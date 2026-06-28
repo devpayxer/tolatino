@@ -23,6 +23,7 @@ import { useI18n } from "../../lib/i18n";
 import { useBiz, CATEGORY_LABELS, TIER_CAPS } from "../../lib/biz";
 import { PhoneFrame, Card, StatusPill, Sheet, PrimaryButton } from "../../components/primitives";
 import { Avatar } from "../../components/ui";
+import { MODULE_SCREENS } from "./modules";
 
 /**
  * Business dashboard hub (mobile). Matches
@@ -47,10 +48,19 @@ const BARS = [30, 26, 34, 28, 40, 52, 58, 66, 54, 70, 46, 38, 60, 50, 42, 36];
 export function BizDashboard({ onExit }: { onExit: () => void }) {
   const { L, lang, setLang } = useI18n();
   const { tier, category } = useBiz();
-  const [sheet, setSheet] = useState<null | "upsell" | "soon">(null);
+  const [sheet, setSheet] = useState<null | "upsell">(null);
+  const [openModule, setOpenModule] = useState<string | null>(null);
   const modulesUnlocked = TIER_CAPS[tier].modules;
 
-  const onModule = () => setSheet(modulesUnlocked ? "soon" : "upsell");
+  const onModule = (key: string) => {
+    if (!modulesUnlocked) return setSheet("upsell");
+    setOpenModule(key);
+  };
+
+  if (openModule) {
+    const ModuleScreen = MODULE_SCREENS[openModule];
+    if (ModuleScreen) return <ModuleScreen onBack={() => setOpenModule(null)} />;
+  }
 
   return (
     <PhoneFrame>
@@ -161,7 +171,7 @@ export function BizDashboard({ onExit }: { onExit: () => void }) {
             return (
               <button
                 key={m.key}
-                onClick={onModule}
+                onClick={() => onModule(m.key)}
                 className="relative flex flex-col items-center gap-1.5 rounded-card border border-hair bg-surface px-1.5 py-3.5"
               >
                 {!modulesUnlocked ? (
@@ -179,32 +189,20 @@ export function BizDashboard({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      {/* upsell / coming-soon sheet */}
+      {/* upsell sheet (free tier — modules locked) */}
       <Sheet open={sheet !== null} onClose={() => setSheet(null)}>
-        {sheet === "upsell" ? (
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[17px] font-extrabold text-ink">{L("Desbloquea los módulos", "Unlock the modules")}</span>
-              <span className="rounded-pill bg-gold px-1.5 py-0.5 text-[9px] font-extrabold text-ink">PRO</span>
-            </div>
-            <p className="mt-1 text-[13px] font-semibold text-muted">
-              {L("Con Verificado administras pedidos, reservas, productos, clientes y más.", "Verified lets you manage orders, bookings, products, customers and more.")}
-            </p>
-            <PrimaryButton className="mt-4 w-full" onClick={() => setSheet(null)}>
-              {L("Mejorar a Verificado · $19/mo", "Upgrade to Verified · $19/mo")}
-            </PrimaryButton>
+        <div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[17px] font-extrabold text-ink">{L("Desbloquea los módulos", "Unlock the modules")}</span>
+            <span className="rounded-pill bg-gold px-1.5 py-0.5 text-[9px] font-extrabold text-ink">PRO</span>
           </div>
-        ) : (
-          <div>
-            <div className="text-[17px] font-extrabold text-ink">{L("Módulo en camino", "Module coming soon")}</div>
-            <p className="mt-1 text-[13px] font-semibold text-muted">
-              {L("Estamos construyendo este módulo. ¡Muy pronto!", "We're building this module. Very soon!")}
-            </p>
-            <PrimaryButton className="mt-4 w-full" onClick={() => setSheet(null)}>
-              {L("Entendido", "Got it")}
-            </PrimaryButton>
-          </div>
-        )}
+          <p className="mt-1 text-[13px] font-semibold text-muted">
+            {L("Con Verificado administras pedidos, reservas, productos, clientes y más.", "Verified lets you manage orders, bookings, products, customers and more.")}
+          </p>
+          <PrimaryButton className="mt-4 w-full" onClick={() => setSheet(null)}>
+            {L("Mejorar a Verificado · $19/mo", "Upgrade to Verified · $19/mo")}
+          </PrimaryButton>
+        </div>
       </Sheet>
     </PhoneFrame>
   );
