@@ -167,6 +167,21 @@ The live implementation lives in **`apps/web`**:
 - **Sub-flows use the sub-view stack pattern** (`DESIGN_SYSTEM.md §7`); flows end in
   a confirmation that returns to the parent.
 
+## Database & migrations (Supabase)
+
+- Every database change is a **versioned SQL migration** in
+  `supabase/migrations/NNNN_*.sql` (seed data in `supabase/seed.sql`). Keep them
+  **idempotent** (`create … if not exists`, `on conflict`, `drop policy if
+  exists`) so they can be re-run safely.
+- **ALWAYS paste the full migration SQL into the chat** whenever a migration is
+  created or required — the founder runs it by pasting into the **Supabase SQL
+  Editor** (no CLI assumed). Don't just reference the file; show the SQL.
+- Design every table for the 1M+ scale target: PostGIS `geography` + GIST index
+  for geo, GIN (full-text / trigram) for search, btree on filtered columns,
+  pagination, and **RLS** (public read where appropriate; writes locked down).
+- Stay portable (vanilla Postgres) so the self-hosted migration later is a
+  `pg_dump`/restore — avoid Supabase-proprietary features without a fallback.
+
 ## Repo layout (target)
 
 ```
