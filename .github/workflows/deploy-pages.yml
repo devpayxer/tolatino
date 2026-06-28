@@ -46,9 +46,10 @@ jobs:
           cache: pnpm
 
       - name: Configure Pages
+        # Pages must be enabled once by hand (Settings → Pages → Source:
+        # "GitHub Actions"). GitHub does not let the Actions token create the
+        # Pages site itself. After that one-time toggle, deploys are automatic.
         uses: actions/configure-pages@v5
-        with:
-          enablement: true # auto-enable Pages (source = GitHub Actions) on first run
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
