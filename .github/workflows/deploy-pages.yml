@@ -57,10 +57,9 @@ jobs:
       - name: Build static export
         env:
           GITHUB_PAGES: "true"
-          # Public Supabase values (RLS-protected). Empty until the repo secrets
-          # are set — the app falls back to sample data when unset.
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          # Public Supabase config comes from apps/web/.env.production (committed;
+          # publishable key + URL are public by design, RLS-protected). To use CI
+          # secrets instead, set NEXT_PUBLIC_SUPABASE_URL / _ANON_KEY here.
         run: pnpm --filter @tolatino/web build
 
       - name: Upload artifact
