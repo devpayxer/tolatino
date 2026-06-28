@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronLeft,
   MapPin,
@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { useI18n } from "../lib/i18n";
 import { PhoneFrame, Card, StatusPill, EmptyState, categoryTile } from "../components/primitives";
-import { BUSINESSES, type Business } from "../data/businesses";
+import { type Business } from "../data/businesses";
+import { searchBusinesses } from "../data/queries";
 
 /**
  * "Buscar" — business discovery surface (top tabs + search). Discover state
@@ -47,16 +48,28 @@ export function Buscar({ onBack, onOpenBusiness }: { onBack: () => void; onOpenB
     L("salón de belleza", "beauty salon"),
   ];
 
-  const q = query.trim().toLowerCase();
-  const matches = q
-    ? BUSINESSES.filter(
-        (b) =>
-          b.name.toLowerCase().includes(q) ||
-          b.cat.es.toLowerCase().includes(q) ||
-          b.cat.en.toLowerCase().includes(q),
-      )
-    : [];
-  const results = q && matches.length === 0 ? BUSINESSES : matches;
+  const q = query.trim();
+  const [results, setResults] = useState<Business[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!q) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+    let active = true;
+    setLoading(true);
+    searchBusinesses(q).then((r) => {
+      if (active) {
+        setResults(r);
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [q]);
 
   const filterChips = [
     { id: "open", es: "Abierto ahora", en: "Open now" },
@@ -162,10 +175,13 @@ export function Buscar({ onBack, onOpenBusiness }: { onBack: () => void; onOpenB
               {/* count + map */}
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-[12.5px] font-bold text-ink">
-                  {results.length}{" "}
-                  {results.length === 1
-                    ? L("resultado cerca de ti", "result near you")
-                    : L("resultados cerca de ti", "results near you")}
+                  {loading
+                    ? L("Buscando…", "Searching…")
+                    : `${results.length} ${
+                        results.length === 1
+                          ? L("resultado cerca de ti", "result near you")
+                          : L("resultados cerca de ti", "results near you")
+                      }`}
                 </span>
                 <button className="flex items-center gap-1 rounded-pill border border-hair bg-surface px-3 py-1.5 text-[12px] font-extrabold text-primary">
                   <MapPin size={13} /> {L("Mapa", "Map")}
@@ -174,9 +190,15 @@ export function Buscar({ onBack, onOpenBusiness }: { onBack: () => void; onOpenB
 
               {/* results */}
               <div className="mt-3 space-y-2.5">
-                {results.map((b) => (
-                  <BusinessResult key={b.id} b={b} onClick={() => onOpenBusiness(b.id)} />
-                ))}
+                {!loading &&
+                  results.map((b) => (
+                    <BusinessResult key={b.id} b={b} onClick={() => onOpenBusiness(b.id)} />
+                  ))}
+                {!loading && results.length === 0 ? (
+                  <p className="px-1 pt-1 text-[12px] font-semibold text-muted">
+                    {L("Sin resultados. Prueba otra búsqueda.", "No results. Try another search.")}
+                  </p>
+                ) : null}
               </div>
             </>
           ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   ChevronLeft,
   Share2,
@@ -18,7 +18,8 @@ import {
 import { useI18n } from "../lib/i18n";
 import { PhoneFrame, Card, StatusPill, PrimaryButton, GhostButton, categoryTile } from "../components/primitives";
 import { Avatar, SectionHeader } from "../components/ui";
-import { getBusiness } from "../data/businesses";
+import type { Business } from "../data/businesses";
+import { fetchBusiness } from "../data/queries";
 
 /**
  * Business detail — tier-aware (DESIGN_RULES.md §2).
@@ -28,7 +29,35 @@ import { getBusiness } from "../data/businesses";
  */
 export function BusinessDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const { L } = useI18n();
-  const b = getBusiness(id);
+  const [b, setB] = useState<Business | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetchBusiness(id).then((biz) => {
+      if (active) {
+        setB(biz);
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <PhoneFrame>
+        <div className="flex items-center gap-3 px-4 pb-2 pt-1">
+          <button onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-ink" aria-label={L("Atrás", "Back")}>
+            <ChevronLeft size={20} />
+          </button>
+        </div>
+        <div className="px-4 pt-10 text-center text-[13px] font-semibold text-muted">{L("Cargando…", "Loading…")}</div>
+      </PhoneFrame>
+    );
+  }
 
   if (!b) {
     return (
