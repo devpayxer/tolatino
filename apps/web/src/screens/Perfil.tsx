@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Star, Bookmark } from "lucide-react";
+import { BadgeCheck, Star, Bookmark, Store, ChevronRight } from "lucide-react";
 import { useI18n } from "../lib/i18n";
 import { Card } from "../components/primitives";
 import { Avatar, SectionHeader } from "../components/ui";
@@ -9,7 +9,7 @@ import { Avatar, SectionHeader } from "../components/ui";
  * "Perfil" (profile) tab. Banner + avatar + tier progress + stats + activity.
  * Matches docs/design-system/reference/screenshots/consumer-dashboard-05-perfil.png.
  */
-export function Perfil() {
+export function Perfil({ onPublishBusiness }: { onPublishBusiness: () => void }) {
   const { L } = useI18n();
 
   const stats = [
@@ -66,6 +66,21 @@ export function Perfil() {
           </div>
         </div>
       </Card>
+
+      {/* publish-your-business CTA → business side */}
+      <button
+        onClick={onPublishBusiness}
+        className="mt-3 flex w-full items-center gap-3 rounded-card bg-gradient-to-br from-primary to-primary-800 p-4 text-left text-white shadow-glow"
+      >
+        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-tile bg-white/15">
+          <Store size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[14px] font-extrabold">{L("Publica tu negocio", "List your business")}</div>
+          <div className="text-[11.5px] font-semibold text-white/80">{L("Llega a clientes latinos cerca de ti.", "Reach Latino customers near you.")}</div>
+        </div>
+        <ChevronRight size={18} className="flex-none text-white/80" />
+      </button>
 
       {/* activity */}
       <SectionHeader title={L("Tu actividad", "Your activity")} />

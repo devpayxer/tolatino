@@ -18,9 +18,11 @@ import { Perfil } from "./screens/Perfil";
 export function ConsumerApp({
   onSearch,
   onOpenBusiness,
+  onPublishBusiness,
 }: {
   onSearch: (query?: string) => void;
   onOpenBusiness: (id: string) => void;
+  onPublishBusiness: () => void;
 }) {
   const [tab, setTab] = useState<ConsumerTab>("home");
 
@@ -31,7 +33,7 @@ export function ConsumerApp({
       {tab === "orders" && <Pedidos />}
       {tab === "bookings" && <Reservas />}
       {tab === "tickets" && <Boletos />}
-      {tab === "profile" && <Perfil />}
+      {tab === "profile" && <Perfil onPublishBusiness={onPublishBusiness} />}
     </PhoneFrame>
   );
 }

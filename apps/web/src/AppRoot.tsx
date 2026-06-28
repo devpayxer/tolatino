@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ConsumerApp } from "./ConsumerApp";
 import { Buscar } from "./screens/Buscar";
 import { BusinessDetail } from "./screens/BusinessDetail";
+import { BizOnboarding } from "./screens/biz/BizOnboarding";
+import { BizDashboard } from "./screens/biz/BizDashboard";
 
 /**
  * Top-level router across the consumer surfaces. Each surface renders its own
@@ -14,11 +16,24 @@ import { BusinessDetail } from "./screens/BusinessDetail";
 type Route =
   | { name: "dashboard" }
   | { name: "search"; query?: string }
-  | { name: "business"; id: string; from: "dashboard" | "search" };
+  | { name: "business"; id: string; from: "dashboard" | "search" }
+  | { name: "bizOnboarding" }
+  | { name: "bizDashboard" };
 
 export function AppRoot() {
   const [route, setRoute] = useState<Route>({ name: "dashboard" });
 
+  if (route.name === "bizOnboarding") {
+    return (
+      <BizOnboarding
+        onExit={() => setRoute({ name: "dashboard" })}
+        onDone={() => setRoute({ name: "bizDashboard" })}
+      />
+    );
+  }
+  if (route.name === "bizDashboard") {
+    return <BizDashboard onExit={() => setRoute({ name: "dashboard" })} />;
+  }
   if (route.name === "search") {
     return (
       <Buscar
@@ -40,6 +55,7 @@ export function AppRoot() {
     <ConsumerApp
       onSearch={(query) => setRoute({ name: "search", query })}
       onOpenBusiness={(id) => setRoute({ name: "business", id, from: "dashboard" })}
+      onPublishBusiness={() => setRoute({ name: "bizOnboarding" })}
     />
   );
 }
