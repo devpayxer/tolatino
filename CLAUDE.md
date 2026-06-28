@@ -167,6 +167,15 @@ The live implementation lives in **`apps/web`**:
 - **Sub-flows use the sub-view stack pattern** (`DESIGN_SYSTEM.md §7`); flows end in
   a confirmation that returns to the parent.
 
+### Product decision (2026-06-28): Inicio = discovery Home
+The **Inicio** tab is the **discovery-first Home** (prominent search → `Buscar`,
+category shortcuts, and live "Cerca de ti" businesses) — **not** the stat-tile
+account dashboard shown in `reference/screenshots/consumer-dashboard-01-inicio.png`
+("Panel del usuario"). A discovery app must lead with search. The account /
+activity summary (orders, bookings, rewards, spend) belongs on **Perfil** (to be
+added there). Don't "correct" Inicio back to the stat-tile dashboard per that one
+reference — this deviation is intentional.
+
 ## Database & migrations (Supabase)
 
 - Every database change is a **versioned SQL migration** in

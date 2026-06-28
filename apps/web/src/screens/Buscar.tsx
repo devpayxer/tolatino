@@ -36,10 +36,18 @@ const TOP_TABS: { id: TopTab; icon: typeof Store; es: string; en: string }[] = [
   { id: "tiendas", icon: ShoppingBag, es: "Tiendas", en: "Shops" },
 ];
 
-export function Buscar({ onBack, onOpenBusiness }: { onBack: () => void; onOpenBusiness: (id: string) => void }) {
+export function Buscar({
+  initialQuery = "",
+  onBack,
+  onOpenBusiness,
+}: {
+  initialQuery?: string;
+  onBack: () => void;
+  onOpenBusiness: (id: string) => void;
+}) {
   const { L, lang, setLang } = useI18n();
   const [top, setTop] = useState<TopTab>("negocios");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [filters, setFilters] = useState<string[]>(["open", "mexicana", "tacos"]);
 
   const recent = [

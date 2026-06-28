@@ -40,8 +40,25 @@ export async function searchBusinesses(query: string): Promise<Business[]> {
     max_results: 20,
   });
   if (error || !data) return [];
+  return (data as SearchRow[]).map(mapSearchRow);
+}
 
-  return (data as SearchRow[]).map((r) => ({
+/* ---- Nearby (Home "Cerca de ti") ---- */
+export async function nearbyBusinesses(limit = 8): Promise<Business[]> {
+  if (!isSupabaseConfigured || !supabase) return BUSINESSES.slice(0, limit);
+
+  const { data, error } = await supabase.rpc("search_businesses", {
+    q: "",
+    user_lat: ORIGIN.lat,
+    user_lng: ORIGIN.lng,
+    max_results: limit,
+  });
+  if (error || !data) return [];
+  return (data as SearchRow[]).map(mapSearchRow);
+}
+
+function mapSearchRow(r: SearchRow): Business {
+  return {
     id: r.slug,
     name: r.name,
     cat: { es: r.tagline_es, en: r.tagline_en },
@@ -53,7 +70,7 @@ export async function searchBusinesses(query: string): Promise<Business[]> {
     open: r.is_open,
     verified: r.tier !== "free",
     promo: r.promo_es ? { es: r.promo_es, en: r.promo_en ?? r.promo_es } : undefined,
-  }));
+  };
 }
 
 /* ---- Detail ---- */

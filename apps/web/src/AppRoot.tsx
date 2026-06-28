@@ -11,7 +11,10 @@ import { BusinessDetail } from "./screens/BusinessDetail";
  * pushed business-detail view). Kept lightweight on purpose — swap for real
  * routing once the app grows.
  */
-type Route = { name: "dashboard" } | { name: "search" } | { name: "business"; id: string };
+type Route =
+  | { name: "dashboard" }
+  | { name: "search"; query?: string }
+  | { name: "business"; id: string; from: "dashboard" | "search" };
 
 export function AppRoot() {
   const [route, setRoute] = useState<Route>({ name: "dashboard" });
@@ -19,13 +22,24 @@ export function AppRoot() {
   if (route.name === "search") {
     return (
       <Buscar
+        initialQuery={route.query}
         onBack={() => setRoute({ name: "dashboard" })}
-        onOpenBusiness={(id) => setRoute({ name: "business", id })}
+        onOpenBusiness={(id) => setRoute({ name: "business", id, from: "search" })}
       />
     );
   }
   if (route.name === "business") {
-    return <BusinessDetail id={route.id} onBack={() => setRoute({ name: "search" })} />;
+    return (
+      <BusinessDetail
+        id={route.id}
+        onBack={() => setRoute(route.from === "search" ? { name: "search" } : { name: "dashboard" })}
+      />
+    );
   }
-  return <ConsumerApp onSearch={() => setRoute({ name: "search" })} />;
+  return (
+    <ConsumerApp
+      onSearch={(query) => setRoute({ name: "search", query })}
+      onOpenBusiness={(id) => setRoute({ name: "business", id, from: "dashboard" })}
+    />
+  );
 }
