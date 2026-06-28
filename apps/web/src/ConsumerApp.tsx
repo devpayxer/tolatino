@@ -19,10 +19,12 @@ export function ConsumerApp({
   onSearch,
   onOpenBusiness,
   onPublishBusiness,
+  onOpenBizDashboard,
 }: {
   onSearch: (query?: string) => void;
   onOpenBusiness: (id: string) => void;
   onPublishBusiness: () => void;
+  onOpenBizDashboard: () => void;
 }) {
   const [tab, setTab] = useState<ConsumerTab>("home");
 
@@ -33,7 +35,7 @@ export function ConsumerApp({
       {tab === "orders" && <Pedidos />}
       {tab === "bookings" && <Reservas />}
       {tab === "tickets" && <Boletos />}
-      {tab === "profile" && <Perfil onPublishBusiness={onPublishBusiness} />}
+      {tab === "profile" && <Perfil onPublishBusiness={onPublishBusiness} onOpenBizDashboard={onOpenBizDashboard} />}
     </PhoneFrame>
   );
 }

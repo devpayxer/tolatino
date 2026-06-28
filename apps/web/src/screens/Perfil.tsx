@@ -9,7 +9,7 @@ import { Avatar, SectionHeader } from "../components/ui";
  * "Perfil" (profile) tab. Banner + avatar + tier progress + stats + activity.
  * Matches docs/design-system/reference/screenshots/consumer-dashboard-05-perfil.png.
  */
-export function Perfil({ onPublishBusiness }: { onPublishBusiness: () => void }) {
+export function Perfil({ onPublishBusiness, onOpenBizDashboard }: { onPublishBusiness: () => void; onOpenBizDashboard: () => void }) {
   const { L } = useI18n();
 
   const stats = [
@@ -80,6 +80,15 @@ export function Perfil({ onPublishBusiness }: { onPublishBusiness: () => void })
           <div className="text-[11.5px] font-semibold text-white/80">{L("Llega a clientes latinos cerca de ti.", "Reach Latino customers near you.")}</div>
         </div>
         <ChevronRight size={18} className="flex-none text-white/80" />
+      </button>
+
+      {/* already have a business → straight to the panel */}
+      <button
+        onClick={onOpenBizDashboard}
+        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-card border border-hair bg-surface py-3 text-[12.5px] font-extrabold text-primary"
+      >
+        {L("Ya tengo un negocio · Entrar a mi panel", "I already have a business · Open my panel")}
+        <ChevronRight size={15} />
       </button>
 
       {/* activity */}

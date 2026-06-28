@@ -32,7 +32,12 @@ export function AppRoot() {
     );
   }
   if (route.name === "bizDashboard") {
-    return <BizDashboard onExit={() => setRoute({ name: "dashboard" })} />;
+    return (
+      <BizDashboard
+        onExit={() => setRoute({ name: "dashboard" })}
+        onNewBusiness={() => setRoute({ name: "bizOnboarding" })}
+      />
+    );
   }
   if (route.name === "search") {
     return (
@@ -56,6 +61,7 @@ export function AppRoot() {
       onSearch={(query) => setRoute({ name: "search", query })}
       onOpenBusiness={(id) => setRoute({ name: "business", id, from: "dashboard" })}
       onPublishBusiness={() => setRoute({ name: "bizOnboarding" })}
+      onOpenBizDashboard={() => setRoute({ name: "bizDashboard" })}
     />
   );
 }

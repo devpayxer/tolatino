@@ -1,58 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Menu,
-  Bell,
-  BadgeCheck,
-  Zap,
-  Lock,
-  UtensilsCrossed,
-  Wrench,
-  Package,
-  Ticket,
-  KeyRound,
-  Megaphone,
-  Users,
-  UserCog,
-  CreditCard,
-  AlertTriangle,
-  type LucideIcon,
-} from "lucide-react";
+import { Menu, Bell, BadgeCheck, Zap, Lock, AlertTriangle } from "lucide-react";
 import { useI18n } from "../../lib/i18n";
 import { useBiz, CATEGORY_LABELS, TIER_CAPS } from "../../lib/biz";
 import { PhoneFrame, Card, StatusPill, Sheet, PrimaryButton } from "../../components/primitives";
 import { Avatar } from "../../components/ui";
-import { MODULE_SCREENS } from "./modules";
+import { MODULE_SCREENS, MODULE_META } from "./modules";
+import { BizMenu } from "./BizMenu";
 
 /**
  * Business dashboard hub (mobile). Matches
  * reference/screenshots/business-03-dashboard-mobile.png.
  * Tier-aware: free locks the 9 modules behind a PRO upsell Sheet (never a dead
- * end); verified/premium unlock them.
+ * end); verified/premium unlock them. The hamburger opens the BizMenu drawer.
  */
-const MODULES: { key: string; icon: LucideIcon; es: string; en: string }[] = [
-  { key: "food", icon: UtensilsCrossed, es: "Comida", en: "Food" },
-  { key: "services", icon: Wrench, es: "Servicios", en: "Services" },
-  { key: "products", icon: Package, es: "Productos", en: "Products" },
-  { key: "events", icon: Ticket, es: "Eventos", en: "Events" },
-  { key: "rental", icon: KeyRound, es: "Renta", en: "Rental" },
-  { key: "updates", icon: Megaphone, es: "Novedades", en: "Updates" },
-  { key: "customers", icon: Users, es: "Clientes", en: "Customers" },
-  { key: "staff", icon: UserCog, es: "Equipo", en: "Staff" },
-  { key: "billing", icon: CreditCard, es: "Facturación", en: "Billing" },
-];
+const MODULES = MODULE_META;
 
 const BARS = [30, 26, 34, 28, 40, 52, 58, 66, 54, 70, 46, 38, 60, 50, 42, 36];
 
-export function BizDashboard({ onExit }: { onExit: () => void }) {
+export function BizDashboard({ onExit, onNewBusiness }: { onExit: () => void; onNewBusiness: () => void }) {
   const { L, lang, setLang } = useI18n();
   const { tier, category } = useBiz();
   const [sheet, setSheet] = useState<null | "upsell">(null);
   const [openModule, setOpenModule] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const modulesUnlocked = TIER_CAPS[tier].modules;
 
   const onModule = (key: string) => {
+    setMenuOpen(false);
     if (!modulesUnlocked) return setSheet("upsell");
     setOpenModule(key);
   };
@@ -66,7 +42,7 @@ export function BizDashboard({ onExit }: { onExit: () => void }) {
     <PhoneFrame>
       {/* dark top bar */}
       <div className="flex items-center justify-between gap-2 bg-ink px-4 py-3 text-white">
-        <button onClick={onExit} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10" aria-label={L("Menú", "Menu")}>
+        <button onClick={() => setMenuOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10" aria-label={L("Menú", "Menu")}>
           <Menu size={18} />
         </button>
         <div className="flex items-center gap-1.5">
@@ -204,6 +180,22 @@ export function BizDashboard({ onExit }: { onExit: () => void }) {
           </PrimaryButton>
         </div>
       </Sheet>
+
+      {/* navigation drawer */}
+      <BizMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onHome={() => {
+          setMenuOpen(false);
+          setOpenModule(null);
+        }}
+        onSelect={onModule}
+        onNewBusiness={() => {
+          setMenuOpen(false);
+          onNewBusiness();
+        }}
+        onExit={onExit}
+      />
     </PhoneFrame>
   );
 }
