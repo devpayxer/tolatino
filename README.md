@@ -42,27 +42,29 @@ The short version:
   primitives. `pnpm install && pnpm --filter @tolatino/web dev`.
 
 Next: more consumer screens (search, listing detail, booking/order), business
-onboarding + dashboard, then the NestJS API + PostgreSQL/PostGIS backend.
+onboarding + dashboard, then wiring the data layer on **Supabase**.
 
-## Planned architecture
+## Architecture
 
-TypeScript end-to-end, bootstrapped-friendly, self-hostable:
+TypeScript end-to-end. **Strategy (decided 2026-06-28): Supabase-first,
+self-host-ready** — ship fast on managed Postgres now, migrate to self-hosted at
+scale (it's plain Postgres underneath, so the move is a `pg_dump`, not a rewrite).
 
 ```
 apps/
-  web/   # Next.js (App Router) mobile-first PWA  — later wrapped with Capacitor
-  api/   # NestJS backend
+  web/   # Next.js (App Router) mobile-first PWA  — hosted on Cloudflare Pages
 packages/
   ui/    # Design-system components (from the To'Latino handoff)
   types/ # Shared TypeScript types
 docs/
   design-system/  # Tokens, component specs, mockups, handoff
-infra/   # Docker Compose / deployment (Hetzner + Cloudflare)
 ```
 
-Core building blocks: **PostgreSQL + PostGIS** (geo / "near me"), **Redis +
-BullMQ**, **MapLibre + OpenStreetMap** (maps without per-request billing),
-**Meilisearch** (search at scale), self-hosted where possible. Full rationale in
+Core building blocks: **Supabase** (managed **Postgres + PostGIS** for geo /
+"near me", auth/OTP, storage, realtime), **Cloudflare Pages** (frontend host),
+**MapLibre + OpenStreetMap** (maps without per-request billing), Postgres
+full-text search → **Meilisearch** at scale. Migration target: self-hosted
+Postgres + **NestJS** on Hetzner. Full rationale and the scale plan in
 [`CLAUDE.md`](CLAUDE.md).
 
 ## License

@@ -40,13 +40,18 @@ it** rather than breaking the rule silently.
 - No hardcoded user-facing English. Route all copy through i18n (next-intl).
 - Errors, empty states, and notifications must exist in Spanish.
 
-## 4. Build from scratch; avoid paid services
-- Prefer free / open-source / self-hostable. Do not add a paid SaaS dependency
-  unless genuinely unavoidable; if so, name it, justify it, pick the cheapest.
-- Reuse the agreed stack (see `CLAUDE.md` → Tech stack). Don't introduce a new
-  external service without explicit sign-off.
-- Allowed external costs are limited to those listed in `CLAUDE.md`
-  (SMS/WhatsApp OTP, transactional email, payments later).
+## 4. Use the sanctioned stack; avoid unapproved paid services
+- **Sanctioned managed services (decided 2026-06-28): Supabase** (DB = managed
+  Postgres+PostGIS, auth/OTP, storage, realtime) and **Cloudflare Pages**
+  (frontend host). Use these — don't flag them as violations.
+- **Stay portable / self-host-ready:** Supabase is plain Postgres underneath.
+  Design the schema for scale (indexes, PostGIS, pagination) and avoid
+  proprietary features that can't be reproduced on vanilla Postgres — so the
+  `pg_dump` migration to self-hosted Hetzner later stays a non-event.
+- Otherwise prefer free / open-source / self-hostable. Don't add a *new* paid
+  dependency without sign-off; if genuinely unavoidable, name it, justify it,
+  pick the cheapest. Other allowed externals: SMS/WhatsApp OTP, transactional
+  email (SES), payments later. See `CLAUDE.md` → Tech stack + Allowed services.
 
 ## 5. Build for 1M+/month scale (without over-engineering)
 - Index every column used in filters/joins/sorts; no N+1 queries; paginate lists.

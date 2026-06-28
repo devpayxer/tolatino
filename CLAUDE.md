@@ -37,7 +37,11 @@ and bookings** to nearby local users, in their own language and culture.
    The founder is bootstrapped (no investor). Prefer free / open-source /
    self-hostable building blocks. When an external paid service is genuinely
    unavoidable (see "Allowed external costs"), call it out explicitly and choose
-   the cheapest viable option.
+   the cheapest viable option. **One deliberate, documented exception is in
+   place for launch velocity — Supabase + Cloudflare Pages (see "Architecture
+   decision" below) — both portable, with a migration path to self-hosted.**
+   Beyond the sanctioned services list, still avoid new paid dependencies and
+   surface conflicts.
 4. **Scale target: 1M+ businesses / listings / users per month.** Make data-model,
    indexing, and architecture choices that hold at that scale (geo queries,
    search, pagination, caching) from day one — without over-engineering.
@@ -46,34 +50,57 @@ and bookings** to nearby local users, in their own language and culture.
 
 ## Tech stack (the agreed base — keep in sync)
 
-> Decisions are made for a solo, bootstrapped founder building with AI assistance.
-> TypeScript end-to-end to share types and reduce context-switching.
+> Decisions are for a solo, bootstrapped founder building with AI assistance.
+> TypeScript end-to-end. **Strategy (decided 2026-06-28): ship fast on a managed
+> Postgres backend (Supabase) now, with a clean migration path to self-hosted at
+> scale.** See "Architecture decision" below.
 
-| Layer | Choice | Why |
-|---|---|---|
-| Monorepo | **pnpm + Turborepo** | One repo, shared `packages/ui` + `packages/types` |
-| Frontend | **Next.js (App Router) as a mobile-first PWA**, Tailwind CSS | One codebase → mobile/tablet/desktop; installable; **SEO = free customer acquisition** for listings (critical, bootstrapped). Wrap with **Capacitor** later for App Store / Play Store reusing the same code. |
-| UI components | **`packages/ui`** implementing the design-system tokens | Single source; every app consumes it |
-| Backend | **NestJS (TypeScript)** | Structured, scalable, testable; same language as web |
-| Database | **PostgreSQL + PostGIS** | Free, scales to millions; PostGIS does geo/radius/"near me" natively — replaces paid geo APIs |
-| Search | **Postgres full-text search** now → **Meilisearch** (self-hosted, OSS) at scale | Avoids paid Algolia |
-| Maps | **MapLibre GL** + **OpenStreetMap** tiles | No Google Maps per-request billing |
-| Geocoding / address autocomplete | **Nominatim / Photon** (OSM, self-hostable) | Address→coords + city autocomplete without Google billing |
-| Cache / queues / jobs | **Redis** + **BullMQ** | Sessions, caching, background jobs, notifications |
-| Realtime | **Socket.IO** (self-hosted) | Chat, live order/booking updates |
-| Object storage (images) | **Cloudflare R2** (cheap, no egress) or self-hosted **MinIO** | Listing photos |
-| Auth | **Own JWT + refresh tokens** (httpOnly cookies), OTP flows | Built from scratch, no paid auth vendor |
-| Push notifications | **Web Push (VAPID)** for PWA; **FCM** (free) for native later | No paid push vendor |
-| Hosting | **Hetzner VPS + Docker Compose** behind **Cloudflare** (free CDN/DDoS/cache) | Extreme value vs. AWS/Vercel at scale; vertical-scale first |
-| i18n | **next-intl**, Spanish-first | es-US default, en-US secondary |
+| Layer | MVP (now) | At scale (migration target) | Why |
+|---|---|---|---|
+| Monorepo | **pnpm + Turborepo** | same | Shared `packages/ui` + `packages/types` |
+| Frontend | **Next.js (App Router) mobile-first PWA**, Tailwind | same | One codebase → mobile/tablet/desktop; **SEO = free acquisition**; Capacitor later for app stores |
+| Frontend host | **Cloudflare Pages** | same (or self-host behind Cloudflare) | Free, cheap bandwidth at scale; fits bootstrapped budget |
+| UI components | **`packages/ui`** (design-system tokens) | same | Single source; every app consumes it |
+| Database + geo | **Supabase** (managed **Postgres + PostGIS**) | **self-hosted Postgres + PostGIS** on Hetzner | Same DB either way → migrate via `pg_dump`. PostGIS does "near me"/radius natively |
+| Auth + OTP | **Supabase Auth** (email/phone OTP, RLS) | keep Supabase Auth, or own JWT if self-hosting | Skips building auth from scratch; RLS enforces access at the DB |
+| Object storage (images) | **Supabase Storage** (S3-compatible) | **Cloudflare R2** / self-hosted MinIO | Cheap, portable |
+| Realtime | **Supabase Realtime** | Socket.IO (self-hosted) if needed | Chat, live order/booking updates |
+| Backend logic | **Supabase** auto REST + **RLS** + **Edge Functions**; add **NestJS** when business logic grows | **NestJS** on Hetzner against the same Postgres | Start with managed APIs; introduce a real backend as complexity grows |
+| Search | **Postgres full-text search** | **Meilisearch** (self-hosted, OSS) | Works on Supabase Postgres; avoids paid Algolia |
+| Maps | **MapLibre GL + OpenStreetMap** tiles | same | No Google Maps per-request billing |
+| Geocoding / autocomplete | **Nominatim / Photon** (OSM) | self-host at scale | Address→coords + city autocomplete without Google billing |
+| Cache / jobs | defer (Edge Functions early) | **Redis + BullMQ** | Add when caching / background jobs matter |
+| Push notifications | **Web Push (VAPID)** for PWA | + **FCM** (free) for native later | No paid push vendor |
+| i18n | **next-intl**, Spanish-first | same | es-US default, en-US secondary |
 
-### Allowed external costs (only when unavoidable)
+### Architecture decision (2026-06-28): Supabase-first, self-host-ready
+Chosen by the founder (option **A + Cloudflare Pages**). Rationale: a bootstrapped
+solo founder needs **speed to launch and validate** more than infra purity at a
+scale (1M+/mo) they don't have yet. Supabase **is** managed Postgres + PostGIS —
+the exact database we wanted — so:
+- **Scale-readiness lives in the data model** (indexes, PostGIS, pagination), which
+  is identical on Supabase or self-hosted. Design every table for scale regardless
+  of where Postgres runs.
+- **Low lock-in:** Supabase is standard Postgres → migrating to a self-hosted
+  Hetzner box later is a `pg_dump`/restore, not a rewrite. Don't use proprietary
+  features that can't be reproduced on vanilla Postgres without a wrapper.
+- **Migration trigger:** when Supabase/Cloudflare bills approach what a Hetzner box
+  + ops time would cost (revisit at real traffic), move the DB to self-hosted
+  Postgres + NestJS; the frontend and schema stay the same.
+
+### Allowed external / managed services (sanctioned)
+Deliberate, documented exceptions to "build from scratch" — chosen for velocity,
+all portable:
+- **Supabase** (DB, auth, storage, realtime) — managed Postgres; migrate to
+  self-hosted at scale.
+- **Cloudflare Pages** — frontend hosting (free tier).
 - **OTP / SMS:** carrier SMS always costs money. Order of preference:
   **email OTP (free)** → **WhatsApp OTP** (audience fits — Latinos use WhatsApp
-  heavily) → cheapest SMS gateway only if required.
+  heavily) → cheapest SMS gateway only if required. (Supabase Auth covers email/
+  phone OTP delivery wiring.)
 - **Transactional email:** self-hosting deliverability is hard. Start with
   **Amazon SES** (~$0.10 / 1,000 emails — cheapest at scale); consider self-hosted
-  **Postal** later. This is the one "necessary external" we accept early.
+  **Postal** later.
 - **Payments:** Stripe/etc. take a per-transaction cut by nature — evaluate when
   we reach the transaction phase; not needed for MVP discovery/listings.
 
