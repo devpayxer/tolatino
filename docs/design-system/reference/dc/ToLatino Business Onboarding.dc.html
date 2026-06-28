@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#DCD8EC;display:flex;flex-direction:column;align-items:center;padding:48px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:12px;width:392px;max-width:100%;margin-bottom:18px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Alta de negocio · {{ stepLabel }}</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:864px;background:#FBFAFE;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.22);border:1px solid rgba(30,27,46,.05);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- ONBOARDING TOP BAR (progress) -->
+    <sc-if value="{{ showTopbar }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 16px 12px">
+      <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button></sc-if>
+      <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:baseline;flex:none"><span style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.03em">To</span><span style="font:800 19px 'Plus Jakarta Sans';color:#7B61FF;letter-spacing:-.03em">Latino</span></div></sc-if>
+      <div style="flex:1;height:6px;border-radius:3px;background:#ECE8F4;overflow:hidden"><div style="height:100%;border-radius:3px;background:#7B61FF;width:{{ progressPct }}"></div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esLight }}">ES</button><button onClick="{{ setEn }}" style="{{ enLight }}">EN</button></div>
+    </div>
+    </sc-if>
+
+    <!-- ============================ SCROLL AREA ============================ -->
+    <div data-noscroll style="flex:1;overflow-y:auto">
+
+      <!-- ===== STEP 1 · AUTH ===== -->
+      <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:14px 22px 22px">
+        <div style="width:54px;height:54px;border-radius:16px;background:#1E1B2E;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F4B740" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v9h16v-9"></path><path d="M4 10l1.5-5h13L20 10"></path><path d="M4 10a2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0"></path></svg></div>
+        <div style="font:800 26px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.025em;line-height:1.16;margin-top:16px;text-wrap:balance">{{ t.authTitle }}</div>
+        <div style="font:500 14px 'Plus Jakarta Sans';color:#6E6A85;line-height:1.5;margin-top:9px">{{ t.authSub }}</div>
+
+        <div style="display:flex;align-items:center;gap:9px;margin-top:20px;background:#fff;border:1.5px solid #E2DEF4;border-radius:14px;padding:4px 4px 4px 14px">
+          <span style="font:700 13.5px 'Plus Jakarta Sans';color:#1E1B2E">🇺🇸 +1</span>
+          <input value="{{ form.phone }}" onInput="{{ onPhone }}" placeholder="{{ t.phonePh }}" style="flex:1;border:none;outline:none;background:none;font:600 14px 'Plus Jakarta Sans';color:#1E1B2E;padding:11px 0">
+        </div>
+        <button onClick="{{ next }}" style="width:100%;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:15px;border-radius:14px;font:800 14.5px 'Plus Jakarta Sans';margin-top:12px;box-shadow:0 12px 24px rgba(123,97,255,.34)">{{ t.continueSms }}</button>
+
+        <div style="display:flex;align-items:center;gap:12px;margin:18px 2px"><span style="flex:1;height:1px;background:rgba(30,27,46,.1)"></span><span style="font:700 11.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.or }}</span><span style="flex:1;height:1px;background:rgba(30,27,46,.1)"></span></div>
+
+        <div style="display:flex;gap:10px">
+          <button onClick="{{ next }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;padding:13px;border-radius:14px;font:800 13px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2c-.3 1.5-1.1 2.7-2.4 3.5v2.9h3.9c2.3-2.1 3.3-5.2 3.3-8.6z"></path><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-2.9c-1.1.7-2.5 1.1-4 1.1-3.1 0-5.7-2.1-6.6-4.9H1.4v3C3.4 21.3 7.4 24 12 24z"></path><path fill="#FBBC05" d="M5.4 14.3c-.2-.7-.4-1.4-.4-2.3s.1-1.6.4-2.3v-3H1.4C.5 8.5 0 10.2 0 12s.5 3.5 1.4 5.3l4-3z"></path><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.7 1.4 6.7l4 3C6.3 6.9 8.9 4.8 12 4.8z"></path></svg>Google</button>
+          <button onClick="{{ next }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;padding:13px;border-radius:14px;font:800 13px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="15" height="15" viewBox="0 0 24 24" fill="#1E1B2E"><path d="M17.05 12.5c0-2.4 1.97-3.55 2.06-3.6-1.12-1.64-2.87-1.87-3.49-1.9-1.49-.15-2.9.87-3.66.87-.75 0-1.92-.85-3.16-.83-1.62.02-3.12.94-3.96 2.4-1.69 2.93-.43 7.27 1.21 9.65.8 1.16 1.76 2.46 3 2.42 1.21-.05 1.67-.78 3.13-.78 1.46 0 1.87.78 3.16.75 1.31-.02 2.13-1.18 2.93-2.35.92-1.35 1.3-2.66 1.32-2.73-.03-.01-2.53-.97-2.55-3.84z"></path><path d="M14.7 5.05c.67-.81 1.12-1.94.99-3.05-.96.04-2.12.64-2.81 1.45-.62.72-1.16 1.86-1.02 2.96 1.07.08 2.17-.55 2.84-1.36z"></path></svg>Apple</button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:9px;margin-top:20px;background:#F3F0FF;border-radius:14px;padding:13px 15px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 8 8 8 8s8-3 8-8V6z"></path><polyline points="9 12 11.5 14.5 16 9.5"></polyline></svg>
+          <span style="font:600 12px 'Plus Jakarta Sans';color:#5A5570;line-height:1.45">{{ t.authTrust }}</span>
+        </div>
+        <div style="text-align:center;margin-top:16px;font:600 13px 'Plus Jakarta Sans';color:#6E6A85">{{ t.haveAccount }} <span style="color:#7B61FF;font-weight:800">{{ t.signin }}</span></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== STEP 2 · CATEGORY ===== -->
+      <sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:6px 20px 4px"><div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ t.catTitle }}</div><div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:5px">{{ t.catSub }}</div></div>
+      <div style="padding:14px 16px 14px;display:grid;grid-template-columns:1fr 1fr;gap:11px">
+        <div onClick="{{ cats.0.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.0.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#E4ECFB;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A5C8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l1.4-4.3A2 2 0 0 1 8.3 7.3h7.4a2 2 0 0 1 1.9 1.4L19 13"></path><rect x="3.5" y="13" width="17" height="5" rx="1.5"></rect><circle cx="7.5" cy="18.6" r="1.2"></circle><circle cx="16.5" cy="18.6" r="1.2"></circle></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.0.label }}</div><sc-if value="{{ cats.0.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.1.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.1.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#FDE7EF;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D6336C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6.5" r="2.3"></circle><circle cx="6" cy="17.5" r="2.3"></circle><line x1="8" y1="8" x2="20" y2="17"></line><line x1="8" y1="16" x2="20" y2="7"></line></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.1.label }}</div><sc-if value="{{ cats.1.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.2.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.2.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#FCEFD6;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B5791A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v6a2 2 0 0 0 4 0V3"></path><line x1="8" y1="9" x2="8" y2="21"></line><path d="M16 3c-1.4 0-2.3 1.6-2.3 4s.9 3.5 2.3 3.5V21"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.2.label }}</div><sc-if value="{{ cats.2.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.3.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.3.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#E3F5EA;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F8A4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6.5 8 6.5"></path><path d="M6.5 9.5V19h11V9.5"></path><path d="M10 19v-4h4v4"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.3.label }}</div><sc-if value="{{ cats.3.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.4.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.4.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#EAE2F8;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-7 8z"></path><line x1="12" y1="12" x2="12" y2="20"></line><line x1="8" y1="20" x2="16" y2="20"></line></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.4.label }}</div><sc-if value="{{ cats.4.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.5.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.5.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#FCE6DD;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D86A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle><path d="M3 4h2l2.2 11a1.5 1.5 0 0 0 1.5 1.2h8a1.5 1.5 0 0 0 1.5-1.2L20 8H6"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.5.label }}</div><sc-if value="{{ cats.5.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.6.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.6.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#EFEBFF;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="1.5"></rect><line x1="4" y1="13" x2="20" y2="13"></line><line x1="12" y1="9" x2="12" y2="20"></line><path d="M12 9S10.5 4 8.2 5.3 9.6 9 12 9z"></path><path d="M12 9s1.5-5 3.8-3.7S14.4 9 12 9z"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.6.label }}</div><sc-if value="{{ cats.6.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.7.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.7.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#DDF2EE;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#138A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h3l2-5 3 10 2-5h6"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.7.label }}</div><sc-if value="{{ cats.7.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.8.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.8.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#E4ECFB;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A5C8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8" width="17" height="11" rx="2"></rect><path d="M8.5 8V6.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V8"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.8.label }}</div><sc-if value="{{ cats.8.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.9.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.9.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#FDE7EF;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D6336C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12a1 1 0 0 1-1 .9H8a1 1 0 0 1-1-.9z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.9.label }}</div><sc-if value="{{ cats.9.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.10.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.10.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#FCEFD6;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B5791A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="11" width="11" height="7" rx="1.5"></rect><path d="M13.5 13h3.7l3 3v2h-6.7z"></path><circle cx="6" cy="18.5" r="1.3"></circle><circle cx="17" cy="18.5" r="1.3"></circle></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.10.label }}</div><sc-if value="{{ cats.10.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.11.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.11.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#EAE2F8;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-4 9 4-9 4z"></path><path d="M7 11v5c0 1 2.4 2.3 5 2.3s5-1.3 5-2.3v-5"></path><line x1="21" y1="9" x2="21" y2="14"></line></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.11.label }}</div><sc-if value="{{ cats.11.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.12.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.12.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#FCE6DD;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D86A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3"></circle><path d="M6.5 20a5.5 5.5 0 0 1 11 0"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.12.label }}</div><sc-if value="{{ cats.12.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.13.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.13.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#E3F5EA;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F8A4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><rect x="2" y="9" width="3" height="6" rx="1"></rect><rect x="19" y="9" width="3" height="6" rx="1"></rect></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.13.label }}</div><sc-if value="{{ cats.13.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.14.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.14.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#EFEBFF;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="8"></line><line x1="9.5" y1="5.5" x2="14.5" y2="5.5"></line><path d="M6 21V11l6-3 6 3v10"></path><path d="M10 21v-4h4v4"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.14.label }}</div><sc-if value="{{ cats.14.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+        <div onClick="{{ cats.15.onTap }}" style="position:relative;background:#fff;border:2px solid {{ cats.15.ring }};border-radius:18px;padding:13px 12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#DDF2EE;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#138A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="1.5"></circle><circle cx="16" cy="9" r="1.5"></circle><circle cx="5.5" cy="13" r="1.3"></circle><circle cx="18.5" cy="13" r="1.3"></circle><path d="M12 12c-2.4 0-4.3 2-4.3 4 0 1.5 1.3 2.1 2.5 1.6a4.4 4.4 0 0 1 3.6 0c1.2.5 2.5-.1 2.5-1.6 0-2-1.9-4-4.3-4z"></path></svg></div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px;line-height:1.2">{{ cats.15.label }}</div><sc-if value="{{ cats.15.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== STEP 3 · SUBCATEGORY ===== -->
+      <sc-if value="{{ isSub }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:6px 20px 4px"><div style="display:inline-flex;align-items:center;gap:7px;background:#EFEBFF;color:#6D4DF6;padding:5px 11px;border-radius:8px;font:800 11px 'Plus Jakarta Sans'">{{ activeCatLabel }}</div><div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;margin-top:11px">{{ t.subTitle }}</div><div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:5px">{{ t.subSub }}</div></div>
+      <div style="padding:14px 16px 14px;display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ subs }}" as="sb" hint-placeholder-count="6">
+        <div onClick="{{ sb.onTap }}" style="display:flex;align-items:center;gap:12px;background:#fff;border:2px solid {{ sb.ring }};border-radius:14px;padding:13px 14px;cursor:pointer">
+          <span style="width:22px;height:22px;border-radius:7px;border:2px solid {{ sb.ring }};background:{{ sb.fill }};display:flex;align-items:center;justify-content:center;flex:none"><sc-if value="{{ sb.sel }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></span>
+          <span style="flex:1;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ sb.label }}</span>
+        </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <!-- ===== STEP 4 · INFO ===== -->
+      <sc-if value="{{ isInfo }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:6px 20px 4px"><div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ t.infoTitle }}</div><div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:5px">{{ t.infoSub }}</div></div>
+      <div style="padding:14px 18px 14px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:13px">
+          <div style="width:64px;height:64px;border-radius:16px;border:2px dashed #C9C2E6;background:#F7F6FC;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="11" r="2"></circle><path d="m21 16-4-4-7 7"></path></svg></div>
+          <div style="flex:1"><div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.addLogo }}</div><div style="font:600 11.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ t.addLogoSub }}</div></div>
+        </div>
+        <div><div style="font:800 12px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fName }}</div><input value="{{ form.name }}" onInput="{{ onName }}" placeholder="{{ t.fNamePh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:13px;padding:13px 14px;font:600 14px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+        <div><div style="font:800 12px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fPhone }}</div><input value="{{ form.bphone }}" onInput="{{ onBphone }}" placeholder="(832) 555-0148" style="width:100%;border:1.5px solid #E2DEF4;border-radius:13px;padding:13px 14px;font:600 14px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+        <div><div style="font:800 12px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fAddr }}</div><input value="{{ form.addr }}" onInput="{{ onAddr }}" placeholder="{{ t.fAddrPh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:13px;padding:13px 14px;font:600 14px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+        <div><div style="font:800 12px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fDesc }}</div><textarea value="{{ form.desc }}" onInput="{{ onDesc }}" placeholder="{{ t.fDescPh }}" data-noscroll style="width:100%;height:82px;resize:none;border:1.5px solid #E2DEF4;border-radius:13px;padding:13px 14px;font:600 13.5px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5"></textarea></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== STEP 5 · PLAN ===== -->
+      <sc-if value="{{ isPlan }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:6px 20px 4px"><div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ t.planTitle }}</div><div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:5px">{{ t.planSub }}</div></div>
+      <div style="padding:14px 16px 14px;display:flex;flex-direction:column;gap:13px">
+
+        <!-- PRO -->
+        <div onClick="{{ choosePro }}" style="position:relative;border:2px solid {{ planProRing }};background:#fff;border-radius:20px;padding:17px 16px;cursor:pointer;box-shadow:0 10px 26px rgba(123,97,255,.1);overflow:hidden">
+          <span style="position:absolute;top:0;right:0;background:#7B61FF;color:#fff;padding:5px 13px;border-bottom-left-radius:12px;font:800 10px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.05em">{{ t.recommended }}</span>
+          <div style="display:flex;align-items:center;gap:11px">
+            <span style="width:24px;height:24px;border-radius:50%;border:2px solid {{ planProRing }};background:{{ planProFill }};display:flex;align-items:center;justify-content:center;flex:none"><sc-if value="{{ isPro }}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></span>
+            <div style="display:flex;align-items:center;gap:6px"><span style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">Verified Pro</span><span style="display:inline-flex;width:17px;height:17px;border-radius:50%;background:#7B61FF;align-items:center;justify-content:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></div>
+            <div style="margin-left:auto;text-align:right"><span style="font:800 20px 'Plus Jakarta Sans';color:#1E1B2E">$4.99</span><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE">/{{ t.month }}</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+            <div style="display:flex;align-items:center;gap:9px;font:600 12.5px 'Plus Jakarta Sans';color:#3A3650"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ t.proF1 }}</div>
+            <div style="display:flex;align-items:center;gap:9px;font:600 12.5px 'Plus Jakarta Sans';color:#3A3650"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ t.proF2 }}</div>
+            <div style="display:flex;align-items:center;gap:9px;font:600 12.5px 'Plus Jakarta Sans';color:#3A3650"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ t.proF3 }}</div>
+            <div style="display:flex;align-items:center;gap:9px;font:600 12.5px 'Plus Jakarta Sans';color:#3A3650"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ t.proF4 }}</div>
+            <div style="display:flex;align-items:center;gap:9px;font:600 12.5px 'Plus Jakarta Sans';color:#3A3650"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ t.proF5 }}</div>
+          </div>
+        </div>
+
+        <!-- FREE -->
+        <div onClick="{{ chooseFree }}" style="position:relative;border:2px solid {{ planFreeRing }};background:#fff;border-radius:20px;padding:17px 16px;cursor:pointer">
+          <div style="display:flex;align-items:center;gap:11px">
+            <span style="width:24px;height:24px;border-radius:50%;border:2px solid {{ planFreeRing }};background:{{ planFreeFill }};display:flex;align-items:center;justify-content:center;flex:none"><sc-if value="{{ isFree }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></span>
+            <span style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.freeName }}</span>
+            <div style="margin-left:auto;text-align:right"><span style="font:800 20px 'Plus Jakarta Sans';color:#1E1B2E">$0</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+            <div style="display:flex;align-items:center;gap:9px;font:600 12.5px 'Plus Jakarta Sans';color:#3A3650"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ t.freeF1 }}</div>
+            <div style="display:flex;align-items:center;gap:9px;font:600 12.5px 'Plus Jakarta Sans';color:#3A3650"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ t.freeF2 }}</div>
+            <div style="display:flex;align-items:center;gap:9px;font:600 12.5px 'Plus Jakarta Sans';color:#9A96AE"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CFCADA" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg><span style="text-decoration:line-through">{{ t.freeF3 }}</span></div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== STEP 6 · CHECKOUT ===== -->
+      <sc-if value="{{ isCheckout }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:6px 20px 4px"><div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ t.checkoutTitle }}</div><div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:5px">{{ t.checkoutSub }}</div></div>
+      <div style="padding:14px 18px 14px">
+        <div style="background:#F3F0FF;border-radius:16px;padding:15px;display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:12px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+          <div style="flex:1"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">Verified Pro</div><div style="font:600 11.5px 'Plus Jakarta Sans';color:#7C7790">{{ t.monthlyPlan }}</div></div>
+          <div style="text-align:right"><div style="font:800 17px 'Plus Jakarta Sans';color:#1E1B2E">$4.99</div><div style="font:700 10.5px 'Plus Jakarta Sans';color:#9A96AE">/{{ t.month }}</div></div>
+        </div>
+
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#56506E;margin:18px 0 6px">{{ t.cardNum }}</div>
+        <div style="display:flex;align-items:center;gap:10px;border:1.5px solid #E2DEF4;border-radius:13px;padding:12px 14px;background:#fff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"></rect><line x1="2.5" y1="10" x2="21.5" y2="10"></line></svg><input value="{{ form.card }}" onInput="{{ onCard }}" placeholder="4242 4242 4242 4242" style="flex:1;border:none;outline:none;font:600 14px 'Plus Jakarta Sans';color:#1E1B2E"></div>
+        <div style="display:flex;gap:11px;margin-top:11px">
+          <div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.exp }}</div><input value="{{ form.exp }}" onInput="{{ onExp }}" placeholder="MM/AA" style="width:100%;border:1.5px solid #E2DEF4;border-radius:13px;padding:12px 14px;font:600 14px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+          <div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">CVC</div><input value="{{ form.cvc }}" onInput="{{ onCvc }}" placeholder="123" style="width:100%;border:1.5px solid #E2DEF4;border-radius:13px;padding:12px 14px;font:600 14px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+        </div>
+        <div style="margin-top:11px"><div style="font:800 12px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.cardName }}</div><input value="{{ form.cardName }}" onInput="{{ onCardName }}" placeholder="{{ t.cardNamePh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:13px;padding:12px 14px;font:600 14px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid rgba(30,27,46,.08)"><span style="font:700 13px 'Plus Jakarta Sans';color:#6E6A85">{{ t.totalToday }}</span><span style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E">$4.99</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:11px;font:600 11.5px 'Plus Jakarta Sans';color:#9A96AE"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>{{ t.secureNote }}</div>
+      </div>
+      </sc-if>
+
+      <!-- ===== STEP 7 · DASHBOARD ===== -->
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+      <!-- dashboard header -->
+      <div style="background:#1E1B2E;padding:6px 18px 20px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(244,183,64,.1)"></div>
+        <div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding-top:6px">
+          <div style="display:flex;align-items:baseline"><span style="font:800 19px 'Plus Jakarta Sans';color:#fff;letter-spacing:-.03em">To</span><span style="font:800 19px 'Plus Jakarta Sans';color:#F4B740;letter-spacing:-.03em">Latino</span><span style="font:700 12px 'Plus Jakarta Sans';color:rgba(255,255,255,.6);margin-left:8px">{{ t.forBusiness }}</span></div>
+          <div style="display:flex;background:rgba(255,255,255,.14);border-radius:999px;padding:3px"><button onClick="{{ setEs }}" style="{{ esDark }}">ES</button><button onClick="{{ setEn }}" style="{{ enDark }}">EN</button></div>
+        </div>
+        <div style="position:relative;display:flex;align-items:center;gap:13px;margin-top:18px">
+          <div style="width:54px;height:54px;border-radius:15px;flex:none;background:repeating-linear-gradient(135deg,#F3E2CE 0 8px,#ECD3B4 8px 16px)"></div>
+          <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 18px 'Plus Jakarta Sans';color:#fff">{{ bizName }}</span><sc-if value="{{ isPro }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;width:17px;height:17px;border-radius:50%;background:#7B61FF;align-items:center;justify-content:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div><div style="font:600 12px 'Plus Jakarta Sans';color:rgba(255,255,255,.62);margin-top:2px">{{ activeCatLabel }} · {{ planBadge }}</div></div>
+        </div>
+      </div>
+
+      <div style="padding:16px 16px 0;margin-top:-12px">
+        <!-- welcome -->
+        <div style="background:#E8F6EE;border:1px solid rgba(31,157,87,.18);border-radius:16px;padding:13px 15px;display:flex;align-items:center;gap:10px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span style="font:700 12.5px 'Plus Jakarta Sans';color:#176B3A;line-height:1.4">{{ t.dashWelcome }}</span>
+        </div>
+
+        <!-- stats -->
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <div style="flex:1;background:#fff;border-radius:16px;padding:13px 10px;text-align:center;box-shadow:0 6px 16px rgba(60,50,110,.06)"><div style="font:800 21px 'Plus Jakarta Sans';color:#7B61FF">{{ stat.views }}</div><div style="font:700 10.5px 'Plus Jakarta Sans';color:#8A86A0;margin-top:2px">{{ t.sViews }}</div></div>
+          <div style="flex:1;background:#fff;border-radius:16px;padding:13px 10px;text-align:center;box-shadow:0 6px 16px rgba(60,50,110,.06)"><div style="font:800 21px 'Plus Jakarta Sans';color:#1F9D57">{{ stat.calls }}</div><div style="font:700 10.5px 'Plus Jakarta Sans';color:#8A86A0;margin-top:2px">{{ t.sCalls }}</div></div>
+          <div style="flex:1;background:#fff;border-radius:16px;padding:13px 10px;text-align:center;box-shadow:0 6px 16px rgba(60,50,110,.06)"><div style="font:800 21px 'Plus Jakarta Sans';color:#F4B740">{{ stat.saves }}</div><div style="font:700 10.5px 'Plus Jakarta Sans';color:#8A86A0;margin-top:2px">{{ t.sSaves }}</div></div>
+        </div>
+
+        <!-- completeness -->
+        <div style="background:#fff;border-radius:16px;padding:15px;margin-top:14px;box-shadow:0 6px 16px rgba(60,50,110,.06)">
+          <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.completeTitle }}</span><span style="font:800 13px 'Plus Jakarta Sans';color:#7B61FF">{{ completePct }}</span></div>
+          <div style="height:8px;border-radius:4px;background:#ECE8F4;overflow:hidden;margin-top:9px"><div style="height:100%;border-radius:4px;background:#7B61FF;width:{{ completePct }}"></div></div>
+          <div style="font:600 11.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:9px">{{ t.completeHint }}</div>
+        </div>
+
+        <!-- quick actions -->
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E;margin:18px 2px 10px">{{ t.manage }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:#fff;border-radius:15px;padding:14px;box-shadow:0 6px 16px rgba(60,50,110,.06)"><div style="width:36px;height:36px;border-radius:10px;background:#EFEBFF;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></div><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px">{{ t.aEdit }}</div></div>
+          <div style="background:#fff;border-radius:15px;padding:14px;box-shadow:0 6px 16px rgba(60,50,110,.06)"><div style="width:36px;height:36px;border-radius:10px;background:#E3F5EA;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F8A4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="11" r="2"></circle><path d="m21 16-4-4-7 7"></path></svg></div><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px">{{ t.aPhotos }}</div></div>
+          <div style="background:#fff;border-radius:15px;padding:14px;box-shadow:0 6px 16px rgba(60,50,110,.06)"><div style="width:36px;height:36px;border-radius:10px;background:#FCEFD6;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B5791A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-7-7 18-2.5-7.5z"></path></svg></div><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px">{{ t.aOffer }}</div></div>
+          <div style="background:#fff;border-radius:15px;padding:14px;box-shadow:0 6px 16px rgba(60,50,110,.06)"><div style="width:36px;height:36px;border-radius:10px;background:#E4ECFB;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2A5C8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></div><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:9px">{{ t.aPreview }}</div></div>
+        </div>
+
+        <!-- upgrade banner (free only) -->
+        <sc-if value="{{ isFree }}" hint-placeholder-val="{{ false }}">
+        <div style="position:relative;margin-top:16px;background:#1E1B2E;border-radius:18px;padding:17px;overflow:hidden">
+          <div style="position:absolute;top:-24px;right:-24px;width:100px;height:100px;border-radius:50%;background:rgba(244,183,64,.14)"></div>
+          <div style="position:relative">
+            <div style="display:flex;align-items:center;gap:7px"><svg width="16" height="16" viewBox="0 0 24 24" fill="#F4B740" stroke="none"><path d="M12 2 4 6v6c0 5 8 8 8 8s8-3 8-8V6z"></path></svg><span style="font:800 14px 'Plus Jakarta Sans';color:#fff">{{ t.upgradeTitle }}</span></div>
+            <div style="font:500 12px 'Plus Jakarta Sans';color:rgba(255,255,255,.72);line-height:1.5;margin-top:7px">{{ t.upgradeSub }}</div>
+            <button onClick="{{ goPlan }}" style="width:100%;border:none;cursor:pointer;background:#F4B740;color:#1E1B2E;padding:13px;border-radius:12px;font:800 13.5px 'Plus Jakarta Sans';margin-top:13px">{{ t.upgradeBtn }}</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- pro confirmation (pro only) -->
+        <sc-if value="{{ isPro }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:16px;background:#F3F0FF;border:1px solid rgba(123,97,255,.2);border-radius:18px;padding:16px;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:12px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+          <div style="flex:1"><div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.proActive }}</div><div style="font:600 11.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:2px">{{ t.proActiveSub }}</div></div>
+        </div>
+        </sc-if>
+
+        <div style="height:18px"></div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- ============================ FOOTER ============================ -->
+    <sc-if value="{{ showFooter }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:12px 18px 18px;background:#fff;border-top:1px solid rgba(30,27,46,.07);box-shadow:0 -10px 24px rgba(60,50,110,.05)">
+      <button onClick="{{ next }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:{{ nextBg }};color:#fff;padding:15px;border-radius:15px;font:800 15px 'Plus Jakarta Sans';box-shadow:{{ nextShadow }}">{{ nextLabel }}</button>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 488, &quot;height&quot;: 980}}">
+class Component extends DCLogic {
+  state = {
+    step: 'auth', lang: 'es', cat: null, subs: [], plan: 'pro',
+    form: { phone: '', name: '', bphone: '', addr: '', desc: '', card: '', exp: '', cvc: '', cardName: '' },
+  };
+
+  ORDER = ['auth', 'category', 'subcategory', 'info', 'plan', 'checkout'];
+
+  _cats() {
+    return [
+      { k: 'auto', es: 'Servicios Automotrices', en: 'Auto Services' },
+      { k: 'belleza', es: 'Belleza y Salud', en: 'Beauty & Health' },
+      { k: 'comida', es: 'Comida y Bebidas', en: 'Food & Drinks' },
+      { k: 'hogar', es: 'Servicios del Hogar', en: 'Home Services' },
+      { k: 'noche', es: 'Vida Nocturna', en: 'Night Life' },
+      { k: 'abarrotes', es: 'Abarrotes y Mercado', en: 'Grocery & Market' },
+      { k: 'fiestas', es: 'Fiestas y Eventos', en: 'Party & Celebrations' },
+      { k: 'salud', es: 'Salud y Medicina', en: 'Health & Medicine' },
+      { k: 'profesional', es: 'Servicios Profesionales', en: 'Professional Services' },
+      { k: 'tiendas', es: 'Tiendas y Comercios', en: 'Shops & Stores' },
+      { k: 'transporte', es: 'Transporte', en: 'Transportation' },
+      { k: 'educacion', es: 'Cursos y Educación', en: 'Courses & Education' },
+      { k: 'ninos', es: 'Niños', en: 'Children' },
+      { k: 'deportes', es: 'Vida Activa y Deportes', en: 'Active Life & Sports' },
+      { k: 'iglesias', es: 'Iglesias y Religión', en: 'Churches & Religion' },
+      { k: 'mascotas', es: 'Mascotas y Veterinaria', en: 'Pets & Veterinary' },
+    ];
+  }
+
+  _subs() {
+    return {
+      auto: [['Taller mecánico', 'Mechanic'], ['Hojalatería y pintura', 'Body & paint'], ['Llantas', 'Tires'], ['Lavado de autos', 'Car wash'], ['Audio y accesorios', 'Audio & accessories'], ['Grúas', 'Towing']],
+      belleza: [['Salón de belleza', 'Beauty salon'], ['Barbería', 'Barbershop'], ['Uñas', 'Nails'], ['Spa', 'Spa'], ['Estética', 'Aesthetics'], ['Maquillaje', 'Makeup']],
+      comida: [['Restaurante', 'Restaurant'], ['Taquería', 'Taco shop'], ['Food truck', 'Food truck'], ['Panadería', 'Bakery'], ['Cafetería', 'Café'], ['Catering', 'Catering']],
+      hogar: [['Plomería', 'Plumbing'], ['Electricidad', 'Electrical'], ['Limpieza', 'Cleaning'], ['Jardinería', 'Landscaping'], ['Aire acondicionado', 'HVAC'], ['Remodelación', 'Remodeling']],
+      noche: [['Bar', 'Bar'], ['Cantina', 'Cantina'], ['Discoteca', 'Nightclub'], ['Karaoke', 'Karaoke'], ['Lounge', 'Lounge'], ['Salón de eventos', 'Event hall']],
+      abarrotes: [['Tienda', 'Store'], ['Carnicería', 'Butcher'], ['Frutería', 'Produce'], ['Tortillería', 'Tortillería'], ['Mercado', 'Market'], ['Licorería', 'Liquor store']],
+      fiestas: [['Salón de fiestas', 'Party hall'], ['Renta de mobiliario', 'Rentals'], ['Decoración', 'Decoration'], ['DJ y música', 'DJ & music'], ['Payasos', 'Clowns'], ['Brincolines', 'Bounce houses']],
+      salud: [['Clínica', 'Clinic'], ['Dentista', 'Dentist'], ['Farmacia', 'Pharmacy'], ['Médico general', 'General doctor'], ['Terapia', 'Therapy'], ['Laboratorio', 'Lab']],
+      profesional: [['Abogado', 'Lawyer'], ['Contador', 'Accountant'], ['Notario', 'Notary'], ['Seguros', 'Insurance'], ['Inmigración', 'Immigration'], ['Traducción', 'Translation']],
+      tiendas: [['Ropa', 'Clothing'], ['Calzado', 'Shoes'], ['Electrónica', 'Electronics'], ['Mueblería', 'Furniture'], ['Joyería', 'Jewelry'], ['Regalos', 'Gifts']],
+      transporte: [['Mudanzas', 'Moving'], ['Fletes', 'Freight'], ['Paquetería', 'Courier'], ['Taxi / Ride', 'Taxi / Ride'], ['Renta de autos', 'Car rental'], ['Transporte escolar', 'School transport']],
+      educacion: [['Inglés', 'English'], ['Computación', 'Computers'], ['Música', 'Music'], ['Tutorías', 'Tutoring'], ['Manejo', 'Driving'], ['Oficios', 'Trades']],
+      ninos: [['Guardería', 'Daycare'], ['Ropa infantil', 'Kids clothing'], ['Juguetes', 'Toys'], ['Pediatría', 'Pediatrics'], ['Clases', 'Classes'], ['Fiestas infantiles', 'Kids parties']],
+      deportes: [['Gimnasio', 'Gym'], ['Fútbol', 'Soccer'], ['Yoga', 'Yoga'], ['Box', 'Boxing'], ['Entrenador personal', 'Personal trainer'], ['Artes marciales', 'Martial arts']],
+      iglesias: [['Católica', 'Catholic'], ['Cristiana', 'Christian'], ['Bautista', 'Baptist'], ['Pentecostal', 'Pentecostal'], ['Grupo de oración', 'Prayer group'], ['Ministerio', 'Ministry']],
+      mascotas: [['Veterinaria', 'Veterinary'], ['Estética canina', 'Pet grooming'], ['Pensión', 'Boarding'], ['Tienda de mascotas', 'Pet store'], ['Adiestramiento', 'Training'], ['Paseo', 'Walking']],
+    };
+  }
+
+  go(step) { this.setState({ step }); }
+  setF(k, v) { this.setState((s) => ({ form: { ...s.form, [k]: v } })); }
+
+  back() {
+    const s = this.state.step;
+    const map = { category: 'auth', subcategory: 'category', info: 'subcategory', plan: 'info', checkout: 'plan' };
+    if (map[s]) this.go(map[s]);
+  }
+
+  next() {
+    const s = this.state.step;
+    if (s === 'auth') return this.go('category');
+    if (s === 'category') { if (this.state.cat) this.go('subcategory'); return; }
+    if (s === 'subcategory') { if (this.state.subs.length) this.go('info'); return; }
+    if (s === 'info') { if (this.state.form.name.trim()) this.go('plan'); return; }
+    if (s === 'plan') return this.go(this.state.plan === 'pro' ? 'checkout' : 'dashboard');
+    if (s === 'checkout') return this.go('dashboard');
+  }
+
+  tapCat(k) { this.setState((st) => ({ cat: k, subs: st.cat === k ? st.subs : [] })); }
+  tapSub(i) { this.setState((st) => ({ subs: st.subs.includes(i) ? st.subs.filter((x) => x !== i) : st.subs.concat(i) })); }
+
+  renderVals() {
+    const st = this.state;
+    const es = st.lang === 'es';
+    const L = (a, b) => (es ? a : b);
+    const step = st.step;
+
+    const mk = (active, dark) => ({
+      border: 'none', cursor: 'pointer', padding: '5px 12px', borderRadius: '999px',
+      fontWeight: 800, fontSize: '12px', fontFamily: "'Plus Jakarta Sans'",
+      background: active ? (dark ? '#fff' : '#7B61FF') : 'transparent',
+      color: active ? (dark ? '#6743E2' : '#fff') : (dark ? '#fff' : '#6E6A85'),
+    });
+
+    const cats = this._cats().map((c) => ({
+      label: L(c.es, c.en),
+      sel: st.cat === c.k,
+      ring: st.cat === c.k ? '#7B61FF' : '#ECE8F4',
+      onTap: () => this.tapCat(c.k),
+    }));
+
+    const curCat = this._cats().find((c) => c.k === st.cat);
+    const activeCatLabel = curCat ? L(curCat.es, curCat.en) : '';
+    const subList = (this._subs()[st.cat] || []);
+    const subs = subList.map((pair, i) => ({
+      label: L(pair[0], pair[1]),
+      sel: st.subs.includes(i),
+      ring: st.subs.includes(i) ? '#7B61FF' : '#ECE8F4',
+      fill: st.subs.includes(i) ? '#7B61FF' : 'transparent',
+      onTap: () => this.tapSub(i),
+    }));
+
+    const idx = this.ORDER.indexOf(step);
+    const isDashboard = step === 'dashboard';
+    const progressPct = isDashboard ? '100%' : Math.round(((idx + 1) / this.ORDER.length) * 100) + '%';
+
+    // canNext per step
+    let canNext = true;
+    if (step === 'category') canNext = !!st.cat;
+    else if (step === 'subcategory') canNext = st.subs.length > 0;
+    else if (step === 'info') canNext = st.form.name.trim().length > 0;
+
+    let nextLabel = L('Continuar', 'Continue');
+    if (step === 'plan') nextLabel = st.plan === 'pro' ? L('Continuar al pago', 'Continue to payment') : L('Crear listado gratis', 'Create free listing');
+    else if (step === 'checkout') nextLabel = L('Pagar $4.99', 'Pay $4.99');
+
+    const isPro = st.plan === 'pro';
+
+    const t = {
+      authTitle: L('Publica tu negocio en ToLatino', 'List your business on ToLatino'),
+      authSub: L('Crea tu cuenta de negocio y llega a miles de clientes latinos.', 'Create your business account and reach thousands of Latino customers.'),
+      phonePh: L('Número de teléfono', 'Phone number'),
+      continueSms: L('Continuar con SMS', 'Continue with SMS'),
+      or: L('o', 'or'),
+      authTrust: L('Gratis para empezar. Sin tarjeta para el listado básico.', 'Free to start. No card needed for the basic listing.'),
+      haveAccount: L('¿Ya tienes cuenta?', 'Already have an account?'), signin: L('Inicia sesión', 'Sign in'),
+      catTitle: L('¿Qué tipo de negocio tienes?', 'What kind of business is it?'),
+      catSub: L('Elige la categoría principal.', 'Pick the main category.'),
+      subTitle: L('Elige tus servicios', 'Choose your services'),
+      subSub: L('Selecciona uno o más. Puedes cambiarlo después.', 'Select one or more. You can change it later.'),
+      infoTitle: L('Información del negocio', 'Business information'),
+      infoSub: L('Así te verán tus clientes.', 'This is what customers will see.'),
+      addLogo: L('Agregar logo o foto', 'Add logo or photo'), addLogoSub: L('JPG o PNG · opcional', 'JPG or PNG · optional'),
+      fName: L('Nombre del negocio', 'Business name'), fNamePh: L('Ej. Taquería La Esperanza', 'e.g. Taquería La Esperanza'),
+      fPhone: L('Teléfono del negocio', 'Business phone'),
+      fAddr: L('Dirección', 'Address'), fAddrPh: L('Calle, ciudad', 'Street, city'),
+      fDesc: L('Descripción', 'Description'), fDescPh: L('Cuéntale a tus clientes qué ofreces…', 'Tell customers what you offer…'),
+      planTitle: L('Elige tu plan', 'Choose your plan'),
+      planSub: L('Empieza gratis o destaca con Verified Pro.', 'Start free or stand out with Verified Pro.'),
+      recommended: L('Recomendado', 'Recommended'), month: L('mes', 'mo'),
+      proF1: L('Insignia verificada', 'Verified badge'),
+      proF2: L('Fotos y menú ilimitados', 'Unlimited photos & menu'),
+      proF3: L('Responde reseñas', 'Reply to reviews'),
+      proF4: L('Destacado en búsquedas', 'Featured in search'),
+      proF5: L('Estadísticas y ofertas', 'Analytics & offers'),
+      freeName: L('Listado Básico', 'Basic Listing'),
+      freeF1: L('Apareces en búsquedas', 'Appear in search'),
+      freeF2: L('Info básica y 1 foto', 'Basic info & 1 photo'),
+      freeF3: L('Insignia verificada', 'Verified badge'),
+      checkoutTitle: L('Pago seguro', 'Secure checkout'),
+      checkoutSub: L('Activa Verified Pro hoy.', 'Activate Verified Pro today.'),
+      monthlyPlan: L('Plan mensual · cancela cuando quieras', 'Monthly plan · cancel anytime'),
+      cardNum: L('Número de tarjeta', 'Card number'), exp: L('Vence', 'Expires'),
+      cardName: L('Nombre en la tarjeta', 'Name on card'), cardNamePh: L('Nombre completo', 'Full name'),
+      totalToday: L('Total hoy', 'Total today'),
+      secureNote: L('Pago cifrado y seguro', 'Encrypted, secure payment'),
+      forBusiness: L('Negocios', 'Business'),
+      dashWelcome: L('¡Tu listado está activo! Ya apareces en ToLatino.', 'Your listing is live! You now appear on ToLatino.'),
+      sViews: L('Vistas', 'Views'), sCalls: L('Llamadas', 'Calls'), sSaves: L('Guardados', 'Saves'),
+      completeTitle: L('Completa tu perfil', 'Complete your profile'),
+      completeHint: isPro ? L('Agrega fotos y tu menú para atraer más clientes.', 'Add photos and your menu to attract more customers.') : L('Sube fotos y horario para subir al 100%.', 'Add photos and hours to reach 100%.'),
+      manage: L('Administrar', 'Manage'),
+      aEdit: L('Editar info', 'Edit info'), aPhotos: L('Agregar fotos', 'Add photos'),
+      aOffer: L('Publicar oferta', 'Post offer'), aPreview: L('Ver como cliente', 'View as customer'),
+      upgradeTitle: L('Hazte Verified Pro', 'Go Verified Pro'),
+      upgradeSub: L('Insignia verificada, fotos ilimitadas y el doble de vistas por $4.99/mes.', 'Verified badge, unlimited photos and 2× views for $4.99/mo.'),
+      upgradeBtn: L('Mejorar por $4.99/mes', 'Upgrade for $4.99/mo'),
+      proActive: L('Verified Pro activo', 'Verified Pro active'),
+      proActiveSub: L('Tu negocio está destacado y verificado.', 'Your business is featured and verified.'),
+    };
+
+    return {
+      stepLabel: isDashboard ? L('Panel', 'Dashboard') : (L('Paso ', 'Step ') + (idx + 1) + L(' de ', ' of ') + this.ORDER.length),
+      isAuth: step === 'auth', isCategory: step === 'category', isSub: step === 'subcategory',
+      isInfo: step === 'info', isPlan: step === 'plan', isCheckout: step === 'checkout', isDashboard,
+      showTopbar: !isDashboard, showBack: !isDashboard && step !== 'auth', showFooter: !isDashboard,
+      progressPct,
+      esLight: mk(es, false), enLight: mk(!es, false), esDark: mk(es, true), enDark: mk(!es, true),
+      setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
+      back: () => this.back(), next: () => this.next(),
+      nextLabel, nextBg: canNext ? '#7B61FF' : '#D8D2EC', nextShadow: canNext ? '0 12px 24px rgba(123,97,255,.34)' : 'none',
+      cats, activeCatLabel, subs,
+      isPro, isFree: st.plan === 'free',
+      choosePro: () => this.setState({ plan: 'pro' }), chooseFree: () => this.setState({ plan: 'free' }),
+      planProRing: isPro ? '#7B61FF' : '#ECE8F4', planProFill: isPro ? '#7B61FF' : 'transparent',
+      planFreeRing: st.plan === 'free' ? '#7B61FF' : '#ECE8F4', planFreeFill: st.plan === 'free' ? '#7B61FF' : 'transparent',
+      goPlan: () => this.go('plan'),
+      bizName: st.form.name.trim() || L('Tu Negocio', 'Your Business'),
+      planBadge: isPro ? 'Verified Pro' : L('Listado básico', 'Basic listing'),
+      stat: isPro ? { views: '128', calls: '14', saves: '32' } : { views: '12', calls: '1', saves: '3' },
+      completePct: isPro ? '75%' : '60%',
+      form: st.form,
+      onPhone: (e) => this.setF('phone', e.target.value),
+      onName: (e) => this.setF('name', e.target.value),
+      onBphone: (e) => this.setF('bphone', e.target.value),
+      onAddr: (e) => this.setF('addr', e.target.value),
+      onDesc: (e) => this.setF('desc', e.target.value),
+      onCard: (e) => this.setF('card', e.target.value),
+      onExp: (e) => this.setF('exp', e.target.value),
+      onCvc: (e) => this.setF('cvc', e.target.value),
+      onCardName: (e) => this.setF('cardName', e.target.value),
+      t,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#DCD8EC;display:flex;flex-direction:column;align-items:center;padding:48px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:12px;width:392px;max-width:100%;margin-bottom:18px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Pre-home · bienvenida para visitantes nuevos</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:864px;background:#FBFAFE;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.22);border:1px solid rgba(30,27,46,.05);display:flex;flex-direction:column">
+    <div data-noscroll style="flex:1;overflow-y:auto">
+
+      <!-- ============ HERO ============ -->
+      <div style="position:relative;background:linear-gradient(158deg,#8268FF 0%,#6743E2 100%);padding-bottom:24px;overflow:hidden">
+        <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.09)"></div>
+        <div style="position:absolute;top:150px;left:-30px;width:120px;height:120px;border-radius:50%;background:rgba(244,183,64,.16)"></div>
+        <div style="position:absolute;top:200px;right:26px;width:12px;height:12px;background:#F4B740;transform:rotate(45deg);opacity:.85"></div>
+
+        <div style="position:relative;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#fff"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#fff;border-radius:1px"></span><span style="width:3px;height:7px;background:#fff;border-radius:1px"></span><span style="width:3px;height:9px;background:#fff;border-radius:1px"></span><span style="width:3px;height:11px;background:#fff;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #fff;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#fff;border-radius:1px"></span></div></div></div>
+
+        <!-- HEADER · logo + language switcher + login -->
+        <div style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0">
+          <div style="display:flex;align-items:baseline"><span style="font:800 23px 'Plus Jakarta Sans';color:#fff;letter-spacing:-.03em">To</span><span style="font:800 23px 'Plus Jakarta Sans';color:#F4B740;letter-spacing:-.03em">Latino</span><span style="display:inline-block;width:6px;height:6px;background:#F4B740;transform:rotate(45deg);margin-left:3px;align-self:center"></span></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;background:rgba(255,255,255,.18);border-radius:999px;padding:3px"><button onClick="{{ setEs }}" style="{{ esDark }}">ES</button><button onClick="{{ setEn }}" style="{{ enDark }}">EN</button></div>
+            <button style="border:none;cursor:pointer;background:rgba(255,255,255,.16);color:#fff;padding:8px 15px;border-radius:999px;font:800 12.5px 'Plus Jakarta Sans'">{{ t.login }}</button>
+          </div>
+        </div>
+
+        <div style="position:relative;padding:22px 22px 0">
+          <div style="font:800 30px 'Plus Jakarta Sans';color:#fff;letter-spacing:-.025em;line-height:1.12;text-wrap:balance">{{ t.heroTitle }}</div>
+          <div style="font:500 14.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.82);line-height:1.5;margin-top:12px">{{ t.heroSub }}</div>
+        </div>
+
+        <div style="position:relative;padding:20px 18px 0">
+          <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:7px 7px 7px 15px;box-shadow:0 12px 28px rgba(40,28,96,.28)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg><span style="flex:1;font:500 14px 'Plus Jakarta Sans';color:#9A96AE">{{ t.searchPh }}</span><button style="border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:11px 18px;border-radius:12px;font:800 13px 'Plus Jakarta Sans'">{{ t.searchBtn }}</button></div>
+        </div>
+
+        <div data-noscroll style="position:relative;display:flex;gap:8px;overflow-x:auto;padding:16px 18px 0">
+          <sc-for list="{{ cats }}" as="c" hint-placeholder-count="6"><span style="flex:none;display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.15);color:#fff;padding:8px 13px;border-radius:999px;font:700 12.5px 'Plus Jakarta Sans'"><span style="width:7px;height:7px;border-radius:50%;background:{{ c.dot }}"></span>{{ c.label }}</span></sc-for>
+        </div>
+
+        <div style="position:relative;display:flex;align-items:center;gap:10px;padding:18px 22px 0">
+          <div style="display:flex;flex:none"><span style="width:26px;height:26px;border-radius:50%;background:#E8954A;border:2px solid #7152EC;color:#fff;font:800 9px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center">TE</span><span style="width:26px;height:26px;border-radius:50%;background:#1F9D57;border:2px solid #7152EC;color:#fff;font:800 9px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;margin-left:-9px">SG</span><span style="width:26px;height:26px;border-radius:50%;background:#D6336C;border:2px solid #7152EC;color:#fff;font:800 9px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;margin-left:-9px">DB</span></div>
+          <span style="font:700 12.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.9)">{{ t.trust }}</span>
+        </div>
+      </div>
+
+      <!-- ============ BODY ============ -->
+      <div style="padding:22px 18px 4px">
+        <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:16px;border-radius:16px;font:800 15px 'Plus Jakarta Sans';box-shadow:0 14px 26px rgba(123,97,255,.34)">{{ t.createFree }}<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg></button>
+        <div style="text-align:center;font:600 12px 'Plus Jakarta Sans';color:#9A96AE;margin-top:9px">{{ t.guestHint }}</div>
+
+        <!-- BUSINESS BAND -->
+        <div style="position:relative;margin-top:22px;background:#FBF1DC;border:1px solid rgba(181,121,26,.16);border-radius:22px;padding:20px 18px;overflow:hidden">
+          <div style="position:absolute;top:-26px;right:-26px;width:108px;height:108px;border-radius:50%;background:rgba(244,183,64,.22)"></div>
+          <div style="position:absolute;bottom:14px;right:16px;width:9px;height:9px;background:#E8B23D;transform:rotate(45deg);opacity:.8"></div>
+          <div style="position:relative">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#F4DFAE;color:#9A6A12;padding:5px 11px;border-radius:8px;font:800 10px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.06em">{{ t.bizLabel }}</span>
+            <div style="font:800 23px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;line-height:1.18;margin-top:13px;text-wrap:balance">{{ t.bizTitle }}</div>
+            <div style="font:500 13.5px 'Plus Jakarta Sans';color:#6E5E40;line-height:1.55;margin-top:10px">{{ t.bizSub }}</div>
+            <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:#1E1B2E;color:#fff;padding:15px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';margin-top:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F4B740" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v9h16v-9"></path><path d="M4 10l1.5-5h13L20 10"></path><path d="M4 10a2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0"></path></svg>{{ t.bizBtn }}</button>
+            <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:11px;font:700 11.5px 'Plus Jakarta Sans';color:#9A6A12"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ t.bizNote }}</div>
+          </div>
+        </div>
+
+        <!-- AUTH -->
+        <div style="display:flex;align-items:center;gap:12px;margin:24px 4px 16px"><span style="flex:1;height:1px;background:rgba(30,27,46,.1)"></span><span style="font:700 11.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.joinDivider }}</span><span style="flex:1;height:1px;background:rgba(30,27,46,.1)"></span></div>
+        <div style="display:flex;gap:10px">
+          <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;padding:13px;border-radius:14px;font:800 13px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2c-.3 1.5-1.1 2.7-2.4 3.5v2.9h3.9c2.3-2.1 3.3-5.2 3.3-8.6z"></path><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-2.9c-1.1.7-2.5 1.1-4 1.1-3.1 0-5.7-2.1-6.6-4.9H1.4v3C3.4 21.3 7.4 24 12 24z"></path><path fill="#FBBC05" d="M5.4 14.3c-.2-.7-.4-1.4-.4-2.3s.1-1.6.4-2.3v-3H1.4C.5 8.5 0 10.2 0 12s.5 3.5 1.4 5.3l4-3z"></path><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4C17.9 1.2 15.2 0 12 0 7.4 0 3.4 2.7 1.4 6.7l4 3C6.3 6.9 8.9 4.8 12 4.8z"></path></svg>Google</button>
+          <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;padding:13px;border-radius:14px;font:800 13px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="15" height="15" viewBox="0 0 24 24" fill="#1E1B2E"><path d="M17.05 12.5c0-2.4 1.97-3.55 2.06-3.6-1.12-1.64-2.87-1.87-3.49-1.9-1.49-.15-2.9.87-3.66.87-.75 0-1.92-.85-3.16-.83-1.62.02-3.12.94-3.96 2.4-1.69 2.93-.43 7.27 1.21 9.65.8 1.16 1.76 2.46 3 2.42 1.21-.05 1.67-.78 3.13-.78 1.46 0 1.87.78 3.16.75 1.31-.02 2.13-1.18 2.93-2.35.92-1.35 1.3-2.66 1.32-2.73-.03-.01-2.53-.97-2.55-3.84z"></path><path d="M14.7 5.05c.67-.81 1.12-1.94.99-3.05-.96.04-2.12.64-2.81 1.45-.62.72-1.16 1.86-1.02 2.96 1.07.08 2.17-.55 2.84-1.36z"></path></svg>Apple</button>
+        </div>
+        <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;padding:13px;border-radius:14px;font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:10px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3l1.6 4.6-2 1.4a11 11 0 0 0 5 5l1.4-2 4.6 1.6V20a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"></path></svg>{{ t.phone }}</button>
+
+        <div style="text-align:center;margin-top:18px;font:600 13px 'Plus Jakarta Sans';color:#6E6A85">{{ t.haveAccount }} <span style="color:#7B61FF;font-weight:800">{{ t.signin }}</span></div>
+        <div style="text-align:center;margin:14px 10px 22px;font:500 10.5px 'Plus Jakarta Sans';color:#A8A4B8;line-height:1.5">{{ t.legal }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 488, &quot;height&quot;: 980}}">
+class Component extends DCLogic {
+  state = { lang: 'es' };
+
+  renderVals() {
+    const es = this.state.lang === 'es';
+    const L = (a, b) => (es ? a : b);
+
+    const mk = (active) => ({
+      border: 'none', cursor: 'pointer', padding: '5px 13px', borderRadius: '999px',
+      fontWeight: 800, fontSize: '12px', fontFamily: "'Plus Jakarta Sans'",
+      background: active ? '#fff' : 'transparent',
+      color: active ? '#6743E2' : '#fff',
+    });
+
+    const cats = [
+      { es: 'Comida', en: 'Food', dot: '#F4B740' },
+      { es: 'Belleza', en: 'Beauty', dot: '#FF8FB1' },
+      { es: 'Mecánica', en: 'Auto', dot: '#7FC8FF' },
+      { es: 'Salud', en: 'Health', dot: '#7BE0A8' },
+      { es: 'Legal', en: 'Legal', dot: '#C9B6FF' },
+      { es: 'Eventos', en: 'Events', dot: '#FFC27A' },
+    ].map((c) => ({ label: L(c.es, c.en), dot: c.dot }));
+
+    const t = {
+      login: L('Entrar', 'Log in'),
+      heroTitle: L('Encuentra todos los negocios, productos y servicios latinos', 'Find every Latino business, product and service'),
+      heroSub: L('Tu comunidad latina en Houston, toda en un solo lugar.', 'Your Latino community in Houston, all in one place.'),
+      searchPh: L('Taquería, salón, mecánico…', 'Taco spot, salon, mechanic…'),
+      searchBtn: L('Buscar', 'Search'),
+      trust: L('+1,240 negocios latinos ya están aquí', '+1,240 Latino businesses are already here'),
+      createFree: L('Crear cuenta gratis', 'Create free account'),
+      guestHint: L('o explora sin crear cuenta', 'or browse without an account'),
+      bizLabel: L('¿Tienes un negocio?', 'Own a business?'),
+      bizTitle: L('Todos sabemos que estás ahí, pero ¿dónde?', "We all know you're out there — but where?"),
+      bizSub: L('Miles de clientes latinos te buscan cada día. Publica tu negocio gratis y deja que te encuentren.', 'Thousands of Latino customers search every day. List your business free and let them find you.'),
+      bizBtn: L('Publicar mi negocio', 'List my business'),
+      bizNote: L('Gratis · listo en 2 minutos', 'Free · ready in 2 minutes'),
+      joinDivider: L('o únete a ToLatino', 'or join ToLatino'),
+      phone: L('Continuar con teléfono', 'Continue with phone'),
+      haveAccount: L('¿Ya tienes cuenta?', 'Already have an account?'),
+      signin: L('Inicia sesión', 'Sign in'),
+      legal: L('Al continuar aceptas nuestros Términos y Política de Privacidad.', 'By continuing you accept our Terms and Privacy Policy.'),
+    };
+
+    return {
+      esDark: mk(es), enDark: mk(!es),
+      setEs: () => this.setState({ lang: 'es' }),
+      setEn: () => this.setState({ lang: 'en' }),
+      cats, t,
+    };
+  }
+}
+</script>
+</body>
+</html>

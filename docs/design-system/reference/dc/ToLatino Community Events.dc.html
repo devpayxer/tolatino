@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#DCD8EC;display:flex;flex-direction:column;align-items:center;padding:48px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:baseline;gap:14px;margin:0 0 26px;align-self:flex-start;max-width:392px;width:100%">
+    <div style="font:800 24px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:7px;height:7px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Eventos comunitarios — descubre, asiste, compra boletos</div>
+  </div>
+
+  <div style="position:relative;width:392px;background:#FBFAFE;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.22);border:1px solid rgba(30,27,46,.05);display:flex;flex-direction:column;height:880px">
+
+    <div data-noscroll style="flex:1;overflow-y:auto">
+
+      <!-- STATUS BAR -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+      <!-- ECOSYSTEM HEADER -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 18px 10px">
+        <div style="display:flex;align-items:baseline"><span style="font:800 23px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.03em">To</span><span style="font:800 23px 'Plus Jakarta Sans';color:#7B61FF;letter-spacing:-.03em">Latino</span><span style="display:inline-block;width:6px;height:6px;background:#F4B740;transform:rotate(45deg);margin-left:3px;align-self:center"></span></div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="display:flex;align-items:center;gap:5px;background:#F1EFFA;border-radius:999px;padding:8px 11px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.3"></circle></svg><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">Houston, TX</span></div>
+          <sc-if value="{{ langClosed }}" hint-placeholder-val="{{ true }}"><button onClick="{{ openLang }}" style="display:flex;align-items:center;gap:5px;background:#F1EFFA;border:none;cursor:pointer;border-radius:999px;padding:7px 11px;font:800 12px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg>{{ currentLang }}<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></sc-if>
+          <sc-if value="{{ langOpen }}" hint-placeholder-val="{{ false }}"><div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px"><button onClick="{{ setEs }}" style="{{ esStyle }}">ES</button><button onClick="{{ setEn }}" style="{{ enStyle }}">EN</button></div></sc-if>
+          <button style="position:relative;width:38px;height:38px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12a1 1 0 0 1-1 .9H8a1 1 0 0 1-1-.9L6 8z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg><div style="position:absolute;top:3px;right:3px;min-width:16px;height:16px;background:#F0466E;color:#fff;border-radius:8px;font:800 9.5px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #FBFAFE">2</div></button>
+        </div>
+      </div>
+
+      <!-- MAIN CATEGORY TABS -->
+      <div data-noscroll style="display:flex;gap:8px;overflow-x:auto;padding:2px 18px 12px">
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5z"></path></svg>{{ mainTabs.0.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v9h16v-9"></path><path d="M4 10l1.5-5h13L20 10"></path><path d="M4 10a2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0"></path></svg>{{ mainTabs.1.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 16px;border-radius:999px;font:800 13px 'Plus Jakarta Sans';background:#7B61FF;color:#fff;box-shadow:0 6px 14px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"></rect><line x1="4" y1="9.5" x2="20" y2="9.5"></line><line x1="9" y1="3" x2="9" y2="6.5"></line><line x1="15" y1="3" x2="15" y2="6.5"></line></svg>{{ mainTabs.2.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="6" rx="2"></rect><path d="M6 11l1.5-4.5a2 2 0 0 1 1.9-1.3h5.2a2 2 0 0 1 1.9 1.3L19 11"></path><circle cx="8" cy="18.5" r="1.4"></circle><circle cx="16" cy="18.5" r="1.4"></circle></svg>{{ mainTabs.3.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6.5 8 6.5"></path><path d="M6.5 9.5V19h11V9.5"></path></svg>{{ mainTabs.4.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8" width="17" height="11" rx="2"></rect><path d="M8.5 8V6.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V8"></path></svg>{{ mainTabs.5.label }}</button>
+      </div>
+      <div style="height:1px;background:rgba(60,50,110,.1)"></div>
+      <div style="height:10px;background:linear-gradient(180deg,rgba(60,50,110,.05),rgba(60,50,110,0))"></div>
+
+      <!-- PAGE HEADING -->
+      <div style="padding:10px 20px 2px;font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ pageTitle }}</div>
+
+      <!-- FILTER CHIPS -->
+      <div data-noscroll style="display:flex;gap:8px;overflow-x:auto;padding:2px 18px 14px">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+          <button onClick="{{ f.onTap }}" style="{{ f.style }}">{{ f.label }}</button>
+        </sc-for>
+      </div>
+
+      <!-- FEATURED HERO -->
+      <div onClick="{{ featured.onOpen }}" style="margin:0 16px 6px;border-radius:22px;overflow:hidden;box-shadow:0 14px 30px rgba(60,50,110,.14);cursor:pointer">
+        <div style="position:relative;height:172px;background:repeating-linear-gradient(135deg,{{ featured.img }})">
+          <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);font:600 11px ui-monospace,Menlo,monospace;color:#A6915F;letter-spacing:.08em">[ {{ featured.imgLabel }} ]</span>
+          <span style="position:absolute;top:13px;left:13px;background:#fff;border-radius:13px;padding:7px 11px;text-align:center;box-shadow:0 4px 12px rgba(60,50,110,.15)"><span style="display:block;font:800 9px 'Plus Jakarta Sans';color:#D7263D;letter-spacing:.06em">{{ featured.mon }}</span><span style="display:block;font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1">{{ featured.day }}</span></span>
+          <span style="position:absolute;top:13px;right:13px;background:#1E1B2E;color:#fff;padding:5px 11px;border-radius:9px;font:800 9.5px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.04em">{{ featured.badge }}</span>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:26px 15px 13px;background:linear-gradient(180deg,rgba(20,16,38,0),rgba(20,16,38,.78))">
+            <div style="font:800 19px 'Plus Jakarta Sans';color:#fff;letter-spacing:-.01em;line-height:1.15">{{ featured.title }}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:5px;font:600 12px 'Plus Jakarta Sans';color:rgba(255,255,255,.82)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.82)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>{{ featured.whenShort }} · {{ featured.time }} · {{ featured.loc }}</div>
+          </div>
+        </div>
+        <div style="background:#fff;display:flex;align-items:center;justify-content:space-between;padding:13px 15px">
+          <div style="display:flex;align-items:center;gap:9px"><div style="display:flex;flex:none"><span style="width:23px;height:23px;border-radius:50%;background:#7B61FF;border:2px solid #fff;color:#fff;font:800 8px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center">CR</span><span style="width:23px;height:23px;border-radius:50%;background:#1F9D57;border:2px solid #fff;color:#fff;font:800 8px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;margin-left:-8px">DL</span><span style="width:23px;height:23px;border-radius:50%;background:#E8954A;border:2px solid #fff;color:#fff;font:800 8px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;margin-left:-8px">+</span></div><span style="font:700 12px 'Plus Jakarta Sans';color:#6E6A85">{{ featured.goingLabel }}</span></div>
+          <span style="display:flex;align-items:center;gap:7px"><span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ featured.priceLabel }}</span><span style="font:800 11.5px 'Plus Jakarta Sans';color:#fff;background:#7B61FF;padding:8px 15px;border-radius:12px">{{ featured.viewLabel }}</span></span>
+        </div>
+      </div>
+
+      <!-- SECTION HEADING -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px">
+        <span style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ listHeading }}</span>
+        <span style="font:700 12px 'Plus Jakarta Sans';color:#9A96AE">{{ countLabel }}</span>
+      </div>
+
+      <!-- EVENT LIST -->
+      <div style="padding:0 16px 22px;display:flex;flex-direction:column;gap:14px">
+        <sc-for list="{{ eventsList }}" as="ev" hint-placeholder-count="4">
+        <div onClick="{{ ev.onOpen }}" style="background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 22px rgba(60,50,110,.07);cursor:pointer">
+          <div style="position:relative;height:118px;background:repeating-linear-gradient(135deg,{{ ev.img }})">
+            <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:600 10px ui-monospace,Menlo,monospace;color:rgba(70,60,110,.45);letter-spacing:.08em">[ {{ ev.imgLabel }} ]</span>
+            <span style="position:absolute;top:11px;left:11px;background:#fff;border-radius:12px;padding:6px 11px;text-align:center;box-shadow:0 4px 12px rgba(60,50,110,.15)"><span style="display:block;font:800 9px 'Plus Jakarta Sans';color:#D7263D;letter-spacing:.05em">{{ ev.mon }}</span><span style="display:block;font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1">{{ ev.day }}</span></span>
+            <span style="position:absolute;top:11px;right:11px;background:{{ ev.tagBg }};color:{{ ev.tagC }};padding:4px 9px;border-radius:8px;font:800 9.5px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.03em">{{ ev.tag }}</span>
+          </div>
+          <div style="padding:13px 14px 14px">
+            <div style="font:800 15.5px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1.2">{{ ev.title }}</div>
+            <div style="font:600 12px 'Plus Jakarta Sans';color:#9A96AE;margin-top:3px">por {{ ev.org }}</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-top:10px">
+              <span style="display:flex;align-items:center;gap:5px;font:600 11.5px 'Plus Jakarta Sans';color:#6E6A85"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>{{ ev.whenShort }} · {{ ev.time }}</span>
+              <span style="display:flex;align-items:center;gap:5px;font:600 11.5px 'Plus Jakarta Sans';color:#6E6A85"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.2-7-11a7 7 0 0 1 14 0c0 5.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>{{ ev.loc }}</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:13px;padding-top:12px;border-top:1px solid rgba(30,27,46,.06)">
+              <span style="display:flex;align-items:center;gap:6px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ ev.priceLabel }}</span><span style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE">· {{ ev.goingLabel }}</span></span>
+              <span style="font:800 11.5px 'Plus Jakarta Sans';color:#6D4DF6;background:#F1EFFA;padding:7px 14px;border-radius:11px">{{ ev.cta }}</span>
+            </div>
+          </div>
+        </div>
+        </sc-for>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div style="flex:none;display:flex;align-items:center;justify-content:space-around;padding:11px 22px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.06)">
+      <div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"></path><path d="M5 9.5V20h14V9.5"></path></svg></div>
+      <div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg></div>
+      <div style="width:46px;height:46px;border-radius:50%;background:#7B61FF;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(123,97,255,.35)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><line x1="3.5" y1="10" x2="20.5" y2="10"></line><line x1="8" y1="2.5" x2="8" y2="7"></line><line x1="16" y1="2.5" x2="16" y2="7"></line></svg></div>
+      <div style="position:relative;width:46px;height:46px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6z"></path><path d="M9.5 20a2.5 2.5 0 0 0 5 0"></path></svg><div style="position:absolute;top:5px;right:5px;min-width:17px;height:17px;background:#F0466E;color:#fff;border-radius:9px;font:800 10px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff">3</div></div>
+      <div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5.5 20a6.5 6.5 0 0 1 13 0"></path></svg></div>
+    </div>
+
+    <!-- ============ EVENT DETAIL SHEET ============ -->
+    <sc-if value="{{ evtOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:10">
+      <div onClick="{{ closeEvent }}" style="position:absolute;inset:0;background:rgba(28,24,46,.5)"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;top:24px;background:#FBFAFE;border-radius:26px 26px 42px 42px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(28,24,46,.34)">
+
+        <div style="position:relative;height:166px;flex:none;background:repeating-linear-gradient(135deg,{{ evt.img }})">
+          <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:600 11px ui-monospace,Menlo,monospace;color:rgba(70,60,110,.42);letter-spacing:.08em">[ {{ evt.imgLabel }} ]</span>
+          <button onClick="{{ closeEvent }}" style="position:absolute;top:13px;left:13px;width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(60,50,110,.18)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button>
+          <button style="position:absolute;top:13px;right:13px;width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(60,50,110,.18)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></button>
+          <span style="position:absolute;bottom:13px;left:13px;background:{{ evt.tagBg }};color:{{ evt.tagC }};padding:5px 11px;border-radius:9px;font:800 10px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.04em">{{ evt.tag }}</span>
+        </div>
+
+        <div data-noscroll style="flex:1;overflow-y:auto;padding:18px 20px 16px">
+          <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.01em;line-height:1.18">{{ evt.title }}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:9px">
+            <div style="width:26px;height:26px;border-radius:8px;background:#EFEBFF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V8l7-5 7 5v13"></path><path d="M9 21v-6h6v6"></path></svg></div>
+            <span style="font:700 13px 'Plus Jakarta Sans';color:#6E6A85">por <span style="color:#6D4DF6">{{ evt.org }}</span></span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+            <div style="display:flex;align-items:center;gap:11px"><span style="width:36px;height:36px;border-radius:11px;background:#F1EFFA;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><line x1="3.5" y1="10" x2="20.5" y2="10"></line></svg></span><span style="font:700 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ evt.whenLabel }}</span></div>
+            <div style="display:flex;align-items:center;gap:11px"><span style="width:36px;height:36px;border-radius:11px;background:#F1EFFA;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.2-7-11a7 7 0 0 1 14 0c0 5.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></span><span style="font:700 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ evt.loc }}</span></div>
+            <div style="display:flex;align-items:center;gap:11px"><span style="width:36px;height:36px;border-radius:11px;background:#F1EFFA;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"></circle><path d="M3 20a6 6 0 0 1 12 0"></path><path d="M16 6.5a3 3 0 0 1 0 5.4"></path><path d="M18 20a5.5 5.5 0 0 0-3-4.9"></path></svg></span><span style="font:700 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ evt.goingLabel }}</span></div>
+          </div>
+
+          <div style="font:500 13.5px 'Plus Jakarta Sans';color:#7E7A92;line-height:1.55;margin-top:18px">{{ evt.long }}</div>
+
+          <div style="font:800 15px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:22px;margin-bottom:10px">{{ evt.tierHeading }}</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ evt.tiers }}" as="t" hint-placeholder-count="2">
+            <button onClick="{{ t.onTap }}" style="display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;background:{{ t.bg }};border:2px solid {{ t.ring }};border-radius:15px;padding:13px 14px;width:100%">
+              <span style="width:21px;height:21px;border-radius:50%;border:2px solid {{ t.ring }};flex:none;display:flex;align-items:center;justify-content:center"><sc-if value="{{ t.selected }}" hint-placeholder-val="{{ false }}"><span style="width:11px;height:11px;border-radius:50%;background:#7B61FF"></span></sc-if></span>
+              <span style="flex:1;min-width:0"><span style="display:block;font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.n }}</span><span style="display:block;font:600 11.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.d }}</span></span>
+              <span style="font:800 14.5px 'Plus Jakarta Sans';color:#1E1B2E;flex:none">{{ t.priceLabel }}</span>
+            </button>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px">
+            <span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ evt.qtyTitle }}</span>
+            <span style="display:flex;align-items:center;gap:16px"><button onClick="{{ evt.qtyDec }}" style="width:32px;height:32px;border-radius:10px;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg></button><span style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;min-width:18px;text-align:center">{{ evt.qty }}</span><button onClick="{{ evt.qtyInc }}" style="width:32px;height:32px;border-radius:10px;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></span>
+          </div>
+        </div>
+
+        <div style="flex:none;display:flex;align-items:center;gap:13px;padding:12px 18px 18px;background:#fff;border-top:1px solid rgba(30,27,46,.07);box-shadow:0 -10px 24px rgba(60,50,110,.06)">
+          <div style="flex:none"><div style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ evt.qtyLabel }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E">{{ evt.totalLabel }}</div></div>
+          <button onClick="{{ confirmEvent }}" style="flex:1;border:none;background:#7B61FF;color:#fff;padding:15px;border-radius:15px;font:800 14.5px 'Plus Jakarta Sans';cursor:pointer;box-shadow:0 12px 24px rgba(123,97,255,.4)">{{ evt.ctaLabel }}</button>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ CONFIRMATION ============ -->
+    <sc-if value="{{ evtConfirm }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:11;background:#FBFAFE;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center">
+      <div style="width:84px;height:84px;border-radius:50%;background:#1F9D57;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 34px rgba(31,157,87,.4)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+      <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:20px">{{ evt.confirmTitle }}</div>
+      <div style="font:500 13.5px 'Plus Jakarta Sans';color:#7E7A92;line-height:1.5;margin-top:7px;max-width:270px">{{ evt.confirmSub }}</div>
+      <div style="margin-top:20px;background:#fff;border-radius:18px;width:100%;max-width:300px;box-shadow:0 10px 28px rgba(60,50,110,.12);overflow:hidden;text-align:left">
+        <div style="background:repeating-linear-gradient(135deg,{{ evt.img }});padding:15px 16px"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ evt.title }}</div><div style="font:700 11.5px 'Plus Jakarta Sans';color:#56506E;margin-top:2px">{{ evt.whenLabel }}</div></div>
+        <div style="display:flex;align-items:center;gap:13px;padding:15px 16px">
+          <div style="width:62px;height:62px;border-radius:11px;background:#1E1B2E;flex:none;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);padding:6px;gap:2px"><span style="background:#fff"></span><span></span><span style="background:#fff"></span><span style="background:#fff"></span><span></span><span></span><span style="background:#fff"></span><span></span><span></span><span style="background:#fff"></span><span style="background:#fff"></span><span></span><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span><span></span><span style="background:#fff"></span><span></span><span style="background:#fff"></span><span></span><span style="background:#fff"></span><span></span><span style="background:#fff"></span><span></span><span style="background:#fff"></span></div>
+          <div style="flex:1;min-width:0">
+            <div style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ evt.codeLabel }}</div>
+            <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:.04em">{{ evt.confirmCode }}</div>
+            <div style="font:700 11.5px 'Plus Jakarta Sans';color:#6D4DF6;margin-top:6px">{{ evt.qtyLabel }} · {{ evt.totalLabel }}</div>
+          </div>
+        </div>
+      </div>
+      <button onClick="{{ done }}" style="width:100%;max-width:300px;margin-top:22px;border:none;background:#7B61FF;color:#fff;padding:15px;border-radius:15px;font:800 14.5px 'Plus Jakarta Sans';cursor:pointer;box-shadow:0 12px 24px rgba(123,97,255,.4)">Listo</button>
+      <button onClick="{{ done }}" style="margin-top:12px;border:none;background:none;color:#9A96AE;font:800 13px 'Plus Jakarta Sans';cursor:pointer">Ver mis eventos</button>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 976}}">
+class Component extends DCLogic {
+  state = { filter: 'all', openId: null, tier: 0, qty: 1, confirm: false, lang: 'es', langOpen: false };
+
+  _tr() {
+    return {
+      reggaeton: { title: 'Reggaeton Saturdays', long: 'The best reggaeton and perreo night with a live DJ, lights and hookah. VIP tables with bottle service. Ages 21 and over only.', tag: 'Club', tiers: ['General cover|Dance floor all night', 'VIP table|Table + bottle · up to 6 people'] },
+      ladies: { title: 'Ladies Night', long: 'Ladies get in free and enjoy 2-for-1 cocktails all night. Music from the resident DJs and a great vibe to dance.', tag: 'Bar', tiers: ['Ladies|Free entry all night', 'Gentlemen|Entry cover'] },
+      karaoke: { title: 'Latino Karaoke', long: 'Grab the mic and sing your favorite rancheras and hits. Free entry, with beer and michelada specials all night.', tag: 'Cantina', tiers: ['Free entry|No cost · arrive early'] },
+      taco: { title: 'Taco Fest 2026', long: 'Our annual festival: 12 taco stands, live banda music, a salsa contest and games for the kids. Your ticket includes a tasting.', tag: 'Festival', tiers: ['General Admission|Entry + 3 tasting tacos', 'VIP|Unlimited tasting + drink + VIP area'] },
+      loteria: { title: 'Lotería Night', long: 'Come play the classic Mexican lotería. Free board with your registration, prizes every round and lots of community fun.', tag: 'Free', tiers: ['RSVP|Free board with your registration'] },
+      salsa: { title: 'Live Salsa Class', long: 'Learn the basic salsa steps with professional instructors. No partner needed and all levels are welcome.', tag: 'Dance', tiers: ['Single class|One 90-minute session', 'Monthly pass|4 classes + open practice'] },
+      mercadito: { title: 'Latino Market', long: 'Over 40 local entrepreneurs: crafts, food, clothing and handmade goods. Free entry for the whole family.', tag: 'Free', tiers: ['Free entry|No cost · just register'] },
+      banda: { title: 'Live Banda Concert', long: 'A night of pure banda with a live group, dance floor and full bar. Event for ages 21 and over only.', tag: 'Live', tiers: ['General|Standing general access', 'Table (4 people)|Reserved table + bottle'] },
+    };
+  }
+
+  _events() {
+    return [
+      { id: 'reggaeton', title: 'Sábados de Reggaetón', org: 'Club Tropikal', mon: 'JUL', day: 5, dow: 'Sáb', time: '10:00 PM', loc: 'Club Tropikal', cat: 'nightlife', recur: true, recEs: 'Cada sábado', recEn: 'Every Sat', tag: 'Discoteca', tagBg: '#EFEBFF', tagC: '#6D4DF6', img: '#E6DEF6 0 12px,#D3C6EE 12px 24px', imgLabel: 'pista de baile', going: 480,
+        long: 'La mejor noche de reggaetón y perreo con DJ en vivo, luces y hookah. Mesas VIP con servicio de botella. Solo mayores de 21 años.',
+        tiers: [ { n: 'Cover general', d: 'Entrada a la pista toda la noche', p: 15 }, { n: 'Mesa VIP', d: 'Mesa + botella · hasta 6 personas', p: 120 } ] },
+      { id: 'ladies', title: 'Ladies Night', org: 'Bar Águila', mon: 'JUL', day: 3, dow: 'Jue', time: '8:00 PM', loc: 'Bar Águila', cat: 'nightlife', recur: true, recEs: 'Cada jueves', recEn: 'Every Thu', tag: 'Bar', tagBg: '#FDE7EF', tagC: '#D6336C', img: '#FCE3EC 0 12px,#F6CEDD 12px 24px', imgLabel: 'barra del bar', going: 160,
+        long: 'Las damas entran gratis y disfrutan 2x1 en cócteles toda la noche. Música de los DJ residentes y ambiente para bailar.',
+        tiers: [ { n: 'Damas', d: 'Entrada gratis toda la noche', p: 0 }, { n: 'Caballeros', d: 'Cover de entrada', p: 10 } ] },
+      { id: 'karaoke', title: 'Karaoke Latino', org: 'Cantina Jalisco', mon: 'JUL', day: 2, dow: 'Mié', time: '9:00 PM', loc: 'Cantina Jalisco', cat: 'nightlife', recur: true, recEs: 'Cada miércoles', recEn: 'Every Wed', tag: 'Cantina', tagBg: '#E3F5EA', tagC: '#1F8A4C', img: '#DCE9F4 0 12px,#C7DBEE 12px 24px', imgLabel: 'noche de karaoke', going: 90,
+        long: 'Toma el micrófono y canta tus rancheras y éxitos favoritos. Entrada libre, con promociones en cerveza y micheladas toda la noche.',
+        tiers: [ { n: 'Entrada libre', d: 'Sin costo · llega temprano', p: 0 } ] },
+      { id: 'taco', title: 'Fiesta del Taco 2026', org: 'Taquería La Esperanza', mon: 'JUL', day: 5, dow: 'Sáb', time: '12:00 PM', loc: 'Parque Hidalgo', cat: 'comida', tag: 'Festival', tagBg: '#FCE9D6', tagC: '#C26A1A', img: '#F3E2CE 0 12px,#ECD3B4 12px 24px', imgLabel: 'festival de comida', going: 212,
+        long: 'Nuestro festival anual: 12 puestos de tacos, música de banda en vivo, concurso de salsas y juegos para los niños. El boleto incluye degustación.',
+        tiers: [ { n: 'Entrada General', d: 'Acceso + 3 tacos de degustación', p: 10 }, { n: 'VIP', d: 'Degustación ilimitada + bebida + área VIP', p: 25 } ] },
+      { id: 'loteria', title: 'Noche de Lotería', org: 'Centro Comunitario Aztlán', mon: 'JUL', day: 8, dow: 'Mié', time: '7:00 PM', loc: 'Salón Aztlán', cat: 'familiar', tag: 'Gratis', tagBg: '#E3F5EA', tagC: '#1F8A4C', img: '#E7F0E3 0 12px,#D6E7D0 12px 24px', imgLabel: 'lotería mexicana', going: 64,
+        long: 'Ven a jugar la clásica lotería mexicana. Cartón gratis con tu registro, premios cada ronda y mucha diversión en comunidad.',
+        tiers: [ { n: 'Reservación', d: 'Cartón gratis con tu registro', p: 0 } ] },
+      { id: 'salsa', title: 'Clase de Salsa en Vivo', org: 'Academia Ritmo Latino', mon: 'JUL', day: 10, dow: 'Jue', time: '8:00 PM', loc: 'Studio Ritmo', cat: 'musica', tag: 'Baile', tagBg: '#EFEBFF', tagC: '#6D4DF6', img: '#EAE2F8 0 12px,#DCCEF2 12px 24px', imgLabel: 'clase de salsa', going: 38,
+        long: 'Aprende los pasos básicos de salsa con instructores profesionales. No necesitas pareja y todos los niveles son bienvenidos.',
+        tiers: [ { n: 'Clase individual', d: '1 sesión de 90 minutos', p: 15 }, { n: 'Pase mensual', d: '4 clases + práctica libre', p: 45 } ] },
+      { id: 'mercadito', title: 'Mercadito Latino', org: 'Cámara de Comercio Latina', mon: 'JUL', day: 12, dow: 'Sáb', time: '10:00 AM', loc: 'Plaza Cesar Chávez', cat: 'familiar', tag: 'Gratis', tagBg: '#E3F5EA', tagC: '#1F8A4C', img: '#FCE3DC 0 12px,#F6CEC2 12px 24px', imgLabel: 'mercado al aire libre', going: 140,
+        long: 'Más de 40 emprendedores locales: artesanías, comida, ropa y productos hechos a mano. Entrada libre para toda la familia.',
+        tiers: [ { n: 'Entrada libre', d: 'Sin costo · solo regístrate', p: 0 } ] },
+      { id: 'banda', title: 'Concierto: Banda en Vivo', org: 'Salón El Patrón', mon: 'JUL', day: 18, dow: 'Vie', time: '9:00 PM', loc: 'Salón El Patrón', cat: 'nightlife', recur: false, tag: 'En vivo', tagBg: '#FDE7EF', tagC: '#D6336C', img: '#E6DEF6 0 12px,#D3C6EE 12px 24px', imgLabel: 'concierto de banda', going: 320,
+        long: 'Una noche de pura banda con grupo en vivo, pista de baile y barra completa. Evento solo para mayores de 21 años.',
+        tiers: [ { n: 'General', d: 'Acceso general de pie', p: 30 }, { n: 'Mesa (4 personas)', d: 'Mesa reservada + botella', p: 160 } ] },
+    ];
+  }
+
+  _f(n) { return '$' + n.toFixed(0); }
+  _min(e) { return Math.min.apply(null, e.tiers.map((t) => t.p)); }
+  _free(e) { return this._min(e) === 0; }
+  _priceLabel(e) { return this._free(e) ? 'Gratis' : 'Desde ' + this._f(this._min(e)); }
+
+  _chipStyle(active) {
+    return 'flex:none;border:none;cursor:pointer;padding:9px 16px;border-radius:999px;font:' + (active ? '800' : '700') + " 13px 'Plus Jakarta Sans';" +
+      (active ? 'background:#7B61FF;color:#fff;box-shadow:0 6px 14px rgba(123,97,255,.3)' : 'background:#F1EFFA;color:#4A4660');
+  }
+
+  open(id) { const e = this._events().find((x) => x.id === id); this.setState({ openId: id, tier: this._free(e) ? 0 : 0, qty: 1, confirm: false }); }
+  close() { this.setState({ openId: null }); }
+  qInc() { this.setState((s) => ({ qty: Math.min(10, s.qty + 1) })); }
+  qDec() { this.setState((s) => ({ qty: Math.max(1, s.qty - 1) })); }
+  confirm() { this.setState({ confirm: true }); }
+  done() { this.setState({ openId: null, confirm: false }); }
+
+  renderVals() {
+    const s = this.state;
+    const all = this._events();
+
+    const es = s.lang === 'es';
+    const L = (a, b) => (es ? a : b);
+    const tr = this._tr();
+    const titleOf = (e) => es ? e.title : tr[e.id].title;
+    const longOf = (e) => es ? e.long : tr[e.id].long;
+    const tagOf = (e) => es ? e.tag : tr[e.id].tag;
+    const tierOf = (e, i) => { if (es) return { n: e.tiers[i].n, d: e.tiers[i].d }; const p = tr[e.id].tiers[i].split('|'); return { n: p[0], d: p[1] }; };
+    const priceLabel = (e) => this._free(e) ? L('Gratis', 'Free') : L('Desde ', 'From ') + this._f(this._min(e));
+
+    const mainTabs = [
+      { es: 'Chat', en: 'Chat' }, { es: 'Negocios', en: 'Business' }, { es: 'Eventos', en: 'Events' },
+      { es: 'Transporte', en: 'Transport' }, { es: 'Bienes Raíces', en: 'Real Estate' }, { es: 'Empleos', en: 'Jobs' },
+    ].map((tb) => ({ label: L(tb.es, tb.en) }));
+
+    const pillBase = { border: 'none', cursor: 'pointer', padding: '5px 12px', borderRadius: '999px', fontWeight: 800, fontSize: '12px', fontFamily: "'Plus Jakarta Sans'" };
+    const esStyle = { ...pillBase, ...(es ? { background: '#7B61FF', color: '#fff' } : { background: 'transparent', color: '#6E6A85' }) };
+    const enStyle = { ...pillBase, ...(!es ? { background: '#7B61FF', color: '#fff' } : { background: 'transparent', color: '#6E6A85' }) };
+
+    const whenShort = (e) => e.recur ? L(e.recEs, e.recEn) : e.dow;
+    const filterDefs = [['all', L('Todos', 'All')], ['free', L('Gratis', 'Free')], ['nightlife', L('Vida Nocturna', 'Nightlife')], ['comida', L('Comida', 'Food')], ['musica', L('Música', 'Music')], ['familiar', L('Familiar', 'Family')]];
+    const filters = filterDefs.map((f) => ({ label: f[1], onTap: () => this.setState({ filter: f[0] }), style: this._chipStyle(s.filter === f[0]) }));
+
+    const featRaw = all[0];
+    const featured = {
+      img: featRaw.img, imgLabel: featRaw.imgLabel, mon: featRaw.mon, day: featRaw.day, dow: featRaw.dow, time: featRaw.time, loc: featRaw.loc,
+      title: titleOf(featRaw), goingLabel: featRaw.going + L(' asistirán', ' going'), priceLabel: priceLabel(featRaw),
+      whenShort: whenShort(featRaw),
+      badge: L('Destacado', 'Featured'), viewLabel: L('Ver', 'View'),
+      onOpen: () => this.open(featRaw.id),
+    };
+
+    let pool = all.filter((e) => e.id !== featRaw.id);
+    if (s.filter === 'free') pool = pool.filter((e) => this._free(e));
+    else if (s.filter !== 'all') pool = pool.filter((e) => e.cat === s.filter);
+
+    const eventsList = pool.map((e) => ({
+      title: titleOf(e), org: e.org, img: e.img, imgLabel: e.imgLabel, mon: e.mon, day: e.day, dow: e.dow, time: e.time, loc: e.loc,
+      tag: tagOf(e), tagBg: e.tagBg, tagC: e.tagC, whenShort: whenShort(e),
+      priceLabel: priceLabel(e), goingLabel: e.going + L(' van', ' going'),
+      cta: this._free(e) ? L('Asistir', 'Attend') : L('Ver evento', 'View'),
+      onOpen: () => this.open(e.id),
+    }));
+
+    const headings = es
+      ? { nightlife: 'Vida nocturna', all: 'Próximos eventos', free: 'Eventos gratis', comida: 'Comida & bebida', musica: 'Música & baile', familiar: 'Para la familia' }
+      : { nightlife: 'Nightlife', all: 'Upcoming events', free: 'Free events', comida: 'Food & drink', musica: 'Music & dance', familiar: 'For the family' };
+    const listHeading = headings[s.filter] || headings.all;
+    const fMatch = s.filter === 'all' || (s.filter === 'free' ? this._free(featRaw) : featRaw.cat === s.filter);
+    const countLabel = (pool.length + (fMatch ? 1 : 0)) + L(' eventos', ' events');
+    const pageTitle = L('Eventos en tu zona', 'Events near you');
+
+    let evt = {};
+    if (s.openId) {
+      const e = all.find((x) => x.id === s.openId);
+      const free = this._free(e);
+      const tierIdx = Math.min(s.tier, e.tiers.length - 1);
+      const total = e.tiers[tierIdx].p * s.qty;
+      const monNice = e.mon[0] + e.mon.slice(1).toLowerCase();
+      evt = {
+        img: e.img, imgLabel: e.imgLabel, title: titleOf(e), org: e.org, long: longOf(e), loc: e.loc,
+        tag: tagOf(e), tagBg: e.tagBg, tagC: e.tagC,
+        whenLabel: e.recur ? (L(e.recEs, e.recEn) + ' · ' + e.time) : (e.dow + ' ' + e.day + ' ' + monNice + ' · ' + e.time),
+        goingLabel: e.going + L(' personas asistirán', ' people going'),
+        tierHeading: free ? L('Registro', 'Registration') : L('Elige tu boleto', 'Choose your ticket'),
+        tiers: e.tiers.map((t, i) => { const a = i === tierIdx; const tt = tierOf(e, i); return { n: tt.n, d: tt.d, priceLabel: t.p === 0 ? L('Gratis', 'Free') : this._f(t.p), selected: a, ring: a ? '#7B61FF' : '#E2DEF4', bg: a ? '#F5F2FE' : '#fff', onTap: () => this.setState({ tier: i }) }; }),
+        qtyTitle: free ? L('¿Cuántas personas?', 'How many people?') : L('Cantidad', 'Quantity'),
+        qty: s.qty, qtyInc: () => this.qInc(), qtyDec: () => this.qDec(),
+        qtyLabel: free ? (s.qty + (s.qty === 1 ? L(' persona', ' person') : L(' personas', ' people'))) : (s.qty + (s.qty === 1 ? L(' boleto', ' ticket') : L(' boletos', ' tickets'))),
+        totalLabel: total === 0 ? L('Gratis', 'Free') : this._f(total),
+        ctaLabel: total === 0 ? L('Confirmar asistencia', 'Confirm attendance') : (L('Pagar ', 'Pay ') + this._f(total)),
+        confirmTitle: free ? L('¡Estás dentro!', "You're in!") : L('¡Boleto confirmado!', 'Ticket confirmed!'),
+        confirmSub: free ? L('Te esperamos en ' + e.loc + '. Te enviamos un recordatorio.', 'See you at ' + e.loc + '. We sent you a reminder.') : L('Te enviamos tu boleto. Muéstralo en la entrada de ' + e.loc + '.', 'We sent your ticket. Show it at the entrance of ' + e.loc + '.'),
+        codeLabel: free ? L('Código de registro', 'Registration code') : L('Código de boleto', 'Ticket code'),
+        confirmCode: 'TL-' + e.id.slice(0, 3).toUpperCase() + '-' + (1000 + e.day * 7),
+      };
+    }
+
+    return {
+      mainTabs, pageTitle,
+      currentLang: es ? 'ES' : 'EN', langOpen: s.langOpen, langClosed: !s.langOpen,
+      openLang: () => this.setState({ langOpen: true }),
+      setEs: () => this.setState({ lang: 'es', langOpen: false }),
+      setEn: () => this.setState({ lang: 'en', langOpen: false }),
+      esStyle, enStyle,
+      filters, featured, eventsList, listHeading, countLabel,
+      evtOpen: !!s.openId && !s.confirm,
+      evtConfirm: !!s.openId && s.confirm,
+      evt,
+      closeEvent: () => this.close(),
+      confirmEvent: () => this.confirm(),
+      done: () => this.done(),
+    };
+  }
+}
+</script>
+</body>
+</html>

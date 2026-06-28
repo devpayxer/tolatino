@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#DCD8EC;display:flex;flex-direction:column;align-items:center;padding:48px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:baseline;gap:14px;margin:0 0 26px;align-self:flex-start;max-width:392px;width:100%">
+    <div style="font:800 24px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:7px;height:7px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Chat — feed vecinal estilo Nextdoor</div>
+  </div>
+
+  <div style="position:relative;width:392px;background:#FBFAFE;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.22);border:1px solid rgba(30,27,46,.05);display:flex;flex-direction:column;height:880px">
+
+    <div data-noscroll style="flex:1;overflow-y:auto">
+
+      <!-- STATUS BAR -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+      <!-- ECOSYSTEM HEADER -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 18px 10px">
+        <div style="display:flex;align-items:baseline"><span style="font:800 23px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.03em">To</span><span style="font:800 23px 'Plus Jakarta Sans';color:#7B61FF;letter-spacing:-.03em">Latino</span><span style="display:inline-block;width:6px;height:6px;background:#F4B740;transform:rotate(45deg);margin-left:3px;align-self:center"></span></div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="display:flex;align-items:center;gap:5px;background:#F1EFFA;border-radius:999px;padding:8px 11px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.3"></circle></svg><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">Houston, TX</span></div>
+          <sc-if value="{{ langClosed }}" hint-placeholder-val="{{ true }}"><button onClick="{{ openLang }}" style="display:flex;align-items:center;gap:5px;background:#F1EFFA;border:none;cursor:pointer;border-radius:999px;padding:7px 11px;font:800 12px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="3" y1="12" x2="21" y2="12"></line><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg>{{ currentLang }}<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button></sc-if>
+          <sc-if value="{{ langOpen }}" hint-placeholder-val="{{ false }}"><div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px"><button onClick="{{ setEs }}" style="{{ esStyle }}">ES</button><button onClick="{{ setEn }}" style="{{ enStyle }}">EN</button></div></sc-if>
+          <button style="position:relative;width:38px;height:38px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12a1 1 0 0 1-1 .9H8a1 1 0 0 1-1-.9L6 8z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg><div style="position:absolute;top:3px;right:3px;min-width:16px;height:16px;background:#F0466E;color:#fff;border-radius:8px;font:800 9.5px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #FBFAFE">2</div></button>
+        </div>
+      </div>
+
+      <!-- MAIN CATEGORY TABS -->
+      <div data-noscroll style="display:flex;gap:8px;overflow-x:auto;padding:2px 18px 12px">
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 16px;border-radius:999px;font:800 13px 'Plus Jakarta Sans';background:#7B61FF;color:#fff;box-shadow:0 6px 14px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5z"></path></svg>{{ mainTabs.0.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v9h16v-9"></path><path d="M4 10l1.5-5h13L20 10"></path><path d="M4 10a2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0 2.2 2.2 0 0 0 4 0"></path></svg>{{ mainTabs.1.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"></rect><line x1="4" y1="9.5" x2="20" y2="9.5"></line><line x1="9" y1="3" x2="9" y2="6.5"></line><line x1="15" y1="3" x2="15" y2="6.5"></line></svg>{{ mainTabs.2.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="6" rx="2"></rect><path d="M6 11l1.5-4.5a2 2 0 0 1 1.9-1.3h5.2a2 2 0 0 1 1.9 1.3L19 11"></path><circle cx="8" cy="18.5" r="1.4"></circle><circle cx="16" cy="18.5" r="1.4"></circle></svg>{{ mainTabs.3.label }}</button>
+        <button style="flex:none;display:flex;align-items:center;gap:7px;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:700 13px 'Plus Jakarta Sans';background:#F1EFFA;color:#4A4660"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A86A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6.5 8 6.5"></path><path d="M6.5 9.5V19h11V9.5"></path></svg>{{ mainTabs.4.label }}</button>
+      </div>
+      <div style="height:1px;background:rgba(60,50,110,.1)"></div>
+
+      <!-- COMPOSER BAR -->
+      <div style="padding:12px 16px 4px">
+        <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid rgba(30,27,46,.07);border-radius:16px;padding:9px 11px;box-shadow:0 6px 16px rgba(60,50,110,.06)">
+          <div style="width:38px;height:38px;border-radius:50%;background:#7B61FF;color:#fff;display:flex;align-items:center;justify-content:center;font:800 12px 'Plus Jakarta Sans';flex:none">TÚ</div>
+          <button onClick="{{ openComposer }}" style="flex:1;text-align:left;background:#F1EFFA;border:none;border-radius:999px;padding:11px 15px;font:600 13px 'Plus Jakarta Sans';color:#9A96AE;cursor:pointer">{{ composerPh }}</button>
+          <button onClick="{{ openComposer }}" style="width:38px;height:38px;border-radius:50%;background:#EFEBFF;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2.5"></rect><circle cx="12" cy="13" r="3.2"></circle><path d="M8 6l1.5-2.5h5L16 6"></path></svg></button>
+        </div>
+      </div>
+
+      <!-- FILTER CHIPS -->
+      <div data-noscroll style="display:flex;gap:8px;overflow-x:auto;padding:12px 18px 8px">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+          <button onClick="{{ f.onTap }}" style="{{ f.style }}">{{ f.label }}</button>
+        </sc-for>
+      </div>
+
+      <!-- FEED -->
+      <div style="padding:6px 16px 22px;display:flex;flex-direction:column;gap:13px">
+        <sc-for list="{{ posts }}" as="p" hint-placeholder-count="4">
+        <div style="background:#fff;border-radius:20px;padding:15px 16px;box-shadow:0 8px 22px rgba(60,50,110,.07)">
+
+          <!-- post header -->
+          <div style="display:flex;align-items:center;gap:11px">
+            <div style="width:42px;height:42px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 13px 'Plus Jakarta Sans';background:{{ p.color }}">{{ p.initials }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.user }}</div>
+              <div style="display:flex;align-items:center;gap:5px;font:600 11.5px 'Plus Jakarta Sans';color:#9A96AE"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.3"></circle></svg>{{ p.hood }} · {{ p.time }}</div>
+            </div>
+            <sc-if value="{{ p.hasType }}" hint-placeholder-val="{{ true }}"><span style="background:{{ p.typeBg }};color:{{ p.typeC }};padding:5px 10px;border-radius:9px;font:800 10px 'Plus Jakarta Sans';white-space:nowrap">{{ p.typeLabel }}</span></sc-if>
+          </div>
+
+          <!-- post text -->
+          <div style="font:500 13.5px 'Plus Jakarta Sans';line-height:1.55;color:#3A3650;margin-top:11px">{{ p.text }}</div>
+
+          <!-- recommended business card -->
+          <sc-if value="{{ p.hasBiz }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:12px;display:flex;align-items:center;gap:12px;background:#F7F6FC;border:1px solid rgba(123,97,255,.13);border-radius:16px;padding:11px 13px">
+            <div style="width:46px;height:46px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 14px 'Plus Jakarta Sans';background:{{ p.biz.color }}">{{ p.biz.initials }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:5px"><span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.biz.name }}</span><sc-if value="{{ p.biz.verified }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;width:15px;height:15px;border-radius:50%;background:#7B61FF;align-items:center;justify-content:center;flex:none"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:2px;font:700 11.5px 'Plus Jakarta Sans'"><span style="color:#F4B740">★ {{ p.biz.rating }}</span><span style="color:#9A96AE">· {{ p.biz.cat }}</span></div>
+              <div style="font:700 10.5px 'Plus Jakarta Sans';color:#6D4DF6;margin-top:3px">{{ p.biz.recsLabel }}</div>
+            </div>
+            <span style="font:800 11.5px 'Plus Jakarta Sans';color:#6D4DF6;background:#EFEBFF;padding:8px 13px;border-radius:11px;flex:none">{{ viewLabel }}</span>
+          </div>
+          </sc-if>
+
+          <!-- ask answers strip -->
+          <sc-if value="{{ p.hasAnswers }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:12px;display:flex;align-items:center;gap:10px;background:#EFEBFF;border-radius:13px;padding:10px 13px">
+            <div style="display:flex;flex:none"><span style="width:24px;height:24px;border-radius:50%;background:#7B61FF;border:2px solid #EFEBFF;color:#fff;font:800 8px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center">AM</span><span style="width:24px;height:24px;border-radius:50%;background:#1F9D57;border:2px solid #EFEBFF;color:#fff;font:800 8px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;margin-left:-8px">RG</span><span style="width:24px;height:24px;border-radius:50%;background:#E8954A;border:2px solid #EFEBFF;color:#fff;font:800 8px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;margin-left:-8px">+</span></div>
+            <span style="flex:1;font:700 12px 'Plus Jakarta Sans';color:#56506E">{{ p.answers }}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </div>
+          </sc-if>
+
+          <!-- image -->
+          <sc-if value="{{ p.hasImg }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:12px;height:150px;border-radius:14px;position:relative;background:repeating-linear-gradient(135deg,{{ p.img }})"><span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:600 10px ui-monospace,Menlo,monospace;color:rgba(70,60,110,.42);letter-spacing:.08em">[ {{ p.imgLabel }} ]</span></div>
+          </sc-if>
+
+          <!-- reactions -->
+          <div style="display:flex;align-items:center;gap:22px;margin-top:13px;padding-top:11px;border-top:1px solid rgba(30,27,46,.06)">
+            <button onClick="{{ p.onLike }}" style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font:800 12.5px 'Plus Jakarta Sans';color:{{ p.likeColor }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="{{ p.heartFill }}" stroke="{{ p.heartStroke }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9.3-9A5 5 0 0 1 12 6.5 5 5 0 0 1 21.3 12c-2.3 4.5-9.3 9-9.3 9z"></path></svg>{{ p.likes }}</button>
+            <button style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font:800 12.5px 'Plus Jakarta Sans';color:#6E6A85"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5z"></path></svg>{{ p.comments }}</button>
+            <button style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font:800 12.5px 'Plus Jakarta Sans';color:#6E6A85;margin-left:auto"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>{{ shareLabel }}</button>
+          </div>
+        </div>
+        </sc-for>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div style="flex:none;display:flex;align-items:center;justify-content:space-around;padding:11px 22px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.06)">
+      <div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"></path><path d="M5 9.5V20h14V9.5"></path></svg></div>
+      <div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg></div>
+      <button onClick="{{ openComposer }}" style="width:48px;height:48px;border-radius:16px;border:none;cursor:pointer;background:#7B61FF;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(123,97,255,.35)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="6" x2="12" y2="18"></line><line x1="6" y1="12" x2="18" y2="12"></line></svg></button>
+      <div style="position:relative;width:46px;height:46px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6z"></path><path d="M9.5 20a2.5 2.5 0 0 0 5 0"></path></svg><div style="position:absolute;top:5px;right:5px;min-width:17px;height:17px;background:#F0466E;color:#fff;border-radius:9px;font:800 10px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff">3</div></div>
+      <div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5.5 20a6.5 6.5 0 0 1 13 0"></path></svg></div>
+    </div>
+
+    <!-- ============ COMPOSER SHEET ============ -->
+    <sc-if value="{{ composerOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeComposer }}" style="position:absolute;inset:0;z-index:10;background:rgba(28,24,46,.5)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:11;background:#fff;border-radius:24px 24px 42px 42px;box-shadow:0 -18px 50px rgba(28,24,46,.3);padding:9px 20px 20px;display:flex;flex-direction:column" data-composer>
+      <div style="width:42px;height:5px;border-radius:3px;background:#E3DEF2;margin:0 auto 12px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font:800 17px 'Plus Jakarta Sans';color:#1E1B2E">{{ sheetTitle }}</span>
+        <button onClick="{{ closeComposer }}" style="width:30px;height:30px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#7B61FF;color:#fff;display:flex;align-items:center;justify-content:center;font:800 12px 'Plus Jakarta Sans';flex:none">TÚ</div>
+        <div style="line-height:1.2"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ youLabel }}</div><div style="font:600 12px 'Plus Jakarta Sans';color:#9A96AE">{{ youHood }}</div></div>
+      </div>
+
+      <div data-noscroll style="display:flex;gap:8px;overflow-x:auto;margin-top:14px">
+        <sc-for list="{{ typeChips }}" as="tc" hint-placeholder-count="5">
+          <button onClick="{{ tc.onTap }}" style="{{ tc.style }}">{{ tc.label }}</button>
+        </sc-for>
+      </div>
+
+      <textarea onInput="{{ onText }}" value="{{ postText }}" placeholder="{{ composerSheetPh }}" data-noscroll style="margin-top:14px;width:100%;height:104px;resize:none;border:1.5px solid #E2DEF4;border-radius:14px;padding:13px;font:500 13.5px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5;box-sizing:border-box"></textarea>
+
+      <div style="display:flex;gap:9px;margin-top:12px">
+        <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;padding:11px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="11" r="2.2"></circle><path d="m21 16-4-4-7 7"></path></svg>{{ photoLabel }}</button>
+        <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;padding:11px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v9h16v-9"></path><path d="M4 10l1.5-5h13L20 10"></path></svg>{{ tagBizLabel }}</button>
+      </div>
+
+      <button onClick="{{ submitPost }}" style="margin-top:14px;width:100%;border:none;background:{{ postBg }};color:#fff;padding:15px;border-radius:15px;font:800 14.5px 'Plus Jakarta Sans';cursor:pointer;box-shadow:{{ postShadow }}">{{ publishLabel }}</button>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 976}}">
+class Component extends DCLogic {
+  state = {
+    filter: 'all', composerOpen: false, postType: 'post', postText: '', lang: 'es', langOpen: false,
+    posts: [
+      { id: 1, user: 'Rosa M.', initials: 'RM', color: '#7B61FF', hood: 'Gulfton', time: 'hace 2 h', type: 'rec',
+        text: 'Por fin encontré los mejores tacos al pastor cerca de casa 🌮 Atención de 10 y todo bien limpio. ¡Súper recomendados!',
+        biz: { name: 'Taquería La Esperanza', cat: 'Comida Mexicana', rating: '4.9', verified: true, initials: 'TE', color: '#E8954A', recs: 47 },
+        likes: 42, liked: false, comments: 8 },
+      { id: 2, user: 'Diego L.', initials: 'DL', color: '#1F9D57', hood: 'Bellaire', time: 'hace 4 h', type: 'ask',
+        text: '¿Alguien conoce un buen mecánico de confianza por Bellaire? El mío me quedó mal y necesito algo urgente 😩',
+        answers: '3 vecinos recomendaron negocios', likes: 6, liked: false, comments: 14 },
+      { id: 3, user: 'Aviso Vecinal', initials: '!', color: '#B5791A', hood: 'Cesar Chavez', time: 'hace 6 h', type: 'notice',
+        text: '🚧 Este sábado cerrarán Cesar Chavez Blvd de 8am a 6pm por el festival comunitario. Busquen ruta alterna por Navigation Blvd.',
+        likes: 30, liked: false, comments: 6 },
+      { id: 4, user: 'Carmen V.', initials: 'CV', color: '#D6336C', hood: 'East End', time: 'ayer', type: 'rec',
+        text: 'Me hicieron las uñas divinas para la boda de mi hija 💅 Pregunten por Lupita, súper detallista y buen precio.',
+        biz: { name: 'Salón Glamour', cat: 'Belleza · Uñas', rating: '4.7', verified: false, initials: 'SG', color: '#7B61FF', recs: 12 },
+        likes: 28, liked: false, comments: 5 },
+      { id: 5, user: 'José P.', initials: 'JP', color: '#2A5C8A', hood: 'Magnolia', time: 'ayer', type: 'sale',
+        text: 'Vendo carriola en muy buen estado, poco uso. $40 o mejor oferta. Mándame mensaje por interno 🙏',
+        img: '#E4ECFB 0 12px,#D7E3F6 12px 24px', imgLabel: 'foto del producto', likes: 9, liked: false, comments: 3 },
+    ],
+  };
+
+  _chipStyle(active) {
+    return 'flex:none;border:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:' + (active ? '800' : '700') + " 12.5px 'Plus Jakarta Sans';" +
+      (active ? 'background:#7B61FF;color:#fff;box-shadow:0 6px 14px rgba(123,97,255,.3)' : 'background:#F1EFFA;color:#4A4660');
+  }
+
+  toggleLike(id) {
+    this.setState((s) => ({ posts: s.posts.map((p) => p.id === id ? { ...p, liked: !p.liked, likes: p.likes + (p.liked ? -1 : 1) } : p) }));
+  }
+
+  submitPost() {
+    const txt = this.state.postText.trim();
+    if (!txt) return;
+    const t = this.state.postType;
+    this.setState((s) => ({
+      composerOpen: false, postText: '', postType: 'post', filter: 'all',
+      posts: [{ id: Date.now(), user: 'Tú', initials: 'TÚ', color: '#7B61FF', hood: s.lang === 'es' ? 'Tu zona' : 'Your area', time: s.lang === 'es' ? 'ahora' : 'now', type: t, text: txt, likes: 0, liked: false, comments: 0 }].concat(s.posts),
+    }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const es = s.lang === 'es';
+    const L = (a, b) => (es ? a : b);
+
+    const mainTabs = [
+      { es: 'Chat', en: 'Chat' }, { es: 'Negocios', en: 'Business' }, { es: 'Eventos', en: 'Events' },
+      { es: 'Transporte', en: 'Transport' }, { es: 'Bienes Raíces', en: 'Real Estate' },
+    ].map((tb) => ({ label: L(tb.es, tb.en) }));
+
+    const pillBase = { border: 'none', cursor: 'pointer', padding: '5px 12px', borderRadius: '999px', fontWeight: 800, fontSize: '12px', fontFamily: "'Plus Jakarta Sans'" };
+    const esStyle = { ...pillBase, ...(es ? { background: '#7B61FF', color: '#fff' } : { background: 'transparent', color: '#6E6A85' }) };
+    const enStyle = { ...pillBase, ...(!es ? { background: '#7B61FF', color: '#fff' } : { background: 'transparent', color: '#6E6A85' }) };
+
+    const TM = {
+      rec: { label: L('Recomendación', 'Recommendation'), bg: '#E8F6EE', c: '#1F8A4C' },
+      ask: { label: L('Pregunta', 'Question'), bg: '#EFEBFF', c: '#6D4DF6' },
+      notice: { label: L('Aviso', 'Notice'), bg: '#FCEFD6', c: '#B5791A' },
+      sale: { label: L('Se vende', 'For sale'), bg: '#E4ECFB', c: '#2A5C8A' },
+    };
+
+    const filterDefs = [['all', L('Todos', 'All')], ['rec', L('Recomendaciones', 'Recommendations')], ['ask', L('Preguntas', 'Questions')], ['notice', L('Avisos', 'Notices')], ['sale', L('Se vende', 'For sale')]];
+    const filters = filterDefs.map((f) => ({ label: f[1], onTap: () => this.setState({ filter: f[0] }), style: this._chipStyle(s.filter === f[0]) }));
+
+    let pool = s.posts;
+    if (s.filter !== 'all') pool = pool.filter((p) => p.type === s.filter);
+
+    const posts = pool.map((p) => {
+      const tm = TM[p.type];
+      return {
+        user: p.user, initials: p.initials, color: p.color, hood: p.hood, time: p.time, text: p.text,
+        hasType: !!tm, typeLabel: tm ? tm.label : '', typeBg: tm ? tm.bg : '', typeC: tm ? tm.c : '',
+        hasBiz: !!p.biz, biz: p.biz ? { name: p.biz.name, cat: p.biz.cat, rating: p.biz.rating, verified: p.biz.verified, initials: p.biz.initials, color: p.biz.color, recsLabel: L('Recomendado por ', 'Recommended by ') + p.biz.recs + L(' vecinos', ' neighbors') } : {},
+        hasAnswers: !!p.answers, answers: p.answers || '',
+        hasImg: !!p.img, img: p.img || '', imgLabel: p.imgLabel || '',
+        likes: p.likes, comments: p.comments,
+        liked: p.liked, heartFill: p.liked ? '#F0466E' : 'none', heartStroke: p.liked ? '#F0466E' : '#9A96AE', likeColor: p.liked ? '#F0466E' : '#6E6A85',
+        onLike: () => this.toggleLike(p.id),
+      };
+    });
+
+    const typeDefs = [['post', L('Publicar', 'Post')], ['rec', L('Recomendar', 'Recommend')], ['ask', L('Preguntar', 'Ask')], ['notice', L('Aviso', 'Notice')], ['sale', L('Vender', 'Sell')]];
+    const typeChips = typeDefs.map((t) => ({ label: t[1], onTap: () => this.setState({ postType: t[0] }), style: this._chipStyle(s.postType === t[0]) }));
+
+    const phByType = {
+      post: L('Comparte algo con tu zona…', 'Share something with your area…'),
+      rec: L('Recomienda un negocio que te encantó…', 'Recommend a business you loved…'),
+      ask: L('Haz una pregunta a tus vecinos…', 'Ask your neighbors a question…'),
+      notice: L('Comparte un aviso importante…', 'Share an important notice…'),
+      sale: L('¿Qué vendes? Precio y detalles…', 'What are you selling? Price and details…'),
+    };
+    const canPost = s.postText.trim().length > 0;
+
+    return {
+      mainTabs, currentLang: es ? 'ES' : 'EN', langOpen: s.langOpen, langClosed: !s.langOpen,
+      openLang: () => this.setState({ langOpen: true }),
+      setEs: () => this.setState({ lang: 'es', langOpen: false }),
+      setEn: () => this.setState({ lang: 'en', langOpen: false }),
+      esStyle, enStyle,
+      composerPh: L('Comparte con tu zona…', 'Share with your area…'),
+      shareLabel: L('Compartir', 'Share'), viewLabel: L('Ver', 'View'),
+      filters, posts,
+      composerOpen: s.composerOpen,
+      openComposer: () => this.setState({ composerOpen: true }),
+      closeComposer: () => this.setState({ composerOpen: false }),
+      sheetTitle: L('Nueva publicación', 'New post'),
+      youLabel: L('Tú', 'You'), youHood: L('Publicando en Houston, TX', 'Posting in Houston, TX'),
+      typeChips, postText: s.postText, onText: (e) => this.setState({ postText: e.target.value }),
+      composerSheetPh: phByType[s.postType],
+      photoLabel: L('Foto', 'Photo'), tagBizLabel: L('Etiquetar negocio', 'Tag business'),
+      publishLabel: L('Publicar', 'Post'),
+      postBg: canPost ? '#7B61FF' : '#D8D2EC', postShadow: canPost ? '0 12px 24px rgba(123,97,255,.4)' : 'none',
+      submitPost: () => this.submitPost(),
+    };
+  }
+}
+</script>
+</body>
+</html>

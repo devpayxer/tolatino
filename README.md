@@ -32,9 +32,17 @@ The short version:
 
 ## Status
 
-🚧 **Foundation stage.** The repository is being set up: project memory and
-standards are in place. Next steps (see `CLAUDE.md`) are bringing in the design
-system handoff and scaffolding the monorepo.
+🚧 **Foundation in place.**
+- Project memory + build standards (`CLAUDE.md`, `tolatino-standards` skill).
+- **Design system** committed under [`docs/design-system/`](docs/design-system/)
+  (tokens, primitives, navigation patterns, reference screenshots).
+- **`apps/web`** — Next.js (App Router) mobile-first PWA scaffolded: Plus Jakarta
+  Sans, design tokens wired into Tailwind, bilingual (es/en) + tier/category
+  providers, and the consumer **Inicio** shell built from the design-system
+  primitives. `pnpm install && pnpm --filter @tolatino/web dev`.
+
+Next: more consumer screens (search, listing detail, booking/order), business
+onboarding + dashboard, then the NestJS API + PostgreSQL/PostGIS backend.
 
 ## Planned architecture
 

@@ -94,20 +94,45 @@ once and **prompt-cached** (cached reads ≈ 0.1× input cost), so keeping stand
 here — and giving each task a tight, well-scoped prompt — minimizes repeated token
 spend. Don't re-explain the project per task; point at this file.
 
-## Design system handoff — what must live in the repo
+## Design system — in the repo (source of truth)
 
 The design system was created in **Claude's design tool** (Mobile-First) with a
-**Handoff**. Before building any UI, these must be brought into the repo (see
-`docs/design-system/` once added):
-- **Design tokens:** color palette, typography scale, spacing, radii, shadows,
-  breakpoints — exported as the source of truth for `packages/ui`.
-- **Component specs:** buttons, inputs, cards, listing cards, nav/tab bar, sheets,
-  etc., with states.
-- **Mobile screen designs / mockups** for the core flows (onboarding, listing
-  creation, discovery/search, listing detail, booking/order).
-- **The Handoff doc** (spacing/measurements, behavior notes).
+**Handoff** and is now committed under **`docs/design-system/`**. Read it before
+building any UI; never improvise. Key files:
+- **`docs/design-system/DESIGN_RULES.md`** — the binding design rules (Spanish-first,
+  tokens-only, primitives, tier/category, navigation). This is the design half of
+  project memory; this root `CLAUDE.md` is the master.
+- **`docs/design-system/DESIGN_SYSTEM.md`** — full token + component + layout +
+  navigation spec.
+- **`docs/design-system/NEW_SCREEN_RECIPE.md`** — how to build a new screen on-brand
+  + the pre-finish checklist. **Follow it for every new screen.**
+- **`docs/design-system/reference/screenshots/`** — the visual target for every
+  screen (build to match density, weight, voice).
+- **`docs/design-system/reference/dc/`** — original interactive HTML prototypes
+  (look/copy/interaction source of truth; do NOT copy their inline-styled HTML).
 
-Until these are in the repo, **do not hand-build UI from imagination.**
+The live implementation lives in **`apps/web`**:
+- Tokens → `apps/web/tailwind.config.ts` (use named tokens: `bg-primary`,
+  `text-ink`, `rounded-card`, `border-hair` — never raw hex).
+- Primitives → `apps/web/src/components/` (`Wordmark`, `PhoneFrame`, `Card`,
+  `StatTile`, `StatusPill`, buttons, `SubView`, `Sheet`, `EmptyState`,
+  `BottomTabs`, `categoryTile`). Compose from these; don't fork their markup.
+- Bilingual helper → `apps/web/src/lib/i18n.tsx` (`L('es','en')`, Spanish-first).
+- Tier/category context → `apps/web/src/lib/biz.tsx` (`useBiz`, `TIER_CAPS`,
+  16 categories). Extract to `packages/ui` / `packages/types` when a second app
+  needs them.
+
+### Design hard-rules (from the handoff — enforce on every UI task)
+- **Spanish-first:** every user-facing string is `L('es','en')`. Never hardcode one language.
+- **Tokens & primitives only:** no raw hex, no off-scale radii; compose from `src/components/`.
+- **Mobile 392px is the source of truth** (`PhoneFrame`); reflow to desktop per
+  `DESIGN_SYSTEM.md §6` (top nav / sidebar, no bottom tabs).
+- **Tier + category aware** on business surfaces; locked features = PRO badge +
+  upsell `Sheet`, never a dead end.
+- **Imagery = `categoryTile()` gradient placeholders**, not illustrations. No emoji
+  except sanctioned brand copy (the "Hola, Ana 👋" greeting).
+- **Sub-flows use the sub-view stack pattern** (`DESIGN_SYSTEM.md §7`); flows end in
+  a confirmation that returns to the parent.
 
 ## Repo layout (target)
 

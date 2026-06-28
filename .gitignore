@@ -8,6 +8,13 @@ dist/
 build/
 .cache/
 
+# Next.js / Turborepo
+.next/
+out/
+.turbo/
+next-env.d.ts
+*.tsbuildinfo
+
 # Environment & secrets
 .env
 .env.local
