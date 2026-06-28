@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Plan y facturación · móvil</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:852px;background:#F4F2F9;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.headTitle }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+    </div>
+
+    <!-- SUBTABS -->
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:11px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ subtabs }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+    </div>
+
+    <!-- BODY -->
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 18px">
+
+      <!-- ===================== PLAN ===================== -->
+      <sc-if value="{{ isPlan }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Plan">
+        <!-- current plan card -->
+        <div style="position:relative;border-radius:20px;padding:18px;overflow:hidden;background:{{ planCard.bg }}">
+          <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:{{ planCard.blob }}"></div>
+          <div style="position:relative">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="display:inline-flex;align-items:center;gap:6px;font:800 9.5px 'Plus Jakarta Sans';color:{{ planCard.kicker }};text-transform:uppercase;letter-spacing:.06em">{{ planCard.badge }} {{ t.currentPlan }}</span>
+              <span style="font:700 10.5px 'Plus Jakarta Sans';color:{{ planCard.sub }}">{{ planCard.renew }}</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:9px;margin-top:11px"><span style="font:800 30px 'Plus Jakarta Sans';color:{{ planCard.fg }};letter-spacing:-.02em">{{ planCard.name }}</span><span style="font:700 14px 'Plus Jakarta Sans';color:{{ planCard.sub }}">{{ planCard.price }}</span></div>
+            <div style="font:500 11.5px 'Plus Jakarta Sans';color:{{ planCard.sub }};margin-top:4px;line-height:1.4">{{ planCard.line }}</div>
+            <div style="display:flex;gap:8px;margin-top:15px;flex-wrap:wrap">
+              <sc-if value="{{ planCard.showUpgrade }}" hint-placeholder-val="{{ false }}"><button onClick="{{ openUpgrade }}" style="border:none;cursor:pointer;background:{{ planCard.ctaBg }};color:{{ planCard.ctaC }};padding:11px 15px;border-radius:12px;font:800 12px 'Plus Jakarta Sans'">{{ planCard.ctaLabel }} ›</button></sc-if>
+              <sc-if value="{{ planCard.showChange }}" hint-placeholder-val="{{ true }}"><button onClick="{{ openUpgrade }}" style="border:1px solid {{ planCard.ghostRing }};cursor:pointer;background:transparent;color:{{ planCard.fg }};padding:11px 15px;border-radius:12px;font:800 12px 'Plus Jakarta Sans'">{{ t.changePlan }}</button></sc-if>
+            </div>
+          </div>
+        </div>
+
+        <!-- usage -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:15px 17px;margin-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.usage }}</span><span style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.thisMonth }}</span></div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ usage }}" as="u" hint-placeholder-count="4"><div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="display:inline-flex;align-items:center;gap:7px;font:600 11.5px 'Plus Jakarta Sans';color:#4A4660">{{ u.icon }}{{ u.label }}</span><span style="font:800 11px 'Plus Jakarta Sans';color:{{ u.valC }}">{{ u.value }} / {{ u.max }}</span></div><div style="height:6px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;width:{{ u.pct }};background:{{ u.barC }};border-radius:99px"></div></div></div></sc-for>
+          </div>
+          <sc-if value="{{ usageWarn }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:9px;background:#FCEFD6;border-radius:11px;padding:10px 12px;margin-top:13px"><span style="flex:none">{{ warnIcon }}</span><span style="font:600 10.5px 'Plus Jakarta Sans';color:#7A6A4A;line-height:1.4">{{ t.usageWarnText }}</span></div></sc-if>
+        </div>
+
+        <!-- next invoice -->
+        <sc-if value="{{ isPaid }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:15px 17px;margin-top:14px">
+          <div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">{{ t.nextInvoice }}</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ nextLines }}" as="n" hint-placeholder-count="3"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 12px 'Plus Jakarta Sans';color:{{ n.labelC }}">{{ n.label }}</span><span style="font:{{ n.weight }} 12px 'Plus Jakarta Sans';color:{{ n.valueC }}">{{ n.value }}</span></div></sc-for>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:11px;border-top:1px dashed rgba(30,27,46,.12)"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.totalDue }}</span><span style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ nextTotal }}</span></div>
+          <div style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:6px">{{ t.charges }} {{ renewDate }} · Visa ••4421</div>
+        </div>
+        </sc-if>
+
+        <!-- add-ons -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:15px 17px;margin-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.addons }}</span><span style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.addonsSub }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-top:8px">
+          <sc-for list="{{ addons }}" as="a" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:11px;padding:11px 12px;background:{{ a.bg }};border:1px solid {{ a.ring }};border-radius:13px"><span style="width:34px;height:34px;border-radius:10px;background:{{ a.iconBg }};display:flex;align-items:center;justify-content:center;flex:none">{{ a.icon }}</span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ a.label }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#8A86A0;margin-top:1px">{{ a.price }}</div></div><div onClick="{{ a.onToggle }}" style="width:44px;height:26px;border-radius:13px;background:{{ a.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ a.knob }};width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        </div>
+
+        <sc-if value="{{ isPaid }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ openCancel }}" style="width:100%;border:none;background:transparent;color:#9A96AE;cursor:pointer;padding:14px;font:700 11.5px 'Plus Jakarta Sans';margin-top:6px;text-decoration:underline">{{ t.cancelSub }}</button>
+        </sc-if>
+        <div style="height:6px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===================== COMPARAR ===================== -->
+      <sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Comparar">
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;border:1px solid rgba(30,27,46,.08);border-radius:16px;overflow:hidden;background:#fff">
+          <div style="padding:13px 12px;background:#F7F6FC;font:800 10px 'Plus Jakarta Sans';color:#8A86A0">{{ t.feature }}</div>
+          <sc-for list="{{ planHeads }}" as="h" hint-placeholder-count="3"><div style="padding:11px 6px;text-align:center;background:{{ h.bg }}"><div style="font:800 11px 'Plus Jakarta Sans';color:{{ h.c }}">{{ h.name }}</div><div style="font:700 8.5px 'Plus Jakarta Sans';color:{{ h.subC }};margin-top:1px">{{ h.price }}</div><sc-if value="{{ h.current }}" hint-placeholder-val="{{ false }}"><div style="font:800 7.5px 'Plus Jakarta Sans';color:#1F8A4C;background:#E3F5EA;border-radius:5px;padding:1px 5px;margin-top:4px;display:inline-block">{{ t.current }}</div></sc-if></div></sc-for>
+          <sc-for list="{{ compareRows }}" as="r" hint-placeholder-count="8">
+            <div style="padding:10px 12px;border-top:1px solid rgba(30,27,46,.06);font:600 10.5px 'Plus Jakarta Sans';color:#4A4660">{{ r.feat }}</div>
+            <div style="padding:10px 6px;border-top:1px solid rgba(30,27,46,.06);text-align:center;font:700 10px 'Plus Jakarta Sans';color:#9A96AE;display:flex;align-items:center;justify-content:center">{{ r.free }}</div>
+            <div style="padding:10px 6px;border-top:1px solid rgba(30,27,46,.06);text-align:center;background:#FAF8FF;font:800 10px 'Plus Jakarta Sans';color:#1E1B2E;display:flex;align-items:center;justify-content:center">{{ r.ver }}</div>
+            <div style="padding:10px 6px;border-top:1px solid rgba(30,27,46,.06);text-align:center;font:700 10px 'Plus Jakarta Sans';color:#4A4660;display:flex;align-items:center;justify-content:center">{{ r.prem }}</div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+          <button onClick="{{ pickVerified }}" style="{{ verifiedBtn }}">{{ t.chooseVerified }}</button>
+          <button onClick="{{ pickPremium }}" style="{{ premiumBtn }}">{{ t.choosePremium }}</button>
+        </div>
+        <div style="background:#F1EFFA;border-radius:14px;padding:13px 15px;margin-top:14px;display:flex;align-items:center;gap:11px"><span style="width:34px;height:34px;border-radius:10px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none">{{ shieldIcon }}</span><div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.guarantee }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.guaranteeSub }}</div></div></div>
+        <div style="height:6px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===================== PAGOS ===================== -->
+      <sc-if value="{{ isMethods }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Pagos">
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <sc-for list="{{ cards }}" as="c" hint-placeholder-count="2"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:14px;display:flex;align-items:center;gap:13px"><span style="width:54px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font:800 10px 'Plus Jakarta Sans';letter-spacing:.05em;flex:none;background:{{ c.brandBg }}">{{ c.brand }}</span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.label }}</span><sc-if value="{{ c.default }}" hint-placeholder-val="{{ false }}"><span style="background:#EFEBFF;color:#6D4DF6;padding:1px 7px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">{{ t.default }}</span></sc-if></div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ c.exp }}</div></div><span style="flex:none">{{ editIcon }}</span></div></sc-for>
+        </div>
+        <button onClick="{{ addCard }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #C9C2E0;background:#fff;color:#6D4DF6;cursor:pointer;padding:14px;border-radius:14px;font:800 12.5px 'Plus Jakarta Sans';margin-top:12px">{{ plusIcon }}{{ t.addCard }}</button>
+        <!-- billing info -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:6px 15px;margin-top:14px">
+          <sc-for list="{{ billingInfo }}" as="b" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid {{ b.border }}"><span style="width:32px;height:32px;border-radius:9px;background:{{ b.bg }};display:flex;align-items:center;justify-content:center;flex:none">{{ b.icon }}</span><div style="flex:1;min-width:0"><div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ b.label }}</div><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:1px">{{ b.value }}</div></div><span style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6">{{ t.edit }}</span></div></sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;margin-top:14px;padding:0 4px"><span style="flex:none">{{ lockIcon }}</span><span style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;line-height:1.4">{{ t.secureNote }}</span></div>
+        <div style="height:6px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===================== FACTURAS ===================== -->
+      <sc-if value="{{ isInvoices }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Facturas">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:13px"><div style="font:600 10px 'Plus Jakarta Sans';color:#8A86A0">{{ t.paidYtd }}</div><div style="font:800 20px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px">$190.00</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:13px"><div style="font:600 10px 'Plus Jakarta Sans';color:#8A86A0">{{ t.nextCharge }}</div><div style="font:800 20px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px">{{ nextTotal }}</div></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.history }}</span><span onClick="{{ exportAll }}" style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer">{{ t.exportAll }}</span></div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:4px 15px">
+          <sc-for list="{{ invoices }}" as="iv" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid {{ iv.border }}"><span style="width:38px;height:38px;border-radius:10px;background:#E3F5EA;display:flex;align-items:center;justify-content:center;flex:none">{{ docIcon }}</span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ iv.num }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ iv.date }} · {{ iv.plan }}</div></div><div style="text-align:right;flex:none"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ iv.amt }}</div><span style="font:800 8.5px 'Plus Jakarta Sans';color:#1F8A4C;background:#E3F5EA;padding:1px 6px;border-radius:5px">{{ iv.status }}</span></div><span onClick="{{ iv.onDownload }}" style="flex:none;cursor:pointer">{{ downloadIcon }}</span></div></sc-for>
+        </div>
+        <div style="height:6px"></div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- ===================== UPGRADE SHEET ===================== -->
+    <sc-if value="{{ upgradeOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(20,16,38,.45);z-index:20"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:21;background:#F4F2F9;border-radius:24px 24px 42px 42px;box-shadow:0 -16px 44px rgba(20,16,38,.3);max-height:88%;display:flex;flex-direction:column">
+      <div style="flex:none;padding:10px 0 4px;display:flex;justify-content:center"><span style="width:40px;height:4px;border-radius:99px;background:#D8D2E6"></span></div>
+      <div data-noscroll style="overflow-y:auto;padding:8px 18px 22px">
+        <div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.choosePlanTitle }}</div>
+        <div style="font:500 12px 'Plus Jakarta Sans';color:#8A86A0;margin-top:4px;line-height:1.45">{{ t.choosePlanSub }}</div>
+        <div style="display:flex;flex-direction:column;gap:11px;margin-top:16px">
+          <sc-for list="{{ planOptions }}" as="p" hint-placeholder-count="2"><div onClick="{{ p.onPick }}" style="border:2px solid {{ p.ring }};background:{{ p.bg }};border-radius:16px;padding:15px;cursor:pointer"><div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><span style="font:800 16px 'Plus Jakarta Sans';color:{{ p.nameC }}">{{ p.name }}</span><sc-if value="{{ p.popular }}" hint-placeholder-val="{{ false }}"><span style="background:#F4B740;color:#1E1B2E;padding:2px 8px;border-radius:6px;font:800 8.5px 'Plus Jakarta Sans'">{{ t.popular }}</span></sc-if></div><span style="font:800 15px 'Plus Jakarta Sans';color:{{ p.nameC }}">{{ p.price }}</span></div><div style="display:flex;flex-direction:column;gap:6px;margin-top:11px"><sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:8px;font:600 11px 'Plus Jakarta Sans';color:{{ p.featC }}">{{ p.check }}{{ f }}</div></sc-for></div></div></sc-for>
+        </div>
+        <button onClick="{{ confirmUpgrade }}" style="width:100%;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 13.5px 'Plus Jakarta Sans';margin-top:16px;box-shadow:0 12px 26px rgba(123,97,255,.34)">{{ confirmLabel }}</button>
+        <div style="font:500 9.5px 'Plus Jakarta Sans';color:#9A96AE;text-align:center;margin-top:10px;line-height:1.4">{{ t.upgradeFine }}</div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== CANCEL SHEET ===================== -->
+    <sc-if value="{{ cancelOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(20,16,38,.45);z-index:20"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:21;background:#F4F2F9;border-radius:24px 24px 42px 42px;box-shadow:0 -16px 44px rgba(20,16,38,.3);display:flex;flex-direction:column">
+      <div style="flex:none;padding:10px 0 4px;display:flex;justify-content:center"><span style="width:40px;height:4px;border-radius:99px;background:#D8D2E6"></span></div>
+      <div style="padding:8px 18px 22px">
+        <span style="width:48px;height:48px;border-radius:14px;background:#FDE7EF;display:inline-flex;align-items:center;justify-content:center">{{ warnRoseIcon }}</span>
+        <div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:12px">{{ t.cancelTitle }}</div>
+        <div style="font:500 12px 'Plus Jakarta Sans';color:#8A86A0;margin-top:6px;line-height:1.5">{{ t.cancelBody }}</div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px;margin-top:14px"><div style="font:800 11px 'Plus Jakarta Sans';color:#9A6A12;margin-bottom:8px">{{ t.youLose }}</div><div style="display:flex;flex-direction:column;gap:6px"><sc-for list="{{ loseList }}" as="l" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:8px;font:600 11px 'Plus Jakarta Sans';color:#4A4660">{{ xIcon }}{{ l }}</div></sc-for></div></div>
+        <button onClick="{{ closeSheet }}" style="width:100%;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 13px 'Plus Jakarta Sans';margin-top:16px">{{ t.keepPlan }}</button>
+        <button onClick="{{ confirmCancel }}" style="width:100%;border:1px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:13px;border-radius:14px;font:800 12.5px 'Plus Jakarta Sans';margin-top:9px">{{ t.confirmCancel }}</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== TOAST ===================== -->
+    <sc-if value="{{ toastOn }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:50%;bottom:30px;transform:translateX(-50%);z-index:30;background:#1E1B2E;color:#fff;padding:11px 18px;border-radius:13px;font:800 12px 'Plus Jakarta Sans';box-shadow:0 12px 30px rgba(20,16,38,.4);display:flex;align-items:center;gap:8px;white-space:nowrap">{{ toastCheck }}{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 488, &quot;height&quot;: 980}, &quot;tier&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;free&quot;, &quot;verified&quot;, &quot;premium&quot;], &quot;default&quot;: &quot;verified&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v === null || v === '') ? d : v; } catch (e) { return d; } }
+  _home() { try { const inq = new URLSearchParams(location.search); const o = new URLSearchParams(); ['tier','cat'].forEach((k) => { if (inq.get(k)) o.set(k, inq.get(k)); }); o.set('lang', (this.state && this.state.lang) || 'es'); location.href = 'ToLatino Business Dashboard Mobile.dc.html?' + o.toString(); } catch (e) {} }
+  state = { tab: 'plan', lang: this._qp('lang', 'es'), planSel: null, upgradeOpen: false, cancelOpen: false, pickPlan: null, addons: { boost: false, featured: false, seats: false, sms: false }, toast: '' };
+  tier() { return this.state.planSel || this._qp('tier', this.props.tier || 'verified'); }
+
+  flash(m) { this.setState({ toast: m }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 2200); }
+
+  I(name, s, stroke) {
+    const P = {
+      card: ['M2.5 6h19v12h-19z', 'M2.5 10h19'],
+      dollar: ['M12 2v20', 'M17 6.5a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1a4 4 0 0 1-4-2.5'],
+      check: ['M20 6 9 17l-5-5'],
+      grid: ['M4 4h7v7H4z', 'M13 4h7v7h-7z', 'M4 13h7v7H4z', 'M13 13h7v7h-7z'],
+      download: ['M12 3v12', 'M7 11l5 4 5-4', 'M5 21h14'],
+      doc: ['M6 2h8l4 4v16H6z', 'M14 2v4h4', 'M9 13h6M9 17h6'],
+      plus: ['M12 5v14', 'M5 12h14'],
+      edit: ['M12 20h9', 'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'],
+      shield: ['M12 2 4 6v6c0 5 8 8 8 8s8-3 8-8V6z'],
+      eye: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'],
+      bag: ['M6 7h12l1 13H5z', 'M9 7a3 3 0 0 1 6 0'],
+      cal: ['M4 5h16v16H4z', 'M4 10h16', 'M9 3v4M15 3v4'],
+      image: ['M3 5h18v14H3z', 'M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z', 'm21 16-5-5L5 21'],
+      users: ['M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M3 20a6 6 0 0 1 12 0', 'M16 5.5a3 3 0 0 1 0 6', 'M19 20a5 5 0 0 0-3-4.6'],
+      star: ['M12 3l2.5 6 6 .4-4.6 4 1.5 6-5.4-3.4L6.6 19l1.5-6L3.5 9.4l6-.4z'],
+      zap: ['M13 2 4 14h7l-1 8 9-12h-7l1-8z'],
+      mail: ['M3 5h18v14H3z', 'M3 6l9 7 9-7'],
+      pin: ['M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z', 'M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'],
+      lock: ['M5 11h14v9H5z', 'M8 11V8a4 4 0 0 1 8 0v3'],
+      alert: ['M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z', 'M12 9v4M12 17h.01'],
+      x: ['M18 6 6 18M6 6l12 12'],
+      msg: ['M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5z'],
+    };
+    const paths = P[name] || P.card;
+    return React.createElement('svg', { width: s || 15, height: s || 15, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  renderVals() {
+    const s = this.state, es = s.lang === 'es', L = (a, b) => (es ? a : b);
+    const tier = this.tier(), isFree = tier === 'free', isPaid = tier !== 'free', isPremium = tier === 'premium';
+    const I = (n, sz, c) => this.I(n, sz, c);
+    const Y = '✓', N = '—';
+
+    const tabBtn = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 12px', borderRadius: '999px', fontWeight: 800, fontSize: '12px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+    const esTab = tabBtn(es), enTab = tabBtn(!es);
+
+    const t = {
+      headTitle: L('Plan y facturación', 'Billing & plan'),
+      currentPlan: L('Plan actual', 'Current plan'), changePlan: L('Cambiar plan', 'Change plan'),
+      usage: L('Uso este mes', 'Usage this month'), thisMonth: L('Oct 2025', 'Oct 2025'),
+      usageWarnText: L('Llegaste al límite de fotos del plan Free. Mejora para subir ilimitadas.', "You've hit the Free photo limit. Upgrade for unlimited."),
+      nextInvoice: L('Próxima factura', 'Next invoice'), totalDue: L('Total a pagar', 'Total due'), charges: L('Se cobra el', 'Charges on'),
+      addons: L('Complementos', 'Add-ons'), addonsSub: L('Opcional', 'Optional'),
+      cancelSub: L('Cancelar suscripción', 'Cancel subscription'),
+      feature: L('Función', 'Feature'), current: L('Actual', 'Current'),
+      chooseVerified: L('Elegir Verified', 'Choose Verified'), choosePremium: L('Elegir Premium', 'Choose Premium'),
+      guarantee: L('Garantía de 14 días', '14-day guarantee'), guaranteeSub: L('Cancela cuando quieras. Sin contratos.', 'Cancel anytime. No contracts.'),
+      default: L('Predeterminada', 'Default'), addCard: L('Agregar método de pago', 'Add payment method'),
+      edit: L('Editar', 'Edit'), secureNote: L('Pagos protegidos y encriptados. ToLatino nunca guarda tu número completo.', 'Payments are secured and encrypted. ToLatino never stores your full number.'),
+      paidYtd: L('Pagado este año', 'Paid this year'), nextCharge: L('Próximo cobro', 'Next charge'),
+      history: L('Historial', 'History'), exportAll: L('Exportar todo', 'Export all'),
+      choosePlanTitle: L('Elige tu plan', 'Choose your plan'), choosePlanSub: L('Mejora para desbloquear módulos, insignia verificada y más visibilidad.', 'Upgrade to unlock modules, the verified badge and more visibility.'),
+      popular: L('Popular', 'Popular'), upgradeFine: L('Se cobra hoy. Renovación automática mensual. Cancela cuando quieras.', 'Charged today. Auto-renews monthly. Cancel anytime.'),
+      cancelTitle: L('¿Cancelar tu plan?', 'Cancel your plan?'), cancelBody: L('Tu plan sigue activo hasta el 14 de noviembre. Después tu listado pasa a Free.', 'Your plan stays active until Nov 14. After that your listing reverts to Free.'),
+      youLose: L('PERDERÁS:', "YOU'LL LOSE:"), keepPlan: L('Mantener mi plan', 'Keep my plan'), confirmCancel: L('Sí, cancelar', 'Yes, cancel'),
+    };
+
+    // ===== subtabs =====
+    const tabs = [['plan', L('Plan', 'Plan')], ['compare', L('Comparar', 'Compare')], ['methods', L('Pagos', 'Methods')], ['invoices', L('Facturas', 'Invoices')]];
+    const subtabs = tabs.map((tb) => ({ label: tb[1], onTap: () => this.setState({ tab: tb[0] }),
+      style: 'flex:none;border:none;cursor:pointer;padding:7px 14px;border-radius:999px;font:' + (s.tab === tb[0] ? '800' : '700') + " 12.5px 'Plus Jakarta Sans';" + (s.tab === tb[0] ? 'background:#1E1B2E;color:#fff' : 'background:#F1EFFA;color:#6E6A85') }));
+
+    const meta = { free: { name: 'Free', price: '$0/mes' }, verified: { name: 'Verified', price: '$19/mes' }, premium: { name: 'Premium', price: '$49/mes' } }[tier];
+    const renewDate = L('14 Nov', 'Nov 14');
+    const headSub = isFree ? L('Sin tarjeta · plan Free', 'No card · Free plan') : meta.name + ' · ' + L('renueva ', 'renews ') + renewDate;
+
+    // ===== plan card =====
+    const planCard = isFree
+      ? { bg: '#fff', blob: 'rgba(123,97,255,.06)', kicker: '#9A6A12', badge: '○', sub: '#9A96AE', fg: '#1E1B2E', name: 'Free', price: '· $0/mes', renew: L('Sin tarjeta', 'No card'), line: L('Listado básico. Mejora para desbloquear módulos e insignia.', 'Basic listing. Upgrade to unlock modules and the badge.'), showUpgrade: true, showChange: false, ctaBg: '#7B61FF', ctaC: '#fff', ctaLabel: L('Mejorar a Verified · $19/mes', 'Upgrade to Verified · $19/mo'), ghostRing: 'rgba(30,27,46,.15)' }
+      : isPremium
+        ? { bg: 'linear-gradient(150deg,#2A2440,#1E1B2E)', blob: 'rgba(244,183,64,.16)', kicker: '#F4B740', badge: '✦', sub: 'rgba(255,255,255,.62)', fg: '#fff', name: 'Premium', price: '· $49/mes', renew: L('Renueva 14 Nov', 'Renews Nov 14'), line: L('Insights AI, posición destacada y soporte prioritario.', 'Insights AI, featured placement and priority support.'), showUpgrade: false, showChange: true, ghostRing: 'rgba(255,255,255,.25)' }
+        : { bg: 'linear-gradient(150deg,#7B61FF,#6743E2)', blob: 'rgba(255,255,255,.14)', kicker: 'rgba(255,255,255,.85)', badge: '✓', sub: 'rgba(255,255,255,.7)', fg: '#fff', name: 'Verified', price: '· $19/mes', renew: L('Renueva 14 Nov', 'Renews Nov 14'), line: L('Insignia verificada, todos los módulos y 5× visibilidad.', 'Verified badge, all modules and 5× visibility.'), showUpgrade: true, showChange: true, ctaBg: '#F4B740', ctaC: '#1E1B2E', ctaLabel: L('Mejorar a Premium · $49/mes', 'Upgrade to Premium · $49/mo'), ghostRing: 'rgba(255,255,255,.25)' };
+
+    // ===== usage =====
+    const usageRaw = isFree
+      ? [['bag', L('Pedidos', 'Orders'), '0', L('Verified', 'Verified'), 0, false], ['cal', L('Reservas', 'Bookings'), '0', L('Verified', 'Verified'), 0, false], ['image', L('Fotos', 'Photos'), '1', '1', 100, true], ['users', L('Miembros', 'Staff seats'), '2', '2', 100, true]]
+      : [['bag', L('Pedidos', 'Orders'), '284', '1,000', 28, false], ['cal', L('Reservas', 'Bookings'), '128', '500', 26, false], ['image', L('Fotos', 'Photos'), '34', '∞', 8, false], ['users', L('Miembros', 'Staff seats'), '14', '20', 70, false]];
+    const usage = usageRaw.map((u) => { const danger = u[4] >= 90; return { icon: I(u[0], 13, '#9A8FC4'), label: u[1], value: u[2], max: u[3], pct: u[4] + '%', barC: danger ? '#D6336C' : u[4] >= 75 ? '#F4B740' : '#7B61FF', valC: danger ? '#D6336C' : '#9A96AE' }; });
+    const usageWarn = isFree;
+
+    // ===== next invoice =====
+    const nextBase = isPremium ? 49 : 19;
+    let addonSum = 0; const addonPrices = { boost: 20, featured: 15, seats: 8, sms: 5 };
+    Object.keys(s.addons).forEach((k) => { if (s.addons[k]) addonSum += addonPrices[k]; });
+    const nextLines = [{ label: meta.name + ' · ' + L('mensual', 'monthly'), value: '$' + nextBase + '.00', weight: '700', labelC: '#4A4660', valueC: '#1E1B2E' }];
+    if (s.addons.boost) nextLines.push({ label: L('Impulso patrocinado', 'Sponsored boost'), value: '$20.00', weight: '600', labelC: '#8A86A0', valueC: '#4A4660' });
+    if (s.addons.featured) nextLines.push({ label: L('Posición destacada', 'Featured placement'), value: '$15.00', weight: '600', labelC: '#8A86A0', valueC: '#4A4660' });
+    if (s.addons.seats) nextLines.push({ label: L('Asientos extra (5)', 'Extra seats (5)'), value: '$8.00', weight: '600', labelC: '#8A86A0', valueC: '#4A4660' });
+    if (s.addons.sms) nextLines.push({ label: L('Créditos SMS', 'SMS credits'), value: '$5.00', weight: '600', labelC: '#8A86A0', valueC: '#4A4660' });
+    const nextTotal = '$' + (nextBase + addonSum) + '.00';
+
+    // ===== add-ons =====
+    const addonDefs = [
+      ['featured', 'star', '#FCEFD6', '#B5791A', L('Posición destacada', 'Featured placement'), '$15/' + L('mes', 'mo')],
+      ['boost', 'zap', '#F1EFFA', '#6D4DF6', L('Impulso patrocinado', 'Sponsored boost'), '$20/' + L('sem', 'wk')],
+      ['seats', 'users', '#E4ECFB', '#2A5C8A', L('5 asientos extra', '5 extra staff seats'), '$8/' + L('mes', 'mo')],
+      ['sms', 'msg', '#E3F5EA', '#1F8A4C', L('500 créditos SMS', '500 SMS credits'), '$5/' + L('mes', 'mo')],
+    ];
+    const addons = addonDefs.map((a) => { const on = s.addons[a[0]]; return { label: a[4], price: a[5], icon: I(a[1], 16, a[3]), iconBg: a[2], bg: on ? '#FAF8FF' : '#fff', ring: on ? 'rgba(123,97,255,.25)' : 'rgba(30,27,46,.07)', track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '21px' : '3px', onToggle: () => { this.setState((st) => ({ addons: { ...st.addons, [a[0]]: !st.addons[a[0]] } })); this.flash(a[4] + (s.addons[a[0]] ? L(' quitado', ' removed') : L(' agregado', ' added'))); } }; });
+
+    // ===== compare =====
+    const planHeads = [
+      { name: 'Free', price: '$0', bg: '#F7F6FC', c: '#1E1B2E', subC: '#9A96AE', current: isFree },
+      { name: 'Verified', price: '$19/mo', bg: '#F1EFFA', c: '#6D4DF6', subC: '#9579FF', current: tier === 'verified' },
+      { name: 'Premium', price: '$49/mo', bg: '#F7F6FC', c: '#1E1B2E', subC: '#9A96AE', current: isPremium },
+    ];
+    const cmpRaw = [
+      [L('Listado básico', 'Basic listing'), Y, Y, Y], [L('Fotos', 'Photos'), '1', '∞', '∞+vid'],
+      [L('Insignia verificada', 'Verified badge'), N, Y, Y], [L('Módulos', 'Modules'), N, Y, Y],
+      [L('Pedidos y entrega', 'Orders & delivery'), N, Y, Y], [L('Eventos y boletos', 'Events & tickets'), N, Y, Y],
+      [L('Posición destacada', 'Featured placement'), N, N, Y], [L('Insights AI', 'Insights AI'), N, N, Y], [L('Soporte', 'Support'), L('Email', 'Email'), L('Prioridad', 'Priority'), '24/7'],
+    ];
+    const compareRows = cmpRaw.map((r) => ({ feat: r[0], free: r[1], ver: r[2], prem: r[3] }));
+    const cmpBtn = (active) => 'border:none;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px \'Plus Jakarta Sans\';' + (active ? 'background:#1E1B2E;color:#fff' : 'background:#7B61FF;color:#fff');
+    const verifiedBtn = cmpBtn(tier === 'verified');
+    const premiumBtn = 'border:none;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px \'Plus Jakarta Sans\';background:#1E1B2E;color:#F4B740';
+
+    // ===== payment methods =====
+    const cards = [
+      { brand: 'VISA', brandBg: 'linear-gradient(135deg,#1A1F71,#3B4F9F)', label: L('Visa ••4421', 'Visa ••4421'), exp: L('Vence 03/27 · Elisabeth R.', 'Exp 03/27 · Elisabeth R.'), default: true },
+      { brand: 'MC', brandBg: 'linear-gradient(135deg,#EB001B,#F79E1B)', label: L('Mastercard ••8821', 'Mastercard ••8821'), exp: L('Vence 11/26 · Respaldo', 'Exp 11/26 · Backup'), default: false },
+    ];
+    const billingInfo = [
+      { icon: I('mail', 14, '#6D4DF6'), bg: '#F1EFFA', label: L('Correo de facturación', 'Billing email'), value: 'pagos@lupitas.com', border: 'rgba(30,27,46,.06)' },
+      { icon: I('pin', 14, '#B5791A'), bg: '#FCEFD6', label: L('Dirección', 'Billing address'), value: '595 Alabama St, SF', border: 'rgba(30,27,46,.06)' },
+      { icon: I('doc', 14, '#1F8A4C'), bg: '#E3F5EA', label: L('RFC / EIN', 'Tax ID / EIN'), value: 'XX-XXX2487', border: 'transparent' },
+    ];
+
+    // ===== invoices =====
+    const invRaw = [
+      ['INV-2487', L('14 Oct, 2025', 'Oct 14, 2025'), 'Verified'], ['INV-2280', L('14 Sep, 2025', 'Sep 14, 2025'), 'Verified'],
+      ['INV-2102', L('14 Ago, 2025', 'Aug 14, 2025'), 'Verified'], ['INV-1908', L('14 Jul, 2025', 'Jul 14, 2025'), 'Verified'], ['INV-1740', L('14 Jun, 2025', 'Jun 14, 2025'), 'Verified'],
+    ];
+    const invoices = invRaw.map((iv, i) => ({ num: iv[0], date: iv[1], plan: iv[2] + ' · ' + L('mensual', 'monthly'), amt: '$19.00', status: L('Pagada', 'Paid'), border: i === invRaw.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)', onDownload: () => this.flash(L('Descargando ', 'Downloading ') + iv[0]) }));
+
+    // ===== upgrade sheet =====
+    const planOptDefs = [
+      { key: 'verified', name: 'Verified', price: '$19/mes', popular: true, ring: '#7B61FF', bg: '#FAF8FF', nameC: '#6D4DF6', featC: '#4A4660', feats: [L('Insignia verificada', 'Verified badge'), L('Todos los módulos', 'All modules'), L('Fotos ilimitadas · 5× visibilidad', 'Unlimited photos · 5× visibility')] },
+      { key: 'premium', name: 'Premium', price: '$49/mes', popular: false, ring: '#1E1B2E', bg: '#fff', nameC: '#1E1B2E', featC: '#4A4660', feats: [L('Todo lo de Verified', 'Everything in Verified'), L('Insights AI + posición destacada', 'Insights AI + featured'), L('Soporte 24/7', '24/7 support')] },
+    ];
+    const pick = s.pickPlan || (isFree ? 'verified' : isPremium ? 'verified' : 'premium');
+    const planOptions = planOptDefs.map((p) => ({ name: p.name, price: p.price, popular: p.popular, feats: p.feats, nameC: p.nameC, featC: p.featC, check: I('check', 13, '#1F9D57'), bg: pick === p.key ? p.bg : '#fff', ring: pick === p.key ? p.ring : 'rgba(30,27,46,.08)', onPick: () => this.setState({ pickPlan: p.key }) }));
+    const pickMeta = { verified: ['Verified', '$19/mes'], premium: ['Premium', '$49/mes'] }[pick];
+    const confirmLabel = L('Confirmar · ', 'Confirm · ') + pickMeta[0] + ' ' + pickMeta[1];
+
+    const loseList = [L('Insignia verificada y prioridad', 'Verified badge & priority'), L('Menú, reservas, pedidos y eventos', 'Menu, bookings, orders & events'), L('Fotos ilimitadas (vuelve a 1)', 'Unlimited photos (back to 1)')];
+
+    return {
+      esTab, enTab, setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }), back: () => this._home(),
+      t, headSub, subtabs,
+      isPlan: s.tab === 'plan', isCompare: s.tab === 'compare', isMethods: s.tab === 'methods', isInvoices: s.tab === 'invoices',
+      isPaid, planCard, usage, usageWarn, warnIcon: I('alert', 16, '#B5791A'),
+      nextLines, nextTotal, renewDate, addons,
+      planHeads, compareRows, verifiedBtn, premiumBtn, shieldIcon: I('shield', 16, '#fff'),
+      cards, billingInfo, editIcon: I('edit', 14, '#9A96AE'), plusIcon: I('plus', 15, '#6D4DF6'), lockIcon: I('lock', 14, '#9A8FC4'),
+      invoices, docIcon: I('doc', 17, '#1F8A4C'), downloadIcon: I('download', 16, '#9A96AE'),
+      // actions
+      openUpgrade: () => this.setState({ upgradeOpen: true, pickPlan: null }), openCancel: () => this.setState({ cancelOpen: true }),
+      pickVerified: () => this.setState({ upgradeOpen: true, pickPlan: 'verified' }), pickPremium: () => this.setState({ upgradeOpen: true, pickPlan: 'premium' }),
+      addCard: () => this.flash(L('Abriendo formulario de tarjeta…', 'Opening card form…')), exportAll: () => this.flash(L('Exportando facturas (CSV)…', 'Exporting invoices (CSV)…')),
+      // sheets
+      upgradeOpen: s.upgradeOpen, cancelOpen: s.cancelOpen, closeSheet: () => this.setState({ upgradeOpen: false, cancelOpen: false }),
+      planOptions, confirmLabel,
+      confirmUpgrade: () => { this.setState({ planSel: pick, upgradeOpen: false }); this.flash(L('¡Listo! Ahora eres ', "You're now on ") + pickMeta[0]); },
+      warnRoseIcon: I('alert', 22, '#D6336C'), loseList, xIcon: I('x', 13, '#D6336C'),
+      confirmCancel: () => { this.setState({ planSel: 'free', cancelOpen: false }); this.flash(L('Plan cancelado · activo hasta 14 Nov', 'Plan canceled · active until Nov 14')); },
+      // toast
+      toastOn: !!s.toast, toastMsg: s.toast, toastCheck: I('check', 14, '#7BE0A8'),
+    };
+  }
+}
+</script>
+</body>
+</html>

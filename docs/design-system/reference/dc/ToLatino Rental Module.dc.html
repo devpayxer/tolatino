@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+@keyframes tlsheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Renta · móvil</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:852px;background:#F4F2F9;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ headTitle }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+    </div>
+
+    <!-- TABS -->
+    <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:11px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ tabs }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+    </div>
+    </sc-if>
+
+    <!-- BODY -->
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 16px">
+
+      <!-- ===== ITEMS ===== -->
+      <sc-if value="{{ isItems }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Articulos">
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px"><span style="width:30px;height:30px;border-radius:9px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center">{{ k.icon }}</span><div style="font:600 10px 'Plus Jakarta Sans';color:#8A86A0;margin-top:9px">{{ k.label }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ k.value }}</div><div style="font:800 9.5px 'Plus Jakarta Sans';color:{{ k.dC }};margin-top:2px">{{ k.delta }}</div></div></sc-for>
+        </div>
+
+        <!-- item cards -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ items }}" as="it" hint-placeholder-count="5">
+          <div onClick="{{ it.onTap }}" style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:11px;display:flex;gap:12px;cursor:pointer">
+            <div style="width:62px;height:62px;border-radius:12px;flex:none;background:repeating-linear-gradient(135deg,{{ it.tile }})"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1.3">{{ it.name }}</span><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ it.rate }}</span></div>
+              <div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:3px">{{ it.avail }} · {{ it.availStock }}</div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px">
+                <span style="background:#F1EFFA;color:#6E6A85;padding:3px 8px;border-radius:7px;font:700 9.5px 'Plus Jakarta Sans'">{{ it.cat }}</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;background:{{ it.statusBg }};color:{{ it.statusC }};padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'"><span style="width:5px;height:5px;border-radius:50%;background:{{ it.statusC }}"></span>{{ it.statusLabel }}</span>
+                <span style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ it.booked }}× {{ t.thisMonth }}</span>
+              </div>
+            </div>
+          </div>
+          </sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== CALENDAR ===== -->
+      <sc-if value="{{ isCalendar }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Calendario">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.october }} 2025</span></div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px"><sc-for list="{{ dows }}" as="d" hint-placeholder-count="7"><span style="text-align:center;font:800 9px 'Plus Jakarta Sans';color:#A8A4B8">{{ d }}</span></sc-for></div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"><sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35"><div style="{{ c.style }}"><span>{{ c.day }}</span><div style="display:flex;gap:2px;margin-top:2px;height:4px">{{ c.dots }}</div></div></sc-for></div>
+        </div>
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.upcomingRentals }}</div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px;display:flex;gap:11px"><div style="width:44px;flex:none;text-align:center;background:{{ u.dtBg }};border-radius:10px;padding:7px 0"><div style="font:700 8px 'Plus Jakarta Sans';color:{{ u.dtC }}">{{ u.mon }}</div><div style="font:800 14px 'Plus Jakarta Sans';color:{{ u.dtC }};line-height:1">{{ u.day }}</div></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ u.name }}</span><sc-if value="{{ u.online }}" hint-placeholder-val="{{ false }}"><span style="background:#FDE7EF;color:#D6336C;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">{{ t.newOnline }}</span></sc-if></div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.what }}</div></div><span style="{{ u.tagStyle }}">{{ u.tag }}</span></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== DEPOSITS ===== -->
+      <sc-if value="{{ isDeposits }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Depositos">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.heldNow }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">$1,840</div><div style="font:800 9px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">6 {{ t.active }}</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.refunded30 }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">$3,420</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">18 {{ t.returns }}</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ deposits }}" as="d" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px"><span style="width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 12px 'Plus Jakarta Sans';background:{{ d.color }}">{{ d.initials }}</span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.item }}</div></div><div style="text-align:right;flex:none"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.amount }}</div><span style="{{ d.statusStyle }}">{{ d.status }}</span></div></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== DAMAGE ===== -->
+      <sc-if value="{{ isDamage }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Danos">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ t.damageSub }}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ damageReports }}" as="r" hint-placeholder-count="3"><div style="background:#fff;border:1px solid {{ r.cardBorder }};border-radius:14px;padding:12px"><div style="display:flex;align-items:center;gap:11px"><div style="width:46px;height:46px;border-radius:11px;flex:none;background:repeating-linear-gradient(135deg,{{ r.tile }})"></div><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.item }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ r.renter }} · {{ r.date }}</div></div><span style="{{ r.sevStyle }}">{{ r.severity }}</span></div><div style="font:500 11px 'Plus Jakarta Sans';color:#56506E;line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px solid rgba(30,27,46,.06)">{{ r.note }}</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px"><span style="font:700 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.deductFromDep }}</span><span style="font:800 12px 'Plus Jakarta Sans';color:#D6336C">{{ r.charge }}</span></div></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== PRICING ===== -->
+      <sc-if value="{{ isPricing }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Precios">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ t.pricingSub }}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ pricingRows }}" as="p" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:38px;height:38px;border-radius:10px;flex:none;background:repeating-linear-gradient(135deg,{{ p.tile }})"></div><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.name }}</div><div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.deposit }} {{ p.dep }}</div></div></div><div style="display:flex;gap:7px"><div style="flex:1;text-align:center;background:{{ p.hourBg }};border-radius:9px;padding:8px 4px"><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.perHour }}</div><div style="font:800 12px 'Plus Jakarta Sans';color:{{ p.hourC }};margin-top:2px">{{ p.hour }}</div></div><div style="flex:1;text-align:center;background:#F7F6FC;border-radius:9px;padding:8px 4px"><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.perDay }}</div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ p.day }}</div></div><div style="flex:1;text-align:center;background:#F7F6FC;border-radius:9px;padding:8px 4px"><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.perWeek }}</div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ p.week }}</div></div></div></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== ITEM DETAIL ===== -->
+      <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Detalle">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;overflow:hidden;margin-bottom:14px">
+          <div style="height:120px;position:relative;background:repeating-linear-gradient(135deg,{{ dTile }})"><span style="position:absolute;top:10px;right:10px;background:{{ dStatusBg }};color:{{ dStatusC }};padding:3px 9px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ dStatusLabel }}</span></div>
+          <div style="padding:14px">
+            <div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ dName }}</div>
+            <div style="font:500 11px 'Plus Jakarta Sans';color:#9A96AE;margin-top:3px">{{ dCat }} · {{ dAvail }}</div>
+            <div style="display:flex;gap:7px;margin-top:13px">
+              <div style="flex:1;text-align:center;background:#F7F6FC;border-radius:10px;padding:9px 4px"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ dHour }}</div><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.perHour }}</div></div>
+              <div style="flex:1;text-align:center;background:#F7F6FC;border-radius:10px;padding:9px 4px"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ dDay }}</div><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.perDay }}</div></div>
+              <div style="flex:1;text-align:center;background:#F7F6FC;border-radius:10px;padding:9px 4px"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ dWeek }}</div><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.perWeek }}</div></div>
+            </div>
+          </div>
+        </div>
+        <!-- units -->
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.units }} · {{ dStock }}</div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">
+          <sc-for list="{{ dUnits }}" as="u" hint-placeholder-count="2"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px;display:flex;align-items:center;gap:11px"><span style="width:34px;height:34px;border-radius:9px;background:{{ u.bg }};color:{{ u.c }};display:flex;align-items:center;justify-content:center;flex:none;font:800 11px 'Plus Jakarta Sans'">{{ u.n }}</span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ u.label }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ u.sub }}</div></div><sc-if value="{{ u.out }}" hint-placeholder-val="{{ false }}"><button onClick="{{ u.onReturn }}" style="border:1.5px solid #E2DEF4;cursor:pointer;background:#fff;color:#1E1B2E;padding:7px 12px;border-radius:9px;font:800 10.5px 'Plus Jakarta Sans'">{{ t.return }}</button></sc-if><sc-if value="{{ u.free }}" hint-placeholder-val="{{ true }}"><span style="font:800 9px 'Plus Jakarta Sans';color:#1F8A4C;background:#E3F5EA;padding:5px 9px;border-radius:7px">{{ t.free }}</span></sc-if></div></sc-for>
+        </div>
+        <!-- waiver -->
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.waiverPolicies }}</div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:4px 13px">
+          <sc-for list="{{ waivers }}" as="w" hint-placeholder-count="4"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid {{ w.border }}"><span style="font:600 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ w.label }}</span><div onClick="{{ w.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ w.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ w.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== RENT-OUT FLOW ===== -->
+      <sc-if value="{{ isRentOut }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="RentarFuera">
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px">
+          <sc-for list="{{ roSteps }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.onTap }}" style="{{ s.style }}"><span style="{{ s.dotStyle }}">{{ s.dot }}</span>{{ s.label }}</button></sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:12px;display:flex;align-items:center;gap:11px;margin-bottom:14px"><div style="width:44px;height:44px;border-radius:11px;flex:none;background:repeating-linear-gradient(135deg,{{ dTile }})"></div><div style="flex:1;min-width:0"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ dName }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ dDay }} · {{ t.deposit }} {{ dDep }}</div></div></div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px">
+          <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:14px">{{ roTitle }}</div>
+          <!-- step renter -->
+          <sc-if value="{{ ro0 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.renterName }} *</div><input value="{{ roDraft.name }}" onInput="{{ onRoName }}" placeholder="{{ t.renterNamePh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.phone }}</div><input value="{{ roDraft.phone }}" onInput="{{ onRoPhone }}" placeholder="(415) 555-0148" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:12px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 2 4 6v6c0 5 8 8 8 8s8-3 8-8V6z"></path></svg><span style="flex:1;font:600 11px 'Plus Jakarta Sans';color:#56506E;line-height:1.4">{{ t.waiverNote }}</span><div onClick="{{ toggleWaiver }}" style="width:42px;height:25px;border-radius:13px;background:{{ waiverTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ waiverKnob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div>
+          </div>
+          </sc-if>
+          <!-- step period -->
+          <sc-if value="{{ ro1 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.rentalPeriod }}</div><div style="display:flex;gap:7px"><sc-for list="{{ periodOpts }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.onTap }}" style="{{ p.style }}">{{ p.label }}</button></sc-for></div></div>
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.quantity }}</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;overflow:hidden"><button onClick="{{ decQty }}" style="width:38px;height:42px;border:none;background:#F7F6FC;cursor:pointer;font:800 16px 'Plus Jakarta Sans';color:#6E6A85">−</button><span style="flex:1;text-align:center;font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ roDraft.qty }}</span><button onClick="{{ incQty }}" style="width:38px;height:42px;border:none;background:#F7F6FC;cursor:pointer;font:800 16px 'Plus Jakarta Sans';color:#6E6A85">+</button></div></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.startDate }}</div><input value="{{ roDraft.start }}" onInput="{{ onRoStart }}" placeholder="15 Oct" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div></div>
+            <div style="background:#F1EFFA;border-radius:12px;padding:13px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><span style="font:600 11px 'Plus Jakarta Sans';color:#6E6A85">{{ t.rentalFee }}</span><span style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ roFee }}</span></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><span style="font:600 11px 'Plus Jakarta Sans';color:#6E6A85">{{ t.deposit }}</span><span style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ dDep }}</span></div><div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(123,97,255,.2)"><span style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.totalDue }}</span><span style="font:800 15px 'Plus Jakarta Sans';color:#6D4DF6">{{ roTotal }}</span></div></div>
+          </div>
+          </sc-if>
+          <!-- step confirm -->
+          <sc-if value="{{ ro2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:11px;background:#E3F5EA;border:1px solid #A7E3C0;border-radius:12px;padding:12px 13px"><span style="width:30px;height:30px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;color:#1F9D57;font:800 14px 'Plus Jakarta Sans'">✓</span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#176B3A">{{ t.readyToRent }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#3E8B5F;margin-top:1px;line-height:1.4">{{ t.readyToRentSub }}</div></div></div>
+            <div style="border:1px solid rgba(30,27,46,.08);border-radius:12px;overflow:hidden"><sc-for list="{{ roReviewRows }}" as="r" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid {{ r.border }}"><span style="width:78px;flex:none;font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ r.k }}</span><span style="flex:1;min-width:0;font:700 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.v }}</span></div></sc-for></div>
+          </div>
+          </sc-if>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== RETURN FLOW ===== -->
+      <sc-if value="{{ isReturn }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Devolucion">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:12px;display:flex;align-items:center;gap:11px;margin-bottom:14px"><div style="width:44px;height:44px;border-radius:11px;flex:none;background:repeating-linear-gradient(135deg,{{ dTile }})"></div><div style="flex:1;min-width:0"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ dName }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.returnedBy }} {{ returnRenter }}</div></div></div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px;margin-bottom:14px">
+          <div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:12px">{{ t.conditionCheck }}</div>
+          <div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ conditionOpts }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onTap }}" style="{{ c.style }}"><span style="{{ c.radioStyle }}"><sc-if value="{{ c.on }}" hint-placeholder-val="{{ true }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ c.dot }}"></span></sc-if></span><span style="width:30px;height:30px;border-radius:8px;background:{{ c.iconBg }};color:{{ c.iconC }};display:flex;align-items:center;justify-content:center;flex:none;font:800 14px 'Plus Jakarta Sans'">{{ c.icon }}</span><span style="flex:1;text-align:left"><span style="display:block;font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.label }}</span><span style="display:block;font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ c.sub }}</span></span></button></sc-for></div>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><span style="font:600 11px 'Plus Jakarta Sans';color:#6E6A85">{{ t.depositHeld }}</span><span style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ dDep }}</span></div>
+          <sc-if value="{{ hasDeduction }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><span style="font:600 11px 'Plus Jakarta Sans';color:#D6336C">{{ t.damageDeduction }}</span><span style="font:700 12px 'Plus Jakarta Sans';color:#D6336C">−$45</span></div></sc-if>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(30,27,46,.08)"><span style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.refundToRenter }}</span><span style="font:800 16px 'Plus Jakarta Sans';color:#1F9D57">{{ refundAmount }}</span></div>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== ADD ITEM WIZARD ===== -->
+      <sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="AddItem">
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px">
+          <sc-for list="{{ wizSteps }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.onTap }}" style="{{ s.style }}"><span style="{{ s.dotStyle }}">{{ s.dot }}</span>{{ s.label }}</button></sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-bottom:14px"><div style="height:96px;background:repeating-linear-gradient(135deg,{{ aDraftTile }})"></div><div style="padding:13px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div style="min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:{{ aDraftNameC }}">{{ aDraftName }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ aDraftCat }}</div></div><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ aDraftRate }}</span></div></div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px">
+          <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:14px">{{ aWizTitle }}</div>
+          <!-- step 1 details -->
+          <sc-if value="{{ aw0 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.itemName }} *</div><input value="{{ aDraft.name }}" onInput="{{ onAName }}" placeholder="{{ t.itemNamePh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.category }} *</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ aWizCats }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.howMany }}</div><input value="{{ aDraft.stock }}" onInput="{{ onAStock }}" placeholder="1" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.unitWord }}</div><input value="{{ aDraft.unit }}" onInput="{{ onAUnit }}" placeholder="{{ t.unitPh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div></div>
+          </div>
+          </sc-if>
+          <!-- step 2 rates -->
+          <sc-if value="{{ aw1 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="font:500 11px 'Plus Jakarta Sans';color:#8A86A0;line-height:1.45">{{ t.ratesIntro }}</div>
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.perHour }}</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 11px"><span style="font:700 12px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ aDraft.hour }}" onInput="{{ onAHour }}" placeholder="—" style="flex:1;border:none;outline:none;padding:11px 6px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.perDay }} *</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 11px"><span style="font:700 12px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ aDraft.day }}" onInput="{{ onADay }}" placeholder="0" style="flex:1;border:none;outline:none;padding:11px 6px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div></div>
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.perWeek }}</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 11px"><span style="font:700 12px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ aDraft.week }}" onInput="{{ onAWeek }}" placeholder="—" style="flex:1;border:none;outline:none;padding:11px 6px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.depositAmt }}</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 11px"><span style="font:700 12px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ aDraft.dep }}" onInput="{{ onADep }}" placeholder="0" style="flex:1;border:none;outline:none;padding:11px 6px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div></div>
+          </div>
+          </sc-if>
+          <!-- step 3 policies -->
+          <sc-if value="{{ aw2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="font:800 11px 'Plus Jakarta Sans';color:#56506E">{{ t.policies }}</div>
+            <sc-for list="{{ aPolicies }}" as="p" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:11px;padding:11px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><div style="flex:1;min-width:0"><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.label }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ p.sub }}</div></div><div onClick="{{ p.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ p.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ p.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+            <div style="display:flex;align-items:center;gap:11px;background:{{ aReadyBg }};border:1px solid {{ aReadyBorder }};border-radius:12px;padding:12px 13px;margin-top:2px"><span style="width:30px;height:30px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;color:{{ aReadyC }};font:800 14px 'Plus Jakarta Sans'">{{ aReadyIcon }}</span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:{{ aReadyC }}">{{ aReadyTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ aReadySub }}</div></div></div>
+          </div>
+          </sc-if>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- FOOTERS -->
+    <sc-if value="{{ showAddFooter }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ startAdd }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ t.addRentalItem }}</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showDetailFooter }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;gap:9px;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ editItem }}" style="width:46px;height:46px;border-radius:13px;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></button>
+      <button onClick="{{ startRentOut }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">{{ t.rentOut }}</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showFlowFooter }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:10px;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ flowBack }}" style="width:46px;height:46px;border-radius:13px;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;text-align:center;font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ flowProgress }}</div>
+      <button onClick="{{ flowNext }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">{{ flowNextLabel }}</button>
+    </div>
+    </sc-if>
+
+    <!-- TOAST -->
+    <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:40;background:#1E1B2E;color:#fff;padding:11px 18px;border-radius:12px;font:700 12.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px rgba(28,24,46,.4);white-space:nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v === null || v === '') ? d : v; } catch (e) { return d; } }
+  _home() { try { const inq = new URLSearchParams(location.search); const o = new URLSearchParams(); ['tier','cat'].forEach((k) => { if (inq.get(k)) o.set(k, inq.get(k)); }); o.set('lang', (this.state && this.state.lang) || 'es'); location.href = 'ToLatino Business Dashboard Mobile.dc.html?' + o.toString(); } catch (e) {} }
+  state = {
+    lang: this._qp('lang', 'es'), view: 'list', tab: 'items', itemId: 1, returnUnit: 1,
+    waiverState: null, detailWaiverState: null, aPolicyState: null,
+    flowStep: 0, flowMax: 0, roDraft: null, condition: 'perfect', wizStep: 0, wizMax: 0, aDraft: null,
+    toast: '', toastT: null,
+  };
+
+  newRo() { return { name: '', phone: '', waiver: true, period: 'day', qty: 1, start: '' }; }
+  newDraft() { return { name: '', cat: 'equipo', stock: '', unit: '', hour: '', day: '', week: '', dep: '', policies: null }; }
+
+  ITEMS() {
+    return [
+      { id: 1, name: this._L('Renta de espacio · medio día', 'Space rental · half-day'), cat: 'space', rate: '$320/' + this._L('día', 'day'), avail: this._L('Lun–Mar 6–11 AM', 'Mon–Tue 6–11 AM'), tile: '#EAE2F8 0 8px,#DCCEF2 8px 16px', booked: 6, stock: 1, out: 1, unit: this._L('espacio', 'space'), dep: 80, rates: { hour: 60, day: 320, week: 1400 } },
+      { id: 2, name: this._L('Mesa larga · 8 lugares', 'Long table · 8 seats'), cat: 'furniture', rate: '$45/' + this._L('día', 'day'), avail: this._L('Siempre', 'Always'), tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px', booked: 2, stock: 4, out: 0, unit: this._L('mesa', 'table'), dep: 40, rates: { hour: null, day: 45, week: 180 } },
+      { id: 3, name: this._L('Vajilla de boda · 100', 'Wedding plate set · 100'), cat: 'tableware', rate: '$180/' + this._L('evento', 'event'), avail: this._L('48h aviso', '48h notice'), tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px', booked: 1, stock: 2, out: 0, unit: this._L('juego', 'set'), dep: 250, rates: { hour: null, day: 180, week: 640 } },
+      { id: 4, name: this._L('Máquina de espresso pro', 'Pro espresso machine'), cat: 'equipo', rate: '$240/' + this._L('día', 'day'), avail: this._L('Entre semana', 'Weekdays'), tile: '#EDE0D4 0 8px,#DFCBB6 8px 16px', booked: 0, stock: 1, out: 0, unit: this._L('máquina', 'machine'), dep: 120, rates: { hour: null, day: 240, week: 960 } },
+      { id: 5, name: this._L('Carro de horno de leña', 'Wood-fired oven cart'), cat: 'equipo', rate: '$600/' + this._L('día', 'day'), avail: this._L('48h aviso', '48h notice'), tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', booked: 1, stock: 1, out: 1, unit: this._L('carro', 'cart'), dep: 300, rates: { hour: null, day: 600, week: 2400 } },
+      { id: 6, name: this._L('Recipientes de catering · 6', 'Catering chafing dishes · 6'), cat: 'tableware', rate: '$95/' + this._L('día', 'day'), avail: this._L('Siempre', 'Always'), tile: '#E3F5EA 0 8px,#D6E7D0 8px 16px', booked: 3, stock: 5, out: 0, unit: this._L('juego', 'set'), dep: 95, rates: { hour: null, day: 95, week: 380 } },
+    ];
+  }
+  CATLABEL(id) { const m = { space: this._L('Espacio', 'Space'), furniture: this._L('Mobiliario', 'Furniture'), tableware: this._L('Vajilla', 'Tableware'), equipo: this._L('Equipo', 'Equipment') }; return m[id] || id; }
+  _L(a, b) { return this.state.lang === 'es' ? a : b; }
+
+  flash(m) { clearTimeout(this.state.toastT); const tt = setTimeout(() => this.setState({ toast: '' }), 1900); this.setState({ toast: m, toastT: tt }); }
+
+  renderVals() {
+    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const view = st.view;
+    const items = this.ITEMS();
+    const item = items.find((i) => i.id === st.itemId) || items[0];
+
+    const chip = (active) => 'flex:none;border:none;cursor:pointer;padding:8px 13px;border-radius:999px;font:' + (active ? '800' : '700') + " 12px 'Plus Jakarta Sans';" + (active ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E');
+    const langTab = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 11px', borderRadius: '999px', fontWeight: 800, fontSize: '11px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+    const svg = (paths, s, stroke) => React.createElement('svg', { width: s || 16, height: s || 16, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+
+    const t = {
+      thisMonth: L('este mes', 'this month'),
+      october: L('Octubre', 'October'), upcomingRentals: L('Rentas próximas', 'Upcoming rentals'), newOnline: L('Nuevo', 'New'),
+      heldNow: L('Retenido', 'Held now'), active: L('activos', 'active'), refunded30: L('Devuelto 30d', 'Refunded 30d'), returns: L('devoluciones', 'returns'),
+      damageSub: L('Reporta daños al devolver. Deduce del depósito si aplica.', 'Report damage on return. Deduct from deposit if needed.'), deductFromDep: L('Deducir del depósito', 'Deduct from deposit'),
+      pricingSub: L('Tarifas por hora, día y semana, más depósito por artículo.', 'Hourly, daily and weekly rates, plus deposit per item.'), deposit: L('Depósito', 'Deposit'), perHour: L('Hora', 'Hour'), perDay: L('Día', 'Day'), perWeek: L('Semana', 'Week'),
+      units: L('Unidades', 'Units'), return: L('Devolver', 'Return'), free: L('Libre', 'Free'), waiverPolicies: L('Exención y políticas', 'Waiver & policies'),
+      renterName: L('Nombre del cliente', 'Renter name'), renterNamePh: L('Ej. Mariana Vélez', 'e.g. Mariana Velez'), phone: L('Teléfono', 'Phone'), waiverNote: L('Exención de responsabilidad firmada', 'Liability waiver signed'),
+      rentalPeriod: L('Periodo de renta', 'Rental period'), quantity: L('Cantidad', 'Quantity'), startDate: L('Fecha inicio', 'Start date'), rentalFee: L('Tarifa de renta', 'Rental fee'), totalDue: L('Total a cobrar', 'Total due'),
+      readyToRent: L('Listo para rentar', 'Ready to rent'), readyToRentSub: L('Se cobra el depósito y se marca como rentado.', 'Deposit is charged and item marked rented.'),
+      returnedBy: L('Devuelto por', 'Returned by'), conditionCheck: L('Revisión de condición', 'Condition check'), depositHeld: L('Depósito retenido', 'Deposit held'), damageDeduction: L('Deducción por daño', 'Damage deduction'), refundToRenter: L('Reembolso al cliente', 'Refund to renter'),
+      itemName: L('Nombre del artículo', 'Item name'), itemNamePh: L('Ej. Bici eléctrica', 'e.g. E-bike'), category: L('Categoría', 'Category'), howMany: L('Cuántos', 'How many'), unitWord: L('Unidad', 'Unit'), unitPh: L('mesa, set…', 'table, set…'),
+      ratesIntro: L('Define al menos la tarifa diaria. Hora y semana son opcionales.', 'Set at least the daily rate. Hour and week are optional.'), depositAmt: L('Depósito', 'Deposit'),
+      policies: L('Políticas', 'Policies'),
+      addRentalItem: L('Agregar artículo', 'Add rental item'), rentOut: L('Rentar', 'Rent out'),
+    };
+
+    // ===== KPIs =====
+    const kpis = [
+      { ic: [['M5.5 18a3 3 0 1 0 0-.01M18.5 18a3 3 0 1 0 0-.01', 'M6 18l4-9h5l3 9', 'M9 9h6']], c: '#6D4DF6', bg: '#EFEBFF', label: L('Artículos', 'Items'), value: '12', delta: L('6 categorías', '6 categories'), dC: '#9A96AE' },
+      { ic: [['M4 5h16v16H4z', 'M4 10h16', 'M9 3v4M15 3v4']], c: '#D6336C', bg: '#FDE7EF', label: L('Rentados/mes', 'Rented/mo'), value: '38', delta: '▲ 22%', dC: '#1F9D57' },
+      { ic: [['M12 2v20', 'M17 6a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1A4 4 0 0 1 7 18']], c: '#1F8A4C', bg: '#E3F5EA', label: L('Ingresos 30d', 'Revenue 30d'), value: '$4,820', delta: '▲ 28%', dC: '#1F9D57' },
+      { ic: [['M12 9v4M12 17h.01', 'M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z']], c: '#9A6A12', bg: '#FCEFD6', label: L('Depósitos', 'Deposits'), value: '$1,840', delta: L('6 activos', '6 active'), dC: '#9A96AE' },
+    ].map((k) => ({ icon: svg(k.ic[0], 16, k.c), bg: k.bg, label: k.label, value: k.value, delta: k.delta, dC: k.dC }));
+
+    // ===== items =====
+    const itemRows = items.map((it) => {
+      const avail = it.stock - it.out;
+      const sm = avail <= 0 ? { bg: '#FDE7EF', c: '#D6336C', es: 'Reservado', en: 'Booked' } : avail <= 1 ? { bg: '#FCEFD6', c: '#9A6A12', es: 'Limitado', en: 'Limited' } : { bg: '#E3F5EA', c: '#1F8A4C', es: 'Disponible', en: 'Available' };
+      return { name: it.name, rate: it.rate, avail: it.avail, availStock: avail + '/' + it.stock + ' ' + it.unit + (it.stock > 1 ? 's' : ''), cat: this.CATLABEL(it.cat), statusBg: sm.bg, statusC: sm.c, statusLabel: L(sm.es, sm.en), booked: it.booked, tile: it.tile, onTap: () => this.setState({ view: 'detail', itemId: it.id }) };
+    });
+
+    // ===== calendar =====
+    const dows = es ? ['L', 'M', 'X', 'J', 'V', 'S', 'D'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const evDays = { 15: ['#7B61FF'], 17: ['#1F9D57'], 19: ['#D6336C'], 27: ['#F4B740', '#D6336C'], 8: ['#7B61FF'], 22: ['#1F9D57'] };
+    const calCells = Array.from({ length: 35 }, (_, i) => {
+      const dn = i - 1, visible = dn >= 0 && dn < 31, day = dn + 1, isToday = day === 14;
+      const dots = (visible && evDays[day]) ? evDays[day] : [];
+      return { day: visible ? day : '', style: 'aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font:800 11px \'Plus Jakarta Sans\';' + (isToday ? 'background:#EFEBFF;color:#6D4DF6' : visible ? 'background:#F7F6FC;color:#1E1B2E' : 'background:transparent;color:transparent'), dots: React.createElement(React.Fragment, null, dots.map((c, j) => React.createElement('span', { key: j, style: { width: 4, height: 4, borderRadius: 99, background: c } }))) };
+    });
+    const upRaw = [
+      { mon: 'OCT', day: '15', name: 'Mariana V.', whatEs: 'Vajilla de boda · 100 · sáb', whatEn: 'Wedding plates · 100 · Sat', online: true, tag: 'warn' },
+      { mon: 'OCT', day: '17', name: 'Coffee Mfg.', whatEs: 'Máquina espresso · demo 1 día', whatEn: 'Espresso machine · 1-day demo', online: false, tag: 'success' },
+      { mon: 'OCT', day: '19', name: 'Park Studios', whatEs: 'Espacio foto · 6–11 AM', whatEn: 'Photo space · 6–11 AM', online: false, tag: 'coral' },
+      { mon: 'OCT', day: '27', name: 'Mission Tech', whatEs: 'Carro de horno · fiesta', whatEn: 'Oven cart · party', online: false, tag: 'warn' },
+    ];
+    const tagColor = { warn: ['#FCEFD6', '#9A6A12'], success: ['#E3F5EA', '#1F8A4C'], coral: ['#FDE7EF', '#D6336C'] };
+    const upcoming = upRaw.map((u) => { const dc = tagColor[u.tag]; return { mon: u.mon, day: u.day, name: u.name, what: es ? u.whatEs : u.whatEn, online: u.online, dtBg: dc[0], dtC: dc[1], tag: u.online ? L('Confirmar', 'Confirm') : L('$ retenido', '$ held'), tagStyle: 'font:800 9px \'Plus Jakarta Sans\';padding:4px 8px;border-radius:6px;flex:none;align-self:center;background:' + (u.online ? '#FCEFD6' : '#E3F5EA') + ';color:' + (u.online ? '#9A6A12' : '#1F8A4C') }; });
+
+    // ===== deposits =====
+    const depRaw = [
+      { initials: 'MV', color: '#7B61FF', name: 'Mariana V.', itemEs: 'Vajilla de boda · 100', itemEn: 'Wedding plates · 100', amount: '$250', st: 'held' },
+      { initials: 'CM', color: '#1F9D57', name: 'Coffee Mfg.', itemEs: 'Máquina de espresso', itemEn: 'Espresso machine', amount: '$120', st: 'held' },
+      { initials: 'PS', color: '#E8954A', name: 'Park Studios', itemEs: 'Espacio de foto', itemEn: 'Photo space', amount: '$80', st: 'held' },
+      { initials: 'JT', color: '#2A5C8A', name: 'James T.', itemEs: 'Mesa larga · devuelto', itemEn: 'Long table · returned', amount: '$40', st: 'refunded' },
+    ];
+    const deposits = depRaw.map((d) => ({ initials: d.initials, color: d.color, name: d.name, item: es ? d.itemEs : d.itemEn, amount: d.amount, status: d.st === 'held' ? L('Retenido', 'Held') : L('Devuelto', 'Refunded'), statusStyle: 'font:800 8.5px \'Plus Jakarta Sans\';padding:3px 7px;border-radius:6px;margin-top:3px;display:inline-block;background:' + (d.st === 'held' ? '#FCEFD6' : '#E3F5EA') + ';color:' + (d.st === 'held' ? '#9A6A12' : '#1F8A4C') }));
+
+    // ===== damage =====
+    const dmgRaw = [
+      { itemEs: 'Carro de horno de leña', itemEn: 'Wood-fired oven cart', renter: 'Mission Tech', date: '27 Oct', sev: 'minor', noteEs: 'Rayón en la puerta. Funcional, estético menor.', noteEn: 'Scratch on the door. Functional, minor cosmetic.', charge: '$45', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px' },
+      { itemEs: 'Vajilla de boda · 100', itemEn: 'Wedding plates · 100', renter: 'Mariana V.', date: '12 Oct', sev: 'major', noteEs: '3 platos rotos de 100. Reemplazo necesario.', noteEn: '3 plates broken of 100. Replacement needed.', charge: '$90', tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px' },
+    ];
+    const sevMeta = { minor: { bg: '#FCEFD6', c: '#9A6A12', es: 'Menor', en: 'Minor', border: '#FDE68A' }, major: { bg: '#FDE7EF', c: '#D6336C', es: 'Mayor', en: 'Major', border: '#FECDD3' } };
+    const damageReports = dmgRaw.map((r) => { const sm = sevMeta[r.sev]; return { item: es ? r.itemEs : r.itemEn, renter: r.renter, date: r.date, note: es ? r.noteEs : r.noteEn, charge: '−' + r.charge, tile: r.tile, severity: L(sm.es, sm.en), cardBorder: sm.border, sevStyle: 'font:800 9px \'Plus Jakarta Sans\';padding:4px 8px;border-radius:6px;flex:none;background:' + sm.bg + ';color:' + sm.c }; });
+
+    // ===== pricing =====
+    const pricingRows = items.map((it) => ({ name: it.name, dep: '$' + it.dep, tile: it.tile, hour: it.rates.hour ? '$' + it.rates.hour : '—', hourBg: it.rates.hour ? '#F7F6FC' : '#F4F2F9', hourC: it.rates.hour ? '#1E1B2E' : '#C0BBD0', day: '$' + it.rates.day, week: '$' + it.rates.week }));
+
+    // ===== detail =====
+    const avail = item.stock - item.out;
+    const dsm = avail <= 0 ? { bg: '#FDE7EF', c: '#D6336C', es: 'Reservado', en: 'Booked' } : avail <= 1 ? { bg: '#FCEFD6', c: '#9A6A12', es: 'Limitado', en: 'Limited' } : { bg: '#E3F5EA', c: '#1F8A4C', es: 'Disponible', en: 'Available' };
+    const dUnits = Array.from({ length: item.stock }, (_, i) => {
+      const out = i < item.out;
+      return { n: '#' + (i + 1), label: item.unit.charAt(0).toUpperCase() + item.unit.slice(1) + ' ' + (i + 1), sub: out ? L('Rentado · regresa 19 Oct', 'Rented · back Oct 19') : L('Disponible ahora', 'Available now'), bg: out ? '#FDE7EF' : '#E3F5EA', c: out ? '#D6336C' : '#1F8A4C', out, free: !out, onReturn: () => this.setState({ view: 'return', returnUnit: i + 1, condition: 'perfect' }) };
+    });
+    const waiverDefs = [[L('Exención de responsabilidad', 'Liability waiver'), true], [L('Depósito reembolsable', 'Refundable deposit'), true], [L('Cargo por retraso · $50/h', 'Late fee · $50/hr'), true], [L('Verificación de seguro', 'Insurance verification'), false]];
+    const dwSt = st.detailWaiverState || waiverDefs.reduce((o, w, i) => { o[i] = w[1]; return o; }, {});
+    const waivers = waiverDefs.map((w, i, a) => { const on = dwSt[i]; return { label: w[0], track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', border: i === a.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)', onToggle: () => this.setState({ detailWaiverState: { ...dwSt, [i]: !on } }) }; });
+
+    // ===== rent-out flow =====
+    const roDraft = st.roDraft || this.newRo();
+    const upRo = (patch) => this.setState({ roDraft: { ...roDraft, ...patch } });
+    const roStepDefs = [['renter', L('Cliente', 'Renter')], ['period', L('Periodo', 'Period')], ['confirm', L('Confirmar', 'Confirm')]];
+    const roSteps = roStepDefs.map((s, i) => { const active = st.flowStep === i, done = i < st.flowStep || (i <= st.flowMax && i !== st.flowStep); return { label: s[1], onTap: () => { if (i <= st.flowMax) this.setState({ flowStep: i }); }, dot: done ? '✓' : (i + 1), style: 'flex:none;display:flex;align-items:center;gap:6px;border:none;cursor:pointer;padding:7px 11px;border-radius:999px;font:800 11px \'Plus Jakarta Sans\';background:' + (active ? '#7B61FF' : done ? '#EFEBFF' : '#F1EFFA') + ';color:' + (active ? '#fff' : done ? '#6D4DF6' : '#9A96AE'), dotStyle: 'width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 9px \'Plus Jakarta Sans\';color:#fff;background:' + (active ? 'rgba(255,255,255,.25)' : done ? '#7B61FF' : '#D8D2E6') }; });
+    const periodDefs = [['hour', L('Hora', 'Hour')], ['day', L('Día', 'Day')], ['week', L('Semana', 'Week')]];
+    const periodOpts = periodDefs.map((p) => ({ label: p[1], onTap: () => upRo({ period: p[0] }), style: 'flex:1;border:none;cursor:pointer;padding:9px;border-radius:9px;font:800 11.5px \'Plus Jakarta Sans\';' + (roDraft.period === p[0] ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#6E6A85') }));
+    const rateOf = item.rates[roDraft.period] || item.rates.day;
+    const feeNum = (rateOf || 0) * roDraft.qty;
+    const roFee = '$' + feeNum.toLocaleString();
+    const roTotal = '$' + (feeNum + item.dep).toLocaleString();
+    const periodLabel = (periodDefs.find((p) => p[0] === roDraft.period) || periodDefs[1])[1];
+    const roReviewRows = [
+      { k: L('Cliente', 'Renter'), v: roDraft.name || '—' },
+      { k: L('Artículo', 'Item'), v: item.name },
+      { k: L('Periodo', 'Period'), v: roDraft.qty + ' × ' + periodLabel },
+      { k: L('Total', 'Total'), v: roTotal },
+    ];
+    roReviewRows.forEach((r, i) => { r.border = i === roReviewRows.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)'; });
+
+    // ===== return flow =====
+    const condDefs = [['perfect', L('Perfecto', 'Perfect'), L('Sin daños · reembolso completo', 'No damage · full refund'), '✓', '#E3F5EA', '#1F8A4C', '#1F9D57'], ['minor', L('Daño menor', 'Minor damage'), L('Deduce parte del depósito', 'Deduct part of deposit'), '~', '#FCEFD6', '#9A6A12', '#E8954A'], ['major', L('Daño mayor', 'Major damage'), L('Deduce o retén el depósito', 'Deduct or hold deposit'), '!', '#FDE7EF', '#D6336C', '#D6336C']];
+    const conditionOpts = condDefs.map((c) => { const on = st.condition === c[0]; return { label: c[1], sub: c[2], icon: c[3], iconBg: c[4], iconC: c[5], dot: c[6], on, onTap: () => this.setState({ condition: c[0] }), style: 'display:flex;align-items:center;gap:10px;width:100%;border:1.5px solid ' + (on ? '#7B61FF' : '#E2DEF4') + ';background:' + (on ? '#F7F5FF' : '#fff') + ';cursor:pointer;padding:11px;border-radius:12px', radioStyle: 'width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (on ? '#7B61FF' : '#D8D2E6') + ';display:flex;align-items:center;justify-content:center;flex:none' }; });
+    const hasDeduction = st.condition !== 'perfect';
+    const refundNum = item.dep - (st.condition === 'minor' ? 45 : st.condition === 'major' ? item.dep : 0);
+    const refundAmount = '$' + Math.max(0, refundNum).toLocaleString();
+
+    // ===== add wizard =====
+    const aDraft = st.aDraft || this.newDraft();
+    const upA = (patch) => this.setState({ aDraft: { ...aDraft, ...patch } });
+    const aCatTiles = { space: '#EAE2F8 0 8px,#DCCEF2 8px 16px', furniture: '#F3E2CE 0 8px,#ECD3B4 8px 16px', tableware: '#FBEFD3 0 8px,#F5E1B0 8px 16px', equipo: '#EDE0D4 0 8px,#DFCBB6 8px 16px' };
+    const aDraftTile = aCatTiles[aDraft.cat] || aCatTiles.equipo;
+    const wizStepDefs = [['details', L('Detalles', 'Details')], ['rates', L('Tarifas', 'Rates')], ['policies', L('Políticas', 'Policies')]];
+    const wizSteps = wizStepDefs.map((s, i) => { const active = st.wizStep === i, done = i < st.wizStep || (i <= st.wizMax && i !== st.wizStep); return { label: s[1], onTap: () => { if (i <= st.wizMax) this.setState({ wizStep: i }); }, dot: done ? '✓' : (i + 1), style: 'flex:none;display:flex;align-items:center;gap:6px;border:none;cursor:pointer;padding:7px 11px;border-radius:999px;font:800 11px \'Plus Jakarta Sans\';background:' + (active ? '#7B61FF' : done ? '#EFEBFF' : '#F1EFFA') + ';color:' + (active ? '#fff' : done ? '#6D4DF6' : '#9A96AE'), dotStyle: 'width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 9px \'Plus Jakarta Sans\';color:#fff;background:' + (active ? 'rgba(255,255,255,.25)' : done ? '#7B61FF' : '#D8D2E6') }; });
+    const aCatDefs = [['equipo', L('Equipo', 'Equipment')], ['space', L('Espacio', 'Space')], ['furniture', L('Mobiliario', 'Furniture')], ['tableware', L('Vajilla', 'Tableware')]];
+    const aWizCats = aCatDefs.map((c) => ({ label: c[1], onTap: () => upA({ cat: c[0] }), style: chip(aDraft.cat === c[0]) }));
+    const aPolDefs = [[L('Exención de responsabilidad', 'Liability waiver'), L('Requerida al rentar', 'Required at rental'), true], [L('Depósito reembolsable', 'Refundable deposit'), L('Se devuelve al regresar', 'Returned on return'), true], [L('Cargo por retraso', 'Late return fee'), L('$50/hora después', '$50/hour after'), true], [L('Seguro requerido', 'Insurance required'), L('Verificación de cobertura', 'Coverage verification'), false]];
+    const aPolSt = st.aPolicyState || aPolDefs.reduce((o, p, i) => { o[i] = p[2]; return o; }, {});
+    const aPolicies = aPolDefs.map((p, i) => { const on = aPolSt[i]; return { label: p[0], sub: p[1], track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState({ aPolicyState: { ...aPolSt, [i]: !on } }) }; });
+    const aReady = aDraft.name && aDraft.day;
+    const aCatLabel = (aCatDefs.find((c) => c[0] === aDraft.cat) || aCatDefs[0])[1];
+
+    const inList = view === 'list';
+    const tabs = [['items', L('Artículos', 'Items')], ['calendar', L('Calendario', 'Calendar')], ['deposits', L('Depósitos', 'Deposits')], ['damage', L('Daños', 'Damage')], ['pricing', L('Precios', 'Pricing')]].map((s) => ({ label: s[1], onTap: () => this.setState({ tab: s[0] }), style: chip(st.tab === s[0]) }));
+
+    const flowNext = () => { if (view === 'rentout') { if (st.flowStep >= roStepDefs.length - 1) { this.flash(L('Rentado · depósito cobrado', 'Rented · deposit charged')); this.setState({ view: 'detail', flowStep: 0, flowMax: 0, roDraft: null }); return; } const n = st.flowStep + 1; this.setState({ flowStep: n, flowMax: Math.max(st.flowMax, n) }); } else if (view === 'wizard') { if (st.wizStep >= wizStepDefs.length - 1) { this.flash(L('Artículo agregado', 'Item added')); this.setState({ view: 'list', tab: 'items', wizStep: 0, wizMax: 0, aDraft: null }); return; } const n = st.wizStep + 1; this.setState({ wizStep: n, wizMax: Math.max(st.wizMax, n) }); } };
+    const flowBack = () => { if (view === 'rentout') { if (st.flowStep === 0) { this.setState({ view: 'detail' }); return; } this.setState({ flowStep: st.flowStep - 1 }); } else if (view === 'wizard') { if (st.wizStep === 0) { this.setState({ view: 'list' }); return; } this.setState({ wizStep: st.wizStep - 1 }); } };
+
+    return {
+      esTab: langTab(es), enTab: langTab(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
+      headTitle: view === 'detail' ? item.name : (view === 'rentout' ? L('Rentar artículo', 'Rent out') : (view === 'return' ? L('Devolución', 'Return') : (view === 'wizard' ? L('Agregar artículo', 'Add rental item') : L('Renta', 'Rental')))),
+      headSub: view === 'detail' ? this.CATLABEL(item.cat) : (view === 'wizard' ? aCatLabel : (view === 'rentout' || view === 'return' ? item.name : L('Tartine · 12 artículos', 'Tartine · 12 items'))),
+      back: () => { if (view === 'detail') this.setState({ view: 'list' }); else if (view === 'rentout' || view === 'return') this.setState({ view: 'detail' }); else if (view !== 'list') this.setState({ view: 'list' }); else this._home(); },
+      isList: inList, tabs,
+      isItems: inList && st.tab === 'items', isCalendar: inList && st.tab === 'calendar', isDeposits: inList && st.tab === 'deposits', isDamage: inList && st.tab === 'damage', isPricing: inList && st.tab === 'pricing',
+      isDetail: view === 'detail', isRentOut: view === 'rentout', isReturn: view === 'return', isWizard: view === 'wizard',
+      t, kpis, items: itemRows, dows, calCells, upcoming, deposits, damageReports, pricingRows,
+      // detail
+      dTile: item.tile, dName: item.name, dCat: this.CATLABEL(item.cat), dAvail: item.avail, dStatusBg: dsm.bg, dStatusC: dsm.c, dStatusLabel: L(dsm.es, dsm.en),
+      dHour: item.rates.hour ? '$' + item.rates.hour : '—', dDay: '$' + item.rates.day, dWeek: '$' + item.rates.week, dDep: '$' + item.dep, dStock: item.stock, dUnits, waivers,
+      // rent-out
+      roSteps, roDraft, ro0: st.flowStep === 0, ro1: st.flowStep === 1, ro2: st.flowStep === 2,
+      roTitle: [L('Datos del cliente', 'Renter details'), L('Periodo y cantidad', 'Period & quantity'), L('Confirmar renta', 'Confirm rental')][st.flowStep],
+      onRoName: (e) => upRo({ name: e.target.value }), onRoPhone: (e) => upRo({ phone: e.target.value }), onRoStart: (e) => upRo({ start: e.target.value }),
+      toggleWaiver: () => upRo({ waiver: !roDraft.waiver }), waiverTrack: roDraft.waiver ? '#7B61FF' : '#D8D2E6', waiverKnob: roDraft.waiver ? '20px' : '3px',
+      periodOpts, decQty: () => upRo({ qty: Math.max(1, roDraft.qty - 1) }), incQty: () => upRo({ qty: Math.min(item.stock, roDraft.qty + 1) }),
+      roFee, roTotal, roReviewRows,
+      // return
+      returnRenter: 'James T.', conditionOpts, hasDeduction, refundAmount,
+      // wizard
+      wizSteps, aDraft, aDraftTile, aDraftName: aDraft.name || L('Nombre del artículo', 'Item name'), aDraftNameC: aDraft.name ? '#1E1B2E' : '#C0BBD0', aDraftCat: aCatLabel, aDraftRate: aDraft.day ? '$' + aDraft.day + '/' + L('día', 'day') : '$0',
+      aWizTitle: [L('Detalles del artículo', 'Item details'), L('Tarifas y depósito', 'Rates & deposit'), L('Políticas y exención', 'Policies & waiver')][st.wizStep],
+      aw0: st.wizStep === 0, aw1: st.wizStep === 1, aw2: st.wizStep === 2,
+      onAName: (e) => upA({ name: e.target.value }), onAStock: (e) => upA({ stock: e.target.value }), onAUnit: (e) => upA({ unit: e.target.value }), onAHour: (e) => upA({ hour: e.target.value }), onADay: (e) => upA({ day: e.target.value }), onAWeek: (e) => upA({ week: e.target.value }), onADep: (e) => upA({ dep: e.target.value }),
+      aWizCats, aPolicies,
+      aReadyBg: aReady ? '#E3F5EA' : '#FCEFD6', aReadyBorder: aReady ? '#A7E3C0' : '#FDE68A', aReadyC: aReady ? '#176B3A' : '#9A6A12', aReadyIcon: aReady ? '✓' : '⚠',
+      aReadyTitle: aReady ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing'),
+      aReadySub: aReady ? L('Aparecerá disponible para rentar.', 'It’ll appear available to rent.') : L('Agrega nombre y tarifa diaria.', 'Add a name and daily rate.'),
+      // footers
+      showAddFooter: inList, startAdd: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, aDraft: this.newDraft() }),
+      showDetailFooter: view === 'detail', editItem: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, aDraft: this.newDraft() }), startRentOut: () => this.setState({ view: 'rentout', flowStep: 0, flowMax: 0, roDraft: this.newRo() }),
+      showFlowFooter: view === 'rentout' || view === 'wizard', flowBack, flowNext,
+      flowProgress: view === 'rentout' ? L('Paso ', 'Step ') + (st.flowStep + 1) + L(' de 3', ' of 3') : L('Paso ', 'Step ') + (st.wizStep + 1) + L(' de 3', ' of 3'),
+      flowNextLabel: view === 'rentout' ? (st.flowStep >= 2 ? L('Cobrar y rentar', 'Charge & rent') : L('Continuar', 'Continue')) : (st.wizStep >= 2 ? L('Publicar artículo', 'Publish item') : L('Continuar', 'Continue')),
+      toastShow: !!st.toast, toastMsg: st.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

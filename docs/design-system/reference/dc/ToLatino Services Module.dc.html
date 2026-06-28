@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+@keyframes tlsheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Servicios y reservas · móvil</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:852px;background:#F4F2F9;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ headTitle }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+    </div>
+
+    <!-- MODE TOGGLE (Servicios | Reservas) -->
+    <sc-if value="{{ inModule }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;display:flex;gap:7px;padding:11px 14px 4px;background:#fff">
+      <button onClick="{{ goServices }}" style="{{ modeServicesStyle }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ modeServicesIconC }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6V20h2.3l6-6a4 4 0 0 0 5.4-5.4l-2.5 2.5-1.8-1.8z"></path></svg>{{ t.tServices }}</button>
+      <button onClick="{{ goBookings }}" style="{{ modeBookingsStyle }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ modeBookingsIconC }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><line x1="3.5" y1="10" x2="20.5" y2="10"></line><line x1="9" y1="3" x2="9" y2="7"></line><line x1="15" y1="3" x2="15" y2="7"></line></svg>{{ t.tBookings }}<sc-if value="{{ showBookBadge }}" hint-placeholder-val="{{ true }}"><span style="background:#7B61FF;color:#fff;padding:1px 6px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">128</span></sc-if></button>
+    </div>
+    <!-- secondary tabs -->
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:10px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ subtabs }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}<sc-if value="{{ s.hasN }}" hint-placeholder-val="{{ false }}"><span style="{{ s.nStyle }}">{{ s.n }}</span></sc-if></button></sc-for>
+    </div>
+    </sc-if>
+
+    <!-- BODY -->
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 16px">
+
+      <!-- ========== SERVICES · CATALOG ========== -->
+      <sc-if value="{{ isCatalog }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Servicios">
+        <!-- bookings banner -->
+        <div style="display:flex;align-items:center;gap:11px;background:#F1EFFA;border-radius:13px;padding:11px 13px;margin-bottom:14px"><span style="width:30px;height:30px;border-radius:9px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><line x1="3.5" y1="10" x2="20.5" y2="10"></line></svg></span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.bookingsActive }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.bookingsActiveSub }}</div></div><span onClick="{{ goBookings }}" style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6;background:#fff;padding:7px 10px;border-radius:9px;cursor:pointer;white-space:nowrap;flex:none;align-self:center">{{ t.openBookings }} ›</span></div>
+
+        <!-- grouped by category -->
+        <sc-for list="{{ catGroups }}" as="g" hint-placeholder-count="3">
+        <div style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+            <span style="width:34px;height:34px;border-radius:9px;flex:none;position:relative;overflow:hidden;background:repeating-linear-gradient(135deg,{{ g.tile }})"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff">{{ g.icon }}</span></span>
+            <div style="flex:1;min-width:0"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ g.name }}</div><div style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE">{{ g.count }} · {{ g.sched }}</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ g.services }}" as="s" hint-placeholder-count="2">
+            <div onClick="{{ s.onTap }}" style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:12px;cursor:pointer">
+              <div style="display:flex;gap:12px">
+                <div style="width:60px;height:60px;border-radius:12px;flex:none;background:repeating-linear-gradient(135deg,{{ s.tile }})"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ s.name }}</span><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ s.price }}</span></div>
+                  <div style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ s.dur }} · {{ s.need }}</div>
+                  <div style="font:500 11px 'Plus Jakarta Sans';color:#7C7790;margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ s.short }}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(30,27,46,.1)">
+                <div onClick="{{ s.onToggle }}" style="display:flex;align-items:center;gap:7px"><div style="width:38px;height:23px;border-radius:12px;background:{{ s.track }};position:relative;flex:none"><span style="position:absolute;top:3px;left:{{ s.knob }};width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div><span style="font:700 10.5px 'Plus Jakarta Sans';color:{{ s.bookableC }}">{{ s.bookableLabel }}</span></div>
+                <span style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6">{{ s.cta }} ›</span>
+              </div>
+            </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-for>
+
+        <!-- analytics -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-top:4px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">{{ t.svcRevenue }}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:13px">
+            <div style="background:#F7F6FC;border-radius:11px;padding:10px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.revenue }}</div><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px">$24.8k</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 38%</div></div>
+            <div style="background:#F7F6FC;border-radius:11px;padding:10px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.bookings }}</div><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px">128</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 22%</div></div>
+            <div style="background:#F7F6FC;border-radius:11px;padding:10px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.conversion }}</div><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px">62%</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 8pp</div></div>
+          </div>
+          <div style="font:800 10px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">{{ t.bestEarners }}</div>
+          <sc-for list="{{ bestEarners }}" as="b" hint-placeholder-count="4"><div style="padding:6px 0"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font:700 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ b.name }}</span><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE">{{ b.count }} · {{ b.rev }}</span></div><div style="height:5px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ b.barC }};width:{{ b.bar }}"></div></div></div></sc-for>
+        </div>
+
+        <!-- pending inquiries -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><span style="display:inline-flex;align-items:center;gap:7px;font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11a1 1 0 0 1-1 1h-5l-2 2-2-2H5a1 1 0 0 1-1-1z"></path></svg>{{ t.pendingInq }}</span><span style="background:#FCEFD6;color:#9A6A12;padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'">8</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ inquiries }}" as="i" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid {{ i.border }}"><span style="width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 11px 'Plus Jakarta Sans';background:{{ i.color }}">{{ i.initials }}</span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ i.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.svc }} · {{ i.when }}</div></div><span style="font:800 10px 'Plus Jakarta Sans';color:#fff;background:#7B61FF;padding:6px 10px;border-radius:8px;flex:none">{{ t.quote }}</span></div></sc-for>
+          </div>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ========== SERVICES · CATEGORIES ========== -->
+      <sc-if value="{{ isSvcCats }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Categorias">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ t.svcCatsSub }}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ svcCatRows }}" as="c" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:11px;display:flex;align-items:center;gap:11px;opacity:{{ c.op }}"><span style="width:46px;height:46px;border-radius:11px;flex:none;position:relative;overflow:hidden;background:repeating-linear-gradient(135deg,{{ c.tile }})"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff">{{ c.icon }}</span></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.name }}</span><sc-if value="{{ c.hidden }}" hint-placeholder-val="{{ false }}"><span style="background:#ECE8F4;color:#9A96AE;padding:2px 7px;border-radius:6px;font:800 8.5px 'Plus Jakarta Sans'">{{ t.hidden }}</span></sc-if></div><div style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:3px">{{ c.n }} {{ t.servicesWord }} · {{ c.sched }}</div></div><div onClick="{{ c.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ c.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ c.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.newCategory }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ========== BOOKINGS ========== -->
+      <sc-if value="{{ isBookings }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Reservas">
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <sc-for list="{{ bookKpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px"><span style="width:30px;height:30px;border-radius:9px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center">{{ k.icon }}</span><div style="font:600 10px 'Plus Jakarta Sans';color:#8A86A0;margin-top:9px">{{ k.label }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ k.value }}</div><div style="font:800 9.5px 'Plus Jakarta Sans';color:{{ k.dC }};margin-top:2px">{{ k.delta }}</div></div></sc-for>
+        </div>
+
+        <!-- view switch -->
+        <div style="display:flex;gap:6px;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:12px;padding:4px;margin-bottom:14px">
+          <sc-for list="{{ bookViews }}" as="v" hint-placeholder-count="3"><button onClick="{{ v.onTap }}" style="{{ v.style }}">{{ v.label }}</button></sc-for>
+        </div>
+
+        <!-- CALENDAR view -->
+        <sc-if value="{{ bvCalendar }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.october }} 2025</span><div style="display:flex;gap:5px"><button style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(30,27,46,.1);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6E6A85" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button><button style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(30,27,46,.1);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6E6A85" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button></div></div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px"><sc-for list="{{ dows }}" as="d" hint-placeholder-count="7"><span style="text-align:center;font:800 9px 'Plus Jakarta Sans';color:#A8A4B8">{{ d }}</span></sc-for></div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">
+            <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35"><div onClick="{{ c.onTap }}" style="{{ c.style }}"><span>{{ c.day }}</span><div style="display:flex;gap:2px;margin-top:2px;height:4px">{{ c.dots }}</div></div></sc-for>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:11px;padding-top:11px;border-top:1px solid rgba(30,27,46,.06)"><span style="display:inline-flex;align-items:center;gap:5px;font:700 9.5px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:8px;height:8px;border-radius:50%;background:#D6336C"></span>{{ t.reservations }}</span><span style="display:inline-flex;align-items:center;gap:5px;font:700 9.5px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:8px;height:8px;border-radius:50%;background:#7B61FF"></span>{{ t.classes }}</span><span style="display:inline-flex;align-items:center;gap:5px;font:700 9.5px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:8px;height:8px;border-radius:50%;background:#1F9D57"></span>{{ t.private }}</span></div>
+        </div>
+        </sc-if>
+
+        <!-- FLOOR view -->
+        <sc-if value="{{ bvFloor }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-bottom:14px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">{{ t.floorPlan }} · 7 PM</div>
+          <div style="position:relative;height:230px;background:#F7F6FC;border-radius:12px;border:1px solid rgba(30,27,46,.06);overflow:hidden">
+            <span style="position:absolute;left:12px;top:9px;font:800 9px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.05em">{{ t.mainDining }}</span>
+            <sc-for list="{{ tables }}" as="tb" hint-placeholder-count="9"><div style="{{ tb.style }}">{{ tb.label }}</div></sc-for>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:11px"><span style="display:inline-flex;align-items:center;gap:5px;font:700 9.5px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:10px;height:10px;border-radius:3px;background:#BBF7D0;border:1.5px solid #22C55E"></span>{{ t.available }} 8</span><span style="display:inline-flex;align-items:center;gap:5px;font:700 9.5px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:10px;height:10px;border-radius:3px;background:#FCA5A5;border:1.5px solid #DC2626"></span>{{ t.seated }} 7</span><span style="display:inline-flex;align-items:center;gap:5px;font:700 9.5px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:10px;height:10px;border-radius:3px;background:#C7D2FE;border:1.5px solid #4F46E5"></span>{{ t.reserved }} 4</span></div>
+          <div style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:8px">{{ t.capacity }}: 64 {{ t.seats }} · 73% {{ t.utilization }}</div>
+        </div>
+        </sc-if>
+
+        <!-- day detail / list -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 2px 10px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ dayLabel }}</span><div data-noscroll style="display:flex;gap:6px;overflow-x:auto"><sc-for list="{{ bookFilters }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onTap }}" style="{{ f.style }}">{{ f.label }}</button></sc-for></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ bookings }}" as="b" hint-placeholder-count="5">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px;display:flex;gap:11px">
+            <div style="width:46px;flex:none;text-align:center;background:{{ b.dtBg }};border-radius:10px;padding:7px 0"><div style="font:700 8.5px 'Plus Jakarta Sans';color:{{ b.dtC }}">{{ b.ampm }}</div><div style="font:800 14px 'Plus Jakarta Sans';color:{{ b.dtC }};line-height:1">{{ b.hour }}</div></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ b.name }}</span><sc-if value="{{ b.vip }}" hint-placeholder-val="{{ false }}"><span style="background:#FCEFD6;color:#9A6A12;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">★ VIP</span></sc-if></div>
+              <div style="font:600 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:2px">{{ b.type }}</div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px"><span style="background:#F1EFFA;color:#6E6A85;padding:2px 7px;border-radius:6px;font:700 9px 'Plus Jakarta Sans'">{{ b.table }}</span><sc-if value="{{ b.deposit }}" hint-placeholder-val="{{ false }}"><span style="background:#E3F5EA;color:#1F8A4C;padding:2px 7px;border-radius:6px;font:800 9px 'Plus Jakarta Sans'">{{ t.deposit }} {{ b.deposit }}</span></sc-if></div>
+              <sc-if value="{{ b.notes }}" hint-placeholder-val="{{ false }}"><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;font-style:italic;margin-top:6px;padding:6px 8px;background:#F7F6FC;border-left:2px solid #E2DEF4;border-radius:0 6px 6px 0;line-height:1.4">"{{ b.notes }}"</div></sc-if>
+            </div>
+            <span style="{{ b.statusStyle }}">{{ b.status }}</span>
+          </div>
+          </sc-for>
+        </div>
+
+        <!-- booking rules -->
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:18px 2px 9px">{{ t.bookingRules }}</div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:4px 13px">
+          <sc-for list="{{ rules }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid {{ r.border }}"><span style="font:600 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.label }}</span><div onClick="{{ r.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ r.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ r.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+
+        <!-- category fields -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-top:14px">
+          <div style="display:flex;align-items:center;gap:9px;background:#F1EFFA;border-radius:11px;padding:10px 12px;margin-bottom:11px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M6 3v6a2 2 0 0 0 4 0V3M8 9v12M16 3c-1.4 0-2.3 1.6-2.3 4S14.6 10.5 16 10.5V21"></path></svg><div style="flex:1"><div style="font:800 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.catFieldsTitle }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.catFieldsSub }}</div></div></div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <sc-for list="{{ catFields }}" as="f" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:#F7F6FC;border-radius:9px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M3 11l8-8 9 9-8 8z"></path><path d="M7 7h.01"></path></svg><span style="flex:1;font:600 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ f.name }}</span><span style="{{ f.reqStyle }}">{{ f.req }}</span></div></sc-for>
+            <button style="align-self:flex-start;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:8px 12px;border-radius:9px;font:800 10.5px 'Plus Jakarta Sans';margin-top:2px">+ {{ t.customField }}</button>
+          </div>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ========== ADD SERVICE WIZARD ========== -->
+      <sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="AddService">
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px">
+          <sc-for list="{{ wizSteps }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onTap }}" style="{{ s.style }}"><span style="{{ s.dotStyle }}">{{ s.dot }}</span>{{ s.label }}</button></sc-for>
+        </div>
+        <!-- preview -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-bottom:14px"><div style="height:96px;background:repeating-linear-gradient(135deg,{{ sDraftTile }})"></div><div style="padding:13px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div style="min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:{{ sDraftNameC }}">{{ sDraftName }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ sDraftMeta }}</div></div><span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ sDraftPrice }}</span></div></div>
+
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px">
+          <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:14px">{{ sWizTitle }}</div>
+
+          <!-- step 1 details -->
+          <sc-if value="{{ sw0 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.svcName }} *</div><input value="{{ sDraft.name }}" onInput="{{ onSName }}" placeholder="{{ t.svcNamePh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fDesc }}</div><textarea value="{{ sDraft.desc }}" onInput="{{ onSDesc }}" placeholder="{{ t.svcDescPh }}" data-noscroll style="width:100%;height:64px;resize:none;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:500 12px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5"></textarea></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.category }} *</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ sWizCats }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.tags }}</div><div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ sWizTags }}" as="g" hint-placeholder-count="4"><button onClick="{{ g.onTap }}" style="{{ g.style }}">{{ g.label }}</button></sc-for></div></div>
+          </div>
+          </sc-if>
+
+          <!-- step 2 pricing & duration -->
+          <sc-if value="{{ sw1 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.price }} *</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 13px"><span style="font:700 13px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ sDraft.price }}" onInput="{{ onSPrice }}" placeholder="0" style="flex:1;border:none;outline:none;padding:11px 8px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.priceType }}</div><div data-noscroll style="display:flex;gap:5px;overflow-x:auto"><sc-for list="{{ priceTypes }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.onTap }}" style="{{ p.style }}">{{ p.label }}</button></sc-for></div></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.duration }}</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ durations }}" as="d" hint-placeholder-count="4"><button onClick="{{ d.onTap }}" style="{{ d.style }}">{{ d.label }}</button></sc-for></div></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:12px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><div style="flex:1"><div style="font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.requireDeposit }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ t.depositSub }}</div></div><div onClick="{{ toggleDeposit }}" style="width:42px;height:25px;border-radius:13px;background:{{ depositTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ depositKnob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div>
+          </div>
+          </sc-if>
+
+          <!-- step 3 booking -->
+          <sc-if value="{{ sw2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.howSold }}</div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ bookModes }}" as="b" hint-placeholder-count="2"><button onClick="{{ b.onTap }}" style="{{ b.style }}"><span style="width:30px;height:30px;border-radius:8px;background:#EFEBFF;display:flex;align-items:center;justify-content:center;flex:none">{{ b.icon }}</span><span style="flex:1;text-align:left"><span style="display:block;font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ b.label }}</span><span style="display:block;font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ b.sub }}</span></span><span style="{{ b.radioStyle }}"><sc-if value="{{ b.on }}" hint-placeholder-val="{{ true }}"><span style="width:8px;height:8px;border-radius:50%;background:#7B61FF"></span></sc-if></span></button></sc-for></div></div>
+            <sc-if value="{{ sDraftBookable }}" hint-placeholder-val="{{ true }}"><div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.capacityPer }}</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto"><sc-for list="{{ capacities }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div></sc-if>
+          </div>
+          </sc-if>
+
+          <!-- step 4 review -->
+          <sc-if value="{{ sw3 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:11px;background:{{ sReadyBg }};border:1px solid {{ sReadyBorder }};border-radius:12px;padding:12px 13px"><span style="width:30px;height:30px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;color:{{ sReadyC }};font:800 14px 'Plus Jakarta Sans'">{{ sReadyIcon }}</span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:{{ sReadyC }}">{{ sReadyTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ sReadySub }}</div></div></div>
+            <div style="border:1px solid rgba(30,27,46,.08);border-radius:12px;overflow:hidden"><sc-for list="{{ sReviewRows }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid {{ r.border }}"><span style="width:80px;flex:none;font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ r.k }}</span><span style="flex:1;min-width:0;font:700 11.5px 'Plus Jakarta Sans';color:{{ r.vC }}">{{ r.v }}</span><span onClick="{{ r.onEdit }}" style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer;flex:none">{{ t.edit }}</span></div></sc-for></div>
+          </div>
+          </sc-if>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ========== SUCCESS ========== -->
+      <sc-if value="{{ isSuccess }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Published" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:24px">
+        <div style="width:64px;height:64px;border-radius:18px;background:#E3F5EA;color:#1F8A4C;display:flex;align-items:center;justify-content:center;margin-bottom:14px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        <div style="font:800 21px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ sSuccessTitle }}</div>
+        <div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:8px;line-height:1.5;max-width:300px">{{ sSuccessSub }}</div>
+        <div style="width:100%;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-top:20px;text-align:left"><div style="height:104px;background:repeating-linear-gradient(135deg,{{ sDraftTile }})"></div><div style="padding:13px;display:flex;align-items:center;justify-content:space-between"><div style="min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ sDraftName }}</div><div style="font:500 11.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ sDraftMeta }} · {{ sDraftPrice }}</div></div><span style="{{ sLivePillStyle }}">{{ sLivePill }}</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;width:100%;margin-top:20px">
+          <button onClick="{{ sAddAnother }}" style="width:100%;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">+ {{ t.addAnotherSvc }}</button>
+          <button onClick="{{ sBackToList }}" style="width:100%;border:1.5px solid #E2DEF4;cursor:pointer;background:#fff;color:#1E1B2E;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans'">{{ t.backToServices }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- FOOTERS -->
+    <sc-if value="{{ showCatalogFooter }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ startAdd }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ t.newService }}</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showBookFooter }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ t.newBooking }}</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showWizFooter }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:10px;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ wizBack }}" style="width:46px;height:46px;border-radius:13px;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;text-align:center;font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ wizProgress }}</div>
+      <button onClick="{{ wizNext }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">{{ wizNextLabel }}</button>
+    </div>
+    </sc-if>
+
+    <!-- EDIT SERVICE SHEET -->
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:30;background:rgba(28,24,46,.5)"></div>
+    <div data-noscroll style="position:absolute;left:0;right:0;bottom:0;z-index:31;max-height:86%;overflow-y:auto;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -18px 50px rgba(28,24,46,.3);animation:tlsheet .22s ease">
+      <div style="position:sticky;top:0;background:#fff;padding:9px 0 6px;display:flex;justify-content:center"><span style="width:42px;height:5px;border-radius:3px;background:#E3DEF2"></span><button onClick="{{ closeSheet }}" style="position:absolute;right:14px;top:10px;width:30px;height:30px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button></div>
+      <div style="height:120px;position:relative;background:repeating-linear-gradient(135deg,{{ editTile }})"></div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+        <div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.editService }}</div>
+        <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.svcName }}</div><input value="{{ edit.name }}" onInput="{{ onEditName }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+        <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fDesc }}</div><textarea value="{{ edit.short }}" onInput="{{ onEditDesc }}" data-noscroll style="width:100%;height:60px;resize:none;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:500 12px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5"></textarea></div>
+        <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.price }}</div><input value="{{ edit.price }}" onInput="{{ onEditPrice }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.duration }}</div><input value="{{ edit.dur }}" onInput="{{ onEditDur }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:12px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><div style="flex:1"><div style="font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.acceptBookings }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ t.acceptBookingsSub }}</div></div><div onClick="{{ toggleEditBookable }}" style="width:42px;height:25px;border-radius:13px;background:{{ editBookTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ editBookKnob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div>
+        <div style="display:flex;gap:9px;padding-top:4px"><button onClick="{{ closeSheet }}" style="border:1.5px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:13px 16px;border-radius:12px;font:800 12.5px 'Plus Jakarta Sans'">{{ t.delete }}</button><button onClick="{{ saveEdit }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:13px;border-radius:12px;font:800 13px 'Plus Jakarta Sans'">{{ t.saveChanges }}</button></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- TOAST -->
+    <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:40;background:#1E1B2E;color:#fff;padding:11px 18px;border-radius:12px;font:700 12.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px rgba(28,24,46,.4);white-space:nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v === null || v === '') ? d : v; } catch (e) { return d; } }
+  _home() { try { const inq = new URLSearchParams(location.search); const o = new URLSearchParams(); ['tier','cat'].forEach((k) => { if (inq.get(k)) o.set(k, inq.get(k)); }); o.set('lang', (this.state && this.state.lang) || 'es'); location.href = 'ToLatino Business Dashboard Mobile.dc.html?' + o.toString(); } catch (e) {} }
+  state = {
+    lang: this._qp('lang', 'es'), mode: this._qp('mode', 'services') === 'bookings' ? 'bookings' : 'services', subtab: 'catalog', view: 'wizardless',
+    bookView: 'calendar', bookFilter: 'all', selDay: 14,
+    services: null, bookableState: null, svcCatState: null, ruleState: null,
+    sheetId: null, edit: null,
+    wizStep: 0, wizMax: 0, sDraft: null,
+    toast: '', toastT: null,
+  };
+
+  I(name, s, stroke) {
+    const P = {
+      utensils: ['M6 3v6a2 2 0 0 0 4 0V3', 'M8 9v12', 'M16 3c-1.4 0-2.3 1.6-2.3 4S14.6 10.5 16 10.5V21'],
+      gift: ['M4 11h16v9H4z', 'M2 7h20v4H2z', 'M12 7v13', 'M12 7S10 3 8 4.5 9.5 7 12 7zM12 7s2-4 4-2.5S14.5 7 12 7z'],
+      cap: ['M3 9l9-4 9 4-9 4z', 'M7 11v4c0 1 2.2 2 5 2s5-1 5-2v-4', 'M21 9v5'],
+      wine: ['M8 3h8l-1 7a3 3 0 0 1-6 0z', 'M12 13v6', 'M9 21h6'],
+      cal: ['M4 5h16v16H4z', 'M4 10h16', 'M9 3v4M15 3v4'],
+      users: ['M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M3 20a6 6 0 0 1 12 0', 'M16 5.5a3 3 0 0 1 0 6', 'M19 20a5 5 0 0 0-3-4.6'],
+      x: ['M5 5l14 14M19 5 5 19'],
+      dollar: ['M12 2v20', 'M17 6a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1A4 4 0 0 1 7 18'],
+      clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7v5l3 2'],
+      grid: ['M4 4h7v7H4z', 'M13 4h7v7h-7z', 'M4 13h7v7H4z', 'M13 13h7v7h-7z'],
+      tag: ['M3 11l8-8 9 9-8 8z', 'M7 7h.01'],
+      check: ['M20 6 9 17l-5-5'],
+      msg: ['M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5z'],
+    };
+    const paths = P[name] || P.grid;
+    return React.createElement('svg', { width: s || 15, height: s || 15, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  SVC_CATS() {
+    return [
+      { id: 'tastings', es: 'Degustaciones', en: 'Tastings', tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', ic: 'wine', sEs: 'Cena · con reserva', sEn: 'Dinner · by booking' },
+      { id: 'classes', es: 'Clases y talleres', en: 'Classes & workshops', tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', ic: 'cap', sEs: 'Fines de semana', sEn: 'Weekends' },
+      { id: 'private', es: 'Eventos privados', en: 'Private events', tile: '#E3F5EA 0 8px,#D6E7D0 8px 16px', ic: 'gift', sEs: 'Bajo cotización', sEn: 'By quote' },
+      { id: 'catering', es: 'Catering', en: 'Catering', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', ic: 'utensils', sEs: 'Solo consulta', sEn: 'Inquiry only' },
+    ];
+  }
+
+  seed() {
+    return [
+      { id: 1, name: 'Sourdough 101', cat: 'classes', price: '$85', dur: '2h', need: this._needEs(true), short: 'Aprende a hornear masa madre desde el fermento inicial. Incluye masa madre para llevar.', shortEn: 'Learn to bake sourdough from the starter. Includes a starter to take home.', tags: ['Más reservado'], tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', bookable: true },
+      { id: 2, name: 'Pizza para familias', cat: 'classes', price: '$60', dur: '90 min', need: this._needEs(true), short: 'Taller práctico de pizza al horno de leña para toda la familia.', shortEn: 'Hands-on wood-fired pizza workshop for the whole family.', tags: ['Familiar'], tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', bookable: true },
+      { id: 3, name: 'Menú degustación', cat: 'tastings', price: '$140', dur: '5 tiempos', need: this._needEs(true), short: '5 tiempos con maridaje de vino opcional. Mar–Dom, solo cena.', shortEn: '5 courses with optional wine pairing. Tue–Sun, dinner only.', tags: ['Premium'], tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', bookable: true },
+      { id: 4, name: 'Cata de vinos', cat: 'tastings', price: '$45', dur: '75 min', need: this._needEs(true), short: 'Cata guiada de vinos de California e Italia con quesos artesanales.', shortEn: 'Guided tasting of California & Italy wines with artisan cheese.', tags: [], tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', bookable: true },
+      { id: 5, name: 'Comedor privado', cat: 'private', price: 'Cotización', dur: '8–24 pers.', need: this._needEs(false), short: 'Reserva nuestra sala trasera para cenas privadas y eventos corporativos.', shortEn: 'Book our back room for private dinners and corporate events.', tags: [], tile: '#E3F5EA 0 8px,#D6E7D0 8px 16px', bookable: false },
+      { id: 6, name: 'Catering · entrega', cat: 'catering', price: 'Desde $12/pers', dur: '20+ pers.', need: this._needEs(false), short: 'Catering para oficinas y eventos. Entrega o montaje en sitio.', shortEn: 'Office & event catering. Drop-off or on-site setup.', tags: [], tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', bookable: false },
+    ];
+  }
+  _needEs(b) { return b ? '__bookable__' : '__inquiry__'; }
+
+  newDraft() { return { name: '', desc: '', cat: 'classes', price: '', priceType: 'fijo', dur: '60 min', tags: [], bookable: true, deposit: true, capacity: '1', publishMode: 'now' }; }
+
+  go(mode, subtab) { this.setState({ mode, subtab: subtab || (mode === 'services' ? 'catalog' : 'bookings'), view: 'wizardless' }); }
+  services() { return this.state.services || this.seed(); }
+  flash(m) { clearTimeout(this.state.toastT); const tt = setTimeout(() => this.setState({ toast: '' }), 1900); this.setState({ toast: m, toastT: tt }); }
+
+  renderVals() {
+    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const I = (n, s, c) => this.I(n, s, c);
+    const svcCats = this.SVC_CATS();
+    const services = this.services();
+    const view = st.view;
+
+    const chip = (active) => 'flex:none;border:none;cursor:pointer;padding:8px 13px;border-radius:999px;font:' + (active ? '800' : '700') + " 12px 'Plus Jakarta Sans';" + (active ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E');
+    const langTab = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 11px', borderRadius: '999px', fontWeight: 800, fontSize: '11px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+    const segSm = (active) => 'flex:none;border:none;cursor:pointer;padding:7px 11px;border-radius:8px;font:800 10.5px \'Plus Jakarta Sans\';' + (active ? 'background:#7B61FF;color:#fff' : 'background:transparent;color:#9A96AE');
+
+    const t = {
+      tServices: L('Servicios', 'Services'), tBookings: L('Reservas', 'Bookings'),
+      bookingsActive: L('Módulo de reservas activo', 'Bookings module active'),
+      bookingsActiveSub: L('Los reservables aceptan reservas y depósitos.', 'Bookable services accept bookings & deposits.'),
+      openBookings: L('Reservas', 'Bookings'),
+      svcRevenue: L('Ingresos por servicios · 30 días', 'Service revenue · 30 days'),
+      revenue: L('Ingresos', 'Revenue'), bookings: L('Reservas', 'Bookings'), conversion: L('Conversión', 'Conversion'),
+      bestEarners: L('Mejores ingresos', 'Best earners'), pendingInq: L('Consultas pendientes', 'Pending inquiries'), quote: L('Cotizar', 'Quote'),
+      svcCatsSub: L('Agrupa tus servicios en secciones. Activa/desactiva para mostrar en el listado.', 'Group services into sections. Toggle to show on the listing.'),
+      servicesWord: L('servicios', 'services'), hidden: L('Oculto', 'Hidden'), newCategory: L('Nueva categoría', 'New category'),
+      october: L('Octubre', 'October'), reservations: L('Reservas', 'Reservations'), classes: L('Clases', 'Classes'), private: L('Privados', 'Private'),
+      floorPlan: L('Plano de mesas', 'Floor plan'), mainDining: L('Comedor', 'Main dining'), available: L('Libre', 'Available'), seated: L('Ocupada', 'Seated'), reserved: L('Reservada', 'Reserved'), capacity: L('Capacidad', 'Capacity'), seats: L('lugares', 'seats'), utilization: L('uso', 'utilization'),
+      deposit: L('Depósito', 'Deposit'), bookingRules: L('Reglas de reserva', 'Booking rules'),
+      catFieldsTitle: L('Campos de reserva · Restaurante', 'Booking fields · Restaurant'), catFieldsSub: L('Lo que tus clientes llenan. Cambia según la categoría.', 'What guests fill in. Changes by category.'), customField: L('Campo personalizado', 'Custom field'),
+      newService: L('Nuevo servicio', 'New service'), newBooking: L('Nueva reserva', 'New booking'),
+      svcName: L('Nombre del servicio', 'Service name'), svcNamePh: L('Ej. Clase de pan', 'e.g. Bread class'),
+      fDesc: L('Descripción', 'Description'), svcDescPh: L('Qué incluye, para quién, qué lo hace especial…', 'What it includes, for whom, what makes it special…'),
+      category: L('Categoría', 'Category'), tags: L('Etiquetas', 'Tags'), price: L('Precio', 'Price'), priceType: L('Tipo', 'Type'), duration: L('Duración', 'Duration'),
+      requireDeposit: L('Requiere depósito', 'Require deposit'), depositSub: L('Cobra un anticipo al reservar.', 'Charge upfront at booking.'),
+      howSold: L('¿Cómo se vende?', 'How is it sold?'), capacityPer: L('Capacidad por sesión', 'Capacity per session'),
+      edit: L('Editar', 'Edit'),
+      editService: L('Editar servicio', 'Edit service'), acceptBookings: L('Acepta reservas', 'Accept bookings'), acceptBookingsSub: L('Apágalo para solo recibir consultas.', 'Turn off to collect inquiries only.'),
+      delete: L('Eliminar', 'Delete'), saveChanges: L('Guardar cambios', 'Save changes'),
+      addAnotherSvc: L('Agregar otro servicio', 'Add another service'), backToServices: L('Volver a servicios', 'Back to services'),
+    };
+
+    const needLabel = (n) => n === '__bookable__' ? L('reservable', 'bookable') : L('solo consulta', 'inquiry only');
+    const tagLabel = (tg) => ({ 'Más reservado': L('Más reservado', 'Most booked'), Familiar: L('Familiar', 'Family'), Premium: L('Premium', 'Premium') }[tg] || tg);
+
+    // ===== catalog grouped =====
+    const bookableSt = st.bookableState || services.reduce((o, s) => { o[s.id] = s.bookable; return o; }, {});
+    const catGroups = svcCats.map((c) => {
+      const list = services.filter((s) => s.cat === c.id);
+      if (!list.length) return null;
+      return {
+        name: L(c.es, c.en), tile: c.tile, icon: I(c.ic, 16, '#fff'), sched: L(c.sEs, c.sEn),
+        count: list.length + ' ' + L('servicios', 'services'),
+        services: list.map((s) => { const bk = bookableSt[s.id]; return {
+          name: s.name, price: s.price, dur: s.dur, need: needLabel(s.need), short: es ? s.short : s.shortEn, tile: s.tile,
+          track: bk ? '#7B61FF' : '#D8D2E6', knob: bk ? '18px' : '3px', bookableC: bk ? '#6D4DF6' : '#9A96AE', bookableLabel: bk ? L('Reservas activas', 'Bookings on') : L('Solo consulta', 'Inquiry only'),
+          cta: bk ? L('Ver reservas', 'View bookings') : L('Leads · 8', 'Leads · 8'),
+          onToggle: () => this.setState({ bookableState: { ...bookableSt, [s.id]: !bk } }),
+          onTap: () => this.setState({ sheetId: s.id, edit: { ...s } }),
+        }; }),
+      };
+    }).filter(Boolean);
+
+    const bestRaw = [['Sourdough 101', '$4,080', 48, 100], ['Comedor privado', '$3,920', 28, 92], ['Pizza familias', '$2,860', 22, 70], ['Cata de vinos', '$1,440', 18, 55]];
+    const barCs = ['#4F46E5', '#7C6BFF', '#A78BFA', '#10B981'];
+    const bestEarners = bestRaw.map((b, i) => ({ name: b[0], rev: b[1], count: b[2], bar: b[3] + '%', barC: barCs[i] }));
+    const inqRaw = [['MV', '#7B61FF', 'Mariana V.', L('Comedor privado · 18 pers.', 'Private dining · 18 ppl'), '9 Nov · 7 PM'], ['MT', '#1F9D57', 'Mission Tech', L('Catering · 80 pers.', 'Catering · 80 ppl'), '18 Oct · 12 PM'], ['SJ', '#E8954A', 'Sarah J.', L('Pastel de boda · cata', 'Wedding cake · tasting'), 'Nov']];
+    const inquiries = inqRaw.map((i, idx, a) => ({ initials: i[0], color: i[1], name: i[2], svc: i[3], when: i[4], border: idx === a.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)' }));
+
+    // ===== svc categories tab =====
+    const scSt = st.svcCatState || svcCats.reduce((o, c) => { o[c.id] = true; return o; }, {});
+    const svcCatRows = svcCats.map((c) => { const on = scSt[c.id]; const n = services.filter((s) => s.cat === c.id).length; return { name: L(c.es, c.en), n, sched: L(c.sEs, c.sEn), tile: c.tile, icon: I(c.ic, 18, '#fff'), hidden: !on, op: on ? '1' : '.6', track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState({ svcCatState: { ...scSt, [c.id]: !on } }) }; });
+
+    // ===== bookings =====
+    const bookKpis = [
+      { ic: 'cal', c: '#6D4DF6', bg: '#EFEBFF', label: L('Próximas · 30d', 'Upcoming · 30d'), value: '128', delta: '▲ 22%', dC: '#1F9D57' },
+      { ic: 'users', c: '#2A5C8A', bg: '#E4ECFB', label: L('Tamaño prom.', 'Avg party'), value: '3.4', delta: '▲ 0.4', dC: '#1F9D57' },
+      { ic: 'x', c: '#9A6A12', bg: '#FCEFD6', label: L('No-shows', 'No-show rate'), value: '4.2%', delta: '▼ 1.8pp', dC: '#1F9D57' },
+      { ic: 'dollar', c: '#D6336C', bg: '#FDE7EF', label: L('Depósitos', 'Deposits held'), value: '$2,840', delta: L('8 activos', '8 active'), dC: '#9A96AE' },
+    ].map((k) => ({ icon: I(k.ic, 16, k.c), bg: k.bg, label: k.label, value: k.value, delta: k.delta, dC: k.dC }));
+
+    const bookViews = [['calendar', L('Calendario', 'Calendar')], ['floor', L('Mesas', 'Floor')], ['list', L('Lista', 'List')]].map((v) => ({ label: v[1], onTap: () => this.setState({ bookView: v[0] }), style: 'flex:1;border:none;cursor:pointer;padding:9px;border-radius:9px;font:800 11.5px \'Plus Jakarta Sans\';' + (st.bookView === v[0] ? 'background:#7B61FF;color:#fff' : 'background:transparent;color:#6E6A85') }));
+
+    // calendar cells (Oct 2025, starts Wed)
+    const dows = es ? ['L', 'M', 'X', 'J', 'V', 'S', 'D'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const eventDays = { 2: ['#D6336C', '#7B61FF'], 5: ['#7B61FF'], 8: ['#D6336C'], 11: ['#1F9D57'], 14: ['#D6336C', '#7B61FF'], 18: ['#D6336C'], 22: ['#7B61FF', '#1F9D57'], 25: ['#D6336C'], 28: ['#1F9D57'], 31: ['#D6336C', '#7B61FF'] };
+    const calCells = Array.from({ length: 35 }, (_, i) => {
+      const dayNum = i - 1; const visible = dayNum >= 0 && dayNum < 31; const dn = dayNum + 1;
+      const isToday = dn === 14, isSel = dn === st.selDay;
+      const dots = (visible && eventDays[dn]) ? eventDays[dn] : [];
+      return {
+        day: visible ? dn : '', onTap: () => { if (visible) this.setState({ selDay: dn }); },
+        style: 'aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:' + (visible ? 'pointer' : 'default') + ';font:800 11px \'Plus Jakarta Sans\';' + (isSel ? 'background:#7B61FF;color:#fff' : isToday ? 'background:#EFEBFF;color:#6D4DF6' : visible ? 'background:#F7F6FC;color:#1E1B2E' : 'background:transparent;color:transparent'),
+        dots: React.createElement(React.Fragment, null, dots.map((c, j) => React.createElement('span', { key: j, style: { width: 4, height: 4, borderRadius: 99, background: isSel ? '#fff' : c } }))),
+      };
+    });
+
+    // floor tables
+    const tblRaw = [
+      ['T1·2', 'free', '6%', '14%', 54, 36], ['T2·4', 'taken', '32%', '14%', 54, 36], ['T3·4', 'taken', '58%', '14%', 54, 36], ['T4·6', 'held', '6%', '40%', 72, 36], ['T5·2', 'free', '44%', '40%', 54, 36], ['T6·6', 'taken', '70%', '40%', 72, 36], ['B1', 'free', '6%', '70%', 34, 34], ['B2', 'taken', '24%', '70%', 34, 34], ['P3·4', 'held', '58%', '70%', 64, 34],
+    ];
+    const tblColor = { free: ['#BBF7D0', '#22C55E', '#137A3A'], taken: ['#FCA5A5', '#DC2626', '#B91C1C'], held: ['#C7D2FE', '#4F46E5', '#3730A3'] };
+    const tables = tblRaw.map((tb) => { const c = tblColor[tb[1]]; const round = tb[0][0] === 'B'; return { label: tb[0], style: 'position:absolute;left:' + tb[2] + ';top:' + tb[3] + ';width:' + tb[4] + 'px;height:' + tb[5] + 'px;background:' + c[0] + ';border:1.5px solid ' + c[1] + ';border-radius:' + (round ? '99px' : '8px') + ';display:flex;align-items:center;justify-content:center;font:800 9px \'Plus Jakarta Sans\';color:' + c[2] }; });
+
+    // bookings list
+    const bkRaw = [
+      { time: '7:00 PM', nm: 'Daniel K.', type: L('Reserva · 2 pers.', 'Reservation · party 2'), table: 'T1', cat: 'indigo', deposit: null, vip: false, notes: L('Aniversario — mesa junto a la ventana.', 'Anniversary — window table please.') },
+      { time: '7:30 PM', nm: 'Anna F.', type: L('Menú degustación · 2', 'Tasting menu · party 2'), table: 'T4', cat: 'success', deposit: '$140', vip: true, notes: L('Maridaje de vino. Alergia: marisco.', 'Wine pairing. Allergy: shellfish.') },
+      { time: '7:45 PM', nm: 'James T.', type: L('Reserva · 6 pers.', 'Reservation · party 6'), table: 'T9', cat: 'coral', deposit: '$50', vip: false, notes: L('Trae pastel de cumpleaños.', 'Bringing birthday cake.') },
+      { time: '8:00 PM', nm: 'Sofia R.', type: L('Sourdough 101 · clase', 'Sourdough 101 · class'), table: '14/16', cat: 'indigo', deposit: '$85', vip: false, notes: '' },
+      { time: '8:30 PM', nm: 'Mission Tech', type: L('Comedor privado · 18', 'Private dining · 18'), table: L('Sala', 'Back room'), cat: 'success', deposit: '$500', vip: true, notes: L('2 vegetarianos, 1 sin gluten.', '2 vegetarian, 1 GF.') },
+    ];
+    const fmap = { reservation: 'indigo', class: 'indigo', private: 'success' };
+    const dtColor = { indigo: ['#EFEBFF', '#6D4DF6'], success: ['#E3F5EA', '#1F8A4C'], coral: ['#FDE7EF', '#D6336C'] };
+    const statusFor = (cat) => cat === 'success' ? { bg: '#E3F5EA', c: '#1F8A4C', es: 'Confirmada', en: 'Confirmed' } : cat === 'coral' ? { bg: '#FDE7EF', c: '#D6336C', es: 'Por confirmar', en: 'Pending' } : { bg: '#EFEBFF', c: '#6D4DF6', es: 'Confirmada', en: 'Confirmed' };
+    const bookFilterDefs = [['all', L('Todas', 'All')], ['reservations', L('Reservas', 'Reservations')], ['classes', L('Clases', 'Classes')], ['private', L('Privados', 'Private')]];
+    const bookFilters = bookFilterDefs.map((f) => ({ label: f[1], onTap: () => this.setState({ bookFilter: f[0] }), style: segSm(st.bookFilter === f[0]) + ';background:' + (st.bookFilter === f[0] ? '#7B61FF' : '#F1EFFA') }));
+    const bookings = bkRaw.map((b) => { const dc = dtColor[b.cat]; const ss = statusFor(b.cat); return { name: b.nm, type: b.type, table: b.table, deposit: b.deposit, vip: b.vip, notes: b.notes, ampm: b.time.split(' ')[1], hour: b.time.split(':')[0], dtBg: dc[0], dtC: dc[1], status: L(ss.es, ss.en), statusStyle: 'font:800 9px \'Plus Jakarta Sans\';padding:4px 8px;border-radius:7px;flex:none;align-self:flex-start;background:' + ss.bg + ';color:' + ss.c }; });
+
+    const ruleDefs = [L('Reservas con 30 días de anticipación', 'Reservations open 30 days ahead'), L('Depósito de $25 para grupos de 6+', '$25 deposit for parties of 6+'), L('Cancelación con 24h', '24h cancellation policy'), L('Auto-confirmar grupos ≤ 4', 'Auto-confirm parties ≤ 4'), L('Permitir lista de espera', 'Allow waitlist when full')];
+    const ruleSt = st.ruleState || { 0: true, 1: true, 2: true, 3: true, 4: false };
+    const rules = ruleDefs.map((r, i, a) => { const on = ruleSt[i]; return { label: r, track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', border: i === a.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)', onToggle: () => this.setState({ ruleState: { ...ruleSt, [i]: !on } }) }; });
+
+    const fieldRaw = [[L('Tamaño del grupo', 'Party size'), true], [L('Fecha y hora', 'Date & time'), true], [L('Preferencia de mesa', 'Seating preference'), false], [L('Restricciones dietéticas', 'Dietary restrictions'), false], [L('Teléfono (recordatorios SMS)', 'Phone (SMS reminders)'), true]];
+    const catFields = fieldRaw.map((f) => ({ name: f[0], req: f[1] ? L('Obligatorio', 'Required') : L('Opcional', 'Optional'), reqStyle: 'font:800 9px \'Plus Jakarta Sans\';padding:3px 8px;border-radius:6px;flex:none;background:' + (f[1] ? '#FDE7EF' : '#F1EFFA') + ';color:' + (f[1] ? '#D6336C' : '#9A96AE') }));
+
+    // ===== WIZARD =====
+    const sDraft = st.sDraft || this.newDraft();
+    const upD = (patch) => this.setState({ sDraft: { ...sDraft, ...patch } });
+    const dCat = svcCats.find((c) => c.id === sDraft.cat) || svcCats[1];
+    const wizStepDefs = [['details', L('Detalles', 'Details')], ['pricing', L('Precio', 'Pricing')], ['booking', L('Reserva', 'Booking')], ['review', L('Revisar', 'Review')]];
+    const wizSteps = wizStepDefs.map((s, i) => { const active = st.wizStep === i, done = i < st.wizStep || (i <= st.wizMax && i !== st.wizStep); return { label: s[1], onTap: () => { if (i <= st.wizMax) this.setState({ wizStep: i }); }, dot: done ? '✓' : (i + 1), style: 'flex:none;display:flex;align-items:center;gap:6px;border:none;cursor:pointer;padding:7px 11px;border-radius:999px;font:800 11px \'Plus Jakarta Sans\';background:' + (active ? '#7B61FF' : done ? '#EFEBFF' : '#F1EFFA') + ';color:' + (active ? '#fff' : done ? '#6D4DF6' : '#9A96AE'), dotStyle: 'width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 9px \'Plus Jakarta Sans\';color:#fff;background:' + (active ? 'rgba(255,255,255,.25)' : done ? '#7B61FF' : '#D8D2E6') }; });
+    const sWizCats = svcCats.map((c) => ({ label: L(c.es, c.en), onTap: () => upD({ cat: c.id }), style: chip(sDraft.cat === c.id) }));
+    const tagDefs = [['Más reservado', L('Más reservado', 'Most booked')], ['Familiar', L('Familiar', 'Family')], ['Premium', L('Premium', 'Premium')], ['Nuevo', L('Nuevo', 'New')]];
+    const sWizTags = tagDefs.map((g) => ({ label: g[1], onTap: () => { const has = sDraft.tags.includes(g[0]); upD({ tags: has ? sDraft.tags.filter((x) => x !== g[0]) : [...sDraft.tags, g[0]] }); }, style: chip(sDraft.tags.includes(g[0])) }));
+    const priceTypeDefs = [['fijo', L('Fijo', 'Fixed')], ['persona', L('Por pers.', 'Per person')], ['cotiza', L('Cotizar', 'Quote')]];
+    const priceTypes = priceTypeDefs.map((p) => ({ label: p[1], onTap: () => upD({ priceType: p[0] }), style: segSm(sDraft.priceType === p[0]) + ';background:' + (sDraft.priceType === p[0] ? '#7B61FF' : '#F1EFFA') }));
+    const durDefs = ['30 min', '60 min', '90 min', '2h', '3h+'];
+    const durations = durDefs.map((d) => ({ label: d, onTap: () => upD({ dur: d }), style: chip(sDraft.dur === d) }));
+    const bookModeDefs = [['bookable', L('Reservable', 'Bookable'), L('Acepta citas y depósitos', 'Accepts appointments & deposits'), 'cal'], ['inquiry', L('Solo consulta', 'Inquiry only'), L('Recolecta leads para cotizar', 'Collects leads to quote'), 'msg']];
+    const bookModes = bookModeDefs.map((b) => { const on = (b[0] === 'bookable') === sDraft.bookable; return { label: b[1], sub: b[2], icon: I(b[3], 15, '#6D4DF6'), on, onTap: () => upD({ bookable: b[0] === 'bookable' }), style: 'display:flex;align-items:center;gap:11px;width:100%;border:1.5px solid ' + (on ? '#7B61FF' : '#E2DEF4') + ';background:' + (on ? '#F7F5FF' : '#fff') + ';cursor:pointer;padding:11px;border-radius:12px', radioStyle: 'width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (on ? '#7B61FF' : '#D8D2E6') + ';display:flex;align-items:center;justify-content:center;flex:none' }; });
+    const capDefs = ['1', '2–6', '8–16', '20+'];
+    const capacities = capDefs.map((c) => ({ label: c, onTap: () => upD({ capacity: c }), style: chip(sDraft.capacity === c) }));
+
+    const sReady = sDraft.name && (sDraft.price || sDraft.priceType === 'cotiza');
+    const srev = (k, v, ok, step) => ({ k, v, vC: ok ? '#1E1B2E' : '#C0BBD0', onEdit: () => this.setState({ wizStep: step }), border: 'rgba(30,27,46,.06)' });
+    const sReviewRows = [
+      srev(L('Nombre', 'Name'), sDraft.name || '—', !!sDraft.name, 0),
+      srev(L('Categoría', 'Category'), L(dCat.es, dCat.en), true, 0),
+      srev(L('Precio', 'Price'), sDraft.priceType === 'cotiza' ? L('Cotización', 'By quote') : (sDraft.price ? '$' + sDraft.price + (sDraft.priceType === 'persona' ? L('/pers', '/person') : '') : '—'), !!sDraft.price || sDraft.priceType === 'cotiza', 1),
+      srev(L('Duración', 'Duration'), sDraft.dur, true, 1),
+      srev(L('Modo', 'Mode'), sDraft.bookable ? L('Reservable', 'Bookable') : L('Solo consulta', 'Inquiry only'), true, 2),
+    ];
+    sReviewRows[sReviewRows.length - 1].border = 'transparent';
+
+    // edit sheet
+    const edit = st.edit || {};
+    const editBk = edit.bookable;
+
+    const inModule = view === 'wizardless';
+    const isCatalog = inModule && st.mode === 'services' && st.subtab === 'catalog';
+    const isSvcCats = inModule && st.mode === 'services' && st.subtab === 'svccats';
+    const isBookings = inModule && st.mode === 'bookings';
+
+    // subtabs depend on mode
+    const subtabs = st.mode === 'services'
+      ? [['catalog', L('Catálogo', 'Catalog'), false], ['svccats', L('Categorías', 'Categories'), true, svcCats.length]].map((s) => ({ label: s[1], onTap: () => this.setState({ subtab: s[0] }), style: chip(st.subtab === s[0]), hasN: s[2], n: s[3], nStyle: 'margin-left:6px;font-weight:800;color:' + (st.subtab === s[0] ? 'rgba(255,255,255,.8)' : '#9A96AE') }))
+      : [];
+
+    const wizNext = () => { if (st.wizStep >= wizStepDefs.length - 1) { this.setState({ view: 'success' }); return; } const n = st.wizStep + 1; this.setState({ wizStep: n, wizMax: Math.max(st.wizMax, n) }); };
+    const wizBack = () => { if (st.wizStep === 0) { this.setState({ view: 'wizardless' }); return; } this.setState({ wizStep: st.wizStep - 1 }); };
+
+    return {
+      esTab: langTab(es), enTab: langTab(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
+      headTitle: view === 'wizard' ? L('Nuevo servicio', 'New service') : (view === 'success' ? L('Servicio publicado', 'Service published') : (st.mode === 'bookings' ? L('Reservas', 'Bookings') : L('Servicios', 'Services'))),
+      headSub: view === 'wizard' ? L(dCat.es, dCat.en) : (st.mode === 'bookings' ? L('Restaurante · 128 próximas', 'Restaurant · 128 upcoming') : L('Restaurante · 6 servicios', 'Restaurant · 6 services')),
+      back: () => { if (view !== 'wizardless') { this.setState({ view: 'wizardless' }); } else { this._home(); } },
+      inModule, t,
+      modeServicesStyle: 'flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;padding:10px;border-radius:11px;font:800 12.5px \'Plus Jakarta Sans\';' + (st.mode === 'services' ? 'background:#1E1B2E;color:#fff' : 'background:#F1EFFA;color:#6E6A85'),
+      modeBookingsStyle: 'flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;padding:10px;border-radius:11px;font:800 12.5px \'Plus Jakarta Sans\';' + (st.mode === 'bookings' ? 'background:#1E1B2E;color:#fff' : 'background:#F1EFFA;color:#6E6A85'),
+      modeServicesIconC: st.mode === 'services' ? '#fff' : '#9A96AE', modeBookingsIconC: st.mode === 'bookings' ? '#fff' : '#9A96AE',
+      goServices: () => this.go('services', 'catalog'), goBookings: () => this.go('bookings', 'bookings'), showBookBadge: st.mode === 'bookings',
+      subtabs,
+      isCatalog, isSvcCats, isBookings, isWizard: view === 'wizard', isSuccess: view === 'success',
+      // catalog
+      catGroups, bestEarners, inquiries,
+      // svc cats
+      svcCatRows,
+      // bookings
+      bookKpis, bookViews, bvCalendar: st.bookView === 'calendar', bvFloor: st.bookView === 'floor',
+      dows, calCells, tables, dayLabel: L('Octubre ', 'October ') + st.selDay + L(' · reservas', ' · bookings'), bookFilters, bookings, rules, catFields,
+      // wizard
+      wizSteps, sDraft, sDraftTile: dCat.tile, sDraftName: sDraft.name || L('Nombre del servicio', 'Service name'), sDraftNameC: sDraft.name ? '#1E1B2E' : '#C0BBD0',
+      sDraftMeta: L(dCat.es, dCat.en) + ' · ' + sDraft.dur, sDraftPrice: sDraft.priceType === 'cotiza' ? L('Cotización', 'Quote') : (sDraft.price ? '$' + sDraft.price : '$0'),
+      sWizTitle: [L('Detalles del servicio', 'Service details'), L('Precio y duración', 'Pricing & duration'), L('Reservas', 'Booking'), L('Revisar y publicar', 'Review & publish')][st.wizStep],
+      sw0: st.wizStep === 0, sw1: st.wizStep === 1, sw2: st.wizStep === 2, sw3: st.wizStep === 3,
+      onSName: (e) => upD({ name: e.target.value }), onSDesc: (e) => upD({ desc: e.target.value }), onSPrice: (e) => upD({ price: e.target.value }),
+      sWizCats, sWizTags, priceTypes, durations, bookModes, capacities, sDraftBookable: sDraft.bookable,
+      toggleDeposit: () => upD({ deposit: !sDraft.deposit }), depositTrack: sDraft.deposit ? '#7B61FF' : '#D8D2E6', depositKnob: sDraft.deposit ? '20px' : '3px',
+      sReady, sReadyBg: sReady ? '#E3F5EA' : '#FCEFD6', sReadyBorder: sReady ? '#A7E3C0' : '#FDE68A', sReadyC: sReady ? '#176B3A' : '#9A6A12', sReadyIcon: sReady ? '✓' : '⚠',
+      sReadyTitle: sReady ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing'),
+      sReadySub: sReady ? L('Todo en orden. Aparecerá en tu listado al instante.', 'All set. It’ll appear on your listing instantly.') : L('Agrega nombre y precio antes de publicar.', 'Add a name and price before publishing.'),
+      sReviewRows,
+      showWizFooter: view === 'wizard', wizBack, wizNext, wizProgress: L('Paso ', 'Step ') + (st.wizStep + 1) + L(' de ', ' of ') + wizStepDefs.length, wizNextLabel: st.wizStep >= wizStepDefs.length - 1 ? L('Publicar servicio', 'Publish service') : L('Continuar', 'Continue'),
+      showCatalogFooter: isCatalog || isSvcCats, showBookFooter: isBookings,
+      startAdd: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, sDraft: this.newDraft() }),
+      // success
+      sSuccessTitle: (sDraft.name || L('Nuevo servicio', 'New service')) + ' ' + L('está activo', 'is live'),
+      sSuccessSub: L('Ya aparece en la pestaña de Servicios de tu listado público.', 'It now appears on your public listing’s Services tab.'),
+      sLivePill: sDraft.bookable ? L('Reservable', 'Bookable') : L('Consulta', 'Inquiry'), sLivePillStyle: 'background:#E3F5EA;color:#1F8A4C;padding:5px 11px;border-radius:8px;font:800 10.5px \'Plus Jakarta Sans\';flex:none',
+      sAddAnother: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, sDraft: this.newDraft() }), sBackToList: () => this.setState({ view: 'wizardless', mode: 'services', subtab: 'catalog' }),
+      // edit sheet
+      sheetOpen: st.sheetId != null, closeSheet: () => this.setState({ sheetId: null, edit: null }),
+      edit, editTile: edit.tile || '#EFE3D0 0 8px,#E2CFB2 8px 16px',
+      onEditName: (e) => this.setState({ edit: { ...edit, name: e.target.value } }), onEditDesc: (e) => this.setState({ edit: { ...edit, short: e.target.value } }), onEditPrice: (e) => this.setState({ edit: { ...edit, price: e.target.value } }), onEditDur: (e) => this.setState({ edit: { ...edit, dur: e.target.value } }),
+      toggleEditBookable: () => this.setState({ edit: { ...edit, bookable: !editBk } }), editBookTrack: editBk ? '#7B61FF' : '#D8D2E6', editBookKnob: editBk ? '20px' : '3px',
+      saveEdit: () => { this.commit && null; this.setState({ services: services.map((s) => s.id === st.sheetId ? { ...s, ...edit } : s), sheetId: null, edit: null }); this.flash(L('Guardado · listado actualizado', 'Saved · listing updated')); },
+      // toast
+      toastShow: !!st.toast, toastMsg: st.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

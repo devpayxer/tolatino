@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+@keyframes tlsheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Productos y envío · móvil</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:852px;background:#F4F2F9;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ headTitle }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+    </div>
+
+    <!-- MODE TOGGLE -->
+    <sc-if value="{{ inModule }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;display:flex;gap:7px;padding:11px 14px 4px;background:#fff">
+      <button onClick="{{ goProducts }}" style="{{ modeProdStyle }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ modeProdIconC }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>{{ t.tProducts }}</button>
+      <button onClick="{{ goShipping }}" style="{{ modeShipStyle }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ modeShipIconC }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="12" height="10" rx="1.5"></rect><path d="M14.5 9h3.5l3 3v4h-6.5"></path><circle cx="6.5" cy="18" r="1.6"></circle><circle cx="17" cy="18" r="1.6"></circle></svg>{{ t.tShipping }}</button>
+    </div>
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:10px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ subtabs }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+    </div>
+    </sc-if>
+
+    <!-- BODY -->
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 16px">
+
+      <!-- ===== PRODUCTS · CATALOG ===== -->
+      <sc-if value="{{ isCatalog }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Catalogo">
+        <!-- sell-online toggle -->
+        <div style="background:#fff;border:1.5px solid {{ sellRing }};border-radius:15px;padding:14px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:38px;height:38px;border-radius:11px;background:{{ sellIconBg }};display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="{{ sellIconC }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6h19v12h-19z"></path><path d="M2.5 10h19"></path></svg></span><div style="flex:1;min-width:0"><div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ sellTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px;line-height:1.4">{{ sellSub }}</div></div><div onClick="{{ toggleSell }}" style="width:46px;height:27px;border-radius:14px;background:{{ sellTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ sellKnob }};width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18)"></span></div></div>
+        </div>
+
+        <!-- search + count -->
+        <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid rgba(30,27,46,.1);border-radius:12px;padding:10px 13px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg><input value="{{ query }}" onInput="{{ onQuery }}" placeholder="{{ t.searchProducts }}" style="flex:1;border:none;outline:none;background:none;font:500 13px 'Plus Jakarta Sans';color:#1E1B2E"></div>
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding:12px 0 6px">
+          <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+        </div>
+
+        <!-- product cards -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ products }}" as="p" hint-placeholder-count="6">
+          <div onClick="{{ p.onTap }}" style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:11px;display:flex;gap:12px;cursor:pointer">
+            <div style="width:60px;height:60px;border-radius:12px;flex:none;background:repeating-linear-gradient(135deg,{{ p.tile }})"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1.3">{{ p.name }}</span><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ p.price }}</span></div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px">
+                <span style="background:#F1EFFA;color:#6E6A85;padding:3px 8px;border-radius:7px;font:700 9.5px 'Plus Jakarta Sans'">{{ p.cat }}</span>
+                <span style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">SKU {{ p.sku }}</span>
+                <sc-if value="{{ p.hasVariants }}" hint-placeholder-val="{{ false }}"><span style="background:#EFEBFF;color:#6D4DF6;padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'">{{ p.variants }} {{ t.variantsWord }}</span></sc-if>
+              </div>
+              <sc-if value="{{ sellOn }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:7px;margin-top:7px"><span style="display:inline-flex;align-items:center;gap:4px;background:{{ p.stockBg }};color:{{ p.stockC }};padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'"><span style="width:5px;height:5px;border-radius:50%;background:{{ p.stockC }}"></span>{{ p.stockLabel }}</span><span style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ p.sales }} {{ t.sold }}</span></div></sc-if>
+            </div>
+          </div>
+          </sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== PRODUCTS · INVENTORY ===== -->
+      <sc-if value="{{ isInventory }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Inventario">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.invValue }}</div><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">$5,480</div><div style="font:800 9px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">7 SKU</div></div>
+          <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A6A12">{{ t.needReorder }}</div><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">2</div><div style="font:800 9px 'Plus Jakarta Sans';color:#9A6A12;margin-top:1px">⚠ {{ t.belowThresh }}</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.incoming }}</div><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">110</div><div style="font:800 9px 'Plus Jakarta Sans';color:#6D4DF6;margin-top:1px">3 PO</div></div>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;overflow:hidden">
+          <sc-for list="{{ inventory }}" as="r" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:11px;padding:11px 13px;border-bottom:1px solid {{ r.border }}"><div style="width:40px;height:40px;border-radius:10px;flex:none;background:repeating-linear-gradient(135deg,{{ r.tile }})"></div><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div><div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">SKU {{ r.sku }} · {{ t.reorderAt }} {{ r.reorder }}<sc-if value="{{ r.hasIncoming }}" hint-placeholder-val="{{ false }}"> · <span style="color:#6D4DF6">+{{ r.incoming }} {{ t.incoming }}</span></sc-if></div></div><div style="text-align:right;flex:none"><div style="font:800 15px 'Plus Jakarta Sans';color:{{ r.onC }}">{{ r.on }}</div><span style="{{ r.pillStyle }}">{{ r.pill }}</span></div></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== PRODUCTS · VARIANTS ===== -->
+      <sc-if value="{{ isVariants }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Variantes">
+        <div style="display:flex;align-items:center;gap:11px;background:#F1EFFA;border-radius:13px;padding:11px 13px;margin-bottom:14px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M13 2 3 14h7l-1 8 10-12h-7z"></path></svg><div style="flex:1"><div style="font:800 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.editingVariants }} · Espresso Beans</div><div style="font:500 10px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.variantsSub }}</div></div></div>
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 8px">{{ t.optionSets }}</div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:13px;margin-bottom:14px">
+          <div style="font:800 10.5px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.grind }} · 3</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px"><sc-for list="{{ grinds }}" as="g" hint-placeholder-count="3"><span style="background:#F1EFFA;color:#56506E;padding:6px 10px;border-radius:8px;font:700 11px 'Plus Jakarta Sans'">{{ g }}</span></sc-for><span style="border:1.5px dashed #C9C2E6;color:#6D4DF6;padding:6px 10px;border-radius:8px;font:800 11px 'Plus Jakarta Sans'">+ {{ t.value }}</span></div>
+          <div style="font:800 10.5px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.size }} · 2</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ sizes }}" as="s" hint-placeholder-count="2"><span style="background:#F1EFFA;color:#56506E;padding:6px 10px;border-radius:8px;font:700 11px 'Plus Jakarta Sans'">{{ s }}</span></sc-for><span style="border:1.5px dashed #C9C2E6;color:#6D4DF6;padding:6px 10px;border-radius:8px;font:800 11px 'Plus Jakarta Sans'">+ {{ t.value }}</span></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 2px 8px"><span style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.variantsWord }} <span style="color:#9A96AE">6</span></span><span style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE">3 × 2</span></div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;overflow:hidden">
+          <sc-for list="{{ variants }}" as="v" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid {{ v.border }}"><span style="flex:1;font:600 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ v.name }}</span><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ v.price }}</span><span style="font:700 11px 'Plus Jakarta Sans';color:{{ v.stockC }};width:34px;text-align:right">{{ v.stock }}</span></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== PRODUCTS · COLLECTIONS ===== -->
+      <sc-if value="{{ isCollections }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Colecciones">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ t.collectionsSub }}</div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <sc-for list="{{ collections }}" as="c" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;overflow:hidden"><div style="height:70px;position:relative;background:repeating-linear-gradient(135deg,{{ c.tile }})"><sc-if value="{{ c.feat }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:9px;left:9px;background:#1E1B2E;color:#fff;padding:3px 8px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">★ {{ t.featured }}</span></sc-if><span style="position:absolute;bottom:9px;right:9px;background:rgba(0,0,0,.55);color:#fff;padding:2px 8px;border-radius:6px;font:700 9.5px 'Plus Jakarta Sans'">{{ c.n }} {{ t.itemsWord }}</span></div><div style="padding:12px;display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.name }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ c.desc }}</div></div><div onClick="{{ c.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ c.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ c.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.newCollection }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== PRODUCTS · DISCOUNTS ===== -->
+      <sc-if value="{{ isDiscounts }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Descuentos">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.activeCodes }}</div><div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">4</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.redeems30 }}</div><div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">814</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 16%</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.given30 }}</div><div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">$4.2k</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ discounts }}" as="d" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px;opacity:{{ d.op }}"><span style="width:38px;height:38px;border-radius:10px;background:{{ d.iconBg }};color:{{ d.iconC }};display:flex;align-items:center;justify-content:center;flex:none;font:800 13px 'Plus Jakarta Sans'">{{ d.val }}</span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;font-family:ui-monospace,Menlo,monospace">{{ d.code }}</span><sc-if value="{{ d.auto }}" hint-placeholder-val="{{ false }}"><span style="background:#EFEBFF;color:#6D4DF6;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">{{ t.auto }}</span></sc-if></div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ d.cond }} · {{ d.used }} {{ t.used }}</div></div><span style="{{ d.statusStyle }}">{{ d.status }}</span></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.newDiscount }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== SHIPPING · ZONES ===== -->
+      <sc-if value="{{ isZones }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Zonas">
+        <!-- map -->
+        <div style="position:relative;height:170px;border-radius:16px;overflow:hidden;background:#EAEEF6;border:1px solid rgba(60,50,110,.07);margin-bottom:14px">
+          <div style="position:absolute;top:30px;left:-10px;width:150%;height:9px;background:#fff;transform:rotate(-14deg)"></div>
+          <div style="position:absolute;bottom:40px;left:-10px;width:150%;height:8px;background:#fff;transform:rotate(7deg)"></div>
+          <div style="position:absolute;top:-10px;left:42%;width:9px;height:150%;background:#fff;transform:rotate(10deg)"></div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:160px;height:120px;border:2px solid rgba(244,183,64,.6);background:rgba(244,183,64,.06);border-radius:50%"></div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:108px;height:84px;border:2px solid rgba(240,70,110,.6);background:rgba(240,70,110,.06);border-radius:50%"></div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:48px;border:2px solid rgba(123,97,255,.7);background:rgba(123,97,255,.08);border-radius:50%"></div>
+          <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#7B61FF;border:2px solid #fff;box-shadow:0 2px 6px rgba(60,50,110,.3)"></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ zones }}" as="z" hint-placeholder-count="3"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px"><span style="width:12px;height:12px;border-radius:50%;background:{{ z.color }};flex:none"></span><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ z.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ z.rad }} · ETA {{ z.time }}</div></div><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ z.fee }}</span></div></sc-for>
+        </div>
+        <div style="background:#F1EFFA;border-radius:13px;padding:12px;margin-top:14px;display:flex;align-items:center;gap:11px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="2.5" y="6" width="12" height="10" rx="1.5"></rect><path d="M14.5 9h3.5l3 3v4h-6.5"></path></svg><div style="flex:1"><div style="font:800 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.outOfZone }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.outOfZoneSub }}</div></div></div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.newZone }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== SHIPPING · PICKUP ===== -->
+      <sc-if value="{{ isPickup }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Recoger">
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.pickupLocations }}</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+          <sc-for list="{{ pickupLocs }}" as="p" hint-placeholder-count="2"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px"><span style="width:36px;height:36px;border-radius:10px;background:#EFEBFF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v9h16v-9"></path><path d="M4 10 5.5 5h13L20 10"></path></svg></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.name }}</span><sc-if value="{{ p.main }}" hint-placeholder-val="{{ true }}"><span style="background:#E3F5EA;color:#1F8A4C;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">{{ t.primary }}</span></sc-if></div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ p.hours }} · {{ p.window }}</div></div></div></sc-for>
+        </div>
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.pickupSettings }}</div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:4px 13px">
+          <sc-for list="{{ pickupSettings }}" as="r" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid {{ r.border }}"><div style="flex:1;min-width:0"><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.title }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ r.sub }}</div></div><div onClick="{{ r.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ r.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ r.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== SHIPPING · SHIP ANYWHERE ===== -->
+      <sc-if value="{{ isShipAny }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Envio">
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.carriers }}</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+          <sc-for list="{{ carriers }}" as="c" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px;opacity:{{ c.op }}"><span style="width:36px;height:36px;border-radius:10px;background:#E4ECFB;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2A5C8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="12" height="10" rx="1.5"></rect><path d="M14.5 9h3.5l3 3v4h-6.5"></path><circle cx="6.5" cy="18" r="1.6"></circle><circle cx="17" cy="18" r="1.6"></circle></svg></span><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ c.time }}</div></div><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.fee }}</span><div onClick="{{ c.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ c.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ c.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <div style="background:#E3F5EA;border:1px solid rgba(31,157,87,.18);border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F8A4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M4 11h16v9H4z"></path><path d="M2 7h20v4H2z"></path><path d="M12 7v13"></path></svg><div style="flex:1"><div style="font:800 11.5px 'Plus Jakarta Sans';color:#176B3A">{{ t.freeShipTitle }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#3E8B5F;margin-top:1px">{{ t.freeShipSub }}</div></div></div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== SHIPPING · DRIVERS ===== -->
+      <sc-if value="{{ isDrivers }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Repartidores">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <sc-for list="{{ driverKpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px"><span style="width:30px;height:30px;border-radius:9px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center">{{ k.icon }}</span><div style="font:600 10px 'Plus Jakarta Sans';color:#8A86A0;margin-top:9px">{{ k.label }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ k.value }}</div><div style="font:800 9.5px 'Plus Jakarta Sans';color:{{ k.dC }};margin-top:2px">{{ k.delta }}</div></div></sc-for>
+        </div>
+        <div style="display:flex;gap:6px;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:12px;padding:4px;margin-bottom:14px">
+          <sc-for list="{{ driverTabs }}" as="d" hint-placeholder-count="2"><button onClick="{{ d.onTap }}" style="{{ d.style }}">{{ d.label }}</button></sc-for>
+        </div>
+        <sc-if value="{{ dtOwn }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ ownDrivers }}" as="d" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px;display:flex;align-items:center;gap:11px"><div style="position:relative;flex:none"><span style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font:800 12px 'Plus Jakarta Sans';background:{{ d.color }}">{{ d.initials }}</span><span style="position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:{{ d.dot }};border:2px solid #fff"></span></div><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.status }} · {{ d.order }}</div></div><div style="text-align:right;flex:none"><div style="font:800 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.km }}</div><div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ d.eta }}</div></div></div></sc-for>
+        </div>
+        </sc-if>
+        <sc-if value="{{ dtExternal }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ extApps }}" as="a" hint-placeholder-count="3"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px"><div style="display:flex;align-items:center;gap:11px"><span style="width:36px;height:36px;border-radius:10px;background:{{ a.color }};color:#fff;display:flex;align-items:center;justify-content:center;font:800 15px 'Plus Jakarta Sans';flex:none">{{ a.label }}</span><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ a.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ a.desc }}</div></div><div onClick="{{ a.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ a.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ a.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(30,27,46,.1)"><span style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE">{{ a.rate }}</span><span style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6">{{ a.cta }} ›</span></div></div></sc-for>
+        </div>
+        </sc-if>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== ADD PRODUCT WIZARD ===== -->
+      <sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="AddProduct">
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px">
+          <sc-for list="{{ wizSteps }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onTap }}" style="{{ s.style }}"><span style="{{ s.dotStyle }}">{{ s.dot }}</span>{{ s.label }}</button></sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-bottom:14px"><div style="height:96px;background:repeating-linear-gradient(135deg,{{ pDraftTile }})"></div><div style="padding:13px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div style="min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:{{ pDraftNameC }}">{{ pDraftName }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ pDraftCat }}</div></div><span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ pDraftPrice }}</span></div></div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px">
+          <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:14px">{{ pWizTitle }}</div>
+          <!-- step 1 details -->
+          <sc-if value="{{ pw0 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.prodName }} *</div><input value="{{ pDraft.name }}" onInput="{{ onPName }}" placeholder="{{ t.prodNamePh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fDesc }}</div><textarea value="{{ pDraft.desc }}" onInput="{{ onPDesc }}" placeholder="{{ t.prodDescPh }}" data-noscroll style="width:100%;height:64px;resize:none;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:500 12px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5"></textarea></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.category }} *</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ pWizCats }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.photos }}</div><div onClick="{{ addPhoto }}" style="height:110px;border:1.5px dashed #C9C2E6;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:#F7F6FC"><sc-if value="{{ pHasPhoto }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,{{ pDraftTile }})"></div></sc-if><sc-if value="{{ pNoPhoto }}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4"></path><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg><div style="font:700 12px 'Plus Jakarta Sans';color:#56506E">{{ t.dropPhoto }}</div></sc-if></div></div>
+          </div>
+          </sc-if>
+          <!-- step 2 pricing -->
+          <sc-if value="{{ pw1 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.price }} *</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 13px"><span style="font:700 13px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ pDraft.price }}" onInput="{{ onPPrice }}" placeholder="0.00" style="flex:1;border:none;outline:none;padding:11px 8px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">SKU</div><input value="{{ pDraft.sku }}" onInput="{{ onPSku }}" placeholder="ABC-001" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.taxCategory }}</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ taxCats }}" as="x" hint-placeholder-count="3"><button onClick="{{ x.onTap }}" style="{{ x.style }}">{{ x.label }}</button></sc-for></div></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:12px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><div style="flex:1"><div style="font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.hasVariantsQ }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ t.hasVariantsSub }}</div></div><div onClick="{{ toggleVariants }}" style="width:42px;height:25px;border-radius:13px;background:{{ varTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ varKnob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div>
+          </div>
+          </sc-if>
+          <!-- step 3 inventory & shipping -->
+          <sc-if value="{{ pw2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.stockQty }}</div><input value="{{ pDraft.stock }}" onInput="{{ onPStock }}" placeholder="0" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.reorderAt }}</div><input value="{{ pDraft.reorder }}" onInput="{{ onPReorder }}" placeholder="10" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.fulfillment }}</div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ fulfillOpts }}" as="f" hint-placeholder-count="3"><button onClick="{{ f.onTap }}" style="{{ f.style }}"><span style="{{ f.ckStyle }}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>{{ f.icon }}<span style="flex:1;text-align:left"><span style="display:block;font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ f.label }}</span><span style="display:block;font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ f.sub }}</span></span></button></sc-for></div></div>
+          </div>
+          </sc-if>
+          <!-- step 4 review -->
+          <sc-if value="{{ pw3 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:11px;background:{{ pReadyBg }};border:1px solid {{ pReadyBorder }};border-radius:12px;padding:12px 13px"><span style="width:30px;height:30px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;color:{{ pReadyC }};font:800 14px 'Plus Jakarta Sans'">{{ pReadyIcon }}</span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:{{ pReadyC }}">{{ pReadyTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ pReadySub }}</div></div></div>
+            <div style="border:1px solid rgba(30,27,46,.08);border-radius:12px;overflow:hidden"><sc-for list="{{ pReviewRows }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid {{ r.border }}"><span style="width:78px;flex:none;font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ r.k }}</span><span style="flex:1;min-width:0;font:700 11.5px 'Plus Jakarta Sans';color:{{ r.vC }}">{{ r.v }}</span><span onClick="{{ r.onEdit }}" style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer;flex:none">{{ t.edit }}</span></div></sc-for></div>
+          </div>
+          </sc-if>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== SUCCESS ===== -->
+      <sc-if value="{{ isSuccess }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Published" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:24px">
+        <div style="width:64px;height:64px;border-radius:18px;background:#E3F5EA;color:#1F8A4C;display:flex;align-items:center;justify-content:center;margin-bottom:14px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        <div style="font:800 21px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ pSuccessTitle }}</div>
+        <div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:8px;line-height:1.5;max-width:300px">{{ pSuccessSub }}</div>
+        <div style="width:100%;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-top:20px;text-align:left"><div style="height:104px;background:repeating-linear-gradient(135deg,{{ pDraftTile }})"></div><div style="padding:13px;display:flex;align-items:center;justify-content:space-between"><div style="min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ pDraftName }}</div><div style="font:500 11.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ pDraftCat }} · {{ pDraftPrice }}</div></div><span style="background:#E3F5EA;color:#1F8A4C;padding:5px 11px;border-radius:8px;font:800 10.5px 'Plus Jakarta Sans';flex:none">{{ t.live }}</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;width:100%;margin-top:20px">
+          <button onClick="{{ pAddAnother }}" style="width:100%;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">+ {{ t.addAnotherProd }}</button>
+          <button onClick="{{ pBackToList }}" style="width:100%;border:1.5px solid #E2DEF4;cursor:pointer;background:#fff;color:#1E1B2E;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans'">{{ t.backToProducts }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- FOOTERS -->
+    <sc-if value="{{ showAddFooter }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ startAdd }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ addLabel }}</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showWizFooter }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:10px;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ wizBack }}" style="width:46px;height:46px;border-radius:13px;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;text-align:center;font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ wizProgress }}</div>
+      <button onClick="{{ wizNext }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">{{ wizNextLabel }}</button>
+    </div>
+    </sc-if>
+
+    <!-- EDIT PRODUCT SHEET -->
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:30;background:rgba(28,24,46,.5)"></div>
+    <div data-noscroll style="position:absolute;left:0;right:0;bottom:0;z-index:31;max-height:86%;overflow-y:auto;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -18px 50px rgba(28,24,46,.3);animation:tlsheet .22s ease">
+      <div style="position:sticky;top:0;background:#fff;padding:9px 0 6px;display:flex;justify-content:center"><span style="width:42px;height:5px;border-radius:3px;background:#E3DEF2"></span><button onClick="{{ closeSheet }}" style="position:absolute;right:14px;top:10px;width:30px;height:30px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button></div>
+      <div style="height:120px;position:relative;background:repeating-linear-gradient(135deg,{{ editTile }})"></div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+        <div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.editProduct }}</div>
+        <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.prodName }}</div><input value="{{ edit.name }}" onInput="{{ onEditName }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+        <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.price }}</div><input value="{{ edit.price }}" onInput="{{ onEditPrice }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.stockQty }}</div><input value="{{ edit.stock }}" onInput="{{ onEditStock }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div></div>
+        <div style="display:flex;gap:9px;padding-top:4px"><button onClick="{{ closeSheet }}" style="border:1.5px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:13px 16px;border-radius:12px;font:800 12.5px 'Plus Jakarta Sans'">{{ t.delete }}</button><button onClick="{{ saveEdit }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:13px;border-radius:12px;font:800 13px 'Plus Jakarta Sans'">{{ t.saveChanges }}</button></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- TOAST -->
+    <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:40;background:#1E1B2E;color:#fff;padding:11px 18px;border-radius:12px;font:700 12.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px rgba(28,24,46,.4);white-space:nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v === null || v === '') ? d : v; } catch (e) { return d; } }
+  _home() { try { const inq = new URLSearchParams(location.search); const o = new URLSearchParams(); ['tier','cat'].forEach((k) => { if (inq.get(k)) o.set(k, inq.get(k)); }); o.set('lang', (this.state && this.state.lang) || 'es'); location.href = 'ToLatino Business Dashboard Mobile.dc.html?' + o.toString(); } catch (e) {} }
+  state = {
+    lang: this._qp('lang', 'es'), mode: ['shipping','drivers'].includes(this._qp('mode','')) ? 'shipping' : 'products', subtab: 'catalog', view: 'wizardless',
+    sellOn: true, cat: 'all', query: '', driverTab: 'own',
+    products: null, collState: null, pickupState: null, carrierState: null, extState: null,
+    sheetId: null, edit: null,
+    wizStep: 0, wizMax: 0, pDraft: null,
+    toast: '', toastT: null,
+  };
+
+  I(name, s, stroke) {
+    const P = {
+      pkg: ['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
+      truck: ['M2.5 6h12v10h-12z', 'M14.5 9h3.5l3 3v4h-6.5', 'M6.5 18a1.6 1.6 0 1 0 0-.01M17 18a1.6 1.6 0 1 0 0-.01'],
+      helmet: ['M4 14a8 8 0 0 1 16 0', 'M3 14h18v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z'],
+      clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7v5l3 2'],
+      dollar: ['M12 2v20', 'M17 6a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1A4 4 0 0 1 7 18'],
+      store: ['M4 10v9h16v-9', 'M4 10 5.5 5h13L20 10', 'M4 10a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0'],
+      bag: ['M6 7h12l1 13H5z', 'M9 7a3 3 0 0 1 6 0'],
+    };
+    const paths = P[name] || P.pkg;
+    return React.createElement('svg', { width: s || 15, height: s || 15, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  CATS() {
+    return [
+      { id: 'pantry', es: 'Despensa', en: 'Pantry', tile: '#F3D9C8 0 8px,#E8C3AC 8px 16px' },
+      { id: 'merch', es: 'Mercancía', en: 'Merch', tile: '#EAE2F8 0 8px,#DCCEF2 8px 16px' },
+      { id: 'baking', es: 'Repostería', en: 'Baking', tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px' },
+      { id: 'coffee', es: 'Café', en: 'Coffee', tile: '#EDE0D4 0 8px,#DFCBB6 8px 16px' },
+      { id: 'books', es: 'Libros', en: 'Books', tile: '#E4ECFB 0 8px,#D7E3F6 8px 16px' },
+    ];
+  }
+  seed() {
+    return [
+      { id: 1, name: 'Mermelada fresa-ruibarbo · 6oz', sku: 'JAM-001', price: 14, stock: 42, cat: 'pantry', variants: 3, sales: '$1,820' },
+      { id: 2, name: 'Libro de recetas Country Loaf', sku: 'BOOK-001', price: 42, stock: 12, cat: 'books', variants: 1, sales: '$924' },
+      { id: 3, name: 'Tote de lona ToLatino', sku: 'MRC-001', price: 28, stock: 84, cat: 'merch', variants: 2, sales: '$2,128' },
+      { id: 4, name: 'Masa madre · 100g', sku: 'STR-001', price: 18, stock: 5, cat: 'baking', variants: 1, sales: '$486' },
+      { id: 5, name: 'Canasta de fermentado', sku: 'TOL-001', price: 32, stock: 24, cat: 'baking', variants: 2, sales: '$640' },
+      { id: 6, name: 'Aceite de oliva · 500ml', sku: 'OIL-001', price: 24, stock: 0, cat: 'pantry', variants: 1, sales: '$2,400' },
+      { id: 7, name: 'Café en grano · 12oz', sku: 'COF-001', price: 19, stock: 62, cat: 'coffee', variants: 3, sales: '$1,178' },
+    ];
+  }
+  newDraft() { return { name: '', desc: '', cat: 'pantry', price: '', sku: '', tax: 'prep', variants: false, stock: '', reorder: '', fulfill: 'ship', publishMode: 'now', photos: 0 }; }
+
+  products() { return this.state.products || this.seed(); }
+  go(mode, subtab) { this.setState({ mode, subtab: subtab || (mode === 'products' ? 'catalog' : 'zones'), view: 'wizardless' }); }
+  flash(m) { clearTimeout(this.state.toastT); const tt = setTimeout(() => this.setState({ toast: '' }), 1900); this.setState({ toast: m, toastT: tt }); }
+
+  renderVals() {
+    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const I = (n, s, c) => this.I(n, s, c);
+    const cats = this.CATS();
+    const catOf = (id) => cats.find((c) => c.id === id) || cats[0];
+    const products = this.products();
+    const view = st.view, sellOn = st.sellOn;
+    const money = (n) => '$' + Number(n).toFixed(2);
+
+    const chip = (active) => 'flex:none;border:none;cursor:pointer;padding:8px 13px;border-radius:999px;font:' + (active ? '800' : '700') + " 12px 'Plus Jakarta Sans';" + (active ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E');
+    const langTab = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 11px', borderRadius: '999px', fontWeight: 800, fontSize: '11px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+
+    const t = {
+      tProducts: L('Productos', 'Products'), tShipping: L('Envío', 'Shipping'),
+      searchProducts: L('Buscar productos…', 'Search products…'), variantsWord: L('variantes', 'variants'), sold: L('vendido', 'sold'), itemsWord: L('artículos', 'items'),
+      invValue: L('Valor inv.', 'Inv. value'), needReorder: L('Reabastecer', 'Reorder'), belowThresh: L('Bajo umbral', 'Below'), incoming: L('Entrante', 'Incoming'), reorderAt: L('Reordenar en', 'Reorder at'),
+      editingVariants: L('Editando variantes', 'Editing variants'), variantsSub: L('Las opciones se combinan en variantes vendibles.', 'Options combine into sellable variants.'),
+      optionSets: L('Conjuntos de opciones', 'Option sets'), grind: L('Molienda', 'Grind'), size: L('Tamaño', 'Size'), value: L('Valor', 'Value'),
+      collectionsSub: L('Agrupa productos en colecciones. Destaca algunas en tu listado.', 'Group products into collections. Feature some on your listing.'), featured: L('Destacada', 'Featured'), newCollection: L('Nueva colección', 'New collection'),
+      activeCodes: L('Códigos', 'Active codes'), redeems30: L('Canjes 30d', 'Redeems 30d'), given30: L('Otorgado', 'Given 30d'), auto: L('Auto', 'Auto'), used: L('usos', 'used'), newDiscount: L('Nuevo descuento', 'New discount'),
+      outOfZone: L('Fuera de zona → envío', 'Out of zone → shipping'), outOfZoneSub: L('Más allá de la Zona 3 se ofrece envío o recoger.', 'Beyond Zone 3 we offer shipping or pickup.'), newZone: L('Nueva zona', 'New zone'),
+      pickupLocations: L('Puntos de recogida', 'Pickup locations'), primary: L('Principal', 'Primary'), pickupSettings: L('Ajustes de recogida', 'Pickup settings'),
+      carriers: L('Transportistas y tarifas', 'Carriers & rates'), freeShipTitle: L('Envío gratis sobre $75', 'Free shipping over $75'), freeShipSub: L('Se aplica automáticamente · solo EE.UU.', 'Applied automatically · US only'),
+      prodName: L('Nombre del producto', 'Product name'), prodNamePh: L('Ej. Mermelada de fresa', 'e.g. Strawberry jam'), fDesc: L('Descripción', 'Description'), prodDescPh: L('Detalles, materiales, tamaño…', 'Details, materials, size…'),
+      category: L('Categoría', 'Category'), photos: L('Fotos', 'Photos'), dropPhoto: L('Toca para subir', 'Tap to upload'),
+      price: L('Precio', 'Price'), taxCategory: L('Categoría fiscal', 'Tax category'), hasVariantsQ: L('¿Tiene variantes?', 'Has variants?'), hasVariantsSub: L('Tamaños, colores, sabores…', 'Sizes, colors, flavors…'),
+      stockQty: L('Cantidad', 'Stock qty'), fulfillment: L('Cumplimiento', 'Fulfillment'),
+      edit: L('Editar', 'Edit'), live: L('Activo', 'Live'), addAnotherProd: L('Agregar otro producto', 'Add another product'), backToProducts: L('Volver a productos', 'Back to products'),
+      editProduct: L('Editar producto', 'Edit product'), delete: L('Eliminar', 'Delete'), saveChanges: L('Guardar cambios', 'Save changes'),
+    };
+
+    const stockMeta = (s) => s === 0 ? { bg: '#FDE7EF', c: '#D6336C', es: 'Agotado', en: 'Out' } : s <= 8 ? { bg: '#FCEFD6', c: '#9A6A12', es: 'Bajo', en: 'Low' } : { bg: '#E3F5EA', c: '#1F8A4C', es: 'En stock', en: 'In stock' };
+
+    // catalog
+    let filtered = st.cat === 'all' ? products : products.filter((p) => p.cat === st.cat);
+    if (st.query.trim()) { const q = st.query.toLowerCase(); filtered = filtered.filter((p) => (p.name + ' ' + p.sku).toLowerCase().includes(q)); }
+    const catFilters = [{ id: 'all', label: L('Todos', 'All') }].concat(cats.filter((c) => products.some((p) => p.cat === c.id)).map((c) => ({ id: c.id, label: L(c.es, c.en) }))).map((c) => ({ label: c.label, onTap: () => this.setState({ cat: c.id }), style: chip(st.cat === c.id) }));
+    const productRows = filtered.map((p) => { const sm = stockMeta(p.stock); return { name: p.name, price: money(p.price), cat: L(catOf(p.cat).es, catOf(p.cat).en), sku: p.sku, tile: catOf(p.cat).tile, hasVariants: p.variants > 1, variants: p.variants, stockBg: sm.bg, stockC: sm.c, stockLabel: p.stock === 0 ? L(sm.es, sm.en) : (p.stock + ''), sales: p.sales, onTap: () => this.setState({ sheetId: p.id, edit: { ...p } }) }; });
+
+    // inventory
+    const invRaw = [
+      { name: 'Mermelada fresa · 6oz', sku: 'JAM-001', on: 42, reorder: 20, incoming: 0, st: 'ok', cat: 'pantry' },
+      { name: 'Libro de recetas', sku: 'BOOK-001', on: 12, reorder: 8, incoming: 24, st: 'ok', cat: 'books' },
+      { name: 'Tote de lona', sku: 'MRC-001', on: 84, reorder: 30, incoming: 0, st: 'ok', cat: 'merch' },
+      { name: 'Masa madre · 100g', sku: 'STR-001', on: 5, reorder: 15, incoming: 50, st: 'low', cat: 'baking' },
+      { name: 'Aceite de oliva · 500ml', sku: 'OIL-001', on: 0, reorder: 12, incoming: 36, st: 'out', cat: 'pantry' },
+      { name: 'Café en grano · 12oz', sku: 'COF-001', on: 62, reorder: 25, incoming: 0, st: 'ok', cat: 'coffee' },
+    ];
+    const invPill = { ok: { bg: '#E3F5EA', c: '#1F8A4C', es: 'En stock', en: 'In stock' }, low: { bg: '#FCEFD6', c: '#9A6A12', es: 'Bajo', en: 'Low' }, out: { bg: '#FDE7EF', c: '#D6336C', es: 'Agotado', en: 'Out' } };
+    const inventory = invRaw.map((r, i, a) => { const pm = invPill[r.st]; return { name: r.name, sku: r.sku, on: r.on, reorder: r.reorder, incoming: r.incoming, hasIncoming: r.incoming > 0, tile: catOf(r.cat).tile, onC: r.st === 'out' ? '#D6336C' : r.st === 'low' ? '#9A6A12' : '#1E1B2E', pill: L(pm.es, pm.en), pillStyle: 'font:800 8.5px \'Plus Jakarta Sans\';padding:3px 7px;border-radius:6px;margin-top:3px;display:inline-block;background:' + pm.bg + ';color:' + pm.c, border: i === a.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)' }; });
+
+    // variants
+    const grinds = [L('Grano entero', 'Whole bean'), 'Espresso', L('Filtro', 'Filter')];
+    const sizes = ['12 oz', '2 lb'];
+    const vPrice = { '12 oz': 19, '2 lb': 46 }; const vStock = [[40, 12], [14, 6], [8, 2]];
+    const variants = [];
+    grinds.forEach((g, gi) => sizes.forEach((s, si) => variants.push({ name: g + ' · ' + s, price: money(vPrice[s]), stock: vStock[gi][si], stockC: vStock[gi][si] < 10 ? '#9A6A12' : '#1E1B2E' })));
+    variants.forEach((v, i) => { v.border = i === variants.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)'; });
+
+    // collections
+    const collRaw = [
+      { es: 'Sets de regalo', en: 'Gift sets', n: 6, feat: true, tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', dEs: 'Paquetes curados de temporada', dEn: 'Curated seasonal bundles' },
+      { es: 'Básicos de despensa', en: 'Pantry staples', n: 12, feat: true, tile: '#F3D9C8 0 8px,#E8C3AC 8px 16px', dEs: 'Mermeladas, aceites, miel, sal', dEn: 'Jams, oils, honey, salt' },
+      { es: 'Kit de repostería', en: 'Home baking kit', n: 8, feat: false, tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px', dEs: 'Masa madre, canasta, harina', dEn: 'Starter, banneton, flour' },
+      { es: 'Programa de café', en: 'Coffee program', n: 5, feat: true, tile: '#EDE0D4 0 8px,#DFCBB6 8px 16px', dEs: 'Granos, equipo, suscripciones', dEn: 'Beans, gear, subscriptions' },
+    ];
+    const collSt = st.collState || collRaw.reduce((o, c, i) => { o[i] = c.feat; return o; }, {});
+    const collections = collRaw.map((c, i) => { const on = collSt[i]; return { name: L(c.es, c.en), desc: L(c.dEs, c.dEn), n: c.n, feat: on, tile: c.tile, track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState({ collState: { ...collSt, [i]: !on } }) }; });
+
+    // discounts
+    const discRaw = [
+      { code: 'WELCOME15', val: '15%', iconBg: '#EFEBFF', iconC: '#6D4DF6', cEs: 'Primer pedido', cEn: 'First order', used: 248, auto: false, status: 'active' },
+      { code: 'FREESHIP75', val: '🚚', iconBg: '#E4ECFB', iconC: '#2A5C8A', cEs: 'Pedidos sobre $75', cEn: 'Orders over $75', used: 412, auto: true, status: 'active' },
+      { code: 'GIFT10', val: '$10', iconBg: '#E3F5EA', iconC: '#1F8A4C', cEs: 'Sets de regalo · fiestas', cEn: 'Gift sets · holiday', used: 64, auto: false, status: 'active' },
+      { code: 'LOCAL20', val: '20%', iconBg: '#FCEFD6', iconC: '#9A6A12', cEs: 'Mission ZIP · recoger', cEn: 'Mission ZIP · pickup', used: 90, auto: false, status: 'active' },
+      { code: 'SUMMER', val: '10%', iconBg: '#F1EFFA', iconC: '#9A96AE', cEs: 'Terminó 30 sep', cEn: 'Ended Sep 30', used: 520, auto: false, status: 'ended' },
+    ];
+    const discounts = discRaw.map((d) => ({ code: d.code, val: d.val, iconBg: d.iconBg, iconC: d.iconC, cond: L(d.cEs, d.cEn), used: d.used, auto: d.auto, op: d.status === 'ended' ? '.6' : '1', status: d.status === 'active' ? L('Activo', 'Active') : L('Terminó', 'Ended'), statusStyle: 'font:800 9px \'Plus Jakarta Sans\';padding:4px 8px;border-radius:6px;flex:none;background:' + (d.status === 'active' ? '#E3F5EA' : '#F1EFFA') + ';color:' + (d.status === 'active' ? '#1F8A4C' : '#9A96AE') }));
+
+    // zones
+    const zones = [
+      { color: '#7B61FF', name: L('Zona 1 · Centro', 'Zone 1 · Core'), rad: '0–1.2 mi', time: '30–45 min', fee: L('Gratis +$25', 'Free +$25') },
+      { color: '#F0466E', name: L('Zona 2 · Ampliada', 'Zone 2 · Greater'), rad: '1.2–3 mi', time: '45–60 min', fee: '$5' },
+      { color: '#F4B740', name: L('Zona 3 · Exterior', 'Zone 3 · Outer'), rad: '3–8 mi', time: '60–90 min', fee: '$12' },
+    ];
+
+    // pickup
+    const pickupLocs = [
+      { name: '595 Valencia St', main: true, hours: L('7 AM – 8 PM diario', '7 AM – 8 PM daily'), window: L('listo en 30 min', 'ready 30 min') },
+      { name: 'Manufactory · 18th St', main: false, hours: 'Mar–Dom · 8–6', window: L('listo en 45 min', 'ready 45 min') },
+    ];
+    const pickRuleRaw = [[L('Recogida en banqueta', 'Curbside pickup'), L('El cliente avisa al llegar', 'Customer texts on arrival'), true], [L('Horarios programados', 'Scheduled slots'), L('Permite elegir hora', 'Let customers pick a time'), true], [L('SMS cuando esté listo', 'SMS when ready'), L('Notifica automáticamente', 'Auto-notify on ready'), true], [L('ID para alcohol', 'Photo ID for alcohol'), L('Requerido para 21+', 'Required for 21+'), true]];
+    const pickSt = st.pickupState || pickRuleRaw.reduce((o, r, i) => { o[i] = r[2]; return o; }, {});
+    const pickupSettings = pickRuleRaw.map((r, i, a) => { const on = pickSt[i]; return { title: r[0], sub: r[1], track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', border: i === a.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)', onToggle: () => this.setState({ pickupState: { ...pickSt, [i]: !on } }) }; });
+
+    // carriers
+    const carrRaw = [['USPS Priority', L('2–3 días hábiles', '2–3 business days'), '$8.00', true], ['UPS Ground', L('3–5 días hábiles', '3–5 business days'), '$10.00', true], ['FedEx 2-Day', L('2 días hábiles', '2 business days'), '$18.00', true], ['USPS Ground', L('3–5 días hábiles', '3–5 business days'), '$5.50', false]];
+    const carrSt = st.carrierState || carrRaw.reduce((o, c, i) => { o[i] = c[3]; return o; }, {});
+    const carriers = carrRaw.map((c, i) => { const on = carrSt[i]; return { name: c[0], time: c[1], fee: c[2], op: on ? '1' : '.6', track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState({ carrierState: { ...carrSt, [i]: !on } }) }; });
+
+    // drivers
+    const driverKpis = [
+      { ic: 'helmet', c: '#6D4DF6', bg: '#EFEBFF', label: L('Activos', 'Active'), value: '3/5', delta: L('2 en ruta', '2 on delivery'), dC: '#9A96AE' },
+      { ic: 'truck', c: '#D6336C', bg: '#FDE7EF', label: L('Entregas hoy', 'Deliveries today'), value: '42', delta: '▲ 12%', dC: '#1F9D57' },
+      { ic: 'clock', c: '#1F8A4C', bg: '#E3F5EA', label: L('Tiempo prom.', 'Avg time'), value: '18 min', delta: L('▼ 2 min', '▼ 2 min'), dC: '#1F9D57' },
+      { ic: 'dollar', c: '#9A6A12', bg: '#FCEFD6', label: L('Costo hoy', 'Cost today'), value: '$336', delta: '$8/' + L('entrega', 'delivery'), dC: '#9A96AE' },
+    ].map((k) => ({ icon: I(k.ic, 16, k.c), bg: k.bg, label: k.label, value: k.value, delta: k.delta, dC: k.dC }));
+    const driverTabs = [['own', L('Propios', 'Own')], ['external', L('Apps externas', 'External apps')]].map((d) => ({ label: d[1], onTap: () => this.setState({ driverTab: d[0] }), style: 'flex:1;border:none;cursor:pointer;padding:9px;border-radius:9px;font:800 11.5px \'Plus Jakarta Sans\';' + (st.driverTab === d[0] ? 'background:#7B61FF;color:#fff' : 'background:transparent;color:#6E6A85') }));
+    const ownRaw = [
+      { initials: 'MP', color: '#7B61FF', dot: '#1F9D57', name: 'Marco P.', sEs: 'En ruta', sEn: 'On delivery', order: '#2487 → Z2', km: '1.8 mi', eta: 'ETA 5 min' },
+      { initials: 'DR', color: '#2A5C8A', dot: '#1F9D57', name: 'Diego R.', sEs: 'En ruta', sEn: 'On delivery', order: '#2484 → Z1', km: '0.9 mi', eta: 'ETA 2 min' },
+      { initials: 'AV', color: '#E8954A', dot: '#6D4DF6', name: 'Andrea V.', sEs: 'En tienda', sEn: 'Idle · shop', order: L('Lista', 'Ready next'), km: '—', eta: '—' },
+      { initials: 'LM', color: '#9A96AE', dot: '#9A96AE', name: 'Lucía M.', sEs: 'Libre hoy', sEn: 'Off today', order: 'Mar–Jue', km: '—', eta: '—' },
+    ];
+    const ownDrivers = ownRaw.map((d) => ({ initials: d.initials, color: d.color, dot: d.dot, name: d.name, status: L(d.sEs, d.sEn), order: d.order, km: d.km, eta: d.eta }));
+    const extRaw = [
+      { label: 'U', color: '#000', name: 'Uber Direct', dEs: 'Conductores bajo demanda cuando los tuyos están ocupados.', dEn: 'On-demand drivers when yours are busy.', on: true, rate: '$8.50 ' + L('prom', 'avg'), cEs: 'Gestionar', cEn: 'Manage' },
+      { label: 'D', color: '#FF3008', name: 'DoorDash Drive', dEs: 'Respaldo cuando salen de zona.', dEn: 'Standby fallback out of zone.', on: true, rate: '$9.00 ' + L('prom', 'avg'), cEs: 'Gestionar', cEn: 'Manage' },
+      { label: 'G', color: '#FF8000', name: 'GrubHub Direct', dEs: 'Cobertura extra en noches ocupadas.', dEn: 'Extra coverage on busy nights.', on: false, rate: '—', cEs: 'Conectar', cEn: 'Connect' },
+    ];
+    const extSt = st.extState || extRaw.reduce((o, a, i) => { o[i] = a.on; return o; }, {});
+    const extApps = extRaw.map((a, i) => { const on = extSt[i]; return { label: a.label, color: a.color, name: a.name, desc: L(a.dEs, a.dEn), rate: a.rate, cta: L(a.cEs, a.cEn), track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState({ extState: { ...extSt, [i]: !on } }) }; });
+
+    // ===== WIZARD =====
+    const pDraft = st.pDraft || this.newDraft();
+    const upD = (patch) => this.setState({ pDraft: { ...pDraft, ...patch } });
+    const dCat = catOf(pDraft.cat);
+    const wizStepDefs = [['details', L('Detalles', 'Details')], ['pricing', L('Precio', 'Pricing')], ['stock', L('Inventario', 'Inventory')], ['review', L('Revisar', 'Review')]];
+    const wizSteps = wizStepDefs.map((s, i) => { const active = st.wizStep === i, done = i < st.wizStep || (i <= st.wizMax && i !== st.wizStep); return { label: s[1], onTap: () => { if (i <= st.wizMax) this.setState({ wizStep: i }); }, dot: done ? '✓' : (i + 1), style: 'flex:none;display:flex;align-items:center;gap:6px;border:none;cursor:pointer;padding:7px 11px;border-radius:999px;font:800 11px \'Plus Jakarta Sans\';background:' + (active ? '#7B61FF' : done ? '#EFEBFF' : '#F1EFFA') + ';color:' + (active ? '#fff' : done ? '#6D4DF6' : '#9A96AE'), dotStyle: 'width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 9px \'Plus Jakarta Sans\';color:#fff;background:' + (active ? 'rgba(255,255,255,.25)' : done ? '#7B61FF' : '#D8D2E6') }; });
+    const pWizCats = cats.map((c) => ({ label: L(c.es, c.en), onTap: () => upD({ cat: c.id }), style: chip(pDraft.cat === c.id) }));
+    const taxDefs = [['prep', L('Comida preparada', 'Prepared food')], ['goods', L('Empacado', 'Packaged')], ['exempt', L('Exento', 'Exempt')]];
+    const taxCats = taxDefs.map((x) => ({ label: x[1], onTap: () => upD({ tax: x[0] }), style: chip(pDraft.tax === x[0]) }));
+    const fulfillDefs = [['ship', L('Envío', 'Shipping'), L('Transportista a domicilio', 'Carrier to address'), 'truck'], ['local', L('Entrega local', 'Local delivery'), L('Tus repartidores o apps', 'Your drivers or apps'), 'helmet'], ['pickup', L('Recoger', 'Pickup'), L('Recoger en tienda', 'In-store pickup'), 'store']];
+    const fulfillOpts = fulfillDefs.map((f) => { const on = pDraft.fulfill === f[0]; return { label: f[1], sub: f[2], icon: I(f[3], 15, on ? '#6D4DF6' : '#9A96AE'), onTap: () => upD({ fulfill: f[0] }), style: 'display:flex;align-items:center;gap:11px;width:100%;border:1.5px solid ' + (on ? '#7B61FF' : '#E2DEF4') + ';background:' + (on ? '#F7F5FF' : '#fff') + ';cursor:pointer;padding:11px;border-radius:12px', ckStyle: 'width:16px;height:16px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex:none;background:' + (on ? '#7B61FF' : '#E2DEF4') }; });
+
+    const pReady = pDraft.name && pDraft.price;
+    const prev = (k, v, ok, step) => ({ k, v, vC: ok ? '#1E1B2E' : '#C0BBD0', onEdit: () => this.setState({ wizStep: step }), border: 'rgba(30,27,46,.06)' });
+    const pReviewRows = [
+      prev(L('Nombre', 'Name'), pDraft.name || '—', !!pDraft.name, 0),
+      prev(L('Categoría', 'Category'), L(dCat.es, dCat.en), true, 0),
+      prev(L('Precio', 'Price'), pDraft.price ? '$' + pDraft.price : '—', !!pDraft.price, 1),
+      prev('SKU', pDraft.sku || '—', !!pDraft.sku, 1),
+      prev(L('Cumplimiento', 'Fulfillment'), { ship: L('Envío', 'Shipping'), local: L('Entrega local', 'Local delivery'), pickup: L('Recoger', 'Pickup') }[pDraft.fulfill], true, 2),
+    ];
+    pReviewRows[pReviewRows.length - 1].border = 'transparent';
+
+    const edit = st.edit || {};
+    const inModule = view === 'wizardless';
+    const isCatalog = inModule && st.mode === 'products' && st.subtab === 'catalog';
+
+    const subtabs = st.mode === 'products'
+      ? [['catalog', L('Catálogo', 'Catalog')], ['inventory', L('Inventario', 'Inventory')], ['variants', L('Variantes', 'Variants')], ['collections', L('Colecciones', 'Collections')], ['discounts', L('Descuentos', 'Discounts')]].map((s) => ({ label: s[1], onTap: () => this.setState({ subtab: s[0] }), style: chip(st.subtab === s[0]) }))
+      : [['zones', L('Zonas', 'Zones')], ['pickup', L('Recoger', 'Pickup')], ['ship', L('Envío', 'Ship anywhere')], ['drivers', L('Repartidores', 'Drivers')]].map((s) => ({ label: s[1], onTap: () => this.setState({ subtab: s[0] }), style: chip(st.subtab === s[0]) }));
+
+    const wizNext = () => { if (st.wizStep >= wizStepDefs.length - 1) { this.setState({ view: 'success' }); return; } const n = st.wizStep + 1; this.setState({ wizStep: n, wizMax: Math.max(st.wizMax, n) }); };
+    const wizBack = () => { if (st.wizStep === 0) { this.setState({ view: 'wizardless' }); return; } this.setState({ wizStep: st.wizStep - 1 }); };
+
+    return {
+      esTab: langTab(es), enTab: langTab(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
+      headTitle: view === 'wizard' ? L('Nuevo producto', 'New product') : (view === 'success' ? L('Producto publicado', 'Product published') : (st.mode === 'shipping' ? L('Envío y entrega', 'Shipping & delivery') : L('Productos', 'Products'))),
+      headSub: view === 'wizard' ? L(dCat.es, dCat.en) : (st.mode === 'shipping' ? L('Zonas, recogida y repartidores', 'Zones, pickup & drivers') : (sellOn ? L('Venta online · 7 productos', 'Online sale · 7 products') : L('Catálogo · 7 productos', 'Catalog · 7 products'))),
+      back: () => { if (view !== 'wizardless') this.setState({ view: 'wizardless' }); else this._home(); },
+      inModule, t,
+      modeProdStyle: 'flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;padding:10px;border-radius:11px;font:800 12.5px \'Plus Jakarta Sans\';' + (st.mode === 'products' ? 'background:#1E1B2E;color:#fff' : 'background:#F1EFFA;color:#6E6A85'),
+      modeShipStyle: 'flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;padding:10px;border-radius:11px;font:800 12.5px \'Plus Jakarta Sans\';' + (st.mode === 'shipping' ? 'background:#1E1B2E;color:#fff' : 'background:#F1EFFA;color:#6E6A85'),
+      modeProdIconC: st.mode === 'products' ? '#fff' : '#9A96AE', modeShipIconC: st.mode === 'shipping' ? '#fff' : '#9A96AE',
+      goProducts: () => this.go('products', 'catalog'), goShipping: () => this.go('shipping', 'zones'),
+      subtabs,
+      isCatalog, isInventory: inModule && st.mode === 'products' && st.subtab === 'inventory', isVariants: inModule && st.mode === 'products' && st.subtab === 'variants', isCollections: inModule && st.mode === 'products' && st.subtab === 'collections', isDiscounts: inModule && st.mode === 'products' && st.subtab === 'discounts',
+      isZones: inModule && st.mode === 'shipping' && st.subtab === 'zones', isPickup: inModule && st.mode === 'shipping' && st.subtab === 'pickup', isShipAny: inModule && st.mode === 'shipping' && st.subtab === 'ship', isDrivers: inModule && st.mode === 'shipping' && st.subtab === 'drivers',
+      isWizard: view === 'wizard', isSuccess: view === 'success',
+      // sell toggle
+      sellOn, toggleSell: () => this.setState({ sellOn: !sellOn }), sellTrack: sellOn ? '#7B61FF' : '#D8D2E6', sellKnob: sellOn ? '22px' : '3px',
+      sellRing: sellOn ? 'rgba(123,97,255,.3)' : 'rgba(30,27,46,.08)', sellIconBg: sellOn ? '#EFEBFF' : '#F1EFFA', sellIconC: sellOn ? '#6D4DF6' : '#9A96AE',
+      sellTitle: sellOn ? L('Venta en línea activa', 'Online sale active') : L('Solo catálogo', 'Catalog only'),
+      sellSub: sellOn ? L('Vende con inventario, envío y checkout.', 'Sell with inventory, shipping & checkout.') : L('Muestra productos con precio, sin comprar.', 'Show products with prices, no checkout.'),
+      // catalog
+      query: st.query, onQuery: (e) => this.setState({ query: e.target.value }), catFilters, products: productRows,
+      // inventory / variants / collections / discounts
+      inventory, grinds, sizes, variants, collections, discounts,
+      // shipping
+      zones, pickupLocs, pickupSettings, carriers,
+      driverKpis, driverTabs, dtOwn: st.driverTab === 'own', dtExternal: st.driverTab === 'external', ownDrivers, extApps,
+      // wizard
+      wizSteps, pDraft, pDraftTile: dCat.tile, pDraftName: pDraft.name || L('Nombre del producto', 'Product name'), pDraftNameC: pDraft.name ? '#1E1B2E' : '#C0BBD0', pDraftCat: L(dCat.es, dCat.en), pDraftPrice: pDraft.price ? '$' + pDraft.price : '$0.00',
+      pWizTitle: [L('Detalles del producto', 'Product details'), L('Precio y SKU', 'Pricing & SKU'), L('Inventario y cumplimiento', 'Inventory & fulfillment'), L('Revisar y publicar', 'Review & publish')][st.wizStep],
+      pw0: st.wizStep === 0, pw1: st.wizStep === 1, pw2: st.wizStep === 2, pw3: st.wizStep === 3,
+      onPName: (e) => upD({ name: e.target.value }), onPDesc: (e) => upD({ desc: e.target.value }), onPPrice: (e) => upD({ price: e.target.value }), onPSku: (e) => upD({ sku: e.target.value }), onPStock: (e) => upD({ stock: e.target.value }), onPReorder: (e) => upD({ reorder: e.target.value }),
+      pWizCats, taxCats, fulfillOpts,
+      pHasPhoto: pDraft.photos > 0, pNoPhoto: pDraft.photos === 0, addPhoto: () => upD({ photos: 1 }),
+      toggleVariants: () => upD({ variants: !pDraft.variants }), varTrack: pDraft.variants ? '#7B61FF' : '#D8D2E6', varKnob: pDraft.variants ? '20px' : '3px',
+      pReady, pReadyBg: pReady ? '#E3F5EA' : '#FCEFD6', pReadyBorder: pReady ? '#A7E3C0' : '#FDE68A', pReadyC: pReady ? '#176B3A' : '#9A6A12', pReadyIcon: pReady ? '✓' : '⚠',
+      pReadyTitle: pReady ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing'),
+      pReadySub: pReady ? L('Aparecerá en tu tienda al instante.', 'It’ll appear in your shop instantly.') : L('Agrega nombre y precio antes de publicar.', 'Add a name and price before publishing.'),
+      pReviewRows,
+      showWizFooter: view === 'wizard', wizBack, wizNext, wizProgress: L('Paso ', 'Step ') + (st.wizStep + 1) + L(' de ', ' of ') + wizStepDefs.length, wizNextLabel: st.wizStep >= wizStepDefs.length - 1 ? L('Publicar producto', 'Publish product') : L('Continuar', 'Continue'),
+      showAddFooter: inModule && st.mode === 'products', startAdd: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, pDraft: this.newDraft() }), addLabel: L('Agregar producto', 'Add product'),
+      pSuccessTitle: (pDraft.name || L('Nuevo producto', 'New product')) + ' ' + L('está activo', 'is live'),
+      pSuccessSub: L('Ya aparece en tu tienda en línea.', 'It now appears in your online shop.'),
+      pAddAnother: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, pDraft: this.newDraft() }), pBackToList: () => this.setState({ view: 'wizardless', mode: 'products', subtab: 'catalog' }),
+      // edit sheet
+      sheetOpen: st.sheetId != null, closeSheet: () => this.setState({ sheetId: null, edit: null }), edit, editTile: catOf(edit.cat || 'pantry').tile,
+      onEditName: (e) => this.setState({ edit: { ...edit, name: e.target.value } }), onEditPrice: (e) => this.setState({ edit: { ...edit, price: e.target.value } }), onEditStock: (e) => this.setState({ edit: { ...edit, stock: e.target.value } }),
+      saveEdit: () => { this.setState({ products: products.map((p) => p.id === st.sheetId ? { ...p, ...edit } : p), sheetId: null, edit: null }); this.flash(L('Guardado · tienda actualizada', 'Saved · shop updated')); },
+      toastShow: !!st.toast, toastMsg: st.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Clientes, pedidos y reseñas · móvil</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:852px;background:#F4F2F9;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ headTitle }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+    </div>
+
+    <!-- MODE TOGGLE -->
+    <div style="flex:none;display:flex;gap:6px;padding:11px 14px 4px;background:#fff">
+      <sc-for list="{{ modes }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.onTap }}" style="{{ m.style }}">{{ m.label }}<sc-if value="{{ m.hasN }}" hint-placeholder-val="{{ false }}"><span style="{{ m.nStyle }}">{{ m.n }}</span></sc-if></button></sc-for>
+    </div>
+    <!-- secondary tabs -->
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:10px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ subtabs }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}<sc-if value="{{ s.hasN }}" hint-placeholder-val="{{ false }}"><span style="{{ s.nStyle }}">{{ s.n }}</span></sc-if></button></sc-for>
+    </div>
+
+    <!-- BODY -->
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 16px">
+
+      <!-- ===== CUSTOMERS ===== -->
+      <sc-if value="{{ isCustomers }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Clientes">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <sc-for list="{{ custKpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px"><span style="width:30px;height:30px;border-radius:9px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center">{{ k.icon }}</span><div style="font:600 10px 'Plus Jakarta Sans';color:#8A86A0;margin-top:9px">{{ k.label }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ k.value }}</div><div style="font:800 9.5px 'Plus Jakarta Sans';color:#1F9D57;margin-top:2px">{{ k.delta }}</div></div></sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid rgba(30,27,46,.1);border-radius:12px;padding:10px 13px;margin-bottom:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg><input value="{{ query }}" onInput="{{ onQuery }}" placeholder="{{ t.searchCustomers }}" style="flex:1;border:none;outline:none;background:none;font:500 13px 'Plus Jakarta Sans';color:#1E1B2E"></div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ customers }}" as="c" hint-placeholder-count="6"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px;display:flex;align-items:center;gap:11px"><span style="width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 12px 'Plus Jakarta Sans';background:{{ c.color }}">{{ c.initials }}</span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:5px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.name }}</span><sc-if value="{{ c.vip }}" hint-placeholder-val="{{ false }}"><span style="background:#FCEFD6;color:#9A6A12;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">VIP</span></sc-if></div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ c.visits }} {{ t.visits }} · {{ t.last }} {{ c.last }}</div></div><div style="text-align:right;flex:none"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.spent }}</div><span style="{{ c.tagStyle }}">{{ c.tag }}</span></div></div></sc-for>
+        </div>
+        <!-- segments -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-top:14px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">{{ t.segments }}</div>
+          <sc-for list="{{ segments }}" as="s" hint-placeholder-count="4"><div style="padding:7px 0"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font:700 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ s.name }}</span><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE">{{ s.n }} · {{ s.ltv }}</span></div><div style="height:6px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ s.barC }};width:{{ s.bar }}"></div></div></div></sc-for>
+        </div>
+        <!-- loyalty -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.loyalty }}</span><div onClick="{{ toggleLoyalty }}" style="width:42px;height:25px;border-radius:13px;background:{{ loyaltyTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ loyaltyKnob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div>
+          <div style="background:#F3F0FF;border-radius:12px;padding:12px;opacity:{{ loyaltyOpacity }}"><div style="font:800 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.loyaltyTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:3px;line-height:1.45">{{ t.loyaltyDesc }}</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:11px;opacity:{{ loyaltyOpacity }}"><sc-for list="{{ rewards }}" as="r" hint-placeholder-count="4"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;background:#F7F6FC;border-radius:9px"><span style="font:600 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.label }}</span><div onClick="{{ r.onToggle }}" style="width:38px;height:23px;border-radius:12px;background:{{ r.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ r.knob }};width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for></div>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== ORDERS ===== -->
+      <sc-if value="{{ isOrders }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Pedidos">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <sc-for list="{{ orderKpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px"><span style="width:30px;height:30px;border-radius:9px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center">{{ k.icon }}</span><div style="font:600 10px 'Plus Jakarta Sans';color:#8A86A0;margin-top:9px">{{ k.label }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ k.value }}</div><div style="font:800 9.5px 'Plus Jakarta Sans';color:{{ k.dC }};margin-top:2px">{{ k.delta }}</div></div></sc-for>
+        </div>
+        <!-- queue status filter -->
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;margin-bottom:12px"><sc-for list="{{ orderStatuses }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onTap }}" style="{{ s.style }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ s.dot }};margin-right:5px"></span>{{ s.label }} {{ s.n }}</button></sc-for></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ orders }}" as="o" hint-placeholder-count="5">
+          <div style="background:#fff;border:1px solid {{ o.cardBorder }};border-radius:14px;padding:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font:800 11.5px 'Plus Jakarta Sans';color:#6D4DF6;font-family:ui-monospace,Menlo,monospace">{{ o.id }}</span><span style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ o.placed }}</span></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ o.who }}</span><sc-if value="{{ o.urgent }}" hint-placeholder-val="{{ false }}"><span style="background:#FDE7EF;color:#D6336C;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">⚡ {{ t.urgent }}</span></sc-if></div>
+            <div style="font:500 11px 'Plus Jakarta Sans';color:#7C7790;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ o.items }}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px"><span style="{{ o.chStyle }}">{{ o.channel }}</span><span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ o.total }}</span></div>
+            <sc-if value="{{ o.hasAdvance }}" hint-placeholder-val="{{ true }}"><button onClick="{{ o.onAdvance }}" style="width:100%;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:10px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans';margin-top:10px">{{ o.advanceLabel }} ›</button></sc-if>
+            <sc-if value="{{ o.done }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:10px;font:700 10.5px 'Plus Jakarta Sans';color:#1F8A4C"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ o.doneLabel }}</div></sc-if>
+          </div>
+          </sc-for>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== REVIEWS ===== -->
+      <sc-if value="{{ isReviews }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Resenas">
+        <!-- rating summary -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:16px;margin-bottom:14px;display:flex;gap:16px;align-items:center">
+          <div style="text-align:center;flex:none"><div style="font:800 38px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1">4.8</div><div style="color:#F4B740;font:700 13px 'Plus Jakarta Sans';letter-spacing:1px;margin-top:2px">★★★★★</div><div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:3px">412 {{ t.reviews }}</div></div>
+          <div style="flex:1;min-width:0"><sc-for list="{{ ratingBars }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><span style="width:22px;font:700 9.5px 'Plus Jakarta Sans';color:#6E6A85">{{ r.star }}★</span><div style="flex:1;height:5px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ r.color }};width:{{ r.pct }}"></div></div><span style="width:28px;text-align:right;font:700 9px 'Plus Jakarta Sans';color:#9A96AE">{{ r.pct }}</span></div></sc-for></div>
+        </div>
+        <!-- review cards -->
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid {{ r.cardBorder }};border-radius:14px;padding:13px">
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:36px;height:36px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 12px 'Plus Jakarta Sans';background:{{ r.color }}">{{ r.initials }}</span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.name }}</span><span style="{{ r.chStyle }}">{{ r.ch }}</span><sc-if value="{{ r.flagged }}" hint-placeholder-val="{{ false }}"><span style="background:#FDE7EF;color:#D6336C;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">{{ t.flagged }}</span></sc-if></div><div style="color:#F4B740;font:700 10px 'Plus Jakarta Sans';letter-spacing:1px;margin-top:2px">{{ r.stars }}</div></div><span style="font:600 9px 'Plus Jakarta Sans';color:#B7B3C6;flex:none">{{ r.date }}</span></div>
+            <div style="font:500 12px 'Plus Jakarta Sans';color:#3A3650;line-height:1.5;margin-top:9px">{{ r.text }}</div>
+            <!-- replied -->
+            <sc-if value="{{ r.replied }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;padding:11px;background:#F7F6FC;border-left:3px solid #1E1B2E;border-radius:0 8px 8px 0"><div style="display:flex;align-items:center;gap:5px;font:800 9.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:4px"><span style="width:16px;height:16px;border-radius:5px;background:#7B61FF;color:#fff;display:flex;align-items:center;justify-content:center;font:800 7px 'Plus Jakarta Sans'">TM</span>Tartine · {{ t.ownerReply }}</div><div style="font:500 11px 'Plus Jakarta Sans';color:#56506E;line-height:1.45">{{ r.reply }}</div></div></sc-if>
+            <!-- needs reply (AI draft) -->
+            <sc-if value="{{ r.needsReply }}" hint-placeholder-val="{{ true }}"><div style="margin-top:10px;padding:11px;border:1px dashed #C9C2E6;border-radius:10px"><div style="display:flex;align-items:center;gap:5px;font:800 9.5px 'Plus Jakarta Sans';color:#6D4DF6;margin-bottom:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>{{ t.aiDraft }}</div><div style="font:500 11px 'Plus Jakarta Sans';color:#56506E;line-height:1.45;background:#F7F6FC;border-radius:8px;padding:9px">{{ r.aiDraft }}</div><div style="display:flex;gap:7px;margin-top:8px;justify-content:flex-end"><span onClick="{{ r.onFlag }}" style="font:800 10px 'Plus Jakarta Sans';color:#D6336C;padding:7px 10px;cursor:pointer">{{ r.flagLabel }}</span><button onClick="{{ r.onReply }}" style="border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:8px 14px;border-radius:9px;font:800 10.5px 'Plus Jakarta Sans'">{{ t.sendReply }}</button></div></div></sc-if>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:9px;font:600 10px 'Plus Jakarta Sans';color:#9A96AE">♥ {{ r.helpful }} {{ t.helpful }}</div>
+          </div>
+          </sc-for>
+        </div>
+        <div style="height:14px"></div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- TOAST -->
+    <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:40;background:#1E1B2E;color:#fff;padding:11px 18px;border-radius:12px;font:700 12.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px rgba(28,24,46,.4);white-space:nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v === null || v === '') ? d : v; } catch (e) { return d; } }
+  _home() { try { const inq = new URLSearchParams(location.search); const o = new URLSearchParams(); ['tier','cat'].forEach((k) => { if (inq.get(k)) o.set(k, inq.get(k)); }); o.set('lang', (this.state && this.state.lang) || 'es'); location.href = 'ToLatino Business Dashboard Mobile.dc.html?' + o.toString(); } catch (e) {} }
+  state = {
+    lang: this._qp('lang', 'es'), mode: ['orders','reviews'].includes(this._qp('mode','')) ? this._qp('mode','') : 'customers', custTab: 'all', orderTab: 'new', reviewTab: 'all',
+    query: '', loyaltyOn: true, rewardState: null,
+    orders: null, reviews: null, toast: '', toastT: null,
+  };
+
+  I(paths, s, stroke) { return React.createElement('svg', { width: s || 16, height: s || 16, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d }))); }
+
+  CUSTOMERS() {
+    return [
+      { id: 1, initials: 'ML', color: '#7B61FF', name: 'Maria Lopez', visits: 24, spent: '$1,824', last: this._L('2 días', '2 days'), ltv: 'High', vip: true, tag: 'VIP' },
+      { id: 2, initials: 'JT', color: '#2A5C8A', name: 'James Tate', visits: 18, spent: '$1,420', last: this._L('1 sem', '1 wk'), ltv: 'High', vip: false, tag: this._L('Recurrente', 'Regular') },
+      { id: 7, initials: 'MT', color: '#1F9D57', name: 'Mission Tech', visits: 12, spent: '$4,680', last: this._L('Hoy', 'Today'), ltv: 'Top', vip: true, tag: 'B2B' },
+      { id: 3, initials: 'AF', color: '#E8954A', name: 'Anna F.', visits: 8, spent: '$986', last: this._L('3 días', '3 days'), ltv: 'Mid', vip: false, tag: this._L('Catas', 'Tasting') },
+      { id: 5, initials: 'SR', color: '#D6336C', name: 'Sofia Reyes', visits: 14, spent: '$840', last: this._L('Hoy', 'Today'), ltv: 'High', vip: false, tag: 'Vegano' },
+      { id: 6, initials: 'CM', color: '#9A6A12', name: 'Carlos M.', visits: 3, spent: '$184', last: this._L('4 días', '4 days'), ltv: 'New', vip: false, tag: this._L('Nuevo', 'New') },
+    ];
+  }
+  _L(a, b) { return this.state.lang === 'es' ? a : b; }
+
+  ORDERS() {
+    return [
+      { id: '#2487', who: 'Maria Lopez', placed: this._L('ahora', 'just now'), urgent: true, channel: 'delivery', status: 'new', total: '$48.20', itemsEs: '2× Pan de campo, Tiramisú, Agua', itemsEn: '2× Country loaf, Tiramisù, Water' },
+      { id: '#2486', who: this._L('Mesa 7', 'Table 7'), placed: '2 min', urgent: false, channel: 'dinein', status: 'new', total: '$92.00', itemsEs: '3× Pizza margherita, Vino tinto', itemsEn: '3× Pizza margherita, Red wine' },
+      { id: '#2484', who: 'James Tate', placed: '8 min', urgent: false, channel: 'delivery', status: 'preparing', total: '$40.40', itemsEs: 'Canasta de pan, Bucatini', itemsEn: 'Bread basket, Bucatini' },
+      { id: '#2481', who: 'Carlos M.', placed: '18 min', urgent: false, channel: 'delivery', status: 'ready', total: '$24.50', itemsEs: 'Tiramisú, 2× Galletas', itemsEn: 'Tiramisù, 2× Cookies' },
+      { id: '#2477', who: this._L('Mesa 5', 'Table 5'), placed: this._L('cerrado', 'closed'), urgent: false, channel: 'dinein', status: 'completed', total: '$220.00', itemsEs: '4× Menú fijo, 3× Cócteles', itemsEn: '4× Prix fixe, 3× Cocktails' },
+    ];
+  }
+
+  REVIEWS() {
+    return [
+      { id: 1, initials: 'JT', color: '#2A5C8A', name: 'James Tate', stars: 4, date: this._L('14 min', '14m'), ch: 'Google', status: 'needs', flagged: false, helpful: 8, es: 'El servicio fue un poco lento pero la comida lo compensó. El menú degustación fue lo mejor.', en: 'Service was a bit slow but the food made up for it. The tasting menu was a highlight.', replyEs: '', aiEs: '¡Gracias por las amables palabras, James! Nos alegra que el menú degustación te encantara. Estamos mejorando los tiempos en la cena.', aiEn: 'Thanks for the kind words, James! So glad the tasting menu landed. We’re tightening up our dinner pacing.' },
+      { id: 2, initials: 'ML', color: '#7B61FF', name: 'Maria Lopez', stars: 5, date: '2h', ch: 'Nearby', status: 'needs', flagged: false, helpful: 14, es: 'El mejor pan de masa madre de SF. La pizza de los martes es una experiencia religiosa.', en: 'Best sourdough in SF. Pizza on Tuesdays is a religious experience.', aiEs: '¡Mil gracias, Maria! Nos llena de alegría — significa mucho para todo el equipo. ¡Te esperamos pronto!', aiEn: 'Thank you so much, Maria! We’re thrilled — it means the world to the whole team.' },
+      { id: 4, initials: 'DK', color: '#D6336C', name: 'Daniel Kim', stars: 5, date: '3d', ch: 'Google', status: 'replied', flagged: false, helpful: 22, es: 'Cena de cumpleaños — trajeron una vela en el pastel de aceite de oliva. Hicieron la noche.', en: 'Birthday dinner — they brought out a candle on the olive oil cake. Made the night.', replyEs: '¡Mil gracias por las amables palabras — nos vemos pronto!', replyEn: 'Thank you so much for the kind words — see you again soon!', aiEs: '', aiEn: '' },
+      { id: 6, initials: 'A', color: '#9A96AE', name: this._L('Anónimo', 'Anonymous'), stars: 1, date: '2d', ch: 'Yelp', status: 'needs', flagged: true, helpful: 0, es: 'Nunca comí aquí pero el dueño es claramente caro y grosero. Una estrella.', en: 'Never even ate here but the owner is clearly overpriced and rude. One star.', aiEs: 'Hola — tomamos en serio toda retroalimentación, pero no tenemos registro de una visita con este nombre. Si cenaste con nosotros, contáctanos directamente.', aiEn: 'Hi — we take all feedback seriously, but we have no record of a visit under this name. Please reach out directly.' },
+    ];
+  }
+
+  orders() { return this.state.orders || this.ORDERS(); }
+  reviews() { return this.state.reviews || this.REVIEWS(); }
+  flash(m) { clearTimeout(this.state.toastT); const tt = setTimeout(() => this.setState({ toast: '' }), 1900); this.setState({ toast: m, toastT: tt }); }
+
+  renderVals() {
+    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const I = (p, s, c) => this.I(p, s, c);
+    const mode = st.mode;
+
+    const chip = (active) => 'flex:none;border:none;cursor:pointer;padding:8px 13px;border-radius:999px;font:' + (active ? '800' : '700') + " 12px 'Plus Jakarta Sans';" + (active ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E');
+    const langTab = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 11px', borderRadius: '999px', fontWeight: 800, fontSize: '11px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+
+    const t = {
+      searchCustomers: L('Buscar por nombre, teléfono…', 'Search by name, phone…'), visits: L('visitas', 'visits'), last: L('última', 'last'),
+      segments: L('Segmentos de clientes', 'Customer segments'), loyalty: L('Lealtad y recompensas', 'Loyalty & rewards'),
+      loyaltyTitle: L('Gana 1 punto por cada $1', 'Earn 1 point per $1 spent'), loyaltyDesc: L('100 pts = $10 de crédito · 284 inscritos · $4,820 canjeados este mes.', '100 pts = $10 credit · 284 enrolled · $4,820 redeemed this month.'),
+      urgent: L('Urgente', 'Urgent'), reviews: L('reseñas', 'reviews'), flagged: L('Reportada', 'Flagged'), ownerReply: L('respuesta del dueño', 'owner reply'),
+      aiDraft: L('Respuesta sugerida por IA', 'AI-suggested reply'), sendReply: L('Responder', 'Send reply'), helpful: L('útil', 'helpful'),
+    };
+
+    // ===== mode toggle =====
+    const needsReply = this.reviews().filter((r) => r.status === 'needs' && !r.flagged).length;
+    const inFlight = this.orders().filter((o) => o.status !== 'completed' && o.status !== 'cancelled').length;
+    const modes = [['customers', L('Clientes', 'Customers'), false], ['orders', L('Pedidos', 'Orders'), true, inFlight], ['reviews', L('Reseñas', 'Reviews'), true, needsReply]].map((m) => ({ label: m[1], onTap: () => this.setState({ mode: m[0] }), style: 'flex:1;display:flex;align-items:center;justify-content:center;gap:5px;border:none;cursor:pointer;padding:10px 6px;border-radius:11px;font:800 12px \'Plus Jakarta Sans\';' + (mode === m[0] ? 'background:#1E1B2E;color:#fff' : 'background:#F1EFFA;color:#6E6A85'), hasN: m[2] && m[3] > 0, n: m[3], nStyle: 'background:' + (mode === m[0] ? '#7B61FF' : '#D6336C') + ';color:#fff;padding:1px 6px;border-radius:7px;font:800 9px \'Plus Jakarta Sans\'' }));
+
+    // secondary tabs
+    let subtabs = [];
+    if (mode === 'customers') subtabs = [['all', L('Todos', 'All')], ['vip', 'VIP'], ['regulars', L('Recurrentes', 'Regulars')], ['new', L('Nuevos', 'New')], ['b2b', 'B2B']].map((s) => ({ label: s[1], onTap: () => this.setState({ custTab: s[0] }), style: chip(st.custTab === s[0]) }));
+    else if (mode === 'orders') subtabs = [['new', L('Nuevos', 'New')], ['preparing', L('Preparando', 'Preparing')], ['ready', L('Listos', 'Ready')], ['completed', L('Completados', 'Completed')], ['all', L('Todos', 'All')]].map((s) => ({ label: s[1], onTap: () => this.setState({ orderTab: s[0] }), style: chip(st.orderTab === s[0]) }));
+    else subtabs = [['all', L('Todas', 'All')], ['need', L('Sin responder', 'Need reply'), true, needsReply], ['5', '5★'], ['low', '≤3★'], ['flagged', L('Reportadas', 'Flagged')]].map((s) => ({ label: s[1], onTap: () => this.setState({ reviewTab: s[0] }), style: chip(st.reviewTab === s[0]), hasN: s[2] && s[3] > 0, n: s[3], nStyle: 'margin-left:5px;background:#D6336C;color:#fff;padding:1px 6px;border-radius:7px;font:800 9px \'Plus Jakarta Sans\'' }));
+
+    // ===== CUSTOMERS =====
+    const custKpis = [
+      { ic: [['M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M3 20a6 6 0 0 1 12 0', 'M16 5.5a3 3 0 0 1 0 6', 'M19 20a5 5 0 0 0-3-4.6']], c: '#6D4DF6', bg: '#EFEBFF', label: L('Total', 'Total'), value: '4,284', delta: '▲ 6%' },
+      { ic: [['M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z']], c: '#D6336C', bg: '#FDE7EF', label: L('Nuevos 30d', 'New 30d'), value: '62', delta: '▲ 28%' },
+      { ic: [['M3 12a9 9 0 0 1 15-6.7L21 8', 'M21 3v5h-5', 'M21 12a9 9 0 0 1-15 6.7L3 16', 'M3 21v-5h5']], c: '#1F8A4C', bg: '#E3F5EA', label: L('Recurrencia', 'Return rate'), value: '72%', delta: '▲ 4pp' },
+      { ic: [['M12 2v20', 'M17 6a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1A4 4 0 0 1 7 18']], c: '#9A6A12', bg: '#FCEFD6', label: L('LTV prom.', 'Avg LTV'), value: '$184', delta: '▲ 9%' },
+    ].map((k) => ({ icon: I(k.ic[0], 16, k.c), bg: k.bg, label: k.label, value: k.value, delta: k.delta }));
+    let custList = this.CUSTOMERS();
+    if (st.custTab === 'vip') custList = custList.filter((c) => c.vip);
+    else if (st.custTab === 'new') custList = custList.filter((c) => c.ltv === 'New');
+    else if (st.custTab === 'b2b') custList = custList.filter((c) => c.tag === 'B2B');
+    else if (st.custTab === 'regulars') custList = custList.filter((c) => c.visits >= 9 && !c.vip);
+    if (st.query.trim()) { const q = st.query.toLowerCase(); custList = custList.filter((c) => c.name.toLowerCase().includes(q)); }
+    const tagColor = (tag, ltv) => ltv === 'New' ? ['#E3F5EA', '#1F8A4C'] : tag === 'B2B' ? ['#EFEBFF', '#6D4DF6'] : ['#F1EFFA', '#9A96AE'];
+    const customers = custList.map((c) => { const tc = tagColor(c.tag, c.ltv); return { initials: c.initials, color: c.color, name: c.name, visits: c.visits, last: c.last, spent: c.spent, vip: c.vip, tag: c.tag, tagStyle: 'font:800 8.5px \'Plus Jakarta Sans\';padding:3px 7px;border-radius:6px;margin-top:3px;display:inline-block;background:' + tc[0] + ';color:' + tc[1] }; });
+    const segRaw = [[L('VIP · top 10%', 'VIP · top 10%'), '428', '$840', '#4F46E5', 86], [L('Recurrentes', 'Regulars'), '1,284', '$184', '#7C6BFF', 64], [L('Ocasionales', 'Occasional'), '2,104', '$58', '#A78BFA', 42], [L('Nuevos', 'New'), '184', '$24', '#34D399', 12]];
+    const segments = segRaw.map((s) => ({ name: s[0], n: s[1], ltv: s[2] + ' LTV', barC: s[3], bar: s[4] + '%' }));
+    const rewardDefs = [[L('Regalo de cumpleaños', 'Birthday gift'), true], [L('10ª visita · $20 crédito', '10th visit · $20 credit'), true], [L('Refiere un amigo · $10', 'Refer a friend · $10'), true], [L('Cliente perdido · 20%', 'Lapsed comeback · 20% off'), false]];
+    const rwSt = st.rewardState || rewardDefs.reduce((o, r, i) => { o[i] = r[1]; return o; }, {});
+    const rewards = rewardDefs.map((r, i) => { const on = rwSt[i]; return { label: r[0], track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '18px' : '3px', onToggle: () => this.setState({ rewardState: { ...rwSt, [i]: !on } }) }; });
+
+    // ===== ORDERS =====
+    const orders = this.orders();
+    const orderKpis = [
+      { ic: [['M6 7h12l1 13H5z', 'M9 7a3 3 0 0 1 6 0']], c: '#D6336C', bg: '#FDE7EF', label: L('Pedidos hoy', 'Orders today'), value: '38', delta: '▲ 18%', dC: '#1F9D57' },
+      { ic: [['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7v5l3 2']], c: '#9A6A12', bg: '#FCEFD6', label: L('En curso', 'In flight'), value: inFlight + '', delta: L('1 urgente', '1 urgent'), dC: '#9A96AE' },
+      { ic: [['M12 2v20', 'M17 6a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1A4 4 0 0 1 7 18']], c: '#1F8A4C', bg: '#E3F5EA', label: L('Ingresos', 'Revenue'), value: '$1,847', delta: '▲ 12%', dC: '#1F9D57' },
+      { ic: [['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7v5l3 2']], c: '#6D4DF6', bg: '#EFEBFF', label: L('Prep prom.', 'Avg prep'), value: '18m', delta: '▼ 2m', dC: '#1F9D57' },
+    ].map((k) => ({ icon: I(k.ic[0], 16, k.c), bg: k.bg, label: k.label, value: k.value, delta: k.delta, dC: k.dC }));
+    const statusMeta = { new: { dot: '#D6336C', es: 'Nuevos', en: 'New' }, preparing: { dot: '#F4B740', es: 'Prep', en: 'Prep' }, ready: { dot: '#7B61FF', es: 'Listos', en: 'Ready' }, completed: { dot: '#1F9D57', es: 'Listo', en: 'Done' } };
+    const statusKeys = ['new', 'preparing', 'ready', 'completed'];
+    const orderStatuses = statusKeys.map((k) => { const m = statusMeta[k]; const n = orders.filter((o) => o.status === k).length; return { label: L(m.es, m.en), n, dot: m.dot, onTap: () => this.setState({ orderTab: k }), style: 'flex:none;display:flex;align-items:center;border:none;cursor:pointer;padding:8px 12px;border-radius:999px;font:800 11px \'Plus Jakarta Sans\';' + (st.orderTab === k ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E') }; });
+    const chMeta = { delivery: { bg: '#FDE7EF', c: '#D6336C', es: 'Entrega', en: 'Delivery' }, dinein: { bg: '#EFEBFF', c: '#6D4DF6', es: 'Mostrador', en: 'Dine-in' }, pickup: { bg: '#FCEFD6', c: '#9A6A12', es: 'Recoger', en: 'Pickup' } };
+    const advLabel = (s, ch) => ({ new: L('Aceptar', 'Accept'), preparing: L('Marcar listo', 'Mark ready'), ready: ch === 'delivery' ? L('Dar al repartidor', 'Hand to driver') : L('Completar', 'Complete') }[s] || '');
+    const flow = { new: 'preparing', preparing: 'ready', ready: 'completed' };
+    let orderList = st.orderTab === 'all' ? orders : orders.filter((o) => o.status === st.orderTab);
+    const orderRows = orderList.map((o) => { const cm = chMeta[o.channel]; const done = o.status === 'completed'; return { id: o.id, who: o.who, placed: o.placed, urgent: o.urgent, items: es ? o.itemsEs : o.itemsEn, total: o.total, channel: L(cm.es, cm.en), chStyle: 'font:800 9px \'Plus Jakarta Sans\';padding:3px 8px;border-radius:6px;background:' + cm.bg + ';color:' + cm.c, hasAdvance: !done, advanceLabel: advLabel(o.status, o.channel), done, doneLabel: L('Pagado y cerrado', 'Paid & closed'), cardBorder: o.urgent && !done ? 'rgba(240,70,110,.35)' : 'rgba(30,27,46,.08)', onAdvance: () => { const nx = flow[o.status]; if (nx) { this.setState({ orders: orders.map((x) => x.id === o.id ? { ...x, status: nx } : x) }); this.flash(o.id + ' → ' + L(statusMeta[nx] ? statusMeta[nx].es : nx, statusMeta[nx] ? statusMeta[nx].en : nx)); } } }; });
+
+    // ===== REVIEWS =====
+    const reviews = this.reviews();
+    const ratingBars = [[5, 78, '#1F9D57'], [4, 14, '#1F9D57'], [3, 5, '#F4B740'], [2, 2, '#D6336C'], [1, 1, '#D6336C']].map((r) => ({ star: r[0], pct: r[1] + '%', color: r[2] }));
+    const chReviewMeta = { Nearby: { bg: '#EFEBFF', c: '#6D4DF6' }, Google: { bg: '#E3F5EA', c: '#1F8A4C' }, Yelp: { bg: '#FCEFD6', c: '#9A6A12' } };
+    let reviewList = reviews;
+    if (st.reviewTab === 'need') reviewList = reviews.filter((r) => r.status === 'needs' && !r.flagged);
+    else if (st.reviewTab === '5') reviewList = reviews.filter((r) => r.stars === 5);
+    else if (st.reviewTab === 'low') reviewList = reviews.filter((r) => r.stars <= 3);
+    else if (st.reviewTab === 'flagged') reviewList = reviews.filter((r) => r.flagged);
+    const reviewRows = reviewList.map((r) => { const cm = chReviewMeta[r.ch] || chReviewMeta.Google; const needs = r.status === 'needs'; return { initials: r.initials, color: r.color, name: r.name, ch: r.ch, chStyle: 'font:800 8px \'Plus Jakarta Sans\';padding:1px 6px;border-radius:5px;background:' + cm.bg + ';color:' + cm.c, flagged: r.flagged, stars: '★★★★★☆☆☆☆☆'.slice(5 - r.stars, 10 - r.stars), date: r.date, text: es ? r.es : r.en, replied: r.status === 'replied', reply: es ? r.replyEs : r.replyEn, needsReply: needs, aiDraft: es ? r.aiEs : r.aiEn, helpful: r.helpful, cardBorder: r.flagged ? 'rgba(240,70,110,.3)' : 'rgba(30,27,46,.08)', flagLabel: r.flagged ? L('Quitar reporte', 'Unflag') : ('⚑ ' + L('Reportar', 'Flag')), onReply: () => { this.setState({ reviews: reviews.map((x) => x.id === r.id ? { ...x, status: 'replied', replyEs: x.aiEs, replyEn: x.aiEn } : x) }); this.flash(L('Respuesta publicada', 'Reply posted')); }, onFlag: () => { this.setState({ reviews: reviews.map((x) => x.id === r.id ? { ...x, flagged: !x.flagged } : x) }); this.flash(r.flagged ? L('Reporte quitado', 'Unflagged') : L('Reseña reportada', 'Review flagged')); } }; });
+
+    return {
+      esTab: langTab(es), enTab: langTab(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }), back: () => this._home(),
+      headTitle: mode === 'orders' ? L('Pedidos', 'Orders') : (mode === 'reviews' ? L('Reseñas', 'Reviews') : L('Clientes', 'Customers')),
+      headSub: mode === 'orders' ? L('38 hoy · ' + inFlight + ' en curso', '38 today · ' + inFlight + ' in flight') : (mode === 'reviews' ? L('4.8★ · ' + needsReply + ' sin responder', '4.8★ · ' + needsReply + ' need reply') : L('4,284 total · 62 nuevos', '4,284 total · 62 new')),
+      modes, subtabs, t,
+      isCustomers: mode === 'customers', isOrders: mode === 'orders', isReviews: mode === 'reviews',
+      // customers
+      custKpis, query: st.query, onQuery: (e) => this.setState({ query: e.target.value }), customers, segments,
+      toggleLoyalty: () => this.setState({ loyaltyOn: !st.loyaltyOn }), loyaltyTrack: st.loyaltyOn ? '#7B61FF' : '#D8D2E6', loyaltyKnob: st.loyaltyOn ? '20px' : '3px', loyaltyOpacity: st.loyaltyOn ? '1' : '.45', rewards,
+      // orders
+      orderKpis, orderStatuses, orders: orderRows,
+      // reviews
+      ratingBars, reviews: reviewRows,
+      toastShow: !!st.toast, toastMsg: st.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -110,6 +110,12 @@ building any UI; never improvise. Key files:
   screen (build to match density, weight, voice).
 - **`docs/design-system/reference/dc/`** — original interactive HTML prototypes
   (look/copy/interaction source of truth; do NOT copy their inline-styled HTML).
+  Covers consumer screens + the business dashboard (mobile & desktop) and all
+  9 business modules (Food, Services, Products, Events, Rental, Updates,
+  Customers, Staff, Billing).
+- **`docs/design-system/CORRECTION_PROMPT.md`** — course-correction checklist to
+  run if a rendered screen drifts from the reference (type/color/radius/spacing/
+  layout/primitives/copy/imagery audit). Use it before finishing any UI task.
 
 The live implementation lives in **`apps/web`**:
 - Tokens → `apps/web/tailwind.config.ts` (use named tokens: `bg-primary`,

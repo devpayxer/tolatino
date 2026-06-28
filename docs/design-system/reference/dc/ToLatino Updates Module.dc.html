@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+@keyframes tlsheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Novedades · móvil</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:852px;background:#F4F2F9;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.title }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+    </div>
+
+    <!-- TABS -->
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:11px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ tabs }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}<sc-if value="{{ s.hasN }}" hint-placeholder-val="{{ false }}"><span style="{{ s.nStyle }}">{{ s.n }}</span></sc-if></button></sc-for>
+    </div>
+
+    <!-- BODY -->
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 16px">
+
+      <!-- COMPOSER -->
+      <sc-if value="{{ showComposer }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-bottom:14px">
+        <div style="display:flex;gap:11px;align-items:flex-start">
+          <span style="width:38px;height:38px;border-radius:11px;background:#7B61FF;color:#fff;font:800 12px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">TM</span>
+          <div style="flex:1;min-width:0">
+            <textarea value="{{ draft.title }}" onInput="{{ onDraft }}" placeholder="{{ t.composePh }}" data-noscroll style="width:100%;height:54px;resize:none;border:1.5px solid #E2DEF4;border-radius:11px;padding:10px 12px;font:500 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.45"></textarea>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:9px"><span style="font:700 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.type }}</span><sc-for list="{{ kindChips }}" as="k" hint-placeholder-count="3"><button onClick="{{ k.onTap }}" style="{{ k.style }}">{{ k.label }}</button></sc-for></div>
+            <div style="display:flex;align-items:center;gap:7px;margin-top:10px">
+              <button onClick="{{ togglePhoto }}" style="{{ photoStyle }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ photoIconC }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="11" r="2"></circle><path d="m21 16-4-4-7 7"></path></svg>{{ t.photo }}</button>
+              <button onClick="{{ toggleVideo }}" style="{{ videoStyle }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ videoIconC }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"></rect><path d="m16 10 6-3v10l-6-3z"></path></svg>{{ t.video }}</button>
+              <button onClick="{{ tagOffer }}" style="border:1px solid rgba(30,27,46,.1);background:#fff;cursor:pointer;border-radius:9px;padding:7px 10px;font:700 10.5px 'Plus Jakarta Sans';color:#6E6A85;display:flex;align-items:center;gap:4px">🏷️ {{ t.offer }}</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(30,27,46,.06)">
+          <button onClick="{{ saveDraft }}" style="border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;color:#1E1B2E;padding:11px 14px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans'">{{ t.saveDraft }}</button>
+          <button onClick="{{ schedule }}" style="border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;color:#6D4DF6;padding:11px 14px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><line x1="3.5" y1="10" x2="20.5" y2="10"></line></svg>{{ t.schedule }}</button>
+          <button onClick="{{ postNow }}" style="flex:1;border:none;cursor:pointer;background:{{ postBg }};color:#fff;padding:11px;border-radius:11px;font:800 12.5px 'Plus Jakarta Sans'">{{ t.postNow }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- PERFORMANCE (All tab) -->
+      <sc-if value="{{ showPerf }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-bottom:14px">
+        <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">{{ t.streamPerf }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <sc-for list="{{ perfStats }}" as="p" hint-placeholder-count="4"><div style="background:#F7F6FC;border-radius:11px;padding:11px"><div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ p.label }}</div><div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ p.value }}</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">{{ p.delta }}</div></div></sc-for>
+        </div>
+      </div>
+      <!-- recent followers -->
+      <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.recentFollowers }}</span><span style="background:#EFEBFF;color:#6D4DF6;padding:3px 8px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">14 {{ t.new }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ followers }}" as="f" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 11px 'Plus Jakarta Sans';background:{{ f.color }}">{{ f.initials }}</span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ f.name }}</div><div style="font:500 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.followed }} {{ f.since }}</div></div><span onClick="{{ f.onWelcome }}" style="{{ f.btnStyle }}">{{ f.btnLabel }}</span></div></sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- POSTS -->
+      <sc-if value="{{ hasPosts }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ posts }}" as="p" hint-placeholder-count="3">
+        <div style="background:#fff;border:1px solid {{ p.cardBorder }};border-radius:16px;overflow:hidden">
+          <div style="padding:13px 13px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:34px;height:34px;border-radius:10px;background:#7B61FF;color:#fff;font:800 11px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">TM</span>
+              <div><div style="display:flex;align-items:center;gap:4px"><span style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">Tartine</span><span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#7B61FF;align-items:center;justify-content:center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></div>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:2px"><sc-if value="{{ p.pinned }}" hint-placeholder-val="{{ false }}"><span style="background:#FCEFD6;color:#9A6A12;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">📌 {{ t.pinned }}</span></sc-if><span style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ p.when }}</span><span style="{{ p.kindStyle }}">{{ p.kind }}</span></div></div>
+            </div>
+            <button style="width:28px;height:28px;border-radius:8px;background:#F7F6FC;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="#9A96AE" stroke="none"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg></button>
+          </div>
+          <div style="padding:9px 13px 0;font:700 13.5px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1.35">{{ p.text }}</div>
+          <sc-if value="{{ p.hasPhoto }}" hint-placeholder-val="{{ true }}"><div style="margin:11px 13px 0;height:130px;border-radius:12px;background:repeating-linear-gradient(135deg,{{ p.tile }})"></div></sc-if>
+          <!-- live stats -->
+          <sc-if value="{{ p.isLive }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:16px;padding:12px 13px;margin-top:2px"><span style="display:inline-flex;align-items:center;gap:4px;font:700 10.5px 'Plus Jakarta Sans';color:#9A96AE">👁 {{ p.views }}</span><span style="display:inline-flex;align-items:center;gap:4px;font:700 10.5px 'Plus Jakarta Sans';color:#D6336C">♥ {{ p.likes }}</span><span style="display:inline-flex;align-items:center;gap:4px;font:700 10.5px 'Plus Jakarta Sans';color:#9A96AE">💬 {{ p.comments }}</span><span style="display:inline-flex;align-items:center;gap:4px;font:700 10.5px 'Plus Jakarta Sans';color:#9A96AE">🔖 {{ p.saves }}</span></div></sc-if>
+          <!-- non-live actions -->
+          <sc-if value="{{ p.hasActions }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:7px;justify-content:flex-end;padding:11px 13px;margin-top:2px;border-top:1px solid rgba(30,27,46,.05)"><sc-for list="{{ p.actions }}" as="a" hint-placeholder-count="2"><button style="{{ a.style }}">{{ a.label }}</button></sc-for></div></sc-if>
+        </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <!-- EMPTY -->
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:34px 20px;text-align:center"><div style="font:600 13px 'Plus Jakarta Sans';color:#9A96AE;line-height:1.5">{{ t.emptyMsg }}</div></div>
+      </sc-if>
+      <div style="height:14px"></div>
+
+    </div>
+
+    <!-- TOAST -->
+    <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:40;background:#1E1B2E;color:#fff;padding:11px 18px;border-radius:12px;font:700 12.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px rgba(28,24,46,.4);white-space:nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v === null || v === '') ? d : v; } catch (e) { return d; } }
+  _home() { try { const inq = new URLSearchParams(location.search); const o = new URLSearchParams(); ['tier','cat'].forEach((k) => { if (inq.get(k)) o.set(k, inq.get(k)); }); o.set('lang', (this.state && this.state.lang) || 'es'); location.href = 'ToLatino Business Dashboard Mobile.dc.html?' + o.toString(); } catch (e) {} }
+  state = {
+    lang: this._qp('lang', 'es'), tab: 'all', draft: { title: '', kind: 'news', hasPhoto: false, hasVideo: false },
+    posts: null, welcomed: {}, toast: '', toastT: null,
+  };
+
+  KIND_TILE = { offer: '#F3E2CE 0 8px,#ECD3B4 8px 16px', event: '#F3D9E2 0 8px,#E8BFCD 8px 16px', news: '#FBEFD3 0 8px,#F5E1B0 8px 16px' };
+
+  seed() {
+    return [
+      { id: 1, kind: 'offer', es: '🌮 Domingos de masa madre: 20% en todos los panes, todo el día.', en: '🌮 Sourdough Sundays: 20% off all loaves, all day.', status: 'live', pinned: true, when: this._L('hace 2 h', '2h ago'), views: '4,820', likes: 312, comments: 28, saves: 64, hasPhoto: true },
+      { id: 2, kind: 'news', es: 'Conoce a Marisa, nuestra nueva panadera ✨ Trae 10 años de experiencia.', en: 'Meet Marisa, our new baker ✨ She brings 10 years of experience.', status: 'live', pinned: false, when: this._L('hace 1 d', '1d ago'), views: '1,820', likes: 142, comments: 12, saves: 21, hasPhoto: true },
+      { id: 3, kind: 'event', es: 'Cena de Halloween · 6 tiempos · 31 de octubre. ¡Últimos boletos!', en: 'Halloween dinner · 6 courses · Oct 31. Last tickets!', status: 'scheduled', pinned: false, when: this._L('Programado · 8 AM', 'Scheduled · 8 AM'), hasPhoto: true },
+      { id: 4, kind: 'news', es: 'Ahora abrimos los domingos de 10 AM a 4 PM 🎉', en: 'We’re now open Sundays 10 AM–4 PM 🎉', status: 'draft', pinned: false, when: this._L('Borrador', 'Draft'), hasPhoto: false },
+      { id: 5, kind: 'offer', es: 'Especial de maíz de verano · platillo destacado.', en: 'Summer corn special · featured item.', status: 'archived', pinned: false, when: this._L('Archivado', 'Archived'), views: '5,880', hasPhoto: true },
+    ];
+  }
+  _L(a, b) { return this.state.lang === 'es' ? a : b; }
+  posts() { return this.state.posts || this.seed(); }
+  flash(m) { clearTimeout(this.state.toastT); const tt = setTimeout(() => this.setState({ toast: '' }), 1900); this.setState({ toast: m, toastT: tt }); }
+
+  createPost(status) {
+    const title = this.state.draft.title.trim();
+    if (!title) { this.flash(this._L('Escribe algo primero', 'Write something first')); return; }
+    const posts = this.posts();
+    const id = Math.max(0, ...posts.map((p) => p.id)) + 1;
+    const d = this.state.draft;
+    const base = { id, kind: d.kind, es: title, en: title, status, pinned: false, hasPhoto: d.hasPhoto, when: status === 'live' ? this._L('ahora', 'just now') : status === 'scheduled' ? this._L('Programado · 8 AM', 'Scheduled · 8 AM') : this._L('Borrador', 'Draft'), views: '0', likes: 0, comments: 0, saves: 0 };
+    this.setState({ posts: [base, ...posts], draft: { title: '', kind: 'news', hasPhoto: false, hasVideo: false }, tab: status === 'live' ? 'live' : status === 'scheduled' ? 'scheduled' : 'draft' });
+    this.flash(status === 'live' ? this._L('Publicado en tu stream', 'Posted to your stream') : status === 'scheduled' ? this._L('Publicación programada', 'Post scheduled') : this._L('Guardado en borradores', 'Saved to drafts'));
+  }
+
+  renderVals() {
+    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const posts = this.posts();
+    const tab = st.tab, draft = st.draft;
+
+    const langTab = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 11px', borderRadius: '999px', fontWeight: 800, fontSize: '11px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+    const chip = (active) => 'flex:none;border:none;cursor:pointer;padding:8px 13px;border-radius:999px;font:' + (active ? '800' : '700') + " 12px 'Plus Jakarta Sans';" + (active ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E');
+
+    const t = {
+      title: L('Novedades', 'Updates'), composePh: L('¿Qué hay de nuevo en tu negocio? Oferta · evento · aviso…', "What's new? Offer · event · news…"),
+      type: L('Tipo:', 'Type:'), photo: L('Foto', 'Photo'), video: L('Video', 'Video'), offer: L('Oferta', 'Offer'),
+      saveDraft: L('Borrador', 'Draft'), schedule: L('Programar', 'Schedule'), postNow: L('Publicar', 'Post now'),
+      streamPerf: L('Rendimiento · 30 días', 'Stream performance · 30d'),
+      recentFollowers: L('Seguidores recientes', 'Recent followers'), new: L('nuevos', 'new'), followed: L('te siguió', 'followed'),
+      pinned: L('Fijado', 'Pinned'), emptyMsg: L('Aún no hay publicaciones aquí. Usa el editor de arriba para crear una.', 'No posts here yet. Use the composer above to create one.'),
+    };
+
+    const kindLabel = (k) => ({ offer: L('Oferta', 'Offer'), event: L('Evento', 'Event'), news: L('Aviso', 'News') }[k] || k);
+    const kindStyle = (k) => { const m = { offer: ['#FDE7EF', '#D6336C'], event: ['#EFEBFF', '#6D4DF6'], news: ['#E3F5EA', '#1F8A4C'] }[k]; return 'background:' + m[0] + ';color:' + m[1] + ';padding:1px 7px;border-radius:5px;font:800 8px \'Plus Jakarta Sans\''; };
+
+    // composer
+    const kindChips = [['news', L('Aviso', 'News')], ['offer', L('Oferta', 'Offer')], ['event', L('Evento', 'Event')]].map((k) => ({ label: k[1], onTap: () => this.setState({ draft: { ...draft, kind: k[0] } }), style: 'border:none;cursor:pointer;padding:4px 10px;border-radius:999px;font:800 10.5px \'Plus Jakarta Sans\';' + (draft.kind === k[0] ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#6E6A85') }));
+
+    // counts
+    const count = (s) => posts.filter((p) => p.status === s).length;
+    const tabs = [['all', L('Todas', 'All')], ['live', L('En vivo', 'Live'), true, count('live')], ['scheduled', L('Programadas', 'Scheduled'), true, count('scheduled')], ['draft', L('Borradores', 'Drafts'), true, count('draft')], ['archived', L('Archivadas', 'Archived'), true, count('archived')]].map((s) => ({ label: s[1], onTap: () => this.setState({ tab: s[0] }), style: chip(tab === s[0]), hasN: s[2], n: s[3], nStyle: 'margin-left:6px;font-weight:800;color:' + (tab === s[0] ? 'rgba(255,255,255,.8)' : '#9A96AE') }));
+
+    // perf
+    const perfStats = [
+      { label: L('Seguidores', 'Followers'), value: '142', delta: '▲ 14 ' + L('nuevos', 'new') },
+      { label: L('Alcance prom.', 'Avg reach'), value: '1,820', delta: '▲ 28%' },
+      { label: L('Interacción', 'Engagement'), value: '8.4%', delta: '▲ 1.2pp' },
+      { label: L('Clics', 'Click-through'), value: '4.2%', delta: '▲ 0.8pp' },
+    ];
+    const folRaw = [['ML', '#7B61FF', 'Maria L.', es ? 'hace 2 h' : '2h ago'], ['JT', '#1F9D57', 'James T.', es ? 'hace 5 h' : '5h ago'], ['AF', '#E8954A', 'Anna F.', es ? 'ayer' : 'yesterday']];
+    const followers = folRaw.map((f, i) => { const w = st.welcomed[i]; return { initials: f[0], color: f[1], name: f[2], since: f[3], onWelcome: () => { if (!w) { this.setState({ welcomed: { ...st.welcomed, [i]: true } }); this.flash(L('Mensaje de bienvenida enviado', 'Welcome message sent')); } }, btnLabel: w ? ('✓ ' + L('Saludado', 'Welcomed')) : L('Saludar', 'Welcome'), btnStyle: w ? 'font:800 10px \'Plus Jakarta Sans\';color:#1F8A4C;flex:none' : 'font:800 10px \'Plus Jakarta Sans\';color:#fff;background:#7B61FF;padding:6px 11px;border-radius:8px;cursor:pointer;flex:none' }; });
+
+    // posts list
+    let visible = tab === 'all' ? posts : posts.filter((p) => p.status === tab);
+    visible = [...visible].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    const actionStyle = (primary) => 'border:' + (primary ? 'none' : '1.5px solid #E2DEF4') + ';cursor:pointer;padding:8px 13px;border-radius:9px;font:800 10.5px \'Plus Jakarta Sans\';' + (primary ? 'background:#7B61FF;color:#fff' : 'background:#fff;color:#1E1B2E');
+    const postRows = visible.map((p) => {
+      let actions = [];
+      if (p.status === 'scheduled') actions = [{ label: L('Reprogramar', 'Reschedule'), style: actionStyle(false) }, { label: '⚡ ' + L('Publicar', 'Post now'), style: actionStyle(true) }];
+      else if (p.status === 'draft') actions = [{ label: '🗑 ' + L('Eliminar', 'Delete'), style: actionStyle(false) }, { label: L('Publicar', 'Publish'), style: actionStyle(true) }];
+      else if (p.status === 'archived') actions = [{ label: '↻ ' + L('Reusar', 'Re-run'), style: actionStyle(false) }];
+      return { text: es ? p.es : p.en, pinned: p.pinned, when: p.when, kind: kindLabel(p.kind), kindStyle: kindStyle(p.kind), hasPhoto: p.hasPhoto !== false, tile: this.KIND_TILE[p.kind], isLive: p.status === 'live', views: p.views, likes: p.likes, comments: p.comments, saves: p.saves, hasActions: p.status !== 'live', actions, cardBorder: p.pinned ? 'rgba(244,183,64,.35)' : 'rgba(30,27,46,.08)' };
+    });
+
+    const titleOk = !!draft.title.trim();
+    return {
+      esTab: langTab(es), enTab: langTab(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }), back: () => this._home(),
+      t, headSub: L('142 seguidores · ' + count('live') + ' en vivo', '142 followers · ' + count('live') + ' live'),
+      tabs,
+      showComposer: tab === 'all' || tab === 'live', showPerf: tab === 'all',
+      draft, onDraft: (e) => this.setState({ draft: { ...draft, title: e.target.value } }),
+      kindChips,
+      togglePhoto: () => this.setState({ draft: { ...draft, hasPhoto: !draft.hasPhoto } }), photoStyle: 'border:1px solid ' + (draft.hasPhoto ? '#7B61FF' : 'rgba(30,27,46,.1)') + ';background:' + (draft.hasPhoto ? '#F7F5FF' : '#fff') + ';cursor:pointer;border-radius:9px;padding:7px 10px;font:700 10.5px \'Plus Jakarta Sans\';color:' + (draft.hasPhoto ? '#6D4DF6' : '#6E6A85') + ';display:flex;align-items:center;gap:4px', photoIconC: draft.hasPhoto ? '#6D4DF6' : '#9A96AE',
+      toggleVideo: () => this.setState({ draft: { ...draft, hasVideo: !draft.hasVideo } }), videoStyle: 'border:1px solid ' + (draft.hasVideo ? '#7B61FF' : 'rgba(30,27,46,.1)') + ';background:' + (draft.hasVideo ? '#F7F5FF' : '#fff') + ';cursor:pointer;border-radius:9px;padding:7px 10px;font:700 10.5px \'Plus Jakarta Sans\';color:' + (draft.hasVideo ? '#6D4DF6' : '#6E6A85') + ';display:flex;align-items:center;gap:4px', videoIconC: draft.hasVideo ? '#6D4DF6' : '#9A96AE',
+      tagOffer: () => this.setState({ draft: { ...draft, kind: 'offer' } }),
+      saveDraft: () => this.createPost('draft'), schedule: () => this.createPost('scheduled'), postNow: () => this.createPost('live'), postBg: titleOk ? '#7B61FF' : '#D8D2EC',
+      perfStats, followers,
+      hasPosts: postRows.length > 0, posts: postRows, isEmpty: postRows.length === 0,
+      toastShow: !!st.toast, toastMsg: st.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

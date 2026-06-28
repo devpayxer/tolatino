@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-sb]{scrollbar-width:thin;scrollbar-color:#D8D2E6 transparent}
+[data-sb]::-webkit-scrollbar{width:8px;height:8px}
+[data-sb]::-webkit-scrollbar-thumb{background:#D8D2E6;border-radius:8px}
+[data-sb]::-webkit-scrollbar-track{background:transparent}
+@keyframes tlp{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:1320px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Panel de negocio · escritorio · {{ tierLabel }} · {{ catLabel }}</div>
+  </div>
+
+  <div style="position:relative;width:1320px;max-width:100%;height:858px;background:#F4F2F9;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- ===================== TOP NAV ===================== -->
+    <div style="flex:none;height:60px;background:#fff;border-bottom:1px solid rgba(30,27,46,.08);display:flex;align-items:center;gap:14px;padding:0 18px">
+      <div style="display:flex;align-items:baseline"><span style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.03em">To</span><span style="font:800 19px 'Plus Jakarta Sans';color:#7B61FF;letter-spacing:-.03em">Latino</span><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE;margin-left:7px">{{ t.business }}</span></div>
+      <div style="width:1px;height:26px;background:rgba(30,27,46,.1)"></div>
+      <button style="display:flex;align-items:center;gap:9px;border:none;background:#F7F6FC;cursor:pointer;border-radius:11px;padding:6px 11px 6px 7px">
+        <span style="width:30px;height:30px;border-radius:8px;background:{{ biz.accent }};color:#fff;font:800 11px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center">{{ biz.initials }}</span>
+        <span style="text-align:left;line-height:1.2"><span style="display:flex;align-items:center;gap:4px;font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ biz.name }}<sc-if value="{{ biz.verified }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#7B61FF;align-items:center;justify-content:center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></span><span style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.ownerRole }}</span></span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div style="width:1px;height:26px;background:rgba(30,27,46,.1)"></div>
+      <span style="display:inline-flex;align-items:center;gap:6px;background:{{ livePill.bg }};color:{{ livePill.c }};padding:6px 11px;border-radius:999px;font:800 11px 'Plus Jakarta Sans'"><span style="width:7px;height:7px;border-radius:50%;background:{{ livePill.dot }};animation:tlp 1.6s ease-in-out infinite"></span>{{ livePill.text }}</span>
+      <span style="display:inline-flex;align-items:center;gap:5px;background:{{ planPill.bg }};color:{{ planPill.c }};padding:6px 11px;border-radius:999px;font:800 11px 'Plus Jakarta Sans'">{{ planPill.text }}</span>
+      <div style="flex:1;display:flex;align-items:center;gap:9px;background:#F4F2F9;border:1px solid rgba(30,27,46,.08);border-radius:11px;padding:8px 12px;max-width:300px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg><span style="flex:1;font:500 12.5px 'Plus Jakarta Sans';color:#9A96AE">{{ t.search }}</span><span style="font:700 10px 'Plus Jakarta Sans';color:#B7B3C6;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:5px;padding:2px 5px">⌘K</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+        <button style="display:flex;align-items:center;gap:6px;border:1px solid rgba(30,27,46,.1);background:#fff;cursor:pointer;border-radius:10px;padding:7px 11px;font:800 11.5px 'Plus Jakarta Sans';color:#4A4660"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>{{ t.viewPublic }}</button>
+        <button style="position:relative;width:36px;height:36px;border-radius:10px;background:#F7F6FC;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A4660" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v11a1 1 0 0 1-1 1h-5l-2 2-2-2H5a1 1 0 0 1-1-1z"></path></svg><span style="position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;background:#F0466E;color:#fff;border-radius:8px;font:800 9px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff">{{ inboxCount }}</span></button>
+        <span style="width:32px;height:32px;border-radius:50%;background:#1E1B2E;color:#fff;font:800 11px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center">ER</span>
+      </div>
+    </div>
+
+    <!-- ===================== SHELL ===================== -->
+    <div style="flex:1;display:flex;min-height:0">
+
+      <!-- SIDEBAR -->
+      <aside data-sb style="flex:none;width:256px;background:#fff;border-right:1px solid rgba(30,27,46,.08);overflow-y:auto;padding:14px 12px 16px">
+        <!-- biz card -->
+        <div style="border:1px solid rgba(30,27,46,.08);border-radius:16px;overflow:hidden;margin-bottom:14px">
+          <div style="height:58px;background:repeating-linear-gradient(135deg,{{ catTile }})"></div>
+          <div style="padding:0 13px 13px;position:relative">
+            <div style="position:absolute;top:-22px;left:13px;width:44px;height:44px;border-radius:12px;border:3px solid #fff;background:{{ biz.accent }};color:#fff;font:800 13px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center">{{ biz.initials }}</div>
+            <div style="padding-top:28px;display:flex;align-items:center;gap:5px;font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ biz.name }}<sc-if value="{{ biz.verified }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;width:14px;height:14px;border-radius:50%;background:#7B61FF;align-items:center;justify-content:center"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></div>
+            <div style="font:600 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-top:2px">{{ biz.category }}</div>
+            <div style="display:flex;align-items:center;gap:4px;font:600 11px 'Plus Jakarta Sans';color:#9A96AE;margin-top:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.3"></circle></svg>{{ biz.area }}</div>
+            <div style="display:flex;gap:6px;margin-top:10px">
+              <span style="display:inline-flex;align-items:center;gap:5px;background:{{ statusPill.bg }};color:{{ statusPill.c }};padding:4px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'"><span style="width:6px;height:6px;border-radius:50%;background:{{ statusPill.c }}"></span>{{ statusPill.text }}</span>
+              <span style="display:inline-flex;align-items:center;gap:4px;background:#F1EFFA;color:#6D4DF6;padding:4px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'">★ {{ biz.rating }}</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:11px">
+              <div style="flex:1;background:#F7F6FC;border-radius:10px;padding:8px 9px"><div style="font:800 15px 'Plus Jakarta Sans';color:#1E1B2E">{{ biz.s1v }}</div><div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ biz.s1l }}</div></div>
+              <div style="flex:1;background:#F7F6FC;border-radius:10px;padding:8px 9px"><div style="font:800 15px 'Plus Jakarta Sans';color:#1E1B2E">{{ biz.s2v }}</div><div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ biz.s2l }}</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- nav groups -->
+        <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 10px 6px"><span style="font:800 10px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.07em">{{ g.label }}</span><sc-if value="{{ g.hasAdd }}" hint-placeholder-val="{{ false }}"><span onClick="{{ g.onAdd }}" style="display:inline-flex;align-items:center;gap:3px;font:800 9.5px 'Plus Jakarta Sans';color:{{ g.addColor }};cursor:pointer">{{ g.add }}</span></sc-if></div>
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4">
+            <button onClick="{{ it.onTap }}" style="{{ it.rowStyle }}">
+              <span style="width:22px;display:flex;justify-content:center;flex:none">{{ it.icon }}</span>
+              <span style="flex:1;text-align:left;font:{{ it.fontW }} 13px 'Plus Jakarta Sans';color:{{ it.labelColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.label }}</span>
+              <sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#C0BBD0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></sc-if>
+              <sc-if value="{{ it.hasCount }}" hint-placeholder-val="{{ false }}"><span style="{{ it.countStyle }}">{{ it.count }}</span></sc-if>
+              <sc-if value="{{ it.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font:700 9.5px 'Plus Jakarta Sans';color:#1F9D57;background:#E3F5EA;padding:2px 6px;border-radius:6px">{{ it.sub }}</span></sc-if>
+            </button>
+          </sc-for>
+        </sc-for>
+
+        <!-- bottom card -->
+        <sc-if value="{{ isFree }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;position:relative;background:#1E1B2E;border-radius:16px;padding:15px;overflow:hidden">
+          <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(244,183,64,.14)"></div>
+          <div style="position:relative">
+            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,64,.18);color:#F4B740;padding:3px 8px;border-radius:7px;font:800 9px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.05em">⚡ {{ t.getVerified }}</span>
+            <div style="font:800 14px 'Plus Jakarta Sans';color:#fff;margin-top:9px;line-height:1.25">{{ t.unlockKit }}</div>
+            <div style="font:500 10.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.66);line-height:1.45;margin-top:6px">{{ t.unlockKitSub }}</div>
+            <button onClick="{{ goBilling }}" style="width:100%;border:none;cursor:pointer;background:#F4B740;color:#1E1B2E;padding:10px;border-radius:11px;font:800 12px 'Plus Jakarta Sans';margin-top:11px">{{ t.upgradeBtn }}</button>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ isPaid }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:16px;background:linear-gradient(155deg,#7B61FF,#6743E2);border-radius:16px;padding:14px;color:#fff">
+          <div style="display:flex;align-items:center;gap:5px;font:800 9.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.05em">⚡ {{ t.todaySoFar }}</div>
+          <div style="font:800 22px 'Plus Jakarta Sans';margin-top:6px">$1,847</div>
+          <div style="font:600 11px 'Plus Jakarta Sans';color:rgba(255,255,255,.78);margin-top:2px">68 {{ t.orders }} · $27 {{ t.avgTicket }}</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font:700 10.5px 'Plus Jakarta Sans';background:rgba(255,255,255,.16);padding:4px 8px;border-radius:7px;margin-top:9px">▲ 12% {{ t.vsAvg }}</div>
+        </div>
+        </sc-if>
+      </aside>
+
+      <!-- MAIN -->
+      <main data-sb data-screen-label="{{ screenLabel }}" style="flex:1;overflow-y:auto;padding:22px 24px 40px">
+
+        <!-- PAGE HEAD -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font:800 24px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ page.title }}</h1><sc-if value="{{ page.hasAccent }}" hint-placeholder-val="{{ true }}"><span style="background:#F1EFFA;color:#6D4DF6;padding:4px 10px;border-radius:8px;font:800 11px 'Plus Jakarta Sans'">{{ page.accent }}</span></sc-if></div>
+            <div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:6px;max-width:560px;line-height:1.5">{{ page.sub }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;flex:none">
+            <sc-if value="{{ page.hasGhost }}" hint-placeholder-val="{{ true }}"><button style="display:flex;align-items:center;gap:6px;border:1px solid rgba(30,27,46,.12);background:#fff;cursor:pointer;border-radius:11px;padding:9px 13px;font:800 12px 'Plus Jakarta Sans';color:#4A4660">{{ page.ghost }}</button></sc-if>
+            <button style="display:flex;align-items:center;gap:6px;border:none;cursor:pointer;background:#7B61FF;color:#fff;border-radius:11px;padding:9px 14px;font:800 12px 'Plus Jakarta Sans';box-shadow:0 8px 18px rgba(123,97,255,.3)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ page.cta }}</button>
+          </div>
+        </div>
+
+        <!-- ============ INSIGHTS (paid) ============ -->
+        <sc-if value="{{ isInsights }}" hint-placeholder-val="{{ true }}">
+        <!-- today hero + action items -->
+        <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:16px">
+          <div style="position:relative;background:linear-gradient(155deg,#2A2440,#1E1B2E);border-radius:18px;padding:20px;color:#fff;overflow:hidden">
+            <div style="position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(123,97,255,.22)"></div>
+            <div style="position:relative;display:flex;align-items:center;justify-content:space-between"><span style="display:inline-flex;align-items:center;gap:6px;font:800 10.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.05em">⚡ {{ t.todayRevenue }}</span><span style="font:600 10.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.5)">{{ t.updatedAgo }}</span></div>
+            <div style="font:800 36px 'Plus Jakarta Sans';letter-spacing:-.02em;margin-top:8px">$1,847<span style="font-size:18px;color:rgba(255,255,255,.6)">.50</span></div>
+            <div style="font:600 12px 'Plus Jakarta Sans';color:rgba(255,255,255,.7);margin-top:3px"><span style="color:#7BE0A8">▲ 12%</span> {{ t.vsAvgTue }} · {{ t.goal }} $2,400</div>
+            <div style="display:flex;gap:3px;margin-top:16px;height:34px;align-items:flex-end">{{ hourBar }}</div>
+            <div style="display:flex;gap:18px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12)">
+              <div><div style="font:600 10px 'Plus Jakarta Sans';color:rgba(255,255,255,.55)">{{ t.orders }}</div><div style="font:800 18px 'Plus Jakarta Sans'">68</div></div>
+              <div><div style="font:600 10px 'Plus Jakarta Sans';color:rgba(255,255,255,.55)">{{ t.avgTicket }}</div><div style="font:800 18px 'Plus Jakarta Sans'">$27.16</div></div>
+              <div><div style="font:600 10px 'Plus Jakarta Sans';color:rgba(255,255,255,.55)">{{ t.newCust }}</div><div style="font:800 18px 'Plus Jakarta Sans'">14</div></div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="display:inline-flex;align-items:center;gap:7px;font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B5791A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>{{ t.needsAttention }}</span><span style="background:#FCEFD6;color:#9A6A12;padding:3px 9px;border-radius:7px;font:800 10px 'Plus Jakarta Sans'">{{ todoOpen }} {{ t.items }}</span></div>
+            <div style="display:flex;flex-direction:column;margin-top:6px">
+              <sc-for list="{{ todos }}" as="td" hint-placeholder-count="4"><div style="display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid {{ td.border }}"><span style="width:19px;height:19px;border-radius:6px;border:2px solid {{ td.chkRing }};background:{{ td.chkBg }};flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center"><sc-if value="{{ td.done }}" hint-placeholder-val="{{ false }}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></span><div style="flex:1;min-width:0"><div style="font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ td.nm }}</div><div style="font:500 11px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ td.mt }}</div></div><sc-if value="{{ td.hasBtn }}" hint-placeholder-val="{{ true }}"><span style="font:800 11px 'Plus Jakarta Sans';color:#6D4DF6;background:#F1EFFA;padding:6px 10px;border-radius:9px;white-space:nowrap">{{ td.btn }}</span></sc-if><sc-if value="{{ td.done }}" hint-placeholder-val="{{ false }}"><span style="font:800 10px 'Plus Jakarta Sans';color:#1F9D57;background:#E3F5EA;padding:5px 9px;border-radius:8px;white-space:nowrap">✓ {{ t.done }}</span></sc-if></div></sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="width:34px;height:34px;border-radius:10px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center">{{ k.icon }}</span>{{ k.spark }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#8A86A0;margin-top:11px">{{ k.label }}</div><div style="font:800 23px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.01em;margin-top:2px">{{ k.value }}</div><div style="display:inline-flex;align-items:center;gap:3px;font:800 10.5px 'Plus Jakarta Sans';color:#1F9D57;margin-top:3px">▲ {{ k.delta }}</div></div></sc-for>
+        </div>
+
+        <!-- chart + donut -->
+        <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-top:16px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.revenue }} · {{ rangeLabel }}</span><div style="display:flex;background:#F4F2F9;border-radius:9px;padding:3px"><sc-for list="{{ metricTabs }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.onTap }}" style="{{ m.style }}">{{ m.label }}</button></sc-for></div></div>
+            {{ revChart }}
+          </div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px">
+            <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:12px">{{ t.channelMix }}</div>
+            <div style="display:flex;align-items:center;gap:16px">{{ donut }}<div style="flex:1;display:flex;flex-direction:column;gap:8px"><sc-for list="{{ channels }}" as="c" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px;font:600 12px 'Plus Jakarta Sans';color:#4A4660"><span style="width:9px;height:9px;border-radius:3px;background:{{ c.color }};flex:none"></span><span style="flex:1">{{ c.label }}</span><span style="font-weight:800;color:#1E1B2E">{{ c.pct }}</span></div></sc-for></div></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:14px;background:#F1EFFA;border-radius:12px;padding:11px 13px"><span style="width:30px;height:30px;border-radius:8px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2 5 5 .5-4 3.5 1.5 5-4.5-3-4.5 3 1.5-5-4-3.5 5-.5z"></path></svg></span><div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.cateringUp }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px">{{ t.cateringTip }}</div></div></div>
+          </div>
+        </div>
+
+        <!-- live order queue -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px;margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><span style="display:inline-flex;align-items:center;gap:8px;font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.liveQueue }}<span style="background:#FDE7EF;color:#D6336C;padding:3px 9px;border-radius:7px;font:800 10px 'Plus Jakarta Sans'">12 {{ t.inFlight }}</span></span><span onClick="{{ goOrders }}" style="font:800 11.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer">{{ t.openQueue }} ›</span></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+            <sc-for list="{{ queue }}" as="col" hint-placeholder-count="4"><div style="background:#F7F6FC;border-radius:13px;padding:11px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><span style="display:inline-flex;align-items:center;gap:5px;font:800 11px 'Plus Jakarta Sans';color:#4A4660"><span style="width:6px;height:6px;border-radius:50%;background:{{ col.dot }}"></span>{{ col.label }}</span><span style="font:800 10px 'Plus Jakarta Sans';color:#9A96AE">{{ col.n }}</span></div><sc-for list="{{ col.cards }}" as="qc" hint-placeholder-count="2"><div style="background:#fff;border:1px solid {{ qc.ring }};border-radius:10px;padding:9px 10px;margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6">{{ qc.id }}</span><span style="font:700 9px 'Plus Jakarta Sans';color:{{ qc.timeC }}">{{ qc.time }}</span></div><div style="font:700 11px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:4px">{{ qc.who }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#8A86A0;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ qc.what }}</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px"><span style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ qc.mode }}</span><span style="font:800 10.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ qc.price }}</span></div></div></sc-for></div></sc-for>
+          </div>
+        </div>
+
+        <!-- top sellers + customer pulse -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.topSellers }}</span><span onClick="{{ goMenu }}" style="font:800 11.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer">{{ t.manageMenu }} ›</span></div>
+            <sc-for list="{{ topSellers }}" as="ts" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:11px;padding:9px 0"><div style="width:38px;height:38px;border-radius:9px;flex:none;background:repeating-linear-gradient(135deg,{{ ts.img }})"></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ ts.nm }}</span><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ ts.rev }}</span></div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ ts.meta }}</div><div style="height:4px;background:#ECE8F4;border-radius:99px;overflow:hidden;margin-top:5px"><div style="height:100%;border-radius:99px;background:{{ ts.barC }};width:{{ ts.bar }}"></div></div></div></div></sc-for>
+          </div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.customerPulse }}</span><span onClick="{{ goCustomers }}" style="font:800 11.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer">{{ t.seeAll }} ›</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <sc-for list="{{ pulse }}" as="p" hint-placeholder-count="4"><div style="background:#F7F6FC;border-radius:11px;padding:11px"><div style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE">{{ p.l }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px">{{ p.v }}</div><div style="font:800 9.5px 'Plus Jakarta Sans';color:{{ p.dC }};margin-top:2px">{{ p.d }}</div></div></sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- module health -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px;margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.moduleHealth }}</span><span onClick="{{ goModules }}" style="font:800 11.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer">{{ t.manageModules }} ›</span></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <sc-for list="{{ modHealth }}" as="mh" hint-placeholder-count="3"><div style="border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:13px"><div style="display:flex;align-items:center;gap:9px"><span style="width:34px;height:34px;border-radius:9px;background:{{ mh.bg }};display:flex;align-items:center;justify-content:center">{{ mh.icon }}</span><div><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ mh.nm }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE">{{ mh.sub }}</div></div></div><div style="display:flex;align-items:flex-end;gap:7px;margin-top:10px"><span style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E">{{ mh.stat }}</span><span style="font:800 10.5px 'Plus Jakarta Sans';color:#1F9D57;margin-bottom:4px">▲ {{ mh.delta }}</span></div></div></sc-for>
+          </div>
+        </div>
+
+        <!-- activity -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px;margin-top:16px">
+          <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:6px">{{ t.recentActivity }}</div>
+          <sc-for list="{{ activity }}" as="a" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid {{ a.border }}"><span style="width:32px;height:32px;border-radius:9px;background:{{ a.bg }};display:flex;align-items:center;justify-content:center;flex:none">{{ a.icon }}</span><div style="flex:1;min-width:0"><div style="font:500 12.5px 'Plus Jakarta Sans';color:#3A3650;line-height:1.4">{{ a.line }}</div><div style="font:600 10.5px 'Plus Jakarta Sans';color:#B7B3C6;margin-top:2px">{{ a.meta }}</div></div><sc-if value="{{ a.hasRight }}" hint-placeholder-val="{{ false }}"><span style="{{ a.rightStyle }}">{{ a.right }}</span></sc-if></div></sc-for>
+        </div>
+
+        <sc-if value="{{ isPremiumTeaser }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:16px;background:linear-gradient(135deg,#1E1B2E,#3A2D5E);border-radius:18px;padding:20px;color:#fff;display:flex;align-items:center;gap:18px">
+          <div style="flex:1"><span style="font:800 10px 'Plus Jakarta Sans';color:#F4B740;text-transform:uppercase;letter-spacing:.06em">✦ Premium</span><div style="font:800 18px 'Plus Jakarta Sans';margin-top:6px">{{ t.premiumTitle }}</div><div style="font:500 12px 'Plus Jakarta Sans';color:rgba(255,255,255,.7);margin-top:5px;max-width:520px;line-height:1.5">{{ t.premiumSub }}</div></div>
+          <button style="border:none;cursor:pointer;background:#F4B740;color:#1E1B2E;padding:12px 18px;border-radius:12px;font:800 13px 'Plus Jakarta Sans';white-space:nowrap">{{ t.premiumBtn }} ›</button>
+        </div>
+        </sc-if>
+        </sc-if>
+
+        <!-- ============ INSIGHTS FREE ============ -->
+        <sc-if value="{{ isInsightsFree }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:13px;background:#FCEFD6;border:1px solid rgba(181,121,26,.2);border-radius:16px;padding:15px 17px"><span style="width:38px;height:38px;border-radius:11px;background:#F4DFAE;color:#9A6A12;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9A6A12" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg></span><div style="flex:1"><div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.unverifiedTitle }}</div><div style="font:500 11.5px 'Plus Jakarta Sans';color:#7A6A4A;margin-top:2px;line-height:1.45">{{ t.unverifiedSub }}</div></div><button onClick="{{ goListing }}" style="border:1px solid rgba(154,106,18,.3);background:#fff;color:#9A6A12;cursor:pointer;padding:9px 13px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans';white-space:nowrap">{{ t.openChecklist }} ›</button></div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px">
+          <sc-for list="{{ freeKpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px;opacity:{{ k.op }}"><div style="width:34px;height:34px;border-radius:10px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center">{{ k.icon }}</div><div style="display:flex;align-items:center;gap:5px;font:600 11px 'Plus Jakarta Sans';color:#8A86A0;margin-top:11px">{{ k.label }}<sc-if value="{{ k.locked }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#C0BBD0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></sc-if></div><div style="font:800 23px 'Plus Jakarta Sans';color:{{ k.valC }};margin-top:2px">{{ k.value }}</div><div style="font:600 10px 'Plus Jakarta Sans';color:#B7B3C6;margin-top:3px">{{ k.note }}</div></div></sc-for>
+        </div>
+
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px;margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.completion }} · 38%</span><span style="font:600 11.5px 'Plus Jakarta Sans';color:#9A96AE">3 / 8 {{ t.stepsDone }}</span></div>
+          <div style="height:8px;background:#ECE8F4;border-radius:99px;overflow:hidden;margin-bottom:16px"><div style="height:100%;width:38%;background:linear-gradient(90deg,#F4B740,#E8954A);border-radius:99px"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <sc-for list="{{ checklist }}" as="c" hint-placeholder-count="6"><div style="padding:11px 12px;border:1px solid {{ c.ring }};background:{{ c.bg }};border-radius:11px;display:flex;align-items:flex-start;gap:9px"><span style="width:19px;height:19px;border-radius:6px;background:{{ c.boxBg }};border:2px solid {{ c.boxRing }};flex:none;display:flex;align-items:center;justify-content:center"><sc-if value="{{ c.done }}" hint-placeholder-val="{{ false }}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></span><div style="flex:1"><div style="font:700 12px 'Plus Jakarta Sans';color:{{ c.titleC }}">{{ c.t }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:{{ c.subC }};margin-top:1px">{{ c.d }}</div></div><sc-if value="{{ c.todo }}" hint-placeholder-val="{{ true }}"><span style="font:800 10px 'Plus Jakarta Sans';color:#6D4DF6;background:#F1EFFA;padding:4px 8px;border-radius:7px">{{ t.do }} ›</span></sc-if></div></sc-for>
+          </div>
+        </div>
+
+        <!-- compare table -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px;margin-top:16px">
+          <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:14px">{{ t.comparePlans }}</div>
+          <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:0;border:1px solid rgba(30,27,46,.08);border-radius:14px;overflow:hidden">
+            <div style="padding:12px 14px;background:#F7F6FC;font:800 11px 'Plus Jakarta Sans';color:#8A86A0">{{ t.feature }}</div>
+            <div style="padding:12px 10px;background:#F7F6FC;text-align:center;font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.freeName }}</div>
+            <div style="padding:12px 10px;background:#F1EFFA;text-align:center;font:800 12px 'Plus Jakarta Sans';color:#6D4DF6">Verified · $19/mo</div>
+            <div style="padding:12px 10px;background:#F7F6FC;text-align:center;font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">Premium · $49/mo</div>
+            <sc-for list="{{ compare }}" as="r" hint-placeholder-count="6"><div style="padding:11px 14px;border-top:1px solid rgba(30,27,46,.06);font:600 12px 'Plus Jakarta Sans';color:#4A4660">{{ r.feat }}</div><div style="padding:11px 10px;border-top:1px solid rgba(30,27,46,.06);text-align:center;font:700 11.5px 'Plus Jakarta Sans';color:#9A96AE">{{ r.free }}</div><div style="padding:11px 10px;border-top:1px solid rgba(30,27,46,.06);background:#FAF8FF;text-align:center;font:800 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.ver }}</div><div style="padding:11px 10px;border-top:1px solid rgba(30,27,46,.06);text-align:center;font:700 11.5px 'Plus Jakarta Sans';color:#4A4660">{{ r.prem }}</div></sc-for>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;position:relative;background:linear-gradient(135deg,#1E1B2E,#3A2D5E);border-radius:18px;padding:22px;color:#fff;overflow:hidden">
+          <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(244,183,64,.14)"></div>
+          <div style="position:relative"><span style="font:800 10px 'Plus Jakarta Sans';color:#F4B740;text-transform:uppercase;letter-spacing:.06em">✦ {{ t.upgradeVerified }}</span><div style="font:800 19px 'Plus Jakarta Sans';margin-top:7px">{{ t.unlockKit }}</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.72);margin-top:6px;max-width:560px;line-height:1.5">{{ t.freeUpsell }}</div><button style="border:none;cursor:pointer;background:#F4B740;color:#1E1B2E;padding:12px 18px;border-radius:12px;font:800 13px 'Plus Jakarta Sans';margin-top:14px">{{ t.startVerify }} → $19/mo ›</button></div>
+        </div>
+        </sc-if>
+
+        <!-- ============ MODULE SETUP ============ -->
+        <sc-if value="{{ isModulesSetup }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
+          <sc-for list="{{ setupMods }}" as="m" hint-placeholder-count="6"><div style="background:#fff;border:1.5px solid {{ m.ring }};border-radius:16px;padding:16px"><div style="display:flex;align-items:center;gap:12px"><span style="width:42px;height:42px;border-radius:12px;background:{{ m.bg }};display:flex;align-items:center;justify-content:center;flex:none">{{ m.icon }}</span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ m.label }}</span><sc-if value="{{ m.proOnly }}" hint-placeholder-val="{{ false }}"><span style="background:#FCEFD6;color:#9A6A12;padding:2px 7px;border-radius:6px;font:800 8.5px 'Plus Jakarta Sans'">PRO</span></sc-if></div><div style="font:500 11px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px;line-height:1.4">{{ m.desc }}</div></div><sc-if value="{{ m.locked }}" hint-placeholder-val="{{ false }}"><span style="width:34px;height:34px;border-radius:50%;background:#F3F0FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A8FC4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span></sc-if><sc-if value="{{ m.showSwitch }}" hint-placeholder-val="{{ true }}"><div onClick="{{ m.onToggle }}" style="width:46px;height:27px;border-radius:14px;background:{{ m.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ m.knob }};width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18)"></span></div></sc-if></div><sc-if value="{{ m.hasDep }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(30,27,46,.06)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span style="font:700 11px 'Plus Jakarta Sans';color:#56506E">{{ m.dep }}</span></div></sc-if></div></sc-for>
+        </div>
+        </sc-if>
+
+        <!-- ============ GENERIC MODULE PAGE ============ -->
+        <sc-if value="{{ isGeneric }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ g.hasBanner }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:13px;background:#F1EFFA;border-radius:14px;padding:13px 15px;margin-bottom:16px"><span style="width:34px;height:34px;border-radius:10px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none">{{ g.bannerIcon }}</span><div style="flex:1"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ g.bannerTitle }}</div><div style="font:500 11px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px">{{ g.bannerSub }}</div></div><sc-if value="{{ g.hasBannerBtn }}" hint-placeholder-val="{{ false }}"><span onClick="{{ g.bannerTap }}" style="font:800 11px 'Plus Jakarta Sans';color:#6D4DF6;background:#fff;padding:8px 12px;border-radius:10px;cursor:pointer;white-space:nowrap">{{ g.bannerBtn }} ›</span></sc-if></div>
+        </sc-if>
+
+        <sc-if value="{{ g.hasKpis }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
+          <sc-for list="{{ g.kpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px"><div style="width:32px;height:32px;border-radius:9px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center">{{ k.icon }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#8A86A0;margin-top:10px">{{ k.label }}</div><div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ k.value }}</div><div style="font:800 10px 'Plus Jakarta Sans';color:{{ k.dC }};margin-top:2px">{{ k.delta }}</div></div></sc-for>
+        </div>
+        </sc-if>
+
+        <div style="display:grid;grid-template-columns:{{ g.cols }};gap:16px">
+          <!-- main card -->
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ g.mainTitle }}</span><sc-if value="{{ g.hasTabs }}" hint-placeholder-val="{{ false }}"><div style="display:flex;background:#F4F2F9;border-radius:9px;padding:3px"><sc-for list="{{ g.tabs }}" as="tb" hint-placeholder-count="3"><span style="{{ tb.style }}">{{ tb.label }}</span></sc-for></div></sc-if></div>
+
+            <!-- compose -->
+            <sc-if value="{{ g.hasCompose }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid rgba(30,27,46,.1);border-radius:13px;padding:12px;margin:8px 0 14px"><div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:50%;flex:none;background:repeating-linear-gradient(135deg,{{ catTile }})"></span><span style="flex:1;font:500 12px 'Plus Jakarta Sans';color:#9A96AE">{{ g.composePh }}</span></div><div style="display:flex;gap:8px;margin-top:11px"><span style="flex:1;text-align:center;border:1px solid rgba(30,27,46,.1);color:#6D4DF6;padding:8px;border-radius:10px;font:800 11px 'Plus Jakarta Sans'">🏷️ {{ t.offer }}</span><span style="flex:1;text-align:center;border:1px solid rgba(30,27,46,.1);color:#6D4DF6;padding:8px;border-radius:10px;font:800 11px 'Plus Jakarta Sans'">📅 {{ t.event }}</span><span style="flex:1;text-align:center;border:1px solid rgba(30,27,46,.1);color:#6D4DF6;padding:8px;border-radius:10px;font:800 11px 'Plus Jakarta Sans'">📣 {{ t.news }}</span></div></div>
+            </sc-if>
+
+            <!-- form -->
+            <sc-if value="{{ g.isForm }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:13px;margin-top:8px">
+              <sc-for list="{{ g.fields }}" as="f" hint-placeholder-count="4"><div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:5px">{{ f.label }}</div><sc-if value="{{ f.area }}" hint-placeholder-val="{{ false }}"><div style="border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:500 12.5px 'Plus Jakarta Sans';color:#1E1B2E;min-height:64px;line-height:1.5">{{ f.value }}</div></sc-if><sc-if value="{{ f.input }}" hint-placeholder-val="{{ true }}"><div style="border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ f.value }}</div></sc-if></div></sc-for>
+            </div>
+            </sc-if>
+
+            <!-- rows -->
+            <sc-if value="{{ g.hasRows }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid {{ r.border }}">
+                <sc-if value="{{ r.hasThumb }}" hint-placeholder-val="{{ false }}"><span style="width:46px;height:46px;border-radius:11px;flex:none;background:repeating-linear-gradient(135deg,{{ r.thumb }})"></span></sc-if>
+                <sc-if value="{{ r.hasAvatar }}" hint-placeholder-val="{{ false }}"><span style="width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 12px 'Plus Jakarta Sans';background:{{ r.avColor }}">{{ r.avatar }}</span></sc-if>
+                <sc-if value="{{ r.hasIcon }}" hint-placeholder-val="{{ false }}"><span style="width:38px;height:38px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;background:{{ r.iconBg }}">{{ r.icon }}</span></sc-if>
+                <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.title }}</span><sc-if value="{{ r.hasPill }}" hint-placeholder-val="{{ false }}"><span style="background:{{ r.pillBg }};color:{{ r.pillC }};padding:2px 8px;border-radius:6px;font:800 9px 'Plus Jakarta Sans'">{{ r.pill }}</span></sc-if></div><div style="font:500 11px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ r.sub }}</div><sc-if value="{{ r.hasBody }}" hint-placeholder-val="{{ false }}"><div style="font:500 12px 'Plus Jakarta Sans';color:#4A4660;margin-top:5px;line-height:1.5">{{ r.body }}</div></sc-if></div>
+                <sc-if value="{{ r.hasRight }}" hint-placeholder-val="{{ false }}"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;flex:none">{{ r.right }}</span></sc-if>
+                <sc-if value="{{ r.hasToggle }}" hint-placeholder-val="{{ false }}"><div style="width:42px;height:25px;border-radius:13px;background:{{ r.track }};position:relative;flex:none"><span style="position:absolute;top:3px;left:{{ r.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></sc-if>
+                <sc-if value="{{ r.hasAction }}" hint-placeholder-val="{{ false }}"><span style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6;background:#F1EFFA;padding:6px 11px;border-radius:9px;flex:none">{{ r.action }}</span></sc-if>
+              </div></sc-for>
+            </div>
+            </sc-if>
+          </div>
+
+          <!-- side card -->
+          <sc-if value="{{ g.hasSide }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:18px;padding:16px 18px">
+              <div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:12px">{{ g.sideTitle }}</div>
+              <sc-for list="{{ g.sideRows }}" as="sr" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid {{ sr.border }}"><span style="width:30px;height:30px;border-radius:8px;background:{{ sr.bg }};display:flex;align-items:center;justify-content:center;flex:none">{{ sr.icon }}</span><div style="flex:1;min-width:0"><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ sr.title }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ sr.sub }}</div></div><sc-if value="{{ sr.hasRight }}" hint-placeholder-val="{{ false }}"><span style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ sr.right }}</span></sc-if></div></sc-for>
+            </div>
+            <sc-if value="{{ g.hasSideNote }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#1E1B2E;border-radius:16px;padding:16px;color:#fff"><div style="font:800 13px 'Plus Jakarta Sans'">{{ g.sideNoteTitle }}</div><div style="font:500 11.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.7);margin-top:6px;line-height:1.5">{{ g.sideNoteSub }}</div><button style="width:100%;border:none;cursor:pointer;background:#F4B740;color:#1E1B2E;padding:11px;border-radius:11px;font:800 12px 'Plus Jakarta Sans';margin-top:12px">{{ g.sideNoteBtn }}</button></div>
+            </sc-if>
+          </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+      </main>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1360, &quot;height&quot;: 920}, &quot;tier&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;free&quot;, &quot;verified&quot;, &quot;premium&quot;], &quot;default&quot;: &quot;verified&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;category&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;restaurant&quot;, &quot;beauty&quot;, &quot;auto&quot;, &quot;retail&quot;, &quot;rental&quot;], &quot;default&quot;: &quot;restaurant&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    tab: 'insights', lang: 'es', metric: 'revenue',
+    touchedTier: false, tierS: 'verified', touchedCat: false, catS: 'restaurant',
+    mods: { menu: true, services: true, bookings: true, products: true, rental: true, events: true, updates: true, staff: true },
+  };
+  tier() { return this.state.touchedTier ? this.state.tierS : (this.props.tier || 'verified'); }
+  cat() { return this.state.touchedCat ? this.state.catS : (this.props.category || 'restaurant'); }
+  go(tab) { this.setState({ tab }); }
+  toggleMod(k) { this.setState((s) => ({ mods: { ...s.mods, [k]: !s.mods[k] } })); }
+
+  // icon factory
+  I(name, s, stroke) {
+    const P = {
+      chart: ['M4 20V10', 'M10 20V4', 'M16 20v-7', 'M22 20H2'],
+      building: ['M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16', 'M15 21V9h3a1 1 0 0 1 1 1v11', 'M3 21h18', 'M8 8h.01M8 12h.01M11 8h.01M11 12h.01'],
+      image: ['M3 5h18v14H3z', 'M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z', 'm21 16-5-5L5 21'],
+      clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7v5l3 2'],
+      link: ['M9 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8h-1', 'M15 12a4 4 0 0 1-4 4H8a4 4 0 0 1 0-8h1'],
+      utensils: ['M6 3v6a2 2 0 0 0 4 0V3', 'M8 9v12', 'M16 3c-1.4 0-2.3 1.6-2.3 4S14.6 10.5 16 10.5V21'],
+      scissors: ['M6 6.5a2 2 0 1 0 0 0.01M6 17.5a2 2 0 1 0 0 0.01', 'M8 8l12 9', 'M8 16l12-9'],
+      wrench: ['M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6V20h2.3l6-6a4 4 0 0 0 5.4-5.4l-2.5 2.5-1.8-1.8z'],
+      store: ['M4 10v9h16v-9', 'M4 10 5.5 5h13L20 10', 'M4 10a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0'],
+      bike: ['M5.5 18a3 3 0 1 0 0-.01M18.5 18a3 3 0 1 0 0-.01', 'M6 18l4-9h5l3 9', 'M9 9h6'],
+      cal: ['M4 5h16v16H4z', 'M4 10h16', 'M9 3v4M15 3v4'],
+      package: ['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
+      route: ['M5 19h9a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h5', 'M5 19a1.5 1.5 0 1 0 0-.01M19 7a1.5 1.5 0 1 0 0-.01'],
+      helmet: ['M4 14a8 8 0 0 1 16 0', 'M3 14h18v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z'],
+      ticket: ['M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z', 'M14 6v12'],
+      users: ['M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M3 20a6 6 0 0 1 12 0', 'M16 5.5a3 3 0 0 1 0 6', 'M19 20a5 5 0 0 0-3-4.6'],
+      bag: ['M6 7h12l1 13H5z', 'M9 7a3 3 0 0 1 6 0'],
+      msg: ['M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5z'],
+      star: ['M12 3l2.5 6 6 .4-4.6 4 1.5 6-5.4-3.4L6.6 19l1.5-6L3.5 9.4l6-.4z'],
+      megaphone: ['M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z', 'M14 8a4 4 0 0 1 0 8'],
+      dollar: ['M12 2v20', 'M17 6.5a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1a4 4 0 0 1-4-2.5'],
+      user: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M5 21a7 7 0 0 1 14 0'],
+      briefcase: ['M3.5 8h17v11h-17z', 'M8.5 8V6.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V8'],
+      grid: ['M4 4h7v7H4z', 'M13 4h7v7h-7z', 'M4 13h7v7H4z', 'M13 13h7v7h-7z'],
+      card: ['M2.5 6h19v12h-19z', 'M2.5 10h19'],
+      cog: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L16 2H8l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 3 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L8 22h8l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5A7 7 0 0 0 19 12z'],
+      eye: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'],
+      truck: ['M2.5 5h11v11h-11z', 'M13.5 8h3.5l3 3v5h-6.5', 'M6 19a2 2 0 1 0 0-.01M17 19a2 2 0 1 0 0-.01'],
+      phone: ['M5 4h3l1.6 4.6-2 1.4a11 11 0 0 0 5 5l1.4-2 4.6 1.6V20a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z'],
+      pin: ['M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z', 'M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'],
+      bell: ['M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6z', 'M9.5 20a2.5 2.5 0 0 0 5 0'],
+      heart: ['M12 21s-7-4.5-9.3-9A5 5 0 0 1 12 6.5 5 5 0 0 1 21.3 12c-2.3 4.5-9.3 9-9.3 9z'],
+      globe: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M3 12h18', 'M12 3a14 14 0 0 1 0 18'],
+      shield: ['M12 2 4 6v6c0 5 8 8 8 8s8-3 8-8V6z'],
+      tag: ['M3 11l8-8 9 9-8 8z', 'M7 7h.01'],
+      edit: ['M12 20h9', 'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'],
+    };
+    const paths = P[name] || P.grid;
+    return React.createElement('svg', { width: s || 15, height: s || 15, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  _catInfo(c) {
+    const m = {
+      restaurant: { es: 'Restaurante · Panadería', en: 'Restaurant · Bakery', name: 'Tartine Manufactory', initials: 'TM', area: 'Mission · 18th St', tile: '#F3E2CE 0 9px,#ECD3B4 9px 18px', svc: 'utensils' },
+      beauty: { es: 'Belleza · Salón', en: 'Beauty · Hair Salon', name: 'Glamour Studio', initials: 'GS', area: 'Hayes Valley · Octavia', tile: '#FCE3EC 0 9px,#F6CEDD 9px 18px', svc: 'scissors' },
+      auto: { es: 'Auto · Lavado', en: 'Auto Repair · Car Wash', name: 'Auto Spa Express', initials: 'AE', area: 'SoMa · 7th St', tile: '#E4ECFB 0 9px,#D7E3F6 9px 18px', svc: 'wrench' },
+      retail: { es: 'Boutique · Ropa', en: 'Boutique · Apparel', name: 'Casa Bonita Shop', initials: 'CB', area: 'Hayes Valley · Hayes St', tile: '#EAE2F8 0 9px,#DCCEF2 9px 18px', svc: 'store' },
+      rental: { es: 'Renta · Bicis', en: 'Rental · Bikes', name: 'Bahía Rentals', initials: 'BR', area: 'Marina · Beach St', tile: '#E3F5EA 0 9px,#D6E7D0 9px 18px', svc: 'bike' },
+    };
+    return m[c] || m.restaurant;
+  }
+
+  spark(pts, color) {
+    const W = 70, H = 26, max = Math.max.apply(null, pts), min = Math.min.apply(null, pts), rng = (max - min) || 1;
+    const step = W / (pts.length - 1);
+    const pP = pts.map((v, i) => [i * step, H - ((v - min) / rng) * (H - 4) - 2]);
+    const line = pP.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const area = line + ' L ' + W + ' ' + H + ' L 0 ' + H + ' Z';
+    const gid = 'sp' + Math.random().toString(36).slice(2, 7);
+    return React.createElement('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H },
+      React.createElement('defs', null, React.createElement('linearGradient', { id: gid, x1: 0, y1: 0, x2: 0, y2: 1 }, React.createElement('stop', { offset: '0%', stopColor: color, stopOpacity: 0.25 }), React.createElement('stop', { offset: '100%', stopColor: color, stopOpacity: 0 }))),
+      React.createElement('path', { d: area, fill: 'url(#' + gid + ')' }),
+      React.createElement('path', { d: line, fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }));
+  }
+
+  bigChart(thisW, lastW, days, color) {
+    const W = 560, H = 180, m = Math.max.apply(null, thisW.concat(lastW)) * 1.15, step = W / (thisW.length - 1);
+    const toP = (a) => a.map((v, i) => [i * step, H - (v / m) * H]);
+    const ln = (p) => p.map((q, i) => (i === 0 ? 'M' : 'L') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
+    const t = toP(thisW), l = toP(lastW);
+    return React.createElement('svg', { viewBox: '0 0 ' + W + ' ' + (H + 22), style: { width: '100%', height: 200 }, preserveAspectRatio: 'none' },
+      React.createElement('defs', null, React.createElement('linearGradient', { id: 'bgrad', x1: 0, y1: 0, x2: 0, y2: 1 }, React.createElement('stop', { offset: '0%', stopColor: color, stopOpacity: 0.26 }), React.createElement('stop', { offset: '100%', stopColor: color, stopOpacity: 0.02 }))),
+      [0, 1, 2, 3].map((i) => React.createElement('line', { key: i, x1: 0, x2: W, y1: H * i / 4, y2: H * i / 4, stroke: '#ECE8F4', strokeDasharray: '2 4' })),
+      React.createElement('path', { d: ln(l), stroke: '#C7C2D6', strokeWidth: 1.8, fill: 'none', strokeDasharray: '4 4' }),
+      React.createElement('path', { d: ln(t) + ' L ' + W + ' ' + H + ' L 0 ' + H + ' Z', fill: 'url(#bgrad)' }),
+      React.createElement('path', { d: ln(t), stroke: color, strokeWidth: 2.5, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+      t.map((p, i) => React.createElement('circle', { key: i, cx: p[0], cy: p[1], r: 3, fill: '#fff', stroke: color, strokeWidth: 2 })),
+      days.map((d, i) => React.createElement('text', { key: 'd' + i, x: i * step, y: H + 16, fontSize: 10, fill: '#9A96AE', fontWeight: 700, fontFamily: "'Plus Jakarta Sans'", textAnchor: i === 0 ? 'start' : (i === days.length - 1 ? 'end' : 'middle') }, d)));
+  }
+
+  donut() {
+    const segs = [['#7B61FF', 42], ['#F0466E', 24], ['#1F9D57', 22], ['#F4B740', 12]];
+    const C = 2 * Math.PI * 40; let acc = 0;
+    return React.createElement('svg', { width: 116, height: 116, viewBox: '0 0 120 120' },
+      React.createElement('circle', { cx: 60, cy: 60, r: 40, stroke: '#F1EFF6', strokeWidth: 15, fill: 'none' }),
+      segs.map((s, i) => { const len = (s[1] / 100) * C, off = -acc; acc += len; return React.createElement('circle', { key: i, cx: 60, cy: 60, r: 40, stroke: s[0], strokeWidth: 15, fill: 'none', strokeDasharray: len + ' ' + (C - len), strokeDashoffset: off, transform: 'rotate(-90 60 60)' }); }),
+      React.createElement('text', { x: 60, y: 58, textAnchor: 'middle', fontSize: 18, fontWeight: 800, fill: '#1E1B2E', fontFamily: "'Plus Jakarta Sans'" }, '$12.4k'),
+      React.createElement('text', { x: 60, y: 74, textAnchor: 'middle', fontSize: 9, fontWeight: 700, fill: '#9A96AE', fontFamily: "'Plus Jakarta Sans'" }, 'ESTA SEM'));
+  }
+
+  renderVals() {
+    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const tier = this.tier(), cat = this.cat(), ci = this._catInfo(cat);
+    const isFree = tier === 'free', isPaid = tier !== 'free', isPremium = tier === 'premium';
+    const tab = st.tab;
+    const I = (n, s, c) => this.I(n, s, c);
+
+    const mk = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 11px', borderRadius: '999px', fontWeight: 800, fontSize: '11.5px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+
+    // ===== business + tier chrome =====
+    const biz = {
+      name: isFree ? "Lupita's Tortillería" : ci.name,
+      initials: isFree ? 'LT' : ci.initials,
+      category: isFree ? L('Panadería · Tortillería', 'Bakery · Tortillería') : L(ci.es, ci.en),
+      area: isFree ? L('Mission · Bartlett St', 'Mission · Bartlett St') : ci.area,
+      verified: !isFree, accent: isFree ? '#9F1239' : '#7B61FF', rating: isFree ? '—' : '4.8',
+      s1v: isFree ? '108' : '1,420', s1l: L('Vistas/sem', 'Views/wk'),
+      s2v: isFree ? '12' : '284', s2l: isFree ? L('Visitas', 'Visits') : L('Seguidores', 'Followers'),
+    };
+    const catTile = isFree ? '#FCE3EC 0 9px,#F6CEDD 9px 18px' : ci.tile;
+
+    const livePill = isFree ? { bg: '#FCEFD6', c: '#9A6A12', dot: '#E8954A', text: L('Sin verificar', 'Unverified') } : { bg: '#E3F5EA', c: '#1F8A4C', dot: '#1F9D57', text: L('Abierto · hasta 10 PM', 'Open · until 10 PM') };
+    const planPill = isFree ? { bg: '#F1EFFA', c: '#8A86A0', text: 'Free' } : (isPremium ? { bg: '#1E1B2E', c: '#F4B740', text: '✦ Premium' } : { bg: '#F1EFFA', c: '#6D4DF6', text: 'Verified' });
+    const statusPill = isFree ? { bg: '#FCEFD6', c: '#B5791A', text: L('Free · 1/3 fotos', 'Free · 1/3 photos') } : { bg: '#E3F5EA', c: '#1F8A4C', text: L('Abierto', 'Open now') };
+
+    // ===== sidebar nav =====
+    const am = isFree
+      ? { menu: true, services: false, bookings: false, products: false, rental: false, events: false, updates: false, staff: false }
+      : { menu: st.mods.menu, services: st.mods.services, bookings: st.mods.services && st.mods.bookings, products: st.mods.products, rental: st.mods.rental, events: st.mods.events, updates: st.mods.updates, staff: st.mods.staff };
+
+    const item = (id, label, iconN, opts) => {
+      opts = opts || {};
+      const locked = !!opts.locked || (isFree && !!opts.lockedFree);
+      const active = tab === id;
+      return {
+        id, label, locked,
+        icon: I(iconN, 15, active ? '#5B3FD6' : (locked ? '#C0BBD0' : '#8A86A0')),
+        onTap: () => { if (!locked) this.go(id); },
+        rowStyle: 'display:flex;align-items:center;gap:10px;width:100%;border:none;cursor:' + (locked ? 'default' : 'pointer') + ';background:' + (active ? '#F1EEFE' : 'transparent') + ';border-radius:10px;padding:9px 10px' + (opts.indent ? ';padding-left:30px' : ''),
+        labelColor: active ? '#5B3FD6' : (locked ? '#B7B3C6' : '#4A4660'),
+        fontW: active ? '800' : '600',
+        hasCount: !locked && opts.count != null, count: opts.count,
+        countStyle: 'font:800 10px \'Plus Jakarta Sans\';padding:2px 7px;border-radius:7px;background:' + (opts.live ? '#E3F5EA' : opts.warn ? '#FCEFD6' : '#F1EFFA') + ';color:' + (opts.live ? '#1F8A4C' : opts.warn ? '#9A6A12' : '#8A86A0'),
+        hasSub: !locked && !!opts.sub, sub: opts.sub,
+      };
+    };
+    const svcIcon = ci.svc;
+    const navGroups = [
+      { label: '', hasAdd: false, items: [item('insights', L('Resumen', 'Insights'), 'chart')] },
+      { label: L('Listado', 'Listing'), hasAdd: true, add: L('siempre activo', 'always on'), addColor: '#B7B3C6', onAdd: () => {}, items: [
+        item('listing', L('Información general', 'General info'), 'building', { sub: isFree ? null : 'OK' }),
+        item('photos', L('Fotos y media', 'Photos & media'), 'image', { count: isFree ? '1' : '34' }),
+        item('hours', L('Horario', 'Hours & holidays'), 'clock'),
+        item('related', L('Listados relacionados', 'Related listings'), 'link', { lockedFree: true }),
+      ] },
+      { label: L('Módulos', 'Modules'), hasAdd: true, add: '⚙ Setup', addColor: '#6D4DF6', onAdd: () => this.go('modules'), items: [
+        item('menu', L('Menú de comida', 'Food menu'), 'utensils', { count: am.menu ? (isFree ? '8' : '68') : null, locked: !am.menu }),
+        item('services', L('Servicios', 'Services'), svcIcon, { count: am.services ? '14' : null, locked: !am.services }),
+        ...(am.services ? [item('bookings', L('Reservas', 'Bookings'), 'cal', { count: am.bookings ? '24' : null, live: am.bookings, locked: !am.bookings, indent: true })] : []),
+        item('products', L('Productos', 'Products'), 'package', { count: am.products ? '42' : null, locked: !am.products }),
+        ...(am.products ? [item('shipping', L('Zonas de envío', 'Shipping zones'), 'route', { locked: !am.products, indent: true }), item('drivers', L('Repartidores', 'Drivers'), 'helmet', { count: '3', locked: !am.products, indent: true })] : []),
+        item('rental', L('Renta', 'Rental'), 'bike', { count: am.rental ? '12' : null, locked: !am.rental }),
+        item('events', L('Eventos y boletos', 'Events & tickets'), 'ticket', { count: am.events ? '4' : null, locked: !am.events }),
+      ] },
+      { label: L('Clientes', 'Customers'), hasAdd: false, items: [
+        item('customers', L('Clientes', 'Customers'), 'users', { count: isFree ? '12' : '4.2k' }),
+        item('orders', L('Pedidos', 'Orders'), 'bag', { count: isFree ? null : '12', live: !isFree, lockedFree: true }),
+        item('messages', L('Mensajes', 'Messages'), 'msg', { count: isFree ? '2' : '7', live: !isFree, warn: isFree }),
+        item('reviews', L('Reseñas', 'Reviews'), 'star', { count: isFree ? '3' : '412', warn: !isFree }),
+        item('updates', L('Novedades', 'Updates'), 'megaphone', { count: am.updates ? '18' : null, locked: !am.updates }),
+      ] },
+      { label: L('Cuenta', 'Account'), hasAdd: false, items: [
+        item('payments', L('Pagos', 'Payouts'), 'dollar', { lockedFree: true }),
+        item('staff', L('Personal', 'Staff'), 'user', { count: am.staff ? '14' : null, locked: !am.staff }),
+        ...(am.staff ? [item('jobs', L('Empleos', 'Jobs'), 'briefcase', { count: '3', indent: true })] : []),
+        item('modules', L('Configurar módulos', 'Module setup'), 'grid'),
+        item('billing', L('Plan y facturación', 'Billing & plan'), 'card'),
+        item('settings', L('Ajustes', 'Settings'), 'cog'),
+      ] },
+    ];
+
+    // ===== translations =====
+    const t = {
+      business: L('Negocios', 'Business'), ownerRole: isFree ? L('Dueño · Sin verificar', 'Owner · Unverified') : L('Dueño · Mission', 'Owner · Mission'),
+      search: L('Ir a pedidos, productos…', 'Jump to orders, items…'), viewPublic: L('Ver listado', 'View public'),
+      getVerified: L('Verifícate', 'Get verified'), unlockKit: L('Desbloquea todo el kit', 'Unlock the full toolkit'),
+      unlockKitSub: L('Activa menú, reservas, productos y más. Insignia verificada y 5× más visibilidad.', 'Activate menu, bookings, products & more. Verified badge and 5× visibility.'),
+      upgradeBtn: L('Mejorar a Verified ›', 'Upgrade to Verified ›'),
+      todaySoFar: L('Hoy, hasta ahora', 'Today, so far'), orders: L('pedidos', 'orders'), avgTicket: L('ticket prom.', 'avg ticket'), vsAvg: L('vs. martes', 'vs Tuesday'),
+      todayRevenue: L('Ingresos de hoy · en vivo', "Today's revenue · live"), updatedAgo: L('hace 12 seg', 'updated 12s ago'),
+      vsAvgTue: L('vs. martes promedio', 'vs avg Tuesday'), goal: L('meta', 'goal'), newCust: L('Nuevos', 'New cust.'),
+      needsAttention: L('Requiere tu atención', 'Needs attention'), items: L('pendientes', 'items'), done: L('Listo', 'Done'),
+      revenue: L('Ingresos', 'Revenue'), channelMix: L('Mezcla de canales', 'Channel mix'),
+      cateringUp: L('Catering subió 38% este mes', 'Catering up 38% this month'), cateringTip: L('Agrega el menú degustación para grupos.', 'Add the tasting menu for groups.'),
+      liveQueue: L('Cola de pedidos en vivo', 'Live order queue'), inFlight: L('en curso', 'in flight'), openQueue: L('Abrir cola', 'Open queue'),
+      topSellers: L('Más vendidos · semana', 'Top sellers · week'), manageMenu: L('Gestionar menú', 'Manage menu'),
+      customerPulse: L('Pulso de clientes', 'Customer pulse'), seeAll: L('Ver todo', 'See all'),
+      moduleHealth: L('Salud de módulos', 'Module health'), manageModules: L('Gestionar', 'Manage'),
+      recentActivity: L('Actividad reciente', 'Recent activity'),
+      premiumTitle: L('Insights AI + posición destacada', 'Insights AI + featured placement'), premiumSub: L('Resúmenes con IA de tendencias, lugares destacados en el feed de descubrimiento y soporte prioritario. $49/mes.', 'AI summaries of trends, featured discovery slots, priority support. $49/mo.'), premiumBtn: L('Mejorar a Premium', 'Upgrade to Premium'),
+      unverifiedTitle: L('Tu listado no está verificado.', 'Your listing is unverified.'), unverifiedSub: L('Agrega 5+ fotos, logo, horario y completa la lista para solicitar la insignia — gratis.', 'Add 5+ photos, a logo, hours and complete the checklist to apply for the badge — free.'),
+      openChecklist: L('Abrir lista', 'Open checklist'), completion: L('Completar listado', 'Listing completion'), stepsDone: L('pasos hechos', 'steps done'), do: L('Hacer', 'Do'),
+      comparePlans: L('Compara los planes', 'Compare plans'), feature: L('Función', 'Feature'), freeName: 'Free',
+      upgradeVerified: L('Mejorar · Verified', 'Upgrade · Verified'), freeUpsell: L('Los listados verificados tienen menú, reservas, pedidos, entregas, eventos y fotos ilimitadas. Más la insignia y 5× más descubrimiento.', 'Verified listings get menu, bookings, orders, delivery, events and unlimited photos. Plus the badge and 5× discovery.'), startVerify: L('Iniciar verificación', 'Start verification'),
+      offer: L('Oferta', 'Offer'), event: L('Evento', 'Event'), news: L('Aviso', 'News'),
+    };
+
+    // ===== insights data =====
+    const hourBar = (() => {
+      const cells = [];
+      for (let h = 0; h < 24; h++) {
+        let bg = '#3A3552', hh = 8;
+        if (h >= 7 && h <= 21) { bg = 'rgba(123,97,255,.45)'; hh = 16; if ((h >= 8 && h <= 10) || (h >= 12 && h <= 14) || (h >= 18 && h <= 20)) { bg = 'rgba(123,97,255,.7)'; hh = 24; } if (h === 13 || h === 19) { bg = '#7B61FF'; hh = 34; } }
+        if (h === 14) bg = '#F4B740';
+        cells.push(React.createElement('span', { key: h, style: { flex: 1, height: hh, borderRadius: 2, background: bg } }));
+      }
+      return React.createElement(React.Fragment, null, cells);
+    })();
+
+    const todoData = [
+      { done: false, nm: L('3 reseñas necesitan respuesta', '3 reviews need a reply'), mt: L('Promedio bajó a 4.6 · responde en 24h', 'Avg dropped to 4.6 · respond within 24h'), btn: L('Abrir', 'Open') },
+      { done: false, nm: L('Pan de campo casi agotado', 'Country loaf running low'), mt: L('Solo 14 para mañana · se pausa en 0', 'Only 14 left for tomorrow · auto-paused at 0'), btn: L('Reabastecer', 'Restock') },
+      { done: true, nm: L('Catering del viernes confirmado', "Friday's catering confirmed"), mt: L('Mission Tech · 80 personas · asignado a Marco', 'Mission Tech · 80 ppl · assigned to Marco'), btn: null },
+      { done: false, nm: L('Menú de Halloween — borrador', 'Halloween menu — draft'), mt: L('5 platillos · lanza el viernes', '5 dishes · launch Friday'), btn: L('Continuar', 'Continue') },
+    ];
+    const todos = todoData.map((d, i) => ({ done: d.done, nm: d.nm, mt: d.mt, hasBtn: !d.done && !!d.btn, btn: d.btn, border: i === todoData.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)', chkRing: d.done ? '#1F9D57' : '#D8D2E6', chkBg: d.done ? '#1F9D57' : '#fff' }));
+    const todoOpen = todoData.filter((d) => !d.done).length;
+
+    const kpiRaw = [
+      { ic: 'bag', c: '#7B61FF', bg: '#F1EFFA', label: L('Ingresos · 7 días', 'Revenue · 7 days'), value: '$12,432', delta: L('18% vs prev', '18% vs prev'), spark: [820, 1140, 980, 1320, 1480, 1840, 1280] },
+      { ic: 'utensils', c: '#F0466E', bg: '#FDE7EF', label: L('Pedidos · 7 días', 'Orders · 7 days'), value: '412', delta: '11%', spark: [42, 58, 49, 66, 72, 84, 61] },
+      { ic: 'cal', c: '#1F9D57', bg: '#E3F5EA', label: L('Reservas · 7 días', 'Reservations'), value: '38', delta: '22%', spark: [3, 4, 4, 5, 5, 6, 6] },
+      { ic: 'eye', c: '#F4B740', bg: '#FCEFD6', label: L('Vistas del listado', 'Listing views'), value: '8,124', delta: '31%', spark: [820, 940, 1100, 980, 1280, 1480, 1620] },
+    ];
+    const kpis = kpiRaw.map((k) => ({ icon: I(k.ic, 17, k.c), bg: k.bg, label: k.label, value: k.value, delta: k.delta, spark: this.spark(k.spark, k.c) }));
+
+    const series = { revenue: { t: [820, 1140, 980, 1320, 1480, 1840, 1280], l: [760, 980, 890, 1180, 1240, 1620, 1150], c: '#7B61FF' }, orders: { t: [42, 58, 49, 66, 72, 84, 61], l: [38, 49, 44, 59, 62, 72, 55], c: '#F0466E' }, ticket: { t: [19, 20, 20.4, 20.2, 21, 22, 21], l: [18, 19, 19.2, 19.4, 20, 21, 20], c: '#1F9D57' } };
+    const days = es ? ['Mié', 'Jue', 'Vie', 'Sáb', 'Dom', 'Lun', 'Mar'] : ['Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue'];
+    const ser = series[st.metric];
+    const revChart = this.bigChart(ser.t, ser.l, days, ser.c);
+    const metricTabs = [['revenue', L('Ingresos', 'Revenue')], ['orders', L('Pedidos', 'Orders')], ['ticket', L('Ticket', 'Avg ticket')]].map((m) => ({ label: m[1], onTap: () => this.setState({ metric: m[0] }), style: 'border:none;cursor:pointer;padding:5px 10px;border-radius:7px;font:800 10.5px \'Plus Jakarta Sans\';background:' + (st.metric === m[0] ? '#fff' : 'transparent') + ';color:' + (st.metric === m[0] ? '#6D4DF6' : '#9A96AE') + (st.metric === m[0] ? ';box-shadow:0 1px 3px rgba(60,50,110,.12)' : '') }));
+
+    const channels = [['#7B61FF', L('Mostrador', 'Dine-in'), '42%'], ['#F0466E', L('Recoger', 'Pickup'), '24%'], ['#1F9D57', L('Entrega', 'Delivery'), '22%'], ['#F4B740', 'Catering', '12%']].map((c) => ({ color: c[0], label: c[1], pct: c[2] }));
+
+    const queue = [
+      { label: L('Nuevos', 'New'), n: '3', dot: '#F0466E', cards: [{ id: '#2487', who: 'Maria L.', what: '2× Country loaf, Tiramisù', price: '$48.20', mode: L('Entrega', 'Delivery'), time: L('ahora', 'now'), timeC: '#F0466E', ring: 'rgba(240,70,110,.3)' }, { id: '#2486', who: 'Mesa 7', what: '3× Pizza margherita', price: '$72.50', mode: L('Mostrador', 'Dine-in'), time: '2m', timeC: '#9A96AE', ring: 'rgba(30,27,46,.08)' }] },
+      { label: L('Preparando', 'Preparing'), n: '5', dot: '#F4B740', cards: [{ id: '#2484', who: 'James T.', what: '2× Bread, 1× Pasta', price: '$36.40', mode: L('Entrega', 'Delivery'), time: '8m', timeC: '#9A96AE', ring: 'rgba(30,27,46,.08)' }, { id: '#2483', who: 'Mesa 12', what: 'Tasting · plato 2/5', price: '$280', mode: L('Mostrador', 'Dine-in'), time: '12m', timeC: '#F4B740', ring: 'rgba(244,183,64,.4)' }] },
+      { label: L('Listos', 'Ready'), n: '2', dot: '#1F9D57', cards: [{ id: '#2481', who: 'Carlos · DoorDash', what: '1× Tiramisù, 2× Cookies', price: '$24.50', mode: L('Repartidor', 'Driver'), time: L('listo 3m', 'ready 3m'), timeC: '#1F9D57', ring: 'rgba(31,157,87,.3)' }] },
+      { label: L('Completados', 'Completed'), n: L('68 hoy', '68 today'), dot: '#9A96AE', cards: [{ id: '#2479', who: 'Mesa 5', what: L('Cena para 4', 'Dinner for 4'), price: '$186', mode: L('Pagado', 'Paid'), time: '8m', timeC: '#9A96AE', ring: 'rgba(30,27,46,.08)' }] },
+    ];
+
+    const topSellers = [
+      { nm: 'Country Loaf', meta: L('Pan · 184 vendidos', 'Bread · sold 184'), rev: '$1,840', img: '#F3E2CE 0 7px,#ECD3B4 7px 14px', barC: '#7B61FF', bar: '100%' },
+      { nm: 'Pizza Margherita', meta: L('Pizza · 142 vendidos', 'Pizza · sold 142'), rev: '$1,704', img: '#FCE3DC 0 7px,#F6CEC2 7px 14px', barC: '#9579FF', bar: '82%' },
+      { nm: 'Morning Bun', meta: L('Pan dulce · 126', 'Pastry · 126'), rev: '$630', img: '#FBEFD3 0 7px,#F5E1B0 7px 14px', barC: '#B9A6FF', bar: '64%' },
+      { nm: 'Tasting Menu', meta: L('Prix-fixe · 42', 'Prix-fixe · 42'), rev: '$4,200', img: '#EAE2F8 0 7px,#DCCEF2 7px 14px', barC: '#F4B740', bar: '48%' },
+    ];
+    const pulse = [['#1F9D57', L('Nuevos/sem', 'New this week'), '62', '▲ 28%'], ['#1F9D57', L('Recurrentes', 'Returning'), '72%', '▲ 4pp'], ['#1F9D57', L('LTV prom.', 'Avg LTV'), '$184', '▲ 9%'], ['#F0466E', L('Reseñas', 'Reviews avg'), '4.8★', '▼ 0.1']].map((p) => ({ l: p[1], v: p[2], d: p[3], dC: p[0] }));
+
+    const modHealth = [
+      { nm: L('Menú', 'Food menu'), sub: L('68 items · 3 bajo stock', '68 items · 3 low'), bg: '#FCEFD6', icon: I('utensils', 16, '#B5791A'), stat: '$8.4k', delta: '12%' },
+      { nm: L('Reservas', 'Bookings'), sub: L('24 próximas · 96%', '24 upcoming · 96%'), bg: '#E4ECFB', icon: I('cal', 16, '#2A5C8A'), stat: '24', delta: '22%' },
+      { nm: L('Entrega', 'Delivery'), sub: L('142 pedidos · 3 activos', '142 orders · 3 active'), bg: '#E3F5EA', icon: I('truck', 16, '#1F8A4C'), stat: '142', delta: '18%' },
+    ];
+
+    const actRaw = [
+      { ic: 'bag', bg: '#F1EFFA', c: '#6D4DF6', line: L('Maria L. hizo un pedido de entrega — 2× Country loaf, Tiramisù.', 'Maria L. placed a delivery order — 2× Country loaf, Tiramisù.'), meta: L('hace 2 min · #2487', '2 min ago · #2487'), right: '$48.20', rk: 'coral' },
+      { ic: 'star', bg: '#FCEFD6', c: '#B5791A', line: L('James T. dejó una reseña de 4 estrellas.', 'James T. left a 4-star review.'), meta: L('hace 14 min', '14 min ago'), right: L('Responder', 'Reply'), rk: 'ghost' },
+      { ic: 'cal', bg: '#E4ECFB', c: '#2A5C8A', line: L('Daniel K. reservó el menú degustación para 2 el viernes.', 'Daniel K. booked the Tasting Menu for 2 on Friday.'), meta: L('hace 32 min', '32 min ago'), right: L('Confirmado', 'Confirmed'), rk: 'indigo' },
+      { ic: 'dollar', bg: '#E3F5EA', c: '#1F8A4C', line: L('Pago de $4,184.20 enviado a tu cuenta — liquida 16 oct.', 'Payout of $4,184.20 sent — settles Oct 16.'), meta: L('hace 2h · Chase ••4421', '2h ago · Chase ••4421'), right: L('Pagado', 'Paid'), rk: 'success' },
+      { ic: 'ticket', bg: '#FDE7EF', c: '#D6336C', line: L('3 boletos vendidos para Cena de Halloween · 32/48.', '3 tickets sold for Halloween dinner · 32/48.'), meta: L('hace 3h', '3h ago'), right: '+$420', rk: 'plain' },
+    ];
+    const rkStyle = { coral: 'font:800 11px \'Plus Jakarta Sans\';color:#D6336C;background:#FDE7EF;padding:5px 9px;border-radius:8px', ghost: 'font:800 11px \'Plus Jakarta Sans\';color:#6D4DF6;background:#F1EFFA;padding:6px 11px;border-radius:9px', indigo: 'font:800 10px \'Plus Jakarta Sans\';color:#6D4DF6;background:#F1EFFA;padding:5px 9px;border-radius:8px', success: 'font:800 10px \'Plus Jakarta Sans\';color:#1F8A4C;background:#E3F5EA;padding:5px 9px;border-radius:8px', plain: 'font:700 11px \'Plus Jakarta Sans\';color:#9A96AE' };
+    const activity = actRaw.map((a, i) => ({ icon: I(a.ic, 14, a.c), bg: a.bg, line: a.line, meta: a.meta, hasRight: true, right: a.right, rightStyle: rkStyle[a.rk], border: i === actRaw.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)' }));
+
+    // free insights
+    const freeKpiRaw = [
+      { ic: 'eye', c: '#F4B740', bg: '#FCEFD6', label: L('Vistas', 'Views'), value: '108', note: L('Bajo el promedio', 'Below avg'), locked: false, op: '1', valC: '#1E1B2E' },
+      { ic: 'user', c: '#7B61FF', bg: '#F1EFFA', label: L('Visitas al perfil', 'Profile visits'), value: '12', note: L('Agrega un logo', 'Add a logo'), locked: false, op: '1', valC: '#1E1B2E' },
+      { ic: 'bag', c: '#F0466E', bg: '#FDE7EF', label: L('Pedidos', 'Orders'), value: '—', note: L('Plan Verified', 'Verified plan'), locked: true, op: '.55', valC: '#B7B3C6' },
+      { ic: 'cal', c: '#1F9D57', bg: '#E3F5EA', label: L('Reservas', 'Bookings'), value: '—', note: L('Plan Verified', 'Verified plan'), locked: true, op: '.55', valC: '#B7B3C6' },
+    ];
+    const freeKpis = freeKpiRaw.map((k) => ({ icon: I(k.ic, 17, k.c), bg: k.bg, label: k.label, value: k.value, note: k.note, locked: k.locked, op: k.op, valC: k.valC }));
+    const clRaw = [
+      [true, L('Información básica', 'Add basic info'), L('Nombre, categoría, dirección', 'Name, category, address')],
+      [true, L('Horario', 'Set hours'), L('Mar–Dom, 7AM–7PM', 'Tue–Sun, 7AM–7PM')],
+      [true, L('1 foto de portada', '1 cover photo'), L('1 de 5 mínimo', '1 of 5 minimum')],
+      [false, L('4 fotos más', '4 more photos'), L('Frente, interior, productos', 'Front, interior, products')],
+      [false, L('Agregar logo', 'Add a logo'), L('PNG o SVG cuadrado', 'PNG or SVG, square')],
+      [false, L('Verificar teléfono', 'Verify phone'), L('Requerido para verificar', 'Required for verification')],
+    ];
+    const checklist = clRaw.map((c) => ({ done: c[0], t: c[1], d: c[2], todo: !c[0], ring: c[0] ? '#A7E3C0' : 'rgba(30,27,46,.08)', bg: c[0] ? '#ECFBF2' : '#fff', boxBg: c[0] ? '#1F9D57' : '#fff', boxRing: c[0] ? '#1F9D57' : '#D8D2E6', titleC: c[0] ? '#176B3A' : '#1E1B2E', subC: c[0] ? '#3E8B5F' : '#9A96AE' }));
+    const Y = '✓', N = '—';
+    const cmpRaw = [
+      [L('Listado básico', 'Basic listing'), Y, Y, Y], [L('Fotos', 'Photos'), L('1 foto', '1 photo'), L('Ilimitadas', 'Unlimited'), L('+ Video', '+ Video')],
+      [L('Insignia verificada', 'Verified badge'), N, Y, Y], [L('Menú de comida', 'Food menu'), N, Y, Y],
+      [L('Reservas', 'Bookings'), N, Y, Y], [L('Pedidos y entrega', 'Orders & delivery'), N, Y, L('+ Repartidores', '+ Own drivers')],
+      [L('Eventos y boletos', 'Events & tickets'), N, Y, Y], [L('Posición destacada', 'Featured placement'), N, N, Y],
+      [L('Insights AI', 'Insights AI'), N, N, Y],
+    ];
+    const compare = cmpRaw.map((r) => ({ feat: r[0], free: r[1], ver: r[2], prem: r[3] }));
+
+    // module setup
+    const setupDefs = [
+      { key: 'services', label: L('Servicios', 'Services'), desc: L('Lista de servicios con precios y reservas.', 'Service list with prices and bookings.'), iconN: ci.svc, bg: '#F1EFFA', dep: L('Reservas activado', 'Bookings on') },
+      { key: 'products', label: L('Productos', 'Products'), desc: L('Vende en línea o muestra un catálogo.', 'Sell online or show a catalog.'), iconN: 'package', bg: '#E4ECFB', dep: L('Envío y repartidores activado', 'Shipping & drivers on') },
+      { key: 'menu', label: L('Menú de comida', 'Food menu'), desc: L('Menú por secciones con entrega.', 'Sectioned menu with delivery.'), iconN: 'utensils', bg: '#FCEFD6', dep: L('Entrega local activado', 'Local delivery on') },
+      { key: 'rental', label: L('Renta', 'Rental'), desc: L('Renta equipo, bicis, mobiliario.', 'Rent equipment, bikes, furniture.'), iconN: 'bike', bg: '#E3F5EA', dep: '' },
+      { key: 'events', label: L('Eventos y boletos', 'Events & tickets'), desc: L('Crea eventos y vende boletos.', 'Create events and sell tickets.'), iconN: 'ticket', bg: '#FDE7EF', dep: '' },
+      { key: 'updates', label: L('Novedades', 'Updates'), desc: L('Publica ofertas y avisos en tu stream.', 'Post offers and news to your stream.'), iconN: 'megaphone', bg: '#F1EFFA', dep: '' },
+    ];
+    const setupMods = setupDefs.map((m) => {
+      const on = !isFree && st.mods[m.key]; const locked = isFree;
+      return { label: m.label, desc: m.desc, icon: I(m.iconN, 21, '#6D4DF6'), bg: m.bg, proOnly: isFree, locked, showSwitch: !locked, ring: on ? 'rgba(123,97,255,.3)' : 'transparent', track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '22px' : '3px', onToggle: () => this.toggleMod(m.key), hasDep: on && !!m.dep, dep: m.dep };
+    });
+
+    // ===== page head + generic content per tab =====
+    const titles = {
+      insights: [L('Resumen', 'Insights'), isFree ? L('Tu listado está activo, pero te falta el kit. Mejora para desbloquear todo.', "Your listing is live, but you're missing the toolkit. Upgrade to unlock everything.") : L('Tu negocio va muy bien esta semana — los ingresos van en aumento.', "Your business is having a great week — revenue is trending up."), L('Últimos 7 días', 'Last 7 days')],
+      listing: [L('Información general', 'General info'), L('Así te ven tus clientes en ToLatino.', 'This is what customers see on ToLatino.'), null],
+      photos: [L('Fotos y media', 'Photos & media'), L('Sube fotos de tu negocio, productos y equipo.', 'Upload photos of your business, products and team.'), null],
+      hours: [L('Horario y feriados', 'Hours & holidays'), L('Define cuándo estás abierto.', 'Set when you are open.'), null],
+      related: [L('Listados relacionados', 'Related listings'), L('Vincula sucursales y marcas que administras.', 'Link branches and brands you manage.'), null],
+      menu: [L('Menú de comida', 'Food menu'), L('Organiza tu menú por secciones · activa entrega.', 'Organize your menu by sections · enables delivery.'), null],
+      services: [L('Servicios', 'Services'), L('Servicios bookables o solo informativos.', 'Bookable or inquiry-only services.'), null],
+      bookings: [L('Reservas', 'Bookings'), L('Citas, depósitos y disponibilidad.', 'Appointments, deposits and availability.'), null],
+      products: [L('Productos', 'Products'), L('Catálogo, inventario, variantes y envío.', 'Catalog, inventory, variants and shipping.'), null],
+      shipping: [L('Zonas de envío', 'Shipping zones'), L('Área de entrega local, recogida y envío nacional.', 'Local delivery area, pickup and national shipping.'), null],
+      drivers: [L('Repartidores', 'Drivers'), L('Repartidor propio o apps externas.', 'Own driver or external apps.'), null],
+      rental: [L('Renta', 'Rental'), L('Artículos para rentar con precio por día.', 'Rentable items with daily pricing.'), null],
+      events: [L('Eventos y boletos', 'Events & tickets'), L('Crea eventos y gestiona boletos.', 'Create events and manage tickets.'), null],
+      customers: [L('Clientes', 'Customers'), L('Tu base de clientes y su historial.', 'Your customer base and history.'), null],
+      orders: [L('Pedidos', 'Orders'), L('Gestiona pedidos por estado.', 'Manage orders by status.'), null],
+      messages: [L('Mensajes', 'Messages'), L('Conversaciones con tus clientes.', 'Conversations with your customers.'), null],
+      reviews: [L('Reseñas', 'Reviews'), L('Responde y construye tu reputación.', 'Reply and build your reputation.'), null],
+      updates: [L('Novedades', 'Updates'), L('Publica ofertas, eventos y avisos.', 'Post offers, events and news.'), null],
+      payments: [L('Pagos', 'Payouts'), L('Depósitos, balance y método de pago.', 'Payouts, balance and payment method.'), null],
+      staff: [L('Personal', 'Staff'), L('Equipo, roles y permisos.', 'Team, roles and permissions.'), null],
+      jobs: [L('Empleos', 'Jobs'), L('Publica vacantes para la comunidad.', 'Post openings for the community.'), null],
+      modules: [L('Configurar módulos', 'Module setup'), L('Activa solo lo que tu negocio necesita.', 'Turn on only what your business needs.'), null],
+      billing: [L('Plan y facturación', 'Billing & plan'), L('Tu plan, método de pago e historial.', 'Your plan, payment method and history.'), null],
+      settings: [L('Ajustes', 'Settings'), L('Perfil, seguridad, notificaciones e idioma.', 'Profile, security, notifications and language.'), null],
+    };
+    const pa = titles[tab] || titles.insights;
+    const ctaMap = { listing: L('Guardar', 'Save'), photos: L('Subir', 'Upload'), menu: L('Agregar platillo', 'Add item'), services: L('Agregar servicio', 'Add service'), products: L('Agregar producto', 'Add product'), events: L('Crear evento', 'Create event'), rental: L('Agregar artículo', 'Add item'), updates: L('Nueva publicación', 'New post'), staff: L('Invitar', 'Invite'), reviews: L('Exportar', 'Export'), customers: L('Exportar', 'Export'), orders: L('Nuevo pedido', 'New order'), insights: L('Nuevo pedido', 'New order'), modules: L('Guardar', 'Save'), billing: L('Cambiar plan', 'Change plan'), settings: L('Guardar', 'Save') };
+    const page = { title: pa[0], hasAccent: tab === 'insights', accent: pa[2] || '', sub: pa[1], hasGhost: tab === 'insights' || tab === 'orders' || tab === 'customers', ghost: L('Exportar', 'Export'), cta: ctaMap[tab] || L('Nuevo', 'New') };
+    const rangeLabel = L('Últimos 7 días', 'Last 7 days');
+
+    // ===== generic module content =====
+    const bd = (i, arr) => (i === arr.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)');
+    const kpi = (ic, c, bg, label, value, delta, dC) => ({ icon: I(ic, 16, c), bg, label, value, delta, dC: dC || '#1F9D57' });
+    const sw = (on) => ({ track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '21px' : '3px' });
+    let g = null;
+    const isGeneric = !['insights', 'modules'].includes(tab) || (tab === 'insights' && false);
+
+    function rowsList(arr) { return arr; }
+
+    if (tab === 'listing') {
+      g = { cols: '1.4fr 1fr', mainTitle: L('Detalles del negocio', 'Business details'), isForm: true, hasRows: false,
+        fields: [
+          { label: L('Nombre del negocio', 'Business name'), value: biz.name, input: true },
+          { label: L('Categoría', 'Category'), value: biz.category, input: true },
+          { label: L('Eslogan', 'Tagline'), value: L('Pan de masa madre y pizza artesanal en el corazón de Mission.', 'Sourdough bread & artisan pizza in the heart of Mission.'), input: true },
+          { label: L('Descripción', 'Description'), value: L('Panadería y restaurante familiar. Horneamos a diario con ingredientes locales. Catering disponible para eventos.', 'Family bakery & restaurant. We bake daily with local ingredients. Catering available for events.'), area: true },
+          { label: L('Teléfono', 'Phone'), value: '(415) 555-0148', input: true },
+          { label: L('Dirección', 'Address'), value: '595 Alabama St, San Francisco', input: true },
+        ],
+        hasSide: true, sideTitle: L('Estado del listado', 'Listing status'),
+        sideRows: [
+          { icon: I('shield', 15, '#1F8A4C'), bg: '#E3F5EA', title: L('Verificado', 'Verified'), sub: L('Insignia activa', 'Badge active'), border: 'rgba(30,27,46,.06)' },
+          { icon: I('image', 15, '#6D4DF6'), bg: '#F1EFFA', title: L('34 fotos', '34 photos'), sub: L('Portada + galería', 'Cover + gallery'), border: 'rgba(30,27,46,.06)' },
+          { icon: I('clock', 15, '#B5791A'), bg: '#FCEFD6', title: L('Horario completo', 'Hours set'), sub: L('Mar–Dom', 'Tue–Sun'), border: 'transparent' },
+        ],
+        hasSideNote: isFree, sideNoteTitle: L('Completa tu perfil', 'Complete your profile'), sideNoteSub: L('Sube 4 fotos más y un logo para verificarte.', 'Add 4 more photos and a logo to get verified.'), sideNoteBtn: L('Continuar', 'Continue') };
+    } else if (tab === 'services') {
+      const svc = cat === 'auto' ? [['Lavado Exterior', '30 min · ' + L('reservable', 'bookable'), '$15', true], ['Detallado Completo', '90 min · ' + L('reservable', 'bookable'), '$45', true], ['Encerado', '60 min', '$35', false]]
+        : cat === 'beauty' ? [['Corte de cabello', '45 min · ' + L('reservable', 'bookable'), '$25', true], ['Tinte', '120 min · ' + L('reservable', 'bookable'), '$80', true], ['Manicure', '40 min', '$20', true]]
+        : [['Menú degustación', L('Por reserva · 5 platos', 'By reservation · 5 courses'), '$110', true], ['Catering', L('Cotización · 20+ personas', 'Quote · 20+ ppl'), '$$', false], ['Clase de pan', L('Sáb · 2h', 'Sat · 2h'), '$85', true]];
+      g = { cols: '1.5fr 1fr', hasBanner: true, bannerIcon: I('cal', 15, '#fff'), bannerTitle: L('Módulo de reservas activo', 'Bookings module active'), bannerSub: L('Los servicios reservables aceptan citas y depósitos.', 'Bookable services accept appointments and deposits.'), hasBannerBtn: true, bannerBtn: L('Reservas', 'Bookings'), bannerTap: () => this.go('bookings'),
+        mainTitle: L('Tus servicios', 'Your services'), hasRows: true,
+        rows: svc.map((s, i, a) => ({ hasThumb: true, thumb: ci.tile, title: s[0], sub: s[1], hasRight: true, right: s[2], hasToggle: true, ...sw(s[3]), border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Resumen', 'Summary'), sideRows: [
+          { icon: I('cal', 15, '#2A5C8A'), bg: '#E4ECFB', title: '24 ' + L('reservas', 'bookings'), sub: L('próximas', 'upcoming'), hasRight: true, right: '96%', border: 'rgba(30,27,46,.06)' },
+          { icon: I('dollar', 15, '#1F8A4C'), bg: '#E3F5EA', title: '$1,240', sub: L('en depósitos', 'in deposits'), border: 'transparent' },
+        ] };
+    } else if (tab === 'bookings') {
+      const fields = cat === 'auto' ? [L('Tipo de vehículo', 'Vehicle type'), L('Paquete', 'Package'), L('Fecha', 'Date'), L('Hora', 'Time'), L('En sitio/a domicilio', 'On-site/mobile')]
+        : cat === 'beauty' ? [L('Servicio', 'Service'), L('Profesional', 'Stylist'), L('Fecha', 'Date'), L('Hora', 'Time')]
+        : [L('Personas', 'Party size'), L('Fecha', 'Date'), L('Hora', 'Time'), L('Mesa/zona', 'Table/area'), L('Notas', 'Notes')];
+      const ap = [['AM', '#7B61FF', 'Ana M.', '10:30 · ' + L('Mesa 4', 'Table 4'), L('Confirmada', 'Confirmed'), '#1F8A4C', '#E3F5EA'], ['DK', '#2A5C8A', 'Daniel K.', '12:00 · ' + L('degustación', 'tasting'), L('Confirmada', 'Confirmed'), '#1F8A4C', '#E3F5EA'], ['RG', '#E8954A', 'Rosa G.', '14:30', L('En espera', 'Pending'), '#9A6A12', '#FCEFD6']];
+      g = { cols: '1.5fr 1fr', hasBanner: true, bannerIcon: I('cal', 15, '#fff'), bannerTitle: L('Campos personalizados para ', 'Custom fields for ') + L(ci.es, ci.en), bannerSub: fields.join(' · '), mainTitle: L('Citas de hoy', "Today's appointments"), hasRows: true,
+        rows: ap.map((a, i, arr) => ({ hasAvatar: true, avatar: a[0], avColor: a[1], title: a[2], sub: a[3], hasPill: true, pill: a[4], pillBg: a[6], pillC: a[5], border: bd(i, arr) })),
+        hasSide: true, sideTitle: L('Esta semana', 'This week'), sideRows: [
+          { icon: I('cal', 15, '#6D4DF6'), bg: '#F1EFFA', title: '24 ' + L('reservas', 'bookings'), sub: L('próximas', 'upcoming'), border: 'rgba(30,27,46,.06)' },
+          { icon: I('users', 15, '#2A5C8A'), bg: '#E4ECFB', title: '96%', sub: L('confirmadas', 'confirmed'), border: 'rgba(30,27,46,.06)' },
+          { icon: I('dollar', 15, '#1F8A4C'), bg: '#E3F5EA', title: '$1,240', sub: L('depósitos', 'deposits'), border: 'transparent' },
+        ] };
+    } else if (tab === 'products') {
+      const pr = [['Salsa Casera', L('Frasco 16oz · 24 en stock', '16oz jar · 24 in stock'), '$8'], ['Camiseta Logo', L('5 tallas · 7 en stock', '5 sizes · 7 in stock'), '$18'], ['Gorra', L('Ajustable · agotado', 'Adjustable · out'), '$15'], ['Café en grano', L('340g · 40 en stock', '340g · 40 in stock'), '$14']];
+      g = { cols: '1.5fr 1fr', hasTabs: true, tabs: [[L('Catálogo', 'Catalog'), true], [L('Inventario', 'Inventory'), false], [L('Variantes', 'Variants'), false]].map((x) => ({ label: x[0], style: 'border:none;cursor:pointer;padding:5px 11px;border-radius:7px;font:800 10.5px \'Plus Jakarta Sans\';background:' + (x[1] ? '#fff' : 'transparent') + ';color:' + (x[1] ? '#6D4DF6' : '#9A96AE') })),
+        mainTitle: L('Productos', 'Products'), hasRows: true,
+        rows: pr.map((p, i, a) => ({ hasThumb: true, thumb: ci.tile, title: p[0], sub: p[1], hasRight: true, right: p[2], border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Envío y entrega', 'Shipping & delivery'), sideRows: [
+          { icon: I('pin', 15, '#1F8A4C'), bg: '#E3F5EA', title: L('Entrega local', 'Local delivery'), sub: L('5 millas · $4', '5 miles · $4'), hasRight: true, right: '›', border: 'rgba(30,27,46,.06)' },
+          { icon: I('truck', 15, '#2A5C8A'), bg: '#E4ECFB', title: L('Envío y recogida', 'Shipping & pickup'), sub: 'USPS · ' + L('en tienda', 'in-store'), hasRight: true, right: '›', border: 'rgba(30,27,46,.06)' },
+          { icon: I('helmet', 15, '#B5791A'), bg: '#FCEFD6', title: L('Repartidores', 'Drivers'), sub: L('Propio o UberEats', 'Own or UberEats'), hasRight: true, right: '3', border: 'transparent' },
+        ] };
+    } else if (tab === 'menu') {
+      const items = [['Al Pastor', L('Cerdo, piña, cilantro', 'Pork, pineapple, cilantro'), '$2.50'], ['Carne Asada', L('Res a la parrilla', 'Grilled beef'), '$2.75'], ['Pollo', L('Pollo adobado', 'Marinated chicken'), '$2.25'], ['Horchata', L('Arroz y canela', 'Rice & cinnamon'), '$3.00']];
+      g = { cols: '1.5fr 1fr', hasBanner: true, bannerIcon: I('truck', 15, '#fff'), bannerTitle: L('El menú activa la entrega local', 'Menu activates local delivery'), bannerSub: L('Tus platillos aparecen en el listado público y en pedidos.', 'Your items appear on the public listing and in orders.'),
+        mainTitle: L('Tacos · 12 platillos', 'Tacos · 12 items'), hasRows: true,
+        rows: items.map((it, i, a) => ({ title: it[0], sub: it[1], hasRight: true, right: it[2], hasAction: true, action: L('Editar', 'Edit'), border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Secciones', 'Sections'), sideRows: [
+          { icon: I('utensils', 15, '#B5791A'), bg: '#FCEFD6', title: 'Tacos', sub: '12 ' + L('platillos', 'items'), hasRight: true, right: '›', border: 'rgba(30,27,46,.06)' },
+          { icon: I('utensils', 15, '#6D4DF6'), bg: '#F1EFFA', title: L('Bebidas', 'Drinks'), sub: '6 ' + L('platillos', 'items'), hasRight: true, right: '›', border: 'rgba(30,27,46,.06)' },
+          { icon: I('tag', 15, '#D6336C'), bg: '#FDE7EF', title: L('Especiales', 'Specials'), sub: '3 ' + L('platillos', 'items'), hasRight: true, right: '›', border: 'transparent' },
+        ] };
+    } else if (tab === 'orders') {
+      const od = [['#2487', 'Maria L.', '2× Country loaf, Tiramisù', '$48.20', L('Nuevo', 'New'), '#D6336C', '#FDE7EF'], ['#2486', 'Mesa 7', '3× Pizza margherita', '$72.50', L('Preparando', 'Preparing'), '#9A6A12', '#FCEFD6'], ['#2481', 'Carlos M.', '1× Tiramisù, 2× Cookies', '$24.50', L('Listo', 'Ready'), '#1F8A4C', '#E3F5EA'], ['#2479', 'Mesa 5', L('Cena para 4', 'Dinner for 4'), '$186.00', L('Completado', 'Completed'), '#8A86A0', '#F1EFFA']];
+      g = { cols: '1.6fr 1fr', hasKpis: true, kpis: [kpi('bag', '#7B61FF', '#F1EFFA', L('Hoy', 'Today'), '68', '▲ 18%'), kpi('dollar', '#1F9D57', '#E3F5EA', L('Ingresos', 'Revenue'), '$1,847', '▲ 12%'), kpi('clock', '#F4B740', '#FCEFD6', L('Prom. prep', 'Avg prep'), '14m', '▼ 2m'), kpi('route', '#2A5C8A', '#E4ECFB', L('Entregas', 'Delivery'), '142', '▲ 18%')],
+        mainTitle: L('Pedidos recientes', 'Recent orders'), hasRows: true,
+        rows: od.map((o, i, a) => ({ hasIcon: true, icon: I('bag', 16, '#6D4DF6'), iconBg: '#F1EFFA', title: o[0] + ' · ' + o[1], sub: o[2], hasPill: true, pill: o[4], pillBg: o[6], pillC: o[5], border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Por canal', 'By channel'), sideRows: [
+          { icon: I('utensils', 15, '#6D4DF6'), bg: '#F1EFFA', title: L('Mostrador', 'Dine-in'), sub: '42%', hasRight: true, right: '28', border: 'rgba(30,27,46,.06)' },
+          { icon: I('bag', 15, '#D6336C'), bg: '#FDE7EF', title: L('Recoger', 'Pickup'), sub: '24%', hasRight: true, right: '16', border: 'rgba(30,27,46,.06)' },
+          { icon: I('truck', 15, '#1F8A4C'), bg: '#E3F5EA', title: L('Entrega', 'Delivery'), sub: '22%', hasRight: true, right: '15', border: 'transparent' },
+        ] };
+    } else if (tab === 'customers') {
+      const cu = [['ML', '#7B61FF', 'Maria L.', '18 ' + L('pedidos', 'orders') + ' · $1,840', 'VIP', '#F1EFFA', '#6D4DF6'], ['JT', '#E8954A', 'James T.', '7 ' + L('pedidos', 'orders') + ' · $420', L('Recurrente', 'Returning'), '#E3F5EA', '#1F8A4C'], ['AF', '#1F9D57', 'Anna F.', '3 ' + L('pedidos', 'orders') + ' · $184', L('Nuevo', 'New'), '#FCEFD6', '#9A6A12'], ['DK', '#D6336C', 'Daniel K.', '12 ' + L('pedidos', 'orders') + ' · $980', L('Recurrente', 'Returning'), '#E3F5EA', '#1F8A4C']];
+      g = { cols: '1.6fr 1fr', hasKpis: true, kpis: [kpi('users', '#7B61FF', '#F1EFFA', L('Total', 'Total'), '4,218', '▲ 6%'), kpi('user', '#1F9D57', '#E3F5EA', L('Nuevos/sem', 'New/wk'), '62', '▲ 28%'), kpi('heart', '#D6336C', '#FDE7EF', L('Recurrentes', 'Returning'), '72%', '▲ 4pp'), kpi('dollar', '#F4B740', '#FCEFD6', L('LTV prom.', 'Avg LTV'), '$184', '▲ 9%')],
+        mainTitle: L('Tus clientes', 'Your customers'), hasRows: true,
+        rows: cu.map((c, i, a) => ({ hasAvatar: true, avatar: c[0], avColor: c[1], title: c[2], sub: c[3], hasPill: true, pill: c[4], pillBg: c[5], pillC: c[6], border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Segmentos', 'Segments'), sideRows: [
+          { icon: I('star', 15, '#6D4DF6'), bg: '#F1EFFA', title: 'VIP', sub: L('Top 10% gasto', 'Top 10% spend'), hasRight: true, right: '142', border: 'rgba(30,27,46,.06)' },
+          { icon: I('heart', 15, '#D6336C'), bg: '#FDE7EF', title: L('Leales', 'Loyal'), sub: '5+ ' + L('pedidos', 'orders'), hasRight: true, right: '880', border: 'rgba(30,27,46,.06)' },
+          { icon: I('clock', 15, '#B5791A'), bg: '#FCEFD6', title: L('En riesgo', 'At risk'), sub: L('sin pedir 60d', 'no order 60d'), hasRight: true, right: '210', border: 'transparent' },
+        ] };
+    } else if (tab === 'reviews') {
+      const rv = [['ML', '#7B61FF', 'Maria L.', '★★★★★ · ' + L('hace 2h', '2h ago'), L('El mejor pan de masa madre de SF. La pizza de los martes es una experiencia.', 'Best sourdough in SF. Pizza on Tuesdays is a religious experience.')], ['JT', '#E8954A', 'James T.', '★★★★☆ · ' + L('hace 1d', '1d ago'), L('El servicio fue un poco lento en la cena pero la comida lo compensó.', 'Service was a bit slow at dinner but the food made up for it.')]];
+      g = { cols: '1.6fr 1fr', hasKpis: true, kpis: [kpi('star', '#F4B740', '#FCEFD6', L('Calificación', 'Rating'), '4.8', '412 ' + L('reseñas', 'reviews'), '#8A86A0'), kpi('msg', '#7B61FF', '#F1EFFA', L('Respuestas', 'Replied'), '88%', '▲ 5%'), kpi('heart', '#D6336C', '#FDE7EF', L('Recomiendan', 'Recommend'), '94%', '▲ 2%'), kpi('clock', '#1F9D57', '#E3F5EA', L('Resp. prom.', 'Avg reply'), '3h', '▼ 1h')],
+        mainTitle: L('Reseñas recientes', 'Recent reviews'), hasRows: true,
+        rows: rv.map((r, i, a) => ({ hasAvatar: true, avatar: r[0], avColor: r[1], title: r[2], sub: r[3], hasBody: true, body: r[4], hasAction: !isFree, action: L('Responder', 'Reply'), border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Distribución', 'Breakdown'), sideRows: [
+          { icon: I('star', 15, '#1F8A4C'), bg: '#E3F5EA', title: '5 ★', sub: '320', hasRight: true, right: '78%', border: 'rgba(30,27,46,.06)' },
+          { icon: I('star', 15, '#B5791A'), bg: '#FCEFD6', title: '4 ★', sub: '64', hasRight: true, right: '16%', border: 'rgba(30,27,46,.06)' },
+          { icon: I('star', 15, '#D6336C'), bg: '#FDE7EF', title: '≤3 ★', sub: '28', hasRight: true, right: '6%', border: 'transparent' },
+        ] };
+    } else if (tab === 'updates') {
+      const up = [[L('OFERTA', 'OFFER'), '#FCEFD6', '#B5791A', L('hace 2d', '2d ago'), L('🌮 Martes de tacos: 2x1 todo el día.', '🌮 Taco Tuesday: 2-for-1 all day.'), '480 · ♥ 36'], [L('AVISO', 'NEWS'), '#F1EFFA', '#6D4DF6', L('hace 5d', '5d ago'), L('Ahora abrimos domingos 10–4.', 'Now open Sundays 10–4.'), '320 · ♥ 21']];
+      g = { cols: '1.6fr 1fr', hasCompose: true, composePh: L('Comparte una novedad con tus clientes…', 'Share an update with your customers…'),
+        mainTitle: L('Publicadas', 'Published'), hasRows: true,
+        rows: up.map((u, i, a) => ({ hasPill: true, pill: u[0], pillBg: u[1], pillC: u[2], title: ' ', sub: u[3], hasBody: true, body: u[4], hasRight: true, right: u[5], border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Alcance · 30 días', 'Reach · 30 days'), sideRows: [
+          { icon: I('eye', 15, '#6D4DF6'), bg: '#F1EFFA', title: L('Impresiones', 'Impressions'), sub: L('en el feed', 'in the feed'), hasRight: true, right: '8.2k', border: 'rgba(30,27,46,.06)' },
+          { icon: I('heart', 15, '#D6336C'), bg: '#FDE7EF', title: L('Interacciones', 'Engagement'), sub: '♥ + 💬', hasRight: true, right: '612', border: 'transparent' },
+        ] };
+    } else if (tab === 'staff') {
+      const stf = [['LM', '#7B61FF', 'Lupita M.', 'lupita@mail.com', L('Dueña', 'Owner'), '#F1EFFA', '#6D4DF6'], ['CR', '#1F9D57', 'Carlos R.', 'carlos@mail.com', L('Gerente', 'Manager'), '#E3F5EA', '#1F8A4C'], ['AS', '#E8954A', 'Ana S.', 'ana@mail.com', 'Staff', '#FCEFD6', '#9A6A12']];
+      g = { cols: '1.6fr 1fr', mainTitle: L('Tu equipo', 'Your team'), hasRows: true,
+        rows: stf.map((s, i, a) => ({ hasAvatar: true, avatar: s[0], avColor: s[1], title: s[2], sub: s[3], hasPill: true, pill: s[4], pillBg: s[5], pillC: s[6], border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Roles y permisos', 'Roles & permissions'), sideRows: [
+          { icon: I('shield', 15, '#6D4DF6'), bg: '#F1EFFA', title: L('Dueña', 'Owner'), sub: L('Acceso total', 'Full access'), hasRight: true, right: '1', border: 'rgba(30,27,46,.06)' },
+          { icon: I('user', 15, '#1F8A4C'), bg: '#E3F5EA', title: L('Gerente', 'Manager'), sub: L('Pedidos, menú', 'Orders, menu'), hasRight: true, right: '2', border: 'rgba(30,27,46,.06)' },
+          { icon: I('briefcase', 15, '#B5791A'), bg: '#FCEFD6', title: L('Empleos abiertos', 'Open jobs'), sub: L('Recibiendo solicitudes', 'Receiving applicants'), hasRight: true, right: '3', border: 'transparent' },
+        ] };
+    } else if (tab === 'billing') {
+      g = { cols: '1fr 1fr', mainTitle: L('Tu plan', 'Your plan'), hasRows: true,
+        rows: [
+          { hasIcon: true, icon: I('card', 16, '#6D4DF6'), iconBg: '#F1EFFA', title: isFree ? 'Free' : (isPremium ? 'Premium · $49/mo' : 'Verified · $19/mo'), sub: isFree ? L('Sin costo', 'No cost') : L('Renueva el 5 jul', 'Renews Jul 5'), hasPill: true, pill: isFree ? 'Free' : 'Activo', pillBg: '#E3F5EA', pillC: '#1F8A4C', border: 'rgba(30,27,46,.06)' },
+          { hasIcon: true, icon: I('card', 16, '#2A5C8A'), iconBg: '#E4ECFB', title: 'Visa •• 4242', sub: L('Vence 08/27', 'Expires 08/27'), hasAction: true, action: L('Cambiar', 'Edit'), border: 'rgba(30,27,46,.06)' },
+          { hasIcon: true, icon: I('dollar', 16, '#1F8A4C'), iconBg: '#E3F5EA', title: L('Factura · jun', 'Invoice · Jun'), sub: '$19.00 · ' + L('pagada', 'paid'), hasRight: true, right: 'PDF', border: 'transparent' },
+        ],
+        hasSide: true, sideTitle: L('Beneficios del plan', 'Plan benefits'), sideRows: [
+          { icon: I('shield', 15, '#1F8A4C'), bg: '#E3F5EA', title: L('Insignia verificada', 'Verified badge'), sub: L('Activa', 'Active'), border: 'rgba(30,27,46,.06)' },
+          { icon: I('grid', 15, '#6D4DF6'), bg: '#F1EFFA', title: L('Todos los módulos', 'All modules'), sub: L('Desbloqueados', 'Unlocked'), border: 'rgba(30,27,46,.06)' },
+          { icon: I('eye', 15, '#B5791A'), bg: '#FCEFD6', title: L('5× descubrimiento', '5× discovery'), sub: L('En el mapa', 'On the map'), border: 'transparent' },
+        ],
+        hasSideNote: !isPremium, sideNoteTitle: L('Mejorar a Premium', 'Upgrade to Premium'), sideNoteSub: L('Insights AI, posición destacada y soporte 24/7 por $49/mes.', 'Insights AI, featured placement and 24/7 support for $49/mo.'), sideNoteBtn: L('Mejorar', 'Upgrade') };
+    } else if (tab === 'settings') {
+      const setRows = [['globe', '#6D4DF6', '#F1EFFA', L('Perfil del negocio', 'Business profile'), ''], ['shield', '#1F8A4C', '#E3F5EA', L('Seguridad', 'Security'), ''], ['bell', '#B5791A', '#FCEFD6', L('Notificaciones', 'Notifications'), ''], ['globe', '#D6336C', '#FDE7EF', L('Idioma', 'Language'), es ? 'Español' : 'English'], ['cog', '#2A5C8A', '#E4ECFB', L('Integraciones', 'Integrations'), '3'], ['user', '#7B61FF', '#F1EFFA', L('Cuenta', 'Account'), '']];
+      g = { cols: '1.4fr 1fr', mainTitle: L('Configuración', 'Settings'), hasRows: true,
+        rows: setRows.map((s, i, a) => ({ hasIcon: true, icon: I(s[0], 16, s[1]), iconBg: s[2], title: s[3], sub: '', hasRight: !!s[4], right: s[4] || '', hasAction: !s[4], action: '›', border: bd(i, a) })),
+        hasSide: true, sideTitle: L('Idioma del panel', 'Dashboard language'), sideRows: [
+          { icon: I('globe', 15, '#6D4DF6'), bg: '#F1EFFA', title: es ? 'Español' : 'English', sub: L('Activo', 'Active'), border: 'transparent' },
+        ],
+        hasSideNote: false };
+    } else {
+      // photos, hours, related, shipping, drivers, rental, events, payments, jobs, messages
+      const genMap = {
+        photos: { kpis: [kpi('image', '#6D4DF6', '#F1EFFA', L('Fotos', 'Photos'), '34', L('publicadas', 'live')), kpi('eye', '#1F9D57', '#E3F5EA', L('Vistas', 'Views'), '8.1k', '▲ 31%')], mainTitle: L('Galería', 'Gallery'), thumb: true, items: [['Portada', L('Exterior · destacada', 'Exterior · featured')], [L('Interior', 'Interior'), L('Comedor', 'Dining room')], [L('Productos', 'Products'), L('Pan y pizza', 'Bread & pizza')], [L('Equipo', 'Team'), L('Detrás de cámaras', 'Behind the scenes')]] },
+        hours: { mainTitle: L('Horario semanal', 'Weekly hours'), rows: [[L('Lun – Vie', 'Mon – Fri'), '7:00 – 19:00'], [L('Sábado', 'Saturday'), '8:00 – 20:00'], [L('Domingo', 'Sunday'), '8:00 – 16:00']], side: [[L('Feriados', 'Holidays'), L('3 configurados', '3 set')], [L('Horas especiales', 'Special hours'), L('Halloween', 'Halloween')]] },
+        related: { mainTitle: L('Sucursales y marcas', 'Branches & brands'), rows: [['Tartine · Mission', L('Principal', 'Primary')], ['Tartine · Marina', L('Sucursal', 'Branch')], ['Coffee Bar', L('Marca hermana', 'Sister brand')]], side: [[L('Listados vinculados', 'Linked listings'), '3'], [L('Solicitudes', 'Requests'), '1']] },
+        shipping: { mainTitle: L('Zonas de envío', 'Shipping zones'), rows: [[L('Entrega local', 'Local delivery'), '5 mi · $4'], [L('Recogida en tienda', 'Store pickup'), L('Gratis', 'Free')], [L('Envío nacional', 'National shipping'), 'USPS · $8']], side: [[L('Pedidos entregados', 'Delivered'), '142'], [L('Tiempo prom.', 'Avg time'), '18 min']] },
+        drivers: { mainTitle: L('Repartidores', 'Drivers'), rows: [['Marco D.', L('Propio · activo', 'Own · active')], ['Sofia R.', L('Propio · activo', 'Own · active')], ['UberEats', L('Externo · conectado', 'External · connected')]], side: [[L('Entregas hoy', 'Deliveries today'), '38'], [L('En ruta', 'On route'), '3']] },
+        rental: { mainTitle: L('Artículos en renta', 'Rental items'), thumb: true, items: [[L('Bici urbana', 'City bike'), '$25/' + L('día', 'day')], [L('Bici eléctrica', 'E-bike'), '$45/' + L('día', 'day')], [L('Casco', 'Helmet'), '$5/' + L('día', 'day')]] , side: [[L('Rentas activas', 'Active rentals'), '12'], [L('Disponibles', 'Available'), '28']] },
+        events: { kpis: [kpi('ticket', '#D6336C', '#FDE7EF', L('Eventos', 'Events'), '4', L('próximos', 'upcoming')), kpi('dollar', '#1F9D57', '#E3F5EA', L('Boletos', 'Tickets'), '$2,420', '▲ 24%')], mainTitle: L('Próximos eventos', 'Upcoming events'), rows: [[L('Clase de pan · Sourdough 101', 'Bread class · Sourdough 101'), '14/16 · $85'], [L('Cena de Halloween · 6 platos', 'Halloween dinner · 6 courses'), '32/48 · $140'], [L('Cata de vino', 'Wine pairing'), '22/30 · $95']], side: [[L('Boletos vendidos', 'Tickets sold'), '68'], [L('Ingresos', 'Revenue'), '$2,420']] },
+        payments: { kpis: [kpi('dollar', '#1F9D57', '#E3F5EA', L('Balance', 'Balance'), '$4,184', L('disponible', 'available')), kpi('card', '#6D4DF6', '#F1EFFA', L('Este mes', 'This month'), '$48k', '▲ 14%')], mainTitle: L('Pagos recientes', 'Recent payouts'), rows: [[L('Pago · 16 oct', 'Payout · Oct 16'), '$4,184.20'], [L('Pago · 9 oct', 'Payout · Oct 9'), '$3,920.00'], [L('Pago · 2 oct', 'Payout · Oct 2'), '$4,510.50']], side: [[L('Cuenta', 'Account'), 'Chase ••4421'], [L('Próximo pago', 'Next payout'), '23 oct']] },
+        jobs: { mainTitle: L('Vacantes publicadas', 'Open positions'), rows: [[L('Cocinero de línea', 'Line Cook'), '$18/hr · ' + L('tiempo completo', 'full-time')], [L('Barista', 'Barista'), '$16/hr · ' + L('medio tiempo', 'part-time')], [L('Repartidor', 'Driver'), '$17/hr · ' + L('por turno', 'shift')]], side: [[L('Solicitudes', 'Applicants'), '24'], [L('Por revisar', 'To review'), '8']] },
+        messages: { mainTitle: L('Conversaciones', 'Conversations'), avatar: true, items: [['SR', '#7B61FF', 'Sofia R.', L('¿Hacen catering para 50?', 'Do you cater for 50?')], ['JM', '#1F9D57', 'Juan M.', L('¿Tienen opción vegana?', 'Any vegan options?')], ['AL', '#E8954A', 'Ana L.', L('Gracias por el pedido 🙏', 'Thanks for the order 🙏')]], side: [[L('Sin leer', 'Unread'), '7'], [L('Resp. prom.', 'Avg reply'), '12 min']] },
+      };
+      const d = genMap[tab] || { mainTitle: pa[0], rows: [['—', '']], side: [] };
+      const rows = (d.items ? d.items.map((it, i, a) => d.avatar ? ({ hasAvatar: true, avatar: it[0], avColor: it[1], title: it[2], sub: it[3], hasAction: true, action: L('Abrir', 'Open'), border: bd(i, a) }) : ({ hasThumb: d.thumb, thumb: ci.tile, title: it[0], sub: it[1] || '', hasRight: !!it[1], right: it[1] || '', border: bd(i, a) }))
+        : d.rows.map((r, i, a) => ({ title: r[0], sub: '', hasRight: true, right: r[1], border: bd(i, a) })));
+      g = { cols: d.side && d.side.length ? '1.6fr 1fr' : '1fr', hasKpis: !!d.kpis, kpis: d.kpis || [], mainTitle: d.mainTitle, hasRows: true, rows,
+        hasSide: !!(d.side && d.side.length), sideTitle: L('Resumen', 'Summary'), sideRows: (d.side || []).map((s, i, a) => ({ icon: I('chart', 15, '#6D4DF6'), bg: '#F1EFFA', title: s[0], sub: '', hasRight: true, right: s[1], border: bd(i, a) })) };
+    }
+
+    return {
+      tierLabel: isFree ? 'Free' : (isPremium ? 'Premium' : 'Verified'), catLabel: L(ci.es, ci.en),
+      esTab: mk(es), enTab: mk(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
+      biz, catTile, livePill, planPill, statusPill, inboxCount: isFree ? '2' : '7',
+      navGroups, isFree, isPaid,
+      goBilling: () => this.go('billing'), goListing: () => this.go('listing'), goOrders: () => this.go('orders'), goMenu: () => this.go('menu'), goCustomers: () => this.go('customers'), goModules: () => this.go('modules'),
+      t, page, rangeLabel, screenLabel: (isFree ? 'Free · ' : (isPremium ? 'Premium · ' : 'Verified · ')) + tab,
+      isInsights: tab === 'insights' && !isFree, isInsightsFree: tab === 'insights' && isFree,
+      isModulesSetup: tab === 'modules', isGeneric: tab !== 'insights' && tab !== 'modules',
+      isPremiumTeaser: tab === 'insights' && tier === 'verified',
+      // insights
+      hourBar, todos, todoOpen, kpis, revChart, metricTabs, donut: this.donut(), channels, queue, topSellers, pulse, modHealth, activity,
+      freeKpis, checklist, compare, setupMods, g,
+    };
+  }
+}
+</script>
+</body>
+</html>

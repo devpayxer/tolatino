@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Eventos y boletos · móvil</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:852px;background:#F4F2F9;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ headTitle }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+    </div>
+
+    <!-- LIST TABS -->
+    <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:11px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ listTabs }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}<sc-if value="{{ s.hasN }}" hint-placeholder-val="{{ false }}"><span style="{{ s.nStyle }}">{{ s.n }}</span></sc-if></button></sc-for>
+    </div>
+    </sc-if>
+
+    <!-- MANAGE TABS -->
+    <sc-if value="{{ isManage }}" hint-placeholder-val="{{ false }}">
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:11px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ manageTabs }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}<sc-if value="{{ s.hasN }}" hint-placeholder-val="{{ false }}"><span style="{{ s.nStyle }}">{{ s.n }}</span></sc-if></button></sc-for>
+    </div>
+    </sc-if>
+
+    <!-- BODY -->
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 16px">
+
+      <!-- ===== UPCOMING LIST ===== -->
+      <sc-if value="{{ isUpcoming }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Eventos">
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.upcoming }}</div><div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">4</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.ticketsSold }}</div><div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">186</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 24%</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.revenue }}</div><div style="font:800 18px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">$14.2k</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 18%</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ events }}" as="e" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;overflow:hidden">
+            <div style="height:96px;position:relative;background:repeating-linear-gradient(135deg,{{ e.tile }})">
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))"></div>
+              <span style="position:absolute;top:10px;left:10px;background:#fff;border-radius:9px;padding:4px 9px;text-align:center;box-shadow:0 3px 8px rgba(60,50,110,.18)"><span style="display:block;font:800 8px 'Plus Jakarta Sans';color:#D6336C">{{ e.mon }}</span><span style="display:block;font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1">{{ e.day }}</span></span>
+              <span style="position:absolute;top:10px;right:10px;background:{{ e.statusBg }};color:{{ e.statusC }};padding:3px 9px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ e.status }}</span>
+              <div style="position:absolute;left:12px;bottom:10px"><div style="font:800 15px 'Plus Jakarta Sans';color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)">{{ e.name }}</div><div style="font:600 10px 'Plus Jakarta Sans';color:rgba(255,255,255,.85)">{{ e.time }} · {{ e.price }}</div></div>
+            </div>
+            <div style="padding:13px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><span style="font:700 10.5px 'Plus Jakarta Sans';color:#6E6A85">{{ e.sold }}/{{ e.cap }} {{ t.sold }}</span><span style="font:800 10.5px 'Plus Jakarta Sans';color:#7B61FF">{{ e.pct }}</span></div>
+              <div style="height:6px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ e.barC }};width:{{ e.pct }}"></div></div>
+              <div style="display:flex;gap:8px;margin-top:12px">
+                <button onClick="{{ e.onManage }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:10px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans'">{{ t.manage }}</button>
+                <button onClick="{{ e.onCheckin }}" style="border:1.5px solid #E2DEF4;cursor:pointer;background:#fff;color:#1E1B2E;padding:10px 13px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3M20 14v.01M14 20h.01M20 20h.01M17 17h.01M20 17h3"></path></svg>{{ t.checkin }}</button>
+              </div>
+            </div>
+          </div>
+          </sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== DRAFTS ===== -->
+      <sc-if value="{{ isDrafts }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Borradores">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ t.draftsSub }}</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ drafts }}" as="d" hint-placeholder-count="2">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;overflow:hidden">
+            <div style="height:80px;position:relative;background:repeating-linear-gradient(135deg,{{ d.tile }})"><div style="position:absolute;inset:0;background:rgba(255,255,255,.42)"></div><span style="position:absolute;top:10px;left:10px;background:#FCEFD6;color:#9A6A12;padding:3px 9px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ t.draft }}</span><span style="position:absolute;top:10px;right:10px;background:{{ d.readyBg }};color:{{ d.readyC }};padding:3px 9px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ d.readyN }} {{ t.ready }}</span></div>
+            <div style="padding:13px">
+              <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.name }}</div>
+              <div style="font:500 11px 'Plus Jakarta Sans';color:#9A96AE;margin-top:3px">{{ d.date }} · {{ d.time }} · {{ d.price }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:11px"><sc-for list="{{ d.checks }}" as="c" hint-placeholder-count="4"><span style="display:inline-flex;align-items:center;gap:4px;font:700 9.5px 'Plus Jakarta Sans';padding:4px 9px;border-radius:999px;background:{{ c.bg }};color:{{ c.c }};border:1px solid {{ c.border }}">{{ c.icon }}{{ c.label }}</span></sc-for></div>
+              <div style="display:flex;gap:8px;margin-top:13px"><button style="flex:1;border:1.5px solid #E2DEF4;cursor:pointer;background:#fff;color:#1E1B2E;padding:10px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans'">{{ t.continueEditing }}</button><button style="border:none;cursor:pointer;background:{{ d.pubBg }};color:#fff;padding:10px 15px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans'">{{ t.publish }}</button></div>
+            </div>
+          </div>
+          </sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== PAST ===== -->
+      <sc-if value="{{ isPast }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Pasados">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ pastEvents }}" as="e" hint-placeholder-count="3"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px;display:flex;align-items:center;gap:11px;opacity:.85"><div style="width:48px;height:48px;border-radius:11px;flex:none;background:repeating-linear-gradient(135deg,{{ e.tile }})"></div><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ e.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ e.date }} · {{ e.sold }} {{ t.attendees }}</div></div><div style="text-align:right;flex:none"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ e.rev }}</div><div style="font:700 9px 'Plus Jakarta Sans';color:#1F9D57">{{ e.rating }} ★</div></div></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== RECURRING ===== -->
+      <sc-if value="{{ isRecurring }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Recurrentes">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ t.recurringSub }}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ recurring }}" as="r" hint-placeholder-count="3"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px;display:flex;align-items:center;gap:11px;opacity:{{ r.op }}"><span style="width:42px;height:42px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:{{ r.bg }};color:{{ r.c }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ r.c }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg></span><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ r.cadence }} · {{ r.next }}</div></div><div onClick="{{ r.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ r.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ r.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.newRecurring }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== PROMOTERS ===== -->
+      <sc-if value="{{ isPromoters }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Promotores">
+        <div style="display:flex;align-items:center;gap:11px;background:#F1EFFA;border-radius:13px;padding:11px 13px;margin-bottom:14px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z"></path><path d="M14 8a4 4 0 0 1 0 8"></path></svg><div style="flex:1"><div style="font:800 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.promotersTitle }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.promotersSub }}</div></div></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ promoters }}" as="p" hint-placeholder-count="3"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:12px;display:flex;align-items:center;gap:11px"><span style="width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 12px 'Plus Jakarta Sans';background:{{ p.color }}">{{ p.initials }}</span><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ p.code }} · {{ p.commission }}</div></div><div style="text-align:right;flex:none"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.sales }}</div><div style="font:700 9px 'Plus Jakarta Sans';color:#9A96AE">{{ p.sold }} {{ t.sold }}</div></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.invitePromoter }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== MANAGE: hero (shown across manage tabs) ===== -->
+      <sc-if value="{{ isManage }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Gestionar">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;overflow:hidden;margin-bottom:14px">
+          <div style="height:80px;position:relative;background:repeating-linear-gradient(135deg,{{ mgTile }})"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.5))"></div><div style="position:absolute;left:12px;bottom:9px"><div style="font:800 15px 'Plus Jakarta Sans';color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)">{{ mgName }}</div><div style="font:600 10px 'Plus Jakarta Sans';color:rgba(255,255,255,.85)">{{ mgTime }} · {{ mgPrice }}</div></div><span style="position:absolute;top:10px;right:10px;background:#E3F5EA;color:#1F8A4C;padding:3px 9px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ t.selling }}</span></div>
+          <div style="padding:12px;display:flex;gap:6px">
+            <div style="flex:1;text-align:center;background:#F7F6FC;border-radius:10px;padding:8px 4px"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ mgSold }}</div><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.sold }}</div></div>
+            <div style="flex:1;text-align:center;background:#F7F6FC;border-radius:10px;padding:8px 4px"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ mgRevenue }}</div><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.revenue }}</div></div>
+            <div style="flex:1;text-align:center;background:#F7F6FC;border-radius:10px;padding:8px 4px"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ mgCheckedIn }}</div><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.checkedIn }}</div></div>
+            <div style="flex:1;text-align:center;background:#F7F6FC;border-radius:10px;padding:8px 4px"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">3</div><div style="font:600 8.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.waitlist }}</div></div>
+          </div>
+        </div>
+
+        <!-- OVERVIEW -->
+        <sc-if value="{{ mgOverview }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-bottom:12px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">{{ t.salesByTier }}</div>
+          <sc-for list="{{ tierRows }}" as="r" hint-placeholder-count="3"><div style="padding:7px 0"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font:700 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.label }} <span style="color:#9A96AE;font-weight:600">{{ r.price }}</span></span><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE">{{ r.sold }} · {{ r.rev }}</span></div><div style="height:5px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ r.barC }};width:{{ r.bar }}"></div></div></div></sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:10px">{{ t.salesTimeline }}</div>
+          <div style="display:flex;align-items:flex-end;gap:5px;height:70px">{{ salesBars }}</div>
+          <div style="font:600 9.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:8px">{{ t.salesNote }}</div>
+        </div>
+        </sc-if>
+
+        <!-- ATTENDEES -->
+        <sc-if value="{{ mgAttendees }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid rgba(30,27,46,.1);border-radius:12px;padding:10px 13px;margin-bottom:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg><span style="flex:1;font:500 12px 'Plus Jakarta Sans';color:#9A96AE">{{ t.searchAttendees }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ attendees }}" as="a" hint-placeholder-count="6"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px;display:flex;align-items:center;gap:11px"><span style="width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 12px 'Plus Jakarta Sans';background:{{ a.color }}">{{ a.initials }}</span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ a.name }}</div><div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="background:{{ a.tierBg }};color:{{ a.tierC }};padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">{{ a.tier }}</span><sc-if value="{{ a.hasDiet }}" hint-placeholder-val="{{ false }}"><span style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ a.diet }}</span></sc-if></div></div><span style="{{ a.stStyle }}">{{ a.stLabel }}</span></div></sc-for>
+        </div>
+        </sc-if>
+
+        <!-- CHECK-IN -->
+        <sc-if value="{{ mgCheckin }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#1E1B2E;border-radius:18px;padding:20px;text-align:center;margin-bottom:14px">
+          <div style="font:800 11px 'Plus Jakarta Sans';color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em">{{ t.scanTickets }}</div>
+          <div style="width:180px;height:180px;margin:16px auto;background:#fff;border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:center">{{ qrCode }}</div>
+          <div style="font:700 12px 'Plus Jakarta Sans';color:rgba(255,255,255,.8)">{{ t.scanHint }}</div>
+          <div style="display:flex;gap:18px;justify-content:center;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)"><div><div style="font:800 18px 'Plus Jakarta Sans';color:#7BE0A8">{{ mgCheckedIn }}</div><div style="font:600 9px 'Plus Jakarta Sans';color:rgba(255,255,255,.55);margin-top:1px">{{ t.checkedIn }}</div></div><div><div style="font:800 18px 'Plus Jakarta Sans';color:#fff">{{ mgSold }}</div><div style="font:600 9px 'Plus Jakarta Sans';color:rgba(255,255,255,.55);margin-top:1px">{{ t.sold }}</div></div><div><div style="font:800 18px 'Plus Jakarta Sans';color:#F4B740">{{ mgRemaining }}</div><div style="font:600 9px 'Plus Jakarta Sans';color:rgba(255,255,255,.55);margin-top:1px">{{ t.remaining }}</div></div></div>
+        </div>
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.recentCheckins }}</div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ recentCheckins }}" as="c" hint-placeholder-count="3"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px;display:flex;align-items:center;gap:11px"><span style="width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 11px 'Plus Jakarta Sans';background:{{ c.color }}">{{ c.initials }}</span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.name }}</div><div style="font:500 9.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ c.tier }} · {{ c.time }}</div></div><span style="width:24px;height:24px;border-radius:50%;background:#E3F5EA;display:flex;align-items:center;justify-content:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></div></sc-for>
+        </div>
+        </sc-if>
+
+        <!-- TICKETS -->
+        <sc-if value="{{ mgTickets }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ ticketTiers }}" as="tk" hint-placeholder-count="3"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:13px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><span style="width:10px;height:10px;border-radius:50%;background:{{ tk.color }};flex:none"></span><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ tk.label }}</span><span style="margin-left:auto;font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ tk.price }}</span></div><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ tk.color }};width:{{ tk.pct }}"></div></div><span style="font:700 10px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap">{{ tk.sold }}/{{ tk.cap }}</span></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.addTier }}</button>
+        </sc-if>
+
+        <!-- SETTINGS -->
+        <sc-if value="{{ mgSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:4px 13px">
+          <sc-for list="{{ eventSettings }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid {{ r.border }}"><div style="flex:1;min-width:0"><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.title }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ r.sub }}</div></div><div onClick="{{ r.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ r.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ r.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">{{ t.cancelEvent }}</button>
+        </sc-if>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== ADD EVENT WIZARD ===== -->
+      <sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="AddEvent">
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px">
+          <sc-for list="{{ wizSteps }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onTap }}" style="{{ s.style }}"><span style="{{ s.dotStyle }}">{{ s.dot }}</span>{{ s.label }}</button></sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-bottom:14px"><div style="height:96px;position:relative;background:repeating-linear-gradient(135deg,{{ eDraftTile }})"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.45))"></div><div style="position:absolute;left:12px;bottom:9px"><div style="font:800 14px 'Plus Jakarta Sans';color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)">{{ eDraftName }}</div><div style="font:600 10px 'Plus Jakarta Sans';color:rgba(255,255,255,.85)">{{ eDraftMeta }}</div></div></div></div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px">
+          <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:14px">{{ eWizTitle }}</div>
+          <!-- step 1 details -->
+          <sc-if value="{{ ew0 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.eventName }} *</div><input value="{{ eDraft.name }}" onInput="{{ onEName }}" placeholder="{{ t.eventNamePh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fDesc }}</div><textarea value="{{ eDraft.desc }}" onInput="{{ onEDesc }}" placeholder="{{ t.eventDescPh }}" data-noscroll style="width:100%;height:64px;resize:none;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:500 12px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5"></textarea></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.eventType }} *</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ eventTypes }}" as="x" hint-placeholder-count="4"><button onClick="{{ x.onTap }}" style="{{ x.style }}">{{ x.label }}</button></sc-for></div></div>
+          </div>
+          </sc-if>
+          <!-- step 2 date -->
+          <sc-if value="{{ ew1 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.date }} *</div><input value="{{ eDraft.date }}" onInput="{{ onEDate }}" placeholder="31 dic 2025" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.time }}</div><input value="{{ eDraft.time }}" onInput="{{ onETime }}" placeholder="8 PM" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.location }}</div><input value="{{ eDraft.location }}" onInput="{{ onELoc }}" placeholder="{{ t.locationPh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:12px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><div style="flex:1"><div style="font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.recurringQ }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ t.recurringQSub }}</div></div><div onClick="{{ toggleERecurring }}" style="width:42px;height:25px;border-radius:13px;background:{{ eRecTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ eRecKnob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div>
+          </div>
+          </sc-if>
+          <!-- step 3 tickets -->
+          <sc-if value="{{ ew2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="font:500 11px 'Plus Jakarta Sans';color:#8A86A0;line-height:1.45">{{ t.ticketsIntro }}</div>
+            <sc-for list="{{ draftTiers }}" as="tk" hint-placeholder-count="2"><div style="background:#F7F6FC;border:1px solid rgba(30,27,46,.08);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:8px;background:{{ tk.bg }};color:{{ tk.c }};display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{ tk.c }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"></path><path d="M14 6v12"></path></svg></span><div style="flex:1;min-width:0"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ tk.label }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ tk.cap }} {{ t.spots }}</div></div><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ tk.price }}</span></div></sc-for>
+            <button style="width:100%;border:1.5px dashed #C9C2E6;background:#fff;color:#6D4DF6;cursor:pointer;padding:11px;border-radius:11px;font:800 11.5px 'Plus Jakarta Sans'">+ {{ t.addTier }}</button>
+          </div>
+          </sc-if>
+          <!-- step 4 review -->
+          <sc-if value="{{ ew3 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:11px;background:{{ eReadyBg }};border:1px solid {{ eReadyBorder }};border-radius:12px;padding:12px 13px"><span style="width:30px;height:30px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;color:{{ eReadyC }};font:800 14px 'Plus Jakarta Sans'">{{ eReadyIcon }}</span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:{{ eReadyC }}">{{ eReadyTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ eReadySub }}</div></div></div>
+            <div style="border:1px solid rgba(30,27,46,.08);border-radius:12px;overflow:hidden"><sc-for list="{{ eReviewRows }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid {{ r.border }}"><span style="width:74px;flex:none;font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ r.k }}</span><span style="flex:1;min-width:0;font:700 11.5px 'Plus Jakarta Sans';color:{{ r.vC }}">{{ r.v }}</span><span onClick="{{ r.onEdit }}" style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer;flex:none">{{ t.edit }}</span></div></sc-for></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.visibility }}</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto"><sc-for list="{{ visOptions }}" as="v" hint-placeholder-count="3"><button onClick="{{ v.onTap }}" style="{{ v.style }}">{{ v.label }}</button></sc-for></div></div>
+          </div>
+          </sc-if>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ===== SUCCESS ===== -->
+      <sc-if value="{{ isSuccess }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Published" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:24px">
+        <div style="width:64px;height:64px;border-radius:18px;background:#E3F5EA;color:#1F8A4C;display:flex;align-items:center;justify-content:center;margin-bottom:14px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        <div style="font:800 21px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ eSuccessTitle }}</div>
+        <div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:8px;line-height:1.5;max-width:300px">{{ eSuccessSub }}</div>
+        <div style="width:100%;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-top:20px;text-align:left"><div style="height:104px;position:relative;background:repeating-linear-gradient(135deg,{{ eDraftTile }})"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.45))"></div><div style="position:absolute;left:12px;bottom:9px"><div style="font:800 15px 'Plus Jakarta Sans';color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)">{{ eDraftName }}</div></div></div><div style="padding:13px;display:flex;align-items:center;justify-content:space-between"><div style="min-width:0"><div style="font:500 11.5px 'Plus Jakarta Sans';color:#9A96AE">{{ eDraftMeta }}</div></div><span style="background:#E3F5EA;color:#1F8A4C;padding:5px 11px;border-radius:8px;font:800 10.5px 'Plus Jakarta Sans';flex:none">{{ t.onSale }}</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;width:100%;margin-top:20px">
+          <button onClick="{{ eShareE }}" style="width:100%;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">{{ t.shareEvent }}</button>
+          <button onClick="{{ eBackToList }}" style="width:100%;border:1.5px solid #E2DEF4;cursor:pointer;background:#fff;color:#1E1B2E;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans'">{{ t.backToEvents }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- FOOTERS -->
+    <sc-if value="{{ showAddFooter }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ startAdd }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ t.createEvent }}</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showWizFooter }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:10px;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ wizBack }}" style="width:46px;height:46px;border-radius:13px;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;text-align:center;font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ wizProgress }}</div>
+      <button onClick="{{ wizNext }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">{{ wizNextLabel }}</button>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v === null || v === '') ? d : v; } catch (e) { return d; } }
+  _home() { try { const inq = new URLSearchParams(location.search); const o = new URLSearchParams(); ['tier','cat'].forEach((k) => { if (inq.get(k)) o.set(k, inq.get(k)); }); o.set('lang', (this.state && this.state.lang) || 'es'); location.href = 'ToLatino Business Dashboard Mobile.dc.html?' + o.toString(); } catch (e) {} }
+  state = {
+    lang: this._qp('lang', 'es'), view: 'list', listTab: 'upcoming', manageTab: 'overview', manageId: 1,
+    recurState: null, settingState: null,
+    wizStep: 0, wizMax: 0, eDraft: null,
+  };
+
+  I(name, s, stroke) {
+    const P = {
+      qr: ['M3 3h7v7H3z', 'M14 3h7v7h-7z', 'M3 14h7v7H3z', 'M14 14h3v3M20 14v.01M14 20h.01M20 20h.01M17 17h.01M20 17h.01'],
+    };
+    const paths = P[name] || P.qr;
+    return React.createElement('svg', { width: s || 15, height: s || 15, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  qrGrid() {
+    // deterministic faux-QR
+    const n = 11, cells = [];
+    const seed = [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 21, 23, 24, 26, 28, 30, 33, 35, 36, 38, 40, 42, 44, 47, 49, 51, 53, 55, 56, 58, 60, 62, 64, 66, 68, 70, 73, 75, 77, 79, 81, 83, 86, 88, 90, 92, 95, 97, 99, 101, 103, 105, 108, 110, 113, 115, 117, 119];
+    const set = new Set(seed);
+    for (let i = 0; i < n * n; i++) cells.push(React.createElement('span', { key: i, style: { background: set.has(i) || (i % 7 === 0) || (i % 5 === 2) ? '#1E1B2E' : 'transparent', borderRadius: 1 } }));
+    // finder corners
+    return React.createElement('div', { style: { width: '100%', height: '100%', display: 'grid', gridTemplateColumns: 'repeat(' + n + ',1fr)', gridTemplateRows: 'repeat(' + n + ',1fr)', gap: 2 } }, cells);
+  }
+
+  salesBarsEl() {
+    const data = [3, 5, 4, 8, 6, 12, 9, 14, 11, 18, 22, 16];
+    const max = Math.max.apply(null, data);
+    return React.createElement(React.Fragment, null, data.map((v, i) => React.createElement('div', { key: i, style: { flex: 1, height: Math.round((v / max) * 60) + 6 + 'px', borderRadius: '4px 4px 2px 2px', background: i === data.length - 2 ? '#7B61FF' : '#D9CFF6' } })));
+  }
+
+  newDraft() { return { name: '', desc: '', type: 'clase', date: '', time: '', location: '', recurring: false, vis: 'public' }; }
+
+  renderVals() {
+    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const I = (n, s, c) => this.I(n, s, c);
+    const view = st.view;
+
+    const chip = (active) => 'flex:none;border:none;cursor:pointer;padding:8px 13px;border-radius:999px;font:' + (active ? '800' : '700') + " 12px 'Plus Jakarta Sans';" + (active ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E');
+    const langTab = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 11px', borderRadius: '999px', fontWeight: 800, fontSize: '11px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+
+    const t = {
+      upcoming: L('Próximos', 'Upcoming'), ticketsSold: L('Boletos', 'Tickets'), revenue: L('Ingresos', 'Revenue'),
+      sold: L('vendidos', 'sold'), manage: L('Gestionar', 'Manage'), checkin: L('Check-in', 'Check-in'),
+      draftsSub: L('Termina de configurar antes de publicar. Cada evento necesita detalles, fecha, boletos y fotos.', 'Finish setup before publishing. Each needs details, date, tickets and photos.'),
+      draft: L('Borrador', 'Draft'), ready: L('listo', 'ready'), continueEditing: L('Continuar', 'Continue'), publish: L('Publicar', 'Publish'),
+      attendees: L('asistentes', 'attendees'),
+      recurringSub: L('Eventos que se repiten automáticamente en tu calendario.', 'Events that auto-repeat on your calendar.'), newRecurring: L('Nuevo recurrente', 'New recurring'),
+      promotersTitle: L('Promotores y afiliados', 'Promoters & affiliates'), promotersSub: L('Comparten un código y ganan comisión por boleto vendido.', 'They share a code and earn commission per ticket.'), invitePromoter: L('Invitar promotor', 'Invite promoter'),
+      selling: L('Vendiendo', 'Selling'), checkedIn: L('Ingresaron', 'Checked in'), waitlist: L('Espera', 'Waitlist'),
+      salesByTier: L('Ventas por nivel', 'Sales by tier'), salesTimeline: L('Línea de ventas', 'Sales timeline'), salesNote: L('Pico de ventas hace 2 días tras el email.', 'Sales peaked 2 days ago after the email.'),
+      searchAttendees: L('Buscar asistentes…', 'Search attendees…'),
+      scanTickets: L('Escanear boletos', 'Scan tickets'), scanHint: L('Apunta a la cámara del invitado', "Point at the guest's ticket"), remaining: L('Faltan', 'Remaining'), recentCheckins: L('Ingresos recientes', 'Recent check-ins'),
+      addTier: L('Agregar nivel', 'Add tier'),
+      cancelEvent: L('Cancelar evento', 'Cancel event'),
+      // wizard
+      eventName: L('Nombre del evento', 'Event name'), eventNamePh: L('Ej. Cena de Fin de Año', 'e.g. New Year’s Eve Dinner'),
+      fDesc: L('Descripción', 'Description'), eventDescPh: L('Qué incluye, quién presenta, qué esperar…', 'What’s included, who hosts, what to expect…'),
+      eventType: L('Tipo de evento', 'Event type'), date: L('Fecha', 'Date'), time: L('Hora', 'Time'), location: L('Ubicación', 'Location'), locationPh: L('En tu negocio o dirección', 'At your venue or address'),
+      recurringQ: L('¿Se repite?', 'Recurring?'), recurringQSub: L('Crea una serie semanal o mensual.', 'Create a weekly or monthly series.'),
+      ticketsIntro: L('Define los niveles de boleto. Puedes agregar más después.', 'Set ticket tiers. You can add more later.'), spots: L('lugares', 'spots'),
+      edit: L('Editar', 'Edit'), visibility: L('Visibilidad', 'Visibility'),
+      onSale: L('En venta', 'On sale'), shareEvent: L('Compartir evento', 'Share event'), backToEvents: L('Volver a eventos', 'Back to events'), createEvent: L('Crear evento', 'Create event'),
+    };
+
+    // ===== events list =====
+    const evRaw = [
+      { id: 1, name: L('Cena de Halloween', 'Halloween Dinner'), mon: 'OCT', day: '31', time: '7 PM', price: '$140', sold: 32, cap: 48, tile: '#FCE3DC 0 9px,#F6CEC2 9px 18px', statusEs: 'Vendiendo', statusEn: 'Selling', statusBg: '#E3F5EA', statusC: '#1F8A4C' },
+      { id: 2, name: 'Sourdough 101', mon: 'NOV', day: '08', time: '10 AM', price: '$85', sold: 14, cap: 16, tile: '#F3E2CE 0 9px,#ECD3B4 9px 18px', statusEs: 'Casi lleno', statusEn: 'Almost full', statusBg: '#FCEFD6', statusC: '#9A6A12' },
+      { id: 3, name: L('Cata de vinos', 'Wine Tasting'), mon: 'NOV', day: '15', time: '6 PM', price: '$45', sold: 22, cap: 30, tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px', statusEs: 'Vendiendo', statusEn: 'Selling', statusBg: '#E3F5EA', statusC: '#1F8A4C' },
+    ];
+    const events = evRaw.map((e) => ({ name: e.name, mon: e.mon, day: e.day, time: e.time, price: e.price, sold: e.sold, cap: e.cap, tile: e.tile, status: L(e.statusEs, e.statusEn), statusBg: e.statusBg, statusC: e.statusC, pct: Math.round(e.sold / e.cap * 100) + '%', barC: (e.sold / e.cap) > 0.85 ? '#E8954A' : '#7B61FF', onManage: () => this.setState({ view: 'manage', manageId: e.id, manageTab: 'overview' }), onCheckin: () => this.setState({ view: 'manage', manageId: e.id, manageTab: 'checkin' }) }));
+
+    // drafts
+    const draftRaw = [
+      { name: L('Fin de Año · Cata y Burbujas', 'NYE · Tasting & Bubbles'), date: '31 Dic', time: '8 PM – 1 AM', price: '$185', tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px', ready: { Detalles: true, Fecha: true, Boletos: false, Fotos: false } },
+      { name: L('Serie de Pan de Invierno', 'Winter Bread Series'), date: L('Ene (sin fecha)', 'Jan (TBD)'), time: '10 AM – 1 PM', price: '$90', tile: '#F3E2CE 0 9px,#ECD3B4 9px 18px', ready: { Detalles: true, Fecha: false, Boletos: true, Fotos: false } },
+    ];
+    const drafts = draftRaw.map((d) => {
+      const entries = Object.entries(d.ready); const done = entries.filter((e) => e[1]).length; const isReady = done === entries.length;
+      return { name: d.name, date: d.date, time: d.time, price: d.price, tile: d.tile, readyN: done + '/' + entries.length, readyBg: isReady ? '#E3F5EA' : '#F1EFFA', readyC: isReady ? '#1F8A4C' : '#9A96AE', pubBg: isReady ? '#7B61FF' : '#D8D2EC',
+        checks: entries.map((e) => ({ label: e[0], icon: e[1] ? '✓ ' : '○ ', bg: e[1] ? '#E3F5EA' : '#F7F6FC', c: e[1] ? '#1F8A4C' : '#9A96AE', border: e[1] ? '#A7E3C0' : 'rgba(30,27,46,.08)' })) };
+    });
+
+    // past
+    const pastEvents = [
+      { name: L('Mercado Navideño', 'Holiday Market'), date: '14 Dic 2024', sold: 142, rev: '$3,840', rating: '4.9', tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px' },
+      { name: L('Clase de tamales', 'Tamales Class'), date: '8 Dic 2024', sold: 24, rev: '$1,200', rating: '5.0', tile: '#FCE3DC 0 9px,#F6CEC2 9px 18px' },
+      { name: L('Noche de jazz', 'Jazz Night'), date: '23 Nov 2024', sold: 86, rev: '$2,580', rating: '4.7', tile: '#E4ECFB 0 9px,#D7E3F6 9px 18px' },
+    ];
+
+    // recurring
+    const recRaw = [
+      { name: L('Martes de tacos en vivo', 'Live Taco Tuesdays'), cEs: 'Cada martes', cEn: 'Every Tuesday', next: L('Próx: 14 oct', 'Next: Oct 14'), bg: '#FCEFD6', c: '#9A6A12', on: true },
+      { name: L('Brunch dominical', 'Sunday Brunch'), cEs: 'Cada domingo', cEn: 'Every Sunday', next: L('Próx: 12 oct', 'Next: Oct 12'), bg: '#E3F5EA', c: '#1F8A4C', on: true },
+      { name: L('Cata mensual', 'Monthly Tasting'), cEs: 'Primer viernes', cEn: 'First Friday', next: L('Próx: 1 nov', 'Next: Nov 1'), bg: '#EFEBFF', c: '#6D4DF6', on: false },
+    ];
+    const recSt = st.recurState || recRaw.reduce((o, r, i) => { o[i] = r.on; return o; }, {});
+    const recurring = recRaw.map((r, i) => { const on = recSt[i]; return { name: r.name, cadence: L(r.cEs, r.cEn), next: r.next, bg: r.bg, c: r.c, op: on ? '1' : '.6', track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState({ recurState: { ...recSt, [i]: !on } }) }; });
+
+    // promoters
+    const promoters = [
+      { initials: 'CR', color: '#7B61FF', name: 'Carlos R.', code: 'CARLOS10', commission: '10%', sales: '$1,240', sold: 28 },
+      { initials: 'LM', color: '#1F9D57', name: 'Lupita M.', code: 'LUPITA15', commission: '15%', sales: '$890', sold: 19 },
+      { initials: 'DJ', color: '#E8954A', name: 'DJ Sonido', code: 'SONIDO', commission: '12%', sales: '$2,100', sold: 42 },
+    ];
+
+    // ===== manage =====
+    const mgEv = evRaw.find((e) => e.id === st.manageId) || evRaw[0];
+    const revenue = mgEv.sold * (mgEv.price === '$140' ? 140 : mgEv.price === '$85' ? 85 : 45);
+    const checkedIn = Math.floor(mgEv.sold * 0.4);
+    const tierDefs = [
+      { label: 'General', price: '$85', color: '#7B61FF', sold: Math.round(mgEv.sold * 0.6), cap: Math.round(mgEv.cap * 0.6) },
+      { label: L('Pareja', 'Pair'), price: '$160', color: '#1F9D57', sold: Math.round(mgEv.sold * 0.25), cap: Math.round(mgEv.cap * 0.25) },
+      { label: 'VIP', price: '$250', color: '#D6336C', sold: Math.round(mgEv.sold * 0.15), cap: Math.round(mgEv.cap * 0.15) },
+    ];
+    const maxTier = Math.max.apply(null, tierDefs.map((x) => x.sold)) || 1;
+    const tierRows = tierDefs.map((x) => ({ label: x.label, price: x.price, sold: x.sold, rev: '$' + (x.sold * parseInt(x.price.slice(1))).toLocaleString(), bar: Math.round(x.sold / maxTier * 100) + '%', barC: x.color }));
+    const ticketTiers = tierDefs.map((x) => ({ label: x.label, price: x.price, color: x.color, sold: x.sold, cap: x.cap, pct: Math.round(x.sold / x.cap * 100) + '%' }));
+
+    const attRaw = [
+      { initials: 'ML', color: '#7B61FF', name: 'Maria Lopez', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: 'Vegetariano', st: 'in' },
+      { initials: 'JT', color: '#2A5C8A', name: 'James Tate', tier: L('Pareja', 'Pair'), tierBg: '#E3F5EA', tierC: '#1F8A4C', diet: '', st: 'in' },
+      { initials: 'AF', color: '#E8954A', name: 'Anna Fischer', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: 'Sin gluten', st: 'in' },
+      { initials: 'DK', color: '#D6336C', name: 'Daniel Kim', tier: 'VIP', tierBg: '#FDE7EF', tierC: '#D6336C', diet: '', st: 'going' },
+      { initials: 'SR', color: '#1F9D57', name: 'Sofia Romano', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: 'Alergia nuez', st: 'going' },
+      { initials: 'PN', color: '#7B61FF', name: 'Priya Nair', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: 'Vegano', st: 'going' },
+    ];
+    const attendees = attRaw.map((a) => ({ initials: a.initials, color: a.color, name: a.name, tier: a.tier, tierBg: a.tierBg, tierC: a.tierC, hasDiet: !!a.diet, diet: a.diet, stLabel: a.st === 'in' ? L('Ingresó', 'Checked in') : L('Confirmado', 'Going'), stStyle: 'font:800 9px \'Plus Jakarta Sans\';padding:4px 8px;border-radius:6px;flex:none;background:' + (a.st === 'in' ? '#E3F5EA' : '#F1EFFA') + ';color:' + (a.st === 'in' ? '#1F8A4C' : '#9A96AE') }));
+    const recentCheckins = attRaw.filter((a) => a.st === 'in').map((a, i) => ({ initials: a.initials, color: a.color, name: a.name, tier: a.tier, time: L('hace ', '') + (i + 2) + L(' min', 'm ago') }));
+
+    const setRaw = [
+      [L('Lista de espera', 'Waitlist'), L('Acepta inscritos cuando se llene.', 'Accept signups when full.'), true],
+      [L('Transferir boletos', 'Allow transfers'), L('Los invitados pueden ceder su boleto.', 'Guests can transfer their ticket.'), true],
+      [L('Recordatorio 24h', '24h reminder'), L('Email y push antes del evento.', 'Email + push before the event.'), true],
+      [L('Reembolsos', 'Refunds'), L('Hasta 48h antes del evento.', 'Up to 48h before the event.'), false],
+      [L('Mostrar asistentes', 'Show attendee count'), L('Visible en la página pública.', 'Visible on the public page.'), true],
+    ];
+    const setSt = st.settingState || setRaw.reduce((o, r, i) => { o[i] = r[2]; return o; }, {});
+    const eventSettings = setRaw.map((r, i, a) => { const on = setSt[i]; return { title: r[0], sub: r[1], track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', border: i === a.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)', onToggle: () => this.setState({ settingState: { ...setSt, [i]: !on } }) }; });
+
+    // ===== wizard =====
+    const eDraft = st.eDraft || this.newDraft();
+    const upD = (patch) => this.setState({ eDraft: { ...eDraft, ...patch } });
+    const typeTiles = { clase: '#F3E2CE 0 9px,#ECD3B4 9px 18px', cata: '#F3D9E2 0 9px,#E8BFCD 9px 18px', cena: '#FCE3DC 0 9px,#F6CEC2 9px 18px', musica: '#E4ECFB 0 9px,#D7E3F6 9px 18px' };
+    const eDraftTile = typeTiles[eDraft.type] || typeTiles.clase;
+    const wizStepDefs = [['details', L('Detalles', 'Details')], ['date', L('Fecha', 'Date')], ['tickets', L('Boletos', 'Tickets')], ['review', L('Revisar', 'Review')]];
+    const wizSteps = wizStepDefs.map((s, i) => { const active = st.wizStep === i, done = i < st.wizStep || (i <= st.wizMax && i !== st.wizStep); return { label: s[1], onTap: () => { if (i <= st.wizMax) this.setState({ wizStep: i }); }, dot: done ? '✓' : (i + 1), style: 'flex:none;display:flex;align-items:center;gap:6px;border:none;cursor:pointer;padding:7px 11px;border-radius:999px;font:800 11px \'Plus Jakarta Sans\';background:' + (active ? '#7B61FF' : done ? '#EFEBFF' : '#F1EFFA') + ';color:' + (active ? '#fff' : done ? '#6D4DF6' : '#9A96AE'), dotStyle: 'width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 9px \'Plus Jakarta Sans\';color:#fff;background:' + (active ? 'rgba(255,255,255,.25)' : done ? '#7B61FF' : '#D8D2E6') }; });
+    const typeDefs = [['clase', L('Clase/Taller', 'Class/Workshop')], ['cata', L('Cata', 'Tasting')], ['cena', L('Cena', 'Dinner')], ['musica', L('Música', 'Music')]];
+    const eventTypes = typeDefs.map((x) => ({ label: x[1], onTap: () => upD({ type: x[0] }), style: chip(eDraft.type === x[0]) }));
+    const draftTiers = [
+      { label: 'General', cap: 40, price: '$85', bg: '#EFEBFF', c: '#6D4DF6' },
+      { label: 'VIP', cap: 8, price: '$250', bg: '#FDE7EF', c: '#D6336C' },
+    ];
+    const visDefs = [['public', L('Público', 'Public')], ['followers', L('Seguidores', 'Followers first')], ['unlisted', L('No listado', 'Unlisted')]];
+    const visOptions = visDefs.map((v) => ({ label: v[1], onTap: () => upD({ vis: v[0] }), style: chip(eDraft.vis === v[0]) }));
+    const eReady = eDraft.name && eDraft.date;
+    const erev = (k, v, ok, step) => ({ k, v, vC: ok ? '#1E1B2E' : '#C0BBD0', onEdit: () => this.setState({ wizStep: step }), border: 'rgba(30,27,46,.06)' });
+    const typeLabel = (typeDefs.find((x) => x[0] === eDraft.type) || typeDefs[0])[1];
+    const eReviewRows = [
+      erev(L('Nombre', 'Name'), eDraft.name || '—', !!eDraft.name, 0),
+      erev(L('Tipo', 'Type'), typeLabel, true, 0),
+      erev(L('Fecha', 'Date'), eDraft.date ? (eDraft.date + (eDraft.time ? ' · ' + eDraft.time : '')) : '—', !!eDraft.date, 1),
+      erev(L('Ubicación', 'Location'), eDraft.location || L('Tu negocio', 'Your venue'), true, 1),
+      erev(L('Boletos', 'Tickets'), '2 ' + L('niveles · 48 lugares', 'tiers · 48 spots'), true, 2),
+    ];
+    eReviewRows[eReviewRows.length - 1].border = 'transparent';
+
+    const inList = view === 'list';
+    const listTabs = [['upcoming', L('Próximos', 'Upcoming')], ['drafts', L('Borradores', 'Drafts'), true, 2], ['past', L('Pasados', 'Past')], ['recurring', L('Recurrentes', 'Recurring')], ['promoters', L('Promotores', 'Promoters')]].map((s) => ({ label: s[1], onTap: () => this.setState({ listTab: s[0] }), style: chip(st.listTab === s[0]), hasN: s[2], n: s[3], nStyle: 'margin-left:6px;font-weight:800;color:' + (st.listTab === s[0] ? 'rgba(255,255,255,.8)' : '#9A96AE') }));
+    const manageTabDefs = [['overview', L('Resumen', 'Overview')], ['attendees', L('Asistentes', 'Attendees'), true, mgEv.sold], ['checkin', L('Check-in', 'Check-in')], ['tickets', L('Boletos', 'Tickets')], ['settings', L('Ajustes', 'Settings')]];
+    const manageTabs = manageTabDefs.map((s) => ({ label: s[1], onTap: () => this.setState({ manageTab: s[0] }), style: chip(st.manageTab === s[0]), hasN: s[2], n: s[3], nStyle: 'margin-left:5px;font-weight:800;color:' + (st.manageTab === s[0] ? 'rgba(255,255,255,.8)' : '#9A96AE') }));
+
+    const wizNext = () => { if (st.wizStep >= wizStepDefs.length - 1) { this.setState({ view: 'success' }); return; } const n = st.wizStep + 1; this.setState({ wizStep: n, wizMax: Math.max(st.wizMax, n) }); };
+    const wizBack = () => { if (st.wizStep === 0) { this.setState({ view: 'list' }); return; } this.setState({ wizStep: st.wizStep - 1 }); };
+
+    return {
+      esTab: langTab(es), enTab: langTab(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
+      headTitle: view === 'manage' ? mgEv.name : (view === 'wizard' ? L('Crear evento', 'Create event') : (view === 'success' ? L('Evento publicado', 'Event published') : L('Eventos y boletos', 'Events & tickets'))),
+      headSub: view === 'manage' ? L('Gestionar evento', 'Manage event') : (view === 'wizard' ? typeLabel : (view === 'success' ? '' : L('Tartine Manufactory · 4 próximos', 'Tartine Manufactory · 4 upcoming'))),
+      back: () => { if (view === 'manage') this.setState({ view: 'list' }); else if (view !== 'list') this.setState({ view: 'list' }); else this._home(); },
+      isList: inList, isManage: view === 'manage', isWizard: view === 'wizard', isSuccess: view === 'success',
+      listTabs, manageTabs,
+      isUpcoming: inList && st.listTab === 'upcoming', isDrafts: inList && st.listTab === 'drafts', isPast: inList && st.listTab === 'past', isRecurring: inList && st.listTab === 'recurring', isPromoters: inList && st.listTab === 'promoters',
+      t, events, drafts, pastEvents, recurring, promoters,
+      // manage
+      mgTile: mgEv.tile, mgName: mgEv.name, mgTime: mgEv.time, mgPrice: mgEv.price, mgSold: mgEv.sold + '/' + mgEv.cap, mgRevenue: '$' + revenue.toLocaleString(), mgCheckedIn: checkedIn + '/' + mgEv.sold, mgRemaining: (mgEv.sold - checkedIn),
+      mgOverview: st.manageTab === 'overview', mgAttendees: st.manageTab === 'attendees', mgCheckin: st.manageTab === 'checkin', mgTickets: st.manageTab === 'tickets', mgSettings: st.manageTab === 'settings',
+      tierRows, salesBars: this.salesBarsEl(), attendees, qrCode: this.qrGrid(), recentCheckins, ticketTiers, eventSettings,
+      // wizard
+      wizSteps, eDraft, eDraftTile, eDraftName: eDraft.name || L('Nombre del evento', 'Event name'), eDraftMeta: (eDraft.date || L('Fecha por definir', 'Date TBD')) + (eDraft.time ? ' · ' + eDraft.time : ''),
+      eWizTitle: [L('Detalles del evento', 'Event details'), L('Fecha y ubicación', 'Date & location'), L('Niveles de boleto', 'Ticket tiers'), L('Revisar y publicar', 'Review & publish')][st.wizStep],
+      ew0: st.wizStep === 0, ew1: st.wizStep === 1, ew2: st.wizStep === 2, ew3: st.wizStep === 3,
+      onEName: (e) => upD({ name: e.target.value }), onEDesc: (e) => upD({ desc: e.target.value }), onEDate: (e) => upD({ date: e.target.value }), onETime: (e) => upD({ time: e.target.value }), onELoc: (e) => upD({ location: e.target.value }),
+      eventTypes, draftTiers, visOptions,
+      toggleERecurring: () => upD({ recurring: !eDraft.recurring }), eRecTrack: eDraft.recurring ? '#7B61FF' : '#D8D2E6', eRecKnob: eDraft.recurring ? '20px' : '3px',
+      eReady, eReadyBg: eReady ? '#E3F5EA' : '#FCEFD6', eReadyBorder: eReady ? '#A7E3C0' : '#FDE68A', eReadyC: eReady ? '#176B3A' : '#9A6A12', eReadyIcon: eReady ? '✓' : '⚠',
+      eReadyTitle: eReady ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing'),
+      eReadySub: eReady ? L('Los boletos se abren al publicar.', 'Tickets open when you publish.') : L('Agrega nombre y fecha antes de publicar.', 'Add a name and date before publishing.'),
+      eReviewRows,
+      showWizFooter: view === 'wizard', wizBack, wizNext, wizProgress: L('Paso ', 'Step ') + (st.wizStep + 1) + L(' de ', ' of ') + wizStepDefs.length, wizNextLabel: st.wizStep >= wizStepDefs.length - 1 ? L('Publicar evento', 'Publish event') : L('Continuar', 'Continue'),
+      showAddFooter: inList, startAdd: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, eDraft: this.newDraft() }),
+      eSuccessTitle: (eDraft.name || L('Nuevo evento', 'New event')) + ' ' + L('está activo', 'is live'),
+      eSuccessSub: L('Los boletos están a la venta y el evento aparece en tu listado.', 'Tickets are on sale and the event is on your listing.'),
+      eShareE: () => this.setState({ view: 'list', listTab: 'upcoming' }), eBackToList: () => this.setState({ view: 'list', listTab: 'upcoming' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

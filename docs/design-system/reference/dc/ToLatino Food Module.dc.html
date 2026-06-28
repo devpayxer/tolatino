@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+@keyframes tlsheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+
+  <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Menú de comida · móvil</div>
+  </div>
+
+  <div style="position:relative;width:392px;height:852px;background:#F4F2F9;border-radius:42px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
+
+    <!-- STATUS BAR -->
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 4px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ back }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ headTitle }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <div style="display:flex;background:#F1EFFA;border-radius:999px;padding:3px;flex:none"><button onClick="{{ setEs }}" style="{{ esTab }}">ES</button><button onClick="{{ setEn }}" style="{{ enTab }}">EN</button></div>
+      <sc-if value="{{ showEye }}" hint-placeholder-val="{{ true }}"><button style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></sc-if>
+    </div>
+
+    <!-- SUB-TAB CHIPS (module home) -->
+    <sc-if value="{{ inModule }}" hint-placeholder-val="{{ true }}">
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:11px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ subtabs }}" as="s" hint-placeholder-count="7"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+    </div>
+    </sc-if>
+
+    <!-- BODY -->
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 16px">
+
+      <!-- ============ ITEMS TAB ============ -->
+      <sc-if value="{{ isItems }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Items">
+        <!-- listing link banner -->
+        <div style="display:flex;align-items:center;gap:11px;background:#F1EFFA;border-radius:13px;padding:11px 13px;margin-bottom:12px"><span style="width:30px;height:30px;border-radius:9px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8h-1"></path><path d="M15 12a4 4 0 0 1-4 4H8a4 4 0 0 1 0-8h1"></path></svg></span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.poweredTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.poweredSub }}</div></div></div>
+
+        <!-- search -->
+        <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid rgba(30,27,46,.1);border-radius:12px;padding:10px 13px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg><input value="{{ query }}" onInput="{{ onQuery }}" placeholder="{{ t.searchItems }}" style="flex:1;border:none;outline:none;background:none;font:500 13px 'Plus Jakarta Sans';color:#1E1B2E"></div>
+
+        <!-- category filter -->
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding:12px 0 4px">
+          <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}<span style="{{ c.nStyle }}">{{ c.n }}</span></button></sc-for>
+        </div>
+
+        <!-- smart sets -->
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding:4px 0 6px">
+          <sc-for list="{{ smartSets }}" as="s" hint-placeholder-count="4"><span style="flex:none;display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid rgba(30,27,46,.08);color:#6E6A85;padding:6px 11px;border-radius:999px;font:700 11px 'Plus Jakarta Sans'">{{ s.icon }}{{ s.label }}<span style="font-weight:800;color:#1E1B2E">{{ s.n }}</span></span></sc-for>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:8px 2px 10px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ listLabel }} <span style="color:#9A96AE">{{ shownCount }}</span></span><span style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ stockSummary }}</span></div>
+
+        <!-- item cards -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ items }}" as="it" hint-placeholder-count="5">
+          <div onClick="{{ it.onTap }}" style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:11px;display:flex;gap:12px;cursor:pointer;opacity:{{ it.op }}">
+            <div style="width:62px;height:62px;border-radius:12px;flex:none;position:relative;overflow:hidden;background:repeating-linear-gradient(135deg,{{ it.tile }})"><sc-if value="{{ it.ribbon }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:0;left:0;background:{{ it.ribbonBg }};color:#fff;font:800 8px 'Plus Jakarta Sans';padding:2px 6px;border-bottom-right-radius:7px">{{ it.ribbonText }}</span></sc-if></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ it.name }}</span><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ it.price }}</span></div>
+              <div style="font:500 11px 'Plus Jakarta Sans';color:#8A86A0;margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ it.desc }}</div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px">
+                <span style="display:inline-flex;align-items:center;gap:4px;background:{{ it.stockBg }};color:{{ it.stockC }};padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'"><span style="width:5px;height:5px;border-radius:50%;background:{{ it.stockC }}"></span>{{ it.stockLabel }}</span>
+                <span style="background:#F1EFFA;color:#6E6A85;padding:3px 8px;border-radius:7px;font:700 9.5px 'Plus Jakarta Sans'">{{ it.cat }}</span>
+                <sc-if value="{{ it.popular }}" hint-placeholder-val="{{ false }}"><span style="background:#FCEFD6;color:#9A6A12;padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'">🔥 {{ t.popular }}</span></sc-if>
+                <sc-for list="{{ it.diet }}" as="d" hint-placeholder-count="2"><span style="background:#E3F5EA;color:#1F8A4C;padding:3px 7px;border-radius:6px;font:800 9px 'Plus Jakarta Sans'">{{ d }}</span></sc-for>
+                <sc-if value="{{ it.hidden }}" hint-placeholder-val="{{ false }}"><span style="background:#ECE8F4;color:#9A96AE;padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'">{{ t.hidden }}</span></sc-if>
+              </div>
+            </div>
+          </div>
+          </sc-for>
+        </div>
+
+        <!-- performance -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-top:16px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">{{ t.perfTitle }}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:12px">
+            <div style="background:#F7F6FC;border-radius:11px;padding:10px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.menuRev }}</div><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px">$48.2k</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 18%</div></div>
+            <div style="background:#F7F6FC;border-radius:11px;padding:10px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.avgPrice }}</div><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px">$14.20</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 4%</div></div>
+            <div style="background:#F7F6FC;border-radius:11px;padding:10px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.mostLoved }}</div><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:3px;line-height:1.2">Country Loaf</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">184 ♥</div></div>
+          </div>
+          <div style="font:800 10px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">{{ t.top5 }}</div>
+          <sc-for list="{{ top5 }}" as="ts" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:10px;padding:6px 0"><span style="width:16px;font:800 11px 'Plus Jakarta Sans';color:#B7B3C6">{{ ts.rank }}</span><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font:700 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ ts.name }}</span><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE">{{ ts.loves }} ♥ · {{ ts.price }}</span></div><div style="height:5px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ ts.barC }};width:{{ ts.bar }}"></div></div></div></div></sc-for>
+        </div>
+
+        <!-- needs attention -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="display:inline-flex;align-items:center;gap:7px;font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B5791A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>{{ t.needsAttention }}</span><span style="background:#FCEFD6;color:#9A6A12;padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'">{{ attnCount }}</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ attention }}" as="a" hint-placeholder-count="3"><div style="display:flex;gap:10px;padding:10px;background:{{ a.bg }};border:1px solid {{ a.border }};border-radius:11px"><span style="width:26px;height:26px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;color:{{ a.iconC }}">{{ a.icon }}</span><div style="flex:1;min-width:0"><div style="font:800 11.5px 'Plus Jakarta Sans';color:{{ a.titleC }}">{{ a.title }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:{{ a.subC }};margin-top:1px;line-height:1.4">{{ a.sub }}</div></div><span style="font:800 10px 'Plus Jakarta Sans';color:#1E1B2E;background:#fff;border:1px solid rgba(30,27,46,.1);padding:6px 9px;border-radius:8px;white-space:nowrap;align-self:center">{{ a.action }}</span></div></sc-for>
+          </div>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ CATEGORIES TAB ============ -->
+      <sc-if value="{{ isCats }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Categorias">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ catTabSub }}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ catRows }}" as="c" hint-placeholder-count="6"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:11px;display:flex;align-items:center;gap:11px;opacity:{{ c.op }}"><div style="width:48px;height:48px;border-radius:11px;flex:none;position:relative;overflow:hidden;background:repeating-linear-gradient(135deg,{{ c.tile }})"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff">{{ c.icon }}</span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.name }}</span><sc-if value="{{ c.hidden }}" hint-placeholder-val="{{ false }}"><span style="background:#ECE8F4;color:#9A96AE;padding:2px 7px;border-radius:6px;font:800 8.5px 'Plus Jakarta Sans'">{{ t.hidden }}</span></sc-if></div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px"><span style="display:inline-flex;align-items:center;gap:3px;background:#F1EFFA;color:#6E6A85;padding:2px 7px;border-radius:6px;font:700 9px 'Plus Jakarta Sans'">🕐 {{ c.sched }}</span><span style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE">{{ c.n }} {{ t.itemsWord }}</span></div></div><div onClick="{{ c.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ c.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ c.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.addCategory }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ MODIFIERS TAB ============ -->
+      <sc-if value="{{ isMods }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Modificadores">
+        <div style="display:flex;align-items:center;gap:11px;background:#F1EFFA;border-radius:13px;padding:11px 13px;margin-bottom:14px"><span style="width:30px;height:30px;border-radius:9px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"></path></svg></span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.modReuseTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.modReuseSub }}</div></div></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ modGroups }}" as="m" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:13px"><div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ m.name }}</span><sc-if value="{{ m.req }}" hint-placeholder-val="{{ false }}"><span style="background:#EFEBFF;color:#6D4DF6;padding:2px 7px;border-radius:6px;font:800 8.5px 'Plus Jakarta Sans'">{{ t.required }}</span></sc-if><span style="margin-left:auto;font:600 10px 'Plus Jakarta Sans';color:#9A96AE">{{ m.typeLabel }} · {{ m.used }}</span></div><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ m.opts }}" as="o" hint-placeholder-count="3"><span style="background:#F7F6FC;border:1px solid rgba(30,27,46,.08);color:#56506E;padding:5px 9px;border-radius:8px;font:700 10.5px 'Plus Jakarta Sans'">{{ o.label }} <span style="color:{{ o.priceC }}">{{ o.price }}</span></span></sc-for></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.newGroup }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SCHEDULES TAB ============ -->
+      <sc-if value="{{ isSched }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Horarios">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ t.schedSub }}</div>
+        <!-- week mini grid -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:14px;margin-bottom:14px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">{{ t.weekSchedule }}</div>
+          <sc-for list="{{ weekRows }}" as="w" hint-placeholder-count="7"><div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span style="width:30px;font:700 10.5px 'Plus Jakarta Sans';color:#6E6A85;flex:none">{{ w.day }}</span><div style="flex:1;position:relative;height:18px;background:#F7F6FC;border-radius:5px">{{ w.bars }}</div></div></sc-for>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid rgba(30,27,46,.06)"><sc-for list="{{ daypartLegend }}" as="d" hint-placeholder-count="3"><span style="display:inline-flex;align-items:center;gap:5px;font:700 9.5px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:8px;height:8px;border-radius:3px;background:{{ d.color }}"></span>{{ d.label }}</span></sc-for></div>
+        </div>
+        <!-- dayparts -->
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.dayparts }}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ dayparts }}" as="d" hint-placeholder-count="4"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px;display:flex;align-items:center;gap:11px;opacity:{{ d.op }}"><span style="width:36px;height:36px;border-radius:9px;background:{{ d.bg }};color:{{ d.color }};display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{ d.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.name }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ d.time }} · {{ d.items }} {{ t.itemsWord }}</div></div><div onClick="{{ d.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ d.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ d.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ {{ t.newDaypart }}</button>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ PROMOTIONS TAB ============ -->
+      <sc-if value="{{ isPromos }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Promociones">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.active }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">4</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.redeems }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">840</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 18%</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.promoRev }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">$10.3k</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">▲ 12%</div></div>
+        </div>
+        <div style="font:800 10px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px">{{ t.createPromo }}</div>
+        <div data-noscroll style="display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px">
+          <sc-for list="{{ promoTypes }}" as="p" hint-placeholder-count="4"><div style="flex:none;width:130px;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:12px;cursor:pointer"><span style="width:34px;height:34px;border-radius:9px;background:{{ p.bg }};color:{{ p.c }};display:flex;align-items:center;justify-content:center">{{ p.icon }}</span><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:8px">{{ p.label }}</div><div style="font:500 9.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.35">{{ p.sub }}</div></div></sc-for>
+        </div>
+        <div style="font:800 10px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px">{{ t.yourPromos }}</div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <sc-for list="{{ promos }}" as="p" hint-placeholder-count="3"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;overflow:hidden;opacity:{{ p.op }}"><div style="height:64px;position:relative;background:repeating-linear-gradient(135deg,{{ p.tile }})"><span style="position:absolute;top:9px;left:9px;background:{{ p.typeBg }};color:{{ p.typeC }};padding:3px 8px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ p.type }}</span><span style="position:absolute;top:9px;right:9px;background:{{ p.statusBg }};color:{{ p.statusC }};padding:3px 8px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ p.status }}</span></div><div style="padding:12px"><div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.name }}</div><div style="font:500 11px 'Plus Jakarta Sans';color:#7C7790;margin-top:3px;line-height:1.4">{{ p.desc }}</div><div style="display:flex;gap:16px;margin-top:11px;padding-top:11px;border-top:1px solid rgba(30,27,46,.06)"><div><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.redeemed }}</div><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.redeem }}</div></div><div><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.revenue }}</div><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.rev }}</div></div></div></div></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ ALLERGENS TAB ============ -->
+      <sc-if value="{{ isAllerg }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Alergenos">
+        <div style="display:flex;align-items:center;gap:11px;background:#F1EFFA;border-radius:13px;padding:11px 13px;margin-bottom:14px"><span style="width:30px;height:30px;border-radius:9px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 8 8 8 8s8-3 8-8V6z"></path></svg></span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.allergPublic }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ t.allergSub }}</div></div></div>
+        <div style="display:flex;gap:14px;margin-bottom:12px;padding:0 2px"><span style="display:inline-flex;align-items:center;gap:6px;font:700 10px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:18px;height:18px;border-radius:5px;background:#FDE7EF;color:#D6336C;display:flex;align-items:center;justify-content:center;font:800 10px 'Plus Jakarta Sans'">✓</span>{{ t.contains }}</span><span style="display:inline-flex;align-items:center;gap:6px;font:700 10px 'Plus Jakarta Sans';color:#6E6A85"><span style="width:18px;height:18px;border-radius:5px;background:#FCEFD6;color:#9A6A12;display:flex;align-items:center;justify-content:center;font:800 11px 'Plus Jakarta Sans'">~</span>{{ t.mayContain }}</span></div>
+        <div data-noscroll style="overflow-x:auto;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px">
+          <div style="min-width:520px">
+            <div style="display:grid;grid-template-columns:1.6fr repeat(7,1fr);padding:10px 12px;border-bottom:1px solid rgba(30,27,46,.08);background:#F7F6FC"><span style="font:800 9px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.05em">{{ t.itemWord }}</span><sc-for list="{{ allergenCols }}" as="c" hint-placeholder-count="7"><span style="font:800 8.5px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;text-align:center">{{ c }}</span></sc-for></div>
+            <sc-for list="{{ allergenRows }}" as="r" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:1.6fr repeat(7,1fr);padding:11px 12px;border-bottom:1px solid {{ r.border }};align-items:center"><div style="min-width:0"><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ r.name }}</div><div style="font:500 9.5px 'Plus Jakarta Sans';color:#9A96AE">{{ r.cat }}</div></div><sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="7"><span style="display:flex;justify-content:center">{{ cell }}</span></sc-for></div></sc-for>
+          </div>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ STOCK & 86 TAB ============ -->
+      <sc-if value="{{ isStock }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Stock">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">{{ t.inStock }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">63</div><div style="font:800 9px 'Plus Jakarta Sans';color:#1F9D57;margin-top:1px">✓ {{ t.available }}</div></div>
+          <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A6A12">{{ t.lowStock }}</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">4</div><div style="font:800 9px 'Plus Jakarta Sans';color:#9A6A12;margin-top:1px">⚠ {{ t.restockSoon }}</div></div>
+          <div style="background:#FFF1F2;border:1px solid #FECDD3;border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#D6336C">86'd</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">2</div><div style="font:800 9px 'Plus Jakarta Sans';color:#D6336C;margin-top:1px">✕ {{ t.hidden }}</div></div>
+        </div>
+        <!-- 86'd -->
+        <div style="background:#fff;border:1px solid #FECDD3;border-radius:14px;overflow:hidden;margin-bottom:14px">
+          <div style="background:#FFF1F2;padding:11px 13px;display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D6336C" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg><span style="font:800 12px 'Plus Jakarta Sans';color:#D6336C">{{ t.currently86 }}</span></div>
+          <sc-for list="{{ stock86 }}" as="s" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:11px;padding:11px 13px;border-top:1px solid rgba(30,27,46,.05)"><div style="width:40px;height:40px;border-radius:10px;flex:none;background:repeating-linear-gradient(135deg,{{ s.tile }})"></div><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ s.name }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#D6336C;margin-top:1px">86'd {{ s.since }} · <span style="color:#9A96AE">{{ s.note }}</span></div></div><span style="font:800 10px 'Plus Jakarta Sans';color:#fff;background:#7B61FF;padding:7px 11px;border-radius:9px;white-space:nowrap;align-self:center">{{ t.restock }}</span></div></sc-for>
+        </div>
+        <!-- low stock -->
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.lowStockTitle }}</div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;overflow:hidden;margin-bottom:14px">
+          <sc-for list="{{ stockLow }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:11px;padding:11px 13px;border-bottom:1px solid {{ s.border }}"><div style="width:40px;height:40px;border-radius:10px;flex:none;background:repeating-linear-gradient(135deg,{{ s.tile }})"></div><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ s.name }}</div><div style="display:flex;align-items:center;gap:8px;margin-top:5px"><div style="flex:1;height:5px;background:#ECE8F4;border-radius:99px;overflow:hidden"><div style="height:100%;width:{{ s.pct }};background:{{ s.barC }}"></div></div><span style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap">{{ s.left }}/{{ s.limit }}</span></div></div></div></sc-for>
+        </div>
+        <!-- automation -->
+        <div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E;margin:2px 2px 9px">{{ t.automation }}</div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:4px 13px">
+          <sc-for list="{{ stockRules }}" as="r" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid {{ r.border }}"><div style="flex:1;min-width:0"><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.title }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ r.sub }}</div></div><div onClick="{{ r.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ r.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ r.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <div style="height:60px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ ADD-ITEM WIZARD ============ -->
+      <sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="AddItem">
+        <!-- stepper -->
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:4px">
+          <sc-for list="{{ wizSteps }}" as="s" hint-placeholder-count="6"><button onClick="{{ s.onTap }}" style="{{ s.style }}"><span style="{{ s.dotStyle }}">{{ s.dot }}</span>{{ s.label }}</button></sc-for>
+        </div>
+
+        <!-- live preview card -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-bottom:14px">
+          <div style="height:104px;position:relative;background:repeating-linear-gradient(135deg,{{ draftTile }})"><div style="position:absolute;top:9px;left:9px;display:flex;gap:6px"><sc-if value="{{ draftNew }}" hint-placeholder-val="{{ true }}"><span style="background:#EFEBFF;color:#6D4DF6;padding:3px 8px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ t.new }}</span></sc-if><sc-if value="{{ draftPopular }}" hint-placeholder-val="{{ false }}"><span style="background:#FCEFD6;color:#9A6A12;padding:3px 8px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'">{{ t.popular }}</span></sc-if></div></div>
+          <div style="padding:13px"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><span style="font:800 15px 'Plus Jakarta Sans';color:{{ draftNameC }}">{{ draftName }}</span><span style="font:800 15px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ draftPrice }}</span></div><div style="font:500 11.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:4px;line-height:1.45">{{ draftDesc }}</div></div>
+        </div>
+
+        <!-- STEP CONTENT -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;padding:15px">
+          <div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:14px">{{ wizStepTitle }}</div>
+
+          <!-- step details -->
+          <sc-if value="{{ wDetails }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fItemName }} *</div><input value="{{ draft.name }}" onInput="{{ onName }}" placeholder="{{ t.fNamePh }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fDesc }}</div><textarea value="{{ draft.desc }}" onInput="{{ onDesc }}" placeholder="{{ t.fDescPh }}" data-noscroll style="width:100%;height:70px;resize:none;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:500 12.5px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5"></textarea></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fCategory }} *</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ wizCats }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.flags }}</div><div style="display:flex;gap:8px"><sc-for list="{{ wizFlags }}" as="f" hint-placeholder-count="3"><button onClick="{{ f.onTap }}" style="{{ f.style }}">{{ f.label }}</button></sc-for></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.photos }}</div><div onClick="{{ addPhoto }}" style="height:120px;border:1.5px dashed #C9C2E6;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:#F7F6FC"><sc-if value="{{ hasPhoto }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,{{ draftTile }})"></div></sc-if><sc-if value="{{ noPhoto }}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7B61FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4"></path><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg><div style="font:700 12px 'Plus Jakarta Sans';color:#56506E">{{ t.dropPhoto }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE">{{ t.photoHint }}</div></sc-if></div></div>
+          </div>
+          </sc-if>
+
+          <!-- step pricing -->
+          <sc-if value="{{ wPricing }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.price }} *</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 13px"><span style="font:700 13px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ draft.price }}" onInput="{{ onPrice }}" placeholder="0.00" style="flex:1;border:none;outline:none;padding:11px 8px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.compareAt }}</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 13px"><span style="font:700 13px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ draft.compareAt }}" onInput="{{ onCompare }}" placeholder="—" style="flex:1;border:none;outline:none;padding:11px 8px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.soldIn }}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ channels }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.onTap }}" style="{{ c.style }}"><span style="{{ c.ckStyle }}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>{{ c.icon }}<span style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.label }}</span></button></sc-for></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.schedule }}</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ wizScheds }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}</button></sc-for></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.daysAvail }}</div><div style="display:flex;gap:6px"><sc-for list="{{ dayToggles }}" as="d" hint-placeholder-count="7"><button onClick="{{ d.onTap }}" style="{{ d.style }}">{{ d.label }}</button></sc-for></div></div>
+            <div style="display:flex;align-items:center;gap:9px;background:#E3F5EA;border-radius:11px;padding:11px 13px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F8A4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg><div style="font:500 10.5px 'Plus Jakarta Sans';color:#176B3A;line-height:1.4">{{ t.commissionNote }}</div></div>
+          </div>
+          </sc-if>
+
+          <!-- step modifiers -->
+          <sc-if value="{{ wMods }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font:500 11px 'Plus Jakarta Sans';color:#8A86A0;line-height:1.45;margin-bottom:2px">{{ t.modsIntro }}</div>
+            <sc-for list="{{ wizMods }}" as="m" hint-placeholder-count="5"><button onClick="{{ m.onTap }}" style="{{ m.style }}"><span style="{{ m.ckStyle }}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span><span style="width:30px;height:30px;border-radius:8px;background:#EFEBFF;display:flex;align-items:center;justify-content:center;flex:none">{{ m.icon }}</span><span style="flex:1;min-width:0;text-align:left"><span style="display:flex;align-items:center;gap:6px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ m.name }}</span><sc-if value="{{ m.req }}" hint-placeholder-val="{{ false }}"><span style="background:#EFEBFF;color:#6D4DF6;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">{{ t.required }}</span></sc-if></span><span style="display:block;font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ m.meta }}</span></span></button></sc-for>
+            <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:12px;border-radius:11px;font:800 12px 'Plus Jakarta Sans';margin-top:4px">+ {{ t.newGroup }}</button>
+          </div>
+          </sc-if>
+
+          <!-- step dietary -->
+          <sc-if value="{{ wDietary }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.dietTags }}</div><div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ dietTags }}" as="d" hint-placeholder-count="6"><button onClick="{{ d.onTap }}" style="{{ d.style }}">{{ d.label }}</button></sc-for></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.allergensCycle }}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ allergenCells }}" as="a" hint-placeholder-count="6"><button onClick="{{ a.onTap }}" style="{{ a.style }}"><span style="{{ a.swatchStyle }}">{{ a.swatch }}</span><span style="flex:1;text-align:left"><span style="display:block;font:800 11.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ a.name }}</span><span style="display:block;font:600 9.5px 'Plus Jakarta Sans';color:{{ a.stC }}">{{ a.st }}</span></span></button></sc-for></div></div>
+          </div>
+          </sc-if>
+
+          <!-- step stock -->
+          <sc-if value="{{ wStock }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.dailyLimit }}</div><input value="{{ draft.dailyLimit }}" onInput="{{ onLimit }}" placeholder="{{ t.unlimited }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 12.5px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.whenOut }}</div><div style="border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.autoPause }}</div></div></div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.automation }}</div><div style="display:flex;flex-direction:column;gap:9px"><sc-for list="{{ wizStockRules }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:11px;padding:11px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><div style="flex:1;min-width:0"><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.title }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ r.sub }}</div></div><div onClick="{{ r.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ r.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ r.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for></div></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:12px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><div style="flex:1"><div style="font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.visibleAtPublish }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ t.visibleSub }}</div></div><div onClick="{{ toggleVisible }}" style="width:42px;height:25px;border-radius:13px;background:{{ visibleTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ visibleKnob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div>
+          </div>
+          </sc-if>
+
+          <!-- step review -->
+          <sc-if value="{{ wReview }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:11px;background:{{ readyBg }};border:1px solid {{ readyBorder }};border-radius:12px;padding:12px 13px"><span style="width:30px;height:30px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;color:{{ readyC }}">{{ readyIcon }}</span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:{{ readyC }}">{{ readyTitle }}</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">{{ readySub }}</div></div></div>
+            <div style="border:1px solid rgba(30,27,46,.08);border-radius:12px;overflow:hidden">
+              <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid {{ r.border }}"><span style="width:74px;flex:none;font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ r.k }}</span><span style="flex:1;min-width:0;font:700 11.5px 'Plus Jakarta Sans';color:{{ r.vC }}">{{ r.v }}</span><span onClick="{{ r.onEdit }}" style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6;cursor:pointer;flex:none">{{ t.edit }}</span></div></sc-for>
+            </div>
+            <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.publishOptions }}</div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ publishModes }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.onTap }}" style="{{ p.style }}"><span style="width:30px;height:30px;border-radius:8px;background:#EFEBFF;display:flex;align-items:center;justify-content:center;flex:none">{{ p.icon }}</span><span style="flex:1;text-align:left"><span style="display:block;font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ p.label }}</span><span style="display:block;font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ p.sub }}</span></span><span style="{{ p.radioStyle }}"><sc-if value="{{ p.on }}" hint-placeholder-val="{{ true }}"><span style="width:8px;height:8px;border-radius:50%;background:#7B61FF"></span></sc-if></span></button></sc-for></div></div>
+          </div>
+          </sc-if>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ SUCCESS SCREEN ============ -->
+      <sc-if value="{{ isSuccess }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Published" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:24px">
+        <div style="width:64px;height:64px;border-radius:18px;background:#E3F5EA;color:#1F8A4C;display:flex;align-items:center;justify-content:center;margin-bottom:14px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1F9D57" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        <div style="font:800 21px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em">{{ successTitle }}</div>
+        <div style="font:500 13px 'Plus Jakarta Sans';color:#8A86A0;margin-top:8px;line-height:1.5;max-width:300px">{{ successSub }}</div>
+        <div style="width:100%;background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;overflow:hidden;margin-top:20px;text-align:left">
+          <div style="height:110px;background:repeating-linear-gradient(135deg,{{ draftTile }})"></div>
+          <div style="padding:13px;display:flex;align-items:center;justify-content:space-between"><div style="min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ draftName }}</div><div style="font:500 11.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ draftCatLabel }} · {{ draftPrice }}</div></div><span style="background:#E3F5EA;color:#1F8A4C;padding:5px 11px;border-radius:8px;font:800 10.5px 'Plus Jakarta Sans';flex:none">{{ t.live }}</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;width:100%;margin-top:20px">
+          <button onClick="{{ addAnother }}" style="width:100%;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">+ {{ t.addAnother }}</button>
+          <button onClick="{{ backToList }}" style="width:100%;border:1.5px solid #E2DEF4;cursor:pointer;background:#fff;color:#1E1B2E;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans'">{{ t.backToMenu }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- FOOTER (module home: Add item · wizard: Back/Continue) -->
+    <sc-if value="{{ showAddFooter }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ startAdd }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ addLabel }}</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showWizFooter }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:10px;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ wizBack }}" style="width:46px;height:46px;border-radius:13px;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;text-align:center;font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ wizProgress }}</div>
+      <button onClick="{{ wizNext }}" style="flex:1;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)">{{ wizNextLabel }}</button>
+    </div>
+    </sc-if>
+
+    <!-- EDIT ITEM BOTTOM SHEET -->
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:30;background:rgba(28,24,46,.5)"></div>
+    <div data-noscroll style="position:absolute;left:0;right:0;bottom:0;z-index:31;max-height:88%;overflow-y:auto;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -18px 50px rgba(28,24,46,.3);animation:tlsheet .22s ease">
+      <div style="position:sticky;top:0;background:#fff;padding:9px 0 6px;display:flex;justify-content:center;border-radius:24px 24px 0 0"><span style="width:42px;height:5px;border-radius:3px;background:#E3DEF2"></span><button onClick="{{ closeSheet }}" style="position:absolute;right:14px;top:10px;width:30px;height:30px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button></div>
+      <div style="height:124px;position:relative;background:repeating-linear-gradient(135deg,{{ editTile }})"><div style="position:absolute;right:12px;bottom:12px;display:flex;gap:7px"><span style="background:rgba(255,255,255,.92);color:#1E1B2E;padding:7px 11px;border-radius:9px;font:800 11px 'Plus Jakarta Sans'">📷 {{ t.photo }}</span></div></div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.editItem }}</span><span style="{{ syncStyle }}">{{ syncLabel }}</span></div>
+        <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fItemName }}</div><input value="{{ edit.name }}" onInput="{{ onEditName }}" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+        <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.fDesc }}</div><textarea value="{{ edit.desc }}" onInput="{{ onEditDesc }}" data-noscroll style="width:100%;height:64px;resize:none;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:500 12px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5"></textarea></div>
+        <div style="display:flex;gap:11px"><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.price }}</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 13px"><span style="font:700 13px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ edit.price }}" onInput="{{ onEditPrice }}" style="flex:1;border:none;outline:none;padding:11px 8px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div><div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">{{ t.availability }}</div><div data-noscroll style="display:flex;gap:5px;overflow-x:auto"><sc-for list="{{ editStockOpts }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}</button></sc-for></div></div></div>
+        <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:7px">{{ t.dietTags }}</div><div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ editDiet }}" as="d" hint-placeholder-count="4"><button onClick="{{ d.onTap }}" style="{{ d.style }}">{{ d.label }}</button></sc-for></div></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:12px;border:1px solid rgba(30,27,46,.08);border-radius:11px;background:#F7F6FC"><div style="flex:1"><div style="font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ t.visibleListing }}</div><div style="font:500 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px;line-height:1.4">{{ t.visibleListingSub }}</div></div><div onClick="{{ toggleEditVisible }}" style="width:42px;height:25px;border-radius:13px;background:{{ editVisTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ editVisKnob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div>
+        <div style="display:flex;gap:9px;padding-top:4px"><button onClick="{{ deleteItem }}" style="border:1.5px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:13px 16px;border-radius:12px;font:800 12.5px 'Plus Jakarta Sans'">{{ t.delete }}</button><button onClick="{{ saveEdit }}" style="flex:1;border:none;cursor:pointer;background:{{ saveBg }};color:#fff;padding:13px;border-radius:12px;font:800 13px 'Plus Jakarta Sans'">{{ t.saveChanges }}</button></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- TOAST -->
+    <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:40;background:#1E1B2E;color:#fff;padding:11px 18px;border-radius:12px;font:700 12.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px rgba(28,24,46,.4);white-space:nowrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v === null || v === '') ? d : v; } catch (e) { return d; } }
+  _home() { try { const inq = new URLSearchParams(location.search); const o = new URLSearchParams(); ['tier','cat'].forEach((k) => { if (inq.get(k)) o.set(k, inq.get(k)); }); o.set('lang', (this.state && this.state.lang) || 'es'); location.href = 'ToLatino Business Dashboard Mobile.dc.html?' + o.toString(); } catch (e) {} }
+  state = {
+    lang: this._qp('lang', 'es'), view: 'module', subtab: 'items', cat: 'all', query: '',
+    items: null, sheetId: null, edit: null,
+    wizStep: 0, wizMax: 0, draft: null,
+    catState: null, daypartState: null, stockRuleState: null,
+    toast: '', toastT: null,
+  };
+
+  CATS() {
+    return [
+      { id: 'bread', es: 'Pan y panes', en: 'Bread & loaves', tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px', ic: 'cake' },
+      { id: 'pastry', es: 'Pan dulce', en: 'Pastries', tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px', ic: 'coffee' },
+      { id: 'pizza', es: 'Pizza', en: 'Pizza', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', ic: 'pizza' },
+      { id: 'pasta', es: 'Pasta', en: 'Pasta', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', ic: 'utensils' },
+      { id: 'salad', es: 'Ensaladas', en: 'Salads', tile: '#E3F5EA 0 8px,#D6E7D0 8px 16px', ic: 'leaf' },
+      { id: 'drinks', es: 'Café y té', en: 'Coffee & tea', tile: '#EDE0D4 0 8px,#DFCBB6 8px 16px', ic: 'coffee' },
+      { id: 'wine', es: 'Vino y cócteles', en: 'Wine & cocktails', tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', ic: 'wine' },
+    ];
+  }
+
+  seed() {
+    return [
+      { id: 1, name: 'Country Loaf', cat: 'bread', price: 12, desc: 'Pan de campo de masa madre. Trigo integral, horneado a diario.', descEn: 'Naturally-leavened country bread. Whole wheat, baked daily.', diet: ['V'], stock: 'in', popular: true, isNew: false, loves: 184, visible: true },
+      { id: 2, name: 'Pizza Margherita', cat: 'pizza', price: 18, desc: 'Tomate San Marzano, fior di latte, albahaca, AOVE. 90 seg al horno.', descEn: 'San Marzano tomato, fior di latte, basil. Wood-fired 90 sec.', diet: ['V'], stock: 'in', popular: true, isNew: false, loves: 142, visible: true },
+      { id: 3, name: 'Morning Bun', cat: 'pastry', price: 5, desc: 'Masa de croissant con azúcar de canela y naranja.', descEn: 'Croissant dough with cinnamon-orange sugar.', diet: ['V'], stock: 'low', popular: false, isNew: true, loves: 126, visible: true },
+      { id: 4, name: 'Menú degustación', cat: 'wine', price: 140, desc: '5 tiempos, maridaje opcional (+$60). Mar–Dom, solo cena.', descEn: '5 courses, optional pairing (+$60). Tue–Sun, dinner only.', diet: [], stock: 'in', popular: true, isNew: false, loves: 42, visible: true },
+      { id: 5, name: 'Ensalada de jitomate', cat: 'salad', price: 13, desc: 'Jitomates heirloom, albahaca, sal de mar, AOVE.', descEn: 'Heritage tomatoes, basil, sea salt, EVOO.', diet: ['VG'], stock: 'in', popular: false, isNew: true, loves: 38, visible: true },
+      { id: 6, name: 'Tiramisú', cat: 'pastry', price: 9, desc: 'Clásico — savoiardi al espresso, mascarpone, cacao.', descEn: 'Classic — espresso savoiardi, mascarpone, cocoa.', diet: ['V'], stock: 'in', popular: false, isNew: false, loves: 58, visible: true },
+      { id: 7, name: 'Cortado', cat: 'drinks', price: 4.5, desc: 'Espresso y leche vaporizada a partes iguales.', descEn: 'Equal parts espresso & steamed milk.', diet: ['V'], stock: 'in', popular: false, isNew: false, loves: 320, visible: true },
+      { id: 8, name: 'Masa madre sin gluten', cat: 'bread', price: 14, desc: 'Receta sin gluten, fermento de 36h. Cantidad limitada.', descEn: 'Gluten-free recipe, 36-hour ferment. Limited daily.', diet: ['GF', 'V'], stock: 'out', popular: false, isNew: false, loves: 24, visible: true },
+      { id: 9, name: 'Pizza anchoa y burrata', cat: 'pizza', price: 22, desc: 'Anchoa del Cantábrico, burrata, limón, aceite de oliva.', descEn: 'Cantabrian anchovy, burrata, lemon, olive oil.', diet: [], stock: 'in', popular: false, isNew: false, loves: 72, visible: false },
+    ];
+  }
+
+  items() { return this.state.items || this.seed(); }
+  commit(next) { this.setState({ items: next }); }
+  flash(m) { clearTimeout(this.state.toastT); const tt = setTimeout(() => this.setState({ toast: '' }), 1900); this.setState({ toast: m, toastT: tt }); }
+
+  newDraft() {
+    return { name: '', desc: '', cat: 'pizza', price: '', compareAt: '', channels: { dinein: true, pickup: true, delivery: true, catering: false }, sched: 'all-day', days: [1, 1, 1, 1, 1, 1, 1], mods: {}, diet: ['Vegetariano'], allergens: [0, 0, 0, 0, 0, 0], flags: { isNew: true, popular: false }, dailyLimit: '', visible: true, publishMode: 'now', photos: 0 };
+  }
+
+  I(name, s, stroke) {
+    const P = {
+      cake: ['M4 20h16v-7H4z', 'M6 13V9a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4', 'M12 7V4'],
+      coffee: ['M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z', 'M17 9h2a2 2 0 0 1 0 4h-2', 'M7 4v1M10 4v1M13 4v1'],
+      pizza: ['M3 6l9-3 9 3-9 15z', 'M9 8.5h.01M11 13h.01M14 9h.01'],
+      utensils: ['M6 3v6a2 2 0 0 0 4 0V3', 'M8 9v12', 'M16 3c-1.4 0-2.3 1.6-2.3 4S14.6 10.5 16 10.5V21'],
+      leaf: ['M4 12c0 5 3 8 8 8 0-8-3-12-8-12', 'M20 5c0 9-5 12-9 13'],
+      wine: ['M8 3h8l-1 7a3 3 0 0 1-6 0z', 'M12 13v6', 'M9 21h6'],
+      grid: ['M4 4h7v7H4z', 'M13 4h7v7h-7z', 'M4 13h7v7H4z', 'M13 13h7v7h-7z'],
+      plus: ['M12 5v14', 'M5 12h14'],
+      tag: ['M3 11l8-8 9 9-8 8z', 'M7 7h.01'],
+      bag: ['M6 7h12l1 13H5z', 'M9 7a3 3 0 0 1 6 0'],
+      gift: ['M4 11h16v9H4z', 'M2 7h20v4H2z', 'M12 7v13', 'M12 7S10 3 8 4.5 9.5 7 12 7zM12 7s2-4 4-2.5S14.5 7 12 7z'],
+      clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7v5l3 2'],
+      dollar: ['M12 2v20', 'M17 6a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1A4 4 0 0 1 7 18'],
+      truck: ['M2.5 5h11v11h-11z', 'M13.5 8h3.5l3 3v5h-6.5', 'M6 19a2 2 0 1 0 0-.01M17 19a2 2 0 1 0 0-.01'],
+      zap: ['M13 2 3 14h7l-1 8 10-12h-7z'],
+      cal: ['M4 5h16v16H4z', 'M4 10h16', 'M9 3v4M15 3v4'],
+      copy: ['M9 9h11v11H9z', 'M5 15V4h11'],
+      check: ['M20 6 9 17l-5-5'],
+      sparkle: ['M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'],
+    };
+    const paths = P[name] || P.grid;
+    return React.createElement('svg', { width: s || 15, height: s || 15, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  renderVals() {
+    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const I = (n, s, c) => this.I(n, s, c);
+    const view = st.view, subtab = st.subtab;
+    const items = this.items();
+    const cats = this.CATS();
+    const catOf = (id) => cats.find((c) => c.id === id) || cats[0];
+    const money = (n) => '$' + Number(n).toFixed(2);
+
+    const stockMeta = {
+      in: { bg: '#E3F5EA', c: '#1F8A4C', es: 'En stock', en: 'In stock' },
+      low: { bg: '#FCEFD6', c: '#9A6A12', es: 'Bajo · 6', en: 'Low · 6' },
+      out: { bg: '#FDE7EF', c: '#D6336C', es: 'Agotado', en: 'Sold out' },
+    };
+
+    const chip = (active) => 'flex:none;border:none;cursor:pointer;padding:8px 13px;border-radius:999px;font:' + (active ? '800' : '700') + " 12px 'Plus Jakarta Sans';" + (active ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E');
+    const langTab = (active) => ({ border: 'none', cursor: 'pointer', padding: '5px 11px', borderRadius: '999px', fontWeight: 800, fontSize: '11px', fontFamily: "'Plus Jakarta Sans'", background: active ? '#7B61FF' : 'transparent', color: active ? '#fff' : '#6E6A85' });
+
+    // ===== subtabs =====
+    const subtabDefs = [['items', L('Platillos', 'Items')], ['categories', L('Categorías', 'Categories')], ['mods', L('Modificadores', 'Modifiers')], ['schedules', L('Horarios', 'Schedules')], ['promos', L('Promociones', 'Promos')], ['allergens', L('Alérgenos', 'Allergens')], ['stock', L('Stock & 86', 'Stock & 86')]];
+    const subtabs = subtabDefs.map((s) => ({ label: s[1], onTap: () => this.setState({ subtab: s[0] }), style: chip(subtab === s[0]) }));
+
+    const t = {
+      poweredTitle: L('Este menú alimenta tu listado', 'This menu powers your listing'),
+      poweredSub: L('Cada cambio aparece en tu página pública.', 'Every edit appears on your public page.'),
+      searchItems: L('Buscar platillos, ingredientes…', 'Search items, ingredients…'),
+      popular: L('Popular', 'Popular'), hidden: L('Oculto', 'Hidden'),
+      perfTitle: L('Rendimiento del menú · 30 días', 'Menu performance · 30 days'),
+      menuRev: L('Ingresos', 'Revenue'), avgPrice: L('Precio prom.', 'Avg price'), mostLoved: L('Más amado', 'Most loved'),
+      top5: L('Top 5 por ♥', 'Top 5 by ♥'),
+      needsAttention: L('Requiere atención', 'Needs attention'),
+      itemsWord: L('platillos', 'items'), itemWord: L('Platillo', 'Item'),
+      addCategory: L('Agregar categoría', 'Add category'), required: L('Obligatorio', 'Required'), newGroup: L('Nuevo grupo', 'New group'),
+      modReuseTitle: L('Reutilizables en tus platillos', 'Reusable across items'),
+      modReuseSub: L('Crea un grupo una vez, úsalo en cualquier platillo.', 'Build a group once, use it on any item.'),
+      schedSub: L('Define qué se muestra y cuándo a lo largo del día.', 'Set what shows and when through the day.'),
+      weekSchedule: L('Horario semanal del menú', 'Weekly menu schedule'), dayparts: L('Franjas del día', 'Dayparts'), newDaypart: L('Nueva franja', 'New daypart'),
+      active: L('Activas', 'Active'), redeems: L('Canjes · 30d', 'Redeems · 30d'), promoRev: L('Ingreso promo', 'Promo rev'),
+      createPromo: L('Crear promoción', 'Create a promotion'), yourPromos: L('Tus promociones', 'Your promotions'),
+      redeemed: L('Canjeado', 'Redeemed'), revenue: L('Ingresos', 'Revenue'),
+      allergPublic: L('Los alérgenos se muestran en tu menú público', 'Allergens appear on your public menu'),
+      allergSub: L('Marca con precisión. Los clientes filtran por necesidad dietética.', 'Mark accurately. Guests filter by dietary need.'),
+      contains: L('Contiene', 'Contains'), mayContain: L('Puede contener', 'May contain'),
+      inStock: L('En stock', 'In stock'), available: L('Disponible', 'Available'), lowStock: L('Bajo', 'Low'), restockSoon: L('Reabastecer', 'Restock'),
+      currently86: L("86'd ahora · oculto del menú", "Currently 86'd · hidden"), restock: L('Reabastecer', 'Restock'),
+      lowStockTitle: L('Bajo stock', 'Low stock'), automation: L('Automatización', 'Automation'),
+      // wizard
+      new: L('Nuevo', 'New'),
+      fItemName: L('Nombre del platillo', 'Item name'), fNamePh: L('Ej. Margherita al horno', 'e.g. Wood-fired Margherita'),
+      fDesc: L('Descripción', 'Description'), fDescPh: L('Ingredientes clave, qué lo hace especial…', 'Key ingredients, what makes it special…'),
+      fCategory: L('Categoría', 'Category'), flags: L('Etiquetas', 'Flags'), photos: L('Fotos', 'Photos'),
+      dropPhoto: L('Arrastra o toca para subir', 'Drag or tap to upload'), photoHint: L('JPG o PNG · 4:3 ideal', 'JPG or PNG · 4:3 best'),
+      price: L('Precio', 'Price'), compareAt: L('Precio anterior', 'Compare-at'),
+      soldIn: L('Se vende en', 'Sold in'), schedule: L('Horario', 'Schedule'), daysAvail: L('Días disponibles', 'Days available'),
+      commissionNote: L('Los pedidos por Entrega incluyen 12% de comisión.', 'Delivery orders include a 12% partner fee.'),
+      modsIntro: L('Adjunta grupos reutilizables: tamaños, extras, opciones. Opcional.', 'Attach reusable groups: sizes, add-ons, choices. Optional.'),
+      dietTags: L('Etiquetas dietéticas', 'Dietary tags'), allergensCycle: L('Alérgenos · toca para ciclar', 'Allergens · tap to cycle'),
+      dailyLimit: L('Límite diario', 'Daily limit'), unlimited: L('Ilimitado', 'Unlimited'), whenOut: L('Al agotarse', 'When out'), autoPause: L('Auto-pausar en 0', 'Auto-pause at 0'),
+      visibleAtPublish: L('Visible al publicar', 'Visible at publish'), visibleSub: L('Apágalo para publicar oculto y revelar luego.', 'Turn off to publish hidden, reveal later.'),
+      edit: L('Editar', 'Edit'), publishOptions: L('Opciones de publicación', 'Publish options'),
+      live: L('Activo', 'Live'), addAnother: L('Agregar otro platillo', 'Add another item'), backToMenu: L('Volver al menú', 'Back to menu'),
+      photo: L('Foto', 'Photo'), editItem: L('Editar platillo', 'Edit item'),
+      availability: L('Disponibilidad', 'Availability'), visibleListing: L('Visible en el listado', 'Visible on listing'),
+      visibleListingSub: L('Apágalo para ocultar sin eliminar.', 'Turn off to hide without deleting.'),
+      delete: L('Eliminar', 'Delete'), saveChanges: L('Guardar cambios', 'Save changes'),
+    };
+
+    // ===== ITEMS data =====
+    let filtered = st.cat === 'all' ? items : items.filter((i) => i.cat === st.cat);
+    if (st.query.trim()) { const q = st.query.toLowerCase(); filtered = filtered.filter((i) => (i.name + ' ' + i.desc).toLowerCase().includes(q)); }
+    const lowCount = items.filter((i) => i.stock === 'low').length, outCount = items.filter((i) => i.stock === 'out').length;
+    const visibleCount = items.filter((i) => i.visible).length;
+
+    const catFilters = [{ id: 'all', label: L('Todos', 'All'), n: items.length }].concat(cats.filter((c) => items.some((i) => i.cat === c.id)).map((c) => ({ id: c.id, label: L(c.es, c.en), n: items.filter((i) => i.cat === c.id).length }))).map((c) => ({ label: c.label, n: c.n, onTap: () => this.setState({ cat: c.id }), style: chip(st.cat === c.id), nStyle: 'margin-left:6px;font-weight:800;color:' + (st.cat === c.id ? 'rgba(255,255,255,.8)' : '#9A96AE') }));
+
+    const smartSets = [
+      { label: L('Popular', 'Popular'), icon: '🔥', n: items.filter((i) => i.popular).length },
+      { label: L('Nuevo', 'New'), icon: '✦', n: items.filter((i) => i.isNew).length },
+      { label: L('Bajo/agotado', 'Low/out'), icon: '⚠', n: lowCount + outCount },
+      { label: L('Ocultos', 'Hidden'), icon: '🙈', n: items.length - visibleCount },
+    ];
+
+    const itemRows = filtered.map((i) => {
+      const sm = stockMeta[i.stock];
+      return {
+        id: i.id, name: i.name, price: money(i.price), desc: es ? i.desc : i.descEn, cat: L(catOf(i.cat).es, catOf(i.cat).en), tile: catOf(i.cat).tile,
+        stockBg: sm.bg, stockC: sm.c, stockLabel: L(sm.es, sm.en),
+        popular: i.popular, diet: i.diet, hidden: !i.visible, op: i.visible ? '1' : '.6',
+        ribbon: i.isNew || i.stock === 'low', ribbonText: i.isNew ? L('Nuevo', 'New') : L('Bajo', 'Low'), ribbonBg: i.isNew ? '#7B61FF' : '#E8954A',
+        onTap: () => this.setState({ sheetId: i.id, edit: { ...i } }),
+      };
+    });
+
+    const sorted = [...items].sort((a, b) => b.loves - a.loves);
+    const maxLoves = sorted[0] ? sorted[0].loves : 1;
+    const barCs = ['#4F46E5', '#7C6BFF', '#A78BFA', '#FBBF24', '#10B981'];
+    const top5 = sorted.slice(0, 5).map((i, idx) => ({ rank: idx + 1, name: i.name, loves: i.loves, price: money(i.price), bar: Math.round((i.loves / maxLoves) * 100) + '%', barC: barCs[idx] }));
+
+    const attnRaw = items.filter((i) => i.stock === 'out').map((i) => ({ kind: 'rose', title: i.name + ' — ' + L('agotado', 'out of stock'), sub: L("86'd en tu listado. Los clientes ven \u201cAgotado hoy\u201d.", 'Customers see \u201cSold out today\u201d.'), action: L('Reabastecer', 'Restock'), icon: '✕' })).concat(items.filter((i) => i.stock === 'low').map((i) => ({ kind: 'warn', title: i.name + ' — ' + L('bajo stock', 'low stock'), sub: L('Marca en stock al reabastecer.', 'Mark in-stock once replenished.'), action: L('En stock', 'In stock'), icon: '⚠' })));
+    const attention = attnRaw.map((a) => ({ title: a.title, sub: a.sub, action: a.action, icon: a.icon, bg: a.kind === 'rose' ? '#FFF1F2' : '#FFFBEB', border: a.kind === 'rose' ? '#FECDD3' : '#FDE68A', iconC: a.kind === 'rose' ? '#D6336C' : '#9A6A12', titleC: a.kind === 'rose' ? '#D6336C' : '#9A6A12', subC: a.kind === 'rose' ? '#9F1239' : '#92400E' }));
+
+    // ===== CATEGORIES tab =====
+    const catData = [
+      { id: 1, es: 'Pan y panes', en: 'Bread & loaves', n: 14, ic: 'cake', tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px', sEs: 'Todo el día', sEn: 'All day', on: true },
+      { id: 2, es: 'Pan dulce', en: 'Pastries', n: 18, ic: 'coffee', tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px', sEs: 'Mañana · 7–11', sEn: 'Morning · 7–11', on: true },
+      { id: 3, es: 'Pizza', en: 'Pizza', n: 9, ic: 'pizza', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', sEs: 'Cena · 5–10', sEn: 'Dinner · 5–10', on: true },
+      { id: 4, es: 'Pasta', en: 'Pasta', n: 7, ic: 'utensils', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', sEs: 'Cena · 5–10', sEn: 'Dinner · 5–10', on: true },
+      { id: 5, es: 'Ensaladas', en: 'Salads', n: 6, ic: 'leaf', tile: '#E3F5EA 0 8px,#D6E7D0 8px 16px', sEs: 'Comida y cena', sEn: 'Lunch & dinner', on: true },
+      { id: 6, es: 'Vino y cócteles', en: 'Wine & cocktails', n: 24, ic: 'wine', tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', sEs: 'Desde 4 PM', sEn: 'From 4 PM', on: true },
+      { id: 9, es: 'Menú infantil', en: 'Kids menu', n: 5, ic: 'cake', tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px', sEs: 'Todo el día', sEn: 'All day', on: false },
+    ];
+    const catSt = st.catState || catData.reduce((o, c) => { o[c.id] = c.on; return o; }, {});
+    const catRows = catData.map((c) => { const on = catSt[c.id]; return { name: L(c.es, c.en), n: c.n, sched: L(c.sEs, c.sEn), tile: c.tile, icon: I(c.ic, 18, '#fff'), hidden: !on, op: on ? '1' : '.6', track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState((s) => ({ catState: { ...catSt, [c.id]: !on } })) }; });
+    const catTabSub = L((catData.length) + ' categorías · arrastra para ordenar · activa/desactiva para mostrar', catData.length + ' categories · drag to order · toggle to show');
+
+    // ===== MODIFIERS tab =====
+    const modGroups = [
+      { es: 'Tamaño', en: 'Size', single: true, req: true, used: L('9 platillos', '9 items'), opts: [['Personal 8"', '+$0'], ['Estándar 12"', '+$0'], ['Grande 16"', '+$6']] },
+      { es: 'Extras', en: 'Add-ons', single: false, req: false, used: L('9 platillos', '9 items'), opts: [['Anchoa', '+$2'], ['Burrata', '+$4'], ['Trufa', '+$8']] },
+      { es: 'Masa', en: 'Crust', single: true, req: true, used: L('9 platillos', '9 items'), opts: [['Original', '+$0'], ['Sin gluten', '+$3'], ['Masa madre', '+$0']] },
+      { es: 'Tipo de leche', en: 'Milk choice', single: true, req: false, used: L('8 platillos', '8 items'), opts: [['Entera', '+$0'], ['Avena', '+$.75'], ['Almendra', '+$.75']] },
+      { es: 'Maridaje de vino', en: 'Wine pairing', single: true, req: false, used: L('2 platillos', '2 items'), opts: [['Sin maridaje', '+$0'], ['Estándar', '+$60'], ['Reserva', '+$120']] },
+    ].map((m) => ({ name: L(m.es, m.en), req: m.req, typeLabel: m.single ? L('Elige uno', 'Choose one') : L('Elige varios', 'Choose multiple'), used: m.used, opts: m.opts.map((o) => ({ label: o[0], price: o[1], priceC: o[1] === '+$0' ? '#9A96AE' : '#1E1B2E' })) }));
+
+    // ===== SCHEDULES tab =====
+    const dpRaw = [
+      { es: 'Mañana · Pan dulce y café', en: 'Morning · Pastries & coffee', color: '#F59E0B', bg: '#FEF3C7', span: [7, 11], lane: 0, days: [1, 1, 1, 1, 1, 1, 1], items: 26, time: '7:00–11:00 AM' },
+      { es: 'Comida', en: 'Lunch', color: '#22C55E', bg: '#DCFCE7', span: [11, 14], lane: 0, days: [1, 1, 1, 1, 1, 1, 1], items: 32, time: '11:00 AM–2:00 PM' },
+      { es: 'Cena · Pizza y pasta', en: 'Dinner · Pizza & pasta', color: '#7B61FF', bg: '#EFEBFF', span: [17, 22], lane: 0, days: [0, 1, 1, 1, 1, 1, 1], items: 41, time: '5:00–10:00 PM' },
+      { es: 'Vino y cócteles', en: 'Wine & cocktails', color: '#D6336C', bg: '#FDE7EF', span: [16, 22], lane: 1, days: [1, 1, 1, 1, 1, 1, 1], items: 24, time: '4:00–10:00 PM' },
+    ];
+    const dpSt = st.daypartState || dpRaw.reduce((o, d, i) => { o[i] = true; return o; }, {});
+    const startH = 7, totalH = 16;
+    const dayLabels = es ? ['L', 'M', 'X', 'J', 'V', 'S', 'D'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const weekRows = dayLabels.map((d, di) => ({
+      day: d,
+      bars: React.createElement(React.Fragment, null, dpRaw.map((dp, pi) => dp.days[di] && dpSt[pi] !== false ? React.createElement('span', { key: pi, title: L(dp.es, dp.en), style: { position: 'absolute', height: 7, top: dp.lane === 0 ? 2 : 9, left: ((dp.span[0] - startH) / totalH * 100) + '%', width: ((dp.span[1] - dp.span[0]) / totalH * 100) + '%', background: dp.color, borderRadius: 3, opacity: 0.92 } }) : null)),
+    }));
+    const daypartLegend = dpRaw.slice(0, 3).map((d) => ({ color: d.color, label: L(d.es, d.en).split(' · ')[0] }));
+    const dayparts = dpRaw.map((d, i) => { const on = dpSt[i] !== false; return { name: L(d.es, d.en), time: d.time, items: d.items, bg: d.bg, color: d.color, op: on ? '1' : '.6', track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState((s) => ({ daypartState: { ...dpSt, [i]: !on } })) }; });
+
+    // ===== PROMOTIONS tab =====
+    const promoTypes = [
+      { es: '% descuento', en: '% off', sEs: 'Descuento porcentual', sEn: 'Percentage discount', bg: '#EFEBFF', c: '#4338CA', icon: I('tag', 16, '#4338CA') },
+      { es: 'Combo', en: 'Combo', sEs: 'Agrupa a un precio', sEn: 'Group at one price', bg: '#E3F5EA', c: '#065F46', icon: I('bag', 16, '#065F46') },
+      { es: 'BOGO', en: 'BOGO', sEs: 'Compra uno, lleva uno', sEn: 'Buy one, get one', bg: '#FCEFD6', c: '#9A3412', icon: I('gift', 16, '#9A3412') },
+      { es: 'Happy hour', en: 'Happy hour', sEs: 'Precio por horario', sEn: 'Time-based pricing', bg: '#FDE7EF', c: '#9F1239', icon: I('clock', 16, '#9F1239') },
+    ].map((p) => ({ label: L(p.es, p.en), sub: L(p.sEs, p.sEn), bg: p.bg, c: p.c, icon: p.icon }));
+    const promosRaw = [
+      { es: 'Domingos de masa madre', en: 'Sourdough Sundays', type: L('% off', '% off'), typeBg: '#EFEBFF', typeC: '#4338CA', status: L('Activa', 'Active'), statusBg: '#E3F5EA', statusC: '#1F8A4C', dEs: '20% en todos los panes los domingos', dEn: '20% off all loaves on Sundays', redeem: '184', rev: '$2,940', tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px', op: '1' },
+      { es: 'Happy hour de vino', en: 'Happy hour wine', type: L('Horario', 'Time deal'), typeBg: '#FDE7EF', typeC: '#9F1239', status: L('Activa', 'Active'), statusBg: '#E3F5EA', statusC: '#1F8A4C', dEs: 'Copas de la casa a $8, 4–6 PM', dEn: '$8 house wine, 4–6 PM', redeem: '312', rev: '$2,496', tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', op: '1' },
+      { es: 'Compra pizza, llévate tiramisú', en: 'Buy a pizza, get a tiramisù', type: 'BOGO', typeBg: '#FCEFD6', typeC: '#9A3412', status: L('Programada', 'Scheduled'), statusBg: '#FCEFD6', statusC: '#9A6A12', dEs: 'Tiramisú gratis con cualquier pizza', dEn: 'Free tiramisù with any pizza', redeem: '—', rev: '—', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', op: '.85' },
+    ];
+    const promos = promosRaw.map((p) => ({ name: L(p.es, p.en), desc: L(p.dEs, p.dEn), type: p.type, typeBg: p.typeBg, typeC: p.typeC, status: p.status, statusBg: p.statusBg, statusC: p.statusC, redeem: p.redeem, rev: p.rev, tile: p.tile, op: p.op }));
+
+    // ===== ALLERGENS tab =====
+    const allergenCols = es ? ['Gluten', 'Lácteo', 'Huevo', 'Nuez', 'Soya', 'Marisco', 'Ajonjolí'] : ['Gluten', 'Dairy', 'Eggs', 'Nuts', 'Soy', 'Shell', 'Sesame'];
+    const algRaw = [
+      { nm: 'Country Loaf', cat: 'bread', a: [2, 0, 0, 0, 0, 0, 1] },
+      { nm: 'Masa madre GF', cat: 'bread', a: [0, 0, 0, 0, 0, 0, 1] },
+      { nm: 'Pizza Margherita', cat: 'pizza', a: [2, 2, 0, 0, 0, 0, 0] },
+      { nm: 'Pizza anchoa burrata', cat: 'pizza', a: [2, 2, 0, 0, 0, 2, 0] },
+      { nm: 'Morning Bun', cat: 'pastry', a: [2, 2, 2, 1, 0, 0, 0] },
+      { nm: 'Tiramisú', cat: 'pastry', a: [2, 2, 2, 0, 0, 0, 0] },
+    ];
+    const algCell = (v) => v === 2 ? React.createElement('span', { style: { width: 20, height: 20, borderRadius: 6, background: '#FDE7EF', color: '#D6336C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, fontFamily: "'Plus Jakarta Sans'" } }, '✓') : v === 1 ? React.createElement('span', { style: { width: 20, height: 20, borderRadius: 6, background: '#FCEFD6', color: '#9A6A12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, fontFamily: "'Plus Jakarta Sans'" } }, '~') : React.createElement('span', { style: { width: 6, height: 6, borderRadius: 99, background: '#D8D2E6' } });
+    const allergenRows = algRaw.map((r, ri) => ({ name: r.nm, cat: L(catOf(r.cat).es, catOf(r.cat).en), cells: r.a.map((v) => algCell(v)), border: ri === algRaw.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)' }));
+
+    // ===== STOCK tab =====
+    const stock86 = [
+      { name: 'Masa madre sin gluten', cat: 'bread', since: L('2:15 PM hoy', '2:15 PM today'), note: L('Regresa mañana 10 AM', 'Back tomorrow 10 AM'), tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px' },
+      { name: 'Pappardelle de jabalí', cat: 'pasta', since: L('Ayer', 'Yesterday'), note: L('Sin ragú de jabalí', 'Out of boar ragù'), tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px' },
+    ];
+    const stockLowRaw = [
+      { name: 'Country Loaf', left: 14, limit: 80, pct: 18, tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px' },
+      { name: 'Morning Bun', left: 6, limit: 60, pct: 10, tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px' },
+      { name: 'Tiramisú', left: 9, limit: 40, pct: 22, tile: '#EDE0D4 0 8px,#DFCBB6 8px 16px' },
+      { name: 'Mermelada 6oz', left: 5, limit: 24, pct: 21, tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px' },
+    ];
+    const stockLow = stockLowRaw.map((s, i, a) => ({ name: s.name, left: s.left, limit: s.limit, pct: s.pct + '%', barC: s.pct <= 15 ? '#D6336C' : '#9A6A12', tile: s.tile, border: i === a.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)' }));
+    const ruleRaw = [
+      { es: 'Auto-86 al llegar a cero', en: 'Auto-86 at zero', sEs: 'Oculta del menú automáticamente.', sEn: 'Hide from menu automatically.' },
+      { es: 'Avisar al personal en bajo stock', en: 'Notify staff at low stock', sEs: 'Alerta a la cocina bajo el umbral.', sEn: 'Alert the kitchen below threshold.' },
+      { es: 'Reiniciar conteo diario a las 5 AM', en: 'Reset counts daily at 5 AM', sEs: 'Los límites se recargan cada mañana.', sEn: 'Daily limits refill each morning.' },
+      { es: 'Permitir pedidos por adelantado', en: 'Allow back-orders', sEs: 'Pedir agotados para después.', sEn: 'Order out-of-stock for later.' },
+    ];
+    const ruleSt = st.stockRuleState || { 0: true, 1: true, 2: true, 3: false };
+    const stockRules = ruleRaw.map((r, i, a) => { const on = ruleSt[i]; return { title: L(r.es, r.en), sub: L(r.sEs, r.sEn), track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', border: i === a.length - 1 ? 'transparent' : 'rgba(30,27,46,.06)', onToggle: () => this.setState((s) => ({ stockRuleState: { ...ruleSt, [i]: !on } })) }; });
+
+    // ===== WIZARD =====
+    const draft = st.draft || this.newDraft();
+    const wizStepDefs = [['details', L('Detalles', 'Details')], ['pricing', L('Precio', 'Pricing')], ['modifiers', L('Modif.', 'Mods')], ['dietary', L('Dieta', 'Dietary')], ['stock', L('Stock', 'Stock')], ['review', L('Revisar', 'Review')]];
+    const wizSteps = wizStepDefs.map((s, i) => {
+      const active = st.wizStep === i, done = i < st.wizStep || (i <= st.wizMax && i !== st.wizStep);
+      return { label: s[1], onTap: () => { if (i <= st.wizMax) this.setState({ wizStep: i }); }, dot: done ? '✓' : (i + 1), style: 'flex:none;display:flex;align-items:center;gap:6px;border:none;cursor:pointer;padding:7px 11px;border-radius:999px;font:800 11px \'Plus Jakarta Sans\';background:' + (active ? '#7B61FF' : done ? '#EFEBFF' : '#F1EFFA') + ';color:' + (active ? '#fff' : done ? '#6D4DF6' : '#9A96AE'), dotStyle: 'width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 9px \'Plus Jakarta Sans\';background:' + (active ? 'rgba(255,255,255,.25)' : done ? '#7B61FF' : '#D8D2E6') + ';color:' + (active || done ? '#fff' : '#fff') };
+    });
+    const draftCat = cats.find((c) => c.id === draft.cat) || cats[2];
+    const upDraft = (patch) => this.setState({ draft: { ...draft, ...patch } });
+    const wizCats = cats.map((c) => ({ label: L(c.es, c.en), onTap: () => upDraft({ cat: c.id }), style: chip(draft.cat === c.id) }));
+    const flagDefs = [['isNew', L('Nuevo', 'New')], ['popular', L('Popular', 'Popular')], ['featured', L('Destacado', 'Featured')]];
+    const wizFlags = flagDefs.map((f) => ({ label: f[1], onTap: () => upDraft({ flags: { ...draft.flags, [f[0]]: !draft.flags[f[0]] } }), style: chip(!!draft.flags[f[0]]) }));
+    const chanDefs = [['dinein', L('Mostrador', 'Dine-in'), 'utensils'], ['pickup', L('Recoger', 'Pickup'), 'bag'], ['delivery', L('Entrega', 'Delivery'), 'truck'], ['catering', 'Catering', 'gift']];
+    const channels = chanDefs.map((c) => { const on = draft.channels[c[0]]; return { label: c[1], icon: I(c[2], 15, on ? '#6D4DF6' : '#9A96AE'), onTap: () => upDraft({ channels: { ...draft.channels, [c[0]]: !on } }), style: 'position:relative;display:flex;align-items:center;gap:8px;border:1.5px solid ' + (on ? '#7B61FF' : '#E2DEF4') + ';background:' + (on ? '#F7F5FF' : '#fff') + ';cursor:pointer;padding:11px 12px;border-radius:11px', ckStyle: 'width:16px;height:16px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex:none;background:' + (on ? '#7B61FF' : '#E2DEF4') }; });
+    const schedDefs = [['all-day', L('Todo el día', 'All day')], ['morning', L('Mañana', 'Morning')], ['lunch', L('Comida', 'Lunch')], ['dinner', L('Cena', 'Dinner')], ['weekends', L('Fines', 'Weekends')]];
+    const wizScheds = schedDefs.map((s) => ({ label: s[1], onTap: () => upDraft({ sched: s[0] }), style: chip(draft.sched === s[0]) }));
+    const dayToggles = dayLabels.map((d, i) => ({ label: d, onTap: () => { const nd = [...draft.days]; nd[i] = nd[i] ? 0 : 1; upDraft({ days: nd }); }, style: 'width:34px;height:34px;flex:none;border:none;cursor:pointer;border-radius:9px;font:800 11px \'Plus Jakarta Sans\';' + (draft.days[i] ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#9A96AE') }));
+    const modLib = [
+      { id: 'size', es: 'Tamaño', en: 'Size', req: true, ic: 'grid', mEs: 'Elige uno · 3 opciones', mEn: 'Choose one · 3 options' },
+      { id: 'toppings', es: 'Extras', en: 'Add-ons', req: false, ic: 'plus', mEs: 'Elige varios · máx 4', mEn: 'Choose multiple · max 4' },
+      { id: 'crust', es: 'Masa', en: 'Crust', req: true, ic: 'pizza', mEs: 'Elige uno · 3 opciones', mEn: 'Choose one · 3 options' },
+      { id: 'milk', es: 'Tipo de leche', en: 'Milk choice', req: false, ic: 'coffee', mEs: 'Elige uno · 4 opciones', mEn: 'Choose one · 4 options' },
+      { id: 'wine', es: 'Maridaje', en: 'Wine pairing', req: false, ic: 'wine', mEs: 'Elige uno · 3 opciones', mEn: 'Choose one · 3 options' },
+    ];
+    const wizMods = modLib.map((m) => { const on = !!draft.mods[m.id]; return { name: L(m.es, m.en), req: m.req, meta: L(m.mEs, m.mEn), icon: I(m.ic, 16, '#6D4DF6'), onTap: () => upDraft({ mods: { ...draft.mods, [m.id]: !on } }), style: 'display:flex;align-items:center;gap:10px;width:100%;border:1.5px solid ' + (on ? '#7B61FF' : '#E2DEF4') + ';background:' + (on ? '#F7F5FF' : '#fff') + ';cursor:pointer;padding:11px;border-radius:12px', ckStyle: 'width:16px;height:16px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex:none;background:' + (on ? '#7B61FF' : '#E2DEF4') }; });
+    const dietDefs = [L('Vegetariano', 'Vegetarian'), L('Vegano', 'Vegan'), L('Sin gluten', 'Gluten-free'), L('Sin lácteos', 'Dairy-free'), L('Halal', 'Halal'), L('Picante', 'Spicy')];
+    const dietTags = dietDefs.map((d) => ({ label: d, onTap: () => { const has = draft.diet.includes(d); upDraft({ diet: has ? draft.diet.filter((x) => x !== d) : [...draft.diet, d] }); }, style: chip(draft.diet.includes(d)) }));
+    const algNames = es ? ['Gluten', 'Lácteo', 'Huevo', 'Nuez', 'Soya', 'Marisco'] : ['Gluten', 'Dairy', 'Eggs', 'Nuts', 'Soy', 'Shellfish'];
+    const allergenCells = algNames.map((a, i) => { const v = draft.allergens[i]; const st2 = v === 1 ? L('Contiene', 'Contains') : v === 2 ? L('Puede contener', 'May contain') : L('Libre de', 'Free of'); const stC = v === 1 ? '#D6336C' : v === 2 ? '#9A6A12' : '#9A96AE'; const sw = v === 1 ? '#FDE7EF' : v === 2 ? '#FCEFD6' : '#F1EFFA'; const swC = v === 1 ? '#D6336C' : v === 2 ? '#9A6A12' : '#C0BBD0'; return { name: a, st: st2, stC, onTap: () => { const na = [...draft.allergens]; na[i] = (na[i] + 1) % 3; upDraft({ allergens: na }); }, style: 'display:flex;align-items:center;gap:9px;border:1.5px solid ' + (v ? swC : '#E2DEF4') + ';background:#fff;cursor:pointer;padding:9px 11px;border-radius:11px', swatchStyle: 'width:24px;height:24px;border-radius:7px;background:' + sw + ';color:' + swC + ';display:flex;align-items:center;justify-content:center;flex:none;font:800 12px \'Plus Jakarta Sans\'', swatch: v === 1 ? '✓' : v === 2 ? '~' : '·' }; });
+    const wizRuleDefs = [[L('Auto-86 al llegar a cero', 'Auto-86 at zero'), L('Oculta del menú automáticamente.', 'Hide from menu automatically.'), true], [L('Reiniciar conteo a las 5 AM', 'Reset count at 5 AM'), L('Recarga el límite cada mañana.', 'Refill limit each morning.'), true], [L('Avisar a cocina en bajo stock', 'Alert kitchen at low stock'), L('Notifica antes de agotarse.', 'Notify before it sells out.'), false]];
+    const wizDraftRules = draft._rules || { 0: true, 1: true, 2: false };
+    const wizStockRules = wizRuleDefs.map((r, i) => { const on = wizDraftRules[i]; return { title: r[0], sub: r[1], track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => upDraft({ _rules: { ...wizDraftRules, [i]: !on } }) }; });
+
+    // review
+    const chansSel = chanDefs.filter((c) => draft.channels[c[0]]).map((c) => c[1]);
+    const modsSel = modLib.filter((m) => draft.mods[m.id]).map((m) => L(m.es, m.en));
+    const algC = draft.allergens.filter((v) => v === 1).length, algM = draft.allergens.filter((v) => v === 2).length;
+    const ready = draft.name && draft.price;
+    const rev = (k, v, ok, step) => ({ k, v, vC: ok ? '#1E1B2E' : '#C0BBD0', onEdit: () => this.setState({ wizStep: step }), border: 'rgba(30,27,46,.06)' });
+    const reviewRows = [
+      rev(L('Nombre', 'Name'), draft.name || '—', !!draft.name, 0),
+      rev(L('Categoría', 'Category'), L(draftCat.es, draftCat.en), true, 0),
+      rev(L('Precio', 'Price'), draft.price ? ('$' + draft.price + (draft.compareAt ? '  (antes $' + draft.compareAt + ')' : '')) : '—', !!draft.price, 1),
+      rev(L('Canales', 'Channels'), chansSel.length ? chansSel.join(' · ') : L('Ninguno', 'None'), chansSel.length > 0, 1),
+      rev(L('Modificadores', 'Modifiers'), modsSel.length ? modsSel.join(', ') : L('Ninguno', 'None'), true, 2),
+      rev(L('Dieta', 'Dietary'), draft.diet.length ? draft.diet.join(', ') : L('Ninguna', 'None'), true, 3),
+      rev(L('Alérgenos', 'Allergens'), (algC ? algC + L(' contiene', ' contains') : '') + (algC && algM ? ' · ' : '') + (algM ? algM + L(' puede', ' may') : '') || L('Ninguno', 'None marked'), true, 3),
+      rev('Stock', (draft.dailyLimit ? L('Límite ', 'Limit ') + draft.dailyLimit : L('Ilimitado', 'Unlimited')) + ' · ' + (draft.visible ? L('Visible', 'Visible') : L('Oculto', 'Hidden')), true, 4),
+    ];
+    reviewRows[reviewRows.length - 1].border = 'transparent';
+    const pubDefs = [['now', L('Publicar ahora', 'Publish now'), L('Aparece en tu menú al instante.', 'Goes live immediately.'), 'zap'], ['schedule', L('Programar', 'Schedule'), L('Elige fecha y hora.', 'Pick a date & time.'), 'cal'], ['draft', L('Guardar borrador', 'Save as draft'), L('Oculto hasta que estés listo.', 'Hidden until ready.'), 'copy']];
+    const publishModes = pubDefs.map((p) => { const on = draft.publishMode === p[0]; return { label: p[1], sub: p[2], icon: I(p[3], 15, '#6D4DF6'), on, onTap: () => upDraft({ publishMode: p[0] }), style: 'display:flex;align-items:center;gap:11px;width:100%;border:1.5px solid ' + (on ? '#7B61FF' : '#E2DEF4') + ';background:' + (on ? '#F7F5FF' : '#fff') + ';cursor:pointer;padding:11px;border-radius:12px', radioStyle: 'width:18px;height:18px;border-radius:50%;border:1.5px solid ' + (on ? '#7B61FF' : '#D8D2E6') + ';display:flex;align-items:center;justify-content:center;flex:none' }; });
+
+    // edit sheet
+    const edit = st.edit || {};
+    const editDirty = st.sheetId != null && JSON.stringify(edit) !== JSON.stringify(items.find((i) => i.id === st.sheetId) || {});
+    const upEdit = (patch) => this.setState({ edit: { ...edit, ...patch } });
+    const editStockOpts = [['in', L('En stock', 'In')], ['low', L('Bajo', 'Low')], ['out', '86']].map((s) => ({ label: s[1], onTap: () => upEdit({ stock: s[0] }), style: 'flex:none;border:none;cursor:pointer;padding:8px 11px;border-radius:9px;font:800 10.5px \'Plus Jakarta Sans\';' + (edit.stock === s[0] ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#6E6A85') }));
+    const editDietDefs = [['V', L('Vegetariano', 'Vegetarian')], ['VG', L('Vegano', 'Vegan')], ['GF', L('Sin gluten', 'Gluten-free')], ['Picante', L('Picante', 'Spicy')]];
+    const editDiet = editDietDefs.map((d) => { const has = (edit.diet || []).includes(d[0]); return { label: d[1], onTap: () => upEdit({ diet: has ? edit.diet.filter((x) => x !== d[0]) : [...(edit.diet || []), d[0]] }), style: chip(has) }; });
+
+    // nav state flags
+    const inModule = view === 'module';
+    const isItems = inModule && subtab === 'items';
+
+    // wizard actions
+    const wizNext = () => { if (st.wizStep >= wizStepDefs.length - 1) { this.setState({ view: 'success' }); return; } const n = st.wizStep + 1; this.setState({ wizStep: n, wizMax: Math.max(st.wizMax, n) }); };
+    const wizBack = () => { if (st.wizStep === 0) { this.setState({ view: 'module' }); return; } this.setState({ wizStep: st.wizStep - 1 }); };
+
+    return {
+      // header / lang
+      esTab: langTab(es), enTab: langTab(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
+      headTitle: view === 'wizard' ? L('Agregar platillo', 'Add menu item') : (view === 'success' ? L('Platillo publicado', 'Item published') : L('Menú de comida', 'Food menu')),
+      headSub: view === 'wizard' ? L(draftCat.es, draftCat.en) : (view === 'success' ? L('Tartine Manufactory', 'Tartine Manufactory') : items.length + ' ' + L('platillos', 'items') + ' · ' + visibleCount + ' ' + L('en listado', 'on listing') + ' · ' + (lowCount + outCount) + " 86'd"),
+      showEye: view === 'module', back: () => { if (view === 'module') return this._home(); this.setState({ view: 'module' }); },
+      inModule, subtabs,
+      isItems, isCats: inModule && subtab === 'categories', isMods: inModule && subtab === 'mods', isSched: inModule && subtab === 'schedules', isPromos: inModule && subtab === 'promos', isAllerg: inModule && subtab === 'allergens', isStock: inModule && subtab === 'stock',
+      isWizard: view === 'wizard', isSuccess: view === 'success',
+      t,
+      // items
+      query: st.query, onQuery: (e) => this.setState({ query: e.target.value }),
+      catFilters, smartSets, items: itemRows, listLabel: st.cat === 'all' ? L('Todos los platillos', 'All items') : L(catOf(st.cat).es, catOf(st.cat).en), shownCount: filtered.length, stockSummary: lowCount + L(' bajo · ', ' low · ') + outCount + " 86'd",
+      top5, attention, attnCount: lowCount + outCount,
+      // categories
+      catRows, catTabSub,
+      // mods
+      modGroups,
+      // schedules
+      weekRows, daypartLegend, dayparts,
+      // promos
+      promoTypes, promos,
+      // allergens
+      allergenCols, allergenRows,
+      // stock
+      stock86, stockLow, stockRules,
+      // wizard
+      wizSteps, draft, draftTile: draftCat.tile, draftNew: !!draft.flags.isNew, draftPopular: !!draft.flags.popular,
+      draftName: draft.name || L('Nombre del platillo', 'Item name'), draftNameC: draft.name ? '#1E1B2E' : '#C0BBD0',
+      draftPrice: draft.price ? ('$' + draft.price) : '$0.00', draftDesc: draft.desc || L('La descripción aparece aquí…', 'Description appears here…'),
+      draftCatLabel: L(draftCat.es, draftCat.en),
+      wizStepTitle: [L('Detalles del platillo', 'Item details'), L('Precio y canales', 'Pricing & channels'), L('Opciones y modificadores', 'Options & modifiers'), L('Dieta y alérgenos', 'Dietary & allergens'), L('Stock y disponibilidad', 'Stock & availability'), L('Revisar y publicar', 'Review & publish')][st.wizStep],
+      wDetails: st.wizStep === 0, wPricing: st.wizStep === 1, wMods: st.wizStep === 2, wDietary: st.wizStep === 3, wStock: st.wizStep === 4, wReview: st.wizStep === 5,
+      onName: (e) => upDraft({ name: e.target.value }), onDesc: (e) => upDraft({ desc: e.target.value }),
+      onPrice: (e) => upDraft({ price: e.target.value }), onCompare: (e) => upDraft({ compareAt: e.target.value }), onLimit: (e) => upDraft({ dailyLimit: e.target.value }),
+      wizCats, wizFlags, channels, wizScheds, dayToggles, wizMods, dietTags, allergenCells, wizStockRules,
+      hasPhoto: draft.photos > 0, noPhoto: draft.photos === 0, addPhoto: () => upDraft({ photos: 1 }),
+      toggleVisible: () => upDraft({ visible: !draft.visible }), visibleTrack: draft.visible ? '#7B61FF' : '#D8D2E6', visibleKnob: draft.visible ? '20px' : '3px',
+      ready, readyBg: ready ? '#E3F5EA' : '#FCEFD6', readyBorder: ready ? '#A7E3C0' : '#FDE68A', readyC: ready ? '#176B3A' : '#9A6A12', readyIcon: ready ? '✓' : '⚠',
+      readyTitle: ready ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos esenciales', 'A few essentials are missing'),
+      readySub: ready ? L('Todo en orden. Publicar lo activa al instante.', 'All set. Publishing makes it live instantly.') : L('Agrega nombre y precio antes de publicar.', 'Add a name and price before publishing.'),
+      reviewRows, publishModes,
+      // wizard footer
+      showWizFooter: view === 'wizard', wizBack, wizNext, wizProgress: L('Paso ', 'Step ') + (st.wizStep + 1) + L(' de ', ' of ') + wizStepDefs.length, wizNextLabel: st.wizStep >= wizStepDefs.length - 1 ? L('Publicar platillo', 'Publish item') : L('Continuar', 'Continue'),
+      // add footer
+      showAddFooter: isItems, startAdd: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, draft: this.newDraft() }), addLabel: L('Agregar platillo', 'Add item'),
+      // success
+      successTitle: (draft.name || L('Nuevo platillo', 'New item')) + ' ' + L('está activo', 'is live'),
+      successSub: L('Ya está en tu menú de ' + L(draftCat.es, draftCat.es) + ' en ' + chansSel.length + ' canales. Los cambios se publican al instante.', 'It’s now on your menu across ' + chansSel.length + ' channels. Changes go live instantly.'),
+      addAnother: () => this.setState({ view: 'wizard', wizStep: 0, wizMax: 0, draft: this.newDraft() }),
+      backToList: () => this.setState({ view: 'module', subtab: 'items' }),
+      // edit sheet
+      sheetOpen: st.sheetId != null, closeSheet: () => this.setState({ sheetId: null, edit: null }),
+      edit, editTile: (catOf((edit.cat) || 'bread')).tile,
+      onEditName: (e) => upEdit({ name: e.target.value }), onEditDesc: (e) => upEdit({ desc: e.target.value }), onEditPrice: (e) => upEdit({ price: Number(String(e.target.value).replace(/[^0-9.]/g, '')) || 0 }),
+      editStockOpts, editDiet,
+      syncLabel: editDirty ? L('Sin guardar', 'Unsaved') : L('Sincronizado', 'Synced'), syncStyle: 'font:800 9.5px \'Plus Jakarta Sans\';padding:4px 9px;border-radius:7px;background:' + (editDirty ? '#FCEFD6' : '#E3F5EA') + ';color:' + (editDirty ? '#9A6A12' : '#1F8A4C'),
+      toggleEditVisible: () => upEdit({ visible: !edit.visible }), editVisTrack: edit.visible ? '#7B61FF' : '#D8D2E6', editVisKnob: edit.visible ? '20px' : '3px',
+      saveBg: editDirty ? '#7B61FF' : '#D8D2EC',
+      saveEdit: () => { this.commit(items.map((i) => i.id === st.sheetId ? { ...i, ...edit } : i)); this.setState({ sheetId: null, edit: null }); this.flash(L('Guardado · listado actualizado', 'Saved · listing updated')); },
+      deleteItem: () => { this.commit(items.filter((i) => i.id !== st.sheetId)); this.setState({ sheetId: null, edit: null }); this.flash(L('Platillo eliminado', 'Item deleted')); },
+      // toast
+      toastShow: !!st.toast, toastMsg: st.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>
