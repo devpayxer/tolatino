@@ -15,13 +15,13 @@ import { Perfil } from "./screens/Perfil";
  * the active tab's screen inside the 392px PhoneFrame, with the BottomTabs nav.
  * (DESIGN_SYSTEM.md §6–7 — mobile is the source of truth; desktop reflow later.)
  */
-export function ConsumerApp() {
+export function ConsumerApp({ onSearch }: { onSearch: () => void }) {
   const [tab, setTab] = useState<ConsumerTab>("home");
 
   return (
     <PhoneFrame tabBar={<BottomTabs active={tab} onChange={setTab} badges={{ orders: 1 }} />}>
       <AppHeader />
-      {tab === "home" && <Inicio onNavigate={setTab} />}
+      {tab === "home" && <Inicio onNavigate={setTab} onSearch={onSearch} />}
       {tab === "orders" && <Pedidos />}
       {tab === "bookings" && <Reservas />}
       {tab === "tickets" && <Boletos />}

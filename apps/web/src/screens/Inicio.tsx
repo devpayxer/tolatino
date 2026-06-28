@@ -11,7 +11,7 @@ import type { ConsumerTab } from "../components/BottomTabs";
  * Matches docs/design-system/reference/screenshots/consumer-dashboard-01-inicio.png.
  * `onNavigate` jumps to another bottom tab (e.g. a stat tile → Pedidos).
  */
-export function Inicio({ onNavigate }: { onNavigate: (tab: ConsumerTab) => void }) {
+export function Inicio({ onNavigate, onSearch }: { onNavigate: (tab: ConsumerTab) => void; onSearch: () => void }) {
   const { L } = useI18n();
   const [view, setView] = useState<"home" | "track">("home");
 
@@ -23,7 +23,7 @@ export function Inicio({ onNavigate }: { onNavigate: (tab: ConsumerTab) => void 
   ];
 
   const quick = [
-    { icon: <Search size={19} className="text-primary-700" />, label: L("Buscar", "Search") },
+    { icon: <Search size={19} className="text-primary-700" />, label: L("Buscar", "Search"), onClick: onSearch },
     { icon: <ShoppingCart size={19} className="text-rose" />, label: L("Pedir", "Order"), onClick: () => onNavigate("orders") },
     { icon: <CalendarDays size={19} className="text-success" />, label: L("Reservar", "Book"), onClick: () => onNavigate("bookings") },
     { icon: <Ticket size={19} className="text-warn" />, label: L("Boletos", "Tickets"), onClick: () => onNavigate("tickets") },
