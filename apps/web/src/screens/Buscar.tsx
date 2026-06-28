@@ -86,7 +86,7 @@ export function Buscar({
   ];
 
   return (
-    <PhoneFrame>
+    <PhoneFrame center>
       {/* header */}
       <div className="flex items-center justify-between gap-2 px-4 pb-3 pt-1">
         <button onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-ink" aria-label={L("Atrás", "Back")}>

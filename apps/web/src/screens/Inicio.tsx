@@ -50,32 +50,33 @@ export function Inicio({
   }, []);
 
   return (
-    <div className="px-4 pb-6">
-      <h1 className="text-[22px] font-extrabold tracking-tight text-ink">{L("Hola, Ana 👋", "Hey, Ana 👋")}</h1>
-      <p className="mt-1 text-[12.5px] font-semibold leading-snug text-muted">
-        {L("Descubre negocios latinos cerca de ti.", "Discover Latino businesses near you.")}
-      </p>
-
-      {/* prominent search */}
-      <button
-        onClick={() => onSearch()}
-        className="mt-4 flex w-full items-center gap-2.5 rounded-[16px] border border-line bg-surface px-3.5 py-3.5 text-left shadow-card"
-      >
-        <Search size={18} className="text-primary" />
-        <span className="text-[14px] font-semibold text-muted-soft">{L("Busca tacos, mecánico, salón…", "Search tacos, mechanic, salon…")}</span>
-      </button>
+    <div className="px-4 pb-6 lg:px-0">
+      {/* greeting + hero search (search hero hidden on desktop — top nav has it) */}
+      <div className="lg:mx-auto lg:max-w-2xl lg:pt-2 lg:text-center">
+        <h1 className="text-[22px] font-extrabold tracking-tight text-ink lg:text-[34px]">{L("Hola, Ana 👋", "Hey, Ana 👋")}</h1>
+        <p className="mt-1 text-[12.5px] font-semibold leading-snug text-muted lg:text-[15px]">
+          {L("Descubre negocios latinos cerca de ti.", "Discover Latino businesses near you.")}
+        </p>
+        <button
+          onClick={() => onSearch()}
+          className="mt-4 flex w-full items-center gap-2.5 rounded-[16px] border border-line bg-surface px-3.5 py-3.5 text-left shadow-card lg:mt-6 lg:hidden"
+        >
+          <Search size={18} className="text-primary" />
+          <span className="text-[14px] font-semibold text-muted-soft">{L("Busca tacos, mecánico, salón…", "Search tacos, mechanic, salon…")}</span>
+        </button>
+      </div>
 
       {/* categories */}
       <SectionHeader title={L("Explora por categoría", "Browse by category")} />
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-8 lg:gap-4 lg:overflow-visible lg:px-0">
         {HOME_CATEGORIES.map((c) => (
           <button
             key={c.id}
             onClick={() => onSearch(L(c.es, c.en))}
-            className="flex w-16 flex-none flex-col items-center gap-1.5"
+            className="flex w-16 flex-none flex-col items-center gap-1.5 lg:w-auto"
           >
-            <span className="h-14 w-14 rounded-card border border-hair" style={categoryTile(c.id)} />
-            <span className="text-center text-[11px] font-bold leading-tight text-ink">{L(c.es, c.en)}</span>
+            <span className="h-14 w-14 rounded-card border border-hair lg:h-auto lg:aspect-square lg:w-full" style={categoryTile(c.id)} />
+            <span className="text-center text-[11px] font-bold leading-tight text-ink lg:text-[12.5px]">{L(c.es, c.en)}</span>
           </button>
         ))}
       </div>
@@ -94,7 +95,7 @@ export function Inicio({
       ) : nearby.length === 0 ? (
         <p className="px-1 text-[12px] font-semibold text-muted">{L("Aún no hay negocios cerca.", "No businesses nearby yet.")}</p>
       ) : (
-        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-5 lg:overflow-visible lg:px-0">
           {nearby.map((b) => (
             <NearbyCard key={b.id} b={b} onClick={() => onOpenBusiness(b.id)} />
           ))}
@@ -107,7 +108,7 @@ export function Inicio({
 function NearbyCard({ b, onClick }: { b: Business; onClick: () => void }) {
   const { L } = useI18n();
   return (
-    <button onClick={onClick} className="w-44 flex-none overflow-hidden rounded-card border border-hair bg-surface text-left">
+    <button onClick={onClick} className="w-44 flex-none overflow-hidden rounded-card border border-hair bg-surface text-left lg:w-auto">
       <div className="relative h-24" style={categoryTile(b.seed)}>
         {b.promo ? (
           <span className="absolute left-2 top-2 rounded-pill bg-gold px-2 py-0.5 text-[9.5px] font-extrabold text-ink">{L(b.promo.es, b.promo.en)}</span>

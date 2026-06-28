@@ -48,7 +48,7 @@ export function BusinessDetail({ id, onBack }: { id: string; onBack: () => void 
 
   if (loading) {
     return (
-      <PhoneFrame>
+      <PhoneFrame center>
         <div className="flex items-center gap-3 px-4 pb-2 pt-1">
           <button onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-ink" aria-label={L("Atrás", "Back")}>
             <ChevronLeft size={20} />
@@ -61,7 +61,7 @@ export function BusinessDetail({ id, onBack }: { id: string; onBack: () => void 
 
   if (!b) {
     return (
-      <PhoneFrame>
+      <PhoneFrame center>
         <div className="p-4">
           <button onClick={onBack} className="text-[13px] font-extrabold text-primary">
             ‹ {L("Volver", "Back")}
@@ -74,7 +74,7 @@ export function BusinessDetail({ id, onBack }: { id: string; onBack: () => void 
   /* ---- Unverified: minimal + claim ---- */
   if (!b.verified) {
     return (
-      <PhoneFrame>
+      <PhoneFrame center>
         <div className="flex items-center justify-between px-4 pb-2 pt-1">
           <button onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-full bg-canvas text-ink" aria-label={L("Atrás", "Back")}>
             <ChevronLeft size={20} />
@@ -136,7 +136,7 @@ export function BusinessDetail({ id, onBack }: { id: string; onBack: () => void 
 
   /* ---- Verified: full overview ---- */
   return (
-    <PhoneFrame>
+    <PhoneFrame center>
       {/* photo header */}
       <div className="relative h-56" style={categoryTile(b.seed)}>
         <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3">

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { PhoneFrame } from "./components/primitives";
+import { PhoneFrame, Lane } from "./components/primitives";
 import { AppHeader } from "./components/AppHeader";
+import { DesktopNav } from "./components/DesktopNav";
 import { BottomTabs, type ConsumerTab } from "./components/BottomTabs";
 import { Inicio } from "./screens/Inicio";
 import { Pedidos } from "./screens/Pedidos";
@@ -30,12 +31,19 @@ export function ConsumerApp({
 
   return (
     <PhoneFrame tabBar={<BottomTabs active={tab} onChange={setTab} badges={{ orders: 1 }} />}>
-      <AppHeader />
-      {tab === "home" && <Inicio onSearch={onSearch} onOpenBusiness={onOpenBusiness} />}
-      {tab === "orders" && <Pedidos />}
-      {tab === "bookings" && <Reservas />}
-      {tab === "tickets" && <Boletos />}
-      {tab === "profile" && <Perfil onPublishBusiness={onPublishBusiness} onOpenBizDashboard={onOpenBizDashboard} />}
+      {/* desktop top nav (lg+) / mobile header */}
+      <DesktopNav active={tab} onChange={setTab} onSearch={onSearch} />
+      <div className="lg:hidden">
+        <AppHeader />
+      </div>
+
+      <main className="mx-auto w-full max-w-content px-0 lg:px-6 lg:py-6">
+        {tab === "home" && <Inicio onSearch={onSearch} onOpenBusiness={onOpenBusiness} />}
+        {tab === "orders" && <Lane>{<Pedidos />}</Lane>}
+        {tab === "bookings" && <Lane>{<Reservas />}</Lane>}
+        {tab === "tickets" && <Lane>{<Boletos />}</Lane>}
+        {tab === "profile" && <Lane><Perfil onPublishBusiness={onPublishBusiness} onOpenBizDashboard={onOpenBizDashboard} /></Lane>}
+      </main>
     </PhoneFrame>
   );
 }

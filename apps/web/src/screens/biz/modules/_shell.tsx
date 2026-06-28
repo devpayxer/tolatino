@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { ChevronLeft, Search } from "lucide-react";
 import { useI18n } from "../../../lib/i18n";
-import { PhoneFrame, Card, categoryTile } from "../../../components/primitives";
+import { PhoneFrame, Card, Lane, categoryTile } from "../../../components/primitives";
 
 /**
  * Shared shell for the 9 business module screens. Light header (back · title ·
@@ -27,25 +27,27 @@ export function ModuleShell({
   const { lang, setLang } = useI18n();
   return (
     <PhoneFrame>
-      <div className="flex items-center gap-3 px-4 pb-3 pt-1.5">
-        <button
-          onClick={onBack}
-          className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-canvas text-ink"
-          aria-label="Back"
-        >
-          <ChevronLeft size={19} />
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[19px] font-extrabold leading-tight tracking-tight text-ink">{title}</div>
-          <div className="truncate text-[12px] font-semibold text-muted">{subtitle}</div>
+      <Lane className="lg:py-4">
+        <div className="flex items-center gap-3 px-4 pb-3 pt-1.5">
+          <button
+            onClick={onBack}
+            className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-canvas text-ink"
+            aria-label="Back"
+          >
+            <ChevronLeft size={19} />
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[19px] font-extrabold leading-tight tracking-tight text-ink">{title}</div>
+            <div className="truncate text-[12px] font-semibold text-muted">{subtitle}</div>
+          </div>
+          <div className="flex flex-none overflow-hidden rounded-pill bg-canvas text-[11px] font-extrabold">
+            <button onClick={() => setLang("es")} className={`px-2 py-1 ${lang === "es" ? "bg-primary text-white" : "text-muted"}`}>ES</button>
+            <button onClick={() => setLang("en")} className={`px-2 py-1 ${lang === "en" ? "bg-primary text-white" : "text-muted"}`}>EN</button>
+          </div>
+          {action}
         </div>
-        <div className="flex flex-none overflow-hidden rounded-pill bg-canvas text-[11px] font-extrabold">
-          <button onClick={() => setLang("es")} className={`px-2 py-1 ${lang === "es" ? "bg-primary text-white" : "text-muted"}`}>ES</button>
-          <button onClick={() => setLang("en")} className={`px-2 py-1 ${lang === "en" ? "bg-primary text-white" : "text-muted"}`}>EN</button>
-        </div>
-        {action}
-      </div>
-      <div className="pb-6">{children}</div>
+        <div className="pb-6">{children}</div>
+      </Lane>
     </PhoneFrame>
   );
 }

@@ -23,20 +23,38 @@ export function Wordmark({ className = "" }: { className?: string }) {
 }
 
 /* ----------------------------------------------------------------------------
- * PhoneFrame — 392px mobile shell: status bar + scroll area + (optional) tabs
+ * PhoneFrame — responsive app shell (NOT a device mockup).
+ * Mobile: a normal full-width website. Desktop: content reflows via the screen's
+ * own `lg:` layout. `tabBar` is the mobile bottom nav (sticky, hidden on desktop
+ * where a top nav / sidebar takes over). See DESIGN_SYSTEM.md §6.
  * -------------------------------------------------------------------------- */
-export function PhoneFrame({ children, tabBar }: { children: ReactNode; tabBar?: ReactNode }) {
+export function PhoneFrame({
+  children,
+  tabBar,
+  center = false,
+}: {
+  children: ReactNode;
+  tabBar?: ReactNode;
+  /** Center content in a comfortable column on desktop (for single-column
+   * sub-screens like detail / search / onboarding). */
+  center?: boolean;
+}) {
   return (
-    <div className="relative mx-auto flex h-[844px] w-full max-w-phone flex-col overflow-hidden rounded-phone bg-canvas shadow-card">
-      {/* status bar */}
-      <div className="flex flex-none items-center justify-between px-7 pt-3 pb-1 text-[13px] font-bold text-ink">
-        <span>9:41</span>
-        <span className="tracking-widest">●●● ▣</span>
-      </div>
-      <div className="flex-1 overflow-y-auto">{children}</div>
-      {tabBar ? <div className="flex-none">{tabBar}</div> : null}
+    <div className="relative flex min-h-[100dvh] w-full flex-col bg-canvas">
+      <div className={`flex-1 ${center ? "mx-auto w-full max-w-3xl lg:py-4" : ""}`}>{children}</div>
+      {tabBar ? <div className="sticky bottom-0 z-30 lg:hidden">{tabBar}</div> : null}
     </div>
   );
+}
+
+/* ----------------------------------------------------------------------------
+ * Lane — centers single-column content on desktop (full-width on mobile).
+ * Use on screens that don't have a bespoke desktop grid so they read as a
+ * comfortable column instead of stretching edge-to-edge.
+ * -------------------------------------------------------------------------- */
+export function Lane({ children, className = "", size = "md" }: { children: ReactNode; className?: string; size?: "sm" | "md" | "lg" }) {
+  const max = size === "sm" ? "lg:max-w-xl" : size === "lg" ? "lg:max-w-5xl" : "lg:max-w-3xl";
+  return <div className={`mx-auto w-full ${max} ${className}`}>{children}</div>;
 }
 
 /* ----------------------------------------------------------------------------

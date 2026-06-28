@@ -28,7 +28,7 @@ export function BizOnboarding({ onExit, onDone }: { onExit: () => void; onDone: 
 
   if (done) {
     return (
-      <PhoneFrame>
+      <PhoneFrame center>
         <Header progress={1} lang={lang} setLang={setLang} onBack={undefined} />
         <EmptyState
           title={L("¡Tu negocio está listo!", "Your business is ready!")}
@@ -44,7 +44,7 @@ export function BizOnboarding({ onExit, onDone }: { onExit: () => void; onDone: 
   }
 
   return (
-    <PhoneFrame>
+    <PhoneFrame center>
       <Header progress={(step + 1) / STEPS} lang={lang} setLang={setLang} onBack={back} />
       <div className="px-4 pb-6 pt-2">
         <div className="mb-4 text-[11px] font-extrabold uppercase tracking-wide text-muted-soft">

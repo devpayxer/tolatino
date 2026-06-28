@@ -12,9 +12,16 @@ body {
 }
 
 body {
-  /* canvas background behind the phone frame */
   background-color: theme("colors.canvas");
   color: theme("colors.ink");
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Hide scrollbars on horizontal rails (mobile carousels) while keeping scroll. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
