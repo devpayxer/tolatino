@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Bell, Search } from "lucide-react";
+import { MapPin, Bell, Search, Store } from "lucide-react";
 import { useI18n } from "../lib/i18n";
 import { Wordmark } from "./primitives";
 import { Avatar } from "./ui";
@@ -23,10 +23,12 @@ export function DesktopNav({
   active,
   onChange,
   onSearch,
+  onPublishBusiness,
 }: {
   active: ConsumerTab;
   onChange: (t: ConsumerTab) => void;
   onSearch: (query?: string) => void;
+  onPublishBusiness: () => void;
 }) {
   const { L, lang, setLang } = useI18n();
   return (
@@ -44,7 +46,7 @@ export function DesktopNav({
           className="flex flex-1 items-center gap-2.5 rounded-pill border border-hair bg-canvas px-4 py-2.5 text-left"
         >
           <Search size={16} className="text-primary" />
-          <span className="text-[13.5px] font-semibold text-muted-soft">{L("Busca tacos, mecánico, salón…", "Search tacos, mechanic, salon…")}</span>
+          <span className="text-[13.5px] font-semibold text-muted-soft">{L("Busca negocios, eventos, empleos…", "Search businesses, events, jobs…")}</span>
         </button>
 
         <nav className="flex items-center gap-1">
@@ -67,6 +69,12 @@ export function DesktopNav({
             <button onClick={() => setLang("es")} className={`px-2.5 py-1.5 ${lang === "es" ? "bg-primary text-white" : "text-muted"}`}>ES</button>
             <button onClick={() => setLang("en")} className={`px-2.5 py-1.5 ${lang === "en" ? "bg-primary text-white" : "text-muted"}`}>EN</button>
           </div>
+          <button
+            onClick={onPublishBusiness}
+            className="flex items-center gap-1.5 rounded-[12px] bg-ink px-3.5 py-2.5 text-[13px] font-extrabold text-white"
+          >
+            <Store size={15} /> {L("Publicar negocio", "List business")}
+          </button>
           <button className="relative flex h-10 w-10 items-center justify-center rounded-full bg-canvas text-ink" aria-label={L("Notificaciones", "Notifications")}>
             <Bell size={18} />
             <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-rose px-1 text-[9px] font-extrabold text-white">3</span>

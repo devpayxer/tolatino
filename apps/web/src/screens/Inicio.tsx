@@ -7,6 +7,7 @@ import { categoryTile } from "../components/primitives";
 import { SectionHeader } from "../components/ui";
 import { nearbyBusinesses } from "../data/queries";
 import type { Business } from "../data/businesses";
+import { InicioDesktop } from "./InicioDesktop";
 
 /**
  * "Inicio" — the discovery-first Home (the landing surface of the app).
@@ -28,9 +29,11 @@ const HOME_CATEGORIES = [
 export function Inicio({
   onSearch,
   onOpenBusiness,
+  onPublishBusiness,
 }: {
   onSearch: (query?: string) => void;
   onOpenBusiness: (id: string) => void;
+  onPublishBusiness: () => void;
 }) {
   const { L } = useI18n();
   const [nearby, setNearby] = useState<Business[]>([]);
@@ -50,7 +53,12 @@ export function Inicio({
   }, []);
 
   return (
-    <div className="px-4 pb-6 lg:px-0">
+    <>
+      {/* desktop home (lg+) — the provided ToLatino Desktop Web design */}
+      <InicioDesktop nearby={nearby} onSearch={onSearch} onOpenBusiness={onOpenBusiness} onPublishBusiness={onPublishBusiness} />
+
+      {/* mobile home */}
+      <div className="px-4 pb-6 lg:hidden">
       {/* greeting + hero search (search hero hidden on desktop — top nav has it) */}
       <div className="lg:mx-auto lg:max-w-2xl lg:pt-2 lg:text-center">
         <h1 className="text-[22px] font-extrabold tracking-tight text-ink lg:text-[34px]">{L("Hola, Ana 👋", "Hey, Ana 👋")}</h1>
@@ -101,7 +109,8 @@ export function Inicio({
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

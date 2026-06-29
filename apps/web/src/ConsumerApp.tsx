@@ -32,13 +32,13 @@ export function ConsumerApp({
   return (
     <PhoneFrame tabBar={<BottomTabs active={tab} onChange={setTab} badges={{ orders: 1 }} />}>
       {/* desktop top nav (lg+) / mobile header */}
-      <DesktopNav active={tab} onChange={setTab} onSearch={onSearch} />
+      <DesktopNav active={tab} onChange={setTab} onSearch={onSearch} onPublishBusiness={onPublishBusiness} />
       <div className="lg:hidden">
         <AppHeader />
       </div>
 
       <main className="mx-auto w-full max-w-content px-0 lg:px-6 lg:py-6">
-        {tab === "home" && <Inicio onSearch={onSearch} onOpenBusiness={onOpenBusiness} />}
+        {tab === "home" && <Inicio onSearch={onSearch} onOpenBusiness={onOpenBusiness} onPublishBusiness={onPublishBusiness} />}
         {tab === "orders" && <Lane>{<Pedidos />}</Lane>}
         {tab === "bookings" && <Lane>{<Reservas />}</Lane>}
         {tab === "tickets" && <Lane>{<Boletos />}</Lane>}
