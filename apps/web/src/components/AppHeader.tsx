@@ -8,7 +8,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Briefcase, Calendar, Car, Home, MapPin, Plus, Search, Store, Truck, Users, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { Avatar, Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
 import { NAV_CATS, VIEW_PATH, bizTile, eventTile } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 import { CAT, tile } from '@/lib/tiles';
@@ -142,6 +143,7 @@ function SearchDropdown() {
 export function AppHeader() {
   const { L } = useLang();
   const app = useApp();
+  const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -182,7 +184,13 @@ export function AppHeader() {
             <Plus size={14} strokeWidth={2.4} className="text-amber" />
             <span className="hidden lg:inline">{L('Publicar', 'List')}</span>
           </button>
-          <YouAvatar size={36} onClick={() => app.setUserOpen(true)} />
+          {auth.profile ? (
+            <button onClick={() => app.setUserOpen(true)} className="flex-none cursor-pointer rounded-full" aria-label={auth.profile.display_name}>
+              <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} size={36} className="border-2 border-lilac-ring" />
+            </button>
+          ) : (
+            <YouAvatar size={36} onClick={() => app.setUserOpen(true)} />
+          )}
         </div>
         <SearchDropdown />
       </div>

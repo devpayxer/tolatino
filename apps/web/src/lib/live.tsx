@@ -29,11 +29,13 @@ type LiveData = { businesses: Business[]; events: EventItem[]; posts: Post[]; li
 
 const Ctx = createContext<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
 
-// ~80 km radius: keeps a whole metro together, separates distant cities.
+// ~80 km radius for businesses/events: keeps a whole metro together.
 const RADIUS_M = 80000;
+// 30 miles for the hyperlocal community feed.
+const COMMUNITY_RADIUS_M = 48280;
 
 export function LiveDataProvider({ children }: { children: ReactNode }) {
-  const { coords, city } = useApp();
+  const { coords } = useApp();
   const [data, setData] = useState<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
 
   useEffect(() => {
@@ -46,8 +48,8 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
         // businesses + events scoped to the user's metro by real distance
         supabase.rpc('businesses_v2', { user_lat: lat, user_lng: lng, in_city: null, max_results: 50, radius_m: RADIUS_M }),
         supabase.rpc('events_near', { user_lat: lat, user_lng: lng, radius_m: RADIUS_M, max_results: 50 }),
-        // community feed is hyperlocal → scoped by the selected city label
-        supabase.from('posts').select('*').eq('city', city).order('created_at', { ascending: false }).limit(50),
+        // community feed is hyperlocal → posts within 30 miles of the user
+        supabase.rpc('posts_near', { user_lat: lat, user_lng: lng, radius_m: COMMUNITY_RADIUS_M, max_results: 50 }),
       ]);
       if (cancelled) return;
 
@@ -138,7 +140,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [coords, city]);
+  }, [coords]);
 
   return <Ctx.Provider value={data}>{children}</Ctx.Provider>;
 }

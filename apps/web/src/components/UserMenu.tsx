@@ -4,22 +4,25 @@
 // Mi negocio, Configuración, Ayuda, idioma, Cerrar sesión.
 
 import { useRouter } from 'next/navigation';
-import { Heart, HelpCircle, LogOut, MessageCircle, SlidersHorizontal, Store, User } from 'lucide-react';
+import { Heart, HelpCircle, LogIn, LogOut, MessageCircle, SlidersHorizontal, Store, User } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Overlay, YouAvatar } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { Avatar, Overlay, YouAvatar } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { VIEW_PATH } from '@/data/fixtures';
 
 export function UserMenu() {
   const { L } = useLang();
   const app = useApp();
+  const auth = useAuth();
   const router = useRouter();
   const close = () => app.setUserOpen(false);
   const go = (path: string) => {
     close();
     router.push(path);
   };
+  const loggedIn = !!auth.user;
 
   const items = [
     { Icon: User, color: '#6D4DF6', bg: '#EFEBFF', label: L('Mi perfil', 'My profile'), act: close },
@@ -30,15 +33,34 @@ export function UserMenu() {
     { Icon: HelpCircle, color: '#9A6A12', bg: '#FCEFD6', label: L('Ayuda y soporte', 'Help & support'), act: close },
   ];
 
+  const name = auth.profile?.display_name ?? L('Tú', 'You');
+
   return (
     <Overlay open={app.userOpen} onClose={close} align="right" width={320}>
       <div className="flex items-center gap-3 border-b border-hair pb-3.5">
-        <YouAvatar size={44} />
+        {loggedIn && auth.profile ? (
+          <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} size={44} />
+        ) : (
+          <YouAvatar size={44} />
+        )}
         <div className="min-w-0">
-          <div className="text-[14.5px] font-extrabold text-ink">{L('Tú', 'You')}</div>
-          <div className="text-[11.5px] font-semibold text-muted">{L(`Vecino · ${app.city}`, `Neighbor · ${app.city}`)}</div>
+          <div className="truncate text-[14.5px] font-extrabold text-ink">{name}</div>
+          <div className="truncate text-[11.5px] font-semibold text-muted">
+            {loggedIn ? L(`Vecino · ${app.cityShort}`, `Neighbor · ${app.cityShort}`) : L('Invitado · sin cuenta', 'Guest · no account')}
+          </div>
         </div>
       </div>
+
+      {!loggedIn && (
+        <button
+          onClick={() => go('/entrar')}
+          className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary p-3 text-[13.5px] font-extrabold text-white shadow-cta-sm"
+        >
+          <LogIn size={16} strokeWidth={2.4} />
+          {L('Crear cuenta o iniciar sesión', 'Create account or sign in')}
+        </button>
+      )}
+
       <div className="flex flex-col py-1.5">
         {items.map(({ Icon, color, bg, label, meta, act }) => (
           <button
@@ -58,15 +80,20 @@ export function UserMenu() {
         <span className="text-[12px] font-extrabold text-muted">{L('Idioma', 'Language')}</span>
         <LangToggle />
       </div>
-      <button
-        onClick={close}
-        className="mt-3 flex w-full cursor-pointer items-center gap-[11px] rounded-btn px-2 py-2.5 text-left hover:bg-pink-bg"
-      >
-        <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px] bg-pink-bg">
-          <LogOut size={16} strokeWidth={2.2} className="text-pink-dark" />
-        </span>
-        <span className="text-[13.5px] font-bold text-pink-dark">{L('Cerrar sesión', 'Log out')}</span>
-      </button>
+      {loggedIn && (
+        <button
+          onClick={async () => {
+            await auth.signOut();
+            close();
+          }}
+          className="mt-3 flex w-full cursor-pointer items-center gap-[11px] rounded-btn px-2 py-2.5 text-left hover:bg-pink-bg"
+        >
+          <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px] bg-pink-bg">
+            <LogOut size={16} strokeWidth={2.2} className="text-pink-dark" />
+          </span>
+          <span className="text-[13.5px] font-bold text-pink-dark">{L('Cerrar sesión', 'Log out')}</span>
+        </button>
+      )}
     </Overlay>
   );
 }

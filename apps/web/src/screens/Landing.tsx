@@ -59,10 +59,10 @@ export function LandingScreen() {
         </button>
         <div className="ml-auto flex items-center gap-2.5">
           <LangToggle />
-          <button onClick={() => go(VIEW_PATH.comunidad)} className="hidden cursor-pointer text-[13px] font-extrabold text-ink-soft md:block">
+          <button onClick={() => go("/entrar")} className="hidden cursor-pointer text-[13px] font-extrabold text-ink-soft md:block">
             {L('Iniciar sesión', 'Log in')}
           </button>
-          <button onClick={() => go(VIEW_PATH.comunidad)} className="cursor-pointer rounded-btn bg-ink px-4 py-2.5 text-[13px] font-extrabold text-white">
+          <button onClick={() => go("/entrar")} className="cursor-pointer rounded-btn bg-ink px-4 py-2.5 text-[13px] font-extrabold text-white">
             {L('Comenzar gratis', 'Get started')}
           </button>
         </div>
@@ -120,10 +120,10 @@ export function LandingScreen() {
             </div>
 
             <div className="mt-5 flex w-full flex-col gap-[11px] md:w-auto md:flex-row">
-              <button onClick={() => go(VIEW_PATH.comunidad)} className="w-full cursor-pointer rounded-btn-lg bg-primary px-[22px] py-[15px] text-[15px] font-extrabold text-white shadow-cta md:w-auto md:px-[26px]">
+              <button onClick={() => go("/entrar")} className="w-full cursor-pointer rounded-btn-lg bg-primary px-[22px] py-[15px] text-[15px] font-extrabold text-white shadow-cta md:w-auto md:px-[26px]">
                 {L('Comenzar gratis', 'Get started — free')}
               </button>
-              <button onClick={() => go(VIEW_PATH.comunidad)} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-[#D8D2EC] bg-white px-[22px] py-[15px] text-[15px] font-extrabold text-ink-soft md:w-auto">
+              <button onClick={() => go("/entrar")} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-[#D8D2EC] bg-white px-[22px] py-[15px] text-[15px] font-extrabold text-ink-soft md:w-auto">
                 {L('Ya tengo cuenta', 'I have an account')}
               </button>
             </div>
