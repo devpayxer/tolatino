@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import { LocateFixed, MapPin, Search } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Overlay, OverlayTitle } from '@/components/ui';
+import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { POPULAR_CITIES, getBrowserLocation, nearestCity, searchCities, type Place } from '@/lib/geo';
 
 export function CityModal() {
@@ -21,6 +21,8 @@ export function CityModal() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [results, setResults] = useState<Place[]>([]);
   const [searching, setSearching] = useState(false);
+  const [pending, setPending] = useState<Place | null>(null); // needs confirmation
+  const [detected, setDetected] = useState(false); // pending came from GPS
   const abortRef = useRef<AbortController | null>(null);
 
   const close = () => {
@@ -29,11 +31,18 @@ export function CityModal() {
     setLocating(false);
     setGeoError(null);
     setResults([]);
+    setPending(null);
+    setDetected(false);
   };
 
-  const pick = (p: Place) => {
+  // commit only after confirmation
+  const confirm = (p: Place) => {
     app.setCityWithCoords(p.label, { lat: p.lat, lng: p.lng });
     close();
+  };
+  const choose = (p: Place, fromGps = false) => {
+    setDetected(fromGps);
+    setPending(p);
   };
 
   // Debounced live autocomplete (Photon). Cancels stale requests.
@@ -66,7 +75,7 @@ export function CityModal() {
     try {
       const { lat, lng } = await getBrowserLocation();
       const place = await nearestCity(lat, lng);
-      pick(place);
+      choose(place, true); // require confirmation before switching
     } catch (err: unknown) {
       const code = (err as GeolocationPositionError)?.code;
       setGeoError(
@@ -81,6 +90,39 @@ export function CityModal() {
 
   const showPopular = q.trim().length < 2;
   const list = showPopular ? POPULAR_CITIES : results;
+
+  // ── Confirmation gate: don't switch city without confirming ──
+  if (app.cityOpen && pending) {
+    return (
+      <Overlay open onClose={close} width={416}>
+        <OverlayTitle title={L('Confirma tu ciudad', 'Confirm your city')} onClose={close} onBack={() => { setPending(null); setDetected(false); }} />
+        <div className="px-2 pb-2 pt-1 text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
+            <MapPin size={24} className="text-primary" strokeWidth={2.2} />
+          </span>
+          <div className="mt-4 text-[17px] font-extrabold text-ink">
+            {detected ? L('¿Es esta tu ciudad?', 'Is this your city?') : L('¿Cambiar a esta ciudad?', 'Switch to this city?')}
+          </div>
+          <p className="mt-1 text-[12.5px] font-medium text-muted">
+            {detected ? L('Te ubicamos aquí.', 'We located you here.') : L('Verás el contenido de esta zona.', 'You’ll see content from this area.')}
+          </p>
+          <div className="mx-auto mt-4 flex items-center justify-center gap-2.5 rounded-tile bg-app px-4 py-3.5">
+            <MapPin size={18} className="text-primary" strokeWidth={2.4} />
+            <span className="text-[16px] font-extrabold text-ink">{pending.label}</span>
+          </div>
+          <PrimaryBtn className="mt-5" onClick={() => confirm(pending)}>
+            {detected ? L('Sí, esta es mi ciudad', 'Yes, this is my city') : L('Sí, cambiar', 'Yes, switch')}
+          </PrimaryBtn>
+          <button
+            onClick={() => { setPending(null); setDetected(false); }}
+            className="mt-3 w-full cursor-pointer text-center text-[13px] font-extrabold text-primary-dark"
+          >
+            {L('No, elegir otra', 'No, pick another')}
+          </button>
+        </div>
+      </Overlay>
+    );
+  }
 
   return (
     <Overlay open={app.cityOpen} onClose={close} width={416}>
@@ -135,7 +177,7 @@ export function CityModal() {
           return (
             <button
               key={`${p.label}-${p.lat}`}
-              onClick={() => pick(p)}
+              onClick={() => choose(p)}
               className={`flex w-full cursor-pointer items-center justify-between rounded-[10px] px-2 py-2.5 text-left text-[13.5px] font-bold ${
                 current ? 'bg-lilac-3 text-ink' : 'text-ink-soft hover:bg-app'
               }`}
