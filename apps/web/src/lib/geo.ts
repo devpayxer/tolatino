@@ -1,7 +1,12 @@
-// Geolocation via OpenStreetMap — Photon (city autocomplete) + Nominatim
-// (reverse geocode). Free / OSS, no API key, no Google billing (per CLAUDE.md).
-// All calls run in the user's browser: CORS is open on both services and the
-// site origin (Referer) satisfies their low-volume usage policies.
+// Geolocation. Primary source is OUR OWN city gazetteer in Supabase
+// (public.cities + search_cities / nearest_city RPCs) — no external
+// dependency, no rate limits, scales like any indexed query. We only fall
+// back to OpenStreetMap (Photon autocomplete + Nominatim reverse) when
+// Supabase isn't configured or returns nothing. Free/OSS end to end, no
+// Google billing (per CLAUDE.md). Browser-side; CORS is open on both OSM
+// services and the site origin satisfies their low-volume policies.
+
+import { supabase } from '@/lib/supabase';
 
 export type Place = { label: string; lat: number; lng: number };
 
@@ -46,10 +51,21 @@ export const POPULAR_CITIES: Place[] = [
 
 export const DEFAULT_COORDS = { lat: POPULAR_CITIES[0].lat, lng: POPULAR_CITIES[0].lng };
 
-/** Forward autocomplete: type a city → real OSM city suggestions (Photon). */
+/** Forward autocomplete: our cities table first, OSM (Photon) as fallback. */
 export async function searchCities(query: string, signal?: AbortSignal): Promise<Place[]> {
   const q = query.trim();
   if (q.length < 2) return [];
+
+  // 1) our own gazetteer
+  if (supabase) {
+    const rpc = supabase.rpc('search_cities', { q, max_results: 8 });
+    const { data, error } = await (signal ? rpc.abortSignal(signal) : rpc);
+    if (!error && data && data.length) {
+      return (data as { label: string; lat: number; lng: number }[]).map((r) => ({ label: r.label, lat: r.lat, lng: r.lng }));
+    }
+  }
+
+  // 2) fallback: OpenStreetMap / Photon
   const url = `https://photon.komoot.io/api?q=${encodeURIComponent(q)}&lang=en&limit=8&layer=city`;
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`photon ${res.status}`);
@@ -72,7 +88,19 @@ export async function searchCities(query: string, signal?: AbortSignal): Promise
   return out;
 }
 
-/** Reverse geocode: coords → nearest city label (Nominatim). */
+/** GPS coords → nearest city: our gazetteer first (PostGIS KNN), OSM fallback. */
+export async function nearestCity(lat: number, lng: number, signal?: AbortSignal): Promise<Place> {
+  if (supabase) {
+    const { data, error } = await supabase.rpc('nearest_city', { user_lat: lat, user_lng: lng });
+    if (!error && data && data.length) {
+      const c = (data as { label: string; lat: number; lng: number }[])[0];
+      return { label: c.label, lat: c.lat, lng: c.lng };
+    }
+  }
+  return reverseGeocode(lat, lng, signal);
+}
+
+/** Reverse geocode via OpenStreetMap (Nominatim) — fallback for nearestCity. */
 export async function reverseGeocode(lat: number, lng: number, signal?: AbortSignal): Promise<Place> {
   const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=10&addressdetails=1`;
   try {

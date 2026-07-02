@@ -11,7 +11,7 @@ import { LocateFixed, MapPin, Search } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Overlay, OverlayTitle } from '@/components/ui';
-import { POPULAR_CITIES, getBrowserLocation, reverseGeocode, searchCities, type Place } from '@/lib/geo';
+import { POPULAR_CITIES, getBrowserLocation, nearestCity, searchCities, type Place } from '@/lib/geo';
 
 export function CityModal() {
   const { L } = useLang();
@@ -65,7 +65,7 @@ export function CityModal() {
     setLocating(true);
     try {
       const { lat, lng } = await getBrowserLocation();
-      const place = await reverseGeocode(lat, lng);
+      const place = await nearestCity(lat, lng);
       pick(place);
     } catch (err: unknown) {
       const code = (err as GeolocationPositionError)?.code;
