@@ -192,7 +192,14 @@ export function ComunidadScreen() {
         </Card>
 
         {posts.length === 0 ? (
-          <EmptyState title={L('Sin resultados para tu búsqueda', 'No results for your search')} />
+          app.search ? (
+            <EmptyState title={L('Sin resultados para tu búsqueda', 'No results for your search')} />
+          ) : (
+            <EmptyState
+              title={L(`Todavía no hay publicaciones en ${app.cityShort}`, `No posts in ${app.cityShort} yet`)}
+              sub={L('Sé el primero en compartir algo con tu barrio.', 'Be the first to share something with your neighborhood.')}
+            />
+          )
         ) : (
           <div className="flex flex-col gap-3.5">
             {posts.map((p) => (

@@ -29,8 +29,11 @@ type LiveData = { businesses: Business[]; events: EventItem[]; posts: Post[]; li
 
 const Ctx = createContext<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
 
+// ~80 km radius: keeps a whole metro together, separates distant cities.
+const RADIUS_M = 80000;
+
 export function LiveDataProvider({ children }: { children: ReactNode }) {
-  const { coords } = useApp();
+  const { coords, city } = useApp();
   const [data, setData] = useState<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
 
   useEffect(() => {
@@ -40,44 +43,47 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       const [biz, ev, po] = await Promise.all([
-        supabase.rpc('businesses_v2', { user_lat: lat, user_lng: lng, in_city: null, max_results: 50 }),
-        supabase.from('events').select('*').order('starts_at', { ascending: true }).limit(50),
-        supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(50),
+        // businesses + events scoped to the user's metro by real distance
+        supabase.rpc('businesses_v2', { user_lat: lat, user_lng: lng, in_city: null, max_results: 50, radius_m: RADIUS_M }),
+        supabase.rpc('events_near', { user_lat: lat, user_lng: lng, radius_m: RADIUS_M, max_results: 50 }),
+        // community feed is hyperlocal → scoped by the selected city label
+        supabase.from('posts').select('*').eq('city', city).order('created_at', { ascending: false }).limit(50),
       ]);
       if (cancelled) return;
 
       const next: LiveData = { businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false };
 
-      if (!biz.error && biz.data?.length) {
+      // When a query SUCCEEDS we trust its result — even if empty (a city with
+      // no listings genuinely shows none). Fixtures remain only if the query
+      // errored (e.g. Supabase not configured, or migrations not applied yet).
+      if (!biz.error && Array.isArray(biz.data)) {
         const rows = (biz.data as Record<string, unknown>[]).filter((r) => isCatKey(String(r.category_id)));
-        if (rows.length) {
-          next.businesses = rows.map((r, i): Business => {
-            const distM = r.distance_m as number | null;
-            return {
-              id: i,
-              name: String(r.name),
-              cat: String(r.category_id) as CatKey,
-              rating: Number(r.rating).toFixed(1),
-              reviews: Number(r.reviews_count),
-              dist: distM != null ? `${(distM / 1609.34).toFixed(1)} mi` : '— mi',
-              price: (r.price_level as Business['price']) ?? '$',
-              open: Boolean(r.is_open),
-              verified: r.tier !== 'free',
-              endorse: Number(r.endorse_count ?? 0),
-              t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
-              specEs: String(r.specialty_es ?? ''),
-              specEn: String(r.specialty_en ?? ''),
-              amEs: (r.amenities_es as string[]) ?? [],
-              amEn: (r.amenities_en as string[]) ?? [],
-              revEs: String(r.review_es ?? ''),
-              revEn: String(r.review_en ?? ''),
-            };
-          });
-          next.live = true;
-        }
+        next.businesses = rows.map((r, i): Business => {
+          const distM = r.distance_m as number | null;
+          return {
+            id: i,
+            name: String(r.name),
+            cat: String(r.category_id) as CatKey,
+            rating: Number(r.rating).toFixed(1),
+            reviews: Number(r.reviews_count),
+            dist: distM != null ? `${(distM / 1609.34).toFixed(1)} mi` : '— mi',
+            price: (r.price_level as Business['price']) ?? '$',
+            open: Boolean(r.is_open),
+            verified: r.tier !== 'free',
+            endorse: Number(r.endorse_count ?? 0),
+            t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
+            specEs: String(r.specialty_es ?? ''),
+            specEn: String(r.specialty_en ?? ''),
+            amEs: (r.amenities_es as string[]) ?? [],
+            amEn: (r.amenities_en as string[]) ?? [],
+            revEs: String(r.review_es ?? ''),
+            revEn: String(r.review_en ?? ''),
+          };
+        });
+        next.live = true;
       }
 
-      if (!ev.error && ev.data?.length) {
+      if (!ev.error && Array.isArray(ev.data)) {
         next.events = (ev.data as Record<string, unknown>[]).map((r, i): EventItem => {
           const d = new Date(String(r.starts_at));
           return {
@@ -102,7 +108,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
         next.live = true;
       }
 
-      if (!po.error && po.data?.length) {
+      if (!po.error && Array.isArray(po.data)) {
         next.posts = (po.data as Record<string, unknown>[]).map((r): Post => {
           const [tEs, tEn] = relTime(String(r.created_at));
           return {
@@ -132,7 +138,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [coords]);
+  }, [coords, city]);
 
   return <Ctx.Provider value={data}>{children}</Ctx.Provider>;
 }
