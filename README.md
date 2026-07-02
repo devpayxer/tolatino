@@ -32,14 +32,22 @@ The short version:
 
 ## Status
 
-🚧 **Foundation in place; app implementation restarting.**
+🚀 **v2 app built from Handoff v2 (2026-07-02).**
 - Project memory + build standards (`CLAUDE.md`, `tolatino-standards` skill).
-- **Design system** committed under [`docs/design-system/`](docs/design-system/)
-  (tokens, primitives, navigation patterns, reference screenshots).
+- **Design system (Handoff v2)** under [`docs/design-system/`](docs/design-system/)
+  (full spec + high-fidelity HTML prototypes).
 - **Database schema** in [`supabase/`](supabase/) (Postgres + PostGIS,
   applied to the live Supabase project).
-- **`apps/web`** — the first implementation was scrapped (2026-07-02) to start
-  over; the next one will be rebuilt from the design system and `CLAUDE.md`.
+- **`apps/web`** — Next.js (App Router) mobile-first responsive app, static
+  export ready for Cloudflare Pages: landing (`/`), client app with the
+  7-category bar (`/comunidad` · `/negocios` · `/eventos` + 4 "Muy pronto"
+  waitlists), and the business onboarding + starter dashboard (`/negocio`).
+  Spanish-first (global ES/EN toggle), geo city selector, real interaction
+  state (post → feed, ♥, Voy, seguir, carrito, boletos, reseñas).
+  `pnpm install && pnpm --filter @tolatino/web dev`.
+
+Next: full business admin panel (modules, orders, customers, billing per
+plan/rubro) and wiring the data layer to **Supabase**.
 
 ## Architecture
 
