@@ -17,8 +17,23 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font-family: inherit;
+}
+
+/*
+ * Prevent iOS Safari's auto-zoom when focusing a form field. Mobile Safari
+ * zooms in whenever an input's font-size is < 16px, so on small screens we
+ * force every form control to 16px (overriding the compact Tailwind sizes).
+ * Desktop keeps the designed type. Pinch-to-zoom stays enabled (accessible).
+ */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 /* hide scrollbars on chip rails (handoff: data-hide) */
