@@ -5,10 +5,10 @@ name: Deploy to Vercel
 # Actions → New repository secret). The Vercel build itself is driven by the
 # root vercel.json (pnpm monorepo → apps/web static export).
 
+# Manual-only: Vercel's own Git integration was auto-connected on project
+# creation (2026-07-02) and deploys every push by itself. This workflow
+# remains as a fallback if that integration is ever disconnected.
 on:
-  push:
-    branches:
-      - claude/tolatino-repo-setup-1efdil
   workflow_dispatch:
 
 concurrency:
