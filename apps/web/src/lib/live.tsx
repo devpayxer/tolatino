@@ -25,9 +25,16 @@ function relTime(iso: string): [string, string] {
   return [`hace ${d} d`, `${d}d`];
 }
 
-type LiveData = { businesses: Business[]; events: EventItem[]; posts: Post[]; live: boolean };
+type LiveData = {
+  businesses: Business[];
+  events: EventItem[];
+  posts: Post[];
+  live: boolean;
+  /** Re-fetch from Supabase (e.g. right after publishing a post). */
+  refresh: () => void;
+};
 
-const Ctx = createContext<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
+const Ctx = createContext<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false, refresh: () => {} });
 
 // ~80 km radius for businesses/events: keeps a whole metro together.
 const RADIUS_M = 80000;
@@ -36,7 +43,8 @@ const COMMUNITY_RADIUS_M = 48280;
 
 export function LiveDataProvider({ children }: { children: ReactNode }) {
   const { coords } = useApp();
-  const [data, setData] = useState<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
+  const [version, setVersion] = useState(0);
+  const [data, setData] = useState<Omit<LiveData, 'refresh'>>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
 
   useEffect(() => {
     if (!supabase) return;
@@ -53,7 +61,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
       ]);
       if (cancelled) return;
 
-      const next: LiveData = { businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false };
+      const next: Omit<LiveData, 'refresh'> = { businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false };
 
       // When a query SUCCEEDS we trust its result — even if empty (a city with
       // no listings genuinely shows none). Fixtures remain only if the query
@@ -140,9 +148,9 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [coords]);
+  }, [coords, version]);
 
-  return <Ctx.Provider value={data}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ ...data, refresh: () => setVersion((v) => v + 1) }}>{children}</Ctx.Provider>;
 }
 
 export function useLiveData(): LiveData {

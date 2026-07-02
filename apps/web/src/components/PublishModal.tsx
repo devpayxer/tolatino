@@ -1,15 +1,21 @@
 'use client';
 
 // Publish flow (Handoff v2): FAB/"Publicar" → chooser (Publicación / Negocio /
-// Evento) → per-type form → success. Posting REALLY adds to the Comunidad feed.
+// Evento) → per-type form → success. Community posts are inserted into
+// Supabase with the author's identity + location, so neighbors within 30
+// miles really see them. Guests hit a sign-in gate. Falls back to the local
+// in-memory feed when Supabase is unavailable.
 // Post form is 3 steps: type → write (photos / tag business / poll options) →
 // preview.
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, HelpCircle, Heart, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
+import { Calendar, HelpCircle, Heart, LogIn, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp, type PostType } from '@/lib/state';
+import { useAuth } from '@/lib/auth';
+import { useLiveData } from '@/lib/live';
+import { supabase } from '@/lib/supabase';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { PUB_HOODS, TAG_BIZ_NAMES, VIEW_PATH } from '@/data/fixtures';
 import { PostCard, type FeedPost } from '@/components/PostCard';
@@ -23,6 +29,8 @@ const PHOTO_TILES = [
 export function PublishModal() {
   const { L } = useLang();
   const app = useApp();
+  const auth = useAuth();
+  const live = useLiveData();
   const router = useRouter();
 
   const [step, setStep] = useState(1);
@@ -34,6 +42,8 @@ export function PublishModal() {
   const [taggedBiz, setTaggedBiz] = useState<string | null>(null);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [evFree, setEvFree] = useState(true);
+  const [posting, setPosting] = useState(false);
+  const [postErr, setPostErr] = useState<string | null>(null);
 
   const reset = () => {
     setStep(1);
@@ -42,6 +52,8 @@ export function PublishModal() {
     setPhotos(0);
     setTaggedBiz(null);
     setPollOptions(['', '']);
+    setPosting(false);
+    setPostErr(null);
   };
   const close = () => {
     app.closePub();
@@ -62,16 +74,13 @@ export function PublishModal() {
     { key: 'poll', Icon: BarChart3, color: '#0E9384', bg: '#D6F3EF', labEs: 'Encuesta', labEn: 'Poll', dEs: 'Haz una pregunta con opciones para votar.', dEn: 'Ask a question with options to vote on.' },
   ];
 
-  const submitPost = () => {
-    const txt = text.trim();
-    if (!txt) return;
-    const opts = pollOptions.map((o) => o.trim()).filter(Boolean);
-    if (isPoll && opts.length < 2) return;
+  // Local fallback: keeps the app working when Supabase is unreachable.
+  const addLocalPost = (txt: string, opts: string[]) => {
     app.addPost({
       type: postType,
-      initials: 'TÚ',
-      color: '#7B61FF',
-      name: L('Tú', 'You'),
+      initials: auth.profile?.initials ?? 'TÚ',
+      color: auth.profile?.avatar_color ?? '#7B61FF',
+      name: auth.profile?.display_name ?? L('Tú', 'You'),
       hoodEs: hood,
       timeEs: 'ahora',
       timeEn: 'now',
@@ -83,6 +92,47 @@ export function PublishModal() {
       es: txt,
       en: txt,
     });
+  };
+
+  const submitPost = async () => {
+    const txt = text.trim();
+    if (!txt || posting) return;
+    const opts = pollOptions.map((o) => o.trim()).filter(Boolean);
+    if (isPoll && opts.length < 2) return;
+    setPostErr(null);
+
+    // Real publish: insert into Supabase with the author's identity + location.
+    if (supabase && auth.user && auth.profile) {
+      setPosting(true);
+      const { error } = await supabase.from('posts').insert({
+        type: postType,
+        author_id: auth.user.id,
+        author_name: auth.profile.display_name,
+        author_initials: auth.profile.initials,
+        author_color: auth.profile.avatar_color,
+        hood,
+        city: app.city,
+        lat: app.coords.lat,
+        lng: app.coords.lng,
+        body_es: txt,
+        body_en: txt,
+        business_name: taggedBiz,
+        business_rating: taggedBiz ? 4.9 : null,
+        poll_options: isPoll ? opts : null,
+        poll_votes: isPoll ? opts.map(() => 0) : null,
+      });
+      setPosting(false);
+      if (error) {
+        setPostErr(L('No pudimos publicar. Revisa tu conexión e intenta de nuevo.', "We couldn't publish. Check your connection and try again."));
+        return;
+      }
+      live.refresh(); // the new post arrives from the DB for everyone nearby
+      setDone(true);
+      return;
+    }
+
+    // No backend (or demo mode): local-only post.
+    addLocalPost(txt, opts);
     setDone(true);
   };
 
@@ -120,9 +170,9 @@ export function PublishModal() {
   const previewPost: FeedPost = {
     id: 'preview',
     type: postType,
-    initials: 'TÚ',
-    color: '#7B61FF',
-    name: L('Tú', 'You'),
+    initials: auth.profile?.initials ?? 'TÚ',
+    color: auth.profile?.avatar_color ?? '#7B61FF',
+    name: auth.profile?.display_name ?? L('Tú', 'You'),
     hoodEs: hood,
     timeEs: 'ahora',
     timeEn: 'now',
@@ -174,8 +224,35 @@ export function PublishModal() {
         </div>
       )}
 
+      {/* sign-in gate: publishing to the community requires an account */}
+      {type === 'post' && !done && !auth.user && auth.configured && (
+        <div className="flex flex-col items-center px-2 py-5 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
+            <LogIn size={24} className="text-primary" strokeWidth={2.2} />
+          </span>
+          <div className="mt-4 text-[19px] font-extrabold tracking-[-.02em] text-ink">
+            {L('Únete para publicar', 'Join to post')}
+          </div>
+          <p className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
+            {L('Crea tu cuenta gratis para compartir con los vecinos a 30 millas a la redonda.', 'Create your free account to share with neighbors within 30 miles.')}
+          </p>
+          <PrimaryBtn
+            className="mt-5"
+            onClick={() => {
+              close();
+              router.push('/entrar');
+            }}
+          >
+            {L('Crear cuenta o iniciar sesión', 'Create account or sign in')}
+          </PrimaryBtn>
+          <button onClick={close} className="mt-3 cursor-pointer text-[12.5px] font-extrabold text-muted">
+            {L('Ahora no', 'Not now')}
+          </button>
+        </div>
+      )}
+
       {/* post flow */}
-      {type === 'post' && !done && (
+      {type === 'post' && !done && (auth.user || !auth.configured) && (
         <>
           <div className="mb-4 flex gap-1.5">
             {[1, 2, 3].map((n) => (
@@ -321,8 +398,11 @@ export function PublishModal() {
                 {L('Así se verá en el feed de tu barrio:', "Here's how it'll look in your feed:")}
               </div>
               <PostCard post={previewPost} preview />
-              <PrimaryBtn className="mt-4" onClick={submitPost}>
-                {L('Publicar', 'Post')}
+              {postErr && (
+                <div className="mt-3 rounded-btn bg-pink-bg px-3 py-2 text-[12px] font-semibold text-pink-dark">{postErr}</div>
+              )}
+              <PrimaryBtn className="mt-4" disabled={posting} onClick={submitPost}>
+                {posting ? L('Publicando…', 'Posting…') : L('Publicar', 'Post')}
               </PrimaryBtn>
             </div>
           )}
