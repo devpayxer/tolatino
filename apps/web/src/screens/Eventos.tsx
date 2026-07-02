@@ -51,8 +51,8 @@ export function EventosScreen() {
     }).map((e) => ({ key: `${e.dEs}-${e.day}`, dEs: e.dEs, day: e.day }));
   }, [EVENTS]);
 
-  const fe = EVENTS[0];
-  const feOn = !!app.going[fe.id];
+  const fe = EVENTS[0]; // featured — may be undefined when a city has no events
+  const feOn = fe ? !!app.going[fe.id] : false;
   const detail = detailId !== null ? EVENTS[detailId] : null;
   const detailOn = detail ? !!app.going[detail.id] : false;
   const priceNum = detail && !detail.free ? parseFloat((detail.price ?? '$0').replace('$', '')) : 0;
@@ -85,7 +85,8 @@ export function EventosScreen() {
 
       <SearchChip count={list.length} className="mb-3.5" />
 
-      {/* featured */}
+      {/* featured — only when the city actually has an event */}
+      {fe && (
       <div
         className="relative mb-[22px] flex cursor-pointer flex-col items-start gap-[18px] overflow-hidden rounded-[22px] p-[22px] shadow-band md:flex-row md:items-center md:gap-[26px] md:p-[28px]"
         style={{ background: 'linear-gradient(150deg,#6743E2,#8268FF)' }}
@@ -126,6 +127,7 @@ export function EventosScreen() {
           {feOn ? L('Voy ✓', 'Going ✓') : L('Comprar boleto', 'Get ticket')}
         </button>
       </div>
+      )}
 
       {/* filter chips */}
       <div className="no-scrollbar -mx-3.5 mb-3 flex gap-2 overflow-x-auto px-3.5">
@@ -172,8 +174,17 @@ export function EventosScreen() {
       {/* grid */}
       {list.length === 0 ? (
         <Card className="p-10 text-center">
-          <div className="text-[15px] font-extrabold text-ink">{L('Sin resultados', 'No results')}</div>
-          <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Prueba quitar algunos filtros.', 'Try removing some filters.')}</div>
+          {EVENTS.length === 0 ? (
+            <>
+              <div className="text-[15px] font-extrabold text-ink">{L(`Todavía no hay eventos en ${app.cityShort}`, `No events in ${app.cityShort} yet`)}</div>
+              <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Sé el primero en crear uno para tu comunidad.', 'Be the first to create one for your community.')}</div>
+            </>
+          ) : (
+            <>
+              <div className="text-[15px] font-extrabold text-ink">{L('Sin resultados', 'No results')}</div>
+              <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Prueba quitar algunos filtros.', 'Try removing some filters.')}</div>
+            </>
+          )}
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
