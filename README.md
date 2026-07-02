@@ -32,17 +32,14 @@ The short version:
 
 ## Status
 
-🚧 **Foundation in place.**
+🚧 **Foundation in place; app implementation restarting.**
 - Project memory + build standards (`CLAUDE.md`, `tolatino-standards` skill).
 - **Design system** committed under [`docs/design-system/`](docs/design-system/)
   (tokens, primitives, navigation patterns, reference screenshots).
-- **`apps/web`** — Next.js (App Router) mobile-first PWA scaffolded: Plus Jakarta
-  Sans, design tokens wired into Tailwind, bilingual (es/en) + tier/category
-  providers, and the consumer **Inicio** shell built from the design-system
-  primitives. `pnpm install && pnpm --filter @tolatino/web dev`.
-
-Next: more consumer screens (search, listing detail, booking/order), business
-onboarding + dashboard, then wiring the data layer on **Supabase**.
+- **Database schema** in [`supabase/`](supabase/) (Postgres + PostGIS,
+  applied to the live Supabase project).
+- **`apps/web`** — the first implementation was scrapped (2026-07-02) to start
+  over; the next one will be rebuilt from the design system and `CLAUDE.md`.
 
 ## Architecture
 

@@ -144,7 +144,14 @@ building any UI; never improvise. Key files:
   run if a rendered screen drifts from the reference (type/color/radius/spacing/
   layout/primitives/copy/imagery audit). Use it before finishing any UI task.
 
-The live implementation lives in **`apps/web`**:
+### Reset (2026-07-02): first `apps/web` implementation scrapped
+The founder decided to **start the app over**. The first `apps/web`
+implementation (consumer tabs, business side, Supabase wiring, GitHub Pages
+deploy workflow) was **removed from the repo**; the design system docs, this
+memory file, the `tolatino-standards` skill, and `supabase/` (the schema
+already applied to the live Supabase project) were kept. The next
+implementation starts from a fresh prompt but must still recreate this
+structure in **`apps/web`**:
 - Tokens → `apps/web/tailwind.config.ts` (use named tokens: `bg-primary`,
   `text-ink`, `rounded-card`, `border-hair` — never raw hex).
 - Primitives → `apps/web/src/components/` (`Wordmark`, `PhoneFrame`, `Card`,
