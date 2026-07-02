@@ -27,19 +27,19 @@ jobs:
         with:
           node-version: 22
 
-      - name: Check secret
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "::error::Falta el secreto VERCEL_TOKEN (Settings → Secrets and variables → Actions)."
-            exit 1
-          fi
-
       - name: Deploy (production)
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TOKEN_RAW: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          npx vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" | tee deploy-url.txt
+          set -o pipefail
+          # Sanitize: keep only the vcp_/vercel token itself, dropping any
+          # stray spaces, newlines or surrounding text pasted into the secret.
+          TOKEN=$(printf '%s' "$VERCEL_TOKEN_RAW" | grep -oE '[A-Za-z0-9_]{24,}' | head -1)
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Falta el secreto VERCEL_TOKEN o no contiene un token válido (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          npx vercel@latest deploy --prod --yes --token "$TOKEN" 2>&1 | tee deploy.log
+          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.vercel\.app' deploy.log | tail -1)
           echo "### 🚀 Desplegado en Vercel" >> "$GITHUB_STEP_SUMMARY"
-          echo "$(tail -1 deploy-url.txt)" >> "$GITHUB_STEP_SUMMARY"
+          echo "$URL" >> "$GITHUB_STEP_SUMMARY"
