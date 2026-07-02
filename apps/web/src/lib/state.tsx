@@ -7,16 +7,21 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_CITY, NOTIFS, type Post, type PostType } from '@/data/fixtures';
+import { DEFAULT_COORDS } from '@/lib/geo';
 
 type Toggles = Record<string, boolean>;
+
+export type Coords = { lat: number; lng: number };
 
 export type PubType = 'post' | 'negocio' | 'evento';
 
 type AppCtx = {
-  // geo
+  // geo — the selected city label + its real coordinates (drive the geo query)
   city: string;
   cityShort: string;
+  coords: Coords;
   setCity: (c: string) => void;
+  setCityWithCoords: (label: string, coords: Coords) => void;
   cityOpen: boolean;
   setCityOpen: (v: boolean) => void;
 
@@ -81,6 +86,7 @@ const toggle = (set: React.Dispatch<React.SetStateAction<Toggles>>, key: string 
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [city, setCity] = useState(DEFAULT_CITY);
+  const [coords, setCoords] = useState<Coords>(DEFAULT_COORDS);
   const [cityOpen, setCityOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
@@ -107,7 +113,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       city,
       cityShort: city.split(',')[0],
+      coords,
       setCity,
+      setCityWithCoords: (label: string, c: Coords) => {
+        setCity(label);
+        setCoords(c);
+      },
       cityOpen,
       setCityOpen,
       query,
@@ -159,7 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       biz,
       setBiz,
     }),
-    [city, cityOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
+    [city, coords, cityOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

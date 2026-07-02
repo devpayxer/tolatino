@@ -12,11 +12,6 @@ import { BUSINESSES, EVENTS, POSTS, type Business, type EventItem, type Post } f
 import { CAT, type CatKey } from '@/lib/tiles';
 import { useApp } from '@/lib/state';
 
-// City centers for the geo query (extend as cities launch).
-const CITY_CENTERS: Record<string, [number, number]> = {
-  'Houston, TX': [29.7604, -95.3698],
-};
-
 const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
 const isCatKey = (v: string): v is CatKey => v in CAT;
@@ -35,13 +30,13 @@ type LiveData = { businesses: Business[]; events: EventItem[]; posts: Post[]; li
 const Ctx = createContext<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
 
 export function LiveDataProvider({ children }: { children: ReactNode }) {
-  const { city } = useApp();
+  const { coords } = useApp();
   const [data, setData] = useState<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
 
   useEffect(() => {
     if (!supabase) return;
     let cancelled = false;
-    const [lat, lng] = CITY_CENTERS[city] ?? CITY_CENTERS['Houston, TX'];
+    const { lat, lng } = coords; // real coords from geolocation / city pick
 
     (async () => {
       const [biz, ev, po] = await Promise.all([
@@ -137,7 +132,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [city]);
+  }, [coords]);
 
   return <Ctx.Provider value={data}>{children}</Ctx.Provider>;
 }
