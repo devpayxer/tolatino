@@ -47,6 +47,13 @@ and bookings** to nearby local users, in their own language and culture.
    search, pagination, caching) from day one — without over-engineering.
 5. **Spanish-first.** Default language is Spanish (es-US); English (en-US) is
    secondary. All copy, errors, and content support i18n from the start.
+6. **Paste anything the founder must run — always, in the chat.** Whenever a task
+   produces something the founder has to run or paste somewhere by hand (SQL
+   migrations, seed scripts, one-off queries, `.env` values, shell/CLI commands,
+   dashboard/config snippets, Supabase settings to toggle), **show the full,
+   copy-pasteable content directly in the chat reply** — never just reference a
+   file path or say "it's in the repo". The founder works by copy-paste (no CLI
+   assumed). If it's long, still paste it in full; don't summarize or truncate.
 
 ## Tech stack (the agreed base — keep in sync)
 
@@ -182,7 +189,9 @@ One responsive app, three surfaces:
   exists`) so they can be re-run safely.
 - **ALWAYS paste the full migration SQL into the chat** whenever a migration is
   created or required — the founder runs it by pasting into the **Supabase SQL
-  Editor** (no CLI assumed). Don't just reference the file; show the SQL.
+  Editor** (no CLI assumed). Don't just reference the file; show the SQL. This is
+  the specific case of the global **"paste anything the founder must run" rule**
+  — see non-negotiable #6.
 - Design every table for the 1M+ scale target: PostGIS `geography` + GIST index
   for geo, GIN (full-text / trigram) for search, btree on filtered columns,
   pagination, and **RLS** (public read where appropriate; writes locked down).
