@@ -9,7 +9,7 @@ import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, MessageCircle, M
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
-import { BUSINESSES, bizTile } from '@/data/fixtures';
+import { bizTile, type Business } from '@/data/fixtures';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_DATES, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
 
@@ -20,11 +20,11 @@ type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg
 const initials = (name: string) =>
   name.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-export function BizDetail({ id, onClose, onOpenOther }: { id: number; onClose: () => void; onOpenOther: (id: number) => void }) {
+export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: Business[]; onClose: () => void; onOpenOther: (b: Business) => void }) {
   const { L } = useLang();
   const B = (pair: Bi) => L(pair[0], pair[1]);
   const app = useApp();
-  const b = BUSINESSES[id];
+  const id = b.id;
 
   const [tab, setTab] = useState<TabKey>('overview');
   const [contactOpen, setContactOpen] = useState(false);
@@ -517,8 +517,8 @@ export function BizDetail({ id, onClose, onOpenOther }: { id: number; onClose: (
       {/* ============ RELATED ============ */}
       {tab === 'related' && (
         <div className="flex flex-col gap-2.5 pt-4">
-          {BUSINESSES.filter((x) => x.id !== id).slice(0, 4).map((x) => (
-            <Card key={x.id} className="flex items-center gap-3 p-3.5" onClick={() => { onOpenOther(x.id); setTab('overview'); }}>
+          {all.filter((x) => x.id !== id).slice(0, 4).map((x) => (
+            <Card key={x.id} className="flex items-center gap-3 p-3.5" onClick={() => { onOpenOther(x); setTab('overview'); }}>
               <span className="h-[56px] w-[56px] flex-none rounded-tile" style={{ background: bizTile(x) }} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">

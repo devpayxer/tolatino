@@ -11,7 +11,8 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
-import { BUSINESSES, SUBCATS, bizTile, type Business } from '@/data/fixtures';
+import { SUBCATS, bizTile, type Business } from '@/data/fixtures';
+import { useLiveData } from '@/lib/live';
 import { CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
 
@@ -32,13 +33,14 @@ const DEFAULT_FILTERS: Filters = { cat: 'all', subCat: null, price: null, rating
 export function NegociosScreen() {
   const { L } = useLang();
   const app = useApp();
+  const { businesses: BUSINESSES } = useLiveData();
   const [f, setF] = useState<Filters>(DEFAULT_FILTERS);
   const [catOpen, setCatOpen] = useState<CatKey | null>(null);
   const [sort, setSort] = useState<'rel' | 'dist' | 'rating'>('rel');
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
-  const [detailId, setDetailId] = useState<number | null>(null);
+  const [detailBiz, setDetailBiz] = useState<Business | null>(null);
 
   const patch = (p: Partial<Filters>) => {
     setF((cur) => ({ ...cur, ...p }));
@@ -57,7 +59,7 @@ export function NegociosScreen() {
     if (sort === 'rating') list = list.slice().sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
     if (sort === 'dist') list = list.slice().sort((a, b) => parseFloat(a.dist) - parseFloat(b.dist));
     return list;
-  }, [f, sl, sort]);
+  }, [f, sl, sort, BUSINESSES]);
 
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
@@ -67,7 +69,7 @@ export function NegociosScreen() {
     const m: Partial<Record<CatKey, number>> = {};
     BUSINESSES.forEach((b) => (m[b.cat] = (m[b.cat] ?? 0) + 1));
     return m;
-  }, []);
+  }, [BUSINESSES]);
 
   const sortLabels = { rel: L('Relevancia', 'Relevance'), dist: L('Distancia', 'Distance'), rating: L('Calificación', 'Rating') };
   const toggleSort = () => setSort((s) => (s === 'rel' ? 'dist' : s === 'dist' ? 'rating' : 'rel'));
@@ -93,8 +95,8 @@ export function NegociosScreen() {
       on ? 'border-primary bg-lilac-3 text-ink' : 'border-[#ECEAF4] bg-white text-ink-soft'
     }`;
 
-  if (detailId !== null) {
-    return <BizDetail id={detailId} onClose={() => setDetailId(null)} onOpenOther={(id) => setDetailId(id)} />;
+  if (detailBiz !== null) {
+    return <BizDetail b={detailBiz} all={BUSINESSES} onClose={() => setDetailBiz(null)} onOpenOther={(biz) => setDetailBiz(biz)} />;
   }
 
   const filterPanel = (
@@ -324,7 +326,7 @@ export function NegociosScreen() {
           ) : (
             <div className="grid gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               {pageResults.map((b) => (
-                <BizCardA key={b.id} b={b} onOpen={() => setDetailId(b.id)} />
+                <BizCardA key={b.id} b={b} onOpen={() => setDetailBiz(b)} />
               ))}
             </div>
           )}

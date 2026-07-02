@@ -10,11 +10,13 @@ import { useApp } from '@/lib/state';
 import { Avatar, Card, EmptyState, Overlay, YouAvatar } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
-import { BUSINESSES, HOODS, NEIGHBORS, POSTS, SEED_COMMENTS, SEED_REPLIES, TRENDING, bizTile, type Comment, type Post } from '@/data/fixtures';
+import { HOODS, NEIGHBORS, SEED_COMMENTS, SEED_REPLIES, TRENDING, bizTile, type Comment, type Post } from '@/data/fixtures';
+import { useLiveData } from '@/lib/live';
 
 export function ComunidadScreen() {
   const { L } = useLang();
   const app = useApp();
+  const { posts: POSTS, businesses: BUSINESSES } = useLiveData();
   const [hood, setHood] = useState('all');
 
   // thread state
@@ -29,7 +31,7 @@ export function ComunidadScreen() {
   const [commentBizQuery, setCommentBizQuery] = useState('');
   const [commentSeq, setCommentSeq] = useState(0);
 
-  const allPosts: Post[] = useMemo(() => [...app.newPosts, ...POSTS], [app.newPosts]);
+  const allPosts: Post[] = useMemo(() => [...app.newPosts, ...POSTS], [app.newPosts, POSTS]);
   const sl = app.search.trim().toLowerCase();
   const posts = sl
     ? allPosts.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))

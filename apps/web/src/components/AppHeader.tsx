@@ -9,7 +9,8 @@ import { Bell, Briefcase, Calendar, Car, Home, MapPin, Plus, Search, Store, Truc
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
-import { BUSINESSES, EVENTS, NAV_CATS, POSTS, VIEW_PATH, bizTile, eventTile } from '@/data/fixtures';
+import { NAV_CATS, VIEW_PATH, bizTile, eventTile } from '@/data/fixtures';
+import { useLiveData } from '@/lib/live';
 import { CAT, tile } from '@/lib/tiles';
 
 const NAV_ICONS = { users: Users, store: Store, calendar: Calendar, truck: Truck, home: Home, car: Car, briefcase: Briefcase };
@@ -73,6 +74,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
 function SearchDropdown() {
   const { L } = useLang();
   const { query, setQuery, setSearch } = useApp();
+  const { businesses: BUSINESSES, events: EVENTS, posts: POSTS } = useLiveData();
   const router = useRouter();
   const ql = query.trim().toLowerCase();
   if (!ql) return null;

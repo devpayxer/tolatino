@@ -9,7 +9,8 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
-import { EVENTS, eventTile, type EventItem } from '@/data/fixtures';
+import { eventTile, type EventItem } from '@/data/fixtures';
+import { useLiveData } from '@/lib/live';
 
 const CAT_LABEL = (L: (a: string, b: string) => string): Record<EventItem['cat'], string> => ({
   musica: L('Vida Nocturna', 'Nightlife'),
@@ -21,6 +22,7 @@ const CAT_LABEL = (L: (a: string, b: string) => string): Record<EventItem['cat']
 export function EventosScreen() {
   const { L } = useLang();
   const app = useApp();
+  const { events: EVENTS } = useLiveData();
   const [cat, setCat] = useState<'all' | 'free' | EventItem['cat']>('all');
   const [date, setDate] = useState<'all' | string>('all');
   const [detailId, setDetailId] = useState<number | null>(null);
@@ -37,7 +39,7 @@ export function EventosScreen() {
     else if (cat !== 'all') l = l.filter((e) => e.cat === cat);
     if (date !== 'all') l = l.filter((e) => `${e.dEs}-${e.day}` === date);
     return l;
-  }, [sl, cat, date]);
+  }, [sl, cat, date, EVENTS]);
 
   const dates = useMemo(() => {
     const seen = new Set<string>();
@@ -47,7 +49,7 @@ export function EventosScreen() {
       seen.add(k);
       return true;
     }).map((e) => ({ key: `${e.dEs}-${e.day}`, dEs: e.dEs, day: e.day }));
-  }, []);
+  }, [EVENTS]);
 
   const fe = EVENTS[0];
   const feOn = !!app.going[fe.id];
