@@ -47,7 +47,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
   return (
     <div
       className={`flex min-w-0 items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-[13px] ${
-        mobile ? 'py-[10px]' : 'max-w-[460px] flex-1 py-[9px]'
+        mobile ? 'py-[10px]' : 'w-full max-w-[520px] py-[9px]'
       }`}
     >
       <Search size={16} className="flex-none text-primary" strokeWidth={2.2} />
@@ -147,7 +147,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-hair bg-[rgba(255,255,255,.94)] backdrop-blur-[8px] backdrop-saturate-[1.4]">
-      <div className="relative flex items-center gap-2 px-3.5 py-[11px] md:gap-3.5 md:px-[22px] md:py-[13px]">
+      <div className="relative mx-auto flex w-full max-w-[1180px] items-center gap-2 px-3.5 py-[11px] md:gap-3.5 md:px-[22px] md:py-[13px]">
         <Wordmark onClick={() => router.push(VIEW_PATH.comunidad)} size="sm" />
         <button
           onClick={() => app.setCityOpen(true)}
@@ -157,7 +157,7 @@ export function AppHeader() {
           <span className="max-w-[64px] truncate md:max-w-none">{app.city}</span>
         </button>
 
-        <div className="hidden min-w-0 flex-1 md:flex">
+        <div className="hidden min-w-0 flex-1 justify-center md:flex">
           <SearchBox />
         </div>
 
@@ -192,28 +192,31 @@ export function AppHeader() {
         <SearchBox mobile />
       </div>
 
-      {/* 7-category bar */}
-      <nav className="no-scrollbar flex items-stretch gap-0.5 overflow-x-auto px-2.5 md:gap-1 md:px-[18px]">
-        {NAV_CATS.map((c) => {
-          const Icon = NAV_ICONS[c.icon];
-          const active = pathname?.startsWith(VIEW_PATH[c.k]);
-          return (
-            <button
-              key={c.k}
-              onClick={() => router.push(VIEW_PATH[c.k])}
-              className={`relative flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap px-[11px] pb-3 pt-[13px] text-[13px] md:px-[13px] md:pb-[13px] md:pt-[15px] md:text-[13.5px] ${
-                active ? 'font-extrabold text-ink' : c.soon ? 'font-bold text-muted-faint2' : 'font-bold text-muted'
-              }`}
-            >
-              <Icon size={16} strokeWidth={2} className={active ? 'text-primary' : c.soon ? 'text-muted-faint2' : 'text-muted'} />
-              <span>{L(c.es, c.en)}</span>
-              {c.soon && <SoonTag label={L('Pronto', 'Soon')} />}
-              <span
-                className={`absolute bottom-0 left-[11px] right-[11px] h-[3px] rounded-t-[3px] ${active ? 'bg-primary' : 'bg-transparent'}`}
-              />
-            </button>
-          );
-        })}
+      {/* 7-category bar — centered when it fits, scrolls from the start when it
+          doesn't (w-max + mx-auto avoids the justify-center overflow cut-off). */}
+      <nav className="no-scrollbar overflow-x-auto">
+        <div className="mx-auto flex w-max max-w-[1180px] items-stretch gap-0.5 px-2.5 md:gap-1 md:px-[18px]">
+          {NAV_CATS.map((c) => {
+            const Icon = NAV_ICONS[c.icon];
+            const active = pathname?.startsWith(VIEW_PATH[c.k]);
+            return (
+              <button
+                key={c.k}
+                onClick={() => router.push(VIEW_PATH[c.k])}
+                className={`relative flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap px-[11px] pb-3 pt-[13px] text-[13px] md:px-[13px] md:pb-[13px] md:pt-[15px] md:text-[13.5px] ${
+                  active ? 'font-extrabold text-ink' : c.soon ? 'font-bold text-muted-faint2' : 'font-bold text-muted'
+                }`}
+              >
+                <Icon size={16} strokeWidth={2} className={active ? 'text-primary' : c.soon ? 'text-muted-faint2' : 'text-muted'} />
+                <span>{L(c.es, c.en)}</span>
+                {c.soon && <SoonTag label={L('Pronto', 'Soon')} />}
+                <span
+                  className={`absolute bottom-0 left-[11px] right-[11px] h-[3px] rounded-t-[3px] ${active ? 'bg-primary' : 'bg-transparent'}`}
+                />
+              </button>
+            );
+          })}
+        </div>
       </nav>
     </header>
   );
