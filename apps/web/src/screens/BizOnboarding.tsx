@@ -402,9 +402,12 @@ export function BizOnboardingScreen() {
               </div>
             )}
 
-            <div className="mt-5 rounded-tile border border-dashed border-[#D8D2EC] bg-white p-4 text-center text-[12px] font-semibold text-muted">
-              {L('El panel completo (módulos, pedidos, clientes, facturación) llega en la siguiente fase.', 'The full dashboard (modules, orders, customers, billing) arrives in the next phase.')}
-            </div>
+            <button
+              onClick={() => router.push('/negocio')}
+              className="mt-5 w-full cursor-pointer rounded-btn-lg bg-primary p-[13px] text-[14px] font-extrabold text-white shadow-cta"
+            >
+              {L('Ir a mi panel completo →', 'Go to my full dashboard →')}
+            </button>
           </>
         )}
       </div>

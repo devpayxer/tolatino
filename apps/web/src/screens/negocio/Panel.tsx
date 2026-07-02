@@ -1,0 +1,277 @@
+'use client';
+
+// Business admin panel (`/negocio`) — Handoff v2 dashboard. Desktop ≥1024:
+// fixed sidebar; mobile: drawer. Content varies by plan (Free/Verified/
+// Premium) and rubro. Tab content: Insights + Module setup + the uniform
+// module pages.
+
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Bell, Check, ExternalLink, Menu, Search, X } from 'lucide-react';
+import { useLang } from '@/lib/i18n';
+import { useApp } from '@/lib/state';
+import { Wordmark, VerifiedBadge } from '@/components/ui';
+import { LangToggle } from '@/components/AppHeader';
+import { CAT_INFO, activeMods, buildGeneric, buildNav, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
+import { GenericTab } from '@/screens/negocio/GenericTab';
+import { InsightsFree, InsightsPaid } from '@/screens/negocio/Insights';
+import { ModulesSetup } from '@/screens/negocio/ModulesSetup';
+
+const RUBRO_FROM_ONB: Record<string, Rubro> = {
+  comida: 'restaurant', belleza: 'beauty', auto: 'auto', tiendas: 'retail', abarrotes: 'retail', deportes: 'rental',
+};
+
+export function PanelScreen() {
+  const { L } = useLang();
+  const app = useApp();
+  const router = useRouter();
+
+  const [tab, setTab] = useState<TabKey>('insights');
+  const [tier, setTier] = useState<Tier>(app.biz ? (app.biz.plan === 'pro' ? 'verified' : 'free') : 'verified');
+  const [drawer, setDrawer] = useState(false);
+  const [mods, setMods] = useState<Mods>({ menu: true, services: true, bookings: true, products: true, rental: true, events: true, updates: true, staff: true });
+
+  const rubro: Rubro = (app.biz && RUBRO_FROM_ONB[app.biz.cat]) || 'restaurant';
+  const ci = CAT_INFO[rubro];
+  const isFree = tier === 'free';
+  const isPremium = tier === 'premium';
+
+  const ctx: PanelCtx = useMemo(
+    () => ({
+      L, es: L('x', 'y') === 'x', tier, rubro, ci, isFree, isPremium, mods,
+      go: (t) => { setTab(t); setDrawer(false); },
+    }),
+    [L, tier, rubro, ci, isFree, isPremium, mods],
+  );
+
+  const bizName = isFree ? 'Lupita’s Tortillería' : (app.biz?.name && app.biz.plan === 'pro' ? app.biz.name : ci.name);
+  const bizInitials = isFree ? 'LT' : ci.initials;
+  const bizCategory = isFree ? L('Panadería · Tortillería', 'Bakery · Tortillería') : L(ci.es, ci.en);
+  const catTile = isFree ? '#FCE3EC 0 9px,#F6CEDD 9px 18px' : ci.tile;
+
+  const livePill = isFree
+    ? { bg: '#FCEFD6', c: '#9A6A12', dot: '#E8954A', text: L('Sin verificar', 'Unverified') }
+    : { bg: '#E3F5EA', c: '#1F8A4C', dot: '#1F9D57', text: L('Abierto · hasta 10 PM', 'Open · until 10 PM') };
+  const planPill = isFree
+    ? { bg: '#F1EFFA', c: '#8A86A0', text: 'Free' }
+    : isPremium
+      ? { bg: '#1E1B2E', c: '#F4B740', text: '✦ Premium' }
+      : { bg: '#F1EFFA', c: '#6D4DF6', text: 'Verified' };
+
+  const stats = {
+    rating: isFree ? '—' : '4.8',
+    s1v: isFree ? '108' : '1,420', s1l: L('Vistas/sem', 'Views/wk'),
+    s2v: isFree ? '12' : '284', s2l: isFree ? L('Visitas', 'Visits') : L('Seguidores', 'Followers'),
+  };
+
+  const nav = buildNav(ctx);
+  const head = pageHead(tab, ctx);
+  const am = activeMods(ctx);
+
+  // If the current tab's module got turned off, fall back to insights.
+  if (tab in am && !(am as Record<string, boolean>)[tab] && !['insights'].includes(tab)) {
+    // handled implicitly: nav locks it; keep simple.
+  }
+
+  const sidebar = (
+    <div className="flex h-full w-[264px] flex-none flex-col border-r border-hair bg-white">
+      {/* business card */}
+      <div className="border-b border-hair p-4">
+        <div className="h-2 rounded-full" style={{ background: `repeating-linear-gradient(135deg,${catTile})` }} />
+        <div className="mt-3 flex items-center gap-2.5">
+          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn text-[14px] font-extrabold text-white" style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
+            {bizInitials}
+          </span>
+          <span className="min-w-0">
+            <span className="flex items-center gap-1.5">
+              <span className="truncate text-[14px] font-extrabold text-ink">{bizName}</span>
+              {!isFree && <VerifiedBadge size={15} />}
+            </span>
+            <span className="block truncate text-[11px] font-semibold text-muted">{bizCategory}</span>
+            <span className="block truncate text-[10.5px] font-semibold text-muted-2">{ci.area}</span>
+          </span>
+        </div>
+        <div className="mt-3 flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-extrabold" style={{ background: livePill.bg, color: livePill.c }}>
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: livePill.dot }} />
+            {livePill.text}
+          </span>
+          <span className="rounded-full px-2 py-1 text-[10px] font-extrabold" style={{ background: planPill.bg, color: planPill.c }}>
+            {planPill.text}
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+          {[
+            [stats.rating, '★'],
+            [stats.s1v, stats.s1l],
+            [stats.s2v, stats.s2l],
+          ].map(([v, l]) => (
+            <span key={l} className="rounded-[10px] bg-app px-1 py-2">
+              <span className="block text-[13px] font-extrabold text-ink">{v}</span>
+              <span className="block truncate text-[9px] font-bold text-muted">{l}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* nav */}
+      <nav className="min-h-0 flex-1 overflow-y-auto p-3">
+        {nav.map((gp, gi) => (
+          <div key={gi} className="mb-2">
+            {gp.label && (
+              <div className="flex items-center justify-between px-2 pb-1 pt-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2">{gp.label}</span>
+                {gp.add && (
+                  <button onClick={gp.add.onAdd} className="cursor-pointer text-[9.5px] font-extrabold" style={{ color: gp.add.color }}>
+                    {gp.add.label}
+                  </button>
+                )}
+              </div>
+            )}
+            {gp.items.map((n) => {
+              const active = tab === n.id;
+              return (
+                <button
+                  key={n.id}
+                  onClick={() => !n.locked && ctx.go(n.id)}
+                  className={`flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-[9px] text-left ${active ? 'bg-[#F1EEFE]' : ''} ${n.locked ? 'cursor-default' : 'cursor-pointer hover:bg-app'} ${n.indent ? 'pl-[30px]' : ''}`}
+                >
+                  <n.Icon size={15} strokeWidth={2.2} className={active ? 'text-primary-press' : n.locked ? 'text-[#C0BBD0]' : 'text-muted'} />
+                  <span className={`flex-1 text-[13px] ${active ? 'font-extrabold text-primary-press' : n.locked ? 'font-semibold text-muted-faint' : 'font-semibold text-ink-soft'}`}>
+                    {n.label}
+                  </span>
+                  {n.sub && <Check size={12} strokeWidth={3} className="text-green" />}
+                  {!n.locked && n.count != null && (
+                    <span className={`rounded-[7px] px-[7px] py-0.5 text-[10px] font-extrabold ${n.live ? 'bg-green-bg text-green-dark' : n.warn ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted'}`}>
+                      {n.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+
+        {isFree && (
+          <div className="mt-2 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#6743E2,#8268FF)' }}>
+            <div className="text-[12.5px] font-extrabold">{L('Desbloquea todo el kit', 'Unlock the full toolkit')}</div>
+            <div className="mt-0.5 text-[10.5px] font-semibold leading-snug text-[rgba(255,255,255,.85)]">
+              {L('Activa menú, reservas, productos y más. Insignia verificada y 5× más visibilidad.', 'Activate menu, bookings, products & more. Verified badge and 5× visibility.')}
+            </div>
+            <button onClick={() => ctx.go('billing')} className="mt-2 cursor-pointer rounded-[9px] bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-primary-press">
+              {L('Mejorar a Verified ›', 'Upgrade to Verified ›')}
+            </button>
+          </div>
+        )}
+      </nav>
+    </div>
+  );
+
+  return (
+    <div className="flex min-h-screen flex-col bg-dash">
+      {/* topbar */}
+      <header className="sticky top-0 z-30 border-b border-hair bg-[rgba(255,255,255,.95)] backdrop-blur-[8px]">
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 md:px-5">
+          <button onClick={() => setDrawer(true)} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-[10px] bg-lilac-2 lg:hidden" aria-label={L('Menú', 'Menu')}>
+            <Menu size={17} strokeWidth={2.2} className="text-ink" />
+          </button>
+          <Wordmark size="sm" onClick={() => router.push('/comunidad')} />
+          <span className="hidden rounded-full bg-lilac px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[.04em] text-primary-dark md:inline">
+            {L('Negocios', 'Business')}
+          </span>
+          <div className="mx-2 hidden min-w-0 max-w-[380px] flex-1 items-center gap-2 rounded-btn bg-app px-3 py-2 md:flex">
+            <Search size={14} className="flex-none text-muted" strokeWidth={2.2} />
+            <input placeholder={L('Ir a pedidos, productos…', 'Jump to orders, items…')} className="min-w-0 flex-1 bg-transparent text-[12.5px] font-medium outline-none placeholder:text-muted" />
+          </div>
+          <div className="ml-auto flex flex-none items-center gap-2">
+            <button onClick={() => router.push('/negocios')} className="hidden cursor-pointer items-center gap-1.5 rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft md:flex">
+              <ExternalLink size={12} strokeWidth={2.4} />
+              {L('Ver listado', 'View public')}
+            </button>
+            <LangToggle mini />
+            <button className="relative flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Notificaciones', 'Notifications')}>
+              <Bell size={16} strokeWidth={2.2} className="text-ink" />
+              <span className="absolute right-0.5 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[8.5px] font-extrabold text-white">
+                {isFree ? '2' : '7'}
+              </span>
+            </button>
+            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
+              {bizInitials}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1">
+        {/* desktop sidebar */}
+        <aside className="sticky top-[58px] hidden h-[calc(100vh-58px)] lg:block">{sidebar}</aside>
+
+        {/* mobile drawer */}
+        {drawer && (
+          <div className="fixed inset-0 z-40 flex lg:hidden" onClick={() => setDrawer(false)}>
+            <div className="h-full" onClick={(e) => e.stopPropagation()}>
+              {sidebar}
+            </div>
+            <div className="flex-1 bg-[rgba(30,27,46,.45)]" />
+            <button onClick={() => setDrawer(false)} className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Cerrar', 'Close')}>
+              <X size={16} strokeWidth={2.6} className="text-ink" />
+            </button>
+          </div>
+        )}
+
+        {/* content */}
+        <main className="min-w-0 flex-1 px-3.5 py-4 md:px-6 md:py-5">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-[20px] font-extrabold tracking-[-.02em] text-ink md:text-[23px]">{head.title}</h1>
+                {head.hasAccent && (
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[10.5px] font-extrabold text-muted shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]">
+                    {head.accent}
+                  </span>
+                )}
+              </div>
+              <div className="mt-0.5 max-w-[640px] text-[12.5px] font-semibold text-muted">{head.sub}</div>
+            </div>
+            <div className="ml-auto flex flex-none items-center gap-2">
+              {head.hasGhost && (
+                <button className="cursor-pointer rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink-soft">
+                  {head.ghost}
+                </button>
+              )}
+              <button className="cursor-pointer rounded-[10px] bg-primary px-4 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">
+                + {head.cta}
+              </button>
+            </div>
+          </div>
+
+          {/* plan switcher inside billing — real behavior, changes the whole panel */}
+          {tab === 'billing' && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-card-sm border border-hair bg-white p-3.5 shadow-card">
+              <span className="text-[12px] font-extrabold text-ink">{L('Tu plan actual:', 'Your current plan:')}</span>
+              {(
+                [
+                  ['free', 'Free · $0'],
+                  ['verified', 'Verified · $19/mo'],
+                  ['premium', '✦ Premium · $49/mo'],
+                ] as const
+              ).map(([k, lab]) => (
+                <button
+                  key={k}
+                  onClick={() => setTier(k)}
+                  className={`cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${tier === k ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-2'}`}
+                >
+                  {lab}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {tab === 'insights' && (isFree ? <InsightsFree ctx={ctx} /> : <InsightsPaid ctx={ctx} />)}
+          {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={(k) => setMods((m) => ({ ...m, [k]: !m[k] }))} />}
+          {tab !== 'insights' && tab !== 'modules' && <GenericTab g={buildGeneric(tab, ctx)} ctx={ctx} />}
+        </main>
+      </div>
+    </div>
+  );
+}

@@ -1,8 +1,7 @@
-import { BizOnboardingScreen } from '@/screens/BizOnboarding';
+import { PanelScreen } from '@/screens/negocio/Panel';
 
-// `/negocio` — business panel entry. Shows the mini-dashboard if the user has
-// a business (or drops into onboarding otherwise). The full admin panel
-// (modules, orders, customers, billing) is the next build phase.
+// `/negocio` — the full business admin panel (plan- and rubro-aware).
+// Onboarding lives at /negocio/publicar and lands here.
 export default function Page() {
-  return <BizOnboardingScreen />;
+  return <PanelScreen />;
 }
