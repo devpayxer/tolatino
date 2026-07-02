@@ -123,65 +123,56 @@ spend. Don't re-explain the project per task; point at this file.
 
 ## Design system — in the repo (source of truth)
 
-The design system was created in **Claude's design tool** (Mobile-First) with a
-**Handoff** and is now committed under **`docs/design-system/`**. Read it before
-building any UI; never improvise. Key files:
-- **`docs/design-system/DESIGN_RULES.md`** — the binding design rules (Spanish-first,
-  tokens-only, primitives, tier/category, navigation). This is the design half of
-  project memory; this root `CLAUDE.md` is the master.
-- **`docs/design-system/DESIGN_SYSTEM.md`** — full token + component + layout +
-  navigation spec.
-- **`docs/design-system/NEW_SCREEN_RECIPE.md`** — how to build a new screen on-brand
-  + the pre-finish checklist. **Follow it for every new screen.**
-- **`docs/design-system/reference/screenshots/`** — the visual target for every
-  screen (build to match density, weight, voice).
-- **`docs/design-system/reference/dc/`** — original interactive HTML prototypes
-  (look/copy/interaction source of truth; do NOT copy their inline-styled HTML).
-  Covers consumer screens + the business dashboard (mobile & desktop) and all
-  9 business modules (Food, Services, Products, Events, Rental, Updates,
-  Customers, Staff, Billing).
-- **`docs/design-system/CORRECTION_PROMPT.md`** — course-correction checklist to
-  run if a rendered screen drifts from the reference (type/color/radius/spacing/
-  layout/primitives/copy/imagery audit). Use it before finishing any UI task.
+**Handoff v2 (2026-07-02, "Plataforma multicanal") supersedes the first design
+system.** The founder scrapped the first app and delivered a new handoff from
+Claude's design tool. It is committed under **`docs/design-system/`**. Read it
+before building any UI; never improvise. Key files:
+- **`docs/design-system/HANDOFF.md`** — the full spec: every screen, design
+  tokens (colors/type/radii/shadows/spacing), interactions, state, responsive
+  behavior, and how to map the "Studio" prototype to the real app. **This is
+  the design half of project memory;** this root `CLAUDE.md` is the master.
+- **`docs/design-system/PROMPT.md`** — the founder's build brief for the handoff.
+- **`docs/design-system/reference/dc/`** — high-fidelity interactive HTML
+  prototypes (look/copy/interaction source of truth; do NOT copy their
+  inline-styled HTML). `To'Latino Studio.dc.html` is the **master file**
+  (landing + client app + embedded business panel, 3 synced device frames —
+  the multi-device canvas itself is review scaffolding, discard it). The
+  business panel lives in `To'Latino Business Dashboard[.Mobile].dc.html` and
+  the `ToLatino *Module*.dc.html` sub-modules.
 
-### Reset (2026-07-02): first `apps/web` implementation scrapped
-The founder decided to **start the app over**. The first `apps/web`
-implementation (consumer tabs, business side, Supabase wiring, GitHub Pages
-deploy workflow) was **removed from the repo**; the design system docs, this
-memory file, the `tolatino-standards` skill, and `supabase/` (the schema
-already applied to the live Supabase project) were kept. The next
-implementation starts from a fresh prompt but must still recreate this
-structure in **`apps/web`**:
-- Tokens → `apps/web/tailwind.config.ts` (use named tokens: `bg-primary`,
-  `text-ink`, `rounded-card`, `border-hair` — never raw hex).
-- Primitives → `apps/web/src/components/` (`Wordmark`, `PhoneFrame`, `Card`,
-  `StatTile`, `StatusPill`, buttons, `SubView`, `Sheet`, `EmptyState`,
-  `BottomTabs`, `categoryTile`). Compose from these; don't fork their markup.
-- Bilingual helper → `apps/web/src/lib/i18n.tsx` (`L('es','en')`, Spanish-first).
-- Tier/category context → `apps/web/src/lib/biz.tsx` (`useBiz`, `TIER_CAPS`,
-  16 categories). Extract to `packages/ui` / `packages/types` when a second app
-  needs them.
+### Product architecture (from Handoff v2)
+One responsive app, three surfaces:
+1. **Bienvenida** → public landing (`/`).
+2. **Cliente** → the app with a **horizontal 7-category bar** under the header:
+   **Comunidad** (`/comunidad`, Nextdoor-style — the app's home), **Negocios**
+   (`/negocios`, Yelp-style), **Eventos** (`/eventos`, with tickets), plus
+   **Transporte, Bienes Raíces, Dealer de carros, Trabajos** in "Muy pronto"
+   (elegant placeholder + waitlist form) for a second phase.
+3. **Negocio** → business admin panel (`/negocio/*`), sidebar/drawer varying by
+   plan (Free/Verified/Premium) and rubro (Restaurante/Belleza/Auto/Tienda/Renta).
 
-### Design hard-rules (from the handoff — enforce on every UI task)
-- **Spanish-first:** every user-facing string is `L('es','en')`. Never hardcode one language.
-- **Tokens & primitives only:** no raw hex, no off-scale radii; compose from `src/components/`.
-- **Mobile 392px is the source of truth** (`PhoneFrame`); reflow to desktop per
-  `DESIGN_SYSTEM.md §6` (top nav / sidebar, no bottom tabs).
-- **Tier + category aware** on business surfaces; locked features = PRO badge +
-  upsell `Sheet`, never a dead end.
-- **Imagery = `categoryTile()` gradient placeholders**, not illustrations. No emoji
-  except sanctioned brand copy (the "Hola, Ana 👋" greeting).
-- **Sub-flows use the sub-view stack pattern** (`DESIGN_SYSTEM.md §7`); flows end in
-  a confirmation that returns to the parent.
-
-### Product decision (2026-06-28): Inicio = discovery Home
-The **Inicio** tab is the **discovery-first Home** (prominent search → `Buscar`,
-category shortcuts, and live "Cerca de ti" businesses) — **not** the stat-tile
-account dashboard shown in `reference/screenshots/consumer-dashboard-01-inicio.png`
-("Panel del usuario"). A discovery app must lead with search. The account /
-activity summary (orders, bookings, rewards, spend) belongs on **Perfil** (to be
-added there). Don't "correct" Inicio back to the stat-tile dashboard per that one
-reference — this deviation is intentional.
+### Design hard-rules (from Handoff v2 — enforce on every UI task)
+- **Spanish-first:** every user-facing string is `L('es','en')` (global ES/EN
+  toggle). Never hardcode one language.
+- **Tokens only:** primary `#7B61FF` (as `primary` token), ink `#1E1B2E`, amber
+  diamond `#F4B740`, app bg `#F4F2F9`; Plus Jakarta Sans (400–800). Consume
+  named Tailwind tokens — never raw hex in components. Full table in
+  `HANDOFF.md` → Design Tokens.
+- **Mobile-first, pixel-perfect** (≤767px = 1 column, own search row, **bottom
+  nav: Comunidad · Negocios · ＋ FAB (Publicar) · Eventos · Alertas**); tablet
+  768–1023 (2 cols, no bottom bar); desktop ≥1024 (multi-column, sidebar
+  filters). Touch targets ≥44px.
+- **Geo by city:** city selector (modal / bottom sheet on mobile) with "use my
+  location" + searchable list; the chosen city propagates app-wide.
+- **Global search** with grouped live suggestions (Negocios/Eventos/Comunidad)
+  and real filtering per section.
+- **Real interaction state:** posting adds to the feed; ♥ save, "Voy", follow,
+  recommend, notifications read/unread, business onboarding → panel.
+- **Imagery = striped category-gradient placeholders**
+  (`repeating-linear-gradient(135deg, A 0 11px, B 11px 22px)`) until real
+  photos exist. Logo = CSS wordmark `To'`(ink)+`Latino`(purple)+amber diamond.
+- **Business card variant:** the handoff offers A·Lista / B·Galería / C·Detalle;
+  prototype default is **A (Lista)** — build A unless the founder picks another.
 
 ## Database & migrations (Supabase)
 

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;-webkit-font-smoothing:antialiased}html,body{margin:0}[data-noscroll]::-webkit-scrollbar{display:none}[data-noscroll]{scrollbar-width:none}</style>
+</helmet>
+<div style="width:100%;height:100%;min-height:812px;background:#F4F9FC;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;display:flex;flex-direction:column">
+
+  <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:13px 24px 5px">
+    <span style="font:800 14px 'Plus Jakarta Sans';color:#0E2A3B">9:41</span>
+    <span style="display:flex;align-items:center;gap:7px">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="#0E2A3B"><rect x="0" y="7" width="3" height="4" rx="1"></rect><rect x="4.5" y="5" width="3" height="6" rx="1"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1"></rect><rect x="13.5" y="0" width="3" height="11" rx="1"></rect></svg>
+      <svg width="16" height="11" viewBox="0 0 16 12" fill="none" stroke="#0E2A3B" stroke-width="1.6"><path d="M1 4.5a10 10 0 0 1 14 0M3.5 7a6.5 6.5 0 0 1 9 0M6 9.4a3 3 0 0 1 4 0"></path></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="21" height="10" rx="3" stroke="#0E2A3B" stroke-opacity=".4"></rect><rect x="3" y="3" width="16" height="6" rx="1.5" fill="#0E2A3B"></rect><rect x="23" y="4" width="1.6" height="4" rx="0.8" fill="#0E2A3B" fill-opacity=".4"></rect></svg>
+    </span>
+  </div>
+
+  <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 18px 12px">
+    <button style="width:38px;height:38px;border-radius:50%;background:#E4F1F8;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2A3B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+    <div style="flex:1;min-width:0;text-align:center"><div style="font:800 16px 'Plus Jakarta Sans';color:#0E2A3B">Aqua Shine Auto Spa</div><div style="font:600 11px 'Plus Jakarta Sans';color:#7C93A1">Servicios &amp; reservas</div></div>
+    <button style="width:38px;height:38px;border-radius:50%;background:#E4F1F8;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2A3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></button>
+  </div>
+
+  <div data-noscroll style="flex:1;overflow-y:auto;padding:4px 16px 96px">
+    <div style="position:relative;border-radius:20px;overflow:hidden;background:linear-gradient(135deg,#1488CC,#0E6FAC);padding:20px 20px 18px">
+      <span style="display:inline-block;background:rgba(255,255,255,.2);color:#EAF6FD;font:800 10px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.06em;padding:5px 10px;border-radius:8px">Lavado a domicilio o en sitio</span>
+      <div style="font:800 22px 'Plus Jakarta Sans';color:#fff;letter-spacing:-.01em;margin-top:11px">Tu auto, reluciente</div>
+      <div style="font:600 12.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.8);line-height:1.5;margin-top:4px;max-width:235px">Elige paquete, tamaño de vehículo y extras. Reserva tu horario y nosotros nos encargamos.</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:14px">
+        <span style="display:flex;align-items:center;gap:4px"><span style="color:#FFD66B;font:700 12px 'Plus Jakarta Sans'">★</span><span style="font:800 12.5px 'Plus Jakarta Sans';color:#fff">4.8</span><span style="font:600 11.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.65)">(412)</span></span>
+        <span style="display:flex;align-items:center;gap:5px;font:600 11.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.82)"><span style="width:7px;height:7px;border-radius:50%;background:#5BE3A7"></span>Espera ~20 min</span>
+      </div>
+    </div>
+
+    <div style="font:800 16px 'Plus Jakarta Sans';color:#0E2A3B;margin:20px 2px 12px">Paquetes de lavado</div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <sc-for list="{{ services }}" as="sv" hint-placeholder-count="5">
+      <div onClick="{{ sv.onOpen }}" style="display:flex;gap:13px;align-items:center;background:#fff;border-radius:17px;padding:12px;box-shadow:0 8px 22px rgba(20,80,130,.08);cursor:pointer">
+        <div style="position:relative;width:64px;height:64px;border-radius:14px;flex:none;background:repeating-linear-gradient(135deg,{{ sv.img }})">
+          <sc-if value="{{ sv.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:5px;left:5px;background:{{ sv.badgeBg }};color:{{ sv.badgeC }};padding:2px 6px;border-radius:6px;font:800 8px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.03em">{{ sv.badge }}</span></sc-if>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font:800 14.5px 'Plus Jakarta Sans';color:#0E2A3B;line-height:1.2">{{ sv.n }}</div>
+          <div style="font:500 11.5px 'Plus Jakarta Sans';color:#7C93A1;line-height:1.4;margin-top:3px">{{ sv.d }}</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <span style="display:flex;align-items:center;gap:4px;font:600 11px 'Plus Jakarta Sans';color:#7C93A1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A7BECB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>{{ sv.dur }}</span>
+            <span style="font:800 13px 'Plus Jakarta Sans';color:#1488CC">{{ sv.fromLabel }}</span>
+          </div>
+        </div>
+        <span style="align-self:stretch;display:flex;align-items:center;font:800 11px 'Plus Jakarta Sans';color:#0E6FAC;background:#E4F1F8;padding:0 13px;border-radius:11px;flex:none">Reservar</span>
+      </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="flex:none;position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-around;align-items:center;padding:11px 14px 20px;background:#fff;border-top:1px solid rgba(14,42,59,.07);box-shadow:0 -8px 22px rgba(20,80,130,.05)">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#A7BECB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg><span style="font:700 9px 'Plus Jakarta Sans';color:#A7BECB">Inicio</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#1488CC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13"></path><path d="M5 13h14v4H5z"></path><circle cx="8" cy="17" r="1.5"></circle><circle cx="16" cy="17" r="1.5"></circle></svg><span style="font:800 9px 'Plus Jakarta Sans';color:#1488CC">Servicios</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#A7BECB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2.5"></rect><path d="M3 10h18M8 2v4M16 2v4"></path></svg><span style="font:700 9px 'Plus Jakarta Sans';color:#A7BECB">Reservas</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#A7BECB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg><span style="font:700 9px 'Plus Jakarta Sans';color:#A7BECB">Perfil</span></div>
+  </div>
+
+  <sc-if value="{{ bookingOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:10">
+    <div onClick="{{ closeBooking }}" style="position:absolute;inset:0;background:rgba(14,42,59,.5)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;top:22px;background:#F4F9FC;border-radius:26px 26px 0 0;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(14,42,59,.4)">
+      <div style="flex:none;display:flex;align-items:center;gap:11px;padding:16px 18px 12px;background:#fff;border-bottom:1px solid rgba(14,42,59,.06)">
+        <button onClick="{{ closeBooking }}" style="width:34px;height:34px;border-radius:50%;background:#E4F1F8;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0E2A3B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+        <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#0E2A3B">{{ booking.svcName }}</div><div style="font:600 11.5px 'Plus Jakarta Sans';color:#7C93A1">{{ booking.dur }} · listo en sitio</div></div>
+      </div>
+      <div data-noscroll style="flex:1;overflow-y:auto;padding:18px 18px 16px">
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#0E2A3B;margin-bottom:11px">Tipo de vehículo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <sc-for list="{{ booking.vehicles }}" as="v" hint-placeholder-count="4">
+          <button onClick="{{ v.onTap }}" style="display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer;background:{{ v.bg }};border:2px solid {{ v.ring }};border-radius:14px;padding:12px 13px">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="{{ v.icon }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13"></path><path d="M4 13h16v4H4z"></path><circle cx="8" cy="17" r="1.5"></circle><circle cx="16" cy="17" r="1.5"></circle></svg>
+            <span style="flex:1;min-width:0"><span style="display:block;font:800 12.5px 'Plus Jakarta Sans';color:#0E2A3B;line-height:1.15">{{ v.n }}</span><span style="display:block;font:700 10.5px 'Plus Jakarta Sans';color:{{ v.deltaColor }};margin-top:2px">{{ v.deltaLabel }}</span></span>
+          </button>
+          </sc-for>
+        </div>
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#0E2A3B;margin:20px 0 10px">Extras</div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ booking.addons }}" as="a" hint-placeholder-count="4">
+          <button onClick="{{ a.onTap }}" style="display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;background:{{ a.bg }};border:1.5px solid {{ a.ring }};border-radius:13px;padding:12px 13px">
+            <span style="width:21px;height:21px;border-radius:7px;border:2px solid {{ a.ring }};background:{{ a.mark }};flex:none;display:flex;align-items:center;justify-content:center"><sc-if value="{{ a.selected }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></span>
+            <span style="flex:1;font:700 13.5px 'Plus Jakarta Sans';color:#2C4250">{{ a.n }}</span>
+            <span style="font:800 13px 'Plus Jakarta Sans';color:#1488CC">{{ a.priceLabel }}</span>
+          </button>
+          </sc-for>
+        </div>
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#0E2A3B;margin:20px 0 11px">Fecha</div>
+        <div data-noscroll style="display:flex;gap:9px;overflow-x:auto;padding-bottom:4px">
+          <sc-for list="{{ booking.days }}" as="d" hint-placeholder-count="6">
+          <button onClick="{{ d.onTap }}" style="flex:none;width:56px;border-radius:14px;border:2px solid {{ d.ring }};background:{{ d.bg }};cursor:pointer;padding:10px 0;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <span style="font:700 10.5px 'Plus Jakarta Sans';color:{{ d.dowColor }}">{{ d.dow }}</span>
+            <span style="font:800 18px 'Plus Jakarta Sans';color:{{ d.dayColor }}">{{ d.day }}</span>
+            <span style="font:600 9.5px 'Plus Jakarta Sans';color:{{ d.monColor }}">{{ d.mon }}</span>
+          </button>
+          </sc-for>
+        </div>
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#0E2A3B;margin:20px 0 11px">Horario</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ booking.times }}" as="t" hint-placeholder-count="6">
+          <button onClick="{{ t.onTap }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#0E2A3B;margin:20px 0 10px">Placa o modelo del vehículo</div>
+        <input value="{{ booking.plate }}" onInput="{{ booking.onPlate }}" placeholder="Ej. ABC-123 · Honda Civic gris" style="width:100%;border:1.5px solid #DCEAF1;background:#fff;border-radius:13px;padding:12px 14px;font:500 13px 'Plus Jakarta Sans';color:#0E2A3B;outline:none"/>
+        <div style="background:#fff;border-radius:16px;padding:15px 16px;margin-top:20px;box-shadow:0 8px 22px rgba(20,80,130,.07)">
+          <sc-for list="{{ booking.lines }}" as="l" hint-placeholder-count="2">
+          <div style="display:flex;justify-content:space-between;font:600 12.5px 'Plus Jakarta Sans';color:#5E7785;margin-bottom:8px"><span>{{ l.n }}</span><span style="font-weight:800;color:#0E2A3B">{{ l.priceLabel }}</span></div>
+          </sc-for>
+          <div style="display:flex;justify-content:space-between;font:800 15px 'Plus Jakarta Sans';color:#0E2A3B;padding-top:10px;border-top:1px solid rgba(14,42,59,.08)"><span>Total</span><span>{{ booking.totalLabel }}</span></div>
+        </div>
+      </div>
+      <div style="flex:none;padding:12px 18px 18px;background:#fff;border-top:1px solid rgba(14,42,59,.07);box-shadow:0 -10px 24px rgba(20,80,130,.06)">
+        <button onClick="{{ confirmBooking }}" style="{{ booking.confirmStyle }}">{{ booking.confirmLabel }}</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ bkConfirm }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:11;background:#F4F9FC;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center">
+    <div style="width:84px;height:84px;border-radius:50%;background:#1488CC;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 34px rgba(20,136,204,.4)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+    <div style="font:800 23px 'Plus Jakarta Sans';color:#0E2A3B;margin-top:22px">¡Reserva confirmada!</div>
+    <div style="font:500 14px 'Plus Jakarta Sans';color:#5E7785;line-height:1.5;margin-top:8px;max-width:270px">Tu auto quedará reluciente. <b style="color:#0E2A3B">Aqua Shine</b> te avisará cuando esté listo.</div>
+    <div style="margin-top:22px;background:#fff;border-radius:16px;padding:16px 18px;width:100%;max-width:290px;box-shadow:0 10px 28px rgba(20,80,130,.12);text-align:left">
+      <div style="font:800 14px 'Plus Jakarta Sans';color:#0E2A3B">{{ booking.svcName }}</div>
+      <div style="font:600 12px 'Plus Jakarta Sans';color:#7C93A1;margin-top:2px">{{ booking.vehicleName }}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(14,42,59,.07)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1488CC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M3 10h18M8 2v4M16 2v4"></path></svg><span style="font:700 12.5px 'Plus Jakarta Sans';color:#2C4250">{{ booking.summaryWhen }}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(14,42,59,.07)"><span style="font:700 12.5px 'Plus Jakarta Sans';color:#5E7785">Pagado</span><span style="font:800 13px 'Plus Jakarta Sans';color:#1488CC">{{ booking.totalLabel }}</span></div>
+    </div>
+    <button onClick="{{ doneBooking }}" style="width:100%;max-width:290px;margin-top:22px;border:none;background:#1488CC;color:#fff;padding:15px;border-radius:15px;font:800 15px 'Plus Jakarta Sans';cursor:pointer;box-shadow:0 12px 24px rgba(20,136,204,.4)">Listo</button>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: { &quot;width&quot;: 392, &quot;height&quot;: 812 }}">
+class Component extends DCLogic {
+  state = { svcId: null, vehicle: 'sedan', sel: [], booking: false, bkDate: null, bkTime: null, bkPlate: '', bkConfirm: false };
+  _f(n) { return '$' + Number(n).toFixed(2); }
+  _services() {
+    return [
+      { id: 'express', n: 'Lavado Express', d: 'Exterior a mano, secado y llantas', dur: '15 min', p: 12, img: '#D7ECF7 0 11px,#C2E0F1 11px 22px' },
+      { id: 'completo', n: 'Lavado Completo', d: 'Exterior + interior, aspirado y vidrios', dur: '30 min', p: 22, popular: true, img: '#D2E8DE 0 11px,#BEDDCF 11px 22px' },
+      { id: 'premium', n: 'Detallado Premium', d: 'Limpieza profunda, encerado y tapicería', dur: '90 min', p: 89, img: '#E6E0F3 0 11px,#D5CCEB 11px 22px' },
+      { id: 'aspirado', n: 'Solo Aspirado', d: 'Interior, alfombras y cajuela', dur: '15 min', p: 10, img: '#F3E8D6 0 11px,#E9DABF 11px 22px' },
+      { id: 'encerado', n: 'Encerado y Pulido', d: 'Cera de carnauba y abrillantado', dur: '60 min', p: 55, isNew: true, img: '#F7E2EC 0 11px,#EFCFDD 11px 22px' },
+    ];
+  }
+  _vehicles() {
+    return [
+      { id: 'sedan', n: 'Sedán / Coupé', delta: 0 },
+      { id: 'suv', n: 'SUV / Crossover', delta: 5 },
+      { id: 'truck', n: 'Camioneta / Pickup', delta: 10 },
+      { id: 'van', n: 'Van / Minivan', delta: 12 },
+    ];
+  }
+  _addons() {
+    return [
+      { n: 'Aromatizante', p: 3 },
+      { n: 'Cera líquida rápida', p: 8 },
+      { n: 'Limpieza de motor', p: 15 },
+      { n: 'Tratamiento de llantas', p: 6 },
+      { n: 'Shampoo de tapicería', p: 20 },
+    ];
+  }
+  _svc(id) { if (!this._idx) { this._idx = {}; this._services().forEach((x) => { this._idx[x.id] = x; }); } return this._idx[id]; }
+  _veh(id) { return this._vehicles().find((v) => v.id === id); }
+  _days() { const dow = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']; const mon = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; const out = []; const base = new Date(2026, 5, 23); for (let i = 0; i < 8; i++) { const d = new Date(base.getTime() + i * 86400000); out.push({ key: d.getDate() + '-' + d.getMonth(), dow: dow[d.getDay()], day: d.getDate(), mon: mon[d.getMonth()] }); } return out; }
+  _chip(active) { return { flex: 'none', cursor: 'pointer', border: 'none', padding: '9px 15px', borderRadius: '12px', font: "800 12.5px 'Plus Jakarta Sans'", background: active ? '#1488CC' : '#E4F1F8', color: active ? '#fff' : '#5E7785' }; }
+  openService(id) { this.setState({ svcId: id, vehicle: 'sedan', sel: [], bkDate: null, bkTime: null, bkPlate: '', booking: true }); }
+  closeBooking() { this.setState({ booking: false, svcId: null }); }
+  setVehicle(id) { this.setState({ vehicle: id }); }
+  toggleAddon(i) { this.setState((s) => { const a = s.sel.slice(); const k = a.indexOf(i); if (k >= 0) a.splice(k, 1); else a.push(i); return { sel: a }; }); }
+  setDate(k) { this.setState({ bkDate: k }); }
+  setTime(t) { this.setState({ bkTime: t }); }
+  onPlate(e) { this.setState({ bkPlate: e.target.value }); }
+  confirmBooking() { this.setState({ booking: false, bkConfirm: true }); }
+  doneBooking() { this.setState({ bkConfirm: false, svcId: null, vehicle: 'sedan', sel: [], bkDate: null, bkTime: null, bkPlate: '' }); }
+  _total() { const it = this._svc(this.state.svcId); if (!it) return 0; const v = this._veh(this.state.vehicle); let t = it.p + (v ? v.delta : 0); this.state.sel.forEach((i) => { t += this._addons()[i].p; }); return t; }
+  renderVals() {
+    const s = this.state;
+    const services = this._services().map((it) => ({
+      n: it.n, d: it.d, dur: it.dur, img: it.img, fromLabel: 'Desde ' + this._f(it.p),
+      hasBadge: !!(it.isNew || it.popular), badge: it.isNew ? 'Nuevo' : 'Popular', badgeBg: it.isNew ? '#E4ECFF' : '#FEF3D7', badgeC: it.isNew ? '#2C5BD0' : '#9A7A12',
+      onOpen: () => this.openService(it.id),
+    }));
+    let booking = null;
+    if (s.svcId) {
+      const it = this._svc(s.svcId); const v = this._veh(s.vehicle); const total = this._total();
+      const lines = [{ n: it.n + ' (' + v.n + ')', priceLabel: this._f(it.p + v.delta) }].concat(s.sel.map((i) => ({ n: this._addons()[i].n, priceLabel: '+' + this._f(this._addons()[i].p) })));
+      const selDay = this._days().find((d) => d.key === s.bkDate);
+      const ok = !!(s.bkDate && s.bkTime);
+      booking = {
+        svcName: it.n, dur: it.dur,
+        vehicles: this._vehicles().map((vh) => { const a = s.vehicle === vh.id; return { n: vh.n, deltaLabel: vh.delta > 0 ? ('+' + this._f(vh.delta)) : 'Incluido', deltaColor: a ? '#1488CC' : '#7C93A1', bg: a ? '#E4F1F8' : '#fff', ring: a ? '#1488CC' : '#DCEAF1', icon: a ? '#1488CC' : '#A7BECB', onTap: () => this.setVehicle(vh.id) }; }),
+        addons: this._addons().map((a, i) => { const sel = s.sel.indexOf(i) >= 0; return { n: a.n, priceLabel: '+' + this._f(a.p), selected: sel, ring: sel ? '#1488CC' : '#DCEAF1', mark: sel ? '#1488CC' : '#fff', bg: sel ? '#EAF4FB' : '#fff', onTap: () => this.toggleAddon(i) }; }),
+        days: this._days().map((d) => { const a = s.bkDate === d.key; return { dow: d.dow, day: d.day, mon: d.mon, bg: a ? '#1488CC' : '#fff', ring: a ? '#1488CC' : '#DCEAF1', dowColor: a ? 'rgba(255,255,255,.8)' : '#7C93A1', dayColor: a ? '#fff' : '#0E2A3B', monColor: a ? 'rgba(255,255,255,.8)' : '#7C93A1', onTap: () => this.setDate(d.key) }; }),
+        times: ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'].map((t) => ({ label: t, style: this._chip(s.bkTime === t), onTap: () => this.setTime(t) })),
+        plate: s.bkPlate, onPlate: (e) => this.onPlate(e),
+        lines, totalLabel: this._f(total),
+        confirmStyle: { width: '100%', border: 'none', borderRadius: '15px', padding: '15px', font: "800 15px 'Plus Jakarta Sans'", cursor: ok ? 'pointer' : 'default', background: ok ? '#1488CC' : '#AECBDD', color: '#fff', boxShadow: ok ? '0 12px 24px rgba(20,136,204,.4)' : 'none' },
+        confirmLabel: ok ? ('Pagar ' + this._f(total) + ' y reservar') : 'Elige fecha y hora',
+        summaryWhen: (selDay ? (selDay.dow + ' ' + selDay.day + ' ' + selDay.mon) : 'Sin fecha') + (s.bkTime ? (' · ' + s.bkTime) : ''),
+        vehicleName: v.n,
+      };
+    }
+    return {
+      services,
+      bookingOpen: s.booking, booking,
+      closeBooking: () => this.closeBooking(),
+      confirmBooking: () => this.confirmBooking(),
+      bkConfirm: s.bkConfirm,
+      doneBooking: () => this.doneBooking(),
+    };
+  }
+}
+</script>
+</body>
+</html>

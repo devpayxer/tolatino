@@ -24,7 +24,7 @@ input,textarea{font-family:inherit}
 <div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
 
   <div style="display:flex;align-items:center;gap:13px;width:392px;max-width:100%;margin-bottom:16px">
-    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline"><span style="color:#1E1B2E">To’</span><span style="color:#7B61FF">Latino</span><span style="display:inline-block;width:6px;height:6px;background:#F4B740;transform:rotate(45deg);margin-left:5px;align-self:center"></span></div>
     <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Módulo · Personal y empleos · móvil</div>
   </div>
 
@@ -512,7 +512,7 @@ class Component extends DCLogic {
       { label: L('Prueba final', 'Trail · final'), dot: '#1F9D57', n: '2', cards: [['Sara P.', '#D6336C', L('Prueba vie 5p', 'Trail Fri 5p')], ['James K.', '#E8954A', L('Referencias OK', 'Refs cleared')]] },
     ].map((col) => ({ label: col.label, dot: col.dot, n: col.n, cards: col.cards.map((c) => ({ name: c[0], color: c[1], meta: c[2], initials: c[0].split(' ').map((x) => x[0]).join('') })) }));
 
-    const visDefs = [['pub', L('Mostrar en mi anuncio', 'Show on public listing'), ''], ['board', L('Tablero de empleos', 'Post to job board'), L('Comunidad ToLatino', 'ToLatino community')], ['email', L('Email a clientes', 'Email past customers'), ''], ['boost', L('Impulso patrocinado', 'Sponsored boost'), '$20/' + L('sem', 'wk')]];
+    const visDefs = [['pub', L('Mostrar en mi anuncio', 'Show on public listing'), ''], ['board', L('Tablero de empleos', 'Post to job board'), L('Comunidad To’Latino', 'To’Latino community')], ['email', L('Email a clientes', 'Email past customers'), ''], ['boost', L('Impulso patrocinado', 'Sponsored boost'), '$20/' + L('sem', 'wk')]];
     const visToggles = visDefs.map((v) => { const on = s.vis[v[0]]; return { label: v[1], hasSub: !!v[2], sub: v[2], track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => { this.setState((st) => ({ vis: { ...st.vis, [v[0]]: !st.vis[v[0]] } })); this.flash(v[1] + (s.vis[v[0]] ? L(' desactivado', ' off') : L(' activado', ' on'))); } }; });
 
     // ===== member sheet =====

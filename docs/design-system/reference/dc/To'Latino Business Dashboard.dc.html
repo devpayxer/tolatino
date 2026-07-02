@@ -24,18 +24,20 @@ input,textarea{font-family:inherit}
 </style>
 </helmet>
 
-<div style="min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box">
+<div style="{{ rootStyle }}">
 
+  <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
   <div style="display:flex;align-items:center;gap:13px;width:1320px;max-width:100%;margin-bottom:16px">
-    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline">ToLatino<span style="display:inline-block;width:6px;height:6px;background:#7B61FF;transform:rotate(45deg);margin-left:5px"></span></div>
+    <div style="font:800 22px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline"><span style="color:#1E1B2E">To'</span><span style="color:#7B61FF">Latino</span><span style="display:inline-block;width:6px;height:6px;background:#F4B740;transform:rotate(45deg);margin-left:5px;align-self:center"></span></div>
     <div style="font:600 13px 'Plus Jakarta Sans';color:#6E6A85">Panel de negocio · escritorio · {{ tierLabel }} · {{ catLabel }}</div>
   </div>
+  </sc-if>
 
   <div style="position:relative;width:1320px;max-width:100%;height:858px;background:#F4F2F9;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(60,50,110,.24);border:1px solid rgba(30,27,46,.06);display:flex;flex-direction:column">
 
     <!-- ===================== TOP NAV ===================== -->
     <div style="flex:none;height:60px;background:#fff;border-bottom:1px solid rgba(30,27,46,.08);display:flex;align-items:center;gap:14px;padding:0 18px">
-      <div style="display:flex;align-items:baseline"><span style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.03em">To</span><span style="font:800 19px 'Plus Jakarta Sans';color:#7B61FF;letter-spacing:-.03em">Latino</span><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE;margin-left:7px">{{ t.business }}</span></div>
+      <div style="display:flex;align-items:baseline"><span style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.03em">To'</span><span style="font:800 19px 'Plus Jakarta Sans';color:#7B61FF;letter-spacing:-.03em">Latino</span><span style="display:inline-block;width:5px;height:5px;background:#F4B740;transform:rotate(45deg);margin:0 0 2px 4px"></span><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE;margin-left:7px">{{ t.business }}</span></div>
       <div style="width:1px;height:26px;background:rgba(30,27,46,.1)"></div>
       <button style="display:flex;align-items:center;gap:9px;border:none;background:#F7F6FC;cursor:pointer;border-radius:11px;padding:6px 11px 6px 7px">
         <span style="width:30px;height:30px;border-radius:8px;background:{{ biz.accent }};color:#fff;font:800 11px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center">{{ biz.initials }}</span>
@@ -324,7 +326,7 @@ input,textarea{font-family:inherit}
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1360, &quot;height&quot;: 920}, &quot;tier&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;free&quot;, &quot;verified&quot;, &quot;premium&quot;], &quot;default&quot;: &quot;verified&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;category&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;restaurant&quot;, &quot;beauty&quot;, &quot;auto&quot;, &quot;retail&quot;, &quot;rental&quot;], &quot;default&quot;: &quot;restaurant&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
 class Component extends DCLogic {
   state = {
-    tab: 'insights', lang: 'es', metric: 'revenue',
+    tab: 'insights', lang: null, metric: 'revenue',
     touchedTier: false, tierS: 'verified', touchedCat: false, catS: 'restaurant',
     mods: { menu: true, services: true, bookings: true, products: true, rental: true, events: true, updates: true, staff: true },
   };
@@ -427,7 +429,9 @@ class Component extends DCLogic {
   }
 
   renderVals() {
-    const st = this.state, es = st.lang === 'es', L = (a, b) => (es ? a : b);
+    const st = this.state, es = (st.lang ?? this.props.lang ?? 'es') === 'es', L = (a, b) => (es ? a : b);
+    const embed = !!this.props.embed;
+    const rootStyle = embed ? 'background:transparent;display:flex;flex-direction:column;align-items:center;padding:0;box-sizing:border-box' : 'min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center;padding:40px 24px;box-sizing:border-box';
     const tier = this.tier(), cat = this.cat(), ci = this._catInfo(cat);
     const isFree = tier === 'free', isPaid = tier !== 'free', isPremium = tier === 'premium';
     const tab = st.tab;
@@ -645,7 +649,7 @@ class Component extends DCLogic {
     // ===== page head + generic content per tab =====
     const titles = {
       insights: [L('Resumen', 'Insights'), isFree ? L('Tu listado está activo, pero te falta el kit. Mejora para desbloquear todo.', "Your listing is live, but you're missing the toolkit. Upgrade to unlock everything.") : L('Tu negocio va muy bien esta semana — los ingresos van en aumento.', "Your business is having a great week — revenue is trending up."), L('Últimos 7 días', 'Last 7 days')],
-      listing: [L('Información general', 'General info'), L('Así te ven tus clientes en ToLatino.', 'This is what customers see on ToLatino.'), null],
+      listing: [L('Información general', 'General info'), L('Así te ven tus clientes en To\u2019Latino.', 'This is what customers see on To\u2019Latino.'), null],
       photos: [L('Fotos y media', 'Photos & media'), L('Sube fotos de tu negocio, productos y equipo.', 'Upload photos of your business, products and team.'), null],
       hours: [L('Horario y feriados', 'Hours & holidays'), L('Define cuándo estás abierto.', 'Set when you are open.'), null],
       related: [L('Listados relacionados', 'Related listings'), L('Vincula sucursales y marcas que administras.', 'Link branches and brands you manage.'), null],
@@ -834,6 +838,7 @@ class Component extends DCLogic {
     }
 
     return {
+      rootStyle, showChrome: !embed,
       tierLabel: isFree ? 'Free' : (isPremium ? 'Premium' : 'Verified'), catLabel: L(ci.es, ci.en),
       esTab: mk(es), enTab: mk(!es), setEs: () => this.setState({ lang: 'es' }), setEn: () => this.setState({ lang: 'en' }),
       biz, catTile, livePill, planPill, statusPill, inboxCount: isFree ? '2' : '7',

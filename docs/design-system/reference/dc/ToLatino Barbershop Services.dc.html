@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;-webkit-font-smoothing:antialiased}html,body{margin:0}[data-noscroll]::-webkit-scrollbar{display:none}[data-noscroll]{scrollbar-width:none}</style>
+</helmet>
+<div style="width:100%;height:100%;min-height:812px;background:#FBFAFE;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;display:flex;flex-direction:column">
+
+  <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:13px 24px 5px">
+    <span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">9:41</span>
+    <span style="display:flex;align-items:center;gap:7px">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="#1E1B2E"><rect x="0" y="7" width="3" height="4" rx="1"></rect><rect x="4.5" y="5" width="3" height="6" rx="1"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1"></rect><rect x="13.5" y="0" width="3" height="11" rx="1"></rect></svg>
+      <svg width="16" height="11" viewBox="0 0 16 12" fill="none" stroke="#1E1B2E" stroke-width="1.6"><path d="M1 4.5a10 10 0 0 1 14 0M3.5 7a6.5 6.5 0 0 1 9 0M6 9.4a3 3 0 0 1 4 0"></path></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="21" height="10" rx="3" stroke="#1E1B2E" stroke-opacity=".4"></rect><rect x="3" y="3" width="16" height="6" rx="1.5" fill="#1E1B2E"></rect><rect x="23" y="4" width="1.6" height="4" rx="0.8" fill="#1E1B2E" fill-opacity=".4"></rect></svg>
+    </span>
+  </div>
+
+  <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 18px 12px">
+    <button style="width:38px;height:38px;border-radius:50%;background:#F1EFF4;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+    <div style="flex:1;min-width:0;text-align:center"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">Fade &amp; Co. Barbería</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE">Servicios &amp; citas</div></div>
+    <button style="width:38px;height:38px;border-radius:50%;background:#F1EFF4;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></button>
+  </div>
+
+  <div data-noscroll style="flex:1;overflow-y:auto;padding:4px 16px 96px">
+    <div style="position:relative;border-radius:20px;overflow:hidden;background:repeating-linear-gradient(135deg,#2A2730 0 13px,#211E27 13px 26px);padding:20px 20px 18px">
+      <span style="display:inline-block;background:rgba(190,138,60,.22);color:#E7B765;font:800 10px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.06em;padding:5px 10px;border-radius:8px">Barbería clásica</span>
+      <div style="font:800 22px 'Plus Jakarta Sans';color:#fff;letter-spacing:-.01em;margin-top:11px">Reserva tu corte</div>
+      <div style="font:600 12.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.66);line-height:1.5;margin-top:4px;max-width:230px">Elige tu barbero y horario. Sin filas, sin esperas — llega y siéntate.</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:14px">
+        <span style="display:flex;align-items:center;gap:4px"><span style="color:#E7B765;font:700 12px 'Plus Jakarta Sans'">★</span><span style="font:800 12.5px 'Plus Jakarta Sans';color:#fff">4.9</span><span style="font:600 11.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.55)">(286)</span></span>
+        <span style="display:flex;align-items:center;gap:5px;font:600 11.5px 'Plus Jakarta Sans';color:rgba(255,255,255,.7)"><span style="width:7px;height:7px;border-radius:50%;background:#3CCB7F"></span>Abierto · cierra 8pm</span>
+      </div>
+    </div>
+
+    <div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;margin:20px 2px 12px">Nuestros servicios</div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <sc-for list="{{ services }}" as="sv" hint-placeholder-count="6">
+      <div onClick="{{ sv.onOpen }}" style="display:flex;gap:13px;align-items:center;background:#fff;border-radius:17px;padding:12px;box-shadow:0 8px 22px rgba(60,50,110,.07);cursor:pointer">
+        <div style="position:relative;width:64px;height:64px;border-radius:14px;flex:none;background:repeating-linear-gradient(135deg,{{ sv.img }})">
+          <sc-if value="{{ sv.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:5px;left:5px;background:{{ sv.badgeBg }};color:{{ sv.badgeC }};padding:2px 6px;border-radius:6px;font:800 8px 'Plus Jakarta Sans';text-transform:uppercase;letter-spacing:.03em">{{ sv.badge }}</span></sc-if>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font:800 14.5px 'Plus Jakarta Sans';color:#1E1B2E;line-height:1.2">{{ sv.n }}</div>
+          <div style="font:500 11.5px 'Plus Jakarta Sans';color:#9A96AE;line-height:1.4;margin-top:3px">{{ sv.d }}</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <span style="display:flex;align-items:center;gap:4px;font:600 11px 'Plus Jakarta Sans';color:#9A96AE"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>{{ sv.dur }}</span>
+            <span style="font:800 13px 'Plus Jakarta Sans';color:#BE8A3C">{{ sv.priceLabel }}</span>
+          </div>
+        </div>
+        <span style="align-self:stretch;display:flex;align-items:center;font:800 11px 'Plus Jakarta Sans';color:#26252B;background:#F1EFF4;padding:0 13px;border-radius:11px;flex:none">Reservar</span>
+      </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="flex:none;position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-around;align-items:center;padding:11px 14px 20px;background:#fff;border-top:1px solid rgba(30,27,46,.07);box-shadow:0 -8px 22px rgba(60,50,110,.05)">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg><span style="font:700 9px 'Plus Jakarta Sans';color:#B7B0CE">Inicio</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#26252B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5l6 6L9 21H3v-6z"></path><path d="M12 6l6 6"></path></svg><span style="font:800 9px 'Plus Jakarta Sans';color:#26252B">Servicios</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2.5"></rect><path d="M3 10h18M8 2v4M16 2v4"></path></svg><span style="font:700 9px 'Plus Jakarta Sans';color:#B7B0CE">Citas</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg><span style="font:700 9px 'Plus Jakarta Sans';color:#B7B0CE">Perfil</span></div>
+  </div>
+
+  <sc-if value="{{ svcOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:9">
+    <div onClick="{{ closeService }}" style="position:absolute;inset:0;background:rgba(28,24,46,.5)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;top:34px;background:#fff;border-radius:26px 26px 0 0;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(28,24,46,.4)">
+      <div style="position:relative;height:140px;flex:none;background:repeating-linear-gradient(135deg,{{ svc.img }})">
+        <button onClick="{{ closeService }}" style="position:absolute;top:12px;left:12px;width:34px;height:34px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(60,50,110,.2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button>
+      </div>
+      <div data-noscroll style="flex:1;overflow-y:auto;padding:18px 20px 16px">
+        <div style="font:800 21px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.01em">{{ svc.name }}</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+          <span style="display:flex;align-items:center;gap:5px;font:600 12px 'Plus Jakarta Sans';color:#9A96AE"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B7B0CE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>{{ svc.dur }}</span>
+          <span style="font:800 15px 'Plus Jakarta Sans';color:#BE8A3C">{{ svc.priceLabel }}</span>
+        </div>
+        <div style="font:500 13.5px 'Plus Jakarta Sans';color:#7E7A92;line-height:1.5;margin-top:12px">{{ svc.long }}</div>
+        <div style="font:800 15px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:22px;margin-bottom:10px">Agregar extras</div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ svc.addons }}" as="a" hint-placeholder-count="3">
+          <button onClick="{{ a.onTap }}" style="display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;background:{{ a.bg }};border:1.5px solid {{ a.ring }};border-radius:13px;padding:12px 13px">
+            <span style="width:21px;height:21px;border-radius:7px;border:2px solid {{ a.ring }};background:{{ a.mark }};flex:none;display:flex;align-items:center;justify-content:center"><sc-if value="{{ a.selected }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></span>
+            <span style="flex:1;font:700 13.5px 'Plus Jakarta Sans';color:#3A3650">{{ a.n }}</span>
+            <span style="font:800 13px 'Plus Jakarta Sans';color:#BE8A3C">{{ a.priceLabel }}</span>
+          </button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:none;display:flex;align-items:center;gap:13px;padding:12px 18px 18px;background:#fff;border-top:1px solid rgba(30,27,46,.07);box-shadow:0 -10px 24px rgba(60,50,110,.06)">
+        <div style="flex:none"><div style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">Total</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E">{{ svc.totalLabel }}</div></div>
+        <button onClick="{{ openBooking }}" style="flex:1;border:none;background:#26252B;color:#fff;padding:15px;border-radius:15px;font:800 14.5px 'Plus Jakarta Sans';cursor:pointer;box-shadow:0 12px 24px rgba(38,37,43,.3)">Reservar cita</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ bookingOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:10">
+    <div onClick="{{ closeBooking }}" style="position:absolute;inset:0;background:rgba(28,24,46,.5)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;top:22px;background:#FBFAFE;border-radius:26px 26px 0 0;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 -20px 60px rgba(28,24,46,.4)">
+      <div style="flex:none;display:flex;align-items:center;gap:11px;padding:16px 18px 12px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+        <button onClick="{{ closeBooking }}" style="width:34px;height:34px;border-radius:50%;background:#F1EFF4;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+        <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">Agenda tu cita</div><div style="font:600 11.5px 'Plus Jakarta Sans';color:#9A96AE">{{ booking.svcName }}</div></div>
+      </div>
+      <div data-noscroll style="flex:1;overflow-y:auto;padding:18px 18px 16px">
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">Elige tu barbero</div>
+        <div data-noscroll style="display:flex;gap:13px;overflow-x:auto;padding-bottom:4px">
+          <sc-for list="{{ booking.barbers }}" as="b" hint-placeholder-count="4">
+          <button onClick="{{ b.onTap }}" style="flex:none;width:72px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:0">
+            <span style="position:relative;width:60px;height:60px;border-radius:50%;background:{{ b.color }};display:flex;align-items:center;justify-content:center;font:800 18px 'Plus Jakarta Sans';color:#fff;border:3px solid {{ b.ring }}">{{ b.ini }}<sc-if value="{{ b.selected }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:#26252B;border:2px solid #FBFAFE;display:flex;align-items:center;justify-content:center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></sc-if></span>
+            <span style="font:800 11px 'Plus Jakarta Sans';color:#1E1B2E;text-align:center;line-height:1.15">{{ b.n }}</span>
+            <span style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE;text-align:center;line-height:1.1">{{ b.tag }}</span>
+          </button>
+          </sc-for>
+        </div>
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E;margin:20px 0 11px">Fecha</div>
+        <div data-noscroll style="display:flex;gap:9px;overflow-x:auto;padding-bottom:4px">
+          <sc-for list="{{ booking.days }}" as="d" hint-placeholder-count="6">
+          <button onClick="{{ d.onTap }}" style="flex:none;width:56px;border-radius:14px;border:2px solid {{ d.ring }};background:{{ d.bg }};cursor:pointer;padding:10px 0;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <span style="font:700 10.5px 'Plus Jakarta Sans';color:{{ d.dowColor }}">{{ d.dow }}</span>
+            <span style="font:800 18px 'Plus Jakarta Sans';color:{{ d.dayColor }}">{{ d.day }}</span>
+            <span style="font:600 9.5px 'Plus Jakarta Sans';color:{{ d.monColor }}">{{ d.mon }}</span>
+          </button>
+          </sc-for>
+        </div>
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E;margin:20px 0 11px">Horario disponible</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ booking.times }}" as="t" hint-placeholder-count="8">
+          <button onClick="{{ t.onTap }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E;margin:20px 0 10px">Notas para tu barbero</div>
+        <input value="{{ booking.note }}" onInput="{{ booking.onNote }}" placeholder="Ej. fade medio, barba perfilada…" style="width:100%;border:1.5px solid #ECE9F6;background:#fff;border-radius:13px;padding:12px 14px;font:500 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"/>
+        <div style="background:#fff;border-radius:16px;padding:15px 16px;margin-top:20px;box-shadow:0 8px 22px rgba(60,50,110,.06)">
+          <sc-for list="{{ booking.lines }}" as="l" hint-placeholder-count="1">
+          <div style="display:flex;justify-content:space-between;font:600 12.5px 'Plus Jakarta Sans';color:#6E6A85;margin-bottom:8px"><span>{{ l.n }}</span><span style="font-weight:800;color:#1E1B2E">{{ l.priceLabel }}</span></div>
+          </sc-for>
+          <div style="display:flex;justify-content:space-between;font:800 15px 'Plus Jakarta Sans';color:#1E1B2E;padding-top:10px;border-top:1px solid rgba(30,27,46,.08)"><span>Total</span><span>{{ booking.totalLabel }}</span></div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:11px;background:#F6F3EC;border-radius:11px;padding:9px 11px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#BE8A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"></rect><path d="M2 10h20"></path></svg><span style="font:700 11.5px 'Plus Jakarta Sans';color:#8A6A2E">Pagas en la barbería al terminar</span></div>
+        </div>
+      </div>
+      <div style="flex:none;padding:12px 18px 18px;background:#fff;border-top:1px solid rgba(30,27,46,.07);box-shadow:0 -10px 24px rgba(60,50,110,.06)">
+        <button onClick="{{ confirmBooking }}" style="{{ booking.confirmStyle }}">{{ booking.confirmLabel }}</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ bkConfirm }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:11;background:#FBFAFE;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center">
+    <div style="width:84px;height:84px;border-radius:50%;background:#26252B;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 34px rgba(38,37,43,.3)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#E7B765" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"></path><path d="M16 2v3"></path><rect x="3" y="5" width="18" height="17" rx="2.5"></rect><path d="M3 10h18"></path><polyline points="9 15 11 17 15 13"></polyline></svg></div>
+    <div style="font:800 23px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:22px">¡Cita agendada!</div>
+    <div style="font:500 14px 'Plus Jakarta Sans';color:#7E7A92;line-height:1.5;margin-top:8px;max-width:270px">Te esperamos en <b style="color:#1E1B2E">Fade &amp; Co.</b> Recibirás un recordatorio una hora antes.</div>
+    <div style="margin-top:22px;background:#fff;border-radius:16px;padding:16px 18px;width:100%;max-width:290px;box-shadow:0 10px 28px rgba(60,50,110,.1);text-align:left">
+      <div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ booking.svcName }}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:11px"><span style="width:30px;height:30px;border-radius:50%;background:{{ booking.barberColor }};display:flex;align-items:center;justify-content:center;font:800 12px 'Plus Jakarta Sans';color:#fff;flex:none">{{ booking.barberIni }}</span><span style="font:700 12.5px 'Plus Jakarta Sans';color:#3A3650">con {{ booking.barberName }}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid rgba(30,27,46,.07)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BE8A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M3 10h18M8 2v4M16 2v4"></path></svg><span style="font:700 12.5px 'Plus Jakarta Sans';color:#3A3650">{{ booking.summaryWhen }}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:11px;padding-top:11px;border-top:1px solid rgba(30,27,46,.07)"><span style="font:700 12.5px 'Plus Jakarta Sans';color:#6E6A85">Total a pagar en sucursal</span><span style="font:800 13px 'Plus Jakarta Sans';color:#BE8A3C">{{ booking.totalLabel }}</span></div>
+    </div>
+    <button onClick="{{ doneBooking }}" style="width:100%;max-width:290px;margin-top:22px;border:none;background:#26252B;color:#fff;padding:15px;border-radius:15px;font:800 15px 'Plus Jakarta Sans';cursor:pointer;box-shadow:0 12px 24px rgba(38,37,43,.3)">Listo</button>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: { &quot;width&quot;: 392, &quot;height&quot;: 812 }}">
+class Component extends DCLogic {
+  state = { svcId: null, sel: [], booking: false, bkBarber: null, bkDate: null, bkTime: null, bkNote: '', bkConfirm: false };
+  _f(n) { return '$' + Number(n).toFixed(2); }
+  _services() {
+    return [
+      { id: 'corte', n: 'Corte de Cabello', d: 'Tijera o máquina, lavado y peinado', dur: '30 min', p: 25, img: '#E7E4EF 0 11px,#DAD5E6 11px 22px', long: 'Un corte clásico o moderno adaptado a tu estilo, terminado con lavado y peinado profesional.', addons: [{ n: 'Lavado premium', p: 5 }, { n: 'Diseño de línea', p: 6 }, { n: 'Mascarilla negra', p: 8 }] },
+      { id: 'cortebarba', n: 'Corte + Barba', d: 'El combo completo, recién arreglado', dur: '45 min', p: 38, popular: true, img: '#EADFD0 0 11px,#DECEB8 11px 22px', long: 'Corte de cabello completo más perfilado y arreglo de barba con toalla caliente y aceites.', addons: [{ n: 'Lavado premium', p: 5 }, { n: 'Diseño de línea', p: 6 }, { n: 'Tinte de barba', p: 12 }] },
+      { id: 'afeitado', n: 'Afeitado Clásico', d: 'Navaja y toalla caliente', dur: '30 min', p: 28, img: '#E2E6EC 0 11px,#D2D8E2 11px 22px', long: 'Afeitado tradicional a navaja con toalla caliente, espuma artesanal y bálsamo calmante.', addons: [{ n: 'Exfoliación facial', p: 9 }, { n: 'Mascarilla negra', p: 8 }] },
+      { id: 'barba', n: 'Arreglo de Barba', d: 'Perfilado y acondicionado', dur: '20 min', p: 18, img: '#E8E2D6 0 11px,#DCD3C0 11px 22px', long: 'Perfilamos y damos forma a tu barba con máquina y navaja, terminando con aceite acondicionador.', addons: [{ n: 'Tinte de barba', p: 12 }, { n: 'Mascarilla negra', p: 8 }] },
+      { id: 'nino', n: 'Corte para Niño', d: 'Menores de 12 años', dur: '25 min', p: 18, img: '#E3ECEF 0 11px,#D2E0E6 11px 22px', long: 'Corte paciente y divertido para los más pequeños, con el estilo que ellos elijan.', addons: [{ n: 'Diseño de línea', p: 6 }] },
+      { id: 'tinte', n: 'Tinte / Color', d: 'Cubre canas o cambia tu look', dur: '60 min', p: 45, isNew: true, img: '#EFE0EA 0 11px,#E6CEDD 11px 22px', long: 'Aplicación de color profesional para cubrir canas o lograr un nuevo tono, incluye lavado y peinado.', addons: [{ n: 'Tratamiento capilar', p: 14 }, { n: 'Corte', p: 20 }] },
+    ];
+  }
+  _barbers() {
+    return [
+      { id: 'marco', n: 'Marco', tag: 'Fades & degradados', ini: 'M', color: '#26252B' },
+      { id: 'tony', n: 'Tony', tag: 'Barbas & afeitado', ini: 'T', color: '#BE8A3C' },
+      { id: 'luis', n: 'Luis', tag: 'Diseños & líneas', ini: 'L', color: '#6D7B8A' },
+      { id: 'any', n: 'Cualquiera', tag: 'Primer disponible', ini: '★', color: '#9A8FB0' },
+    ];
+  }
+  _svc(id) { if (!this._idx) { this._idx = {}; this._services().forEach((x) => { this._idx[x.id] = x; }); } return this._idx[id]; }
+  _days() { const dow = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']; const mon = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; const out = []; const base = new Date(2026, 5, 23); for (let i = 0; i < 8; i++) { const d = new Date(base.getTime() + i * 86400000); out.push({ key: d.getDate() + '-' + d.getMonth(), dow: dow[d.getDay()], day: d.getDate(), mon: mon[d.getMonth()] }); } return out; }
+  _chip(active) { return { flex: 'none', cursor: 'pointer', border: 'none', padding: '9px 15px', borderRadius: '12px', font: "800 12.5px 'Plus Jakarta Sans'", background: active ? '#26252B' : '#F1EFF4', color: active ? '#fff' : '#6E6A85' }; }
+  openService(id) { this.setState({ svcId: id, sel: [] }); }
+  closeService() { this.setState({ svcId: null }); }
+  toggleAddon(i) { this.setState((s) => { const a = s.sel.slice(); const k = a.indexOf(i); if (k >= 0) a.splice(k, 1); else a.push(i); return { sel: a }; }); }
+  openBooking() { this.setState({ booking: true }); }
+  closeBooking() { this.setState({ booking: false }); }
+  setBarber(id) { this.setState({ bkBarber: id }); }
+  setDate(k) { this.setState({ bkDate: k }); }
+  setTime(t) { this.setState({ bkTime: t }); }
+  onNote(e) { this.setState({ bkNote: e.target.value }); }
+  confirmBooking() { this.setState({ booking: false, bkConfirm: true }); }
+  doneBooking() { this.setState({ bkConfirm: false, svcId: null, sel: [], bkBarber: null, bkDate: null, bkTime: null, bkNote: '' }); }
+  _total() { const it = this._svc(this.state.svcId); if (!it) return 0; let t = it.p; this.state.sel.forEach((i) => { t += it.addons[i].p; }); return t; }
+  renderVals() {
+    const s = this.state;
+    const services = this._services().map((it) => ({
+      n: it.n, d: it.d, dur: it.dur, img: it.img, priceLabel: this._f(it.p),
+      hasBadge: !!(it.isNew || it.popular), badge: it.isNew ? 'Nuevo' : 'Popular', badgeBg: it.isNew ? '#EFEBFF' : '#FEF3D7', badgeC: it.isNew ? '#6D4DF6' : '#9A7A12',
+      onOpen: () => this.openService(it.id),
+    }));
+    let svc = null;
+    if (s.svcId) {
+      const it = this._svc(s.svcId); const total = this._total();
+      svc = {
+        img: it.img, name: it.n, dur: it.dur, priceLabel: this._f(it.p), long: it.long, totalLabel: this._f(total),
+        addons: it.addons.map((a, i) => { const sel = s.sel.indexOf(i) >= 0; return { n: a.n, priceLabel: '+' + this._f(a.p), selected: sel, ring: sel ? '#BE8A3C' : '#E2DEF4', mark: sel ? '#BE8A3C' : '#fff', bg: sel ? '#FBF6EC' : '#fff', onTap: () => this.toggleAddon(i) }; }),
+      };
+    }
+    let booking = null;
+    if (s.svcId) {
+      const it = this._svc(s.svcId); const total = this._total();
+      const lines = [{ n: it.n, priceLabel: this._f(it.p) }].concat(s.sel.map((i) => ({ n: it.addons[i].n, priceLabel: '+' + this._f(it.addons[i].p) })));
+      const selDay = this._days().find((d) => d.key === s.bkDate);
+      const bsel = this._barbers().find((b) => b.id === s.bkBarber);
+      const ok = !!(s.bkBarber && s.bkDate && s.bkTime);
+      booking = {
+        svcName: it.n,
+        barbers: this._barbers().map((b) => { const a = s.bkBarber === b.id; return { n: b.n, tag: b.tag, ini: b.ini, color: b.color, selected: a, ring: a ? '#26252B' : 'transparent', onTap: () => this.setBarber(b.id) }; }),
+        days: this._days().map((d) => { const a = s.bkDate === d.key; return { dow: d.dow, day: d.day, mon: d.mon, bg: a ? '#26252B' : '#fff', ring: a ? '#26252B' : '#ECE9F6', dowColor: a ? 'rgba(255,255,255,.8)' : '#9A96AE', dayColor: a ? '#fff' : '#1E1B2E', monColor: a ? 'rgba(255,255,255,.8)' : '#9A96AE', onTap: () => this.setDate(d.key) }; }),
+        times: ['10:00', '10:30', '11:00', '11:30', '12:00', '13:00', '13:30', '14:00', '15:00', '16:00', '17:00', '18:00'].map((t) => ({ label: t, style: this._chip(s.bkTime === t), onTap: () => this.setTime(t) })),
+        note: s.bkNote, onNote: (e) => this.onNote(e),
+        lines, totalLabel: this._f(total),
+        canConfirm: ok,
+        confirmStyle: { width: '100%', border: 'none', borderRadius: '15px', padding: '15px', font: "800 15px 'Plus Jakarta Sans'", cursor: ok ? 'pointer' : 'default', background: ok ? '#26252B' : '#C7C4CE', color: '#fff', boxShadow: ok ? '0 12px 24px rgba(38,37,43,.3)' : 'none' },
+        confirmLabel: ok ? ('Confirmar cita · ' + this._f(total)) : 'Elige barbero, fecha y hora',
+        summaryWhen: (selDay ? (selDay.dow + ' ' + selDay.day + ' ' + selDay.mon) : 'Sin fecha') + (s.bkTime ? (' · ' + s.bkTime) : ''),
+        barberName: bsel ? bsel.n : '', barberIni: bsel ? bsel.ini : '', barberColor: bsel ? bsel.color : '#9A8FB0',
+      };
+    }
+    return {
+      services,
+      svcOpen: !!s.svcId && !s.booking, svc,
+      closeService: () => this.closeService(),
+      openBooking: () => this.openBooking(),
+      bookingOpen: s.booking, booking,
+      closeBooking: () => this.closeBooking(),
+      confirmBooking: () => this.confirmBooking(),
+      bkConfirm: s.bkConfirm,
+      doneBooking: () => this.doneBooking(),
+    };
+  }
+}
+</script>
+</body>
+</html>
