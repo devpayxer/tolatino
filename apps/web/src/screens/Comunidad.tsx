@@ -3,19 +3,65 @@
 // Comunidad (`/comunidad`) — Nextdoor-style home of the app (Handoff v2).
 // Desktop: barrios rail / feed / tendencias+vecinos. Mobile: single column.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Send, Store, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useAuth } from '@/lib/auth';
+import { useInteractions } from '@/lib/interactions';
+import { supabase } from '@/lib/supabase';
 import { Avatar, Card, EmptyState, Overlay, YouAvatar } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { HOODS, NEIGHBORS, SEED_COMMENTS, SEED_REPLIES, TRENDING, bizTile, type Comment, type Post } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 
+// Real (Supabase) posts/comments carry a UUID id; fixtures do not.
+const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
+
+function relTime(iso: string): [string, string] {
+  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return [`hace ${mins} min`, `${mins}m`];
+  const h = Math.round(mins / 60);
+  if (h < 24) return [`hace ${h} h`, `${h}h`];
+  const d = Math.round(h / 24);
+  return [`hace ${d} d`, `${d}d`];
+}
+
+type CommentRow = {
+  id: string;
+  parent_id: string | null;
+  author_name: string;
+  author_initials: string;
+  author_color: string;
+  body: string;
+  biz_name: string | null;
+  biz_rating: string | null;
+  like_count: number;
+  created_at: string;
+};
+
+function mapComment(r: CommentRow): Comment {
+  const [tEs, tEn] = relTime(r.created_at);
+  return {
+    id: r.id,
+    initials: r.author_initials,
+    color: r.author_color,
+    name: r.author_name,
+    timeEs: tEs,
+    timeEn: tEn,
+    likes: r.like_count,
+    es: r.body,
+    en: r.body,
+    biz: r.biz_name ? { name: r.biz_name, rating: r.biz_rating ?? '' } : undefined,
+  };
+}
+
 export function ComunidadScreen() {
   const { L } = useLang();
   const app = useApp();
+  const auth = useAuth();
+  const it = useInteractions();
   const { posts: POSTS, businesses: BUSINESSES } = useLiveData();
   const [hood, setHood] = useState('all');
 
@@ -25,11 +71,51 @@ export function ComunidadScreen() {
   const [replyTo, setReplyTo] = useState<{ cid: string; name: string } | null>(null);
   const [userComments, setUserComments] = useState<Record<string, Comment[]>>({});
   const [userReplies, setUserReplies] = useState<Record<string, Comment[]>>({});
+  // DB-backed comments (loaded when a real post's thread opens).
+  const [dbTop, setDbTop] = useState<Record<string, Comment[]>>({});
+  const [dbReplies, setDbReplies] = useState<Record<string, Comment[]>>({});
   const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({});
+  const [commentLikeCount, setCommentLikeCount] = useState<Record<string, number>>({});
   const [commentBiz, setCommentBiz] = useState<string | null>(null);
   const [commentBizOpen, setCommentBizOpen] = useState(false);
   const [commentBizQuery, setCommentBizQuery] = useState('');
   const [commentSeq, setCommentSeq] = useState(0);
+  const [sending, setSending] = useState(false);
+
+  // Load the DB comment thread (and this user's comment-likes) when a real
+  // post's thread opens. Fixture posts keep their SEED_COMMENTS.
+  useEffect(() => {
+    const pid = threadPostId;
+    if (!pid || !supabase || !isUuid(pid)) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.from('post_comments').select('*').eq('post_id', pid).order('created_at');
+      if (cancelled || error || !data) return;
+      const rows = data as CommentRow[];
+      const top: Comment[] = [];
+      const rep: Record<string, Comment[]> = {};
+      for (const r of rows) {
+        const c = mapComment(r);
+        if (r.parent_id) (rep[r.parent_id] ??= []).push(c);
+        else top.push(c);
+      }
+      setDbTop((m) => ({ ...m, [pid]: top }));
+      setDbReplies((m) => ({ ...m, ...rep }));
+      if (auth.user && rows.length) {
+        const { data: cl } = await supabase
+          .from('comment_likes')
+          .select('comment_id')
+          .eq('user_id', auth.user.id)
+          .in('comment_id', rows.map((r) => r.id));
+        if (!cancelled && cl) {
+          setCommentLikes((m) => ({ ...m, ...Object.fromEntries((cl as { comment_id: string }[]).map((x) => [x.comment_id, true])) }));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [threadPostId, auth.user]);
 
   const allPosts: Post[] = useMemo(() => [...app.newPosts, ...POSTS], [app.newPosts, POSTS]);
   const sl = app.search.trim().toLowerCase();
@@ -37,9 +123,12 @@ export function ComunidadScreen() {
     ? allPosts.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))
     : allPosts;
 
-  const topComments = (pid: string) => [...(SEED_COMMENTS[pid] ?? []), ...(userComments[pid] ?? [])];
-  const repliesFor = (cid: string) => [...(SEED_REPLIES[cid] ?? []), ...(userReplies[cid] ?? [])];
-  const commentCount = (pid: string) => topComments(pid).reduce((n, c) => n + 1 + repliesFor(c.id).length, 0);
+  const topComments = (pid: string) => [...(SEED_COMMENTS[pid] ?? []), ...(dbTop[pid] ?? []), ...(userComments[pid] ?? [])];
+  const repliesFor = (cid: string) => [...(SEED_REPLIES[cid] ?? []), ...(dbReplies[cid] ?? []), ...(userReplies[cid] ?? [])];
+  // Feed count: real posts use the DB total (loaded for the whole visible feed
+  // and kept live via bumpComment); fixtures count their local comments.
+  const commentCount = (pid: string) =>
+    isUuid(pid) ? (it.commentCount[pid] ?? 0) : topComments(pid).reduce((n, c) => n + 1 + repliesFor(c.id).length, 0);
 
   const threadPost = allPosts.find((p) => p.id === threadPostId) ?? null;
   const canComment = commentText.trim().length > 0 || !!commentBiz;
@@ -52,14 +141,51 @@ export function ComunidadScreen() {
     setCommentBizOpen(false);
   };
 
-  const sendComment = () => {
+  const resetComposer = () => {
+    setCommentText('');
+    setReplyTo(null);
+    setCommentBiz(null);
+    setCommentBizOpen(false);
+  };
+
+  const sendComment = async () => {
     const txt = commentText.trim();
-    if ((!txt && !commentBiz) || !threadPostId) return;
+    const pid = threadPostId;
+    if ((!txt && !commentBiz) || !pid || sending) return;
+    // Guests must sign in before commenting on a real feed.
+    if (!it.gate()) return;
+
+    // Real post + signed-in user → persist to Supabase.
+    if (supabase && auth.user && auth.profile && isUuid(pid)) {
+      setSending(true);
+      const row = {
+        post_id: pid,
+        parent_id: replyTo?.cid ?? null,
+        author_id: auth.user.id,
+        author_name: auth.profile.display_name,
+        author_initials: auth.profile.initials,
+        author_color: auth.profile.avatar_color,
+        body: txt,
+        biz_name: commentBiz ?? null,
+        biz_rating: commentBiz ? '4.9' : null,
+      };
+      const { data, error } = await supabase.from('post_comments').insert(row).select().single();
+      setSending(false);
+      if (error || !data) return;
+      const c = mapComment(data as CommentRow);
+      if (replyTo) setDbReplies((m) => ({ ...m, [replyTo.cid]: [...(m[replyTo.cid] ?? []), c] }));
+      else setDbTop((m) => ({ ...m, [pid]: [...(m[pid] ?? []), c] }));
+      it.bumpComment(pid, 1);
+      resetComposer();
+      return;
+    }
+
+    // Demo / not configured → optimistic local comment.
     const base: Comment = {
       id: `u${commentSeq}`,
-      initials: 'TÚ',
-      color: '#7B61FF',
-      name: L('Tú', 'You'),
+      initials: auth.profile?.initials ?? 'TÚ',
+      color: auth.profile?.avatar_color ?? '#7B61FF',
+      name: auth.profile?.display_name ?? L('Tú', 'You'),
       hoodEs: 'Bellaire',
       timeEs: 'ahora',
       timeEn: 'now',
@@ -72,12 +198,26 @@ export function ComunidadScreen() {
     if (replyTo) {
       setUserReplies((m) => ({ ...m, [replyTo.cid]: [...(m[replyTo.cid] ?? []), base] }));
     } else {
-      setUserComments((m) => ({ ...m, [threadPostId]: [...(m[threadPostId] ?? []), base] }));
+      setUserComments((m) => ({ ...m, [pid]: [...(m[pid] ?? []), base] }));
     }
-    setCommentText('');
-    setReplyTo(null);
-    setCommentBiz(null);
-    setCommentBizOpen(false);
+    resetComposer();
+  };
+
+  const toggleCommentLike = (c: Comment) => {
+    if (!it.gate()) return;
+    const liked = !!commentLikes[c.id];
+    const base = commentLikeCount[c.id] ?? c.likes;
+    setCommentLikes((m) => ({ ...m, [c.id]: !liked }));
+    setCommentLikeCount((m) => ({ ...m, [c.id]: Math.max(0, base + (liked ? -1 : 1)) }));
+    if (supabase && auth.user && isUuid(c.id)) {
+      supabase.rpc('toggle_comment_like', { p_comment: c.id }).then(({ data, error }) => {
+        if (!error && data && (data as { liked: boolean; count: number }[])[0]) {
+          const d = (data as { liked: boolean; count: number }[])[0];
+          setCommentLikes((m) => ({ ...m, [c.id]: d.liked }));
+          setCommentLikeCount((m) => ({ ...m, [c.id]: d.count }));
+        }
+      });
+    }
   };
 
   const cbq = commentBizQuery.trim().toLowerCase();
@@ -85,6 +225,7 @@ export function ComunidadScreen() {
 
   const commentRow = (c: Comment, isReply = false) => {
     const liked = !!commentLikes[c.id];
+    const likes = commentLikeCount[c.id] ?? c.likes;
     return (
       <div key={c.id} className={`flex items-start gap-[9px] ${isReply ? 'ml-10' : ''}`}>
         <Avatar initials={c.initials} color={c.color} size={isReply ? 26 : 30} />
@@ -107,10 +248,10 @@ export function ComunidadScreen() {
           </div>
           <div className="mt-1 flex items-center gap-3.5 px-1">
             <button
-              onClick={() => setCommentLikes((m) => ({ ...m, [c.id]: !m[c.id] }))}
+              onClick={() => toggleCommentLike(c)}
               className={`cursor-pointer text-[11.5px] font-extrabold ${liked ? 'text-pink' : 'text-muted'}`}
             >
-              ♥ {c.likes + (liked ? 1 : 0)}
+              ♥ {likes}
             </button>
             {!isReply && (
               <button
@@ -345,9 +486,9 @@ export function ComunidadScreen() {
                 </button>
                 <button
                   onClick={sendComment}
-                  disabled={!canComment}
+                  disabled={!canComment || sending}
                   className={`flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-white ${
-                    canComment ? 'cursor-pointer bg-primary' : 'cursor-not-allowed bg-[#E3DEF2]'
+                    canComment && !sending ? 'cursor-pointer bg-primary' : 'cursor-not-allowed bg-[#E3DEF2]'
                   }`}
                   aria-label={L('Enviar', 'Send')}
                 >

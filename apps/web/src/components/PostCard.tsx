@@ -4,9 +4,11 @@
 // hood·time, text, optional poll / tagged business, actions (♥ recommend,
 // comments → thread, save, share). All toggles carry real state.
 
+import { useState } from 'react';
 import { Bookmark, Check, MessageCircle, Share } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useInteractions } from '@/lib/interactions';
 import { Avatar } from '@/components/ui';
 import type { Post, PostType } from '@/data/fixtures';
 import { tile } from '@/lib/tiles';
@@ -41,12 +43,32 @@ export function PostCard({
 }) {
   const { L } = useLang();
   const app = useApp();
+  const it = useInteractions();
   const tag = postTag(post.type, L);
+  const [copied, setCopied] = useState(false);
 
-  const recOn = !!app.recd[post.id];
-  const saveOn = !!app.savedPosts[post.id];
+  const recOn = !!it.liked[post.id];
+  const saveOn = !!it.saved[post.id];
+  const recCount = it.likeCount[post.id] ?? post.recommends;
+  const commentTotal = commentCount ?? it.commentCount[post.id] ?? 0;
   const voteIdx = app.pollVotes[post.id];
   const voted = voteIdx !== undefined;
+
+  const share = async () => {
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/comunidad` : '';
+    const text = `${post.name} · To'Latino: ${L(post.es, post.en)}`;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: "To'Latino", text, url });
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(`${text} ${url}`.trim());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1600);
+      }
+    } catch {
+      /* user cancelled the share sheet — ignore */
+    }
+  };
 
   const pollCounts = (post.pollBase ?? post.poll?.map(() => 0) ?? []).map((c, i) => c + (voteIdx === i ? 1 : 0));
   const pollTotal = pollCounts.reduce((a, b) => a + b, 0);
@@ -122,11 +144,11 @@ export function PostCard({
       <div className="mt-[13px] flex items-center gap-[18px] border-t border-hair pt-3">
         <button
           disabled={preview}
-          onClick={() => app.toggleRecd(post.id)}
+          onClick={() => it.gate() && it.toggleLike(post.id, post.recommends)}
           className={`flex cursor-pointer items-center gap-1.5 text-[13px] font-extrabold ${recOn ? 'text-pink' : 'text-muted'}`}
         >
           <span className="text-[16px] leading-none">♥</span>
-          {post.recommends + (recOn ? 1 : 0)}
+          {recCount}
         </button>
         <button
           disabled={preview}
@@ -134,18 +156,24 @@ export function PostCard({
           className="flex cursor-pointer items-center gap-1.5 text-[13px] font-extrabold text-muted"
         >
           <MessageCircle size={16} strokeWidth={2.2} />
-          {commentCount ?? 0}
+          {commentTotal}
         </button>
         <button
           disabled={preview}
-          onClick={() => app.toggleSavedPost(post.id)}
+          onClick={() => it.gate() && it.toggleSave(post.id)}
           className="ml-auto flex cursor-pointer items-center"
           aria-label={L('Guardar', 'Save')}
         >
           <Bookmark size={16} strokeWidth={2.2} className={saveOn ? 'text-primary' : 'text-muted'} fill={saveOn ? '#7B61FF' : 'none'} />
         </button>
-        <button disabled={preview} className="flex cursor-pointer items-center text-muted" aria-label={L('Compartir', 'Share')}>
+        <button
+          disabled={preview}
+          onClick={share}
+          className={`flex cursor-pointer items-center gap-1.5 text-[12px] font-extrabold ${copied ? 'text-green-dark' : 'text-muted'}`}
+          aria-label={L('Compartir', 'Share')}
+        >
           <Share size={16} strokeWidth={2.2} />
+          {copied && <span>{L('Copiado', 'Copied')}</span>}
         </button>
       </div>
     </div>
