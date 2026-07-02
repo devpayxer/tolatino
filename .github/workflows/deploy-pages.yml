@@ -8,7 +8,9 @@ name: Deploy web to GitHub Pages
 on:
   push:
     branches:
-      - claude/new-prompt-xkubrd
+      # Deploys run from the default branch — the github-pages environment's
+      # protection rules only allow it. Feature branches merge in to publish.
+      - claude/tolatino-repo-setup-1efdil
     paths:
       - "apps/web/**"
       - "package.json"
