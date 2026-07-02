@@ -1,0 +1,390 @@
+'use client';
+
+// Publish flow (Handoff v2): FAB/"Publicar" → chooser (Publicación / Negocio /
+// Evento) → per-type form → success. Posting REALLY adds to the Comunidad feed.
+// Post form is 3 steps: type → write (photos / tag business / poll options) →
+// preview.
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Calendar, HelpCircle, Heart, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
+import { useLang } from '@/lib/i18n';
+import { useApp, type PostType } from '@/lib/state';
+import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
+import { PUB_HOODS, TAG_BIZ_NAMES, VIEW_PATH } from '@/data/fixtures';
+import { PostCard, type FeedPost } from '@/components/PostCard';
+
+const PHOTO_TILES = [
+  'linear-gradient(135deg,#FFD8A8,#FF922B)',
+  'linear-gradient(135deg,#D0BFFF,#7B61FF)',
+  'linear-gradient(135deg,#A5D8FF,#4DABF7)',
+];
+
+export function PublishModal() {
+  const { L } = useLang();
+  const app = useApp();
+  const router = useRouter();
+
+  const [step, setStep] = useState(1);
+  const [done, setDone] = useState(false);
+  const [postType, setPostType] = useState<PostType>('ask');
+  const [text, setText] = useState('');
+  const [hood, setHood] = useState('Bellaire');
+  const [photos, setPhotos] = useState(0);
+  const [taggedBiz, setTaggedBiz] = useState<string | null>(null);
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [evFree, setEvFree] = useState(true);
+
+  const reset = () => {
+    setStep(1);
+    setDone(false);
+    setText('');
+    setPhotos(0);
+    setTaggedBiz(null);
+    setPollOptions(['', '']);
+  };
+  const close = () => {
+    app.closePub();
+    reset();
+  };
+
+  const type = app.pubType;
+  const isChooser = app.pubOpen && !type && !done;
+  const isPoll = postType === 'poll';
+  const pollFilled = pollOptions.filter((o) => o.trim()).length;
+  const canPost = isPoll ? text.trim().length > 0 && pollFilled >= 2 : text.trim().length > 0;
+
+  const typeDefs: { key: PostType; Icon: typeof HelpCircle; color: string; bg: string; labEs: string; labEn: string; dEs: string; dEn: string }[] = [
+    { key: 'ask', Icon: HelpCircle, color: '#6D4DF6', bg: '#EFEBFF', labEs: 'Pregunta', labEn: 'Ask', dEs: 'Pide una recomendación o ayuda a tus vecinos.', dEn: 'Ask neighbors for a rec or help.' },
+    { key: 'rec', Icon: Heart, color: '#1F9D57', bg: '#E3F5EA', labEs: 'Recomendación', labEn: 'Recommendation', dEs: 'Comparte un negocio o servicio que te encantó.', dEn: 'Share a business or service you loved.' },
+    { key: 'local', Icon: MessageCircle, color: '#2F6FED', bg: '#E5EFFB', labEs: 'Aviso del barrio', labEn: 'Neighborhood update', dEs: 'Cuenta algo que está pasando cerca de ti.', dEn: 'Share something happening nearby.' },
+    { key: 'sale', Icon: Tag, color: '#B26A00', bg: '#FCEFD6', labEs: 'Compra y venta', labEn: 'Buy & sell', dEs: 'Ofrece o busca algo en tu comunidad.', dEn: 'Offer or look for something locally.' },
+    { key: 'poll', Icon: BarChart3, color: '#0E9384', bg: '#D6F3EF', labEs: 'Encuesta', labEn: 'Poll', dEs: 'Haz una pregunta con opciones para votar.', dEn: 'Ask a question with options to vote on.' },
+  ];
+
+  const submitPost = () => {
+    const txt = text.trim();
+    if (!txt) return;
+    const opts = pollOptions.map((o) => o.trim()).filter(Boolean);
+    if (isPoll && opts.length < 2) return;
+    app.addPost({
+      type: postType,
+      initials: 'TÚ',
+      color: '#7B61FF',
+      name: L('Tú', 'You'),
+      hoodEs: hood,
+      timeEs: 'ahora',
+      timeEn: 'now',
+      recommends: 0,
+      business: taggedBiz ?? undefined,
+      bizRating: taggedBiz ? '4.9' : undefined,
+      poll: isPoll ? opts : undefined,
+      pollBase: isPoll ? opts.map(() => 0) : undefined,
+      es: txt,
+      en: txt,
+    });
+    setDone(true);
+  };
+
+  const finishView = type === 'negocio' ? 'negocios' : type === 'evento' ? 'eventos' : 'comunidad';
+  const success = {
+    post: { t: L('¡Publicado!', 'Posted!'), s: L('Tu publicación ya está en el feed de tu barrio.', 'Your post is now in your neighborhood feed.'), c: L('Ver en Comunidad', 'View in Community') },
+    negocio: { t: L('¡Negocio enviado!', 'Business submitted!'), s: L('Lo revisaremos y aparecerá en el directorio muy pronto.', 'We’ll review it and it will appear in the directory soon.'), c: L('Ir a Negocios', 'Go to Business') },
+    evento: { t: L('¡Evento creado!', 'Event created!'), s: L('Tu evento ya está publicado para la comunidad.', 'Your event is now live for the community.'), c: L('Ir a Eventos', 'Go to Events') },
+  }[type ?? 'post'];
+
+  const title = isChooser
+    ? L('¿Qué quieres publicar?', 'What do you want to post?')
+    : type === 'post'
+      ? step === 1
+        ? L('Nueva publicación', 'New post')
+        : step === 2
+          ? L('Escribe tu publicación', 'Write your post')
+          : L('Vista previa', 'Preview')
+      : type === 'negocio'
+        ? L('Publicar negocio', 'List business')
+        : L('Crear evento', 'Create event');
+
+  const chip = (on: boolean) =>
+    `flex-none cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-[12.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`;
+
+  const field = (label: string, input: React.ReactNode) => (
+    <label className="block">
+      <span className="mb-1.5 block text-[12px] font-extrabold text-ink">{label}</span>
+      {input}
+    </label>
+  );
+  const inputCls =
+    'w-full rounded-field border-[1.5px] border-[#ECE9F6] bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary';
+
+  const previewPost: FeedPost = {
+    id: 'preview',
+    type: postType,
+    initials: 'TÚ',
+    color: '#7B61FF',
+    name: L('Tú', 'You'),
+    hoodEs: hood,
+    timeEs: 'ahora',
+    timeEn: 'now',
+    recommends: 0,
+    business: taggedBiz ?? undefined,
+    bizRating: taggedBiz ? '4.9' : undefined,
+    poll: isPoll ? pollOptions.map((o) => o.trim()).filter(Boolean) : undefined,
+    pollBase: isPoll ? pollOptions.map(() => 0) : undefined,
+    es: text.trim() || L('Tu publicación aparecerá aquí…', 'Your post will appear here…'),
+    en: text.trim() || L('Tu publicación aparecerá aquí…', 'Your post will appear here…'),
+  };
+
+  if (!app.pubOpen) return null;
+
+  return (
+    <Overlay open onClose={close} width={460}>
+      {!done && (
+        <OverlayTitle
+          title={title}
+          onClose={close}
+          onBack={type === 'post' && step > 1 ? () => setStep(step - 1) : type ? () => { app.setPubType(null); setStep(1); } : undefined}
+        />
+      )}
+
+      {/* chooser */}
+      {isChooser && (
+        <div className="flex flex-col gap-2.5">
+          {(
+            [
+              { key: 'post', Icon: MessageCircle, color: '#6D4DF6', bg: '#EFEBFF', lab: L('Crear publicación', 'Create post'), d: L('Pregunta, recomienda o comparte con tu barrio.', 'Ask, recommend or share with your neighborhood.') },
+              { key: 'negocio', Icon: Store, color: '#1F9D57', bg: '#E3F5EA', lab: L('Publicar mi negocio', 'List my business'), d: L('Aparece en el directorio y llega a miles de clientes.', 'Get in the directory and reach thousands of customers.') },
+              { key: 'evento', Icon: Calendar, color: '#2F6FED', bg: '#E5EFFB', lab: L('Crear evento', 'Create event'), d: L('Organiza y vende boletos para tu comunidad.', 'Organize and sell tickets for your community.') },
+            ] as const
+          ).map((o) => (
+            <button
+              key={o.key}
+              onClick={() => app.setPubType(o.key)}
+              className="flex w-full cursor-pointer items-center gap-3.5 rounded-tile border-[1.5px] border-hair bg-white p-3.5 text-left hover:border-primary"
+            >
+              <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn" style={{ background: o.bg }}>
+                <o.Icon size={22} strokeWidth={2.2} style={{ color: o.color }} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[14px] font-extrabold text-ink">{o.lab}</span>
+                <span className="mt-0.5 block text-[12px] font-semibold leading-snug text-muted">{o.d}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* post flow */}
+      {type === 'post' && !done && (
+        <>
+          <div className="mb-4 flex gap-1.5">
+            {[1, 2, 3].map((n) => (
+              <span key={n} className={`h-[5px] flex-1 rounded-[3px] ${n <= step ? 'bg-primary' : 'bg-lilac-line'}`} />
+            ))}
+          </div>
+
+          {step === 1 && (
+            <div className="flex flex-col gap-2.5">
+              <div className="text-[12.5px] font-semibold text-muted">{L('Elige el tipo de publicación.', 'Choose the kind of post.')}</div>
+              {typeDefs.map((o) => (
+                <button
+                  key={o.key}
+                  onClick={() => {
+                    setPostType(o.key);
+                    setStep(2);
+                  }}
+                  className={`flex w-full cursor-pointer items-center gap-3.5 rounded-tile border-[1.5px] p-3.5 text-left ${
+                    postType === o.key ? 'border-primary bg-[#FAF9FE]' : 'border-hair bg-white'
+                  }`}
+                >
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn" style={{ background: o.bg }}>
+                    <o.Icon size={20} strokeWidth={2.2} style={{ color: o.color }} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[13.5px] font-extrabold text-ink">{L(o.labEs, o.labEn)}</span>
+                    <span className="mt-0.5 block text-[11.5px] font-semibold leading-snug text-muted">{L(o.dEs, o.dEn)}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="flex flex-col gap-4">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={4}
+                placeholder={
+                  isPoll
+                    ? L('Escribe tu pregunta…', 'Write your question…')
+                    : L('¿Qué quieres compartir con tu barrio?', 'What do you want to share with your neighborhood?')
+                }
+                className={`${inputCls} resize-none`}
+              />
+
+              {isPoll && (
+                <div>
+                  <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Opciones de la encuesta', 'Poll options')}</div>
+                  <div className="flex flex-col gap-2">
+                    {pollOptions.map((v, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          value={v}
+                          onChange={(e) => setPollOptions(pollOptions.map((o, j) => (j === i ? e.target.value : o)))}
+                          placeholder={`${L('Opción', 'Option')} ${i + 1}`}
+                          className={inputCls}
+                        />
+                        {pollOptions.length > 2 && (
+                          <button
+                            onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
+                            className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
+                          >
+                            <X size={13} strokeWidth={2.6} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {pollOptions.length < 4 && (
+                    <button
+                      onClick={() => setPollOptions([...pollOptions, ''])}
+                      className="mt-2 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-extrabold text-primary-dark"
+                    >
+                      <Plus size={14} strokeWidth={2.6} />
+                      {L('Añadir opción', 'Add option')}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {!isPoll && (
+                <div>
+                  <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Fotos (opcional)', 'Photos (optional)')}</div>
+                  <div className="flex gap-2">
+                    {Array.from({ length: photos }).map((_, i) => (
+                      <span key={i} className="relative h-[68px] w-[68px] rounded-btn" style={{ background: PHOTO_TILES[i % 3] }}>
+                        <button
+                          onClick={() => setPhotos(photos - 1)}
+                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-ink text-white"
+                        >
+                          <X size={10} strokeWidth={3} />
+                        </button>
+                      </span>
+                    ))}
+                    {photos < 3 && (
+                      <button
+                        onClick={() => setPhotos(photos + 1)}
+                        className="flex h-[68px] w-[68px] cursor-pointer flex-col items-center justify-center gap-1 rounded-btn border-[1.5px] border-dashed border-lilac-line text-[11px] font-extrabold text-primary-dark"
+                      >
+                        <Plus size={16} strokeWidth={2.6} />
+                        {L('Añadir', 'Add')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {postType === 'rec' && (
+                <div>
+                  <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Etiquetar negocio', 'Tag a business')}</div>
+                  <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                    {TAG_BIZ_NAMES.map((b) => (
+                      <button key={b} onClick={() => setTaggedBiz(taggedBiz === b ? null : b)} className={chip(taggedBiz === b)}>
+                        {b}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Barrio', 'Neighborhood')}</div>
+                <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                  {PUB_HOODS.map((h) => (
+                    <button key={h} onClick={() => setHood(h)} className={chip(hood === h)}>
+                      {h}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <PrimaryBtn disabled={!canPost} onClick={() => canPost && setStep(3)}>
+                {L('Continuar', 'Continue')}
+              </PrimaryBtn>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <div className="mb-3 text-[12.5px] font-semibold text-muted">
+                {L('Así se verá en el feed de tu barrio:', "Here's how it'll look in your feed:")}
+              </div>
+              <PostCard post={previewPost} preview />
+              <PrimaryBtn className="mt-4" onClick={submitPost}>
+                {L('Publicar', 'Post')}
+              </PrimaryBtn>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* business form */}
+      {type === 'negocio' && !done && (
+        <div className="flex flex-col gap-3.5">
+          {field(L('Nombre del negocio', 'Business name'), <input className={inputCls} placeholder={L('Ej. Taquería La Esperanza', 'e.g. Taquería La Esperanza')} />)}
+          {field(L('Categoría', 'Category'), <input className={inputCls} placeholder={L('Ej. Comida, Belleza, Autos…', 'e.g. Food, Beauty, Auto…')} />)}
+          {field(L('Teléfono', 'Phone'), <input className={inputCls} placeholder="(713) 555-0100" />)}
+          {field(L('Descripción', 'Description'), <textarea rows={3} className={`${inputCls} resize-none`} placeholder={L('Cuéntale a la comunidad qué ofreces…', 'Tell the community what you offer…')} />)}
+          <PrimaryBtn onClick={() => setDone(true)}>{L('Publicar', 'Post')}</PrimaryBtn>
+          <button
+            onClick={() => {
+              close();
+              router.push('/negocio/publicar');
+            }}
+            className="cursor-pointer text-center text-[12.5px] font-extrabold text-primary-dark"
+          >
+            {L('¿Quieres el onboarding completo con planes? →', 'Want the full onboarding with plans? →')}
+          </button>
+        </div>
+      )}
+
+      {/* event form */}
+      {type === 'evento' && !done && (
+        <div className="flex flex-col gap-3.5">
+          {field(L('Nombre del evento', 'Event name'), <input className={inputCls} placeholder={L('Ej. Noche de Lotería', 'e.g. Lotería Night')} />)}
+          {field(L('Fecha y hora', 'Date & time'), <input className={inputCls} placeholder={L('Sáb 27 Jul · 7:00 pm', 'Sat Jul 27 · 7:00 pm')} />)}
+          {field(L('Lugar', 'Venue'), <input className={inputCls} placeholder={L('Salón, dirección o barrio', 'Venue, address or neighborhood')} />)}
+          <div>
+            <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Precio', 'Price')}</div>
+            <div className="flex gap-2">
+              <button onClick={() => setEvFree(true)} className={chip(evFree)}>{L('Gratis', 'Free')}</button>
+              <button onClick={() => setEvFree(false)} className={chip(!evFree)}>{L('De pago', 'Paid')}</button>
+            </div>
+          </div>
+          <PrimaryBtn onClick={() => setDone(true)}>{L('Publicar', 'Post')}</PrimaryBtn>
+        </div>
+      )}
+
+      {/* success */}
+      {done && (
+        <div className="flex flex-col items-center px-2 py-6 text-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
+            <Check size={28} strokeWidth={3} className="text-green" />
+          </span>
+          <div className="mt-4 text-[19px] font-extrabold tracking-[-.02em] text-ink">{success.t}</div>
+          <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">{success.s}</div>
+          <PrimaryBtn
+            className="mt-5"
+            onClick={() => {
+              close();
+              router.push(VIEW_PATH[finishView]);
+            }}
+          >
+            {success.c}
+          </PrimaryBtn>
+        </div>
+      )}
+    </Overlay>
+  );
+}

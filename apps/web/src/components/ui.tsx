@@ -1,0 +1,225 @@
+'use client';
+
+// Shared UI primitives — compose every screen from these; don't fork markup.
+
+import { X } from 'lucide-react';
+import type { CSSProperties, ReactNode } from 'react';
+
+/** CSS wordmark: To'(ink) + Latino(purple) + amber diamond. */
+export function Wordmark({ size = 'md', onClick }: { size?: 'sm' | 'md' | 'lg'; onClick?: () => void }) {
+  const px = size === 'lg' ? 'text-[21px]' : size === 'md' ? 'text-[20px]' : 'text-[18px]';
+  return (
+    <span
+      onClick={onClick}
+      className={`inline-flex items-baseline font-extrabold tracking-[-.03em] ${px} ${onClick ? 'cursor-pointer' : ''}`}
+    >
+      <span className="text-ink">To&rsquo;</span>
+      <span className="text-primary">Latino</span>
+      <span className="ml-1 inline-block h-1.5 w-1.5 rotate-45 self-center bg-amber" />
+    </span>
+  );
+}
+
+/** Verified check badge (purple circle). */
+export function VerifiedBadge({ size = 19 }: { size?: number }) {
+  return (
+    <span
+      className="inline-flex flex-none items-center justify-center rounded-full bg-primary"
+      style={{ width: size, height: size }}
+    >
+      <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    </span>
+  );
+}
+
+export function Avatar({
+  initials,
+  color,
+  size = 44,
+  className = '',
+}: {
+  initials: string;
+  color?: string;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`flex flex-none items-center justify-center rounded-full font-extrabold text-white ${className}`}
+      style={{ width: size, height: size, background: color, fontSize: size * 0.34 }}
+    >
+      {initials}
+    </span>
+  );
+}
+
+/** The signed-in "TÚ" avatar (lilac). */
+export function YouAvatar({ size = 40, onClick }: { size?: number; onClick?: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-none cursor-pointer items-center justify-center rounded-full border-2 border-lilac-ring bg-lilac font-extrabold text-primary-dark"
+      style={{ width: size, height: size, fontSize: 12 }}
+      aria-label="TÚ"
+    >
+      TÚ
+    </button>
+  );
+}
+
+export function Chip({
+  active,
+  children,
+  onClick,
+  className = '',
+  style,
+}: {
+  active?: boolean;
+  children: ReactNode;
+  onClick?: (e: React.MouseEvent) => void;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={style}
+      className={`flex-none whitespace-nowrap rounded-full px-[15px] py-2 text-[12.5px] font-extrabold transition-colors ${
+        active
+          ? 'bg-primary text-white shadow-cta-sm'
+          : 'bg-white text-ink-soft shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
+      } ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function SoonTag({ label }: { label: string }) {
+  return (
+    <span className="rounded-full bg-amber-bg px-1.5 py-0.5 text-[8.5px] font-extrabold tracking-[.03em] text-amber-ink">
+      {label}
+    </span>
+  );
+}
+
+/**
+ * Responsive overlay: bottom sheet on mobile, centered dialog (or side panel)
+ * on ≥768px — per handoff modal specs.
+ */
+export function Overlay({
+  open,
+  onClose,
+  children,
+  align = 'center',
+  width = 460,
+  fullHeightSheet = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  align?: 'center' | 'right' | 'top';
+  width?: number;
+  fullHeightSheet?: boolean;
+}) {
+  if (!open) return null;
+  const desktopAlign =
+    align === 'right'
+      ? 'md:items-start md:justify-end md:p-[14px]'
+      : align === 'top'
+        ? 'md:items-start md:justify-center md:p-10'
+        : 'md:items-center md:justify-center md:p-6';
+  return (
+    <div
+      className={`fixed inset-0 z-[70] flex items-end justify-center bg-[rgba(30,27,46,.45)] ${desktopAlign}`}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ ['--w' as string]: `${width}px` }}
+        className={`w-full overflow-y-auto rounded-t-panel bg-white p-4 pb-7 shadow-sheet md:w-[var(--w)] md:max-w-[calc(100%-28px)] md:rounded-card md:p-5 md:shadow-modal ${
+          fullHeightSheet ? 'h-[90%] md:h-auto md:max-h-[min(640px,calc(100%-40px))]' : 'max-h-[88%] md:max-h-[calc(100%-24px)]'
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function OverlayTitle({ title, onClose, onBack }: { title: string; onClose: () => void; onBack?: () => void }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2"
+          aria-label="back"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-ink">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+      )}
+      <div className="text-[16px] font-extrabold text-ink">{title}</div>
+      <button
+        onClick={onClose}
+        className="ml-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
+        aria-label="close"
+      >
+        <X size={15} strokeWidth={2.8} />
+      </button>
+    </div>
+  );
+}
+
+export function Card({ children, className = '', onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      className={`rounded-card border border-hair bg-white shadow-card ${onClick ? 'cursor-pointer' : ''} ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function Stars({ className = '' }: { className?: string }) {
+  return <span className={`font-bold tracking-[1px] text-amber ${className}`}>★★★★★</span>;
+}
+
+export function EmptyState({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div className="rounded-card-sm border border-dashed border-[rgba(123,97,255,.3)] bg-white p-8 text-center">
+      <div className="text-[13.5px] font-bold text-muted">{title}</div>
+      {sub && <div className="mt-1 text-[12px] font-semibold text-muted-2">{sub}</div>}
+    </div>
+  );
+}
+
+/** Primary CTA button (purple, elevated). */
+export function PrimaryBtn({
+  children,
+  onClick,
+  disabled,
+  className = '',
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full rounded-btn-lg p-[13px] text-[14px] font-extrabold text-white transition-colors ${
+        disabled ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta hover:bg-primary-dark'
+      } ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
