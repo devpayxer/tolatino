@@ -5,18 +5,10 @@ name: Deploy web to GitHub Pages
 # https://devpayxer.github.io/tolatino/
 # (Production hosting target remains Cloudflare Pages.)
 
+# Manual-only for now: the Pages backend was cancelling deployments
+# (2026-07-02), so the live preview moved to Vercel (deploy-vercel.yml).
+# Re-enable the push trigger if Pages is wanted again as a mirror.
 on:
-  push:
-    branches:
-      # Deploys run from the default branch — the github-pages environment's
-      # protection rules only allow it. Feature branches merge in to publish.
-      - claude/tolatino-repo-setup-1efdil
-    paths:
-      - "apps/web/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
 permissions:
