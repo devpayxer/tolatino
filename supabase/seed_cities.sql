@@ -4,8 +4,38 @@
 -- Coordinates are real neighborhood points so the distance-scoped geo query
 -- surfaces them per city. Idempotent (on conflict / not-exists guards).
 --
--- Apply AFTER 0002_v2_multicanal.sql, seed.sql and 0004_geo_scope.sql.
--- Paste into the Supabase SQL Editor and Run.
+-- Apply AFTER 0002_v2_multicanal.sql and 0004_geo_scope.sql. Self-contained:
+-- it seeds the categories + amenities it needs, so it runs even if the main
+-- seed.sql hasn't been applied. Paste into the Supabase SQL Editor and Run.
+
+-- ── Categories + amenities these rows reference (idempotent, standalone) ─────
+insert into public.categories (id, name_es, name_en, sort) values
+  ('AutoServices',  'Servicios de Auto',        'Auto Services',        1),
+  ('BeautyHealth',  'Belleza y Salud',          'Beauty & Health',      2),
+  ('FoodDrinks',    'Comida y Bebida',          'Food & Drinks',        3),
+  ('HomeServices',  'Servicios del Hogar',      'Home Services',        4),
+  ('NightLife',     'Vida Nocturna',            'Night Life',           5),
+  ('Grocery',       'Supermercado',             'Grocery & Market',     6),
+  ('Party',         'Fiestas y Celebraciones',  'Party & Celebrations', 7),
+  ('HealthMedicine','Salud y Medicina',         'Health & Medicine',    8),
+  ('ProServices',   'Servicios Profesionales',  'Professional Services',9),
+  ('Shops',         'Tiendas',                  'Shops & Stores',      10),
+  ('Transportation','Transporte',               'Transportation',      11),
+  ('Education',     'Cursos y Educación',       'Courses & Education', 12),
+  ('Children',      'Niños',                    'Children',            13),
+  ('Sports',        'Vida Activa y Deportes',   'Active Life & Sports',14),
+  ('Churches',      'Iglesias y Religión',      'Churches & Religion', 15)
+on conflict (id) do update set name_es = excluded.name_es, name_en = excluded.name_en, sort = excluded.sort;
+
+insert into public.amenities (id, name_es, name_en) values
+  ('delivery','A domicilio','Delivery'), ('spanish','Español','Spanish'),
+  ('parking','Estacionamiento','Parking'), ('free-quote','Presupuesto gratis','Free quote'),
+  ('warranty','Garantía','Warranty'), ('custom-orders','Por encargo','Custom orders'),
+  ('appointments','Con cita','Appointments'), ('no-wait','Sin espera','No wait'),
+  ('no-insurance','Sin seguro OK','No insurance OK'), ('same-day','Mismo día','Same day'),
+  ('free-consult','Consulta gratis','Free consult'), ('payment-plans','Planes de pago','Payment plans'),
+  ('walk-in','Sin cita','Walk-in'), ('fast','Rápido','Fast'), ('nearby','Cerca','Nearby')
+on conflict (id) do update set name_es = excluded.name_es, name_en = excluded.name_en;
 
 -- ── Backfill Houston events with coordinates (so radius scoping works) ───────
 update public.events e set location = v.loc
