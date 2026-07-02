@@ -193,6 +193,8 @@ function LocationStep({ onPick }: { onPick: (p: Place) => void }) {
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [pending, setPending] = useState<Place | null>(null); // needs confirmation
+  const [detected, setDetected] = useState(false); // pending came from GPS
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -223,7 +225,9 @@ function LocationStep({ onPick }: { onPick: (p: Place) => void }) {
     setLocating(true);
     try {
       const { lat, lng } = await getBrowserLocation();
-      onPick(await nearestCity(lat, lng));
+      const place = await nearestCity(lat, lng);
+      setDetected(true);
+      setPending(place); // require confirmation before advancing
     } catch (e: unknown) {
       const code = (e as GeolocationPositionError)?.code;
       setErr(code === 1 ? L('Permiso denegado. Elige tu ciudad abajo.', 'Permission denied. Pick your city below.') : L('No pudimos detectar tu ubicación.', "Couldn't detect your location."));
@@ -232,7 +236,44 @@ function LocationStep({ onPick }: { onPick: (p: Place) => void }) {
     }
   };
 
+  const choose = (p: Place, fromGps = false) => {
+    setDetected(fromGps);
+    setPending(p);
+  };
+
   const list = q.trim().length < 2 ? POPULAR_CITIES : results;
+
+  // ── Confirmation gate: no advancing without confirming the city ──
+  if (pending) {
+    return (
+      <div className="text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
+          <MapPin size={24} className="text-primary" strokeWidth={2.2} />
+        </span>
+        <h1 className="mt-4 text-[20px] font-extrabold tracking-[-.02em] text-ink">
+          {detected ? L('¿Es esta tu ciudad?', 'Is this your city?') : L('Confirma tu ciudad', 'Confirm your city')}
+        </h1>
+        <p className="mt-1 text-[12.5px] font-medium text-muted">
+          {detected
+            ? L('Te ubicamos aquí. Confírmalo para continuar.', 'We located you here. Confirm to continue.')
+            : L('Revisa que sea correcta antes de continuar.', 'Make sure it’s right before continuing.')}
+        </p>
+        <div className="mx-auto mt-4 flex items-center justify-center gap-2.5 rounded-tile bg-app px-4 py-3.5">
+          <MapPin size={18} className="text-primary" strokeWidth={2.4} />
+          <span className="text-[16px] font-extrabold text-ink">{pending.label}</span>
+        </div>
+        <PrimaryBtn className="mt-5" onClick={() => onPick(pending)}>
+          {L('Sí, esta es mi ciudad', 'Yes, this is my city')}
+        </PrimaryBtn>
+        <button
+          onClick={() => { setPending(null); setDetected(false); }}
+          className="mt-3 w-full cursor-pointer text-center text-[13px] font-extrabold text-primary-dark"
+        >
+          {L('No, elegir otra', 'No, pick another')}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -255,7 +296,7 @@ function LocationStep({ onPick }: { onPick: (p: Place) => void }) {
 
       <div className="mt-2 flex max-h-[240px] flex-col gap-0.5 overflow-y-auto">
         {list.map((p) => (
-          <button key={`${p.label}-${p.lat}`} onClick={() => onPick(p)} className="flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-2 py-2.5 text-left text-[13.5px] font-bold text-ink-soft hover:bg-app">
+          <button key={`${p.label}-${p.lat}`} onClick={() => choose(p)} className="flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-2 py-2.5 text-left text-[13.5px] font-bold text-ink-soft hover:bg-app">
             <MapPin size={14} className="text-primary" strokeWidth={2.4} />
             {p.label}
           </button>
