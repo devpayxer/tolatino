@@ -5,7 +5,7 @@
 // publish flow, and posts the user creates. In production the toggles persist
 // per-user in Supabase; the shapes stay the same.
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_CITY, NOTIFS, type Post, type PostType } from '@/data/fixtures';
 import { DEFAULT_COORDS } from '@/lib/geo';
 
@@ -84,10 +84,28 @@ const Ctx = createContext<AppCtx | null>(null);
 const toggle = (set: React.Dispatch<React.SetStateAction<Toggles>>, key: string | number) =>
   set((m) => ({ ...m, [key]: !m[key] }));
 
+const CITY_KEY = 'tl.city';
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [city, setCity] = useState(DEFAULT_CITY);
   const [coords, setCoords] = useState<Coords>(DEFAULT_COORDS);
   const [cityOpen, setCityOpen] = useState(false);
+
+  // Rehydrate the chosen city once on mount (client-only, avoids SSR/hydration
+  // mismatch: first paint is the default, then we swap to the saved city).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CITY_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { label?: string; lat?: number; lng?: number };
+      if (saved.label && typeof saved.lat === 'number' && typeof saved.lng === 'number') {
+        setCity(saved.label);
+        setCoords({ lat: saved.lat, lng: saved.lng });
+      }
+    } catch {
+      /* ignore malformed/blocked storage */
+    }
+  }, []);
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
   const [saved, setSaved] = useState<Toggles>({});
@@ -118,6 +136,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCityWithCoords: (label: string, c: Coords) => {
         setCity(label);
         setCoords(c);
+        try {
+          localStorage.setItem(CITY_KEY, JSON.stringify({ label, lat: c.lat, lng: c.lng }));
+        } catch {
+          /* storage blocked (private mode) — keep working in-memory */
+        }
       },
       cityOpen,
       setCityOpen,
