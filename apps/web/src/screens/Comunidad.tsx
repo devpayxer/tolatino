@@ -149,6 +149,21 @@ export function ComunidadScreen() {
   const [revealed, setRevealed] = useState<Post[]>([]);
   const feedIdsRef = useRef<Set<string>>(new Set());
 
+  // The app header is `sticky top-0` and its height differs between mobile
+  // (stacked brand + search + category rows ≈ 155px) and desktop (≈ 130px), so
+  // we measure it live and offset the "new posts" pill by it — that keeps the
+  // pill floating just under the header on every screen, no magic numbers.
+  const [headerH, setHeaderH] = useState(0);
+  useEffect(() => {
+    const el = document.querySelector('header');
+    if (!el) return;
+    const update = () => setHeaderH((el as HTMLElement).offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Load the DB comment thread (and this user's comment-likes) when a real
   // post's thread opens. Fixture posts keep their SEED_COMMENTS.
   useEffect(() => {
@@ -482,7 +497,10 @@ export function ComunidadScreen() {
 
         {/* Live alert: new posts from neighbors, buffered so the feed never jumps */}
         {pending.length > 0 && (
-          <div className="pointer-events-none sticky top-[104px] z-20 -mt-1 mb-3.5 flex justify-center md:top-[120px]">
+          <div
+            className="pointer-events-none sticky z-20 -mt-1 mb-3.5 flex justify-center"
+            style={{ top: (headerH || 120) + 8 }}
+          >
             <button
               onClick={showNewPosts}
               className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-pop transition active:scale-95"
