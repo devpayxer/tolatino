@@ -160,6 +160,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   // no gap, no overlap — on any breakpoint. Fallbacks are only for first paint.
   const [headerH, setHeaderH] = useState<number | null>(null);
   const headerHRef = useRef<number | null>(null);
+  // Minimum height for the tab-content area so a SHORT tab still leaves enough
+  // scroll room to push the hero out of view and pin the bar. ~48px covers the
+  // collapsed bar (tabs row), a safe slight over-provision.
+  const [contentMinH, setContentMinH] = useState<number | null>(null);
   useEffect(() => {
     const header = document.querySelector('header');
     if (!header) return;
@@ -167,11 +171,16 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       const h = Math.round(header.getBoundingClientRect().height);
       headerHRef.current = h;
       setHeaderH(h);
+      setContentMinH(Math.max(0, window.innerHeight - h - 48));
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(header);
-    return () => ro.disconnect();
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
   }, []);
   const pinPx = () =>
     headerHRef.current ?? (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
@@ -374,6 +383,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         </div>
         <div className="no-scrollbar flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain pt-2.5">{tabButtons}</div>
       </div>
+
+      {/* Tab content — min-height guarantees enough scroll to pin the bar even
+          when a tab (e.g. Eventos) is short. */}
+      <div style={contentMinH != null ? { minHeight: contentMinH } : undefined}>
 
       {/* ============ OVERVIEW ============ */}
       {tab === 'overview' && (
@@ -702,6 +715,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </div>
         </div>
       )}
+
+      </div>
 
       {/* cart bar */}
       {cartCount > 0 && (
