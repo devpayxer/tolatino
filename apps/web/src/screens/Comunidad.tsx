@@ -117,6 +117,43 @@ export function ComunidadScreen() {
     };
   }, [threadPostId, auth.user]);
 
+  // Live thread: while a real post's thread is open, stream new comments/replies
+  // and comment-like changes from other users (no refresh). The feed-wide count
+  // is handled by InteractionsProvider; here we keep the open list in sync.
+  useEffect(() => {
+    const pid = threadPostId;
+    const sb = supabase;
+    if (!pid || !sb || !isUuid(pid)) return;
+    const ch = sb
+      .channel(`tl-thread-${pid}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_comments', filter: `post_id=eq.${pid}` },
+        (payload) => {
+          const r = payload.new as CommentRow;
+          const c = mapComment(r);
+          if (r.parent_id) {
+            const parent = r.parent_id;
+            setDbReplies((m) => ((m[parent] ?? []).some((x) => x.id === c.id) ? m : { ...m, [parent]: [...(m[parent] ?? []), c] }));
+          } else {
+            setDbTop((m) => ((m[pid] ?? []).some((x) => x.id === c.id) ? m : { ...m, [pid]: [...(m[pid] ?? []), c] }));
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'post_comments', filter: `post_id=eq.${pid}` },
+        (payload) => {
+          const r = payload.new as CommentRow;
+          if (r?.id) setCommentLikeCount((m) => ({ ...m, [r.id]: r.like_count }));
+        },
+      )
+      .subscribe();
+    return () => {
+      sb.removeChannel(ch);
+    };
+  }, [threadPostId]);
+
   const allPosts: Post[] = useMemo(() => [...app.newPosts, ...POSTS], [app.newPosts, POSTS]);
   const sl = app.search.trim().toLowerCase();
   const posts = sl
@@ -175,7 +212,7 @@ export function ComunidadScreen() {
       const c = mapComment(data as CommentRow);
       if (replyTo) setDbReplies((m) => ({ ...m, [replyTo.cid]: [...(m[replyTo.cid] ?? []), c] }));
       else setDbTop((m) => ({ ...m, [pid]: [...(m[pid] ?? []), c] }));
-      it.bumpComment(pid, 1);
+      it.noteComment(c.id, pid);
       resetComposer();
       return;
     }

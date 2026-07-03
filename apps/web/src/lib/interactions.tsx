@@ -6,7 +6,7 @@
 // visible feed are loaded from the DB. Comments themselves live in the thread
 // component (loaded on open); here we track only the per-post count.
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -26,7 +26,9 @@ type Ctx = {
   commentCount: Num;
   toggleLike: (postId: string, baseCount: number) => void;
   toggleSave: (postId: string) => void;
-  bumpComment: (postId: string, delta: number) => void;
+  /** Record a freshly-inserted comment once (dedupes our own insert vs. the
+   *  realtime echo) and bump that post's live comment count. */
+  noteComment: (commentId: string, postId: string) => void;
   /** True if the user may act; otherwise routes guests to sign in and returns false. */
   gate: () => boolean;
 };
@@ -42,8 +44,17 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
   const [saved, setSaved] = useState<Bool>({});
   const [likeCount, setLikeCount] = useState<Num>({});
   const [commentCount, setCommentCount] = useState<Num>({});
+  // Comment ids already counted — dedupes a locally-inserted comment against
+  // its own realtime echo, and realtime echoes against the initial DB load.
+  const seen = useRef<Set<string>>(new Set());
 
   const ids = posts.map((p) => p.id).filter(isUuid).join(',');
+
+  const noteComment = useCallback((commentId: string, postId: string) => {
+    if (seen.current.has(commentId)) return;
+    seen.current.add(commentId);
+    setCommentCount((c) => ({ ...c, [postId]: (c[postId] ?? 0) + 1 }));
+  }, []);
 
   // Load comment counts (public) + the user's likes/saves for the visible feed.
   useEffect(() => {
@@ -54,8 +65,13 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       const counts: Num = {};
-      const cc = await supabase.from('post_comments').select('post_id').in('post_id', postIds);
-      if (!cc.error && cc.data) for (const r of cc.data as { post_id: string }[]) counts[r.post_id] = (counts[r.post_id] ?? 0) + 1;
+      const cc = await supabase.from('post_comments').select('id, post_id').in('post_id', postIds);
+      if (!cc.error && cc.data) {
+        for (const r of cc.data as { id: string; post_id: string }[]) {
+          counts[r.post_id] = (counts[r.post_id] ?? 0) + 1;
+          seen.current.add(r.id);
+        }
+      }
       if (!cancelled) setCommentCount(counts);
 
       if (user) {
@@ -116,12 +132,32 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
-  const bumpComment = useCallback((postId: string, delta: number) => {
-    setCommentCount((c) => ({ ...c, [postId]: Math.max(0, (c[postId] ?? 0) + delta) }));
-  }, []);
+  // ── Live updates (Supabase Realtime) ──────────────────────────────────────
+  // Feed-wide: new comments bump the live count for any post; a post's ♥ count
+  // follows `posts.recommends` so every viewer sees likes without refreshing.
+  // (At 1M+ scale this broadcast fan-out moves to per-city channels; MVP keeps
+  // one global channel.)
+  useEffect(() => {
+    const sb = supabase;
+    if (!sb) return;
+    const ch = sb
+      .channel('tl-social')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'post_comments' }, (payload) => {
+        const r = payload.new as { id: string; post_id: string };
+        if (r?.id && r?.post_id) noteComment(r.id, r.post_id);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, (payload) => {
+        const r = payload.new as { id: string; recommends: number };
+        if (r?.id && typeof r.recommends === 'number') setLikeCount((m) => ({ ...m, [r.id]: r.recommends }));
+      })
+      .subscribe();
+    return () => {
+      sb.removeChannel(ch);
+    };
+  }, [noteComment]);
 
   return (
-    <C.Provider value={{ liked, saved, likeCount, commentCount, toggleLike, toggleSave, bumpComment, gate }}>
+    <C.Provider value={{ liked, saved, likeCount, commentCount, toggleLike, toggleSave, noteComment, gate }}>
       {children}
     </C.Provider>
   );
