@@ -148,6 +148,28 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     ['reviews', L('Reseñas', 'Reviews')],
   ];
 
+  // Overview = the full, browse-y view (hero + meta). Any other tab switches to a
+  // focused mode: the hero collapses into a compact pinned header (title + tabs
+  // stuck to the top) for a distraction-free read. Jump to the top on every
+  // switch so each tab opens from its start.
+  const focused = tab !== 'overview';
+  const onTab = (k: TabKey) => {
+    setTab(k);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  };
+
+  const tabButtons = tabs.map(([k, label]) => (
+    <button
+      key={k}
+      onClick={() => onTab(k)}
+      className={`-mb-px flex-none cursor-pointer border-b-[2.5px] pb-[11px] text-[14px] ${
+        tab === k ? 'border-primary font-extrabold text-ink' : 'border-transparent font-bold text-muted-2'
+      }`}
+    >
+      {label}
+    </button>
+  ));
+
   const divider = <div className="my-5 h-px bg-hairline" style={{ background: 'rgba(30,27,46,.06)' }} />;
   const secTitle = (t: string) => <div className="mb-3 text-[15.5px] font-extrabold text-ink">{t}</div>;
 
@@ -199,6 +221,9 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   return (
     <div className="mx-auto max-w-[680px]">
+      {/* Full header (hero + title + meta + endorsement) — Overview only */}
+      {!focused && (
+      <>
       {/* hero */}
       <div className="relative mb-4 h-[200px] overflow-hidden rounded-card" style={{ background: bizTile(b) }}>
         <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A8FC4]">[ foto ]</div>
@@ -254,21 +279,35 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </span>
         </div>
       )}
+      </>
+      )}
 
-      {/* tabs */}
-      <div className="no-scrollbar sticky top-[118px] z-[15] -mx-1 mt-1 flex gap-5 overflow-x-auto border-b border-hair bg-app px-1 pt-3 md:top-[126px]">
-        {tabs.map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={`-mb-px flex-none cursor-pointer border-b-[2.5px] pb-[11px] text-[14px] ${
-              tab === k ? 'border-primary font-extrabold text-ink' : 'border-transparent font-bold text-muted-2'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* tabs — sticky bar. Overview: scrolls below the hero. Focused: a compact
+          pinned header carrying the business title so context is never lost. */}
+      {focused ? (
+        <div className="sticky top-[118px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[126px] md:-mx-5 md:px-5">
+          <div className="flex items-center gap-2 pb-2 pt-2.5">
+            <button onClick={onClose} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver', 'Back')}>
+              <ChevronLeft size={16} strokeWidth={2.6} className="text-ink" />
+            </button>
+            <span className="truncate text-[15.5px] font-extrabold text-ink">{b.name}</span>
+            {b.verified && <VerifiedBadge size={16} />}
+            <div className="ml-auto flex flex-none items-center gap-1.5">
+              <button onClick={() => savedBiz.toggle(b.slug)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Guardar', 'Save')}>
+                <Heart size={15} strokeWidth={2.2} className="text-pink" fill={saved ? '#F0466E' : 'none'} />
+              </button>
+              <button onClick={() => setContactOpen(true)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Contacto y opciones', 'Contact & options')}>
+                <MoreHorizontal size={18} className="text-primary-dark" />
+              </button>
+            </div>
+          </div>
+          <div className="no-scrollbar flex gap-5 overflow-x-auto">{tabButtons}</div>
+        </div>
+      ) : (
+        <div className="no-scrollbar sticky top-[118px] z-[15] -mx-1 mt-1 flex gap-5 overflow-x-auto border-b border-hair bg-app px-1 pt-3 md:top-[126px]">
+          {tabButtons}
+        </div>
+      )}
 
       {/* ============ OVERVIEW ============ */}
       {tab === 'overview' && (
@@ -373,7 +412,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               <div className="mt-2 text-[13px] font-medium leading-[1.55] text-ink-soft">{quote}</div>
             </div>
           )}
-          <button onClick={() => setTab('reviews')} className="mt-4 w-full cursor-pointer rounded-[13px] border-[1.5px] border-lilac-line bg-white p-[13px] text-[13.5px] font-extrabold text-primary-dark">
+          <button onClick={() => onTab('reviews')} className="mt-4 w-full cursor-pointer rounded-[13px] border-[1.5px] border-lilac-line bg-white p-[13px] text-[13.5px] font-extrabold text-primary-dark">
             {L('Ver todas las reseñas', 'See all reviews')}
           </button>
         </div>
@@ -530,7 +569,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       {tab === 'related' && (
         <div className="flex flex-col gap-2.5 pt-4">
           {all.filter((x) => x.id !== id).slice(0, 4).map((x) => (
-            <Card key={x.id} className="flex items-center gap-3 p-3.5" onClick={() => { onOpenOther(x); setTab('overview'); }}>
+            <Card key={x.id} className="flex items-center gap-3 p-3.5" onClick={() => { onOpenOther(x); onTab('overview'); }}>
               <span className="h-[56px] w-[56px] flex-none rounded-tile" style={{ background: bizTile(x) }} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
