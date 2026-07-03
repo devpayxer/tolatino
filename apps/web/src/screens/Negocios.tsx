@@ -9,11 +9,11 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Heart, Map as MapIcon, MapPin, Phone, SlidersHorizontal, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Card, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
+import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
-import { CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
+import { AVATAR_PALETTE, CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
 
 const DIST_MIN = 5;
@@ -92,8 +92,17 @@ export function NegociosScreen() {
         return `${b.name} ${CAT[b.cat].es} ${CAT[b.cat].en} ${b.specEs} ${b.specEn} ${subs}`.toLowerCase().includes(sl);
       });
     }
-    if (sort === 'rating') list = list.slice().sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
-    if (sort === 'dist') list = list.slice().sort((a, b) => parseFloat(a.dist) - parseFloat(b.dist));
+    // Verified businesses ALWAYS rank first (a paid/earned placement); the chosen
+    // sort orders within each tier. Array.sort is stable, so 'rel' keeps the
+    // backend's order inside each tier.
+    const vkey = (b: Business) => (b.verified ? 0 : 1);
+    const within =
+      sort === 'rating'
+        ? (a: Business, b: Business) => parseFloat(b.rating) - parseFloat(a.rating)
+        : sort === 'dist'
+          ? (a: Business, b: Business) => parseFloat(a.dist) - parseFloat(b.dist)
+          : () => 0;
+    list = list.slice().sort((a, b) => vkey(a) - vkey(b) || within(a, b));
     return list;
   }, [f, sl, sort, BUSINESSES]);
 
@@ -447,9 +456,22 @@ export function NegociosScreen() {
             </div>
           ) : (
             <div className="grid gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              {pageResults.map((b) => (
-                <BizCardA key={b.id} b={b} onOpen={() => setDetailBiz(b)} />
-              ))}
+              {pageResults.map((b, i) => {
+                // Full-width label at the verified → sin-verificar boundary so the
+                // two tiers read as distinct groups (verified always on top).
+                const boundary = i > 0 && pageResults[i - 1].verified && !b.verified;
+                return (
+                  <div key={b.id} className="contents">
+                    {boundary && (
+                      <div className="col-span-full mt-1 flex items-center gap-2.5 md:col-span-2 lg:col-span-1 xl:col-span-2">
+                        <span className="text-[12px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Más negocios cerca', 'More nearby')}</span>
+                        <span className="h-px flex-1 bg-hair" />
+                      </div>
+                    )}
+                    {b.verified ? <BizCardVerified b={b} onOpen={() => setDetailBiz(b)} /> : <BizCardBasic b={b} onOpen={() => setDetailBiz(b)} />}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -498,53 +520,105 @@ export function NegociosScreen() {
   );
 }
 
-/** Card variant A · "Lista" (prototype default). */
-function BizCardA({ b, onOpen }: { b: Business; onOpen: () => void }) {
+/** Small heart / save toggle shared by both card variants. */
+function SaveBtn({ b, size = 17 }: { b: Business; size?: number }) {
   const { L } = useLang();
   const app = useApp();
   const savedOn = !!app.saved[b.id];
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        app.toggleSaved(b.id);
+      }}
+      className="ml-auto flex-none cursor-pointer p-1"
+      aria-label={L('Guardar', 'Save')}
+    >
+      <Heart size={size} strokeWidth={2.2} className={savedOn ? 'text-pink' : 'text-[#D6D1E2]'} fill={savedOn ? '#F0466E' : 'none'} />
+    </button>
+  );
+}
+
+/** Rating · reviews · price · open — shared meta row. */
+function BizMeta({ b }: { b: Business }) {
+  const { L } = useLang();
+  return (
+    <div className="flex flex-wrap items-center gap-x-1.5 text-[12.5px] font-bold">
+      <span className="text-amber">★</span>
+      <span className="font-extrabold text-ink">{b.rating}</span>
+      <span className="text-muted-2">({b.reviews})</span>
+      <span className="text-muted-2">· {b.price}</span>
+      <span className={`font-extrabold ${b.open ? 'text-green' : 'text-[#A59FB6]'}`}>
+        · {b.open ? L('Abierto', 'Open') : L('Cerrado', 'Closed')}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * VERIFIED card — the richer listing (always ranked on top). Adds the specialty,
+ * "what it offers" chips, a neighbor-endorsement bar with an avatar stack, a
+ * featured review, and Call + View actions.
+ */
+function BizCardVerified({ b, onOpen }: { b: Business; onOpen: () => void }) {
+  const { L } = useLang();
+  const chips = b.amEs.length ? b.amEs.map((es, i) => [es, b.amEn[i] ?? es] as [string, string]) : [];
+  const review = L(b.revEs, b.revEn).trim();
 
   return (
-    <Card
-      onClick={onOpen}
-      className={`p-3.5 transition-shadow hover:shadow-card-lg ${b.verified ? 'border-[rgba(123,97,255,.18)]' : ''}`}
-    >
+    <Card onClick={onOpen} className="border-[rgba(123,97,255,.22)] p-3.5 shadow-[0_2px_14px_rgba(123,97,255,.09)] transition-shadow hover:shadow-card-lg">
       <div className="flex items-start gap-3">
-        <span className="h-[78px] w-[78px] flex-none rounded-tile" style={{ background: bizTile(b) }} />
+        <span className="h-[84px] w-[84px] flex-none rounded-tile" style={{ background: bizTile(b) }} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="truncate text-[15px] font-extrabold text-ink">{b.name}</span>
-            {b.verified && <VerifiedBadge size={17} />}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                app.toggleSaved(b.id);
-              }}
-              className="ml-auto flex-none cursor-pointer p-1"
-              aria-label={L('Guardar', 'Save')}
-            >
-              <Heart size={17} strokeWidth={2.2} className={savedOn ? 'text-pink' : 'text-[#D6D1E2]'} fill={savedOn ? '#F0466E' : 'none'} />
-            </button>
+            <span className="truncate text-[15.5px] font-extrabold text-ink">{b.name}</span>
+            <VerifiedBadge size={17} />
+            <SaveBtn b={b} />
           </div>
-          <div className="mt-0.5 truncate text-[12px] font-bold text-muted">
-            {L(CAT[b.cat].es, CAT[b.cat].en)} · {b.dist}
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] font-bold text-muted">
+            <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[11px] text-primary-dark">{L(CAT[b.cat].es, CAT[b.cat].en)}</span>
+            <span>· {b.dist}</span>
           </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[12.5px] font-bold">
-            <span className="text-amber">★</span>
-            <span className="font-extrabold text-ink">{b.rating}</span>
-            <span className="text-muted-2">({b.reviews})</span>
-            <span className="text-muted-2">· {b.price}</span>
-            <span className={`font-extrabold ${b.open ? 'text-green' : 'text-[#A59FB6]'}`}>
-              · {b.open ? L('Abierto', 'Open') : L('Cerrado', 'Closed')}
-            </span>
+          <div className="mt-1.5">
+            <BizMeta b={b} />
           </div>
-          <div className={`mt-1 text-[11.5px] font-bold ${b.verified ? 'text-primary-dark' : 'text-muted-2'}`}>
-            {b.verified
-              ? L(`Recomendado por ${b.endorse} vecinos`, `Recommended by ${b.endorse} neighbors`)
-              : L('Aún sin verificar', 'Not yet verified')}
-          </div>
+          {b.specEs && (
+            <div className="mt-1 truncate text-[12px] font-bold text-ink-3">{L(b.specEs, b.specEn)}</div>
+          )}
         </div>
       </div>
+
+      {/* what it offers — first 3 amenities */}
+      {chips.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {chips.slice(0, 3).map(([es, en]) => (
+            <span key={es} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-2.5 py-1 text-[11px] font-bold text-ink-soft">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              {L(es, en)}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* neighbor endorsement */}
+      {b.endorse > 0 && (
+        <div className="mt-3 flex items-center gap-2.5 rounded-btn bg-lilac-2 px-3 py-2">
+          <span className="flex flex-none">
+            {['CR', 'DL', 'JP'].map((ini, i) => (
+              <Avatar key={ini} initials={ini} color={AVATAR_PALETTE[i]} size={22} className={`border-2 border-lilac-2 text-[8px] ${i > 0 ? '-ml-2' : ''}`} />
+            ))}
+          </span>
+          <span className="text-[11.5px] font-bold text-ink-3">
+            {L('Recomendado por', 'Recommended by')} <span className="text-primary-dark">{b.endorse} {L('vecinos', 'neighbors')}</span>
+          </span>
+        </div>
+      )}
+
+      {/* featured review */}
+      {review && (
+        <div className="mt-2.5 line-clamp-2 text-[12px] font-medium leading-[1.5] text-muted">{review}</div>
+      )}
+
       <div className="mt-3 flex gap-2 border-t border-hair pt-3">
         <button
           onClick={(e) => e.stopPropagation()}
@@ -559,6 +633,47 @@ function BizCardA({ b, onOpen }: { b: Business; onOpen: () => void }) {
             onOpen();
           }}
           className="flex flex-1 cursor-pointer items-center justify-center rounded-field bg-primary py-2.5 text-[12.5px] font-extrabold text-white"
+        >
+          {L('Ver perfil', 'View')}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * BASIC card — the simple listing for a business that hasn't been verified yet.
+ * Minimal content + a "Sin verificar" badge; a single "Ver perfil" action.
+ */
+function BizCardBasic({ b, onOpen }: { b: Business; onOpen: () => void }) {
+  const { L } = useLang();
+
+  return (
+    <Card onClick={onOpen} className="p-3 transition-shadow hover:shadow-card-lg">
+      <div className="flex items-start gap-3">
+        <span className="h-[58px] w-[58px] flex-none rounded-tile opacity-90" style={{ background: bizTile(b) }} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-[14px] font-extrabold text-ink">{b.name}</span>
+            <SaveBtn b={b} size={16} />
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full border border-hair px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-muted-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#D6D1E2]" />
+              {L('Sin verificar', 'Unverified')}
+            </span>
+            <span className="text-[11.5px] font-bold text-muted">{L(CAT[b.cat].es, CAT[b.cat].en)} · {b.dist}</span>
+          </div>
+          <div className="mt-1.5">
+            <BizMeta b={b} />
+          </div>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen();
+          }}
+          className="flex-none cursor-pointer self-center rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2 text-[12px] font-extrabold text-primary-dark"
         >
           {L('Ver perfil', 'View')}
         </button>

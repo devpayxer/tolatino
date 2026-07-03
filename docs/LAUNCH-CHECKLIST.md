@@ -118,6 +118,14 @@
   "Características" (delivery, full bar, licensed…) when creating a listing. Wire a
   feature-picker into `PublishModal` (options from `FEATURES_COMMON` +
   `FEATURES_BY_CAT[cat]`) so new listings are filterable.
+- [ ] **Verified vs unverified listing tiers — claim/upgrade flow.** The Negocios
+  directory now renders two card variants (`BizCardVerified` rich vs `BizCardBasic`
+  simple + "Sin verificar" badge) and always ranks verified businesses on top
+  (`vkey` sort in `Negocios.tsx`). "Verified" today just means `tier !== 'free'`.
+  Still needed before launch: a **self-serve "¿Es tu negocio? Reclámalo / verifícate"
+  flow** (claim an unverified listing, prove ownership, upgrade to Verified/Premium),
+  and the paid-tier billing that gates it. Until then no owner can move their own
+  listing from the basic card to the rich one.
 - [ ] **Push notifications.** Not built. Plan: **Web Push (VAPID)** for the PWA,
   **+ FCM** (free) for native later. Drives the "Alertas" tab and new-activity
   pings.
