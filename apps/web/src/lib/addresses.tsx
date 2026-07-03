@@ -7,7 +7,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { nearestCity } from '@/lib/geo';
+import { cityCenter, nearestCity } from '@/lib/geo';
 import { useAuth } from '@/lib/auth';
 import { useApp } from '@/lib/state';
 
@@ -54,15 +54,17 @@ export function AddressesProvider({ children }: { children: ReactNode }) {
       if (!appliedRef.current && !app.address && list.length) {
         const def = list.find((a) => a.is_default) ?? list[0];
         const coords = { lat: def.lat, lng: def.lng };
+        // Resolve the city context BEFORE applying (one-time login flow, no
+        // instant-feedback pressure) so a late resolution can't overwrite a
+        // pick the user makes in the meantime.
+        let ctx: { label: string; lat: number; lng: number } | undefined;
         if (def.city) {
-          // use the address's own city (correct), not the nearest centroid
-          app.setUserAddress(def.formatted, coords, def.id, { label: def.city, lat: def.lat, lng: def.lng });
+          ctx = await cityCenter(def.city, coords); // address's own city, real center
         } else {
-          app.setUserAddress(def.formatted, coords, def.id);
-          nearestCity(def.lat, def.lng)
-            .then((c) => app.setUserAddress(def.formatted, coords, def.id, { label: c.label, lat: c.lat, lng: c.lng }))
-            .catch(() => {});
+          ctx = await nearestCity(def.lat, def.lng).catch(() => undefined);
         }
+        if (cancelled || app.address) return; // user acted while we resolved
+        app.setUserAddress(def.formatted, coords, def.id, ctx);
       }
       appliedRef.current = true;
     })();

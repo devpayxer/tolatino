@@ -122,7 +122,10 @@ export async function reverseGeocode(lat: number, lng: number, signal?: AbortSig
 // `city` is the address's OWN city ("Philadelphia, PA") from the geocoder — used
 // to switch the app city. We derive it from address components (not nearest
 // centroid) so a Philadelphia address doesn't resolve to a tiny adjacent town.
-export type Address = { formatted: string; lat: number; lng: number; city: string };
+// `verified` = exact rooftop match from the US Census geocoder (official TIGER
+// data). `approx` = synthesized house-number + street suggestion (coords at the
+// street until the pick is snapped through the Census geocoder).
+export type Address = { formatted: string; lat: number; lng: number; city: string; verified?: boolean; approx?: boolean };
 
 function stAbbr(p: Record<string, string | undefined>): string {
   return p.countrycode?.toUpperCase() === 'US' ? US_STATE_ABBR[p.state ?? ''] ?? p.state ?? '' : p.state ?? '';
@@ -130,14 +133,16 @@ function stAbbr(p: Record<string, string | undefined>): string {
 
 function addrLabel(p: Record<string, string | undefined>): string {
   const line1 = [p.housenumber, p.street || p.name].filter(Boolean).join(' ') || p.name || '';
-  const cityPart = p.city || p.town || p.village || p.suburb || p.county || '';
+  const cityPart = p.city || p.town || p.village || p.district || p.locality || p.suburb || p.county || '';
   const tail = [cityPart, [stAbbr(p), p.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   return [line1, tail].filter(Boolean).join(', ');
 }
 
-/** "City, ST" from the address's own components (not nearest centroid). */
+/** "City, ST" from the address's own components (not nearest centroid).
+ *  Covers both Photon vocabulary (city/district/locality) and Nominatim's
+ *  (town/village/municipality) since reverseAddress maps into this shape. */
 function cityLabelOf(p: Record<string, string | undefined>): string {
-  const c = p.city || p.town || p.village || p.municipality || p.county || '';
+  const c = p.city || p.town || p.village || p.municipality || p.district || p.locality || p.county || '';
   if (!c) return '';
   const st = stAbbr(p);
   return st ? `${c}, ${st}` : c;
@@ -147,15 +152,12 @@ function cityLabelOf(p: Record<string, string | undefined>): string {
 // city. ~0.9° ≈ 55–62 mi at US latitudes, matching the ~80 km discovery radius.
 const METRO_DEG = 0.9;
 
-/**
- * Address autocomplete via OpenStreetMap (Photon). When `near` (the selected
- * city center) is given, results are biased toward it AND fenced to its metro
- * box, so a user in Hazleton doesn't get suggestions from other states.
- * Free/OSS, no Google billing.
- */
-export async function searchAddress(query: string, near?: { lat: number; lng: number } | null, signal?: AbortSignal): Promise<Address[]> {
-  const q = query.trim();
-  if (q.length < 3) return [];
+type NearCtx = { lat: number; lng: number; city?: string };
+
+/** Photon (OSM) search, biased + hard-fenced to the metro box. `layer` narrows
+ *  to a feature type (e.g. 'street'). Returns [] on any failure — the merge in
+ *  searchAddress must survive one source being down. */
+async function photonSearch(q: string, near: NearCtx | null | undefined, signal: AbortSignal | undefined, layer?: 'street'): Promise<Address[]> {
   const params = new URLSearchParams({ q, lang: 'en', limit: '10' });
   if (near) {
     params.set('lat', String(near.lat)); // proximity bias
@@ -163,28 +165,174 @@ export async function searchAddress(query: string, near?: { lat: number; lng: nu
     // minLon,minLat,maxLon,maxLat
     params.set('bbox', `${near.lng - METRO_DEG},${near.lat - METRO_DEG},${near.lng + METRO_DEG},${near.lat + METRO_DEG}`);
   }
-  const res = await fetch(`https://photon.komoot.io/api?${params.toString()}`, { signal });
-  if (!res.ok) throw new Error(`photon ${res.status}`);
-  const data = (await res.json()) as {
-    features?: { geometry?: { coordinates?: [number, number] }; properties?: Record<string, string> }[];
-  };
-  const out: Address[] = [];
-  const seen = new Set<string>();
-  for (const f of data.features ?? []) {
-    const p = f.properties ?? {};
-    const c = f.geometry?.coordinates;
-    if (!c) continue;
-    const [lng, lat] = c;
-    if (typeof lat !== 'number' || typeof lng !== 'number') continue;
-    // Hard fence to the metro box (Photon's bbox isn't always strict).
-    if (near && (Math.abs(lat - near.lat) > METRO_DEG || Math.abs(lng - near.lng) > METRO_DEG)) continue;
-    const formatted = addrLabel(p);
-    if (!formatted || seen.has(formatted)) continue;
-    seen.add(formatted);
-    out.push({ formatted, lat, lng, city: cityLabelOf(p) });
-    if (out.length >= 6) break;
+  if (layer) params.set('layer', layer);
+  try {
+    const res = await fetch(`https://photon.komoot.io/api?${params.toString()}`, { signal });
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      features?: { geometry?: { coordinates?: [number, number] }; properties?: Record<string, string> }[];
+    };
+    const out: Address[] = [];
+    const seen = new Set<string>();
+    for (const f of data.features ?? []) {
+      const p = f.properties ?? {};
+      const c = f.geometry?.coordinates;
+      if (!c) continue;
+      const [lng, lat] = c;
+      if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+      // Hard fence to the metro box (Photon's bbox isn't always strict).
+      if (near && (Math.abs(lat - near.lat) > METRO_DEG || Math.abs(lng - near.lng) > METRO_DEG)) continue;
+      const formatted = addrLabel(p);
+      if (!formatted || seen.has(formatted.toLowerCase())) continue;
+      seen.add(formatted.toLowerCase());
+      out.push({ formatted, lat, lng, city: cityLabelOf(p) });
+      if (out.length >= 6) break;
+    }
+    return out;
+  } catch {
+    return [];
   }
-  return out;
+}
+
+// ── US Census Bureau geocoder — the PRECISION layer ──────────────────────────
+// Free, no API key, official TIGER data: matches essentially every US street
+// address to an exact house-number point (which OSM/Photon often lacks). Used
+// to (a) surface an exact "verified" match while typing a full address and
+// (b) snap a picked house+street suggestion to its true location + ZIP.
+// The endpoint does NOT send CORS headers, so a browser fetch is blocked — we
+// use its official JSONP support (format=jsonp&callback=) instead.
+// Self-host Pelias/TIGER at scale (see LAUNCH-CHECKLIST).
+function titleCase(s: string): string {
+  return s.toLowerCase().replace(/(^|[\s-])[a-zà-ú]/g, (m) => m.toUpperCase());
+}
+
+let jsonpSeq = 0;
+function jsonp<T>(src: string, timeoutMs: number): Promise<T | null> {
+  return new Promise((resolve) => {
+    if (typeof document === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const name = `__tlCensus${++jsonpSeq}`;
+    const w = window as unknown as Record<string, unknown>;
+    const script = document.createElement('script');
+    let done = false;
+    const finish = (val: T | null) => {
+      if (done) return;
+      done = true;
+      w[name] = () => {}; // a late response hits a noop, not a ReferenceError
+      script.remove();
+      resolve(val);
+    };
+    w[name] = (data: T) => finish(data);
+    script.src = `${src}&format=jsonp&callback=${name}`;
+    script.onerror = () => finish(null);
+    setTimeout(() => finish(null), timeoutMs); // never hang the UI on a slow gov API
+    document.head.appendChild(script);
+  });
+}
+
+export async function censusGeocode(oneline: string, signal?: AbortSignal): Promise<Address | null> {
+  if (signal?.aborted) return null;
+  const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(oneline)}&benchmark=Public_AR_Current`;
+  const data = await jsonp<{
+    result?: { addressMatches?: { matchedAddress?: string; coordinates?: { x: number; y: number }; addressComponents?: { city?: string; state?: string; zip?: string } }[] };
+  }>(url, 4000);
+  if (!data || signal?.aborted) return null;
+  const m = data.result?.addressMatches?.[0];
+  if (!m?.coordinates || !m.matchedAddress) return null;
+  const comp = m.addressComponents ?? {};
+  const city = comp.city ? `${titleCase(comp.city)}${comp.state ? `, ${comp.state}` : ''}` : '';
+  // "762 MCNAIR ST, HAZLETON, PA, 18201" → "762 Mcnair St, Hazleton, PA 18201"
+  const parts = m.matchedAddress.split(',').map((s) => s.trim());
+  const formatted =
+    parts.length >= 4 ? `${titleCase(parts[0])}, ${titleCase(parts[1])}, ${parts[2]} ${parts[3]}` : titleCase(m.matchedAddress);
+  return { formatted, lat: m.coordinates.y, lng: m.coordinates.x, city, verified: true };
+}
+
+/** Did the Census match the SAME house+street the user picked? (Census can
+ *  fuzzy-match a different address — never silently swap it in.) */
+export function sameAddress(a: string, b: string): boolean {
+  const re = /^([\d-]+)\s+([a-zà-ú]+)/i;
+  const pa = re.exec(a.trim().toLowerCase());
+  const pb = re.exec(b.trim().toLowerCase());
+  if (!pa || !pb || pa[1] !== pb[1]) return false;
+  const [sa, sb] = [pa[2], pb[2]];
+  return sa.startsWith(sb.slice(0, 3)) || sb.startsWith(sa.slice(0, 3));
+}
+
+/** Resolve a city label ("Hazleton, PA") to its REAL center via our gazetteer —
+ *  so "use the city center" never inherits a house's coordinates. Falls back to
+ *  the given point when the gazetteer doesn't know the label. */
+export async function cityCenter(label: string, fallback: { lat: number; lng: number }): Promise<{ label: string; lat: number; lng: number }> {
+  try {
+    const hits = await searchCities(label.split(',')[0]);
+    const exact = hits.find((c) => c.label.toLowerCase() === label.toLowerCase());
+    if (exact) return { label, lat: exact.lat, lng: exact.lng };
+  } catch {
+    /* gazetteer unreachable — keep the fallback point */
+  }
+  return { label, lat: fallback.lat, lng: fallback.lng };
+}
+
+/**
+ * Professional address autocomplete — merges three free sources:
+ *  1. US Census exact match (official; shown first, "verified") when the typed
+ *     text looks like a full address.
+ *  2. Synthesized house-number + street suggestions: OSM knows the STREETS even
+ *     when it lacks the house number, so "762 mc" → streets matching "mc" →
+ *     "762 McNair Street, Hazleton…". The pick is later snapped via Census.
+ *  3. Raw Photon results (POIs, streets, OSM-mapped house numbers).
+ * All biased + fenced to the user's metro. No Google billing.
+ */
+export async function searchAddress(query: string, near?: NearCtx | null, signal?: AbortSignal): Promise<Address[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
+
+  // "762 mcnair st" / "10-24 main st" → house number + street fragment
+  const house = /^(\d{1,6}(?:-\d{1,4})?)\s+(.{2,})$/.exec(q);
+
+  // Census needs a reasonably complete address; complete it with the city
+  // context — or just the state when the user already typed their own city.
+  let censusQ: string | null = null;
+  if (house && house[2].length >= 4) {
+    censusQ = q;
+    if (near?.city) {
+      if (!q.includes(',')) censusQ = `${q}, ${near.city}`;
+      else {
+        const st = near.city.split(',').pop()?.trim();
+        if (st && st.length <= 3 && !new RegExp(`\\b${st}\\b`, 'i').test(q)) censusQ = `${q}, ${st}`;
+      }
+    }
+  }
+
+  const [census, streets, photon] = await Promise.all([
+    censusQ ? censusGeocode(censusQ, signal) : Promise.resolve(null),
+    house ? photonSearch(house[2].split(',')[0], near, signal, 'street') : Promise.resolve([] as Address[]),
+    photonSearch(q, near, signal),
+  ]);
+
+  // A stale (aborted) call must never overwrite fresher results in the modal.
+  if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
+
+  const out: Address[] = [];
+  const pos = new Map<string, number>();
+  const push = (a: Address) => {
+    const key = a.formatted.toLowerCase();
+    const i = pos.get(key);
+    if (i !== undefined) {
+      // an exact (OSM/Census) entry beats a synthesized street-level one
+      if (out[i].approx && !a.approx) out[i] = a;
+      return;
+    }
+    pos.set(key, out.length);
+    out.push(a);
+  };
+
+  if (census) push(census);
+  if (house) for (const s of streets.slice(0, 4)) push({ ...s, formatted: `${house[1]} ${s.formatted}`, approx: true });
+  for (const a of photon) push(a);
+  return out.slice(0, 6);
 }
 
 /** GPS coords → a full street address (Nominatim). Fallback for "use my location". */

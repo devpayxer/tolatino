@@ -55,10 +55,15 @@
   UI never janks.
 - [ ] **Search → Meilisearch.** Postgres full-text search now → self-hosted
   **Meilisearch** (OSS) at scale. Avoid paid Algolia.
-- [ ] **Business-address geocoding.** The **city gazetteer is already owned**
-  (Supabase `cities` table + `search_cities`/`nearest_city`). But geocoding a
-  business's street address still calls **Nominatim/Photon** (OSM, free, low
-  volume). Self-host Nominatim/Photon when volume grows.
+- [ ] **Street-address geocoding at scale.** The **city gazetteer is already
+  owned** (Supabase `cities` table + `search_cities`/`nearest_city`). Street
+  addresses use a free 3-layer pipeline (2026-07-03): **Photon** (streets/POIs,
+  biased+fenced to the metro) + **synthesized house-number+street suggestions**
+  + the **US Census Bureau geocoder** (official TIGER data — exact house-number
+  match, "verified" badge, snap-on-pick; free, no key) with graceful fallbacks
+  when any source is down. **Nominatim** for GPS→address. At scale: self-host
+  **Pelias (with TIGER/OpenAddresses import)** or Photon+Nominatim to own the
+  whole path and drop external rate limits.
 
 ## 2. Security, moderation & abuse (launch blockers)
 

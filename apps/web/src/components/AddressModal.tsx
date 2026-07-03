@@ -14,7 +14,7 @@ import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useAddresses, type SavedAddress } from '@/lib/addresses';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
-import { getBrowserLocation, nearestCity, reverseAddress, searchAddress, type Address } from '@/lib/geo';
+import { censusGeocode, cityCenter, getBrowserLocation, nearestCity, reverseAddress, sameAddress, searchAddress, type Address } from '@/lib/geo';
 
 export function AddressModal() {
   const { L } = useLang();
@@ -35,9 +35,14 @@ export function AddressModal() {
   const [editText, setEditText] = useState('');
   const [addErr, setAddErr] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Monotonic pick token: every pick/clear bumps it, and every async
+  // continuation re-checks it before applying — a slow earlier pick can never
+  // overwrite a newer choice.
+  const pickSeq = useRef(0);
 
   const close = () => {
     app.setAddressOpen(false);
+    abortRef.current?.abort(); // don't let an in-flight search resurrect results
     setQ('');
     setNewLabel('');
     setResults([]);
@@ -57,23 +62,43 @@ export function AddressModal() {
     }
   };
 
+  // City context for an address: its OWN city name, but with the city's REAL
+  // center (via the gazetteer) so "use the city center" never keeps the house
+  // point; nearest-city only as a last resort.
+  const cityCtxOf = async (a: Address | { city?: string | null; lat: number; lng: number }) =>
+    a.city ? await cityCenter(a.city, { lat: a.lat, lng: a.lng }) : await cityOf(a.lat, a.lng);
+
   // Choose a resolved address. Apply it immediately as the active origin (instant
   // feedback + works even if the DB save fails), switch the whole app to that
   // address's city, then (signed-in) save it and swap in the real id.
-  const choose = async (a: Address) => {
+  const choose = async (raw: Address) => {
     setAddErr(null);
-    const coords = { lat: a.lat, lng: a.lng };
-    // Prefer the address's OWN city (from the geocoder); only if it's missing do
-    // we fall back to the nearest known city.
-    const cityCtx = a.city ? { label: a.city, lat: a.lat, lng: a.lng } : await cityOf(a.lat, a.lng);
-    app.setUserAddress(a.formatted, coords, null, cityCtx);
+    const seq = ++pickSeq.current;
+    abortRef.current?.abort(); // kill any pending suggestion fetch
+    // Instant feedback: apply the pick right away (street-level is fine for a
+    // moment), then refine below.
+    app.setUserAddress(raw.formatted, { lat: raw.lat, lng: raw.lng }, null, raw.city ? { label: raw.city, lat: raw.lat, lng: raw.lng } : undefined);
     setQ('');
     setResults([]);
-    if (!saved) {
-      close();
-      return;
+    if (!saved) close(); // guests: pick → done; refinement continues in background
+
+    // Synthesized house+street picks carry street coords — snap them to the
+    // exact house point (+ correct ZIP) via the official US Census geocoder,
+    // but only when Census matched the SAME house+street the user picked.
+    let a = raw;
+    if (raw.approx) {
+      const exact = await censusGeocode(raw.formatted);
+      if (exact && sameAddress(raw.formatted, exact.formatted)) a = exact;
     }
+    if (seq !== pickSeq.current) return; // superseded by a newer pick/clear
+    const coords = { lat: a.lat, lng: a.lng };
+    const cityCtx = await cityCtxOf(a);
+    if (seq !== pickSeq.current) return;
+    app.setUserAddress(a.formatted, coords, null, cityCtx);
+    if (!saved) return;
+
     const row = await store.add(newLabel.trim() || null, a.formatted, a.lat, a.lng, a.city || null);
+    if (seq !== pickSeq.current) return;
     if (row) {
       app.setUserAddress(row.formatted, { lat: row.lat, lng: row.lng }, row.id, cityCtx);
       setNewLabel('');
@@ -90,6 +115,7 @@ export function AddressModal() {
   useEffect(() => {
     const query = q.trim();
     if (query.length < 3) {
+      abortRef.current?.abort(); // a cleared/shortened query must not resurrect
       setResults([]);
       setSearching(false);
       return;
@@ -100,7 +126,7 @@ export function AddressModal() {
       const ctrl = new AbortController();
       abortRef.current = ctrl;
       try {
-        setResults(await searchAddress(query, app.coords, ctrl.signal));
+        setResults(await searchAddress(query, { lat: app.coords.lat, lng: app.coords.lng, city: app.city }, ctrl.signal));
       } catch {
         if (!ctrl.signal.aborted) setResults([]);
       } finally {
@@ -129,17 +155,22 @@ export function AddressModal() {
   };
 
   const selectSaved = (a: SavedAddress) => {
+    const seq = ++pickSeq.current;
     const coords = { lat: a.lat, lng: a.lng };
-    const cityCtx = a.city ? { label: a.city, lat: a.lat, lng: a.lng } : undefined;
-    app.setUserAddress(a.formatted, coords, a.id, cityCtx); // instant (with city when known)
+    app.setUserAddress(a.formatted, coords, a.id, a.city ? { label: a.city, lat: a.lat, lng: a.lng } : undefined); // instant
     close(); // pick → done (Uber-style)
-    // older saved rows may lack a stored city → resolve it in the background
-    if (!cityCtx) cityOf(a.lat, a.lng).then((c) => c && app.setUserAddress(a.formatted, coords, a.id, c));
+    // refine in the background: real city center (and city for legacy rows)
+    cityCtxOf(a).then((c) => {
+      if (c && seq === pickSeq.current) app.setUserAddress(a.formatted, coords, a.id, c);
+    });
   };
 
   const del = async (id: string) => {
     await store.remove(id);
-    if (app.addressId === id) app.clearUserAddress();
+    if (app.addressId === id) {
+      pickSeq.current++; // cancel any in-flight refinement of the removed pick
+      app.clearUserAddress();
+    }
   };
 
   const saveEdit = async (id: string) => {
@@ -206,7 +237,15 @@ export function AddressModal() {
               className="flex w-full cursor-pointer items-start gap-2.5 rounded-[10px] px-2 py-2.5 text-left hover:bg-app"
             >
               <MapPin size={15} className="mt-0.5 flex-none text-primary" strokeWidth={2.4} />
-              <span className="text-[13px] font-bold text-ink-soft">{a.formatted}</span>
+              <span className="min-w-0 text-[13px] font-bold text-ink-soft">
+                {a.formatted}
+                {a.verified && (
+                  <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-[6px] bg-green-bg px-1.5 py-0.5 align-middle text-[9.5px] font-extrabold uppercase tracking-[.03em] text-green-dark">
+                    <Check size={9} strokeWidth={3.4} />
+                    {L('Verificada', 'Verified')}
+                  </span>
+                )}
+              </span>
             </button>
           ))}
         </div>
@@ -289,6 +328,7 @@ export function AddressModal() {
           </PrimaryBtn>
           <button
             onClick={() => {
+              pickSeq.current++; // cancel in-flight refinements
               app.clearUserAddress();
               close();
             }}
@@ -303,7 +343,13 @@ export function AddressModal() {
             <div className="mt-3 flex items-center gap-2.5 rounded-tile bg-lilac-3 p-3">
               <Check size={16} className="flex-none text-primary" strokeWidth={2.6} />
               <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{app.address}</span>
-              <button onClick={() => app.clearUserAddress()} className="flex-none cursor-pointer text-[11.5px] font-extrabold text-primary-dark">
+              <button
+                onClick={() => {
+                  pickSeq.current++; // cancel in-flight refinements
+                  app.clearUserAddress();
+                }}
+                className="flex-none cursor-pointer text-[11.5px] font-extrabold text-primary-dark"
+              >
                 {L('Quitar', 'Remove')}
               </button>
             </div>
