@@ -112,7 +112,12 @@
   TODO: real **address geocoding** (today it uses the city center or the owner's
   GPS pin), business **photos**, amenities/hours capture, editing/deleting your
   own listing from the UI (RLS policies already exist), and the paid tiers
-  (verified/premium).
+  (verified/premium). **Feature tags** (`businesses.features`, migration `0016`)
+  now power the dynamic per-category Negocios filter and `create_business` accepts
+  them, but the **publish form doesn't collect them yet** — the owner can't tick
+  "Características" (delivery, full bar, licensed…) when creating a listing. Wire a
+  feature-picker into `PublishModal` (options from `FEATURES_COMMON` +
+  `FEATURES_BY_CAT[cat]`) so new listings are filterable.
 - [ ] **Push notifications.** Not built. Plan: **Web Push (VAPID)** for the PWA,
   **+ FCM** (free) for native later. Drives the "Alertas" tab and new-activity
   pings.

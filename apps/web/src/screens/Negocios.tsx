@@ -11,7 +11,7 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Card, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
-import { SUBCATS, bizTile, type Business } from '@/data/fixtures';
+import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 import { CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
@@ -25,6 +25,18 @@ const PAGE_SIZE = 6;
 const SUB_EN: Record<string, string> = {};
 for (const arr of Object.values(SUBCATS)) for (const [es, en] of arr) SUB_EN[es] = en;
 
+// es → en lookup for feature labels (common + every category's set).
+const FEAT_EN: Record<string, string> = {};
+for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
+for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
+
+// Canonical labels of the universal ("Sugeridos") features — kept when the user
+// switches category (category-specific picks are dropped, they wouldn't match).
+const COMMON_SET = new Set(FEATURES_COMMON.map(([es]) => es));
+
+// How many category features show before "Ver todas".
+const FEAT_PREVIEW = 8;
+
 type Filters = {
   cat: CatKey | 'all';
   subCat: string | null;
@@ -32,9 +44,10 @@ type Filters = {
   rating: string | null;
   maxDist: number;
   openNow: boolean;
+  features: string[]; // canonical (es) feature labels — business must offer all
 };
 
-const DEFAULT_FILTERS: Filters = { cat: 'all', subCat: null, price: null, rating: null, maxDist: DIST_DEFAULT, openNow: false };
+const DEFAULT_FILTERS: Filters = { cat: 'all', subCat: null, price: null, rating: null, maxDist: DIST_DEFAULT, openNow: false, features: [] };
 
 export function NegociosScreen() {
   const { L } = useLang();
@@ -48,11 +61,16 @@ export function NegociosScreen() {
   const [mapOpen, setMapOpen] = useState(false);
   const [detailBiz, setDetailBiz] = useState<Business | null>(null);
   const [openFilter, setOpenFilter] = useState<null | 'dist' | 'rating' | 'price'>(null);
+  const [showAllFeat, setShowAllFeat] = useState(false);
 
   const patch = (p: Partial<Filters>) => {
     setF((cur) => ({ ...cur, ...p }));
     setPage(1);
   };
+
+  // Toggle a feature on/off (works for both "Sugeridos" and category features).
+  const toggleFeature = (es: string) =>
+    patch({ features: f.features.includes(es) ? f.features.filter((x) => x !== es) : [...f.features, es] });
 
   const sl = app.search.trim().toLowerCase();
   const results = useMemo(() => {
@@ -62,6 +80,7 @@ export function NegociosScreen() {
     if (f.price) list = list.filter((b) => b.price === f.price);
     if (f.rating) list = list.filter((b) => parseFloat(b.rating) >= parseFloat(f.rating!));
     if (f.openNow) list = list.filter((b) => b.open);
+    if (f.features.length) list = list.filter((b) => f.features.every((x) => (b.features ?? []).includes(x)));
     // distance always applies; keep businesses with unknown distance ("— mi")
     list = list.filter((b) => {
       const d = parseFloat(b.dist);
@@ -99,6 +118,7 @@ export function NegociosScreen() {
     (f.price ? 1 : 0) +
     (f.rating ? 1 : 0) +
     (f.openNow ? 1 : 0) +
+    f.features.length +
     (f.maxDist !== DIST_DEFAULT ? 1 : 0);
 
   // Applied-chip row shows ONLY what isn't already visible elsewhere: the search
@@ -107,10 +127,12 @@ export function NegociosScreen() {
   const appliedChips: { label: string; onRemove: () => void }[] = [];
   if (sl) appliedChips.push({ label: `“${app.search}”`, onRemove: () => app.setSearch('') });
   if (f.subCat) appliedChips.push({ label: L(f.subCat, SUB_EN[f.subCat] ?? f.subCat), onRemove: () => patch({ subCat: null }) });
+  for (const ft of f.features) appliedChips.push({ label: L(ft, FEAT_EN[ft] ?? ft), onRemove: () => toggleFeature(ft) });
 
   const clearAll = () => {
     setF(DEFAULT_FILTERS);
     setCatOpen(null);
+    setShowAllFeat(false);
     app.setSearch('');
     setPage(1);
   };
@@ -124,14 +146,42 @@ export function NegociosScreen() {
     return <BizDetail b={detailBiz} all={BUSINESSES} onClose={() => setDetailBiz(null)} onOpenOther={(biz) => setDetailBiz(biz)} />;
   }
 
+  // Feature pill (shared by "Sugeridos" and the per-category "Características").
+  const featChip = ([es, en]: [string, string]) => {
+    const on = f.features.includes(es);
+    return (
+      <button
+        key={es}
+        onClick={() => toggleFeature(es)}
+        className={`cursor-pointer rounded-full px-[11px] py-1.5 text-[11.5px] ${
+          on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-3'
+        }`}
+      >
+        {L(es, en)}
+      </button>
+    );
+  };
+
+  // Category-specific features (the dynamic half). Only when a real category is
+  // picked — mirrors Yelp, where "Features" change with the chosen category.
+  const catFeatures = f.cat !== 'all' ? FEATURES_BY_CAT[f.cat] ?? [] : [];
+  const shownFeatures = showAllFeat ? catFeatures : catFeatures.slice(0, FEAT_PREVIEW);
+
+  const secLabel = 'mb-1.5 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted';
+
   const filterPanel = (
     <>
+      {/* Sugeridos — universal quick features (apply to every category) */}
+      <div className={secLabel}>{L('Sugeridos', 'Suggested')}</div>
+      <div className="mb-4 flex flex-wrap gap-1.5">{FEATURES_COMMON.map(featChip)}</div>
+
       {/* category accordion */}
-      <div className="mb-1 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Categoría', 'Category')}</div>
+      <div className={`${secLabel} mt-1`}>{L('Categoría', 'Category')}</div>
       <button
         onClick={() => {
-          patch({ cat: 'all', subCat: null });
+          patch({ cat: 'all', subCat: null, features: f.features.filter((x) => COMMON_SET.has(x)) });
           setCatOpen(null);
+          setShowAllFeat(false);
         }}
         className={`flex w-full cursor-pointer items-center justify-between rounded-[10px] px-[11px] py-[9px] text-left text-[13px] ${
           f.cat === 'all' ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
@@ -152,7 +202,11 @@ export function NegociosScreen() {
             <button
               onClick={() => {
                 setCatOpen(open ? null : k);
-                patch({ cat: k, subCat: open ? f.subCat : null });
+                setShowAllFeat(false);
+                // switching category drops category-specific feature picks (they
+                // wouldn't match a different rubro); keep the universal ones.
+                const keepFeatures = active ? f.features : f.features.filter((x) => COMMON_SET.has(x));
+                patch({ cat: k, subCat: open ? f.subCat : null, features: keepFeatures });
               }}
               className={`flex w-full cursor-pointer items-center justify-between rounded-[10px] px-[11px] py-[9px] text-left text-[13px] ${
                 active || open ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
@@ -190,6 +244,25 @@ export function NegociosScreen() {
           </div>
         );
       })}
+
+      {/* Características — dynamic per selected category */}
+      {catFeatures.length > 0 && (
+        <div className="mt-5">
+          <div className={secLabel}>
+            {L('Características', 'Features')}
+            <span className="ml-1.5 font-bold normal-case tracking-normal text-muted-faint">{L(CAT[f.cat as CatKey].es, CAT[f.cat as CatKey].en)}</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">{shownFeatures.map(featChip)}</div>
+          {catFeatures.length > FEAT_PREVIEW && (
+            <button
+              onClick={() => setShowAllFeat((v) => !v)}
+              className="mt-2 cursor-pointer text-[11.5px] font-extrabold text-primary-dark"
+            >
+              {showAllFeat ? L('Ver menos', 'See less') : L(`Ver todas (${catFeatures.length})`, `See all (${catFeatures.length})`)}
+            </button>
+          )}
+        </div>
+      )}
 
       <button onClick={clearAll} className="mt-5 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark">
         {L('Limpiar filtros', 'Clear')}

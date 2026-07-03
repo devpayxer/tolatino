@@ -27,6 +27,7 @@ export type Business = {
   name: string;
   cat: CatKey;
   subcats?: string[]; // canonical (es) subcategory labels from SUBCATS
+  features?: string[]; // canonical (es) feature labels from FEATURES_* (dynamic filter)
   rating: string;
   reviews: number;
   dist: string;
@@ -44,14 +45,14 @@ export type Business = {
 };
 
 export const BUSINESSES: Business[] = [
-  { id: 0, name: 'Taquería La Esperanza', cat: 'FoodDrinks', subcats: ['Taquería', 'Tacos', 'Mexicana'], rating: '4.9', reviews: 320, dist: '0.8 mi', price: '$$', open: true, verified: true, endorse: 47, t: ['#ECE3F8', '#E3D7F4'], specEs: 'Especialidad · Tacos al pastor', specEn: 'Specialty · Tacos al pastor', amEs: ['A domicilio', 'Español', 'Estacionamiento'], amEn: ['Delivery', 'Spanish', 'Parking'], revEs: '“El mejor pastor de Houston, sin exagerar.” — Carlos R.', revEn: '“Best pastor in Houston, no joke.” — Carlos R.' },
-  { id: 1, name: 'Don Beto Mecánica', cat: 'AutoServices', subcats: ['Taller mecánico', 'Afinación', 'Frenos'], rating: '4.7', reviews: 128, dist: '2.6 mi', price: '$', open: true, verified: true, endorse: 23, t: ['#E7EEFB', '#DAE5F6'], specEs: 'Especialidad · Frenos y suspensión', specEn: 'Specialty · Brakes & suspension', amEs: ['Presupuesto gratis', 'Español', 'Garantía'], amEn: ['Free quote', 'Spanish', 'Warranty'], revEs: '“Honrado y rápido, no te roba.” — María G.', revEn: '“Honest and fast, won’t rip you off.” — María G.' },
-  { id: 2, name: 'Dulces Encanto', cat: 'FoodDrinks', subcats: ['Dulcería', 'Repostería', 'Pastelería'], rating: '5.0', reviews: 96, dist: '1.2 mi', price: '$$', open: true, verified: true, endorse: 31, t: ['#FBE9F0', '#F6DCE8'], specEs: 'Especialidad · Pasteles temáticos', specEn: 'Specialty · Theme cakes', amEs: ['Por encargo', 'Español', 'Entregas'], amEn: ['Custom orders', 'Spanish', 'Delivery'], revEs: '“El pastel de Encanto quedó precioso.” — Jonathan P.', revEn: '“The Encanto cake came out gorgeous.” — Jonathan P.' },
-  { id: 3, name: 'Salón Bella Vida', cat: 'BeautyHealth', subcats: ['Salón de belleza', 'Uñas', 'Corte de cabello'], rating: '4.8', reviews: 154, dist: '1.5 mi', price: '$$', open: true, verified: true, endorse: 19, t: ['#FBE9F0', '#F5D8E6'], specEs: 'Especialidad · Color y tratamientos', specEn: 'Specialty · Color & treatments', amEs: ['Con cita', 'Español', 'Sin espera'], amEn: ['Appointments', 'Spanish', 'No wait'], revEs: '“Salgo feliz cada vez, súper amables.” — Sofía L.', revEn: '“I leave happy every time, so kind.” — Sofía L.' },
-  { id: 4, name: 'Clínica Familiar Sana', cat: 'HealthMedicine', subcats: ['Clínica', 'Médico general', 'Pediatra'], rating: '4.6', reviews: 78, dist: '3.1 mi', price: '$$', open: false, verified: true, endorse: 14, t: ['#E3F5EA', '#D6EFDF'], specEs: 'Especialidad · Medicina familiar', specEn: 'Specialty · Family medicine', amEs: ['Sin seguro OK', 'Español', 'Mismo día'], amEn: ['No insurance OK', 'Spanish', 'Same day'], revEs: '“Me atendieron sin seguro, muy humanos.” — Ana E.', revEn: '“Seen without insurance, very caring.” — Ana E.' },
-  { id: 5, name: 'Abogada Ramírez', cat: 'ProServices', subcats: ['Abogado', 'Abogado de inmigración', 'Notario'], rating: '4.9', reviews: 42, dist: '4.0 mi', price: '$$$', open: true, verified: true, endorse: 12, t: ['#E8E4FB', '#DCD6F6'], specEs: 'Especialidad · Inmigración', specEn: 'Specialty · Immigration', amEs: ['Consulta gratis', 'Español', 'Planes de pago'], amEn: ['Free consult', 'Spanish', 'Payment plans'], revEs: '“Nos guió en todo el proceso con paciencia.” — Roberto M.', revEn: '“Guided us through it all patiently.” — Roberto M.' },
-  { id: 6, name: 'Lavado Express Sol', cat: 'AutoServices', subcats: ['Autolavado', 'Detallado', 'Polarizado'], rating: '4.5', reviews: 64, dist: '2.0 mi', price: '$', open: true, verified: false, endorse: 0, t: ['#E5EFFB', '#D7E5F6'], specEs: 'Especialidad · Detallado completo', specEn: 'Specialty · Full detail', amEs: ['Sin cita', 'Rápido'], amEn: ['Walk-in', 'Fast'], revEs: '', revEn: '' },
-  { id: 7, name: 'Ferretería El Tornillo', cat: 'HomeServices', subcats: ['Handyman', 'Construcción'], rating: '4.4', reviews: 53, dist: '1.9 mi', price: '$', open: true, verified: false, endorse: 0, t: ['#FCF1C7', '#F6E8AE'], specEs: 'Especialidad · Herramienta y plomería', specEn: 'Specialty · Tools & plumbing', amEs: ['Español', 'Cerca'], amEn: ['Spanish', 'Nearby'], revEs: '', revEn: '' },
+  { id: 0, name: 'Taquería La Esperanza', cat: 'FoodDrinks', subcats: ['Taquería', 'Tacos', 'Mexicana'], features: ['A domicilio', 'Para llevar', 'Comedor', 'Apto para niños', 'Se habla español'], rating: '4.9', reviews: 320, dist: '0.8 mi', price: '$$', open: true, verified: true, endorse: 47, t: ['#ECE3F8', '#E3D7F4'], specEs: 'Especialidad · Tacos al pastor', specEn: 'Specialty · Tacos al pastor', amEs: ['A domicilio', 'Español', 'Estacionamiento'], amEn: ['Delivery', 'Spanish', 'Parking'], revEs: '“El mejor pastor de Houston, sin exagerar.” — Carlos R.', revEn: '“Best pastor in Houston, no joke.” — Carlos R.' },
+  { id: 1, name: 'Don Beto Mecánica', cat: 'AutoServices', subcats: ['Taller mecánico', 'Afinación', 'Frenos'], features: ['Presupuesto gratis', 'Garantía', 'Servicio a domicilio', 'Se habla español'], rating: '4.7', reviews: 128, dist: '2.6 mi', price: '$', open: true, verified: true, endorse: 23, t: ['#E7EEFB', '#DAE5F6'], specEs: 'Especialidad · Frenos y suspensión', specEn: 'Specialty · Brakes & suspension', amEs: ['Presupuesto gratis', 'Español', 'Garantía'], amEn: ['Free quote', 'Spanish', 'Warranty'], revEs: '“Honrado y rápido, no te roba.” — María G.', revEn: '“Honest and fast, won’t rip you off.” — María G.' },
+  { id: 2, name: 'Dulces Encanto', cat: 'FoodDrinks', subcats: ['Dulcería', 'Repostería', 'Pastelería'], features: ['Para llevar', 'A domicilio', 'Catering', 'Se habla español'], rating: '5.0', reviews: 96, dist: '1.2 mi', price: '$$', open: true, verified: true, endorse: 31, t: ['#FBE9F0', '#F6DCE8'], specEs: 'Especialidad · Pasteles temáticos', specEn: 'Specialty · Theme cakes', amEs: ['Por encargo', 'Español', 'Entregas'], amEn: ['Custom orders', 'Spanish', 'Delivery'], revEs: '“El pastel de Encanto quedó precioso.” — Jonathan P.', revEn: '“The Encanto cake came out gorgeous.” — Jonathan P.' },
+  { id: 3, name: 'Salón Bella Vida', cat: 'BeautyHealth', subcats: ['Salón de belleza', 'Uñas', 'Corte de cabello'], features: ['Con cita', 'Sin cita', 'Unisex', 'Se habla español'], rating: '4.8', reviews: 154, dist: '1.5 mi', price: '$$', open: true, verified: true, endorse: 19, t: ['#FBE9F0', '#F5D8E6'], specEs: 'Especialidad · Color y tratamientos', specEn: 'Specialty · Color & treatments', amEs: ['Con cita', 'Español', 'Sin espera'], amEn: ['Appointments', 'Spanish', 'No wait'], revEs: '“Salgo feliz cada vez, súper amables.” — Sofía L.', revEn: '“I leave happy every time, so kind.” — Sofía L.' },
+  { id: 4, name: 'Clínica Familiar Sana', cat: 'HealthMedicine', subcats: ['Clínica', 'Médico general', 'Pediatra'], features: ['Sin seguro OK', 'Mismo día', 'Personal bilingüe'], rating: '4.6', reviews: 78, dist: '3.1 mi', price: '$$', open: false, verified: true, endorse: 14, t: ['#E3F5EA', '#D6EFDF'], specEs: 'Especialidad · Medicina familiar', specEn: 'Specialty · Family medicine', amEs: ['Sin seguro OK', 'Español', 'Mismo día'], amEn: ['No insurance OK', 'Spanish', 'Same day'], revEs: '“Me atendieron sin seguro, muy humanos.” — Ana E.', revEn: '“Seen without insurance, very caring.” — Ana E.' },
+  { id: 5, name: 'Abogada Ramírez', cat: 'ProServices', subcats: ['Abogado', 'Abogado de inmigración', 'Notario'], features: ['Consulta gratis', 'Planes de pago', 'Bilingüe'], rating: '4.9', reviews: 42, dist: '4.0 mi', price: '$$$', open: true, verified: true, endorse: 12, t: ['#E8E4FB', '#DCD6F6'], specEs: 'Especialidad · Inmigración', specEn: 'Specialty · Immigration', amEs: ['Consulta gratis', 'Español', 'Planes de pago'], amEn: ['Free consult', 'Spanish', 'Payment plans'], revEs: '“Nos guió en todo el proceso con paciencia.” — Roberto M.', revEn: '“Guided us through it all patiently.” — Roberto M.' },
+  { id: 6, name: 'Lavado Express Sol', cat: 'AutoServices', subcats: ['Autolavado', 'Detallado', 'Polarizado'], features: ['Servicio express', 'Estacionamiento'], rating: '4.5', reviews: 64, dist: '2.0 mi', price: '$', open: true, verified: false, endorse: 0, t: ['#E5EFFB', '#D7E5F6'], specEs: 'Especialidad · Detallado completo', specEn: 'Specialty · Full detail', amEs: ['Sin cita', 'Rápido'], amEn: ['Walk-in', 'Fast'], revEs: '', revEn: '' },
+  { id: 7, name: 'Ferretería El Tornillo', cat: 'HomeServices', subcats: ['Handyman', 'Construcción'], features: ['Presupuesto gratis', 'Se habla español', 'Estacionamiento'], rating: '4.4', reviews: 53, dist: '1.9 mi', price: '$', open: true, verified: false, endorse: 0, t: ['#FCF1C7', '#F6E8AE'], specEs: 'Especialidad · Herramienta y plomería', specEn: 'Specialty · Tools & plumbing', amEs: ['Español', 'Cerca'], amEn: ['Spanish', 'Nearby'], revEs: '', revEn: '' },
 ];
 
 export const bizTile = (b: Business) => tile(b.t[0], b.t[1]);
@@ -216,6 +217,95 @@ export const SUBCATS: Record<CatKey, [string, string][]> = {
     ['Consejería', 'Counseling'], ['Voluntariado', 'Volunteering'], ['Ayuda social', 'Social aid'], ['Banco de alimentos', 'Food bank'],
     ['Bodas religiosas', 'Religious weddings'], ['Bautizos', 'Baptisms'], ['Primera comunión', 'First communion'],
     ['Quinceañera (misa)', 'Quinceañera mass'], ['Funerales', 'Funeral services'], ['Artículos religiosos', 'Religious goods'],
+  ],
+};
+
+// ---------- business features / attributes (dynamic filter) ----------
+// Yelp-style "Características": the filter shown under Negocios changes with the
+// picked category. `FEATURES_COMMON` ("Sugeridos") apply to every rubro; each
+// entry in `FEATURES_BY_CAT` is that category's own attribute set. A business
+// stores the canonical (es) labels it offers in `Business.features`; the filter
+// keeps only businesses that offer every selected feature.
+export type Feature = [string, string]; // [es, en]
+
+// Universal quick toggles — relevant to essentially any local business, and
+// especially meaningful for this audience (Spanish spoken, delivery, cards).
+export const FEATURES_COMMON: Feature[] = [
+  ['Se habla español', 'Spanish spoken'],
+  ['A domicilio', 'Delivery'],
+  ['Para llevar', 'Takeout / pickup'],
+  ['Acepta tarjeta', 'Accepts cards'],
+  ['Estacionamiento', 'Parking'],
+  ['Wifi gratis', 'Free Wi-Fi'],
+];
+
+// Category-specific attributes (the dynamic half). Curated per rubro for the US
+// Latino local market; the first ~8 show by default, the rest behind "Ver todas".
+export const FEATURES_BY_CAT: Record<CatKey, Feature[]> = {
+  AutoServices: [
+    ['Servicio a domicilio', 'Mobile service'], ['Diagnóstico gratis', 'Free diagnostics'], ['Presupuesto gratis', 'Free estimates'],
+    ['Garantía', 'Warranty'], ['Grúa', 'Towing'], ['Servicio express', 'Express service'], ['Planes de pago', 'Payment plans'],
+    ['Abierto fines de semana', 'Open weekends'], ['Refacciones incluidas', 'Parts included'], ['Certificado ASE', 'ASE certified'],
+  ],
+  BeautyHealth: [
+    ['Con cita', 'By appointment'], ['Sin cita', 'Walk-ins welcome'], ['A domicilio', 'Home service'], ['Unisex', 'Unisex'],
+    ['Solo mujeres', 'Women only'], ['Novias', 'Bridal'], ['Apto para niños', 'Kid friendly'], ['Productos veganos', 'Vegan products'],
+    ['Abierto tarde', 'Open late'],
+  ],
+  FoodDrinks: [
+    ['Reservaciones', 'Reservations'], ['Comedor', 'Dine-in'], ['Para llevar', 'Takeout'], ['A domicilio', 'Delivery'],
+    ['Servicio en auto', 'Drive-thru'], ['Terraza / al aire libre', 'Outdoor seating'], ['Desayuno', 'Breakfast'], ['Alcohol', 'Serves alcohol'],
+    ['Música en vivo', 'Live music'], ['Apto para niños', 'Kid friendly'], ['Opciones veganas', 'Vegan options'], ['Catering', 'Catering'],
+  ],
+  HomeServices: [
+    ['Presupuesto gratis', 'Free estimates'], ['Servicio de emergencia', 'Emergency service'], ['Disponible 24/7', '24/7 available'],
+    ['Con licencia', 'Licensed'], ['Asegurado', 'Insured'], ['Garantía', 'Warranty'], ['Planes de pago', 'Payment plans'],
+    ['Abierto fines de semana', 'Open weekends'],
+  ],
+  NightLife: [
+    ['Barra completa', 'Full bar'], ['Happy hour', 'Happy hour'], ['Música en vivo', 'Live music'], ['DJ', 'DJ'],
+    ['Pista de baile', 'Dance floor'], ['Karaoke', 'Karaoke'], ['Terraza', 'Rooftop / patio'], ['Área VIP', 'VIP area'],
+    ['Hookah', 'Hookah'], ['Buena para grupos', 'Good for groups'], ['+21', '21+'],
+  ],
+  Grocery: [
+    ['Carnicería', 'Butcher counter'], ['Tortillería', 'Fresh tortillas'], ['Panadería', 'Bakery'], ['Productos importados', 'Imported goods'],
+    ['Envío de dinero', 'Money transfer'], ['Acepta WIC/EBT', 'Accepts WIC/EBT'], ['Abierto tarde', 'Open late'], ['A domicilio', 'Delivery'],
+  ],
+  Party: [
+    ['Paquetes', 'Packages'], ['Renta de equipo', 'Equipment rental'], ['Montaje incluido', 'Setup included'], ['A domicilio', 'Delivery'],
+    ['Personalizado', 'Custom'], ['Bilingüe', 'Bilingual'], ['Disponible fines de semana', 'Weekend availability'], ['Fotos y video', 'Photo & video'],
+  ],
+  HealthMedicine: [
+    ['Sin seguro OK', 'No insurance OK'], ['Acepta seguro', 'Accepts insurance'], ['Mismo día', 'Same-day'], ['Planes de pago', 'Payment plans'],
+    ['Telemedicina', 'Telemedicine'], ['A domicilio', 'Home visits'], ['Personal bilingüe', 'Bilingual staff'], ['Abierto fines de semana', 'Open weekends'],
+  ],
+  ProServices: [
+    ['Consulta gratis', 'Free consultation'], ['Planes de pago', 'Payment plans'], ['A domicilio', 'Mobile / home visits'], ['En línea', 'Online service'],
+    ['Bilingüe', 'Bilingual'], ['Sin cita', 'Walk-ins welcome'], ['Mismo día', 'Same-day service'], ['Abierto fines de semana', 'Open weekends'],
+  ],
+  Shops: [
+    ['Recoge en tienda', 'In-store pickup'], ['A domicilio', 'Delivery'], ['Apartado', 'Layaway'], ['Planes de pago', 'Payment plans'],
+    ['Compra en línea', 'Shop online'], ['Devoluciones', 'Returns'], ['Productos importados', 'Imported goods'], ['Estacionamiento', 'Parking'],
+  ],
+  Transportation: [
+    ['Servicio 24/7', '24/7 service'], ['Al aeropuerto', 'Airport service'], ['A domicilio', 'Door-to-door'], ['Presupuesto gratis', 'Free quotes'],
+    ['Envíos a Latinoamérica', 'Ships to Latin America'], ['Asegurado', 'Insured'], ['Reservación', 'Reservations'], ['Bilingüe', 'Bilingual'],
+  ],
+  Education: [
+    ['En línea', 'Online'], ['Presencial', 'In-person'], ['A domicilio', 'At-home tutoring'], ['Clases en español', 'Classes in Spanish'],
+    ['Certificado', 'Certificate'], ['Horario flexible', 'Flexible schedule'], ['Clase de prueba gratis', 'Free trial class'], ['Para adultos', 'For adults'],
+  ],
+  Children: [
+    ['Con licencia', 'Licensed'], ['Personal bilingüe', 'Bilingual staff'], ['Horario extendido', 'Extended hours'], ['Comidas incluidas', 'Meals included'],
+    ['Acepta subsidio', 'Accepts subsidy'], ['Cámaras de seguridad', 'Security cameras'], ['Área de juegos', 'Play area'], ['Recién nacidos', 'Infants welcome'],
+  ],
+  Sports: [
+    ['Clase de prueba gratis', 'Free trial'], ['Entrenador personal', 'Personal trainer'], ['Clases en grupo', 'Group classes'], ['Abierto 24 horas', 'Open 24 hours'],
+    ['Regaderas', 'Showers'], ['Para niños', 'Kids welcome'], ['Sin contrato', 'No contract'], ['Clases en español', 'Classes in Spanish'],
+  ],
+  Churches: [
+    ['Servicios en español', 'Services in Spanish'], ['Servicios en inglés', 'Services in English'], ['Grupos juveniles', 'Youth groups'], ['Estudio bíblico', 'Bible study'],
+    ['Guardería', 'Childcare'], ['Ayuda social', 'Social aid'], ['Banco de alimentos', 'Food bank'], ['Música en vivo', 'Live music'],
   ],
 };
 

@@ -85,6 +85,9 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             specEs: String(r.specialty_es ?? ''),
             specEn: String(r.specialty_en ?? ''),
             subcats: (r.subcategories as string[]) ?? [],
+            // dynamic feature filter: prefer the dedicated column, fall back to
+            // the business's amenities so pre-migration rows still filter.
+            features: (r.features as string[]) ?? (r.amenities_es as string[]) ?? [],
             amEs: (r.amenities_es as string[]) ?? [],
             amEn: (r.amenities_en as string[]) ?? [],
             revEs: String(r.review_es ?? ''),
