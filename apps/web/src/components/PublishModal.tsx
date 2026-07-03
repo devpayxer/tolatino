@@ -8,7 +8,7 @@
 // Post form is 3 steps: type → write (photos / tag business / poll options) →
 // preview.
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, HelpCircle, Heart, ImagePlus, LogIn, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
@@ -18,7 +18,7 @@ import { useLiveData } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
 import { uploadPostImages } from '@/lib/image';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
-import { PUB_HOODS, TAG_BIZ_NAMES, VIEW_PATH } from '@/data/fixtures';
+import { TAG_BIZ_NAMES, VIEW_PATH, hoodsForCity } from '@/data/fixtures';
 import { PostCard, type FeedPost } from '@/components/PostCard';
 
 const MAX_PHOTOS = 3;
@@ -35,7 +35,16 @@ export function PublishModal() {
   const [done, setDone] = useState(false);
   const [postType, setPostType] = useState<PostType>('ask');
   const [text, setText] = useState('');
-  const [hood, setHood] = useState('Bellaire');
+  const [hood, setHood] = useState('');
+
+  // Neighborhoods follow the selected city. Known cities show chips; unknown
+  // ones (any of the 6,978 gazetteer cities) get a free-text field. Default to
+  // the first known hood and reset when the city changes.
+  const cityHoods = hoodsForCity(app.cityShort);
+  useEffect(() => {
+    setHood(cityHoods[0] ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app.cityShort]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [taggedBiz, setTaggedBiz] = useState<string | null>(null);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -415,14 +424,25 @@ export function PublishModal() {
               )}
 
               <div>
-                <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Barrio', 'Neighborhood')}</div>
-                <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                  {PUB_HOODS.map((h) => (
-                    <button key={h} onClick={() => setHood(h)} className={chip(hood === h)}>
-                      {h}
-                    </button>
-                  ))}
+                <div className="mb-1.5 text-[12px] font-extrabold text-ink">
+                  {L('Barrio', 'Neighborhood')} <span className="font-semibold text-muted">· {app.cityShort}</span>
                 </div>
+                {cityHoods.length > 0 ? (
+                  <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                    {cityHoods.map((h) => (
+                      <button key={h} onClick={() => setHood(h)} className={chip(hood === h)}>
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    value={hood}
+                    onChange={(e) => setHood(e.target.value)}
+                    placeholder={L('Tu barrio o zona', 'Your neighborhood or area')}
+                    className={inputCls}
+                  />
+                )}
               </div>
 
               <PrimaryBtn disabled={!canPost} onClick={() => canPost && setStep(3)}>

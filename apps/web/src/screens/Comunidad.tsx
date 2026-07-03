@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { Avatar, Card, EmptyState, Overlay, YouAvatar } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
-import { HOODS, NEIGHBORS, SEED_COMMENTS, SEED_REPLIES, TRENDING, bizTile, type Comment, type Post } from '@/data/fixtures';
+import { NEIGHBORS, SEED_COMMENTS, SEED_REPLIES, TRENDING, bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 
 // Real (Supabase) posts/comments carry a UUID id; fixtures do not.
@@ -255,6 +255,7 @@ export function ComunidadScreen() {
   useEffect(() => {
     setPending([]);
     setRevealed([]);
+    setHood('all'); // barrios differ per city — reset the filter
   }, [cLat, cLng]);
 
   // Live feed: buffer new posts from OTHER users within the 30-mile radius.
@@ -283,10 +284,20 @@ export function ComunidadScreen() {
     setPending([]);
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+  // Barrios for the current city: the curated list, plus any hood that actually
+  // appears in the live feed (so real data always shows), deduped in order.
+  const hoodOptions = useMemo(() => {
+    const curated = hoodsForCity(app.cityShort);
+    const fromData = allPosts.map((p) => p.hoodEs).filter(Boolean);
+    return [...new Set([...curated, ...fromData])];
+  }, [app.cityShort, allPosts]);
+  const hoodCount = (name: string) => allPosts.filter((p) => p.hoodEs === name).length;
+
+  const byHood = hood === 'all' ? allPosts : allPosts.filter((p) => p.hoodEs === hood);
   const sl = app.search.trim().toLowerCase();
   const posts = sl
-    ? allPosts.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))
-    : allPosts;
+    ? byHood.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))
+    : byHood;
 
   const topComments = (pid: string) => [...(SEED_COMMENTS[pid] ?? []), ...(dbTop[pid] ?? []), ...(userComments[pid] ?? [])];
   const repliesFor = (cid: string) => [...(SEED_REPLIES[cid] ?? []), ...(dbReplies[cid] ?? []), ...(userReplies[cid] ?? [])];
@@ -442,9 +453,8 @@ export function ComunidadScreen() {
         <Card className="p-[17px]">
           <div className="mb-[11px] text-[13.5px] font-extrabold text-ink">{L('Barrios', 'Neighborhoods')}</div>
           <div className="flex flex-col gap-0.5">
-            {HOODS.map(([k, label, count]) => {
-              const [es, en = es] = label.split('|');
-              return (
+            {[{ k: 'all', label: L('Todos los barrios', 'All neighborhoods'), n: allPosts.length }, ...hoodOptions.map((h) => ({ k: h, label: h, n: hoodCount(h) }))].map(
+              ({ k, label, n }) => (
                 <button
                   key={k}
                   onClick={() => setHood(k)}
@@ -452,11 +462,11 @@ export function ComunidadScreen() {
                     hood === k ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
                   }`}
                 >
-                  <span>{L(es, en)}</span>
-                  <span className="text-[11px] font-bold text-muted-faint">{count}</span>
+                  <span>{label}</span>
+                  {n > 0 && <span className="text-[11px] font-bold text-muted-faint">{n}</span>}
                 </button>
-              );
-            })}
+              ),
+            )}
           </div>
         </Card>
       </aside>
@@ -524,6 +534,11 @@ export function ComunidadScreen() {
         {posts.length === 0 ? (
           app.search ? (
             <EmptyState title={L('Sin resultados para tu búsqueda', 'No results for your search')} />
+          ) : hood !== 'all' ? (
+            <EmptyState
+              title={L(`Todavía no hay publicaciones en ${hood}`, `No posts in ${hood} yet`)}
+              sub={L('Sé el primero en compartir algo con tu barrio.', 'Be the first to share something with your neighborhood.')}
+            />
           ) : (
             <EmptyState
               title={L(`Todavía no hay publicaciones en ${app.cityShort}`, `No posts in ${app.cityShort} yet`)}

@@ -137,16 +137,24 @@ export const SEED_REPLIES: Record<string, Comment[]> = {
   ],
 };
 
-export const HOODS: [string, string, string][] = [
-  ['all', 'Todos los barrios|All neighborhoods', '6.4k'],
-  ['bellaire', 'Bellaire', '1.2k'],
-  ['gulfton', 'Gulfton', '980'],
-  ['spring', 'Spring Branch', '1.5k'],
-  ['katy', 'Katy', '870'],
-  ['eastend', 'East End', '640'],
-];
+// Neighborhoods per city (keyed by the city's short name — the part before the
+// comma, e.g. "Houston", "The Bronx"). Drives both the Comunidad barrios rail
+// and the neighborhood picker when creating a post. The seeded names here match
+// the hoods used in supabase/seed*.sql so the filter lines up with real data.
+// Cities not listed fall back to whatever hoods appear in their live posts, and
+// the composer offers a free-text field — so it works for any of the 6,978
+// gazetteer cities without hardcoding them all.
+export const HOODS_BY_CITY: Record<string, string[]> = {
+  Houston: ['Bellaire', 'Gulfton', 'Spring Branch', 'East End', 'Katy', 'Alief', 'Sharpstown', 'Pasadena'],
+  Hazleton: ['Downtown', 'Alter St', 'West Hazleton', 'Hazle Township', 'Heights', 'Diamond'],
+  Boston: ['East Boston', 'Jamaica Plain', 'Chelsea', 'Roxbury', 'Dorchester', 'Revere', 'Everett'],
+  'The Bronx': ['Concourse', 'Fordham', 'Mott Haven', 'Soundview', 'University Heights', 'Kingsbridge'],
+};
 
-export const PUB_HOODS = ['Bellaire', 'Gulfton', 'Spring Branch', 'Katy', 'East End'];
+/** Curated neighborhoods for a city (empty if we don't have a list for it). */
+export function hoodsForCity(cityShort: string): string[] {
+  return HOODS_BY_CITY[cityShort] ?? [];
+}
 
 export const TRENDING = [
   { tag: '#MejorMecánico', posts: 84 },
