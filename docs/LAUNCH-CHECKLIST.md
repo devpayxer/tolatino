@@ -94,6 +94,22 @@
 - [ ] **Photo aspect ratio (cosmetic).** Feed photos are cropped **square**
   (Instagram-style). Optional: offer 4:5 or original-aspect. One-line change in
   `PostCard.tsx`.
+- [ ] **Video in posts — DO NOT self-host raw.** Decision (2026-07-03): video is
+  the #1 budget killer for a bootstrap — the cost is **egress**, not storage
+  (each view streams the file; 1M short clips ≈ multi-TB storage + hundreds of TB
+  egress). There is **no browser-side compression** equivalent to the photo
+  pipeline (client transcoding via ffmpeg.wasm is heavy/unreliable on mobile).
+  Plan, in order:
+  1. **MVP/launch:** no native video upload.
+  2. **Cheap, culturally-fit path (buildable now):** let users paste a
+     **TikTok / YouTube / Instagram Reels** link → render the embed/thumbnail in
+     the post. Hosting cost ≈ $0 (video stays on the source platform).
+  3. **At traction, for native short video (≤30–60s):** use **Cloudflare Stream**
+     (fits the Cloudflare stack — transcoding + adaptive bitrate + CDN +
+     thumbnails, priced per delivered minute = predictable). Never DIY transcode
+     on Supabase Storage.
+  Also: video moderation is harder/costlier than images — another reason to
+  defer past the moderation work.
 
 ## 4. Infra & hosting
 
