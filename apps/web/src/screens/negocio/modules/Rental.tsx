@@ -12,8 +12,8 @@
 
 import { useMemo, useState } from 'react';
 import {
-  AlertTriangle, Boxes, CalendarDays, Check, ChevronLeft, DollarSign, Minus, Package,
-  Pencil, Plus, RotateCcw, Shield, ShieldCheck,
+  AlertTriangle, Boxes, CalendarDays, Check, ChevronLeft, DollarSign, Minus,
+  Pencil, Plus, Shield,
 } from 'lucide-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';

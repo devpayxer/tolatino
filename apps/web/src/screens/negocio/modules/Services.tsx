@@ -14,8 +14,8 @@
 import { useMemo, useState } from 'react';
 import {
   CalendarCheck, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight,
-  DollarSign, Gift, GraduationCap, MessageSquare, Plus, Tag, Users, Utensils,
-  Wine, Wrench, X, XCircle,
+  DollarSign, Gift, GraduationCap, Lock, MessageSquare, Plus, Sparkles, Tag,
+  Users, Utensils, Wine, Wrench, X, XCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
@@ -103,6 +103,34 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const catOf = (id: CatId) => SVC_CATS.find((c) => c.id === id)!;
   const catName = (id: CatId) => L(catOf(id).es, catOf(id).en);
   const tagLabel = (t: string) => ({ 'Más reservado': L('Más reservado', 'Most booked'), Familiar: L('Familiar', 'Family'), Premium: L('Premium', 'Premium'), Nuevo: L('Nuevo', 'New') }[t] ?? t);
+
+  // ============================ FREE GATE ============================
+  // Servicios/Reservas is a Verified+ module. Free listings see the upsell.
+  if (isFree) {
+    return (
+      <div className="mx-auto flex max-w-[560px] flex-col gap-4 pb-8">
+        <div className="flex flex-col items-center rounded-card-sm border border-hair bg-white p-6 text-center shadow-card">
+          <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[16px] bg-lilac-2 text-primary-dark"><Lock size={26} strokeWidth={2.2} /></span>
+          <div className="text-[17px] font-extrabold text-ink">{L('Servicios y reservas', 'Services & bookings')}</div>
+          <div className="mt-2 max-w-[380px] text-[12.5px] font-medium leading-relaxed text-muted">
+            {L(`Publica servicios reservables para ${ci.name}, cobra depósitos y gestiona tu calendario. Disponible en el plan Verified.`, `Publish bookable services for ${ci.name}, take deposits and manage your calendar. Available on the Verified plan.`)}
+          </div>
+          <button onClick={() => ctx.go('billing')} className="mt-4 rounded-btn-lg bg-primary px-6 py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Iniciar verificación', 'Start verification')}</button>
+        </div>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {([[CalendarCheck, L('Reservas y depósitos', 'Bookings & deposits'), L('Citas con anticipo automático.', 'Appointments with auto-deposits.')], [MessageSquare, L('Consultas y cotizaciones', 'Inquiries & quotes'), L('Recolecta leads para servicios a medida.', 'Collect leads for custom work.')]] as [LucideIcon, string, string][]).map(([Icon, title, sub]) => (
+            <div key={title} className="flex items-start gap-3 rounded-card-sm border border-hair bg-white p-3.5 shadow-card">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-lilac-2 text-primary-dark"><Icon size={17} strokeWidth={2.2} /></span>
+              <div>
+                <div className="text-[12.5px] font-extrabold text-ink">{title}</div>
+                <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">{sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // ============================ SUCCESS ============================
   if (view === 'success') {
@@ -710,6 +738,18 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button onClick={() => { setDraft(newDraft()); setWizStep(0); setWizMax(0); setView('wizard'); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta md:w-auto md:px-8">
           <Plus size={16} strokeWidth={2.6} />{L('Nuevo servicio', 'New service')}
         </button>
+      )}
+
+      {/* premium teaser (verified only) */}
+      {!isPremium && (
+        <div className="mt-4 flex flex-wrap items-center gap-3.5 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-amber"><Sparkles size={18} strokeWidth={2.2} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13.5px] font-extrabold">{L('Recordatorios SMS y depósitos automáticos', 'SMS reminders & auto-deposits')}</span>
+            <span className="mt-0.5 block max-w-[520px] text-[11.5px] font-medium leading-snug text-[rgba(255,255,255,.7)]">{L('Reduce no-shows con recordatorios y cobra anticipos sin esfuerzo. Incluido en Premium.', 'Cut no-shows with reminders and collect deposits hands-free. Included with Premium.')}</span>
+          </span>
+          <button onClick={() => ctx.go('billing')} className="flex-none rounded-btn bg-amber px-3.5 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar a Premium', 'Upgrade to Premium')}</button>
+        </div>
       )}
 
       {/* edit bottom sheet */}

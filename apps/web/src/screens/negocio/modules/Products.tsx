@@ -50,7 +50,8 @@ type Edit = { id: number; name: string; price: string; stock: string; cat: strin
 const newDraft = (): Draft => ({ name: '', desc: '', cat: 'pantry', price: '', sku: '', tax: 'goods', variants: false, stock: '', reorder: '', fulfill: 'ship', photo: false });
 
 export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
-  const { L, es } = ctx;
+  const { L, es, isFree, isPremium, ci } = ctx;
+  void es;
 
   const [mode, setMode] = useState<'products' | 'shipping'>(tab === 'shipping' ? 'shipping' : 'products');
   const [prodTab, setProdTab] = useState<ProdTab>('catalog');
