@@ -11,6 +11,7 @@ import { FollowsProvider } from '@/lib/follows';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { CityModal } from '@/components/CityModal';
+import { AddressModal } from '@/components/AddressModal';
 import { NotifPanel } from '@/components/NotifPanel';
 import { PublishModal } from '@/components/PublishModal';
 import { UserMenu } from '@/components/UserMenu';
@@ -27,6 +28,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
       </main>
       <BottomNav />
       <CityModal />
+      <AddressModal />
       <NotifPanel />
       <UserMenu />
       <PublishModal />

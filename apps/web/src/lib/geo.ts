@@ -118,6 +118,69 @@ export async function reverseGeocode(lat: number, lng: number, signal?: AbortSig
   return { label: `${lat.toFixed(3)}, ${lng.toFixed(3)}`, lat, lng };
 }
 
+// ── Precise street address (optional, for real distances + delivery) ─────────
+export type Address = { formatted: string; lat: number; lng: number };
+
+function addrLabel(p: Record<string, string | undefined>): string {
+  const line1 = [p.housenumber, p.street || p.name].filter(Boolean).join(' ') || p.name || '';
+  const cityPart = p.city || p.town || p.village || p.suburb || p.county || '';
+  const st = p.countrycode?.toUpperCase() === 'US' ? US_STATE_ABBR[p.state ?? ''] ?? p.state ?? '' : p.state ?? '';
+  const tail = [cityPart, [st, p.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  return [line1, tail].filter(Boolean).join(', ');
+}
+
+/** Address autocomplete via OpenStreetMap (Photon). Free/OSS, no Google billing. */
+export async function searchAddress(query: string, signal?: AbortSignal): Promise<Address[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
+  const url = `https://photon.komoot.io/api?q=${encodeURIComponent(q)}&lang=en&limit=6`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`photon ${res.status}`);
+  const data = (await res.json()) as {
+    features?: { geometry?: { coordinates?: [number, number] }; properties?: Record<string, string> }[];
+  };
+  const out: Address[] = [];
+  const seen = new Set<string>();
+  for (const f of data.features ?? []) {
+    const p = f.properties ?? {};
+    const c = f.geometry?.coordinates;
+    if (!c) continue;
+    const [lng, lat] = c;
+    if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+    const formatted = addrLabel(p);
+    if (!formatted || seen.has(formatted)) continue;
+    seen.add(formatted);
+    out.push({ formatted, lat, lng });
+  }
+  return out;
+}
+
+/** GPS coords → a full street address (Nominatim). Fallback for "use my location". */
+export async function reverseAddress(lat: number, lng: number, signal?: AbortSignal): Promise<Address> {
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=18&addressdetails=1`;
+  try {
+    const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
+    if (res.ok) {
+      const data = (await res.json()) as { address?: Record<string, string>; display_name?: string };
+      const a = data.address ?? {};
+      const formatted = addrLabel({
+        housenumber: a.house_number,
+        street: a.road,
+        name: a.road,
+        city: a.city || a.town || a.village || a.suburb || a.county,
+        state: a.state,
+        postcode: a.postcode,
+        countrycode: a.country_code,
+      });
+      if (formatted) return { formatted, lat, lng };
+      if (data.display_name) return { formatted: data.display_name, lat, lng };
+    }
+  } catch {
+    /* ignore — fall through */
+  }
+  return { formatted: `${lat.toFixed(4)}, ${lng.toFixed(4)}`, lat, lng };
+}
+
 /** Browser geolocation (needs HTTPS + user permission). */
 export function getBrowserLocation(): Promise<{ lat: number; lng: number }> {
   return new Promise((resolve, reject) => {

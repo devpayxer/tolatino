@@ -7,7 +7,7 @@
 // Bottom sheet on mobile, dialog on desktop.
 
 import { useEffect, useRef, useState } from 'react';
-import { LocateFixed, MapPin, Search } from 'lucide-react';
+import { ChevronRight, LocateFixed, MapPin, Search } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
@@ -35,10 +35,11 @@ export function CityModal() {
     setDetected(false);
   };
 
-  // commit only after confirmation
+  // commit only after confirmation, then optionally prompt for a precise address
   const confirm = (p: Place) => {
     app.setCityWithCoords(p.label, { lat: p.lat, lng: p.lng });
     close();
+    app.setAddressOpen(true);
   };
   const choose = (p: Place, fromGps = false) => {
     setDetected(fromGps);
@@ -201,6 +202,24 @@ export function CityModal() {
           </div>
         )}
       </div>
+
+      {/* optional precise address → real distances + delivery */}
+      <button
+        onClick={() => {
+          close();
+          app.setAddressOpen(true);
+        }}
+        className="mt-3 flex w-full cursor-pointer items-center gap-2.5 rounded-tile border border-hair bg-app p-3 text-left hover:bg-lilac-2"
+      >
+        <MapPin size={16} className="flex-none text-primary" strokeWidth={2.4} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13px] font-extrabold text-ink">{L('Dirección exacta (opcional)', 'Exact address (optional)')}</span>
+          <span className="block truncate text-[11.5px] font-semibold text-muted">
+            {app.address ?? L(`Usando el centro de ${app.cityShort}`, `Using ${app.cityShort} center`)}
+          </span>
+        </span>
+        <ChevronRight size={16} className="flex-none text-muted" strokeWidth={2.4} />
+      </button>
     </Overlay>
   );
 }

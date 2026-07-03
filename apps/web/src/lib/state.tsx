@@ -28,6 +28,13 @@ type AppCtx = {
   cityOpen: boolean;
   setCityOpen: (v: boolean) => void;
 
+  // optional precise address (real distances + delivery destination)
+  address: string | null;
+  setUserAddress: (formatted: string, coords: Coords) => void;
+  clearUserAddress: () => void;
+  addressOpen: boolean;
+  setAddressOpen: (v: boolean) => void;
+
   // global search: `query` = live typing, `search` = committed
   query: string;
   setQuery: (v: string) => void;
@@ -95,19 +102,38 @@ const CITY_KEY = 'tl.city';
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [city, setCity] = useState(DEFAULT_CITY);
-  const [coords, setCoords] = useState<Coords>(DEFAULT_COORDS);
+  const [cityCoords, setCityCoords] = useState<Coords>(DEFAULT_COORDS);
+  // Optional precise street address. When set, its coords become the geo origin
+  // (real distances + delivery destination); otherwise we use the city center.
+  const [address, setAddress] = useState<string | null>(null);
+  const [addressCoords, setAddressCoords] = useState<Coords | null>(null);
   const [cityOpen, setCityOpen] = useState(false);
+  const [addressOpen, setAddressOpen] = useState(false);
 
-  // Rehydrate the chosen city once on mount (client-only, avoids SSR/hydration
-  // mismatch: first paint is the default, then we swap to the saved city).
+  const coords = addressCoords ?? cityCoords;
+
+  const persistGeo = (label: string, cc: Coords, addr: string | null, ac: Coords | null) => {
+    try {
+      localStorage.setItem(CITY_KEY, JSON.stringify({ label, lat: cc.lat, lng: cc.lng, address: addr, alat: ac?.lat ?? null, alng: ac?.lng ?? null }));
+    } catch {
+      /* storage blocked (private mode) — keep working in-memory */
+    }
+  };
+
+  // Rehydrate the chosen city + address once on mount (client-only, avoids
+  // SSR/hydration mismatch: first paint is the default, then we swap in saved).
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CITY_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { label?: string; lat?: number; lng?: number };
+      const saved = JSON.parse(raw) as { label?: string; lat?: number; lng?: number; address?: string | null; alat?: number | null; alng?: number | null };
       if (saved.label && typeof saved.lat === 'number' && typeof saved.lng === 'number') {
         setCity(saved.label);
-        setCoords({ lat: saved.lat, lng: saved.lng });
+        setCityCoords({ lat: saved.lat, lng: saved.lng });
+        if (saved.address && typeof saved.alat === 'number' && typeof saved.alng === 'number') {
+          setAddress(saved.address);
+          setAddressCoords({ lat: saved.alat, lng: saved.alng });
+        }
       }
     } catch {
       /* ignore malformed/blocked storage */
@@ -142,16 +168,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       coords,
       setCity,
       setCityWithCoords: (label: string, c: Coords) => {
+        // new city → drop any precise address (it belonged to the old city)
         setCity(label);
-        setCoords(c);
-        try {
-          localStorage.setItem(CITY_KEY, JSON.stringify({ label, lat: c.lat, lng: c.lng }));
-        } catch {
-          /* storage blocked (private mode) — keep working in-memory */
-        }
+        setCityCoords(c);
+        setAddress(null);
+        setAddressCoords(null);
+        persistGeo(label, c, null, null);
       },
       cityOpen,
       setCityOpen,
+      address,
+      setUserAddress: (formatted: string, c: Coords) => {
+        setAddress(formatted);
+        setAddressCoords(c);
+        persistGeo(city, cityCoords, formatted, c);
+      },
+      clearUserAddress: () => {
+        setAddress(null);
+        setAddressCoords(null);
+        persistGeo(city, cityCoords, null, null);
+      },
+      addressOpen,
+      setAddressOpen,
       query,
       setQuery,
       search,
@@ -203,7 +241,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       biz,
       setBiz,
     }),
-    [city, coords, cityOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
+    [city, cityCoords, coords, address, addressCoords, cityOpen, addressOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
