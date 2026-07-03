@@ -55,15 +55,26 @@
   UI never janks.
 - [ ] **Search → Meilisearch.** Postgres full-text search now → self-hosted
   **Meilisearch** (OSS) at scale. Avoid paid Algolia.
-- [ ] **Street-address geocoding at scale.** The **city gazetteer is already
-  owned** (Supabase `cities` table + `search_cities`/`nearest_city`). Street
-  addresses use a free 3-layer pipeline (2026-07-03): **Photon** (streets/POIs,
-  biased+fenced to the metro) + **synthesized house-number+street suggestions**
-  + the **US Census Bureau geocoder** (official TIGER data — exact house-number
-  match, "verified" badge, snap-on-pick; free, no key) with graceful fallbacks
-  when any source is down. **Nominatim** for GPS→address. At scale: self-host
-  **Pelias (with TIGER/OpenAddresses import)** or Photon+Nominatim to own the
-  whole path and drop external rate limits.
+- [ ] **Street-address geocoding — Pelias at/near launch (decided 2026-07-03).**
+  The **city gazetteer is already owned** (Supabase `cities` +
+  `search_cities`/`nearest_city`). Street addresses currently use a free 3-layer
+  pipeline: **Photon** (streets/POIs, biased+fenced to the metro, US-only) +
+  **synthesized house-number+street suggestions** + the **US Census Bureau
+  geocoder** (official TIGER data — exact house-number match, "verified" badge,
+  snap-on-pick, via JSONP since it has no CORS; free, no key) with graceful
+  fallbacks; locality-aware (a typed city outside the metro → national search).
+  **Nominatim** for GPS→address.
+  - **Decision:** the free pipeline is good enough for dev + early testing;
+    **don't pay for infra with no users yet.** The production answer is
+    **self-hosted Pelias** (OpenAddresses + TIGER + OSM + WhosOnFirst, US-only
+    build) — Google-class `/v1/autocomplete`, ours, no rate limits.
+  - **Migration is a config flip, not a rewrite:** the app geocodes over HTTP.
+    When we build it, put a **`NEXT_PUBLIC_GEOCODER_URL`** abstraction in
+    `geo.ts` (Pelias adapter when set, current pipeline when empty) so launch =
+    stand up the box + set one env var.
+  - **Ops when we do it:** Hetzner ~16–32 GB box (**~€30–60/mo**, US-only fits),
+    Docker Compose, a few hours to import, refresh data periodically, HTTPS +
+    CORS behind Cloudflare. First "real server" of the project — not copy-paste.
 
 ## 2. Security, moderation & abuse (launch blockers)
 
