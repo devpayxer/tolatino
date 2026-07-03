@@ -54,6 +54,13 @@ and bookings** to nearby local users, in their own language and culture.
    copy-pasteable content directly in the chat reply** — never just reference a
    file path or say "it's in the repo". The founder works by copy-paste (no CLI
    assumed). If it's long, still paste it in full; don't summarize or truncate.
+7. **Record every deferred/"do-at-launch/at-scale" decision in
+   `docs/LAUNCH-CHECKLIST.md`.** The founder can't hold these in his head. Any
+   time a task yields a "we'll do X later / before public launch / when it's
+   real / at scale" note (sandbox→prod gaps, scale migrations, moderation/
+   security, stubbed features, infra swaps), **append it to that file** — don't
+   just say it in chat. Read it before launch-related work; check items off only
+   when truly done.
 
 ## Tech stack (the agreed base — keep in sync)
 
