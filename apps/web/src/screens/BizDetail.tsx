@@ -156,7 +156,25 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const barRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const pinOffset = () => (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
+  // Pin the bar to the REAL app-header height (measured live) so it tucks flush —
+  // no gap, no overlap — on any breakpoint. Fallbacks are only for first paint.
+  const [headerH, setHeaderH] = useState<number | null>(null);
+  const headerHRef = useRef<number | null>(null);
+  useEffect(() => {
+    const header = document.querySelector('header');
+    if (!header) return;
+    const measure = () => {
+      const h = Math.round(header.getBoundingClientRect().height);
+      headerHRef.current = h;
+      setHeaderH(h);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(header);
+    return () => ro.disconnect();
+  }, []);
+  const pinPx = () =>
+    headerHRef.current ?? (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
 
   const onTab = (k: TabKey) => {
     setTab(k);
@@ -172,7 +190,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     const s = sentinelRef.current;
     if (!s) return;
     const naturalTop = s.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: Math.max(0, naturalTop - pinOffset()) });
+    window.scrollTo({ top: Math.max(0, naturalTop - pinPx()) });
   };
 
   // Track when the sticky bar reaches the top so Overview can reveal the title
@@ -184,8 +202,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     let raf = 0;
     const check = () => {
       raf = 0;
-      const pin = window.matchMedia('(min-width: 768px)').matches ? 108 : 150;
-      setStuck(el.getBoundingClientRect().top <= pin + 0.5);
+      setStuck(el.getBoundingClientRect().top <= pinPx() + 0.5);
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(check);
@@ -198,7 +215,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [tab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, headerH]);
   const showTitle = focused || stuck;
 
   const tabButtons = tabs.map(([k, label]) => (
@@ -332,7 +350,11 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           on a non-Overview tab it shows immediately, and on Overview it reveals
           (smoothly, no jump) once the bar pins to the top while scrolling — so
           switching tabs never snaps between two different bars. */}
-      <div ref={barRef} className="sticky top-[150px] z-20 mt-1 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[108px] md:-mx-5 md:px-5">
+      <div
+        ref={barRef}
+        style={headerH != null ? { top: headerH } : undefined}
+        className="sticky top-[150px] z-20 mt-1 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[108px] md:-mx-5 md:px-5"
+      >
         <div className={`overflow-hidden transition-all duration-200 ${showTitle ? 'max-h-[64px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="flex items-center gap-2 pb-2 pt-2.5">
             <button onClick={() => onTab('overview')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
