@@ -173,17 +173,23 @@ The founder delivered a **mobile business-dashboard handoff** (shell + 9 modules
 uniform `GenericTab` with each module's **rich** screen, one at a time, in the
 handoff's build order. Each is mobile-first and expanded to desktop.
 
+All 9 module screens are **built, wired into `/negocio`, and pass the production
+build** (each mobile-first + expanded to desktop, Spanish-first, tokens only,
+real interactive state). Content is demo/fixture data — the remaining work is
+backing them with real Supabase tables/RPCs when each feature goes live.
 - [x] **Updates / Novedades** — composer (type chips + photo/video/offer +
   Borrador/Programar/Publicar), sub-tabs with live counts, post cards
-  (live stats / per-status actions), perf + recent-followers rail. Real state.
-- [ ] **Billing** — Plan / Comparar / Pagos / Facturas; upgrade + cancel sheets.
-- [ ] **Customers / Orders / Reviews** — mode toggle + segments + order pipeline + AI reply.
-- [ ] **Staff / Jobs** — roster, schedule (gantt), attendance, payroll, roles; job pipeline.
-- [ ] **Rental** — items/availability, calendar, deposits, damages, pricing; rent-out flow.
-- [ ] **Events & Tickets** — upcoming/drafts/past/recurring, manage detail, check-in QR, add-event wizard.
-- [ ] **Products & Shipping** — catalog/inventory/variants/collections/discounts; shipping zones; add-product wizard.
-- [ ] **Services & Bookings** — catalog + bookable/inquiry, reservations (calendar/tables/list); add-service wizard.
-- [ ] **Food menu** — 7 sub-tabs + 6-step add-item wizard (the largest).
+  (live stats / per-status actions), perf + recent-followers rail.
+- [x] **Billing** — Plan / Comparar / Pagos / Facturas; upgrade + cancel sheets; tier-aware.
+- [x] **Customers / Orders / Reviews** — mode toggle + segments + order pipeline (advance) + AI-draft reply.
+- [x] **Staff / Jobs** — roster, schedule (gantt), attendance, payroll, roles matrix; job pipeline. Free gates Horario/Asistencia/Nómina + 2-member cap.
+- [x] **Rental** — items/availability, calendar, deposits, damages, pricing; rent-out + return/refund flows; add-item wizard.
+- [x] **Events & Tickets** — upcoming/drafts/past/recurring/promoters, manage detail (check-in QR), 4-step add-event wizard.
+- [x] **Products & Shipping** — catalog/inventory/variants/collections/discounts; zones/pickup/national/drivers; 4-step add-product wizard.
+- [x] **Services & Bookings** — catalog + bookable/inquiry toggle, reservations (calendar/tables/list/rules); 4-step add-service wizard.
+- [x] **Food menu** — 7 sub-tabs (Platillos/Categorías/Modificadores/Horarios/Promociones/Alérgenos/Stock-86) + 6-step add-item wizard with live preview.
+- [ ] **Wire modules to real data** — today all module content is fixture/demo state
+  (local `useState`). Back each with Supabase tables/RPCs as the feature launches.
 - [ ] **Shell polish** — optional mobile bottom-tab bar (Inicio·Pedidos·Mensajes·Reseñas·Más)
   to mirror the handoff's mobile chrome; today the mobile shell uses the drawer nav.
 

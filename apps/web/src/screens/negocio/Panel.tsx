@@ -17,10 +17,22 @@ import { GenericTab } from '@/screens/negocio/GenericTab';
 import { InsightsFree, InsightsPaid } from '@/screens/negocio/Insights';
 import { ModulesSetup } from '@/screens/negocio/ModulesSetup';
 import { UpdatesModule } from '@/screens/negocio/modules/Updates';
+import { BillingModule } from '@/screens/negocio/modules/Billing';
+import { CustomersModule } from '@/screens/negocio/modules/Customers';
+import { StaffModule } from '@/screens/negocio/modules/Staff';
+import { RentalModule } from '@/screens/negocio/modules/Rental';
+import { EventsModule } from '@/screens/negocio/modules/Events';
+import { ProductsModule } from '@/screens/negocio/modules/Products';
+import { ServicesModule } from '@/screens/negocio/modules/Services';
+import { FoodModule } from '@/screens/negocio/modules/Food';
 
-// Tabs that render their own rich module screen (composer / sub-tabs / etc.)
-// instead of the uniform GenericTab — the panel hides its generic "+ CTA" row.
-const RICH_MODULES = new Set<TabKey>(['updates']);
+// Tabs that render their own rich module screen (mode toggles / sub-tabs /
+// wizards / sheets) instead of the uniform GenericTab — the panel hides its
+// generic "+ CTA" row for these (each module owns its own actions).
+const RICH_MODULES = new Set<TabKey>([
+  'updates', 'billing', 'customers', 'orders', 'reviews', 'staff', 'jobs',
+  'rental', 'events', 'products', 'shipping', 'services', 'bookings', 'menu',
+]);
 
 const RUBRO_FROM_ONB: Record<string, Rubro> = {
   comida: 'restaurant', belleza: 'beauty', auto: 'auto', tiendas: 'retail', abarrotes: 'retail', deportes: 'rental',
@@ -277,6 +289,14 @@ export function PanelScreen() {
           {tab === 'insights' && (isFree ? <InsightsFree ctx={ctx} /> : <InsightsPaid ctx={ctx} />)}
           {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={(k) => setMods((m) => ({ ...m, [k]: !m[k] }))} />}
           {tab === 'updates' && <UpdatesModule ctx={ctx} />}
+          {tab === 'billing' && <BillingModule ctx={ctx} tab={tab} />}
+          {(tab === 'customers' || tab === 'orders' || tab === 'reviews') && <CustomersModule ctx={ctx} tab={tab} />}
+          {(tab === 'staff' || tab === 'jobs') && <StaffModule ctx={ctx} tab={tab} />}
+          {tab === 'rental' && <RentalModule ctx={ctx} tab={tab} />}
+          {tab === 'events' && <EventsModule ctx={ctx} tab={tab} />}
+          {(tab === 'products' || tab === 'shipping') && <ProductsModule ctx={ctx} tab={tab} />}
+          {(tab === 'services' || tab === 'bookings') && <ServicesModule ctx={ctx} tab={tab} />}
+          {tab === 'menu' && <FoodModule ctx={ctx} tab={tab} />}
           {tab !== 'insights' && tab !== 'modules' && !RICH_MODULES.has(tab) && <GenericTab g={buildGeneric(tab, ctx)} ctx={ctx} />}
         </main>
       </div>
