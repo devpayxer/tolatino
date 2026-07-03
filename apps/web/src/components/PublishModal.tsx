@@ -38,11 +38,11 @@ export function PublishModal() {
   const [hood, setHood] = useState('');
 
   // Neighborhoods follow the selected city. Known cities show chips; unknown
-  // ones (any of the 6,978 gazetteer cities) get a free-text field. Default to
-  // the first known hood and reset when the city changes.
+  // ones (any of the 6,978 gazetteer cities) get a free-text field. The barrio
+  // is OPTIONAL — default to none ("Toda la ciudad") and reset on city change.
   const cityHoods = hoodsForCity(app.cityShort);
   useEffect(() => {
-    setHood(cityHoods[0] ?? '');
+    setHood('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.cityShort]);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -151,7 +151,7 @@ export function PublishModal() {
         author_name: auth.profile.display_name,
         author_initials: auth.profile.initials,
         author_color: auth.profile.avatar_color,
-        hood,
+        hood: hood.trim() || null,
         city: app.city,
         lat: app.coords.lat,
         lng: app.coords.lng,
@@ -429,12 +429,16 @@ export function PublishModal() {
 
               <div>
                 <div className="mb-1.5 text-[12px] font-extrabold text-ink">
-                  {L('Barrio', 'Neighborhood')} <span className="font-semibold text-muted">· {app.cityShort}</span>
+                  {L('Barrio', 'Neighborhood')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span>
                 </div>
                 {cityHoods.length > 0 ? (
                   <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                    {/* "Whole city" = no specific barrio; only the city shows on the post */}
+                    <button onClick={() => setHood('')} className={chip(hood === '')}>
+                      {L(`Todo ${app.cityShort}`, `All ${app.cityShort}`)}
+                    </button>
                     {cityHoods.map((h) => (
-                      <button key={h} onClick={() => setHood(h)} className={chip(hood === h)}>
+                      <button key={h} onClick={() => setHood(hood === h ? '' : h)} className={chip(hood === h)}>
                         {h}
                       </button>
                     ))}
@@ -443,7 +447,7 @@ export function PublishModal() {
                   <input
                     value={hood}
                     onChange={(e) => setHood(e.target.value)}
-                    placeholder={L('Tu barrio o zona', 'Your neighborhood or area')}
+                    placeholder={L('Tu barrio o zona (opcional)', 'Your neighborhood or area (optional)')}
                     className={inputCls}
                   />
                 )}
