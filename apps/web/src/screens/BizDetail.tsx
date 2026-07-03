@@ -301,10 +301,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               </button>
             </div>
           </div>
-          <div className="no-scrollbar flex gap-5 overflow-x-auto">{tabButtons}</div>
+          <div className="no-scrollbar flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain">{tabButtons}</div>
         </div>
       ) : (
-        <div className="no-scrollbar sticky top-[118px] z-[15] -mx-1 mt-1 flex gap-5 overflow-x-auto border-b border-hair bg-app px-1 pt-3 md:top-[126px]">
+        <div className="no-scrollbar sticky top-[118px] z-[15] -mx-1 mt-1 flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-app px-1 pt-3 md:top-[126px]">
           {tabButtons}
         </div>
       )}
