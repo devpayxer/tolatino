@@ -84,6 +84,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
             specEs: String(r.specialty_es ?? ''),
             specEn: String(r.specialty_en ?? ''),
+            subcats: (r.subcategories as string[]) ?? [],
             amEs: (r.amenities_es as string[]) ?? [],
             amEn: (r.amenities_en as string[]) ?? [],
             revEs: String(r.review_es ?? ''),

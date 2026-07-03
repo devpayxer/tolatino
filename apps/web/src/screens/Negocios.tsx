@@ -19,6 +19,10 @@ import { BizDetail } from '@/screens/BizDetail';
 const DIST_MAX = 25;
 const PAGE_SIZE = 6;
 
+// es → en lookup for subcategory labels (filter stores the canonical es value).
+const SUB_EN: Record<string, string> = {};
+for (const arr of Object.values(SUBCATS)) for (const [es, en] of arr) SUB_EN[es] = en;
+
 type Filters = {
   cat: CatKey | 'all';
   subCat: string | null;
@@ -51,11 +55,17 @@ export function NegociosScreen() {
   const results = useMemo(() => {
     let list = BUSINESSES.slice();
     if (f.cat !== 'all') list = list.filter((b) => b.cat === f.cat);
+    if (f.subCat) list = list.filter((b) => (b.subcats ?? []).includes(f.subCat as string));
     if (f.price) list = list.filter((b) => b.price === f.price);
     if (f.rating) list = list.filter((b) => parseFloat(b.rating) >= parseFloat(f.rating!));
     if (f.openNow) list = list.filter((b) => b.open);
     if (f.maxDist < DIST_MAX) list = list.filter((b) => parseFloat(b.dist) <= f.maxDist);
-    if (sl) list = list.filter((b) => `${b.name} ${CAT[b.cat].es} ${CAT[b.cat].en} ${b.specEs} ${b.specEn}`.toLowerCase().includes(sl));
+    if (sl) {
+      list = list.filter((b) => {
+        const subs = (b.subcats ?? []).map((s) => `${s} ${SUB_EN[s] ?? ''}`).join(' ');
+        return `${b.name} ${CAT[b.cat].es} ${CAT[b.cat].en} ${b.specEs} ${b.specEn} ${subs}`.toLowerCase().includes(sl);
+      });
+    }
     if (sort === 'rating') list = list.slice().sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
     if (sort === 'dist') list = list.slice().sort((a, b) => parseFloat(a.dist) - parseFloat(b.dist));
     return list;
@@ -77,7 +87,7 @@ export function NegociosScreen() {
   const appliedChips: { label: string; onRemove: () => void }[] = [];
   if (sl) appliedChips.push({ label: `“${app.search}”`, onRemove: () => app.setSearch('') });
   if (f.cat !== 'all') appliedChips.push({ label: L(CAT[f.cat].es, CAT[f.cat].en), onRemove: () => patch({ cat: 'all', subCat: null }) });
-  if (f.subCat) appliedChips.push({ label: f.subCat, onRemove: () => patch({ subCat: null }) });
+  if (f.subCat) appliedChips.push({ label: L(f.subCat, SUB_EN[f.subCat] ?? f.subCat), onRemove: () => patch({ subCat: null }) });
   if (f.price) appliedChips.push({ label: f.price, onRemove: () => patch({ price: null }) });
   if (f.rating) appliedChips.push({ label: `★ ${f.rating}+`, onRemove: () => patch({ rating: null }) });
   if (f.openNow) appliedChips.push({ label: L('Abierto ahora', 'Open now'), onRemove: () => patch({ openNow: false }) });
@@ -147,17 +157,16 @@ export function NegociosScreen() {
             {open && subs.length > 0 && (
               <div className="flex flex-wrap gap-1.5 px-2 py-2">
                 {subs.map(([se, en]) => {
-                  const lab = L(se, en);
-                  const on = f.subCat === lab;
+                  const on = f.subCat === se;
                   return (
                     <button
                       key={se}
-                      onClick={() => patch({ cat: k, subCat: on ? null : lab })}
+                      onClick={() => patch({ cat: k, subCat: on ? null : se })}
                       className={`cursor-pointer rounded-full px-[11px] py-1.5 text-[11.5px] ${
                         on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-3'
                       }`}
                     >
-                      {lab}
+                      {L(se, en)}
                     </button>
                   );
                 })}
