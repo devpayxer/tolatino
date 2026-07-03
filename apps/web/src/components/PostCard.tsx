@@ -109,7 +109,7 @@ export function PostCard({
               <button
                 onClick={() => follows.toggleFollow(post.authorId as string)}
                 className={`inline-flex cursor-pointer items-center rounded-[7px] border px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] ${
-                  following ? 'border-primary bg-primary text-white' : 'border-primary bg-lilac text-primary-dark'
+                  following ? 'border-hair-strong text-muted' : 'border-primary text-primary-dark'
                 }`}
               >
                 {following ? L('Siguiendo', 'Following') : L('Seguir', 'Follow')}
