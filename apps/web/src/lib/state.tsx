@@ -15,6 +15,9 @@ export type Coords = { lat: number; lng: number };
 
 export type PubType = 'post' | 'negocio' | 'evento';
 
+// Which community feed the user is viewing (profile nav).
+export type FeedView = 'home' | 'saved' | 'following';
+
 type AppCtx = {
   // geo — the selected city label + its real coordinates (drive the geo query)
   city: string;
@@ -55,6 +58,10 @@ type AppCtx = {
   markNotifRead: (id: string) => void;
   markAllNotifsRead: () => void;
   unreadCount: number;
+
+  // community feed view (profile nav: Inicio / Guardados / Siguiendo)
+  feedView: FeedView;
+  setFeedView: (v: FeedView) => void;
 
   // user menu
   userOpen: boolean;
@@ -117,6 +124,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [waitDone, setWaitDone] = useState<Toggles>({});
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifRead, setNotifRead] = useState<Toggles>({});
+  const [feedView, setFeedView] = useState<FeedView>('home');
   const [userOpen, setUserOpen] = useState(false);
   const [pubOpen, setPubOpen] = useState(false);
   const [pubType, setPubType] = useState<PubType | null>(null);
@@ -171,6 +179,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       markAllNotifsRead: () =>
         setNotifRead(Object.fromEntries(NOTIFS.map((n) => [n.id, true]))),
       unreadCount,
+      feedView,
+      setFeedView,
       userOpen,
       setUserOpen,
       pubOpen,
@@ -193,7 +203,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       biz,
       setBiz,
     }),
-    [city, coords, cityOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
+    [city, coords, cityOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

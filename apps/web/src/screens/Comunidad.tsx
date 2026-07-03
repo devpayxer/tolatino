@@ -9,10 +9,12 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useInteractions } from '@/lib/interactions';
+import { useFollows } from '@/lib/follows';
 import { supabase } from '@/lib/supabase';
 import { Avatar, Card, EmptyState, Overlay, YouAvatar } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
+import { ProfileNav } from '@/components/ProfileNav';
 import { NEIGHBORS, SEED_COMMENTS, SEED_REPLIES, TRENDING, bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 
@@ -127,6 +129,7 @@ export function ComunidadScreen() {
   const app = useApp();
   const auth = useAuth();
   const it = useInteractions();
+  const follows = useFollows();
   const { posts: POSTS, businesses: BUSINESSES } = useLiveData();
   const [hood, setHood] = useState('all');
 
@@ -314,6 +317,47 @@ export function ComunidadScreen() {
     setPending([]);
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Feed view (profile nav): 'home' = nearby (live); 'saved' / 'following' fetch
+  // their own list. Realtime applies to the home feed only.
+  const homeMode = app.feedView === 'home';
+  const [viewFeed, setViewFeed] = useState<Post[]>([]);
+  const [viewLoading, setViewLoading] = useState(false);
+  useEffect(() => {
+    if (homeMode) return;
+    const sb = supabase;
+    const uid = auth.user?.id;
+    if (!sb || !uid) {
+      setViewFeed([]);
+      return;
+    }
+    let cancelled = false;
+    setViewLoading(true);
+    (async () => {
+      let rows: PostRow[] = [];
+      if (app.feedView === 'saved') {
+        const s = await sb.from('saved_posts').select('post_id').eq('user_id', uid);
+        const ids = ((s.data as { post_id: string }[]) ?? []).map((r) => r.post_id);
+        if (ids.length) {
+          const { data } = await sb.from('posts').select('*').in('id', ids).order('created_at', { ascending: false });
+          rows = (data as PostRow[]) ?? [];
+        }
+      } else if (app.feedView === 'following') {
+        const ids = [...follows.following];
+        if (ids.length) {
+          const { data } = await sb.from('posts').select('*').in('author_id', ids).order('created_at', { ascending: false }).limit(50);
+          rows = (data as PostRow[]) ?? [];
+        }
+      }
+      if (!cancelled) {
+        setViewFeed(rows.map(mapPost));
+        setViewLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [app.feedView, homeMode, auth.user, follows.following]);
   // Barrios for the current city: the curated list, plus any hood that actually
   // appears in the live feed (so real data always shows), deduped in order.
   const hoodOptions = useMemo(() => {
@@ -323,7 +367,8 @@ export function ComunidadScreen() {
   }, [app.cityShort, allPosts]);
   const hoodCount = (name: string) => allPosts.filter((p) => p.hoodEs === name).length;
 
-  const byHood = hood === 'all' ? allPosts : allPosts.filter((p) => p.hoodEs === hood);
+  const baseFeed = homeMode ? allPosts : viewFeed;
+  const byHood = homeMode && hood !== 'all' ? baseFeed.filter((p) => p.hoodEs === hood) : baseFeed;
   const sl = app.search.trim().toLowerCase();
   const posts = sl
     ? byHood.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))
@@ -336,7 +381,7 @@ export function ComunidadScreen() {
   const commentCount = (pid: string) =>
     isUuid(pid) ? (it.commentCount[pid] ?? 0) : topComments(pid).reduce((n, c) => n + 1 + repliesFor(c.id).length, 0);
 
-  const threadPost = allPosts.find((p) => p.id === threadPostId) ?? null;
+  const threadPost = [...allPosts, ...viewFeed].find((p) => p.id === threadPostId) ?? null;
   const canComment = commentText.trim().length > 0 || !!commentBiz;
 
   const closeThread = () => {
@@ -478,32 +523,51 @@ export function ComunidadScreen() {
 
   return (
     <div className="grid items-start gap-[22px] lg:grid-cols-[218px_1fr_264px] md:grid-cols-[1fr_252px]">
-      {/* left rail — barrios (desktop only) */}
-      <aside className="sticky top-[130px] hidden lg:block">
-        <Card className="p-[17px]">
-          <div className="mb-[11px] text-[13.5px] font-extrabold text-ink">{L('Barrios', 'Neighborhoods')}</div>
-          <div className="flex flex-col gap-0.5">
-            {[{ k: 'all', label: L('Todos los barrios', 'All neighborhoods'), n: allPosts.length }, ...hoodOptions.map((h) => ({ k: h, label: h, n: hoodCount(h) }))].map(
-              ({ k, label, n }) => (
-                <button
-                  key={k}
-                  onClick={() => setHood(k)}
-                  className={`flex w-full cursor-pointer items-center justify-between rounded-[9px] px-2.5 py-2 text-left text-[12.5px] ${
-                    hood === k ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
-                  }`}
-                >
-                  <span>{label}</span>
-                  {n > 0 && <span className="text-[11px] font-bold text-muted-faint">{n}</span>}
-                </button>
-              ),
-            )}
-          </div>
-        </Card>
+      {/* left rail — profile nav + barrios (desktop only) */}
+      <aside className="sticky top-[130px] hidden flex-col gap-[18px] lg:flex">
+        <ProfileNav />
+        {homeMode && (
+          <Card className="p-[17px]">
+            <div className="mb-[11px] text-[13.5px] font-extrabold text-ink">{L('Barrios', 'Neighborhoods')}</div>
+            <div className="flex flex-col gap-0.5">
+              {[{ k: 'all', label: L('Todos los barrios', 'All neighborhoods'), n: allPosts.length }, ...hoodOptions.map((h) => ({ k: h, label: h, n: hoodCount(h) }))].map(
+                ({ k, label, n }) => (
+                  <button
+                    key={k}
+                    onClick={() => setHood(k)}
+                    className={`flex w-full cursor-pointer items-center justify-between rounded-[9px] px-2.5 py-2 text-left text-[12.5px] ${
+                      hood === k ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
+                    }`}
+                  >
+                    <span>{label}</span>
+                    {n > 0 && <span className="text-[11px] font-bold text-muted-faint">{n}</span>}
+                  </button>
+                ),
+              )}
+            </div>
+          </Card>
+        )}
       </aside>
 
       {/* feed */}
       <div className="min-w-0">
-        <SearchChip count={posts.length} className="mb-3.5" />
+        {/* view title for Saved / Following (Home keeps the search chip) */}
+        {homeMode ? (
+          <SearchChip count={posts.length} className="mb-3.5" />
+        ) : (
+          <div className="mb-3.5 flex items-center gap-2">
+            <h2 className="text-[17px] font-extrabold text-ink">
+              {app.feedView === 'saved' ? L('Guardados', 'Saved') : L('Siguiendo', 'Following')}
+            </h2>
+            <span className="text-[12.5px] font-bold text-muted">{posts.length}</span>
+            <button
+              onClick={() => app.setFeedView('home')}
+              className="ml-auto cursor-pointer text-[12.5px] font-extrabold text-primary-dark"
+            >
+              {L('← Inicio', '← Home')}
+            </button>
+          </div>
+        )}
 
         {/* composer */}
         <Card className="mb-4 p-[15px]">
@@ -541,7 +605,7 @@ export function ComunidadScreen() {
             `fixed` (not sticky) because mobile Safari drops position:sticky inside
             a CSS grid item — this floats reliably on every device, offset just
             under the measured (variable-height) header. */}
-        {pending.length > 0 && (
+        {homeMode && pending.length > 0 && (
           <div
             className="pointer-events-none fixed inset-x-0 z-20 flex justify-center px-4"
             style={{ top: (headerH || 120) + 8 }}
@@ -562,7 +626,19 @@ export function ComunidadScreen() {
         )}
 
         {posts.length === 0 ? (
-          app.search ? (
+          !homeMode && viewLoading ? (
+            <EmptyState title={L('Cargando…', 'Loading…')} />
+          ) : app.feedView === 'saved' ? (
+            <EmptyState
+              title={L('No tienes publicaciones guardadas', 'You have no saved posts')}
+              sub={L('Toca el marcador en cualquier publicación para guardarla aquí.', 'Tap the bookmark on any post to save it here.')}
+            />
+          ) : app.feedView === 'following' ? (
+            <EmptyState
+              title={L('Aún no sigues a nadie', "You're not following anyone yet")}
+              sub={L('Sigue a vecinos desde el menú “…” de sus publicaciones.', 'Follow neighbors from the “…” menu on their posts.')}
+            />
+          ) : app.search ? (
             <EmptyState title={L('Sin resultados para tu búsqueda', 'No results for your search')} />
           ) : hood !== 'all' ? (
             <EmptyState

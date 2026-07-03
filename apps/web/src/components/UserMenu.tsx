@@ -4,13 +4,13 @@
 // Mi negocio, Configuración, Ayuda, idioma, Cerrar sesión.
 
 import { useRouter } from 'next/navigation';
-import { Heart, HelpCircle, LogIn, LogOut, MessageCircle, SlidersHorizontal, Store, User } from 'lucide-react';
+import { HelpCircle, LogIn, LogOut, SlidersHorizontal, Store } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
-import { Avatar, Overlay, YouAvatar } from '@/components/ui';
+import { Overlay } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
-import { VIEW_PATH } from '@/data/fixtures';
+import { ProfileNav } from '@/components/ProfileNav';
 
 export function UserMenu() {
   const { L } = useLang();
@@ -25,31 +25,15 @@ export function UserMenu() {
   const loggedIn = !!auth.user;
 
   const items = [
-    { Icon: User, color: '#6D4DF6', bg: '#EFEBFF', label: L('Mi perfil', 'My profile'), act: close },
-    { Icon: Heart, color: '#F0466E', bg: '#FDE7EF', label: L('Guardados', 'Saved'), meta: String(app.savedCount), act: () => go(VIEW_PATH.negocios) },
-    { Icon: MessageCircle, color: '#2F6FED', bg: '#E5EFFB', label: L('Mis publicaciones', 'My posts'), act: () => go(VIEW_PATH.comunidad) },
     { Icon: Store, color: '#1F9D57', bg: '#E3F5EA', label: L('Mi negocio', 'My business'), act: () => go('/negocio/publicar') },
     { Icon: SlidersHorizontal, color: '#8A86A0', bg: '#F1EFFA', label: L('Configuración', 'Settings'), act: close },
     { Icon: HelpCircle, color: '#9A6A12', bg: '#FCEFD6', label: L('Ayuda y soporte', 'Help & support'), act: close },
   ];
 
-  const name = auth.profile?.display_name ?? L('Tú', 'You');
-
   return (
     <Overlay open={app.userOpen} onClose={close} align="right" width={320}>
-      <div className="flex items-center gap-3 border-b border-hair pb-3.5">
-        {loggedIn && auth.profile ? (
-          <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} size={44} />
-        ) : (
-          <YouAvatar size={44} />
-        )}
-        <div className="min-w-0">
-          <div className="truncate text-[14.5px] font-extrabold text-ink">{name}</div>
-          <div className="truncate text-[11.5px] font-semibold text-muted">
-            {loggedIn ? L(`Vecino · ${app.cityShort}`, `Neighbor · ${app.cityShort}`) : L('Invitado · sin cuenta', 'Guest · no account')}
-          </div>
-        </div>
-      </div>
+      {/* profile + feed nav (Inicio / Guardados / Siguiendo) — mobile home for it */}
+      <ProfileNav onNavigate={close} className="!border-0 !p-0 !shadow-none" />
 
       {!loggedIn && (
         <button
@@ -61,8 +45,8 @@ export function UserMenu() {
         </button>
       )}
 
-      <div className="flex flex-col py-1.5">
-        {items.map(({ Icon, color, bg, label, meta, act }) => (
+      <div className="mt-2 flex flex-col py-1.5">
+        {items.map(({ Icon, color, bg, label, act }) => (
           <button
             key={label}
             onClick={act}
@@ -72,7 +56,6 @@ export function UserMenu() {
               <Icon size={16} strokeWidth={2.2} style={{ color }} />
             </span>
             <span className="flex-1 text-[13.5px] font-bold text-ink">{label}</span>
-            {meta && <span className="text-[12px] font-extrabold text-muted">{meta}</span>}
           </button>
         ))}
       </div>
