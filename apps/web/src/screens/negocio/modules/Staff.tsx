@@ -52,7 +52,7 @@ const initialsOf = (nm: string) => nm.split(' ').map((x) => x[0]).slice(0, 2).jo
 
 export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
-  void ci;
+  void isPremium; void ci; // ctx destructured per module contract; not all fields used here
   const salon = ctx.rubro === 'beauty';
 
   const [mode, setMode] = useState<Mode>(tab === 'jobs' ? 'jobs' : 'staff');
@@ -271,15 +271,15 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- schedule (today gantt) ----
-  const schedRaw: [string, string, string, number, number, string][] = [
-    ['Marisa', L('Pan', 'Baker'), 'x', 5, 13, '#6D4DF6'],
-    ['Elisabeth', L('Chef', 'Chef'), 'x', 7, 22, '#1E1B2E'],
-    ['David', L('Barra', 'Bar'), 'x', 11, 23, '#9579FF'],
-    ['Sofía', 'FOH', 'x', 11, 19, '#1F9D57'],
-    ['Marco', L('Repart', 'Driver'), 'x', 11, 23, '#D6336C'],
-    ['Carlos', L('Cocina', 'Cook'), 'x', 11, 21, '#E8954A'],
-    ['Tomás', L('Postre', 'Pastry'), 'x', 5, 13, '#138A72'],
-  ].map(([nm, role, , a, b, c]) => [nm as string, role as string, '', a as number, b as number, c as string]);
+  const schedRaw: [string, string, number, number, string][] = [
+    ['Marisa', L('Pan', 'Baker'), 5, 13, '#6D4DF6'],
+    ['Elisabeth', L('Chef', 'Chef'), 7, 22, '#1E1B2E'],
+    ['David', L('Barra', 'Bar'), 11, 23, '#9579FF'],
+    ['Sofía', 'FOH', 11, 19, '#1F9D57'],
+    ['Marco', L('Repart', 'Driver'), 11, 23, '#D6336C'],
+    ['Carlos', L('Cocina', 'Cook'), 11, 21, '#E8954A'],
+    ['Tomás', L('Postre', 'Pastry'), 5, 13, '#138A72'],
+  ];
   const nowLeft = (14 / 24) * 100;
 
   const scheduleView = (
@@ -295,13 +295,13 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className="text-[10.5px] font-semibold text-muted-2">428 {L('hrs', 'hrs')} · $22.8k</span>
         </div>
         <div className="flex flex-col gap-1.5">
-          {schedRaw.map(([nm, role, , a, b, c]) => (
-            <div key={String(nm)} className="grid grid-cols-[86px_1fr] items-center gap-2 md:grid-cols-[120px_1fr]">
+          {schedRaw.map(([nm, role, a, b, c]) => (
+            <div key={nm} className="grid grid-cols-[86px_1fr] items-center gap-2 md:grid-cols-[120px_1fr]">
               <div className="truncate text-[11px] font-bold text-ink">{nm}<span className="font-medium text-muted-2"> · {role}</span></div>
               <div className="relative h-[22px] overflow-hidden rounded-md" style={{ background: '#ECE8F4' }}>
                 <div
                   className="absolute inset-y-0 flex items-center overflow-hidden rounded-md px-1.5 text-[8.5px] font-extrabold text-white"
-                  style={{ left: `${((a as number) / 24) * 100}%`, width: `${(((b as number) - (a as number)) / 24) * 100}%`, background: c as string }}
+                  style={{ left: `${(a / 24) * 100}%`, width: `${((b - a) / 24) * 100}%`, background: c }}
                 >
                   {a}–{b}
                 </div>
