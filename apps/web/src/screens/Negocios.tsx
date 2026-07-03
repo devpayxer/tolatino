@@ -47,6 +47,7 @@ export function NegociosScreen() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [detailBiz, setDetailBiz] = useState<Business | null>(null);
+  const [openFilter, setOpenFilter] = useState<null | 'dist' | 'rating' | 'price'>(null);
 
   const patch = (p: Partial<Filters>) => {
     setF((cur) => ({ ...cur, ...p }));
@@ -117,24 +118,6 @@ export function NegociosScreen() {
 
   const filterPanel = (
     <>
-      {/* distance (top) */}
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Distancia', 'Distance')}</span>
-        <span className="text-[12px] font-extrabold text-primary-dark">≤ {f.maxDist} {L('millas', 'mi')}</span>
-      </div>
-      <input
-        type="range"
-        min={DIST_MIN}
-        max={DIST_MAX}
-        value={f.maxDist}
-        onChange={(e) => patch({ maxDist: parseInt(e.target.value, 10) })}
-        className="w-full accent-[#7B61FF]"
-      />
-      <div className="mb-4 mt-1 flex justify-between text-[10.5px] font-bold text-muted-faint">
-        <span>{DIST_MIN} mi</span>
-        <span>{DIST_MAX} mi</span>
-      </div>
-
       {/* category accordion */}
       <div className="mb-1 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Categoría', 'Category')}</div>
       <button
@@ -200,41 +183,90 @@ export function NegociosScreen() {
         );
       })}
 
-      <div className="mb-2 mt-4 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Precio', 'Price')}</div>
-      <div className="flex gap-2">
-        {['$', '$$', '$$$'].map((p) => (
-          <button key={p} onClick={() => patch({ price: f.price === p ? null : p })} className={seg(f.price === p)}>
-            {p}
-          </button>
-        ))}
-      </div>
-
-      <div className="mb-2 mt-4 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Calificación', 'Rating')}</div>
-      <div className="flex gap-2">
-        {(['4.5', '4.0', '3.5'] as const).map((r) => (
-          <button key={r} onClick={() => patch({ rating: f.rating === r ? null : r })} className={seg(f.rating === r)}>
-            ★ {r}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-[13px] font-extrabold text-ink">{L('Abierto ahora', 'Open now')}</span>
-        <button
-          onClick={() => patch({ openNow: !f.openNow })}
-          className={`relative h-[26px] w-11 flex-none cursor-pointer rounded-full transition-colors ${f.openNow ? 'bg-primary' : 'bg-[#E3DEF2]'}`}
-          aria-label={L('Abierto ahora', 'Open now')}
-        >
-          <span
-            className={`absolute top-[3px] h-5 w-5 rounded-full bg-white shadow transition-all ${f.openNow ? 'left-[21px]' : 'left-[3px]'}`}
-          />
-        </button>
-      </div>
-
       <button onClick={clearAll} className="mt-5 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark">
         {L('Limpiar filtros', 'Clear')}
       </button>
     </>
+  );
+
+  // Quick-filter pills: each reveals its own control on demand (all screens).
+  const pill = (active: boolean) =>
+    `flex flex-none cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-extrabold ${
+      active ? 'bg-primary text-white' : 'bg-white text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
+    }`;
+
+  const quickBar = (
+    <div className="relative mb-4">
+      <div className="no-scrollbar -mx-3.5 flex gap-2 overflow-x-auto px-3.5 lg:mx-0 lg:px-0">
+        <button onClick={() => setOpenFilter(openFilter === 'dist' ? null : 'dist')} className={pill(openFilter === 'dist' || f.maxDist !== DIST_DEFAULT)}>
+          {f.maxDist !== DIST_DEFAULT ? `≤ ${f.maxDist} mi` : L('Distancia', 'Distance')}
+          <ChevronDown size={13} strokeWidth={2.6} className={`transition-transform ${openFilter === 'dist' ? 'rotate-180' : ''}`} />
+        </button>
+        <button onClick={() => setOpenFilter(openFilter === 'rating' ? null : 'rating')} className={pill(openFilter === 'rating' || !!f.rating)}>
+          {f.rating ? `★ ${f.rating}+` : L('Calificación', 'Rating')}
+          <ChevronDown size={13} strokeWidth={2.6} className={`transition-transform ${openFilter === 'rating' ? 'rotate-180' : ''}`} />
+        </button>
+        <button onClick={() => setOpenFilter(openFilter === 'price' ? null : 'price')} className={pill(openFilter === 'price' || !!f.price)}>
+          {f.price ?? L('Precio', 'Price')}
+          <ChevronDown size={13} strokeWidth={2.6} className={`transition-transform ${openFilter === 'price' ? 'rotate-180' : ''}`} />
+        </button>
+        <button onClick={() => patch({ openNow: !f.openNow })} className={pill(f.openNow)}>
+          {L('Abierto ahora', 'Open now')}
+        </button>
+      </div>
+
+      {openFilter && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpenFilter(null)} />
+          <div className="absolute left-0 z-40 mt-2 w-full rounded-2xl border border-hair bg-white p-4 shadow-pop md:w-[320px]">
+            {openFilter === 'dist' && (
+              <>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Distancia', 'Distance')}</span>
+                  <span className="text-[12px] font-extrabold text-primary-dark">≤ {f.maxDist} {L('millas', 'mi')}</span>
+                </div>
+                <input
+                  type="range"
+                  min={DIST_MIN}
+                  max={DIST_MAX}
+                  value={f.maxDist}
+                  onChange={(e) => patch({ maxDist: parseInt(e.target.value, 10) })}
+                  className="w-full accent-[#7B61FF]"
+                />
+                <div className="mt-1 flex justify-between text-[10.5px] font-bold text-muted-faint">
+                  <span>{DIST_MIN} mi</span>
+                  <span>{DIST_MAX} mi</span>
+                </div>
+              </>
+            )}
+            {openFilter === 'rating' && (
+              <>
+                <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Calificación', 'Rating')}</div>
+                <div className="flex gap-2">
+                  {(['4.5', '4.0', '3.5'] as const).map((r) => (
+                    <button key={r} onClick={() => patch({ rating: f.rating === r ? null : r })} className={seg(f.rating === r)}>
+                      ★ {r}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {openFilter === 'price' && (
+              <>
+                <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Precio', 'Price')}</div>
+                <div className="flex gap-2">
+                  {['$', '$$', '$$$'].map((p) => (
+                    <button key={p} onClick={() => patch({ price: f.price === p ? null : p })} className={seg(f.price === p)}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </div>
   );
 
   return (
@@ -255,7 +287,7 @@ export function NegociosScreen() {
             onClick={toggleSort}
             className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]"
           >
-            {sortLabels[sort]}
+            <span className="text-muted">{L('Orden', 'Sort')}:</span> {sortLabels[sort]}
             <ChevronDown size={13} strokeWidth={2.6} className="text-muted" />
           </button>
           <button
@@ -295,6 +327,9 @@ export function NegociosScreen() {
           </Chip>
         ))}
       </div>
+
+      {/* quick-filter pills (distance / rating / price / open) */}
+      {quickBar}
 
       {/* applied chips */}
       {appliedChips.length > 0 && (
