@@ -85,12 +85,12 @@
   real event creation (insert, geo, tickets, images). (Business publish is now
   real via `create_business`; community posts are real. The full multi-plan
   business onboarding at `/negocio/publicar` is still a separate stub flow.)
-- [ ] **Precise address — Phase 2.** Phase 1 shipped: an optional precise
-  address (GPS or Photon autocomplete) that overrides the city center as the geo
-  origin for real distances; stored in `localStorage` (works for guests + users,
-  not yet synced). Phase 2 (for ordering/delivery): a `user_addresses` table
-  (label / default / multiple), the saved-addresses manager UI, sync on sign-in,
-  and using the address as the delivery destination at checkout.
+- [ ] **Precise address — delivery integration.** Phases 1 & 2 shipped: optional
+  precise address (GPS / Photon), and a saved-addresses manager (`user_addresses`
+  table, labels, default, add/rename/delete) that syncs for signed-in users and
+  drives the geo origin; guests keep one address locally. Remaining: use the
+  active address as the **delivery destination** at checkout (fees / ETA / "does
+  this business deliver to me"), when the ordering flow exists.
 - [ ] **Business publish — follow-ups.** `create_business` inserts a Free-tier
   listing with the category-gradient tile and the picked subcategories. Still
   TODO: real **address geocoding** (today it uses the city center or the owner's

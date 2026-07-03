@@ -1,42 +1,64 @@
 'use client';
 
-// Optional precise address (Phase 1). Sets the geo origin used for real
-// distances in Negocios and, later, the delivery destination for orders.
-//  • "Use my location" → GPS → reverse geocode to a full address (Nominatim).
-//  • Type an address → live autocomplete (Photon), debounced.
-// When no address is set, the app falls back to the city center. Free/OSS geo.
+// Saved addresses manager (Phase 2). Signed-in users keep multiple labeled
+// addresses (Casa / Trabajo / …), pick the active one (geo origin), set a
+// default, rename or delete. Guests get a single address stored locally, with a
+// nudge to sign in. Add via GPS (reverse geocode) or Photon autocomplete —
+// free/OSS, no Google billing.
 
 import { useEffect, useRef, useState } from 'react';
-import { LocateFixed, MapPin, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Check, LocateFixed, MapPin, Pencil, Search, Star, Trash2 } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useAuth } from '@/lib/auth';
+import { useAddresses } from '@/lib/addresses';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { getBrowserLocation, reverseAddress, searchAddress, type Address } from '@/lib/geo';
 
 export function AddressModal() {
   const { L } = useLang();
   const app = useApp();
+  const auth = useAuth();
+  const store = useAddresses();
+  const router = useRouter();
+
+  const saved = !!auth.user && store.configured; // logged-in → multi-address manager
+
   const [q, setQ] = useState('');
+  const [newLabel, setNewLabel] = useState('');
   const [results, setResults] = useState<Address[]>([]);
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
   const abortRef = useRef<AbortController | null>(null);
 
   const close = () => {
     app.setAddressOpen(false);
     setQ('');
+    setNewLabel('');
     setResults([]);
     setGeoError(null);
     setLocating(false);
+    setEditId(null);
   };
 
-  const pick = (a: Address) => {
-    app.setUserAddress(a.formatted, { lat: a.lat, lng: a.lng });
-    close();
+  // Choose a resolved address: saved users store it (+ select); guests set local.
+  const choose = async (a: Address) => {
+    if (saved) {
+      const row = await store.add(newLabel.trim() || null, a.formatted, a.lat, a.lng);
+      if (row) app.setUserAddress(row.formatted, { lat: row.lat, lng: row.lng }, row.id);
+    } else {
+      app.setUserAddress(a.formatted, { lat: a.lat, lng: a.lng });
+    }
+    setQ('');
+    setNewLabel('');
+    setResults([]);
+    if (!saved) close();
   };
 
-  // Debounced address autocomplete (Photon). Cancels stale requests.
   useEffect(() => {
     const query = q.trim();
     if (query.length < 3) {
@@ -65,7 +87,7 @@ export function AddressModal() {
     setLocating(true);
     try {
       const { lat, lng } = await getBrowserLocation();
-      pick(await reverseAddress(lat, lng));
+      await choose(await reverseAddress(lat, lng));
     } catch (err: unknown) {
       const code = (err as GeolocationPositionError)?.code;
       setGeoError(
@@ -73,17 +95,32 @@ export function AddressModal() {
           ? L('Permiso denegado. Actívalo o escribe tu dirección abajo.', 'Permission denied. Enable it or type your address below.')
           : L('No pudimos detectar tu ubicación. Escribe tu dirección abajo.', "Couldn't detect your location. Type your address below."),
       );
+    } finally {
       setLocating(false);
     }
   };
 
+  const selectSaved = (a: { id: string; formatted: string; lat: number; lng: number }) =>
+    app.setUserAddress(a.formatted, { lat: a.lat, lng: a.lng }, a.id);
+
+  const del = async (id: string) => {
+    await store.remove(id);
+    if (app.addressId === id) app.clearUserAddress();
+  };
+
+  const saveEdit = async (id: string) => {
+    await store.setLabel(id, editText.trim() || null);
+    setEditId(null);
+  };
+
   return (
     <Overlay open={app.addressOpen} onClose={close} width={460}>
-      <OverlayTitle title={L('Tu dirección', 'Your address')} onClose={close} />
+      <OverlayTitle title={L('Tus direcciones', 'Your addresses')} onClose={close} />
       <p className="-mt-1 mb-3 text-[12.5px] font-semibold text-muted">
-        {L('Opcional · para distancias exactas y pedir a domicilio.', 'Optional · for exact distances and delivery.')}
+        {L('Para distancias exactas y pedir a domicilio.', 'For exact distances and delivery.')}
       </p>
 
+      {/* add: GPS */}
       <button
         onClick={detect}
         disabled={locating}
@@ -103,10 +140,18 @@ export function AddressModal() {
           <span className="block text-[11.5px] font-semibold text-muted">{L('La forma más rápida y exacta', 'The fastest, most exact way')}</span>
         </span>
       </button>
-
       {geoError && <div className="mt-2 rounded-btn bg-pink-bg px-3 py-2 text-[11.5px] font-semibold text-pink-dark">{geoError}</div>}
 
-      <div className="mt-3 flex items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px]">
+      {/* add: optional label (saved users) + address search */}
+      {saved && (
+        <input
+          value={newLabel}
+          onChange={(e) => setNewLabel(e.target.value)}
+          placeholder={L('Etiqueta: Casa, Trabajo… (opcional)', 'Label: Home, Work… (optional)')}
+          className="mt-3 w-full rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px] text-[13px] font-medium text-ink outline-none placeholder:text-muted"
+        />
+      )}
+      <div className="mt-2 flex items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px]">
         <Search size={15} className="flex-none text-primary" strokeWidth={2.2} />
         <input
           value={q}
@@ -117,41 +162,125 @@ export function AddressModal() {
         {searching && <span className="h-3.5 w-3.5 flex-none animate-[spin_.8s_linear_infinite] rounded-full border-2 border-primary border-t-transparent" />}
       </div>
 
-      {app.address && q.trim().length < 3 && (
-        <div className="mt-3 flex items-center gap-2.5 rounded-tile bg-lilac-3 p-3">
-          <MapPin size={16} className="flex-none text-primary" strokeWidth={2.4} />
-          <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{app.address}</span>
-          <button onClick={() => app.clearUserAddress()} className="flex-none cursor-pointer text-[11.5px] font-extrabold text-primary-dark">
-            {L('Quitar', 'Remove')}
-          </button>
+      {/* autocomplete results */}
+      {results.length > 0 && (
+        <div className="mt-1 flex max-h-[210px] flex-col gap-0.5 overflow-y-auto">
+          {results.map((a, i) => (
+            <button
+              key={`${a.formatted}-${i}`}
+              onClick={() => choose(a)}
+              className="flex w-full cursor-pointer items-start gap-2.5 rounded-[10px] px-2 py-2.5 text-left hover:bg-app"
+            >
+              <MapPin size={15} className="mt-0.5 flex-none text-primary" strokeWidth={2.4} />
+              <span className="text-[13px] font-bold text-ink-soft">{a.formatted}</span>
+            </button>
+          ))}
         </div>
       )}
+      {q.trim().length >= 3 && !searching && results.length === 0 && (
+        <div className="px-2 py-4 text-center text-[12.5px] font-semibold text-muted">{L('Sin resultados', 'No results')}</div>
+      )}
 
-      <div className="mt-2 flex max-h-[300px] flex-col gap-0.5 overflow-y-auto">
-        {results.map((a, i) => (
+      {/* saved list (logged in) */}
+      {saved ? (
+        <div className="mt-3 border-t border-hair pt-3">
+          {store.addresses.length === 0 ? (
+            <div className="px-2 py-4 text-center text-[12.5px] font-semibold text-muted">
+              {L('Aún no tienes direcciones guardadas.', 'No saved addresses yet.')}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {store.addresses.map((a) => {
+                const active = app.addressId === a.id;
+                return (
+                  <div key={a.id} className="flex items-start gap-2.5 rounded-tile px-1 py-2">
+                    <button onClick={() => selectSaved(a)} className="mt-0.5 flex-none cursor-pointer" aria-label={L('Seleccionar', 'Select')}>
+                      <span className={`flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 ${active ? 'border-primary' : 'border-[#CFC8E6]'}`}>
+                        {active && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                      </span>
+                    </button>
+                    <button onClick={() => selectSaved(a)} className="min-w-0 flex-1 cursor-pointer text-left">
+                      <span className="flex items-center gap-1.5">
+                        {a.label && (
+                          <span className="rounded-[6px] bg-lilac-2 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[.03em] text-primary-dark">{a.label}</span>
+                        )}
+                        {a.is_default && (
+                          <span className="text-[10px] font-extrabold uppercase tracking-[.03em] text-green-dark">{L('Predet.', 'Default')}</span>
+                        )}
+                      </span>
+                      {editId === a.id ? (
+                        <input
+                          autoFocus
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && saveEdit(a.id)}
+                          onBlur={() => saveEdit(a.id)}
+                          placeholder={L('Etiqueta', 'Label')}
+                          className="mt-1 w-full rounded-[8px] border border-hair-strong bg-white px-2 py-1 text-[12.5px] font-bold outline-none"
+                        />
+                      ) : (
+                        <span className="mt-0.5 block text-[12.5px] font-bold text-ink-body">{a.formatted}</span>
+                      )}
+                    </button>
+                    <div className="flex flex-none items-center gap-0.5">
+                      {!a.is_default && (
+                        <button onClick={() => store.setDefault(a.id)} className="cursor-pointer p-1.5 text-muted hover:text-amber" aria-label={L('Predeterminada', 'Set default')}>
+                          <Star size={15} strokeWidth={2.2} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setEditId(a.id);
+                          setEditText(a.label ?? '');
+                        }}
+                        className="cursor-pointer p-1.5 text-muted hover:text-primary"
+                        aria-label={L('Editar etiqueta', 'Edit label')}
+                      >
+                        <Pencil size={14} strokeWidth={2.2} />
+                      </button>
+                      <button onClick={() => del(a.id)} className="cursor-pointer p-1.5 text-muted hover:text-pink" aria-label={L('Eliminar', 'Delete')}>
+                        <Trash2 size={14} strokeWidth={2.2} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <button
-            key={`${a.formatted}-${i}`}
-            onClick={() => pick(a)}
-            className="flex w-full cursor-pointer items-start gap-2.5 rounded-[10px] px-2 py-2.5 text-left hover:bg-app"
+            onClick={() => {
+              app.clearUserAddress();
+              close();
+            }}
+            className="mt-2 w-full cursor-pointer text-center text-[12px] font-extrabold text-muted"
           >
-            <MapPin size={15} className="mt-0.5 flex-none text-primary" strokeWidth={2.4} />
-            <span className="text-[13px] font-bold text-ink-soft">{a.formatted}</span>
+            {L(`Usar el centro de ${app.cityShort}`, `Use ${app.cityShort} center`)}
           </button>
-        ))}
-        {q.trim().length >= 3 && !searching && results.length === 0 && (
-          <div className="px-2 py-6 text-center text-[12.5px] font-semibold text-muted">{L('Sin resultados', 'No results')}</div>
-        )}
-      </div>
-
-      <button
-        onClick={() => {
-          app.clearUserAddress();
-          close();
-        }}
-        className="mt-3 w-full cursor-pointer text-center text-[12.5px] font-extrabold text-muted"
-      >
-        {L(`Omitir · usar el centro de ${app.cityShort}`, `Skip · use ${app.cityShort} center`)}
-      </button>
+        </div>
+      ) : (
+        <>
+          {app.address && q.trim().length < 3 && (
+            <div className="mt-3 flex items-center gap-2.5 rounded-tile bg-lilac-3 p-3">
+              <Check size={16} className="flex-none text-primary" strokeWidth={2.6} />
+              <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{app.address}</span>
+              <button onClick={() => app.clearUserAddress()} className="flex-none cursor-pointer text-[11.5px] font-extrabold text-primary-dark">
+                {L('Quitar', 'Remove')}
+              </button>
+            </div>
+          )}
+          {auth.configured && (
+            <button
+              onClick={() => {
+                close();
+                router.push('/entrar');
+              }}
+              className="mt-3 w-full cursor-pointer rounded-btn bg-lilac-2 py-2.5 text-[12px] font-extrabold text-primary-dark"
+            >
+              {L('Inicia sesión para guardar varias direcciones', 'Sign in to save multiple addresses')}
+            </button>
+          )}
+        </>
+      )}
     </Overlay>
   );
 }

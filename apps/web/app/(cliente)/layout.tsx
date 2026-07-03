@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { LiveDataProvider } from '@/lib/live';
 import { InteractionsProvider } from '@/lib/interactions';
 import { FollowsProvider } from '@/lib/follows';
+import { AddressesProvider } from '@/lib/addresses';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { CityModal } from '@/components/CityModal';
@@ -20,6 +21,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
   return (
     <LiveDataProvider>
     <FollowsProvider>
+    <AddressesProvider>
     <InteractionsProvider>
     <div className="min-h-screen bg-app">
       <AppHeader />
@@ -34,6 +36,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
       <PublishModal />
     </div>
     </InteractionsProvider>
+    </AddressesProvider>
     </FollowsProvider>
     </LiveDataProvider>
   );

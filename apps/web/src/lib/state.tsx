@@ -30,7 +30,8 @@ type AppCtx = {
 
   // optional precise address (real distances + delivery destination)
   address: string | null;
-  setUserAddress: (formatted: string, coords: Coords) => void;
+  addressId: string | null;
+  setUserAddress: (formatted: string, coords: Coords, id?: string | null) => void;
   clearUserAddress: () => void;
   addressOpen: boolean;
   setAddressOpen: (v: boolean) => void;
@@ -107,14 +108,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // (real distances + delivery destination); otherwise we use the city center.
   const [address, setAddress] = useState<string | null>(null);
   const [addressCoords, setAddressCoords] = useState<Coords | null>(null);
+  const [addressId, setAddressId] = useState<string | null>(null); // saved-address id when the origin is a saved one
   const [cityOpen, setCityOpen] = useState(false);
   const [addressOpen, setAddressOpen] = useState(false);
 
   const coords = addressCoords ?? cityCoords;
 
-  const persistGeo = (label: string, cc: Coords, addr: string | null, ac: Coords | null) => {
+  const persistGeo = (label: string, cc: Coords, addr: string | null, ac: Coords | null, aid: string | null) => {
     try {
-      localStorage.setItem(CITY_KEY, JSON.stringify({ label, lat: cc.lat, lng: cc.lng, address: addr, alat: ac?.lat ?? null, alng: ac?.lng ?? null }));
+      localStorage.setItem(CITY_KEY, JSON.stringify({ label, lat: cc.lat, lng: cc.lng, address: addr, alat: ac?.lat ?? null, alng: ac?.lng ?? null, addressId: aid }));
     } catch {
       /* storage blocked (private mode) — keep working in-memory */
     }
@@ -126,13 +128,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(CITY_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { label?: string; lat?: number; lng?: number; address?: string | null; alat?: number | null; alng?: number | null };
+      const saved = JSON.parse(raw) as { label?: string; lat?: number; lng?: number; address?: string | null; alat?: number | null; alng?: number | null; addressId?: string | null };
       if (saved.label && typeof saved.lat === 'number' && typeof saved.lng === 'number') {
         setCity(saved.label);
         setCityCoords({ lat: saved.lat, lng: saved.lng });
         if (saved.address && typeof saved.alat === 'number' && typeof saved.alng === 'number') {
           setAddress(saved.address);
           setAddressCoords({ lat: saved.alat, lng: saved.alng });
+          setAddressId(saved.addressId ?? null);
         }
       }
     } catch {
@@ -173,20 +176,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setCityCoords(c);
         setAddress(null);
         setAddressCoords(null);
-        persistGeo(label, c, null, null);
+        setAddressId(null);
+        persistGeo(label, c, null, null, null);
       },
       cityOpen,
       setCityOpen,
       address,
-      setUserAddress: (formatted: string, c: Coords) => {
+      addressId,
+      setUserAddress: (formatted: string, c: Coords, id: string | null = null) => {
         setAddress(formatted);
         setAddressCoords(c);
-        persistGeo(city, cityCoords, formatted, c);
+        setAddressId(id);
+        persistGeo(city, cityCoords, formatted, c, id);
       },
       clearUserAddress: () => {
         setAddress(null);
         setAddressCoords(null);
-        persistGeo(city, cityCoords, null, null);
+        setAddressId(null);
+        persistGeo(city, cityCoords, null, null, null);
       },
       addressOpen,
       setAddressOpen,
@@ -241,7 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       biz,
       setBiz,
     }),
-    [city, cityCoords, coords, address, addressCoords, cityOpen, addressOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
+    [city, cityCoords, coords, address, addressCoords, addressId, cityOpen, addressOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
