@@ -128,6 +128,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             color: String(r.author_color),
             name: String(r.author_name),
             hoodEs: String(r.hood ?? ''),
+            city: (r.city as string) ?? undefined,
             timeEs: tEs,
             timeEn: tEn,
             recommends: Number(r.recommends ?? 0),

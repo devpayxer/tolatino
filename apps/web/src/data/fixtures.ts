@@ -83,6 +83,7 @@ export type Post = {
   color: string;
   name: string;
   hoodEs: string;
+  city?: string; // full city label ("Houston, TX") — shown as "Barrio, Ciudad"
   timeEs: string;
   timeEn: string;
   recommends: number;

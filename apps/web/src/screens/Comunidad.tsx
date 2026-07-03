@@ -68,6 +68,7 @@ type PostRow = {
   author_color: string;
   author_name: string;
   hood: string | null;
+  city: string | null;
   created_at: string;
   recommends: number | null;
   business_name: string | null;
@@ -90,6 +91,7 @@ function mapPost(r: PostRow): Post {
     color: r.author_color,
     name: r.author_name,
     hoodEs: r.hood ?? '',
+    city: r.city ?? undefined,
     timeEs: tEs,
     timeEn: tEn,
     recommends: Number(r.recommends ?? 0),

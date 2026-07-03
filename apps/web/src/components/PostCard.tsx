@@ -90,7 +90,7 @@ export function PostCard({
             </span>
           </div>
           <div className="mt-0.5 text-[11.5px] font-semibold text-muted-2">
-            {post.hoodEs} · {L(post.timeEs, post.timeEn)}
+            {[post.hoodEs, post.city].filter(Boolean).join(', ')} · {L(post.timeEs, post.timeEn)}
           </div>
         </div>
       </div>
