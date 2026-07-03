@@ -276,6 +276,19 @@ export function NegociosScreen() {
   const quickBar = (
     <div className="relative mb-4">
       <div className="no-scrollbar -mx-3.5 flex gap-2 overflow-x-auto px-3.5 lg:mx-0 lg:px-0">
+        {/* mobile/tablet: full filter sheet opener, first on the line to save space */}
+        <button
+          onClick={() => setFiltersOpen(true)}
+          className={`relative ${pill(activeCount > 0)} lg:hidden`}
+        >
+          <SlidersHorizontal size={13} strokeWidth={2.4} />
+          {L('Filtros', 'Filters')}
+          {activeCount > 0 && (
+            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-extrabold text-primary">
+              {activeCount}
+            </span>
+          )}
+        </button>
         <button onClick={() => setOpenFilter(openFilter === 'dist' ? null : 'dist')} className={pill(openFilter === 'dist' || f.maxDist !== DIST_DEFAULT)}>
           {f.maxDist !== DIST_DEFAULT ? `≤ ${f.maxDist} mi` : L('Distancia', 'Distance')}
           <ChevronDown size={13} strokeWidth={2.6} className={`transition-transform ${openFilter === 'dist' ? 'rotate-180' : ''}`} />
@@ -369,18 +382,6 @@ export function NegociosScreen() {
           >
             <MapIcon size={13} strokeWidth={2.4} />
             {L('Mapa', 'Map')}
-          </button>
-          <button
-            onClick={() => setFiltersOpen(true)}
-            className="relative flex cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)] lg:hidden"
-          >
-            <SlidersHorizontal size={13} strokeWidth={2.4} />
-            {L('Filtros', 'Filters')}
-            {activeCount > 0 && (
-              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-extrabold text-white">
-                {activeCount}
-              </span>
-            )}
           </button>
         </div>
       </div>
