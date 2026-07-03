@@ -9,7 +9,7 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Heart, Map as MapIcon, MapPin, Phone, SlidersHorizontal, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
+import { Card, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
@@ -323,18 +323,6 @@ export function NegociosScreen() {
       </div>
 
       <SearchChip count={results.length} className="mb-3.5" />
-
-      {/* mobile category chips */}
-      <div className="no-scrollbar -mx-3.5 mb-4 flex gap-2 overflow-x-auto px-3.5 lg:hidden">
-        <Chip active={f.cat === 'all'} onClick={() => patch({ cat: 'all', subCat: null })}>
-          {L('Todos', 'All')}
-        </Chip>
-        {CAT_KEYS.filter((k) => counts[k]).map((k) => (
-          <Chip key={k} active={f.cat === k} onClick={() => patch({ cat: k, subCat: null })}>
-            {L(CAT[k].es, CAT[k].en)}
-          </Chip>
-        ))}
-      </div>
 
       {/* quick-filter pills (distance / rating / price / open) */}
       {quickBar}
