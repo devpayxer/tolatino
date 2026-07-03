@@ -287,7 +287,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       {focused ? (
         <div className="sticky top-[150px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[126px] md:-mx-5 md:px-5">
           <div className="flex items-center gap-2 pb-2 pt-2.5">
-            <button onClick={onClose} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver', 'Back')}>
+            <button onClick={() => onTab('overview')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
               <ChevronLeft size={16} strokeWidth={2.6} className="text-ink" />
             </button>
             <span className="truncate text-[15.5px] font-extrabold text-ink">{b.name}</span>
