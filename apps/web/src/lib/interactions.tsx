@@ -14,6 +14,7 @@ import { useLiveData } from '@/lib/live';
 
 type Bool = Record<string, boolean>;
 type Num = Record<string, number>;
+type NumArr = Record<string, number[]>;
 
 // Real (Supabase) posts carry a UUID id; fixture / just-created local posts do
 // not — only UUIDs are safe to send to a `uuid` column filter.
@@ -29,6 +30,9 @@ type Ctx = {
   /** Record a freshly-inserted comment once (dedupes our own insert vs. the
    *  realtime echo) and bump that post's live comment count. */
   noteComment: (commentId: string, postId: string) => void;
+  pollVote: Num; // the option index this user picked, per poll post
+  pollCount: NumArr; // authoritative per-option counts (override), per poll post
+  votePoll: (postId: string, optionIndex: number, base: number[]) => void;
   /** True if the user may act; otherwise routes guests to sign in and returns false. */
   gate: () => boolean;
 };
@@ -44,6 +48,8 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
   const [saved, setSaved] = useState<Bool>({});
   const [likeCount, setLikeCount] = useState<Num>({});
   const [commentCount, setCommentCount] = useState<Num>({});
+  const [pollVote, setPollVote] = useState<Num>({});
+  const [pollCount, setPollCount] = useState<NumArr>({});
   // Comment ids already counted — dedupes a locally-inserted comment against
   // its own realtime echo, and realtime echoes against the initial DB load.
   const seen = useRef<Set<string>>(new Set());
@@ -75,16 +81,19 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
       if (!cancelled) setCommentCount(counts);
 
       if (user) {
-        const [pl, sp] = await Promise.all([
+        const [pl, sp, pv] = await Promise.all([
           supabase.from('post_likes').select('post_id').eq('user_id', user.id).in('post_id', postIds),
           supabase.from('saved_posts').select('post_id').eq('user_id', user.id).in('post_id', postIds),
+          supabase.from('poll_votes').select('post_id, option_index').eq('user_id', user.id).in('post_id', postIds),
         ]);
         if (cancelled) return;
         if (!pl.error && pl.data) setLiked(Object.fromEntries((pl.data as { post_id: string }[]).map((r) => [r.post_id, true])));
         if (!sp.error && sp.data) setSaved(Object.fromEntries((sp.data as { post_id: string }[]).map((r) => [r.post_id, true])));
+        if (!pv.error && pv.data) setPollVote(Object.fromEntries((pv.data as { post_id: string; option_index: number }[]).map((r) => [r.post_id, r.option_index])));
       } else {
         setLiked({});
         setSaved({});
+        setPollVote({});
       }
     })();
 
@@ -132,6 +141,28 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
+  const votePoll = useCallback(
+    (postId: string, optionIndex: number, base: number[]) => {
+      if (pollVote[postId] !== undefined) return; // one vote per user, final
+      if (!gate()) return; // guests → sign in
+      // optimistic: mark the choice and bump its count
+      setPollVote((m) => ({ ...m, [postId]: optionIndex }));
+      setPollCount((c) => {
+        const cur = c[postId] ?? base;
+        return { ...c, [postId]: cur.map((n, i) => (i === optionIndex ? n + 1 : n)) };
+      });
+      if (supabase && user && isUuid(postId)) {
+        supabase.rpc('vote_poll', { p_post: postId, p_option: optionIndex }).then(({ data, error }) => {
+          if (!error && data && data[0]) {
+            setPollCount((c) => ({ ...c, [postId]: data[0].counts as number[] }));
+            setPollVote((m) => ({ ...m, [postId]: data[0].my_option as number }));
+          }
+        });
+      }
+    },
+    [pollVote, gate, user],
+  );
+
   // ── Live updates (Supabase Realtime) ──────────────────────────────────────
   // Feed-wide: new comments bump the live count for any post; a post's ♥ count
   // follows `posts.recommends` so every viewer sees likes without refreshing.
@@ -147,8 +178,11 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
         if (r?.id && r?.post_id) noteComment(r.id, r.post_id);
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, (payload) => {
-        const r = payload.new as { id: string; recommends: number };
-        if (r?.id && typeof r.recommends === 'number') setLikeCount((m) => ({ ...m, [r.id]: r.recommends }));
+        const r = payload.new as { id: string; recommends: number; poll_votes: number[] | null };
+        if (!r?.id) return;
+        if (typeof r.recommends === 'number') setLikeCount((m) => ({ ...m, [r.id]: r.recommends }));
+        // poll counts follow posts.poll_votes so votes update live for everyone
+        if (Array.isArray(r.poll_votes)) setPollCount((m) => ({ ...m, [r.id]: r.poll_votes as number[] }));
       })
       .subscribe();
     return () => {
@@ -157,7 +191,7 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
   }, [noteComment]);
 
   return (
-    <C.Provider value={{ liked, saved, likeCount, commentCount, toggleLike, toggleSave, noteComment, gate }}>
+    <C.Provider value={{ liked, saved, likeCount, commentCount, toggleLike, toggleSave, noteComment, pollVote, pollCount, votePoll, gate }}>
       {children}
     </C.Provider>
   );

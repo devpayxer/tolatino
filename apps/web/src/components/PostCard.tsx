@@ -7,7 +7,6 @@
 import { useState } from 'react';
 import { Bookmark, Check, MessageCircle, Share } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
-import { useApp } from '@/lib/state';
 import { useInteractions } from '@/lib/interactions';
 import { Avatar } from '@/components/ui';
 import { PostMenu } from '@/components/PostMenu';
@@ -43,7 +42,6 @@ export function PostCard({
   onOpenThread?: () => void;
 }) {
   const { L } = useLang();
-  const app = useApp();
   const it = useInteractions();
   const tag = postTag(post.type, L);
   const [copied, setCopied] = useState(false);
@@ -54,7 +52,8 @@ export function PostCard({
   const saveOn = !!it.saved[post.id];
   const recCount = it.likeCount[post.id] ?? post.recommends;
   const commentTotal = commentCount ?? it.commentCount[post.id] ?? 0;
-  const voteIdx = app.pollVotes[post.id];
+  const pollBase = post.pollBase ?? post.poll?.map(() => 0) ?? [];
+  const voteIdx = it.pollVote[post.id];
   const voted = voteIdx !== undefined;
 
   const share = async () => {
@@ -73,7 +72,9 @@ export function PostCard({
     }
   };
 
-  const pollCounts = (post.pollBase ?? post.poll?.map(() => 0) ?? []).map((c, i) => c + (voteIdx === i ? 1 : 0));
+  // Authoritative per-option counts (already include everyone's votes); the
+  // realtime override keeps them live.
+  const pollCounts = it.pollCount[post.id] ?? pollBase;
   const pollTotal = pollCounts.reduce((a, b) => a + b, 0);
 
   return (
@@ -150,8 +151,8 @@ export function PostCard({
             return (
               <button
                 key={i}
-                disabled={preview}
-                onClick={() => app.votePoll(post.id, i)}
+                disabled={preview || voted}
+                onClick={() => it.votePoll(post.id, i, pollBase)}
                 className={`relative w-full cursor-pointer overflow-hidden rounded-field border-[1.5px] bg-white px-3.5 py-[11px] text-left ${
                   chosen ? 'border-primary' : 'border-hair-strong'
                 }`}
