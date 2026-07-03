@@ -297,57 +297,88 @@ function collectAddresses(census: Address | null, houseNo: string | null, street
   return out;
 }
 
+// Common US street-type suffixes — anything AFTER one of these (with no comma)
+// is the city/state/zip the user typed, not part of the street name.
+const STREET_TYPE = /^(st|street|ave|avenue|av|blvd|boulevard|rd|road|dr|drive|ln|lane|way|ct|court|pl|place|ter|terrace|cir|circle|hwy|highway|pkwy|parkway|pike|trl|trail|loop|run|row|sq|square|pass|path|walk|xing|crossing|aly|alley|plz|plaza)\.?$/i;
+const US_STATES = new Set(Object.values(US_STATE_ABBR));
+
+/** Split "22 reynolds ave. randolph ma" → {houseNo, street, locality:"randolph ma", cityToken:"randolph"}.
+ *  Handles a comma ("…, randolph") and the no-comma case (city after the street type). */
+function parseAddress(q: string): { houseNo: string | null; street: string; locality: string; cityToken: string } {
+  const m = /^(\d{1,6}(?:-\d{1,4})?)\s+(.+)$/.exec(q);
+  const rest = m ? m[2] : q;
+  const houseNo = m ? m[1] : null;
+  let street = rest;
+  let locality = '';
+  const ci = rest.indexOf(',');
+  if (ci >= 0) {
+    street = rest.slice(0, ci).trim();
+    locality = rest.slice(ci + 1).trim();
+  } else {
+    const words = rest.split(/\s+/);
+    let typeIdx = -1;
+    for (let i = 1; i < words.length; i++) if (STREET_TYPE.test(words[i])) typeIdx = i;
+    if (typeIdx >= 0 && typeIdx < words.length - 1) {
+      street = words.slice(0, typeIdx + 1).join(' ');
+      locality = words.slice(typeIdx + 1).join(' ');
+    }
+  }
+  // first locality token that is a real place name (skip 2-letter states + zips)
+  const cityToken = locality.toLowerCase().split(/[\s,]+/).find((t) => t.length >= 3 && !/^\d+$/.test(t) && !US_STATES.has(t.toUpperCase())) ?? '';
+  return { houseNo, street: street.replace(/\.$/, ''), locality, cityToken };
+}
+
 /**
- * Professional address autocomplete — merges three free sources:
- *  1. US Census exact match (official; "verified") when the text looks like a
- *     full address.
- *  2. Synthesized house-number + street suggestions (OSM knows the STREETS even
- *     when it lacks the house number). The pick is snapped via Census.
- *  3. Raw Photon results (POIs, streets, OSM house numbers).
+ * Professional address autocomplete. Free sources merged (no Google billing):
+ *  1. US Census exact match (official; "verified").
+ *  2. Synthesized house-number + Photon STREET suggestions (OSM has the streets
+ *     even when it lacks the house number). Pick is snapped via Census.
+ *  3. Raw Photon (POIs, streets, OSM house numbers).
  *
- * Two stages, like pro apps: first LOCAL (biased + fenced to the user's metro);
- * if the typed address isn't found nearby, WIDEN to the whole country so the
- * user can still pick the right far-away address. No Google billing.
+ * Locality-aware, like pro apps: if the query names a city that ISN'T your metro
+ * ("22 reynolds ave randolph" while in PA), search NATIONALLY and prefer that
+ * city; otherwise stay LOCAL (biased + fenced), and only widen when a local
+ * house address isn't found.
  */
 export async function searchAddress(query: string, near?: NearCtx | null, signal?: AbortSignal): Promise<Address[]> {
   const q = query.trim();
   if (q.length < 3) return [];
 
-  // "762 mcnair st" / "10-24 main st" → house number + street fragment
-  const house = /^(\d{1,6}(?:-\d{1,4})?)\s+(.{2,})$/.exec(q);
-  const houseNo = house ? house[1] : null;
-  const street = house ? house[2].split(',')[0] : '';
-  const wantsCensus = !!(house && house[2].length >= 4);
+  const { houseNo, street, locality, cityToken } = parseAddress(q);
+  const wantsCensus = !!(houseNo && (street.length >= 4 || locality));
 
-  // Census query completed with the local city context (or just the state when
-  // the user already typed their own city).
-  let censusQ = q;
-  if (wantsCensus && near?.city) {
-    if (!q.includes(',')) censusQ = `${q}, ${near.city}`;
-    else {
-      const st = near.city.split(',').pop()?.trim();
-      if (st && st.length <= 3 && !new RegExp(`\\b${st}\\b`, 'i').test(q)) censusQ = `${q}, ${st}`;
-    }
-  }
+  const localCity = near?.city?.split(',')[0]?.toLowerCase() ?? '';
+  // The user is targeting somewhere other than their current metro.
+  const elsewhere = !!cityToken && !localCity.startsWith(cityToken) && !cityToken.startsWith(localCity);
 
-  // ── Stage 1: local (fenced to the metro) ──
-  const [census, streets, photon] = await Promise.all([
+  // Elsewhere → don't fence to the metro; let Census parse the whole free-form
+  // query. Local → complete a bare "number street" with the metro city.
+  const fence = elsewhere ? null : near;
+  const censusQ = !wantsCensus ? q : elsewhere || locality || q.includes(',') ? q : near?.city ? `${q}, ${near.city}` : q;
+
+  const [census, streetsRaw, photon] = await Promise.all([
     wantsCensus ? censusGeocode(censusQ, signal) : Promise.resolve(null),
-    house ? photonSearch(street, near, signal, 'street') : Promise.resolve([] as Address[]),
-    photonSearch(q, near, signal),
+    houseNo ? photonSearch(street, fence, signal, 'street') : Promise.resolve([] as Address[]),
+    photonSearch(elsewhere ? street || q : q, fence, signal),
   ]);
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
+  // When a city was typed, prefer streets in THAT city.
+  let streets = streetsRaw;
+  if (cityToken) {
+    const inCity = streetsRaw.filter((s) => s.city.toLowerCase().includes(cityToken));
+    if (inCity.length) streets = inCity;
+  }
+
   let list = collectAddresses(census, houseNo, streets, photon);
 
-  // ── Stage 2: widen to any city when the typed address isn't found nearby ──
-  // Trigger: a house-number query with no house match locally, or nothing at all.
-  const localHit = house ? list.some((a) => a.verified || a.approx) : list.length > 0;
-  if (!localHit) {
+  // Widen to any city when a house address isn't found nearby (local case only —
+  // the elsewhere path is already national).
+  const hit = houseNo ? list.some((a) => a.verified || a.approx) : list.length > 0;
+  if (!hit && !elsewhere) {
     const [censusWide, streetsWide, photonWide] = await Promise.all([
-      // national census (drop the local city context that just missed)
       wantsCensus ? (censusQ === q ? Promise.resolve(census) : censusGeocode(q, signal)) : Promise.resolve(null),
-      house ? photonSearch(street, null, signal, 'street') : Promise.resolve([] as Address[]),
+      houseNo ? photonSearch(street, null, signal, 'street') : Promise.resolve([] as Address[]),
       photonSearch(q, null, signal),
     ]);
     if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
