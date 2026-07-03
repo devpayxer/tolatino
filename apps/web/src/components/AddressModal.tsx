@@ -114,8 +114,10 @@ export function AddressModal() {
     }
   };
 
-  const selectSaved = (a: { id: string; formatted: string; lat: number; lng: number }) =>
+  const selectSaved = (a: { id: string; formatted: string; lat: number; lng: number }) => {
     app.setUserAddress(a.formatted, { lat: a.lat, lng: a.lng }, a.id);
+    close(); // pick → done (Uber-style)
+  };
 
   const del = async (id: string) => {
     await store.remove(id);
@@ -228,6 +230,7 @@ export function AddressModal() {
                         <input
                           autoFocus
                           value={editText}
+                          onClick={(e) => e.stopPropagation()}
                           onChange={(e) => setEditText(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && saveEdit(a.id)}
                           onBlur={() => saveEdit(a.id)}
