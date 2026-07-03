@@ -11,6 +11,8 @@ import { useApp } from '@/lib/state';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
+import { useNow } from '@/lib/useNow';
+import { bizStatus, fmtDayHours, statusLabel } from '@/lib/hours';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_DATES, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
 
@@ -59,6 +61,9 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [myReviews, setMyReviews] = useState<{ id: string; stars: number; text: string }[]>([]);
 
   const saved = savedBiz.isSaved(b.slug);
+  const now = useNow();
+  const status = statusLabel(bizStatus(b.hours, now, b.open), L);
+  const statusTone = status.tone === 'open' ? 'text-green' : status.tone === 'soon' ? 'text-amber-ink' : 'text-[#A59FB6]';
   const catLabel = L(CAT[b.cat].es, CAT[b.cat].en);
   const revRaw = L(b.revEs, b.revEn);
   const [quote, rvName] = revRaw.includes('—') ? [revRaw.split('—')[0].trim(), revRaw.split('—').slice(1).join('—').trim()] : [revRaw, ''];
@@ -230,7 +235,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         <span className="rounded-lg bg-lilac px-2 py-1 text-[11px] text-primary-dark">{catLabel}</span>
         <span>· {b.price}</span>
         <span>· {b.dist}</span>
-        <span className={`font-extrabold ${b.open ? 'text-green' : 'text-[#A59FB6]'}`}>· {b.open ? L('Abierto', 'Open') : L('Cerrado', 'Closed')}</span>
+        <span className={`font-extrabold ${statusTone}`}>· {status.text}</span>
       </div>
       <div className="mt-3 flex items-center gap-2">
         <Stars className="text-[14px]" />
@@ -288,13 +293,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           {divider}
           <div className="flex items-center justify-between">
             <span className="text-[15.5px] font-extrabold text-ink">{L('Horario', 'Hours')}</span>
-            <span className={`text-[12.5px] font-extrabold ${b.open ? 'text-green' : 'text-[#A59FB6]'}`}>
-              {b.open ? L('Abierto · cierra 10:00 pm', 'Open · closes 10:00 pm') : L('Cerrado · abre 9:00 am', 'Closed · opens 9:00 am')}
-            </span>
+            <span className={`text-[12.5px] font-extrabold ${statusTone}`}>{status.text}</span>
           </div>
+          {/* today's hours (real when the business has a schedule) */}
           <div className="mt-[11px] flex items-center justify-between text-[13.5px] font-semibold text-ink-soft">
             <span className="font-extrabold text-ink">{L('Hoy', 'Today')}</span>
-            <span>9:00 am – 10:00 pm</span>
+            <span>{b.hours && now ? fmtDayHours(b.hours[now.getDay()], L('Cerrado', 'Closed')) : '9:00 am – 10:00 pm'}</span>
           </div>
           <button onClick={() => setWeekOpen(!weekOpen)} className="mt-2 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-extrabold text-primary-dark">
             {L('Ver toda la semana', 'See full week')}
@@ -302,12 +306,18 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </button>
           {weekOpen && (
             <div className="mt-3 flex flex-col gap-2 rounded-[13px] bg-[#F7F6FC] px-3.5 py-3">
-              {WEEK.map((d, i) => (
-                <div key={d[0]} className="flex items-center justify-between text-[12.5px] font-semibold">
-                  <span className={i === 1 ? 'font-extrabold text-ink' : 'text-ink-soft'}>{B(d)}</span>
-                  <span className="text-ink-2">{i === 6 ? '10:00 am – 6:00 pm' : '9:00 am – 10:00 pm'}</span>
-                </div>
-              ))}
+              {WEEK.map((d, i) => {
+                // WEEK is Monday-first; our hours are Sunday-first (0=Sun..6=Sat).
+                const hoursIdx = i === 6 ? 0 : i + 1;
+                const isToday = now != null && now.getDay() === hoursIdx;
+                const label = b.hours ? fmtDayHours(b.hours[hoursIdx], L('Cerrado', 'Closed')) : i === 6 ? '10:00 am – 6:00 pm' : '9:00 am – 10:00 pm';
+                return (
+                  <div key={d[0]} className="flex items-center justify-between text-[12.5px] font-semibold">
+                    <span className={isToday ? 'font-extrabold text-ink' : 'text-ink-soft'}>{B(d)}</span>
+                    <span className={isToday ? 'font-extrabold text-ink-2' : 'text-ink-2'}>{label}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
           {divider}

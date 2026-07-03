@@ -80,6 +80,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             dist: distM != null ? `${(distM / 1609.34).toFixed(1)} mi` : '— mi',
             price: (r.price_level as Business['price']) ?? '$',
             open: Boolean(r.is_open),
+            hours: (r.hours as Business['hours']) ?? undefined,
             verified: r.tier !== 'free',
             endorse: Number(r.endorse_count ?? 0),
             t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],

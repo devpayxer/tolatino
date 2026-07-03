@@ -14,6 +14,8 @@ import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 import { useSavedBiz } from '@/lib/savedBiz';
+import { useNow } from '@/lib/useNow';
+import { bizStatus, isOpenNow, statusLabel } from '@/lib/hours';
 import { AVATAR_PALETTE, CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
 
@@ -55,6 +57,7 @@ export function NegociosScreen() {
   const app = useApp();
   const { businesses: BUSINESSES } = useLiveData();
   const savedBiz = useSavedBiz();
+  const now = useNow();
   const [f, setF] = useState<Filters>(DEFAULT_FILTERS);
   const [catOpen, setCatOpen] = useState<CatKey | null>(null);
   const [onlySaved, setOnlySaved] = useState(false); // "Guardados" view
@@ -82,7 +85,7 @@ export function NegociosScreen() {
     if (f.subCat) list = list.filter((b) => (b.subcats ?? []).includes(f.subCat as string));
     if (f.price) list = list.filter((b) => b.price === f.price);
     if (f.rating) list = list.filter((b) => parseFloat(b.rating) >= parseFloat(f.rating!));
-    if (f.openNow) list = list.filter((b) => b.open);
+    if (f.openNow) list = list.filter((b) => isOpenNow(b.hours, now, b.open));
     if (f.features.length) list = list.filter((b) => f.features.every((x) => (b.features ?? []).includes(x)));
     // distance always applies; keep businesses with unknown distance ("— mi")
     list = list.filter((b) => {
@@ -99,7 +102,7 @@ export function NegociosScreen() {
     // is stable, so the backend's relevance order is kept inside each tier.
     list = list.slice().sort((a, b) => (a.verified ? 0 : 1) - (b.verified ? 0 : 1));
     return list;
-  }, [f, sl, BUSINESSES, onlySaved, savedBiz.saved]);
+  }, [f, sl, BUSINESSES, onlySaved, savedBiz.saved, now]);
 
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
@@ -555,18 +558,20 @@ function SaveBtn({ b, size = 17 }: { b: Business; size?: number }) {
   );
 }
 
-/** Rating · reviews · price · open — shared meta row. */
+const TONE_CLASS = { open: 'text-green', soon: 'text-amber-ink', closed: 'text-[#A59FB6]' } as const;
+
+/** Rating · reviews · price · live open/closed status — shared meta row. */
 function BizMeta({ b }: { b: Business }) {
   const { L } = useLang();
+  const now = useNow();
+  const st = statusLabel(bizStatus(b.hours, now, b.open), L);
   return (
     <div className="flex flex-wrap items-center gap-x-1.5 text-[12.5px] font-bold">
       <span className="text-amber">★</span>
       <span className="font-extrabold text-ink">{b.rating}</span>
       <span className="text-muted-2">({b.reviews})</span>
       <span className="text-muted-2">· {b.price}</span>
-      <span className={`font-extrabold ${b.open ? 'text-green' : 'text-[#A59FB6]'}`}>
-        · {b.open ? L('Abierto', 'Open') : L('Cerrado', 'Closed')}
-      </span>
+      <span className={`font-extrabold ${TONE_CLASS[st.tone]}`}>· {st.text}</span>
     </div>
   );
 }

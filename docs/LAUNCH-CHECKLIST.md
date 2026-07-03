@@ -110,9 +110,12 @@
 - [ ] **Business publish — follow-ups.** `create_business` inserts a Free-tier
   listing with the category-gradient tile and the picked subcategories. Still
   TODO: real **address geocoding** (today it uses the city center or the owner's
-  GPS pin), business **photos**, amenities/hours capture, editing/deleting your
+  GPS pin), business **photos**, amenities capture, editing/deleting your
   own listing from the UI (RLS policies already exist), and the paid tiers
-  (verified/premium). **Feature tags** (`businesses.features`, migration `0016`)
+  (verified/premium). **Hours:** `businesses.hours` (migration `0018`) now drives
+  the live open/closed status and `create_business` accepts it, but the **publish
+  form doesn't collect a weekly schedule yet** (new listings get `hours = null` →
+  they fall back to the `is_open` flag). Add an hours editor to `PublishModal`. **Feature tags** (`businesses.features`, migration `0016`)
   now power the dynamic per-category Negocios filter and `create_business` accepts
   them, but the **publish form doesn't collect them yet** — the owner can't tick
   "Características" (delivery, full bar, licensed…) when creating a listing. Wire a
