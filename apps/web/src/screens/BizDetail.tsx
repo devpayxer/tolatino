@@ -168,7 +168,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     let raf = 0;
     const check = () => {
       raf = 0;
-      const pin = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 126 : 150;
+      const pin = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 108 : 150;
       setStuck(el.getBoundingClientRect().top <= pin + 0.5);
     };
     const onScroll = () => {
@@ -313,7 +313,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           on a non-Overview tab it shows immediately, and on Overview it reveals
           (smoothly, no jump) once the bar pins to the top while scrolling — so
           switching tabs never snaps between two different bars. */}
-      <div ref={barRef} className={`sticky top-[150px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[126px] md:-mx-5 md:px-5 ${focused ? '' : 'mt-1'}`}>
+      <div ref={barRef} className={`sticky top-[150px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[108px] md:-mx-5 md:px-5 ${focused ? '' : 'mt-1'}`}>
         <div className={`overflow-hidden transition-all duration-200 ${showTitle ? 'max-h-[64px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="flex items-center gap-2 pb-2 pt-2.5">
             <button onClick={() => onTab('overview')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
