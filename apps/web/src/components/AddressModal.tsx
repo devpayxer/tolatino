@@ -13,7 +13,7 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useAddresses } from '@/lib/addresses';
-import { Overlay, OverlayTitle } from '@/components/ui';
+import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { getBrowserLocation, reverseAddress, searchAddress, type Address } from '@/lib/geo';
 
 export function AddressModal() {
@@ -263,6 +263,9 @@ export function AddressModal() {
               })}
             </div>
           )}
+          <PrimaryBtn className="mt-3" onClick={close}>
+            {L('Hecho', 'Done')}
+          </PrimaryBtn>
           <button
             onClick={() => {
               app.clearUserAddress();
