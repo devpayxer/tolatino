@@ -4,7 +4,7 @@
 // (Overview · Updates · Menú · Tienda · Servicios · Eventos · Equipo ·
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -158,6 +158,33 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
   };
 
+  // Track when the sticky bar reaches the top so Overview can reveal the title
+  // row exactly when it pins (focused tabs always show it). Shared 1-frame check.
+  const barRef = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    let raf = 0;
+    const check = () => {
+      raf = 0;
+      const pin = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 126 : 150;
+      setStuck(el.getBoundingClientRect().top <= pin + 0.5);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [tab]);
+  const showTitle = focused || stuck;
+
   const tabButtons = tabs.map(([k, label]) => (
     <button
       key={k}
@@ -282,10 +309,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       </>
       )}
 
-      {/* tabs — sticky bar. Overview: scrolls below the hero. Focused: a compact
-          pinned header carrying the business title so context is never lost. */}
-      {focused ? (
-        <div className="sticky top-[150px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[126px] md:-mx-5 md:px-5">
+      {/* One sticky header for every tab. The business-title row is always here;
+          on a non-Overview tab it shows immediately, and on Overview it reveals
+          (smoothly, no jump) once the bar pins to the top while scrolling — so
+          switching tabs never snaps between two different bars. */}
+      <div ref={barRef} className={`sticky top-[150px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[126px] md:-mx-5 md:px-5 ${focused ? '' : 'mt-1'}`}>
+        <div className={`overflow-hidden transition-all duration-200 ${showTitle ? 'max-h-[64px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="flex items-center gap-2 pb-2 pt-2.5">
             <button onClick={() => onTab('overview')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
               <ChevronLeft size={16} strokeWidth={2.6} className="text-ink" />
@@ -301,13 +330,9 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               </button>
             </div>
           </div>
-          <div className="no-scrollbar flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain">{tabButtons}</div>
         </div>
-      ) : (
-        <div className="no-scrollbar sticky top-[150px] z-[15] -mx-1 mt-1 flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-app px-1 pt-3 md:top-[126px]">
-          {tabButtons}
-        </div>
-      )}
+        <div className="no-scrollbar flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain pt-2.5">{tabButtons}</div>
+      </div>
 
       {/* ============ OVERVIEW ============ */}
       {tab === 'overview' && (
