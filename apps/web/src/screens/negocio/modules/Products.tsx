@@ -747,7 +747,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               [L('Categoría', 'Category'), L(dCat.es, dCat.en), true, 0],
               [L('Precio', 'Price'), draft.price ? '$' + draft.price : '—', !!draft.price, 1],
               ['SKU', draft.sku || '—', !!draft.sku, 1],
-              [L('Cumplimiento', 'Fulfillment'), { ship: L('Envío', 'Shipping'), local: L('Entrega local', 'Local delivery'), pickup: L('Recoger', 'Pickup') }[draft.fulfill], true, 2],
+              [L('Cumplimiento', 'Fulfillment'), ({ ship: L('Envío', 'Shipping'), local: L('Entrega local', 'Local delivery'), pickup: L('Recoger', 'Pickup') } as Record<string, string>)[draft.fulfill], true, 2],
             ] as [string, string, boolean, number][]).map((r, i, a) => (
               <div key={r[0]} className={`flex items-center gap-2.5 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
                 <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
