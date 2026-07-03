@@ -80,11 +80,17 @@
 
 ## 3. Incomplete / stubbed features
 
-- [ ] **"Publicar negocio" & "Crear evento" forms are stubs.** In
-  `PublishModal.tsx` both just call `setDone(true)` — they do **not** insert into
-  the DB. Only community **posts** are real. Build real business + event
-  creation (tables, RLS, geo, images) — the full business onboarding lives at
-  `/negocio/publicar`.
+- [ ] **"Crear evento" form is a stub.** In `PublishModal.tsx` the event branch
+  still just calls `setDone(true)` — it does **not** insert into `events`. Build
+  real event creation (insert, geo, tickets, images). (Business publish is now
+  real via `create_business`; community posts are real. The full multi-plan
+  business onboarding at `/negocio/publicar` is still a separate stub flow.)
+- [ ] **Business publish — follow-ups.** `create_business` inserts a Free-tier
+  listing with the category-gradient tile and the picked subcategories. Still
+  TODO: real **address geocoding** (today it uses the city center or the owner's
+  GPS pin), business **photos**, amenities/hours capture, editing/deleting your
+  own listing from the UI (RLS policies already exist), and the paid tiers
+  (verified/premium).
 - [ ] **Push notifications.** Not built. Plan: **Web Push (VAPID)** for the PWA,
   **+ FCM** (free) for native later. Drives the "Alertas" tab and new-activity
   pings.

@@ -17,8 +17,10 @@ import { useAuth } from '@/lib/auth';
 import { useLiveData } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
 import { uploadPostImages } from '@/lib/image';
+import { getBrowserLocation } from '@/lib/geo';
+import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
-import { TAG_BIZ_NAMES, VIEW_PATH, hoodsForCity } from '@/data/fixtures';
+import { SUBCATS, TAG_BIZ_NAMES, VIEW_PATH, hoodsForCity } from '@/data/fixtures';
 import { PostCard, type FeedPost } from '@/components/PostCard';
 
 const MAX_PHOTOS = 3;
@@ -53,6 +55,85 @@ export function PublishModal() {
   const [postErr, setPostErr] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  // ── business publish form ──
+  const [bizName, setBizName] = useState('');
+  const [bizCat, setBizCat] = useState<CatKey | null>(null);
+  const [bizSubs, setBizSubs] = useState<string[]>([]);
+  const [bizPrice, setBizPrice] = useState<string | null>(null);
+  const [bizPhone, setBizPhone] = useState('');
+  const [bizAddress, setBizAddress] = useState('');
+  const [bizAbout, setBizAbout] = useState('');
+  const [bizGps, setBizGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [bizLocating, setBizLocating] = useState(false);
+  const [bizBusy, setBizBusy] = useState(false);
+  const [bizErr, setBizErr] = useState<string | null>(null);
+
+  const resetBiz = () => {
+    setBizName('');
+    setBizCat(null);
+    setBizSubs([]);
+    setBizPrice(null);
+    setBizPhone('');
+    setBizAddress('');
+    setBizAbout('');
+    setBizGps(null);
+    setBizBusy(false);
+    setBizErr(null);
+  };
+
+  const useMyLocationForBiz = async () => {
+    setBizLocating(true);
+    try {
+      const loc = await getBrowserLocation();
+      if (loc) setBizGps({ lat: loc.lat, lng: loc.lng });
+    } catch {
+      /* denied / unavailable — keep the city center */
+    }
+    setBizLocating(false);
+  };
+
+  const submitBiz = async () => {
+    if (!bizName.trim() || !bizCat || bizBusy) return;
+    setBizErr(null);
+    // publishing a business requires an account (owner)
+    if (supabase && !auth.user) {
+      close();
+      router.push('/entrar');
+      return;
+    }
+    if (supabase && auth.user) {
+      setBizBusy(true);
+      const subTuple = SUBCATS[bizCat].find(([es]) => es === bizSubs[0]);
+      const coords = bizGps ?? app.coords;
+      const { error } = await supabase.rpc('create_business', {
+        p_name: bizName.trim(),
+        p_category: bizCat,
+        p_subcats: bizSubs,
+        p_price: bizPrice,
+        p_phone: bizPhone.trim(),
+        p_address: bizAddress.trim(),
+        p_city: app.city,
+        p_about: bizAbout.trim(),
+        p_specialty_es: subTuple?.[0] ?? '',
+        p_specialty_en: subTuple?.[1] ?? '',
+        p_tile_a: CAT[bizCat].bg,
+        p_tile_b: CAT[bizCat].dot,
+        p_lat: coords.lat,
+        p_lng: coords.lng,
+      });
+      setBizBusy(false);
+      if (error) {
+        setBizErr(L('No pudimos publicar el negocio. Intenta de nuevo.', "We couldn't publish the business. Try again."));
+        return;
+      }
+      live.refresh(); // the new listing shows up in Negocios for everyone nearby
+      setDone(true);
+      return;
+    }
+    // demo / not configured
+    setDone(true);
+  };
+
   const clearPhotos = () => setPhotos((list) => (list.forEach((p) => URL.revokeObjectURL(p.url)), []));
 
   const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,6 +157,7 @@ export function PublishModal() {
     setPollOptions(['', '']);
     setPosting(false);
     setPostErr(null);
+    resetBiz();
   };
   const close = () => {
     app.closePub();
@@ -181,7 +263,7 @@ export function PublishModal() {
   const finishView = type === 'negocio' ? 'negocios' : type === 'evento' ? 'eventos' : 'comunidad';
   const success = {
     post: { t: L('¡Publicado!', 'Posted!'), s: L('Tu publicación ya está en el feed de tu barrio.', 'Your post is now in your neighborhood feed.'), c: L('Ver en Comunidad', 'View in Community') },
-    negocio: { t: L('¡Negocio enviado!', 'Business submitted!'), s: L('Lo revisaremos y aparecerá en el directorio muy pronto.', 'We’ll review it and it will appear in the directory soon.'), c: L('Ir a Negocios', 'Go to Business') },
+    negocio: { t: L('¡Negocio publicado!', 'Business published!'), s: L('Tu negocio ya está en el directorio de tu zona.', 'Your business is now in your local directory.'), c: L('Ir a Negocios', 'Go to Business') },
     evento: { t: L('¡Evento creado!', 'Event created!'), s: L('Tu evento ya está publicado para la comunidad.', 'Your event is now live for the community.'), c: L('Ir a Eventos', 'Go to Events') },
   }[type ?? 'post'];
 
@@ -483,11 +565,88 @@ export function PublishModal() {
       {/* business form */}
       {type === 'negocio' && !done && (
         <div className="flex flex-col gap-3.5">
-          {field(L('Nombre del negocio', 'Business name'), <input className={inputCls} placeholder={L('Ej. Taquería La Esperanza', 'e.g. Taquería La Esperanza')} />)}
-          {field(L('Categoría', 'Category'), <input className={inputCls} placeholder={L('Ej. Comida, Belleza, Autos…', 'e.g. Food, Beauty, Auto…')} />)}
-          {field(L('Teléfono', 'Phone'), <input className={inputCls} placeholder="(713) 555-0100" />)}
-          {field(L('Descripción', 'Description'), <textarea rows={3} className={`${inputCls} resize-none`} placeholder={L('Cuéntale a la comunidad qué ofreces…', 'Tell the community what you offer…')} />)}
-          <PrimaryBtn onClick={() => setDone(true)}>{L('Publicar', 'Post')}</PrimaryBtn>
+          {field(
+            L('Nombre del negocio', 'Business name'),
+            <input value={bizName} onChange={(e) => setBizName(e.target.value)} className={inputCls} placeholder={L('Ej. Taquería La Esperanza', 'e.g. Taquería La Esperanza')} />,
+          )}
+
+          <div>
+            <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Categoría', 'Category')}</div>
+            <div className="flex flex-wrap gap-2">
+              {CAT_KEYS.map((k) => (
+                <button
+                  key={k}
+                  onClick={() => {
+                    setBizCat(k);
+                    setBizSubs([]);
+                  }}
+                  className={chip(bizCat === k)}
+                >
+                  {L(CAT[k].es, CAT[k].en)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {bizCat && (
+            <div>
+              <div className="mb-1.5 text-[12px] font-extrabold text-ink">
+                {L('Subcategorías', 'Subcategories')} <span className="font-semibold text-muted">· {L('elige las que apliquen', 'pick any that apply')}</span>
+              </div>
+              <div className="flex max-h-[164px] flex-wrap gap-2 overflow-y-auto">
+                {SUBCATS[bizCat].map(([es, en]) => {
+                  const on = bizSubs.includes(es);
+                  return (
+                    <button
+                      key={es}
+                      onClick={() => setBizSubs((s) => (on ? s.filter((x) => x !== es) : [...s, es]))}
+                      className={chip(on)}
+                    >
+                      {L(es, en)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Precio', 'Price')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
+            <div className="flex gap-2">
+              {['$', '$$', '$$$'].map((p) => (
+                <button key={p} onClick={() => setBizPrice(bizPrice === p ? null : p)} className={chip(bizPrice === p)}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {field(L('Teléfono', 'Phone'), <input value={bizPhone} onChange={(e) => setBizPhone(e.target.value)} className={inputCls} placeholder="(713) 555-0100" />)}
+          {field(L('Dirección', 'Address'), <input value={bizAddress} onChange={(e) => setBizAddress(e.target.value)} className={inputCls} placeholder={L('Calle y número (opcional)', 'Street address (optional)')} />)}
+          {field(
+            L('Descripción', 'Description'),
+            <textarea value={bizAbout} onChange={(e) => setBizAbout(e.target.value)} rows={3} className={`${inputCls} resize-none`} placeholder={L('Cuéntale a la comunidad qué ofreces…', 'Tell the community what you offer…')} />,
+          )}
+
+          <div>
+            <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Ubicación', 'Location')}</div>
+            <button
+              onClick={useMyLocationForBiz}
+              disabled={bizLocating}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark disabled:opacity-60"
+            >
+              {bizLocating ? L('Ubicando…', 'Locating…') : bizGps ? L('Ubicación fijada ✓', 'Location set ✓') : L('Usar mi ubicación actual', 'Use my current location')}
+            </button>
+            <div className="mt-1 text-[11px] font-semibold text-muted">
+              {bizGps ? L('Usaremos tu ubicación exacta.', "We'll use your exact location.") : L(`Si no, aparecerá en ${app.cityShort}.`, `Otherwise it'll show in ${app.cityShort}.`)}
+            </div>
+          </div>
+
+          {bizErr && <div className="rounded-btn bg-pink-bg px-3 py-2 text-[12px] font-semibold text-pink-dark">{bizErr}</div>}
+
+          <PrimaryBtn disabled={!bizName.trim() || !bizCat || bizBusy} onClick={submitBiz}>
+            {bizBusy ? L('Publicando…', 'Publishing…') : L('Publicar negocio', 'Publish business')}
+          </PrimaryBtn>
           <button
             onClick={() => {
               close();
