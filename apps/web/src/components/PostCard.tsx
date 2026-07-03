@@ -47,6 +47,8 @@ export function PostCard({
   const tag = postTag(post.type, L);
   const [copied, setCopied] = useState(false);
 
+  const [slide, setSlide] = useState(0);
+
   const recOn = !!it.liked[post.id];
   const saveOn = !!it.saved[post.id];
   const recCount = it.likeCount[post.id] ?? post.recommends;
@@ -96,21 +98,45 @@ export function PostCard({
       <div className="mt-[11px] text-[14px] font-medium leading-[1.55] text-ink-body">{L(post.es, post.en)}</div>
 
       {post.images && post.images.length > 0 && (
-        <div
-          className={`mt-3 grid gap-1.5 overflow-hidden rounded-card-sm ${
-            post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
-          }`}
-        >
-          {post.images.map((src, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={i}
-              src={src}
-              alt=""
-              loading="lazy"
-              className={`w-full bg-app ${post.images!.length === 1 ? 'max-h-[440px] object-cover' : 'aspect-square object-cover'}`}
-            />
-          ))}
+        <div className="relative mt-3">
+          {/* Instagram-style: one regular (square) photo at a time, swipe to next */}
+          <div
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              setSlide(Math.round(el.scrollLeft / el.clientWidth));
+            }}
+            className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-card-sm"
+          >
+            {post.images.map((src, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={src}
+                alt=""
+                loading="lazy"
+                draggable={false}
+                className="aspect-square w-full flex-none snap-center bg-app object-cover"
+              />
+            ))}
+          </div>
+
+          {post.images.length > 1 && (
+            <>
+              <div className="absolute right-2.5 top-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-bold text-white">
+                {Math.min(slide + 1, post.images.length)}/{post.images.length}
+              </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center gap-1.5">
+                {post.images.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full shadow-[0_0_2px_rgba(0,0,0,.4)] transition-all ${
+                      i === slide ? 'w-4 bg-white' : 'w-1.5 bg-white/60'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
