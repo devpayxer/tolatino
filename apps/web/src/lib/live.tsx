@@ -127,6 +127,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             initials: String(r.author_initials),
             color: String(r.author_color),
             name: String(r.author_name),
+            authorId: (r.author_id as string) ?? undefined,
             hoodEs: String(r.hood ?? ''),
             city: (r.city as string) ?? undefined,
             timeEs: tEs,

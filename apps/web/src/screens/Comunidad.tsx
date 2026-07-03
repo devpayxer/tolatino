@@ -90,6 +90,7 @@ function mapPost(r: PostRow): Post {
     initials: r.author_initials,
     color: r.author_color,
     name: r.author_name,
+    authorId: r.author_id ?? undefined,
     hoodEs: r.hood ?? '',
     city: r.city ?? undefined,
     timeEs: tEs,

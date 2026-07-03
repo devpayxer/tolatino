@@ -10,6 +10,7 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useInteractions } from '@/lib/interactions';
 import { Avatar } from '@/components/ui';
+import { PostMenu } from '@/components/PostMenu';
 import type { Post, PostType } from '@/data/fixtures';
 import { tile } from '@/lib/tiles';
 
@@ -93,6 +94,7 @@ export function PostCard({
             {[post.hoodEs, post.city].filter(Boolean).join(', ')} · {L(post.timeEs, post.timeEn)}
           </div>
         </div>
+        {!preview && <PostMenu post={post} />}
       </div>
 
       <div className="mt-[11px] text-[14px] font-medium leading-[1.55] text-ink-body">{L(post.es, post.en)}</div>

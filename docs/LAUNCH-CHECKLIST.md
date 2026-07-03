@@ -62,10 +62,12 @@
 
 ## 2. Security, moderation & abuse (launch blockers)
 
-- [ ] **Content moderation.** User-generated posts, comments and **photos** have
-  **no reporting/moderation** yet. Before public launch add: report button,
-  block user, hide/remove flow, profanity/abuse handling, and **image
-  moderation** (photos are public). This is a real launch blocker.
+- [ ] **Content moderation.** Post **reporting** now exists (per-post "…" menu →
+  Report, stored in `post_reports`; authors can edit/delete their own posts —
+  migration `0009`). Still missing before public launch: an **admin review
+  dashboard/queue** for reports, **block user**, auto-hide on N reports,
+  reporting for **comments**, profanity/abuse handling, and **image moderation**
+  (photos are public). Still a launch blocker until the review side exists.
 - [ ] **Rate limiting / anti-spam.** Posting, commenting, likes and uploads have
   no rate limits. Add throttling (Edge Function / DB) before opening signups.
 - [ ] **Account verification.** Auth is **email + password with "Confirm email"

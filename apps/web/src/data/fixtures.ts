@@ -82,6 +82,7 @@ export type Post = {
   initials: string;
   color: string;
   name: string;
+  authorId?: string; // auth user id — drives owner-only edit/delete
   hoodEs: string;
   city?: string; // full city label ("Houston, TX") — shown as "Barrio, Ciudad"
   timeEs: string;
