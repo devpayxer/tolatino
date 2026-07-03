@@ -91,14 +91,22 @@ export function NegociosScreen() {
   const sortLabels = { rel: L('Relevancia', 'Relevance'), dist: L('Distancia', 'Distance'), rating: L('Calificación', 'Rating') };
   const toggleSort = () => setSort((s) => (s === 'rel' ? 'dist' : s === 'dist' ? 'rating' : 'rel'));
 
+  // Total active filters (drives the "Filtros" badge and the clear-all link).
+  const activeCount =
+    (sl ? 1 : 0) +
+    (f.cat !== 'all' ? 1 : 0) +
+    (f.subCat ? 1 : 0) +
+    (f.price ? 1 : 0) +
+    (f.rating ? 1 : 0) +
+    (f.openNow ? 1 : 0) +
+    (f.maxDist !== DIST_DEFAULT ? 1 : 0);
+
+  // Applied-chip row shows ONLY what isn't already visible elsewhere: the search
+  // term and the picked subcategory. Distance/rating/price/open live on their
+  // pills (which highlight + show the value); the category shows on its chip.
   const appliedChips: { label: string; onRemove: () => void }[] = [];
   if (sl) appliedChips.push({ label: `“${app.search}”`, onRemove: () => app.setSearch('') });
-  if (f.cat !== 'all') appliedChips.push({ label: L(CAT[f.cat].es, CAT[f.cat].en), onRemove: () => patch({ cat: 'all', subCat: null }) });
   if (f.subCat) appliedChips.push({ label: L(f.subCat, SUB_EN[f.subCat] ?? f.subCat), onRemove: () => patch({ subCat: null }) });
-  if (f.price) appliedChips.push({ label: f.price, onRemove: () => patch({ price: null }) });
-  if (f.rating) appliedChips.push({ label: `★ ${f.rating}+`, onRemove: () => patch({ rating: null }) });
-  if (f.openNow) appliedChips.push({ label: L('Abierto ahora', 'Open now'), onRemove: () => patch({ openNow: false }) });
-  if (f.maxDist !== DIST_DEFAULT) appliedChips.push({ label: `≤ ${f.maxDist} mi`, onRemove: () => patch({ maxDist: DIST_DEFAULT }) });
 
   const clearAll = () => {
     setF(DEFAULT_FILTERS);
@@ -305,9 +313,9 @@ export function NegociosScreen() {
           >
             <SlidersHorizontal size={13} strokeWidth={2.4} />
             {L('Filtros', 'Filters')}
-            {appliedChips.length > 0 && (
+            {activeCount > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-extrabold text-white">
-                {appliedChips.length}
+                {activeCount}
               </span>
             )}
           </button>
@@ -331,8 +339,8 @@ export function NegociosScreen() {
       {/* quick-filter pills (distance / rating / price / open) */}
       {quickBar}
 
-      {/* applied chips */}
-      {appliedChips.length > 0 && (
+      {/* applied chips — only search + subcategory; plus a clear-all when any filter is on */}
+      {activeCount > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {appliedChips.map((c) => (
             <span key={c.label} className="flex items-center gap-1.5 rounded-full bg-lilac py-1.5 pl-3 pr-2 text-[11.5px] font-extrabold text-primary-dark">
