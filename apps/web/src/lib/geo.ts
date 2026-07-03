@@ -275,15 +275,39 @@ export async function cityCenter(label: string, fallback: { lat: number; lng: nu
   return { label, lat: fallback.lat, lng: fallback.lng };
 }
 
+// Merge the three sources: census exact first, then synthesized house+street,
+// then raw Photon; dedupe by formatted, and let an exact entry replace a
+// synthesized (approx) duplicate.
+function collectAddresses(census: Address | null, houseNo: string | null, streets: Address[], photon: Address[]): Address[] {
+  const out: Address[] = [];
+  const pos = new Map<string, number>();
+  const push = (a: Address) => {
+    const key = a.formatted.toLowerCase();
+    const i = pos.get(key);
+    if (i !== undefined) {
+      if (out[i].approx && !a.approx) out[i] = a;
+      return;
+    }
+    pos.set(key, out.length);
+    out.push(a);
+  };
+  if (census) push(census);
+  if (houseNo) for (const s of streets.slice(0, 6)) push({ ...s, formatted: `${houseNo} ${s.formatted}`, approx: true });
+  for (const a of photon) push(a);
+  return out;
+}
+
 /**
  * Professional address autocomplete — merges three free sources:
- *  1. US Census exact match (official; shown first, "verified") when the typed
- *     text looks like a full address.
- *  2. Synthesized house-number + street suggestions: OSM knows the STREETS even
- *     when it lacks the house number, so "762 mc" → streets matching "mc" →
- *     "762 McNair Street, Hazleton…". The pick is later snapped via Census.
- *  3. Raw Photon results (POIs, streets, OSM-mapped house numbers).
- * All biased + fenced to the user's metro. No Google billing.
+ *  1. US Census exact match (official; "verified") when the text looks like a
+ *     full address.
+ *  2. Synthesized house-number + street suggestions (OSM knows the STREETS even
+ *     when it lacks the house number). The pick is snapped via Census.
+ *  3. Raw Photon results (POIs, streets, OSM house numbers).
+ *
+ * Two stages, like pro apps: first LOCAL (biased + fenced to the user's metro);
+ * if the typed address isn't found nearby, WIDEN to the whole country so the
+ * user can still pick the right far-away address. No Google billing.
  */
 export async function searchAddress(query: string, near?: NearCtx | null, signal?: AbortSignal): Promise<Address[]> {
   const q = query.trim();
@@ -291,48 +315,48 @@ export async function searchAddress(query: string, near?: NearCtx | null, signal
 
   // "762 mcnair st" / "10-24 main st" → house number + street fragment
   const house = /^(\d{1,6}(?:-\d{1,4})?)\s+(.{2,})$/.exec(q);
+  const houseNo = house ? house[1] : null;
+  const street = house ? house[2].split(',')[0] : '';
+  const wantsCensus = !!(house && house[2].length >= 4);
 
-  // Census needs a reasonably complete address; complete it with the city
-  // context — or just the state when the user already typed their own city.
-  let censusQ: string | null = null;
-  if (house && house[2].length >= 4) {
-    censusQ = q;
-    if (near?.city) {
-      if (!q.includes(',')) censusQ = `${q}, ${near.city}`;
-      else {
-        const st = near.city.split(',').pop()?.trim();
-        if (st && st.length <= 3 && !new RegExp(`\\b${st}\\b`, 'i').test(q)) censusQ = `${q}, ${st}`;
-      }
+  // Census query completed with the local city context (or just the state when
+  // the user already typed their own city).
+  let censusQ = q;
+  if (wantsCensus && near?.city) {
+    if (!q.includes(',')) censusQ = `${q}, ${near.city}`;
+    else {
+      const st = near.city.split(',').pop()?.trim();
+      if (st && st.length <= 3 && !new RegExp(`\\b${st}\\b`, 'i').test(q)) censusQ = `${q}, ${st}`;
     }
   }
 
+  // ── Stage 1: local (fenced to the metro) ──
   const [census, streets, photon] = await Promise.all([
-    censusQ ? censusGeocode(censusQ, signal) : Promise.resolve(null),
-    house ? photonSearch(house[2].split(',')[0], near, signal, 'street') : Promise.resolve([] as Address[]),
+    wantsCensus ? censusGeocode(censusQ, signal) : Promise.resolve(null),
+    house ? photonSearch(street, near, signal, 'street') : Promise.resolve([] as Address[]),
     photonSearch(q, near, signal),
   ]);
-
-  // A stale (aborted) call must never overwrite fresher results in the modal.
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
-  const out: Address[] = [];
-  const pos = new Map<string, number>();
-  const push = (a: Address) => {
-    const key = a.formatted.toLowerCase();
-    const i = pos.get(key);
-    if (i !== undefined) {
-      // an exact (OSM/Census) entry beats a synthesized street-level one
-      if (out[i].approx && !a.approx) out[i] = a;
-      return;
-    }
-    pos.set(key, out.length);
-    out.push(a);
-  };
+  let list = collectAddresses(census, houseNo, streets, photon);
 
-  if (census) push(census);
-  if (house) for (const s of streets.slice(0, 4)) push({ ...s, formatted: `${house[1]} ${s.formatted}`, approx: true });
-  for (const a of photon) push(a);
-  return out.slice(0, 6);
+  // ── Stage 2: widen to any city when the typed address isn't found nearby ──
+  // Trigger: a house-number query with no house match locally, or nothing at all.
+  const localHit = house ? list.some((a) => a.verified || a.approx) : list.length > 0;
+  if (!localHit) {
+    const [censusWide, streetsWide, photonWide] = await Promise.all([
+      // national census (drop the local city context that just missed)
+      wantsCensus ? (censusQ === q ? Promise.resolve(census) : censusGeocode(q, signal)) : Promise.resolve(null),
+      house ? photonSearch(street, null, signal, 'street') : Promise.resolve([] as Address[]),
+      photonSearch(q, null, signal),
+    ]);
+    if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
+    list = collectAddresses(censusWide ?? census, houseNo, [...streets, ...streetsWide], [...photon, ...photonWide]);
+  }
+
+  // Real house/verified matches float to the top; keep the best 6.
+  const rank = (a: Address) => (a.verified ? 0 : a.approx ? 1 : 2);
+  return list.sort((a, b) => rank(a) - rank(b)).slice(0, 6);
 }
 
 /** GPS coords → a full street address (Nominatim). Fallback for "use my location". */
