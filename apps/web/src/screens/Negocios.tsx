@@ -16,7 +16,9 @@ import { useLiveData } from '@/lib/live';
 import { CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
 
-const DIST_MAX = 25;
+const DIST_MIN = 5;
+const DIST_MAX = 50;
+const DIST_DEFAULT = 15;
 const PAGE_SIZE = 6;
 
 // es → en lookup for subcategory labels (filter stores the canonical es value).
@@ -32,7 +34,7 @@ type Filters = {
   openNow: boolean;
 };
 
-const DEFAULT_FILTERS: Filters = { cat: 'all', subCat: null, price: null, rating: null, maxDist: DIST_MAX, openNow: false };
+const DEFAULT_FILTERS: Filters = { cat: 'all', subCat: null, price: null, rating: null, maxDist: DIST_DEFAULT, openNow: false };
 
 export function NegociosScreen() {
   const { L } = useLang();
@@ -59,7 +61,11 @@ export function NegociosScreen() {
     if (f.price) list = list.filter((b) => b.price === f.price);
     if (f.rating) list = list.filter((b) => parseFloat(b.rating) >= parseFloat(f.rating!));
     if (f.openNow) list = list.filter((b) => b.open);
-    if (f.maxDist < DIST_MAX) list = list.filter((b) => parseFloat(b.dist) <= f.maxDist);
+    // distance always applies; keep businesses with unknown distance ("— mi")
+    list = list.filter((b) => {
+      const d = parseFloat(b.dist);
+      return Number.isNaN(d) || d <= f.maxDist;
+    });
     if (sl) {
       list = list.filter((b) => {
         const subs = (b.subcats ?? []).map((s) => `${s} ${SUB_EN[s] ?? ''}`).join(' ');
@@ -91,7 +97,7 @@ export function NegociosScreen() {
   if (f.price) appliedChips.push({ label: f.price, onRemove: () => patch({ price: null }) });
   if (f.rating) appliedChips.push({ label: `★ ${f.rating}+`, onRemove: () => patch({ rating: null }) });
   if (f.openNow) appliedChips.push({ label: L('Abierto ahora', 'Open now'), onRemove: () => patch({ openNow: false }) });
-  if (f.maxDist < DIST_MAX) appliedChips.push({ label: `≤ ${f.maxDist} mi`, onRemove: () => patch({ maxDist: DIST_MAX }) });
+  if (f.maxDist !== DIST_DEFAULT) appliedChips.push({ label: `≤ ${f.maxDist} mi`, onRemove: () => patch({ maxDist: DIST_DEFAULT }) });
 
   const clearAll = () => {
     setF(DEFAULT_FILTERS);
@@ -111,6 +117,24 @@ export function NegociosScreen() {
 
   const filterPanel = (
     <>
+      {/* distance (top) */}
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Distancia', 'Distance')}</span>
+        <span className="text-[12px] font-extrabold text-primary-dark">≤ {f.maxDist} {L('millas', 'mi')}</span>
+      </div>
+      <input
+        type="range"
+        min={DIST_MIN}
+        max={DIST_MAX}
+        value={f.maxDist}
+        onChange={(e) => patch({ maxDist: parseInt(e.target.value, 10) })}
+        className="w-full accent-[#7B61FF]"
+      />
+      <div className="mb-4 mt-1 flex justify-between text-[10.5px] font-bold text-muted-faint">
+        <span>{DIST_MIN} mi</span>
+        <span>{DIST_MAX} mi</span>
+      </div>
+
       {/* category accordion */}
       <div className="mb-1 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Categoría', 'Category')}</div>
       <button
@@ -193,21 +217,6 @@ export function NegociosScreen() {
           </button>
         ))}
       </div>
-
-      <div className="mb-2 mt-4 flex items-center justify-between">
-        <span className="text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Distancia', 'Distance')}</span>
-        <span className="text-[12px] font-extrabold text-primary-dark">
-          {f.maxDist < DIST_MAX ? `≤ ${f.maxDist} mi` : L('Cualquiera', 'Any')}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={1}
-        max={DIST_MAX}
-        value={f.maxDist}
-        onChange={(e) => patch({ maxDist: parseInt(e.target.value, 10) })}
-        className="w-full accent-[#7B61FF]"
-      />
 
       <div className="mt-4 flex items-center justify-between">
         <span className="text-[13px] font-extrabold text-ink">{L('Abierto ahora', 'Open now')}</span>
