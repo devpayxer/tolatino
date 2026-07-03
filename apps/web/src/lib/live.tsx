@@ -135,6 +135,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             bizRating: r.business_rating != null ? Number(r.business_rating).toFixed(1) : undefined,
             poll: (r.poll_options as string[]) ?? undefined,
             pollBase: (r.poll_votes as number[]) ?? undefined,
+            images: (r.images as string[]) ?? undefined,
             es: String(r.body_es),
             en: String(r.body_en),
           };

@@ -90,6 +90,7 @@ export type Post = {
   bizRating?: string;
   poll?: string[];
   pollBase?: number[];
+  images?: string[];
   es: string;
   en: string;
 };

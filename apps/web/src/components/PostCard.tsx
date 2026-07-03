@@ -95,6 +95,25 @@ export function PostCard({
 
       <div className="mt-[11px] text-[14px] font-medium leading-[1.55] text-ink-body">{L(post.es, post.en)}</div>
 
+      {post.images && post.images.length > 0 && (
+        <div
+          className={`mt-3 grid gap-1.5 overflow-hidden rounded-card-sm ${
+            post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+          }`}
+        >
+          {post.images.map((src, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src={src}
+              alt=""
+              loading="lazy"
+              className={`w-full bg-app ${post.images!.length === 1 ? 'max-h-[440px] object-cover' : 'aspect-square object-cover'}`}
+            />
+          ))}
+        </div>
+      )}
+
       {post.poll && post.poll.length > 0 && (
         <div className="mt-3 flex flex-col gap-2">
           {post.poll.map((label, i) => {

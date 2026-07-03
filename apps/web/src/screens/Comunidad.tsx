@@ -74,6 +74,7 @@ type PostRow = {
   business_rating: number | null;
   poll_options: string[] | null;
   poll_votes: number[] | null;
+  images: string[] | null;
   body_es: string;
   body_en: string;
   lat: number | null;
@@ -96,6 +97,7 @@ function mapPost(r: PostRow): Post {
     bizRating: r.business_rating != null ? Number(r.business_rating).toFixed(1) : undefined,
     poll: r.poll_options ?? undefined,
     pollBase: r.poll_votes ?? undefined,
+    images: r.images ?? undefined,
     es: r.body_es,
     en: r.body_en,
   };

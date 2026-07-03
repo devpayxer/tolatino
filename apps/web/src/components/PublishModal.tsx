@@ -8,23 +8,21 @@
 // Post form is 3 steps: type → write (photos / tag business / poll options) →
 // preview.
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, HelpCircle, Heart, LogIn, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
+import { Calendar, HelpCircle, Heart, ImagePlus, LogIn, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp, type PostType } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useLiveData } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
+import { uploadPostImages } from '@/lib/image';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { PUB_HOODS, TAG_BIZ_NAMES, VIEW_PATH } from '@/data/fixtures';
 import { PostCard, type FeedPost } from '@/components/PostCard';
 
-const PHOTO_TILES = [
-  'linear-gradient(135deg,#FFD8A8,#FF922B)',
-  'linear-gradient(135deg,#D0BFFF,#7B61FF)',
-  'linear-gradient(135deg,#A5D8FF,#4DABF7)',
-];
+const MAX_PHOTOS = 3;
+type Photo = { file: File; url: string };
 
 export function PublishModal() {
   const { L } = useLang();
@@ -38,18 +36,33 @@ export function PublishModal() {
   const [postType, setPostType] = useState<PostType>('ask');
   const [text, setText] = useState('');
   const [hood, setHood] = useState('Bellaire');
-  const [photos, setPhotos] = useState(0);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [taggedBiz, setTaggedBiz] = useState<string | null>(null);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [evFree, setEvFree] = useState(true);
   const [posting, setPosting] = useState(false);
   const [postErr, setPostErr] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const clearPhotos = () => setPhotos((list) => (list.forEach((p) => URL.revokeObjectURL(p.url)), []));
+
+  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith('image/'));
+    setPhotos((list) => [...list, ...picked.slice(0, MAX_PHOTOS - list.length).map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+    e.target.value = ''; // allow re-picking the same file
+  };
+
+  const removePhoto = (i: number) =>
+    setPhotos((list) => {
+      URL.revokeObjectURL(list[i].url);
+      return list.filter((_, j) => j !== i);
+    });
 
   const reset = () => {
     setStep(1);
     setDone(false);
     setText('');
-    setPhotos(0);
+    clearPhotos();
     setTaggedBiz(null);
     setPollOptions(['', '']);
     setPosting(false);
@@ -89,6 +102,7 @@ export function PublishModal() {
       bizRating: taggedBiz ? '4.9' : undefined,
       poll: isPoll ? opts : undefined,
       pollBase: isPoll ? opts.map(() => 0) : undefined,
+      images: photos.length ? photos.map((p) => p.url) : undefined,
       es: txt,
       en: txt,
     });
@@ -104,6 +118,22 @@ export function PublishModal() {
     // Real publish: insert into Supabase with the author's identity + location.
     if (supabase && auth.user && auth.profile) {
       setPosting(true);
+
+      // Compress + upload any photos first (client-side WebP, see lib/image).
+      let images: string[] = [];
+      if (photos.length) {
+        try {
+          images = await uploadPostImages(
+            photos.map((p) => p.file),
+            auth.user.id,
+          );
+        } catch {
+          setPosting(false);
+          setPostErr(L('No pudimos subir las fotos. Intenta de nuevo.', "We couldn't upload the photos. Try again."));
+          return;
+        }
+      }
+
       const { error } = await supabase.from('posts').insert({
         type: postType,
         author_id: auth.user.id,
@@ -120,6 +150,7 @@ export function PublishModal() {
         business_rating: taggedBiz ? 4.9 : null,
         poll_options: isPoll ? opts : null,
         poll_votes: isPoll ? opts.map(() => 0) : null,
+        images: images.length ? images : null,
       });
       setPosting(false);
       if (error) {
@@ -181,6 +212,7 @@ export function PublishModal() {
     bizRating: taggedBiz ? '4.9' : undefined,
     poll: isPoll ? pollOptions.map((o) => o.trim()).filter(Boolean) : undefined,
     pollBase: isPoll ? pollOptions.map(() => 0) : undefined,
+    images: photos.length ? photos.map((p) => p.url) : undefined,
     es: text.trim() || L('Tu publicación aparecerá aquí…', 'Your post will appear here…'),
     en: text.trim() || L('Tu publicación aparecerá aquí…', 'Your post will appear here…'),
   };
@@ -338,26 +370,33 @@ export function PublishModal() {
               {!isPoll && (
                 <div>
                   <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Fotos (opcional)', 'Photos (optional)')}</div>
-                  <div className="flex gap-2">
-                    {Array.from({ length: photos }).map((_, i) => (
-                      <span key={i} className="relative h-[68px] w-[68px] rounded-btn" style={{ background: PHOTO_TILES[i % 3] }}>
+                  <input ref={fileInput} type="file" accept="image/*" multiple onChange={onPickFiles} className="hidden" />
+                  <div className="flex flex-wrap gap-2">
+                    {photos.map((p, i) => (
+                      <span key={p.url} className="relative h-[68px] w-[68px] overflow-hidden rounded-btn bg-app">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={p.url} alt="" className="h-full w-full object-cover" />
                         <button
-                          onClick={() => setPhotos(photos - 1)}
+                          onClick={() => removePhoto(i)}
                           className="absolute -right-1.5 -top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-ink text-white"
+                          aria-label={L('Quitar foto', 'Remove photo')}
                         >
                           <X size={10} strokeWidth={3} />
                         </button>
                       </span>
                     ))}
-                    {photos < 3 && (
+                    {photos.length < MAX_PHOTOS && (
                       <button
-                        onClick={() => setPhotos(photos + 1)}
+                        onClick={() => fileInput.current?.click()}
                         className="flex h-[68px] w-[68px] cursor-pointer flex-col items-center justify-center gap-1 rounded-btn border-[1.5px] border-dashed border-lilac-line text-[11px] font-extrabold text-primary-dark"
                       >
-                        <Plus size={16} strokeWidth={2.6} />
+                        <ImagePlus size={16} strokeWidth={2.4} />
                         {L('Añadir', 'Add')}
                       </button>
                     )}
+                  </div>
+                  <div className="mt-1.5 text-[11px] font-semibold text-muted">
+                    {L('Se optimizan en tu teléfono antes de subir.', 'Optimized on your phone before upload.')}
                   </div>
                 </div>
               )}
@@ -402,7 +441,11 @@ export function PublishModal() {
                 <div className="mt-3 rounded-btn bg-pink-bg px-3 py-2 text-[12px] font-semibold text-pink-dark">{postErr}</div>
               )}
               <PrimaryBtn className="mt-4" disabled={posting} onClick={submitPost}>
-                {posting ? L('Publicando…', 'Posting…') : L('Publicar', 'Post')}
+                {posting
+                  ? photos.length
+                    ? L('Subiendo fotos…', 'Uploading photos…')
+                    : L('Publicando…', 'Posting…')
+                  : L('Publicar', 'Post')}
               </PrimaryBtn>
             </div>
           )}
