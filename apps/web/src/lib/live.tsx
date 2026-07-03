@@ -72,6 +72,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
           const distM = r.distance_m as number | null;
           return {
             id: i,
+            slug: String(r.slug),
             name: String(r.name),
             cat: String(r.category_id) as CatKey,
             rating: Number(r.rating).toFixed(1),

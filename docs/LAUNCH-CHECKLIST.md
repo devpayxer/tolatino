@@ -126,6 +126,14 @@
   flow** (claim an unverified listing, prove ownership, upgrade to Verified/Premium),
   and the paid-tier billing that gates it. Until then no owner can move their own
   listing from the basic card to the rich one.
+- [ ] **Saved businesses — cross-city list.** The ♥ on a business now persists
+  (`saved_businesses` table for signed-in users, migration `0017`; localStorage
+  for guests; keyed by slug; guest saves merge up on login) and there's a
+  "Guardados" toggle in Negocios. Limitation: that toggle **filters the current
+  geo-scoped results**, so a saved business in another metro won't show while
+  you're viewing a different city. Before launch, add a real saved list that
+  **fetches the saved businesses by slug regardless of the active city** (a
+  `businesses_by_slugs` RPC) so Guardados is truly global.
 - [ ] **Push notifications.** Not built. Plan: **Web Push (VAPID)** for the PWA,
   **+ FCM** (free) for native later. Drives the "Alertas" tab and new-activity
   pings.

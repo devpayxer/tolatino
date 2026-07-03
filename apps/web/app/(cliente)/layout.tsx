@@ -9,6 +9,7 @@ import { LiveDataProvider } from '@/lib/live';
 import { InteractionsProvider } from '@/lib/interactions';
 import { FollowsProvider } from '@/lib/follows';
 import { AddressesProvider } from '@/lib/addresses';
+import { SavedBizProvider } from '@/lib/savedBiz';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { CityModal } from '@/components/CityModal';
@@ -22,6 +23,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
     <LiveDataProvider>
     <FollowsProvider>
     <AddressesProvider>
+    <SavedBizProvider>
     <InteractionsProvider>
     <div className="min-h-screen bg-app">
       <AppHeader />
@@ -36,6 +38,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
       <PublishModal />
     </div>
     </InteractionsProvider>
+    </SavedBizProvider>
     </AddressesProvider>
     </FollowsProvider>
     </LiveDataProvider>

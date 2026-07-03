@@ -44,9 +44,6 @@ type AppCtx = {
   setSearch: (v: string) => void;
 
   // toggles
-  saved: Toggles;
-  toggleSaved: (id: number) => void;
-  savedCount: number;
   savedPosts: Toggles;
   toggleSavedPost: (id: string) => void;
   recd: Toggles;
@@ -145,7 +142,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
-  const [saved, setSaved] = useState<Toggles>({});
   const [savedPosts, setSavedPosts] = useState<Toggles>({});
   const [recd, setRecd] = useState<Toggles>({});
   const [going, setGoing] = useState<Toggles>({});
@@ -163,7 +159,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [biz, setBiz] = useState<BizProfile | null>(null);
 
   const unreadCount = NOTIFS.filter((n) => n.unread && !notifRead[n.id]).length;
-  const savedCount = Object.values(saved).filter(Boolean).length;
 
   const value = useMemo<AppCtx>(
     () => ({
@@ -209,9 +204,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setQuery,
       search,
       setSearch,
-      saved,
-      toggleSaved: (id) => toggle(setSaved, id),
-      savedCount,
       savedPosts,
       toggleSavedPost: (id) => toggle(setSavedPosts, id),
       recd,
@@ -256,7 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       biz,
       setBiz,
     }),
-    [city, cityCoords, coords, address, addressCoords, addressId, cityOpen, addressOpen, query, search, saved, savedCount, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
+    [city, cityCoords, coords, address, addressCoords, addressId, cityOpen, addressOpen, query, search, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

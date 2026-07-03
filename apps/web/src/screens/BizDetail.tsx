@@ -10,6 +10,7 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, type Business } from '@/data/fixtures';
+import { useSavedBiz } from '@/lib/savedBiz';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_DATES, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
 
@@ -24,6 +25,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const { L } = useLang();
   const B = (pair: Bi) => L(pair[0], pair[1]);
   const app = useApp();
+  const savedBiz = useSavedBiz();
   const id = b.id;
 
   const [tab, setTab] = useState<TabKey>('overview');
@@ -56,7 +58,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [myText, setMyText] = useState('');
   const [myReviews, setMyReviews] = useState<{ id: string; stars: number; text: string }[]>([]);
 
-  const saved = !!app.saved[id];
+  const saved = savedBiz.isSaved(b.slug);
   const catLabel = L(CAT[b.cat].es, CAT[b.cat].en);
   const revRaw = L(b.revEs, b.revEn);
   const [quote, rvName] = revRaw.includes('—') ? [revRaw.split('—')[0].trim(), revRaw.split('—').slice(1).join('—').trim()] : [revRaw, ''];
@@ -203,7 +205,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
             <button onClick={() => setContactOpen(true)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Compartir', 'Share')}>
               <Share size={16} strokeWidth={2.2} className="text-ink" />
             </button>
-            <button onClick={() => app.toggleSaved(id)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Guardar', 'Save')}>
+            <button onClick={() => savedBiz.toggle(b.slug)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Guardar', 'Save')}>
               <Heart size={16} strokeWidth={2.2} className="text-pink" fill={saved ? '#F0466E' : 'none'} />
             </button>
           </div>

@@ -13,6 +13,7 @@ import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
+import { useSavedBiz } from '@/lib/savedBiz';
 import { AVATAR_PALETTE, CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
 
@@ -53,8 +54,10 @@ export function NegociosScreen() {
   const { L } = useLang();
   const app = useApp();
   const { businesses: BUSINESSES } = useLiveData();
+  const savedBiz = useSavedBiz();
   const [f, setF] = useState<Filters>(DEFAULT_FILTERS);
   const [catOpen, setCatOpen] = useState<CatKey | null>(null);
+  const [onlySaved, setOnlySaved] = useState(false); // "Guardados" view
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
@@ -74,6 +77,7 @@ export function NegociosScreen() {
   const sl = app.search.trim().toLowerCase();
   const results = useMemo(() => {
     let list = BUSINESSES.slice();
+    if (onlySaved) list = list.filter((b) => savedBiz.isSaved(b.slug));
     if (f.cat !== 'all') list = list.filter((b) => b.cat === f.cat);
     if (f.subCat) list = list.filter((b) => (b.subcats ?? []).includes(f.subCat as string));
     if (f.price) list = list.filter((b) => b.price === f.price);
@@ -95,7 +99,7 @@ export function NegociosScreen() {
     // is stable, so the backend's relevance order is kept inside each tier.
     list = list.slice().sort((a, b) => (a.verified ? 0 : 1) - (b.verified ? 0 : 1));
     return list;
-  }, [f, sl, BUSINESSES]);
+  }, [f, sl, BUSINESSES, onlySaved, savedBiz.saved]);
 
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
@@ -304,6 +308,15 @@ export function NegociosScreen() {
         <button onClick={() => patch({ openNow: !f.openNow })} className={pill(f.openNow)}>
           {L('Abierto ahora', 'Open now')}
         </button>
+        <button onClick={() => { setOnlySaved((v) => !v); setPage(1); }} className={pill(onlySaved)}>
+          <Heart size={13} strokeWidth={2.4} fill={onlySaved ? '#fff' : 'none'} />
+          {L('Guardados', 'Saved')}
+          {savedBiz.count > 0 && (
+            <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-extrabold ${onlySaved ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
+              {savedBiz.count}
+            </span>
+          )}
+        </button>
       </div>
 
       {openFilter && (
@@ -433,8 +446,29 @@ export function NegociosScreen() {
 
           {results.length === 0 ? (
             <div className="rounded-card border border-hair bg-white p-10 text-center shadow-card">
-              <div className="text-[15px] font-extrabold text-ink">{L('Sin resultados', 'No results')}</div>
-              <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Prueba quitar algunos filtros.', 'Try removing some filters.')}</div>
+              {onlySaved ? (
+                <>
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-pink-bg">
+                    <Heart size={22} strokeWidth={2.2} className="text-pink" />
+                  </div>
+                  <div className="text-[15px] font-extrabold text-ink">
+                    {savedBiz.count === 0 ? L('Aún no guardas negocios', 'No saved businesses yet') : L('Ninguno por aquí', 'None in this view')}
+                  </div>
+                  <div className="mt-1 text-[12.5px] font-semibold text-muted">
+                    {savedBiz.count === 0
+                      ? L('Toca el ♥ en un negocio para guardarlo y verlo aquí.', 'Tap the ♥ on a business to save it and find it here.')
+                      : L('Tus negocios guardados no aparecen con estos filtros o ciudad.', "Your saved businesses aren't in this filter or city.")}
+                  </div>
+                  <button onClick={() => { setOnlySaved(false); setPage(1); }} className="mt-4 cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-2 text-[12.5px] font-extrabold text-primary-dark">
+                    {L('Explorar negocios', 'Browse businesses')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="text-[15px] font-extrabold text-ink">{L('Sin resultados', 'No results')}</div>
+                  <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Prueba quitar algunos filtros.', 'Try removing some filters.')}</div>
+                </>
+              )}
             </div>
           ) : (
             <div className="grid gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -502,19 +536,19 @@ export function NegociosScreen() {
   );
 }
 
-/** Small heart / save toggle shared by both card variants. */
+/** Small heart / save toggle shared by both card variants (persists by slug). */
 function SaveBtn({ b, size = 17 }: { b: Business; size?: number }) {
   const { L } = useLang();
-  const app = useApp();
-  const savedOn = !!app.saved[b.id];
+  const savedBiz = useSavedBiz();
+  const savedOn = savedBiz.isSaved(b.slug);
   return (
     <button
       onClick={(e) => {
         e.stopPropagation();
-        app.toggleSaved(b.id);
+        savedBiz.toggle(b.slug);
       }}
       className="ml-auto flex-none cursor-pointer p-1"
-      aria-label={L('Guardar', 'Save')}
+      aria-label={savedOn ? L('Quitar de guardados', 'Remove from saved') : L('Guardar', 'Save')}
     >
       <Heart size={size} strokeWidth={2.2} className={savedOn ? 'text-pink' : 'text-[#D6D1E2]'} fill={savedOn ? '#F0466E' : 'none'} />
     </button>
