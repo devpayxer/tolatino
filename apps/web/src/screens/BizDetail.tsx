@@ -153,14 +153,30 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   // stuck to the top) for a distraction-free read. Jump to the top on every
   // switch so each tab opens from its start.
   const focused = tab !== 'overview';
+  const barRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const pinOffset = () => (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
+
   const onTab = (k: TabKey) => {
     setTab(k);
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+    if (typeof window === 'undefined') return;
+    if (k === 'overview') {
+      window.scrollTo({ top: 0 }); // reveal the full hero
+      return;
+    }
+    // Non-Overview: scroll the hero out of view so the bar is pinned and the tab
+    // opens from its start. Because the hero stays mounted, the bar's pinned spot
+    // is the same as on any other tab → switching from a pinned Overview (or
+    // between tabs) is seamless, no snap.
+    const s = sentinelRef.current;
+    if (!s) return;
+    const naturalTop = s.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: Math.max(0, naturalTop - pinOffset()) });
   };
 
   // Track when the sticky bar reaches the top so Overview can reveal the title
   // row exactly when it pins (focused tabs always show it). Shared 1-frame check.
-  const barRef = useRef<HTMLDivElement>(null);
   const [stuck, setStuck] = useState(false);
   useEffect(() => {
     const el = barRef.current;
@@ -168,7 +184,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     let raf = 0;
     const check = () => {
       raf = 0;
-      const pin = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 108 : 150;
+      const pin = window.matchMedia('(min-width: 768px)').matches ? 108 : 150;
       setStuck(el.getBoundingClientRect().top <= pin + 0.5);
     };
     const onScroll = () => {
@@ -248,9 +264,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   return (
     <div className="mx-auto max-w-[680px]">
-      {/* Full header (hero + title + meta + endorsement) — Overview only */}
-      {!focused && (
-      <>
+      {/* Full header (hero + title + meta + endorsement) is ALWAYS in the DOM so
+          the tab bar's natural position is identical on every tab — that's what
+          makes tab switches seamless. On a non-Overview tab we simply scroll it
+          out of view (bar pinned) instead of unmounting it. */}
       {/* hero */}
       <div className="relative mb-4 h-[200px] overflow-hidden rounded-card" style={{ background: bizTile(b) }}>
         <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A8FC4]">[ foto ]</div>
@@ -306,14 +323,16 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </span>
         </div>
       )}
-      </>
-      )}
+
+      {/* 0-height marker at the bar's natural top — used to scroll the bar into
+          its pinned position when opening a non-Overview tab. */}
+      <div ref={sentinelRef} className="h-0" aria-hidden />
 
       {/* One sticky header for every tab. The business-title row is always here;
           on a non-Overview tab it shows immediately, and on Overview it reveals
           (smoothly, no jump) once the bar pins to the top while scrolling — so
           switching tabs never snaps between two different bars. */}
-      <div ref={barRef} className={`sticky top-[150px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[108px] md:-mx-5 md:px-5 ${focused ? '' : 'mt-1'}`}>
+      <div ref={barRef} className="sticky top-[150px] z-20 mt-1 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[108px] md:-mx-5 md:px-5">
         <div className={`overflow-hidden transition-all duration-200 ${showTitle ? 'max-h-[64px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="flex items-center gap-2 pb-2 pt-2.5">
             <button onClick={() => onTab('overview')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
