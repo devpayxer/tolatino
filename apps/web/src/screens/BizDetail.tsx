@@ -4,7 +4,7 @@
 // (Overview · Updates · Menú · Tienda · Servicios · Eventos · Equipo ·
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -154,16 +154,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   // switch so each tab opens from its start.
   const focused = tab !== 'overview';
   const barRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const onTab = (k: TabKey) => setTab(k);
 
   // Pin the bar to the REAL app-header height (measured live) so it tucks flush —
   // no gap, no overlap — on any breakpoint. Fallbacks are only for first paint.
   const [headerH, setHeaderH] = useState<number | null>(null);
   const headerHRef = useRef<number | null>(null);
-  // Minimum height for the tab-content area so a SHORT tab still leaves enough
-  // scroll room to push the hero out of view and pin the bar. ~48px covers the
-  // collapsed bar (tabs row), a safe slight over-provision.
-  const [contentMinH, setContentMinH] = useState<number | null>(null);
   useEffect(() => {
     const header = document.querySelector('header');
     if (!header) return;
@@ -171,7 +167,6 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       const h = Math.round(header.getBoundingClientRect().height);
       headerHRef.current = h;
       setHeaderH(h);
-      setContentMinH(Math.max(0, window.innerHeight - h - 48));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -182,28 +177,18 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       window.removeEventListener('resize', measure);
     };
   }, []);
-  const pinPx = () =>
-    headerHRef.current ?? (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
 
-  const onTab = (k: TabKey) => {
-    setTab(k);
-    if (typeof window === 'undefined') return;
-    if (k === 'overview') {
-      window.scrollTo({ top: 0 }); // reveal the full hero
-      return;
-    }
-    // Non-Overview: scroll the hero out of view so the bar is pinned and the tab
-    // opens from its start. Because the hero stays mounted, the bar's pinned spot
-    // is the same as on any other tab → switching from a pinned Overview (or
-    // between tabs) is seamless, no snap.
-    const s = sentinelRef.current;
-    if (!s) return;
-    const naturalTop = s.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: Math.max(0, naturalTop - pinPx()) });
-  };
+  // On every tab change reset to the top BEFORE paint. On Overview this shows the
+  // full hero; on any other tab the hero is display:none, so scroll 0 lands the
+  // bar flush at the top — and since nothing is above it, it stays locked there
+  // (you can't scroll up to reveal the hero). Doing it pre-paint keeps switching
+  // seamless: the bar never visibly moves, only the content below swaps.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab]);
 
-  // Track when the sticky bar reaches the top so Overview can reveal the title
-  // row exactly when it pins (focused tabs always show it). Shared 1-frame check.
+  // Overview reveals the title row once the bar pins while scrolling; focused
+  // tabs always show it. Track the pinned state via a cheap per-frame check.
   const [stuck, setStuck] = useState(false);
   useEffect(() => {
     const el = barRef.current;
@@ -211,7 +196,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     let raf = 0;
     const check = () => {
       raf = 0;
-      setStuck(el.getBoundingClientRect().top <= pinPx() + 0.5);
+      const pin = headerHRef.current ?? (window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
+      setStuck(el.getBoundingClientRect().top <= pin + 0.5);
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(check);
@@ -224,7 +210,6 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       window.removeEventListener('resize', onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, headerH]);
   const showTitle = focused || stuck;
 
@@ -291,10 +276,11 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   return (
     <div className="mx-auto max-w-[680px]">
-      {/* Full header (hero + title + meta + endorsement) is ALWAYS in the DOM so
-          the tab bar's natural position is identical on every tab — that's what
-          makes tab switches seamless. On a non-Overview tab we simply scroll it
-          out of view (bar pinned) instead of unmounting it. */}
+      {/* Full header (hero + title + meta + endorsement). Kept mounted but
+          display:none on non-Overview tabs, so those tabs have nothing scrollable
+          above the bar → the bar is locked at the very top and the hero can't be
+          revealed. Only Overview shows it. */}
+      <div className={focused ? 'hidden' : ''}>
       {/* hero */}
       <div className="relative mb-4 h-[200px] overflow-hidden rounded-card" style={{ background: bizTile(b) }}>
         <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A8FC4]">[ foto ]</div>
@@ -350,19 +336,18 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </span>
         </div>
       )}
+      </div>
 
-      {/* 0-height marker at the bar's natural top — used to scroll the bar into
-          its pinned position when opening a non-Overview tab. */}
-      <div ref={sentinelRef} className="h-0" aria-hidden />
-
-      {/* One sticky header for every tab. The business-title row is always here;
-          on a non-Overview tab it shows immediately, and on Overview it reveals
-          (smoothly, no jump) once the bar pins to the top while scrolling — so
-          switching tabs never snaps between two different bars. */}
+      {/* One sticky header for every tab. On a non-Overview tab the negative top
+          margin cancels the page's top padding so the bar sits flush at the very
+          top (locked, since the hero above is display:none). On Overview it sits
+          below the hero and reveals its title row once it pins while scrolling. */}
       <div
         ref={barRef}
         style={headerH != null ? { top: headerH } : undefined}
-        className="sticky top-[150px] z-20 mt-1 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[108px] md:-mx-5 md:px-5"
+        className={`sticky top-[150px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[108px] md:-mx-5 md:px-5 ${
+          focused ? '-mt-4 md:-mt-5 lg:-mt-[26px]' : 'mt-1'
+        }`}
       >
         <div className={`overflow-hidden transition-all duration-200 ${showTitle ? 'max-h-[64px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="flex items-center gap-2 pb-2 pt-2.5">
@@ -383,10 +368,6 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         </div>
         <div className="no-scrollbar flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain pt-2.5">{tabButtons}</div>
       </div>
-
-      {/* Tab content — min-height guarantees enough scroll to pin the bar even
-          when a tab (e.g. Eventos) is short. */}
-      <div style={contentMinH != null ? { minHeight: contentMinH } : undefined}>
 
       {/* ============ OVERVIEW ============ */}
       {tab === 'overview' && (
@@ -715,8 +696,6 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </div>
         </div>
       )}
-
-      </div>
 
       {/* cart bar */}
       {cartCount > 0 && (
