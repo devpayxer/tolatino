@@ -152,6 +152,9 @@ export function ComunidadScreen() {
   // they're scrolling. `revealed` holds the ones they chose to show.
   const [pending, setPending] = useState<Post[]>([]);
   const [revealed, setRevealed] = useState<Post[]>([]);
+  // Posts deleted by their author while we're viewing — removed from the feed
+  // live (via the realtime DELETE event) so nobody has to refresh.
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const feedIdsRef = useRef<Set<string>>(new Set());
 
   // The app header is `sticky top-0` and its height differs between mobile
@@ -242,8 +245,8 @@ export function ComunidadScreen() {
   }, [threadPostId]);
 
   const allPosts: Post[] = useMemo(
-    () => dedupeById([...revealed, ...app.newPosts, ...POSTS]),
-    [revealed, app.newPosts, POSTS],
+    () => dedupeById([...revealed, ...app.newPosts, ...POSTS]).filter((p) => !removedIds.has(p.id)),
+    [revealed, app.newPosts, POSTS, removedIds],
   );
 
   // Keep a live set of the ids already in the feed so the realtime handler can
@@ -258,6 +261,7 @@ export function ComunidadScreen() {
   useEffect(() => {
     setPending([]);
     setRevealed([]);
+    setRemovedIds(new Set());
     setHood('all'); // barrios differ per city — reset the filter
   }, [cLat, cLng]);
 
@@ -275,6 +279,14 @@ export function ComunidadScreen() {
         if (r.lat != null && r.lng != null && distMeters(cLat, cLng, r.lat, r.lng) > COMMUNITY_RADIUS_M) return;
         const post = mapPost(r);
         setPending((list) => (list.some((p) => p.id === post.id) ? list : [post, ...list]));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, (payload) => {
+        // DELETE payload carries only the primary key (id) — enough to drop it.
+        const id = (payload.old as { id?: string })?.id;
+        if (!id) return;
+        setRemovedIds((s) => (s.has(String(id)) ? s : new Set(s).add(String(id))));
+        setPending((list) => list.filter((p) => p.id !== String(id)));
+        setRevealed((list) => list.filter((p) => p.id !== String(id)));
       })
       .subscribe();
     return () => {
