@@ -16,6 +16,11 @@ import { CAT_INFO, activeMods, buildGeneric, buildNav, pageHead, type Mods, type
 import { GenericTab } from '@/screens/negocio/GenericTab';
 import { InsightsFree, InsightsPaid } from '@/screens/negocio/Insights';
 import { ModulesSetup } from '@/screens/negocio/ModulesSetup';
+import { UpdatesModule } from '@/screens/negocio/modules/Updates';
+
+// Tabs that render their own rich module screen (composer / sub-tabs / etc.)
+// instead of the uniform GenericTab — the panel hides its generic "+ CTA" row.
+const RICH_MODULES = new Set<TabKey>(['updates']);
 
 const RUBRO_FROM_ONB: Record<string, Rubro> = {
   comida: 'restaurant', belleza: 'beauty', auto: 'auto', tiendas: 'retail', abarrotes: 'retail', deportes: 'rental',
@@ -239,9 +244,11 @@ export function PanelScreen() {
                   {head.ghost}
                 </button>
               )}
-              <button className="cursor-pointer rounded-[10px] bg-primary px-4 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">
-                + {head.cta}
-              </button>
+              {!RICH_MODULES.has(tab) && (
+                <button className="cursor-pointer rounded-[10px] bg-primary px-4 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">
+                  + {head.cta}
+                </button>
+              )}
             </div>
           </div>
 
@@ -269,7 +276,8 @@ export function PanelScreen() {
 
           {tab === 'insights' && (isFree ? <InsightsFree ctx={ctx} /> : <InsightsPaid ctx={ctx} />)}
           {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={(k) => setMods((m) => ({ ...m, [k]: !m[k] }))} />}
-          {tab !== 'insights' && tab !== 'modules' && <GenericTab g={buildGeneric(tab, ctx)} ctx={ctx} />}
+          {tab === 'updates' && <UpdatesModule ctx={ctx} />}
+          {tab !== 'insights' && tab !== 'modules' && !RICH_MODULES.has(tab) && <GenericTab g={buildGeneric(tab, ctx)} ctx={ctx} />}
         </main>
       </div>
     </div>
