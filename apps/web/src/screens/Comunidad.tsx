@@ -155,6 +155,9 @@ export function ComunidadScreen() {
   // Posts deleted by their author while we're viewing — removed from the feed
   // live (via the realtime DELETE event) so nobody has to refresh.
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  // Posts edited by their author while we're viewing — the fresh version
+  // overrides the one in the feed (via the realtime UPDATE event).
+  const [editedPosts, setEditedPosts] = useState<Record<string, Post>>({});
   const feedIdsRef = useRef<Set<string>>(new Set());
 
   // The app header is `sticky top-0` and its height differs between mobile
@@ -245,8 +248,11 @@ export function ComunidadScreen() {
   }, [threadPostId]);
 
   const allPosts: Post[] = useMemo(
-    () => dedupeById([...revealed, ...app.newPosts, ...POSTS]).filter((p) => !removedIds.has(p.id)),
-    [revealed, app.newPosts, POSTS, removedIds],
+    () =>
+      dedupeById([...revealed, ...app.newPosts, ...POSTS])
+        .filter((p) => !removedIds.has(p.id))
+        .map((p) => editedPosts[p.id] ?? p),
+    [revealed, app.newPosts, POSTS, removedIds, editedPosts],
   );
 
   // Keep a live set of the ids already in the feed so the realtime handler can
@@ -262,6 +268,7 @@ export function ComunidadScreen() {
     setPending([]);
     setRevealed([]);
     setRemovedIds(new Set());
+    setEditedPosts({});
     setHood('all'); // barrios differ per city — reset the filter
   }, [cLat, cLng]);
 
@@ -287,6 +294,14 @@ export function ComunidadScreen() {
         setRemovedIds((s) => (s.has(String(id)) ? s : new Set(s).add(String(id))));
         setPending((list) => list.filter((p) => p.id !== String(id)));
         setRevealed((list) => list.filter((p) => p.id !== String(id)));
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, (payload) => {
+        // Author edited a post → overwrite the visible copy live. UPDATE always
+        // carries the full new row. Only for posts we're already showing.
+        const r = payload.new as PostRow;
+        if (!r?.id || !feedIdsRef.current.has(String(r.id))) return;
+        const post = mapPost(r);
+        setEditedPosts((m) => ({ ...m, [post.id]: post }));
       })
       .subscribe();
     return () => {
