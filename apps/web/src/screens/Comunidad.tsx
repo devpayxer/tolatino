@@ -3,7 +3,7 @@
 // Comunidad (`/comunidad`) — Nextdoor-style home of the app (Handoff v2).
 // Desktop: barrios rail / feed / tendencias+vecinos. Mobile: single column.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Send, Store, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -57,6 +57,66 @@ function mapComment(r: CommentRow): Comment {
   };
 }
 
+// 30 miles — the hyperlocal community radius (matches posts_near in live.tsx).
+const COMMUNITY_RADIUS_M = 48280;
+
+type PostRow = {
+  id: string;
+  type: Post['type'];
+  author_id: string | null;
+  author_initials: string;
+  author_color: string;
+  author_name: string;
+  hood: string | null;
+  created_at: string;
+  recommends: number | null;
+  business_name: string | null;
+  business_rating: number | null;
+  poll_options: string[] | null;
+  poll_votes: number[] | null;
+  body_es: string;
+  body_en: string;
+  lat: number | null;
+  lng: number | null;
+};
+
+function mapPost(r: PostRow): Post {
+  const [tEs, tEn] = relTime(r.created_at);
+  return {
+    id: String(r.id),
+    type: r.type,
+    initials: r.author_initials,
+    color: r.author_color,
+    name: r.author_name,
+    hoodEs: r.hood ?? '',
+    timeEs: tEs,
+    timeEn: tEn,
+    recommends: Number(r.recommends ?? 0),
+    business: r.business_name ?? undefined,
+    bizRating: r.business_rating != null ? Number(r.business_rating).toFixed(1) : undefined,
+    poll: r.poll_options ?? undefined,
+    pollBase: r.poll_votes ?? undefined,
+    es: r.body_es,
+    en: r.body_en,
+  };
+}
+
+// Great-circle distance in meters (haversine) — used to keep realtime posts
+// within the user's 30-mile community radius without a round-trip.
+function distMeters(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+function dedupeById(list: Post[]): Post[] {
+  const seen = new Set<string>();
+  return list.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+}
+
 export function ComunidadScreen() {
   const { L } = useLang();
   const app = useApp();
@@ -81,6 +141,13 @@ export function ComunidadScreen() {
   const [commentBizQuery, setCommentBizQuery] = useState('');
   const [commentSeq, setCommentSeq] = useState(0);
   const [sending, setSending] = useState(false);
+
+  // New posts from other users arriving live: buffered in `pending` (shown as a
+  // pill) until the user taps to reveal them — so the feed never jumps while
+  // they're scrolling. `revealed` holds the ones they chose to show.
+  const [pending, setPending] = useState<Post[]>([]);
+  const [revealed, setRevealed] = useState<Post[]>([]);
+  const feedIdsRef = useRef<Set<string>>(new Set());
 
   // Load the DB comment thread (and this user's comment-likes) when a real
   // post's thread opens. Fixture posts keep their SEED_COMMENTS.
@@ -154,7 +221,51 @@ export function ComunidadScreen() {
     };
   }, [threadPostId]);
 
-  const allPosts: Post[] = useMemo(() => [...app.newPosts, ...POSTS], [app.newPosts, POSTS]);
+  const allPosts: Post[] = useMemo(
+    () => dedupeById([...revealed, ...app.newPosts, ...POSTS]),
+    [revealed, app.newPosts, POSTS],
+  );
+
+  // Keep a live set of the ids already in the feed so the realtime handler can
+  // skip posts we're already showing (e.g. ones that arrived via a refresh).
+  useEffect(() => {
+    feedIdsRef.current = new Set(allPosts.map((p) => p.id));
+  }, [allPosts]);
+
+  // Switching city resets the buffered/revealed live posts — they belonged to
+  // the old feed.
+  const { lat: cLat, lng: cLng } = app.coords;
+  useEffect(() => {
+    setPending([]);
+    setRevealed([]);
+  }, [cLat, cLng]);
+
+  // Live feed: buffer new posts from OTHER users within the 30-mile radius.
+  useEffect(() => {
+    const sb = supabase;
+    if (!sb) return;
+    const ch = sb
+      .channel('tl-comunidad-feed')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload) => {
+        const r = payload.new as PostRow;
+        if (!r?.id) return;
+        if (auth.user && r.author_id === auth.user.id) return; // our own post arrives via refresh
+        if (feedIdsRef.current.has(String(r.id))) return; // already visible
+        if (r.lat != null && r.lng != null && distMeters(cLat, cLng, r.lat, r.lng) > COMMUNITY_RADIUS_M) return;
+        const post = mapPost(r);
+        setPending((list) => (list.some((p) => p.id === post.id) ? list : [post, ...list]));
+      })
+      .subscribe();
+    return () => {
+      sb.removeChannel(ch);
+    };
+  }, [cLat, cLng, auth.user]);
+
+  const showNewPosts = () => {
+    setRevealed((r) => dedupeById([...pending, ...r]));
+    setPending([]);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const sl = app.search.trim().toLowerCase();
   const posts = sl
     ? allPosts.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))
@@ -368,6 +479,24 @@ export function ComunidadScreen() {
             ))}
           </div>
         </Card>
+
+        {/* Live alert: new posts from neighbors, buffered so the feed never jumps */}
+        {pending.length > 0 && (
+          <div className="pointer-events-none sticky top-[104px] z-20 -mt-1 mb-3.5 flex justify-center md:top-[120px]">
+            <button
+              onClick={showNewPosts}
+              className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-pop transition active:scale-95"
+            >
+              <span className="h-2 w-2 flex-none rounded-full bg-white" />
+              {pending.length}{' '}
+              {L(
+                pending.length === 1 ? 'publicación nueva' : 'publicaciones nuevas',
+                pending.length === 1 ? 'new post' : 'new posts',
+              )}{' '}
+              · {L('Ver', 'Show')}
+            </button>
+          </div>
+        )}
 
         {posts.length === 0 ? (
           app.search ? (
