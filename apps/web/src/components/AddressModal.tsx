@@ -33,6 +33,7 @@ export function AddressModal() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [addErr, setAddErr] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const close = () => {
@@ -43,20 +44,33 @@ export function AddressModal() {
     setGeoError(null);
     setLocating(false);
     setEditId(null);
+    setAddErr(null);
   };
 
-  // Choose a resolved address: saved users store it (+ select); guests set local.
+  // Choose a resolved address. Apply it immediately as the active origin (instant
+  // feedback + works even if the DB save fails); then, for signed-in users, save
+  // it to the account and swap in the real id.
   const choose = async (a: Address) => {
-    if (saved) {
-      const row = await store.add(newLabel.trim() || null, a.formatted, a.lat, a.lng);
-      if (row) app.setUserAddress(row.formatted, { lat: row.lat, lng: row.lng }, row.id);
-    } else {
-      app.setUserAddress(a.formatted, { lat: a.lat, lng: a.lng });
-    }
+    setAddErr(null);
+    app.setUserAddress(a.formatted, { lat: a.lat, lng: a.lng }, null);
     setQ('');
-    setNewLabel('');
     setResults([]);
-    if (!saved) close();
+    if (!saved) {
+      close();
+      return;
+    }
+    const row = await store.add(newLabel.trim() || null, a.formatted, a.lat, a.lng);
+    if (row) {
+      app.setUserAddress(row.formatted, { lat: row.lat, lng: row.lng }, row.id);
+      setNewLabel('');
+    } else {
+      setAddErr(
+        L(
+          'Dirección aplicada en este dispositivo, pero no se pudo guardar en tu cuenta. ¿Corriste la migración de direcciones?',
+          "Address applied on this device, but we couldn't save it to your account. Did you run the addresses migration?",
+        ),
+      );
+    }
   };
 
   useEffect(() => {
@@ -180,6 +194,8 @@ export function AddressModal() {
       {q.trim().length >= 3 && !searching && results.length === 0 && (
         <div className="px-2 py-4 text-center text-[12.5px] font-semibold text-muted">{L('Sin resultados', 'No results')}</div>
       )}
+
+      {addErr && <div className="mt-2 rounded-btn bg-pink-bg px-3 py-2 text-[11.5px] font-semibold text-pink-dark">{addErr}</div>}
 
       {/* saved list (logged in) */}
       {saved ? (
