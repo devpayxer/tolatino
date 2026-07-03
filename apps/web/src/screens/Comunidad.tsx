@@ -495,10 +495,13 @@ export function ComunidadScreen() {
           </div>
         </Card>
 
-        {/* Live alert: new posts from neighbors, buffered so the feed never jumps */}
+        {/* Live alert: new posts from neighbors, buffered so the feed never jumps.
+            `fixed` (not sticky) because mobile Safari drops position:sticky inside
+            a CSS grid item — this floats reliably on every device, offset just
+            under the measured (variable-height) header. */}
         {pending.length > 0 && (
           <div
-            className="pointer-events-none sticky z-20 -mt-1 mb-3.5 flex justify-center"
+            className="pointer-events-none fixed inset-x-0 z-20 flex justify-center px-4"
             style={{ top: (headerH || 120) + 8 }}
           >
             <button
