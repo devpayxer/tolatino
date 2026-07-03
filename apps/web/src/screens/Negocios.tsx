@@ -55,7 +55,6 @@ export function NegociosScreen() {
   const { businesses: BUSINESSES } = useLiveData();
   const [f, setF] = useState<Filters>(DEFAULT_FILTERS);
   const [catOpen, setCatOpen] = useState<CatKey | null>(null);
-  const [sort, setSort] = useState<'rel' | 'dist' | 'rating'>('rel');
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
@@ -92,19 +91,11 @@ export function NegociosScreen() {
         return `${b.name} ${CAT[b.cat].es} ${CAT[b.cat].en} ${b.specEs} ${b.specEn} ${subs}`.toLowerCase().includes(sl);
       });
     }
-    // Verified businesses ALWAYS rank first (a paid/earned placement); the chosen
-    // sort orders within each tier. Array.sort is stable, so 'rel' keeps the
-    // backend's order inside each tier.
-    const vkey = (b: Business) => (b.verified ? 0 : 1);
-    const within =
-      sort === 'rating'
-        ? (a: Business, b: Business) => parseFloat(b.rating) - parseFloat(a.rating)
-        : sort === 'dist'
-          ? (a: Business, b: Business) => parseFloat(a.dist) - parseFloat(b.dist)
-          : () => 0;
-    list = list.slice().sort((a, b) => vkey(a) - vkey(b) || within(a, b));
+    // Verified businesses ALWAYS rank first (a paid/earned placement). Array.sort
+    // is stable, so the backend's relevance order is kept inside each tier.
+    list = list.slice().sort((a, b) => (a.verified ? 0 : 1) - (b.verified ? 0 : 1));
     return list;
-  }, [f, sl, sort, BUSINESSES]);
+  }, [f, sl, BUSINESSES]);
 
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
@@ -115,9 +106,6 @@ export function NegociosScreen() {
     BUSINESSES.forEach((b) => (m[b.cat] = (m[b.cat] ?? 0) + 1));
     return m;
   }, [BUSINESSES]);
-
-  const sortLabels = { rel: L('Relevancia', 'Relevance'), dist: L('Distancia', 'Distance'), rating: L('Calificación', 'Rating') };
-  const toggleSort = () => setSort((s) => (s === 'rel' ? 'dist' : s === 'dist' ? 'rating' : 'rel'));
 
   // Total active filters (drives the "Filtros" badge and the clear-all link).
   const activeCount =
@@ -373,13 +361,6 @@ export function NegociosScreen() {
           </div>
         </div>
         <div className="ml-auto flex flex-none items-center gap-2">
-          <button
-            onClick={toggleSort}
-            className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]"
-          >
-            <span className="text-muted">{L('Orden', 'Sort')}:</span> {sortLabels[sort]}
-            <ChevronDown size={13} strokeWidth={2.6} className="text-muted" />
-          </button>
           <button
             onClick={() => setMapOpen(!mapOpen)}
             className={`hidden cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-extrabold md:flex ${
