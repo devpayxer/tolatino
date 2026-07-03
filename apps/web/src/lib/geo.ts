@@ -180,6 +180,8 @@ async function photonSearch(q: string, near: NearCtx | null | undefined, signal:
       if (!c) continue;
       const [lng, lat] = c;
       if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+      // US-only app: never suggest addresses in other countries.
+      if (p.countrycode && p.countrycode.toUpperCase() !== 'US') continue;
       // Hard fence to the metro box (Photon's bbox isn't always strict).
       if (near && (Math.abs(lat - near.lat) > METRO_DEG || Math.abs(lng - near.lng) > METRO_DEG)) continue;
       const formatted = addrLabel(p);
@@ -356,10 +358,16 @@ export async function searchAddress(query: string, near?: NearCtx | null, signal
   const fence = elsewhere ? null : near;
   const censusQ = !wantsCensus ? q : elsewhere || locality || q.includes(',') ? q : near?.city ? `${q}, ${near.city}` : q;
 
+  // When the user names another city, put it IN the Photon query so Photon ranks
+  // that city's streets (not globally-relevant ones). Locally, search the bare
+  // street (the metro bbox handles location).
+  const streetQ = elsewhere && locality ? `${street}, ${locality}` : street;
+  const generalQ = elsewhere && locality ? `${street}, ${locality}` : q;
+
   const [census, streetsRaw, photon] = await Promise.all([
     wantsCensus ? censusGeocode(censusQ, signal) : Promise.resolve(null),
-    houseNo ? photonSearch(street, fence, signal, 'street') : Promise.resolve([] as Address[]),
-    photonSearch(elsewhere ? street || q : q, fence, signal),
+    houseNo ? photonSearch(streetQ, fence, signal, 'street') : Promise.resolve([] as Address[]),
+    photonSearch(generalQ, fence, signal),
   ]);
   if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
 
