@@ -12,7 +12,7 @@ import { Check, LocateFixed, MapPin, Pencil, Search, Star, Trash2 } from 'lucide
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
-import { useAddresses } from '@/lib/addresses';
+import { useAddresses, type SavedAddress } from '@/lib/addresses';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { getBrowserLocation, nearestCity, reverseAddress, searchAddress, type Address } from '@/lib/geo';
 
@@ -63,16 +63,17 @@ export function AddressModal() {
   const choose = async (a: Address) => {
     setAddErr(null);
     const coords = { lat: a.lat, lng: a.lng };
-    app.setUserAddress(a.formatted, coords, null);
+    // Prefer the address's OWN city (from the geocoder); only if it's missing do
+    // we fall back to the nearest known city.
+    const cityCtx = a.city ? { label: a.city, lat: a.lat, lng: a.lng } : await cityOf(a.lat, a.lng);
+    app.setUserAddress(a.formatted, coords, null, cityCtx);
     setQ('');
     setResults([]);
-    const cityCtx = await cityOf(a.lat, a.lng);
-    if (cityCtx) app.setUserAddress(a.formatted, coords, null, cityCtx);
     if (!saved) {
       close();
       return;
     }
-    const row = await store.add(newLabel.trim() || null, a.formatted, a.lat, a.lng);
+    const row = await store.add(newLabel.trim() || null, a.formatted, a.lat, a.lng, a.city || null);
     if (row) {
       app.setUserAddress(row.formatted, { lat: row.lat, lng: row.lng }, row.id, cityCtx);
       setNewLabel('');
@@ -127,14 +128,13 @@ export function AddressModal() {
     }
   };
 
-  const selectSaved = (a: { id: string; formatted: string; lat: number; lng: number }) => {
+  const selectSaved = (a: SavedAddress) => {
     const coords = { lat: a.lat, lng: a.lng };
-    app.setUserAddress(a.formatted, coords, a.id); // instant
+    const cityCtx = a.city ? { label: a.city, lat: a.lat, lng: a.lng } : undefined;
+    app.setUserAddress(a.formatted, coords, a.id, cityCtx); // instant (with city when known)
     close(); // pick → done (Uber-style)
-    // switch the whole app to this address's city (in the background)
-    cityOf(a.lat, a.lng).then((c) => {
-      if (c) app.setUserAddress(a.formatted, coords, a.id, c);
-    });
+    // older saved rows may lack a stored city → resolve it in the background
+    if (!cityCtx) cityOf(a.lat, a.lng).then((c) => c && app.setUserAddress(a.formatted, coords, a.id, c));
   };
 
   const del = async (id: string) => {

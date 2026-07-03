@@ -11,13 +11,13 @@ import { nearestCity } from '@/lib/geo';
 import { useAuth } from '@/lib/auth';
 import { useApp } from '@/lib/state';
 
-export type SavedAddress = { id: string; label: string | null; formatted: string; lat: number; lng: number; is_default: boolean };
+export type SavedAddress = { id: string; label: string | null; formatted: string; lat: number; lng: number; city: string | null; is_default: boolean };
 
 type Ctx = {
   addresses: SavedAddress[];
   configured: boolean;
   reload: () => void;
-  add: (label: string | null, formatted: string, lat: number, lng: number) => Promise<SavedAddress | null>;
+  add: (label: string | null, formatted: string, lat: number, lng: number, city: string | null) => Promise<SavedAddress | null>;
   remove: (id: string) => Promise<void>;
   setDefault: (id: string) => Promise<void>;
   setLabel: (id: string, label: string | null) => Promise<void>;
@@ -54,11 +54,15 @@ export function AddressesProvider({ children }: { children: ReactNode }) {
       if (!appliedRef.current && !app.address && list.length) {
         const def = list.find((a) => a.is_default) ?? list[0];
         const coords = { lat: def.lat, lng: def.lng };
-        app.setUserAddress(def.formatted, coords, def.id);
-        // adopt the default address's city too
-        nearestCity(def.lat, def.lng)
-          .then((c) => app.setUserAddress(def.formatted, coords, def.id, { label: c.label, lat: c.lat, lng: c.lng }))
-          .catch(() => {});
+        if (def.city) {
+          // use the address's own city (correct), not the nearest centroid
+          app.setUserAddress(def.formatted, coords, def.id, { label: def.city, lat: def.lat, lng: def.lng });
+        } else {
+          app.setUserAddress(def.formatted, coords, def.id);
+          nearestCity(def.lat, def.lng)
+            .then((c) => app.setUserAddress(def.formatted, coords, def.id, { label: c.label, lat: c.lat, lng: c.lng }))
+            .catch(() => {});
+        }
       }
       appliedRef.current = true;
     })();
@@ -71,12 +75,12 @@ export function AddressesProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   const add = useCallback<Ctx['add']>(
-    async (label, formatted, lat, lng) => {
+    async (label, formatted, lat, lng, city) => {
       if (!supabase || !user) return null;
       const isFirst = addresses.length === 0;
       const { data, error } = await supabase
         .from('user_addresses')
-        .insert({ user_id: user.id, label, formatted, lat, lng, is_default: isFirst })
+        .insert({ user_id: user.id, label, formatted, lat, lng, city, is_default: isFirst })
         .select()
         .single();
       if (error || !data) return null;

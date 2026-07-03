@@ -119,14 +119,28 @@ export async function reverseGeocode(lat: number, lng: number, signal?: AbortSig
 }
 
 // ── Precise street address (optional, for real distances + delivery) ─────────
-export type Address = { formatted: string; lat: number; lng: number };
+// `city` is the address's OWN city ("Philadelphia, PA") from the geocoder — used
+// to switch the app city. We derive it from address components (not nearest
+// centroid) so a Philadelphia address doesn't resolve to a tiny adjacent town.
+export type Address = { formatted: string; lat: number; lng: number; city: string };
+
+function stAbbr(p: Record<string, string | undefined>): string {
+  return p.countrycode?.toUpperCase() === 'US' ? US_STATE_ABBR[p.state ?? ''] ?? p.state ?? '' : p.state ?? '';
+}
 
 function addrLabel(p: Record<string, string | undefined>): string {
   const line1 = [p.housenumber, p.street || p.name].filter(Boolean).join(' ') || p.name || '';
   const cityPart = p.city || p.town || p.village || p.suburb || p.county || '';
-  const st = p.countrycode?.toUpperCase() === 'US' ? US_STATE_ABBR[p.state ?? ''] ?? p.state ?? '' : p.state ?? '';
-  const tail = [cityPart, [st, p.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const tail = [cityPart, [stAbbr(p), p.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   return [line1, tail].filter(Boolean).join(', ');
+}
+
+/** "City, ST" from the address's own components (not nearest centroid). */
+function cityLabelOf(p: Record<string, string | undefined>): string {
+  const c = p.city || p.town || p.village || p.municipality || p.county || '';
+  if (!c) return '';
+  const st = stAbbr(p);
+  return st ? `${c}, ${st}` : c;
 }
 
 // Metro box (~degrees) used to bias + fence address suggestions to the chosen
@@ -167,7 +181,7 @@ export async function searchAddress(query: string, near?: { lat: number; lng: nu
     const formatted = addrLabel(p);
     if (!formatted || seen.has(formatted)) continue;
     seen.add(formatted);
-    out.push({ formatted, lat, lng });
+    out.push({ formatted, lat, lng, city: cityLabelOf(p) });
     if (out.length >= 6) break;
   }
   return out;
@@ -181,22 +195,25 @@ export async function reverseAddress(lat: number, lng: number, signal?: AbortSig
     if (res.ok) {
       const data = (await res.json()) as { address?: Record<string, string>; display_name?: string };
       const a = data.address ?? {};
-      const formatted = addrLabel({
+      const p = {
         housenumber: a.house_number,
         street: a.road,
         name: a.road,
-        city: a.city || a.town || a.village || a.suburb || a.county,
+        city: a.city || a.town || a.village || a.municipality,
+        suburb: a.suburb,
+        county: a.county,
         state: a.state,
         postcode: a.postcode,
         countrycode: a.country_code,
-      });
-      if (formatted) return { formatted, lat, lng };
-      if (data.display_name) return { formatted: data.display_name, lat, lng };
+      };
+      const formatted = addrLabel(p);
+      if (formatted) return { formatted, lat, lng, city: cityLabelOf(p) };
+      if (data.display_name) return { formatted: data.display_name, lat, lng, city: cityLabelOf(p) };
     }
   } catch {
     /* ignore — fall through */
   }
-  return { formatted: `${lat.toFixed(4)}, ${lng.toFixed(4)}`, lat, lng };
+  return { formatted: `${lat.toFixed(4)}, ${lng.toFixed(4)}`, lat, lng, city: '' };
 }
 
 /** Browser geolocation (needs HTTPS + user permission). */
