@@ -14,7 +14,7 @@ import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useAddresses } from '@/lib/addresses';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
-import { getBrowserLocation, reverseAddress, searchAddress, type Address } from '@/lib/geo';
+import { getBrowserLocation, nearestCity, reverseAddress, searchAddress, type Address } from '@/lib/geo';
 
 export function AddressModal() {
   const { L } = useLang();
@@ -47,21 +47,34 @@ export function AddressModal() {
     setAddErr(null);
   };
 
+  // Map a precise point to its nearest known city (for switching the app city).
+  const cityOf = async (lat: number, lng: number) => {
+    try {
+      const c = await nearestCity(lat, lng);
+      return { label: c.label, lat: c.lat, lng: c.lng };
+    } catch {
+      return undefined;
+    }
+  };
+
   // Choose a resolved address. Apply it immediately as the active origin (instant
-  // feedback + works even if the DB save fails); then, for signed-in users, save
-  // it to the account and swap in the real id.
+  // feedback + works even if the DB save fails), switch the whole app to that
+  // address's city, then (signed-in) save it and swap in the real id.
   const choose = async (a: Address) => {
     setAddErr(null);
-    app.setUserAddress(a.formatted, { lat: a.lat, lng: a.lng }, null);
+    const coords = { lat: a.lat, lng: a.lng };
+    app.setUserAddress(a.formatted, coords, null);
     setQ('');
     setResults([]);
+    const cityCtx = await cityOf(a.lat, a.lng);
+    if (cityCtx) app.setUserAddress(a.formatted, coords, null, cityCtx);
     if (!saved) {
       close();
       return;
     }
     const row = await store.add(newLabel.trim() || null, a.formatted, a.lat, a.lng);
     if (row) {
-      app.setUserAddress(row.formatted, { lat: row.lat, lng: row.lng }, row.id);
+      app.setUserAddress(row.formatted, { lat: row.lat, lng: row.lng }, row.id, cityCtx);
       setNewLabel('');
     } else {
       setAddErr(
@@ -115,8 +128,13 @@ export function AddressModal() {
   };
 
   const selectSaved = (a: { id: string; formatted: string; lat: number; lng: number }) => {
-    app.setUserAddress(a.formatted, { lat: a.lat, lng: a.lng }, a.id);
+    const coords = { lat: a.lat, lng: a.lng };
+    app.setUserAddress(a.formatted, coords, a.id); // instant
     close(); // pick → done (Uber-style)
+    // switch the whole app to this address's city (in the background)
+    cityOf(a.lat, a.lng).then((c) => {
+      if (c) app.setUserAddress(a.formatted, coords, a.id, c);
+    });
   };
 
   const del = async (id: string) => {

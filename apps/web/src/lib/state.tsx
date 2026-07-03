@@ -31,7 +31,8 @@ type AppCtx = {
   // optional precise address (real distances + delivery destination)
   address: string | null;
   addressId: string | null;
-  setUserAddress: (formatted: string, coords: Coords, id?: string | null) => void;
+  // Setting an address can also switch the whole app to that address's city.
+  setUserAddress: (formatted: string, coords: Coords, id?: string | null, city?: { label: string; lat: number; lng: number }) => void;
   clearUserAddress: () => void;
   addressOpen: boolean;
   setAddressOpen: (v: boolean) => void;
@@ -183,11 +184,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCityOpen,
       address,
       addressId,
-      setUserAddress: (formatted: string, c: Coords, id: string | null = null) => {
+      setUserAddress: (formatted: string, c: Coords, id: string | null = null, cityCtx?: { label: string; lat: number; lng: number }) => {
+        // an address in another city switches the whole app to that city
+        const label = cityCtx?.label ?? city;
+        const cc: Coords = cityCtx ? { lat: cityCtx.lat, lng: cityCtx.lng } : cityCoords;
+        if (cityCtx) {
+          setCity(label);
+          setCityCoords(cc);
+        }
         setAddress(formatted);
         setAddressCoords(c);
         setAddressId(id);
-        persistGeo(city, cityCoords, formatted, c, id);
+        persistGeo(label, cc, formatted, c, id);
       },
       clearUserAddress: () => {
         setAddress(null);
