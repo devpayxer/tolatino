@@ -11,7 +11,7 @@
 // the analytics/inquiries + day detail move into a sticky side rail and lists go
 // multi-column. Real state: mode, sub-tabs, bookable toggles, edit sheet, wizard.
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   CalendarCheck, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight,
   DollarSign, Gift, GraduationCap, Lock, MessageSquare, Plus, Sparkles, Tag,
@@ -803,7 +803,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 }
 
-function Toast({ children }: { children: React.ReactNode }) {
+function Toast({ children }: { children: ReactNode }) {
   return (
     <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
       <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />

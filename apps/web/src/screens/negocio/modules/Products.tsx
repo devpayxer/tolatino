@@ -539,6 +539,12 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </button>
         ))}
       </div>
+      {driverTab === 'external' && (
+        <div className="flex items-center gap-2 rounded-field bg-lilac-2 px-3 py-2 text-[10.5px] font-semibold text-ink-3">
+          <span className="rounded bg-primary px-1.5 py-0.5 text-[8px] font-extrabold text-white">{isPremium ? 'PREMIUM' : L('PREMIUM', 'PREMIUM')}</span>
+          {isPremium ? L('Incluido en tu plan Premium.', 'Included in your Premium plan.') : L('Las apps externas de reparto son parte de Premium.', 'External delivery apps are part of Premium.')}
+        </div>
+      )}
       {driverTab === 'own' ? (
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
           {ownDrivers.map((d) => (
@@ -860,7 +866,11 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const rail = (
     <div className="flex flex-col gap-4 xl:sticky xl:top-[74px] xl:self-start">
       <div className={`${cardCls} p-4`}>
-        <div className="mb-3 text-[13px] font-extrabold text-ink">{mode === 'products' ? L('Resumen de tienda', 'Shop summary') : L('Cobertura', 'Coverage')}</div>
+        <div className="mb-0.5 text-[13px] font-extrabold text-ink">{mode === 'products' ? L('Resumen de tienda', 'Shop summary') : L('Cobertura', 'Coverage')}</div>
+        <div className="mb-3 flex items-center gap-1.5 text-[10.5px] font-semibold text-muted-2">
+          <span className="flex h-4 w-4 items-center justify-center rounded bg-lilac text-[7px] font-extrabold text-primary-dark">{ci.initials}</span>
+          {ci.name}
+        </div>
         <div className="grid grid-cols-2 gap-2.5">
           {(mode === 'products'
             ? [[L('Productos', 'Products'), '7'], [L('En stock', 'In stock'), '5'], [L('Valor inv.', 'Inv. value'), '$5.4k'], [L('Ventas 30d', 'Sales 30d'), '$9.6k']]
@@ -891,6 +901,17 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   return (
     <div className="relative pb-8">
+      {isFree && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-card-sm bg-amber-bg p-3.5">
+          <span className="text-[18px]">✦</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[12.5px] font-extrabold text-ink">{L('La tienda en línea es una función Verified.', 'The online shop is a Verified feature.')}</span>
+            <span className="block text-[11px] font-semibold text-amber-ink">{L('Estás viendo una vista previa. Verifícate para vender productos.', "You're seeing a preview. Get verified to sell products.")}</span>
+          </span>
+          <button onClick={() => ctx.go('billing')} className="flex-none cursor-pointer rounded-btn bg-ink px-3.5 py-2 text-[11.5px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
+        </div>
+      )}
+
       {/* mode toggle */}
       <div className="mb-3 grid grid-cols-2 gap-2">
         <button onClick={() => goMode('products')} className={`flex items-center justify-center gap-2 rounded-btn py-2.5 text-[12.5px] font-extrabold ${mode === 'products' ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`}>
