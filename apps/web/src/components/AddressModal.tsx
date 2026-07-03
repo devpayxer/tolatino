@@ -72,7 +72,7 @@ export function AddressModal() {
       const ctrl = new AbortController();
       abortRef.current = ctrl;
       try {
-        setResults(await searchAddress(query, ctrl.signal));
+        setResults(await searchAddress(query, app.coords, ctrl.signal));
       } catch {
         if (!ctrl.signal.aborted) setResults([]);
       } finally {

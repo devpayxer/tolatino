@@ -129,12 +129,27 @@ function addrLabel(p: Record<string, string | undefined>): string {
   return [line1, tail].filter(Boolean).join(', ');
 }
 
-/** Address autocomplete via OpenStreetMap (Photon). Free/OSS, no Google billing. */
-export async function searchAddress(query: string, signal?: AbortSignal): Promise<Address[]> {
+// Metro box (~degrees) used to bias + fence address suggestions to the chosen
+// city. ~0.9° ≈ 55–62 mi at US latitudes, matching the ~80 km discovery radius.
+const METRO_DEG = 0.9;
+
+/**
+ * Address autocomplete via OpenStreetMap (Photon). When `near` (the selected
+ * city center) is given, results are biased toward it AND fenced to its metro
+ * box, so a user in Hazleton doesn't get suggestions from other states.
+ * Free/OSS, no Google billing.
+ */
+export async function searchAddress(query: string, near?: { lat: number; lng: number } | null, signal?: AbortSignal): Promise<Address[]> {
   const q = query.trim();
   if (q.length < 3) return [];
-  const url = `https://photon.komoot.io/api?q=${encodeURIComponent(q)}&lang=en&limit=6`;
-  const res = await fetch(url, { signal });
+  const params = new URLSearchParams({ q, lang: 'en', limit: '10' });
+  if (near) {
+    params.set('lat', String(near.lat)); // proximity bias
+    params.set('lon', String(near.lng));
+    // minLon,minLat,maxLon,maxLat
+    params.set('bbox', `${near.lng - METRO_DEG},${near.lat - METRO_DEG},${near.lng + METRO_DEG},${near.lat + METRO_DEG}`);
+  }
+  const res = await fetch(`https://photon.komoot.io/api?${params.toString()}`, { signal });
   if (!res.ok) throw new Error(`photon ${res.status}`);
   const data = (await res.json()) as {
     features?: { geometry?: { coordinates?: [number, number] }; properties?: Record<string, string> }[];
@@ -147,10 +162,13 @@ export async function searchAddress(query: string, signal?: AbortSignal): Promis
     if (!c) continue;
     const [lng, lat] = c;
     if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+    // Hard fence to the metro box (Photon's bbox isn't always strict).
+    if (near && (Math.abs(lat - near.lat) > METRO_DEG || Math.abs(lng - near.lng) > METRO_DEG)) continue;
     const formatted = addrLabel(p);
     if (!formatted || seen.has(formatted)) continue;
     seen.add(formatted);
     out.push({ formatted, lat, lng });
+    if (out.length >= 6) break;
   }
   return out;
 }
