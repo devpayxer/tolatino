@@ -6,10 +6,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Flag, MoreHorizontal, Pencil, Trash2, UserCheck, UserPlus } from 'lucide-react';
+import { Flag, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
-import { useFollows } from '@/lib/follows';
 import { useLiveData } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
 import { Overlay, PrimaryBtn } from '@/components/ui';
@@ -28,7 +27,6 @@ const REPORT_REASONS: [string, string][] = [
 export function PostMenu({ post }: { post: Post }) {
   const { L } = useLang();
   const auth = useAuth();
-  const follows = useFollows();
   const live = useLiveData();
   const router = useRouter();
 
@@ -133,30 +131,9 @@ export function PostMenu({ post }: { post: Post }) {
                 </button>
               </>
             ) : (
-              <>
-                {post.authorId && (
-                  <button
-                    onClick={() => {
-                      follows.toggleFollow(post.authorId as string);
-                      setOpen(false);
-                    }}
-                    className={`${itemCls} text-ink hover:bg-app`}
-                  >
-                    {follows.isFollowing(post.authorId) ? (
-                      <>
-                        <UserCheck size={15} strokeWidth={2.2} /> {L('Siguiendo', 'Following')}
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus size={15} strokeWidth={2.2} /> {L(`Seguir a ${post.name}`, `Follow ${post.name}`)}
-                      </>
-                    )}
-                  </button>
-                )}
-                <button onClick={openReport} className={`${itemCls} text-ink hover:bg-app`}>
-                  <Flag size={15} strokeWidth={2.2} /> {L('Reportar', 'Report')}
-                </button>
-              </>
+              <button onClick={openReport} className={`${itemCls} text-ink hover:bg-app`}>
+                <Flag size={15} strokeWidth={2.2} /> {L('Reportar', 'Report')}
+              </button>
             )}
           </div>
         </>

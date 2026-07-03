@@ -7,7 +7,9 @@
 import { useState } from 'react';
 import { Bookmark, Check, MessageCircle, Share } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth';
 import { useInteractions } from '@/lib/interactions';
+import { useFollows } from '@/lib/follows';
 import { Avatar } from '@/components/ui';
 import { PostMenu } from '@/components/PostMenu';
 import type { Post, PostType } from '@/data/fixtures';
@@ -42,9 +44,15 @@ export function PostCard({
   onOpenThread?: () => void;
 }) {
   const { L } = useLang();
+  const auth = useAuth();
   const it = useInteractions();
+  const follows = useFollows();
   const tag = postTag(post.type, L);
   const [copied, setCopied] = useState(false);
+
+  // Follow button on posts by other users (real posts only, not your own).
+  const canFollow = !preview && follows.configured && !!post.authorId && post.authorId !== auth.user?.id;
+  const following = !!post.authorId && follows.isFollowing(post.authorId);
 
   const [slide, setSlide] = useState(0);
 
@@ -95,7 +103,21 @@ export function PostCard({
             {[post.hoodEs, post.city].filter(Boolean).join(', ')} · {L(post.timeEs, post.timeEn)}
           </div>
         </div>
-        {!preview && <PostMenu post={post} />}
+        {!preview && (
+          <div className="flex flex-none items-center gap-1.5">
+            {canFollow && (
+              <button
+                onClick={() => follows.toggleFollow(post.authorId as string)}
+                className={`cursor-pointer rounded-full px-3 py-1.5 text-[11.5px] font-extrabold ${
+                  following ? 'bg-lilac text-primary-dark' : 'bg-primary text-white'
+                }`}
+              >
+                {following ? L('Siguiendo', 'Following') : L('Seguir', 'Follow')}
+              </button>
+            )}
+            <PostMenu post={post} />
+          </div>
+        )}
       </div>
 
       <div className="mt-[11px] text-[14px] font-medium leading-[1.55] text-ink-body">{L(post.es, post.en)}</div>
