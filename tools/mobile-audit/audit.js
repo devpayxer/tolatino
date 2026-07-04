@@ -132,10 +132,19 @@ async function gotoTab(page, label) {
 
     // 2) try openers (sheets / wizards / detail views)
     for (const txt of OPENERS) {
-      const btn = page.locator(`main :text("${txt}")`).first();
-      if (!(await btn.count())) continue;
-      if (!(await btn.isVisible().catch(() => false))) continue;
-      await btn.click({ timeout: 1500 }).catch(() => {});
+      // click the first VISIBLE match (desktop-only hidden twins come first in DOM)
+      const cands = page.locator(`main :text("${txt}")`);
+      const nCands = await cands.count();
+      if (!nCands) continue;
+      let clicked = false;
+      for (let bi = 0; bi < nCands; bi++) {
+        if (await cands.nth(bi).isVisible().catch(() => false)) {
+          await cands.nth(bi).click({ timeout: 1500 }).catch(() => {});
+          clicked = true;
+          break;
+        }
+      }
+      if (!clicked) continue;
       await page.waitForTimeout(400);
       await check(page, `${key}-open-${txt.slice(0, 18)}`);
       // if a wizard: walk enabled Next buttons a few steps

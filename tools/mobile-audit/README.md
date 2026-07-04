@@ -22,5 +22,5 @@ cd tools/mobile-audit && npm i playwright          # una vez (usa el Chromium lo
 node audit.js                                       # espera "0 violation state(s)"
 ```
 En el entorno de Claude Code el Chromium vive en `/opt/pw-browsers/chromium`
-(ya referenciado en el script). Última corrida: **121 estados · 0 violaciones**.
+(ya referenciado en el script). Última corrida: **125 estados · 0 violaciones**.
 Correlo después de cualquier cambio de UI del dashboard.
