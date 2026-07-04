@@ -1,0 +1,264 @@
+'use client';
+
+// Listado → Información general. The FIRST real (Supabase-backed) dashboard
+// screen: loads the signed-in owner's active business and edits its public
+// listing fields (name, category, tagline, price, phone, address, description),
+// persisting to the real `businesses` row via RLS ("update own business"). ES is
+// the primary language; EN mirrors it on save (matching create_business). When
+// the owner has no business yet it shows a clean "publish first" empty state.
+
+import { useEffect, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { Clock, ExternalLink, Image as ImageIcon, Loader2, Shield, Store } from 'lucide-react';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
+import { VerifiedBadge } from '@/components/ui';
+import type { PanelCtx } from '@/screens/negocio/tabs';
+import { Toast } from '@/screens/negocio/modules/_page';
+
+type Draft = {
+  name: string;
+  category_id: string;
+  tagline: string;
+  price_level: string;
+  phone: string;
+  address: string;
+  about: string;
+};
+
+const draftOf = (b: {
+  name: string; category_id: string; tagline_es: string | null; price_level: string | null;
+  phone: string | null; address: string | null; about_es: string | null;
+}): Draft => ({
+  name: b.name ?? '',
+  category_id: b.category_id ?? 'FoodDrinks',
+  tagline: b.tagline_es ?? '',
+  price_level: b.price_level ?? '',
+  phone: b.phone ?? '',
+  address: b.address ?? '',
+  about: b.about_es ?? '',
+});
+
+export function ListingModule({ ctx }: { ctx: PanelCtx }) {
+  const { L, go } = ctx;
+  const admin = useBizAdmin();
+  const router = useRouter();
+  const real = admin.active;
+
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+  const flash = (m: string) => {
+    setToast(m);
+    window.setTimeout(() => setToast(''), 1900);
+  };
+
+  // Seed (and reseed when switching between the owner's businesses).
+  useEffect(() => {
+    setDraft(real ? draftOf(real) : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id]);
+
+  const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => (d ? { ...d, [k]: v } : d));
+
+  const dirty =
+    !!real &&
+    !!draft &&
+    (draft.name.trim() !== (real.name ?? '') ||
+      draft.category_id !== (real.category_id ?? '') ||
+      draft.tagline.trim() !== (real.tagline_es ?? '') ||
+      draft.price_level !== (real.price_level ?? '') ||
+      draft.phone.trim() !== (real.phone ?? '') ||
+      draft.address.trim() !== (real.address ?? '') ||
+      draft.about.trim() !== (real.about_es ?? ''));
+
+  const save = async () => {
+    if (!draft || !real || saving || !draft.name.trim()) return;
+    setSaving(true);
+    const { error } = await admin.update({
+      name: draft.name.trim(),
+      category_id: draft.category_id,
+      tagline_es: draft.tagline.trim() || null,
+      tagline_en: draft.tagline.trim() || null,
+      price_level: draft.price_level || null,
+      phone: draft.phone.trim() || null,
+      address: draft.address.trim() || null,
+      about_es: draft.about.trim() || null,
+      about_en: draft.about.trim() || null,
+    });
+    setSaving(false);
+    flash(error ? L('No se pudo guardar. Intenta de nuevo.', "Couldn't save. Try again.") : L('Cambios guardados', 'Changes saved'));
+  };
+
+  // ── loading ──
+  if (admin.loading) {
+    return (
+      <div className="flex items-center justify-center rounded-card border border-hair bg-white py-16 text-muted shadow-card">
+        <Loader2 size={20} className="animate-spin" />
+      </div>
+    );
+  }
+
+  // ── no business yet ──
+  if (!real || !draft) {
+    return (
+      <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
+          <Store size={24} className="text-primary" strokeWidth={2.2} />
+        </span>
+        <h3 className="mt-4 text-[17px] font-extrabold text-ink">{L('Conecta tu negocio', 'Connect your business')}</h3>
+        <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
+          {L('Publica tu negocio para editar aquí tu información general, fotos y horario.', 'Publish your business to edit its general info, photos and hours here.')}
+        </p>
+        <button
+          onClick={() => router.push('/negocio/publicar')}
+          className="mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm"
+        >
+          {L('Publicar negocio', 'Publish business')}
+        </button>
+      </div>
+    );
+  }
+
+  const inputCls =
+    'w-full rounded-field border-[1.5px] border-lilac-line bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary';
+  const label = (t: ReactNode) => <span className="mb-1.5 block text-[12px] font-extrabold text-ink">{t}</span>;
+
+  return (
+    <>
+      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+        {/* form */}
+        <div className="rounded-card border border-hair bg-white p-4 shadow-card md:p-5">
+          <div className="mb-3.5 text-[13px] font-extrabold text-ink">{L('Detalles del negocio', 'Business details')}</div>
+          <div className="flex flex-col gap-3.5">
+            <label className="block">
+              {label(L('Nombre del negocio', 'Business name'))}
+              <input value={draft.name} onChange={(e) => set('name', e.target.value)} className={inputCls} />
+            </label>
+
+            <label className="block">
+              {label(L('Categoría', 'Category'))}
+              <select value={draft.category_id} onChange={(e) => set('category_id', e.target.value)} className={`${inputCls} cursor-pointer`}>
+                {CAT_KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {L(CAT[k as CatKey].es, CAT[k as CatKey].en)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              {label(L('Eslogan', 'Tagline'))}
+              <input
+                value={draft.tagline}
+                onChange={(e) => set('tagline', e.target.value)}
+                className={inputCls}
+                placeholder={L('Ej. Sabor de casa en el corazón de tu barrio.', 'e.g. Home-style flavor in your neighborhood.')}
+              />
+            </label>
+
+            <div>
+              {label(
+                <>
+                  {L('Precio', 'Price')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span>
+                </>,
+              )}
+              <div className="flex gap-2">
+                {['$', '$$', '$$$'].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => set('price_level', draft.price_level === p ? '' : p)}
+                    className={`cursor-pointer rounded-full px-4 py-2 text-[12.5px] font-extrabold ${draft.price_level === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="block">
+              {label(L('Teléfono', 'Phone'))}
+              <input value={draft.phone} onChange={(e) => set('phone', e.target.value)} className={inputCls} placeholder="(713) 555-0100" inputMode="tel" />
+            </label>
+
+            <label className="block">
+              {label(L('Dirección', 'Address'))}
+              <input value={draft.address} onChange={(e) => set('address', e.target.value)} className={inputCls} placeholder={L('Calle y número', 'Street address')} />
+            </label>
+
+            <label className="block">
+              {label(L('Descripción', 'Description'))}
+              <textarea
+                value={draft.about}
+                onChange={(e) => set('about', e.target.value)}
+                rows={4}
+                className={`${inputCls} resize-none`}
+                placeholder={L('Cuéntale a la comunidad qué ofreces…', 'Tell the community what you offer…')}
+              />
+            </label>
+
+            <button
+              onClick={save}
+              disabled={!dirty || saving || !draft.name.trim()}
+              className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-50"
+            >
+              {saving && <Loader2 size={15} className="animate-spin" />}
+              {saving ? L('Guardando…', 'Saving…') : dirty ? L('Guardar cambios', 'Save changes') : L('Guardado', 'Saved')}
+            </button>
+          </div>
+        </div>
+
+        {/* side: listing status */}
+        <div className="flex flex-col gap-3">
+          <div className="rounded-card border border-hair bg-white p-4 shadow-card">
+            <div className="mb-3 text-[12px] font-extrabold text-ink">{L('Estado del listado', 'Listing status')}</div>
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn" style={{ background: real.tier === 'free' ? '#FCEFD6' : '#E3F5EA' }}>
+                  <Shield size={16} strokeWidth={2.2} className={real.tier === 'free' ? 'text-amber-ink' : 'text-green-dark'} />
+                </span>
+                <span className="min-w-0">
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink">
+                    {real.tier === 'free' ? L('Sin verificar', 'Unverified') : L('Verificado', 'Verified')}
+                    {real.tier !== 'free' && <VerifiedBadge size={13} />}
+                  </span>
+                  <span className="block text-[11px] font-semibold text-muted">{real.tier === 'free' ? L('Mejora para la insignia', 'Upgrade for the badge') : L('Insignia activa', 'Badge active')}</span>
+                </span>
+              </div>
+
+              <button onClick={() => go('photos')} className="flex cursor-pointer items-center gap-2.5 text-left">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2">
+                  <ImageIcon size={16} strokeWidth={2.2} className="text-primary-dark" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[12.5px] font-extrabold text-ink">{L('Fotos y media', 'Photos & media')}</span>
+                  <span className="block text-[11px] font-semibold text-muted">{L('Portada + galería', 'Cover + gallery')}</span>
+                </span>
+              </button>
+
+              <button onClick={() => go('hours')} className="flex cursor-pointer items-center gap-2.5 text-left">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2">
+                  <Clock size={16} strokeWidth={2.2} className="text-primary-dark" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[12.5px] font-extrabold text-ink">{L('Horario', 'Hours')}</span>
+                  <span className="block text-[11px] font-semibold text-muted">{real.hours && real.hours.length ? L('Configurado', 'Set') : L('Sin configurar', 'Not set')}</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={() => router.push(`/negocios?b=${real.slug}`)}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark"
+          >
+            <ExternalLink size={13} strokeWidth={2.4} />
+            {L('Ver listado público', 'View public listing')}
+          </button>
+        </div>
+      </div>
+      <Toast msg={toast} />
+    </>
+  );
+}

@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { BarChart3, Bell, Check, ExternalLink, Menu, MessageCircle, Search, ShoppingBag, Star, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
+import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { CAT_INFO, activeMods, buildGeneric, buildNav, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
@@ -25,11 +27,16 @@ import { EventsModule } from '@/screens/negocio/modules/Events';
 import { ProductsModule } from '@/screens/negocio/modules/Products';
 import { ServicesModule } from '@/screens/negocio/modules/Services';
 import { FoodModule } from '@/screens/negocio/modules/Food';
+import { ListingModule } from '@/screens/negocio/modules/Listing';
+import { HoursModule } from '@/screens/negocio/modules/Hours';
+import { PhotosModule } from '@/screens/negocio/modules/Photos';
+import { RelatedModule } from '@/screens/negocio/modules/Related';
 
 // Tabs that render their own rich module screen (mode toggles / sub-tabs /
 // wizards / sheets) instead of the uniform GenericTab — the panel hides its
 // generic "+ CTA" row for these (each module owns its own actions).
 const RICH_MODULES = new Set<TabKey>([
+  'listing', 'hours', 'photos', 'related',
   'updates', 'billing', 'customers', 'orders', 'reviews', 'staff', 'jobs',
   'rental', 'events', 'products', 'shipping', 'services', 'bookings', 'menu',
 ]);
@@ -44,11 +51,17 @@ export function PanelScreen() {
   const router = useRouter();
 
   const [tab, setTab] = useState<TabKey>('insights');
-  const [tier, setTier] = useState<Tier>(app.biz ? (app.biz.plan === 'pro' ? 'verified' : 'free') : 'verified');
+  const admin = useBizAdmin();
+  const real = admin.active; // the signed-in owner's active business (null in demo)
   const [drawer, setDrawer] = useState(false);
   const [mods, setMods] = useState<Mods>({ menu: true, services: true, bookings: true, products: true, rental: true, events: true, updates: true, staff: true });
 
-  const rubro: Rubro = (app.biz && RUBRO_FROM_ONB[app.biz.cat]) || 'restaurant';
+  // The real business drives plan/rubro/identity; when the owner has no listing
+  // (or isn't signed in) the panel falls back to the demo tier switcher so it
+  // stays fully explorable.
+  const [demoTier, setDemoTier] = useState<Tier>(app.biz ? (app.biz.plan === 'pro' ? 'verified' : 'free') : 'verified');
+  const tier: Tier = real ? real.tier : demoTier;
+  const rubro: Rubro = real ? rubroFromCat(real.category_id) : ((app.biz && RUBRO_FROM_ONB[app.biz.cat]) || 'restaurant');
   const ci = CAT_INFO[rubro];
   const isFree = tier === 'free';
   const isPremium = tier === 'premium';
@@ -61,14 +74,22 @@ export function PanelScreen() {
     [L, tier, rubro, ci, isFree, isPremium, mods],
   );
 
-  const bizName = isFree ? 'Lupita’s Tortillería' : (app.biz?.name && app.biz.plan === 'pro' ? app.biz.name : ci.name);
-  const bizInitials = isFree ? 'LT' : ci.initials;
-  const bizCategory = isFree ? L('Panadería · Tortillería', 'Bakery · Tortillería') : L(ci.es, ci.en);
-  const catTile = isFree ? '#FCE3EC 0 9px,#F6CEDD 9px 18px' : ci.tile;
+  const initialsOf = (n: string) => n.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'TL';
+  const catLabel = (cat: string) => L(CAT[cat as CatKey]?.es ?? cat, CAT[cat as CatKey]?.en ?? cat);
 
-  const livePill = isFree
-    ? { bg: '#FCEFD6', c: '#9A6A12', dot: '#E8954A', text: L('Sin verificar', 'Unverified') }
-    : { bg: '#E3F5EA', c: '#1F8A4C', dot: '#1F9D57', text: L('Abierto · hasta 10 PM', 'Open · until 10 PM') };
+  const bizName = real ? real.name : isFree ? 'Lupita’s Tortillería' : (app.biz?.name && app.biz.plan === 'pro' ? app.biz.name : ci.name);
+  const bizInitials = real ? initialsOf(real.name) : isFree ? 'LT' : ci.initials;
+  const bizCategory = real ? catLabel(real.category_id) : isFree ? L('Panadería · Tortillería', 'Bakery · Tortillería') : L(ci.es, ci.en);
+  const bizArea = real ? (real.address || real.city || '') : ci.area;
+  const catTile = real ? `${real.tile_a ?? '#EFEBFF'} 0 9px,${real.tile_b ?? '#E5DEF9'} 9px 18px` : isFree ? '#FCE3EC 0 9px,#F6CEDD 9px 18px' : ci.tile;
+
+  const livePill = real
+    ? real.is_open
+      ? { bg: '#E3F5EA', c: '#1F8A4C', dot: '#1F9D57', text: L('Abierto', 'Open') }
+      : { bg: '#FCEFD6', c: '#9A6A12', dot: '#E8954A', text: L('Cerrado', 'Closed') }
+    : isFree
+      ? { bg: '#FCEFD6', c: '#9A6A12', dot: '#E8954A', text: L('Sin verificar', 'Unverified') }
+      : { bg: '#E3F5EA', c: '#1F8A4C', dot: '#1F9D57', text: L('Abierto · hasta 10 PM', 'Open · until 10 PM') };
   const planPill = isFree
     ? { bg: '#F1EFFA', c: '#8A86A0', text: 'Free' }
     : isPremium
@@ -105,9 +126,25 @@ export function PanelScreen() {
               {!isFree && <VerifiedBadge size={15} />}
             </span>
             <span className="block truncate text-[11px] font-semibold text-muted">{bizCategory}</span>
-            <span className="block truncate text-[10.5px] font-semibold text-muted-2">{ci.area}</span>
+            <span className="block truncate text-[10.5px] font-semibold text-muted-2">{bizArea}</span>
           </span>
         </div>
+
+        {/* business switcher — only when the owner manages more than one listing */}
+        {admin.businesses.length > 1 && (
+          <select
+            value={admin.activeId ?? ''}
+            onChange={(e) => admin.setActive(e.target.value)}
+            className="mt-3 w-full cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-app px-2.5 py-2 text-[12px] font-bold text-ink outline-none focus:border-primary"
+            aria-label={L('Cambiar de negocio', 'Switch business')}
+          >
+            {admin.businesses.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        )}
         <div className="mt-3 flex items-center gap-1.5">
           <span className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-extrabold" style={{ background: livePill.bg, color: livePill.c }}>
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: livePill.dot }} />
@@ -297,10 +334,11 @@ export function PanelScreen() {
             </div>
           </div>
 
-          {/* plan switcher inside billing — real behavior, changes the whole panel */}
-          {tab === 'billing' && (
+          {/* demo plan switcher inside billing — lets you preview each tier when
+              exploring without a real listing; a real business shows its own plan */}
+          {tab === 'billing' && !real && (
             <div className="mb-4 flex flex-wrap items-center gap-2 rounded-card-sm border border-hair bg-white p-3.5 shadow-card">
-              <span className="text-[12px] font-extrabold text-ink">{L('Tu plan actual:', 'Your current plan:')}</span>
+              <span className="text-[12px] font-extrabold text-ink">{L('Vista previa del plan:', 'Preview plan:')}</span>
               {(
                 [
                   ['free', 'Free · $0'],
@@ -310,8 +348,8 @@ export function PanelScreen() {
               ).map(([k, lab]) => (
                 <button
                   key={k}
-                  onClick={() => setTier(k)}
-                  className={`cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${tier === k ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-2'}`}
+                  onClick={() => setDemoTier(k)}
+                  className={`cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${demoTier === k ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-2'}`}
                 >
                   {lab}
                 </button>
@@ -330,6 +368,10 @@ export function PanelScreen() {
           {(tab === 'products' || tab === 'shipping') && <ProductsModule ctx={ctx} tab={tab} />}
           {(tab === 'services' || tab === 'bookings') && <ServicesModule ctx={ctx} tab={tab} />}
           {tab === 'menu' && <FoodModule ctx={ctx} tab={tab} />}
+          {tab === 'listing' && <ListingModule ctx={ctx} />}
+          {tab === 'hours' && <HoursModule ctx={ctx} />}
+          {tab === 'photos' && <PhotosModule ctx={ctx} />}
+          {tab === 'related' && <RelatedModule ctx={ctx} />}
           {tab !== 'insights' && tab !== 'modules' && !RICH_MODULES.has(tab) && <GenericTab g={buildGeneric(tab, ctx)} ctx={ctx} />}
         </main>
       </div>
