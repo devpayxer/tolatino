@@ -82,4 +82,8 @@ begin
   return new_slug;
 end $$;
 
-grant execute on function public.create_business to authenticated;
+-- Grant the exact signature (not the bare name) so re-running this migration
+-- when a later overload also exists never trips "42725: function is not unique".
+grant execute on function public.create_business(
+  text, text, text[], text, text, text, text, text, text, text, text, text, double precision, double precision
+) to authenticated;

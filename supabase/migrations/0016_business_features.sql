@@ -151,4 +151,8 @@ begin
   return new_slug;
 end $$;
 
-grant execute on function public.create_business to authenticated;
+-- Grant the exact signature (not the bare name) so re-running this migration
+-- when the 14- or 16-arg overload also exists never trips "42725: not unique".
+grant execute on function public.create_business(
+  text, text, text[], text, text, text, text, text, text, text, text, text, double precision, double precision, text[]
+) to authenticated;
