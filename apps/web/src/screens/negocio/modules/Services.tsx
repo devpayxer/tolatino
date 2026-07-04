@@ -11,7 +11,7 @@
 // the analytics/inquiries + day detail move into a sticky side rail and lists go
 // multi-column. Real state: mode, sub-tabs, bookable toggles, edit sheet, wizard.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CalendarCheck, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight,
   DollarSign, Gift, GraduationCap, Lock, MessageSquare, Plus, Sparkles, Tag,
@@ -20,13 +20,51 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 
 // ---------- static model ----------
 type CatId = 'tastings' | 'classes' | 'private' | 'catering';
 type Svc = {
-  id: number; cat: CatId; name: string; price: string; dur: string; bookable: boolean;
+  id: number; dbId?: string; cat: CatId; name: string; price: string; dur: string; bookable: boolean;
   es: string; en: string; tile: string; tags: string[];
 };
+
+const SVC_CAT_IDS = new Set<CatId>(['tastings', 'classes', 'private', 'catering']);
+// Map a business_items row (kind='service') ↔ the module's Svc. Service prices
+// are free-text ($85 / Cotización / Desde $12/pers), so they live in attrs.
+function rowToSvc(r: BizItemRow, idx: number): Svc {
+  const a = (r.attrs ?? {}) as Record<string, unknown>;
+  const cat = (r.section as CatId) ?? 'classes';
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    cat: SVC_CAT_IDS.has(cat) ? cat : 'classes',
+    name: r.name,
+    price: String(a.priceLabel ?? ''),
+    dur: String(a.dur ?? ''),
+    bookable: !!a.bookable,
+    es: r.description ?? '',
+    en: String(a.en ?? r.description ?? ''),
+    tile: String(a.tile ?? '#EFE3D0 0 8px,#E2CFB2 8px 16px'),
+    tags: (a.tags as string[]) ?? [],
+  };
+}
+function svcToRow(s: Svc, businessId: string, sort: number): NewBizItem {
+  return {
+    business_id: businessId,
+    kind: 'service',
+    name: s.name,
+    description: s.es,
+    price: null,
+    unit: null,
+    section: s.cat,
+    available: true,
+    sort,
+    image_url: null,
+    attrs: { en: s.en, dur: s.dur, bookable: s.bookable, tile: s.tile, tags: s.tags, priceLabel: s.price },
+  };
+}
 
 const SVC_CATS: { id: CatId; es: string; en: string; tile: string; Icon: LucideIcon; sEs: string; sEn: string }[] = [
   { id: 'tastings', es: 'Degustaciones', en: 'Tastings', tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', Icon: Wine, sEs: 'Cena · con reserva', sEn: 'Dinner · by booking' },
@@ -84,6 +122,39 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const [services, setServices] = useState<Svc[]>(SEED);
   const [bookable, setBookable] = useState<Record<number, boolean>>(() => Object.fromEntries(SEED.map((s) => [s.id, s.bookable])));
+  const admin = useBizAdmin();
+  const real = admin.active;
+  const persistable = !admin.demo && !!real; // real signed-in business → persist
+
+  // Load the real business's services (demo keeps the sample seed).
+  useEffect(() => {
+    if (!persistable || !real) {
+      setServices(SEED);
+      setBookable(Object.fromEntries(SEED.map((s) => [s.id, s.bookable])));
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const rows = await listBizItems(real.id, 'service');
+      if (cancelled) return;
+      const svcs = rows.map(rowToSvc);
+      setServices(svcs);
+      setBookable(Object.fromEntries(svcs.map((s) => [s.id, s.bookable])));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  const persistNewSvc = async (s: Svc) => {
+    if (!persistable || !real) return;
+    const dbId = await insertBizItem(svcToRow(s, real.id, services.length));
+    if (dbId) setServices((l) => l.map((x) => (x.id === s.id ? { ...x, dbId } : x)));
+  };
+  const persistSvcPatch = (s: Svc | undefined) => {
+    if (persistable && s?.dbId) updateBizItem(s.dbId, { name: s.name, description: s.es, section: s.cat, attrs: { en: s.en, dur: s.dur, bookable: s.bookable, tile: s.tile, tags: s.tags, priceLabel: s.price } });
+  };
   const [catShow, setCatShow] = useState<Record<CatId, boolean>>({ tastings: true, classes: true, private: true, catering: true });
   const [ruleSt, setRuleSt] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: true, 4: false });
   const [fieldSt, setFieldSt] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: false, 3: false, 4: true });
@@ -183,6 +254,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         const svc: Svc = { id, cat: draft.cat, name: draft.name, price: draft.priceType === 'cotiza' ? 'Cotización' : `$${draft.price || '0'}`, dur: draft.dur, bookable: draft.bookable, es: draft.desc, en: draft.desc, tile: dc.tile, tags: draft.tags };
         setServices((l) => [svc, ...l]);
         setBookable((b) => ({ ...b, [id]: draft.bookable }));
+        persistNewSvc(svc);
         setView('success');
         return;
       }
@@ -733,8 +805,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       onBack={closeSheet}
       footer={
         <div className="flex gap-2.5">
-          <button onClick={() => { setServices((l) => l.filter((s) => s.id !== sheetSvc.id)); closeSheet(); flash(L('Servicio eliminado', 'Service deleted')); }} className="cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
-          <button onClick={() => { setServices((l) => l.map((s) => s.id === sheetSvc.id ? { ...s, ...edit } as Svc : s)); closeSheet(); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); }} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar cambios', 'Save changes')}</button>
+          <button onClick={() => { if (persistable && sheetSvc.dbId) deleteBizItem(sheetSvc.dbId); setServices((l) => l.filter((s) => s.id !== sheetSvc.id)); closeSheet(); flash(L('Servicio eliminado', 'Service deleted')); }} className="cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
+          <button onClick={() => { setServices((l) => { const next = l.map((s) => s.id === sheetSvc.id ? { ...s, ...edit } as Svc : s); persistSvcPatch(next.find((s) => s.id === sheetSvc.id)); return next; }); closeSheet(); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); }} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar cambios', 'Save changes')}</button>
         </div>
       }
     >

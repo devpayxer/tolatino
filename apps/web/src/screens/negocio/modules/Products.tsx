@@ -9,7 +9,7 @@
 // live filtering/toggles. Mobile-first; on desktop content widens into
 // multi-column grids with a sticky contextual summary rail. Real useState.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Boxes, Check, Clock, CreditCard, DollarSign, HardHat,
   Layers, MapPin, Package, Percent, Plus, Route, Search,
@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 
 // ---------- static content model (ported from the Products handoff prototype) ----------
 
@@ -29,7 +31,38 @@ const CATS: Cat[] = [
   { id: 'books', es: 'Libros', en: 'Books', tile: '#E4ECFB 0 8px,#D7E3F6 8px 16px' },
 ];
 
-type Product = { id: number; name: string; sku: string; price: number; stock: number; cat: string; variants: number; sales: string };
+type Product = { id: number; dbId?: string; name: string; sku: string; price: number; stock: number; cat: string; variants: number; sales: string };
+
+// Map a business_items row (kind='product') ↔ Product.
+function rowToProduct(r: BizItemRow, idx: number): Product {
+  const a = (r.attrs ?? {}) as Record<string, unknown>;
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    name: r.name,
+    sku: String(a.sku ?? ''),
+    price: Number(r.price ?? 0),
+    stock: Number(a.stock ?? 0),
+    cat: r.section ?? 'pantry',
+    variants: Number(a.variants ?? 0),
+    sales: String(a.sales ?? '$0'),
+  };
+}
+function productToRow(p: Product, businessId: string, sort: number): NewBizItem {
+  return {
+    business_id: businessId,
+    kind: 'product',
+    name: p.name,
+    description: null,
+    price: p.price,
+    unit: null,
+    section: p.cat,
+    available: true,
+    sort,
+    image_url: null,
+    attrs: { sku: p.sku, stock: p.stock, variants: p.variants, sales: p.sales },
+  };
+}
 const SEED: Product[] = [
   { id: 1, name: 'Mermelada fresa-ruibarbo · 6oz', sku: 'JAM-001', price: 14, stock: 42, cat: 'pantry', variants: 3, sales: '$1,820' },
   { id: 2, name: 'Libro de recetas Country Loaf', sku: 'BOOK-001', price: 42, stock: 12, cat: 'books', variants: 1, sales: '$924' },
@@ -63,6 +96,36 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [driverTab, setDriverTab] = useState<'own' | 'external'>('own');
 
   const [products, setProducts] = useState<Product[]>(SEED);
+  const admin = useBizAdmin();
+  const real = admin.active;
+  const persistable = !admin.demo && !!real; // real signed-in business → persist
+
+  // Load the real business's products (demo keeps the sample seed).
+  useEffect(() => {
+    if (!persistable || !real) {
+      setProducts(SEED);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const rows = await listBizItems(real.id, 'product');
+      if (!cancelled) setProducts(rows.map(rowToProduct));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  const nextProdId = () => (products.length ? Math.max(...products.map((p) => p.id)) : 0) + 1;
+  const persistNewProd = async (p: Product) => {
+    if (!persistable || !real) return;
+    const dbId = await insertBizItem(productToRow(p, real.id, products.length));
+    if (dbId) setProducts((ps) => ps.map((x) => (x.id === p.id ? { ...x, dbId } : x)));
+  };
+  const persistProdPatch = (p: Product | undefined) => {
+    if (persistable && p?.dbId) updateBizItem(p.dbId, { name: p.name, price: p.price, section: p.cat, attrs: { sku: p.sku, stock: p.stock, variants: p.variants, sales: p.sales } });
+  };
   const [collState, setCollState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: false, 3: true });
   const [pickState, setPickState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: true });
   const [carrierState, setCarrierState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: false });
@@ -608,8 +671,23 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setWizMax(0);
     setView('wizard');
   }
+  // Turn the wizard draft into a real product (adds to the catalog + persists).
+  const addProductFromDraft = () => {
+    const p: Product = {
+      id: nextProdId(),
+      name: draft.name.trim() || L('Nuevo producto', 'New product'),
+      sku: draft.sku,
+      price: Number(draft.price) || 0,
+      stock: Number(draft.stock) || 0,
+      cat: draft.cat,
+      variants: draft.variants ? 1 : 0,
+      sales: '$0',
+    };
+    setProducts((ps) => [p, ...ps]);
+    persistNewProd(p);
+  };
   const wizNext = () => {
-    if (wizStep >= wizStepDefs.length - 1) { setView('success'); return; }
+    if (wizStep >= wizStepDefs.length - 1) { addProductFromDraft(); setView('success'); return; }
     const n = wizStep + 1;
     setWizStep(n);
     setWizMax((m) => Math.max(m, n));
@@ -828,13 +906,19 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---------- edit product (full page) ----------
   const saveSheet = () => {
     if (!sheet) return;
-    setProducts((ps) => ps.map((p) => (p.id === sheet.id ? { ...p, name: sheet.name, price: Number(sheet.price) || p.price, stock: Number(sheet.stock) || 0 } : p)));
+    setProducts((ps) => {
+      const next = ps.map((p) => (p.id === sheet.id ? { ...p, name: sheet.name, price: Number(sheet.price) || p.price, stock: Number(sheet.stock) || 0 } : p));
+      persistProdPatch(next.find((p) => p.id === sheet.id));
+      return next;
+    });
     setSheet(null);
     flash(L('Guardado · tienda actualizada', 'Saved · shop updated'));
   };
   const deleteSheet = () => {
     if (!sheet) return;
+    const target = products.find((p) => p.id === sheet.id);
     setProducts((ps) => ps.filter((p) => p.id !== sheet.id));
+    if (persistable && target?.dbId) deleteBizItem(target.dbId);
     setSheet(null);
     flash(L('Producto eliminado', 'Product deleted'));
   };

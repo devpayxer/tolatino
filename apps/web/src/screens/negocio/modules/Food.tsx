@@ -8,7 +8,7 @@
 // grid with a sticky preview/side rail. Real state: sub-tab, filters, edit sheet,
 // wizard step + draft fields, per-row toggles, toasts.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Cake, Calendar, Check, ChevronRight, Clock, Coffee, Copy, Croissant,
@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
@@ -24,9 +26,46 @@ const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 type Stock = 'in' | 'low' | 'out';
 type CatId = 'bread' | 'pastry' | 'pizza' | 'pasta' | 'salad' | 'drinks' | 'wine';
 type Item = {
-  id: number; name: string; cat: CatId; price: number; es: string; en: string;
+  id: number; dbId?: string; name: string; cat: CatId; price: number; es: string; en: string;
   diet: string[]; stock: Stock; popular: boolean; isNew: boolean; loves: number; visible: boolean;
 };
+
+// Map a business_items row (kind='menu') to the module's rich Item and back.
+const CAT_IDS = new Set<CatId>(['bread', 'pastry', 'pizza', 'pasta', 'salad', 'drinks', 'wine']);
+function rowToItem(r: BizItemRow, idx: number): Item {
+  const a = (r.attrs ?? {}) as Record<string, unknown>;
+  const cat = (r.section as CatId) ?? 'bread';
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    name: r.name,
+    cat: CAT_IDS.has(cat) ? cat : 'bread',
+    price: Number(r.price ?? 0),
+    es: r.description ?? '',
+    en: String(a.en ?? r.description ?? ''),
+    diet: (a.diet as string[]) ?? [],
+    stock: (a.stock as Stock) ?? 'in',
+    popular: !!a.popular,
+    isNew: !!a.isNew,
+    loves: Number(a.loves ?? 0),
+    visible: r.available,
+  };
+}
+function itemToRow(it: Item, businessId: string, sort: number): NewBizItem {
+  return {
+    business_id: businessId,
+    kind: 'menu',
+    name: it.name,
+    description: it.es,
+    price: it.price,
+    unit: null,
+    section: it.cat,
+    available: it.visible,
+    sort,
+    image_url: null,
+    attrs: { en: it.en, diet: it.diet, stock: it.stock, popular: it.popular, isNew: it.isNew, loves: it.loves },
+  };
+}
 type Cat = { id: CatId; es: string; en: string; tile: string; Icon: LucideIcon };
 
 const CATS: Cat[] = [
@@ -104,6 +143,39 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   const [items, setItems] = useState<Item[]>(seed);
+  const admin = useBizAdmin();
+  const real = admin.active;
+  const persistable = !admin.demo && !!real; // real signed-in business → persist to Supabase
+
+  // Load the real business's menu (demo keeps the sample seed for exploration).
+  useEffect(() => {
+    if (!persistable || !real) {
+      setItems(seed);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const rows = await listBizItems(real.id, 'menu');
+      if (!cancelled) setItems(rows.map(rowToItem));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  const nextId = () => (items.length ? Math.max(...items.map((i) => i.id)) : 0) + 1;
+  // persist a brand-new item, then backfill its DB id so later edits target it
+  const persistNew = async (it: Item) => {
+    if (!persistable || !real) return;
+    const dbId = await insertBizItem(itemToRow(it, real.id, items.length));
+    if (dbId) setItems((xs) => xs.map((x) => (x.id === it.id ? { ...x, dbId } : x)));
+  };
+  const persistPatch = (it: Item | undefined) => {
+    if (persistable && it?.dbId) {
+      updateBizItem(it.dbId, { name: it.name, description: it.es, price: it.price, section: it.cat, available: it.visible, attrs: { en: it.en, diet: it.diet, stock: it.stock, popular: it.popular, isNew: it.isNew, loves: it.loves } });
+    }
+  };
   const [subtab, setSubtab] = useState<'items' | 'categories' | 'mods' | 'schedules' | 'promos' | 'allergens' | 'stock'>('items');
   const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
   const [cat, setCat] = useState<'all' | CatId>('all');
@@ -601,7 +673,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ============ STOCK (86) ============
   const renderStock = () => {
     const stock86 = items.filter((i) => i.stock === 'out');
-    const setStock = (id: number, s: Stock) => { setItems((xs) => xs.map((i) => (i.id === id ? { ...i, stock: s } : i))); flash(s === 'in' ? L('Platillo reabastecido', 'Item restocked') : L('Platillo 86’d', 'Item 86’d')); };
+    const setStock = (id: number, s: Stock) => { setItems((xs) => { const next = xs.map((i) => (i.id === id ? { ...i, stock: s } : i)); persistPatch(next.find((i) => i.id === id)); return next; }); flash(s === 'in' ? L('Platillo reabastecido', 'Item restocked') : L('Platillo 86’d', 'Item 86’d')); };
     const stockLow = [
       { name: 'Country Loaf', left: 14, limit: 80, pct: 18, tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px' },
       { name: 'Morning Bun', left: 6, limit: 60, pct: 10, tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px' },
@@ -740,8 +812,28 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     L('Stock y disponibilidad', 'Stock & availability'), L('Revisar y publicar', 'Review & publish'),
   ][wizStep];
 
+  // Turn the wizard draft into a real menu item (adds to the list + persists).
+  const addFromDraft = () => {
+    const it: Item = {
+      id: nextId(),
+      name: draft.name.trim() || L('Nuevo platillo', 'New item'),
+      cat: draft.cat,
+      price: Number(draft.price) || 0,
+      es: draft.desc,
+      en: draft.desc,
+      diet: draft.diet,
+      stock: 'in',
+      popular: !!draft.flags.popular,
+      isNew: !!draft.flags.isNew,
+      loves: 0,
+      visible: draft.visible,
+    };
+    setItems((xs) => [it, ...xs]);
+    persistNew(it);
+  };
+
   const wizNext = () => {
-    if (wizStep >= wizStepDefs.length - 1) { setView('success'); return; }
+    if (wizStep >= wizStepDefs.length - 1) { addFromDraft(); setView('success'); return; }
     const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
   };
   const wizBack = () => { if (wizStep === 0) { setView('module'); return; } setWizStep((s) => s - 1); };
@@ -1075,8 +1167,8 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const editDirty = sheetId != null && edit != null && JSON.stringify(edit) !== JSON.stringify(items.find((i) => i.id === sheetId));
   const closeSheet = () => { setSheetId(null); setEdit(null); };
   const upEdit = (p: Partial<Item>) => setEdit((e) => (e ? { ...e, ...p } : e));
-  const saveEdit = () => { if (edit) setItems((xs) => xs.map((i) => (i.id === sheetId ? { ...i, ...edit } : i))); closeSheet(); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); };
-  const deleteItem = () => { setItems((xs) => xs.filter((i) => i.id !== sheetId)); closeSheet(); flash(L('Platillo eliminado', 'Item deleted')); };
+  const saveEdit = () => { if (edit) setItems((xs) => { const next = xs.map((i) => (i.id === sheetId ? { ...i, ...edit } : i)); persistPatch(next.find((i) => i.id === sheetId)); return next; }); closeSheet(); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); };
+  const deleteItem = () => { const target = items.find((i) => i.id === sheetId); setItems((xs) => xs.filter((i) => i.id !== sheetId)); if (persistable && target?.dbId) deleteBizItem(target.dbId); closeSheet(); flash(L('Platillo eliminado', 'Item deleted')); };
 
   const editPage = sheetId != null && edit != null && (
     <ModulePage

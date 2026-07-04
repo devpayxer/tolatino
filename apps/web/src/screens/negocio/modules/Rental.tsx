@@ -11,13 +11,15 @@
 // bottom sheets. Real state: sub-tabs, selected item, wizard/flow steps, refund
 // calc, toasts.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle, Boxes, CalendarDays, Check, ChevronLeft, DollarSign, Minus,
   Pencil, Plus, Shield,
 } from 'lucide-react';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { insertBizItem, listBizItems, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 
 type Cat = 'space' | 'furniture' | 'tableware' | 'equipo';
 type Period = 'hour' | 'day' | 'week';
@@ -25,10 +27,52 @@ type Condition = 'perfect' | 'minor' | 'major';
 type Sub = 'items' | 'calendar' | 'deposits' | 'damage' | 'pricing';
 
 type Item = {
-  id: number; es: string; en: string; cat: Cat; tile: string; booked: number;
+  id: number; dbId?: string; es: string; en: string; cat: Cat; tile: string; booked: number;
   stock: number; out: number; unitEs: string; unitEn: string; dep: number;
   hour: number | null; day: number; week: number; availEs: string; availEn: string;
 };
+
+const RENTAL_CATS = new Set<Cat>(['space', 'furniture', 'tableware', 'equipo']);
+// Map a business_items row (kind='rental') ↔ the module's bilingual Item.
+function rowToRental(r: BizItemRow, idx: number): Item {
+  const a = (r.attrs ?? {}) as Record<string, unknown>;
+  const cat = (r.section as Cat) ?? 'equipo';
+  const safeCat = RENTAL_CATS.has(cat) ? cat : 'equipo';
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    es: r.name,
+    en: String(a.nameEn ?? r.name),
+    cat: safeCat,
+    tile: String(a.tile ?? ''),
+    booked: Number(a.booked ?? 0),
+    stock: Number(a.stock ?? 0),
+    out: Number(a.out ?? 0),
+    unitEs: String(a.unitEs ?? r.unit ?? ''),
+    unitEn: String(a.unitEn ?? ''),
+    dep: Number(a.dep ?? 0),
+    hour: a.hour != null ? Number(a.hour) : null,
+    day: Number(a.day ?? r.price ?? 0),
+    week: Number(a.week ?? 0),
+    availEs: String(a.availEs ?? ''),
+    availEn: String(a.availEn ?? ''),
+  };
+}
+function rentalToRow(it: Item, businessId: string, sort: number): NewBizItem {
+  return {
+    business_id: businessId,
+    kind: 'rental',
+    name: it.es,
+    description: null,
+    price: it.day,
+    unit: it.unitEs,
+    section: it.cat,
+    available: true,
+    sort,
+    image_url: null,
+    attrs: { nameEn: it.en, unitEn: it.unitEn, tile: it.tile, booked: it.booked, stock: it.stock, out: it.out, dep: it.dep, hour: it.hour, day: it.day, week: it.week, availEs: it.availEs, availEn: it.availEn },
+  };
+}
 
 const CAT_TILE: Record<Cat, string> = {
   space: '#EAE2F8 0 8px,#DCCEF2 8px 16px',
@@ -62,6 +106,32 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   const [items, setItems] = useState<Item[]>(seed);
+  const admin = useBizAdmin();
+  const real = admin.active;
+  const persistable = !admin.demo && !!real; // real signed-in business → persist
+
+  // Load the real business's rental items (demo keeps the sample seed).
+  useEffect(() => {
+    if (!persistable || !real) {
+      setItems(seed);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const rows = await listBizItems(real.id, 'rental');
+      if (!cancelled) setItems(rows.map(rowToRental));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  const persistNewRental = async (it: Item) => {
+    if (!persistable || !real) return;
+    const dbId = await insertBizItem(rentalToRow(it, real.id, items.length));
+    if (dbId) setItems((prev) => prev.map((x) => (x.id === it.id ? { ...x, dbId } : x)));
+  };
   const [sub, setSub] = useState<Sub>('items');
   const [openId, setOpenId] = useState<number | null>(null);
   const [flow, setFlow] = useState<null | 'rentout' | 'return' | 'wizard'>(null);
@@ -429,7 +499,9 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           catLabel={catLabel}
           onClose={() => setFlow(null)}
           onDone={(it) => {
-            setItems((prev) => [{ ...it, id: Math.max(0, ...prev.map((p) => p.id)) + 1 }, ...prev]);
+            const withId = { ...it, id: Math.max(0, ...items.map((p) => p.id)) + 1 };
+            setItems((prev) => [withId, ...prev]);
+            persistNewRental(withId);
             setFlow(null); setSub('items');
             flash(L('Artículo agregado', 'Item added'));
           }}

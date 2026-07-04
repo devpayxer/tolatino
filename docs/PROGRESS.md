@@ -111,12 +111,15 @@ local-only) so every editor stays explorable + auditable.
   to the `post-photos` bucket; cover + delete.
 - [x] **Listado · Listados relacionados** — real portfolio of the owner's businesses.
 - [x] **Configurar módulos** — toggles persist to `businesses.modules` (0020).
-- [ ] **Módulos content** (Menú/Servicios/Reservas/Productos/Envío/Repartidores/
-  Renta/Eventos), **Clientes** (Clientes/Pedidos/Mensajes/Reseñas/Novedades),
-  **Cuenta** (Pagos/Personal/Empleos/Plan/**Ajustes**) — still the elaborate handoff
-  modules on fixture/local state. Each needs its own table(s)+RLS+CRUD; convert in
-  nav order, reusing the `bizAdmin` foundation. (A shared `business_items` table can
-  back the catalog modules — menu/products/services/rental — in one pass.)
+- [x] **Catalog modules — real CRUD** on the shared `business_items` table (0021,
+  `lib/bizItems.ts`): **Menú de comida** (add/edit/delete/86), **Servicios**
+  (add/edit/delete), **Productos** (add/edit/delete), **Renta** (add). Each keeps
+  its rich handoff UI + demo seed (local-only) and persists for real owners.
+- [ ] **Remaining sections** — **Módulos** (Reservas, Zonas de envío, Repartidores,
+  Eventos), **Clientes** (Clientes/Pedidos/Mensajes/Reseñas/Novedades), **Cuenta**
+  (Pagos/Personal/Empleos/Plan/**Ajustes**) — still fixture/local. Each needs its own
+  table(s)+RLS+CRUD (bookings, orders, messages, reviews-reply, staff, jobs, events,
+  payouts…). Convert in nav order, reusing the `bizAdmin` foundation.
 
 Every dashboard-real change: **build + `tools/mobile-audit/audit.js` (125 states,
 0 overflow at 392px)**; the demo mock exercises the real editors.
@@ -141,6 +144,7 @@ apps/web/src/screens/negocio/
   modules/{Food,Products,Services,Events,Rental,Staff,Customers,Billing,Updates}.tsx  (still fixture)
 apps/web/app/negocio/layout.tsx        provides BizAdminProvider
 apps/web/src/lib/bizAdmin.tsx          real owner-business loader + writer (RLS)
+apps/web/src/lib/bizItems.ts           CRUD over business_items (catalog modules)
 apps/web/src/screens/{Negocios,BizDetail,Comunidad,…}.tsx   consumer screens
 apps/web/src/lib/                      state, live (Supabase), savedBiz, hours,
                                        geo, addresses, follows, interactions, i18n
