@@ -11,10 +11,11 @@
 
 import { useMemo, useState } from 'react';
 import {
-  Check, ChevronLeft, DollarSign, MapPin, Megaphone, Plus,
-  QrCode, RefreshCw, Search, Share2, Ticket, TrendingUp, Users, X,
+  Check, DollarSign, MapPin, Megaphone, Plus,
+  QrCode, RefreshCw, Search, Share2, Ticket, TrendingUp, Users,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
@@ -557,18 +558,13 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  const manageBody = (
-    <div className="pb-8">
-      <div className="mb-3 flex items-center gap-3">
-        <button onClick={() => setView('list')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver', 'Back')}>
-          <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-extrabold text-ink">{mgEv.name}</div>
-          <div className="text-[11px] font-medium text-muted-2">{L('Gestionar evento', 'Manage event')}</div>
-        </div>
-      </div>
-
+  const managePage = (
+    <ModulePage
+      title={mgEv.name}
+      subtitle={L('Gestionar evento', 'Manage event')}
+      onBack={() => setView('list')}
+      maxW={940}
+    >
       <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
         {manageTabs.map(([k, label, n]) => (
           <button key={k} onClick={() => setManageTab(k)} className={chip(manageTab === k)}>
@@ -579,7 +575,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[320px_1fr]">
-        <div className="xl:sticky xl:top-[74px]">{heroCard}</div>
+        <div className="xl:sticky xl:top-0">{heroCard}</div>
         <div>
           {manageTab === 'overview' && overviewView}
           {manageTab === 'attendees' && attendeesView}
@@ -588,7 +584,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {manageTab === 'settings' && settingsView}
         </div>
       </div>
-    </div>
+    </ModulePage>
   );
 
   // ==================================================================
@@ -719,18 +715,24 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   };
   const wizBack = () => { if (wizStep === 0) { setView('list'); return; } setWizStep((s) => s - 1); };
 
-  const wizardBody = (
-    <div className="pb-8">
-      <div className="mb-4 flex items-center gap-3">
-        <button onClick={() => setView('list')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Cancelar', 'Cancel')}>
-          <X size={17} strokeWidth={2.4} className="text-ink" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-extrabold text-ink">{L('Crear evento', 'Create event')}</div>
-          <div className="text-[11px] font-medium text-muted-2">{typeLabel}</div>
+  const wizardPage = (
+    <ModulePage
+      title={L('Crear evento', 'Create event')}
+      subtitle={`${typeLabel} · ${L('Paso ', 'Step ')}${wizStep + 1}${L(' de ', ' of ')}${wizStepDefs.length}`}
+      onBack={() => setView('list')}
+      backLabel={L('Cancelar', 'Cancel')}
+      maxW={940}
+      footer={
+        <div className="flex items-center gap-3">
+          <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">
+            {wizStep === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
+          </button>
+          <button onClick={wizNext} className="flex-1 cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
+            {wizStep >= wizStepDefs.length - 1 ? L('Publicar evento', 'Publish event') : L('Continuar', 'Continue')}
+          </button>
         </div>
-      </div>
-
+      }
+    >
       <div className="no-scrollbar mb-4 flex gap-2 min-w-0 overflow-x-auto pb-0.5">
         {wizStepDefs.map(([, label], i) => {
           const active = wizStep === i, done = i < wizStep || (i <= wizMax && i !== wizStep);
@@ -744,7 +746,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
-        <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card xl:sticky xl:top-[74px]">
+        <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card xl:sticky xl:top-0">
           <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${draftTile})` }}>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.45))' }} />
             <div className="absolute bottom-2.5 left-3">
@@ -761,23 +763,16 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {wizStep === 1 && wizStep1}
           {wizStep === 2 && wizStep2}
           {wizStep === 3 && wizStep3}
-
-          <div className="mt-5 flex items-center gap-2.5 border-t border-hair pt-4">
-            <button onClick={wizBack} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn-lg bg-lilac-2" aria-label={L('Atrás', 'Back')}>
-              <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
-            </button>
-            <span className="flex-1 text-center text-[11px] font-semibold text-muted-2">{L('Paso ', 'Step ')}{wizStep + 1}{L(' de ', ' of ')}{wizStepDefs.length}</span>
-            <button onClick={wizNext} className="flex-1 cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">{wizStep >= wizStepDefs.length - 1 ? L('Publicar evento', 'Publish event') : L('Continuar', 'Continue')}</button>
-          </div>
         </div>
       </div>
-    </div>
+    </ModulePage>
   );
 
   // ==================================================================
   // SUCCESS
   // ==================================================================
-  const successBody = (
+  const successPage = (
+    <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('list'); setListTab('upcoming'); }}>
     <div className="flex flex-col items-center px-2 pb-8 pt-6 text-center">
       <div className="mb-3.5 flex h-16 w-16 items-center justify-center rounded-card bg-green-bg">
         <Check size={32} strokeWidth={2.6} className="text-green" />
@@ -803,9 +798,16 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button onClick={() => { setView('list'); setListTab('upcoming'); }} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a eventos', 'Back to events')}</button>
       </div>
     </div>
+    </ModulePage>
   );
 
   // ---------- render ----------
+  // Manage detail, the add-event wizard and the success screen each take over
+  // the viewport as a dedicated full-screen page (no cramped in-flow views).
+  if (view === 'manage') return <>{managePage}<Toast msg={toast} /></>;
+  if (view === 'wizard') return <>{wizardPage}<Toast msg={toast} /></>;
+  if (view === 'success') return <>{successPage}<Toast msg={toast} /></>;
+
   return (
     <div className="relative">
       {isFree && (
@@ -819,24 +821,16 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
 
-      {view === 'list' && listBody}
-      {view === 'manage' && manageBody}
-      {view === 'wizard' && wizardBody}
-      {view === 'success' && successBody}
+      {listBody}
 
-      {isPremium && view === 'list' && listTab === 'upcoming' && (
+      {isPremium && listTab === 'upcoming' && (
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
           <TrendingUp size={20} className="flex-none text-amber" />
           <span className="min-w-0 flex-1 text-[12px] font-semibold leading-snug text-white/80">{L('Tus eventos aparecen destacados en el feed de descubrimiento con Premium.', 'Your events get featured placement in the discovery feed with Premium.')}</span>
         </div>
       )}
 
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />
-          {toast}
-        </div>
-      )}
+      <Toast msg={toast} />
     </div>
   );
 }

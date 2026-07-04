@@ -11,11 +11,12 @@
 
 import { useMemo, useState } from 'react';
 import {
-  ArrowLeft, Boxes, Check, ChevronLeft, Clock, CreditCard, DollarSign, HardHat,
-  Image as ImageIcon, Layers, MapPin, Package, Percent, Plus, Route, Search,
-  Store, Tag, Trash2, Truck, Upload, X, Zap,
+  Boxes, Check, Clock, CreditCard, DollarSign, HardHat,
+  Layers, MapPin, Package, Percent, Plus, Route, Search,
+  Store, Tag, Truck, Upload, Zap,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 
 // ---------- static content model (ported from the Products handoff prototype) ----------
 
@@ -761,13 +762,26 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  const wizardView = (
-    <div className="flex flex-col gap-4 pb-8">
-      <button onClick={() => setView('module')} className="flex w-fit cursor-pointer items-center gap-1.5 text-[12px] font-extrabold text-ink-2">
-        <ArrowLeft size={15} strokeWidth={2.4} />{L('Volver a productos', 'Back to products')}
-      </button>
+  const wizardPage = (
+    <ModulePage
+      title={L('Agregar producto', 'Add product')}
+      subtitle={`${L(dCat.es, dCat.en)} · ${L('Paso', 'Step')} ${wizStep + 1}/${wizStepDefs.length}`}
+      onBack={() => setView('module')}
+      backLabel={L('Cancelar', 'Cancel')}
+      maxW={940}
+      footer={
+        <div className="flex items-center gap-3">
+          <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">
+            {wizStep === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
+          </button>
+          <button onClick={wizNext} className="flex-1 cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm">
+            {wizStep >= wizStepDefs.length - 1 ? L('Publicar producto', 'Publish product') : L('Continuar', 'Continue')}
+          </button>
+        </div>
+      }
+    >
       {/* step chips */}
-      <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
         {wizStepDefs.map(([lab], i) => {
           const active = wizStep === i;
           const done = i < wizStep || (i <= wizMax && i !== wizStep);
@@ -779,42 +793,82 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           );
         })}
       </div>
-      <div className="grid gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
-        <div className="flex flex-col gap-4 xl:sticky xl:top-[74px] xl:self-start">{wizardPreview}</div>
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
+        <div className="flex flex-col gap-4 xl:sticky xl:top-0 xl:self-start">{wizardPreview}</div>
         {wizardBody}
       </div>
-      {/* footer nav */}
-      <div className="flex items-center gap-3">
-        <button onClick={wizBack} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2 text-ink"><ChevronLeft size={18} strokeWidth={2.4} /></button>
-        <span className="flex-1 text-center text-[11px] font-semibold text-muted-2">{L('Paso ', 'Step ')}{wizStep + 1}{L(' de ', ' of ')}{wizStepDefs.length}</span>
-        <button onClick={wizNext} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm sm:flex-none sm:px-8">
-          {wizStep >= wizStepDefs.length - 1 ? L('Publicar producto', 'Publish product') : L('Continuar', 'Continue')}
-        </button>
-      </div>
-    </div>
+    </ModulePage>
   );
 
   // ---------- success ----------
-  const successView = (
-    <div className="flex flex-col items-center pb-8 pt-6 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-card-sm bg-green-bg text-green"><Check size={32} strokeWidth={2.6} /></div>
-      <div className="mt-3.5 text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo producto', 'New product'))} {L('está activo', 'is live')}</div>
-      <div className="mt-2 max-w-[320px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en tu tienda en línea.', 'It now appears in your online shop.')}</div>
-      <div className={`mt-5 w-full max-w-[440px] overflow-hidden text-left ${cardCls}`}>
-        <div className="h-[104px]" style={{ background: `repeating-linear-gradient(135deg,${dCat.tile})` }} />
-        <div className="flex items-center justify-between p-3">
-          <div className="min-w-0">
-            <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo producto', 'New product')}</div>
-            <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{L(dCat.es, dCat.en)} · {draft.price ? '$' + draft.price : '$0.00'}</div>
+  const successPage = (
+    <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); goMode('products'); }}>
+      <div className="flex flex-col items-center pb-4 pt-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-card-sm bg-green-bg text-green"><Check size={32} strokeWidth={2.6} /></div>
+        <div className="mt-3.5 text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo producto', 'New product'))} {L('está activo', 'is live')}</div>
+        <div className="mt-2 max-w-[320px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en tu tienda en línea.', 'It now appears in your online shop.')}</div>
+        <div className={`mt-5 w-full max-w-[440px] overflow-hidden text-left ${cardCls}`}>
+          <div className="h-[104px]" style={{ background: `repeating-linear-gradient(135deg,${dCat.tile})` }} />
+          <div className="flex items-center justify-between p-3">
+            <div className="min-w-0">
+              <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo producto', 'New product')}</div>
+              <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{L(dCat.es, dCat.en)} · {draft.price ? '$' + draft.price : '$0.00'}</div>
+            </div>
+            <span className="flex-none rounded-btn bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Activo', 'Live')}</span>
           </div>
-          <span className="flex-none rounded-btn bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Activo', 'Live')}</span>
+        </div>
+        <div className="mt-5 flex w-full max-w-[440px] flex-col gap-2.5">
+          <button onClick={startWizard} className="cursor-pointer rounded-btn bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm">+ {L('Agregar otro producto', 'Add another product')}</button>
+          <button onClick={() => { setView('module'); goMode('products'); }} className="cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a productos', 'Back to products')}</button>
         </div>
       </div>
-      <div className="mt-5 flex w-full max-w-[440px] flex-col gap-2.5">
-        <button onClick={startWizard} className="cursor-pointer rounded-btn bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm">+ {L('Agregar otro producto', 'Add another product')}</button>
-        <button onClick={() => { setView('module'); goMode('products'); }} className="cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a productos', 'Back to products')}</button>
+    </ModulePage>
+  );
+
+  // ---------- edit product (full page) ----------
+  const saveSheet = () => {
+    if (!sheet) return;
+    setProducts((ps) => ps.map((p) => (p.id === sheet.id ? { ...p, name: sheet.name, price: Number(sheet.price) || p.price, stock: Number(sheet.stock) || 0 } : p)));
+    setSheet(null);
+    flash(L('Guardado · tienda actualizada', 'Saved · shop updated'));
+  };
+  const deleteSheet = () => {
+    if (!sheet) return;
+    setProducts((ps) => ps.filter((p) => p.id !== sheet.id));
+    setSheet(null);
+    flash(L('Producto eliminado', 'Product deleted'));
+  };
+
+  const editPage = sheet && (
+    <ModulePage
+      title={L('Editar producto', 'Edit product')}
+      subtitle={L(catOf(sheet.cat).es, catOf(sheet.cat).en)}
+      onBack={() => setSheet(null)}
+      footer={
+        <div className="flex gap-2.5">
+          <button onClick={deleteSheet} className="cursor-pointer rounded-btn border-[1.5px] border-pink/40 bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
+          <button onClick={saveSheet} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar cambios', 'Save changes')}</button>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-3.5">
+        <div className="h-28 overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${catOf(sheet.cat).tile})` }} />
+        <div>
+          <label className={fieldLabel}>{L('Nombre del producto', 'Product name')}</label>
+          <input value={sheet.name} onChange={(e) => setSheet({ ...sheet, name: e.target.value })} className={fieldCls} />
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className={fieldLabel}>{L('Precio', 'Price')}</label>
+            <input value={sheet.price} onChange={(e) => setSheet({ ...sheet, price: e.target.value })} inputMode="decimal" className={fieldCls} />
+          </div>
+          <div className="flex-1">
+            <label className={fieldLabel}>{L('Cantidad', 'Stock qty')}</label>
+            <input value={sheet.stock} onChange={(e) => setSheet({ ...sheet, stock: e.target.value })} inputMode="numeric" className={fieldCls} />
+          </div>
+        </div>
       </div>
-    </div>
+    </ModulePage>
   );
 
   // ---------- module body (mode + sub-tabs + content) ----------
@@ -896,8 +950,10 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  if (view === 'wizard') return <div className="relative">{wizardView}{toastEl(toast)}</div>;
-  if (view === 'success') return <div className="relative">{successView}{toastEl(toast)}</div>;
+  // Edit / create flows take over the screen as full pages (no cramped popups).
+  if (view === 'wizard') return <>{wizardPage}<Toast msg={toast} /></>;
+  if (view === 'success') return <>{successPage}<Toast msg={toast} /></>;
+  if (editPage) return <>{editPage}<Toast msg={toast} /></>;
 
   return (
     <div className="relative pb-8">
@@ -939,75 +995,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {rail}
       </div>
 
-      {/* edit product bottom sheet */}
-      {sheet && <EditSheet sheet={sheet} setSheet={setSheet} catOf={catOf} L={L}
-        onSave={() => {
-          setProducts((ps) => ps.map((p) => p.id === sheet.id ? { ...p, name: sheet.name, price: Number(sheet.price) || p.price, stock: Number(sheet.stock) || 0 } : p));
-          setSheet(null);
-          flash(L('Guardado · tienda actualizada', 'Saved · shop updated'));
-        }}
-        onDelete={() => { setProducts((ps) => ps.filter((p) => p.id !== sheet.id)); setSheet(null); flash(L('Producto eliminado', 'Product deleted')); }}
-      />}
-
-      {toastEl(toast)}
+      <Toast msg={toast} />
     </div>
-  );
-
-  function toastEl(msg: string) {
-    if (!msg) return null;
-    return (
-      <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-        <Check size={14} strokeWidth={2.6} className="text-green" />
-        {msg}
-      </div>
-    );
-  }
-}
-
-// ---------- edit product sheet ----------
-function EditSheet({
-  sheet, setSheet, catOf, L, onSave, onDelete,
-}: {
-  sheet: Edit;
-  setSheet: (e: Edit | null) => void;
-  catOf: (id: string) => Cat;
-  L: PanelCtx['L'];
-  onSave: () => void;
-  onDelete: () => void;
-}) {
-  const fieldCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none focus:border-primary';
-  const fieldLabel = 'mb-1.5 block text-[11px] font-extrabold text-ink-soft';
-  return (
-    <>
-      <div onClick={() => setSheet(null)} className="fixed inset-0 z-40 bg-ink/50" />
-      <div className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[86vh] w-full max-w-[540px] overflow-y-auto rounded-t-panel bg-white shadow-sheet">
-        <div className="sticky top-0 flex justify-center bg-white pb-1.5 pt-2.5">
-          <span className="h-1.5 w-10 rounded-full bg-lilac-line" />
-          <button onClick={() => setSheet(null)} className="absolute right-3.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-lilac-2 text-ink"><X size={14} strokeWidth={2.6} /></button>
-        </div>
-        <div className="h-28" style={{ background: `repeating-linear-gradient(135deg,${catOf(sheet.cat).tile})` }} />
-        <div className="flex flex-col gap-3.5 p-4">
-          <div className="text-[16px] font-extrabold text-ink">{L('Editar producto', 'Edit product')}</div>
-          <div>
-            <label className={fieldLabel}>{L('Nombre del producto', 'Product name')}</label>
-            <input value={sheet.name} onChange={(e) => setSheet({ ...sheet, name: e.target.value })} className={fieldCls} />
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className={fieldLabel}>{L('Precio', 'Price')}</label>
-              <input value={sheet.price} onChange={(e) => setSheet({ ...sheet, price: e.target.value })} inputMode="decimal" className={fieldCls} />
-            </div>
-            <div className="flex-1">
-              <label className={fieldLabel}>{L('Cantidad', 'Stock qty')}</label>
-              <input value={sheet.stock} onChange={(e) => setSheet({ ...sheet, stock: e.target.value })} inputMode="numeric" className={fieldCls} />
-            </div>
-          </div>
-          <div className="flex gap-2.5 pt-1">
-            <button onClick={onDelete} className="cursor-pointer rounded-btn border-[1.5px] border-pink/40 bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
-            <button onClick={onSave} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar cambios', 'Save changes')}</button>
-          </div>
-        </div>
-      </div>
-    </>
   );
 }

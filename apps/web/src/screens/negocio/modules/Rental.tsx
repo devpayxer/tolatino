@@ -1,21 +1,22 @@
 'use client';
 
 // Renta / Rental module (business dashboard). Sub-tabs Artículos / Calendario /
-// Depósitos / Daños / Precios. Tapping an item opens a detail sheet (rates
-// hour/day/week + units + waiver policies). A "rentar" 3-step flow (renter →
-// period/qty → review → success), a "return condition check" flow that computes
-// a refund, and an "add item" 3-step wizard that appends to the list on success.
-// Mobile-first: single column with a horizontal sub-tab bar; on desktop it
-// expands to multi-column grids plus a sticky summary rail. All drill-ins use
-// the shared Overlay (bottom sheet on mobile, centered dialog on ≥768px). Real
-// state: sub-tabs, selected item, wizard/flow steps, refund calc, toasts.
+// Depósitos / Daños / Precios. Tapping an item opens a detail page (rates
+// hour/day/week + units + waiver). A "rentar" 3-step flow (renter → period/qty →
+// review → success), a "return condition check" flow that computes a refund, and
+// an "add item" 3-step wizard that appends to the list on success. Mobile-first:
+// single column with a horizontal sub-tab bar; on desktop it expands to
+// multi-column grids plus a sticky summary rail. Every drill-in (detail / rent-out
+// / return / add-item) takes over the screen as a full ModulePage — no cramped
+// bottom sheets. Real state: sub-tabs, selected item, wizard/flow steps, refund
+// calc, toasts.
 
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle, Boxes, CalendarDays, Check, ChevronLeft, DollarSign, Minus,
   Pencil, Plus, Shield,
 } from 'lucide-react';
-import { Overlay, OverlayTitle } from '@/components/ui';
+import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 
 type Cat = 'space' | 'furniture' | 'tableware' | 'equipo';
@@ -210,7 +211,6 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     { mon: 'OCT', day: '19', name: 'Park Studios', es: 'Espacio foto · 6–11 AM', en: 'Photo space · 6–11 AM', tag: 'coral' as const, online: false },
     { mon: 'OCT', day: '27', name: 'Mission Tech', es: 'Carro de horno · fiesta', en: 'Oven cart · party', tag: 'warn' as const, online: false },
   ];
-  const tagCls: Record<'warn' | 'success' | 'coral', string> = { warn: 'bg-amber-bg text-amber-ink', success: 'bg-green-bg text-green-dark', coral: 'bg-pink-bg text-pink-dark' };
   const dtCls: Record<'warn' | 'success' | 'coral', string> = { warn: 'bg-amber-bg text-amber-ink', success: 'bg-green-bg text-green-dark', coral: 'bg-pink-bg text-pink-dark' };
 
   const calendarPane = (
@@ -374,6 +374,71 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
+  // ---- Drill-in pages take over the screen as full ModulePages (no cramped popups) ----
+  if (selected && flow === null) {
+    return (
+      <>
+        <ItemDetail
+          item={selected}
+          ctx={ctx}
+          catLabel={catLabel}
+          statusOf={statusOf}
+          onClose={() => setOpenId(null)}
+          onEdit={() => flash(L('Edición próximamente', 'Editing coming soon'))}
+          onRentOut={() => setFlow('rentout')}
+          onReturn={() => setFlow('return')}
+        />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+
+  if (selected && flow === 'rentout') {
+    return (
+      <>
+        <RentOutFlow
+          item={selected}
+          ctx={ctx}
+          onBackToDetail={() => setFlow(null)}
+          onDone={() => { setFlow(null); setOpenId(null); flash(L('Rentado · depósito cobrado', 'Rented · deposit charged')); }}
+        />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+
+  if (selected && flow === 'return') {
+    return (
+      <>
+        <ReturnFlow
+          item={selected}
+          ctx={ctx}
+          onClose={() => setFlow(null)}
+          onDone={() => { setFlow(null); setOpenId(null); flash(L('Depósito devuelto', 'Deposit refunded')); }}
+        />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+
+  if (flow === 'wizard') {
+    return (
+      <>
+        <AddItemWizard
+          ctx={ctx}
+          catLabel={catLabel}
+          onClose={() => setFlow(null)}
+          onDone={(it) => {
+            setItems((prev) => [{ ...it, id: Math.max(0, ...prev.map((p) => p.id)) + 1 }, ...prev]);
+            setFlow(null); setSub('items');
+            flash(L('Artículo agregado', 'Item added'));
+          }}
+        />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+
   return (
     <div className="relative pb-8">
       {/* sub-tabs + add */}
@@ -394,65 +459,10 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {sub === 'damage' && damagePane}
       {sub === 'pricing' && pricingPane}
 
-      {/* mobile add FAB-style button (all sub-tabs) */}
+      {/* mobile add button (all sub-tabs) */}
       <button onClick={() => setFlow('wizard')} className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm md:hidden">
         <Plus size={16} strokeWidth={2.6} />{L('Agregar artículo', 'Add rental item')}
       </button>
-
-      {/* ===== DETAIL SHEET ===== */}
-      {selected && flow === null && (
-        <ItemDetail
-          item={selected}
-          ctx={ctx}
-          catLabel={catLabel}
-          statusOf={statusOf}
-          onClose={() => setOpenId(null)}
-          onEdit={() => flash(L('Edición próximamente', 'Editing coming soon'))}
-          onRentOut={() => setFlow('rentout')}
-          onReturn={() => setFlow('return')}
-        />
-      )}
-
-      {/* ===== RENT-OUT FLOW ===== */}
-      {selected && flow === 'rentout' && (
-        <RentOutFlow
-          item={selected}
-          ctx={ctx}
-          onClose={() => { setFlow(null); }}
-          onBackToDetail={() => setFlow(null)}
-          onDone={() => { setFlow(null); setOpenId(null); flash(L('Rentado · depósito cobrado', 'Rented · deposit charged')); }}
-        />
-      )}
-
-      {/* ===== RETURN FLOW ===== */}
-      {selected && flow === 'return' && (
-        <ReturnFlow
-          item={selected}
-          ctx={ctx}
-          onClose={() => setFlow(null)}
-          onDone={() => { setFlow(null); setOpenId(null); flash(L('Depósito devuelto', 'Deposit refunded')); }}
-        />
-      )}
-
-      {/* ===== ADD-ITEM WIZARD ===== */}
-      {flow === 'wizard' && (
-        <AddItemWizard
-          ctx={ctx}
-          catLabel={catLabel}
-          onClose={() => setFlow(null)}
-          onDone={(it) => {
-            setItems((prev) => [{ ...it, id: Math.max(0, ...prev.map((p) => p.id)) + 1 }, ...prev]);
-            setFlow(null); setSub('items');
-            flash(L('Artículo agregado', 'Item added'));
-          }}
-        />
-      )}
-
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />{toast}
-        </div>
-      )}
 
       {/* premium teaser */}
       {!isPremium && sub === 'items' && (
@@ -465,11 +475,13 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <button onClick={() => ctx.go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar', 'Upgrade')}</button>
         </div>
       )}
+
+      <Toast msg={toast} />
     </div>
   );
 }
 
-// ---------- Item detail sheet ----------
+// ---------- Item detail page ----------
 function ItemDetail({
   item, ctx, catLabel, statusOf, onClose, onEdit, onRentOut, onReturn,
 }: {
@@ -493,8 +505,20 @@ function ItemDetail({
   ];
 
   return (
-    <Overlay open onClose={onClose} align="right" width={460} fullHeightSheet>
-      <OverlayTitle title={L(item.es, item.en)} onClose={onClose} />
+    <ModulePage
+      title={L(item.es, item.en)}
+      subtitle={`${catLabel(item.cat)} · ${L(item.availEs, item.availEn)}`}
+      onBack={onClose}
+      action={<span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${s.cls}`}>{s.label}</span>}
+      footer={
+        <div className="flex gap-2.5">
+          <button onClick={onEdit} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label={L('Editar', 'Edit')}>
+            <Pencil size={16} strokeWidth={2} className="text-primary-dark" />
+          </button>
+          <button onClick={onRentOut} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Rentar', 'Rent out')}</button>
+        </div>
+      }
+    >
       <div className="flex flex-col gap-4">
         <div className="overflow-hidden rounded-card-sm border border-hair">
           <div className="relative h-[110px]" style={{ background: `repeating-linear-gradient(135deg,${item.tile})` }}>
@@ -548,21 +572,14 @@ function ItemDetail({
             ))}
           </div>
         </div>
-
-        <div className="sticky bottom-0 -mx-4 -mb-7 flex gap-2.5 border-t border-hair bg-white px-4 py-3.5 md:-mx-5 md:-mb-5 md:px-5">
-          <button onClick={onEdit} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label={L('Editar', 'Edit')}>
-            <Pencil size={16} strokeWidth={2} className="text-primary-dark" />
-          </button>
-          <button onClick={onRentOut} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Rentar', 'Rent out')}</button>
-        </div>
       </div>
-    </Overlay>
+    </ModulePage>
   );
 }
 
 // ---------- Rent-out 3-step flow ----------
-function RentOutFlow({ item, ctx, onClose, onBackToDetail, onDone }: {
-  item: Item; ctx: PanelCtx; onClose: () => void; onBackToDetail: () => void; onDone: () => void;
+function RentOutFlow({ item, ctx, onBackToDetail, onDone }: {
+  item: Item; ctx: PanelCtx; onBackToDetail: () => void; onDone: () => void;
 }) {
   const { L } = ctx;
   const [step, setStep] = useState(0);
@@ -597,8 +614,27 @@ function RentOutFlow({ item, ctx, onClose, onBackToDetail, onDone }: {
   const back = () => { if (step === 0) { onBackToDetail(); return; } setStep((s) => s - 1); };
 
   return (
-    <Overlay open onClose={onClose} align="right" width={460} fullHeightSheet>
-      <OverlayTitle title={L('Rentar artículo', 'Rent out')} onClose={onClose} onBack={back} />
+    <ModulePage
+      title={L('Rentar artículo', 'Rent out')}
+      subtitle={`${L('Paso', 'Step')} ${step + 1}/3`}
+      onBack={back}
+      backLabel={step === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
+      footer={
+        <div className="flex items-center gap-3">
+          <button onClick={back} aria-label={L('Atrás', 'Back')} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2">
+            <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
+          </button>
+          <span className="flex-1 text-center text-[11px] font-semibold text-muted-2">{`${L('Paso', 'Step')} ${step + 1} ${L('de 3', 'of 3')}`}</span>
+          <button
+            onClick={next}
+            disabled={!canNext}
+            className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${!canNext ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta-sm'}`}
+          >
+            {step >= 2 ? L('Cobrar y rentar', 'Charge & rent') : L('Continuar', 'Continue')}
+          </button>
+        </div>
+      }
+    >
       <div className="flex flex-col gap-4">
         <StepBar steps={steps} step={step} onGo={(i) => i <= step && setStep(i)} />
         <ItemStrip item={item} ctx={ctx} right={`${money(item.day)}/${L('día', 'day')} · ${L('Depósito', 'Deposit')} ${money(item.dep)}`} />
@@ -681,17 +717,8 @@ function RentOutFlow({ item, ctx, onClose, onBackToDetail, onDone }: {
             </>
           )}
         </div>
-
-        <FlowFooter
-          ctx={ctx}
-          progress={`${L('Paso', 'Step')} ${step + 1} ${L('de 3', 'of 3')}`}
-          nextLabel={step >= 2 ? L('Cobrar y rentar', 'Charge & rent') : L('Continuar', 'Continue')}
-          disabled={!canNext}
-          onBack={back}
-          onNext={next}
-        />
       </div>
-    </Overlay>
+    </ModulePage>
   );
 }
 
@@ -722,8 +749,15 @@ function ReturnFlow({ item, ctx, onClose, onDone }: { item: Item; ctx: PanelCtx;
   }
 
   return (
-    <Overlay open onClose={onClose} align="right" width={460} fullHeightSheet>
-      <OverlayTitle title={L('Devolución', 'Return')} onClose={onClose} />
+    <ModulePage
+      title={L('Devolución', 'Return')}
+      onBack={onClose}
+      footer={
+        <button onClick={() => setDone(true)} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">
+          {L('Registrar y reembolsar', 'Record & refund')}
+        </button>
+      }
+    >
       <div className="flex flex-col gap-4">
         <ItemStrip item={item} ctx={ctx} right={`${L('Devuelto por', 'Returned by')} James T.`} />
 
@@ -761,14 +795,8 @@ function ReturnFlow({ item, ctx, onClose, onDone }: { item: Item; ctx: PanelCtx;
             <span className="text-[16px] font-extrabold text-green">{money(refund)}</span>
           </div>
         </div>
-
-        <div className="sticky bottom-0 -mx-4 -mb-7 border-t border-hair bg-white px-4 py-3.5 md:-mx-5 md:-mb-5 md:px-5">
-          <button onClick={() => setDone(true)} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">
-            {L('Registrar y reembolsar', 'Record & refund')}
-          </button>
-        </div>
       </div>
-    </Overlay>
+    </ModulePage>
   );
 }
 
@@ -813,96 +841,111 @@ function AddItemWizard({ ctx, catLabel, onClose, onDone }: {
   const back = () => { if (step === 0) { onClose(); return; } setStep((s) => s - 1); };
 
   return (
-    <Overlay open onClose={onClose} align="right" width={460} fullHeightSheet>
-      <OverlayTitle title={L('Agregar artículo', 'Add rental item')} onClose={onClose} onBack={back} />
-      <div className="flex flex-col gap-4">
-        <StepBar steps={steps} step={step} onGo={(i) => i <= step && setStep(i)} />
+    <ModulePage
+      title={L('Agregar artículo', 'Add rental item')}
+      subtitle={`${catLabel(cat)} · ${L('Paso', 'Step')} ${step + 1}/3`}
+      onBack={back}
+      backLabel={step === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
+      maxW={940}
+      footer={
+        <div className="flex items-center gap-3">
+          <button onClick={back} aria-label={L('Atrás', 'Back')} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2">
+            <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
+          </button>
+          <span className="flex-1 text-center text-[11px] font-semibold text-muted-2">{`${L('Paso', 'Step')} ${step + 1} ${L('de 3', 'of 3')}`}</span>
+          <button
+            onClick={next}
+            disabled={!canNext}
+            className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${!canNext ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta-sm'}`}
+          >
+            {step >= 2 ? L('Publicar artículo', 'Publish item') : L('Continuar', 'Continue')}
+          </button>
+        </div>
+      }
+    >
+      <div className="mb-4"><StepBar steps={steps} step={step} onGo={(i) => i <= step && setStep(i)} /></div>
 
-        {/* live preview */}
-        <div className="overflow-hidden rounded-card-sm border border-hair">
-          <div className="h-[80px]" style={{ background: `repeating-linear-gradient(135deg,${CAT_TILE[cat]})` }} />
-          <div className="flex items-start justify-between gap-2.5 p-3">
-            <div className="min-w-0">
-              <div className={`text-[14px] font-extrabold ${name ? 'text-ink' : 'text-muted-faint'}`}>{name || L('Nombre del artículo', 'Item name')}</div>
-              <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{catLabel(cat)}</div>
-            </div>
-            <span className="whitespace-nowrap text-[13px] font-extrabold text-ink">{day ? `${money(Number(day))}/${L('día', 'day')}` : '$0'}</span>
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
+        <div className="order-2 xl:order-1">
+          <div className={`${cardCls} flex flex-col gap-3.5 p-4`}>
+            <div className="text-[13.5px] font-extrabold text-ink">{[L('Detalles del artículo', 'Item details'), L('Tarifas y depósito', 'Rates & deposit'), L('Políticas y exención', 'Policies & waiver')][step]}</div>
+
+            {step === 0 && (
+              <>
+                <Field label={`${L('Nombre del artículo', 'Item name')} *`}>
+                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Bici eléctrica', 'e.g. E-bike')} className={fieldCls} />
+                </Field>
+                <Field label={`${L('Categoría', 'Category')} *`}>
+                  <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto pb-0.5">
+                    {catDefs.map(([c, lab]) => (
+                      <button key={c} onClick={() => setCat(c)} className={`flex-none rounded-full px-3.5 py-2 text-[12px] ${cat === c ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-soft'}`}>{lab}</button>
+                    ))}
+                  </div>
+                </Field>
+                <div className="flex gap-3">
+                  <Field label={L('Cuántos', 'How many')} className="flex-1">
+                    <input value={stock} onChange={(e) => setStock(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="1" className={fieldCls} />
+                  </Field>
+                  <Field label={L('Unidad', 'Unit')} className="flex-1">
+                    <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={L('mesa, set…', 'table, set…')} className={fieldCls} />
+                  </Field>
+                </div>
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <div className="text-[11px] font-medium leading-snug text-muted">{L('Define al menos la tarifa diaria. Hora y semana son opcionales.', 'Set at least the daily rate. Hour and week are optional.')}</div>
+                <div className="flex gap-3">
+                  <Field label={L('Hora', 'Hour')} className="flex-1"><MoneyInput value={hour} onChange={setHour} placeholder="—" /></Field>
+                  <Field label={`${L('Día', 'Day')} *`} className="flex-1"><MoneyInput value={day} onChange={setDay} placeholder="0" /></Field>
+                </div>
+                <div className="flex gap-3">
+                  <Field label={L('Semana', 'Week')} className="flex-1"><MoneyInput value={week} onChange={setWeek} placeholder="—" /></Field>
+                  <Field label={L('Depósito', 'Deposit')} className="flex-1"><MoneyInput value={dep} onChange={setDep} placeholder="0" /></Field>
+                </div>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <div className="text-[11px] font-extrabold text-ink-soft">{L('Políticas', 'Policies')}</div>
+                {polDefs.map(([label, sub], i) => (
+                  <div key={label} className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12px] font-bold text-ink">{label}</span>
+                      <span className="block text-[10px] font-medium text-muted-2">{sub}</span>
+                    </span>
+                    <Toggle on={policies[i]} onClick={() => setPolicies((prev) => prev.map((v, j) => (j === i ? !v : v)))} />
+                  </div>
+                ))}
+                <div className={`mt-1 flex items-center gap-3 rounded-field border p-3 ${ready ? 'border-green/40 bg-green-bg' : 'border-amber/40 bg-amber-bg'}`}>
+                  <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[14px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? '✓' : '⚠'}</span>
+                  <span className="flex-1">
+                    <span className={`block text-[12px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing')}</span>
+                    <span className="block text-[10.5px] font-semibold leading-snug text-ink-3">{ready ? L('Aparecerá disponible para rentar.', 'It’ll appear available to rent.') : L('Agrega nombre y tarifa diaria.', 'Add a name and daily rate.')}</span>
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        <div className={`${cardCls} flex flex-col gap-3.5 p-4`}>
-          <div className="text-[13.5px] font-extrabold text-ink">{[L('Detalles del artículo', 'Item details'), L('Tarifas y depósito', 'Rates & deposit'), L('Políticas y exención', 'Policies & waiver')][step]}</div>
-
-          {step === 0 && (
-            <>
-              <Field label={`${L('Nombre del artículo', 'Item name')} *`}>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Bici eléctrica', 'e.g. E-bike')} className={fieldCls} />
-              </Field>
-              <Field label={`${L('Categoría', 'Category')} *`}>
-                <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto pb-0.5">
-                  {catDefs.map(([c, lab]) => (
-                    <button key={c} onClick={() => setCat(c)} className={`flex-none rounded-full px-3.5 py-2 text-[12px] ${cat === c ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-soft'}`}>{lab}</button>
-                  ))}
-                </div>
-              </Field>
-              <div className="flex gap-3">
-                <Field label={L('Cuántos', 'How many')} className="flex-1">
-                  <input value={stock} onChange={(e) => setStock(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="1" className={fieldCls} />
-                </Field>
-                <Field label={L('Unidad', 'Unit')} className="flex-1">
-                  <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={L('mesa, set…', 'table, set…')} className={fieldCls} />
-                </Field>
+        <div className="order-1 xl:order-2 xl:sticky xl:top-0">
+          <div className="mb-2 text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-faint">{L('Vista previa en vivo', 'Live preview')}</div>
+          <div className="overflow-hidden rounded-card-sm border border-hair">
+            <div className="h-[80px]" style={{ background: `repeating-linear-gradient(135deg,${CAT_TILE[cat]})` }} />
+            <div className="flex items-start justify-between gap-2.5 p-3">
+              <div className="min-w-0">
+                <div className={`text-[14px] font-extrabold ${name ? 'text-ink' : 'text-muted-faint'}`}>{name || L('Nombre del artículo', 'Item name')}</div>
+                <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{catLabel(cat)}</div>
               </div>
-            </>
-          )}
-
-          {step === 1 && (
-            <>
-              <div className="text-[11px] font-medium leading-snug text-muted">{L('Define al menos la tarifa diaria. Hora y semana son opcionales.', 'Set at least the daily rate. Hour and week are optional.')}</div>
-              <div className="flex gap-3">
-                <Field label={L('Hora', 'Hour')} className="flex-1"><MoneyInput value={hour} onChange={setHour} placeholder="—" /></Field>
-                <Field label={`${L('Día', 'Day')} *`} className="flex-1"><MoneyInput value={day} onChange={setDay} placeholder="0" /></Field>
-              </div>
-              <div className="flex gap-3">
-                <Field label={L('Semana', 'Week')} className="flex-1"><MoneyInput value={week} onChange={setWeek} placeholder="—" /></Field>
-                <Field label={L('Depósito', 'Deposit')} className="flex-1"><MoneyInput value={dep} onChange={setDep} placeholder="0" /></Field>
-              </div>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <div className="text-[11px] font-extrabold text-ink-soft">{L('Políticas', 'Policies')}</div>
-              {polDefs.map(([label, sub], i) => (
-                <div key={label} className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[12px] font-bold text-ink">{label}</span>
-                    <span className="block text-[10px] font-medium text-muted-2">{sub}</span>
-                  </span>
-                  <Toggle on={policies[i]} onClick={() => setPolicies((prev) => prev.map((v, j) => (j === i ? !v : v)))} />
-                </div>
-              ))}
-              <div className={`mt-1 flex items-center gap-3 rounded-field border p-3 ${ready ? 'border-green/40 bg-green-bg' : 'border-amber/40 bg-amber-bg'}`}>
-                <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[14px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? '✓' : '⚠'}</span>
-                <span className="flex-1">
-                  <span className={`block text-[12px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing')}</span>
-                  <span className="block text-[10.5px] font-semibold leading-snug text-ink-3">{ready ? L('Aparecerá disponible para rentar.', 'It’ll appear available to rent.') : L('Agrega nombre y tarifa diaria.', 'Add a name and daily rate.')}</span>
-                </span>
-              </div>
-            </>
-          )}
+              <span className="whitespace-nowrap text-[13px] font-extrabold text-ink">{day ? `${money(Number(day))}/${L('día', 'day')}` : '$0'}</span>
+            </div>
+          </div>
         </div>
-
-        <FlowFooter
-          ctx={ctx}
-          progress={`${L('Paso', 'Step')} ${step + 1} ${L('de 3', 'of 3')}`}
-          nextLabel={step >= 2 ? L('Publicar artículo', 'Publish item') : L('Continuar', 'Continue')}
-          disabled={!canNext}
-          onBack={back}
-          onNext={next}
-        />
       </div>
-    </Overlay>
+    </ModulePage>
   );
 }
 
@@ -910,16 +953,21 @@ function AddItemWizard({ ctx, catLabel, onClose, onDone }: {
 function SuccessSheet({ ctx, title, sub, onClose }: { ctx: PanelCtx; title: string; sub: string; onClose: () => void }) {
   const { L } = ctx;
   return (
-    <Overlay open onClose={onClose} align="right" width={460}>
+    <ModulePage
+      title={title}
+      onBack={onClose}
+      footer={
+        <button onClick={onClose} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Listo', 'Done')}</button>
+      }
+    >
       <div className="flex flex-col items-center gap-3 py-6 text-center">
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-bg text-green-dark">
           <Check size={28} strokeWidth={3} />
         </span>
         <div className="text-[16px] font-extrabold text-ink">{title}</div>
         <div className="max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">{sub}</div>
-        <button onClick={onClose} className="mt-2 w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Listo', 'Done')}</button>
       </div>
-    </Overlay>
+    </ModulePage>
   );
 }
 
@@ -948,23 +996,6 @@ function ItemStrip({ item, ctx, right }: { item: Item; ctx: PanelCtx; right: str
         <span className="block text-[13px] font-extrabold text-ink">{L(item.es, item.en)}</span>
         <span className="block truncate text-[10px] font-medium text-muted-2">{right}</span>
       </span>
-    </div>
-  );
-}
-
-function FlowFooter({ ctx, progress, nextLabel, disabled, onBack, onNext }: {
-  ctx: PanelCtx; progress: string; nextLabel: string; disabled?: boolean; onBack: () => void; onNext: () => void;
-}) {
-  void ctx;
-  return (
-    <div className="sticky bottom-0 -mx-4 -mb-7 flex items-center gap-3 border-t border-hair bg-white px-4 py-3.5 md:-mx-5 md:-mb-5 md:px-5">
-      <button onClick={onBack} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label="back">
-        <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
-      </button>
-      <span className="flex-1 text-center text-[11px] font-semibold text-muted-2">{progress}</span>
-      <button onClick={onNext} disabled={disabled} className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${disabled ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta-sm'}`}>
-        {nextLabel}
-      </button>
     </div>
   );
 }

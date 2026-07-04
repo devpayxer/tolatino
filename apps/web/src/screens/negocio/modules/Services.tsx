@@ -11,14 +11,15 @@
 // the analytics/inquiries + day detail move into a sticky side rail and lists go
 // multi-column. Real state: mode, sub-tabs, bookable toggles, edit sheet, wizard.
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  CalendarCheck, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight,
+  CalendarCheck, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight,
   DollarSign, Gift, GraduationCap, Lock, MessageSquare, Plus, Sparkles, Tag,
-  Users, Utensils, Wine, Wrench, X, XCircle,
+  Users, Utensils, Wine, Wrench, XCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 
 // ---------- static model ----------
 type CatId = 'tastings' | 'classes' | 'private' | 'catering';
@@ -136,31 +137,36 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   if (view === 'success') {
     const dc = catOf(draft.cat);
     return (
-      <div className="mx-auto flex max-w-[440px] flex-col items-center pb-8 pt-4 text-center">
-        <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green">
-          <CheckCircle2 size={34} strokeWidth={2.4} />
-        </span>
-        <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">
-          {(draft.name || L('Nuevo servicio', 'New service')) + ' ' + L('está activo', 'is live')}
-        </div>
-        <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">
-          {L('Ya aparece en la pestaña de Servicios de tu listado público.', "It now appears on your public listing's Services tab.")}
-        </div>
-        <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
-          <div className="h-[104px]" style={{ background: stripe(dc.tile) }} />
-          <div className="flex items-center justify-between p-3.5">
-            <div className="min-w-0">
-              <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo servicio', 'New service')}</div>
-              <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{catName(draft.cat)} · {draft.dur} · {draft.priceType === 'cotiza' ? L('Cotización', 'Quote') : draft.price ? `$${draft.price}` : '$0'}</div>
+      <>
+        <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setMode('services'); setSvcSub('catalog'); }}>
+          <div className="mx-auto flex max-w-[440px] flex-col items-center pb-4 pt-4 text-center">
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green">
+              <CheckCircle2 size={34} strokeWidth={2.4} />
+            </span>
+            <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">
+              {(draft.name || L('Nuevo servicio', 'New service')) + ' ' + L('está activo', 'is live')}
             </div>
-            <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-dark">{draft.bookable ? L('Reservable', 'Bookable') : L('Consulta', 'Inquiry')}</span>
+            <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">
+              {L('Ya aparece en la pestaña de Servicios de tu listado público.', "It now appears on your public listing's Services tab.")}
+            </div>
+            <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
+              <div className="h-[104px]" style={{ background: stripe(dc.tile) }} />
+              <div className="flex items-center justify-between p-3.5">
+                <div className="min-w-0">
+                  <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo servicio', 'New service')}</div>
+                  <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{catName(draft.cat)} · {draft.dur} · {draft.priceType === 'cotiza' ? L('Cotización', 'Quote') : draft.price ? `$${draft.price}` : '$0'}</div>
+                </div>
+                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-dark">{draft.bookable ? L('Reservable', 'Bookable') : L('Consulta', 'Inquiry')}</span>
+              </div>
+            </div>
+            <div className="mt-5 flex w-full flex-col gap-2.5">
+              <button onClick={() => { setDraft(newDraft()); setWizStep(0); setWizMax(0); setView('wizard'); }} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro servicio', 'Add another service')}</button>
+              <button onClick={() => { setView('module'); setMode('services'); setSvcSub('catalog'); }} className="rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a servicios', 'Back to services')}</button>
+            </div>
           </div>
-        </div>
-        <div className="mt-5 flex w-full flex-col gap-2.5">
-          <button onClick={() => { setDraft(newDraft()); setWizStep(0); setWizMax(0); setView('wizard'); }} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro servicio', 'Add another service')}</button>
-          <button onClick={() => { setView('module'); setMode('services'); setSvcSub('catalog'); }} className="rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a servicios', 'Back to services')}</button>
-        </div>
-      </div>
+        </ModulePage>
+        <Toast msg={toast} />
+      </>
     );
   }
 
@@ -203,9 +209,23 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     );
 
     return (
-      <div className="relative pb-8">
+      <>
+        <ModulePage
+          title={L('Nuevo servicio', 'New service')}
+          subtitle={`${catName(draft.cat)} · ${L('Paso', 'Step')} ${wizStep + 1}/${steps.length}`}
+          onBack={() => setView('module')}
+          backLabel={L('Cancelar', 'Cancel')}
+          maxW={940}
+          footer={
+            <div className="flex items-center gap-3">
+              <button onClick={back} className="flex h-11 w-11 flex-none items-center justify-center rounded-btn-lg bg-lilac-2 text-ink"><ChevronLeft size={18} strokeWidth={2.4} /></button>
+              <div className="hidden flex-1 text-center text-[11px] font-semibold text-muted-2 sm:block">{L('Paso ', 'Step ')}{wizStep + 1}{L(' de ', ' of ')}{steps.length}</div>
+              <button onClick={next} className="flex-1 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm sm:flex-none sm:px-8">{wizStep >= steps.length - 1 ? L('Publicar servicio', 'Publish service') : L('Continuar', 'Continue')}</button>
+            </div>
+          }
+        >
         <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[340px_1fr]">
-          <div className="flex flex-col gap-3 xl:sticky xl:top-[74px]">
+          <div className="flex flex-col gap-3 xl:sticky xl:top-0">
             <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
               {steps.map(([lbl], i) => {
                 const active = wizStep === i, done = i < wizMax && i !== wizStep;
@@ -349,16 +369,9 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             )}
           </div>
         </div>
-
-        {/* wizard footer */}
-        <div className="sticky bottom-0 z-20 mt-4 flex items-center gap-3 border-t border-hair bg-white/95 px-1 py-3 backdrop-blur">
-          <button onClick={back} className="flex h-11 w-11 flex-none items-center justify-center rounded-btn-lg bg-lilac-2 text-ink"><ChevronLeft size={18} strokeWidth={2.4} /></button>
-          <div className="hidden flex-1 text-center text-[11px] font-semibold text-muted-2 sm:block">{L('Paso ', 'Step ')}{wizStep + 1}{L(' de ', ' of ')}{steps.length}</div>
-          <button onClick={next} className="flex-1 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm sm:flex-none sm:px-8">{wizStep >= steps.length - 1 ? L('Publicar servicio', 'Publish service') : L('Continuar', 'Continue')}</button>
-        </div>
-
-        {toast && <Toast>{toast}</Toast>}
-      </div>
+        </ModulePage>
+        <Toast msg={toast} />
+      </>
     );
   }
 
@@ -710,8 +723,54 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ---- edit sheet ----
+  // ---- edit page (full-screen) ----
   const sheetSvc = services.find((s) => s.id === sheetId);
+  const closeSheet = () => { setSheetId(null); setEdit({}); };
+  const editPage = sheetSvc && (
+    <ModulePage
+      title={L('Editar servicio', 'Edit service')}
+      subtitle={catName(sheetSvc.cat)}
+      onBack={closeSheet}
+      footer={
+        <div className="flex gap-2.5">
+          <button onClick={() => { setServices((l) => l.filter((s) => s.id !== sheetSvc.id)); closeSheet(); flash(L('Servicio eliminado', 'Service deleted')); }} className="cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
+          <button onClick={() => { setServices((l) => l.map((s) => s.id === sheetSvc.id ? { ...s, ...edit } as Svc : s)); closeSheet(); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); }} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar cambios', 'Save changes')}</button>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-3.5">
+        <div className="h-[150px] overflow-hidden rounded-tile" style={{ background: stripe(sheetSvc.tile) }} />
+        <div>
+          <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Nombre del servicio', 'Service name')}</div>
+          <input value={edit.name ?? ''} onChange={(e) => setEdit((x) => ({ ...x, name: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
+        </div>
+        <div>
+          <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Descripción', 'Description')}</div>
+          <textarea value={edit.es ?? ''} onChange={(e) => setEdit((x) => ({ ...x, es: e.target.value, en: e.target.value }))} rows={3} className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[12px] font-medium leading-relaxed text-ink outline-none focus:border-primary" />
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Precio', 'Price')}</div>
+            <input value={edit.price ?? ''} onChange={(e) => setEdit((x) => ({ ...x, price: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
+          </div>
+          <div className="flex-1">
+            <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Duración', 'Duration')}</div>
+            <input value={edit.dur ?? ''} onChange={(e) => setEdit((x) => ({ ...x, dur: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-btn-lg border border-hair bg-app p-3.5">
+          <div className="min-w-0 flex-1">
+            <div className="text-[12.5px] font-bold text-ink">{L('Acepta reservas', 'Accept bookings')}</div>
+            <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L('Apágalo para solo recibir consultas.', 'Turn off to collect inquiries only.')}</div>
+          </div>
+          <Switch big on={!!bookable[sheetSvc.id]} onClick={() => setBookable((b) => ({ ...b, [sheetSvc.id]: !b[sheetSvc.id] }))} />
+        </div>
+      </div>
+    </ModulePage>
+  );
+
+  // Edit takes over the screen as a full page (no cramped bottom sheet).
+  if (editPage) return <>{editPage}<Toast msg={toast} /></>;
 
   return (
     <div className="relative pb-8">
@@ -752,62 +811,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
 
-      {/* edit bottom sheet */}
-      {sheetSvc && (
-        <>
-          <div onClick={() => { setSheetId(null); setEdit({}); }} className="fixed inset-0 z-40 bg-[rgba(28,24,46,.5)]" />
-          <div className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[88%] max-w-[560px] overflow-y-auto rounded-t-[24px] bg-white shadow-sheet">
-            <div className="sticky top-0 flex justify-center bg-white pb-1.5 pt-2.5">
-              <span className="h-[5px] w-10 rounded-full bg-lilac-line" />
-              <button onClick={() => { setSheetId(null); setEdit({}); }} className="absolute right-3.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-lilac-2 text-ink"><X size={13} strokeWidth={2.6} /></button>
-            </div>
-            <div className="h-[120px]" style={{ background: stripe(sheetSvc.tile) }} />
-            <div className="flex flex-col gap-3.5 p-4">
-              <div className="text-[16px] font-extrabold text-ink">{L('Editar servicio', 'Edit service')}</div>
-              <div>
-                <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Nombre del servicio', 'Service name')}</div>
-                <input value={edit.name ?? ''} onChange={(e) => setEdit((x) => ({ ...x, name: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
-              </div>
-              <div>
-                <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Descripción', 'Description')}</div>
-                <textarea value={edit.es ?? ''} onChange={(e) => setEdit((x) => ({ ...x, es: e.target.value, en: e.target.value }))} rows={2} className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[12px] font-medium leading-relaxed text-ink outline-none focus:border-primary" />
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Precio', 'Price')}</div>
-                  <input value={edit.price ?? ''} onChange={(e) => setEdit((x) => ({ ...x, price: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
-                </div>
-                <div className="flex-1">
-                  <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Duración', 'Duration')}</div>
-                  <input value={edit.dur ?? ''} onChange={(e) => setEdit((x) => ({ ...x, dur: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-btn-lg border border-hair bg-app p-3.5">
-                <div className="min-w-0 flex-1">
-                  <div className="text-[12.5px] font-bold text-ink">{L('Acepta reservas', 'Accept bookings')}</div>
-                  <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L('Apágalo para solo recibir consultas.', 'Turn off to collect inquiries only.')}</div>
-                </div>
-                <Switch big on={!!bookable[sheetSvc.id]} onClick={() => setBookable((b) => ({ ...b, [sheetSvc.id]: !b[sheetSvc.id] }))} />
-              </div>
-              <div className="flex gap-2.5 pt-0.5">
-                <button onClick={() => { setServices((l) => l.filter((s) => s.id !== sheetSvc.id)); setSheetId(null); setEdit({}); flash(L('Servicio eliminado', 'Service deleted')); }} className="rounded-btn border-[1.5px] border-[#F0C9D3] bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
-                <button onClick={() => { setServices((l) => l.map((s) => s.id === sheetSvc.id ? { ...s, ...edit } as Svc : s)); setSheetId(null); setEdit({}); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); }} className="flex-1 rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar cambios', 'Save changes')}</button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {toast && <Toast>{toast}</Toast>}
-    </div>
-  );
-}
-
-function Toast({ children }: { children: ReactNode }) {
-  return (
-    <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-      <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />
-      {children}
+      <Toast msg={toast} />
     </div>
   );
 }

@@ -7,8 +7,8 @@
 // invoice history with download). Tier-aware throughout via a LOCAL plan
 // state so "Confirm upgrade" / "Cancel" actually restyle the plan card.
 // Mobile-first single column; on desktop each tab expands into multi-column
-// grids with a sticky side rail. Upgrade & Cancel open the shared responsive
-// Overlay (bottom sheet on mobile, centered dialog on desktop).
+// grids with a sticky side rail. Upgrade takes over the screen as a full-screen
+// ModulePage; Cancel is a small centered confirm dialog (never a bottom sheet).
 
 import { useState } from 'react';
 import {
@@ -16,8 +16,8 @@ import {
   Lock, Mail, MapPin, MessageSquare, Pencil, Plus, Shield, ShoppingBag,
   Star, Users, X, Zap,
 } from 'lucide-react';
-import { Overlay } from '@/components/ui';
 import type { PanelCtx, TabKey, Tier } from '@/screens/negocio/tabs';
+import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
@@ -461,7 +461,56 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
   const pickMeta = { verified: ['Verified', '$19/mes'], premium: ['Premium', '$49/mes'] }[pick];
 
+  // ---------- upgrade page (full-screen) ----------
+  const upgradePage = (
+    <ModulePage
+      title={L('Elige tu plan', 'Choose your plan')}
+      subtitle={L('Mejora tu cuenta', 'Upgrade your account')}
+      onBack={() => setUpgradeOpen(false)}
+      footer={
+        <>
+          <button onClick={confirmUpgrade} className="w-full cursor-pointer rounded-btn-lg bg-primary p-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
+            {L('Confirmar · ', 'Confirm · ')}{pickMeta[0]} {pickMeta[1]}
+          </button>
+          <div className="mt-2.5 text-center text-[9.5px] font-medium leading-snug text-muted-2">
+            {L('Se cobra hoy. Renovación automática mensual. Cancela cuando quieras.', 'Charged today. Auto-renews monthly. Cancel anytime.')}
+          </div>
+        </>
+      }
+    >
+      <div className="text-[12px] font-medium leading-snug text-muted">
+        {L('Mejora para desbloquear módulos, insignia verificada y más visibilidad.', 'Upgrade to unlock modules, the verified badge and more visibility.')}
+      </div>
+      <div className="mt-4 flex flex-col gap-2.5">
+        {planOpts.map((p) => {
+          const on = pick === p.key;
+          return (
+            <button key={p.key} onClick={() => setPick(p.key)} className={`cursor-pointer rounded-card border-2 p-4 text-left ${on ? 'border-primary bg-lilac-3' : 'border-hair bg-white'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[16px] font-extrabold ${p.key === 'premium' ? 'text-ink' : 'text-primary-dark'}`}>{p.name}</span>
+                  {p.popular && <span className="rounded-md bg-amber px-2 py-0.5 text-[8.5px] font-extrabold text-ink">{L('Popular', 'Popular')}</span>}
+                </div>
+                <span className={`text-[15px] font-extrabold ${p.key === 'premium' ? 'text-ink' : 'text-primary-dark'}`}>{p.price}</span>
+              </div>
+              <div className="mt-2.5 flex flex-col gap-1.5">
+                {p.feats.map((f) => (
+                  <div key={f} className="flex items-center gap-2 text-[11px] font-semibold text-ink-soft">
+                    <Check size={13} strokeWidth={2.6} className="flex-none text-green" />{f}
+                  </div>
+                ))}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </ModulePage>
+  );
+
   // ---------- render ----------
+  // Upgrade takes over the screen as a full page (no cramped bottom sheet).
+  if (upgradeOpen) return <>{upgradePage}<Toast msg={toast} /></>;
+
   return (
     <div className="relative pb-8">
       <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
@@ -492,80 +541,49 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {sub === 'methods' && methodsEl}
       {sub === 'invoices' && invoicesEl}
 
-      {/* ---------- Upgrade sheet ---------- */}
-      <Overlay open={upgradeOpen} onClose={() => setUpgradeOpen(false)} width={460}>
-        <div className="text-[18px] font-extrabold text-ink">{L('Elige tu plan', 'Choose your plan')}</div>
-        <div className="mt-1 text-[12px] font-medium leading-snug text-muted">
-          {L('Mejora para desbloquear módulos, insignia verificada y más visibilidad.', 'Upgrade to unlock modules, the verified badge and more visibility.')}
-        </div>
-        <div className="mt-4 flex flex-col gap-2.5">
-          {planOpts.map((p) => {
-            const on = pick === p.key;
-            return (
-              <button key={p.key} onClick={() => setPick(p.key)} className={`cursor-pointer rounded-card border-2 p-4 text-left ${on ? 'border-primary bg-lilac-3' : 'border-hair bg-white'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[16px] font-extrabold ${p.key === 'premium' ? 'text-ink' : 'text-primary-dark'}`}>{p.name}</span>
-                    {p.popular && <span className="rounded-md bg-amber px-2 py-0.5 text-[8.5px] font-extrabold text-ink">{L('Popular', 'Popular')}</span>}
+      {/* ---------- Cancel confirm (small centered dialog) ---------- */}
+      {cancelOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          style={{ background: 'rgba(30,27,46,.45)' }}
+          onClick={() => setCancelOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[calc(100%-32px)] w-full max-w-[440px] overflow-y-auto rounded-card bg-white p-5 shadow-modal"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-tile bg-pink-bg">
+              <AlertTriangle size={22} strokeWidth={2.2} className="text-pink-dark" />
+            </span>
+            <div className="mt-3 text-[18px] font-extrabold text-ink">{L('¿Cancelar tu plan?', 'Cancel your plan?')}</div>
+            <div className="mt-1.5 text-[12px] font-medium leading-relaxed text-muted">
+              {L('Tu plan sigue activo hasta el 14 de noviembre. Después tu listado pasa a Free.', 'Your plan stays active until Nov 14. After that your listing reverts to Free.')}
+            </div>
+            <div className="mt-3.5 rounded-tile border border-hair bg-white p-3">
+              <div className="mb-2 text-[11px] font-extrabold text-amber-ink">{L('PERDERÁS:', "YOU'LL LOSE:")}</div>
+              <div className="flex flex-col gap-1.5">
+                {[
+                  L('Insignia verificada y prioridad', 'Verified badge & priority'),
+                  L('Menú, reservas, pedidos y eventos', 'Menu, bookings, orders & events'),
+                  L('Fotos ilimitadas (vuelve a 1)', 'Unlimited photos (back to 1)'),
+                ].map((l) => (
+                  <div key={l} className="flex items-center gap-2 text-[11px] font-semibold text-ink-soft">
+                    <X size={13} strokeWidth={2.6} className="flex-none text-pink-dark" />{l}
                   </div>
-                  <span className={`text-[15px] font-extrabold ${p.key === 'premium' ? 'text-ink' : 'text-primary-dark'}`}>{p.price}</span>
-                </div>
-                <div className="mt-2.5 flex flex-col gap-1.5">
-                  {p.feats.map((f) => (
-                    <div key={f} className="flex items-center gap-2 text-[11px] font-semibold text-ink-soft">
-                      <Check size={13} strokeWidth={2.6} className="flex-none text-green" />{f}
-                    </div>
-                  ))}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <button onClick={confirmUpgrade} className="mt-4 w-full cursor-pointer rounded-btn-lg bg-primary p-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
-          {L('Confirmar · ', 'Confirm · ')}{pickMeta[0]} {pickMeta[1]}
-        </button>
-        <div className="mt-2.5 text-center text-[9.5px] font-medium leading-snug text-muted-2">
-          {L('Se cobra hoy. Renovación automática mensual. Cancela cuando quieras.', 'Charged today. Auto-renews monthly. Cancel anytime.')}
-        </div>
-      </Overlay>
-
-      {/* ---------- Cancel sheet ---------- */}
-      <Overlay open={cancelOpen} onClose={() => setCancelOpen(false)} width={440}>
-        <span className="flex h-12 w-12 items-center justify-center rounded-tile bg-pink-bg">
-          <AlertTriangle size={22} strokeWidth={2.2} className="text-pink-dark" />
-        </span>
-        <div className="mt-3 text-[18px] font-extrabold text-ink">{L('¿Cancelar tu plan?', 'Cancel your plan?')}</div>
-        <div className="mt-1.5 text-[12px] font-medium leading-relaxed text-muted">
-          {L('Tu plan sigue activo hasta el 14 de noviembre. Después tu listado pasa a Free.', 'Your plan stays active until Nov 14. After that your listing reverts to Free.')}
-        </div>
-        <div className="mt-3.5 rounded-tile border border-hair bg-white p-3">
-          <div className="mb-2 text-[11px] font-extrabold text-amber-ink">{L('PERDERÁS:', "YOU'LL LOSE:")}</div>
-          <div className="flex flex-col gap-1.5">
-            {[
-              L('Insignia verificada y prioridad', 'Verified badge & priority'),
-              L('Menú, reservas, pedidos y eventos', 'Menu, bookings, orders & events'),
-              L('Fotos ilimitadas (vuelve a 1)', 'Unlimited photos (back to 1)'),
-            ].map((l) => (
-              <div key={l} className="flex items-center gap-2 text-[11px] font-semibold text-ink-soft">
-                <X size={13} strokeWidth={2.6} className="flex-none text-pink-dark" />{l}
+                ))}
               </div>
-            ))}
+            </div>
+            <button onClick={() => setCancelOpen(false)} className="mt-4 w-full cursor-pointer rounded-btn-lg bg-primary p-3.5 text-[13px] font-extrabold text-white shadow-cta">
+              {L('Mantener mi plan', 'Keep my plan')}
+            </button>
+            <button onClick={confirmCancel} className="mt-2.5 w-full cursor-pointer rounded-btn-lg border border-pink-bg bg-white p-3 text-[12.5px] font-extrabold text-pink-dark">
+              {L('Sí, cancelar', 'Yes, cancel')}
+            </button>
           </div>
         </div>
-        <button onClick={() => setCancelOpen(false)} className="mt-4 w-full cursor-pointer rounded-btn-lg bg-primary p-3.5 text-[13px] font-extrabold text-white shadow-cta">
-          {L('Mantener mi plan', 'Keep my plan')}
-        </button>
-        <button onClick={confirmCancel} className="mt-2.5 w-full cursor-pointer rounded-btn-lg border border-[#F0C9D3] bg-white p-3 text-[12.5px] font-extrabold text-pink-dark">
-          {L('Sí, cancelar', 'Yes, cancel')}
-        </button>
-      </Overlay>
-
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />
-          {toast}
-        </div>
       )}
+
+      <Toast msg={toast} />
     </div>
   );
 }

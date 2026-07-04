@@ -14,9 +14,10 @@
 import { useMemo, useState } from 'react';
 import {
   Award, Briefcase, Calendar, Check, ChevronLeft, ChevronRight, Clock, DollarSign,
-  Eye, Inbox, Lock, Mail, MapPin, MessageCircle, Pencil, Phone, Plus, Shield, User, Users, X,
+  Eye, Inbox, Lock, Mail, MapPin, MessageCircle, Pencil, Phone, Plus, Shield, User, Users,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 
 type Mode = 'staff' | 'jobs';
 type StaffTab = 'roster' | 'schedule' | 'time' | 'payroll' | 'roles';
@@ -695,14 +696,132 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ---------- member sheet ----------
+  // ---------- member detail page ----------
   const vm = roster.find((m) => m.id === viewing) ?? null;
   const shiftRaw: [string, string][] = [['L', '7a–10p'], ['M', '7a–10p'], ['X', 'OFF'], ['J', '7a–10p'], ['V', '7a–11p'], ['S', '9a–4p'], ['D', 'OFF']];
+
+  const memberPage = vm && (
+    <ModulePage
+      title={vm.nm}
+      subtitle={`${L(vm.titleEs, vm.titleEn)} · ${L('desde', 'since')} ${vm.since}`}
+      onBack={() => setViewing(null)}
+      action={<span className={`rounded-md px-2 py-1 text-[9.5px] font-extrabold ${ROLE_PILL[vm.role]}`}>{roleLabel(vm.role)}</span>}
+      footer={
+        <button onClick={() => setViewing(null)} className="w-full cursor-pointer rounded-btn-lg border border-pink-bg bg-white py-3.5 text-[13px] font-extrabold text-pink-dark">
+          {L('Remover del equipo', 'Remove from team')}
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-3.5">
+        <div className="flex gap-2.5">
+          <button onClick={() => flash(L('Chat abierto', 'Chat opened'))} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white"><MessageCircle size={14} strokeWidth={2.2} />{L('Mensaje', 'Message')}</button>
+          <button onClick={() => setStabStaff('roles')} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn border border-hair-strong bg-white py-2.5 text-[12px] font-extrabold text-ink-soft"><Pencil size={14} strokeWidth={2.2} />{L('Editar rol', 'Edit role')}</button>
+        </div>
+
+        <div className={`${cardCls} p-3.5`}>
+          <div className="text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Estado ahora', 'Status now')}</div>
+          <div className={`mt-2 flex items-center gap-1.5 text-[13px] font-bold ${dotColor(vm.dot)}`}>
+            <span className="h-2 w-2 rounded-full" style={{ background: vm.dot }} />{L(vm.stEs, vm.stEn)}
+          </div>
+        </div>
+
+        <div className={`${cardCls} px-3.5 py-1.5`}>
+          {[
+            { Icon: Briefcase, c: '#6D4DF6', bg: '#F1EFFA', label: L('Empleo', 'Employment'), value: vm.hours },
+            { Icon: Shield, c: '#1F8A4C', bg: '#E3F5EA', label: L('Permisos', 'Permissions'), value: L(vm.permsEs, vm.permsEn) },
+            { Icon: Phone, c: '#B5791A', bg: '#FCEFD6', label: L('Contacto', 'Contact'), value: `(415) 555-0${vm.id}24` },
+            { Icon: Mail, c: '#D6336C', bg: '#FDE7EF', label: 'Email', value: `${vm.nm.split(' ')[0].toLowerCase()}@mail.com` },
+          ].map((r, i, arr) => (
+            <div key={r.label} className={`flex items-center gap-3 py-2.5 ${i < arr.length - 1 ? 'border-b border-hair' : ''}`}>
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg" style={{ background: r.bg }}>
+                <r.Icon size={14} strokeWidth={2.2} style={{ color: r.c }} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9.5px] font-semibold text-muted-2">{r.label}</div>
+                <div className="mt-0.5 truncate text-[12px] font-bold text-ink">{r.value}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className={`${cardCls} p-3.5`}>
+          <div className="mb-2.5 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Turnos de la semana', "This week's shifts")}</div>
+          <div className="flex flex-col gap-2">
+            {shiftRaw.map(([day, hrs]) => (
+              <div key={day} className="grid grid-cols-[40px_1fr] items-center gap-2.5">
+                <span className="text-[10.5px] font-bold text-muted-2">{day}</span>
+                {hrs === 'OFF'
+                  ? <span className="text-[10px] font-bold text-muted-faint">OFF</span>
+                  : <span className="justify-self-start rounded-md px-2.5 py-1 text-[10px] font-extrabold text-white" style={{ background: vm.c }}>{hrs}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </ModulePage>
+  );
+
+  // ---------- invite member page ----------
+  const invitePage = inviteOpen && (
+    <ModulePage
+      title={L('Invitar a un miembro', 'Invite a member')}
+      onBack={() => setInviteOpen(false)}
+      backLabel={L('Cerrar', 'Close')}
+      footer={
+        <button
+          onClick={() => {
+            const nm = { manager: L('Nuevo Gerente', 'New Manager'), staff: L('Nuevo Staff', 'New Staff'), driver: L('Nuevo Repartidor', 'New Driver') }[inviteRole];
+            setExtra((e) => [
+              { id: Date.now(), nm, c: '#7B61FF', role: inviteRole, titleEs: roleLabel(inviteRole), titleEn: roleLabel(inviteRole), hours: 'Part-time', dot: '#C0BBD0', stEs: 'Invitado', stEn: 'Invited', permsEs: '—', permsEn: '—', since: '2025', invited: true },
+              ...e,
+            ]);
+            setInviteOpen(false);
+            flash(L('Invitación enviada', 'Invitation sent'));
+          }}
+          className="w-full cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm"
+        >
+          {L('Enviar invitación', 'Send invitation')}
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-3.5">
+        <div className="text-[12px] font-medium leading-snug text-muted">{L('Te ayudan a manejar pedidos, reservas y más según su rol.', 'They help manage orders, bookings and more based on their role.')}</div>
+
+        <div>
+          <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Correo o teléfono', 'Email or phone')}</div>
+          <input
+            type="text"
+            placeholder="nombre@correo.com"
+            className="w-full rounded-btn border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2 focus:border-primary"
+          />
+        </div>
+
+        <div>
+          <div className="mb-2 text-[11px] font-extrabold text-ink-soft">{L('Asignar rol', 'Assign role')}</div>
+          <div className="flex gap-2">
+            {([['manager', L('Gerente', 'Manager')], ['staff', 'Staff'], ['driver', L('Repartidor', 'Driver')]] as const).map(([r, label]) => (
+              <button
+                key={r}
+                onClick={() => setInviteRole(r)}
+                className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[11.5px] font-extrabold ${inviteRole === r ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </ModulePage>
+  );
 
   // ---------- sub-tab bars ----------
   const staffTabs: [StaffTab, string][] = [['roster', L('Equipo', 'Roster')], ['schedule', L('Horario', 'Schedule')], ['time', L('Asistencia', 'Time')], ['payroll', L('Nómina', 'Payroll')], ['roles', L('Roles', 'Roles')]];
   const jobTabs: [JobTab, string][] = [['jobs', L('Vacantes', 'Jobs')], ['pipeline', L('Candidatos', 'Pipeline')], ['visibility', L('Visibilidad', 'Visibility')]];
   const proTabs: Record<string, boolean> = { schedule: true, time: true, payroll: true };
+
+  // Detail / invite flows take over the screen as full pages (no cramped sheets).
+  if (invitePage) return <>{invitePage}<Toast msg={toast} /></>;
+  if (memberPage) return <>{memberPage}<Toast msg={toast} /></>;
 
   return (
     <div className="relative pb-8">
@@ -761,137 +880,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
 
-      {/* ===== member bottom-sheet ===== */}
-      {vm && (
-        <>
-          <div onClick={() => setViewing(null)} className="fixed inset-0 z-40 bg-[rgba(20,16,38,.45)]" />
-          <div className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[88%] max-w-[540px] flex-col rounded-t-panel bg-app shadow-modal">
-            <div className="flex flex-none justify-center pb-1 pt-2.5"><span className="h-1 w-10 rounded-full bg-[#D8D2E6]" /></div>
-            <div className="no-scrollbar overflow-y-auto px-4 pb-6 pt-2">
-              <div className="flex items-center gap-3">
-                <span className="relative flex-none">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-tile text-[17px] font-extrabold text-white" style={{ background: vm.c }}>{initialsOf(vm.nm)}</span>
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-[3px] border-app" style={{ background: vm.dot }} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[18px] font-extrabold text-ink">{vm.nm}</div>
-                  <div className="mt-0.5 text-[12px] font-semibold text-muted">{L(vm.titleEs, vm.titleEn)} · {L('desde', 'since')} {vm.since}</div>
-                  <span className={`mt-1.5 inline-block rounded-md px-2 py-0.5 text-[9.5px] font-extrabold ${ROLE_PILL[vm.role]}`}>{roleLabel(vm.role)}</span>
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-2.5">
-                <button onClick={() => flash(L('Chat abierto', 'Chat opened'))} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white"><MessageCircle size={14} strokeWidth={2.2} />{L('Mensaje', 'Message')}</button>
-                <button onClick={() => setStabStaff('roles')} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn border border-hair-strong bg-white py-2.5 text-[12px] font-extrabold text-ink-soft"><Pencil size={14} strokeWidth={2.2} />{L('Editar rol', 'Edit role')}</button>
-              </div>
-
-              <div className={`${cardCls} mt-3.5 p-3.5`}>
-                <div className="text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Estado ahora', 'Status now')}</div>
-                <div className={`mt-2 flex items-center gap-1.5 text-[13px] font-bold ${dotColor(vm.dot)}`}>
-                  <span className="h-2 w-2 rounded-full" style={{ background: vm.dot }} />{L(vm.stEs, vm.stEn)}
-                </div>
-              </div>
-
-              <div className={`${cardCls} mt-3 px-3.5 py-1.5`}>
-                {[
-                  { Icon: Briefcase, c: '#6D4DF6', bg: '#F1EFFA', label: L('Empleo', 'Employment'), value: vm.hours },
-                  { Icon: Shield, c: '#1F8A4C', bg: '#E3F5EA', label: L('Permisos', 'Permissions'), value: L(vm.permsEs, vm.permsEn) },
-                  { Icon: Phone, c: '#B5791A', bg: '#FCEFD6', label: L('Contacto', 'Contact'), value: `(415) 555-0${vm.id}24` },
-                  { Icon: Mail, c: '#D6336C', bg: '#FDE7EF', label: 'Email', value: `${vm.nm.split(' ')[0].toLowerCase()}@mail.com` },
-                ].map((r, i, arr) => (
-                  <div key={r.label} className={`flex items-center gap-3 py-2.5 ${i < arr.length - 1 ? 'border-b border-hair' : ''}`}>
-                    <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg" style={{ background: r.bg }}>
-                      <r.Icon size={14} strokeWidth={2.2} style={{ color: r.c }} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[9.5px] font-semibold text-muted-2">{r.label}</div>
-                      <div className="mt-0.5 truncate text-[12px] font-bold text-ink">{r.value}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className={`${cardCls} mt-3 p-3.5`}>
-                <div className="mb-2.5 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Turnos de la semana', "This week's shifts")}</div>
-                <div className="flex flex-col gap-2">
-                  {shiftRaw.map(([day, hrs]) => (
-                    <div key={day} className="grid grid-cols-[40px_1fr] items-center gap-2.5">
-                      <span className="text-[10.5px] font-bold text-muted-2">{day}</span>
-                      {hrs === 'OFF'
-                        ? <span className="text-[10px] font-bold text-muted-faint">OFF</span>
-                        : <span className="justify-self-start rounded-md px-2.5 py-1 text-[10px] font-extrabold text-white" style={{ background: vm.c }}>{hrs}</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button onClick={() => setViewing(null)} className="mt-3.5 w-full cursor-pointer rounded-btn-lg border border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">
-                {L('Remover del equipo', 'Remove from team')}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ===== invite bottom-sheet ===== */}
-      {inviteOpen && (
-        <>
-          <div onClick={() => setInviteOpen(false)} className="fixed inset-0 z-40 bg-[rgba(20,16,38,.45)]" />
-          <div className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-[540px] flex-col rounded-t-panel bg-app shadow-modal">
-            <div className="flex flex-none justify-center pb-1 pt-2.5"><span className="h-1 w-10 rounded-full bg-[#D8D2E6]" /></div>
-            <div className="px-4 pb-6 pt-2">
-              <div className="flex items-start justify-between">
-                <div className="text-[18px] font-extrabold text-ink">{L('Invitar a un miembro', 'Invite a member')}</div>
-                <button onClick={() => setInviteOpen(false)} className="cursor-pointer text-muted-2" aria-label={L('Cerrar', 'Close')}><X size={18} strokeWidth={2.4} /></button>
-              </div>
-              <div className="mt-1 text-[12px] font-medium leading-snug text-muted">{L('Te ayudan a manejar pedidos, reservas y más según su rol.', 'They help manage orders, bookings and more based on their role.')}</div>
-
-              <div className="mb-1.5 mt-4 text-[11px] font-extrabold text-ink-soft">{L('Correo o teléfono', 'Email or phone')}</div>
-              <input
-                type="text"
-                placeholder="nombre@correo.com"
-                className="w-full rounded-btn border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2 focus:border-primary"
-              />
-
-              <div className="mb-2 mt-3.5 text-[11px] font-extrabold text-ink-soft">{L('Asignar rol', 'Assign role')}</div>
-              <div className="flex gap-2">
-                {([['manager', L('Gerente', 'Manager')], ['staff', 'Staff'], ['driver', L('Repartidor', 'Driver')]] as const).map(([r, label]) => (
-                  <button
-                    key={r}
-                    onClick={() => setInviteRole(r)}
-                    className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[11.5px] font-extrabold ${inviteRole === r ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  const nm = { manager: L('Nuevo Gerente', 'New Manager'), staff: L('Nuevo Staff', 'New Staff'), driver: L('Nuevo Repartidor', 'New Driver') }[inviteRole];
-                  setExtra((e) => [
-                    { id: Date.now(), nm, c: '#7B61FF', role: inviteRole, titleEs: roleLabel(inviteRole), titleEn: roleLabel(inviteRole), hours: 'Part-time', dot: '#C0BBD0', stEs: 'Invitado', stEn: 'Invited', permsEs: '—', permsEn: '—', since: '2025', invited: true },
-                    ...e,
-                  ]);
-                  setInviteOpen(false);
-                  flash(L('Invitación enviada', 'Invitation sent'));
-                }}
-                className="mt-4 w-full cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm"
-              >
-                {L('Enviar invitación', 'Send invitation')}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ===== toast ===== */}
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />
-          {toast}
-        </div>
-      )}
+      <Toast msg={toast} />
     </div>
   );
 }
