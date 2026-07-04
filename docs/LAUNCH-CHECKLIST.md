@@ -188,14 +188,25 @@ backing them with real Supabase tables/RPCs when each feature goes live.
 - [x] **Products & Shipping** — catalog/inventory/variants/collections/discounts; zones/pickup/national/drivers; 4-step add-product wizard.
 - [x] **Services & Bookings** — catalog + bookable/inquiry toggle, reservations (calendar/tables/list/rules); 4-step add-service wizard.
 - [x] **Food menu** — 7 sub-tabs (Platillos/Categorías/Modificadores/Horarios/Promociones/Alérgenos/Stock-86) + 6-step add-item wizard with live preview.
-- [ ] **Wire modules to real data** — today all module content is fixture/demo state
-  (local `useState`). Back each with Supabase tables/RPCs as the feature launches.
 - [x] **Shell polish (mobile chrome, 2026-07-04)** — the dashboard now mirrors the
   handoff on mobile: dark top bar on Inicio (light elsewhere), business identity
   card at the top of Inicio, and the fixed bottom-tab bar
   (Inicio·Pedidos·Mensajes·Reseñas·Más→drawer). Verified via Playwright at 392px:
   0 horizontal overflow on all 12 dashboard views (fixed min-w-0 on module grid
   columns and scroll rows); desktop unchanged (light topbar + sidebar).
+- [x] **Popups → full-screen pages (2026-07-04)** — every module edit/create/detail/
+  wizard converted from cramped bottom-sheets to the shared `ModulePage`
+  (`modules/_page.tsx`: own header, natural scroll, sticky footer actions). Verified
+  by `tools/mobile-audit/` — **125 states / 0 overflow** at 392px.
+- [ ] **Apply the missing DB migrations (BLOCKING).** The founder's Supabase is
+  missing `0013`→`0018` (the `owner_id` ownership SQL failed: "column owner_id does
+  not exist"). Apply `0013`→`0018` in order in the SQL Editor, then run the
+  Hazleton→`b@b.com` ownership script (pasted in chat). Until then `create_business`
+  (publish), features, hours and saved-businesses tables are absent in prod.
+- [ ] **Wire modules to real data** — today all module content is fixture/demo state
+  (local `useState`). Load the owner's business(es) by `owner_id`, add a business
+  switcher, and back each module with Supabase tables/RPCs as features launch (so
+  `b@b.com` sees the real Hazleton businesses, not the demo restaurant).
 
 ## 4. Infra & hosting
 

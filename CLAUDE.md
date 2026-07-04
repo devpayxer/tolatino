@@ -4,6 +4,11 @@
 > and standards. Read it before doing any work. Every decision must respect the
 > **non-negotiables** below. When a rule here conflicts with a request, surface
 > the conflict instead of silently breaking the rule.
+>
+> **Resuming a session? Read `docs/PROGRESS.md` first** — it's the live "where we
+> are / how to resume" handoff (current state, deploy flow, what's built, the
+> pending DB-migration blocker, and next steps). Then `docs/LAUNCH-CHECKLIST.md`
+> for deferred decisions.
 
 ## What we're building
 
