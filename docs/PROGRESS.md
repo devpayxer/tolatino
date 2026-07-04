@@ -123,11 +123,24 @@ local-only) so every editor stays explorable + auditable.
 - [x] **Zonas de envío + Repartidores** — persist config to businesses.settings (0026).
 - [x] **Ajustes** — real profile links, ES/EN, notification prefs (businesses.settings),
   account (email + sign out).
-- [ ] **Still fixture** — **Reservas** (business_bookings 0027 ready), **Pedidos**
-  (business_orders 0028), **Mensajes** (business_conversations/_messages 0029),
-  **Clientes** (business_customers 0030), **Plan y facturación** (show real tier;
-  upgrade = payments), **Pagos** (needs Stripe — deferred). Tables 0027–0030 are
-  created; client wiring is the remaining step (bookings/orders/messages/customers).
+- [x] **Mensajes** — real inbox: conversations + threads + send (business_conversations
+  / business_messages 0029), mobile list↔thread, demo sample inbox.
+- [x] **Pedidos** — orders list + status changes on business_orders (0028).
+- [x] **Clientes** — customer directory on business_customers (0030).
+- [x] **Pagos** — real revenue from completed orders; automatic payouts show an
+  honest "connect payments" state (Stripe deferred per CLAUDE.md, transaction phase).
+- [x] **Plan y facturación** — reflects the business's real tier (via bizAdmin); the
+  card/invoices are placeholders until payments (Stripe) is connected.
+- [x] **Reservas** — booking list + status lifecycle on business_bookings (0027).
+
+**Every dashboard section is now real-data backed** (payouts honestly deferred to a
+payment processor). Catalog/list rows, edits, statuses and messages persist to
+Supabase for signed-in owners; a demo sample business keeps the whole panel
+explorable when nobody's signed in. Aggregate KPI/rollup cards and a few
+visual-only surfaces (calendar/floor-plan grids) stay as fixtures where there's no
+table to bind. Verified per batch by build + `tools/mobile-audit/audit.js` (125
+states, 0 overflow at 392px). **Founder must apply migrations 0019–0030** (pasted in
+chat) for the data to persist in production.
 
 Every dashboard-real change: **build + `tools/mobile-audit/audit.js` (125 states,
 0 overflow at 392px)**; the demo mock exercises the real editors.

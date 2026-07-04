@@ -22,6 +22,7 @@ import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
+import { supabase } from '@/lib/supabase';
 
 // ---------- static model ----------
 type CatId = 'tastings' | 'classes' | 'private' | 'catering';
@@ -92,6 +93,47 @@ type Draft = {
 };
 const newDraft = (): Draft => ({ name: '', desc: '', cat: 'classes', price: '', priceType: 'fijo', dur: '60 min', tags: [], bookable: true, deposit: true, capacity: '1', days: ['Vie', 'Sáb', 'Dom'] });
 
+// ---------- bookings (Reservas) model ----------
+// Card shape used by the calendar/floor/list booking views. Real rows carry a
+// `dbId` + `status`; demo fixtures carry neither (so demo shows no DB actions).
+type BkStatus = 'pending' | 'confirmed' | 'seated' | 'done' | 'cancelled';
+type Bk = {
+  dbId?: string; time: string; nm: string; kind: 'reservations' | 'classes' | 'private';
+  type: string; table: string; deposit: string; vip: boolean; notes: string;
+  st: 'ok' | 'pending'; status?: BkStatus;
+};
+// One row of the private `business_bookings` table (migration 0027).
+type BookingRow = {
+  id: string; service_name: string | null; customer_name: string; party_size: number | null;
+  starts_at: string; status: BkStatus; deposit: number | null; notes: string | null; created_at: string;
+};
+// Status → badge copy + token classes. Also used for the demo two-state badge
+// (pending/ok) so wiring real statuses leaves the demo render byte-identical.
+const BK_STATUS: Record<BkStatus, { es: string; en: string; cls: string }> = {
+  pending: { es: 'Por confirmar', en: 'Pending', cls: 'bg-pink-bg text-pink-dark' },
+  confirmed: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
+  seated: { es: 'Sentada', en: 'Seated', cls: 'bg-lilac-2 text-primary-dark' },
+  done: { es: 'Completada', en: 'Done', cls: 'bg-lilac-2 text-ink-2' },
+  cancelled: { es: 'Cancelada', en: 'Cancelled', cls: 'bg-lilac-2 text-muted-2' },
+};
+const bookingTime = (iso: string): string => {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+// Map a business_bookings row ↔ the module's booking card. There are no
+// table/kind/vip columns (owner-managed reservations), so those fall back to
+// sensible defaults and the party size folds into the type line.
+function rowToBk(r: BookingRow, es: boolean): Bk {
+  const dep = r.deposit == null ? 0 : Number(r.deposit);
+  const svc = r.service_name || (es ? 'Reserva' : 'Reservation');
+  const type = r.party_size != null ? (es ? `${svc} · ${r.party_size} pers.` : `${svc} · party ${r.party_size}`) : svc;
+  return {
+    dbId: r.id, time: bookingTime(r.starts_at), nm: r.customer_name, kind: 'reservations',
+    type, table: '', deposit: dep > 0 ? `$${dep}` : '', vip: false, notes: r.notes ?? '',
+    st: r.status === 'pending' ? 'pending' : 'ok', status: r.status,
+  };
+}
+
 // ---------- small switch ----------
 function Switch({ on, onClick, big }: { on: boolean; onClick: () => void; big?: boolean }) {
   const w = big ? 42 : 38;
@@ -122,6 +164,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const [services, setServices] = useState<Svc[]>(SEED);
   const [bookable, setBookable] = useState<Record<number, boolean>>(() => Object.fromEntries(SEED.map((s) => [s.id, s.bookable])));
+  const [bookingRows, setBookingRows] = useState<BookingRow[] | null>(null); // real bookings (null = demo → keep fixture)
   const admin = useBizAdmin();
   const real = admin.active;
   const persistable = !admin.demo && !!real; // real signed-in business → persist
@@ -140,6 +183,29 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       const svcs = rows.map(rowToSvc);
       setServices(svcs);
       setBookable(Object.fromEntries(svcs.map((s) => [s.id, s.bookable])));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  // Load the real business's bookings (demo keeps the sample day). Private table,
+  // owner-only via RLS; ordered by start time like the SQL index.
+  useEffect(() => {
+    if (!persistable || !real || !supabase) {
+      setBookingRows(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!
+        .from('business_bookings')
+        .select('id,service_name,customer_name,party_size,starts_at,status,deposit,notes,created_at')
+        .eq('business_id', real.id)
+        .order('starts_at', { ascending: true });
+      if (cancelled) return;
+      setBookingRows(error || !Array.isArray(data) ? [] : (data as unknown as BookingRow[]));
     })();
     return () => {
       cancelled = true;
@@ -170,6 +236,16 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const [toast, setToast] = useState('');
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
+
+  // Advance a real booking's status (optimistic local update, then persist).
+  // Demo rows (no dbId) never surface the action buttons that call this.
+  const setBookingStatus = async (b: Bk, status: BkStatus) => {
+    if (!b.dbId) return;
+    setBookingRows((rows) => (rows ? rows.map((r) => (r.id === b.dbId ? { ...r, status } : r)) : rows));
+    if (persistable && supabase) await supabase.from('business_bookings').update({ status }).eq('id', b.dbId);
+    flash(L('Reserva actualizada', 'Booking updated'));
+  };
+  const bkBadge = (b: Bk) => (b.status ? BK_STATUS[b.status] : b.st === 'pending' ? BK_STATUS.pending : BK_STATUS.confirmed);
 
   const upD = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
   const catOf = (id: CatId) => SVC_CATS.find((c) => c.id === id)!;
@@ -594,13 +670,19 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const dows = es ? ['L', 'M', 'X', 'J', 'V', 'S', 'D'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const eventDays: Record<number, string[]> = { 2: ['#D6336C', '#7B61FF'], 5: ['#7B61FF'], 8: ['#D6336C'], 11: ['#1F9D57'], 14: ['#D6336C', '#7B61FF'], 18: ['#D6336C'], 22: ['#7B61FF', '#1F9D57'], 25: ['#D6336C'], 28: ['#1F9D57'], 31: ['#D6336C', '#7B61FF'] };
 
-  const bookingsRaw = useMemo(() => ([
-    { time: '7:00 PM', nm: 'Daniel K.', kind: 'reservations', type: L('Reserva · 2 pers.', 'Reservation · party 2'), table: 'T1', deposit: '', vip: false, notes: L('Aniversario — mesa junto a la ventana.', 'Anniversary — window table please.'), st: 'ok' },
-    { time: '7:30 PM', nm: 'Anna F.', kind: 'reservations', type: L('Menú degustación · 2', 'Tasting menu · party 2'), table: 'T4', deposit: '$140', vip: true, notes: L('Maridaje de vino. Alergia: marisco.', 'Wine pairing. Allergy: shellfish.'), st: 'ok' },
-    { time: '7:45 PM', nm: 'James T.', kind: 'reservations', type: L('Reserva · 6 pers.', 'Reservation · party 6'), table: 'T9', deposit: '$50', vip: false, notes: L('Trae pastel de cumpleaños.', 'Bringing birthday cake.'), st: 'pending' },
-    { time: '8:00 PM', nm: 'Sofia R.', kind: 'classes', type: L('Sourdough 101 · clase', 'Sourdough 101 · class'), table: '14/16', deposit: '$85', vip: false, notes: '', st: 'ok' },
-    { time: '8:30 PM', nm: 'Mission Tech', kind: 'private', type: L('Comedor privado · 18', 'Private dining · 18'), table: L('Sala', 'Back room'), deposit: '$500', vip: true, notes: L('2 vegetarianos, 1 sin gluten.', '2 vegetarian, 1 GF.'), st: 'ok' },
-  ]), [es]);
+  // Real business → its bookings (mapped from business_bookings). Demo keeps the
+  // sample day. Re-maps on language toggle for the ES/EN type line.
+  const bookingsRaw = useMemo<Bk[]>(() => {
+    if (bookingRows) return bookingRows.map((r) => rowToBk(r, es));
+    return [
+      { time: '7:00 PM', nm: 'Daniel K.', kind: 'reservations', type: L('Reserva · 2 pers.', 'Reservation · party 2'), table: 'T1', deposit: '', vip: false, notes: L('Aniversario — mesa junto a la ventana.', 'Anniversary — window table please.'), st: 'ok' },
+      { time: '7:30 PM', nm: 'Anna F.', kind: 'reservations', type: L('Menú degustación · 2', 'Tasting menu · party 2'), table: 'T4', deposit: '$140', vip: true, notes: L('Maridaje de vino. Alergia: marisco.', 'Wine pairing. Allergy: shellfish.'), st: 'ok' },
+      { time: '7:45 PM', nm: 'James T.', kind: 'reservations', type: L('Reserva · 6 pers.', 'Reservation · party 6'), table: 'T9', deposit: '$50', vip: false, notes: L('Trae pastel de cumpleaños.', 'Bringing birthday cake.'), st: 'pending' },
+      { time: '8:00 PM', nm: 'Sofia R.', kind: 'classes', type: L('Sourdough 101 · clase', 'Sourdough 101 · class'), table: '14/16', deposit: '$85', vip: false, notes: '', st: 'ok' },
+      { time: '8:30 PM', nm: 'Mission Tech', kind: 'private', type: L('Comedor privado · 18', 'Private dining · 18'), table: L('Sala', 'Back room'), deposit: '$500', vip: true, notes: L('2 vegetarianos, 1 sin gluten.', '2 vegetarian, 1 GF.'), st: 'ok' },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingRows, es]);
   const bookingList = bookFilter === 'all' ? bookingsRaw : bookingsRaw.filter((b) => b.kind === bookFilter);
 
   const filterChip = (on: boolean) => `flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
@@ -622,12 +704,12 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               </div>
               <div className="mt-0.5 text-[10.5px] font-semibold text-ink-3">{b.type}</div>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <span className="rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-bold text-ink-2">{b.table}</span>
+                {b.table && <span className="rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-bold text-ink-2">{b.table}</span>}
                 {b.deposit && <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')} {b.deposit}</span>}
               </div>
               {b.notes && <div className="mt-1.5 rounded-r-md border-l-2 border-lilac-line bg-app px-2 py-1.5 text-[10px] font-medium italic leading-snug text-muted-2">&ldquo;{b.notes}&rdquo;</div>}
             </div>
-            <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${b.st === 'pending' ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-dark'}`}>{b.st === 'pending' ? L('Por confirmar', 'Pending') : L('Confirmada', 'Confirmed')}</span>
+            <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${bkBadge(b).cls}`}>{L(bkBadge(b).es, bkBadge(b).en)}</span>
           </div>
         );
       })}
@@ -776,18 +858,30 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       )}
       {bookSub === 'list' && <div>{dayHeader}<div className="grid gap-2.5 md:grid-cols-2">{bookingList.map((b) => {
         const dt = b.st === 'pending' ? { bg: '#FDE7EF', c: '#D6336C' } : b.kind === 'private' ? { bg: '#E3F5EA', c: '#1F8A4C' } : { bg: '#EFEBFF', c: '#6D4DF6' };
+        const bd = bkBadge(b);
+        const canAct = !!b.dbId && !!b.status && b.status !== 'done' && b.status !== 'cancelled';
         return (
-          <div key={b.nm + b.time} className={`${cardCls} flex gap-3 p-3`}>
-            <div className="w-12 flex-none rounded-btn-lg py-1.5 text-center" style={{ background: dt.bg }}>
-              <div className="text-[8.5px] font-bold" style={{ color: dt.c }}>{b.time.split(' ')[1]}</div>
-              <div className="text-[14px] font-extrabold leading-none" style={{ color: dt.c }}>{b.time.split(':')[0]}</div>
+          <div key={b.nm + b.time} className={`${cardCls} p-3`}>
+            <div className="flex gap-3">
+              <div className="w-12 flex-none rounded-btn-lg py-1.5 text-center" style={{ background: dt.bg }}>
+                <div className="text-[8.5px] font-bold" style={{ color: dt.c }}>{b.time.split(' ')[1]}</div>
+                <div className="text-[14px] font-extrabold leading-none" style={{ color: dt.c }}>{b.time.split(':')[0]}</div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5"><span className="text-[12.5px] font-extrabold text-ink">{b.nm}</span>{b.vip && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">★ VIP</span>}</div>
+                <div className="mt-0.5 text-[10.5px] font-semibold text-ink-3">{b.type}</div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{b.table && <span className="rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-bold text-ink-2">{b.table}</span>}{b.deposit && <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')} {b.deposit}</span>}</div>
+              </div>
+              <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${bd.cls}`}>{L(bd.es, bd.en)}</span>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5"><span className="text-[12.5px] font-extrabold text-ink">{b.nm}</span>{b.vip && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">★ VIP</span>}</div>
-              <div className="mt-0.5 text-[10.5px] font-semibold text-ink-3">{b.type}</div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5"><span className="rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-bold text-ink-2">{b.table}</span>{b.deposit && <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')} {b.deposit}</span>}</div>
-            </div>
-            <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${b.st === 'pending' ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-dark'}`}>{b.st === 'pending' ? L('Por confirmar', 'Pending') : L('Confirmada', 'Confirmed')}</span>
+            {canAct && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-dashed border-hair pt-2.5">
+                {b.status === 'pending' && <button onClick={() => setBookingStatus(b, 'confirmed')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Confirmar', 'Confirm')}</button>}
+                {b.status === 'confirmed' && <button onClick={() => setBookingStatus(b, 'seated')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Sentar', 'Seat')}</button>}
+                {b.status === 'seated' && <button onClick={() => setBookingStatus(b, 'done')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Completar', 'Complete')}</button>}
+                {(b.status === 'pending' || b.status === 'confirmed') && <button onClick={() => setBookingStatus(b, 'cancelled')} className="rounded-lg border-[1.5px] border-pink-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-pink-dark">{L('Cancelar', 'Cancel')}</button>}
+              </div>
+            )}
           </div>
         );
       })}</div></div>}

@@ -26,12 +26,12 @@ type Channel = 'delivery' | 'dinein' | 'pickup';
 type RvFilter = 'all' | 'need' | 'top' | 'low' | 'flagged';
 
 type Customer = {
-  id: number; initials: string; color: string; name: string; visits: number;
+  id: number; dbId?: string; initials: string; color: string; name: string; visits: number;
   spent: string; last: [string, string]; tag: [string, string]; vip: boolean;
   isNew: boolean; atRisk: boolean; b2b?: boolean;
 };
 type Order = {
-  id: string; who: [string, string]; placed: [string, string]; urgent: boolean;
+  id: string; dbId?: string; who: [string, string]; placed: [string, string]; urgent: boolean;
   channel: Channel; status: OStatus; total: string; items: [string, string];
 };
 type Review = {
@@ -102,13 +102,100 @@ function rowToReview(r: ReviewRow, idx: number, es: boolean): Review {
   };
 }
 
+// ---- Clientes / Pedidos real-data mapping ---------------------------------
+// Private per-business tables (RLS: owner-only). Both tabs mirror the reviews
+// pattern above: a real signed-in owner → load + map rows (`dbId` tracks the DB
+// uuid so writes target the right row); demo → keep the local fixture untouched.
+type CustomerRow = {
+  id: string; name: string; initials: string | null; color: string | null;
+  phone: string | null; email: string | null; orders_count: number | null;
+  spend: number | string | null; tag: string | null; notes: string | null;
+  last_order_at: string | null; created_at: string;
+};
+type OrderItem = { name?: string; qty?: number; price?: number };
+type OrderRow = {
+  id: string; code: string | null; customer_name: string | null;
+  items: OrderItem[] | null; total: number | string | null;
+  channel: string | null; status: string; created_at: string;
+};
+
+const money0 = (n: number | string | null) => `$${(Math.round(Number(n ?? 0)) || 0).toLocaleString('en-US')}`;
+const money2 = (n: number | string | null) =>
+  `$${(Number(n ?? 0) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// A private `business_customers` row → the module's Customer shape. The free-text
+// `tag` drives both the display chip and the segment flags (vip / new / at-risk /
+// b2b) so the Clientes sub-tabs keep filtering on real data.
+function rowToCustomer(r: CustomerRow, idx: number): Customer {
+  const tag = (r.tag ?? '').trim();
+  const t = tag.toLowerCase();
+  const b2b = t.includes('b2b');
+  const vip = b2b || t.includes('vip');
+  const isNew = t.includes('nuevo') || t.includes('new');
+  const atRisk = t.includes('riesgo') || t.includes('risk');
+  const initials = (r.initials?.trim())
+    || r.name.split(/\s+/).map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+    || 'C';
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    initials,
+    color: r.color || RV_COLORS[idx % RV_COLORS.length],
+    name: r.name,
+    visits: Number(r.orders_count ?? 0) || 0,
+    spent: money0(r.spend),
+    last: r.last_order_at ? [relTime(r.last_order_at, true), relTime(r.last_order_at, false)] : ['—', '—'],
+    tag: tag ? [tag, tag] : ['Cliente', 'Customer'],
+    vip,
+    isNew,
+    atRisk,
+    b2b: b2b || undefined,
+  };
+}
+
+const ORDER_CHANNELS: Channel[] = ['delivery', 'dinein', 'pickup'];
+function itemsLine(items: OrderRow['items']): string {
+  if (!Array.isArray(items) || items.length === 0) return '';
+  return items
+    .map((it) => {
+      const q = Number(it?.qty ?? 1) || 1;
+      const name = (it?.name ?? '').toString().trim();
+      if (!name) return '';
+      return q > 1 ? `${q}× ${name}` : name;
+    })
+    .filter(Boolean)
+    .join(', ');
+}
+
+// A private `business_orders` row → the module's Order shape. `items` is a jsonb
+// array [{name,qty,price}] summarized into one line; `code` is the human order id
+// and `dbId` the DB uuid the status-advance button writes back to. A DB status of
+// 'cancelled' simply falls outside the four filter tabs, so it renders nowhere.
+function rowToOrder(r: OrderRow): Order {
+  const channel = (ORDER_CHANNELS.includes(r.channel as Channel) ? r.channel : 'dinein') as Channel;
+  const line = itemsLine(r.items);
+  const code = (r.code && r.code.trim()) || `#${r.id.slice(0, 6)}`;
+  const ageMin = (Date.now() - new Date(r.created_at).getTime()) / 60000;
+  return {
+    id: code,
+    dbId: r.id,
+    who: [r.customer_name || 'Cliente', r.customer_name || 'Customer'],
+    placed: [relTime(r.created_at, true), relTime(r.created_at, false)],
+    urgent: r.status === 'new' && Number.isFinite(ageMin) && ageMin < 5,
+    channel,
+    status: r.status as OStatus,
+    total: money2(r.total),
+    items: [line, line],
+  };
+}
+
 export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
 
   const initialMode: Mode = tab === 'orders' ? 'orders' : tab === 'reviews' ? 'reviews' : 'customers';
 
   // ---- seed data ------------------------------------------------------------
-  const customers = useMemo<Customer[]>(
+  const seedCustomers = useMemo<Customer[]>(
     () => [
       { id: 1, initials: 'ML', color: '#7B61FF', name: 'María López', visits: 24, spent: '$1,824', last: ['hace 2 días', '2 days ago'], tag: ['VIP', 'VIP'], vip: true, isNew: false, atRisk: false },
       { id: 2, initials: 'MT', color: '#1F9D57', name: 'Mission Tech', visits: 12, spent: '$4,680', last: ['hoy', 'today'], tag: ['B2B', 'B2B'], vip: true, isNew: false, atRisk: false, b2b: true },
@@ -150,6 +237,11 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const persistable = !admin.demo && !!real; // real signed-in business → persist replies
   const [realReviews, setRealReviews] = useState<Review[] | null>(null);
   const reviews = realReviews ?? seedReviews;
+  // Clientes / Pedidos also load real data for a signed-in business (demo keeps
+  // the fixtures). Orders live in the mutable `orders` state below (the advance
+  // button edits them), so only Clientes needs its own real/fixture switch here.
+  const [realCustomers, setRealCustomers] = useState<Customer[] | null>(null);
+  const customers = realCustomers ?? seedCustomers;
 
   // ---- state ----------------------------------------------------------------
   const [mode, setMode] = useState<Mode>(initialMode);
@@ -199,6 +291,49 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       mapped.forEach((r) => { if (r.reply_es) seeded[r.id] = [r.reply_es, r.reply_en ?? r.reply_es]; });
       setPosted(seeded);
       setFlagged({}); // fixture's default flag doesn't apply to real reviews
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  // Load the real business's private customer directory (demo keeps the fixture).
+  useEffect(() => {
+    if (!persistable || !real || !supabase) {
+      setRealCustomers(null); // demo / not configured → fixture
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!
+        .from('business_customers')
+        .select('id,name,initials,color,phone,email,orders_count,spend,tag,notes,last_order_at,created_at')
+        .eq('business_id', real.id)
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      const rows = error || !Array.isArray(data) ? [] : (data as CustomerRow[]);
+      setRealCustomers(rows.map((r, i) => rowToCustomer(r, i)));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  // Load the real business's orders (demo keeps the fixture). Status advances then
+  // persist to `business_orders` via `advance`; demo mutations stay local.
+  useEffect(() => {
+    if (!persistable || !real || !supabase) {
+      setOrders(seedOrders); // demo / not configured → fixture
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!
+        .from('business_orders')
+        .select('id,code,customer_name,items,total,channel,status,created_at')
+        .eq('business_id', real.id)
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      const rows = error || !Array.isArray(data) ? [] : (data as OrderRow[]);
+      setOrders(rows.map(rowToOrder));
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -400,11 +535,17 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     s === 'new' ? L('Aceptar', 'Accept') : s === 'preparing' ? L('Marcar listo', 'Mark ready') : ch === 'delivery' ? L('Dar al repartidor', 'Hand to driver') : L('Completar', 'Complete');
   const chLabel = (ch: Channel) => ch === 'delivery' ? L('Entrega', 'Delivery') : ch === 'dinein' ? L('Mostrador', 'Dine-in') : L('Recoger', 'Pickup');
 
-  const advance = (o: Order) => {
+  const advance = async (o: Order) => {
     const nx = FLOW[o.status];
     if (!nx) return;
-    setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, status: nx } : x)));
+    // Optimistic local advance (match by DB uuid when present, else display code).
+    setOrders((list) => list.map((x) => ((o.dbId ? x.dbId === o.dbId : x.id === o.id) ? { ...x, status: nx } : x)));
     flash(`${o.id} → ${statusMeta[nx][0]}`);
+    // Persist only for a real, signed-in business; demo mutations stay local.
+    if (persistable && o.dbId && supabase) {
+      const { error } = await supabase.from('business_orders').update({ status: nx }).eq('id', o.dbId);
+      if (error) flash(L('No se pudo actualizar el pedido', 'Could not update the order'));
+    }
   };
 
   const orderList = orders.filter((o) => o.status === oStatus);

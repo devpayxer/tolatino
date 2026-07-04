@@ -32,12 +32,14 @@ import { HoursModule } from '@/screens/negocio/modules/Hours';
 import { PhotosModule } from '@/screens/negocio/modules/Photos';
 import { RelatedModule } from '@/screens/negocio/modules/Related';
 import { SettingsModule } from '@/screens/negocio/modules/Settings';
+import { MessagesModule } from '@/screens/negocio/modules/Messages';
+import { PaymentsModule } from '@/screens/negocio/modules/Payments';
 
 // Tabs that render their own rich module screen (mode toggles / sub-tabs /
 // wizards / sheets) instead of the uniform GenericTab — the panel hides its
 // generic "+ CTA" row for these (each module owns its own actions).
 const RICH_MODULES = new Set<TabKey>([
-  'listing', 'hours', 'photos', 'related', 'settings',
+  'listing', 'hours', 'photos', 'related', 'settings', 'messages', 'payments',
   'updates', 'billing', 'customers', 'orders', 'reviews', 'staff', 'jobs',
   'rental', 'events', 'products', 'shipping', 'services', 'bookings', 'menu',
 ]);
@@ -390,6 +392,8 @@ export function PanelScreen() {
           {tab === 'photos' && <PhotosModule ctx={ctx} />}
           {tab === 'related' && <RelatedModule ctx={ctx} />}
           {tab === 'settings' && <SettingsModule ctx={ctx} />}
+          {tab === 'messages' && <MessagesModule ctx={ctx} />}
+          {tab === 'payments' && <PaymentsModule ctx={ctx} />}
           {tab !== 'insights' && tab !== 'modules' && !RICH_MODULES.has(tab) && <GenericTab g={buildGeneric(tab, ctx)} ctx={ctx} />}
         </main>
       </div>
