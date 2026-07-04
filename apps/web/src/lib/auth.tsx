@@ -16,6 +16,8 @@ export type Profile = {
   city_label: string | null;
   lat: number | null;
   lng: number | null;
+  bio?: string | null;
+  settings?: Record<string, unknown> | null;
 };
 
 type AuthCtx = {
@@ -27,6 +29,7 @@ type AuthCtx = {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   saveLocation: (loc: { label: string; lat: number; lng: number }) => Promise<void>;
+  updateProfile: (patch: Partial<Profile>) => Promise<{ error: string | null }>;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -123,8 +126,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile((p) => (p ? { ...p, ...patch } : p));
   };
 
+  // Edit the user's own profile (name / bio / settings). Recomputes initials
+  // from the name so the avatar stays in sync. Optimistic local update.
+  const updateProfile: AuthCtx['updateProfile'] = async (patch) => {
+    if (!user) return { error: 'no-user' };
+    const next: Partial<Profile> = { ...patch };
+    if (typeof patch.display_name === 'string') next.initials = initialsOf(patch.display_name);
+    setProfile((p) => (p ? { ...p, ...next } : p));
+    if (!supabase) return { error: null };
+    const { error } = await supabase.from('profiles').update(next).eq('id', user.id);
+    return { error: error ? error.message : null };
+  };
+
   return (
-    <Ctx.Provider value={{ user, profile, loading, configured: !!supabase, signUp, signIn, signOut, saveLocation }}>
+    <Ctx.Provider value={{ user, profile, loading, configured: !!supabase, signUp, signIn, signOut, saveLocation, updateProfile }}>
       {children}
     </Ctx.Provider>
   );

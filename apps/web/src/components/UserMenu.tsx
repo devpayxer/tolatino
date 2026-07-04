@@ -4,7 +4,7 @@
 // Mi negocio, Configuración, Ayuda, idioma, Cerrar sesión.
 
 import { useRouter } from 'next/navigation';
-import { HelpCircle, LayoutDashboard, LogIn, LogOut, SlidersHorizontal, Store } from 'lucide-react';
+import { HelpCircle, LayoutDashboard, LogIn, LogOut, SlidersHorizontal, Store, User } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -25,9 +25,10 @@ export function UserMenu() {
   const loggedIn = !!auth.user;
 
   const items = [
+    ...(loggedIn ? [{ Icon: User, color: '#6D4DF6', bg: '#EFEBFF', label: L('Mi cuenta', 'My account'), act: () => go('/cuenta') }] : []),
     { Icon: LayoutDashboard, color: '#6D4DF6', bg: '#EFEBFF', label: L('Panel de negocio', 'Business dashboard'), act: () => go('/negocio') },
     { Icon: Store, color: '#1F9D57', bg: '#E3F5EA', label: L('Publicar negocio', 'List a business'), act: () => go('/negocio/publicar') },
-    { Icon: SlidersHorizontal, color: '#8A86A0', bg: '#F1EFFA', label: L('Configuración', 'Settings'), act: close },
+    { Icon: SlidersHorizontal, color: '#8A86A0', bg: '#F1EFFA', label: L('Configuración', 'Settings'), act: () => go('/cuenta') },
     { Icon: HelpCircle, color: '#9A6A12', bg: '#FCEFD6', label: L('Ayuda y soporte', 'Help & support'), act: close },
   ];
 
