@@ -61,7 +61,7 @@ export function GenericTab({ g, ctx }: { g: G; ctx: PanelCtx }) {
         </div>
       )}
 
-      <div className={`grid items-start gap-4 ${g.side?.length ? 'lg:grid-cols-[1.6fr_1fr]' : ''}`}>
+      <div className={`grid items-start gap-4 [&>*]:min-w-0 ${g.side?.length ? 'lg:grid-cols-[1.6fr_1fr]' : ''}`}>
         <div className="rounded-card-sm border border-hair bg-white p-4 shadow-card md:p-5">
           <div className="mb-3 text-[14.5px] font-extrabold text-ink">{g.mainTitle}</div>
 

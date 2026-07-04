@@ -779,7 +779,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           );
         })}
       </div>
-      <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
+      <div className="grid gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
         <div className="flex flex-col gap-4 xl:sticky xl:top-[74px] xl:self-start">{wizardPreview}</div>
         {wizardBody}
       </div>

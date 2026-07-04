@@ -82,7 +82,7 @@ export function InsightsPaid({ ctx }: { ctx: PanelCtx }) {
   return (
     <div className="flex flex-col gap-4 pb-8">
       {/* live revenue + hours + needs attention */}
-      <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
+      <div className="grid gap-4 [&>*]:min-w-0 xl:grid-cols-[1.35fr_1fr]">
         <div className="rounded-card-sm bg-ink p-5 text-white shadow-card-lg">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-extrabold uppercase tracking-[.05em] text-[rgba(255,255,255,.6)]">{L('Ingresos de hoy · en vivo', "Today's revenue · live")}</span>
@@ -169,7 +169,7 @@ export function InsightsPaid({ ctx }: { ctx: PanelCtx }) {
       </div>
 
       {/* revenue chart + channel mix */}
-      <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-4 [&>*]:min-w-0 xl:grid-cols-[1.5fr_1fr]">
         <div className={`${cardCls} p-4 md:p-5`}>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <span className="text-[14px] font-extrabold text-ink">{L('Ingresos', 'Revenue')}</span>
@@ -410,7 +410,7 @@ export function InsightsFree({ ctx }: { ctx: PanelCtx }) {
         ))}
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[1.3fr_1fr]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1.3fr_1fr]">
         <div className={`${cardCls} p-4 md:p-5`}>
           <div className="mb-3 flex items-center justify-between">
             <span className="text-[14px] font-extrabold text-ink">{L('Completar listado', 'Listing completion')}</span>
