@@ -11,6 +11,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // Suppresses iOS Safari's automatic zoom when focusing inputs (<16px text),
+  // which blew fixed bottom-sheets past the screen edges. Since iOS 10, user
+  // pinch-zoom still works — Safari ignores the cap for user gestures.
+  maximumScale: 1,
   themeColor: '#7B61FF',
 };
 

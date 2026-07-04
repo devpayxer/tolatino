@@ -1085,7 +1085,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="relative h-[124px]" style={{ background: `repeating-linear-gradient(135deg,${catOf(edit.cat).tile})` }}>
           <span className="absolute bottom-3 right-3 rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink">📷 {L('Foto', 'Photo')}</span>
         </div>
-        <div className="flex flex-col gap-3.5 p-4">
+        <div className="flex flex-col gap-3.5 p-4 pb-[max(env(safe-area-inset-bottom),16px)]">
           <div className="flex items-center justify-between">
             <span className="text-[16px] font-extrabold text-ink">{L('Editar platillo', 'Edit item')}</span>
             <span className={`rounded-md px-2 py-1 text-[9.5px] font-extrabold ${editDirty ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{editDirty ? L('Sin guardar', 'Unsaved') : L('Sincronizado', 'Synced')}</span>
