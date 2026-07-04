@@ -5,7 +5,7 @@
 // Premium) and rubro. Tab content: Insights + Module setup + the uniform
 // module pages.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BarChart3, Bell, Check, ExternalLink, Menu, MessageCircle, Search, ShoppingBag, Star, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
@@ -45,6 +45,8 @@ const RUBRO_FROM_ONB: Record<string, Rubro> = {
   comida: 'restaurant', belleza: 'beauty', auto: 'auto', tiendas: 'retail', abarrotes: 'retail', deportes: 'rental',
 };
 
+const DEFAULT_MODS: Mods = { menu: true, services: true, bookings: true, products: true, rental: true, events: true, updates: true, staff: true };
+
 export function PanelScreen() {
   const { L } = useLang();
   const app = useApp();
@@ -54,7 +56,21 @@ export function PanelScreen() {
   const admin = useBizAdmin();
   const real = admin.active; // the signed-in owner's active business (null in demo)
   const [drawer, setDrawer] = useState(false);
-  const [mods, setMods] = useState<Mods>({ menu: true, services: true, bookings: true, products: true, rental: true, events: true, updates: true, staff: true });
+  const [mods, setMods] = useState<Mods>(DEFAULT_MODS);
+
+  // Load the real business's saved module config (null → tier default).
+  useEffect(() => {
+    setMods(real?.modules ? { ...DEFAULT_MODS, ...real.modules } : DEFAULT_MODS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id]);
+
+  // Toggling a module persists to the real business (local-only in demo).
+  const toggleMod = (k: keyof Mods) =>
+    setMods((m) => {
+      const next = { ...m, [k]: !m[k] };
+      if (real) admin.update({ modules: next });
+      return next;
+    });
 
   // The real business drives plan/rubro/identity; when the owner has no listing
   // (or isn't signed in) the panel falls back to the demo tier switcher so it
@@ -358,7 +374,7 @@ export function PanelScreen() {
           )}
 
           {tab === 'insights' && (isFree ? <InsightsFree ctx={ctx} /> : <InsightsPaid ctx={ctx} />)}
-          {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={(k) => setMods((m) => ({ ...m, [k]: !m[k] }))} />}
+          {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={toggleMod} />}
           {tab === 'updates' && <UpdatesModule ctx={ctx} />}
           {tab === 'billing' && <BillingModule ctx={ctx} tab={tab} />}
           {(tab === 'customers' || tab === 'orders' || tab === 'reviews') && <CustomersModule ctx={ctx} tab={tab} />}
