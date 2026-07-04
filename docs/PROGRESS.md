@@ -88,25 +88,45 @@ uploads, not committed).
 - iOS input auto-zoom disabled via `maximum-scale=1` in `apps/web/app/layout.tsx`
   viewport (kept multi-field forms from blowing past the screen).
 
-## ⚠️ ACTION NEEDED FROM THE FOUNDER (blocking)
-The founder's Supabase is **missing migrations** — `alter … owner_id` failed with
-"column owner_id does not exist", so **0013 onward were not applied**. Before the
-dashboard/data work continues:
-1. In the Supabase SQL Editor, check which migrations ran, then **apply the missing
-   ones in order: `0013` → `0018`** (all are in `supabase/migrations/`, idempotent).
-2. Then run the **Hazleton → `b@b.com` ownership** script (already pasted in chat:
-   ensures `owner_id` column exists, then `update businesses set owner_id = (b@b.com)
-   where city = 'Hazleton, PA'`). `b@b.com` must have signed up first.
+## ⚠️ ACTION NEEDED FROM THE FOUNDER (apply in the SQL Editor)
+- ✅ **`0013`→`0018` applied** (2026-07-04, verified: single 16-arg `create_business`).
+  The old "not unique / owner_id missing" blocker is resolved; publish + Hazleton
+  ownership work.
+- ⏳ **Apply `0019_business_photos.sql` + `0020_business_modules.sql`** (both
+  idempotent) so the dashboard's **Fotos** and **Configurar módulos** persist. The
+  combined SQL is pasted in chat.
+
+## Dashboard → real data (in progress, 2026-07-04)
+Building the business panel section-by-section from fixture/demo into real,
+Supabase-backed tools. **Foundation done:** `lib/bizAdmin` loads the signed-in
+owner's business(es) by `owner_id`, exposes the active one + a switcher + a writer
+(`update`) that persists to the real `businesses` row (RLS "update own business");
+`app/negocio/layout.tsx` provides it; `Panel.tsx` derives identity/plan/rubro from
+the real business, with a **demo sample business** when nobody's signed in (edits
+local-only) so every editor stays explorable + auditable.
+- [x] **Listado · Información general** — real edit/save (name, category, tagline,
+  price, phone, address, description) → `businesses`.
+- [x] **Listado · Horario** — weekly HoursEditor + manual fallback → `businesses.hours`.
+- [x] **Listado · Fotos y media** — gallery on `business_photos` (0019); WebP upload
+  to the `post-photos` bucket; cover + delete.
+- [x] **Listado · Listados relacionados** — real portfolio of the owner's businesses.
+- [x] **Configurar módulos** — toggles persist to `businesses.modules` (0020).
+- [ ] **Módulos content** (Menú/Servicios/Reservas/Productos/Envío/Repartidores/
+  Renta/Eventos), **Clientes** (Clientes/Pedidos/Mensajes/Reseñas/Novedades),
+  **Cuenta** (Pagos/Personal/Empleos/Plan/**Ajustes**) — still the elaborate handoff
+  modules on fixture/local state. Each needs its own table(s)+RLS+CRUD; convert in
+  nav order, reusing the `bizAdmin` foundation. (A shared `business_items` table can
+  back the catalog modules — menu/products/services/rental — in one pass.)
+
+Every dashboard-real change: **build + `tools/mobile-audit/audit.js` (125 states,
+0 overflow at 392px)**; the demo mock exercises the real editors.
 
 ## Next steps (priority order)
-1. **Founder applies missing migrations + ownership SQL** (above).
-2. **Wire the dashboard to REAL data.** Everything in the 9 modules is fixture/local
-   state today. Load the signed-in owner's business(es) by `owner_id`, add a business
-   switcher, and back each module with Supabase tables/RPCs as features go live.
-   (So `b@b.com` sees the real Hazleton businesses, not the demo restaurant.)
-3. Continue **`docs/LAUNCH-CHECKLIST.md`** deferrals: real event creation, business
-   photos/reviews/map, delivery checkout using saved address, saved-biz cross-city
-   fetch, claim/verify flow, moderation dashboard, push, next-intl, payments, Pelias.
+1. **Founder applies `0019`+`0020`** (above) so Fotos/Módulos persist in prod.
+2. **Continue the dashboard-real conversion** in nav order (Módulos content next),
+   backing each section with Supabase and keeping the audit green.
+3. Continue **`docs/LAUNCH-CHECKLIST.md`** deferrals: real event creation, delivery
+   checkout, saved-biz cross-city, claim/verify, moderation, push, next-intl, payments.
 
 ## Map of key files
 ```
@@ -117,7 +137,10 @@ apps/web/src/screens/negocio/
   tabs.tsx                             nav model, PanelCtx, CAT_INFO
   Insights.tsx                         Inicio home (paid + free)
   modules/_page.tsx                    ModulePage + Toast (full-screen page)
-  modules/{Food,Products,Services,Events,Rental,Staff,Customers,Billing,Updates}.tsx
+  modules/{Listing,Hours,Photos,Related}.tsx   Listado section — REAL (bizAdmin-backed)
+  modules/{Food,Products,Services,Events,Rental,Staff,Customers,Billing,Updates}.tsx  (still fixture)
+apps/web/app/negocio/layout.tsx        provides BizAdminProvider
+apps/web/src/lib/bizAdmin.tsx          real owner-business loader + writer (RLS)
 apps/web/src/screens/{Negocios,BizDetail,Comunidad,…}.tsx   consumer screens
 apps/web/src/lib/                      state, live (Supabase), savedBiz, hours,
                                        geo, addresses, follows, interactions, i18n
