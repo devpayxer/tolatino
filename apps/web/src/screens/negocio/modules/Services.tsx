@@ -204,9 +204,9 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
     return (
       <div className="relative pb-8">
-        <div className="grid items-start gap-4 xl:grid-cols-[340px_1fr]">
+        <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[340px_1fr]">
           <div className="flex flex-col gap-3 xl:sticky xl:top-[74px]">
-            <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+            <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
               {steps.map(([lbl], i) => {
                 const active = wizStep === i, done = i < wizMax && i !== wizStep;
                 return (
@@ -235,7 +235,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 </div>
                 <div>
                   <div className={label}>{L('Categoría', 'Category')} *</div>
-                  <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
+                  <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1 pb-0.5">
                     {SVC_CATS.map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
                   </div>
                 </div>
@@ -263,14 +263,14 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   </div>
                   <div className="flex-1">
                     <div className={label}>{L('Tipo', 'Type')}</div>
-                    <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
+                    <div className="no-scrollbar flex gap-1.5 min-w-0 overflow-x-auto">
                       {([['fijo', L('Fijo', 'Fixed')], ['persona', L('Por pers.', 'Per person')], ['cotiza', L('Cotizar', 'Quote')]] as const).map(([k, lbl]) => <button key={k} onClick={() => upD({ priceType: k })} className={seg(draft.priceType === k)}>{lbl}</button>)}
                     </div>
                   </div>
                 </div>
                 <div>
                   <div className={label}>{L('Duración', 'Duration')}</div>
-                  <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
+                  <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1 pb-0.5">
                     {['30 min', '60 min', '90 min', '2h', '3h+'].map((d) => <button key={d} onClick={() => upD({ dur: d })} className={chip(draft.dur === d)}>{d}</button>)}
                   </div>
                 </div>
@@ -308,7 +308,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <>
                     <div>
                       <div className={label}>{L('Capacidad por sesión', 'Capacity per session')}</div>
-                      <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
+                      <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1 pb-0.5">
                         {['1', '2–6', '8–16', '20+'].map((c) => <button key={c} onClick={() => upD({ capacity: c })} className={chip(draft.capacity === c)}>{c}</button>)}
                       </div>
                     </div>
@@ -413,7 +413,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   const catalog = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_340px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_340px]">
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3 rounded-card-sm bg-lilac-2 p-3">
           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-primary text-white"><CalendarCheck size={16} strokeWidth={2.2} /></span>
@@ -552,7 +552,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const dayHeader = (
     <div className="mb-2.5 flex items-center justify-between gap-2">
       <span className="text-[13px] font-extrabold text-ink">{L('Octubre ', 'October ')}{selDay}{L(' · reservas', ' · bookings')}</span>
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
+      <div className="no-scrollbar flex gap-1.5 min-w-0 overflow-x-auto">
         {([['all', L('Todas', 'All')], ['reservations', L('Reservas', 'Reservations')], ['classes', L('Clases', 'Classes')], ['private', L('Privados', 'Private')]] as const).map(([k, lbl]) => (
           <button key={k} onClick={() => setBookFilter(k)} className={filterChip(bookFilter === k)}>{lbl}</button>
         ))}
@@ -678,13 +678,13 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       {bookSub === 'calendar' && (
-        <div className="grid items-start gap-4 xl:grid-cols-[1.4fr_1fr]">
+        <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1.4fr_1fr]">
           {calendarCard}
           <div className="xl:sticky xl:top-[74px]">{dayHeader}{bookingCards}</div>
         </div>
       )}
       {bookSub === 'floor' && (
-        <div className="grid items-start gap-4 xl:grid-cols-[1.2fr_1fr]">
+        <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1.2fr_1fr]">
           {floorCard}
           <div className="xl:sticky xl:top-[74px]">{dayHeader}{bookingCards}</div>
         </div>
@@ -723,7 +723,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       {/* services sub-tabs */}
       {mode === 'services' && (
-        <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+        <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
           <button onClick={() => setSvcSub('catalog')} className={chipCls(svcSub === 'catalog')}>{L('Catálogo', 'Catalog')}</button>
           <button onClick={() => setSvcSub('cats')} className={chipCls(svcSub === 'cats')}>
             {L('Categorías', 'Categories')}<span className={`ml-1.5 font-extrabold ${svcSub === 'cats' ? 'text-white/80' : 'text-muted-2'}`}>{SVC_CATS.length}</span>

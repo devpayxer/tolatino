@@ -198,10 +198,10 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   const rosterView = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-3.5">
         <div className="flex items-center justify-between gap-2">
-          <div className="no-scrollbar -mx-1 flex flex-1 gap-2 overflow-x-auto px-1">
+          <div className="no-scrollbar -mx-1 flex flex-1 gap-2 min-w-0 overflow-x-auto px-1">
             {filters.map(([k, label]) => (
               <button key={k} onClick={() => setRfilter(k)} className={filterChip(rfilter === k)}>{label}</button>
             ))}
@@ -335,7 +335,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
 
   const timeView = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_300px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
       <div className="flex flex-col gap-3.5">
         <div className="grid grid-cols-3 gap-3">
           {timeStats.map((s) => (
@@ -401,7 +401,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const runPayroll = () => { setPayrollDone(true); flash(L('Nómina corrida · depósito en 2 días', 'Payroll run · deposit in 2 days')); };
 
   const payrollView = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_300px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
       <div className="flex flex-col gap-3.5">
         <div className="rounded-card-sm border border-green bg-green-bg p-4">
           <div className="flex items-start gap-3">
@@ -511,7 +511,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="flex items-center gap-1 text-[9px] font-bold" style={{ color: '#2A5C8A' }}><Eye size={9} strokeWidth={2.4} />{L('Ver', 'View')}</span>
           </span>
         </div>
-        <div className="no-scrollbar overflow-x-auto">
+        <div className="no-scrollbar min-w-0 overflow-x-auto">
           <div className="min-w-[360px]">
             <div className="grid grid-cols-[1.5fr_repeat(4,1fr)] border-b border-hair pb-2.5">
               <span className="text-[8.5px] font-extrabold uppercase tracking-[.04em] text-muted-faint">{L('Módulo', 'Module')}</span>
@@ -550,7 +550,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const tagLabel = (t: Job['tag']) => ({ live: L('En vivo', 'Live'), new: L('Recién', 'Just posted'), paused: L('Pausada', 'Paused') }[t]);
 
   const jobsView = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_300px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
       <div className="flex flex-col gap-3.5">
         <div className="grid grid-cols-3 gap-3">
           {jobStats.map(([l, v]) => (
@@ -657,7 +657,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
 
   const visibilityView = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
       <div className={`${cardCls} p-4`}>
         <div className="mb-3 flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink"><Eye size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Visibilidad del anuncio', 'Listing visibility')}</div>
         <div className="flex flex-col gap-2.5">
@@ -720,7 +720,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       {/* sub-tabs */}
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
         {(mode === 'staff' ? staffTabs : jobTabs).map(([k, label]) => {
           const active = mode === 'staff' ? stabStaff === k : stabJobs === k;
           const showPro = isFree && mode === 'staff' && proTabs[k];

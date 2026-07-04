@@ -138,7 +138,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       {/* category filters */}
-      <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
         {catFilters.map((c) => (
           <button key={c.id} onClick={() => setCat(c.id)} className={chip(cat === c.id)}>{c.label}</button>
         ))}
@@ -657,7 +657,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div>
             <label className={fieldLabel}>{L('Categoría', 'Category')} *</label>
-            <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+            <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
               {CATS.map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={miniChip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
             </div>
           </div>
@@ -687,7 +687,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div>
             <label className={fieldLabel}>{L('Categoría fiscal', 'Tax category')}</label>
-            <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+            <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
               {taxDefs.map(([id, lab]) => <button key={id} onClick={() => upD({ tax: id })} className={miniChip(draft.tax === id)}>{lab}</button>)}
             </div>
           </div>
@@ -767,7 +767,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <ArrowLeft size={15} strokeWidth={2.4} />{L('Volver a productos', 'Back to products')}
       </button>
       {/* step chips */}
-      <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
         {wizStepDefs.map(([lab], i) => {
           const active = wizStep === i;
           const done = i < wizStep || (i <= wizMax && i !== wizStep);
@@ -923,7 +923,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       {/* sub-tabs */}
-      <div className="no-scrollbar -mx-1 mb-4 flex items-center gap-2 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 mb-4 flex items-center gap-2 min-w-0 overflow-x-auto px-1">
         {mode === 'products'
           ? prodSub.map(([k, label]) => <button key={k} onClick={() => setProdTab(k)} className={chip(prodTab === k)}>{label}</button>)
           : shipSub.map(([k, label]) => <button key={k} onClick={() => setShipTab(k)} className={chip(shipTab === k)}>{label}</button>)}
@@ -934,7 +934,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         )}
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[1fr_300px]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
         <div className="min-w-0">{content}</div>
         {rail}
       </div>

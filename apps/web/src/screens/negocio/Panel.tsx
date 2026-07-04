@@ -7,10 +7,10 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, ExternalLink, Menu, Search, X } from 'lucide-react';
+import { BarChart3, Bell, Check, ExternalLink, Menu, MessageCircle, Search, ShoppingBag, Star, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Wordmark, VerifiedBadge } from '@/components/ui';
+import { VerifiedBadge } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { CAT_INFO, activeMods, buildGeneric, buildNav, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
 import { GenericTab } from '@/screens/negocio/GenericTab';
@@ -184,15 +184,27 @@ export function PanelScreen() {
     </div>
   );
 
+  // Handoff mobile chrome: the top bar is DARK on Inicio/Insights and light with
+  // a title elsewhere; desktop (lg+) keeps the light topbar + sidebar shell.
+  const isInicio = tab === 'insights';
+
   return (
     <div className="flex min-h-screen flex-col bg-dash">
       {/* topbar */}
-      <header className="sticky top-0 z-30 border-b border-hair bg-[rgba(255,255,255,.95)] backdrop-blur-[8px]">
+      <header className={`sticky top-0 z-30 border-b backdrop-blur-[8px] ${isInicio ? 'border-transparent bg-ink lg:border-hair lg:bg-[rgba(255,255,255,.95)]' : 'border-hair bg-[rgba(255,255,255,.95)]'}`}>
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 md:px-5">
-          <button onClick={() => setDrawer(true)} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-[10px] bg-lilac-2 lg:hidden" aria-label={L('Menú', 'Menu')}>
-            <Menu size={17} strokeWidth={2.2} className="text-ink" />
+          <button
+            onClick={() => setDrawer(true)}
+            className={`flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full lg:hidden ${isInicio ? 'bg-[rgba(255,255,255,.12)]' : 'bg-lilac-2'}`}
+            aria-label={L('Menú', 'Menu')}
+          >
+            <Menu size={17} strokeWidth={2.2} className={isInicio ? 'text-white' : 'text-ink'} />
           </button>
-          <Wordmark size="sm" onClick={() => router.push('/comunidad')} />
+          <button onClick={() => router.push('/comunidad')} className="flex cursor-pointer items-baseline">
+            <span className={`text-[18px] font-extrabold tracking-[-.03em] ${isInicio ? 'text-white lg:text-ink' : 'text-ink'}`}>To&rsquo;</span>
+            <span className={`text-[18px] font-extrabold tracking-[-.03em] ${isInicio ? 'text-amber lg:text-primary' : 'text-primary'}`}>Latino</span>
+            <span className={`ml-1.5 text-[10.5px] font-bold md:hidden ${isInicio ? 'text-[rgba(255,255,255,.55)]' : 'text-muted'}`}>{L('Negocios', 'Business')}</span>
+          </button>
           <span className="hidden rounded-full bg-lilac px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[.04em] text-primary-dark md:inline">
             {L('Negocios', 'Business')}
           </span>
@@ -206,8 +218,11 @@ export function PanelScreen() {
               {L('Ver listado', 'View public')}
             </button>
             <LangToggle mini />
-            <button className="relative flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Notificaciones', 'Notifications')}>
-              <Bell size={16} strokeWidth={2.2} className="text-ink" />
+            <button
+              className={`relative flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full ${isInicio ? 'bg-[rgba(255,255,255,.12)] lg:bg-lilac-2' : 'bg-lilac-2'}`}
+              aria-label={L('Notificaciones', 'Notifications')}
+            >
+              <Bell size={16} strokeWidth={2.2} className={isInicio ? 'text-white lg:text-ink' : 'text-ink'} />
               <span className="absolute right-0.5 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[8.5px] font-extrabold text-white">
                 {isFree ? '2' : '7'}
               </span>
@@ -237,7 +252,25 @@ export function PanelScreen() {
         )}
 
         {/* content */}
-        <main className="min-w-0 flex-1 px-3.5 py-4 md:px-6 md:py-5">
+        <main className="min-w-0 flex-1 px-3.5 pb-[96px] pt-4 md:px-6 md:pt-5 lg:pb-6">
+          {/* identity card (handoff mobile Inicio) — business avatar + name + plan */}
+          {isInicio && (
+            <div className="mb-3.5 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card lg:hidden">
+              <span className="flex h-[46px] w-[46px] flex-none items-center justify-center rounded-[13px] text-[13px] font-extrabold text-white" style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
+                {bizInitials}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate text-[15px] font-extrabold text-ink">{bizName}</span>
+                  {!isFree && <VerifiedBadge size={15} />}
+                </span>
+                <span className="block truncate text-[11px] font-semibold text-muted-2">{bizCategory}</span>
+              </span>
+              <span className="flex-none rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold" style={{ background: planPill.bg, color: planPill.c }}>
+                {planPill.text}
+              </span>
+            </div>
+          )}
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
@@ -252,7 +285,7 @@ export function PanelScreen() {
             </div>
             <div className="ml-auto flex flex-none items-center gap-2">
               {head.hasGhost && (
-                <button className="cursor-pointer rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink-soft">
+                <button className="hidden cursor-pointer rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink-soft md:block">
                   {head.ghost}
                 </button>
               )}
@@ -300,6 +333,35 @@ export function PanelScreen() {
           {tab !== 'insights' && tab !== 'modules' && !RICH_MODULES.has(tab) && <GenericTab g={buildGeneric(tab, ctx)} ctx={ctx} />}
         </main>
       </div>
+
+      {/* mobile bottom tabs (handoff): Inicio · Pedidos · Mensajes · Reseñas · Más */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-hair bg-white pb-[max(env(safe-area-inset-bottom),8px)] pt-1.5 lg:hidden">
+        {(
+          [
+            ['insights', BarChart3, L('Inicio', 'Home'), null],
+            ['orders', ShoppingBag, L('Pedidos', 'Orders'), isFree ? null : '12'],
+            ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
+            ['reviews', Star, L('Reseñas', 'Reviews'), isFree ? null : '3'],
+          ] as const
+        ).map(([k, Icon, label, badge]) => {
+          const active = tab === k;
+          return (
+            <button key={k} onClick={() => ctx.go(k)} className="relative flex min-h-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5">
+              <Icon size={19} strokeWidth={2.2} className={active ? 'text-primary' : 'text-muted-2'} />
+              <span className={`text-[9px] font-extrabold ${active ? 'text-primary' : 'text-muted-2'}`}>{label}</span>
+              {badge && (
+                <span className="absolute right-[calc(50%-20px)] top-0 flex h-[14px] min-w-[14px] items-center justify-center rounded-[7px] border-[1.5px] border-white bg-pink px-[3px] text-[8px] font-extrabold text-white">
+                  {badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+        <button onClick={() => setDrawer(true)} className="flex min-h-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5">
+          <Menu size={19} strokeWidth={2.2} className={drawer ? 'text-primary' : 'text-muted-2'} />
+          <span className={`text-[9px] font-extrabold ${drawer ? 'text-primary' : 'text-muted-2'}`}>{L('Más', 'More')}</span>
+        </button>
+      </nav>
     </div>
   );
 }

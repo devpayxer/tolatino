@@ -237,7 +237,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     );
 
     return (
-      <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-3">
           {/* listing link banner */}
           <div className="flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
@@ -255,7 +255,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
 
           {/* category filter */}
-          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-1">
+          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1 py-1">
             {catFilters.map(([id, label, n]) => (
               <button key={id} onClick={() => setCat(id)} className={chip(cat === id)}>
                 {label}<span className={`ml-1.5 font-extrabold ${cat === id ? 'text-white/80' : 'text-muted-2'}`}>{n}</span>
@@ -264,7 +264,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
 
           {/* smart sets */}
-          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
             {smartSets.map(([Icon, label, n, c]) => (
               <span key={label} className="flex flex-none items-center gap-1.5 rounded-full border border-hair bg-white px-2.5 py-1.5 text-[11px] font-bold text-ink-2">
                 <Icon size={12} strokeWidth={2.2} className={c} />{label}<span className="font-extrabold text-ink">{n}</span>
@@ -497,7 +497,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       { es: 'Compra pizza, llévate tiramisú', en: 'Buy a pizza, get a tiramisù', type: 'BOGO', typeCls: 'bg-amber-bg text-amber-ink', status: L('Programada', 'Scheduled'), statusCls: 'bg-amber-bg text-amber-ink', dEs: 'Tiramisú gratis con cualquier pizza', dEn: 'Free tiramisù with any pizza', redeem: '—', rev: '—', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', op: 0.85 },
     ];
     return (
-      <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
         <div>
           <div className="mb-3.5 grid grid-cols-3 gap-2.5">
             {stats.map(([lab, val, delta]) => (
@@ -576,7 +576,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className="flex items-center gap-1.5 text-[10px] font-bold text-ink-2"><span className="flex h-[18px] w-[18px] items-center justify-center rounded-md bg-pink-bg text-[10px] font-extrabold text-pink-dark">✓</span>{L('Contiene', 'Contains')}</span>
           <span className="flex items-center gap-1.5 text-[10px] font-bold text-ink-2"><span className="flex h-[18px] w-[18px] items-center justify-center rounded-md bg-amber-bg text-[11px] font-extrabold text-amber-ink">~</span>{L('Puede contener', 'May contain')}</span>
         </div>
-        <div className={`overflow-x-auto ${cardCls}`}>
+        <div className={`min-w-0 overflow-x-auto ${cardCls}`}>
           <div className="min-w-[540px]">
             <div className="grid grid-cols-[1.6fr_repeat(7,1fr)] border-b border-hair bg-app px-3 py-2.5">
               <span className={sectionLabel}>{L('Platillo', 'Item')}</span>
@@ -774,7 +774,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={draft.desc} onChange={(e) => upDraft({ desc: e.target.value })} placeholder={L('Ingredientes clave, qué lo hace especial…', 'Key ingredients, what makes it special…')} rows={3} className={`${inputCls} resize-none`} /></div>
         <div>
           <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
-          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
             {CATS.map((c) => <button key={c.id} onClick={() => upDraft({ cat: c.id })} className={chip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
           </div>
         </div>
@@ -823,7 +823,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div>
           <div className={fieldLabel}>{L('Horario', 'Schedule')}</div>
-          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
             {([['all-day', L('Todo el día', 'All day')], ['morning', L('Mañana', 'Morning')], ['lunch', L('Comida', 'Lunch')], ['dinner', L('Cena', 'Dinner')], ['weekends', L('Fines', 'Weekends')]] as [string, string][]).map(([k, lab]) => (
               <button key={k} onClick={() => upDraft({ sched: k })} className={chip(draft.sched === k)}>{lab}</button>
             ))}
@@ -997,7 +997,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </button>
 
       {/* stepper */}
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
         {wizStepDefs.map((label, i) => {
           const active = wizStep === i; const done = i < wizStep || (i <= wizMax && i !== wizStep);
           return (
@@ -1009,7 +1009,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         })}
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
         {/* step content */}
         <div className="order-2 xl:order-1">
           <div className={`${cardCls} p-4`}>
@@ -1133,7 +1133,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     : view === 'success' ? renderSuccess()
       : (
         <div className="pb-8">
-          <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+          <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
             {subtabDefs.map(([k, label]) => (
               <button key={k} onClick={() => setSubtab(k)} className={chip(subtab === k)}>{label}</button>
             ))}

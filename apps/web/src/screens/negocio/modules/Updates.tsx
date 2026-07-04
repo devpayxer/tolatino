@@ -266,7 +266,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
   return (
     <div className="relative pb-8">
       {/* sub-tabs */}
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
         {tabs.map(([k, label, n]) => (
           <button key={k} onClick={() => setTab(k)} className={chip(tab === k)}>
             {label}
@@ -275,7 +275,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
         ))}
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-4">
           {showComposer && composer}
           {postList}

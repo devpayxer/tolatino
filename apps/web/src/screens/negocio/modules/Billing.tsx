@@ -292,7 +292,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const compareEl = (
     <div className="mx-auto flex max-w-3xl flex-col gap-3.5">
       <div className={`${cardCls} overflow-hidden !rounded-card`}>
-        <div className="overflow-x-auto">
+        <div className="min-w-0 overflow-x-auto">
           <table className="w-full min-w-[380px] border-collapse text-[10.5px]">
             <thead>
               <tr>
@@ -357,7 +357,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
 
   const methodsEl = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_340px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_340px]">
       <div className="flex flex-col gap-3">
         {cards.map((c) => (
           <div key={c.label} className={`${cardCls} flex items-center gap-3 p-3.5`}>
@@ -464,14 +464,14 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---------- render ----------
   return (
     <div className="relative pb-8">
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
         {subtabs.map(([k, label]) => (
           <button key={k} onClick={() => setSub(k)} className={chip(sub === k)}>{label}</button>
         ))}
       </div>
 
       {sub === 'plan' && (
-        <div className="grid items-start gap-4 xl:grid-cols-[1fr_360px]">
+        <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_360px]">
           <div className="flex flex-col gap-4">
             {planCardEl}
             {usageEl}

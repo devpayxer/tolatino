@@ -135,7 +135,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
 
   const upcomingView = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_300px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
           {kpis.map((k) => (
@@ -339,7 +339,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const listBody = (
     <div className="pb-8">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+        <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
           {listTabs.map(([k, label, n]) => (
             <button key={k} onClick={() => setListTab(k)} className={chip(listTab === k)}>
               {label}
@@ -465,7 +465,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---- Check-in ----
   const checkinView = (
-    <div className="grid items-start gap-4 xl:grid-cols-[300px_1fr]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
       <div className="rounded-card p-5 text-center" style={{ background: '#1E1B2E' }}>
         <div className="text-[11px] font-extrabold uppercase tracking-[.06em] text-white/60">{L('Escanear boletos', 'Scan tickets')}</div>
         <div className="mx-auto my-4 flex h-[180px] w-[180px] items-center justify-center rounded-tile bg-white p-3.5">
@@ -569,7 +569,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       </div>
 
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
         {manageTabs.map(([k, label, n]) => (
           <button key={k} onClick={() => setManageTab(k)} className={chip(manageTab === k)}>
             {label}
@@ -578,7 +578,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         ))}
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[320px_1fr]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[320px_1fr]">
         <div className="xl:sticky xl:top-[74px]">{heroCard}</div>
         <div>
           {manageTab === 'overview' && overviewView}
@@ -623,7 +623,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Tipo de evento', 'Event type')} *</label>
-        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
+        <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto pb-0.5">
           {typeDefs.map(([k, lab]) => <button key={k} onClick={() => upD({ type: k })} className={chip(draft.type === k)}>{lab}</button>)}
         </div>
       </div>
@@ -705,7 +705,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Visibilidad', 'Visibility')}</label>
-        <div className="no-scrollbar flex gap-2 overflow-x-auto">
+        <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto">
           {visDefs.map(([k, lab]) => <button key={k} onClick={() => upD({ vis: k })} className={chip(draft.vis === k)}>{lab}</button>)}
         </div>
       </div>
@@ -731,7 +731,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       </div>
 
-      <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto pb-0.5">
+      <div className="no-scrollbar mb-4 flex gap-2 min-w-0 overflow-x-auto pb-0.5">
         {wizStepDefs.map(([, label], i) => {
           const active = wizStep === i, done = i < wizStep || (i <= wizMax && i !== wizStep);
           return (
@@ -743,7 +743,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         })}
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[300px_1fr]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
         <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card xl:sticky xl:top-[74px]">
           <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${draftTile})` }}>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.45))' }} />

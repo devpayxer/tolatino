@@ -190,8 +190,12 @@ backing them with real Supabase tables/RPCs when each feature goes live.
 - [x] **Food menu** — 7 sub-tabs (Platillos/Categorías/Modificadores/Horarios/Promociones/Alérgenos/Stock-86) + 6-step add-item wizard with live preview.
 - [ ] **Wire modules to real data** — today all module content is fixture/demo state
   (local `useState`). Back each with Supabase tables/RPCs as the feature launches.
-- [ ] **Shell polish** — optional mobile bottom-tab bar (Inicio·Pedidos·Mensajes·Reseñas·Más)
-  to mirror the handoff's mobile chrome; today the mobile shell uses the drawer nav.
+- [x] **Shell polish (mobile chrome, 2026-07-04)** — the dashboard now mirrors the
+  handoff on mobile: dark top bar on Inicio (light elsewhere), business identity
+  card at the top of Inicio, and the fixed bottom-tab bar
+  (Inicio·Pedidos·Mensajes·Reseñas·Más→drawer). Verified via Playwright at 392px:
+  0 horizontal overflow on all 12 dashboard views (fixed min-w-0 on module grid
+  columns and scroll rows); desktop unchanged (light topbar + sidebar).
 
 ## 4. Infra & hosting
 

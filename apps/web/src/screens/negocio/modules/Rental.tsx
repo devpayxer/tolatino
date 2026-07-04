@@ -120,7 +120,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ===== ITEMS =====
   const itemsPane = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_300px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {kpis.map((k) => (
@@ -214,7 +214,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const dtCls: Record<'warn' | 'success' | 'coral', string> = { warn: 'bg-amber-bg text-amber-ink', success: 'bg-green-bg text-green-dark', coral: 'bg-pink-bg text-pink-dark' };
 
   const calendarPane = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1.3fr_1fr]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1.3fr_1fr]">
       <div className={`${cardCls} p-4`}>
         <div className="mb-3 flex items-center justify-between">
           <span className="text-[13px] font-extrabold text-ink">{L('Octubre', 'October')} 2025</span>
@@ -378,7 +378,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="relative pb-8">
       {/* sub-tabs + add */}
       <div className="mb-4 flex items-center gap-3">
-        <div className="no-scrollbar -mx-1 flex flex-1 gap-2 overflow-x-auto px-1">
+        <div className="no-scrollbar -mx-1 flex flex-1 gap-2 min-w-0 overflow-x-auto px-1">
           {subTabs.map(([k, label]) => (
             <button key={k} onClick={() => setSub(k)} className={chip(sub === k)}>{label}</button>
           ))}
@@ -839,7 +839,7 @@ function AddItemWizard({ ctx, catLabel, onClose, onDone }: {
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Bici eléctrica', 'e.g. E-bike')} className={fieldCls} />
               </Field>
               <Field label={`${L('Categoría', 'Category')} *`}>
-                <div className="no-scrollbar flex gap-2 overflow-x-auto pb-0.5">
+                <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto pb-0.5">
                   {catDefs.map(([c, lab]) => (
                     <button key={c} onClick={() => setCat(c)} className={`flex-none rounded-full px-3.5 py-2 text-[12px] ${cat === c ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-soft'}`}>{lab}</button>
                   ))}
@@ -925,7 +925,7 @@ function SuccessSheet({ ctx, title, sub, onClose }: { ctx: PanelCtx; title: stri
 
 function StepBar({ steps, step, onGo }: { steps: string[]; step: number; onGo: (i: number) => void }) {
   return (
-    <div className="no-scrollbar flex gap-2 overflow-x-auto">
+    <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto">
       {steps.map((label, i) => {
         const active = i === step, done = i < step;
         return (

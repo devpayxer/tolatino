@@ -208,7 +208,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {custKpis.map((k) => <Kpi key={k.label} {...k} />)}
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 focus-within:border-primary">
             <Search size={16} strokeWidth={2.2} className="flex-none text-muted-2" />
@@ -220,7 +220,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             />
           </div>
 
-          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
             {segTabs.map(([k, label]) => (
               <button key={k} onClick={() => setSeg(k)} className={chip(seg === k)}>{label}</button>
             ))}
@@ -339,9 +339,9 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {orderKpis.map((k) => <Kpi key={k.label} {...k} />)}
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[1fr_300px]">
+      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-4">
-          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
             {statusKeys.map((k) => {
               const on = oStatus === k;
               const n = orders.filter((o) => o.status === k).length;
@@ -475,7 +475,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   const reviewsView = (
-    <div className="grid items-start gap-4 xl:grid-cols-[1fr_300px]">
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
       <div className="flex flex-col gap-4">
         {/* rating summary (mobile: on top) */}
         <div className={`${cardCls} flex items-center gap-5 p-5 xl:hidden`}>
@@ -497,7 +497,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         </div>
 
-        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+        <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
           {rvFilters.map(([k, label, n]) => (
             <button key={k} onClick={() => setRvFilter(k)} className={chip(rvFilter === k)}>
               {label}

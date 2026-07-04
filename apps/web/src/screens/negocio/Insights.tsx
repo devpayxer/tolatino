@@ -95,9 +95,6 @@ export function InsightsPaid({ ctx }: { ctx: PanelCtx }) {
             <span className="text-[38px] font-extrabold tracking-[-.02em]">$1,847</span>
             <span className="rounded-lg bg-[rgba(31,157,87,.25)] px-2 py-1 text-[11.5px] font-extrabold text-[#7BE0A8]">▲ 12% {L('vs. martes promedio', 'vs avg Tuesday')}</span>
           </div>
-          <div className="mt-1 text-[12px] font-semibold text-[rgba(255,255,255,.55)]">
-            68 {L('pedidos', 'orders')} · $27.20 {L('ticket prom.', 'avg ticket')}
-          </div>
           <div className="mt-4">
             <div className="mb-1 flex justify-between text-[10.5px] font-bold text-[rgba(255,255,255,.5)]">
               <span>{L('meta', 'goal')} $2,500</span>
@@ -112,6 +109,21 @@ export function InsightsPaid({ ctx }: { ctx: PanelCtx }) {
             <div className="mt-1 flex justify-between text-[9.5px] font-bold text-[rgba(255,255,255,.4)]">
               <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
             </div>
+          </div>
+          {/* handoff stats row: pedidos / ticket prom. / nuevos */}
+          <div className="mt-3.5 flex gap-7 border-t border-[rgba(255,255,255,.12)] pt-3.5">
+            {(
+              [
+                [L('pedidos', 'orders'), '68'],
+                [L('ticket prom.', 'avg ticket'), '$27.16'],
+                [L('Nuevos', 'New'), '14'],
+              ] as const
+            ).map(([l, v]) => (
+              <span key={l}>
+                <span className="block text-[10px] font-semibold text-[rgba(255,255,255,.55)]">{l}</span>
+                <span className="block text-[16px] font-extrabold">{v}</span>
+              </span>
+            ))}
           </div>
         </div>
 
@@ -206,9 +218,10 @@ export function InsightsPaid({ ctx }: { ctx: PanelCtx }) {
           </span>
           <button onClick={() => ctx.go('orders')} className="cursor-pointer text-[12px] font-extrabold text-primary-dark">{L('Abrir cola', 'Open queue')} →</button>
         </div>
-        <div className="no-scrollbar grid gap-3 overflow-x-auto md:grid-cols-2 xl:grid-cols-4">
+        {/* horizontal scroll columns on mobile (handoff); grid at md+ */}
+        <div className="no-scrollbar -mx-4 flex min-w-0 gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-2 md:px-0 xl:grid-cols-4">
           {queue.map((col) => (
-            <div key={col.label} className="min-w-[220px] rounded-btn-lg bg-app p-3">
+            <div key={col.label} className="w-[218px] flex-none rounded-btn-lg bg-app p-3 md:w-auto">
               <div className="mb-2 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[.04em] text-muted">
                 <span className="h-2 w-2 rounded-full" style={{ background: col.dot }} />
                 {col.label} · {col.n}
@@ -317,15 +330,16 @@ export function InsightsPaid({ ctx }: { ctx: PanelCtx }) {
 
       {/* premium teaser (verified only) */}
       {!isPremium && (
-        <div className="flex flex-wrap items-center gap-4 rounded-card-sm p-5 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[20px]">✦</span>
-          <span className="min-w-0 flex-1">
+        <div className="rounded-card-sm p-4 text-white shadow-band md:flex md:items-center md:gap-4 md:p-5" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+          <span className="text-[10px] font-extrabold uppercase tracking-[.06em] text-amber md:hidden">✦ Premium</span>
+          <span className="hidden h-11 w-11 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[20px] md:flex">✦</span>
+          <span className="mt-1.5 block min-w-0 md:mt-0 md:flex-1">
             <span className="block text-[15px] font-extrabold">{L('Insights AI + posición destacada', 'Insights AI + featured placement')}</span>
-            <span className="mt-0.5 block max-w-[560px] text-[12px] font-semibold leading-snug text-[rgba(255,255,255,.7)]">
+            <span className="mt-1 block max-w-[560px] text-[12px] font-semibold leading-relaxed text-[rgba(255,255,255,.7)]">
               {L('Resúmenes con IA de tendencias, lugares destacados en el feed de descubrimiento y soporte prioritario. $49/mes.', 'AI summaries of trends, featured discovery slots, priority support. $49/mo.')}
             </span>
           </span>
-          <button onClick={() => ctx.go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-4 py-2.5 text-[12.5px] font-extrabold text-ink">
+          <button onClick={() => ctx.go('billing')} className="mt-3.5 w-full flex-none cursor-pointer rounded-btn bg-amber px-4 py-3 text-[12.5px] font-extrabold text-ink md:mt-0 md:w-auto md:py-2.5">
             {L('Mejorar a Premium', 'Upgrade to Premium')}
           </button>
         </div>
