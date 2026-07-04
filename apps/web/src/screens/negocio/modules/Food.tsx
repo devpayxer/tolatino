@@ -16,6 +16,7 @@ import {
   Sparkles, Tag, Truck, Upload, Utensils, Wine, X, Zap,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
@@ -990,14 +991,30 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     );
   };
 
-  const renderWizard = () => (
-    <div className="pb-8">
-      <button onClick={() => setView('module')} className="mb-3 flex items-center gap-1.5 text-[12px] font-extrabold text-primary-dark">
-        <ChevronRight size={14} className="rotate-180" strokeWidth={2.6} />{L('Agregar platillo', 'Add menu item')} · {L(draftCat.es, draftCat.en)}
-      </button>
-
+  const wizardPage = (
+    <ModulePage
+      title={L('Agregar platillo', 'Add menu item')}
+      subtitle={`${L(draftCat.es, draftCat.en)} · ${L('Paso', 'Step')} ${wizStep + 1}/${wizStepDefs.length}`}
+      onBack={() => setView('module')}
+      backLabel={L('Cancelar', 'Cancel')}
+      maxW={940}
+      footer={
+        <div className="flex items-center gap-3">
+          <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">
+            {wizStep === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
+          </button>
+          <button
+            onClick={wizNext}
+            disabled={!nextGated}
+            className={`flex-1 rounded-btn-lg py-3.5 text-[13.5px] font-extrabold text-white ${nextGated ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}
+          >
+            {wizStep >= wizStepDefs.length - 1 ? L('Publicar platillo', 'Publish item') : L('Continuar', 'Continue')}
+          </button>
+        </div>
+      }
+    >
       {/* stepper */}
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
+      <div className="no-scrollbar -mx-1 mb-4 flex min-w-0 gap-2 overflow-x-auto px-1">
         {wizStepDefs.map((label, i) => {
           const active = wizStep === i; const done = i < wizStep || (i <= wizMax && i !== wizStep);
           return (
@@ -1010,40 +1027,26 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
-        {/* step content */}
         <div className="order-2 xl:order-1">
           <div className={`${cardCls} p-4`}>
             <div className="mb-3.5 text-[13.5px] font-extrabold text-ink">{wizTitle}</div>
             {renderWizardStep()}
           </div>
-          {/* footer nav */}
-          <div className="mt-4 flex items-center gap-3">
-            <button onClick={wizBack} className="flex h-[46px] w-[46px] flex-none cursor-pointer items-center justify-center rounded-btn-lg bg-lilac-2"><ChevronRight size={18} className="rotate-180 text-ink" strokeWidth={2.4} /></button>
-            <div className="flex-1 text-center text-[11px] font-semibold text-muted-2">{L('Paso ', 'Step ')}{wizStep + 1}{L(' de ', ' of ')}{wizStepDefs.length}</div>
-            <button
-              onClick={wizNext}
-              disabled={!nextGated}
-              className={`flex-1 rounded-btn-lg py-3.5 text-[13.5px] font-extrabold text-white ${nextGated ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}
-            >
-              {wizStep >= wizStepDefs.length - 1 ? L('Publicar platillo', 'Publish item') : L('Continuar', 'Continue')}
-            </button>
-          </div>
         </div>
-
-        {/* live preview (sticky side rail on desktop) */}
-        <div className="order-1 xl:order-2 xl:sticky xl:top-[74px]">
+        <div className="order-1 xl:order-2 xl:sticky xl:top-0">
           <div className={`mb-2 ${sectionLabel}`}>{L('Vista previa en vivo', 'Live preview')}</div>
           {previewCard}
         </div>
       </div>
-    </div>
+    </ModulePage>
   );
 
   // ============ SUCCESS ============
-  const renderSuccess = () => {
+  const successPage = (() => {
     const chansSel = chanDefs.filter((c) => draft.channels[c[0]]).length;
     return (
-      <div className="mx-auto flex max-w-[420px] flex-col items-center pb-8 pt-6 text-center">
+      <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setSubtab('items'); }}>
+      <div className="mx-auto flex max-w-[420px] flex-col items-center pb-4 pt-6 text-center">
         <div className="mb-3.5 flex h-16 w-16 items-center justify-center rounded-panel bg-green-bg text-green-dark"><Check size={32} strokeWidth={2.6} /></div>
         <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo platillo', 'New item'))} {L('está activo', 'is live')}</div>
         <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">
@@ -1064,8 +1067,9 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <button onClick={() => { setView('module'); setSubtab('items'); }} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver al menú', 'Back to menu')}</button>
         </div>
       </div>
+      </ModulePage>
     );
-  };
+  })();
 
   // ============ EDIT SHEET ============
   const editDirty = sheetId != null && edit != null && JSON.stringify(edit) !== JSON.stringify(items.find((i) => i.id === sheetId));
@@ -1074,91 +1078,77 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const saveEdit = () => { if (edit) setItems((xs) => xs.map((i) => (i.id === sheetId ? { ...i, ...edit } : i))); closeSheet(); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); };
   const deleteItem = () => { setItems((xs) => xs.filter((i) => i.id !== sheetId)); closeSheet(); flash(L('Platillo eliminado', 'Item deleted')); };
 
-  const editSheet = sheetId != null && edit != null && (
-    <>
-      <div onClick={closeSheet} className="fixed inset-0 z-40 bg-[rgba(28,24,46,.5)]" />
-      <div className="no-scrollbar fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[90vh] max-w-[560px] overflow-y-auto rounded-t-[24px] bg-white shadow-sheet">
-        <div className="sticky top-0 z-10 flex justify-center rounded-t-[24px] bg-white pb-1.5 pt-2.5">
-          <span className="h-1.5 w-[42px] rounded-full bg-lilac-line" />
-          <button onClick={closeSheet} className="absolute right-3.5 top-2.5 flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-full bg-lilac-2"><X size={13} className="text-ink" strokeWidth={2.6} /></button>
+  const editPage = sheetId != null && edit != null && (
+    <ModulePage
+      title={L('Editar platillo', 'Edit item')}
+      subtitle={L(catOf(edit.cat).es, catOf(edit.cat).en)}
+      onBack={closeSheet}
+      action={<span className={`rounded-md px-2 py-1 text-[9.5px] font-extrabold ${editDirty ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{editDirty ? L('Sin guardar', 'Unsaved') : L('Sincronizado', 'Synced')}</span>}
+      footer={
+        <div className="flex gap-2.5">
+          <button onClick={deleteItem} className="cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
+          <button onClick={saveEdit} disabled={!editDirty} className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${editDirty ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}>{L('Guardar cambios', 'Save changes')}</button>
         </div>
-        <div className="relative h-[124px]" style={{ background: `repeating-linear-gradient(135deg,${catOf(edit.cat).tile})` }}>
+      }
+    >
+      <div className="flex flex-col gap-3.5">
+        <div className="relative h-[150px] overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${catOf(edit.cat).tile})` }}>
           <span className="absolute bottom-3 right-3 rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink">📷 {L('Foto', 'Photo')}</span>
         </div>
-        <div className="flex flex-col gap-3.5 p-4 pb-[max(env(safe-area-inset-bottom),16px)]">
-          <div className="flex items-center justify-between">
-            <span className="text-[16px] font-extrabold text-ink">{L('Editar platillo', 'Edit item')}</span>
-            <span className={`rounded-md px-2 py-1 text-[9.5px] font-extrabold ${editDirty ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{editDirty ? L('Sin guardar', 'Unsaved') : L('Sincronizado', 'Synced')}</span>
-          </div>
-          <div><div className={fieldLabel}>{L('Nombre del platillo', 'Item name')}</div><input value={edit.name} onChange={(e) => upEdit({ name: e.target.value })} className={inputCls} /></div>
-          <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={es ? edit.es : edit.en} onChange={(e) => upEdit(es ? { es: e.target.value } : { en: e.target.value })} rows={2} className={`${inputCls} resize-none`} /></div>
-          {/* stacked on phones — the 3 availability chips don't fit half a 392px row */}
-          <div className="flex flex-col gap-3.5 sm:flex-row sm:gap-3">
-            <div className="sm:flex-1"><div className={fieldLabel}>{L('Precio', 'Price')}</div><div className="flex items-center rounded-field border-[1.5px] border-lilac-line px-3 focus-within:border-primary"><span className="text-[13px] font-bold text-muted-2">$</span><input value={edit.price} onChange={(e) => upEdit({ price: Number(String(e.target.value).replace(/[^0-9.]/g, '')) || 0 })} className="min-w-0 flex-1 border-none bg-transparent px-2 py-2.5 text-[13px] font-semibold text-ink outline-none" /></div></div>
-            <div className="sm:flex-1">
-              <div className={fieldLabel}>{L('Disponibilidad', 'Availability')}</div>
-              <div className="flex min-w-0 gap-1.5">
-                {([['in', L('En stock', 'In')], ['low', L('Bajo', 'Low')], ['out', '86']] as [Stock, string][]).map(([k, lab]) => (
-                  <button key={k} onClick={() => upEdit({ stock: k })} className={`min-w-0 flex-1 cursor-pointer truncate rounded-[9px] px-2 py-2 text-[10.5px] font-extrabold sm:flex-none sm:px-2.5 ${edit.stock === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{lab}</button>
-                ))}
-              </div>
+        <div><div className={fieldLabel}>{L('Nombre del platillo', 'Item name')}</div><input value={edit.name} onChange={(e) => upEdit({ name: e.target.value })} className={inputCls} /></div>
+        <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={es ? edit.es : edit.en} onChange={(e) => upEdit(es ? { es: e.target.value } : { en: e.target.value })} rows={3} className={`${inputCls} resize-none`} /></div>
+        <div className="flex flex-col gap-3.5 sm:flex-row sm:gap-3">
+          <div className="sm:flex-1"><div className={fieldLabel}>{L('Precio', 'Price')}</div><div className="flex items-center rounded-field border-[1.5px] border-lilac-line px-3 focus-within:border-primary"><span className="text-[13px] font-bold text-muted-2">$</span><input value={edit.price} onChange={(e) => upEdit({ price: Number(String(e.target.value).replace(/[^0-9.]/g, '')) || 0 })} className="min-w-0 flex-1 border-none bg-transparent px-2 py-2.5 text-[13px] font-semibold text-ink outline-none" /></div></div>
+          <div className="sm:flex-1">
+            <div className={fieldLabel}>{L('Disponibilidad', 'Availability')}</div>
+            <div className="flex min-w-0 gap-1.5">
+              {([['in', L('En stock', 'In')], ['low', L('Bajo', 'Low')], ['out', '86']] as [Stock, string][]).map(([k, lab]) => (
+                <button key={k} onClick={() => upEdit({ stock: k })} className={`min-w-0 flex-1 cursor-pointer truncate rounded-[9px] px-2 py-2.5 text-[11px] font-extrabold ${edit.stock === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{lab}</button>
+              ))}
             </div>
-          </div>
-          <div>
-            <div className={fieldLabel}>{L('Etiquetas dietéticas', 'Dietary tags')}</div>
-            <div className="flex flex-wrap gap-2">
-              {([['V', L('Vegetariano', 'Vegetarian')], ['VG', L('Vegano', 'Vegan')], ['GF', L('Sin gluten', 'Gluten-free')], ['Picante', L('Picante', 'Spicy')]] as [string, string][]).map(([k, lab]) => {
-                const has = edit.diet.includes(k);
-                return <button key={k} onClick={() => upEdit({ diet: has ? edit.diet.filter((x) => x !== k) : [...edit.diet, k] })} className={chip(has)}>{lab}</button>;
-              })}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
-            <span className="min-w-0 flex-1">
-              <span className="block text-[12.5px] font-bold text-ink">{L('Visible en el listado', 'Visible on listing')}</span>
-              <span className="block text-[10px] font-medium leading-snug text-muted-2">{L('Apágalo para ocultar sin eliminar.', 'Turn off to hide without deleting.')}</span>
-            </span>
-            <Toggle on={edit.visible} onClick={() => upEdit({ visible: !edit.visible })} />
-          </div>
-          <div className="flex gap-2.5 pt-1">
-            <button onClick={deleteItem} className="cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
-            <button onClick={saveEdit} className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${editDirty ? 'cursor-pointer bg-primary' : 'bg-lilac-line'}`}>{L('Guardar cambios', 'Save changes')}</button>
           </div>
         </div>
+        <div>
+          <div className={fieldLabel}>{L('Etiquetas dietéticas', 'Dietary tags')}</div>
+          <div className="flex flex-wrap gap-2">
+            {([['V', L('Vegetariano', 'Vegetarian')], ['VG', L('Vegano', 'Vegan')], ['GF', L('Sin gluten', 'Gluten-free')], ['Picante', L('Picante', 'Spicy')]] as [string, string][]).map(([k, lab]) => {
+              const has = edit.diet.includes(k);
+              return <button key={k} onClick={() => upEdit({ diet: has ? edit.diet.filter((x) => x !== k) : [...edit.diet, k] })} className={chip(has)}>{lab}</button>;
+            })}
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-field border border-hair bg-white p-3">
+          <span className="min-w-0 flex-1">
+            <span className="block text-[12.5px] font-bold text-ink">{L('Visible en el listado', 'Visible on listing')}</span>
+            <span className="block text-[10px] font-medium leading-snug text-muted-2">{L('Apágalo para ocultar sin eliminar.', 'Turn off to hide without deleting.')}</span>
+          </span>
+          <Toggle on={edit.visible} onClick={() => upEdit({ visible: !edit.visible })} />
+        </div>
       </div>
-    </>
+    </ModulePage>
   );
 
   // ============ RENDER ============
-  const body = view === 'wizard' ? renderWizard()
-    : view === 'success' ? renderSuccess()
-      : (
-        <div className="pb-8">
-          <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
-            {subtabDefs.map(([k, label]) => (
-              <button key={k} onClick={() => setSubtab(k)} className={chip(subtab === k)}>{label}</button>
-            ))}
-          </div>
-          {subtab === 'items' && renderItems()}
-          {subtab === 'categories' && renderCategories()}
-          {subtab === 'mods' && renderMods()}
-          {subtab === 'schedules' && renderSchedules()}
-          {subtab === 'promos' && renderPromos()}
-          {subtab === 'allergens' && renderAllergens()}
-          {subtab === 'stock' && renderStock()}
-        </div>
-      );
+  // Edit / create flows take over the screen as full pages (no cramped popups).
+  if (view === 'wizard') return <>{wizardPage}<Toast msg={toast} /></>;
+  if (view === 'success') return <>{successPage}<Toast msg={toast} /></>;
+  if (editPage) return <>{editPage}<Toast msg={toast} /></>;
 
   return (
-    <div className="relative">
-      {body}
-      {editSheet}
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />
-          {toast}
-        </div>
-      )}
+    <div className="relative pb-8">
+      <div className="no-scrollbar -mx-1 mb-4 flex min-w-0 gap-2 overflow-x-auto px-1">
+        {subtabDefs.map(([k, label]) => (
+          <button key={k} onClick={() => setSubtab(k)} className={chip(subtab === k)}>{label}</button>
+        ))}
+      </div>
+      {subtab === 'items' && renderItems()}
+      {subtab === 'categories' && renderCategories()}
+      {subtab === 'mods' && renderMods()}
+      {subtab === 'schedules' && renderSchedules()}
+      {subtab === 'promos' && renderPromos()}
+      {subtab === 'allergens' && renderAllergens()}
+      {subtab === 'stock' && renderStock()}
+      <Toast msg={toast} />
     </div>
   );
 }
