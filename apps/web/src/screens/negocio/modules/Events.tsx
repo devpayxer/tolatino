@@ -9,13 +9,16 @@
 // success screen. Mobile-first single column; on desktop the list gains a
 // sticky rail and the manage/wizard panels widen into multi-column layouts.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Check, DollarSign, MapPin, Megaphone, Plus,
   QrCode, RefreshCw, Search, Share2, Ticket, TrendingUp, Users,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
@@ -24,9 +27,38 @@ type ListTab = 'upcoming' | 'drafts' | 'past' | 'recurring' | 'promoters';
 type ManageTab = 'overview' | 'attendees' | 'checkin' | 'tickets' | 'settings';
 
 type EventRow = {
-  id: number; name: string; mon: string; day: string; time: string; price: string;
+  id: number; dbId?: string; name: string; mon: string; day: string; time: string; price: string;
   priceN: number; sold: number; cap: number; tile: string; status: [string, string];
   statusBg: string; statusC: string;
+};
+
+// A row from the public `events` table (migration 0002 + 0022), the columns the
+// dashboard reads for the owner's own events.
+type EventDbRow = {
+  id: string; slug: string; title_es: string; title_en: string;
+  venue_es: string | null; venue_en: string | null; cat: string; city: string;
+  starts_at: string; time_label_es: string | null; time_label_en: string | null;
+  price_label: string | null; going_count: number; desc_es: string | null; desc_en: string | null;
+  tile_a: string | null; tile_b: string | null;
+};
+
+// The public events table only allows four categories; map the wizard's event
+// "type" to the nearest one (there is no 'mercado' source type in the wizard).
+const EVENT_CAT_MAP: Record<string, 'musica' | 'mercado' | 'familia' | 'comida'> = {
+  clase: 'familia', cata: 'comida', cena: 'comida', musica: 'musica',
+};
+const MON_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+const MON_EN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const fmtTime = (d: Date) => {
+  let h = d.getHours();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  const m = d.getMinutes();
+  return m ? `${h}:${String(m).padStart(2, '0')} ${ap}` : `${h} ${ap}`;
+};
+const EMPTY_EVENT: EventRow = {
+  id: 0, name: '', mon: '', day: '', time: '', price: '', priceN: 0, sold: 0, cap: 1,
+  tile: '#EFEBFF 0 9px,#E5DEF9 9px 18px', status: ['', ''], statusBg: '#E3F5EA', statusC: '#1F8A4C',
 };
 type Attendee = { initials: string; color: string; name: string; tier: string; tierBg: string; tierC: string; diet: string; base: boolean };
 type EventDraft = { name: string; desc: string; type: string; date: string; time: string; location: string; recurring: boolean; vis: string };
@@ -51,13 +83,77 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
 
-  // ---------- seed data ----------
-  const events = useMemo<EventRow[]>(() => [
+  // ---------- persistence wiring ----------
+  // A signed-in owner's events load from / write to Supabase; when nobody is
+  // signed in (or Supabase isn't configured) we stay in DEMO mode: the sample
+  // seed below, with local-only edits that never touch the network.
+  const admin = useBizAdmin();
+  const real = admin.active;
+  const persistable = !admin.demo && !!real; // real signed-in business → persist
+  const { user } = useAuth();
+
+  // ---------- seed data (DEMO sample events) ----------
+  const seedEvents = useMemo<EventRow[]>(() => [
     { id: 1, name: L('Cena de Halloween', 'Halloween Dinner'), mon: 'OCT', day: '31', time: '7 PM', price: '$140', priceN: 140, sold: 32, cap: 48, tile: '#FCE3DC 0 9px,#F6CEC2 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E3F5EA', statusC: '#1F8A4C' },
     { id: 2, name: 'Sourdough 101', mon: 'NOV', day: '08', time: '10 AM', price: '$85', priceN: 85, sold: 14, cap: 16, tile: '#F3E2CE 0 9px,#ECD3B4 9px 18px', status: [es ? 'Casi lleno' : 'Almost full', 'Almost full'], statusBg: '#FCEFD6', statusC: '#9A6A12' },
     { id: 3, name: L('Cata de vinos', 'Wine Tasting'), mon: 'NOV', day: '15', time: '6 PM', price: '$45', priceN: 45, sold: 22, cap: 30, tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E3F5EA', statusC: '#1F8A4C' },
     { id: 4, name: L('Noche de Lotería', 'Lotería Night'), mon: 'NOV', day: '22', time: '5 PM', price: '$10', priceN: 10, sold: 14, cap: 16, tile: '#EAE2F8 0 9px,#DCCEF2 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E3F5EA', statusC: '#1F8A4C' },
   ], [es, L]);
+
+  const [events, setEvents] = useState<EventRow[]>(seedEvents);
+
+  // Map an `events` DB row → the module's rich EventRow (tracks the uuid as dbId
+  // so later edit/delete can target it). Capacity isn't modeled server-side yet,
+  // so we derive a nominal cap for the progress bars.
+  const rowToEvent = (r: EventDbRow, idx: number): EventRow => {
+    const d = new Date(r.starts_at);
+    const valid = !Number.isNaN(d.getTime());
+    const sold = r.going_count ?? 0;
+    const cap = Math.max(50, sold);
+    const almost = cap > 0 && sold / cap >= 0.85;
+    const tl = L(r.time_label_es ?? '', r.time_label_en ?? '');
+    const priceN = Number((r.price_label ?? '').replace(/[^0-9.]/g, '')) || 0;
+    return {
+      id: idx + 1,
+      dbId: r.id,
+      name: L(r.title_es, r.title_en),
+      mon: valid ? (es ? MON_ES : MON_EN)[d.getMonth()] : '—',
+      day: valid ? String(d.getDate()).padStart(2, '0') : '',
+      time: tl || (valid ? fmtTime(d) : ''),
+      price: r.price_label ?? L('Gratis', 'Free'),
+      priceN,
+      sold,
+      cap,
+      tile: `${r.tile_a ?? '#EFEBFF'} 0 9px,${r.tile_b ?? '#E5DEF9'} 9px 18px`,
+      status: almost ? ['Casi lleno', 'Almost full'] : ['Vendiendo', 'Selling'],
+      statusBg: almost ? '#FCEFD6' : '#E3F5EA',
+      statusC: almost ? '#9A6A12' : '#1F8A4C',
+    };
+  };
+
+  // Pure fetch of the owner's events (callers own the setState).
+  const fetchEvents = async (ownerId: string): Promise<EventRow[]> => {
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('events')
+      .select('id,slug,title_es,title_en,venue_es,venue_en,cat,city,starts_at,time_label_es,time_label_en,price_label,going_count,desc_es,desc_en,tile_a,tile_b')
+      .eq('owner_id', ownerId)
+      .order('starts_at', { ascending: true });
+    if (error || !Array.isArray(data)) return [];
+    return (data as EventDbRow[]).map(rowToEvent);
+  };
+
+  // On mount / auth change: real owner → load their events; demo → keep the seed.
+  useEffect(() => {
+    if (!persistable || !real || !user) { setEvents(seedEvents); return; }
+    let cancelled = false;
+    (async () => {
+      const rows = await fetchEvents(user.id);
+      if (!cancelled) setEvents(rows);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, real?.id, admin.demo, es]);
 
   const drafts = useMemo(() => [
     { name: L('Fin de Año · Cata y Burbujas', 'NYE · Tasting & Bubbles'), date: L('31 Dic', 'Dec 31'), time: '8 PM – 1 AM', price: '$185', tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px', ready: [[L('Detalles', 'Details'), true], [L('Fecha', 'Date'), true], [L('Boletos', 'Tickets'), false], [L('Fotos', 'Photos'), false]] as [string, boolean][] },
@@ -92,7 +188,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ], [L]);
 
   // ---------- derived: current managed event ----------
-  const mgEv = events.find((e) => e.id === manageId) ?? events[0];
+  // EMPTY_EVENT keeps the manage view from crashing when a real owner has no
+  // events yet (the demo seed is never empty). cap:1 avoids divide-by-zero.
+  const mgEv = events.find((e) => e.id === manageId) ?? events[0] ?? EMPTY_EVENT;
   const isCheckedIn = (a: Attendee) => (a.name in checkedIn ? checkedIn[a.name] : a.base);
   const checkedInCount = attendees.filter(isCheckedIn).length;
   const revenue = mgEv.sold * mgEv.priceN;
@@ -554,7 +652,21 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         ))}
       </div>
-      <button onClick={() => flash(L('Evento cancelado', 'Event cancelled'))} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Cancelar evento', 'Cancel event')}</button>
+      <button
+        onClick={() => {
+          // Real owner → delete the event row; demo → local flash only (unchanged).
+          if (persistable && mgEv.dbId && supabase) {
+            void supabase.from('events').delete().eq('id', mgEv.dbId).then(() => {
+              setEvents((xs) => xs.filter((x) => x.id !== mgEv.id));
+              flash(L('Evento cancelado', 'Event cancelled'));
+              setView('list');
+            });
+          } else {
+            flash(L('Evento cancelado', 'Event cancelled'));
+          }
+        }}
+        className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"
+      >{L('Cancelar evento', 'Cancel event')}</button>
     </div>
   );
 
@@ -709,8 +821,63 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   const wizTitles = [L('Detalles del evento', 'Event details'), L('Niveles de boleto', 'Ticket tiers'), L('Fecha y ubicación', 'Date & location'), L('Revisar y publicar', 'Review & publish')];
+
+  const nextId = () => (events.length ? Math.max(...events.map((e) => e.id)) : 0) + 1;
+
+  // Turn the wizard draft into a live event: optimistic local add always, plus a
+  // real `create_event` RPC when a signed-in owner is present (demo = local only).
+  const addFromDraft = () => {
+    const d0 = new Date(draft.date); // date is free-text; best-effort parse
+    const startsAt = Number.isNaN(d0.getTime()) ? new Date().toISOString() : d0.toISOString();
+    const sd = new Date(startsAt);
+    const [tileA, tileB] = draftTile.split(',').map((s) => s.trim().split(' ')[0]);
+    const priceN = draftTiers[0].priceN;
+    const priceLabel = '$' + priceN;
+    const pCat = EVENT_CAT_MAP[draft.type] ?? 'familia';
+    const local: EventRow = {
+      id: nextId(),
+      name: draft.name.trim() || L('Nuevo evento', 'New event'),
+      mon: (es ? MON_ES : MON_EN)[sd.getMonth()],
+      day: String(sd.getDate()).padStart(2, '0'),
+      time: draft.time || fmtTime(sd),
+      price: priceLabel,
+      priceN,
+      sold: 0,
+      cap: 48,
+      tile: draftTile,
+      status: ['Vendiendo', 'Selling'],
+      statusBg: '#E3F5EA',
+      statusC: '#1F8A4C',
+    };
+    setEvents((xs) => [local, ...xs]);
+    if (persistable && real && user && supabase) {
+      (async () => {
+        const { error } = await supabase!.rpc('create_event', {
+          p_title_es: draft.name.trim(),
+          p_title_en: draft.name.trim(),
+          p_venue_es: draft.location || '',
+          p_venue_en: draft.location || '',
+          p_cat: pCat,
+          p_starts_at: startsAt,
+          p_time_label_es: draft.time || '',
+          p_time_label_en: draft.time || '',
+          p_price_label: priceLabel,
+          p_desc_es: draft.desc || '',
+          p_desc_en: draft.desc || '',
+          p_city: real.city || '',
+          p_tile_a: tileA,
+          p_tile_b: tileB,
+          p_lat: null,
+          p_lng: null,
+        });
+        // Reconcile with the DB truth (real slug/id/going_count; backfills dbId).
+        if (!error) { const rows = await fetchEvents(user.id); setEvents(rows); }
+      })();
+    }
+  };
+
   const wizNext = () => {
-    if (wizStep >= wizStepDefs.length - 1) { setView('success'); return; }
+    if (wizStep >= wizStepDefs.length - 1) { addFromDraft(); setView('success'); return; }
     const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
   };
   const wizBack = () => { if (wizStep === 0) { setView('list'); return; } setWizStep((s) => s - 1); };

@@ -11,13 +11,15 @@
 // Real state: mode, sub-tabs, roster filter, member sheet, invite sheet,
 // post-job flow, run-payroll toast, visibility toggles.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Award, Briefcase, Calendar, Check, ChevronLeft, ChevronRight, Clock, DollarSign,
   Eye, Inbox, Lock, Mail, MapPin, MessageCircle, Pencil, Phone, Plus, Shield, User, Users,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { supabase } from '@/lib/supabase';
 
 type Mode = 'staff' | 'jobs';
 type StaffTab = 'roster' | 'schedule' | 'time' | 'payroll' | 'roles';
@@ -25,12 +27,12 @@ type JobTab = 'jobs' | 'pipeline' | 'visibility';
 type Role = 'owner' | 'manager' | 'staff' | 'driver';
 
 type Member = {
-  id: number; nm: string; c: string; role: Role; titleEs: string; titleEn: string;
+  id: number; dbId?: string; nm: string; c: string; role: Role; titleEs: string; titleEn: string;
   hours: string; dot: string; stEs: string; stEn: string; permsEs: string; permsEn: string;
   since: string; invited?: boolean;
 };
 type Job = {
-  id: number; titleEs: string; titleEn: string; pay: string; typeEs: string; typeEn: string;
+  id: number; dbId?: string; titleEs: string; titleEn: string; pay: string; typeEs: string; typeEn: string;
   applied: number; viewed: number; whenEs: string; whenEn: string; tag: 'live' | 'new' | 'paused';
 };
 
@@ -51,6 +53,85 @@ const TAG_PILL: Record<Job['tag'], string> = {
 
 const initialsOf = (nm: string) => nm.split(' ').map((x) => x[0]).slice(0, 2).join('');
 
+// ---- Supabase row shapes + mappers (business_staff / business_jobs, mig. 0025) ----
+// business_staff is PRIVATE (owner-only); business_jobs is PUBLIC read, owner write.
+type DbRole = 'owner' | 'manager' | 'staff';
+type StaffRow = {
+  id: string; name: string; email: string | null; role: DbRole;
+  title_es: string | null; title_en: string | null; invited: boolean; created_at: string;
+};
+type JobRow = {
+  id: string; title_es: string; title_en: string | null; pay: string | null;
+  type_es: string | null; type_en: string | null; status: Job['tag'];
+  applied: number; viewed: number; created_at: string;
+};
+
+// Display-only fields the roster card needs, derived from role exactly the way
+// the seed builds them (avatar color, permissions blurb, bilingual title fallback).
+const ROLE_COLOR: Record<Role, string> = { owner: '#7B61FF', manager: '#1F9D57', staff: '#D6336C', driver: '#E8954A' };
+const ROLE_PERMS: Record<Role, [string, string]> = {
+  owner: ['Acceso total', 'All access'],
+  manager: ['Todo menos pagos', 'All but billing'],
+  staff: ['Pedidos y reservas', 'Orders & bookings'],
+  driver: ['Pedidos y entregas', 'Orders & deliveries'],
+};
+const ROLE_TITLE: Record<Role, [string, string]> = {
+  owner: ['Dueña', 'Owner'], manager: ['Gerente', 'Manager'], staff: ['Staff', 'Staff'], driver: ['Repartidor', 'Driver'],
+};
+// business_staff only stores owner/manager/staff — coerce the client-only 'driver'.
+const toDbRole = (r: Role): DbRole => (r === 'driver' ? 'staff' : r);
+
+const ROLES = new Set<Role>(['owner', 'manager', 'staff', 'driver']);
+function rowToMember(r: StaffRow, idx: number): Member {
+  const role = (ROLES.has(r.role as Role) ? r.role : 'staff') as Role;
+  const invited = !!r.invited;
+  const [pEs, pEn] = ROLE_PERMS[role];
+  const [tEs, tEn] = ROLE_TITLE[role];
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    nm: r.name,
+    c: ROLE_COLOR[role],
+    role,
+    titleEs: r.title_es ?? tEs,
+    titleEn: r.title_en ?? r.title_es ?? tEn,
+    hours: invited ? 'Part-time' : 'Full-time',
+    dot: invited ? '#C0BBD0' : '#1F9D57',
+    stEs: invited ? 'Invitado' : 'En turno',
+    stEn: invited ? 'Invited' : 'On shift',
+    permsEs: invited ? '—' : pEs,
+    permsEn: invited ? '—' : pEn,
+    since: r.created_at ? String(new Date(r.created_at).getFullYear()) : '2025',
+    invited,
+  };
+}
+
+// Human "posted X ago" label for a job's created_at (Spanish-first).
+function relWhen(iso: string): [string, string] {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (!Number.isFinite(days) || days <= 0) return ['recién', 'just now'];
+  if (days === 1) return ['ayer', 'yesterday'];
+  return [`hace ${days} días`, `${days} days ago`];
+}
+const JOB_TAGS = new Set<Job['tag']>(['live', 'new', 'paused']);
+function rowToJob(r: JobRow, idx: number): Job {
+  const [wEs, wEn] = relWhen(r.created_at);
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    titleEs: r.title_es,
+    titleEn: r.title_en ?? r.title_es,
+    pay: r.pay ?? '',
+    typeEs: r.type_es ?? '',
+    typeEn: r.type_en ?? r.type_es ?? '',
+    applied: Number(r.applied ?? 0),
+    viewed: Number(r.viewed ?? 0),
+    whenEs: wEs,
+    whenEn: wEn,
+    tag: JOB_TAGS.has(r.status) ? r.status : 'live',
+  };
+}
+
 export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
   void isPremium; void ci; // ctx destructured per module contract; not all fields used here
@@ -63,11 +144,16 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [viewing, setViewing] = useState<number | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteRole, setInviteRole] = useState<Exclude<Role, 'owner'>>('staff');
-  const [extra, setExtra] = useState<Member[]>([]);
-  const [jobsExtra, setJobsExtra] = useState<Job[]>([]);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [members, setMembers] = useState<Member[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [vis, setVis] = useState({ pub: true, board: true, email: false, boost: false });
   const [payrollDone, setPayrollDone] = useState(false);
   const [toast, setToast] = useState('');
+
+  const admin = useBizAdmin();
+  const real = admin.active;
+  const persistable = !admin.demo && !!real; // real signed-in business → persist to Supabase
 
   const flash = (m: string) => {
     setToast(m);
@@ -89,16 +175,87 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     [salon],
   );
 
-  const roster = useMemo(() => [...extra, ...baseRoster], [extra, baseRoster]);
-  const jobs = useMemo<Job[]>(
+  const seedJobs = useMemo<Job[]>(
     () => [
-      ...jobsExtra,
       { id: 1, titleEs: 'Cocinero de línea · noche', titleEn: 'Line cook · evening', pay: '$22–$26/hr', typeEs: 'Tiempo completo · 4 días', typeEn: 'Full-time · 4 days/wk', applied: 12, viewed: 280, whenEs: 'hace 8 días', whenEn: '8 days ago', tag: 'live' },
       { id: 2, titleEs: 'Repartidor · fines de semana', titleEn: 'Driver · weekends', pay: `$18/hr + ${L('propinas', 'tips')}`, typeEs: 'Medio tiempo · Sáb–Dom', typeEn: 'Part-time · Sat–Sun', applied: 8, viewed: 142, whenEs: 'hace 4 días', whenEn: '4 days ago', tag: 'live' },
       { id: 3, titleEs: 'Pastelero · masa madre', titleEn: 'Pastry chef · sourdough', pay: '$28–$32/hr', typeEs: 'Tiempo completo · 5 días', typeEn: 'Full-time · 5 days/wk', applied: 4, viewed: 62, whenEs: 'ayer', whenEn: 'yesterday', tag: 'new' },
     ],
-    [jobsExtra, L],
+    [L],
   );
+
+  // Roster is state-driven: demo seeds from the fixture; a real business loads
+  // its PRIVATE staff from Supabase (empty until the owner invites anyone).
+  useEffect(() => {
+    if (!persistable || !real || !supabase) { setMembers(baseRoster); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!
+        .from('business_staff')
+        .select('id,name,email,role,title_es,title_en,invited,created_at')
+        .eq('business_id', real.id)
+        .order('created_at', { ascending: true });
+      if (cancelled) return;
+      const rows = error || !Array.isArray(data) ? [] : (data as unknown as StaffRow[]);
+      setMembers(rows.map(rowToMember));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo, baseRoster]);
+
+  // Job postings: demo seeds from fixtures; a real business loads its PUBLIC
+  // postings from Supabase (newest first).
+  useEffect(() => {
+    if (!persistable || !real || !supabase) { setJobs(seedJobs); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!
+        .from('business_jobs')
+        .select('id,title_es,title_en,pay,type_es,type_en,status,applied,viewed,created_at')
+        .eq('business_id', real.id)
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      const rows = error || !Array.isArray(data) ? [] : (data as unknown as JobRow[]);
+      setJobs(rows.map(rowToJob));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo, seedJobs]);
+
+  const roster = members; // roster renders straight from state now
+
+  // ---- persistence (only when real; demo = local optimistic only) ----
+  const persistNewMember = async (m: Member, email: string | null) => {
+    if (!persistable || !real || !supabase) return;
+    const { data, error } = await supabase
+      .from('business_staff')
+      .insert({ business_id: real.id, name: m.nm, email, role: toDbRole(m.role), title_es: m.titleEs, title_en: m.titleEn, invited: !!m.invited })
+      .select('id')
+      .single();
+    if (!error && data) {
+      const dbId = (data as { id: string }).id;
+      setMembers((xs) => xs.map((x) => (x.id === m.id ? { ...x, dbId } : x)));
+    }
+  };
+  const removeMember = (m: Member) => {
+    setMembers((xs) => xs.filter((x) => x.id !== m.id));
+    if (persistable && supabase && m.dbId) supabase.from('business_staff').delete().eq('id', m.dbId);
+    setViewing(null);
+    flash(L('Removido del equipo', 'Removed from team'));
+  };
+  const persistNewJob = async (j: Job) => {
+    if (!persistable || !real || !supabase) return;
+    const { data, error } = await supabase
+      .from('business_jobs')
+      .insert({ business_id: real.id, title_es: j.titleEs, title_en: j.titleEn, pay: j.pay, type_es: j.typeEs, type_en: j.typeEn, status: j.tag })
+      .select('id')
+      .single();
+    if (!error && data) {
+      const dbId = (data as { id: string }).id;
+      setJobs((xs) => xs.map((x) => (x.id === j.id ? { ...x, dbId } : x)));
+    }
+  };
+
   const applicantTotal = jobs.reduce((a, j) => a + j.applied, 0);
   const onShiftCount = 5;
 
@@ -541,11 +698,10 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     [L('Vistas', 'Views'), '484'],
   ];
   const postJob = () => {
-    const id = Date.now();
-    setJobsExtra((j) => [
-      { id, titleEs: 'Nueva vacante · borrador', titleEn: 'New position · draft', pay: '$20–$24/hr', typeEs: 'Tiempo completo', typeEn: 'Full-time', applied: 0, viewed: 0, whenEs: 'recién', whenEn: 'just now', tag: 'new' },
-      ...j,
-    ]);
+    const id = (jobs.length ? Math.max(...jobs.map((x) => x.id)) : 0) + 1;
+    const job: Job = { id, titleEs: 'Nueva vacante · borrador', titleEn: 'New position · draft', pay: '$20–$24/hr', typeEs: 'Tiempo completo', typeEn: 'Full-time', applied: 0, viewed: 0, whenEs: 'recién', whenEn: 'just now', tag: 'new' };
+    setJobs((j) => [job, ...j]);
+    persistNewJob(job);
     flash(L('Vacante publicada en tu anuncio', 'Job posted to your listing'));
   };
   const tagLabel = (t: Job['tag']) => ({ live: L('En vivo', 'Live'), new: L('Recién', 'Just posted'), paused: L('Pausada', 'Paused') }[t]);
@@ -707,7 +863,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       onBack={() => setViewing(null)}
       action={<span className={`rounded-md px-2 py-1 text-[9.5px] font-extrabold ${ROLE_PILL[vm.role]}`}>{roleLabel(vm.role)}</span>}
       footer={
-        <button onClick={() => setViewing(null)} className="w-full cursor-pointer rounded-btn-lg border border-pink-bg bg-white py-3.5 text-[13px] font-extrabold text-pink-dark">
+        <button onClick={() => removeMember(vm)} className="w-full cursor-pointer rounded-btn-lg border border-pink-bg bg-white py-3.5 text-[13px] font-extrabold text-pink-dark">
           {L('Remover del equipo', 'Remove from team')}
         </button>
       }
@@ -771,11 +927,12 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button
           onClick={() => {
             const nm = { manager: L('Nuevo Gerente', 'New Manager'), staff: L('Nuevo Staff', 'New Staff'), driver: L('Nuevo Repartidor', 'New Driver') }[inviteRole];
-            setExtra((e) => [
-              { id: Date.now(), nm, c: '#7B61FF', role: inviteRole, titleEs: roleLabel(inviteRole), titleEn: roleLabel(inviteRole), hours: 'Part-time', dot: '#C0BBD0', stEs: 'Invitado', stEn: 'Invited', permsEs: '—', permsEn: '—', since: '2025', invited: true },
-              ...e,
-            ]);
+            const id = (members.length ? Math.max(...members.map((m) => m.id)) : 0) + 1;
+            const member: Member = { id, nm, c: '#7B61FF', role: inviteRole, titleEs: roleLabel(inviteRole), titleEn: roleLabel(inviteRole), hours: 'Part-time', dot: '#C0BBD0', stEs: 'Invitado', stEn: 'Invited', permsEs: '—', permsEn: '—', since: '2025', invited: true };
+            setMembers((e) => [member, ...e]);
+            persistNewMember(member, inviteEmail.trim() || null);
             setInviteOpen(false);
+            setInviteEmail('');
             flash(L('Invitación enviada', 'Invitation sent'));
           }}
           className="w-full cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm"
@@ -791,6 +948,8 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Correo o teléfono', 'Email or phone')}</div>
           <input
             type="text"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
             placeholder="nombre@correo.com"
             className="w-full rounded-btn border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2 focus:border-primary"
           />

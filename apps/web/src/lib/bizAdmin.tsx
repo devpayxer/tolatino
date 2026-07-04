@@ -38,13 +38,14 @@ export type BizRow = {
   tile_a: string | null;
   tile_b: string | null;
   modules: Mods | null; // which dashboard modules are on (null = tier default)
+  settings: Record<string, unknown> | null; // notifications / shipping / drivers prefs
   created_at: string;
 };
 
 // Columns we read for the admin view (never the raw `location` geography — it
 // serializes as WKB hex and we don't need it here).
 const COLS =
-  'id,slug,name,category_id,tagline_es,tagline_en,tier,price_level,about_es,about_en,address,city,phone,hours,features,subcategories,specialty_es,specialty_en,is_open,rating,reviews_count,tile_a,tile_b,modules,created_at';
+  'id,slug,name,category_id,tagline_es,tagline_en,tier,price_level,about_es,about_en,address,city,phone,hours,features,subcategories,specialty_es,specialty_en,is_open,rating,reviews_count,tile_a,tile_b,modules,settings,created_at';
 
 // The 15 public categories → the dashboard's 5 rubros (drives module defaults &
 // category-specific copy). Anything not clearly food/beauty/auto/rental is retail.
@@ -96,6 +97,7 @@ const DEMO_BIZ: BizRow = {
   tile_a: '#ECE3F8',
   tile_b: '#E3D7F4',
   modules: null,
+  settings: null,
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -104,7 +106,7 @@ const DEMO_BIZ: BizRow = {
 // controlled by billing / the review system, not the listing editor.
 const WRITABLE: (keyof BizRow)[] = [
   'name', 'category_id', 'tagline_es', 'tagline_en', 'price_level', 'about_es', 'about_en',
-  'address', 'city', 'phone', 'hours', 'features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules',
+  'address', 'city', 'phone', 'hours', 'features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings',
 ];
 
 type BizAdminCtx = {

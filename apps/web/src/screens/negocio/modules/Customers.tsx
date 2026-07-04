@@ -10,12 +10,14 @@
 // Mobile-first; on desktop the secondary panels move into a sticky side rail and
 // lists spread into multi-column grids. All state is real & local.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Check, ChevronRight, Clock, DollarSign, Flag, Gift, Heart, RefreshCw, Search,
   ShoppingBag, Sparkles, Star, UserPlus, Users, Zap,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { supabase } from '@/lib/supabase';
 
 type Mode = 'customers' | 'orders' | 'reviews';
 type Seg = 'all' | 'new' | 'regulars' | 'vip' | 'risk';
@@ -33,9 +35,10 @@ type Order = {
   channel: Channel; status: OStatus; total: string; items: [string, string];
 };
 type Review = {
-  id: number; initials: string; color: string; name: [string, string]; stars: number;
+  id: number; dbId?: string; initials: string; color: string; name: [string, string]; stars: number;
   date: string; ch: 'Google' | 'Nearby' | 'Yelp'; helpful: number;
   text: [string, string]; ai: [string, string]; seededReply?: [string, string];
+  reply_es?: string | null; reply_en?: string | null;
 };
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
@@ -56,6 +59,48 @@ const CH_REVIEW: Record<Review['ch'], string> = {
   Nearby: 'bg-lilac-2 text-primary-dark',
   Yelp: 'bg-amber-bg text-amber-ink',
 };
+
+// A public `reviews` row (owner view) → the module's Review shape. Real reviews
+// are native to To'Latino, so channel = 'Nearby'. `dbId` tracks the DB uuid so
+// the owner's reply targets it via the reply_to_review RPC. `reply_es/en` carry
+// any existing owner reply so it renders immediately.
+type ReviewRow = {
+  id: string; author_name: string; author_initials: string | null; rating: number;
+  body_es: string | null; body_en: string | null; reply_es: string | null;
+  reply_en: string | null; replied_at: string | null; created_at: string;
+};
+const RV_COLORS = ['#7B61FF', '#1F9D57', '#2A5C8A', '#D6336C', '#E8954A', '#9A6A12', '#B5791A'];
+const relTime = (iso: string, es: boolean) => {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return '';
+  const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  const m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
+  if (m < 1) return es ? 'ahora' : 'now';
+  if (m < 60) return es ? `${m} min` : `${m}m`;
+  if (h < 24) return `${h}h`;
+  if (d < 30) return `${d}d`;
+  return `${Math.floor(d / 30)}mo`;
+};
+function rowToReview(r: ReviewRow, idx: number, es: boolean): Review {
+  const initials = (r.author_initials?.trim())
+    || r.author_name.split(/\s+/).map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+    || 'A';
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    initials,
+    color: RV_COLORS[idx % RV_COLORS.length],
+    name: [r.author_name, r.author_name],
+    stars: r.rating,
+    date: relTime(r.created_at, es),
+    ch: 'Nearby',
+    helpful: 0,
+    text: [r.body_es ?? '', r.body_en ?? r.body_es ?? ''],
+    ai: ['', ''],
+    reply_es: r.reply_es,
+    reply_en: r.reply_en,
+  };
+}
 
 export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
@@ -88,7 +133,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     [],
   );
 
-  const reviews = useMemo<Review[]>(
+  const seedReviews = useMemo<Review[]>(
     () => [
       { id: 1, initials: 'JT', color: '#2A5C8A', name: ['James Tate', 'James Tate'], stars: 4, date: es ? '14 min' : '14m', ch: 'Google', helpful: 8, text: ['El servicio fue un poco lento pero la comida lo compensó. El menú degustación fue lo mejor.', 'Service was a bit slow but the food made up for it. The tasting menu was a highlight.'], ai: ['¡Gracias por las amables palabras, James! Nos alegra que el menú degustación te encantara. Estamos mejorando los tiempos en la cena.', 'Thanks for the kind words, James! So glad the tasting menu landed. We’re tightening up our dinner pacing.'] },
       { id: 2, initials: 'ML', color: '#7B61FF', name: ['María López', 'María López'], stars: 5, date: '2h', ch: 'Nearby', helpful: 14, text: ['El mejor al pastor de Houston. Los martes de 2x1 son una experiencia religiosa.', 'Best al pastor in Houston. Taco Tuesday is a religious experience.'], ai: ['¡Mil gracias, María! Nos llena de alegría — significa mucho para todo el equipo. ¡Te esperamos pronto!', 'Thank you so much, María! We’re thrilled — it means the world to the whole team.'] },
@@ -97,6 +142,14 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     ],
     [es],
   );
+
+  // Reviews are the only real-data view here (Clientes/Pedidos stay fixture).
+  // Signed-in owner → load their business's reviews; demo → keep the fixture.
+  const admin = useBizAdmin();
+  const real = admin.active;
+  const persistable = !admin.demo && !!real; // real signed-in business → persist replies
+  const [realReviews, setRealReviews] = useState<Review[] | null>(null);
+  const reviews = realReviews ?? seedReviews;
 
   // ---- state ----------------------------------------------------------------
   const [mode, setMode] = useState<Mode>(initialMode);
@@ -112,16 +165,44 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [replyText, setReplyText] = useState<Record<number, string>>({});
   const [posted, setPosted] = useState<Record<number, [string, string]>>(() => {
     const seeded: Record<number, [string, string]> = {};
-    reviews.forEach((r) => { if (r.seededReply) seeded[r.id] = r.seededReply; });
+    seedReviews.forEach((r) => { if (r.seededReply) seeded[r.id] = r.seededReply; });
     return seeded;
   });
   const [flagged, setFlagged] = useState<Record<number, boolean>>({ 4: true });
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const [toast, setToast] = useState('');
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 1900);
   };
+
+  // Load the real business's reviews (demo keeps the sample fixture). Seed the
+  // `posted` map from any existing owner reply so it renders right away.
+  useEffect(() => {
+    if (!persistable || !real || !supabase) {
+      setRealReviews(null); // demo / not configured → fixture (posted stays seeded)
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!
+        .from('reviews')
+        .select('id,author_name,author_initials,rating,body_es,body_en,reply_es,reply_en,replied_at,created_at')
+        .eq('business_id', real.id)
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      const rows = error || !Array.isArray(data) ? [] : (data as ReviewRow[]);
+      const mapped = rows.map((r, i) => rowToReview(r, i, es));
+      setRealReviews(mapped);
+      const seeded: Record<number, [string, string]> = {};
+      mapped.forEach((r) => { if (r.reply_es) seeded[r.id] = [r.reply_es, r.reply_en ?? r.reply_es]; });
+      setPosted(seeded);
+      setFlagged({}); // fixture's default flag doesn't apply to real reviews
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
 
   // ---- derived --------------------------------------------------------------
   const inFlight = orders.filter((o) => o.status !== 'completed').length;
@@ -454,11 +535,30 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setReplyText((t) => ({ ...t, [r.id]: L(r.ai[0], r.ai[1]) }));
     flash(L('Borrador con IA listo — revísalo', 'AI draft ready — review it'));
   };
-  const sendReply = (r: Review) => {
+  const startEdit = (r: Review) => {
+    setReplyText((t) => ({ ...t, [r.id]: posted[r.id]?.[0] ?? '' }));
+    setEditingId(r.id);
+  };
+  const sendReply = async (r: Review) => {
     const text = (replyText[r.id] ?? '').trim();
-    if (!text) return flash(L('Escribe una respuesta primero', 'Write a reply first'));
-    setPosted((p) => ({ ...p, [r.id]: [text, text] }));
-    flash(L('Respuesta publicada', 'Reply posted'));
+    const had = !!posted[r.id];
+    if (!text && !had) return flash(L('Escribe una respuesta primero', 'Write a reply first'));
+    // Optimistic: reflect the reply (or its removal) immediately.
+    setPosted((p) => {
+      const next = { ...p };
+      if (text) next[r.id] = [text, text];
+      else delete next[r.id];
+      return next;
+    });
+    setEditingId((id) => (id === r.id ? null : id));
+    setReplyText((t) => ({ ...t, [r.id]: '' }));
+    // Persist only for a real, signed-in business; demo stays local. An empty
+    // reply clears the stored reply (the RPC nulls it out).
+    if (persistable && r.dbId && supabase) {
+      const { error } = await supabase.rpc('reply_to_review', { p_review_id: r.dbId, p_reply: text });
+      if (error) return flash(L('No se pudo guardar la respuesta', 'Could not save the reply'));
+    }
+    flash(text ? L('Respuesta publicada', 'Reply posted') : L('Respuesta eliminada', 'Reply removed'));
   };
   const toggleFlag = (r: Review) => {
     const on = !flagged[r.id];
@@ -515,6 +615,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             reviewList.map((r) => {
               const reply = posted[r.id];
               const isFlagged = flagged[r.id];
+              const editing = editingId === r.id;
               const draft = replyText[r.id] ?? '';
               return (
                 <div key={r.id} className={`rounded-card-sm border bg-white p-4 shadow-card ${isFlagged ? 'border-[rgba(240,70,110,.3)]' : 'border-hair'}`}>
@@ -533,11 +634,12 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
                   <div className="mt-2.5 text-[12px] font-medium leading-relaxed text-ink-body">{L(r.text[0], r.text[1])}</div>
 
-                  {reply ? (
+                  {reply && !editing ? (
                     <div className="mt-3 rounded-r-lg border-l-[3px] border-ink bg-app px-3 py-2.5">
                       <div className="mb-1 flex items-center gap-1.5 text-[9.5px] font-extrabold text-ink">
                         <span className="flex h-4 w-4 items-center justify-center rounded bg-primary text-[7px] font-extrabold text-white">{ci.initials}</span>
                         {ci.name.split(' ')[0]} · {L('respuesta del dueño', 'owner reply')}
+                        <button onClick={() => startEdit(r)} className="ml-auto flex-none cursor-pointer text-[9px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
                       </div>
                       <div className="text-[11px] font-medium leading-snug text-ink-3">{reply[0]}</div>
                     </div>

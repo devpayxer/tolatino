@@ -115,11 +115,19 @@ local-only) so every editor stays explorable + auditable.
   `lib/bizItems.ts`): **Menú de comida** (add/edit/delete/86), **Servicios**
   (add/edit/delete), **Productos** (add/edit/delete), **Renta** (add). Each keeps
   its rich handoff UI + demo seed (local-only) and persists for real owners.
-- [ ] **Remaining sections** — **Módulos** (Reservas, Zonas de envío, Repartidores,
-  Eventos), **Clientes** (Clientes/Pedidos/Mensajes/Reseñas/Novedades), **Cuenta**
-  (Pagos/Personal/Empleos/Plan/**Ajustes**) — still fixture/local. Each needs its own
-  table(s)+RLS+CRUD (bookings, orders, messages, reviews-reply, staff, jobs, events,
-  payouts…). Convert in nav order, reusing the `bizAdmin` foundation.
+- [x] **Eventos** — create (create_event RPC 0022) + delete + load owner's events.
+- [x] **Reseñas** — load real reviews + owner reply (reply_to_review RPC 0023).
+- [x] **Novedades** — post + delete on business_updates (0024).
+- [x] **Personal + Empleos** — business_staff (private) + business_jobs (public) (0025):
+  load, invite/add, remove, post job.
+- [x] **Zonas de envío + Repartidores** — persist config to businesses.settings (0026).
+- [x] **Ajustes** — real profile links, ES/EN, notification prefs (businesses.settings),
+  account (email + sign out).
+- [ ] **Still fixture** — **Reservas** (business_bookings 0027 ready), **Pedidos**
+  (business_orders 0028), **Mensajes** (business_conversations/_messages 0029),
+  **Clientes** (business_customers 0030), **Plan y facturación** (show real tier;
+  upgrade = payments), **Pagos** (needs Stripe — deferred). Tables 0027–0030 are
+  created; client wiring is the remaining step (bookings/orders/messages/customers).
 
 Every dashboard-real change: **build + `tools/mobile-audit/audit.js` (125 states,
 0 overflow at 392px)**; the demo mock exercises the real editors.

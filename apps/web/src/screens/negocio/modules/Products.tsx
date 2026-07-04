@@ -73,6 +73,34 @@ const SEED: Product[] = [
   { id: 7, name: 'Café en grano · 12oz', sku: 'COF-001', price: 19, stock: 62, cat: 'coffee', variants: 3, sales: '$1,178' },
 ];
 
+// ---- shipping / drivers persistence model (businesses.settings jsonb) ----
+// Language-neutral records (es/en pairs) so lists can be persisted AND rendered
+// through L() without freezing one language.
+type Zone = { color: string; es: string; en: string; rad: string; time: string; feeEs: string; feeEn: string };
+type OwnDriver = { initials: string; color: string; dot: string; name: string; sEs: string; sEn: string; orderEs: string; orderEn: string; km: string; eta: string };
+
+const ZONE_SEED: Zone[] = [
+  { color: '#7B61FF', es: 'Zona 1 · Centro', en: 'Zone 1 · Core', rad: '0–1.2 mi', time: '30–45 min', feeEs: 'Gratis +$25', feeEn: 'Free +$25' },
+  { color: '#F0466E', es: 'Zona 2 · Ampliada', en: 'Zone 2 · Greater', rad: '1.2–3 mi', time: '45–60 min', feeEs: '$5', feeEn: '$5' },
+  { color: '#F4B740', es: 'Zona 3 · Exterior', en: 'Zone 3 · Outer', rad: '3–8 mi', time: '60–90 min', feeEs: '$12', feeEn: '$12' },
+];
+const ZONE_COLORS = ['#7B61FF', '#F0466E', '#F4B740'];
+const DRIVER_SEED: OwnDriver[] = [
+  { initials: 'MP', color: '#7B61FF', dot: '#1F9D57', name: 'Marco P.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2487 → Z2', orderEn: '#2487 → Z2', km: '1.8 mi', eta: 'ETA 5 min' },
+  { initials: 'DR', color: '#2A5C8A', dot: '#1F9D57', name: 'Diego R.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2484 → Z1', orderEn: '#2484 → Z1', km: '0.9 mi', eta: 'ETA 2 min' },
+  { initials: 'AV', color: '#E8954A', dot: '#6D4DF6', name: 'Andrea V.', sEs: 'En tienda', sEn: 'Idle · shop', orderEs: 'Lista', orderEn: 'Ready next', km: '—', eta: '—' },
+  { initials: 'LM', color: '#9A96AE', dot: '#9A96AE', name: 'Lucía M.', sEs: 'Libre hoy', sEn: 'Off today', orderEs: 'Mar–Jue', orderEn: 'Mar–Jue', km: '—', eta: '—' },
+];
+const PICK_DEF = [true, true, true, true];
+const CARRIER_DEF = [true, true, true, false];
+const EXT_DEF = [true, true, false];
+const arrToRec = (a: boolean[]): Record<number, boolean> => {
+  const r: Record<number, boolean> = {};
+  a.forEach((v, i) => { r[i] = v; });
+  return r;
+};
+const recToArr = (r: Record<number, boolean>, n: number): boolean[] => Array.from({ length: n }, (_, i) => !!r[i]);
+
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
 type ProdTab = 'catalog' | 'inventory' | 'variants' | 'collections' | 'discounts';
@@ -127,9 +155,11 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     if (persistable && p?.dbId) updateBizItem(p.dbId, { name: p.name, price: p.price, section: p.cat, attrs: { sku: p.sku, stock: p.stock, variants: p.variants, sales: p.sales } });
   };
   const [collState, setCollState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: false, 3: true });
-  const [pickState, setPickState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: true });
-  const [carrierState, setCarrierState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: false });
-  const [extState, setExtState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: false });
+  const [pickState, setPickState] = useState<Record<number, boolean>>(arrToRec(PICK_DEF));
+  const [carrierState, setCarrierState] = useState<Record<number, boolean>>(arrToRec(CARRIER_DEF));
+  const [extState, setExtState] = useState<Record<number, boolean>>(arrToRec(EXT_DEF));
+  const [zones, setZones] = useState<Zone[]>(ZONE_SEED);
+  const [drivers, setDrivers] = useState<OwnDriver[]>(DRIVER_SEED);
 
   const [sheet, setSheet] = useState<Edit | null>(null);
   const [view, setView] = useState<View>('module');
@@ -139,6 +169,59 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [toast, setToast] = useState('');
 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
+
+  // Seed shipping/drivers config from the real business's settings jsonb (falls
+  // back to the fixtures when absent → demo + first load look unchanged).
+  // Re-seeds when the active business or demo mode changes, mirroring the
+  // products loader above. Toggling values does NOT re-run this (id is stable),
+  // so local edits are never clobbered.
+  useEffect(() => {
+    const s = (real?.settings ?? {}) as Record<string, unknown>;
+    const ship = (s.shipping ?? {}) as {
+      delivery?: { zones?: Zone[] };
+      pickup?: { rules?: boolean[] };
+      national?: { carriers?: boolean[] };
+      external?: boolean[];
+    };
+    const dz = ship.delivery?.zones;
+    const dr = s.drivers;
+    const pr = ship.pickup?.rules;
+    const ca = ship.national?.carriers;
+    const ex = ship.external;
+    setZones(Array.isArray(dz) && dz.length ? dz : ZONE_SEED);
+    setDrivers(Array.isArray(dr) && dr.length ? (dr as OwnDriver[]) : DRIVER_SEED);
+    setPickState(arrToRec(Array.isArray(pr) ? pr : PICK_DEF));
+    setCarrierState(arrToRec(Array.isArray(ca) ? ca : CARRIER_DEF));
+    setExtState(arrToRec(Array.isArray(ex) ? ex : EXT_DEF));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  // Build the shipping settings object from current (or just-changed) state.
+  const buildShipping = (o: { zones?: Zone[]; pick?: Record<number, boolean>; carrier?: Record<number, boolean>; ext?: Record<number, boolean> }) => {
+    const z = o.zones ?? zones;
+    const pRules = recToArr(o.pick ?? pickState, 4);
+    const cArr = recToArr(o.carrier ?? carrierState, 4);
+    const eArr = recToArr(o.ext ?? extState, 3);
+    return {
+      delivery: { on: z.length > 0, radius: z.length ? z[z.length - 1].rad : '', fee: z.length > 1 ? z[1].feeEs : (z[0]?.feeEs ?? ''), zones: z },
+      pickup: { on: pRules.some(Boolean), rules: pRules },
+      national: { on: cArr.some(Boolean), carriers: cArr },
+      external: eArr,
+    };
+  };
+  // Persist { shipping, drivers } to businesses.settings (RLS). Demo / not
+  // configured → local only (admin.update no-ops the network).
+  const persistShip = (o: { zones?: Zone[]; pick?: Record<number, boolean>; carrier?: Record<number, boolean>; ext?: Record<number, boolean>; drivers?: OwnDriver[] } = {}) => {
+    if (!persistable || !real) return;
+    admin.update({ settings: { ...(real.settings ?? {}), shipping: buildShipping(o), drivers: o.drivers ?? drivers } });
+  };
+  const addZone = () => {
+    const n = zones.length + 1;
+    const next: Zone[] = [...zones, { color: ZONE_COLORS[zones.length % ZONE_COLORS.length], es: `Zona ${n}`, en: `Zone ${n}`, rad: '—', time: '—', feeEs: '$0', feeEn: '$0' }];
+    setZones(next);
+    persistShip({ zones: next });
+    flash(L('Nueva zona creada', 'New zone created'));
+  };
 
   const catOf = (id: string) => CATS.find((c) => c.id === id) ?? CATS[0];
   const money = (n: number) => '$' + n.toFixed(2);
@@ -436,12 +519,6 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---------- shipping · zones ----------
-  const zones = [
-    { color: '#7B61FF', name: L('Zona 1 · Centro', 'Zone 1 · Core'), rad: '0–1.2 mi', time: '30–45 min', fee: L('Gratis +$25', 'Free +$25') },
-    { color: '#F0466E', name: L('Zona 2 · Ampliada', 'Zone 2 · Greater'), rad: '1.2–3 mi', time: '45–60 min', fee: '$5' },
-    { color: '#F4B740', name: L('Zona 3 · Exterior', 'Zone 3 · Outer'), rad: '3–8 mi', time: '60–90 min', fee: '$12' },
-  ];
-
   const zonesView = (
     <div className="flex flex-col gap-3.5 md:grid md:grid-cols-2 md:items-start md:gap-4 xl:grid-cols-1 2xl:grid-cols-2">
       {/* map placeholder */}
@@ -455,14 +532,14 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary shadow-card" />
       </div>
       <div className="flex flex-col gap-2.5">
-        {zones.map((z) => (
-          <div key={z.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
+        {zones.map((z, zi) => (
+          <div key={zi} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
             <span className="h-3 w-3 flex-none rounded-full" style={{ background: z.color }} />
             <div className="min-w-0 flex-1">
-              <div className="text-[12.5px] font-extrabold text-ink">{z.name}</div>
+              <div className="text-[12.5px] font-extrabold text-ink">{L(z.es, z.en)}</div>
               <div className="mt-0.5 text-[10px] font-medium text-muted-2">{z.rad} · ETA {z.time}</div>
             </div>
-            <span className="flex-none text-[13px] font-extrabold text-ink">{z.fee}</span>
+            <span className="flex-none text-[13px] font-extrabold text-ink">{L(z.feeEs, z.feeEn)}</span>
           </div>
         ))}
         <div className="flex items-center gap-3 rounded-card-sm bg-lilac-2 p-3">
@@ -472,7 +549,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="mt-0.5 text-[10px] font-medium leading-snug text-ink-3">{L('Más allá de la Zona 3 se ofrece envío o recoger.', 'Beyond Zone 3 we offer shipping or pickup.')}</div>
           </div>
         </div>
-        <button onClick={() => flash(L('Nueva zona creada', 'New zone created'))} className={dashBtn}>+ {L('Nueva zona', 'New zone')}</button>
+        <button onClick={addZone} className={dashBtn}>+ {L('Nueva zona', 'New zone')}</button>
       </div>
     </div>
   );
@@ -519,7 +596,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div className="text-[12px] font-bold text-ink">{r[0]}</div>
                   <div className="mt-0.5 text-[10px] font-medium text-muted-2">{r[1]}</div>
                 </div>
-                <Toggle on={on} onClick={() => setPickState((s) => ({ ...s, [i]: !on }))} />
+                <Toggle on={on} onClick={() => { const next = { ...pickState, [i]: !on }; setPickState(next); persistShip({ pick: next }); }} />
               </div>
             );
           })}
@@ -550,7 +627,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <div className="mt-0.5 text-[10px] font-medium text-muted-2">{c[1]}</div>
               </div>
               <span className="text-[13px] font-extrabold text-ink">{c[2]}</span>
-              <Toggle on={on} onClick={() => setCarrierState((s) => ({ ...s, [i]: !on }))} />
+              <Toggle on={on} onClick={() => { const next = { ...carrierState, [i]: !on }; setCarrierState(next); persistShip({ carrier: next }); }} />
             </div>
           );
         })}
@@ -571,12 +648,6 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     { Icon: Truck, cls: 'bg-pink-bg text-pink-dark', label: L('Entregas hoy', 'Deliveries today'), value: '42', delta: '▲ 12%', dCls: 'text-green' },
     { Icon: Clock, cls: 'bg-green-bg text-green-dark', label: L('Tiempo prom.', 'Avg time'), value: '18 min', delta: '▼ 2 min', dCls: 'text-green' },
     { Icon: DollarSign, cls: 'bg-amber-bg text-amber-ink', label: L('Costo hoy', 'Cost today'), value: '$336', delta: '$8/' + L('entrega', 'delivery'), dCls: 'text-muted-2' },
-  ];
-  const ownDrivers = [
-    { initials: 'MP', color: '#7B61FF', dot: '#1F9D57', name: 'Marco P.', s: L('En ruta', 'On delivery'), order: '#2487 → Z2', km: '1.8 mi', eta: 'ETA 5 min' },
-    { initials: 'DR', color: '#2A5C8A', dot: '#1F9D57', name: 'Diego R.', s: L('En ruta', 'On delivery'), order: '#2484 → Z1', km: '0.9 mi', eta: 'ETA 2 min' },
-    { initials: 'AV', color: '#E8954A', dot: '#6D4DF6', name: 'Andrea V.', s: L('En tienda', 'Idle · shop'), order: L('Lista', 'Ready next'), km: '—', eta: '—' },
-    { initials: 'LM', color: '#9A96AE', dot: '#9A96AE', name: 'Lucía M.', s: L('Libre hoy', 'Off today'), order: 'Mar–Jue', km: '—', eta: '—' },
   ];
   const extRaw = [
     { label: 'U', color: '#000', name: 'Uber Direct', dEs: 'Conductores bajo demanda cuando los tuyos están ocupados.', dEn: 'On-demand drivers when yours are busy.', rate: '$8.50 ' + L('prom', 'avg'), cEs: 'Gestionar', cEn: 'Manage' },
@@ -611,7 +682,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       )}
       {driverTab === 'own' ? (
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-          {ownDrivers.map((d) => (
+          {drivers.map((d) => (
             <div key={d.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
               <span className="relative flex-none">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
@@ -619,7 +690,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[12.5px] font-extrabold text-ink">{d.name}</div>
-                <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{d.s} · {d.order}</div>
+                <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{L(d.sEs, d.sEn)} · {L(d.orderEs, d.orderEn)}</div>
               </div>
               <div className="flex-none text-right">
                 <div className="text-[11.5px] font-extrabold text-ink">{d.km}</div>
@@ -640,7 +711,7 @@ export function ProductsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className="text-[12.5px] font-extrabold text-ink">{a.name}</div>
                     <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L(a.dEs, a.dEn)}</div>
                   </div>
-                  <Toggle on={on} onClick={() => setExtState((s) => ({ ...s, [i]: !on }))} />
+                  <Toggle on={on} onClick={() => { const next = { ...extState, [i]: !on }; setExtState(next); persistShip({ ext: next }); }} />
                 </div>
                 <div className="mt-2.5 flex items-center justify-between border-t border-dashed border-hair pt-2.5">
                   <span className="text-[10px] font-semibold text-muted-2">{a.rate}</span>

@@ -7,20 +7,56 @@
 // and recent-followers list. Mobile-first; on desktop the perf/followers move
 // into a sticky side rail. Real state: posting adds to the list + switches tab.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Bookmark, Calendar, Check, Heart, Image as ImageIcon, MessageCircle, MoreHorizontal,
   RefreshCw, Tag, Trash2, Video, Zap,
 } from 'lucide-react';
 import { VerifiedBadge } from '@/components/ui';
 import type { PanelCtx } from '@/screens/negocio/tabs';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { supabase } from '@/lib/supabase';
 
 type Kind = 'news' | 'offer' | 'event';
 type Status = 'live' | 'scheduled' | 'draft' | 'archived';
 type Post = {
-  id: number; kind: Kind; es: string; en: string; status: Status; pinned: boolean;
+  id: number; dbId?: string; kind: Kind; es: string; en: string; status: Status; pinned: boolean;
   when: [string, string]; views?: string; likes?: number; comments?: number; saves?: number; hasPhoto: boolean;
 };
+
+// A `business_updates` row (migration 0024) → the module's Post. The table has no
+// status column: every stored update is a published one, so it loads as 'live'.
+// `kind` maps 1:1 (DB check is exactly offer|news|event), guarded for stray values.
+type UpdateRow = {
+  id: string; kind: Kind; body_es: string; body_en: string | null;
+  image_url: string | null; likes: number | null; views: number | null; created_at: string;
+};
+function rel(iso: string): [string, string] {
+  const min = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  if (min < 1) return ['ahora', 'just now'];
+  if (min < 60) return [`hace ${min} min`, `${min}m ago`];
+  const h = Math.floor(min / 60);
+  if (h < 24) return [`hace ${h} h`, `${h}h ago`];
+  const d = Math.floor(h / 24);
+  return [`hace ${d} d`, `${d}d ago`];
+}
+function rowToPost(r: UpdateRow, idx: number): Post {
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    kind: r.kind === 'offer' || r.kind === 'event' ? r.kind : 'news',
+    es: r.body_es,
+    en: r.body_en ?? r.body_es,
+    status: 'live',
+    pinned: false,
+    when: rel(r.created_at),
+    views: String(r.views ?? 0),
+    likes: r.likes ?? 0,
+    comments: 0,
+    saves: 0,
+    hasPhoto: !!r.image_url,
+  };
+}
 
 const KIND_TILE: Record<Kind, string> = {
   offer: '#F3E2CE 0 8px,#ECD3B4 8px 16px',
@@ -58,6 +94,31 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
   const [welcomed, setWelcomed] = useState<Record<number, boolean>>({});
   const [toast, setToast] = useState('');
 
+  const admin = useBizAdmin();
+  const real = admin.active;
+  const persistable = !admin.demo && !!real; // real signed-in business → persist to Supabase
+
+  // Load the real business's published updates (demo keeps the sample seed).
+  useEffect(() => {
+    if (!persistable || !real || !supabase) {
+      setPosts(seed);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase!
+        .from('business_updates')
+        .select('id,kind,body_es,body_en,image_url,likes,views,created_at')
+        .eq('business_id', real.id)
+        .order('created_at', { ascending: false });
+      if (!cancelled && Array.isArray(data)) setPosts((data as unknown as UpdateRow[]).map(rowToPost));
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 1900);
@@ -65,7 +126,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
 
   const count = (s: Status) => posts.filter((p) => p.status === s).length;
 
-  const create = (status: Status) => {
+  const create = async (status: Status) => {
     const title = draft.trim();
     if (!title) return flash(L('Escribe algo primero', 'Write something first'));
     const id = Math.max(0, ...posts.map((p) => p.id)) + 1;
@@ -79,6 +140,24 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
         : status === 'scheduled' ? L('Publicación programada', 'Post scheduled')
           : L('Guardado en borradores', 'Saved to drafts'),
     );
+    // Persist only real, *published* updates; drafts/scheduled stay local until
+    // posted (business_updates rows are public-read, so unpublished stays out).
+    if (persistable && real && supabase && status === 'live') {
+      const { data } = await supabase
+        .from('business_updates')
+        .insert({ business_id: real.id, kind, body_es: title, body_en: title, image_url: null })
+        .select('id')
+        .single();
+      const dbId = (data as { id: string } | null)?.id;
+      if (dbId) setPosts((xs) => xs.map((x) => (x.id === id ? { ...x, dbId } : x)));
+    }
+  };
+
+  // Remove a post locally; also delete the DB row when it's a real persisted update.
+  const remove = (p: Post) => {
+    setPosts((xs) => xs.filter((x) => x.id !== p.id));
+    if (persistable && p.dbId && supabase) void supabase.from('business_updates').delete().eq('id', p.dbId);
+    flash(L('Publicación eliminada', 'Post deleted'));
   };
 
   const kindLabel = (k: Kind) => ({ offer: L('Oferta', 'Offer'), event: L('Evento', 'Event'), news: L('Aviso', 'News') }[k]);
@@ -253,7 +332,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
             ) : (
               <div className="mt-2 flex justify-end gap-2 border-t border-hair px-3.5 py-3">
                 {p.status === 'scheduled' && <>{actionBtn(L('Reprogramar', 'Reschedule'))}<button className="flex cursor-pointer items-center gap-1 rounded-field bg-primary px-3 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm"><Zap size={12} strokeWidth={2.4} />{L('Publicar', 'Post now')}</button></>}
-                {p.status === 'draft' && <><button className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><Trash2 size={12} strokeWidth={2.2} />{L('Eliminar', 'Delete')}</button>{actionBtn(L('Publicar', 'Publish'), true)}</>}
+                {p.status === 'draft' && <><button onClick={() => remove(p)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><Trash2 size={12} strokeWidth={2.2} />{L('Eliminar', 'Delete')}</button>{actionBtn(L('Publicar', 'Publish'), true)}</>}
                 {p.status === 'archived' && <button className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><RefreshCw size={12} strokeWidth={2.2} />{L('Reusar', 'Re-run')}</button>}
               </div>
             )}
