@@ -1,7 +1,14 @@
 # Mobile layout audit (screen-by-screen)
 
-Recorre el **business dashboard** a ancho de teléfono (392px) con Playwright y
-certifica que nada se sale del layout:
+Dos auditorías Playwright a ancho de teléfono (392px) que certifican que nada se
+sale del layout:
+
+- **`audit.js`** — el **business dashboard** (`/negocio`).
+- **`publish.js`** — el flujo **Publicar negocio** del consumidor (FAB → "Publicar
+  mi negocio"): campos, picker de **Características** y editor semanal de
+  **Horario** (franjas, día cerrado, aplicar-a-semana, cambio de hora).
+
+`audit.js` recorre el dashboard así:
 
 1. Visita cada sección del panel (16 tabs vía el drawer).
 2. Hace click en **cada sub-tab / filtro / modo** (filas de chips) y re-mide
@@ -14,13 +21,21 @@ certifica que nada se sale del layout:
    con scroll interno), y scroll horizontal dentro de sheets. Cada violación
    se registra y se captura en `img/audit/FAIL-*.png`.
 
+Cada estado detecta: desborde horizontal de página, elementos fuera del viewport
+(ignorando decoraciones recortadas por `overflow-hidden` y filas con scroll
+interno), y scroll horizontal dentro de sheets. Cada violación se registra y se
+captura en `img/audit/FAIL-*.png` (carpeta gitignored).
+
 ## Uso
 ```bash
 pnpm --filter @tolatino/web build
 cd apps/web/out && python3 -m http.server 4173 &   # sirve el export estático
-cd tools/mobile-audit && npm i playwright          # una vez (usa el Chromium local)
-node audit.js                                       # espera "0 violation state(s)"
+cd tools/mobile-audit && npm i                      # una vez — instala Playwright local
+node audit.js                                       # dashboard  → "0 violation state(s)"
+node publish.js                                     # publicar   → "0 violation state(s)"
 ```
 En el entorno de Claude Code el Chromium vive en `/opt/pw-browsers/chromium`
-(ya referenciado en el script). Última corrida: **125 estados · 0 violaciones**.
-Correlo después de cualquier cambio de UI del dashboard.
+(ya referenciado en los scripts); este tool es independiente del workspace pnpm
+(usa `npm` local). Corre ambos después de cualquier cambio de UI que toquen.
+El contador solo cuenta **violaciones**; una corrida limpia imprime
+`0 violation state(s)`.

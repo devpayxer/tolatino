@@ -36,3 +36,7 @@ Thumbs.db
 # Misc
 .tmp/
 coverage/
+
+# mobile-audit: standalone tool, Playwright installed locally via npm (not pnpm)
+tools/mobile-audit/package-lock.json
+tools/mobile-audit/img/

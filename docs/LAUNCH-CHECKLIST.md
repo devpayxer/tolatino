@@ -41,8 +41,9 @@
   uses **one global Supabase Realtime channel** (`tl-social` for likes/comment
   counts, `tl-comunidad-feed` for new-post INSERTs). Every client receives every
   event — fine for MVP, not for 1M+. Partition by **city/region** (or geohash)
-  so a client only subscribes to nearby events. Code is commented with this note
-  in `apps/web/src/lib/interactions.tsx` and `screens/Comunidad.tsx`.
+  so a client only subscribes to nearby events. The scale note lives in
+  `apps/web/src/lib/interactions.tsx` (lines 166-170); `screens/Comunidad.tsx`'s
+  `tl-comunidad-feed` channel carries no such note yet.
 - [ ] **Images → Cloudflare R2.** Photos upload to **Supabase Storage** now;
   move object storage to **Cloudflare R2** (free egress) at scale. Client-side
   compression stays identical; only the upload destination changes
@@ -112,15 +113,24 @@
   TODO: real **address geocoding** (today it uses the city center or the owner's
   GPS pin), business **photos**, amenities capture, editing/deleting your
   own listing from the UI (RLS policies already exist), and the paid tiers
-  (verified/premium). **Hours:** `businesses.hours` (migration `0018`) now drives
-  the live open/closed status and `create_business` accepts it, but the **publish
-  form doesn't collect a weekly schedule yet** (new listings get `hours = null` →
-  they fall back to the `is_open` flag). Add an hours editor to `PublishModal`. **Feature tags** (`businesses.features`, migration `0016`)
-  now power the dynamic per-category Negocios filter and `create_business` accepts
-  them, but the **publish form doesn't collect them yet** — the owner can't tick
-  "Características" (delivery, full bar, licensed…) when creating a listing. Wire a
-  feature-picker into `PublishModal` (options from `FEATURES_COMMON` +
-  `FEATURES_BY_CAT[cat]`) so new listings are filterable.
+  (verified/premium).
+  - [x] **Hours editor (2026-07-04).** `PublishModal` now has a mobile-first
+    weekly **Horario** editor (`components/HoursEditor.tsx`): per-day Abierto/Cerrado,
+    open/close selects, split slots ("Otra franja"), "Aplicar a toda la semana". It
+    emits the exact `WeekHours` shape (`businesses.hours`, migration `0018`) and
+    submits it as `p_hours`, so new listings get a real live open/closed status
+    instead of `hours = null`. Optional — skipping it still falls back to `is_open`.
+  - [x] **Feature picker (2026-07-04).** The publish form now collects **Características**
+    (Sugeridos = `FEATURES_COMMON` + per-rubro `FEATURES_BY_CAT[cat]`, deduped) and
+    submits the canonical es-labels as `p_features` (migration `0016`), so new
+    listings are filterable in the Negocios directory the moment they're created.
+  - ⚠️ **Both ride on the same blocking `0013`→`0018` batch** (see the blocking
+    item below). `p_features`/`p_hours` only exist on the **16-arg `create_business`
+    from `0018`**; the form now always sends them. Publish is already blocked until
+    that batch is applied (`0013` is what creates `create_business` in the first
+    place), so apply `0013`→`0018` **in full and in order** — a partial subset that
+    stops before `0018` would make the publish RPC call fail to resolve (PostgREST
+    can't match extra named args), not silently drop the fields.
 - [ ] **Verified vs unverified listing tiers — claim/upgrade flow.** The Negocios
   directory now renders two card variants (`BizCardVerified` rich vs `BizCardBasic`
   simple + "Sin verificar" badge) and always ranks verified businesses on top

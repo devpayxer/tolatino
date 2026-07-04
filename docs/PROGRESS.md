@@ -9,16 +9,18 @@
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,
   `output: 'export'` static export, Tailwind). Build: `pnpm --filter @tolatino/web build`.
 - **Branches / deploy flow:**
-  - Develop on **`claude/new-prompt-xkubrd`**.
+  - Develop on the **current session branch** (it churns each session — pin it here
+    per session, don't hardcode an old one). This session: **`claude/progress-md-review-r5bdar`**.
   - Release by **fast-forward-merging** into **`claude/tolatino-repo-setup-1efdil`**
-    (the branch **Vercel** auto-deploys). Sequence every time:
+    (the branch **Vercel** auto-deploys). Sequence every time (swap in the current
+    session branch for `<dev>`):
     ```
     git add -A && git commit -m "…"
-    git push -u origin claude/new-prompt-xkubrd
+    git push -u origin <dev>
     git checkout claude/tolatino-repo-setup-1efdil
-    git merge --ff-only claude/new-prompt-xkubrd
+    git merge --ff-only <dev>
     git push -u origin claude/tolatino-repo-setup-1efdil
-    git checkout claude/new-prompt-xkubrd
+    git checkout <dev>
     ```
   - Git identity for commits: `user.email noreply@anthropic.com`, `user.name Claude`.
 - **Live site:** `tolatino.vercel.app` (Vercel; Cloudflare Pages is the eventual target per `CLAUDE.md`).
@@ -36,13 +38,15 @@
   **follows**, Supabase **Realtime** (live likes/comments + new-post pill),
   Instagram-style photo carousel, per-city barrios, post "…" menu (edit/delete/
   report), profile+feed nav card, follow system.
-- **Negocios** (Yelp-style): full 15-category taxonomy + ~430 subcategories, real
+- **Negocios** (Yelp-style): full 15-category taxonomy + ~418 subcategories, real
   subcategory filtering, **dynamic per-category feature filters** (Sugeridos +
   Características), distance filter (5–50 mi), **Verified vs Sin-verificar card
   variants** (verified always on top), **Saved businesses** (♥ persists: localStorage
   guests + Supabase signed-in), **live open/closed status from business hours**
   ("Abierto · cierra en 30 min" / "Cerrado · abre mañana 9am"), real "Publicar
-  negocio", **BizDetail** page with a focused-tab mode (hero collapses; tab bar
+  negocio" (**now collects a weekly Horario editor + Características picker** →
+  new listings ship with live open/closed status and are filterable immediately),
+  **BizDetail** page with a focused-tab mode (hero collapses; tab bar
   pinned to the measured header height; seamless transitions; touch-pan-x).
 - **Geo:** own city gazetteer (`cities` + `search_cities`/`nearest_city`) + free
   street-address pipeline (Photon + US Census + synthesized suggestions, US-only,
@@ -78,7 +82,9 @@ uploads, not committed).
   tab, clicks every chip row, opens every sheet/wizard (first *visible* opener) and
   steps wizards, flagging any horizontal overflow / off-screen element / overlay
   hscroll, with screenshots. **Run after any dashboard UI change; must report
-  "0 violation state(s)".** Last run: **125 states, 0 violations.**
+  "0 violation state(s)".** The harness counts *violations* only (it does not emit
+  a total-states figure, and no run screenshots/logs are committed) — a clean run
+  prints `0 violation state(s)`. Last clean run: **0 violations** (~125 states walked).
 - iOS input auto-zoom disabled via `maximum-scale=1` in `apps/web/app/layout.tsx`
   viewport (kept multi-field forms from blowing past the screen).
 
@@ -115,8 +121,11 @@ apps/web/src/screens/negocio/
 apps/web/src/screens/{Negocios,BizDetail,Comunidad,…}.tsx   consumer screens
 apps/web/src/lib/                      state, live (Supabase), savedBiz, hours,
                                        geo, addresses, follows, interactions, i18n
+apps/web/src/components/PublishModal.tsx   FAB publish flow (post / negocio / evento)
+apps/web/src/components/HoursEditor.tsx     weekly Horario editor (→ businesses.hours)
 apps/web/src/data/fixtures.ts          demo data + taxonomy (SUBCATS, FEATURES_*)
 supabase/migrations/00xx_*.sql         all migrations (paste into SQL Editor)
-tools/mobile-audit/                    Playwright screen-by-screen audit
-docs/{CLAUDE.md,LAUNCH-CHECKLIST.md,PROGRESS.md,design-system/}
+tools/mobile-audit/                    Playwright audits: audit.js (dashboard) + publish.js (publish flow)
+CLAUDE.md (repo root)                  master project memory
+docs/{LAUNCH-CHECKLIST.md,PROGRESS.md,design-system/}
 ```

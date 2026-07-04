@@ -1,0 +1,13 @@
+{
+  "name": "tolatino-mobile-audit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Playwright mobile-layout audits (dashboard + publish flow). Standalone — not part of the pnpm workspace; install Playwright locally with `npm i`.",
+  "scripts": {
+    "audit": "node audit.js",
+    "publish-audit": "node publish.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}

@@ -10,7 +10,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, HelpCircle, Heart, ImagePlus, LogIn, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
+import { Calendar, Clock, HelpCircle, Heart, ImagePlus, LogIn, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp, type PostType } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -19,9 +19,15 @@ import { supabase } from '@/lib/supabase';
 import { uploadPostImages } from '@/lib/image';
 import { getBrowserLocation } from '@/lib/geo';
 import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
+import type { WeekHours } from '@/lib/hours';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
-import { SUBCATS, TAG_BIZ_NAMES, VIEW_PATH, hoodsForCity } from '@/data/fixtures';
+import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, TAG_BIZ_NAMES, VIEW_PATH, hoodsForCity } from '@/data/fixtures';
 import { PostCard, type FeedPost } from '@/components/PostCard';
+import { HoursEditor, defaultWeek, hasAnyHours } from '@/components/HoursEditor';
+
+// Canonical (es) labels of the universal "Sugeridos" features — kept across a
+// category switch (unlike the per-rubro ones, which wouldn't match a new rubro).
+const COMMON_SET = new Set(FEATURES_COMMON.map(([es]) => es));
 
 const MAX_PHOTOS = 3;
 type Photo = { file: File; url: string };
@@ -59,24 +65,40 @@ export function PublishModal() {
   const [bizName, setBizName] = useState('');
   const [bizCat, setBizCat] = useState<CatKey | null>(null);
   const [bizSubs, setBizSubs] = useState<string[]>([]);
+  const [bizFeatures, setBizFeatures] = useState<string[]>([]);
   const [bizPrice, setBizPrice] = useState<string | null>(null);
   const [bizPhone, setBizPhone] = useState('');
   const [bizAddress, setBizAddress] = useState('');
   const [bizAbout, setBizAbout] = useState('');
   const [bizGps, setBizGps] = useState<{ lat: number; lng: number } | null>(null);
   const [bizLocating, setBizLocating] = useState(false);
+  // Weekly schedule is OPTIONAL: null = don't send hours (listing falls back to
+  // the is_open flag). Enabling it seeds a common schedule the owner can adjust.
+  const [bizHours, setBizHours] = useState<WeekHours | null>(null);
   const [bizBusy, setBizBusy] = useState(false);
   const [bizErr, setBizErr] = useState<string | null>(null);
+
+  // Switching category drops the per-rubro feature picks (they wouldn't match a
+  // different rubro); the universal "Sugeridos" ones are kept.
+  const pickBizCat = (k: CatKey) => {
+    setBizCat(k);
+    setBizSubs([]);
+    setBizFeatures((prev) => prev.filter((x) => COMMON_SET.has(x) || FEATURES_BY_CAT[k].some(([es]) => es === x)));
+  };
+  const toggleFeature = (es: string) =>
+    setBizFeatures((prev) => (prev.includes(es) ? prev.filter((x) => x !== es) : [...prev, es]));
 
   const resetBiz = () => {
     setBizName('');
     setBizCat(null);
     setBizSubs([]);
+    setBizFeatures([]);
     setBizPrice(null);
     setBizPhone('');
     setBizAddress('');
     setBizAbout('');
     setBizGps(null);
+    setBizHours(null);
     setBizBusy(false);
     setBizErr(null);
   };
@@ -120,6 +142,9 @@ export function PublishModal() {
         p_tile_b: CAT[bizCat].dot,
         p_lat: coords.lat,
         p_lng: coords.lng,
+        p_features: bizFeatures,
+        // only send a schedule if the owner actually set one → else hours = null
+        p_hours: bizHours && hasAnyHours(bizHours) ? bizHours : null,
       });
       setBizBusy(false);
       if (error) {
@@ -574,14 +599,7 @@ export function PublishModal() {
             <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Categoría', 'Category')}</div>
             <div className="flex flex-wrap gap-2">
               {CAT_KEYS.map((k) => (
-                <button
-                  key={k}
-                  onClick={() => {
-                    setBizCat(k);
-                    setBizSubs([]);
-                  }}
-                  className={chip(bizCat === k)}
-                >
+                <button key={k} onClick={() => pickBizCat(k)} className={chip(bizCat === k)}>
                   {L(CAT[k].es, CAT[k].en)}
                 </button>
               ))}
@@ -609,6 +627,35 @@ export function PublishModal() {
               </div>
             </div>
           )}
+
+          {/* Características — Sugeridos (universales) siempre; las del rubro al elegir categoría */}
+          <div>
+            <div className="mb-1.5 text-[12px] font-extrabold text-ink">
+              {L('Características', 'Features')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span>
+            </div>
+            <div className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[.04em] text-muted">{L('Sugeridos', 'Suggested')}</div>
+            <div className="flex flex-wrap gap-2">
+              {FEATURES_COMMON.map(([es, en]) => (
+                <button key={es} onClick={() => toggleFeature(es)} className={chip(bizFeatures.includes(es))}>
+                  {L(es, en)}
+                </button>
+              ))}
+            </div>
+            {bizCat && (
+              <>
+                <div className="mb-1.5 mt-3 text-[11px] font-extrabold uppercase tracking-[.04em] text-muted">{L(CAT[bizCat].es, CAT[bizCat].en)}</div>
+                <div className="flex flex-wrap gap-2">
+                  {FEATURES_BY_CAT[bizCat]
+                    .filter(([es]) => !COMMON_SET.has(es))
+                    .map(([es, en]) => (
+                      <button key={es} onClick={() => toggleFeature(es)} className={chip(bizFeatures.includes(es))}>
+                        {L(es, en)}
+                      </button>
+                    ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <div>
             <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Precio', 'Price')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
@@ -640,6 +687,34 @@ export function PublishModal() {
             <div className="mt-1 text-[11px] font-semibold text-muted">
               {bizGps ? L('Usaremos tu ubicación exacta.', "We'll use your exact location.") : L(`Si no, aparecerá en ${app.cityShort}.`, `Otherwise it'll show in ${app.cityShort}.`)}
             </div>
+          </div>
+
+          {/* Horario de atención — opcional; alimenta el estado abierto/cerrado en vivo */}
+          <div>
+            <div className="mb-1.5 text-[12px] font-extrabold text-ink">
+              {L('Horario de atención', 'Opening hours')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span>
+            </div>
+            {bizHours ? (
+              <>
+                <HoursEditor week={bizHours} onChange={setBizHours} L={L} />
+                <button onClick={() => setBizHours(null)} className="mt-2 cursor-pointer text-[11.5px] font-extrabold text-muted">
+                  {L('Quitar horario', 'Remove hours')}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setBizHours(defaultWeek())}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark"
+                >
+                  <Clock size={15} strokeWidth={2.4} />
+                  {L('Agregar horario de atención', 'Add opening hours')}
+                </button>
+                <div className="mt-1 text-[11px] font-semibold text-muted">
+                  {L('Sin horario, tu negocio aparece como “Abierto”.', 'Without hours, your business shows as “Open”.')}
+                </div>
+              </>
+            )}
           </div>
 
           {bizErr && <div className="rounded-btn bg-pink-bg px-3 py-2 text-[12px] font-semibold text-pink-dark">{bizErr}</div>}
