@@ -23,7 +23,7 @@ import type { WeekHours } from '@/lib/hours';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, TAG_BIZ_NAMES, VIEW_PATH, hoodsForCity } from '@/data/fixtures';
 import { PostCard, type FeedPost } from '@/components/PostCard';
-import { HoursEditor, defaultWeek, hasAnyHours } from '@/components/HoursEditor';
+import { HoursEditor, defaultWeek } from '@/components/HoursEditor';
 
 // Canonical (es) labels of the universal "Sugeridos" features — kept across a
 // category switch (unlike the per-rubro ones, which wouldn't match a new rubro).
@@ -98,6 +98,7 @@ export function PublishModal() {
     setBizAddress('');
     setBizAbout('');
     setBizGps(null);
+    setBizLocating(false); // clear "Ubicando…" so a hung geolocation prompt can't survive close/reopen
     setBizHours(null);
     setBizBusy(false);
     setBizErr(null);
@@ -143,8 +144,10 @@ export function PublishModal() {
         p_lat: coords.lat,
         p_lng: coords.lng,
         p_features: bizFeatures,
-        // only send a schedule if the owner actually set one → else hours = null
-        p_hours: bizHours && hasAnyHours(bizHours) ? bizHours : null,
+        // null = no schedule (falls back to is_open). A non-null week is a
+        // deliberate schedule and is stored as-is — even "all days closed", so a
+        // business set to closed all week never renders as "Abierto".
+        p_hours: bizHours,
       });
       setBizBusy(false);
       if (error) {

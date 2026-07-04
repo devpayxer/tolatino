@@ -24,6 +24,8 @@ const MAX_FRANJAS = 3;
 // Open at every half-hour across the day (0:00–23:30); close from :30 up to 2am+1.
 const OPEN_OPTS: number[] = Array.from({ length: 1440 / STEP }, (_, i) => i * STEP);
 const CLOSE_OPTS: number[] = Array.from({ length: (CLOSE_MAX - STEP) / STEP + 1 }, (_, i) => STEP + i * STEP);
+const LAST_OPEN = OPEN_OPTS[OPEN_OPTS.length - 1]; // 23:30 — the latest selectable open time
+const GAP = 60; // an added franja must start at least this long after the previous close
 
 /** A sensible starting schedule (Mon–Fri 9–6, Sat 9–2, Sun closed). */
 export const defaultWeek = (): WeekHours =>
@@ -61,10 +63,20 @@ export function HoursEditor({
       }),
     );
 
+  // A new franja must start STRICTLY after the previous close (never clamp below
+  // it — that would overlap the earlier interval, and bizStatus, which returns on
+  // the first matching interval, would then misreport the closing time).
+  const canAddFranja = (d: number): boolean => {
+    const day = week[d];
+    if (day.length === 0 || day.length >= MAX_FRANJAS) return false;
+    return day[day.length - 1][1] + GAP <= LAST_OPEN;
+  };
+
   const addFranja = (d: number) => {
-    const last = week[d][week[d].length - 1];
-    const start = Math.min((last ? last[1] : 540) + 60, 1410);
-    setDay(d, [...week[d], [start, Math.min(start + 180, CLOSE_MAX)]]);
+    const day = week[d];
+    const start = day.length ? day[day.length - 1][1] + GAP : 540;
+    if (start > LAST_OPEN) return; // no valid non-overlapping slot left
+    setDay(d, [...day, [start, Math.min(start + 180, CLOSE_MAX)]]);
   };
 
   const removeFranja = (d: number, idx: number) => setDay(d, week[d].filter((_, j) => j !== idx));
@@ -80,7 +92,7 @@ export function HoursEditor({
   const selectCls =
     'h-11 w-full min-w-0 rounded-field border-[1.5px] border-lilac-line bg-app px-2.5 text-[13px] font-bold text-ink outline-none focus:border-primary';
   const seg = (on: boolean) =>
-    `flex-1 cursor-pointer rounded-full py-1.5 text-[11.5px] font-extrabold transition-colors ${on ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`;
+    `flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-full py-1.5 text-[11.5px] font-extrabold transition-colors ${on ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`;
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -144,14 +156,14 @@ export function HoursEditor({
                         type="button"
                         onClick={() => removeFranja(d, idx)}
                         aria-label={L('Quitar franja', 'Remove slot')}
-                        className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
+                        className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
                       >
-                        <X size={13} strokeWidth={2.6} />
+                        <X size={14} strokeWidth={2.6} />
                       </button>
                     )}
                   </div>
                 ))}
-                {day.length < MAX_FRANJAS && (
+                {canAddFranja(d) && (
                   <button
                     type="button"
                     onClick={() => addFranja(d)}
