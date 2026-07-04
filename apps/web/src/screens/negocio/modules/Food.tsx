@@ -1092,13 +1092,14 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div><div className={fieldLabel}>{L('Nombre del platillo', 'Item name')}</div><input value={edit.name} onChange={(e) => upEdit({ name: e.target.value })} className={inputCls} /></div>
           <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={es ? edit.es : edit.en} onChange={(e) => upEdit(es ? { es: e.target.value } : { en: e.target.value })} rows={2} className={`${inputCls} resize-none`} /></div>
-          <div className="flex gap-3">
-            <div className="flex-1"><div className={fieldLabel}>{L('Precio', 'Price')}</div><div className="flex items-center rounded-field border-[1.5px] border-lilac-line px-3 focus-within:border-primary"><span className="text-[13px] font-bold text-muted-2">$</span><input value={edit.price} onChange={(e) => upEdit({ price: Number(String(e.target.value).replace(/[^0-9.]/g, '')) || 0 })} className="min-w-0 flex-1 border-none bg-transparent px-2 py-2.5 text-[13px] font-semibold text-ink outline-none" /></div></div>
-            <div className="flex-1">
+          {/* stacked on phones — the 3 availability chips don't fit half a 392px row */}
+          <div className="flex flex-col gap-3.5 sm:flex-row sm:gap-3">
+            <div className="sm:flex-1"><div className={fieldLabel}>{L('Precio', 'Price')}</div><div className="flex items-center rounded-field border-[1.5px] border-lilac-line px-3 focus-within:border-primary"><span className="text-[13px] font-bold text-muted-2">$</span><input value={edit.price} onChange={(e) => upEdit({ price: Number(String(e.target.value).replace(/[^0-9.]/g, '')) || 0 })} className="min-w-0 flex-1 border-none bg-transparent px-2 py-2.5 text-[13px] font-semibold text-ink outline-none" /></div></div>
+            <div className="sm:flex-1">
               <div className={fieldLabel}>{L('Disponibilidad', 'Availability')}</div>
-              <div className="flex gap-1.5">
+              <div className="flex min-w-0 gap-1.5">
                 {([['in', L('En stock', 'In')], ['low', L('Bajo', 'Low')], ['out', '86']] as [Stock, string][]).map(([k, lab]) => (
-                  <button key={k} onClick={() => upEdit({ stock: k })} className={`flex-none cursor-pointer rounded-[9px] px-2.5 py-2 text-[10.5px] font-extrabold ${edit.stock === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{lab}</button>
+                  <button key={k} onClick={() => upEdit({ stock: k })} className={`min-w-0 flex-1 cursor-pointer truncate rounded-[9px] px-2 py-2 text-[10.5px] font-extrabold sm:flex-none sm:px-2.5 ${edit.stock === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{lab}</button>
                 ))}
               </div>
             </div>
