@@ -16,7 +16,7 @@ import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data
 import { useSavedBiz } from '@/lib/savedBiz';
 import { fetchBusinessPhotos } from '@/lib/live';
 import { useNow } from '@/lib/useNow';
-import { bizStatus, fmtDayHours, statusLabel } from '@/lib/hours';
+import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 
 // es → en lookup for feature labels ("Lo que ofrece"), so the owner-selected
@@ -101,8 +101,16 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const saved = savedBiz.isSaved(b.slug);
   const now = useNow();
-  const status = statusLabel(bizStatus(b.hours, now, b.open), L);
+  const status = statusLabel(bizStatus(b.hours, now, b.open, b.hoursExceptions), L);
   const statusTone = status.tone === 'open' ? 'text-green' : status.tone === 'soon' ? 'text-amber-ink' : 'text-[#A59FB6]';
+  // A date-specific override active today (holiday / vacation / weather) — shown
+  // on the "Hoy" line so the special hours (or closure + reason) are explicit.
+  const todayEx = now ? activeException(b.hoursExceptions, now) : null;
+  const todayExText = todayEx
+    ? todayEx.closed || todayEx.open == null || todayEx.close == null
+      ? L('Cerrado', 'Closed')
+      : `${fmtLong(todayEx.open)} – ${fmtLong(todayEx.close)}`
+    : null;
   const catLabel = L(CAT[b.cat].es, CAT[b.cat].en);
   const revRaw = L(b.revEs, b.revEn);
   const [quote, rvName] = revRaw.includes('—') ? [revRaw.split('—')[0].trim(), revRaw.split('—').slice(1).join('—').trim()] : [revRaw, ''];
@@ -553,10 +561,20 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
             <span className="text-[15.5px] font-extrabold text-ink">{L('Horario', 'Hours')}</span>
             <span className={`text-[12.5px] font-extrabold ${statusTone}`}>{status.text}</span>
           </div>
-          {/* today's hours (real when the business has a schedule) */}
-          <div className="mt-[11px] flex items-center justify-between text-[13.5px] font-semibold text-ink-soft">
+          {/* today's hours — a date override (holiday/vacation) wins over the
+              weekly schedule, with the owner's reason as an amber badge. */}
+          <div className="mt-[11px] flex items-center justify-between gap-2 text-[13.5px] font-semibold text-ink-soft">
             <span className="font-extrabold text-ink">{L('Hoy', 'Today')}</span>
-            <span>{b.hours && now ? fmtDayHours(b.hours[now.getDay()], L('Cerrado', 'Closed')) : '9:00 am – 10:00 pm'}</span>
+            {todayExText != null ? (
+              <span className="flex min-w-0 items-center justify-end gap-1.5">
+                {todayEx?.label && (
+                  <span className="truncate rounded-md bg-amber-bg px-1.5 py-0.5 text-[10px] font-extrabold text-amber-ink">{todayEx.label}</span>
+                )}
+                <span className="flex-none">{todayExText}</span>
+              </span>
+            ) : (
+              <span>{b.hours && now ? fmtDayHours(b.hours[now.getDay()], L('Cerrado', 'Closed')) : '9:00 am – 10:00 pm'}</span>
+            )}
           </div>
           <button onClick={() => setWeekOpen(!weekOpen)} className="mt-2 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-extrabold text-primary-dark">
             {L('Ver toda la semana', 'See full week')}
@@ -568,7 +586,9 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 // WEEK is Monday-first; our hours are Sunday-first (0=Sun..6=Sat).
                 const hoursIdx = i === 6 ? 0 : i + 1;
                 const isToday = now != null && now.getDay() === hoursIdx;
-                const label = b.hours ? fmtDayHours(b.hours[hoursIdx], L('Cerrado', 'Closed')) : i === 6 ? '10:00 am – 6:00 pm' : '9:00 am – 10:00 pm';
+                const label = isToday && todayExText != null
+                  ? todayExText
+                  : b.hours ? fmtDayHours(b.hours[hoursIdx], L('Cerrado', 'Closed')) : i === 6 ? '10:00 am – 6:00 pm' : '9:00 am – 10:00 pm';
                 return (
                   <div key={d[0]} className="flex items-center justify-between text-[12.5px] font-semibold">
                     <span className={isToday ? 'font-extrabold text-ink' : 'text-ink-soft'}>{B(d)}</span>

@@ -14,6 +14,38 @@
 export type Interval = [number, number]; // [openMin, closeMin]; close may exceed 1440
 export type WeekHours = Interval[][]; // length 7, index 0 = Sunday
 
+// A date-specific override of the weekly schedule — holidays, vacations, weather,
+// etc. Applies to a single date, or a `date`..`end` range. `closed` wins; when
+// open with special hours, `open`/`close` are minutes-from-midnight.
+export type HoursException = {
+  id: string;
+  date: string; // 'YYYY-MM-DD' (start)
+  end?: string; // 'YYYY-MM-DD' (inclusive range end); omit for a single day
+  closed: boolean;
+  open?: number;
+  close?: number;
+  label?: string; // owner's reason, e.g. "Navidad", "Vacaciones"
+};
+
+/** Local calendar date → 'YYYY-MM-DD' (matches the date inputs the owner picks). */
+export function isoDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** The exception covering a given date, if any (first match wins). */
+export function activeException(exceptions: HoursException[] | undefined, d: Date): HoursException | null {
+  if (!exceptions?.length) return null;
+  const iso = isoDate(d);
+  return exceptions.find((e) => iso >= e.date && iso <= (e.end || e.date)) ?? null;
+}
+
+/** The effective intervals for an actual date — an exception overrides the week. */
+function effectiveIntervals(hours: WeekHours, exceptions: HoursException[] | undefined, d: Date): Interval[] {
+  const ex = activeException(exceptions, d);
+  if (ex) return ex.closed || ex.open == null || ex.close == null ? [] : [[ex.open, ex.close]];
+  return hours[d.getDay()];
+}
+
 export type BizStatus =
   | { open: true; soon: boolean; minsToClose: number; closeMin: number; hasHours: boolean }
   | { open: false; nextOpenMin: number | null; nextOpenDay: number; dayOffset: number; hasHours: boolean };
@@ -53,26 +85,29 @@ export function fmtDayHours(day: Interval[], closedLabel: string): string {
  * Resolve the live status. `now == null` (pre-mount) or missing hours →
  * fall back to the stored `open` boolean so the label stays sensible.
  */
-export function bizStatus(hours: WeekHours | undefined, now: Date | null, fallbackOpen: boolean): BizStatus {
+export function bizStatus(hours: WeekHours | undefined, now: Date | null, fallbackOpen: boolean, exceptions?: HoursException[]): BizStatus {
   if (!validWeek(hours) || now == null) {
     return fallbackOpen
       ? { open: true, soon: false, minsToClose: Infinity, closeMin: -1, hasHours: false }
       : { open: false, nextOpenMin: null, nextOpenDay: 0, dayOffset: 0, hasHours: false };
   }
 
-  const day = now.getDay();
   const nowMin = now.getHours() * 60 + now.getMinutes();
+  const dateAt = (off: number) => {
+    const d = new Date(now);
+    d.setDate(now.getDate() + off);
+    return d;
+  };
 
-  // Open because of an interval that started today.
-  for (const [o, c] of hours[day]) {
+  // Open because of an interval that started today (exception-aware).
+  for (const [o, c] of effectiveIntervals(hours, exceptions, now)) {
     if (nowMin >= o && nowMin < c) {
       const minsToClose = c - nowMin;
       return { open: true, soon: minsToClose <= 60, minsToClose, closeMin: c, hasHours: true };
     }
   }
   // Open because of yesterday's interval that runs past midnight into now.
-  const prev = (day + 6) % 7;
-  for (const [o, c] of hours[prev]) {
+  for (const [o, c] of effectiveIntervals(hours, exceptions, dateAt(-1))) {
     if (c > 1440) {
       const shifted = nowMin + 1440;
       if (shifted >= o && shifted < c) {
@@ -82,21 +117,21 @@ export function bizStatus(hours: WeekHours | undefined, now: Date | null, fallba
       }
     }
   }
-  // Closed → find the next opening within the next 7 days.
+  // Closed → find the next opening within the next 7 days (exception-aware).
   for (let off = 0; off < 8; off++) {
-    const d = (day + off) % 7;
-    const opens = hours[d].map(([o]) => o).sort((a, b) => a - b);
+    const d = dateAt(off);
+    const opens = effectiveIntervals(hours, exceptions, d).map(([o]) => o).sort((a, b) => a - b);
     for (const o of opens) {
       if (off === 0 && o <= nowMin) continue; // already passed today
-      return { open: false, nextOpenMin: o, nextOpenDay: d, dayOffset: off, hasHours: true };
+      return { open: false, nextOpenMin: o, nextOpenDay: d.getDay(), dayOffset: off, hasHours: true };
     }
   }
   return { open: false, nextOpenMin: null, nextOpenDay: 0, dayOffset: 0, hasHours: true };
 }
 
 /** True if open right now (dynamic when hours exist, else the stored flag). */
-export function isOpenNow(hours: WeekHours | undefined, now: Date | null, fallbackOpen: boolean): boolean {
-  return bizStatus(hours, now, fallbackOpen).open;
+export function isOpenNow(hours: WeekHours | undefined, now: Date | null, fallbackOpen: boolean, exceptions?: HoursException[]): boolean {
+  return bizStatus(hours, now, fallbackOpen, exceptions).open;
 }
 
 export type Tone = 'open' | 'soon' | 'closed';

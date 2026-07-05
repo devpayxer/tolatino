@@ -112,7 +112,7 @@ export function NegociosScreen() {
     if (f.subCat) list = list.filter((b) => (b.subcats ?? []).includes(f.subCat as string));
     if (f.price) list = list.filter((b) => b.price === f.price);
     if (f.rating) list = list.filter((b) => parseFloat(b.rating) >= parseFloat(f.rating!));
-    if (f.openNow) list = list.filter((b) => isOpenNow(b.hours, now, b.open));
+    if (f.openNow) list = list.filter((b) => isOpenNow(b.hours, now, b.open, b.hoursExceptions));
     if (f.features.length) list = list.filter((b) => f.features.every((x) => (b.features ?? []).includes(x)));
     // distance always applies; keep businesses with unknown distance ("— mi")
     list = list.filter((b) => {
@@ -591,7 +591,7 @@ const TONE_CLASS = { open: 'text-green', soon: 'text-amber-ink', closed: 'text-[
 function BizMeta({ b }: { b: Business }) {
   const { L } = useLang();
   const now = useNow();
-  const st = statusLabel(bizStatus(b.hours, now, b.open), L);
+  const st = statusLabel(bizStatus(b.hours, now, b.open, b.hoursExceptions), L);
   return (
     <div className="flex flex-wrap items-center gap-x-1.5 text-[12.5px] font-bold">
       <span className="text-amber">★</span>

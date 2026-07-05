@@ -30,6 +30,7 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     price: (r.price_level as Business['price']) ?? '$',
     open: Boolean(r.is_open),
     hours: (r.hours as Business['hours']) ?? undefined,
+    hoursExceptions: (r.hours_exceptions as Business['hoursExceptions']) ?? undefined,
     verified: r.tier !== 'free',
     endorse: Number(r.endorse_count ?? 0),
     t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],

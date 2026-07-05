@@ -3,7 +3,7 @@
 // the shapes below are the contract the UI is built against.
 
 import { tile, type CatKey } from '@/lib/tiles';
-import type { WeekHours } from '@/lib/hours';
+import type { WeekHours, HoursException } from '@/lib/hours';
 
 // hours helpers — minutes from midnight; build a week as [Sun..Sat].
 const hm = (h: number, m = 0) => h * 60 + m;
@@ -44,6 +44,7 @@ export type Business = {
   price: '$' | '$$' | '$$$';
   open: boolean; // fallback when `hours` is absent
   hours?: WeekHours; // real schedule → drives the live open/closed status
+  hoursExceptions?: HoursException[]; // date overrides (holidays/vacations)
   verified: boolean;
   endorse: number;
   t: [string, string];

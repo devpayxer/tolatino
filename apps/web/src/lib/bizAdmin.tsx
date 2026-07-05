@@ -11,6 +11,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import type { Mods, Rubro, Tier } from '@/screens/negocio/tabs';
+import type { HoursException } from '@/lib/hours';
 
 // One row of the owner's business, admin view (all editable fields).
 export type BizRow = {
@@ -33,6 +34,7 @@ export type BizRow = {
   message_channel: string | null; // 'sms' | 'whatsapp'
   message_phone: string | null; // separate messaging number; null = use `phone`
   hours: number[][][] | null; // WeekHours jsonb
+  hours_exceptions: HoursException[] | null; // date overrides (holidays/vacations)
   features: string[];
   card_features: string[] | null; // up to 3 highlighted on the search card
   subcategories: string[];
@@ -93,6 +95,7 @@ const DEMO_BIZ: BizRow = {
   message_channel: 'whatsapp',
   message_phone: null,
   hours: [[[600, 1200]], [[540, 1320]], [[540, 1320]], [[540, 1320]], [[540, 1320]], [[540, 1380]], [[540, 1380]]],
+  hours_exceptions: null,
   features: ['A domicilio', 'Para llevar', 'Comedor', 'Se habla español'],
   card_features: ['A domicilio', 'Para llevar', 'Se habla español'],
   subcategories: ['Tacos', 'Comida mexicana'],
@@ -130,6 +133,7 @@ const DEMO_BIZ_2: BizRow = {
   message_channel: 'sms',
   message_phone: null,
   hours: [[], [[540, 1140]], [[540, 1140]], [[540, 1140]], [[540, 1140]], [[540, 1080]], []],
+  hours_exceptions: null,
   features: ['Con cita', 'Sin cita', 'Se habla español'],
   card_features: ['Con cita', 'Se habla español'],
   subcategories: ['Salón de belleza', 'Uñas'],
@@ -150,7 +154,7 @@ const DEMO_BIZ_2: BizRow = {
 // controlled by billing / the review system, not the listing editor.
 const WRITABLE: (keyof BizRow)[] = [
   'name', 'category_id', 'tagline_es', 'tagline_en', 'price_level', 'about_es', 'about_en',
-  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings',
+  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings', 'hours_exceptions',
 ];
 
 type BizAdminCtx = {
