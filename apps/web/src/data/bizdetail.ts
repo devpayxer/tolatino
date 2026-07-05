@@ -119,6 +119,16 @@ export const SVC_DATES: { lab: Bi; sub: string }[] = [
 
 export const SVC_TIMES = ['9:00 am', '12:00 pm', '3:00 pm', '6:00 pm'];
 
+// Consumer-facing rentable items (mirror the business Rental module's catalog).
+// Rented by hour / day / week with a refundable deposit — drives the Renta tab.
+export type RentItem = { n: Bi; d: Bi; tile: string; hour: number | null; day: number; week: number; dep: number };
+export const RENTAL: RentItem[] = [
+  { n: ['Salón de eventos', 'Event hall'], d: ['Quinces, bodas y fiestas · hasta 120', 'Quinces, weddings & parties · up to 120'], tile: '#EAE2F8 0 11px,#DCCEF2 11px 22px', hour: 60, day: 350, week: 1400, dep: 150 },
+  { n: ['Mesa larga · 8 lugares', 'Long table · 8 seats'], d: ['Mesa de banquete con sillas', 'Banquet table with chairs'], tile: '#F3E2CE 0 11px,#ECD3B4 11px 22px', hour: null, day: 45, week: 180, dep: 40 },
+  { n: ['Vajilla de fiesta · 100', 'Party tableware · 100'], d: ['Platos, copas y cubiertos completos', 'Full plates, glasses & cutlery'], tile: '#FBEFD3 0 11px,#F5E1B0 11px 22px', hour: null, day: 120, week: 480, dep: 200 },
+  { n: ['Bocina y micrófono', 'Speaker & microphone'], d: ['Sonido profesional para tu evento', 'Pro sound for your event'], tile: '#E3F5EA 0 11px,#D6E7D0 11px 22px', hour: 25, day: 90, week: 360, dep: 80 },
+];
+
 export const DETAIL_EVENTS: { d: Bi; day: string; title: Bi; loc: Bi; base: number; desc: Bi }[] = [
   { d: ['JUL', 'JUL'], day: '27', title: ['Noche de Lotería', 'Lotería Night'], loc: ['En el local · 7:00 pm', 'In-store · 7:00 pm'], base: 88, desc: ['Ven a jugar lotería con premios, antojitos y música en vivo. Entrada libre para toda la familia.', 'Come play lotería with prizes, snacks and live music. Free entry for the whole family.'] },
   { d: ['AGO', 'AUG'], day: '13', title: ['Feria del Taco', 'Taco Fair'], loc: ['Terraza · 12:00 pm', 'Patio · 12:00 pm'], base: 220, desc: ['Degustación de tacos, concurso de salsas y música regional toda la tarde.', 'Taco tasting, a salsa contest and regional music all afternoon.'] },

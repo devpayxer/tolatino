@@ -66,15 +66,18 @@ create policy "update business_rentals" on public.business_rentals for update
 
 -- ── EVENT TICKETS (customer buys tickets for an event) ─────────────────────
 create table if not exists public.event_tickets (
-  id         uuid primary key default gen_random_uuid(),
-  event_id   uuid not null references public.events(id) on delete cascade,
-  user_id    uuid not null references auth.users(id) on delete cascade,
-  qty        int not null default 1,
-  total      numeric,
-  code       text not null default upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
-  status     text not null default 'confirmed' check (status in ('confirmed', 'used', 'refunded')),
-  created_at timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  event_id      uuid not null references public.events(id) on delete cascade,
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  customer_name text,
+  qty           int not null default 1,
+  total         numeric,
+  code          text not null default upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
+  status        text not null default 'confirmed' check (status in ('confirmed', 'used', 'refunded')),
+  created_at    timestamptz not null default now()
 );
+-- idempotent: backfill the column on DBs where the table pre-existed
+alter table public.event_tickets add column if not exists customer_name text;
 create index if not exists event_tickets_user_idx  on public.event_tickets (user_id, created_at desc);
 create index if not exists event_tickets_event_idx on public.event_tickets (event_id, created_at desc);
 alter table public.event_tickets enable row level security;

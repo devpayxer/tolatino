@@ -42,6 +42,17 @@ type EventDbRow = {
   tile_a: string | null; tile_b: string | null;
 };
 
+// A ticket a customer bought for this event (event_tickets) — the other side of
+// the consumer's "Comprar boletos" action. customer_name is stored on insert.
+type TicketRow = {
+  id: string; customer_name: string | null; qty: number; total: number | null; code: string; status: string; created_at: string;
+};
+const TICKET_STATUS: Record<string, { es: string; en: string; cls: string }> = {
+  confirmed: { es: 'Confirmado', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
+  used:      { es: 'Usado',      en: 'Used',      cls: 'bg-lilac-2 text-ink-2' },
+  refunded:  { es: 'Reembolsado', en: 'Refunded', cls: 'bg-lilac-2 text-ink-2' },
+};
+
 // The public events table only allows four categories; map the wizard's event
 // "type" to the nearest one (there is no 'mercado' source type in the wizard).
 const EVENT_CAT_MAP: Record<string, 'musica' | 'mercado' | 'familia' | 'comida'> = {
@@ -76,6 +87,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [settingState, setSettingState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: false, 4: true });
   const [checkedIn, setCheckedIn] = useState<Record<string, boolean>>({});
   const [attendeeQuery, setAttendeeQuery] = useState('');
+  const [ticketRows, setTicketRows] = useState<TicketRow[] | null>(null);
   const [wizStep, setWizStep] = useState(0);
   const [wizMax, setWizMax] = useState(0);
   const [draft, setDraft] = useState<EventDraft>(newDraft);
@@ -194,6 +206,26 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const isCheckedIn = (a: Attendee) => (a.name in checkedIn ? checkedIn[a.name] : a.base);
   const checkedInCount = attendees.filter(isCheckedIn).length;
   const revenue = mgEv.sold * mgEv.priceN;
+
+  // Real ticket sales for the managed event (event_tickets). Owner-scoped via
+  // RLS; demo / no-uuid keeps null so the Boletos tab shows only the tier design.
+  useEffect(() => {
+    if (!persistable || !mgEv.dbId || !supabase) { setTicketRows(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!
+        .from('event_tickets')
+        .select('id,customer_name,qty,total,code,status,created_at')
+        .eq('event_id', mgEv.dbId)
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      setTicketRows(error || !Array.isArray(data) ? [] : (data as unknown as TicketRow[]));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mgEv.dbId, admin.demo]);
+  const ticketsSold = (ticketRows ?? []).reduce((n, t) => n + (t.qty || 0), 0);
+  const ticketsRevenue = (ticketRows ?? []).reduce((n, t) => n + (Number(t.total) || 0), 0);
 
   const tierDefs = useMemo(() => [
     { label: 'General', priceN: 85, color: '#7B61FF', sold: Math.round(mgEv.sold * 0.6), cap: Math.round(mgEv.cap * 0.6) },
@@ -607,6 +639,32 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---- Boletos ----
   const ticketsView = (
     <div className="flex flex-col gap-3">
+      {/* Real ticket sales bought by customers (event_tickets). Shows when the
+          owner's event has at least one purchase; demo events show only tiers. */}
+      {ticketRows && ticketRows.length > 0 && (
+        <div className={`${cardCls} p-3.5`}>
+          <div className="mb-2.5 flex items-center gap-2">
+            <Ticket size={15} strokeWidth={2.2} className="text-primary-dark" />
+            <span className="text-[12.5px] font-extrabold text-ink">{L('Boletos vendidos', 'Tickets sold')}</span>
+            <span className="ml-auto text-[11px] font-bold text-muted-2">{ticketsSold} · ${ticketsRevenue.toLocaleString()}</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {ticketRows.map((t) => {
+              const st = TICKET_STATUS[t.status] ?? TICKET_STATUS.confirmed;
+              return (
+                <div key={t.id} className="flex items-center gap-2.5 border-t border-hair pt-2 first:border-0 first:pt-0">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12px] font-extrabold text-ink">{t.customer_name || L('Cliente', 'Customer')}</span>
+                    <span className="block truncate text-[10px] font-semibold text-muted-2">{t.qty} {t.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')} · {L('código', 'code')} {t.code}</span>
+                  </span>
+                  {t.total != null && Number(t.total) > 0 && <span className="flex-none text-[12px] font-extrabold text-ink">${Number(t.total).toLocaleString()}</span>}
+                  <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <div className="grid gap-2.5 md:grid-cols-2">
         {tierDefs.map((tk) => {
           const pct = Math.round((tk.sold / tk.cap) * 100);

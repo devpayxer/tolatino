@@ -6,17 +6,21 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useAuth } from '@/lib/auth';
+import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useNow } from '@/lib/useNow';
 import { bizStatus, fmtDayHours, statusLabel } from '@/lib/hours';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
-import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_DATES, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
+import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_DATES, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
 
-type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'events' | 'staff' | 'related' | 'reviews';
+type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
+type RentPeriod = 'hour' | 'day' | 'week';
 
 type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string };
 
@@ -28,7 +32,18 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const B = (pair: Bi) => L(pair[0], pair[1]);
   const app = useApp();
   const savedBiz = useSavedBiz();
+  const act = useMyActivity();
+  const { user } = useAuth();
+  const router = useRouter();
   const id = b.id;
+
+  // Local confirmation toast (mirrors the customer Cuenta screen). Width-capped
+  // + centered so it can never cause horizontal overflow on mobile.
+  const [toast, setToast] = useState('');
+  const flash = (m: string) => {
+    setToast(m);
+    window.setTimeout(() => setToast(''), 1800);
+  };
 
   const [tab, setTab] = useState<TabKey>('overview');
   const [contactOpen, setContactOpen] = useState(false);
@@ -49,6 +64,11 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [svcDate, setSvcDate] = useState(0);
   const [svcTime, setSvcTime] = useState(0);
   const [svcDone, setSvcDone] = useState(false);
+  const [rentIdx, setRentIdx] = useState<number | null>(null);
+  const [rentPeriod, setRentPeriod] = useState<RentPeriod>('day');
+  const [rentQty, setRentQty] = useState(1);
+  const [rentDate, setRentDate] = useState(0);
+  const [rentDone, setRentDone] = useState(false);
   const [evIdx, setEvIdx] = useState<number | null>(null);
   const [evGoing, setEvGoing] = useState<Record<number, boolean>>({});
   const [updLikes, setUpdLikes] = useState<Record<number, boolean>>({});
@@ -124,6 +144,84 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       return n;
     });
 
+  // --- Real customer create-actions (myActivity) -------------------------
+  // Every create inserts as the signed-in customer; guests are routed to
+  // /entrar instead (never insert as a guest). Item NAMES + the business slug
+  // are stored; the creators resolve slug → uuid internally.
+
+  // Quick single-item order. Fixture prices are numeric, so total = unit price.
+  const orderItem = (catKey: string, it: MenuItem) => {
+    if (!user) { router.push('/entrar'); return; }
+    act.placeOrder(b.slug, [{ name: B(it.n), qty: 1, price: it.price }], it.price, 'pickup');
+    flash(L('Pedido enviado · míralo en Mi cuenta', 'Order sent · see it in My account'));
+  };
+
+  // Build a real ISO from the existing picker: svcDate = day offset from today
+  // (0 = Hoy, 1 = Mañana, …); svcTime parsed from the "9:00 am" label.
+  const svcStartISO = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + svcDate);
+    const m = (SVC_TIMES[svcTime] || '').match(/(\d+):(\d+)\s*(am|pm)/i);
+    if (m) {
+      let h = Number(m[1]) % 12;
+      if (/pm/i.test(m[3])) h += 12;
+      d.setHours(h, Number(m[2]), 0, 0);
+    }
+    return d.toISOString();
+  };
+
+  const confirmBooking = async () => {
+    if (svcIdx === null) return;
+    if (!user) { router.push('/entrar'); return; }
+    setSvcDone(true); // keep the existing success screen (optimistic)
+    const { error } = await act.book(b.slug, B(SERVICES[svcIdx].n), svcStartISO(), null, null);
+    if (!error) flash(L('Reserva enviada · míralo en Mi cuenta', 'Booking sent · see it in My account'));
+  };
+
+  // Rental: rate per hour/day/week × qty, plus a refundable deposit. Start = the
+  // picked SVC_DATES day at 9am; end derived from period × qty.
+  const rentRate = (it: (typeof RENTAL)[number], p: RentPeriod) =>
+    p === 'hour' ? it.hour ?? it.day : p === 'week' ? it.week : it.day;
+  const rentStartISO = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + rentDate);
+    d.setHours(9, 0, 0, 0);
+    return d.toISOString();
+  };
+  const rentEndISO = () => {
+    const d = new Date(rentStartISO());
+    if (rentPeriod === 'hour') d.setHours(d.getHours() + rentQty);
+    else if (rentPeriod === 'week') d.setDate(d.getDate() + rentQty * 7);
+    else d.setDate(d.getDate() + rentQty);
+    return d.toISOString();
+  };
+  const confirmRental = async () => {
+    if (rentIdx === null) return;
+    if (!user) { router.push('/entrar'); return; }
+    const it = RENTAL[rentIdx];
+    const fee = rentRate(it, rentPeriod) * rentQty;
+    setRentDone(true); // optimistic success screen
+    const { error } = await act.rent(b.slug, B(it.n), rentStartISO(), rentEndISO(), rentQty, fee + it.dep, it.dep);
+    if (!error) flash(L('Renta solicitada · míralo en Mi cuenta', 'Rental requested · see it in My account'));
+  };
+
+  // Events: real RSVP when the fixture has a public slug; otherwise fall back to
+  // the existing optimistic local toggle (the detail fixtures carry no slug yet).
+  const evSlug = (i: number) => (DETAIL_EVENTS[i] as { slug?: string }).slug;
+  const evOn = (i: number) => {
+    const s = evSlug(i);
+    return s ? act.goingSlugs.has(s) : !!evGoing[i];
+  };
+  const toggleEv = (i: number) => {
+    const s = evSlug(i);
+    if (s) {
+      if (!user) { router.push('/entrar'); return; }
+      act.rsvp(s, !act.goingSlugs.has(s));
+      return;
+    }
+    setEvGoing((m) => ({ ...m, [i]: !m[i] }));
+  };
+
   const modalUnit = useMemo(() => {
     if (!itemModal) return 0;
     let add = 0;
@@ -142,6 +240,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     ['menu', L('Menú', 'Menu')],
     ['shop', L('Tienda', 'Shop')],
     ['services', L('Servicios', 'Services')],
+    ['rentals', L('Renta', 'Rentals')],
     ['events', L('Eventos', 'Events')],
     ['staff', L('Equipo', 'Staff')],
     ['related', L('Relacionados', 'Related')],
@@ -260,16 +359,24 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           )}
         </span>
       </span>
-      <span
-        onClick={(e) => {
-          if (withAdd) {
-            e.stopPropagation();
-            addSimple(catKey, it);
-          }
-        }}
-        className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-lilac text-primary-dark"
-      >
-        <Plus size={15} strokeWidth={2.8} />
+      <span className="flex flex-none flex-col items-center gap-1.5">
+        <span
+          onClick={(e) => {
+            if (withAdd) {
+              e.stopPropagation();
+              addSimple(catKey, it);
+            }
+          }}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-lilac text-primary-dark"
+        >
+          <Plus size={15} strokeWidth={2.8} />
+        </span>
+        <span
+          onClick={(e) => { e.stopPropagation(); orderItem(catKey, it); }}
+          className="cursor-pointer whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[10px] font-extrabold text-white shadow-cta-sm"
+        >
+          {L('Pedir', 'Order')}
+        </span>
       </span>
     </button>
   );
@@ -581,11 +688,36 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         </div>
       )}
 
+      {/* ============ RENTALS ============ */}
+      {tab === 'rentals' && (
+        <div className="flex flex-col gap-2.5 pt-4">
+          {RENTAL.map((it, i) => (
+            <Card key={it.n[0]} className="flex items-center gap-3 p-3.5">
+              <span className="h-[62px] w-[62px] flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }} />
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-extrabold text-ink">{B(it.n)}</div>
+                <div className="mt-0.5 text-[12px] font-semibold text-muted">{B(it.d)}</div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[12.5px] font-extrabold text-primary-dark">
+                  <span>{money(it.day)}/{L('día', 'day')}</span>
+                  <span className="text-[11px] font-bold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => { setRentIdx(i); setRentPeriod('day'); setRentQty(1); setRentDate(0); setRentDone(false); }}
+                className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
+              >
+                {L('Rentar', 'Rent')}
+              </button>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {/* ============ EVENTS ============ */}
       {tab === 'events' && (
         <div className="flex flex-col gap-2.5 pt-4">
           {DETAIL_EVENTS.map((e, i) => {
-            const on = !!evGoing[i];
+            const on = evOn(i);
             return (
               <Card key={e.title[0]} className="flex items-center gap-3.5 p-4" onClick={() => setEvIdx(i)}>
                 <span className="flex h-[54px] w-[54px] flex-none flex-col items-center justify-center rounded-tile bg-lilac">
@@ -600,7 +732,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 <button
                   onClick={(ev) => {
                     ev.stopPropagation();
-                    setEvGoing((m) => ({ ...m, [i]: !m[i] }));
+                    toggleEv(i);
                   }}
                   className={`flex-none cursor-pointer rounded-field px-4 py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'}`}
                 >
@@ -885,7 +1017,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 </button>
               ))}
             </div>
-            <PrimaryBtn className="mt-5" onClick={() => setSvcDone(true)}>
+            <PrimaryBtn className="mt-5" onClick={confirmBooking}>
               {L('Solicitar reserva', 'Request booking')}
             </PrimaryBtn>
           </>
@@ -906,6 +1038,74 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         )}
       </Overlay>
 
+      {/* rental booking modal */}
+      <Overlay open={rentIdx !== null} onClose={() => setRentIdx(null)} width={440}>
+        {rentIdx !== null && !rentDone && (() => {
+          const it = RENTAL[rentIdx];
+          const periods: RentPeriod[] = it.hour != null ? ['hour', 'day', 'week'] : ['day', 'week'];
+          const pLabel = (p: RentPeriod) => ({ hour: L('Hora', 'Hour'), day: L('Día', 'Day'), week: L('Semana', 'Week') }[p]);
+          const fee = rentRate(it, rentPeriod) * rentQty;
+          return (
+            <>
+              <OverlayTitle title={B(it.n)} onClose={() => setRentIdx(null)} />
+              <div className="text-[12.5px] font-semibold text-muted">{B(it.d)}</div>
+
+              <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Periodo', 'Period')}</div>
+              <div className="flex gap-1.5">
+                {periods.map((p) => (
+                  <button key={p} onClick={() => setRentPeriod(p)} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[12.5px] font-extrabold ${rentPeriod === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                    {pLabel(p)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Cantidad', 'Quantity')}</div>
+              <div className="flex w-fit items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
+                <button onClick={() => setRentQty(Math.max(1, rentQty - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
+                <span className="w-6 text-center text-[14px] font-extrabold">{rentQty}</span>
+                <button onClick={() => setRentQty(rentQty + 1)} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">+</button>
+              </div>
+
+              <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Fecha de inicio', 'Start date')}</div>
+              <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                {SVC_DATES.map((d, i) => (
+                  <button key={d.sub} onClick={() => setRentDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${rentDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                    <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
+                    <span className={`block text-[10.5px] font-bold ${rentDate === i ? 'text-white/80' : 'text-muted'}`}>{d.sub}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
+                <div className="flex justify-between"><span>{L('Renta', 'Rental')} · {rentQty} × {pLabel(rentPeriod)}</span><span>{money(fee)}</span></div>
+                <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable', 'Refundable deposit')}</span><span>{money(it.dep)}</span></div>
+                <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
+                  <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(fee + it.dep)}</span>
+                </div>
+              </div>
+
+              <PrimaryBtn className="mt-4" onClick={confirmRental}>
+                {L('Solicitar renta', 'Request rental')}
+              </PrimaryBtn>
+            </>
+          );
+        })()}
+        {rentIdx !== null && rentDone && (
+          <div className="flex flex-col items-center px-2 py-6 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
+              <Check size={28} strokeWidth={3} className="text-green" />
+            </span>
+            <div className="mt-4 text-[19px] font-extrabold text-ink">{L('¡Renta solicitada!', 'Rental requested!')}</div>
+            <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
+              {L('El negocio confirmará disponibilidad y el depósito. Míralo en Mi cuenta.', 'The business will confirm availability and the deposit. See it in My account.')}
+            </div>
+            <PrimaryBtn className="mt-5" onClick={() => { setRentIdx(null); setRentDone(false); }}>
+              {L('Listo', 'Done')}
+            </PrimaryBtn>
+          </div>
+        )}
+      </Overlay>
+
       {/* detail event modal */}
       <Overlay open={evIdx !== null} onClose={() => setEvIdx(null)} width={440}>
         {evIdx !== null && (
@@ -916,13 +1116,13 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
             </div>
             <div className="mt-3 text-[13.5px] font-medium leading-[1.55] text-ink-soft">{B(DETAIL_EVENTS[evIdx].desc)}</div>
             <div className="mt-2 text-[12px] font-bold text-muted-2">
-              {DETAIL_EVENTS[evIdx].base + (evGoing[evIdx] ? 1 : 0)} {L('asisten', 'going')}
+              {DETAIL_EVENTS[evIdx].base + (evOn(evIdx) ? 1 : 0)} {L('asisten', 'going')}
             </div>
             <PrimaryBtn
-              className={`mt-4 ${evGoing[evIdx] ? '!bg-green-bg !text-green-dark !shadow-none' : ''}`}
-              onClick={() => setEvGoing((m) => ({ ...m, [evIdx]: !m[evIdx] }))}
+              className={`mt-4 ${evOn(evIdx) ? '!bg-green-bg !text-green-dark !shadow-none' : ''}`}
+              onClick={() => toggleEv(evIdx)}
             >
-              {evGoing[evIdx] ? L('Voy ✓', 'Going ✓') : L('Asistir', 'Attend')}
+              {evOn(evIdx) ? L('Voy ✓', 'Going ✓') : L('Asistir', 'Attend')}
             </PrimaryBtn>
           </>
         )}
@@ -957,6 +1157,13 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           {L('Publicar reseña', 'Post review')}
         </PrimaryBtn>
       </Overlay>
+
+      {/* confirmation toast — width-capped + centered (never overflows) */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 z-[90] w-[calc(100%-28px)] max-w-[360px] -translate-x-1/2 rounded-xl bg-ink px-4 py-3 text-center text-[12.5px] font-bold text-white shadow-modal">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

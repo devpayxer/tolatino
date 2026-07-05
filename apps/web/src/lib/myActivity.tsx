@@ -124,10 +124,10 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     if (!supabase || !user) return { error: 'auth' };
     const evId = await idOf('events', eventSlug);
     if (!evId) return { error: 'event-not-found' };
-    const { error } = await supabase.from('event_tickets').insert({ event_id: evId, user_id: user.id, qty, total });
+    const { error } = await supabase.from('event_tickets').insert({ event_id: evId, user_id: user.id, customer_name: custName, qty, total });
     if (!error) refresh();
     return { error: error ? error.message : null };
-  }, [user, refresh, idOf]);
+  }, [user, custName, refresh, idOf]);
 
   const rsvp = useCallback<Ctx['rsvp']>(async (eventSlug, on) => {
     if (!supabase || !user) return { error: 'auth' };

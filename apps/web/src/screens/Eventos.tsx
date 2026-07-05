@@ -4,9 +4,12 @@
 // chips + date chips, event grid with real "Voy" state, detail + tickets.
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Check, MapPin, Ticket } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useAuth } from '@/lib/auth';
+import { useMyActivity } from '@/lib/myActivity';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, type EventItem } from '@/data/fixtures';
@@ -23,11 +26,19 @@ export function EventosScreen() {
   const { L } = useLang();
   const app = useApp();
   const { events: EVENTS } = useLiveData();
+  const { user } = useAuth();
+  const router = useRouter();
+  const act = useMyActivity();
   const [cat, setCat] = useState<'all' | 'free' | EventItem['cat']>('all');
   const [date, setDate] = useState<'all' | string>('all');
   const [detailId, setDetailId] = useState<number | null>(null);
   const [ticketQty, setTicketQty] = useState(1);
   const [orderDone, setOrderDone] = useState(false);
+  const [toast, setToast] = useState('');
+  const flash = (m: string) => {
+    setToast(m);
+    window.setTimeout(() => setToast(''), 1900);
+  };
 
   const catLabel = CAT_LABEL(L);
   const sl = app.search.trim().toLowerCase();
@@ -52,18 +63,49 @@ export function EventosScreen() {
   }, [EVENTS]);
 
   const fe = EVENTS[0]; // featured — may be undefined when a city has no events
-  const feOn = fe ? !!app.going[fe.id] : false;
+  const feOn = fe ? (fe.slug ? act.goingSlugs.has(fe.slug) : !!app.going[fe.id]) : false;
   const detail = detailId !== null ? EVENTS[detailId] : null;
-  const detailOn = detail ? !!app.going[detail.id] : false;
+  const detailOn = detail ? (detail.slug ? act.goingSlugs.has(detail.slug) : !!app.going[detail.id]) : false;
   const priceNum = detail && !detail.free ? parseFloat((detail.price ?? '$0').replace('$', '')) : 0;
 
+  // "Voy" toggle. Live events (with a slug) write attendance via the API — never
+  // as a guest (route to /entrar). Fixture events (no slug) keep the local demo
+  // behavior. Optimistic app.going keeps the count/label instant either way.
+  const rsvpToggle = (e: EventItem) => {
+    const on = e.slug ? act.goingSlugs.has(e.slug) : !!app.going[e.id];
+    if (e.slug) {
+      if (!user) {
+        router.push('/entrar');
+        return;
+      }
+      void act.rsvp(e.slug, !on);
+    }
+    app.toggleGoing(e.id);
+  };
+
+  // Ticket purchase. Live events buy via the API (total = price × qty, or null if
+  // free); fixture events fall back to the local confirmation-only demo flow.
+  const buyTicket = () => {
+    if (!detail) return;
+    if (detail.slug && !user) {
+      router.push('/entrar');
+      return;
+    }
+    const total = detail.free ? null : priceNum * ticketQty;
+    if (detail.slug) {
+      void act.buyTickets(detail.slug, ticketQty, total);
+      flash(L('¡Boleto comprado! Míralo en Mi cuenta', 'Ticket purchased! See it in My account'));
+    }
+    setOrderDone(true);
+  };
+
   const goingBtn = (e: EventItem, big = false) => {
-    const on = !!app.going[e.id];
+    const on = e.slug ? act.goingSlugs.has(e.slug) : !!app.going[e.id];
     return (
       <button
         onClick={(ev) => {
           ev.stopPropagation();
-          app.toggleGoing(e.id);
+          rsvpToggle(e);
         }}
         className={`flex-none cursor-pointer rounded-full px-4 py-2 text-[12.5px] font-extrabold ${big ? 'px-5' : ''} ${
           on ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'
@@ -113,7 +155,7 @@ export function EventosScreen() {
         <button
           onClick={(ev) => {
             ev.stopPropagation();
-            if (feOn) app.toggleGoing(fe.id);
+            if (feOn) rsvpToggle(fe);
             else {
               setDetailId(0);
               setTicketQty(1);
@@ -254,7 +296,7 @@ export function EventosScreen() {
             {detail.free ? (
               <PrimaryBtn
                 className={`mt-5 ${detailOn ? '!bg-green-bg !text-green-dark !shadow-none' : ''}`}
-                onClick={() => app.toggleGoing(detail.id)}
+                onClick={() => rsvpToggle(detail)}
               >
                 {detailOn ? L('Voy ✓', 'Going ✓') : L('Asistir · Gratis', 'Attend · Free')}
               </PrimaryBtn>
@@ -271,7 +313,7 @@ export function EventosScreen() {
                     <button onClick={() => setTicketQty(ticketQty + 1)} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-[16px] font-extrabold">+</button>
                   </span>
                 </div>
-                <PrimaryBtn className="mt-3" onClick={() => setOrderDone(true)}>
+                <PrimaryBtn className="mt-3" onClick={buyTicket}>
                   {L('Comprar ', 'Buy ')}{ticketQty} · ${(priceNum * ticketQty).toFixed(2)}
                 </PrimaryBtn>
               </div>
@@ -300,6 +342,13 @@ export function EventosScreen() {
           </div>
         )}
       </Overlay>
+
+      {toast && (
+        <div className="fixed bottom-[86px] left-1/2 z-[70] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal md:bottom-6">
+          <Check size={14} strokeWidth={3} className="text-green" />
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

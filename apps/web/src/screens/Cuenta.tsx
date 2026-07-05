@@ -414,7 +414,7 @@ export function CuentaScreen() {
                     <span className="block truncate text-[13px] font-extrabold text-ink">{evTitle(g.events)}</span>
                     <span className="block truncate text-[11.5px] font-semibold text-muted">{g.events ? `${L(g.events.venue_es ?? '', g.events.venue_en ?? '')} · ${dt(g.events.starts_at)}` : ''}</span>
                   </span>
-                  <button onClick={() => act.rsvp(g.event_id, false)} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-3 py-1.5 text-[11px] font-extrabold text-ink-2">{L('Quitar', 'Remove')}</button>
+                  {g.events?.slug && <button onClick={() => act.rsvp(g.events!.slug, false)} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-3 py-1.5 text-[11px] font-extrabold text-ink-2">{L('Quitar', 'Remove')}</button>}
                 </div>
               ))}
             </div>

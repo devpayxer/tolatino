@@ -19,12 +19,27 @@ import {
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { supabase } from '@/lib/supabase';
 import { insertBizItem, listBizItems, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 
 type Cat = 'space' | 'furniture' | 'tableware' | 'equipo';
 type Period = 'hour' | 'day' | 'week';
 type Condition = 'perfect' | 'minor' | 'major';
-type Sub = 'items' | 'calendar' | 'deposits' | 'damage' | 'pricing';
+type Sub = 'items' | 'requests' | 'calendar' | 'deposits' | 'damage' | 'pricing';
+
+// An incoming customer rental (business_rentals) — the other side of the
+// consumer's "Rentar" action on a listing. customer_name is stored on insert.
+type RentalReq = {
+  id: string; customer_name: string | null; item_name: string; start_at: string;
+  end_at: string | null; qty: number; total: number | null; deposit: number | null; status: string;
+};
+const REQ_STATUS: Record<string, { es: string; en: string; cls: string }> = {
+  pending:   { es: 'Pendiente',  en: 'Pending',   cls: 'bg-amber-bg text-amber-ink' },
+  confirmed: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
+  out:       { es: 'En uso',     en: 'Out',       cls: 'bg-lilac text-primary-dark' },
+  returned:  { es: 'Devuelto',   en: 'Returned',  cls: 'bg-lilac-2 text-ink-2' },
+  cancelled: { es: 'Cancelado',  en: 'Cancelled', cls: 'bg-lilac-2 text-ink-2' },
+};
 
 type Item = {
   id: number; dbId?: string; es: string; en: string; cat: Cat; tile: string; booked: number;
@@ -139,6 +154,31 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
 
+  // Incoming customer rental requests (business_rentals). Real owner → load their
+  // rows; demo keeps a small sample so the tab is never empty in the prototype.
+  const [reqRows, setReqRows] = useState<RentalReq[] | null>(null);
+  useEffect(() => {
+    if (!persistable || !real || !supabase) { setReqRows(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!
+        .from('business_rentals')
+        .select('id,customer_name,item_name,start_at,end_at,qty,total,deposit,status')
+        .eq('business_id', real.id)
+        .order('start_at', { ascending: false });
+      if (cancelled) return;
+      setReqRows(error || !Array.isArray(data) ? [] : (data as unknown as RentalReq[]));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  const setReqStatus = async (id: string, status: string) => {
+    setReqRows((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, status } : r)) : rows));
+    if (persistable && supabase) await supabase.from('business_rentals').update({ status }).eq('id', id);
+    flash(L('Renta actualizada', 'Rental updated'));
+  };
+
   const selected = items.find((i) => i.id === openId) ?? null;
 
   // ---- Free gate ----
@@ -170,6 +210,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const subTabs: [Sub, string][] = [
     ['items', L('Artículos', 'Items')],
+    ['requests', L('Solicitudes', 'Requests')],
     ['calendar', L('Calendario', 'Calendar')],
     ['deposits', L('Depósitos', 'Deposits')],
     ['damage', L('Daños', 'Damage')],
@@ -269,6 +310,64 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <Plus size={16} strokeWidth={2.6} />{L('Agregar artículo', 'Add rental item')}
         </button>
       </div>
+    </div>
+  );
+
+  // ===== REQUESTS (incoming customer rentals) =====
+  const reqSeed: RentalReq[] = [
+    { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', qty: 1, total: 320, deposit: 200, status: 'pending' },
+    { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', qty: 1, total: 170, deposit: 80, status: 'confirmed' },
+  ];
+  const reqList = reqRows ?? reqSeed;
+  const fmtReqDate = (iso: string) => new Date(iso).toLocaleDateString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short' });
+  const requestsPane = (
+    <div className="flex flex-col gap-3">
+      <div className="text-[11.5px] font-medium leading-relaxed text-muted">
+        {L('Solicitudes de renta de tus clientes. Confirma para reservar el artículo y retener el depósito.', 'Rental requests from your customers. Confirm to reserve the item and hold the deposit.')}
+      </div>
+      {reqList.length === 0 ? (
+        <div className={`${cardCls} p-6 text-center text-[12.5px] font-semibold text-muted`}>{L('Sin solicitudes por ahora.', 'No requests yet.')}</div>
+      ) : (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {reqList.map((r) => {
+            const st = REQ_STATUS[r.status] ?? REQ_STATUS.pending;
+            return (
+              <div key={r.id} className={`${cardCls} p-3.5`}>
+                <div className="flex items-start gap-2.5">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12.5px] font-extrabold text-ink">{r.customer_name || L('Cliente', 'Customer')}</span>
+                    <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted-2">{r.item_name}</span>
+                  </span>
+                  <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
+                </div>
+                <div className="mt-2.5 flex items-center gap-2 border-t border-hair pt-2.5 text-[10.5px] font-semibold text-muted-2">
+                  <span className="min-w-0 truncate">{r.qty}× · {fmtReqDate(r.start_at)}{r.end_at ? ` – ${fmtReqDate(r.end_at)}` : ''}</span>
+                  <span className="ml-auto flex-none text-[12px] font-extrabold text-ink">{r.total != null ? money(Number(r.total)) : '—'}</span>
+                </div>
+                {r.deposit != null && Number(r.deposit) > 0 && (
+                  <div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}</div>
+                )}
+                {(r.status === 'pending' || r.status === 'confirmed' || r.status === 'out') && (
+                  <div className="mt-2.5 flex gap-2">
+                    {r.status === 'pending' && (
+                      <button onClick={() => setReqStatus(r.id, 'confirmed')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>
+                    )}
+                    {r.status === 'confirmed' && (
+                      <button onClick={() => setReqStatus(r.id, 'out')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Entregar', 'Hand out')}</button>
+                    )}
+                    {r.status === 'out' && (
+                      <button onClick={() => setReqStatus(r.id, 'returned')} className="flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink">{L('Marcar devuelto', 'Mark returned')}</button>
+                    )}
+                    {r.status === 'pending' && (
+                      <button onClick={() => setReqStatus(r.id, 'cancelled')} className="flex-none cursor-pointer rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-ink-2">{L('Rechazar', 'Decline')}</button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 
@@ -526,6 +625,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       {sub === 'items' && itemsPane}
+      {sub === 'requests' && requestsPane}
       {sub === 'calendar' && calendarPane}
       {sub === 'deposits' && depositsPane}
       {sub === 'damage' && damagePane}
