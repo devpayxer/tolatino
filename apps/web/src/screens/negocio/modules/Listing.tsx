@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { Clock, ExternalLink, Image as ImageIcon, Loader2, Shield, Store } from 'lucide-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { formatPhone } from '@/lib/phone';
+import { SUBCATS } from '@/data/fixtures';
 import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
 import type { PanelCtx } from '@/screens/negocio/tabs';
@@ -20,6 +21,7 @@ import { Toast } from '@/screens/negocio/modules/_page';
 type Draft = {
   name: string;
   category_id: string;
+  subcategories: string[]; // canonical (es) labels from SUBCATS[category]
   tagline: string;
   price_level: string;
   phone: string;
@@ -44,10 +46,11 @@ const draftOf = (b: {
   name: string; category_id: string; tagline_es: string | null; price_level: string | null;
   phone: string | null; address: string | null; website: string | null;
   accepts_messages: boolean; message_channel: string | null; message_phone: string | null;
-  about_es: string | null;
+  subcategories: string[] | null; about_es: string | null;
 }): Draft => ({
   name: b.name ?? '',
   category_id: b.category_id ?? 'FoodDrinks',
+  subcategories: b.subcategories ?? [],
   tagline: b.tagline_es ?? '',
   price_level: b.price_level ?? '',
   phone: formatPhone(b.phone ?? ''),
@@ -82,11 +85,24 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => (d ? { ...d, [k]: v } : d));
 
+  // Changing category swaps the valid subcategories → drop any that no longer apply.
+  const setCategory = (cat: string) =>
+    setDraft((d) => {
+      if (!d) return d;
+      const valid = new Set((SUBCATS[cat as CatKey] ?? []).map(([es]) => es));
+      return { ...d, category_id: cat, subcategories: d.subcategories.filter((s) => valid.has(s)) };
+    });
+  const toggleSub = (es: string) =>
+    setDraft((d) => (d ? { ...d, subcategories: d.subcategories.includes(es) ? d.subcategories.filter((x) => x !== es) : [...d.subcategories, es] } : d));
+
+  const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
+
   const dirty =
     !!real &&
     !!draft &&
     (draft.name.trim() !== (real.name ?? '') ||
       draft.category_id !== (real.category_id ?? '') ||
+      !sameSet(draft.subcategories, real.subcategories ?? []) ||
       draft.tagline.trim() !== (real.tagline_es ?? '') ||
       draft.price_level !== (real.price_level ?? '') ||
       draft.phone.trim() !== (real.phone ?? '') ||
@@ -103,6 +119,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     const { error } = await admin.update({
       name: draft.name.trim(),
       category_id: draft.category_id,
+      subcategories: draft.subcategories,
       tagline_es: draft.tagline.trim() || null,
       tagline_en: draft.tagline.trim() || null,
       price_level: draft.price_level || null,
@@ -167,7 +184,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
             <label className="block">
               {label(L('Categoría', 'Category'))}
-              <select value={draft.category_id} onChange={(e) => set('category_id', e.target.value)} className={`${inputCls} cursor-pointer`}>
+              <select value={draft.category_id} onChange={(e) => setCategory(e.target.value)} className={`${inputCls} cursor-pointer`}>
                 {CAT_KEYS.map((k) => (
                   <option key={k} value={k}>
                     {L(CAT[k as CatKey].es, CAT[k as CatKey].en)}
@@ -175,6 +192,32 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                 ))}
               </select>
             </label>
+
+            {/* Subcategorías del rubro elegido — se despliegan al elegir categoría */}
+            {(SUBCATS[draft.category_id as CatKey]?.length ?? 0) > 0 && (
+              <div>
+                {label(
+                  <>
+                    {L('Subcategorías', 'Subcategories')} <span className="font-semibold text-muted">· {L('elige las que apliquen', 'pick any that apply')}</span>
+                  </>,
+                )}
+                <div className="flex max-h-[168px] flex-wrap gap-2 overflow-y-auto">
+                  {SUBCATS[draft.category_id as CatKey].map(([es, en]) => {
+                    const on = draft.subcategories.includes(es);
+                    return (
+                      <button
+                        key={es}
+                        type="button"
+                        onClick={() => toggleSub(es)}
+                        className={`cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                      >
+                        {L(es, en)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <label className="block">
               {label(L('Eslogan', 'Tagline'))}
