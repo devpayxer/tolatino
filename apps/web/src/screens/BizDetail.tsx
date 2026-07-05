@@ -14,6 +14,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
+import { fetchBusinessPhotos } from '@/lib/live';
 import { useNow } from '@/lib/useNow';
 import { bizStatus, fmtDayHours, statusLabel } from '@/lib/hours';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
@@ -55,6 +56,18 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [contactOpen, setContactOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState(false);
   const [photoTile, setPhotoTile] = useState<string | null>(null);
+
+  // Real gallery photos for this listing (by slug). Empty → placeholder tiles.
+  const [photos, setPhotos] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    setPhotos([]);
+    fetchBusinessPhotos(b.slug).then((urls) => { if (!cancelled) setPhotos(urls); });
+    return () => { cancelled = true; };
+  }, [b.slug]);
+  const cover = photos[0] ?? null;
+  // Lightbox holds either a real photo URL (http) or a placeholder gradient.
+  const isUrl = (s: string) => /^https?:\/\//.test(s);
 
   // cart
   const [cart, setCart] = useState<Record<string, CartLine>>({});
@@ -407,7 +420,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       <div className={focused ? 'hidden' : ''}>
       {/* hero */}
       <div className="relative mb-4 h-[200px] overflow-hidden rounded-card" style={{ background: bizTile(b) }}>
-        <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A8FC4]">[ foto ]</div>
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover} alt={b.name} onClick={() => setPhotoTile(cover)} className="absolute inset-0 h-full w-full cursor-pointer object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A8FC4]">[ foto ]</div>
+        )}
         <div className="absolute left-3 right-3 top-3 flex items-center justify-between">
           <button onClick={onClose} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Volver', 'Back')}>
             <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
@@ -426,7 +444,9 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
             {L('Martes 2x1', 'Taco Tue 2x1')}
           </span>
         )}
-        <span className="absolute bottom-3 right-3.5 rounded-[10px] bg-[rgba(30,27,46,.6)] px-[11px] py-[5px] text-[11.5px] font-bold text-white">1 / 8</span>
+        {photos.length > 0 && (
+          <span className="absolute bottom-3 right-3.5 rounded-[10px] bg-[rgba(30,27,46,.6)] px-[11px] py-[5px] text-[11.5px] font-bold text-white">1 / {photos.length}</span>
+        )}
       </div>
 
       {/* title + meta */}
@@ -561,9 +581,14 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           {divider}
           {secTitle(L('Fotos', 'Photos'))}
           <div className="no-scrollbar flex gap-2 overflow-x-auto">
-            {DETAIL_PHOTOS.map((t) => (
-              <button key={t} onClick={() => setPhotoTile(t)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px]" style={{ background: t }} />
-            ))}
+            {photos.length > 0
+              ? photos.map((u) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={u} src={u} alt="" onClick={() => setPhotoTile(u)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px] border border-hair object-cover" />
+                ))
+              : DETAIL_PHOTOS.map((t) => (
+                  <button key={t} onClick={() => setPhotoTile(t)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px]" style={{ background: t }} />
+                ))}
           </div>
           {divider}
           {secTitle(L('Ubicación', 'Location'))}
@@ -911,10 +936,15 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         </div>
       </Overlay>
 
-      {/* photo lightbox */}
+      {/* photo lightbox — a real photo (URL) or a placeholder gradient */}
       {photoTile && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(20,16,34,.82)] p-6" onClick={() => setPhotoTile(null)}>
-          <div className="h-[70%] w-full max-w-[640px] rounded-card" style={{ background: photoTile }} />
+          {isUrl(photoTile) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoTile} alt="" className="max-h-[80%] w-auto max-w-full rounded-card object-contain" />
+          ) : (
+            <div className="h-[70%] w-full max-w-[640px] rounded-card" style={{ background: photoTile }} />
+          )}
         </div>
       )}
 

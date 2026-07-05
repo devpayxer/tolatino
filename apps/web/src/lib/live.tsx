@@ -58,6 +58,15 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
   };
 }
 
+/** Fetch a business's gallery photo URLs by public slug (cover first). Empty
+ *  when offline / none uploaded — the listing falls back to placeholders. */
+export async function fetchBusinessPhotos(slug: string): Promise<string[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('business_photos_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data)) return [];
+  return (data as { url: string }[]).map((r) => String(r.url)).filter(Boolean);
+}
+
 /** Fetch a single business by its public slug (geo-independent). Returns a
  *  mapped Business or null (offline / not found / unknown category). */
 export async function fetchBusinessBySlug(slug: string): Promise<Business | null> {
