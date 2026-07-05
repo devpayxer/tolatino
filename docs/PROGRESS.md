@@ -3,7 +3,7 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-04.
+> Last updated: 2026-07-05.
 
 ## How this project ships (read first)
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,
@@ -95,6 +95,10 @@ uploads, not committed).
 - ⏳ **Apply `0019_business_photos.sql` + `0020_business_modules.sql`** (both
   idempotent) so the dashboard's **Fotos** and **Configurar módulos** persist. The
   combined SQL is pasted in chat.
+- ⏳ **Apply `0031_profile_settings.sql` + `0032_consumer_transactions.sql`** (both
+  idempotent) — power Mi cuenta (bio/settings) and the **two-sided transaction
+  loop** (orders/bookings gain `user_id`; new `business_rentals`, `event_tickets`,
+  `event_attendance`; dual customer↔owner RLS). Combined SQL pasted in chat.
 
 ## Dashboard → real data (in progress, 2026-07-04)
 Building the business panel section-by-section from fixture/demo into real,
@@ -145,10 +149,31 @@ chat) for the data to persist in production.
 Every dashboard-real change: **build + `tools/mobile-audit/audit.js` (125 states,
 0 overflow at 392px)**; the demo mock exercises the real editors.
 
+## Consumer transaction loop — DONE (2026-07-05)
+The two-sided loop is complete and live. A customer creates a transaction from a
+listing (or Eventos) and the SAME row shows in BOTH Mi cuenta and the business
+dashboard (dual customer↔owner RLS, migration 0032).
+- **Create actions** (`lib/myActivity.tsx` — `MyActivityProvider`, signed-in only;
+  guests routed to `/entrar`):
+  - `BizDetail` — **Pedir** (menu/shop order), **Reservar** (Servicios booking),
+    new **Renta** tab + modal (period/qty/date + refundable deposit), event RSVP.
+  - `Eventos` — **Voy** RSVP + **Comprar boletos**.
+- **Mi cuenta (`/cuenta`)** manages all five: Mis pedidos · Reservas · Rentas ·
+  Boletos · Voy a asistir (status pills, live counts).
+- **Business side** sees the same rows: orders → **Pedidos/Pagos**, bookings →
+  **Servicios**, rentals → **Renta · Solicitudes** (confirm/hand-out/return),
+  tickets → **Eventos · Boletos** (buyer + qty + code + total).
+- Consumer objects carry the public `slug` (not the uuid); creators resolve
+  slug→uuid internally. Verified: tsc, build, and mobile audits all green —
+  dashboard 0, **consumer 0/20** (`tools/mobile-audit/consumer.js`), publish 0.
+- Deferred (see LAUNCH-CHECKLIST §5): business-side RSVP **names** (attendance has
+  no name column); rentals/tickets are request-stage, **not charged** yet.
+
 ## Next steps (priority order)
-1. **Founder applies `0019`+`0020`** (above) so Fotos/Módulos persist in prod.
-2. **Continue the dashboard-real conversion** in nav order (Módulos content next),
-   backing each section with Supabase and keeping the audit green.
+1. **Founder applies `0019`+`0020`+`0031`+`0032`** (above) so Fotos/Módulos and the
+   transaction loop persist in prod.
+2. **Continue the dashboard-real conversion** in nav order, backing each remaining
+   rollup/visual surface with Supabase and keeping the audit green.
 3. Continue **`docs/LAUNCH-CHECKLIST.md`** deferrals: real event creation, delivery
    checkout, saved-biz cross-city, claim/verify, moderation, push, next-intl, payments.
 

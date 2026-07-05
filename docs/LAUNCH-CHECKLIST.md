@@ -231,6 +231,23 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   applied in order in the Supabase SQL Editor — they are pasted into chat when
   created (non-negotiable #6).
 
+## 5. Consumer transaction loop (deferred pieces)
+
+- [ ] **Business-side RSVP attendee names.** The two-sided loop is live: a
+  customer's order / booking / rental / ticket / "Voy" is created from the
+  listing (or Eventos) and shows in BOTH Mi cuenta and the business dashboard
+  (orders → Pedidos/Pagos, bookings → Servicios, rentals → Renta·Solicitudes,
+  tickets → Eventos·Boletos). `event_attendance` stores only `user_id` (no
+  name) and profiles are self-read under RLS, so the business can show a **count**
+  of "Voy" RSVPs but not the attendees **by name**. To surface names later,
+  either denormalize `customer_name` onto `event_attendance` (like tickets) or
+  add a scoped profiles-read policy for event owners. Non-transactional, low
+  priority.
+- [ ] **Rentals/tickets are request-stage, not paid.** Rentals insert as
+  `pending` (business confirms → hand-out → returned); tickets/deposits are
+  recorded but **not charged** — payments come in the transaction phase
+  (Stripe/etc., see §2). No real money moves yet.
+
 ---
 
-_Last updated: 2026-07-03. Add to this file as new deferrals appear._
+_Last updated: 2026-07-05. Add to this file as new deferrals appear._
