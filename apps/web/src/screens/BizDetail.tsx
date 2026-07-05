@@ -92,6 +92,15 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const phone = b.phone || '(832) 555-4521';
   const address = b.address || '5821 Bellaire Blvd, Houston, TX';
 
+  // Message channel (opt-in from the dashboard). Build a functional link from the
+  // phone: WhatsApp needs an international number (assume US when 10 digits), SMS
+  // opens the native texting app. Only enabled when the owner opted in + has a phone.
+  const phoneDigits = phone.replace(/\D/g, '');
+  const intlDigits = phoneDigits.length === 10 ? `1${phoneDigits}` : phoneDigits;
+  const msgOn = !!b.acceptsMessages && phoneDigits.length > 0;
+  const msgIsSms = b.messageChannel === 'sms';
+  const msgHref = msgIsSms ? `sms:+${intlDigits}` : `https://wa.me/${intlDigits}`;
+
   const cartCount = Object.values(cart).reduce((n, l) => n + l.qty, 0);
   const cartTotal = Object.values(cart).reduce((n, l) => n + l.qty * l.unit, 0);
   const deliveryFee = cartCount > 0 ? 2.99 : 0;
@@ -852,7 +861,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         <div className="flex flex-col">
           {([
             { Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA' },
-            { Icon: MessageCircle, label: L('Mensaje', 'Message'), sub: 'WhatsApp', color: '#6D4DF6', bg: '#EFEBFF' },
+            // Mensaje only shows when the owner opted in; opens SMS or WhatsApp.
+            ...(msgOn ? [{ Icon: MessageCircle, label: L('Mensaje', 'Message'), sub: msgIsSms ? L('Mensaje de texto', 'Text message') : 'WhatsApp', color: '#6D4DF6', bg: '#EFEBFF', href: msgHref }] : []),
             // Sitio web only shows when the owner set one; opens the real site.
             ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#2F6FED', bg: '#E5EFFB', href: `https://${b.website}` }] : []),
             { Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6' },

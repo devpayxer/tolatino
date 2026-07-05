@@ -28,6 +28,8 @@ export type BizRow = {
   city: string | null;
   phone: string | null;
   website: string | null;
+  accepts_messages: boolean;
+  message_channel: string | null; // 'sms' | 'whatsapp'
   hours: number[][][] | null; // WeekHours jsonb
   features: string[];
   subcategories: string[];
@@ -46,7 +48,7 @@ export type BizRow = {
 // Columns we read for the admin view (never the raw `location` geography — it
 // serializes as WKB hex and we don't need it here).
 const COLS =
-  'id,slug,name,category_id,tagline_es,tagline_en,tier,price_level,about_es,about_en,address,city,phone,website,hours,features,subcategories,specialty_es,specialty_en,is_open,rating,reviews_count,tile_a,tile_b,modules,settings,created_at';
+  'id,slug,name,category_id,tagline_es,tagline_en,tier,price_level,about_es,about_en,address,city,phone,website,accepts_messages,message_channel,hours,features,subcategories,specialty_es,specialty_en,is_open,rating,reviews_count,tile_a,tile_b,modules,settings,created_at';
 
 // The 15 public categories → the dashboard's 5 rubros (drives module defaults &
 // category-specific copy). Anything not clearly food/beauty/auto/rental is retail.
@@ -88,6 +90,8 @@ const DEMO_BIZ: BizRow = {
   city: 'Houston, TX',
   phone: '(832) 555-4521',
   website: 'taquerialaesperanza.com',
+  accepts_messages: true,
+  message_channel: 'whatsapp',
   hours: [[[600, 1200]], [[540, 1320]], [[540, 1320]], [[540, 1320]], [[540, 1320]], [[540, 1380]], [[540, 1380]]],
   features: ['A domicilio', 'Para llevar', 'Comedor', 'Se habla español'],
   subcategories: ['Tacos', 'Comida mexicana'],
@@ -108,7 +112,7 @@ const DEMO_BIZ: BizRow = {
 // controlled by billing / the review system, not the listing editor.
 const WRITABLE: (keyof BizRow)[] = [
   'name', 'category_id', 'tagline_es', 'tagline_en', 'price_level', 'about_es', 'about_en',
-  'address', 'city', 'phone', 'website', 'hours', 'features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings',
+  'address', 'city', 'phone', 'website', 'accepts_messages', 'message_channel', 'hours', 'features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings',
 ];
 
 type BizAdminCtx = {

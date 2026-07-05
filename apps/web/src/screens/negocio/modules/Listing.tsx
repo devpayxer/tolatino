@@ -24,6 +24,8 @@ type Draft = {
   phone: string;
   address: string;
   website: string;
+  acceptsMessages: boolean;
+  messageChannel: string; // 'sms' | 'whatsapp'
   about: string;
 };
 
@@ -37,7 +39,8 @@ const normalizeWebsite = (v: string): string | null => {
 
 const draftOf = (b: {
   name: string; category_id: string; tagline_es: string | null; price_level: string | null;
-  phone: string | null; address: string | null; website: string | null; about_es: string | null;
+  phone: string | null; address: string | null; website: string | null;
+  accepts_messages: boolean; message_channel: string | null; about_es: string | null;
 }): Draft => ({
   name: b.name ?? '',
   category_id: b.category_id ?? 'FoodDrinks',
@@ -46,6 +49,8 @@ const draftOf = (b: {
   phone: b.phone ?? '',
   address: b.address ?? '',
   website: b.website ?? '',
+  acceptsMessages: b.accepts_messages ?? false,
+  messageChannel: b.message_channel ?? 'whatsapp',
   about: b.about_es ?? '',
 });
 
@@ -81,6 +86,8 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       draft.phone.trim() !== (real.phone ?? '') ||
       draft.address.trim() !== (real.address ?? '') ||
       draft.website.trim() !== (real.website ?? '') ||
+      draft.acceptsMessages !== (real.accepts_messages ?? false) ||
+      draft.messageChannel !== (real.message_channel ?? 'whatsapp') ||
       draft.about.trim() !== (real.about_es ?? ''));
 
   const save = async () => {
@@ -95,6 +102,8 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       phone: draft.phone.trim() || null,
       address: draft.address.trim() || null,
       website: normalizeWebsite(draft.website),
+      accepts_messages: draft.acceptsMessages,
+      message_channel: draft.acceptsMessages ? (draft.messageChannel || 'whatsapp') : null,
       about_es: draft.about.trim() || null,
       about_en: draft.about.trim() || null,
     });
@@ -193,6 +202,49 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               {label(L('Teléfono', 'Phone'))}
               <input value={draft.phone} onChange={(e) => set('phone', e.target.value)} className={inputCls} placeholder="(713) 555-0100" inputMode="tel" />
             </label>
+
+            {/* Contacto por mensaje: opt-in + channel. Uses the phone above. */}
+            <div className="rounded-field border border-hair bg-app p-3.5">
+              <div className="flex items-center gap-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[12.5px] font-extrabold text-ink">{L('Contacto por mensaje', 'Contact by message')}</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold leading-snug text-muted">{L('Muestra un botón de Mensaje en tu ficha.', 'Show a Message button on your listing.')}</span>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={draft.acceptsMessages}
+                  aria-label={L('Contacto por mensaje', 'Contact by message')}
+                  onClick={() => set('acceptsMessages', !draft.acceptsMessages)}
+                  className={`relative h-[25px] w-[44px] flex-none cursor-pointer rounded-full transition-colors ${draft.acceptsMessages ? 'bg-primary' : 'bg-[#D8D2E6]'}`}
+                >
+                  <span className={`absolute top-[3px] h-[19px] w-[19px] rounded-full bg-white shadow transition-all ${draft.acceptsMessages ? 'left-[22px]' : 'left-[3px]'}`} />
+                </button>
+              </div>
+              {draft.acceptsMessages && (
+                <div className="mt-3 border-t border-hair pt-3">
+                  {label(L('¿Por dónde?', 'Which channel?'))}
+                  <div className="flex gap-2">
+                    {([['whatsapp', 'WhatsApp'], ['sms', L('Mensaje de texto', 'Text message')]] as [string, string][]).map(([val, lab]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => set('messageChannel', val)}
+                        className={`flex-1 cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${draft.messageChannel === val ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                      >
+                        {lab}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-[11px] font-semibold leading-snug text-muted">
+                    {draft.messageChannel === 'sms'
+                      ? L('Abre un mensaje de texto a tu teléfono.', 'Opens a text message to your phone.')
+                      : L('Abre WhatsApp a tu teléfono.', 'Opens WhatsApp to your phone.')}
+                    {!draft.phone.trim() && ` ${L('Agrega tu teléfono arriba.', 'Add your phone above.')}`}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <label className="block">
               {label(L('Dirección', 'Address'))}

@@ -59,6 +59,8 @@ export type Business = {
   address?: string;
   city?: string;
   website?: string; // clean host (no protocol) — the listing links to https://<website>
+  acceptsMessages?: boolean; // owner opted in to being messaged
+  messageChannel?: 'sms' | 'whatsapp'; // which channel the Mensaje button opens
   descEs?: string;
   descEn?: string;
 };
