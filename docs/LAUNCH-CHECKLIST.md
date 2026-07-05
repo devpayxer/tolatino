@@ -248,6 +248,18 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   recorded but **not charged** — payments come in the transaction phase
   (Stripe/etc., see §2). No real money moves yet.
 
+## 6. Moderation & admin
+
+- [ ] **Subcategory suggestions — admin approval UI.** Owners can propose a new
+  subcategory from Información general; it's stored `pending` in
+  `subcategory_suggestions` (0038) and only publishes when approved. Approval is
+  **currently manual**: set `status = 'approved'` in the Supabase Table Editor
+  and a trigger appends the label to that business's `subcategories`. Before
+  scale, build a proper **admin moderation queue** (review/approve/reject with
+  `label_en`), and consider promoting popular approved labels into the shared
+  `SUBCATS` taxonomy (today it's a hardcoded fixture — approved customs only go
+  live on the proposing business, not as a standard chip for everyone).
+
 ---
 
 _Last updated: 2026-07-05. Add to this file as new deferrals appear._
