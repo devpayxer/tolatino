@@ -16,10 +16,13 @@ import type { PanelCtx } from '@/screens/negocio/tabs';
 import { Toast } from '@/screens/negocio/modules/_page';
 
 type Photo = { id: string; url: string; sort: number; is_cover: boolean };
-const MAX_PHOTOS = 24;
+// Gallery size by plan: Free = 1 photo, Pro (verified/premium) = 20.
+const FREE_PHOTOS = 1;
+const PRO_PHOTOS = 20;
 
 export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
-  const { L } = ctx;
+  const { L, isFree, go } = ctx;
+  const maxPhotos = isFree ? FREE_PHOTOS : PRO_PHOTOS;
   const admin = useBizAdmin();
   const { user } = useAuth();
   const router = useRouter();
@@ -94,8 +97,14 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
     const files = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith('image/'));
     e.target.value = '';
     if (!files.length || !real || !user || !supabase) return;
-    const room = MAX_PHOTOS - photos.length;
-    if (room <= 0) return flash(L(`Máximo ${MAX_PHOTOS} fotos`, `Max ${MAX_PHOTOS} photos`));
+    const room = maxPhotos - photos.length;
+    if (room <= 0) {
+      return flash(
+        isFree
+          ? L('El plan Gratis permite 1 foto. Mejora a Pro para subir más.', 'Free allows 1 photo. Upgrade to Pro to add more.')
+          : L(`Máximo ${maxPhotos} fotos`, `Max ${maxPhotos} photos`),
+      );
+    }
     setUploading(true);
     try {
       const urls = await uploadPostImages(files.slice(0, room), user.id);
@@ -200,17 +209,35 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
 
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="text-[12.5px] font-bold text-muted">
-          {photos.length}/{MAX_PHOTOS} {L('fotos', 'photos')} · {L('se optimizan en tu teléfono antes de subir', 'optimized on your phone before upload')}
+          {photos.length}/{maxPhotos} {L('fotos', 'photos')} · {L('se optimizan en tu teléfono antes de subir', 'optimized on your phone before upload')}
         </div>
         <button
           onClick={() => fileInput.current?.click()}
-          disabled={uploading || photos.length >= MAX_PHOTOS}
+          disabled={uploading || photos.length >= maxPhotos}
           className="flex flex-none cursor-pointer items-center gap-2 rounded-btn bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-50"
         >
           {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} strokeWidth={2.4} />}
           {uploading ? L('Subiendo…', 'Uploading…') : L('Subir fotos', 'Upload photos')}
         </button>
       </div>
+
+      {/* Free plan: 1 photo — nudge to Pro for the full gallery */}
+      {isFree && (
+        <button
+          onClick={() => go('billing')}
+          className="mb-4 flex w-full flex-wrap items-center gap-3 rounded-card-sm p-3.5 text-left text-white"
+          style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}
+        >
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[15px]">✦</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[12.5px] font-extrabold">{L('Plan Gratis: 1 foto', 'Free plan: 1 photo')}</span>
+            <span className="mt-0.5 block text-[11px] font-semibold leading-snug text-[rgba(255,255,255,.7)]">
+              {L('Mejora a Pro para subir hasta 20 fotos y mostrar tu negocio completo.', 'Upgrade to Pro for up to 20 photos and show your whole business.')}
+            </span>
+          </span>
+          <span className="flex-none rounded-btn bg-amber px-3.5 py-2 text-[11.5px] font-extrabold text-ink">{L('Mejorar a Pro', 'Upgrade to Pro')}</span>
+        </button>
+      )}
 
       {photos.length === 0 ? (
         <button

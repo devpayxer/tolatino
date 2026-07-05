@@ -257,7 +257,9 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   "update own business" policy does NOT check tier, so a technically savvy free
   owner could still write those columns via the API. Before real launch, add a
   DB-side guard (e.g. a BEFORE UPDATE trigger that rejects changes to gated
-  columns when `tier = 'free'`).
+  columns when `tier = 'free'`). Same applies to the **photo cap** (Free 1 /
+  Pro 20, enforced only in the Photos UI) — add a trigger/policy on
+  `business_photos` insert that counts existing rows against the owner's tier.
 
 - [ ] **Subcategory suggestions — admin approval UI.** Owners can propose a new
   subcategory from Información general; it's stored `pending` in

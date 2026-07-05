@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { BarChart3, Bell, Check, ChevronDown, ExternalLink, Menu, MessageCircle, Plus, Search, ShoppingBag, Star, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { supabase } from '@/lib/supabase';
 import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
@@ -57,8 +58,24 @@ export function PanelScreen() {
 
   const [tab, setTab] = useState<TabKey>('insights');
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [photoCount, setPhotoCount] = useState<number | undefined>(undefined);
   const admin = useBizAdmin();
   const real = admin.active; // the signed-in owner's active business (null in demo)
+
+  // Real gallery photo count for the active business → the "Fotos y media" nav
+  // badge. Refetched on business switch and on tab change (so it stays fresh
+  // after uploads). Demo → 0 (empty demo gallery).
+  useEffect(() => {
+    if (!real || admin.demo || !supabase) { setPhotoCount(admin.demo ? 0 : undefined); return; }
+    let cancelled = false;
+    supabase
+      .from('business_photos')
+      .select('id', { count: 'exact', head: true })
+      .eq('business_id', real.id)
+      .then(({ count }) => { if (!cancelled) setPhotoCount(count ?? 0); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo, tab]);
   const [drawer, setDrawer] = useState(false);
   const [mods, setMods] = useState<Mods>(DEFAULT_MODS);
 
@@ -88,10 +105,10 @@ export function PanelScreen() {
 
   const ctx: PanelCtx = useMemo(
     () => ({
-      L, es: L('x', 'y') === 'x', tier, rubro, ci, isFree, isPremium, mods,
+      L, es: L('x', 'y') === 'x', tier, rubro, ci, isFree, isPremium, mods, photoCount,
       go: (t) => { setTab(t); setDrawer(false); },
     }),
-    [L, tier, rubro, ci, isFree, isPremium, mods],
+    [L, tier, rubro, ci, isFree, isPremium, mods, photoCount],
   );
 
   const initialsOf = (n: string) => n.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'TL';

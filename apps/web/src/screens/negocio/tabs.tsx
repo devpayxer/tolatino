@@ -41,6 +41,7 @@ export type PanelCtx = {
   isFree: boolean;
   isPremium: boolean;
   mods: Mods;
+  photoCount?: number; // real gallery photo count for the active business (nav badge)
   go: (tab: TabKey) => void;
 };
 
@@ -65,7 +66,9 @@ export function activeMods(ctx: PanelCtx): Mods {
 }
 
 export function buildNav(ctx: PanelCtx): NavGroup[] {
-  const { L, isFree, ci, go } = ctx;
+  const { L, isFree, ci, go, photoCount } = ctx;
+  // Real gallery count when known (>0); no badge otherwise.
+  const photoBadge = photoCount != null && photoCount > 0 ? String(photoCount) : null;
   const am = activeMods(ctx);
   const it = (id: TabKey, label: string, Icon: LucideIcon, opts: Partial<NavItem> & { lockedFree?: boolean } = {}): NavItem => ({
     id, label, Icon,
@@ -79,7 +82,7 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
       add: { label: L('siempre activo', 'always on'), color: '#B7B3C6' },
       items: [
         it('listing', L('Información general', 'General info'), Building2, { sub: isFree ? null : 'OK' }),
-        it('photos', L('Fotos y media', 'Photos & media'), ImageIcon, { count: isFree ? '1' : '34' }),
+        it('photos', L('Fotos y media', 'Photos & media'), ImageIcon, { count: photoBadge }),
         it('hours', L('Horario', 'Hours & holidays'), Clock),
         it('related', L('Listados relacionados', 'Related listings'), Link2, { lockedFree: true }),
       ],
