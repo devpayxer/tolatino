@@ -159,8 +159,10 @@ type BizAdminCtx = {
   active: BizRow | null;
   activeId: string | null;
   setActive: (id: string) => void;
-  /** Persist a patch to the active business (RLS-guarded) + update local state. */
-  update: (patch: Partial<BizRow>) => Promise<{ error: string | null }>;
+  /** Persist a patch to the active business (RLS-guarded) + update local state.
+   *  `skipped` lists columns the DB didn't recognize (pending migration) — the
+   *  rest of the patch WAS saved. */
+  update: (patch: Partial<BizRow>) => Promise<{ error: string | null; skipped?: string[] }>;
   refresh: () => void;
 };
 
@@ -219,7 +221,7 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
   const active = useMemo(() => businesses.find((b) => b.id === activeId) ?? null, [businesses, activeId]);
 
   const update = useCallback(
-    async (patch: Partial<BizRow>): Promise<{ error: string | null }> => {
+    async (patch: Partial<BizRow>): Promise<{ error: string | null; skipped?: string[] }> => {
       if (!active) return { error: 'no-active-business' };
       // Only forward known-writable columns to the DB.
       const dbPatch: Record<string, unknown> = {};
@@ -227,8 +229,28 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
       // Optimistic local update so the UI reflects the change immediately.
       setBusinesses((list) => list.map((b) => (b.id === active.id ? ({ ...b, ...patch } as BizRow) : b)));
       if (!supabase || demo) return { error: null }; // demo / not configured → local only
-      const { error } = await supabase.from('businesses').update(dbPatch).eq('id', active.id);
-      return { error: error ? error.message : null };
+
+      // A column the DB doesn't know yet (migration not applied, or PostgREST's
+      // schema cache briefly stale after DDL) must NOT sink the whole save —
+      // drop the offending column, save the rest, and report what was skipped.
+      //   PostgREST: "Could not find the 'card_features' column of ..."
+      //   Postgres:  column "card_features" of relation ... does not exist
+      const skipped: string[] = [];
+      let toSend = { ...dbPatch };
+      for (let attempt = 0; attempt < WRITABLE.length; attempt++) {
+        if (Object.keys(toSend).length === 0) break;
+        const { error } = await supabase.from('businesses').update(toSend).eq('id', active.id);
+        if (!error) return { error: null, skipped: skipped.length ? skipped : undefined };
+        const m = /'([^']+)' column/.exec(error.message) ?? /column "([^"]+)"/.exec(error.message);
+        if (m && m[1] in toSend) {
+          skipped.push(m[1]);
+          const { [m[1]]: _drop, ...rest } = toSend;
+          toSend = rest;
+          continue;
+        }
+        return { error: error.message };
+      }
+      return { error: null, skipped: skipped.length ? skipped : undefined };
     },
     [active, demo],
   );

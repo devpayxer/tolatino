@@ -195,7 +195,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   const save = async () => {
     if (!draft || !real || saving || !draft.name.trim()) return;
     setSaving(true);
-    const { error } = await admin.update({
+    const { error, skipped } = await admin.update({
       name: draft.name.trim(),
       category_id: draft.category_id,
       subcategories: draft.subcategories,
@@ -214,7 +214,13 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       about_en: draft.about.trim() || null,
     });
     setSaving(false);
-    flash(error ? L('No se pudo guardar. Intenta de nuevo.', "Couldn't save. Try again.") : L('Cambios guardados', 'Changes saved'));
+    flash(
+      error
+        ? L('No se pudo guardar. Intenta de nuevo.', "Couldn't save. Try again.")
+        : skipped?.length
+          ? L('Guardado — falta una migración para algunos campos', 'Saved — some fields need a pending DB migration')
+          : L('Cambios guardados', 'Changes saved'),
+    );
   };
 
   // ── loading ──

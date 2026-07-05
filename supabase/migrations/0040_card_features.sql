@@ -119,3 +119,7 @@ returns table (
 $$;
 
 grant execute on function public.business_by_slug(text) to anon, authenticated;
+
+-- Refresh PostgREST's schema cache so the API sees the new column immediately
+-- (otherwise saves that include card_features can fail for ~a minute after DDL).
+notify pgrst, 'reload schema';
