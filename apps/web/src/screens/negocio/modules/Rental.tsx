@@ -20,6 +20,7 @@ import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { supabase } from '@/lib/supabase';
+import { formatPhone } from '@/lib/phone';
 import { insertBizItem, listBizItems, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 
 type Cat = 'space' | 'furniture' | 'tableware' | 'equipo';
@@ -820,7 +821,7 @@ function RentOutFlow({ item, ctx, onBackToDetail, onDone }: {
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Mariana Vélez', 'e.g. Mariana Velez')} className={fieldCls} />
               </Field>
               <Field label={L('Teléfono', 'Phone')}>
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(415) 555-0148" className={fieldCls} />
+                <input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(415) 555-0148" className={fieldCls} inputMode="tel" autoComplete="tel" />
               </Field>
               <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
                 <Shield size={17} strokeWidth={2} className="flex-none text-primary-dark" />

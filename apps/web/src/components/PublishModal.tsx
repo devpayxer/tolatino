@@ -18,6 +18,7 @@ import { useLiveData } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
 import { uploadPostImages } from '@/lib/image';
 import { getBrowserLocation } from '@/lib/geo';
+import { formatPhone } from '@/lib/phone';
 import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
 import type { WeekHours } from '@/lib/hours';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
@@ -671,7 +672,7 @@ export function PublishModal() {
             </div>
           </div>
 
-          {field(L('Teléfono', 'Phone'), <input value={bizPhone} onChange={(e) => setBizPhone(e.target.value)} className={inputCls} placeholder="(713) 555-0100" />)}
+          {field(L('Teléfono', 'Phone'), <input value={bizPhone} onChange={(e) => setBizPhone(formatPhone(e.target.value))} className={inputCls} placeholder="(713) 555-0100" inputMode="tel" autoComplete="tel" />)}
           {field(L('Dirección', 'Address'), <input value={bizAddress} onChange={(e) => setBizAddress(e.target.value)} className={inputCls} placeholder={L('Calle y número (opcional)', 'Street address (optional)')} />)}
           {field(
             L('Descripción', 'Description'),

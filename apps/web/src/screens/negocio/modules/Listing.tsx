@@ -11,6 +11,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Clock, ExternalLink, Image as ImageIcon, Loader2, Shield, Store } from 'lucide-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { formatPhone } from '@/lib/phone';
 import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
 import type { PanelCtx } from '@/screens/negocio/tabs';
@@ -49,13 +50,13 @@ const draftOf = (b: {
   category_id: b.category_id ?? 'FoodDrinks',
   tagline: b.tagline_es ?? '',
   price_level: b.price_level ?? '',
-  phone: b.phone ?? '',
+  phone: formatPhone(b.phone ?? ''),
   address: b.address ?? '',
   website: b.website ?? '',
   acceptsMessages: b.accepts_messages ?? false,
   messageChannel: b.message_channel ?? 'whatsapp',
   sameNumber: !b.message_phone,
-  messagePhone: b.message_phone ?? '',
+  messagePhone: formatPhone(b.message_phone ?? ''),
   about: b.about_es ?? '',
 });
 
@@ -207,7 +208,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
             <label className="block">
               {label(L('Teléfono', 'Phone'))}
-              <input value={draft.phone} onChange={(e) => set('phone', e.target.value)} className={inputCls} placeholder="(713) 555-0100" inputMode="tel" />
+              <input value={draft.phone} onChange={(e) => set('phone', formatPhone(e.target.value))} className={inputCls} placeholder="(713) 555-0100" inputMode="tel" autoComplete="tel" />
             </label>
 
             {/* Contacto por mensaje: opt-in + channel. Uses the phone above. */}
@@ -261,10 +262,11 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                     {!draft.sameNumber && (
                       <input
                         value={draft.messagePhone}
-                        onChange={(e) => set('messagePhone', e.target.value)}
+                        onChange={(e) => set('messagePhone', formatPhone(e.target.value))}
                         className={`${inputCls} mt-2`}
                         placeholder={draft.messageChannel === 'sms' ? L('Número para SMS', 'Number for SMS') : L('Número de WhatsApp', 'WhatsApp number')}
                         inputMode="tel"
+                        autoComplete="tel"
                       />
                     )}
                   </div>
