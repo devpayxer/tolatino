@@ -47,11 +47,6 @@ export type BizRow = {
   created_at: string;
 };
 
-// Columns we read for the admin view (never the raw `location` geography — it
-// serializes as WKB hex and we don't need it here).
-const COLS =
-  'id,slug,name,category_id,tagline_es,tagline_en,tier,price_level,about_es,about_en,address,city,phone,website,accepts_messages,message_channel,message_phone,hours,features,card_features,subcategories,specialty_es,specialty_en,is_open,rating,reviews_count,tile_a,tile_b,modules,settings,created_at';
-
 // The 15 public categories → the dashboard's 5 rubros (drives module defaults &
 // category-specific copy). Anything not clearly food/beauty/auto/rental is retail.
 const RUBRO_FROM_CAT: Record<string, Rubro> = {
@@ -111,6 +106,42 @@ const DEMO_BIZ: BizRow = {
   created_at: '2024-01-01T00:00:00Z',
 };
 
+// A second demo business so the switcher flow is visible/explorable when nobody
+// is signed in (a real owner sees their own list instead). Different rubro.
+const DEMO_BIZ_2: BizRow = {
+  id: 'demo-2',
+  slug: 'salon-bella-vida',
+  name: 'Salón Bella Vida',
+  category_id: 'BeautyHealth',
+  tagline_es: 'Belleza con cariño',
+  tagline_en: 'Beauty with care',
+  tier: 'free',
+  price_level: '$$',
+  about_es: 'Salón familiar. Cortes, color y uñas con productos de calidad.',
+  about_en: 'Family salon. Cuts, color and nails with quality products.',
+  address: '2140 Long Point Rd, Houston, TX',
+  city: 'Houston, TX',
+  phone: '(713) 555-0192',
+  website: null,
+  accepts_messages: true,
+  message_channel: 'sms',
+  message_phone: null,
+  hours: [[], [[540, 1140]], [[540, 1140]], [[540, 1140]], [[540, 1140]], [[540, 1080]], []],
+  features: ['Con cita', 'Sin cita', 'Se habla español'],
+  card_features: ['Con cita', 'Se habla español'],
+  subcategories: ['Salón de belleza', 'Uñas'],
+  specialty_es: 'Color y tratamientos',
+  specialty_en: 'Color & treatments',
+  is_open: true,
+  rating: 4.7,
+  reviews_count: 138,
+  tile_a: '#FBE9F0',
+  tile_b: '#F5D8E6',
+  modules: null,
+  settings: null,
+  created_at: '2024-03-01T00:00:00Z',
+};
+
 // Columns that are safe to write from the client (map 1:1 to editable form
 // fields). tier / rating / reviews_count are intentionally NOT here — they are
 // controlled by billing / the review system, not the listing editor.
@@ -139,7 +170,7 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
   const { user, configured } = useAuth();
   const [loading, setLoading] = useState(true);
   const [demo, setDemo] = useState(true);
-  const [businesses, setBusinesses] = useState<BizRow[]>([DEMO_BIZ]);
+  const [businesses, setBusinesses] = useState<BizRow[]>([DEMO_BIZ, DEMO_BIZ_2]);
   const [activeId, setActiveId] = useState<string | null>(DEMO_BIZ.id);
   const [version, setVersion] = useState(0);
 
@@ -148,8 +179,8 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
     // business so every editor is explorable; edits stay local.
     if (!supabase || !user) {
       setDemo(true);
-      setBusinesses([DEMO_BIZ]);
-      setActiveId(DEMO_BIZ.id);
+      setBusinesses([DEMO_BIZ, DEMO_BIZ_2]);
+      setActiveId((prev) => (prev === DEMO_BIZ_2.id ? DEMO_BIZ_2.id : DEMO_BIZ.id));
       setLoading(false);
       return;
     }
@@ -157,13 +188,24 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
     setDemo(false);
     setLoading(true);
     (async () => {
+      // select('*') — NOT an explicit column list — so a not-yet-applied
+      // migration or a briefly-stale PostgREST schema cache can never make the
+      // query error and blank the owner's real businesses (that turned the whole
+      // dashboard into the "connect your business" empty state). Unknown/extra
+      // columns are simply ignored by the row mapping.
       const { data, error } = await supabase!
         .from('businesses')
-        .select(COLS)
+        .select('*')
         .eq('owner_id', user.id)
         .order('created_at', { ascending: true });
       if (cancelled) return;
-      const rows = error || !Array.isArray(data) ? [] : (data as unknown as BizRow[]);
+      if (error) {
+        // Transient error → keep whatever we already have; never wipe a working
+        // dashboard. A refresh re-tries the load.
+        setLoading(false);
+        return;
+      }
+      const rows = Array.isArray(data) ? (data as unknown as BizRow[]) : [];
       setBusinesses(rows);
       // keep the current selection if it still exists, else pick the first
       setActiveId((prev) => (prev && rows.some((r) => r.id === prev) ? prev : rows[0]?.id ?? null));

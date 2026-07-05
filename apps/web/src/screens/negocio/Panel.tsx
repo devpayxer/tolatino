@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BarChart3, Bell, Check, ExternalLink, Menu, MessageCircle, Search, ShoppingBag, Star, X } from 'lucide-react';
+import { BarChart3, Bell, Check, ChevronDown, ExternalLink, Menu, MessageCircle, Plus, Search, ShoppingBag, Star, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
@@ -56,6 +56,7 @@ export function PanelScreen() {
   const router = useRouter();
 
   const [tab, setTab] = useState<TabKey>('insights');
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const admin = useBizAdmin();
   const real = admin.active; // the signed-in owner's active business (null in demo)
   const [drawer, setDrawer] = useState(false);
@@ -149,20 +150,58 @@ export function PanelScreen() {
           </span>
         </div>
 
-        {/* business switcher — only when the owner manages more than one listing */}
+        {/* business switcher — a clear dropdown when the owner has 2+ listings:
+            lists each business (avatar · name · rubro, ✓ on the active one) and a
+            "publish another" action. */}
         {admin.businesses.length > 1 && (
-          <select
-            value={admin.activeId ?? ''}
-            onChange={(e) => admin.setActive(e.target.value)}
-            className="mt-3 w-full cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-app px-2.5 py-2 text-[12px] font-bold text-ink outline-none focus:border-primary"
-            aria-label={L('Cambiar de negocio', 'Switch business')}
-          >
-            {admin.businesses.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative mt-3">
+            <button
+              onClick={() => setSwitcherOpen((o) => !o)}
+              className="flex w-full cursor-pointer items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-app px-2.5 py-2 text-left"
+              aria-label={L('Cambiar de negocio', 'Switch business')}
+              aria-expanded={switcherOpen}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-[9px] font-extrabold uppercase tracking-[.05em] text-muted-2">{L('Negocio', 'Business')} · {admin.businesses.length}</span>
+                <span className="block truncate text-[12px] font-extrabold text-ink">{real?.name ?? '—'}</span>
+              </span>
+              <ChevronDown size={15} className={`flex-none text-muted transition-transform ${switcherOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {switcherOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setSwitcherOpen(false)} />
+                <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-40 overflow-hidden rounded-card-sm border border-hair bg-white shadow-modal">
+                  <div className="max-h-[240px] overflow-y-auto p-1.5">
+                    {admin.businesses.map((b) => {
+                      const on = b.id === admin.activeId;
+                      return (
+                        <button
+                          key={b.id}
+                          onClick={() => { admin.setActive(b.id); setSwitcherOpen(false); }}
+                          className={`flex w-full cursor-pointer items-center gap-2.5 rounded-btn px-2 py-2 text-left ${on ? 'bg-lilac-2' : 'hover:bg-app'}`}
+                        >
+                          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-[11px] font-extrabold text-white" style={{ background: b.tier === 'free' ? '#9F1239' : '#7B61FF' }}>
+                            {initialsOf(b.name)}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[12.5px] font-extrabold text-ink">{b.name}</span>
+                            <span className="block truncate text-[10.5px] font-semibold text-muted-2">{catLabel(b.category_id)}</span>
+                          </span>
+                          {on && <Check size={15} strokeWidth={2.6} className="flex-none text-primary" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => { setSwitcherOpen(false); router.push('/negocio/publicar'); }}
+                    className="flex w-full cursor-pointer items-center gap-2 border-t border-hair px-3 py-2.5 text-left text-[12px] font-extrabold text-primary-dark hover:bg-app"
+                  >
+                    <Plus size={14} strokeWidth={2.6} /> {L('Publicar otro negocio', 'Publish another business')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
         <div className="mt-3 flex items-center gap-1.5">
           <span className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-extrabold" style={{ background: livePill.bg, color: livePill.c }}>
