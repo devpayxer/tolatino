@@ -17,6 +17,7 @@ import { VerifiedBadge } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { CAT_INFO, activeMods, buildGeneric, buildNav, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
 import { GenericTab } from '@/screens/negocio/GenericTab';
+import { HoursReminders } from '@/screens/negocio/HoursReminders';
 import { InsightsFree, InsightsPaid } from '@/screens/negocio/Insights';
 import { ModulesSetup } from '@/screens/negocio/ModulesSetup';
 import { UpdatesModule } from '@/screens/negocio/modules/Updates';
@@ -371,6 +372,17 @@ export function PanelScreen() {
 
         {/* content */}
         <main className="min-w-0 flex-1 px-3.5 pb-[96px] pt-4 md:px-6 md:pt-5 lg:pb-6">
+          {/* Horario heads-up: holidays / special days starting today or tomorrow,
+              across all the owner's businesses (see docs/LAUNCH-CHECKLIST.md for the
+              push-notification follow-up). Shown on the dashboard home. */}
+          {isInicio && (
+            <HoursReminders
+              businesses={admin.businesses}
+              L={L}
+              es={ctx.es}
+              onOpenHours={(id) => { admin.setActive(id); ctx.go('hours'); }}
+            />
+          )}
           {/* identity card (handoff mobile Inicio) — business avatar + name + plan */}
           {isInicio && (
             <div className="mb-3.5 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card lg:hidden">

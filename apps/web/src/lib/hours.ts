@@ -39,6 +39,37 @@ export function activeException(exceptions: HoursException[] | undefined, d: Dat
   return exceptions.find((e) => iso >= e.date && iso <= (e.end || e.date)) ?? null;
 }
 
+/** 'YYYY-MM-DD' → local midnight Date (matches how the owner picks dates). */
+function isoToLocalDate(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
+/** Whole calendar days from `a` to `b` (both 'YYYY-MM-DD'); negative if b < a. */
+export function daysBetweenIso(a: string, b: string): number {
+  return Math.round((isoToLocalDate(b).getTime() - isoToLocalDate(a).getTime()) / 86400000);
+}
+
+/** Exceptions imminent enough to remind the owner about. Holiday / special days
+ *  are created in advance, so we surface a heads-up when one STARTS today or
+ *  within `withinDays` (default 1 = "tomorrow"). Each result carries `daysUntil`
+ *  (0 = today, 1 = tomorrow) so the UI can say "Hoy" / "Mañana". Soonest first. */
+export function upcomingExceptionReminders(
+  exceptions: HoursException[] | undefined,
+  now: Date,
+  withinDays = 1,
+): { ex: HoursException; daysUntil: number }[] {
+  if (!exceptions?.length) return [];
+  const today = isoDate(now);
+  const out: { ex: HoursException; daysUntil: number }[] = [];
+  for (const ex of exceptions) {
+    if (ex.date < today) continue; // already started / past — not a heads-up anymore
+    const daysUntil = daysBetweenIso(today, ex.date);
+    if (daysUntil >= 0 && daysUntil <= withinDays) out.push({ ex, daysUntil });
+  }
+  return out.sort((a, b) => a.daysUntil - b.daysUntil || a.ex.date.localeCompare(b.ex.date));
+}
+
 /** The effective intervals for an actual date — an exception overrides the week. */
 function effectiveIntervals(hours: WeekHours, exceptions: HoursException[] | undefined, d: Date): Interval[] {
   const ex = activeException(exceptions, d);

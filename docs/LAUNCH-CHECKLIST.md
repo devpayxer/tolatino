@@ -150,6 +150,18 @@
 - [ ] **Push notifications.** Not built. Plan: **Web Push (VAPID)** for the PWA,
   **+ FCM** (free) for native later. Drives the "Alertas" tab and new-activity
   pings.
+  - [ ] **Horario "Feriados y más" — day-before push reminder.** Holidays /
+    vacations / special days are programmed in advance, so the owner should get a
+    push **the day before** each one starts (and optionally the day of). Built
+    **client-side today**: the dashboard **home** shows a `HoursReminders` banner
+    for any `businesses.hours_exceptions` starting today/tomorrow (helper
+    `upcomingExceptionReminders` in `lib/hours.ts`), dismissible via
+    `localStorage`. That only fires **while the dashboard is open** — when Web
+    Push lands, add a **scheduled server push** (Supabase Edge Function on a daily
+    cron, or `pg_cron`) that scans `hours_exceptions` for start dates = tomorrow
+    and pushes the owner, honoring the owner's notification prefs in
+    `businesses.settings`. Reuse the same today/tomorrow window + copy as the
+    banner. Also feed these into the header `Bell` count (currently a demo stub).
 - [ ] **i18n via next-intl.** Copy is bilingual today via inline `L('es','en')`
   + a global ES/EN toggle (works). `CLAUDE.md` targets **next-intl** — migrate
   when it's worth it (SEO/locale routing).
