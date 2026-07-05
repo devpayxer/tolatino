@@ -9,9 +9,10 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, ExternalLink, Image as ImageIcon, Loader2, Shield, Store } from 'lucide-react';
+import { Clock, ExternalLink, Image as ImageIcon, Loader2, Plus, Shield, Store, X } from 'lucide-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { formatPhone } from '@/lib/phone';
+import { listSuggestions, proposeSubcategory, cancelSuggestion, type SubcatSuggestion } from '@/lib/subcatSuggestions';
 import { SUBCATS } from '@/data/fixtures';
 import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
@@ -72,6 +73,10 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+  // Owner-proposed subcategories (pending admin approval) for the current category.
+  const [pending, setPending] = useState<SubcatSuggestion[]>([]);
+  const [addingSub, setAddingSub] = useState(false);
+  const [newSub, setNewSub] = useState('');
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 1900);
@@ -80,8 +85,23 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   // Seed (and reseed when switching between the owner's businesses).
   useEffect(() => {
     setDraft(real ? draftOf(real) : null);
+    setAddingSub(false);
+    setNewSub('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id]);
+
+  // Load the owner's pending suggestions for the selected category (demo: local only).
+  const cat = draft?.category_id;
+  useEffect(() => {
+    if (!real || admin.demo || !cat) { setPending([]); return; }
+    let cancelled = false;
+    (async () => {
+      const rows = await listSuggestions(real.id, cat);
+      if (!cancelled) setPending(rows);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, cat, admin.demo]);
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => (d ? { ...d, [k]: v } : d));
 
@@ -94,6 +114,41 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     });
   const toggleSub = (es: string) =>
     setDraft((d) => (d ? { ...d, subcategories: d.subcategories.includes(es) ? d.subcategories.filter((x) => x !== es) : [...d.subcategories, es] } : d));
+
+  // Propose a new subcategory → stored pending (admin approves later). Rejects
+  // duplicates of an existing chip or a pending one. Persists immediately (it's
+  // independent of the form's Save button).
+  const submitNewSub = async () => {
+    const labelRaw = newSub.trim();
+    if (!labelRaw || !draft) return;
+    const lc = labelRaw.toLowerCase();
+    const isOfficial = (SUBCATS[draft.category_id as CatKey] ?? []).some(([es, en]) => es.toLowerCase() === lc || en.toLowerCase() === lc);
+    const isSelected = draft.subcategories.some((s) => s.toLowerCase() === lc);
+    const isPending = pending.some((s) => s.label_es.toLowerCase() === lc);
+    setNewSub('');
+    setAddingSub(false);
+    if (isOfficial || isSelected || isPending) {
+      flash(L('Esa subcategoría ya existe.', 'That subcategory already exists.'));
+      return;
+    }
+    if (real && !admin.demo) {
+      const row = await proposeSubcategory(real.id, draft.category_id, labelRaw);
+      if (row) {
+        setPending((p) => [...p, row]);
+        flash(L('Enviado para aprobación', 'Sent for approval'));
+      } else {
+        flash(L('No se pudo enviar. Intenta de nuevo.', "Couldn't send. Try again."));
+      }
+    } else {
+      // demo: optimistic local pending chip so the flow stays explorable
+      setPending((p) => [...p, { id: `local-${labelRaw}`, label_es: labelRaw, status: 'pending', category_id: draft.category_id }]);
+      flash(L('Enviado para aprobación', 'Sent for approval'));
+    }
+  };
+  const cancelSub = async (id: string) => {
+    setPending((p) => p.filter((s) => s.id !== id));
+    if (!id.startsWith('local-')) await cancelSuggestion(id);
+  };
 
   const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
 
@@ -193,31 +248,99 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               </select>
             </label>
 
-            {/* Subcategorías del rubro elegido — se despliegan al elegir categoría */}
-            {(SUBCATS[draft.category_id as CatKey]?.length ?? 0) > 0 && (
-              <div>
-                {label(
-                  <>
-                    {L('Subcategorías', 'Subcategories')} <span className="font-semibold text-muted">· {L('elige las que apliquen', 'pick any that apply')}</span>
-                  </>,
-                )}
-                <div className="flex max-h-[168px] flex-wrap gap-2 overflow-y-auto">
-                  {SUBCATS[draft.category_id as CatKey].map(([es, en]) => {
-                    const on = draft.subcategories.includes(es);
-                    return (
+            {/* Subcategorías del rubro elegido — se despliegan al elegir categoría.
+                Incluye las estándar, las personalizadas ya aprobadas, las
+                pendientes de aprobación, y un botón para proponer una nueva. */}
+            {(SUBCATS[draft.category_id as CatKey]?.length ?? 0) > 0 && (() => {
+              const official = SUBCATS[draft.category_id as CatKey];
+              const officialSet = new Set(official.map(([es]) => es));
+              const customApproved = draft.subcategories.filter((s) => !officialSet.has(s));
+              const pendingHere = pending.filter((s) => s.status === 'pending');
+              return (
+                <div>
+                  {label(
+                    <>
+                      {L('Subcategorías', 'Subcategories')} <span className="font-semibold text-muted">· {L('elige las que apliquen', 'pick any that apply')}</span>
+                    </>,
+                  )}
+                  <div className="flex max-h-[196px] flex-wrap gap-2 overflow-y-auto">
+                    {official.map(([es, en]) => {
+                      const on = draft.subcategories.includes(es);
+                      return (
+                        <button
+                          key={es}
+                          type="button"
+                          onClick={() => toggleSub(es)}
+                          className={`cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                        >
+                          {L(es, en)}
+                        </button>
+                      );
+                    })}
+                    {/* personalizadas aprobadas (ya publicadas) — seleccionables */}
+                    {customApproved.map((es) => (
                       <button
-                        key={es}
+                        key={`c-${es}`}
                         type="button"
                         onClick={() => toggleSub(es)}
-                        className={`cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                        className="cursor-pointer rounded-full bg-primary px-3 py-2 text-[12px] font-extrabold text-white"
                       >
-                        {L(es, en)}
+                        {es}
                       </button>
-                    );
-                  })}
+                    ))}
+                    {/* pendientes de aprobación — no publican aún */}
+                    {pendingHere.map((s) => (
+                      <span
+                        key={s.id}
+                        className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-amber bg-amber-bg px-3 py-2 text-[12px] font-extrabold text-amber-ink"
+                      >
+                        {s.label_es}
+                        <span className="rounded bg-white/70 px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase tracking-[.03em] text-amber-ink">{L('pendiente', 'pending')}</span>
+                        <button type="button" onClick={() => cancelSub(s.id)} aria-label={L('Cancelar', 'Cancel')} className="cursor-pointer text-amber-ink/70 hover:text-amber-ink">
+                          <X size={12} strokeWidth={2.8} />
+                        </button>
+                      </span>
+                    ))}
+                    {!addingSub && (
+                      <button
+                        type="button"
+                        onClick={() => { setAddingSub(true); setNewSub(''); }}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] border-dashed border-lilac-line bg-white px-3 py-2 text-[12px] font-extrabold text-primary-dark"
+                      >
+                        <Plus size={13} strokeWidth={2.8} /> {L('Agregar', 'Add')}
+                      </button>
+                    )}
+                  </div>
+
+                  {addingSub && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        autoFocus
+                        value={newSub}
+                        onChange={(e) => setNewSub(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { e.preventDefault(); submitNewSub(); }
+                          if (e.key === 'Escape') { setAddingSub(false); setNewSub(''); }
+                        }}
+                        maxLength={40}
+                        placeholder={L('Nueva subcategoría…', 'New subcategory…')}
+                        className={inputCls}
+                      />
+                      <button type="button" onClick={submitNewSub} disabled={!newSub.trim()} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-3 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
+                        {L('Enviar', 'Send')}
+                      </button>
+                      <button type="button" onClick={() => { setAddingSub(false); setNewSub(''); }} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-3.5 py-3 text-[12px] font-extrabold text-ink-2">
+                        {L('Cancelar', 'Cancel')}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="mt-1.5 text-[11px] font-semibold leading-snug text-muted">
+                    {L('¿Falta una? Agrégala — se publica tras la aprobación del equipo.', "Missing one? Add it — it goes live after our team approves it.")}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             <label className="block">
               {label(L('Eslogan', 'Tagline'))}
