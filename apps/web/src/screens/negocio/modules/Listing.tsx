@@ -9,7 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, ExternalLink, Image as ImageIcon, Loader2, Shield, Store } from 'lucide-react';
+import { Clock, ExternalLink, Image as ImageIcon, Loader2, Shield, Star, Store } from 'lucide-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { formatPhone } from '@/lib/phone';
 import { listSuggestions, proposeSuggestion, cancelSuggestion, type Suggestion, type SuggestionTable } from '@/lib/suggestions';
@@ -20,11 +20,18 @@ import { VerifiedBadge } from '@/components/ui';
 import type { PanelCtx } from '@/screens/negocio/tabs';
 import { Toast } from '@/screens/negocio/modules/_page';
 
+// es → en lookup for feature labels, so the card-highlight picker + preview show
+// bilingual labels; custom (approved) labels fall back to es.
+const FEAT_EN: Record<string, string> = {};
+for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
+for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
+
 type Draft = {
   name: string;
   category_id: string;
   subcategories: string[]; // canonical (es) labels from SUBCATS[category]
   features: string[]; // canonical (es) labels — "Lo que ofrece"
+  cardFeatures: string[]; // ≤3 features highlighted on the search card
   tagline: string;
   price_level: string;
   phone: string;
@@ -49,12 +56,14 @@ const draftOf = (b: {
   name: string; category_id: string; tagline_es: string | null; price_level: string | null;
   phone: string | null; address: string | null; website: string | null;
   accepts_messages: boolean; message_channel: string | null; message_phone: string | null;
-  subcategories: string[] | null; features: string[] | null; about_es: string | null;
+  subcategories: string[] | null; features: string[] | null; card_features: string[] | null; about_es: string | null;
 }): Draft => ({
   name: b.name ?? '',
   category_id: b.category_id ?? 'FoodDrinks',
   subcategories: b.subcategories ?? [],
   features: b.features ?? [],
+  // card highlights must be a subset of the selected features
+  cardFeatures: (b.card_features ?? []).filter((x) => (b.features ?? []).includes(x)).slice(0, 3),
   tagline: b.tagline_es ?? '',
   price_level: b.price_level ?? '',
   phone: formatPhone(b.phone ?? ''),
@@ -117,7 +126,25 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       return { ...d, category_id: next, subcategories: d.subcategories.filter((s) => valid.has(s)) };
     });
   const toggleIn = (key: 'subcategories' | 'features', es: string) =>
-    setDraft((d) => (d ? { ...d, [key]: d[key].includes(es) ? d[key].filter((x) => x !== es) : [...d[key], es] } : d));
+    setDraft((d) => {
+      if (!d) return d;
+      const removing = d[key].includes(es);
+      const nextArr = removing ? d[key].filter((x) => x !== es) : [...d[key], es];
+      // removing an offering also drops it from the card highlights
+      const cardFeatures = key === 'features' && removing ? d.cardFeatures.filter((x) => x !== es) : d.cardFeatures;
+      return { ...d, [key]: nextArr, cardFeatures };
+    });
+
+  // Pick / unpick a feature to highlight on the search card (max 3).
+  const toggleCard = (es: string) => {
+    if (!draft) return;
+    if (draft.cardFeatures.includes(es)) {
+      setDraft((d) => (d ? { ...d, cardFeatures: d.cardFeatures.filter((x) => x !== es) } : d));
+      return;
+    }
+    if (draft.cardFeatures.length >= 3) { flash(L('Máximo 3 para la tarjeta.', 'Up to 3 for the card.')); return; }
+    setDraft((d) => (d ? { ...d, cardFeatures: [...d.cardFeatures, es] } : d));
+  };
 
   // Propose a new taxonomy value → stored pending (admin approves later). Rejects
   // duplicates. Persists immediately (independent of the form's Save button).
@@ -154,6 +181,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       draft.category_id !== (real.category_id ?? '') ||
       !sameSet(draft.subcategories, real.subcategories ?? []) ||
       !sameSet(draft.features, real.features ?? []) ||
+      !sameSet(draft.cardFeatures, real.card_features ?? []) ||
       draft.tagline.trim() !== (real.tagline_es ?? '') ||
       draft.price_level !== (real.price_level ?? '') ||
       draft.phone.trim() !== (real.phone ?? '') ||
@@ -172,6 +200,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       category_id: draft.category_id,
       subcategories: draft.subcategories,
       features: draft.features,
+      card_features: draft.cardFeatures,
       tagline_es: draft.tagline.trim() || null,
       tagline_en: draft.tagline.trim() || null,
       price_level: draft.price_level || null,
@@ -297,6 +326,59 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               L={L}
               inputCls={inputCls}
             />
+
+            {/* Destacar en la tarjeta: elige hasta 3 de "Lo que ofrece" para la
+                tarjeta de búsqueda, con una vista previa de cómo se verá. */}
+            <div className="rounded-field border border-hair bg-app p-3.5">
+              <div className="flex items-center gap-2">
+                <Star size={14} strokeWidth={2.4} className="flex-none text-amber-ink" fill="#F4B740" />
+                <span className="min-w-0 flex-1 text-[12.5px] font-extrabold text-ink">{L('Destacar en la tarjeta', 'Feature on the card')}</span>
+                <span className="flex-none rounded-full bg-white px-2 py-0.5 text-[11px] font-extrabold text-ink-2">{draft.cardFeatures.length}/3</span>
+              </div>
+              <div className="mt-1 text-[11px] font-semibold leading-snug text-muted">
+                {L('Elige hasta 3 de “Lo que ofrece” — son las que la gente ve en tu tarjeta al buscar.', 'Pick up to 3 from “What it offers” — these show on your card in search.')}
+              </div>
+
+              {draft.features.length === 0 ? (
+                <div className="mt-2.5 rounded-field bg-white px-3.5 py-3 text-[12px] font-semibold text-muted-2">
+                  {L('Primero elige opciones en “Lo que ofrece” arriba.', 'First pick options in “What it offers” above.')}
+                </div>
+              ) : (
+                <>
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    {draft.features.map((es) => {
+                      const on = draft.cardFeatures.includes(es);
+                      return (
+                        <button
+                          key={es}
+                          type="button"
+                          onClick={() => toggleCard(es)}
+                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-amber text-ink' : 'bg-lilac-2 text-ink-2'}`}
+                        >
+                          <Star size={12} strokeWidth={2.6} fill={on ? '#1E1B2E' : 'none'} />
+                          {L(es, FEAT_EN[es] ?? es)}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* vista previa de la tarjeta */}
+                  {draft.cardFeatures.length > 0 && (
+                    <div className="mt-3 rounded-card-sm border border-hair bg-white p-3">
+                      <div className="mb-1.5 text-[9.5px] font-extrabold uppercase tracking-[.05em] text-muted-2">{L('Vista previa en la tarjeta', 'Card preview')}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {draft.cardFeatures.map((es) => (
+                          <span key={es} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-2.5 py-1 text-[11px] font-bold text-ink-soft">
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                            {L(es, FEAT_EN[es] ?? es)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
             <label className="block">
               {label(L('Eslogan', 'Tagline'))}

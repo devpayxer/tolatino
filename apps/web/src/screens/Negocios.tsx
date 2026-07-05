@@ -37,6 +37,14 @@ for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FE
 // switches category (category-specific picks are dropped, they wouldn't match).
 const COMMON_SET = new Set(FEATURES_COMMON.map(([es]) => es));
 
+// The ≤3 chips shown on a search card: the owner's chosen `cardFeatures` first,
+// else the first 3 selected `features`, else the legacy amenities. Bilingual.
+function cardChips(b: Business): [string, string][] {
+  if (b.cardFeatures?.length) return b.cardFeatures.slice(0, 3).map((es) => [es, FEAT_EN[es] ?? es]);
+  if (b.features?.length) return b.features.slice(0, 3).map((es) => [es, FEAT_EN[es] ?? es]);
+  return b.amEs.slice(0, 3).map((es, i) => [es, b.amEn[i] ?? es]);
+}
+
 // How many category features show before "Ver todas".
 const FEAT_PREVIEW = 8;
 
@@ -602,7 +610,7 @@ function BizMeta({ b }: { b: Business }) {
  */
 function BizCardVerified({ b, onOpen }: { b: Business; onOpen: () => void }) {
   const { L } = useLang();
-  const chips = b.amEs.length ? b.amEs.map((es, i) => [es, b.amEn[i] ?? es] as [string, string]) : [];
+  const chips = cardChips(b);
   const review = L(b.revEs, b.revEn).trim();
 
   return (
@@ -687,6 +695,7 @@ function BizCardVerified({ b, onOpen }: { b: Business; onOpen: () => void }) {
  */
 function BizCardBasic({ b, onOpen }: { b: Business; onOpen: () => void }) {
   const { L } = useLang();
+  const chips = cardChips(b);
 
   return (
     <Card onClick={onOpen} className="p-3 transition-shadow hover:shadow-card-lg">
@@ -718,6 +727,16 @@ function BizCardBasic({ b, onOpen }: { b: Business; onOpen: () => void }) {
           {L('Ver perfil', 'View')}
         </button>
       </div>
+      {chips.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {chips.map(([es, en]) => (
+            <span key={es} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-2.5 py-1 text-[11px] font-bold text-ink-soft">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              {L(es, en)}
+            </span>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

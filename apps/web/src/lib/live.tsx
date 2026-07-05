@@ -39,6 +39,7 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     // dynamic feature filter: prefer the dedicated column, fall back to the
     // business's amenities so pre-migration rows still filter.
     features: (r.features as string[]) ?? (r.amenities_es as string[]) ?? [],
+    cardFeatures: (r.card_features as string[] | null) ?? undefined,
     amEs: (r.amenities_es as string[]) ?? [],
     amEn: (r.amenities_en as string[]) ?? [],
     revEs: String(r.review_es ?? ''),
