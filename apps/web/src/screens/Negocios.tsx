@@ -5,14 +5,14 @@
 // Mobile: swipeable category chips + "Filtros" bottom sheet.
 // Card variant A ("Lista") — the prototype default.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Heart, Map as MapIcon, MapPin, Phone, SlidersHorizontal, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
-import { useLiveData } from '@/lib/live';
+import { useLiveData, fetchBusinessBySlug } from '@/lib/live';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useNow } from '@/lib/useNow';
 import { bizStatus, isOpenNow, statusLabel } from '@/lib/hours';
@@ -66,6 +66,25 @@ export function NegociosScreen() {
   const [mapOpen, setMapOpen] = useState(false);
   const [detailBiz, setDetailBiz] = useState<Business | null>(null);
   const [openFilter, setOpenFilter] = useState<null | 'dist' | 'rating' | 'price'>(null);
+
+  // Deep link: /negocios?b=<slug> opens that listing directly (e.g. the business
+  // dashboard's "Ver listado público"). Resolve from the loaded list first; if
+  // it isn't there (out-of-city or brand-new listing) fetch it by slug — the geo
+  // feed is radius-scoped, a slug lookup is not. Runs once; the ?b= param is then
+  // stripped so closing the detail lands back on a clean /negocios.
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || typeof window === 'undefined') return;
+    const bSlug = new URLSearchParams(window.location.search).get('b');
+    if (!bSlug) return;
+    deepLinked.current = true;
+    window.history.replaceState(null, '', window.location.pathname);
+    const local = BUSINESSES.find((x) => x.slug === bSlug);
+    if (local) { setDetailBiz(local); return; }
+    let cancelled = false;
+    void fetchBusinessBySlug(bSlug).then((biz) => { if (!cancelled && biz) setDetailBiz(biz); });
+    return () => { cancelled = true; };
+  }, [BUSINESSES]);
   const [showAllFeat, setShowAllFeat] = useState(false);
 
   const patch = (p: Partial<Filters>) => {

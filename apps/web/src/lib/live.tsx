@@ -16,6 +16,47 @@ const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP'
 
 const isCatKey = (v: string): v is CatKey => v in CAT;
 
+// Map a `businesses_v2` / `business_by_slug` row → the app's Business shape.
+// Shared by the geo list and the by-slug deep link so both stay identical.
+export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: number | null): Business {
+  return {
+    id: i,
+    slug: String(r.slug),
+    name: String(r.name),
+    cat: String(r.category_id) as CatKey,
+    rating: Number(r.rating).toFixed(1),
+    reviews: Number(r.reviews_count),
+    dist: distM != null ? `${(distM / 1609.34).toFixed(1)} mi` : '— mi',
+    price: (r.price_level as Business['price']) ?? '$',
+    open: Boolean(r.is_open),
+    hours: (r.hours as Business['hours']) ?? undefined,
+    verified: r.tier !== 'free',
+    endorse: Number(r.endorse_count ?? 0),
+    t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
+    specEs: String(r.specialty_es ?? ''),
+    specEn: String(r.specialty_en ?? ''),
+    subcats: (r.subcategories as string[]) ?? [],
+    // dynamic feature filter: prefer the dedicated column, fall back to the
+    // business's amenities so pre-migration rows still filter.
+    features: (r.features as string[]) ?? (r.amenities_es as string[]) ?? [],
+    amEs: (r.amenities_es as string[]) ?? [],
+    amEn: (r.amenities_en as string[]) ?? [],
+    revEs: String(r.review_es ?? ''),
+    revEn: String(r.review_en ?? ''),
+  };
+}
+
+/** Fetch a single business by its public slug (geo-independent). Returns a
+ *  mapped Business or null (offline / not found / unknown category). */
+export async function fetchBusinessBySlug(slug: string): Promise<Business | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('business_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const r = data[0] as Record<string, unknown>;
+  if (!isCatKey(String(r.category_id))) return null;
+  return mapBusinessRow(r, 0, (r.distance_m as number | null) ?? null);
+}
+
 function relTime(iso: string): [string, string] {
   const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
   if (mins < 60) return [`hace ${mins} min`, `${mins}m`];
@@ -68,34 +109,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
       // errored (e.g. Supabase not configured, or migrations not applied yet).
       if (!biz.error && Array.isArray(biz.data)) {
         const rows = (biz.data as Record<string, unknown>[]).filter((r) => isCatKey(String(r.category_id)));
-        next.businesses = rows.map((r, i): Business => {
-          const distM = r.distance_m as number | null;
-          return {
-            id: i,
-            slug: String(r.slug),
-            name: String(r.name),
-            cat: String(r.category_id) as CatKey,
-            rating: Number(r.rating).toFixed(1),
-            reviews: Number(r.reviews_count),
-            dist: distM != null ? `${(distM / 1609.34).toFixed(1)} mi` : '— mi',
-            price: (r.price_level as Business['price']) ?? '$',
-            open: Boolean(r.is_open),
-            hours: (r.hours as Business['hours']) ?? undefined,
-            verified: r.tier !== 'free',
-            endorse: Number(r.endorse_count ?? 0),
-            t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
-            specEs: String(r.specialty_es ?? ''),
-            specEn: String(r.specialty_en ?? ''),
-            subcats: (r.subcategories as string[]) ?? [],
-            // dynamic feature filter: prefer the dedicated column, fall back to
-            // the business's amenities so pre-migration rows still filter.
-            features: (r.features as string[]) ?? (r.amenities_es as string[]) ?? [],
-            amEs: (r.amenities_es as string[]) ?? [],
-            amEn: (r.amenities_en as string[]) ?? [],
-            revEs: String(r.review_es ?? ''),
-            revEn: String(r.review_en ?? ''),
-          };
-        });
+        next.businesses = rows.map((r, i) => mapBusinessRow(r, i, (r.distance_m as number | null) ?? null));
         next.live = true;
       }
 
