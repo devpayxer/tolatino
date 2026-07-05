@@ -23,12 +23,21 @@ type Draft = {
   price_level: string;
   phone: string;
   address: string;
+  website: string;
   about: string;
+};
+
+// Store a clean host (+path): no protocol, no leading www, no trailing slash —
+// so the listing can prepend https:// to make it clickable and show this as the
+// label. Empty → null. e.g. "https://www.Barberia.com/" → "barberia.com".
+const normalizeWebsite = (v: string): string | null => {
+  const s = v.trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/+$/, '');
+  return s || null;
 };
 
 const draftOf = (b: {
   name: string; category_id: string; tagline_es: string | null; price_level: string | null;
-  phone: string | null; address: string | null; about_es: string | null;
+  phone: string | null; address: string | null; website: string | null; about_es: string | null;
 }): Draft => ({
   name: b.name ?? '',
   category_id: b.category_id ?? 'FoodDrinks',
@@ -36,6 +45,7 @@ const draftOf = (b: {
   price_level: b.price_level ?? '',
   phone: b.phone ?? '',
   address: b.address ?? '',
+  website: b.website ?? '',
   about: b.about_es ?? '',
 });
 
@@ -70,6 +80,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       draft.price_level !== (real.price_level ?? '') ||
       draft.phone.trim() !== (real.phone ?? '') ||
       draft.address.trim() !== (real.address ?? '') ||
+      draft.website.trim() !== (real.website ?? '') ||
       draft.about.trim() !== (real.about_es ?? ''));
 
   const save = async () => {
@@ -83,6 +94,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       price_level: draft.price_level || null,
       phone: draft.phone.trim() || null,
       address: draft.address.trim() || null,
+      website: normalizeWebsite(draft.website),
       about_es: draft.about.trim() || null,
       about_en: draft.about.trim() || null,
     });
@@ -185,6 +197,11 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
             <label className="block">
               {label(L('Dirección', 'Address'))}
               <input value={draft.address} onChange={(e) => set('address', e.target.value)} className={inputCls} placeholder={L('Calle y número', 'Street address')} />
+            </label>
+
+            <label className="block">
+              {label(L('Sitio web', 'Website'))}
+              <input value={draft.website} onChange={(e) => set('website', e.target.value)} className={inputCls} placeholder="barberia.com" inputMode="url" autoCapitalize="none" autoCorrect="off" />
             </label>
 
             <label className="block">

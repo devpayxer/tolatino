@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, Heart, MapPin, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -850,22 +850,32 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       <Overlay open={contactOpen} onClose={() => setContactOpen(false)} width={400}>
         <OverlayTitle title={L('Contacto y opciones', 'Contact & options')} onClose={() => setContactOpen(false)} />
         <div className="flex flex-col">
-          {[
+          {([
             { Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA' },
             { Icon: MessageCircle, label: L('Mensaje', 'Message'), sub: 'WhatsApp', color: '#6D4DF6', bg: '#EFEBFF' },
+            // Sitio web only shows when the owner set one; opens the real site.
+            ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#2F6FED', bg: '#E5EFFB', href: `https://${b.website}` }] : []),
             { Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6' },
             { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#8A86A0', bg: '#F1EFFA' },
-          ].map(({ Icon, label, sub, color, bg }) => (
-            <button key={label} onClick={() => setContactOpen(false)} className="flex w-full cursor-pointer items-center gap-3 rounded-btn px-2 py-2.5 text-left hover:bg-app">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px]" style={{ background: bg }}>
-                <Icon size={16} strokeWidth={2.2} style={{ color }} />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-[13.5px] font-bold text-ink">{label}</span>
-                {sub && <span className="block truncate text-[11.5px] font-semibold text-muted">{sub}</span>}
-              </span>
-            </button>
-          ))}
+          ] as { Icon: typeof Phone; label: string; sub: string; color: string; bg: string; href?: string }[]).map(({ Icon, label, sub, color, bg, href }) => {
+            const inner = (
+              <>
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px]" style={{ background: bg }}>
+                  <Icon size={16} strokeWidth={2.2} style={{ color }} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[13.5px] font-bold text-ink">{label}</span>
+                  {sub && <span className="block truncate text-[11.5px] font-semibold text-muted">{sub}</span>}
+                </span>
+              </>
+            );
+            const cls = 'flex w-full cursor-pointer items-center gap-3 rounded-btn px-2 py-2.5 text-left hover:bg-app';
+            return href ? (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" onClick={() => setContactOpen(false)} className={cls}>{inner}</a>
+            ) : (
+              <button key={label} onClick={() => setContactOpen(false)} className={cls}>{inner}</button>
+            );
+          })}
           <button onClick={() => setContactOpen(false)} className="mt-1 w-full cursor-pointer rounded-btn px-2 py-2.5 text-left text-[12.5px] font-bold text-pink-dark hover:bg-pink-bg">
             {L('Reportar un problema', 'Report a problem')}
           </button>

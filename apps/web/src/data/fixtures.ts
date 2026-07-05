@@ -58,6 +58,7 @@ export type Business = {
   phone?: string;
   address?: string;
   city?: string;
+  website?: string; // clean host (no protocol) — the listing links to https://<website>
   descEs?: string;
   descEn?: string;
 };
