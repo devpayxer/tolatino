@@ -9,6 +9,9 @@ const OUT = __dirname + '/img/audit';
 
 const TABS = [
   ['inicio', null],
+  ['listing', 'Información general'],
+  ['hours', 'Horario'],
+  ['photos', 'Fotos y media'],
   ['updates', 'Novedades'],
   ['menu', 'Menú de comida'],
   ['services', 'Servicios'],

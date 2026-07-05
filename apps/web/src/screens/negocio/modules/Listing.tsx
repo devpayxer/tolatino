@@ -9,7 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, ExternalLink, Image as ImageIcon, Loader2, Shield, Star, Store } from 'lucide-react';
+import { Clock, ExternalLink, Globe, Image as ImageIcon, ListChecks, Loader2, Lock, MessageCircle, Shield, Star, Store, Tag } from 'lucide-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { formatPhone } from '@/lib/phone';
 import { listSuggestions, proposeSuggestion, cancelSuggestion, type Suggestion, type SuggestionTable } from '@/lib/suggestions';
@@ -77,7 +77,7 @@ const draftOf = (b: {
 });
 
 export function ListingModule({ ctx }: { ctx: PanelCtx }) {
-  const { L, go } = ctx;
+  const { L, go, isFree } = ctx;
   const admin = useBizAdmin();
   const router = useRouter();
   const real = admin.active;
@@ -102,7 +102,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   // Load the owner's pending suggestions for the selected category (demo: local only).
   const cat = draft?.category_id;
   useEffect(() => {
-    if (!real || admin.demo || !cat) { setSubPending([]); setFeatPending([]); return; }
+    if (!real || admin.demo || !cat || isFree) { setSubPending([]); setFeatPending([]); return; }
     let cancelled = false;
     (async () => {
       const [subs, feats] = await Promise.all([
@@ -113,7 +113,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [real?.id, cat, admin.demo]);
+  }, [real?.id, cat, admin.demo, isFree]);
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => (d ? { ...d, [k]: v } : d));
 
@@ -174,22 +174,29 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
   const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
 
+  // Pro-only fields (Subcategorías, Lo que ofrece, Destacar, Sitio web, Mensaje)
+  // count toward dirty — and get saved — only on a paid tier; on Free their
+  // sections render locked, so the draft values never change anyway.
+  const proDirty =
+    !!real && !!draft && !isFree &&
+    (!sameSet(draft.subcategories, real.subcategories ?? []) ||
+      !sameSet(draft.features, real.features ?? []) ||
+      !sameSet(draft.cardFeatures, real.card_features ?? []) ||
+      draft.website.trim() !== (real.website ?? '') ||
+      draft.acceptsMessages !== (real.accepts_messages ?? false) ||
+      draft.messageChannel !== (real.message_channel ?? 'whatsapp') ||
+      (draft.acceptsMessages && !draft.sameNumber ? draft.messagePhone.trim() : '') !== (real.message_phone ?? ''));
+
   const dirty =
     !!real &&
     !!draft &&
-    (draft.name.trim() !== (real.name ?? '') ||
+    (proDirty ||
+      draft.name.trim() !== (real.name ?? '') ||
       draft.category_id !== (real.category_id ?? '') ||
-      !sameSet(draft.subcategories, real.subcategories ?? []) ||
-      !sameSet(draft.features, real.features ?? []) ||
-      !sameSet(draft.cardFeatures, real.card_features ?? []) ||
       draft.tagline.trim() !== (real.tagline_es ?? '') ||
       draft.price_level !== (real.price_level ?? '') ||
       draft.phone.trim() !== (real.phone ?? '') ||
       draft.address.trim() !== (real.address ?? '') ||
-      draft.website.trim() !== (real.website ?? '') ||
-      draft.acceptsMessages !== (real.accepts_messages ?? false) ||
-      draft.messageChannel !== (real.message_channel ?? 'whatsapp') ||
-      (draft.acceptsMessages && !draft.sameNumber ? draft.messagePhone.trim() : '') !== (real.message_phone ?? '') ||
       draft.about.trim() !== (real.about_es ?? ''));
 
   const save = async () => {
@@ -198,20 +205,23 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     const { error, skipped } = await admin.update({
       name: draft.name.trim(),
       category_id: draft.category_id,
-      subcategories: draft.subcategories,
-      features: draft.features,
-      card_features: draft.cardFeatures,
       tagline_es: draft.tagline.trim() || null,
       tagline_en: draft.tagline.trim() || null,
       price_level: draft.price_level || null,
       phone: draft.phone.trim() || null,
       address: draft.address.trim() || null,
-      website: normalizeWebsite(draft.website),
-      accepts_messages: draft.acceptsMessages,
-      message_channel: draft.acceptsMessages ? (draft.messageChannel || 'whatsapp') : null,
-      message_phone: draft.acceptsMessages && !draft.sameNumber ? (draft.messagePhone.trim() || null) : null,
       about_es: draft.about.trim() || null,
       about_en: draft.about.trim() || null,
+      // Pro-only fields never leave the client on the Free tier.
+      ...(!isFree && {
+        subcategories: draft.subcategories,
+        features: draft.features,
+        card_features: draft.cardFeatures,
+        website: normalizeWebsite(draft.website),
+        accepts_messages: draft.acceptsMessages,
+        message_channel: draft.acceptsMessages ? (draft.messageChannel || 'whatsapp') : null,
+        message_phone: draft.acceptsMessages && !draft.sameNumber ? (draft.messagePhone.trim() || null) : null,
+      }),
     });
     setSaving(false);
     flash(
@@ -257,12 +267,53 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     'w-full rounded-field border-[1.5px] border-lilac-line bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary';
   const label = (t: ReactNode) => <span className="mb-1.5 block text-[12px] font-extrabold text-ink">{t}</span>;
 
+  // Pro-locked placeholder for a gated section on the Free tier: the option is
+  // visible (so the owner knows it exists) but locked, with a one-line benefit
+  // and an upgrade action that jumps to Plan y facturación.
+  const proLock = (Icon: typeof Globe, title: string, benefit: string) => (
+    <button
+      type="button"
+      onClick={() => go('billing')}
+      className="flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-field border-[1.5px] border-dashed border-lilac-line bg-lilac-3 px-3.5 py-3 text-left transition-colors hover:bg-lilac-2"
+    >
+      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white">
+        <Lock size={15} strokeWidth={2.2} className="text-primary-dark" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <Icon size={13} strokeWidth={2.4} className="flex-none text-primary-dark" />
+          <span className="truncate text-[12.5px] font-extrabold text-ink">{title}</span>
+          <span className="flex-none rounded bg-amber px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase tracking-[.04em] text-ink">Pro</span>
+        </span>
+        <span className="mt-0.5 block text-[11px] font-semibold leading-snug text-muted">{benefit}</span>
+      </span>
+      <span className="flex-none rounded-btn bg-primary px-3 py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Mejorar', 'Upgrade')}</span>
+    </button>
+  );
+
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+      <div className="grid gap-4 [&>*]:min-w-0 lg:grid-cols-[1fr_300px]">
         {/* form */}
         <div className="rounded-card border border-hair bg-white p-4 shadow-card md:p-5">
           <div className="mb-3.5 text-[13px] font-extrabold text-ink">{L('Detalles del negocio', 'Business details')}</div>
+
+          {/* Free plan → upgrade band (handoff premium-teaser pattern) */}
+          {isFree && (
+            <div className="mb-3.5 flex flex-wrap items-center gap-3 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[15px]">✦</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12.5px] font-extrabold">{L('Tu listado está en el plan Gratis', 'Your listing is on the Free plan')}</span>
+                <span className="mt-0.5 block text-[11px] font-semibold leading-snug text-[rgba(255,255,255,.7)]">
+                  {L('Desbloquea subcategorías, “Lo que ofrece”, destacados en la tarjeta, mensajes y sitio web con Pro.', 'Unlock subcategories, “What it offers”, card highlights, messaging and website with Pro.')}
+                </span>
+              </span>
+              <button onClick={() => go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-3.5 py-2 text-[11.5px] font-extrabold text-ink">
+                {L('Mejorar a Pro', 'Upgrade to Pro')}
+              </button>
+            </div>
+          )}
+
           <div className="flex flex-col gap-3.5">
             <label className="block">
               {label(L('Nombre del negocio', 'Business name'))}
@@ -280,8 +331,9 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               </select>
             </label>
 
-            {/* Subcategorías del rubro elegido — se despliegan al elegir categoría */}
-            {(SUBCATS[draft.category_id as CatKey]?.length ?? 0) > 0 && (
+            {/* Subcategorías del rubro elegido — se despliegan al elegir categoría (Pro) */}
+            {isFree ? proLock(Tag, L('Subcategorías', 'Subcategories'), L('Aparece en más búsquedas y filtros de tu rubro.', 'Show up in more searches and filters for your trade.'))
+            : (SUBCATS[draft.category_id as CatKey]?.length ?? 0) > 0 && (
               <TaxonomyPicker
                 title={L('Subcategorías', 'Subcategories')}
                 hint={L('elige las que apliquen', 'pick any that apply')}
@@ -305,8 +357,9 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               />
             )}
 
-            {/* Lo que ofrece (características): universales + del rubro + propuestas */}
-            <TaxonomyPicker
+            {/* Lo que ofrece (características): universales + del rubro + propuestas (Pro) */}
+            {isFree ? proLock(ListChecks, L('Lo que ofrece', 'What it offers'), L('Muestra tus servicios y comodidades en tu ficha pública.', 'Show your services and amenities on your public listing.'))
+            : <TaxonomyPicker
               title={L('Lo que ofrece', 'What it offers')}
               hint={L('elige las que apliquen', 'pick any that apply')}
               groups={[
@@ -331,11 +384,12 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               note={L('¿Falta una? Agrégala — se publica tras la aprobación del equipo.', "Missing one? Add it — it goes live after our team approves it.")}
               L={L}
               inputCls={inputCls}
-            />
+            />}
 
             {/* Destacar en la tarjeta: elige hasta 3 de "Lo que ofrece" para la
-                tarjeta de búsqueda, con una vista previa de cómo se verá. */}
-            <div className="rounded-field border border-hair bg-app p-3.5">
+                tarjeta de búsqueda, con una vista previa de cómo se verá. (Pro) */}
+            {isFree ? proLock(Star, L('Destacar en la tarjeta', 'Feature on the card'), L('Elige las 3 que la gente ve en tu tarjeta al buscar.', 'Pick the 3 people see on your card in search.'))
+            : <div className="rounded-field border border-hair bg-app p-3.5">
               <div className="flex items-center gap-2">
                 <Star size={14} strokeWidth={2.4} className="flex-none text-amber-ink" fill="#F4B740" />
                 <span className="min-w-0 flex-1 text-[12.5px] font-extrabold text-ink">{L('Destacar en la tarjeta', 'Feature on the card')}</span>
@@ -384,7 +438,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                   )}
                 </>
               )}
-            </div>
+            </div>}
 
             <label className="block">
               {label(L('Eslogan', 'Tagline'))}
@@ -421,8 +475,9 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               <input value={draft.phone} onChange={(e) => set('phone', formatPhone(e.target.value))} className={inputCls} placeholder="(713) 555-0100" inputMode="tel" autoComplete="tel" />
             </label>
 
-            {/* Contacto por mensaje: opt-in + channel. Uses the phone above. */}
-            <div className="rounded-field border border-hair bg-app p-3.5">
+            {/* Contacto por mensaje: opt-in + channel. Uses the phone above. (Pro) */}
+            {isFree ? proLock(MessageCircle, L('Contacto por mensaje', 'Contact by message'), L('Botón de WhatsApp o SMS en tu ficha para recibir clientes.', 'A WhatsApp or SMS button on your listing to receive customers.'))
+            : <div className="rounded-field border border-hair bg-app p-3.5">
               <div className="flex items-center gap-3">
                 <span className="min-w-0 flex-1">
                   <span className="block text-[12.5px] font-extrabold text-ink">{L('Contacto por mensaje', 'Contact by message')}</span>
@@ -493,17 +548,19 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                   </div>
                 </div>
               )}
-            </div>
+            </div>}
 
             <label className="block">
               {label(L('Dirección', 'Address'))}
               <input value={draft.address} onChange={(e) => set('address', e.target.value)} className={inputCls} placeholder={L('Calle y número', 'Street address')} />
             </label>
 
-            <label className="block">
+            {/* Sitio web (Pro) */}
+            {isFree ? proLock(Globe, L('Sitio web', 'Website'), L('Enlaza tu página desde tu ficha pública.', 'Link your website from your public listing.'))
+            : <label className="block">
               {label(L('Sitio web', 'Website'))}
               <input value={draft.website} onChange={(e) => set('website', e.target.value)} className={inputCls} placeholder="barberia.com" inputMode="url" autoCapitalize="none" autoCorrect="off" />
-            </label>
+            </label>}
 
             <label className="block">
               {label(L('Descripción', 'Description'))}

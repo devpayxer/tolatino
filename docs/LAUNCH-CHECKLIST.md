@@ -250,6 +250,15 @@ backing them with real Supabase tables/RPCs when each feature goes live.
 
 ## 6. Moderation & admin
 
+- [ ] **Server-side enforcement of Pro-gated listing fields.** Información
+  general gates Subcategorías / Lo que ofrece / Destacar en la tarjeta /
+  Contacto por mensaje / Sitio web behind the paid tier — but only in the UI
+  (the client also stops sending those columns for free accounts). The RLS
+  "update own business" policy does NOT check tier, so a technically savvy free
+  owner could still write those columns via the API. Before real launch, add a
+  DB-side guard (e.g. a BEFORE UPDATE trigger that rejects changes to gated
+  columns when `tier = 'free'`).
+
 - [ ] **Subcategory suggestions — admin approval UI.** Owners can propose a new
   subcategory from Información general; it's stored `pending` in
   `subcategory_suggestions` (0038) and only publishes when approved. Approval is
