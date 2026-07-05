@@ -9,7 +9,7 @@
 // stacked card so nothing overflows at 392px; two selects share a row via
 // `flex-1 min-w-0`.
 
-import { Plus, X } from 'lucide-react';
+import { Lock, Plus, X } from 'lucide-react';
 import { fmtShort, type Interval, type WeekHours } from '@/lib/hours';
 
 // Storage order: index 0 = Sunday.
@@ -38,10 +38,16 @@ export function HoursEditor({
   week,
   onChange,
   L,
+  proSlots = true,
+  onUpgrade,
 }: {
   week: WeekHours;
   onChange: (w: WeekHours) => void;
   L: (es: string, en: string) => string;
+  // Splitting a day into multiple slots ("+ Otra franja") is a Pro feature. On
+  // Free, the affordance stays visible but locked and routes to the upgrade.
+  proSlots?: boolean;
+  onUpgrade?: () => void;
 }) {
   const setDay = (d: number, intervals: Interval[]) =>
     onChange(week.map((x, i) => (i === d ? intervals : x)) as WeekHours);
@@ -163,16 +169,28 @@ export function HoursEditor({
                     )}
                   </div>
                 ))}
-                {canAddFranja(d) && (
-                  <button
-                    type="button"
-                    onClick={() => addFranja(d)}
-                    className="flex cursor-pointer items-center gap-1.5 self-start text-[11.5px] font-extrabold text-primary-dark"
-                  >
-                    <Plus size={13} strokeWidth={2.6} />
-                    {L('Otra franja', 'Add slot')}
-                  </button>
-                )}
+                {canAddFranja(d) &&
+                  (proSlots ? (
+                    <button
+                      type="button"
+                      onClick={() => addFranja(d)}
+                      className="flex cursor-pointer items-center gap-1.5 self-start text-[11.5px] font-extrabold text-primary-dark"
+                    >
+                      <Plus size={13} strokeWidth={2.6} />
+                      {L('Otra franja', 'Add slot')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={onUpgrade}
+                      aria-label={L('Otra franja — función Pro', 'Add slot — Pro feature')}
+                      className="flex cursor-pointer items-center gap-1.5 self-start rounded-full bg-[rgba(244,183,64,.16)] px-2.5 py-1 text-[11px] font-extrabold text-amber-ink"
+                    >
+                      <Lock size={11} strokeWidth={2.6} />
+                      {L('Otra franja', 'Add slot')}
+                      <span className="rounded bg-amber px-1 py-[1px] text-[8px] font-extrabold uppercase tracking-[.04em] text-ink">Pro</span>
+                    </button>
+                  ))}
               </div>
             )}
           </div>

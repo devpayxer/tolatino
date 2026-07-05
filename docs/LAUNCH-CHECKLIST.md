@@ -272,6 +272,10 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   columns when `tier = 'free'`). Same applies to the **photo cap** (Free 1 /
   Pro 20, enforced only in the Photos UI) — add a trigger/policy on
   `business_photos` insert that counts existing rows against the owner's tier.
+  Same applies to the **Horario Pro-gate** (Free: one slot per day, no
+  `hours_exceptions`): the "+ Otra franja" and "Feriados y más" limits are
+  UI-only, so the trigger should also reject `hours` with >1 interval on any day
+  and any non-empty `hours_exceptions` when `tier = 'free'`.
 
 - [ ] **Subcategory suggestions — admin approval UI.** Owners can propose a new
   subcategory from Información general; it's stored `pending` in

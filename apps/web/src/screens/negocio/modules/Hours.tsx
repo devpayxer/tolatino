@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, Clock, Loader2, Plus, Store, Trash2, X } from 'lucide-react';
+import { CalendarDays, Clock, Loader2, Lock, Plus, Store, Trash2, X } from 'lucide-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { HoursEditor, defaultWeek } from '@/components/HoursEditor';
 import { fmtLong, type HoursException, type WeekHours } from '@/lib/hours';
@@ -26,7 +26,7 @@ const newId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? c
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 export function HoursModule({ ctx }: { ctx: PanelCtx }) {
-  const { L, es } = ctx;
+  const { L, es, isFree, go } = ctx;
   const admin = useBizAdmin();
   const router = useRouter();
   const real = admin.active;
@@ -136,19 +136,59 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
             {L('Tu listado muestra el estado en vivo (Abierto / cierra pronto / Cerrado) a partir de este horario.', 'Your listing shows a live status (Open / closing soon / Closed) from this schedule.')}
           </p>
 
-          {/* mode: weekly schedule vs holidays & special days */}
+          {/* Free plan → upgrade band: split slots + Feriados y más are Pro */}
+          {isFree && (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[15px]">✦</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12.5px] font-extrabold">{L('Horario en el plan Gratis', 'Hours on the Free plan')}</span>
+                <span className="mt-0.5 block text-[11px] font-semibold leading-snug text-[rgba(255,255,255,.7)]">
+                  {L('Con Pro divides el día en varias franjas y programas feriados, vacaciones y cierres especiales.', 'With Pro you split the day into multiple slots and schedule holidays, vacations and special closures.')}
+                </span>
+              </span>
+              <button onClick={() => go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-3.5 py-2 text-[11.5px] font-extrabold text-ink">
+                {L('Mejorar a Pro', 'Upgrade to Pro')}
+              </button>
+            </div>
+          )}
+
+          {/* mode: weekly schedule vs holidays & special days (Pro) */}
           <div className="mb-4 flex rounded-full bg-lilac-2 p-0.5">
             <button type="button" onClick={() => setMode('weekly')} className={seg(mode === 'weekly')}>
               {L('Horario semanal', 'Weekly schedule')}
             </button>
             <button type="button" onClick={() => setMode('holidays')} className={seg(mode === 'holidays')}>
+              {isFree && <Lock size={11} strokeWidth={2.6} className="-mt-0.5 mr-1 inline-block align-middle" />}
               {L('Feriados y más', 'Holidays & more')}
-              {upcoming.length > 0 && <span className="ml-1.5 rounded-full bg-lilac px-1.5 text-[10px] text-primary-dark">{upcoming.length}</span>}
+              {!isFree && upcoming.length > 0 && <span className="ml-1.5 rounded-full bg-lilac px-1.5 text-[10px] text-primary-dark">{upcoming.length}</span>}
             </button>
           </div>
 
           {mode === 'weekly' ? (
-            <HoursEditor week={week} onChange={setWeek} L={L} />
+            <HoursEditor week={week} onChange={setWeek} L={L} proSlots={!isFree} onUpgrade={() => go('billing')} />
+          ) : isFree ? (
+            /* Feriados y más is Pro — show what it unlocks + upgrade CTA */
+            <div className="rounded-field border-[1.5px] border-dashed border-lilac-line bg-lilac-3 px-4 py-6 text-center">
+              <span className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white">
+                <CalendarDays size={22} strokeWidth={2.2} className="text-primary-dark" />
+                <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-lilac-3 bg-amber">
+                  <Lock size={9} strokeWidth={2.8} className="text-ink" />
+                </span>
+              </span>
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                <span className="text-[15px] font-extrabold text-ink">{L('Feriados y más', 'Holidays & more')}</span>
+                <span className="rounded bg-amber px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase tracking-[.04em] text-ink">Pro</span>
+              </div>
+              <p className="mx-auto mt-1.5 max-w-[320px] text-[12px] font-semibold leading-relaxed text-muted">
+                {L('Programa días festivos, vacaciones y cierres por clima. Anulan tu horario semanal solo en esas fechas — y avisan a tus clientes en tu ficha.', 'Schedule holidays, vacations and weather closures. They override your weekly schedule on those dates only — and inform your customers on your listing.')}
+              </p>
+              <button
+                onClick={() => go('billing')}
+                className="mt-4 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
+              >
+                {L('Mejorar a Pro', 'Upgrade to Pro')}
+              </button>
+            </div>
           ) : (
             <div>
               <p className="mb-3 text-[12px] font-medium leading-relaxed text-muted">
