@@ -116,6 +116,12 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
 
   const fieldCls =
     'w-full rounded-field border-[1.5px] border-lilac-line bg-app px-3 py-2.5 text-[13px] font-semibold text-ink outline-none focus:border-primary';
+  // Native date/time inputs on iOS Safari CENTER their value (and ignore the
+  // input's text-align), so the picked day looked misaligned vs the left-aligned
+  // labels. Left-align the value pseudo-elements so it lines up like every other
+  // field. (No-op on desktop Chromium, which already left-aligns.)
+  const dateFieldCls =
+    `${fieldCls} text-left [&::-webkit-date-and-time-value]:text-left [&::-webkit-datetime-edit]:text-left [&::-webkit-datetime-edit-fields-wrapper]:text-left`;
   const upcoming = [...exceptions].filter((e) => (e.end || e.date) >= todayISO());
 
   return (
@@ -188,7 +194,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                   <div className="flex flex-col gap-2.5">
                     <label className="block">
                       <span className="mb-1 block text-[11.5px] font-extrabold text-ink">{fRange ? L('Desde', 'From') : L('Fecha', 'Date')}</span>
-                      <input type="date" value={fDate} min={todayISO()} onChange={(e) => setFDate(e.target.value)} className={fieldCls} />
+                      <input type="date" value={fDate} min={todayISO()} onChange={(e) => setFDate(e.target.value)} className={dateFieldCls} />
                     </label>
                     <label className="flex cursor-pointer items-center gap-2">
                       <input type="checkbox" checked={fRange} onChange={(e) => setFRange(e.target.checked)} className="h-4 w-4 accent-[#7B61FF]" />
@@ -197,7 +203,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                     {fRange && (
                       <label className="block">
                         <span className="mb-1 block text-[11.5px] font-extrabold text-ink">{L('Hasta', 'To')}</span>
-                        <input type="date" value={fEnd} min={fDate || todayISO()} onChange={(e) => setFEnd(e.target.value)} className={fieldCls} />
+                        <input type="date" value={fEnd} min={fDate || todayISO()} onChange={(e) => setFEnd(e.target.value)} className={dateFieldCls} />
                       </label>
                     )}
                     <label className="block">
@@ -215,11 +221,11 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                       <div className="flex gap-2.5">
                         <label className="block flex-1">
                           <span className="mb-1 block text-[11.5px] font-extrabold text-ink">{L('Abre', 'Opens')}</span>
-                          <input type="time" value={fOpen} onChange={(e) => setFOpen(e.target.value)} className={fieldCls} />
+                          <input type="time" value={fOpen} onChange={(e) => setFOpen(e.target.value)} className={dateFieldCls} />
                         </label>
                         <label className="block flex-1">
                           <span className="mb-1 block text-[11.5px] font-extrabold text-ink">{L('Cierra', 'Closes')}</span>
-                          <input type="time" value={fClose} onChange={(e) => setFClose(e.target.value)} className={fieldCls} />
+                          <input type="time" value={fClose} onChange={(e) => setFClose(e.target.value)} className={dateFieldCls} />
                         </label>
                       </div>
                     )}
