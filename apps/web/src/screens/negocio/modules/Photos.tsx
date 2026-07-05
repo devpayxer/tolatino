@@ -11,7 +11,7 @@ import { ImagePlus, Loader2, Star, Store, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useBizAdmin } from '@/lib/bizAdmin';
-import { uploadPostImages } from '@/lib/image';
+import { uploadPostImages, uploadImage, LOGO_MAX_EDGE } from '@/lib/image';
 import type { PanelCtx } from '@/screens/negocio/tabs';
 import { Toast } from '@/screens/negocio/modules/_page';
 
@@ -28,12 +28,43 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [logoBusy, setLogoBusy] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
+  const logoInput = useRef<HTMLInputElement>(null);
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 1900);
+  };
+
+  // Logo: same compression protocol as every image (WebP client-side, small
+  // edge — a logo never needs more than 512px), stored on businesses.logo_url.
+  // Demo mode keeps it local (object URL) so the flow stays explorable.
+  const onPickLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = (e.target.files ?? [])[0];
+    e.target.value = '';
+    if (!file || !file.type.startsWith('image/') || !real || logoBusy) return;
+    setLogoBusy(true);
+    try {
+      const url = admin.demo || !user || !supabase
+        ? URL.createObjectURL(file)
+        : await uploadImage(file, user.id, LOGO_MAX_EDGE);
+      const { error } = await admin.update({ logo_url: url });
+      if (error) throw new Error(error);
+      flash(L('Logo actualizado', 'Logo updated'));
+    } catch {
+      flash(L('No se pudo subir el logo.', "Couldn't upload the logo."));
+    }
+    setLogoBusy(false);
+  };
+
+  const removeLogo = async () => {
+    if (!real || logoBusy) return;
+    setLogoBusy(true);
+    await admin.update({ logo_url: null });
+    setLogoBusy(false);
+    flash(L('Logo eliminado', 'Logo removed'));
   };
 
   const load = useCallback(async () => {
@@ -128,6 +159,45 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
   return (
     <>
       <input ref={fileInput} type="file" accept="image/*" multiple onChange={onPick} className="hidden" />
+      <input ref={logoInput} type="file" accept="image/*" onChange={onPickLogo} className="hidden" />
+
+      {/* logo — the business identity image (cards + dashboard header) */}
+      <div className="mb-4 flex items-center gap-3.5 rounded-card border border-hair bg-white p-4 shadow-card">
+        {real.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={real.logo_url} alt={L('Logo del negocio', 'Business logo')} className="h-[68px] w-[68px] flex-none rounded-tile border border-hair object-cover" />
+        ) : (
+          <button
+            onClick={() => logoInput.current?.click()}
+            className="flex h-[68px] w-[68px] flex-none cursor-pointer items-center justify-center rounded-tile border-[1.5px] border-dashed border-lilac-line bg-lilac-3"
+            aria-label={L('Subir logo', 'Upload logo')}
+          >
+            <ImagePlus size={20} strokeWidth={2} className="text-primary-dark" />
+          </button>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="text-[13.5px] font-extrabold text-ink">{L('Logo del negocio', 'Business logo')}</div>
+          <div className="mt-0.5 text-[11.5px] font-semibold leading-snug text-muted">
+            {L('Se muestra en tu tarjeta y en tu panel. Se optimiza antes de subir.', 'Shown on your card and dashboard. Optimized before upload.')}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              onClick={() => logoInput.current?.click()}
+              disabled={logoBusy}
+              className="flex cursor-pointer items-center gap-1.5 rounded-btn bg-lilac-2 px-3 py-1.5 text-[11.5px] font-extrabold text-primary-dark disabled:opacity-50"
+            >
+              {logoBusy && <Loader2 size={12} className="animate-spin" />}
+              {logoBusy ? L('Subiendo…', 'Uploading…') : real.logo_url ? L('Cambiar logo', 'Change logo') : L('Subir logo', 'Upload logo')}
+            </button>
+            {real.logo_url && (
+              <button onClick={removeLogo} disabled={logoBusy} className="cursor-pointer rounded-btn px-3 py-1.5 text-[11.5px] font-extrabold text-pink-dark disabled:opacity-50">
+                {L('Quitar', 'Remove')}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="text-[12.5px] font-bold text-muted">
           {photos.length}/{MAX_PHOTOS} {L('fotos', 'photos')} · {L('se optimizan en tu teléfono antes de subir', 'optimized on your phone before upload')}

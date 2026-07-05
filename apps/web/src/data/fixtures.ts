@@ -59,6 +59,7 @@ export type Business = {
   address?: string;
   city?: string;
   website?: string; // clean host (no protocol) — the listing links to https://<website>
+  logoUrl?: string; // uploaded business logo (WebP-compressed) — shown on cards
   cardFeatures?: string[]; // up to 3 features the owner highlights on the search card
   acceptsMessages?: boolean; // owner opted in to being messaged
   messageChannel?: 'sms' | 'whatsapp'; // which channel the Mensaje button opens

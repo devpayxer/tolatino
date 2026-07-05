@@ -28,6 +28,7 @@ export type BizRow = {
   city: string | null;
   phone: string | null;
   website: string | null;
+  logo_url: string | null;
   accepts_messages: boolean;
   message_channel: string | null; // 'sms' | 'whatsapp'
   message_phone: string | null; // separate messaging number; null = use `phone`
@@ -87,6 +88,7 @@ const DEMO_BIZ: BizRow = {
   city: 'Houston, TX',
   phone: '(832) 555-4521',
   website: 'taquerialaesperanza.com',
+  logo_url: null,
   accepts_messages: true,
   message_channel: 'whatsapp',
   message_phone: null,
@@ -123,6 +125,7 @@ const DEMO_BIZ_2: BizRow = {
   city: 'Houston, TX',
   phone: '(713) 555-0192',
   website: null,
+  logo_url: null,
   accepts_messages: true,
   message_channel: 'sms',
   message_phone: null,
@@ -147,7 +150,7 @@ const DEMO_BIZ_2: BizRow = {
 // controlled by billing / the review system, not the listing editor.
 const WRITABLE: (keyof BizRow)[] = [
   'name', 'category_id', 'tagline_es', 'tagline_en', 'price_level', 'about_es', 'about_en',
-  'address', 'city', 'phone', 'website', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings',
+  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings',
 ];
 
 type BizAdminCtx = {

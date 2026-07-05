@@ -13,6 +13,7 @@ const BUCKET = 'post-photos';
 /** Max long-edge in px per use. Feeds never need more than ~1600. */
 export const IMAGE_MAX_EDGE = 1600;
 export const AVATAR_MAX_EDGE = 400;
+export const LOGO_MAX_EDGE = 512;
 
 function uuid(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -86,4 +87,21 @@ export async function uploadPostImages(files: File[], userId: string): Promise<s
     urls.push(supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
   }
   return urls;
+}
+
+/**
+ * Compress + upload ONE image (same pipeline, custom max edge — e.g. a business
+ * logo at LOGO_MAX_EDGE). Returns the public URL. Throws on upload error.
+ */
+export async function uploadImage(file: File, userId: string, maxEdge = IMAGE_MAX_EDGE): Promise<string> {
+  if (!supabase) throw new Error('storage-not-configured');
+  const blob = await compressImage(file, maxEdge);
+  const path = `${userId}/${uuid()}.${EXT[blob.type] ?? 'jpg'}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
+    contentType: blob.type,
+    cacheControl: '31536000',
+    upsert: false,
+  });
+  if (error) throw error;
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }

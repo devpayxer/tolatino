@@ -616,7 +616,12 @@ function BizCardVerified({ b, onOpen }: { b: Business; onOpen: () => void }) {
   return (
     <Card onClick={onOpen} className="border-[rgba(123,97,255,.22)] p-3.5 shadow-[0_2px_14px_rgba(123,97,255,.09)] transition-shadow hover:shadow-card-lg">
       <div className="flex items-start gap-3">
-        <span className="h-[84px] w-[84px] flex-none rounded-tile" style={{ background: bizTile(b) }} />
+        {b.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={b.logoUrl} alt="" className="h-[84px] w-[84px] flex-none rounded-tile border border-hair object-cover" />
+        ) : (
+          <span className="h-[84px] w-[84px] flex-none rounded-tile" style={{ background: bizTile(b) }} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-[15.5px] font-extrabold text-ink">{b.name}</span>
@@ -700,7 +705,12 @@ function BizCardBasic({ b, onOpen }: { b: Business; onOpen: () => void }) {
   return (
     <Card onClick={onOpen} className="p-3 transition-shadow hover:shadow-card-lg">
       <div className="flex items-start gap-3">
-        <span className="h-[58px] w-[58px] flex-none rounded-tile opacity-90" style={{ background: bizTile(b) }} />
+        {b.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={b.logoUrl} alt="" className="h-[58px] w-[58px] flex-none rounded-tile border border-hair object-cover" />
+        ) : (
+          <span className="h-[58px] w-[58px] flex-none rounded-tile opacity-90" style={{ background: bizTile(b) }} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-[14px] font-extrabold text-ink">{b.name}</span>

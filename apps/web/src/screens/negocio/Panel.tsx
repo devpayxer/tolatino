@@ -99,6 +99,16 @@ export function PanelScreen() {
 
   const bizName = real ? real.name : isFree ? 'Lupita’s Tortillería' : (app.biz?.name && app.biz.plan === 'pro' ? app.biz.name : ci.name);
   const bizInitials = real ? initialsOf(real.name) : isFree ? 'LT' : ci.initials;
+  // Business avatar: the uploaded logo when present, else the initials tile.
+  const bizAvatar = (cls: string) =>
+    real?.logo_url ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={real.logo_url} alt="" className={`${cls} flex-none border border-hair object-cover`} />
+    ) : (
+      <span className={`${cls} flex flex-none items-center justify-center font-extrabold text-white`} style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
+        {bizInitials}
+      </span>
+    );
   const bizCategory = real ? catLabel(real.category_id) : isFree ? L('Panadería · Tortillería', 'Bakery · Tortillería') : L(ci.es, ci.en);
   const bizArea = real ? (real.address || real.city || '') : ci.area;
   const catTile = real ? `${real.tile_a ?? '#EFEBFF'} 0 9px,${real.tile_b ?? '#E5DEF9'} 9px 18px` : isFree ? '#FCE3EC 0 9px,#F6CEDD 9px 18px' : ci.tile;
@@ -137,9 +147,7 @@ export function PanelScreen() {
       <div className="border-b border-hair p-4">
         <div className="h-2 rounded-full" style={{ background: `repeating-linear-gradient(135deg,${catTile})` }} />
         <div className="mt-3 flex items-center gap-2.5">
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn text-[14px] font-extrabold text-white" style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
-            {bizInitials}
-          </span>
+          {bizAvatar('h-11 w-11 rounded-btn text-[14px]')}
           <span className="min-w-0">
             <span className="flex items-center gap-1.5">
               <span className="truncate text-[14px] font-extrabold text-ink">{bizName}</span>
@@ -322,9 +330,7 @@ export function PanelScreen() {
                 {isFree ? '2' : '7'}
               </span>
             </button>
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
-              {bizInitials}
-            </span>
+            {bizAvatar('h-9 w-9 rounded-full text-[11px]')}
           </div>
         </div>
       </header>
@@ -351,9 +357,7 @@ export function PanelScreen() {
           {/* identity card (handoff mobile Inicio) — business avatar + name + plan */}
           {isInicio && (
             <div className="mb-3.5 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card lg:hidden">
-              <span className="flex h-[46px] w-[46px] flex-none items-center justify-center rounded-[13px] text-[13px] font-extrabold text-white" style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
-                {bizInitials}
-              </span>
+              {bizAvatar('h-[46px] w-[46px] rounded-[13px] text-[13px]')}
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-[15px] font-extrabold text-ink">{bizName}</span>

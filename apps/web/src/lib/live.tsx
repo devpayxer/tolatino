@@ -49,6 +49,7 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     address: r.address != null ? String(r.address) : undefined,
     city: r.city != null ? String(r.city) : undefined,
     website: r.website != null ? String(r.website) : undefined,
+    logoUrl: r.logo_url != null ? String(r.logo_url) : undefined,
     acceptsMessages: r.accepts_messages === true,
     messageChannel: r.message_channel === 'sms' ? 'sms' : r.message_channel === 'whatsapp' ? 'whatsapp' : undefined,
     messagePhone: r.message_phone != null ? String(r.message_phone) : undefined,
