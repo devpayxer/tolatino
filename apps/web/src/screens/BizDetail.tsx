@@ -12,11 +12,17 @@ import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
-import { bizTile, type Business } from '@/data/fixtures';
+import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useNow } from '@/lib/useNow';
 import { bizStatus, fmtDayHours, statusLabel } from '@/lib/hours';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
+
+// es → en lookup for feature labels ("Lo que ofrece"), so the owner-selected
+// `features` render bilingually; custom (approved) labels fall back to es.
+const FEAT_EN: Record<string, string> = {};
+for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
+for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
 import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_DATES, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
@@ -490,16 +496,28 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       {/* ============ OVERVIEW ============ */}
       {tab === 'overview' && (
         <div className="pt-5">
-          {secTitle(L('Lo que ofrece', 'What it offers'))}
-          <div className="flex flex-wrap gap-2">
-            {(L(b.amEs.join('|'), b.amEn.join('|')).split('|')).map((a) => (
-              <span key={a} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-3 py-[7px] text-[12px] font-bold text-ink-soft">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                {a}
-              </span>
-            ))}
-          </div>
-          {divider}
+          {/* "Lo que ofrece" = the owner-selected features (bilingual); falls back
+              to the legacy amenities. Hidden when there's nothing to show. */}
+          {(() => {
+            const offers = b.features && b.features.length
+              ? b.features.map((es) => L(es, FEAT_EN[es] ?? es))
+              : L(b.amEs.join('|'), b.amEn.join('|')).split('|').map((s) => s.trim()).filter(Boolean);
+            if (offers.length === 0) return null;
+            return (
+              <>
+                {secTitle(L('Lo que ofrece', 'What it offers'))}
+                <div className="flex flex-wrap gap-2">
+                  {offers.map((a) => (
+                    <span key={a} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-3 py-[7px] text-[12px] font-bold text-ink-soft">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      {a}
+                    </span>
+                  ))}
+                </div>
+                {divider}
+              </>
+            );
+          })()}
           {secTitle(L('Acerca de', 'About'))}
           <div className="whitespace-pre-line text-[14px] font-medium leading-[1.6] text-ink-soft">
             {/* real owner description when present; otherwise a friendly template

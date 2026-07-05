@@ -9,11 +9,12 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, ExternalLink, Image as ImageIcon, Loader2, Plus, Shield, Store, X } from 'lucide-react';
+import { Clock, ExternalLink, Image as ImageIcon, Loader2, Shield, Store } from 'lucide-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { formatPhone } from '@/lib/phone';
-import { listSuggestions, proposeSubcategory, cancelSuggestion, type SubcatSuggestion } from '@/lib/subcatSuggestions';
-import { SUBCATS } from '@/data/fixtures';
+import { listSuggestions, proposeSuggestion, cancelSuggestion, type Suggestion, type SuggestionTable } from '@/lib/suggestions';
+import { TaxonomyPicker } from '@/screens/negocio/modules/TaxonomyPicker';
+import { SUBCATS, FEATURES_COMMON, FEATURES_BY_CAT } from '@/data/fixtures';
 import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
 import type { PanelCtx } from '@/screens/negocio/tabs';
@@ -23,6 +24,7 @@ type Draft = {
   name: string;
   category_id: string;
   subcategories: string[]; // canonical (es) labels from SUBCATS[category]
+  features: string[]; // canonical (es) labels — "Lo que ofrece"
   tagline: string;
   price_level: string;
   phone: string;
@@ -47,11 +49,12 @@ const draftOf = (b: {
   name: string; category_id: string; tagline_es: string | null; price_level: string | null;
   phone: string | null; address: string | null; website: string | null;
   accepts_messages: boolean; message_channel: string | null; message_phone: string | null;
-  subcategories: string[] | null; about_es: string | null;
+  subcategories: string[] | null; features: string[] | null; about_es: string | null;
 }): Draft => ({
   name: b.name ?? '',
   category_id: b.category_id ?? 'FoodDrinks',
   subcategories: b.subcategories ?? [],
+  features: b.features ?? [],
   tagline: b.tagline_es ?? '',
   price_level: b.price_level ?? '',
   phone: formatPhone(b.phone ?? ''),
@@ -73,10 +76,9 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
-  // Owner-proposed subcategories (pending admin approval) for the current category.
-  const [pending, setPending] = useState<SubcatSuggestion[]>([]);
-  const [addingSub, setAddingSub] = useState(false);
-  const [newSub, setNewSub] = useState('');
+  // Owner-proposed subcategories + features (pending admin approval).
+  const [subPending, setSubPending] = useState<Suggestion[]>([]);
+  const [featPending, setFeatPending] = useState<Suggestion[]>([]);
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 1900);
@@ -85,19 +87,20 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   // Seed (and reseed when switching between the owner's businesses).
   useEffect(() => {
     setDraft(real ? draftOf(real) : null);
-    setAddingSub(false);
-    setNewSub('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id]);
 
   // Load the owner's pending suggestions for the selected category (demo: local only).
   const cat = draft?.category_id;
   useEffect(() => {
-    if (!real || admin.demo || !cat) { setPending([]); return; }
+    if (!real || admin.demo || !cat) { setSubPending([]); setFeatPending([]); return; }
     let cancelled = false;
     (async () => {
-      const rows = await listSuggestions(real.id, cat);
-      if (!cancelled) setPending(rows);
+      const [subs, feats] = await Promise.all([
+        listSuggestions('subcategory_suggestions', real.id, cat),
+        listSuggestions('feature_suggestions', real.id, cat),
+      ]);
+      if (!cancelled) { setSubPending(subs); setFeatPending(feats); }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,48 +109,40 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => (d ? { ...d, [k]: v } : d));
 
   // Changing category swaps the valid subcategories → drop any that no longer apply.
-  const setCategory = (cat: string) =>
+  // Features are kept (many are universal; leftovers show as selected extras).
+  const setCategory = (next: string) =>
     setDraft((d) => {
       if (!d) return d;
-      const valid = new Set((SUBCATS[cat as CatKey] ?? []).map(([es]) => es));
-      return { ...d, category_id: cat, subcategories: d.subcategories.filter((s) => valid.has(s)) };
+      const valid = new Set((SUBCATS[next as CatKey] ?? []).map(([es]) => es));
+      return { ...d, category_id: next, subcategories: d.subcategories.filter((s) => valid.has(s)) };
     });
-  const toggleSub = (es: string) =>
-    setDraft((d) => (d ? { ...d, subcategories: d.subcategories.includes(es) ? d.subcategories.filter((x) => x !== es) : [...d.subcategories, es] } : d));
+  const toggleIn = (key: 'subcategories' | 'features', es: string) =>
+    setDraft((d) => (d ? { ...d, [key]: d[key].includes(es) ? d[key].filter((x) => x !== es) : [...d[key], es] } : d));
 
-  // Propose a new subcategory → stored pending (admin approves later). Rejects
-  // duplicates of an existing chip or a pending one. Persists immediately (it's
-  // independent of the form's Save button).
-  const submitNewSub = async () => {
-    const labelRaw = newSub.trim();
+  // Propose a new taxonomy value → stored pending (admin approves later). Rejects
+  // duplicates. Persists immediately (independent of the form's Save button).
+  const propose = async (
+    table: SuggestionTable,
+    setPending: React.Dispatch<React.SetStateAction<Suggestion[]>>,
+    isDup: (lc: string) => boolean,
+    dupMsg: string,
+    labelRaw: string,
+  ) => {
     if (!labelRaw || !draft) return;
     const lc = labelRaw.toLowerCase();
-    const isOfficial = (SUBCATS[draft.category_id as CatKey] ?? []).some(([es, en]) => es.toLowerCase() === lc || en.toLowerCase() === lc);
-    const isSelected = draft.subcategories.some((s) => s.toLowerCase() === lc);
-    const isPending = pending.some((s) => s.label_es.toLowerCase() === lc);
-    setNewSub('');
-    setAddingSub(false);
-    if (isOfficial || isSelected || isPending) {
-      flash(L('Esa subcategoría ya existe.', 'That subcategory already exists.'));
-      return;
-    }
+    if (isDup(lc)) { flash(dupMsg); return; }
     if (real && !admin.demo) {
-      const row = await proposeSubcategory(real.id, draft.category_id, labelRaw);
-      if (row) {
-        setPending((p) => [...p, row]);
-        flash(L('Enviado para aprobación', 'Sent for approval'));
-      } else {
-        flash(L('No se pudo enviar. Intenta de nuevo.', "Couldn't send. Try again."));
-      }
+      const row = await proposeSuggestion(table, real.id, draft.category_id, labelRaw);
+      if (row) { setPending((p) => [...p, row]); flash(L('Enviado para aprobación', 'Sent for approval')); }
+      else flash(L('No se pudo enviar. Intenta de nuevo.', "Couldn't send. Try again."));
     } else {
-      // demo: optimistic local pending chip so the flow stays explorable
       setPending((p) => [...p, { id: `local-${labelRaw}`, label_es: labelRaw, status: 'pending', category_id: draft.category_id }]);
       flash(L('Enviado para aprobación', 'Sent for approval'));
     }
   };
-  const cancelSub = async (id: string) => {
+  const cancelPending = (table: SuggestionTable, setPending: React.Dispatch<React.SetStateAction<Suggestion[]>>) => async (id: string) => {
     setPending((p) => p.filter((s) => s.id !== id));
-    if (!id.startsWith('local-')) await cancelSuggestion(id);
+    if (!id.startsWith('local-')) await cancelSuggestion(table, id);
   };
 
   const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
@@ -158,6 +153,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     (draft.name.trim() !== (real.name ?? '') ||
       draft.category_id !== (real.category_id ?? '') ||
       !sameSet(draft.subcategories, real.subcategories ?? []) ||
+      !sameSet(draft.features, real.features ?? []) ||
       draft.tagline.trim() !== (real.tagline_es ?? '') ||
       draft.price_level !== (real.price_level ?? '') ||
       draft.phone.trim() !== (real.phone ?? '') ||
@@ -175,6 +171,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       name: draft.name.trim(),
       category_id: draft.category_id,
       subcategories: draft.subcategories,
+      features: draft.features,
       tagline_es: draft.tagline.trim() || null,
       tagline_en: draft.tagline.trim() || null,
       price_level: draft.price_level || null,
@@ -248,99 +245,58 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               </select>
             </label>
 
-            {/* Subcategorías del rubro elegido — se despliegan al elegir categoría.
-                Incluye las estándar, las personalizadas ya aprobadas, las
-                pendientes de aprobación, y un botón para proponer una nueva. */}
-            {(SUBCATS[draft.category_id as CatKey]?.length ?? 0) > 0 && (() => {
-              const official = SUBCATS[draft.category_id as CatKey];
-              const officialSet = new Set(official.map(([es]) => es));
-              const customApproved = draft.subcategories.filter((s) => !officialSet.has(s));
-              const pendingHere = pending.filter((s) => s.status === 'pending');
-              return (
-                <div>
-                  {label(
-                    <>
-                      {L('Subcategorías', 'Subcategories')} <span className="font-semibold text-muted">· {L('elige las que apliquen', 'pick any that apply')}</span>
-                    </>,
-                  )}
-                  <div className="flex max-h-[196px] flex-wrap gap-2 overflow-y-auto">
-                    {official.map(([es, en]) => {
-                      const on = draft.subcategories.includes(es);
-                      return (
-                        <button
-                          key={es}
-                          type="button"
-                          onClick={() => toggleSub(es)}
-                          className={`cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
-                        >
-                          {L(es, en)}
-                        </button>
-                      );
-                    })}
-                    {/* personalizadas aprobadas (ya publicadas) — seleccionables */}
-                    {customApproved.map((es) => (
-                      <button
-                        key={`c-${es}`}
-                        type="button"
-                        onClick={() => toggleSub(es)}
-                        className="cursor-pointer rounded-full bg-primary px-3 py-2 text-[12px] font-extrabold text-white"
-                      >
-                        {es}
-                      </button>
-                    ))}
-                    {/* pendientes de aprobación — no publican aún */}
-                    {pendingHere.map((s) => (
-                      <span
-                        key={s.id}
-                        className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-amber bg-amber-bg px-3 py-2 text-[12px] font-extrabold text-amber-ink"
-                      >
-                        {s.label_es}
-                        <span className="rounded bg-white/70 px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase tracking-[.03em] text-amber-ink">{L('pendiente', 'pending')}</span>
-                        <button type="button" onClick={() => cancelSub(s.id)} aria-label={L('Cancelar', 'Cancel')} className="cursor-pointer text-amber-ink/70 hover:text-amber-ink">
-                          <X size={12} strokeWidth={2.8} />
-                        </button>
-                      </span>
-                    ))}
-                    {!addingSub && (
-                      <button
-                        type="button"
-                        onClick={() => { setAddingSub(true); setNewSub(''); }}
-                        className="inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] border-dashed border-lilac-line bg-white px-3 py-2 text-[12px] font-extrabold text-primary-dark"
-                      >
-                        <Plus size={13} strokeWidth={2.8} /> {L('Agregar', 'Add')}
-                      </button>
-                    )}
-                  </div>
+            {/* Subcategorías del rubro elegido — se despliegan al elegir categoría */}
+            {(SUBCATS[draft.category_id as CatKey]?.length ?? 0) > 0 && (
+              <TaxonomyPicker
+                title={L('Subcategorías', 'Subcategories')}
+                hint={L('elige las que apliquen', 'pick any that apply')}
+                groups={[{ items: SUBCATS[draft.category_id as CatKey] }]}
+                selected={draft.subcategories}
+                onToggle={(es) => toggleIn('subcategories', es)}
+                pending={subPending}
+                onPropose={(labelRaw) => {
+                  const officialSub = SUBCATS[draft.category_id as CatKey] ?? [];
+                  propose('subcategory_suggestions', setSubPending,
+                    (lc) => officialSub.some(([es, en]) => es.toLowerCase() === lc || en.toLowerCase() === lc)
+                      || draft.subcategories.some((s) => s.toLowerCase() === lc)
+                      || subPending.some((s) => s.label_es.toLowerCase() === lc),
+                    L('Esa subcategoría ya existe.', 'That subcategory already exists.'), labelRaw);
+                }}
+                onCancelPending={cancelPending('subcategory_suggestions', setSubPending)}
+                addPlaceholder={L('Nueva subcategoría…', 'New subcategory…')}
+                note={L('¿Falta una? Agrégala — se publica tras la aprobación del equipo.', "Missing one? Add it — it goes live after our team approves it.")}
+                L={L}
+                inputCls={inputCls}
+              />
+            )}
 
-                  {addingSub && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <input
-                        autoFocus
-                        value={newSub}
-                        onChange={(e) => setNewSub(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') { e.preventDefault(); submitNewSub(); }
-                          if (e.key === 'Escape') { setAddingSub(false); setNewSub(''); }
-                        }}
-                        maxLength={40}
-                        placeholder={L('Nueva subcategoría…', 'New subcategory…')}
-                        className={inputCls}
-                      />
-                      <button type="button" onClick={submitNewSub} disabled={!newSub.trim()} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-3 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
-                        {L('Enviar', 'Send')}
-                      </button>
-                      <button type="button" onClick={() => { setAddingSub(false); setNewSub(''); }} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-3.5 py-3 text-[12px] font-extrabold text-ink-2">
-                        {L('Cancelar', 'Cancel')}
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="mt-1.5 text-[11px] font-semibold leading-snug text-muted">
-                    {L('¿Falta una? Agrégala — se publica tras la aprobación del equipo.', "Missing one? Add it — it goes live after our team approves it.")}
-                  </div>
-                </div>
-              );
-            })()}
+            {/* Lo que ofrece (características): universales + del rubro + propuestas */}
+            <TaxonomyPicker
+              title={L('Lo que ofrece', 'What it offers')}
+              hint={L('elige las que apliquen', 'pick any that apply')}
+              groups={[
+                { title: L('Sugeridos', 'Suggested'), items: FEATURES_COMMON },
+                ...((FEATURES_BY_CAT[draft.category_id as CatKey]?.length ?? 0) > 0
+                  ? [{ title: L(CAT[draft.category_id as CatKey].es, CAT[draft.category_id as CatKey].en), items: FEATURES_BY_CAT[draft.category_id as CatKey] }]
+                  : []),
+              ]}
+              selected={draft.features}
+              onToggle={(es) => toggleIn('features', es)}
+              pending={featPending}
+              onPropose={(labelRaw) => {
+                const officialFeat = [...FEATURES_COMMON, ...(FEATURES_BY_CAT[draft.category_id as CatKey] ?? [])];
+                propose('feature_suggestions', setFeatPending,
+                  (lc) => officialFeat.some(([es, en]) => es.toLowerCase() === lc || en.toLowerCase() === lc)
+                    || draft.features.some((s) => s.toLowerCase() === lc)
+                    || featPending.some((s) => s.label_es.toLowerCase() === lc),
+                  L('Esa característica ya existe.', 'That feature already exists.'), labelRaw);
+              }}
+              onCancelPending={cancelPending('feature_suggestions', setFeatPending)}
+              addPlaceholder={L('Nueva característica…', 'New feature…')}
+              note={L('¿Falta una? Agrégala — se publica tras la aprobación del equipo.', "Missing one? Add it — it goes live after our team approves it.")}
+              L={L}
+              inputCls={inputCls}
+            />
 
             <label className="block">
               {label(L('Eslogan', 'Tagline'))}
