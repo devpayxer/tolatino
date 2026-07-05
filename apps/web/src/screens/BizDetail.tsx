@@ -92,12 +92,13 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const phone = b.phone || '(832) 555-4521';
   const address = b.address || '5821 Bellaire Blvd, Houston, TX';
 
-  // Message channel (opt-in from the dashboard). Build a functional link from the
-  // phone: WhatsApp needs an international number (assume US when 10 digits), SMS
-  // opens the native texting app. Only enabled when the owner opted in + has a phone.
-  const phoneDigits = phone.replace(/\D/g, '');
-  const intlDigits = phoneDigits.length === 10 ? `1${phoneDigits}` : phoneDigits;
-  const msgOn = !!b.acceptsMessages && phoneDigits.length > 0;
+  // Message channel (opt-in from the dashboard). Uses a separate messaging number
+  // when the owner set one, else the main phone. Build a functional link: WhatsApp
+  // needs an international number (assume US when 10 digits), SMS opens the native
+  // texting app. Only enabled when the owner opted in + a number exists.
+  const msgDigits = (b.messagePhone || b.phone || '').replace(/\D/g, '');
+  const intlDigits = msgDigits.length === 10 ? `1${msgDigits}` : msgDigits;
+  const msgOn = !!b.acceptsMessages && msgDigits.length > 0;
   const msgIsSms = b.messageChannel === 'sms';
   const msgHref = msgIsSms ? `sms:+${intlDigits}` : `https://wa.me/${intlDigits}`;
 

@@ -26,6 +26,8 @@ type Draft = {
   website: string;
   acceptsMessages: boolean;
   messageChannel: string; // 'sms' | 'whatsapp'
+  sameNumber: boolean; // use the main phone for messages
+  messagePhone: string; // used only when sameNumber = false
   about: string;
 };
 
@@ -40,7 +42,8 @@ const normalizeWebsite = (v: string): string | null => {
 const draftOf = (b: {
   name: string; category_id: string; tagline_es: string | null; price_level: string | null;
   phone: string | null; address: string | null; website: string | null;
-  accepts_messages: boolean; message_channel: string | null; about_es: string | null;
+  accepts_messages: boolean; message_channel: string | null; message_phone: string | null;
+  about_es: string | null;
 }): Draft => ({
   name: b.name ?? '',
   category_id: b.category_id ?? 'FoodDrinks',
@@ -51,6 +54,8 @@ const draftOf = (b: {
   website: b.website ?? '',
   acceptsMessages: b.accepts_messages ?? false,
   messageChannel: b.message_channel ?? 'whatsapp',
+  sameNumber: !b.message_phone,
+  messagePhone: b.message_phone ?? '',
   about: b.about_es ?? '',
 });
 
@@ -88,6 +93,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       draft.website.trim() !== (real.website ?? '') ||
       draft.acceptsMessages !== (real.accepts_messages ?? false) ||
       draft.messageChannel !== (real.message_channel ?? 'whatsapp') ||
+      (draft.acceptsMessages && !draft.sameNumber ? draft.messagePhone.trim() : '') !== (real.message_phone ?? '') ||
       draft.about.trim() !== (real.about_es ?? ''));
 
   const save = async () => {
@@ -104,6 +110,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       website: normalizeWebsite(draft.website),
       accepts_messages: draft.acceptsMessages,
       message_channel: draft.acceptsMessages ? (draft.messageChannel || 'whatsapp') : null,
+      message_phone: draft.acceptsMessages && !draft.sameNumber ? (draft.messagePhone.trim() || null) : null,
       about_es: draft.about.trim() || null,
       about_en: draft.about.trim() || null,
     });
@@ -236,11 +243,41 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                       </button>
                     ))}
                   </div>
+
+                  <div className="mt-3">
+                    {label(L('¿Qué número?', 'Which number?'))}
+                    <div className="flex gap-2">
+                      {([[true, L('Mismo teléfono', 'Same phone')], [false, L('Otro número', 'Other number')]] as [boolean, string][]).map(([val, lab]) => (
+                        <button
+                          key={String(val)}
+                          type="button"
+                          onClick={() => set('sameNumber', val)}
+                          className={`flex-1 cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${draft.sameNumber === val ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                        >
+                          {lab}
+                        </button>
+                      ))}
+                    </div>
+                    {!draft.sameNumber && (
+                      <input
+                        value={draft.messagePhone}
+                        onChange={(e) => set('messagePhone', e.target.value)}
+                        className={`${inputCls} mt-2`}
+                        placeholder={draft.messageChannel === 'sms' ? L('Número para SMS', 'Number for SMS') : L('Número de WhatsApp', 'WhatsApp number')}
+                        inputMode="tel"
+                      />
+                    )}
+                  </div>
+
                   <div className="mt-2 text-[11px] font-semibold leading-snug text-muted">
-                    {draft.messageChannel === 'sms'
-                      ? L('Abre un mensaje de texto a tu teléfono.', 'Opens a text message to your phone.')
-                      : L('Abre WhatsApp a tu teléfono.', 'Opens WhatsApp to your phone.')}
-                    {!draft.phone.trim() && ` ${L('Agrega tu teléfono arriba.', 'Add your phone above.')}`}
+                    {(() => {
+                      const ch = draft.messageChannel === 'sms' ? L('un mensaje de texto', 'a text message') : 'WhatsApp';
+                      const num = draft.sameNumber
+                        ? (draft.phone.trim() || L('tu teléfono', 'your phone'))
+                        : (draft.messagePhone.trim() || L('el número que pongas', 'the number you enter'));
+                      return L(`Abre ${ch} a ${num}.`, `Opens ${ch} to ${num}.`);
+                    })()}
+                    {draft.sameNumber && !draft.phone.trim() && ` ${L('Agrega tu teléfono arriba.', 'Add your phone above.')}`}
                   </div>
                 </div>
               )}
