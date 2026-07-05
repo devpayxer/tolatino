@@ -423,6 +423,7 @@ export const TAG_BIZ_NAMES = ['Taquería La Esperanza', 'Salón Glamour', 'Talle
 // ---------- events ----------
 export type EventItem = {
   id: number;
+  slug?: string; // supabase events.slug — present on live events; drives tickets/RSVP
   dEs: string;
   day: string;
   cat: 'musica' | 'mercado' | 'familia' | 'comida';

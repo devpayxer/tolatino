@@ -7,11 +7,11 @@
 // notification prefs, the user's own posts, and quick links to Guardados /
 // Siguiendo / Notificaciones / the business panel. No improvised UI.
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Bell, Bookmark, ChevronLeft, ChevronRight, Globe, HelpCircle, LayoutDashboard,
-  LogIn, LogOut, Mail, MapPin, Megaphone, Plus, Star, Trash2, User, Users,
+  Bell, Bike, Bookmark, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Globe, HelpCircle,
+  LayoutDashboard, LogIn, LogOut, Mail, MapPin, Megaphone, Plus, ShoppingBag, Star, Ticket, Trash2, User, Users,
 } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -20,11 +20,29 @@ import { useAddresses } from '@/lib/addresses';
 import { useFollows } from '@/lib/follows';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useLiveData } from '@/lib/live';
+import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, YouAvatar } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 
-type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config';
+type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config' | 'pedidos' | 'reservas' | 'rentas' | 'boletos' | 'voy';
+
+// Status → bilingual label + pill colors, shared across the activity lists.
+const STATUS: Record<string, { es: string; en: string; bg: string; c: string }> = {
+  new: { es: 'Nuevo', en: 'New', bg: '#FDE7EF', c: '#D6336C' },
+  preparing: { es: 'Preparando', en: 'Preparing', bg: '#FCEFD6', c: '#9A6A12' },
+  ready: { es: 'Listo', en: 'Ready', bg: '#E3F5EA', c: '#1F8A4C' },
+  completed: { es: 'Completado', en: 'Completed', bg: '#F1EFFA', c: '#8A86A0' },
+  pending: { es: 'Pendiente', en: 'Pending', bg: '#FCEFD6', c: '#9A6A12' },
+  confirmed: { es: 'Confirmada', en: 'Confirmed', bg: '#E3F5EA', c: '#1F8A4C' },
+  seated: { es: 'En sitio', en: 'Seated', bg: '#E5EFFB', c: '#2F6FED' },
+  done: { es: 'Completada', en: 'Done', bg: '#F1EFFA', c: '#8A86A0' },
+  out: { es: 'En uso', en: 'Out', bg: '#E5EFFB', c: '#2F6FED' },
+  returned: { es: 'Devuelto', en: 'Returned', bg: '#F1EFFA', c: '#8A86A0' },
+  cancelled: { es: 'Cancelado', en: 'Cancelled', bg: '#F1EFFA', c: '#8A86A0' },
+  used: { es: 'Usado', en: 'Used', bg: '#F1EFFA', c: '#8A86A0' },
+  refunded: { es: 'Reembolsado', en: 'Refunded', bg: '#F1EFFA', c: '#8A86A0' },
+};
 type Notifs = { posts: boolean; follows: boolean; events: boolean; marketing: boolean };
 const DEFAULT_NOTIFS: Notifs = { posts: true, follows: true, events: true, marketing: false };
 
@@ -40,6 +58,7 @@ export function CuentaScreen() {
   const follows = useFollows();
   const saved = useSavedBiz();
   const live = useLiveData();
+  const act = useMyActivity();
   const router = useRouter();
 
   const [sec, setSec] = useState<Sec>('home');
@@ -56,6 +75,25 @@ export function CuentaScreen() {
   const p = auth.profile;
   const notifs: Notifs = { ...DEFAULT_NOTIFS, ...((p?.settings?.notifications as Partial<Notifs>) ?? {}) };
   const myPosts = live.posts.filter((x) => x.authorId && x.authorId === auth.user?.id);
+
+  const es = L('es', 'en') === 'es';
+  const dt = (iso: string) => new Date(iso).toLocaleString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  const money = (n: number | null | undefined) => (n == null ? '' : '$' + Number(n).toFixed(2));
+  const pill = (status: string) => {
+    const s = STATUS[status] ?? { es: status, en: status, bg: '#F1EFFA', c: '#8A86A0' };
+    return <span className="flex-none rounded-full px-2 py-0.5 text-[10px] font-extrabold" style={{ background: s.bg, color: s.c }}>{L(s.es, s.en)}</span>;
+  };
+  const txEmpty = (msg: string) => <div className={`${cardCls} p-6 text-center text-[13px] font-semibold text-muted`}>{msg}</div>;
+  const txItem = (key: string, title: string, sub: string, right: ReactNode) => (
+    <div key={key} className={`${cardCls} flex items-center gap-3 p-3.5`}>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-extrabold text-ink">{title}</span>
+        <span className="block truncate text-[11.5px] font-semibold text-muted">{sub}</span>
+      </span>
+      <span className="flex flex-none flex-col items-end gap-1">{right}</span>
+    </div>
+  );
+  const evTitle = (e: { title_es: string; title_en: string } | null) => (e ? L(e.title_es, e.title_en) : L('Evento', 'Event'));
 
   const openPerfil = () => {
     if (guest) return router.push('/entrar');
@@ -152,6 +190,15 @@ export function CuentaScreen() {
             {row(Star, '#B5791A', '#FCEFD6', L('Negocios guardados', 'Saved businesses'), L('Tus lugares favoritos', 'Your favorite places'), () => router.push('/negocios'), String(saved.count))}
             {row(Users, '#1F8A4C', '#E3F5EA', L('Siguiendo', 'Following'), L('Vecinos y negocios que sigues', 'Neighbors & businesses you follow'), () => goFeed('following'), String(follows.followingCount))}
             {row(Megaphone, '#2F6FED', '#E5EFFB', L('Mis publicaciones', 'My posts'), L('Lo que compartiste en la comunidad', 'What you shared in the community'), () => setSec('posts'), String(myPosts.length))}
+          </div>
+
+          <div className={`${cardCls} p-2`}>
+            <div className="px-2 pb-1 pt-2 text-[10.5px] font-extrabold uppercase tracking-[.05em] text-muted-2">{L('Mis transacciones', 'My transactions')}</div>
+            {row(ShoppingBag, '#6D4DF6', '#EFEBFF', L('Mis pedidos', 'My orders'), L('Comida y productos', 'Food & products'), () => setSec('pedidos'), String(act.orders.length))}
+            {row(CalendarDays, '#1F8A4C', '#E3F5EA', L('Mis reservas', 'My bookings'), L('Citas y servicios', 'Appointments & services'), () => setSec('reservas'), String(act.bookings.length))}
+            {row(Bike, '#B5791A', '#FCEFD6', L('Mis rentas', 'My rentals'), L('Equipo y artículos rentados', 'Rented equipment & items'), () => setSec('rentas'), String(act.rentals.length))}
+            {row(Ticket, '#D6336C', '#FDE7EF', L('Mis boletos', 'My tickets'), L('Boletos de eventos', 'Event tickets'), () => setSec('boletos'), String(act.tickets.length))}
+            {row(CalendarCheck, '#2F6FED', '#E5EFFB', L('Voy a asistir', "I'm going"), L('Eventos que marcaste "Voy"', 'Events you RSVP\'d'), () => setSec('voy'), String(act.going.length))}
           </div>
 
           <div className={`${cardCls} p-2`}>
@@ -296,6 +343,82 @@ export function CuentaScreen() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── MIS PEDIDOS ── */}
+      {sec === 'pedidos' && (
+        <div>
+          {backBar(L('Mis pedidos', 'My orders'))}
+          {act.orders.length === 0 ? txEmpty(L('Aún no tienes pedidos.', 'No orders yet.')) : (
+            <div className="flex flex-col gap-2.5">
+              {act.orders.map((o) => txItem(o.id, o.businesses?.name ?? L('Negocio', 'Business'),
+                `${(o.items ?? []).map((i) => `${i.qty}× ${i.name}`).join(', ') || '—'} · ${dt(o.created_at)}`,
+                <>{o.total != null && <span className="text-[13px] font-extrabold text-ink">{money(o.total)}</span>}{pill(o.status)}</>))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── MIS RESERVAS ── */}
+      {sec === 'reservas' && (
+        <div>
+          {backBar(L('Mis reservas', 'My bookings'))}
+          {act.bookings.length === 0 ? txEmpty(L('Aún no tienes reservas.', 'No bookings yet.')) : (
+            <div className="flex flex-col gap-2.5">
+              {act.bookings.map((b) => txItem(b.id, b.businesses?.name ?? L('Negocio', 'Business'),
+                `${b.service_name ?? L('Servicio', 'Service')}${b.party_size ? ` · ${b.party_size} ${L('personas', 'people')}` : ''} · ${dt(b.starts_at)}`,
+                pill(b.status)))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── MIS RENTAS ── */}
+      {sec === 'rentas' && (
+        <div>
+          {backBar(L('Mis rentas', 'My rentals'))}
+          {act.rentals.length === 0 ? txEmpty(L('Aún no tienes rentas.', 'No rentals yet.')) : (
+            <div className="flex flex-col gap-2.5">
+              {act.rentals.map((r) => txItem(r.id, r.businesses?.name ?? L('Negocio', 'Business'),
+                `${r.qty}× ${r.item_name} · ${dt(r.start_at)}`,
+                <>{r.total != null && <span className="text-[13px] font-extrabold text-ink">{money(r.total)}</span>}{pill(r.status)}</>))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── MIS BOLETOS ── */}
+      {sec === 'boletos' && (
+        <div>
+          {backBar(L('Mis boletos', 'My tickets'))}
+          {act.tickets.length === 0 ? txEmpty(L('Aún no tienes boletos.', 'No tickets yet.')) : (
+            <div className="flex flex-col gap-2.5">
+              {act.tickets.map((t) => txItem(t.id, evTitle(t.events),
+                `${t.qty} ${t.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')} · ${L('código', 'code')} ${t.code}`,
+                <>{t.total != null && Number(t.total) > 0 && <span className="text-[13px] font-extrabold text-ink">{money(t.total)}</span>}{pill(t.status)}</>))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── VOY (RSVP) ── */}
+      {sec === 'voy' && (
+        <div>
+          {backBar(L('Voy a asistir', "I'm going"))}
+          {act.going.length === 0 ? txEmpty(L('No has marcado "Voy" en ningún evento.', "You haven't RSVP'd to any events.")) : (
+            <div className="flex flex-col gap-2.5">
+              {act.going.map((g) => (
+                <div key={g.event_id} className={`${cardCls} flex items-center gap-3 p-3.5`}>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-extrabold text-ink">{evTitle(g.events)}</span>
+                    <span className="block truncate text-[11.5px] font-semibold text-muted">{g.events ? `${L(g.events.venue_es ?? '', g.events.venue_en ?? '')} · ${dt(g.events.starts_at)}` : ''}</span>
+                  </span>
+                  <button onClick={() => act.rsvp(g.event_id, false)} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-3 py-1.5 text-[11px] font-extrabold text-ink-2">{L('Quitar', 'Remove')}</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

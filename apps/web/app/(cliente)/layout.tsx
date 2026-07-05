@@ -10,6 +10,7 @@ import { InteractionsProvider } from '@/lib/interactions';
 import { FollowsProvider } from '@/lib/follows';
 import { AddressesProvider } from '@/lib/addresses';
 import { SavedBizProvider } from '@/lib/savedBiz';
+import { MyActivityProvider } from '@/lib/myActivity';
 import { AppHeader } from '@/components/AppHeader';
 import { BottomNav } from '@/components/BottomNav';
 import { CityModal } from '@/components/CityModal';
@@ -24,6 +25,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
     <FollowsProvider>
     <AddressesProvider>
     <SavedBizProvider>
+    <MyActivityProvider>
     <InteractionsProvider>
     <div className="min-h-screen bg-app">
       <AppHeader />
@@ -38,6 +40,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
       <PublishModal />
     </div>
     </InteractionsProvider>
+    </MyActivityProvider>
     </SavedBizProvider>
     </AddressesProvider>
     </FollowsProvider>

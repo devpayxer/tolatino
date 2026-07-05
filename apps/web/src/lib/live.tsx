@@ -104,6 +104,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
           const d = new Date(String(r.starts_at));
           return {
             id: i,
+            slug: r.slug != null ? String(r.slug) : undefined,
             dEs: MONTHS_ES[d.getMonth()],
             day: String(d.getDate()).padStart(2, '0'),
             cat: r.cat as EventItem['cat'],
