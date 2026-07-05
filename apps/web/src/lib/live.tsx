@@ -43,6 +43,12 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     amEn: (r.amenities_en as string[]) ?? [],
     revEs: String(r.review_es ?? ''),
     revEn: String(r.review_en ?? ''),
+    // owner-entered contact + description (absent on pre-0034 rows → undefined)
+    phone: r.phone != null ? String(r.phone) : undefined,
+    address: r.address != null ? String(r.address) : undefined,
+    city: r.city != null ? String(r.city) : undefined,
+    descEs: r.about_es != null ? String(r.about_es) : undefined,
+    descEn: r.about_en != null ? String(r.about_en) : undefined,
   };
 }
 

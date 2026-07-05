@@ -53,6 +53,13 @@ export type Business = {
   amEn: string[];
   revEs: string;
   revEn: string;
+  // Owner-entered contact + description (from the dashboard). Present on live
+  // businesses; absent on demo fixtures → BizDetail falls back to placeholders.
+  phone?: string;
+  address?: string;
+  city?: string;
+  descEs?: string;
+  descEn?: string;
 };
 
 export const BUSINESSES: Business[] = [

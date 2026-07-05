@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, Heart, MapPin, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -87,9 +87,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const catLabel = L(CAT[b.cat].es, CAT[b.cat].en);
   const revRaw = L(b.revEs, b.revEn);
   const [quote, rvName] = revRaw.includes('—') ? [revRaw.split('—')[0].trim(), revRaw.split('—').slice(1).join('—').trim()] : [revRaw, ''];
-  const slug = b.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '').slice(0, 14);
-  const phone = '(832) 555-4521';
-  const address = '5821 Bellaire Blvd, Houston, TX';
+  // Real owner-entered contact (from the dashboard); demo fixtures fall back to
+  // sample values so the prototype stays populated.
+  const phone = b.phone || '(832) 555-4521';
+  const address = b.address || '5821 Bellaire Blvd, Houston, TX';
 
   const cartCount = Object.values(cart).reduce((n, l) => n + l.qty, 0);
   const cartTotal = Object.values(cart).reduce((n, l) => n + l.qty * l.unit, 0);
@@ -490,11 +491,14 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </div>
           {divider}
           {secTitle(L('Acerca de', 'About'))}
-          <div className="text-[14px] font-medium leading-[1.6] text-ink-soft">
-            {L(
-              `Negocio latino de confianza en ${app.cityShort}. ${b.specEs.replace('Especialidad · ', '')}, hecho con dedicación. Atendido con orgullo por su familia — de la comunidad para la comunidad.`,
-              `Trusted Latino-owned business in ${app.cityShort}. ${b.specEn.replace('Specialty · ', '')}, made with care. Proudly family-run — from the community for the community.`,
-            )}
+          <div className="whitespace-pre-line text-[14px] font-medium leading-[1.6] text-ink-soft">
+            {/* real owner description when present; otherwise a friendly template
+                using the business's own city (falls back to the app city). */}
+            {L(b.descEs || '', b.descEn || '').trim()
+              || L(
+                `Negocio latino de confianza en ${b.city || app.cityShort}. ${b.specEs.replace('Especialidad · ', '')}, hecho con dedicación. Atendido con orgullo por su familia — de la comunidad para la comunidad.`,
+                `Trusted Latino-owned business in ${b.city || app.cityShort}. ${b.specEn.replace('Specialty · ', '')}, made with care. Proudly family-run — from the community for the community.`,
+              )}
           </div>
           {divider}
           <div className="flex items-center justify-between">
@@ -849,7 +853,6 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           {[
             { Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA' },
             { Icon: MessageCircle, label: L('Mensaje', 'Message'), sub: 'WhatsApp', color: '#6D4DF6', bg: '#EFEBFF' },
-            { Icon: Globe, label: L('Sitio web', 'Website'), sub: `${slug}.com`, color: '#2F6FED', bg: '#E5EFFB' },
             { Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6' },
             { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#8A86A0', bg: '#F1EFFA' },
           ].map(({ Icon, label, sub, color, bg }) => (
