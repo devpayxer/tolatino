@@ -13,6 +13,7 @@ import {
   Plus, Salad, Sandwich, ShoppingBag, Soup, Tag, Trash2, Utensils, Wine, X,
 } from 'lucide-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import {
   DAYPART_COLORS, MENU_TILES, hourLabel, menuId,
   type Daypart, type MenuCategory, type ModGroup, type ModOption, type Promo, type PromoType,
@@ -79,11 +80,12 @@ export function CategoryEditor({
   const [icon, setIcon] = useState('utensils');
   const [tile, setTile] = useState(MENU_TILES[0]);
   const [sched, setSched] = useState('');
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setEs(initial?.es ?? ''); setEn(initial?.en ?? ''); setIcon(initial?.icon ?? 'utensils');
-    setTile(initial?.tile ?? MENU_TILES[0]); setSched(initial?.schedEs ?? '');
+    setTile(initial?.tile ?? MENU_TILES[0]); setSched(initial?.schedEs ?? ''); setConfirming(false);
   }, [open, initial]);
 
   const save = () => {
@@ -131,13 +133,24 @@ export function CategoryEditor({
         </div>
         <div className="mt-1 flex gap-2.5">
           {initial && (
-            <button onClick={() => { if (itemCount === 0) { onDelete(initial.id); onClose(); } }} disabled={itemCount > 0} className={dangerBtn}
+            <button onClick={() => { if (itemCount === 0) setConfirming(true); }} disabled={itemCount > 0} className={dangerBtn}
               title={itemCount > 0 ? L('Mueve sus platillos antes de eliminar', 'Move its items before deleting') : undefined}>
               <Trash2 size={15} strokeWidth={2.2} />
             </button>
           )}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear categoría', 'Create category')}</button>
         </div>
+        {initial && (
+          <ConfirmDialog
+            open={confirming}
+            onClose={() => setConfirming(false)}
+            onConfirm={() => { setConfirming(false); onDelete(initial.id); onClose(); }}
+            title={L('¿Eliminar categoría?', 'Delete category?')}
+            message={L(`“${initial.es}” se quitará de tu menú. Esta acción no se puede deshacer.`, `“${initial.en}” will be removed from your menu. This can’t be undone.`)}
+            confirmLabel={L('Eliminar', 'Delete')}
+            cancelLabel={L('Cancelar', 'Cancel')}
+          />
+        )}
         {initial && itemCount > 0 && (
           <div className="rounded-field bg-amber-bg px-3 py-2 text-[10.5px] font-semibold text-amber-ink">
             {L(`Tiene ${itemCount} platillos — muévelos a otra categoría para poder eliminarla.`, `Has ${itemCount} items — move them to another category before deleting.`)}
@@ -164,12 +177,14 @@ export function ModGroupEditor({
   const [single, setSingle] = useState(true);
   const [required, setRequired] = useState(false);
   const [options, setOptions] = useState<ModOption[]>([{ es: '', price: 0 }]);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setEs(initial?.es ?? ''); setEn(initial?.en ?? '');
     setSingle(initial?.single ?? true); setRequired(initial?.required ?? false);
     setOptions(initial?.options.length ? initial.options.map((o) => ({ ...o })) : [{ es: '', price: 0 }, { es: '', price: 0 }]);
+    setConfirming(false);
   }, [open, initial]);
 
   const upOpt = (i: number, p: Partial<ModOption>) => setOptions((xs) => xs.map((o, j) => (j === i ? { ...o, ...p } : o)));
@@ -231,12 +246,25 @@ export function ModGroupEditor({
         <div className="mt-1 flex gap-2.5">
           {initial && (
             <>
-              <button onClick={() => { onDelete(initial.id); onClose(); }} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>
+              <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>
               <button onClick={() => { if (ready) { onDuplicate({ ...build(), id: menuId(), es: `${build().es} (copia)`, en: `${build().en} (copy)` }); onClose(); } }} className={ghostBtn}>{L('Duplicar', 'Duplicate')}</button>
             </>
           )}
           <button onClick={() => { if (ready) { onSave(build()); onClose(); } }} disabled={!ready} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear grupo', 'Create group')}</button>
         </div>
+        {initial && (
+          <ConfirmDialog
+            open={confirming}
+            onClose={() => setConfirming(false)}
+            onConfirm={() => { setConfirming(false); onDelete(initial.id); onClose(); }}
+            title={L('¿Eliminar grupo de opciones?', 'Delete option group?')}
+            message={usedCount > 0
+              ? L(`“${initial.es}” se usa en ${usedCount} platillo${usedCount === 1 ? '' : 's'} y se quitará de todos. No se puede deshacer.`, `“${initial.en}” is used by ${usedCount} item${usedCount === 1 ? '' : 's'} and will be removed from all of them. This can’t be undone.`)
+              : L(`“${initial.es}” se eliminará. Esta acción no se puede deshacer.`, `“${initial.en}” will be deleted. This can’t be undone.`)}
+            confirmLabel={L('Eliminar', 'Delete')}
+            cancelLabel={L('Cancelar', 'Cancel')}
+          />
+        )}
       </div>
     </Overlay>
   );
@@ -256,6 +284,7 @@ export function DaypartEditor({
   const [end, setEnd] = useState('11:00');
   const [days, setDays] = useState<number[]>([1, 1, 1, 1, 1, 1, 1]);
   const [colorIdx, setColorIdx] = useState(0);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -264,6 +293,7 @@ export function DaypartEditor({
     setEnd(initial ? hourToTime(initial.end) : '11:00');
     setDays(initial?.days ? [...initial.days] : [1, 1, 1, 1, 1, 1, 1]);
     setColorIdx(Math.max(0, DAYPART_COLORS.findIndex((c) => c.color === initial?.color)));
+    setConfirming(false);
   }, [open, initial]);
 
   const ready = !!name.trim() && timeToHour(end) > timeToHour(start) && days.some(Boolean);
@@ -306,9 +336,20 @@ export function DaypartEditor({
           {hourLabel(timeToHour(start))} – {hourLabel(timeToHour(end))}
         </div>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => { onDelete(initial.id); onClose(); }} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
           <button onClick={save} disabled={!ready} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear franja', 'Create daypart')}</button>
         </div>
+        {initial && (
+          <ConfirmDialog
+            open={confirming}
+            onClose={() => setConfirming(false)}
+            onConfirm={() => { setConfirming(false); onDelete(initial.id); onClose(); }}
+            title={L('¿Eliminar franja?', 'Delete daypart?')}
+            message={L(`“${initial.es}” se eliminará de tu horario. Esta acción no se puede deshacer.`, `“${initial.en}” will be removed from your schedule. This can’t be undone.`)}
+            confirmLabel={L('Eliminar', 'Delete')}
+            cancelLabel={L('Cancelar', 'Cancel')}
+          />
+        )}
       </div>
     </Overlay>
   );
@@ -334,9 +375,11 @@ export function PromoEditor({
   const [days, setDays] = useState<number[]>([1, 1, 1, 1, 1, 1, 1]);
   const [status, setStatus] = useState<Promo['status']>('active');
   const [startDate, setStartDate] = useState('');
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    setConfirming(false);
     setName(initial?.es ?? ''); setDesc(initial?.descEs ?? '');
     setValue(initial?.value != null ? String(initial.value) : '');
     setTStart(initial?.timeStart != null ? hourToTime(initial.timeStart) : '16:00');
@@ -411,9 +454,20 @@ export function PromoEditor({
           )}
         </div>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => { onDelete(initial.id); onClose(); }} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
           <button onClick={save} disabled={!ready} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear promoción', 'Create promotion')}</button>
         </div>
+        {initial && (
+          <ConfirmDialog
+            open={confirming}
+            onClose={() => setConfirming(false)}
+            onConfirm={() => { setConfirming(false); onDelete(initial.id); onClose(); }}
+            title={L('¿Eliminar promoción?', 'Delete promotion?')}
+            message={L(`“${initial.es}” se eliminará. Esta acción no se puede deshacer.`, `“${initial.en}” will be deleted. This can’t be undone.`)}
+            confirmLabel={L('Eliminar', 'Delete')}
+            cancelLabel={L('Cancelar', 'Cancel')}
+          />
+        )}
       </div>
     </Overlay>
   );

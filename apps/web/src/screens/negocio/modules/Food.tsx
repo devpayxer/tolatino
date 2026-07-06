@@ -26,6 +26,7 @@ import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
@@ -231,6 +232,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [cat, setCat] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null); // null = creating; else editing this item
+  const [confirmDel, setConfirmDel] = useState(false); // delete-item confirmation
   const [wizStep, setWizStep] = useState(0);
   const [wizMax, setWizMax] = useState(0);
   const [draft, setDraft] = useState<Draft>(() => newDraft('pizza'));
@@ -1313,7 +1315,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink">
                 <Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}
               </button>
-              <button onClick={deleteEditing} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">
+              <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">
                 <Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}
               </button>
             </div>
@@ -1471,9 +1473,22 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </>
   );
 
+  // Delete-item confirmation (shared with the wizard review "Eliminar").
+  const deleteConfirm = (
+    <ConfirmDialog
+      open={confirmDel}
+      onClose={() => setConfirmDel(false)}
+      onConfirm={() => { setConfirmDel(false); deleteEditing(); }}
+      title={L('¿Eliminar platillo?', 'Delete item?')}
+      message={L(`“${draft.name || L('Este platillo', 'This item')}” se quitará de tu menú y tu listado público. Esta acción no se puede deshacer.`, `“${draft.name || 'This item'}” will be removed from your menu and public listing. This can’t be undone.`)}
+      confirmLabel={L('Eliminar', 'Delete')}
+      cancelLabel={L('Cancelar', 'Cancel')}
+    />
+  );
+
   // ============ RENDER ============
   // Add/edit both use the SAME full-page wizard (no cramped popups).
-  if (view === 'wizard') return <>{wizardPage}{editorSheets}<Toast msg={toast} /></>;
+  if (view === 'wizard') return <>{wizardPage}{editorSheets}{deleteConfirm}<Toast msg={toast} /></>;
   if (view === 'success') return <>{successPage}<Toast msg={toast} /></>;
 
   return (
