@@ -266,9 +266,14 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     "Servicios informativos · Llamar" note when booking is off. Per-service
     `bookable` still distinguishes Reservar (appointment + time slot) from
     Consultar (inquiry lead, no time slot) when booking mode is ON.
-  - [ ] **Deposits are not transactional.** The booking sheet computes a deposit
-    (= estimated total when "requiere depósito") and stores it on the booking,
-    but no money moves — wire real payments before promoting paid deposits.
+  - [ ] **Reservations pass — do it when Stripe/payments land (founder decision,
+    2026-07-06).** The booking flow works end-to-end (create/manage bookings,
+    deposit toggle, estimated total + deposit summary) but **no money moves**:
+    the computed deposit is stored on the booking, not charged. When the payment
+    system (Stripe or chosen gateway) is in place, do a proper refinement pass on
+    reservations — actually charge/hold deposits, partial-deposit %, refunds/
+    cancellation policy, and confirm-on-payment. Do NOT promote "paid deposits"
+    until then.
   - [ ] **Availability/day enforcement.** Per-service available days + capacity
     are stored and shown, but the public date/time picker offers fixed sample
     slots (`SVC_DATES`/`SVC_TIMES`) regardless — generate real slots from the
