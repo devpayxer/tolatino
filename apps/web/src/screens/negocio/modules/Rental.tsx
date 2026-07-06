@@ -1,32 +1,49 @@
 'use client';
 
-// Renta / Rental module (business dashboard). Sub-tabs Artículos / Calendario /
-// Depósitos / Daños / Precios. Tapping an item opens a detail page (rates
-// hour/day/week + units + waiver). A "rentar" 3-step flow (renter → period/qty →
-// review → success), a "return condition check" flow that computes a refund, and
-// an "add item" 3-step wizard that appends to the list on success. Mobile-first:
-// single column with a horizontal sub-tab bar; on desktop it expands to
-// multi-column grids plus a sticky summary rail. Every drill-in (detail / rent-out
-// / return / add-item) takes over the screen as a full ModulePage — no cramped
-// bottom sheets. Real state: sub-tabs, selected item, wizard/flow steps, refund
-// calc, toasts.
+// Renta / Rental module (business dashboard) — fully functional, mirroring the
+// Servicios module. Rental items live in business_items (kind='rental'); the
+// structure (categories, reusable priced add-ons, rental mode) lives in
+// businesses.rental_config (migration 0050). Two top-level modes:
+//  • Artículos — catalog (grouped by config categories, each item editable via
+//    the shared 5-step wizard: create/edit/duplicate/delete-confirmed, photo,
+//    add-ons, rates/deposit, policies), plus Categorías + Add-ons sub-tabs (real
+//    CRUD), a Precios overview, and a "Modo del listado" toggle (Solo mostrar vs
+//    Aceptar rentas). Tapping a card opens the item detail (rent-out / return /
+//    edit).
+//  • Rentas — operations: incoming customer rental requests (business_rentals),
+//    calendar, deposits and damage.
+// Display-only mode hides the Rentar button on the public listing. Fully
+// explorable in demo (local sample); a signed-in owner persists to Supabase.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
-  AlertTriangle, Boxes, CalendarDays, Check, ChevronLeft, DollarSign, Minus,
-  Pencil, Plus, Shield,
+  AlertTriangle, Boxes, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft,
+  ChevronUp, Copy, DollarSign, Loader2, Lock, Minus, Package, Pencil, Plus, Shield,
+  Store, Trash2, Upload, Zap,
 } from 'lucide-react';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ChipRow } from '@/components/ChipRow';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { formatPhone } from '@/lib/phone';
-import { insertBizItem, listBizItems, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
+import { uploadImage } from '@/lib/image';
+import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
+import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
+import {
+  defaultRentalConfig, demoRentalConfig, normalizeRentalConfig,
+  type RentalAddon, type RentalCategory, type RentalConfig,
+} from '@/lib/rentalConfig';
+import { RentalAddonEditor, RentalCategoryEditor, rentCatIcon } from '@/screens/negocio/modules/RentalEditors';
 
-type Cat = 'space' | 'furniture' | 'tableware' | 'equipo';
 type Period = 'hour' | 'day' | 'week';
 type Condition = 'perfect' | 'minor' | 'major';
-type Sub = 'items' | 'requests' | 'calendar' | 'deposits' | 'damage' | 'pricing';
+
+const FALLBACK_CAT: RentalCategory = { id: '_', es: 'Artículos', en: 'Items', icon: 'boxes', tile: '#EAE2F8 0 8px,#DCCEF2 8px 16px', visible: true };
 
 // An incoming customer rental (business_rentals) — the other side of the
 // consumer's "Rentar" action on a listing. customer_name is stored on insert.
@@ -43,23 +60,26 @@ const REQ_STATUS: Record<string, { es: string; en: string; cls: string }> = {
 };
 
 type Item = {
-  id: number; dbId?: string; es: string; en: string; cat: Cat; tile: string; booked: number;
-  stock: number; out: number; unitEs: string; unitEn: string; dep: number;
-  hour: number | null; day: number; week: number; availEs: string; availEn: string;
+  id: number; dbId?: string; es: string; en: string; descEs: string; descEn: string;
+  cat: string; tile: string; booked: number; stock: number; out: number;
+  unitEs: string; unitEn: string; dep: number; hour: number | null; day: number; week: number;
+  availEs: string; availEn: string; addons: string[]; tags: string[];
+  waivers: boolean[]; imageUrl?: string;
 };
 
-const RENTAL_CATS = new Set<Cat>(['space', 'furniture', 'tableware', 'equipo']);
+const DEFAULT_WAIVERS = [true, true, true, false];
+
 // Map a business_items row (kind='rental') ↔ the module's bilingual Item.
 function rowToRental(r: BizItemRow, idx: number): Item {
   const a = (r.attrs ?? {}) as Record<string, unknown>;
-  const cat = (r.section as Cat) ?? 'equipo';
-  const safeCat = RENTAL_CATS.has(cat) ? cat : 'equipo';
   return {
     id: idx + 1,
     dbId: r.id,
     es: r.name,
     en: String(a.nameEn ?? r.name),
-    cat: safeCat,
+    descEs: r.description ?? '',
+    descEn: String(a.descEn ?? r.description ?? ''),
+    cat: r.section ?? FALLBACK_CAT.id,
     tile: String(a.tile ?? ''),
     booked: Number(a.booked ?? 0),
     stock: Number(a.stock ?? 0),
@@ -72,6 +92,10 @@ function rowToRental(r: BizItemRow, idx: number): Item {
     week: Number(a.week ?? 0),
     availEs: String(a.availEs ?? ''),
     availEn: String(a.availEn ?? ''),
+    addons: Array.isArray(a.addons) ? (a.addons as string[]) : [],
+    tags: Array.isArray(a.tags) ? (a.tags as string[]) : [],
+    waivers: Array.isArray(a.waivers) ? (a.waivers as boolean[]) : [...DEFAULT_WAIVERS],
+    imageUrl: r.image_url ?? undefined,
   };
 }
 function rentalToRow(it: Item, businessId: string, sort: number): NewBizItem {
@@ -79,84 +103,105 @@ function rentalToRow(it: Item, businessId: string, sort: number): NewBizItem {
     business_id: businessId,
     kind: 'rental',
     name: it.es,
-    description: null,
+    description: it.descEs || null,
     price: it.day,
     unit: it.unitEs,
     section: it.cat,
     available: true,
     sort,
-    image_url: null,
-    attrs: { nameEn: it.en, unitEn: it.unitEn, tile: it.tile, booked: it.booked, stock: it.stock, out: it.out, dep: it.dep, hour: it.hour, day: it.day, week: it.week, availEs: it.availEs, availEn: it.availEn },
+    image_url: it.imageUrl ?? null,
+    attrs: {
+      nameEn: it.en, descEn: it.descEn, unitEn: it.unitEn, tile: it.tile, booked: it.booked,
+      stock: it.stock, out: it.out, dep: it.dep, hour: it.hour, day: it.day, week: it.week,
+      availEs: it.availEs, availEn: it.availEn, addons: it.addons, tags: it.tags, waivers: it.waivers,
+    },
   };
 }
-
-const CAT_TILE: Record<Cat, string> = {
-  space: '#EAE2F8 0 8px,#DCCEF2 8px 16px',
-  furniture: '#F3E2CE 0 8px,#ECD3B4 8px 16px',
-  tableware: '#FBEFD3 0 8px,#F5E1B0 8px 16px',
-  equipo: '#EDE0D4 0 8px,#DFCBB6 8px 16px',
-};
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 const fieldCls =
   'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-faint focus:border-primary';
+const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
+const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12.5px] font-extrabold text-primary-dark';
+const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 const money = (n: number) => '$' + n.toLocaleString();
+const chip = (on: boolean) =>
+  `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 
+const RENT_TAGS = ['Más rentado', 'Para eventos', 'Nuevo', 'Popular'];
+const tagLabel = (t: string, L: (es: string, en: string) => string) =>
+  ({ 'Más rentado': L('Más rentado', 'Most rented'), 'Para eventos': L('Para eventos', 'For events'), Nuevo: L('Nuevo', 'New'), Popular: 'Popular' } as Record<string, string>)[t] ?? t;
+
+const AVAILS: [string, string][] = [['Siempre', 'Always'], ['Entre semana', 'Weekdays'], ['Fines de semana', 'Weekends'], ['48h aviso', '48h notice']];
+
+// ---------- draft ----------
+type Draft = {
+  name: string; nameEn: string; descEs: string; descEn: string; cat: string; stock: string;
+  unitEs: string; unitEn: string; hour: string; day: string; week: string; dep: string;
+  addons: string[]; tags: string[]; avail: string; waivers: boolean[]; photoUrl: string;
+};
+const newDraft = (cat: string): Draft => ({
+  name: '', nameEn: '', descEs: '', descEn: '', cat, stock: '1', unitEs: '', unitEn: '',
+  hour: '', day: '', week: '', dep: '', addons: [], tags: [], avail: 'Siempre', waivers: [...DEFAULT_WAIVERS], photoUrl: '',
+});
+
+// =====================================================================
 export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   void tab;
   const { L, es, isFree, isPremium } = ctx;
-
-  const catLabel = (c: Cat) =>
-    ({ space: L('Espacio', 'Space'), furniture: L('Mobiliario', 'Furniture'), tableware: L('Vajilla', 'Tableware'), equipo: L('Equipo', 'Equipment') }[c]);
-
-  const seed = useMemo<Item[]>(
-    () => [
-      { id: 1, es: 'Renta de espacio · medio día', en: 'Space rental · half-day', cat: 'space', tile: CAT_TILE.space, booked: 6, stock: 1, out: 1, unitEs: 'espacio', unitEn: 'space', dep: 80, hour: 60, day: 320, week: 1400, availEs: 'Lun–Mar 6–11 AM', availEn: 'Mon–Tue 6–11 AM' },
-      { id: 2, es: 'Mesa larga · 8 lugares', en: 'Long table · 8 seats', cat: 'furniture', tile: CAT_TILE.furniture, booked: 2, stock: 4, out: 0, unitEs: 'mesa', unitEn: 'table', dep: 40, hour: null, day: 45, week: 180, availEs: 'Siempre', availEn: 'Always' },
-      { id: 3, es: 'Vajilla de boda · 100', en: 'Wedding plate set · 100', cat: 'tableware', tile: CAT_TILE.tableware, booked: 1, stock: 2, out: 0, unitEs: 'juego', unitEn: 'set', dep: 250, hour: null, day: 180, week: 640, availEs: '48h aviso', availEn: '48h notice' },
-      { id: 4, es: 'Máquina de espresso pro', en: 'Pro espresso machine', cat: 'equipo', tile: CAT_TILE.equipo, booked: 0, stock: 1, out: 0, unitEs: 'máquina', unitEn: 'machine', dep: 120, hour: null, day: 240, week: 960, availEs: 'Entre semana', availEn: 'Weekdays' },
-      { id: 5, es: 'Carro de horno de leña', en: 'Wood-fired oven cart', cat: 'equipo', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', booked: 1, stock: 1, out: 1, unitEs: 'carro', unitEn: 'cart', dep: 300, hour: null, day: 600, week: 2400, availEs: '48h aviso', availEn: '48h notice' },
-      { id: 6, es: 'Recipientes de catering · 6', en: 'Catering chafing dishes · 6', cat: 'tableware', tile: '#E3F5EA 0 8px,#D6E7D0 8px 16px', booked: 3, stock: 5, out: 0, unitEs: 'juego', unitEn: 'set', dep: 95, hour: null, day: 95, week: 380, availEs: 'Siempre', availEn: 'Always' },
-    ],
-    [],
-  );
-
-  const [items, setItems] = useState<Item[]>(seed);
   const admin = useBizAdmin();
+  const { user } = useAuth();
   const real = admin.active;
-  const persistable = !admin.demo && !!real; // real signed-in business → persist
+  const persistable = !admin.demo && !!real;
 
-  // Load the real business's rental items (demo keeps the sample seed).
+  // ── config (categories / add-ons / rental mode) ────────────────────────────
+  const [cfg, setCfg] = useState<RentalConfig>(demoRentalConfig);
   useEffect(() => {
-    if (!persistable || !real) {
-      setItems(seed);
-      return;
-    }
+    setCfg(admin.demo ? demoRentalConfig() : real?.rental_config ? normalizeRentalConfig(real.rental_config) : defaultRentalConfig());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+  const saveCfg = (next: RentalConfig) => { setCfg(next); if (persistable) admin.update({ rental_config: next }); };
+  const catOf = (id: string): RentalCategory => cfg.categories.find((c) => c.id === id) ?? FALLBACK_CAT;
+  const catLabelOf = (id: string) => { const c = catOf(id); return L(c.es, c.en); };
+  const tileOf = (it: Item) => catOf(it.cat).tile || it.tile || FALLBACK_CAT.tile;
+  const addonOf = (id: string) => cfg.addons.find((a) => a.id === id);
+
+  // ── items (business_items kind='rental') ───────────────────────────────────
+  const demoSeed = (): Item[] => {
+    const c = demoRentalConfig().categories;
+    const t = (id: string) => c.find((x) => x.id === id)?.tile ?? FALLBACK_CAT.tile;
+    return [
+      { id: 1, es: 'Salón de eventos', en: 'Event hall', descEs: 'Quinces, bodas y fiestas · hasta 120', descEn: 'Quinces, weddings & parties · up to 120', cat: 'space', tile: t('space'), booked: 6, stock: 1, out: 1, unitEs: 'espacio', unitEn: 'space', dep: 150, hour: 60, day: 350, week: 1400, availEs: 'Siempre', availEn: 'Always', addons: ['delivery', 'setup'], tags: ['Para eventos'], waivers: [...DEFAULT_WAIVERS] },
+      { id: 2, es: 'Mesa larga · 8 lugares', en: 'Long table · 8 seats', descEs: 'Mesa de banquete con sillas', descEn: 'Banquet table with chairs', cat: 'furniture', tile: t('furniture'), booked: 2, stock: 4, out: 0, unitEs: 'mesa', unitEn: 'table', dep: 40, hour: null, day: 45, week: 180, availEs: 'Siempre', availEn: 'Always', addons: ['delivery'], tags: [], waivers: [...DEFAULT_WAIVERS] },
+      { id: 3, es: 'Vajilla de fiesta · 100', en: 'Party tableware · 100', descEs: 'Platos, copas y cubiertos completos', descEn: 'Full plates, glasses & cutlery', cat: 'tableware', tile: t('tableware'), booked: 1, stock: 2, out: 0, unitEs: 'juego', unitEn: 'set', dep: 200, hour: null, day: 120, week: 480, availEs: '48h aviso', availEn: '48h notice', addons: ['delivery', 'pickup'], tags: ['Más rentado'], waivers: [...DEFAULT_WAIVERS] },
+      { id: 4, es: 'Bocina y micrófono', en: 'Speaker & microphone', descEs: 'Sonido profesional para tu evento', descEn: 'Pro sound for your event', cat: 'equipo', tile: t('equipo'), booked: 3, stock: 3, out: 1, unitEs: 'equipo', unitEn: 'kit', dep: 80, hour: 25, day: 90, week: 360, availEs: 'Entre semana', availEn: 'Weekdays', addons: ['setup', 'insurance'], tags: [], waivers: [...DEFAULT_WAIVERS] },
+    ];
+  };
+  const [items, setItems] = useState<Item[]>(demoSeed);
+  useEffect(() => {
+    if (!persistable || !real) { setItems(demoSeed()); return; }
     let cancelled = false;
     (async () => {
       const rows = await listBizItems(real.id, 'rental');
       if (!cancelled) setItems(rows.map(rowToRental));
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
 
-  const persistNewRental = async (it: Item) => {
+  const nextId = () => (items.length ? Math.max(...items.map((s) => s.id)) : 0) + 1;
+  const persistNew = async (it: Item) => {
     if (!persistable || !real) return;
     const dbId = await insertBizItem(rentalToRow(it, real.id, items.length));
     if (dbId) setItems((prev) => prev.map((x) => (x.id === it.id ? { ...x, dbId } : x)));
   };
-  const [sub, setSub] = useState<Sub>('items');
-  const [openId, setOpenId] = useState<number | null>(null);
-  const [flow, setFlow] = useState<null | 'rentout' | 'return' | 'wizard'>(null);
-  const [toast, setToast] = useState('');
+  const persistPatch = (it: Item | undefined) => {
+    if (persistable && it?.dbId) updateBizItem(it.dbId, rentalToRow(it, real!.id, 0));
+  };
+  const countIn = (catId: string) => items.filter((s) => s.cat === catId).length;
+  const addonUsedBy = (addonId: string) => items.filter((s) => s.addons.includes(addonId)).length;
 
-  const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
-
-  // Incoming customer rental requests (business_rentals). Real owner → load their
-  // rows; demo keeps a small sample so the tab is never empty in the prototype.
+  // ── incoming customer rental requests (business_rentals) ───────────────────
   const [reqRows, setReqRows] = useState<RentalReq[] | null>(null);
   useEffect(() => {
     if (!persistable || !real || !supabase) { setReqRows(null); return; }
@@ -173,51 +218,94 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
-
   const setReqStatus = async (id: string, status: string) => {
     setReqRows((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, status } : r)) : rows));
     if (persistable && supabase) await supabase.from('business_rentals').update({ status }).eq('id', id);
     flash(L('Renta actualizada', 'Rental updated'));
   };
 
+  // ── ui state ────────────────────────────────────────────────────────────────
+  const [mode, setMode] = useState<'items' | 'ops'>('items');
+  const [itemSub, setItemSub] = useState<'catalog' | 'cats' | 'addons' | 'pricing'>('catalog');
+  const [opSub, setOpSub] = useState<'requests' | 'calendar' | 'deposits' | 'damage'>('requests');
+  const [openId, setOpenId] = useState<number | null>(null);
+  const [flow, setFlow] = useState<null | 'rentout' | 'return'>(null);
+  const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [wizStep, setWizStep] = useState(0);
+  const [wizMax, setWizMax] = useState(0);
+  const [draft, setDraft] = useState<Draft>(() => newDraft('general'));
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [toast, setToast] = useState('');
+  const [catSheet, setCatSheet] = useState<{ open: boolean; initial: RentalCategory | null }>({ open: false, initial: null });
+  const [addonSheet, setAddonSheet] = useState<{ open: boolean; initial: RentalAddon | null }>({ open: false, initial: null });
+  const [catFromWiz, setCatFromWiz] = useState(false);
+  const [tagSheet, setTagSheet] = useState(false);
+
+  const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
+  const upD = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
+
   const selected = items.find((i) => i.id === openId) ?? null;
 
-  // ---- Free gate ----
-  if (isFree) {
-    return (
-      <div className="pb-8">
-        <div className={`${cardCls} flex flex-col items-center gap-3 p-8 text-center`}>
-          <span className="flex h-12 w-12 items-center justify-center rounded-btn-lg bg-lilac-2">
-            <Boxes size={22} strokeWidth={2.2} className="text-primary-dark" />
-          </span>
-          <div className="text-[15px] font-extrabold text-ink">{L('La renta es parte del kit verificado', 'Rentals are part of the verified toolkit')}</div>
-          <div className="max-w-[420px] text-[12.5px] font-semibold leading-relaxed text-muted">
-            {L('Publica artículos para rentar por hora, día o semana — con depósitos, calendario y control de daños. Verifica tu negocio para activarlo.', 'List items to rent by hour, day or week — with deposits, a calendar and damage tracking. Verify your business to turn it on.')}
-          </div>
-          <button onClick={() => ctx.go('billing')} className="mt-1 cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">
-            {L('Iniciar verificación', 'Start verification')}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // ── draft recovery ──────────────────────────────────────────────────────────
+  const draftKey = 'tl:draft:rental:' + (real?.id ?? 'demo');
+  useEffect(() => {
+    if (view === 'wizard' && editingId == null) saveDraft(draftKey, draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, view, editingId]);
 
-  const kpis = [
-    { Icon: Boxes, c: '#6D4DF6', bg: '#EFEBFF', label: L('Artículos', 'Items'), value: String(items.length), delta: L('6 categorías', '6 categories'), dC: 'text-muted-2' },
-    { Icon: CalendarDays, c: '#D6336C', bg: '#FDE7EF', label: L('Rentados/mes', 'Rented/mo'), value: '38', delta: '▲ 22%', dC: 'text-green' },
-    { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', label: L('Ingresos 30d', 'Revenue 30d'), value: '$4,820', delta: '▲ 28%', dC: 'text-green' },
-    { Icon: AlertTriangle, c: '#9A6A12', bg: '#FCEFD6', label: L('Depósitos', 'Deposits'), value: '$1,840', delta: L('6 activos', '6 active'), dC: 'text-muted-2' },
+  // ── photo upload ────────────────────────────────────────────────────────────
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pickPhoto = async (file: File | null | undefined) => {
+    if (!file || !file.type.startsWith('image/') || photoBusy) return;
+    setPhotoBusy(true);
+    try {
+      const url = !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 1200);
+      upD({ photoUrl: url });
+    } catch { flash(L('No se pudo subir la foto.', "Couldn't upload the photo.")); }
+    setPhotoBusy(false);
+  };
+
+  // ── structure mutations ─────────────────────────────────────────────────────
+  const upsertCategory = (c: RentalCategory) => {
+    const exists = cfg.categories.some((x) => x.id === c.id);
+    saveCfg({ ...cfg, categories: exists ? cfg.categories.map((x) => (x.id === c.id ? c : x)) : [...cfg.categories, c] });
+    if (!exists && catFromWiz) upD({ cat: c.id });
+    setCatFromWiz(false);
+    flash(exists ? L('Categoría guardada', 'Category saved') : L('Categoría creada', 'Category created'));
+  };
+  const addTag = (label: string) => {
+    if (!cfg.tags.includes(label)) saveCfg({ ...cfg, tags: [...cfg.tags, label] });
+    if (!draft.tags.includes(label)) upD({ tags: [...draft.tags, label] });
+  };
+  const deleteCategory = (id: string) => { saveCfg({ ...cfg, categories: cfg.categories.filter((x) => x.id !== id) }); flash(L('Categoría eliminada', 'Category deleted')); };
+  const moveCategory = (id: string, dir: -1 | 1) => {
+    const i = cfg.categories.findIndex((x) => x.id === id); const j = i + dir;
+    if (i < 0 || j < 0 || j >= cfg.categories.length) return;
+    const next = [...cfg.categories]; [next[i], next[j]] = [next[j], next[i]]; saveCfg({ ...cfg, categories: next });
+  };
+  const toggleCategory = (id: string) => saveCfg({ ...cfg, categories: cfg.categories.map((x) => (x.id === id ? { ...x, visible: !x.visible } : x)) });
+  const upsertAddon = (a: RentalAddon) => {
+    const exists = cfg.addons.some((x) => x.id === a.id);
+    saveCfg({ ...cfg, addons: exists ? cfg.addons.map((x) => (x.id === a.id ? a : x)) : [...cfg.addons, a] });
+    flash(exists ? L('Extra guardado', 'Add-on saved') : L('Extra creado', 'Add-on created'));
+  };
+  const deleteAddon = (id: string) => {
+    saveCfg({ ...cfg, addons: cfg.addons.filter((x) => x.id !== id) });
+    setItems((l) => l.map((s) => (s.addons.includes(id) ? { ...s, addons: s.addons.filter((x) => x !== id) } : s)));
+    flash(L('Extra eliminado', 'Add-on deleted'));
+  };
+
+  // ── wizard: draft ⇄ item ────────────────────────────────────────────────────
+  const wizSteps: [string, string][] = [
+    [L('Detalles', 'Details'), L('Detalles del artículo', 'Item details')],
+    [L('Tarifas', 'Rates'), L('Tarifas y depósito', 'Rates & deposit')],
+    [L('Extras', 'Add-ons'), L('Extras y add-ons', 'Extras & add-ons')],
+    [L('Políticas', 'Policies'), L('Políticas y disponibilidad', 'Policies & availability')],
+    [L('Revisar', 'Review'), L('Revisar y publicar', 'Review & publish')],
   ];
-
-  const subTabs: [Sub, string][] = [
-    ['items', L('Artículos', 'Items')],
-    ['requests', L('Solicitudes', 'Requests')],
-    ['calendar', L('Calendario', 'Calendar')],
-    ['deposits', L('Depósitos', 'Deposits')],
-    ['damage', L('Daños', 'Damage')],
-    ['pricing', L('Precios', 'Pricing')],
-  ];
-
+  const draftReady = !!draft.name.trim() && !!draft.day.trim();
   const availOf = (it: Item) => it.stock - it.out;
   const statusOf = (it: Item) => {
     const a = availOf(it);
@@ -228,93 +316,533 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         : { cls: 'bg-green-bg text-green-dark', dot: '#1F8A4C', label: L('Disponible', 'Available') };
   };
 
-  const chip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+  const startAdd = () => {
+    setEditingId(null);
+    const fresh = newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'general');
+    const saved = loadDraft<Draft>(draftKey);
+    if (saved && (saved.name?.trim() || saved.descEs || saved.descEn || saved.day || saved.photoUrl)) {
+      setDraft({ ...fresh, ...saved });
+      flash(L('Borrador recuperado', 'Draft restored'));
+    } else setDraft(fresh);
+    setWizStep(0); setWizMax(0); setOpenId(null); setFlow(null); setView('wizard');
+  };
+  const startEdit = (s: Item) => {
+    setEditingId(s.id);
+    setDraft({
+      name: s.es, nameEn: s.en, descEs: s.descEs, descEn: s.descEn, cat: s.cat, stock: String(s.stock || 1),
+      unitEs: s.unitEs, unitEn: s.unitEn, hour: s.hour != null ? String(s.hour) : '', day: String(s.day || ''),
+      week: s.week ? String(s.week) : '', dep: s.dep ? String(s.dep) : '', addons: [...s.addons], tags: [...s.tags],
+      avail: s.availEs || 'Siempre', waivers: [...s.waivers], photoUrl: s.imageUrl ?? '',
+    });
+    setWizStep(0); setWizMax(wizSteps.length - 1); setOpenId(null); setFlow(null); setView('wizard');
+  };
+  const draftFields = (): Omit<Item, 'id'> => {
+    const availPair = AVAILS.find(([e]) => e === draft.avail) ?? AVAILS[0];
+    return {
+      es: draft.name.trim() || L('Nuevo artículo', 'New item'), en: draft.nameEn.trim() || draft.name.trim() || L('Nuevo artículo', 'New item'),
+      descEs: draft.descEs, descEn: draft.descEn || draft.descEs, cat: draft.cat, tile: catOf(draft.cat).tile,
+      booked: 0, stock: Number(draft.stock) || 1, out: 0, unitEs: draft.unitEs.trim() || 'unidad', unitEn: draft.unitEn.trim() || draft.unitEs.trim() || 'unit',
+      dep: Number(draft.dep) || 0, hour: draft.hour ? Number(draft.hour) : null, day: Number(draft.day) || 0, week: Number(draft.week) || 0,
+      availEs: availPair[0], availEn: availPair[1], addons: draft.addons, tags: draft.tags, waivers: draft.waivers, imageUrl: draft.photoUrl || undefined,
+    };
+  };
+  const addFromDraft = () => { const s: Item = { id: nextId(), ...draftFields() }; setItems((l) => [s, ...l]); persistNew(s); clearDraft(draftKey); };
+  const saveFromDraft = () => {
+    if (editingId == null) return;
+    setItems((l) => { const next = l.map((s) => (s.id === editingId ? { ...s, ...draftFields() } : s)); persistPatch(next.find((s) => s.id === editingId)); return next; });
+  };
+  const duplicateFromDraft = () => {
+    const s: Item = { id: nextId(), ...draftFields(), es: `${draft.name.trim() || L('Nuevo artículo', 'New item')} ${L('(copia)', '(copy)')}` };
+    setItems((l) => [s, ...l]); persistNew(s); setView('module'); setEditingId(null); flash(L('Artículo duplicado', 'Item duplicated'));
+  };
+  const deleteEditing = () => {
+    if (editingId == null) return;
+    const target = items.find((s) => s.id === editingId);
+    setItems((l) => l.filter((s) => s.id !== editingId));
+    if (persistable && target?.dbId) deleteBizItem(target.dbId);
+    setView('module'); setEditingId(null); flash(L('Artículo eliminado', 'Item deleted'));
+  };
+  const wizNext = () => {
+    if (wizStep >= wizSteps.length - 1) {
+      if (editingId != null) { saveFromDraft(); setView('module'); flash(L('Cambios guardados', 'Changes saved')); }
+      else { addFromDraft(); setView('success'); }
+      return;
+    }
+    const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
+  };
+  const wizBack = () => { if (wizStep === 0) { setView('module'); setEditingId(null); return; } setWizStep((s) => s - 1); };
+  const nextGated = wizStep === 0 ? !!draft.name.trim() : wizStep === 1 ? !!draft.day.trim() : true;
 
-  // ===== ITEMS =====
-  const itemsPane = (
-    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
-      <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {kpis.map((k) => (
-            <div key={k.label} className={`${cardCls} p-3.5`}>
-              <span className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: k.bg }}>
-                <k.Icon size={15} strokeWidth={2.2} style={{ color: k.c }} />
-              </span>
-              <div className="mt-2 text-[11px] font-bold text-muted">{k.label}</div>
-              <div className="mt-0.5 text-[19px] font-extrabold text-ink">{k.value}</div>
-              <div className={`text-[10px] font-extrabold ${k.dC}`}>{k.delta}</div>
-            </div>
-          ))}
+  function editorSheets() {
+    return (
+      <>
+        <RentalCategoryEditor open={catSheet.open} onClose={() => { setCatSheet((s) => ({ ...s, open: false })); setCatFromWiz(false); }} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
+        <RentalAddonEditor open={addonSheet.open} onClose={() => setAddonSheet((s) => ({ ...s, open: false }))} L={L} initial={addonSheet.initial} usedCount={addonSheet.initial ? addonUsedBy(addonSheet.initial.id) : 0} onSave={upsertAddon} onDelete={deleteAddon} />
+      </>
+    );
+  }
+
+  // ============================ FREE GATE ============================
+  if (isFree) {
+    return (
+      <div className="pb-8">
+        <div className={`${cardCls} flex flex-col items-center gap-3 p-8 text-center`}>
+          <span className="flex h-12 w-12 items-center justify-center rounded-btn-lg bg-lilac-2"><Lock size={22} strokeWidth={2.2} className="text-primary-dark" /></span>
+          <div className="text-[15px] font-extrabold text-ink">{L('La renta es parte del kit verificado', 'Rentals are part of the verified toolkit')}</div>
+          <div className="max-w-[420px] text-[12.5px] font-semibold leading-relaxed text-muted">
+            {L('Publica artículos para rentar por hora, día o semana — con depósitos, calendario y control de daños. Verifica tu negocio para activarlo.', 'List items to rent by hour, day or week — with deposits, a calendar and damage tracking. Verify your business to turn it on.')}
+          </div>
+          <button onClick={() => ctx.go('billing')} className="mt-1 cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">{L('Iniciar verificación', 'Start verification')}</button>
         </div>
+      </div>
+    );
+  }
 
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-          {items.map((it) => {
-            const s = statusOf(it);
-            return (
-              <button
-                key={it.id}
-                onClick={() => { setOpenId(it.id); setFlow(null); }}
-                className={`${cardCls} flex cursor-pointer gap-3 p-3 text-left transition-shadow hover:shadow-card-lg`}
-              >
-                <span className="h-[62px] w-[62px] flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }} />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-start justify-between gap-2">
-                    <span className="text-[13px] font-extrabold leading-tight text-ink">{L(it.es, it.en)}</span>
-                    <span className="whitespace-nowrap text-[12.5px] font-extrabold text-ink">{money(it.day)}/{L('día', 'day')}</span>
-                  </span>
-                  <span className="mt-1 block text-[10px] font-medium text-muted-2">
-                    {L(it.availEs, it.availEn)} · {availOf(it)}/{it.stock} {L(it.unitEs, it.unitEn)}{it.stock > 1 ? 's' : ''}
-                  </span>
-                  <span className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-md bg-lilac-2 px-2 py-0.5 text-[9.5px] font-bold text-ink-2">{catLabel(it.cat)}</span>
-                    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9.5px] font-extrabold ${s.cls}`}>
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />{s.label}
+  // ============================ SUCCESS ============================
+  if (view === 'success') {
+    const dc = catOf(draft.cat);
+    return (
+      <>
+        <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setMode('items'); setItemSub('catalog'); }}>
+          <div className="mx-auto flex max-w-[440px] flex-col items-center pb-4 pt-4 text-center">
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} strokeWidth={2.4} /></span>
+            <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo artículo', 'New item')) + ' ' + L('está disponible', 'is live')}</div>
+            <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en la pestaña de Renta de tu listado público.', "It now appears on your public listing's Rentals tab.")}</div>
+            <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
+              <div className="relative h-[104px]" style={{ background: stripe(dc.tile) }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+              </div>
+              <div className="flex items-center justify-between p-3.5">
+                <div className="min-w-0">
+                  <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo artículo', 'New item')}</div>
+                  <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{L(dc.es, dc.en)} · {draft.day ? `${money(Number(draft.day))}/${L('día', 'day')}` : '$0'}</div>
+                </div>
+                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Disponible', 'Available')}</span>
+              </div>
+            </div>
+            <div className="mt-5 flex w-full flex-col gap-2.5">
+              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro artículo', 'Add another item')}</button>
+              <button onClick={() => { setView('module'); setMode('items'); setItemSub('catalog'); }} className="rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a artículos', 'Back to items')}</button>
+            </div>
+          </div>
+        </ModulePage>
+        <Toast msg={toast} />
+      </>
+    );
+  }
+
+  // ============================ WIZARD ============================
+  if (view === 'wizard') {
+    const dc = catOf(draft.cat);
+    const preview = (
+      <div className={`overflow-hidden ${cardCls}`}>
+        <div className="relative h-[96px]" style={{ background: stripe(dc.tile) }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        </div>
+        <div className="flex items-start justify-between gap-2.5 p-3.5">
+          <div className="min-w-0">
+            <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del artículo', 'Item name')}</div>
+            <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{L(dc.es, dc.en)}</div>
+          </div>
+          <span className="whitespace-nowrap text-[14px] font-extrabold text-ink">{draft.day ? `${money(Number(draft.day))}/${L('día', 'day')}` : '$0'}</span>
+        </div>
+      </div>
+    );
+
+    return (
+      <>
+        <ModulePage
+          title={editingId != null ? L('Editar artículo', 'Edit item') : L('Nuevo artículo', 'New item')}
+          subtitle={`${L(dc.es, dc.en)} · ${L('Paso', 'Step')} ${wizStep + 1}/${wizSteps.length}`}
+          onBack={() => { setView('module'); setEditingId(null); }}
+          backLabel={editingId != null ? L('Cerrar', 'Close') : L('Cancelar', 'Cancel')}
+          maxW={940}
+          footer={
+            <div className="flex items-center gap-3">
+              <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">{wizStep === 0 ? (editingId != null ? L('Cerrar', 'Close') : L('Cancelar', 'Cancel')) : L('Atrás', 'Back')}</button>
+              <button onClick={wizNext} disabled={!nextGated} className={`flex-1 rounded-btn-lg py-3.5 text-[13.5px] font-extrabold text-white ${nextGated ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}>{wizStep >= wizSteps.length - 1 ? (editingId != null ? L('Guardar cambios', 'Save changes') : L('Publicar artículo', 'Publish item')) : L('Continuar', 'Continue')}</button>
+            </div>
+          }
+        >
+          <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[340px_1fr]">
+            <div className="flex flex-col gap-3 xl:sticky xl:top-0">
+              <ChipRow className="-mx-1 px-1">
+                {wizSteps.map(([lbl], i) => {
+                  const active = wizStep === i, done = i < wizMax && i !== wizStep;
+                  return (
+                    <button key={lbl} onClick={() => { if (i <= wizMax) setWizStep(i); }} className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
+                      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>{lbl}
+                    </button>
+                  );
+                })}
+              </ChipRow>
+              {preview}
+            </div>
+
+            <div className={`${cardCls} p-4 md:p-5`}>
+              <div className="mb-4 text-[13.5px] font-extrabold text-ink">{wizSteps[wizStep][1]}</div>
+
+              {wizStep === 0 && (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
+                    <div className="flex-1"><div className={fieldLabel}>{L('Nombre (español)', 'Name (Spanish)')} *</div><input value={draft.name} onChange={(e) => upD({ name: e.target.value })} placeholder={L('Ej. Mesa larga', 'e.g. Long table')} className={fieldCls} /></div>
+                    <div className="flex-1"><div className={fieldLabel}>{L('Nombre (inglés)', 'Name (English)')}</div><input value={draft.nameEn} onChange={(e) => upD({ nameEn: e.target.value })} placeholder={L('Opcional', 'Optional')} className={fieldCls} /></div>
+                  </div>
+                  <div><div className={fieldLabel}>{L('Descripción', 'Description')} <span className="font-semibold text-muted">· {es ? 'ES' : 'EN'}</span></div><textarea value={es ? draft.descEs : draft.descEn} onChange={(e) => upD(es ? { descEs: e.target.value } : { descEn: e.target.value })} rows={2} placeholder={L('Qué incluye, capacidad, para qué sirve…', 'What it includes, capacity, what it is for…')} className={`${fieldCls} resize-none leading-relaxed`} /></div>
+                  <div>
+                    <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
+                    <ChipRow className="-mx-1 px-1">
+                      {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
+                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+                    </ChipRow>
+                  </div>
+                  <div>
+                    <div className={fieldLabel}>{L('Foto', 'Photo')}</div>
+                    {draft.photoUrl ? (
+                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
+                        <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
+                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} strokeWidth={2.2} /></button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0]); }} disabled={photoBusy} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60">
+                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" strokeWidth={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
+                          : (<><Upload size={20} className="text-primary" strokeWidth={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
+                      </button>
+                    )}
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f); }} />
+                  </div>
+                  <div className="flex flex-col gap-4 sm:flex-row">
+                    <div className="flex-1"><div className={fieldLabel}>{L('Cuántos (stock)', 'How many (stock)')}</div><input value={draft.stock} onChange={(e) => upD({ stock: e.target.value.replace(/\D/g, '') })} inputMode="numeric" placeholder="1" className={fieldCls} /></div>
+                    <div className="flex-1"><div className={fieldLabel}>{L('Unidad', 'Unit')}</div><input value={es ? draft.unitEs : draft.unitEn} onChange={(e) => upD(es ? { unitEs: e.target.value } : { unitEn: e.target.value })} placeholder={L('mesa, juego…', 'table, set…')} className={fieldCls} /></div>
+                  </div>
+                  <div>
+                    <div className={fieldLabel}>{L('Etiquetas', 'Tags')}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {[...RENT_TAGS, ...cfg.tags].map((t) => { const on = draft.tags.includes(t); return <button key={t} onClick={() => upD({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{RENT_TAGS.includes(t) ? tagLabel(t, L) : t}</button>; })}
+                      <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {wizStep === 1 && (
+                <div className="flex flex-col gap-4">
+                  <div className="text-[11px] font-medium leading-snug text-muted">{L('Define al menos la tarifa diaria. Hora y semana son opcionales.', 'Set at least the daily rate. Hour and week are optional.')}</div>
+                  <div className="flex gap-3">
+                    <div className="flex-1"><div className={fieldLabel}>{L('Hora', 'Hour')}</div><MoneyInput value={draft.hour} onChange={(v) => upD({ hour: v })} placeholder="—" /></div>
+                    <div className="flex-1"><div className={fieldLabel}>{L('Día', 'Day')} *</div><MoneyInput value={draft.day} onChange={(v) => upD({ day: v })} placeholder="0" /></div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-1"><div className={fieldLabel}>{L('Semana', 'Week')}</div><MoneyInput value={draft.week} onChange={(v) => upD({ week: v })} placeholder="—" /></div>
+                    <div className="flex-1"><div className={fieldLabel}>{L('Depósito', 'Deposit')}</div><MoneyInput value={draft.dep} onChange={(v) => upD({ dep: v })} placeholder="0" /></div>
+                  </div>
+                </div>
+              )}
+
+              {wizStep === 2 && (
+                <div className="flex flex-col gap-2.5">
+                  <div className="text-[11px] font-medium leading-relaxed text-muted">{L('Extras reutilizables que el cliente agrega al rentar (entrega, montaje, seguro…). Opcional.', 'Reusable extras the customer adds when renting (delivery, setup, insurance…). Optional.')}</div>
+                  {cfg.addons.length === 0 && (
+                    <div className="rounded-field border-[1.5px] border-dashed border-lilac-line bg-app px-4 py-5 text-center text-[12px] font-semibold text-muted">{L('Aún no tienes extras.', "You don't have add-ons yet.")}</div>
+                  )}
+                  {cfg.addons.map((a) => {
+                    const on = draft.addons.includes(a.id);
+                    return (
+                      <button key={a.id} onClick={() => upD({ addons: on ? draft.addons.filter((x) => x !== a.id) : [...draft.addons, a.id] })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
+                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Zap size={15} className="text-primary-dark" strokeWidth={2.2} /></span>
+                        <span className="min-w-0 flex-1 text-left"><span className="block text-[12.5px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span></span>
+                        <span className="flex-none text-[12px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => setAddonSheet({ open: true, initial: null })} className="mt-1 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12px] font-extrabold text-primary-dark">+ {L('Nuevo extra', 'New add-on')}</button>
+                </div>
+              )}
+
+              {wizStep === 3 && (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <div className={fieldLabel}>{L('Disponibilidad', 'Availability')}</div>
+                    <ChipRow className="-mx-1 px-1">{AVAILS.map(([e, en]) => <button key={e} onClick={() => upD({ avail: e })} className={chip(draft.avail === e)}>{L(e, en)}</button>)}</ChipRow>
+                  </div>
+                  <div>
+                    <div className={fieldLabel}>{L('Políticas', 'Policies')}</div>
+                    <div className="flex flex-col gap-2">
+                      {WAIVER_DEFS(L).map(([label, sub], i) => (
+                        <div key={label} className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
+                          <span className="min-w-0 flex-1"><span className="block text-[12px] font-bold text-ink">{label}</span><span className="block text-[10px] font-medium text-muted-2">{sub}</span></span>
+                          <Toggle on={draft.waivers[i]} onClick={() => upD({ waivers: draft.waivers.map((v, j) => (j === i ? !v : v)) })} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {wizStep === 4 && (() => {
+                const editing = editingId != null;
+                const addonNames = draft.addons.map((id) => addonOf(id)).filter(Boolean).map((a) => L(a!.es, a!.en ?? a!.es));
+                const rateStr = [draft.hour ? `${money(Number(draft.hour))}/h` : null, draft.day ? `${money(Number(draft.day))}/${L('día', 'day')}` : null, draft.week ? `${money(Number(draft.week))}/${L('sem', 'wk')}` : null].filter(Boolean).join(' · ') || '—';
+                const rows: [string, string, boolean, number][] = [
+                  [L('Nombre', 'Name'), draft.name || '—', !!draft.name, 0],
+                  [L('Categoría', 'Category'), L(dc.es, dc.en), true, 0],
+                  [L('Tarifas', 'Rates'), rateStr, !!draft.day, 1],
+                  [L('Depósito', 'Deposit'), draft.dep ? money(Number(draft.dep)) : L('Sin depósito', 'No deposit'), true, 1],
+                  [L('Extras', 'Add-ons'), addonNames.length ? addonNames.join(', ') : L('Ninguno', 'None'), true, 2],
+                  [L('Disponibilidad', 'Availability'), L(draft.avail, AVAILS.find(([e]) => e === draft.avail)?.[1] ?? draft.avail), true, 3],
+                ];
+                return (
+                  <div className="flex flex-col gap-4">
+                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#A7E3C0] bg-green-bg' : 'border-[#FDE68A] bg-amber-bg'}`}>
+                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
+                      <div className="min-w-0">
+                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
+                        <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá disponible para rentar.', "It'll appear available to rent.") : L('Agrega nombre y tarifa diaria antes de continuar.', 'Add a name and daily rate before continuing.')}</div>
+                      </div>
+                    </div>
+                    <div className="overflow-hidden rounded-btn-lg border border-hair">
+                      {rows.map((r, i, a) => (
+                        <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
+                          <span className="w-24 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
+                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-faint'}`}>{r[1]}</span>
+                          <button onClick={() => setWizStep(r[3])} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
+                        </div>
+                      ))}
+                    </div>
+                    {editing && (
+                      <div>
+                        <div className={fieldLabel}>{L('Administrar artículo', 'Manage item')}</div>
+                        <div className="flex gap-2.5">
+                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </ModulePage>
+        {editorSheets()}
+        <QuickTagSheet open={tagSheet} onClose={() => setTagSheet(false)} L={L} onCreate={addTag} existing={[...RENT_TAGS, ...cfg.tags]} />
+        <ConfirmDialog open={confirmDel} onClose={() => setConfirmDel(false)} onConfirm={() => { setConfirmDel(false); deleteEditing(); }} title={L('¿Eliminar artículo?', 'Delete item?')} message={L(`“${draft.name || L('Este artículo', 'This item')}” se quitará de tu listado. Esta acción no se puede deshacer.`, `“${draft.name || 'This item'}” will be removed from your listing. This can’t be undone.`)} confirmLabel={L('Eliminar', 'Delete')} cancelLabel={L('Cancelar', 'Cancel')} />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+
+  // ============================ DRILL-IN: DETAIL / RENT-OUT / RETURN ============================
+  if (selected && flow === null) {
+    return (
+      <>
+        <ItemDetail item={selected} ctx={ctx} catName={catLabelOf(selected.cat)} tile={tileOf(selected)} statusOf={statusOf} availOf={availOf}
+          onClose={() => setOpenId(null)} onEdit={() => startEdit(selected)} onRentOut={() => setFlow('rentout')} onReturn={() => setFlow('return')} />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+  if (selected && flow === 'rentout') {
+    return (
+      <>
+        <RentOutFlow item={selected} ctx={ctx} tile={tileOf(selected)} onBackToDetail={() => setFlow(null)} onDone={() => { setFlow(null); setOpenId(null); flash(L('Rentado · depósito cobrado', 'Rented · deposit charged')); }} />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+  if (selected && flow === 'return') {
+    return (
+      <>
+        <ReturnFlow item={selected} ctx={ctx} tile={tileOf(selected)} onClose={() => setFlow(null)} onDone={() => { setFlow(null); setOpenId(null); flash(L('Depósito devuelto', 'Deposit refunded')); }} />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+
+  // ============================ MODULE ============================
+  const modeBtn = (on: boolean) => `flex flex-1 items-center justify-center gap-2 rounded-btn py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
+
+  const kpis = [
+    { Icon: Boxes, c: '#6D4DF6', bg: '#EFEBFF', label: L('Artículos', 'Items'), value: String(items.length) },
+    { Icon: CalendarDays, c: '#D6336C', bg: '#FDE7EF', label: L('Unidades libres', 'Units free'), value: String(items.reduce((a, it) => a + availOf(it), 0)) },
+    { Icon: Package, c: '#2A5C8A', bg: '#E4ECFB', label: L('Rentadas', 'Units out'), value: String(items.reduce((a, it) => a + it.out, 0)) },
+    { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', label: L('Rentas/mes', 'Rentals/mo'), value: String(items.reduce((a, it) => a + it.booked, 0)) },
+  ];
+
+  const groups = cfg.categories.filter((c) => c.visible).map((c) => ({ cat: c, list: items.filter((s) => s.cat === c.id) }))
+    .concat([{ cat: FALLBACK_CAT, list: items.filter((s) => !cfg.categories.some((c) => c.id === s.cat)) }])
+    .filter((g) => g.list.length);
+
+  // ---- items · catalog ----
+  const catalog = (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {kpis.map((k) => (
+          <div key={k.label} className={`${cardCls} p-3.5`}>
+            <span className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: k.bg }}><k.Icon size={15} strokeWidth={2.2} style={{ color: k.c }} /></span>
+            <div className="mt-2 text-[11px] font-bold text-muted">{k.label}</div>
+            <div className="mt-0.5 text-[19px] font-extrabold text-ink">{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* MODE: display-only vs online rentals */}
+      <div className={`${cardCls} p-3.5`}>
+        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CalendarDays size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Modo del listado', 'Listing mode')}</div>
+        <div className="flex rounded-full bg-lilac-2 p-0.5">
+          <button onClick={() => { if (cfg.renting) { saveCfg({ ...cfg, renting: false }); flash(L('Renta en modo Solo mostrar', 'Rentals set to Display only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.renting ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo mostrar', 'Display only')}</button>
+          <button onClick={() => { if (!cfg.renting) { saveCfg({ ...cfg, renting: true }); flash(L('Renta en línea activada', 'Online rentals enabled')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.renting ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Aceptar rentas', 'Accept rentals')}</button>
+        </div>
+        <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
+          {cfg.renting
+            ? L('Tu listado muestra tus artículos y los clientes pueden rentar en línea (botón Rentar).', 'Your listing shows items and customers can rent online (Rentar button).')
+            : L('Tu listado muestra tus artículos y tarifas. Los clientes te llaman o visitan para rentar — sin renta en línea.', 'Your listing shows items & rates. Customers call or visit to rent — no online renting.')}
+        </p>
+      </div>
+
+      {groups.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no tienes artículos — agrega el primero.', 'No items yet — add your first one.')}</div>
+      ) : groups.map((g) => (
+        <div key={g.cat.id}>
+          <div className="mb-2.5 flex items-center gap-2.5">
+            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-white" style={{ background: stripe(g.cat.tile) }}>{(() => { const Icon = rentCatIcon(g.cat.icon); return <Icon size={16} strokeWidth={2.2} />; })()}</span>
+            <div className="min-w-0">
+              <div className="text-[13px] font-extrabold text-ink">{L(g.cat.es, g.cat.en)}</div>
+              <div className="text-[10px] font-semibold text-muted-2">{g.list.length} {g.list.length === 1 ? L('artículo', 'item') : L('artículos', 'items')}</div>
+            </div>
+          </div>
+          <div className="grid gap-2.5 md:grid-cols-2">
+            {g.list.map((it) => {
+              const s = statusOf(it);
+              return (
+                <button key={it.id} onClick={() => { setOpenId(it.id); setFlow(null); }} className={`${cardCls} cursor-pointer p-3 text-left`}>
+                  <div className="flex gap-3">
+                    <span className="relative h-[60px] w-[60px] flex-none overflow-hidden rounded-tile" style={{ background: stripe(tileOf(it)) }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {it.imageUrl && <img src={it.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     </span>
-                    <span className="text-[9.5px] font-semibold text-muted-2">{it.booked}× {L('este mes', 'this month')}</span>
-                  </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{L(it.es, it.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                        <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{money(it.day)}/{L('día', 'day')}</span>
+                      </span>
+                      <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{L(it.availEs, it.availEn)} · {availOf(it)}/{it.stock} {L(it.unitEs, it.unitEn)}</span>
+                      <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9.5px] font-extrabold ${s.cls}`}><span className="h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />{s.label}</span>
+                        {it.dep > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{L('Depósito', 'Deposit')} {money(it.dep)}</span>}
+                        {it.addons.length > 0 && <span className="rounded-md bg-lilac-2 px-1.5 py-0.5 text-[9px] font-extrabold text-ink-2">{it.addons.length} {L('extras', 'add-ons')}</span>}
+                        {it.tags.map((t) => <span key={t} className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[9px] font-extrabold text-amber-ink">{tagLabel(t, L)}</span>)}
+                      </span>
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} strokeWidth={2.6} />{L('Nuevo artículo', 'New item')}</button>
+    </div>
+  );
+
+  // ---- items · categories ----
+  const categoriesTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3 text-[11.5px] font-medium leading-relaxed text-ink-3">{cfg.categories.length}{L(' categorías · toca para editar · reordena con las flechas · activa/desactiva para mostrar', ' categories · tap to edit · reorder with the arrows · toggle to show')}</div>
+      <div className="grid gap-2.5 md:grid-cols-2">
+        {cfg.categories.map((c, i) => {
+          const Icon = rentCatIcon(c.icon); const n = countIn(c.id);
+          return (
+            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
+              <span className="flex flex-none flex-col">
+                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} strokeWidth={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} strokeWidth={2.6} /></button>
+              </span>
+              <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('artículo', 'item') : L('artículos', 'items')}</div>
+                </div>
+              </button>
+              <Toggle on={c.visible} onClick={() => toggleCategory(c.id)} />
+            </div>
+          );
+        })}
+      </div>
+      <button onClick={() => setCatSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nueva categoría', 'New category')}</button>
+    </div>
+  );
+
+  // ---- items · add-ons ----
+  const addonsTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Zap size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{L('Extras reutilizables', 'Reusable extras')}</span><span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea un extra una vez (entrega, montaje…), úsalo en cualquier artículo.', 'Build an add-on once (delivery, setup…), use it on any item.')}</span></span>
+      </div>
+      {cfg.addons.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no hay extras — crea el primero (ej. Entrega, Montaje).', 'No add-ons yet — create your first (e.g. Delivery, Setup).')}</div>
+      ) : (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {cfg.addons.map((a) => {
+            const used = addonUsedBy(a.id);
+            return (
+              <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{used} {used === 1 ? L('artículo', 'item') : L('artículos', 'items')}</span>
                 </span>
+                <span className="flex-none text-[13px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* desktop sticky rail */}
-      <div className="hidden flex-col gap-4 xl:sticky xl:top-[74px] xl:flex">
-        <div className={`${cardCls} p-4`}>
-          <div className="mb-3 text-[13px] font-extrabold text-ink">{L('Disponibilidad', 'Availability')}</div>
-          {[
-            { l: L('Unidades libres', 'Units free'), v: items.reduce((a, it) => a + availOf(it), 0), c: 'text-green' },
-            { l: L('Unidades rentadas', 'Units out'), v: items.reduce((a, it) => a + it.out, 0), c: 'text-pink-dark' },
-            { l: L('Rentas este mes', 'Rentals this month'), v: items.reduce((a, it) => a + it.booked, 0), c: 'text-ink' },
-          ].map((r) => (
-            <div key={r.l} className="flex items-center justify-between border-b border-hair py-2 last:border-0">
-              <span className="text-[11.5px] font-semibold text-muted">{r.l}</span>
-              <span className={`text-[15px] font-extrabold ${r.c}`}>{r.v}</span>
-            </div>
-          ))}
-        </div>
-        <div className={`${cardCls} p-4`}>
-          <div className="mb-2 text-[13px] font-extrabold text-ink">{L('Más rentados', 'Most rented')}</div>
-          <div className="flex flex-col gap-2.5">
-            {[...items].sort((a, b) => b.booked - a.booked).slice(0, 3).map((it) => (
-              <div key={it.id} className="flex items-center gap-2.5">
-                <span className="h-8 w-8 flex-none rounded-[9px]" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }} />
-                <span className="min-w-0 flex-1 truncate text-[11.5px] font-extrabold text-ink">{L(it.es, it.en)}</span>
-                <span className="text-[11px] font-extrabold text-primary-dark">{it.booked}×</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <button onClick={() => setFlow('wizard')} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">
-          <Plus size={16} strokeWidth={2.6} />{L('Agregar artículo', 'Add rental item')}
-        </button>
-      </div>
+      )}
+      <button onClick={() => setAddonSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nuevo extra', 'New add-on')}</button>
     </div>
   );
 
-  // ===== REQUESTS (incoming customer rentals) =====
+  // ---- items · pricing ----
+  const pricingPane = (
+    <div className="flex flex-col gap-3">
+      <div className="text-[11.5px] font-medium leading-relaxed text-muted">{L('Tarifas por hora, día y semana, más depósito por artículo.', 'Hourly, daily and weekly rates, plus deposit per item.')}</div>
+      {items.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no tienes artículos.', 'No items yet.')}</div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {items.map((it) => (
+            <div key={it.id} className={`${cardCls} p-3`}>
+              <div className="mb-2.5 flex items-center gap-2.5">
+                <span className="h-9 w-9 flex-none rounded-[10px]" style={{ background: stripe(tileOf(it)) }} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12.5px] font-extrabold text-ink">{L(it.es, it.en)}</span>
+                  <span className="block text-[9.5px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                {[{ l: L('Hora', 'Hour'), v: it.hour, on: it.hour != null }, { l: L('Día', 'Day'), v: it.day, on: true }, { l: L('Semana', 'Week'), v: it.week, on: it.week > 0 }].map((r) => (
+                  <div key={r.l} className={`flex-1 rounded-[9px] py-2 text-center ${r.on ? 'bg-app' : 'bg-lilac-3'}`}>
+                    <div className="text-[8.5px] font-semibold text-muted-2">{r.l}</div>
+                    <div className={`mt-0.5 text-[12px] font-extrabold ${r.on ? 'text-ink' : 'text-muted-faint'}`}>{r.v != null && r.on ? money(r.v) : '—'}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ---- ops · requests ----
   const reqSeed: RentalReq[] = [
     { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', qty: 1, total: 320, deposit: 200, status: 'pending' },
     { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', qty: 1, total: 170, deposit: 80, status: 'confirmed' },
@@ -323,9 +851,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const fmtReqDate = (iso: string) => new Date(iso).toLocaleDateString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short' });
   const requestsPane = (
     <div className="flex flex-col gap-3">
-      <div className="text-[11.5px] font-medium leading-relaxed text-muted">
-        {L('Solicitudes de renta de tus clientes. Confirma para reservar el artículo y retener el depósito.', 'Rental requests from your customers. Confirm to reserve the item and hold the deposit.')}
-      </div>
+      <div className="text-[11.5px] font-medium leading-relaxed text-muted">{L('Solicitudes de renta de tus clientes. Confirma para reservar el artículo y retener el depósito.', 'Rental requests from your customers. Confirm to reserve the item and hold the deposit.')}</div>
       {reqList.length === 0 ? (
         <div className={`${cardCls} p-6 text-center text-[12.5px] font-semibold text-muted`}>{L('Sin solicitudes por ahora.', 'No requests yet.')}</div>
       ) : (
@@ -345,23 +871,13 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <span className="min-w-0 truncate">{r.qty}× · {fmtReqDate(r.start_at)}{r.end_at ? ` – ${fmtReqDate(r.end_at)}` : ''}</span>
                   <span className="ml-auto flex-none text-[12px] font-extrabold text-ink">{r.total != null ? money(Number(r.total)) : '—'}</span>
                 </div>
-                {r.deposit != null && Number(r.deposit) > 0 && (
-                  <div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}</div>
-                )}
+                {r.deposit != null && Number(r.deposit) > 0 && (<div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}</div>)}
                 {(r.status === 'pending' || r.status === 'confirmed' || r.status === 'out') && (
                   <div className="mt-2.5 flex gap-2">
-                    {r.status === 'pending' && (
-                      <button onClick={() => setReqStatus(r.id, 'confirmed')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>
-                    )}
-                    {r.status === 'confirmed' && (
-                      <button onClick={() => setReqStatus(r.id, 'out')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Entregar', 'Hand out')}</button>
-                    )}
-                    {r.status === 'out' && (
-                      <button onClick={() => setReqStatus(r.id, 'returned')} className="flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink">{L('Marcar devuelto', 'Mark returned')}</button>
-                    )}
-                    {r.status === 'pending' && (
-                      <button onClick={() => setReqStatus(r.id, 'cancelled')} className="flex-none cursor-pointer rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-ink-2">{L('Rechazar', 'Decline')}</button>
-                    )}
+                    {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'confirmed')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>)}
+                    {r.status === 'confirmed' && (<button onClick={() => setReqStatus(r.id, 'out')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Entregar', 'Hand out')}</button>)}
+                    {r.status === 'out' && (<button onClick={() => setReqStatus(r.id, 'returned')} className="flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink">{L('Marcar devuelto', 'Mark returned')}</button>)}
+                    {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'cancelled')} className="flex-none cursor-pointer rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-ink-2">{L('Rechazar', 'Decline')}</button>)}
                   </div>
                 )}
               </div>
@@ -372,37 +888,28 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ===== CALENDAR =====
+  // ---- ops · calendar ----
   const dows = es ? ['L', 'M', 'X', 'J', 'V', 'S', 'D'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const evDays: Record<number, string[]> = { 8: ['#7B61FF'], 15: ['#7B61FF'], 17: ['#1F9D57'], 19: ['#D6336C'], 22: ['#1F9D57'], 27: ['#F4B740', '#D6336C'] };
   const upcoming = [
-    { mon: 'OCT', day: '15', name: 'Mariana V.', es: 'Vajilla de boda · 100 · sáb', en: 'Wedding plates · 100 · Sat', tag: 'warn' as const, online: true },
-    { mon: 'OCT', day: '17', name: 'Coffee Mfg.', es: 'Máquina espresso · demo 1 día', en: 'Espresso machine · 1-day demo', tag: 'success' as const, online: false },
-    { mon: 'OCT', day: '19', name: 'Park Studios', es: 'Espacio foto · 6–11 AM', en: 'Photo space · 6–11 AM', tag: 'coral' as const, online: false },
-    { mon: 'OCT', day: '27', name: 'Mission Tech', es: 'Carro de horno · fiesta', en: 'Oven cart · party', tag: 'warn' as const, online: false },
+    { mon: 'JUL', day: '12', name: 'Mariana V.', es: 'Vajilla de fiesta · 100 · sáb', en: 'Party tableware · 100 · Sat', tag: 'warn' as const },
+    { mon: 'JUL', day: '17', name: 'Coffee Mfg.', es: 'Bocina y micrófono · 1 día', en: 'Speaker & mic · 1 day', tag: 'success' as const },
+    { mon: 'JUL', day: '19', name: 'Park Studios', es: 'Salón de eventos · 6–11 PM', en: 'Event hall · 6–11 PM', tag: 'coral' as const },
   ];
   const dtCls: Record<'warn' | 'success' | 'coral', string> = { warn: 'bg-amber-bg text-amber-ink', success: 'bg-green-bg text-green-dark', coral: 'bg-pink-bg text-pink-dark' };
-
   const calendarPane = (
     <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1.3fr_1fr]">
       <div className={`${cardCls} p-4`}>
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-[13px] font-extrabold text-ink">{L('Octubre', 'October')} 2025</span>
-          <span className="text-[11px] font-bold text-muted-2">{L('Hoy · 14', 'Today · 14')}</span>
-        </div>
-        <div className="mb-1.5 grid grid-cols-7 gap-1">
-          {dows.map((d, i) => <span key={i} className="text-center text-[9px] font-extrabold text-muted-faint">{d}</span>)}
-        </div>
+        <div className="mb-3 flex items-center justify-between"><span className="text-[13px] font-extrabold text-ink">{L('Julio', 'July')} 2026</span><span className="text-[11px] font-bold text-muted-2">{L('Hoy · 6', 'Today · 6')}</span></div>
+        <div className="mb-1.5 grid grid-cols-7 gap-1">{dows.map((d, i) => <span key={i} className="text-center text-[9px] font-extrabold text-muted-faint">{d}</span>)}</div>
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: 35 }, (_, i) => {
-            const dn = i - 1, visible = dn >= 0 && dn < 31, day = dn + 1, isToday = day === 14;
+            const dn = i - 1, visible = dn >= 0 && dn < 31, day = dn + 1, isToday = day === 6;
             const dots = visible ? evDays[day] ?? [] : [];
             return (
               <div key={i} className={`flex aspect-square flex-col items-center justify-center rounded-lg text-[11px] font-extrabold ${isToday ? 'bg-lilac text-primary-dark' : visible ? 'bg-app text-ink' : 'text-transparent'}`}>
                 <span>{visible ? day : ''}</span>
-                <span className="mt-0.5 flex h-1 gap-0.5">
-                  {dots.map((c, j) => <span key={j} className="h-1 w-1 rounded-full" style={{ background: c }} />)}
-                </span>
+                <span className="mt-0.5 flex h-1 gap-0.5">{dots.map((c, j) => <span key={j} className="h-1 w-1 rounded-full" style={{ background: c }} />)}</span>
               </div>
             );
           })}
@@ -413,20 +920,9 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="flex flex-col gap-2.5">
           {upcoming.map((u, i) => (
             <div key={i} className={`${cardCls} flex items-center gap-3 p-3`}>
-              <span className={`flex-none rounded-[10px] px-2 py-1.5 text-center ${dtCls[u.tag]}`}>
-                <span className="block text-[8px] font-bold leading-none">{u.mon}</span>
-                <span className="block text-[14px] font-extrabold leading-tight">{u.day}</span>
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5">
-                  <span className="text-[12px] font-extrabold text-ink">{u.name}</span>
-                  {u.online && <span className="rounded bg-pink-bg px-1.5 py-px text-[8px] font-extrabold text-pink-dark">{L('Nuevo', 'New')}</span>}
-                </span>
-                <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-2">{L(u.es, u.en)}</span>
-              </span>
-              <span className={`flex-none self-center rounded-md px-2 py-1 text-[9px] font-extrabold ${u.online ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>
-                {u.online ? L('Confirmar', 'Confirm') : L('$ retenido', '$ held')}
-              </span>
+              <span className={`flex-none rounded-[10px] px-2 py-1.5 text-center ${dtCls[u.tag]}`}><span className="block text-[8px] font-bold leading-none">{u.mon}</span><span className="block text-[14px] font-extrabold leading-tight">{u.day}</span></span>
+              <span className="min-w-0 flex-1"><span className="text-[12px] font-extrabold text-ink">{u.name}</span><span className="mt-0.5 block truncate text-[10px] font-medium text-muted-2">{L(u.es, u.en)}</span></span>
+              <span className={`flex-none self-center rounded-md px-2 py-1 text-[9px] font-extrabold ${u.tag === 'warn' ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{u.tag === 'warn' ? L('Confirmar', 'Confirm') : L('$ retenido', '$ held')}</span>
             </div>
           ))}
         </div>
@@ -434,51 +930,35 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ===== DEPOSITS =====
+  // ---- ops · deposits ----
   const deposits = [
-    { initials: 'MV', color: '#7B61FF', name: 'Mariana V.', es: 'Vajilla de boda · 100', en: 'Wedding plates · 100', amount: '$250', held: true },
-    { initials: 'CM', color: '#1F9D57', name: 'Coffee Mfg.', es: 'Máquina de espresso', en: 'Espresso machine', amount: '$120', held: true },
-    { initials: 'PS', color: '#E8954A', name: 'Park Studios', es: 'Espacio de foto', en: 'Photo space', amount: '$80', held: true },
+    { initials: 'MV', color: '#7B61FF', name: 'Mariana V.', es: 'Vajilla de fiesta · 100', en: 'Party tableware · 100', amount: '$200', held: true },
+    { initials: 'CM', color: '#1F9D57', name: 'Coffee Mfg.', es: 'Bocina y micrófono', en: 'Speaker & microphone', amount: '$80', held: true },
+    { initials: 'PS', color: '#E8954A', name: 'Park Studios', es: 'Salón de eventos', en: 'Event hall', amount: '$150', held: true },
     { initials: 'JT', color: '#2A5C8A', name: 'James T.', es: 'Mesa larga · devuelto', en: 'Long table · returned', amount: '$40', held: false },
   ];
   const depositsPane = (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 md:max-w-md">
-        <div className={`${cardCls} p-3.5`}>
-          <div className="text-[10px] font-bold text-muted">{L('Retenido', 'Held now')}</div>
-          <div className="mt-0.5 text-[19px] font-extrabold text-ink">$1,840</div>
-          <div className="text-[9.5px] font-extrabold text-muted-2">6 {L('activos', 'active')}</div>
-        </div>
-        <div className={`${cardCls} p-3.5`}>
-          <div className="text-[10px] font-bold text-muted">{L('Devuelto 30d', 'Refunded 30d')}</div>
-          <div className="mt-0.5 text-[19px] font-extrabold text-ink">$3,420</div>
-          <div className="text-[9.5px] font-extrabold text-green">18 {L('devoluciones', 'returns')}</div>
-        </div>
+        <div className={`${cardCls} p-3.5`}><div className="text-[10px] font-bold text-muted">{L('Retenido', 'Held now')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">$430</div><div className="text-[9.5px] font-extrabold text-muted-2">3 {L('activos', 'active')}</div></div>
+        <div className={`${cardCls} p-3.5`}><div className="text-[10px] font-bold text-muted">{L('Devuelto 30d', 'Refunded 30d')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">$1,240</div><div className="text-[9.5px] font-extrabold text-green">9 {L('devoluciones', 'returns')}</div></div>
       </div>
       <div className="grid gap-2.5 md:grid-cols-2">
         {deposits.map((d) => (
           <div key={d.name + d.amount} className={`${cardCls} flex items-center gap-3 p-3`}>
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[12px] font-extrabold text-ink">{d.name}</span>
-              <span className="block truncate text-[10px] font-medium text-muted-2">{L(d.es, d.en)}</span>
-            </span>
-            <span className="flex-none text-right">
-              <span className="block text-[13px] font-extrabold text-ink">{d.amount}</span>
-              <span className={`mt-0.5 inline-block rounded px-1.5 py-px text-[8.5px] font-extrabold ${d.held ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>
-                {d.held ? L('Retenido', 'Held') : L('Devuelto', 'Refunded')}
-              </span>
-            </span>
+            <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{d.name}</span><span className="block truncate text-[10px] font-medium text-muted-2">{L(d.es, d.en)}</span></span>
+            <span className="flex-none text-right"><span className="block text-[13px] font-extrabold text-ink">{d.amount}</span><span className={`mt-0.5 inline-block rounded px-1.5 py-px text-[8.5px] font-extrabold ${d.held ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{d.held ? L('Retenido', 'Held') : L('Devuelto', 'Refunded')}</span></span>
           </div>
         ))}
       </div>
     </div>
   );
 
-  // ===== DAMAGE =====
+  // ---- ops · damage ----
   const damage = [
-    { es: 'Carro de horno de leña', en: 'Wood-fired oven cart', renter: 'Mission Tech', date: '27 Oct', sev: 'minor' as const, noteEs: 'Rayón en la puerta. Funcional, estético menor.', noteEn: 'Scratch on the door. Functional, minor cosmetic.', charge: '$45', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px' },
-    { es: 'Vajilla de boda · 100', en: 'Wedding plates · 100', renter: 'Mariana V.', date: '12 Oct', sev: 'major' as const, noteEs: '3 platos rotos de 100. Reemplazo necesario.', noteEn: '3 plates broken of 100. Replacement needed.', charge: '$90', tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px' },
+    { es: 'Bocina y micrófono', en: 'Speaker & microphone', renter: 'Mission Tech', date: '5 Jul', sev: 'minor' as const, noteEs: 'Rayón en la carcasa. Funcional, estético menor.', noteEn: 'Scratch on the casing. Functional, minor cosmetic.', charge: '$25', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px' },
+    { es: 'Vajilla de fiesta · 100', en: 'Party tableware · 100', renter: 'Mariana V.', date: '1 Jul', sev: 'major' as const, noteEs: '3 platos rotos de 100. Reemplazo necesario.', noteEn: '3 plates broken of 100. Replacement needed.', charge: '$90', tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px' },
   ];
   const sevMeta: Record<'minor' | 'major', { cls: string; border: string; label: string }> = {
     minor: { cls: 'bg-amber-bg text-amber-ink', border: 'border-amber/40', label: L('Menor', 'Minor') },
@@ -493,18 +973,12 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           return (
             <div key={r.es} className={`rounded-card-sm border ${m.border} bg-white p-3 shadow-card`}>
               <div className="flex items-center gap-3">
-                <span className="h-11 w-11 flex-none rounded-[11px]" style={{ background: `repeating-linear-gradient(135deg,${r.tile})` }} />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[12.5px] font-extrabold text-ink">{L(r.es, r.en)}</span>
-                  <span className="block text-[10px] font-medium text-muted-2">{r.renter} · {r.date}</span>
-                </span>
+                <span className="h-11 w-11 flex-none rounded-[11px]" style={{ background: stripe(r.tile) }} />
+                <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{L(r.es, r.en)}</span><span className="block text-[10px] font-medium text-muted-2">{r.renter} · {r.date}</span></span>
                 <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${m.cls}`}>{m.label}</span>
               </div>
               <div className="mt-2.5 border-t border-hair pt-2.5 text-[11px] font-medium leading-relaxed text-ink-3">{L(r.noteEs, r.noteEn)}</div>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-[10.5px] font-bold text-muted-2">{L('Deducir del depósito', 'Deduct from deposit')}</span>
-                <span className="text-[12px] font-extrabold text-pink-dark">−{r.charge}</span>
-              </div>
+              <div className="mt-2 flex items-center justify-between"><span className="text-[10.5px] font-bold text-muted-2">{L('Deducir del depósito', 'Deduct from deposit')}</span><span className="text-[12px] font-extrabold text-pink-dark">−{r.charge}</span></div>
             </div>
           );
         })}
@@ -512,133 +986,40 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ===== PRICING =====
-  const pricingPane = (
-    <div className="flex flex-col gap-3">
-      <div className="text-[11.5px] font-medium leading-relaxed text-muted">{L('Tarifas por hora, día y semana, más depósito por artículo.', 'Hourly, daily and weekly rates, plus deposit per item.')}</div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {items.map((it) => (
-          <div key={it.id} className={`${cardCls} p-3`}>
-            <div className="mb-2.5 flex items-center gap-2.5">
-              <span className="h-9 w-9 flex-none rounded-[10px]" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12.5px] font-extrabold text-ink">{L(it.es, it.en)}</span>
-                <span className="block text-[9.5px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>
-              </span>
-            </div>
-            <div className="flex gap-1.5">
-              {[
-                { l: L('Hora', 'Hour'), v: it.hour, on: it.hour != null },
-                { l: L('Día', 'Day'), v: it.day, on: true },
-                { l: L('Semana', 'Week'), v: it.week, on: true },
-              ].map((r) => (
-                <div key={r.l} className={`flex-1 rounded-[9px] py-2 text-center ${r.on ? 'bg-app' : 'bg-lilac-3'}`}>
-                  <div className="text-[8.5px] font-semibold text-muted-2">{r.l}</div>
-                  <div className={`mt-0.5 text-[12px] font-extrabold ${r.on ? 'text-ink' : 'text-muted-faint'}`}>{r.v != null ? money(r.v) : '—'}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // ---- Drill-in pages take over the screen as full ModulePages (no cramped popups) ----
-  if (selected && flow === null) {
-    return (
-      <>
-        <ItemDetail
-          item={selected}
-          ctx={ctx}
-          catLabel={catLabel}
-          statusOf={statusOf}
-          onClose={() => setOpenId(null)}
-          onEdit={() => flash(L('Edición próximamente', 'Editing coming soon'))}
-          onRentOut={() => setFlow('rentout')}
-          onReturn={() => setFlow('return')}
-        />
-        <Toast msg={toast} />
-      </>
-    );
-  }
-
-  if (selected && flow === 'rentout') {
-    return (
-      <>
-        <RentOutFlow
-          item={selected}
-          ctx={ctx}
-          onBackToDetail={() => setFlow(null)}
-          onDone={() => { setFlow(null); setOpenId(null); flash(L('Rentado · depósito cobrado', 'Rented · deposit charged')); }}
-        />
-        <Toast msg={toast} />
-      </>
-    );
-  }
-
-  if (selected && flow === 'return') {
-    return (
-      <>
-        <ReturnFlow
-          item={selected}
-          ctx={ctx}
-          onClose={() => setFlow(null)}
-          onDone={() => { setFlow(null); setOpenId(null); flash(L('Depósito devuelto', 'Deposit refunded')); }}
-        />
-        <Toast msg={toast} />
-      </>
-    );
-  }
-
-  if (flow === 'wizard') {
-    return (
-      <>
-        <AddItemWizard
-          ctx={ctx}
-          catLabel={catLabel}
-          onClose={() => setFlow(null)}
-          onDone={(it) => {
-            const withId = { ...it, id: Math.max(0, ...items.map((p) => p.id)) + 1 };
-            setItems((prev) => [withId, ...prev]);
-            persistNewRental(withId);
-            setFlow(null); setSub('items');
-            flash(L('Artículo agregado', 'Item added'));
-          }}
-        />
-        <Toast msg={toast} />
-      </>
-    );
-  }
+  const opsUpcoming = reqList.filter((r) => r.status === 'pending' || r.status === 'confirmed').length;
 
   return (
     <div className="relative pb-8">
-      {/* sub-tabs + add */}
-      <div className="mb-4 flex items-center gap-3">
-        <div className="no-scrollbar -mx-1 flex flex-1 gap-2 min-w-0 overflow-x-auto px-1">
-          {subTabs.map(([k, label]) => (
-            <button key={k} onClick={() => setSub(k)} className={chip(sub === k)}>{label}</button>
-          ))}
-        </div>
-        <button onClick={() => setFlow('wizard')} className="hidden flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm md:flex xl:hidden">
-          <Plus size={15} strokeWidth={2.6} />{L('Agregar', 'Add')}
-        </button>
+      <div className="mb-3 flex gap-2">
+        <button onClick={() => setMode('items')} className={modeBtn(mode === 'items')}><Boxes size={14} strokeWidth={2} />{L('Artículos', 'Items')}</button>
+        <button onClick={() => setMode('ops')} className={modeBtn(mode === 'ops')}><CalendarDays size={14} strokeWidth={2} />{L('Rentas', 'Rentals')}{opsUpcoming > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{opsUpcoming}</span>}</button>
       </div>
 
-      {sub === 'items' && itemsPane}
-      {sub === 'requests' && requestsPane}
-      {sub === 'calendar' && calendarPane}
-      {sub === 'deposits' && depositsPane}
-      {sub === 'damage' && damagePane}
-      {sub === 'pricing' && pricingPane}
+      <div className="mb-4">
+        <ChipRow className="-mx-1 px-1">
+          {mode === 'items' ? (
+            <>
+              <button onClick={() => setItemSub('catalog')} className={chip(itemSub === 'catalog')}>{L('Catálogo', 'Catalog')}</button>
+              <button onClick={() => setItemSub('cats')} className={chip(itemSub === 'cats')}>{L('Categorías', 'Categories')}<span className={`ml-1.5 font-extrabold ${itemSub === 'cats' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.categories.length}</span></button>
+              <button onClick={() => setItemSub('addons')} className={chip(itemSub === 'addons')}>{L('Extras', 'Add-ons')}<span className={`ml-1.5 font-extrabold ${itemSub === 'addons' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.addons.length}</span></button>
+              <button onClick={() => setItemSub('pricing')} className={chip(itemSub === 'pricing')}>{L('Precios', 'Pricing')}</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setOpSub('requests')} className={chip(opSub === 'requests')}>{L('Solicitudes', 'Requests')}{opsUpcoming > 0 && <span className={`ml-1.5 font-extrabold ${opSub === 'requests' ? 'text-white/80' : 'text-muted-2'}`}>{opsUpcoming}</span>}</button>
+              <button onClick={() => setOpSub('calendar')} className={chip(opSub === 'calendar')}>{L('Calendario', 'Calendar')}</button>
+              <button onClick={() => setOpSub('deposits')} className={chip(opSub === 'deposits')}>{L('Depósitos', 'Deposits')}</button>
+              <button onClick={() => setOpSub('damage')} className={chip(opSub === 'damage')}>{L('Daños', 'Damage')}</button>
+            </>
+          )}
+        </ChipRow>
+      </div>
 
-      {/* mobile add button (all sub-tabs) */}
-      <button onClick={() => setFlow('wizard')} className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm md:hidden">
-        <Plus size={16} strokeWidth={2.6} />{L('Agregar artículo', 'Add rental item')}
-      </button>
+      {mode === 'items'
+        ? (itemSub === 'catalog' ? catalog : itemSub === 'cats' ? categoriesTab : itemSub === 'addons' ? addonsTab : pricingPane)
+        : (opSub === 'requests' ? requestsPane : opSub === 'calendar' ? calendarPane : opSub === 'deposits' ? depositsPane : damagePane)}
 
-      {/* premium teaser */}
-      {!isPremium && sub === 'items' && (
+      {!isPremium && mode === 'items' && itemSub === 'catalog' && (
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[18px]">✦</span>
           <span className="min-w-0 flex-1">
@@ -649,60 +1030,60 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
 
+      {editorSheets()}
       <Toast msg={toast} />
     </div>
   );
 }
 
+// ---------- waiver defs ----------
+const WAIVER_DEFS = (L: (es: string, en: string) => string): [string, string][] => [
+  [L('Exención de responsabilidad', 'Liability waiver'), L('Requerida al rentar', 'Required at rental')],
+  [L('Depósito reembolsable', 'Refundable deposit'), L('Se devuelve al regresar', 'Returned on return')],
+  [L('Cargo por retraso', 'Late return fee'), L('$50/hora después', '$50/hour after')],
+  [L('Seguro requerido', 'Insurance required'), L('Verificación de cobertura', 'Coverage verification')],
+];
+
 // ---------- Item detail page ----------
 function ItemDetail({
-  item, ctx, catLabel, statusOf, onClose, onEdit, onRentOut, onReturn,
+  item, ctx, catName, tile, statusOf, availOf, onClose, onEdit, onRentOut, onReturn,
 }: {
-  item: Item; ctx: PanelCtx; catLabel: (c: Cat) => string;
+  item: Item; ctx: PanelCtx; catName: string; tile: string;
   statusOf: (it: Item) => { cls: string; dot: string; label: string };
+  availOf: (it: Item) => number;
   onClose: () => void; onEdit: () => void; onRentOut: () => void; onReturn: () => void;
 }) {
   const { L } = ctx;
   const s = statusOf(item);
-  const [waivers, setWaivers] = useState<boolean[]>([true, true, true, false]);
-  const waiverDefs = [
-    L('Exención de responsabilidad', 'Liability waiver'),
-    L('Depósito reembolsable', 'Refundable deposit'),
-    L('Cargo por retraso · $50/h', 'Late fee · $50/hr'),
-    L('Verificación de seguro', 'Insurance verification'),
-  ];
-  const rates = [
-    { l: L('Hora', 'Hour'), v: item.hour },
-    { l: L('Día', 'Day'), v: item.day },
-    { l: L('Semana', 'Week'), v: item.week },
-  ];
-
+  const rates = [{ l: L('Hora', 'Hour'), v: item.hour }, { l: L('Día', 'Day'), v: item.day }, { l: L('Semana', 'Week'), v: item.week }];
+  const waiverLabels = WAIVER_DEFS(L);
   return (
     <ModulePage
       title={L(item.es, item.en)}
-      subtitle={`${catLabel(item.cat)} · ${L(item.availEs, item.availEn)}`}
+      subtitle={`${catName} · ${L(item.availEs, item.availEn)}`}
       onBack={onClose}
       action={<span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${s.cls}`}>{s.label}</span>}
       footer={
         <div className="flex gap-2.5">
-          <button onClick={onEdit} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label={L('Editar', 'Edit')}>
-            <Pencil size={16} strokeWidth={2} className="text-primary-dark" />
-          </button>
+          <button onClick={onEdit} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label={L('Editar', 'Edit')}><Pencil size={16} strokeWidth={2} className="text-primary-dark" /></button>
           <button onClick={onRentOut} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Rentar', 'Rent out')}</button>
         </div>
       }
     >
       <div className="flex flex-col gap-4">
         <div className="overflow-hidden rounded-card-sm border border-hair">
-          <div className="relative h-[110px]" style={{ background: `repeating-linear-gradient(135deg,${item.tile})` }}>
+          <div className="relative h-[110px]" style={{ background: stripe(tile) }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {item.imageUrl && <img src={item.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
             <span className={`absolute right-2.5 top-2.5 rounded-md px-2 py-1 text-[9px] font-extrabold ${s.cls}`}>{s.label}</span>
           </div>
           <div className="p-3.5">
-            <div className="text-[11px] font-semibold text-muted-2">{catLabel(item.cat)} · {L(item.availEs, item.availEn)}</div>
+            {item.descEs && <div className="mb-2.5 text-[12px] font-medium leading-relaxed text-ink-3">{L(item.descEs, item.descEn)}</div>}
+            <div className="text-[11px] font-semibold text-muted-2">{catName} · {L(item.availEs, item.availEn)}</div>
             <div className="mt-2.5 flex gap-1.5">
               {rates.map((r) => (
                 <div key={r.l} className="flex-1 rounded-[10px] bg-app py-2.5 text-center">
-                  <div className="text-[14px] font-extrabold text-ink">{r.v != null ? money(r.v) : '—'}</div>
+                  <div className="text-[14px] font-extrabold text-ink">{r.v != null && r.v > 0 ? money(r.v) : '—'}</div>
                   <div className="mt-0.5 text-[8.5px] font-semibold text-muted-2">{r.l}</div>
                 </div>
               ))}
@@ -713,34 +1094,27 @@ function ItemDetail({
         <div>
           <div className="mb-2 text-[12px] font-extrabold text-ink">{L('Unidades', 'Units')} · {item.stock}</div>
           <div className="flex flex-col gap-2">
-            {Array.from({ length: item.stock }, (_, i) => {
-              const out = i < item.out;
-              const unit = L(item.unitEs, item.unitEn);
+            {Array.from({ length: Math.max(1, item.stock) }, (_, i) => {
+              const out = i < item.out; const unit = L(item.unitEs, item.unitEn);
               return (
                 <div key={i} className={`${cardCls} flex items-center gap-3 p-2.5`}>
                   <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-[11px] font-extrabold ${out ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-dark'}`}>#{i + 1}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[12px] font-extrabold capitalize text-ink">{unit} {i + 1}</span>
-                    <span className="block text-[10px] font-medium text-muted-2">{out ? L('Rentado · regresa 19 Oct', 'Rented · back Oct 19') : L('Disponible ahora', 'Available now')}</span>
-                  </span>
-                  {out ? (
-                    <button onClick={onReturn} className="flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-ink">{L('Devolver', 'Return')}</button>
-                  ) : (
-                    <span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Libre', 'Free')}</span>
-                  )}
+                  <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold capitalize text-ink">{unit} {i + 1}</span><span className="block text-[10px] font-medium text-muted-2">{out ? L('Rentado', 'Rented') : L('Disponible ahora', 'Available now')}</span></span>
+                  {out ? (<button onClick={onReturn} className="flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-ink">{L('Devolver', 'Return')}</button>) : (<span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Libre', 'Free')}</span>)}
                 </div>
               );
             })}
           </div>
+          <div className="mt-1.5 text-[10.5px] font-semibold text-muted-2">{availOf(item)}/{item.stock} {L('disponibles', 'available')}</div>
         </div>
 
         <div>
           <div className="mb-2 text-[12px] font-extrabold text-ink">{L('Exención y políticas', 'Waiver & policies')}</div>
           <div className={`${cardCls} px-3.5`}>
-            {waiverDefs.map((w, i) => (
+            {waiverLabels.map(([w], i) => (
               <div key={w} className="flex items-center justify-between gap-3 border-b border-hair py-3 last:border-0">
                 <span className="text-[12px] font-semibold text-ink">{w}</span>
-                <Toggle on={waivers[i]} onClick={() => setWaivers((prev) => prev.map((v, j) => (j === i ? !v : v)))} />
+                <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${item.waivers[i] ? 'bg-green-bg text-green-dark' : 'bg-lilac-2 text-muted-2'}`}>{item.waivers[i] ? L('Activo', 'On') : L('Inactivo', 'Off')}</span>
               </div>
             ))}
           </div>
@@ -751,8 +1125,8 @@ function ItemDetail({
 }
 
 // ---------- Rent-out 3-step flow ----------
-function RentOutFlow({ item, ctx, onBackToDetail, onDone }: {
-  item: Item; ctx: PanelCtx; onBackToDetail: () => void; onDone: () => void;
+function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
+  item: Item; ctx: PanelCtx; tile: string; onBackToDetail: () => void; onDone: () => void;
 }) {
   const { L } = ctx;
   const [step, setStep] = useState(0);
@@ -768,20 +1142,10 @@ function RentOutFlow({ item, ctx, onBackToDetail, onDone }: {
   const fee = rate * qty;
   const total = fee + item.dep;
   const periodLabel = { hour: L('Hora', 'Hour'), day: L('Día', 'Day'), week: L('Semana', 'Week') }[period];
-
   const steps = [L('Cliente', 'Renter'), L('Periodo', 'Period'), L('Confirmar', 'Confirm')];
   const canNext = step === 0 ? name.trim().length > 0 : true;
 
-  if (done) {
-    return (
-      <SuccessSheet
-        ctx={ctx}
-        title={L('¡Rentado!', 'Rented!')}
-        sub={L('Se cobró el depósito y el artículo quedó marcado como rentado.', 'Deposit charged and the item is marked as rented.')}
-        onClose={onDone}
-      />
-    );
-  }
+  if (done) return (<SuccessSheet ctx={ctx} title={L('¡Rentado!', 'Rented!')} sub={L('Se cobró el depósito y el artículo quedó marcado como rentado.', 'Deposit charged and the item is marked as rented.')} onClose={onDone} />);
 
   const next = () => { if (step >= 2) { setDone(true); return; } setStep((s) => s + 1); };
   const back = () => { if (step === 0) { onBackToDetail(); return; } setStep((s) => s - 1); };
@@ -794,97 +1158,52 @@ function RentOutFlow({ item, ctx, onBackToDetail, onDone }: {
       backLabel={step === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
       footer={
         <div className="flex items-center gap-3">
-          <button onClick={back} aria-label={L('Atrás', 'Back')} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2">
-            <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
-          </button>
+          <button onClick={back} aria-label={L('Atrás', 'Back')} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2"><ChevronLeft size={18} strokeWidth={2.4} className="text-ink" /></button>
           <span className="flex-1 text-center text-[11px] font-semibold text-muted-2">{`${L('Paso', 'Step')} ${step + 1} ${L('de 3', 'of 3')}`}</span>
-          <button
-            onClick={next}
-            disabled={!canNext}
-            className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${!canNext ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta-sm'}`}
-          >
-            {step >= 2 ? L('Cobrar y rentar', 'Charge & rent') : L('Continuar', 'Continue')}
-          </button>
+          <button onClick={next} disabled={!canNext} className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${!canNext ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta-sm'}`}>{step >= 2 ? L('Cobrar y rentar', 'Charge & rent') : L('Continuar', 'Continue')}</button>
         </div>
       }
     >
       <div className="flex flex-col gap-4">
         <StepBar steps={steps} step={step} onGo={(i) => i <= step && setStep(i)} />
-        <ItemStrip item={item} ctx={ctx} right={`${money(item.day)}/${L('día', 'day')} · ${L('Depósito', 'Deposit')} ${money(item.dep)}`} />
-
+        <ItemStrip item={item} ctx={ctx} tile={tile} right={`${money(item.day)}/${L('día', 'day')} · ${L('Depósito', 'Deposit')} ${money(item.dep)}`} />
         <div className={`${cardCls} flex flex-col gap-3.5 p-4`}>
           <div className="text-[13.5px] font-extrabold text-ink">{[L('Datos del cliente', 'Renter details'), L('Periodo y cantidad', 'Period & quantity'), L('Confirmar renta', 'Confirm rental')][step]}</div>
-
           {step === 0 && (
             <>
-              <Field label={`${L('Nombre del cliente', 'Renter name')} *`}>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Mariana Vélez', 'e.g. Mariana Velez')} className={fieldCls} />
-              </Field>
-              <Field label={L('Teléfono', 'Phone')}>
-                <input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(415) 555-0148" className={fieldCls} inputMode="tel" autoComplete="tel" />
-              </Field>
-              <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
-                <Shield size={17} strokeWidth={2} className="flex-none text-primary-dark" />
-                <span className="flex-1 text-[11px] font-semibold leading-snug text-ink-soft">{L('Exención de responsabilidad firmada', 'Liability waiver signed')}</span>
-                <Toggle on={waiver} onClick={() => setWaiver((v) => !v)} />
-              </div>
+              <Field label={`${L('Nombre del cliente', 'Renter name')} *`}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Mariana Vélez', 'e.g. Mariana Velez')} className={fieldCls} /></Field>
+              <Field label={L('Teléfono', 'Phone')}><input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(415) 555-0148" className={fieldCls} inputMode="tel" autoComplete="tel" /></Field>
+              <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3"><Shield size={17} strokeWidth={2} className="flex-none text-primary-dark" /><span className="flex-1 text-[11px] font-semibold leading-snug text-ink-soft">{L('Exención de responsabilidad firmada', 'Liability waiver signed')}</span><Toggle on={waiver} onClick={() => setWaiver((v) => !v)} /></div>
             </>
           )}
-
           {step === 1 && (
             <>
               <Field label={L('Periodo de renta', 'Rental period')}>
-                <div className="flex gap-1.5">
-                  {(['hour', 'day', 'week'] as Period[]).map((p) => (
-                    <button key={p} onClick={() => setPeriod(p)} className={`flex-1 rounded-[9px] py-2 text-[11.5px] font-extrabold ${period === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>
-                      {{ hour: L('Hora', 'Hour'), day: L('Día', 'Day'), week: L('Semana', 'Week') }[p]}
-                    </button>
-                  ))}
-                </div>
+                <div className="flex gap-1.5">{(['hour', 'day', 'week'] as Period[]).map((p) => (<button key={p} onClick={() => setPeriod(p)} className={`flex-1 rounded-[9px] py-2 text-[11.5px] font-extrabold ${period === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{{ hour: L('Hora', 'Hour'), day: L('Día', 'Day'), week: L('Semana', 'Week') }[p]}</button>))}</div>
               </Field>
               <div className="flex gap-3">
                 <Field label={L('Cantidad', 'Quantity')} className="flex-1">
                   <div className="flex items-center overflow-hidden rounded-field border-[1.5px] border-lilac-line">
                     <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-[42px] w-10 items-center justify-center bg-app text-ink-2"><Minus size={15} strokeWidth={2.6} /></button>
                     <span className="flex-1 text-center text-[14px] font-extrabold text-ink">{qty}</span>
-                    <button onClick={() => setQty((q) => Math.min(item.stock, q + 1))} className="flex h-[42px] w-10 items-center justify-center bg-app text-ink-2"><Plus size={15} strokeWidth={2.6} /></button>
+                    <button onClick={() => setQty((q) => Math.min(Math.max(1, item.stock), q + 1))} className="flex h-[42px] w-10 items-center justify-center bg-app text-ink-2"><Plus size={15} strokeWidth={2.6} /></button>
                   </div>
                 </Field>
-                <Field label={L('Fecha inicio', 'Start date')} className="flex-1">
-                  <input value={start} onChange={(e) => setStart(e.target.value)} placeholder="15 Oct" className={fieldCls} />
-                </Field>
+                <Field label={L('Fecha inicio', 'Start date')} className="flex-1"><input value={start} onChange={(e) => setStart(e.target.value)} placeholder="12 Jul" className={fieldCls} /></Field>
               </div>
               <div className="rounded-field bg-lilac-2 p-3.5">
                 <Line l={L('Tarifa de renta', 'Rental fee')} v={money(fee)} />
                 <Line l={L('Depósito', 'Deposit')} v={money(item.dep)} />
-                <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2">
-                  <span className="text-[12px] font-extrabold text-ink">{L('Total a cobrar', 'Total due')}</span>
-                  <span className="text-[15px] font-extrabold text-primary-dark">{money(total)}</span>
-                </div>
+                <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2"><span className="text-[12px] font-extrabold text-ink">{L('Total a cobrar', 'Total due')}</span><span className="text-[15px] font-extrabold text-primary-dark">{money(total)}</span></div>
               </div>
             </>
           )}
-
           {step === 2 && (
             <>
-              <div className="flex items-center gap-3 rounded-field border border-green/40 bg-green-bg p-3">
-                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-green-dark"><Check size={16} strokeWidth={3} /></span>
-                <span className="flex-1">
-                  <span className="block text-[12px] font-extrabold text-green-dark">{L('Listo para rentar', 'Ready to rent')}</span>
-                  <span className="block text-[10.5px] font-semibold leading-snug text-green-dark/80">{L('Se cobra el depósito y se marca como rentado.', 'Deposit is charged and item marked rented.')}</span>
-                </span>
-              </div>
+              <div className="flex items-center gap-3 rounded-field border border-green/40 bg-green-bg p-3"><span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-green-dark"><Check size={16} strokeWidth={3} /></span><span className="flex-1"><span className="block text-[12px] font-extrabold text-green-dark">{L('Listo para rentar', 'Ready to rent')}</span><span className="block text-[10.5px] font-semibold leading-snug text-green-dark/80">{L('Se cobra el depósito y se marca como rentado.', 'Deposit is charged and item marked rented.')}</span></span></div>
               <div className="overflow-hidden rounded-field border border-hair">
-                {[
-                  [L('Cliente', 'Renter'), name || '—'],
-                  [L('Artículo', 'Item'), L(item.es, item.en)],
-                  [L('Periodo', 'Period'), `${qty} × ${periodLabel}`],
-                  [L('Total', 'Total'), money(total)],
-                ].map(([k, v], i, a) => (
-                  <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
-                    <span className="w-[80px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span>
-                    <span className="min-w-0 flex-1 text-[11.5px] font-extrabold text-ink">{v}</span>
-                  </div>
+                {([[L('Cliente', 'Renter'), name || '—'], [L('Artículo', 'Item'), L(item.es, item.en)], [L('Periodo', 'Period'), `${qty} × ${periodLabel}`], [L('Total', 'Total'), money(total)]] as [string, string][]).map(([k, v], i, a) => (
+                  <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}><span className="w-[80px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span><span className="min-w-0 flex-1 text-[11.5px] font-extrabold text-ink">{v}</span></div>
                 ))}
               </div>
             </>
@@ -896,44 +1215,22 @@ function RentOutFlow({ item, ctx, onBackToDetail, onDone }: {
 }
 
 // ---------- Return / condition-check flow ----------
-function ReturnFlow({ item, ctx, onClose, onDone }: { item: Item; ctx: PanelCtx; onClose: () => void; onDone: () => void }) {
+function ReturnFlow({ item, ctx, tile, onClose, onDone }: { item: Item; ctx: PanelCtx; tile: string; onClose: () => void; onDone: () => void }) {
   const { L } = ctx;
   const [condition, setCondition] = useState<Condition>('perfect');
   const [done, setDone] = useState(false);
-
   const deduction = condition === 'minor' ? 45 : condition === 'major' ? item.dep : 0;
   const refund = Math.max(0, item.dep - deduction);
-
   const conds: { key: Condition; label: string; sub: string; icon: string; iconCls: string }[] = [
     { key: 'perfect', label: L('Perfecto', 'Perfect'), sub: L('Sin daños · reembolso completo', 'No damage · full refund'), icon: '✓', iconCls: 'bg-green-bg text-green-dark' },
     { key: 'minor', label: L('Daño menor', 'Minor damage'), sub: L('Deduce parte del depósito', 'Deduct part of deposit'), icon: '~', iconCls: 'bg-amber-bg text-amber-ink' },
     { key: 'major', label: L('Daño mayor', 'Major damage'), sub: L('Deduce o retén el depósito', 'Deduct or hold deposit'), icon: '!', iconCls: 'bg-pink-bg text-pink-dark' },
   ];
-
-  if (done) {
-    return (
-      <SuccessSheet
-        ctx={ctx}
-        title={L('Devolución registrada', 'Return recorded')}
-        sub={`${L('Reembolso al cliente', 'Refund to renter')}: ${money(refund)}`}
-        onClose={onDone}
-      />
-    );
-  }
-
+  if (done) return (<SuccessSheet ctx={ctx} title={L('Devolución registrada', 'Return recorded')} sub={`${L('Reembolso al cliente', 'Refund to renter')}: ${money(refund)}`} onClose={onDone} />);
   return (
-    <ModulePage
-      title={L('Devolución', 'Return')}
-      onBack={onClose}
-      footer={
-        <button onClick={() => setDone(true)} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">
-          {L('Registrar y reembolsar', 'Record & refund')}
-        </button>
-      }
-    >
+    <ModulePage title={L('Devolución', 'Return')} onBack={onClose} footer={<button onClick={() => setDone(true)} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Registrar y reembolsar', 'Record & refund')}</button>}>
       <div className="flex flex-col gap-4">
-        <ItemStrip item={item} ctx={ctx} right={`${L('Devuelto por', 'Returned by')} James T.`} />
-
+        <ItemStrip item={item} ctx={ctx} tile={tile} right={`${L('Devuelto por', 'Returned by')} James T.`} />
         <div className={`${cardCls} p-4`}>
           <div className="mb-3 text-[13px] font-extrabold text-ink">{L('Revisión de condición', 'Condition check')}</div>
           <div className="flex flex-col gap-2">
@@ -941,181 +1238,18 @@ function ReturnFlow({ item, ctx, onClose, onDone }: { item: Item; ctx: PanelCtx;
               const on = condition === c.key;
               return (
                 <button key={c.key} onClick={() => setCondition(c.key)} className={`flex items-center gap-3 rounded-field border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                  <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border-[1.5px] ${on ? 'border-primary' : 'border-muted-faint'}`}>
-                    {on && <span className="h-2 w-2 rounded-full bg-primary" />}
-                  </span>
+                  <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border-[1.5px] ${on ? 'border-primary' : 'border-muted-faint'}`}>{on && <span className="h-2 w-2 rounded-full bg-primary" />}</span>
                   <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg text-[14px] font-extrabold ${c.iconCls}`}>{c.icon}</span>
-                  <span className="flex-1">
-                    <span className="block text-[12px] font-extrabold text-ink">{c.label}</span>
-                    <span className="block text-[10px] font-medium text-muted-2">{c.sub}</span>
-                  </span>
+                  <span className="flex-1"><span className="block text-[12px] font-extrabold text-ink">{c.label}</span><span className="block text-[10px] font-medium text-muted-2">{c.sub}</span></span>
                 </button>
               );
             })}
           </div>
         </div>
-
         <div className={`${cardCls} p-4`}>
           <Line l={L('Depósito retenido', 'Deposit held')} v={money(item.dep)} />
-          {deduction > 0 && (
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-pink-dark">{L('Deducción por daño', 'Damage deduction')}</span>
-              <span className="text-[12px] font-bold text-pink-dark">−{money(deduction)}</span>
-            </div>
-          )}
-          <div className="mt-2 flex items-center justify-between border-t border-hair pt-2.5">
-            <span className="text-[12px] font-extrabold text-ink">{L('Reembolso al cliente', 'Refund to renter')}</span>
-            <span className="text-[16px] font-extrabold text-green">{money(refund)}</span>
-          </div>
-        </div>
-      </div>
-    </ModulePage>
-  );
-}
-
-// ---------- Add-item 3-step wizard ----------
-function AddItemWizard({ ctx, catLabel, onClose, onDone }: {
-  ctx: PanelCtx; catLabel: (c: Cat) => string; onClose: () => void;
-  onDone: (item: Omit<Item, 'id'>) => void;
-}) {
-  const { L } = ctx;
-  const [step, setStep] = useState(0);
-  const [name, setName] = useState('');
-  const [cat, setCat] = useState<Cat>('equipo');
-  const [stock, setStock] = useState('');
-  const [unit, setUnit] = useState('');
-  const [hour, setHour] = useState('');
-  const [day, setDay] = useState('');
-  const [week, setWeek] = useState('');
-  const [dep, setDep] = useState('');
-  const [policies, setPolicies] = useState<boolean[]>([true, true, true, false]);
-
-  const ready = name.trim().length > 0 && day.trim().length > 0;
-  const steps = [L('Detalles', 'Details'), L('Tarifas', 'Rates'), L('Políticas', 'Policies')];
-  const canNext = step === 0 ? name.trim().length > 0 : step === 1 ? day.trim().length > 0 : ready;
-
-  const catDefs: [Cat, string][] = [['equipo', L('Equipo', 'Equipment')], ['space', L('Espacio', 'Space')], ['furniture', L('Mobiliario', 'Furniture')], ['tableware', L('Vajilla', 'Tableware')]];
-  const polDefs = [
-    [L('Exención de responsabilidad', 'Liability waiver'), L('Requerida al rentar', 'Required at rental')],
-    [L('Depósito reembolsable', 'Refundable deposit'), L('Se devuelve al regresar', 'Returned on return')],
-    [L('Cargo por retraso', 'Late return fee'), L('$50/hora después', '$50/hour after')],
-    [L('Seguro requerido', 'Insurance required'), L('Verificación de cobertura', 'Coverage verification')],
-  ];
-
-  const finish = () => {
-    onDone({
-      es: name.trim(), en: name.trim(), cat, tile: CAT_TILE[cat], booked: 0,
-      stock: Number(stock) || 1, out: 0, unitEs: unit.trim() || 'unidad', unitEn: unit.trim() || 'unit',
-      dep: Number(dep) || 0, hour: hour ? Number(hour) : null, day: Number(day) || 0, week: Number(week) || 0,
-      availEs: 'Siempre', availEn: 'Always',
-    });
-  };
-  const next = () => { if (step >= 2) { finish(); return; } setStep((s) => s + 1); };
-  const back = () => { if (step === 0) { onClose(); return; } setStep((s) => s - 1); };
-
-  return (
-    <ModulePage
-      title={L('Agregar artículo', 'Add rental item')}
-      subtitle={`${catLabel(cat)} · ${L('Paso', 'Step')} ${step + 1}/3`}
-      onBack={back}
-      backLabel={step === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
-      maxW={940}
-      footer={
-        <div className="flex items-center gap-3">
-          <button onClick={back} aria-label={L('Atrás', 'Back')} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2">
-            <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
-          </button>
-          <span className="flex-1 text-center text-[11px] font-semibold text-muted-2">{`${L('Paso', 'Step')} ${step + 1} ${L('de 3', 'of 3')}`}</span>
-          <button
-            onClick={next}
-            disabled={!canNext}
-            className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${!canNext ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta-sm'}`}
-          >
-            {step >= 2 ? L('Publicar artículo', 'Publish item') : L('Continuar', 'Continue')}
-          </button>
-        </div>
-      }
-    >
-      <div className="mb-4"><StepBar steps={steps} step={step} onGo={(i) => i <= step && setStep(i)} /></div>
-
-      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
-        <div className="order-2 xl:order-1">
-          <div className={`${cardCls} flex flex-col gap-3.5 p-4`}>
-            <div className="text-[13.5px] font-extrabold text-ink">{[L('Detalles del artículo', 'Item details'), L('Tarifas y depósito', 'Rates & deposit'), L('Políticas y exención', 'Policies & waiver')][step]}</div>
-
-            {step === 0 && (
-              <>
-                <Field label={`${L('Nombre del artículo', 'Item name')} *`}>
-                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Bici eléctrica', 'e.g. E-bike')} className={fieldCls} />
-                </Field>
-                <Field label={`${L('Categoría', 'Category')} *`}>
-                  <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto pb-0.5">
-                    {catDefs.map(([c, lab]) => (
-                      <button key={c} onClick={() => setCat(c)} className={`flex-none rounded-full px-3.5 py-2 text-[12px] ${cat === c ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-soft'}`}>{lab}</button>
-                    ))}
-                  </div>
-                </Field>
-                <div className="flex gap-3">
-                  <Field label={L('Cuántos', 'How many')} className="flex-1">
-                    <input value={stock} onChange={(e) => setStock(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="1" className={fieldCls} />
-                  </Field>
-                  <Field label={L('Unidad', 'Unit')} className="flex-1">
-                    <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={L('mesa, set…', 'table, set…')} className={fieldCls} />
-                  </Field>
-                </div>
-              </>
-            )}
-
-            {step === 1 && (
-              <>
-                <div className="text-[11px] font-medium leading-snug text-muted">{L('Define al menos la tarifa diaria. Hora y semana son opcionales.', 'Set at least the daily rate. Hour and week are optional.')}</div>
-                <div className="flex gap-3">
-                  <Field label={L('Hora', 'Hour')} className="flex-1"><MoneyInput value={hour} onChange={setHour} placeholder="—" /></Field>
-                  <Field label={`${L('Día', 'Day')} *`} className="flex-1"><MoneyInput value={day} onChange={setDay} placeholder="0" /></Field>
-                </div>
-                <div className="flex gap-3">
-                  <Field label={L('Semana', 'Week')} className="flex-1"><MoneyInput value={week} onChange={setWeek} placeholder="—" /></Field>
-                  <Field label={L('Depósito', 'Deposit')} className="flex-1"><MoneyInput value={dep} onChange={setDep} placeholder="0" /></Field>
-                </div>
-              </>
-            )}
-
-            {step === 2 && (
-              <>
-                <div className="text-[11px] font-extrabold text-ink-soft">{L('Políticas', 'Policies')}</div>
-                {polDefs.map(([label, sub], i) => (
-                  <div key={label} className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[12px] font-bold text-ink">{label}</span>
-                      <span className="block text-[10px] font-medium text-muted-2">{sub}</span>
-                    </span>
-                    <Toggle on={policies[i]} onClick={() => setPolicies((prev) => prev.map((v, j) => (j === i ? !v : v)))} />
-                  </div>
-                ))}
-                <div className={`mt-1 flex items-center gap-3 rounded-field border p-3 ${ready ? 'border-green/40 bg-green-bg' : 'border-amber/40 bg-amber-bg'}`}>
-                  <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[14px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? '✓' : '⚠'}</span>
-                  <span className="flex-1">
-                    <span className={`block text-[12px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing')}</span>
-                    <span className="block text-[10.5px] font-semibold leading-snug text-ink-3">{ready ? L('Aparecerá disponible para rentar.', 'It’ll appear available to rent.') : L('Agrega nombre y tarifa diaria.', 'Add a name and daily rate.')}</span>
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="order-1 xl:order-2 xl:sticky xl:top-0">
-          <div className="mb-2 text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-faint">{L('Vista previa en vivo', 'Live preview')}</div>
-          <div className="overflow-hidden rounded-card-sm border border-hair">
-            <div className="h-[80px]" style={{ background: `repeating-linear-gradient(135deg,${CAT_TILE[cat]})` }} />
-            <div className="flex items-start justify-between gap-2.5 p-3">
-              <div className="min-w-0">
-                <div className={`text-[14px] font-extrabold ${name ? 'text-ink' : 'text-muted-faint'}`}>{name || L('Nombre del artículo', 'Item name')}</div>
-                <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{catLabel(cat)}</div>
-              </div>
-              <span className="whitespace-nowrap text-[13px] font-extrabold text-ink">{day ? `${money(Number(day))}/${L('día', 'day')}` : '$0'}</span>
-            </div>
-          </div>
+          {deduction > 0 && (<div className="mt-1.5 flex items-center justify-between"><span className="text-[11px] font-semibold text-pink-dark">{L('Deducción por daño', 'Damage deduction')}</span><span className="text-[12px] font-bold text-pink-dark">−{money(deduction)}</span></div>)}
+          <div className="mt-2 flex items-center justify-between border-t border-hair pt-2.5"><span className="text-[12px] font-extrabold text-ink">{L('Reembolso al cliente', 'Refund to renter')}</span><span className="text-[16px] font-extrabold text-green">{money(refund)}</span></div>
         </div>
       </div>
     </ModulePage>
@@ -1126,17 +1260,9 @@ function AddItemWizard({ ctx, catLabel, onClose, onDone }: {
 function SuccessSheet({ ctx, title, sub, onClose }: { ctx: PanelCtx; title: string; sub: string; onClose: () => void }) {
   const { L } = ctx;
   return (
-    <ModulePage
-      title={title}
-      onBack={onClose}
-      footer={
-        <button onClick={onClose} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Listo', 'Done')}</button>
-      }
-    >
+    <ModulePage title={title} onBack={onClose} footer={<button onClick={onClose} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Listo', 'Done')}</button>}>
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-bg text-green-dark">
-          <Check size={28} strokeWidth={3} />
-        </span>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-bg text-green-dark"><Check size={28} strokeWidth={3} /></span>
         <div className="text-[16px] font-extrabold text-ink">{title}</div>
         <div className="max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">{sub}</div>
       </div>
@@ -1151,8 +1277,7 @@ function StepBar({ steps, step, onGo }: { steps: string[]; step: number; onGo: (
         const active = i === step, done = i < step;
         return (
           <button key={label} onClick={() => onGo(i)} className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
-            <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>
-            {label}
+            <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>{label}
           </button>
         );
       })}
@@ -1160,26 +1285,21 @@ function StepBar({ steps, step, onGo }: { steps: string[]; step: number; onGo: (
   );
 }
 
-function ItemStrip({ item, ctx, right }: { item: Item; ctx: PanelCtx; right: string }) {
+function ItemStrip({ item, ctx, tile, right }: { item: Item; ctx: PanelCtx; tile: string; right: string }) {
   const { L } = ctx;
   return (
     <div className={`${cardCls} flex items-center gap-3 p-3`}>
-      <span className="h-11 w-11 flex-none rounded-[11px]" style={{ background: `repeating-linear-gradient(135deg,${item.tile})` }} />
-      <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-extrabold text-ink">{L(item.es, item.en)}</span>
-        <span className="block truncate text-[10px] font-medium text-muted-2">{right}</span>
+      <span className="relative h-11 w-11 flex-none overflow-hidden rounded-[11px]" style={{ background: stripe(tile) }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {item.imageUrl && <img src={item.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
       </span>
+      <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L(item.es, item.en)}</span><span className="block truncate text-[10px] font-medium text-muted-2">{right}</span></span>
     </div>
   );
 }
 
 function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
-  return (
-    <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-[11px] font-extrabold text-ink-soft">{label}</span>
-      {children}
-    </label>
-  );
+  return (<label className={`block ${className}`}><span className="mb-1.5 block text-[11px] font-extrabold text-ink-soft">{label}</span>{children}</label>);
 }
 
 function MoneyInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
@@ -1200,10 +1320,5 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 }
 
 function Line({ l, v }: { l: string; v: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-[11px] font-semibold text-ink-2">{l}</span>
-      <span className="text-[12px] font-bold text-ink">{v}</span>
-    </div>
-  );
+  return (<div className="flex items-center justify-between"><span className="text-[11px] font-semibold text-ink-2">{l}</span><span className="text-[12px] font-bold text-ink">{v}</span></div>);
 }

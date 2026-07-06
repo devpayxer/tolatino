@@ -14,6 +14,7 @@ import { useApp } from '@/lib/state';
 import { normalizeMenuConfig } from '@/lib/menuConfig';
 import { normalizeServiceConfig } from '@/lib/serviceConfig';
 import { normalizeProductConfig } from '@/lib/productConfig';
+import { normalizeRentalConfig } from '@/lib/rentalConfig';
 import type { Bi, MenuCat, MenuItem, OptionGroup } from '@/data/bizdetail';
 
 const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -278,6 +279,70 @@ export async function fetchBusinessProducts(slug: string): Promise<PublicShop | 
 
   const collections = cfg.collections.filter((c) => c.featured).map((c) => ({ es: c.es, en: c.en, tile: c.tile }));
   return { cats, groups, collections, selling: cfg.selling };
+}
+
+// ── real rentals (business_items kind='rental' + rental_config, migration 0050) ──
+export type PubRentalAddon = { id: string; name: Bi; price: number };
+export type PubRental = {
+  id: string;
+  n: Bi; // bilingual name
+  d: Bi; // bilingual description
+  tile: string; // category striped tile (placeholder imagery)
+  hour: number | null;
+  day: number;
+  week: number;
+  dep: number; // refundable deposit
+  img?: string; // real photo URL (live); tile stays as the fallback
+  addons: PubRentalAddon[]; // resolved priced extras offered on this item
+  catKey: string;
+  catName: Bi;
+};
+/** The real public rentals for a listing: items with hour/day/week rates +
+ *  deposit, resolved add-ons (for the Rentar sheet), and the rental mode
+ *  (false = display-only → no online Rentar). */
+export type PublicRentals = { items: PubRental[]; addons: PubRentalAddon[]; renting: boolean };
+
+/** Fetch + map a business's real rental items by slug (migration 0050). Returns
+ *  null when offline / no published rentals — BizDetail falls back to fixtures. */
+export async function fetchBusinessRentals(slug: string): Promise<PublicRentals | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('business_rentals_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const row = data[0] as { items: unknown; config: unknown };
+  const rows = Array.isArray(row.items) ? (row.items as Record<string, unknown>[]) : [];
+  if (rows.length === 0) return null;
+  const cfg = normalizeRentalConfig(row.config);
+
+  const addons: PubRentalAddon[] = cfg.addons.map((a) => ({ id: a.id, name: [a.es, a.en ?? a.es], price: a.price }));
+  const addonById = new Map(addons.map((a) => [a.id, a]));
+  const catById = new Map(cfg.categories.map((c) => [c.id, c]));
+  const FALLBACK_TILE = '#EAE2F8 0 11px,#DCCEF2 11px 22px';
+
+  const toRental = (r: Record<string, unknown>): PubRental => {
+    const a = (r.attrs ?? {}) as Record<string, unknown>;
+    const name = String(r.name);
+    const dEs = String(r.description ?? '');
+    const cat = catById.get(String(r.section ?? ''));
+    const ids = Array.isArray(a.addons) ? (a.addons as string[]) : [];
+    return {
+      id: String(r.id),
+      n: [name, String(a.nameEn ?? name)],
+      d: [dEs, String(a.descEn ?? dEs)],
+      tile: cat?.tile ?? String(a.tile ?? FALLBACK_TILE),
+      hour: a.hour != null ? Number(a.hour) : null,
+      day: r.price != null ? Number(r.price) : Number(a.day ?? 0),
+      week: Number(a.week ?? 0),
+      dep: Number(a.dep ?? 0),
+      img: r.image_url != null ? String(r.image_url) : undefined,
+      addons: ids.map((id) => addonById.get(id)).filter((x): x is PubRentalAddon => !!x),
+      catKey: cat?.id ?? '_rest',
+      catName: cat ? [cat.es, cat.en] : ['Renta', 'Rentals'],
+    };
+  };
+
+  const items = rows.map(toRental);
+  if (items.length === 0) return null;
+  return { items, addons, renting: cfg.renting };
 }
 
 /** Fetch a single business by its public slug (geo-independent). Returns a

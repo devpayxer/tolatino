@@ -15,6 +15,7 @@ import type { HoursException } from '@/lib/hours';
 import type { MenuConfig } from '@/lib/menuConfig';
 import type { ServiceConfig } from '@/lib/serviceConfig';
 import type { ProductConfig } from '@/lib/productConfig';
+import type { RentalConfig } from '@/lib/rentalConfig';
 
 // One row of the owner's business, admin view (all editable fields).
 export type BizRow = {
@@ -53,6 +54,7 @@ export type BizRow = {
   menu_config: MenuConfig | null; // food-menu structure (categories/mods/dayparts/promos)
   service_config: ServiceConfig | null; // services structure (categories/add-ons/booking mode)
   product_config: ProductConfig | null; // shop structure (categories/option sets/collections/discounts/sell mode)
+  rental_config: RentalConfig | null; // rental structure (categories/add-ons/rental mode)
   created_at: string;
 };
 
@@ -117,6 +119,7 @@ const DEMO_BIZ: BizRow = {
   menu_config: null,
   service_config: null,
   product_config: null,
+  rental_config: null,
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -158,6 +161,7 @@ const DEMO_BIZ_2: BizRow = {
   menu_config: null,
   service_config: null,
   product_config: null,
+  rental_config: null,
   created_at: '2024-03-01T00:00:00Z',
 };
 
@@ -166,7 +170,7 @@ const DEMO_BIZ_2: BizRow = {
 // controlled by billing / the review system, not the listing editor.
 const WRITABLE: (keyof BizRow)[] = [
   'name', 'category_id', 'tagline_es', 'tagline_en', 'price_level', 'about_es', 'about_en',
-  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings', 'hours_exceptions', 'menu_config', 'service_config', 'product_config',
+  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings', 'hours_exceptions', 'menu_config', 'service_config', 'product_config', 'rental_config',
 ];
 
 type BizAdminCtx = {

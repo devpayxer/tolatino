@@ -311,6 +311,40 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   - [ ] **Collections on membership sync.** A collection stores member product
     ids; if a product is deleted its id can linger in a collection (harmless —
     the public strip only shows the collection name). Prune on delete later.
+- [x] **Renta — FULL admin (2026-07-06).** Same treatment as Servicios. Rental
+  items live in `business_items` (kind='rental'); the structure (categories,
+  reusable priced add-ons, rental mode) lives in `businesses.rental_config`
+  (migration **0050**). New `lib/rentalConfig.ts` + `RentalEditors.tsx`
+  (RentalCategoryEditor + RentalAddonEditor) mirror the service versions. Two
+  top-level modes:
+  - **Artículos** — sub-tabs **Catálogo** (item cards grouped by the owner's
+    editable categories → shared **5-step wizard** Detalles → Tarifas → Extras →
+    Políticas → Revisar, for create AND edit, with live preview, real **photo
+    upload** → `business_items.image_url`, hour/day/week rates + deposit, tags,
+    add-ons, waiver policies, duplicate, delete-confirmed; tapping a card opens
+    the item detail with **Rentar** (walk-in rent-out flow) + **Devolver**
+    (condition-check refund flow) + **Editar**), **Categorías** (create/edit/
+    reorder/hide/delete-guarded), **Extras** (reusable priced add-ons: entrega,
+    montaje, seguro…), and **Precios** (rate overview). A **"Modo del listado"**
+    toggle (Solo mostrar vs Aceptar rentas) persists `rental_config.renting`.
+  - **Rentas** — operations: **Solicitudes** (real `business_rentals` requests
+    with status progression), **Calendario**, **Depósitos**, **Daños**.
+  - The public listing's **Renta tab renders real items** (`fetchBusinessRentals`
+    → `business_rentals_by_slug`, migration 0050 — RPC includes `price`), with the
+    Rentar sheet; display-only mode (renting off) hides Rentar and shows a "llama
+    o visita para rentar" note. The item card tap → detail keeps the RentOut/Return
+    ops (a superset of the Servicios tap→edit — Editar lives in the detail). Deferred:
+  - [ ] **Renting is not transactional.** "Aceptar rentas" surfaces the Rentar
+    flow (requests insert via `business_rentals`) but there's no deposit charge /
+    payment — wire real checkout + deposit holds with the payments phase (same
+    status as Servicios bookings / online ordering).
+  - [ ] **Ops panes (Calendario / Depósitos / Daños) are still sample data.**
+    Solicitudes is real (`business_rentals`); the calendar, deposit ledger and
+    damage log are illustrative fixtures — back them with real
+    rentals/deposits/damage rows when the rental transaction loop is built.
+  - [ ] **Per-unit availability is a count, not a schedule.** Stock/out is a
+    number; real per-unit calendar blocking (which unit is out which dates) needs
+    a bookings-style availability table when volume warrants.
 - [x] **Wizard UX across Menú / Servicios / Productos (2026-07-06).** Three
   shared improvements to all three create/edit wizards:
   - **Draft recovery.** The CREATE draft autosaves to `localStorage`

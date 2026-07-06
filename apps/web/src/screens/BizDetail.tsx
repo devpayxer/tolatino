@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, Menu, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, Menu, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, Store, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -14,7 +14,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, type PublicMenu, type PublicServices, type PubSvc, type PublicShop } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
@@ -120,6 +120,20 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   }, [b.slug]);
   const shopCats = realShop?.cats ?? SHOP;
   const shopDisplayOnly = realShop != null && !realShop.selling;
+
+  // Real rentals (business_items kind='rental' + rental_config, migration 0050).
+  // Null → the Renta tab keeps the sample fixtures. renting off → display-only
+  // (items + rates, no online Rentar).
+  const [realRentals, setRealRentals] = useState<PublicRentals | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setRealRentals(null);
+    fetchBusinessRentals(b.slug).then((s) => { if (!cancelled) setRealRentals(s); });
+    return () => { cancelled = true; };
+  }, [b.slug]);
+  const rentalItems: PubRental[] = realRentals?.items
+    ?? RENTAL.map((r, i) => ({ id: `fx${i}`, n: r.n, d: r.d, tile: r.tile, hour: r.hour, day: r.day, week: r.week, dep: r.dep, addons: [], catKey: '_', catName: ['Renta', 'Rentals'] as Bi }));
+  const rentDisplayOnly = realRentals != null && !realRentals.renting;
 
   // Option groups for an item: per-item groups on a real menu / real shop (`sh:`
   // keys route to the shop); the per-category fixture groups otherwise.
@@ -337,7 +351,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   // Rental: rate per hour/day/week × qty, plus a refundable deposit. Start = the
   // picked SVC_DATES day at 9am; end derived from period × qty.
-  const rentRate = (it: (typeof RENTAL)[number], p: RentPeriod) =>
+  const rentRate = (it: PubRental, p: RentPeriod) =>
     p === 'hour' ? it.hour ?? it.day : p === 'week' ? it.week : it.day;
   const rentStartISO = () => {
     const d = new Date();
@@ -355,7 +369,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const confirmRental = async () => {
     if (rentIdx === null) return;
     if (!user) { router.push('/entrar'); return; }
-    const it = RENTAL[rentIdx];
+    const it = rentalItems[rentIdx];
     const fee = rentRate(it, rentPeriod) * rentQty;
     setRentDone(true); // optimistic success screen
     const { error } = await act.rent(b.slug, B(it.n), rentStartISO(), rentEndISO(), rentQty, fee + it.dep, it.dep);
@@ -1045,23 +1059,34 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       {/* ============ RENTALS ============ */}
       {tab === 'rentals' && (
         <div className="flex flex-col gap-2.5 pt-4">
-          {RENTAL.map((it, i) => (
-            <Card key={it.n[0]} className="flex items-center gap-3 p-3.5">
-              <span className="h-[62px] w-[62px] flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }} />
+          {rentDisplayOnly && (
+            <div className="flex items-center gap-2.5 rounded-tile bg-lilac-2 px-3.5 py-2.5">
+              <Store size={16} strokeWidth={2.2} className="flex-none text-primary-dark" />
+              <span className="text-[12px] font-semibold leading-snug text-ink-soft">{L('Consulta disponibilidad y tarifas — llama o visita para rentar.', 'Check availability & rates — call or visit to rent.')}</span>
+            </div>
+          )}
+          {rentalItems.map((it, i) => (
+            <Card key={it.id} className="flex items-center gap-3 p-3.5">
+              <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[14px] font-extrabold text-ink">{B(it.n)}</div>
                 <div className="mt-0.5 text-[12px] font-semibold text-muted">{B(it.d)}</div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[12.5px] font-extrabold text-primary-dark">
                   <span>{money(it.day)}/{L('día', 'day')}</span>
-                  <span className="text-[11px] font-bold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>
+                  {it.dep > 0 && <span className="text-[11px] font-bold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>}
                 </div>
               </div>
-              <button
-                onClick={() => { setRentIdx(i); setRentPeriod('day'); setRentQty(1); setRentDate(0); setRentDone(false); }}
-                className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
-              >
-                {L('Rentar', 'Rent')}
-              </button>
+              {!rentDisplayOnly && (
+                <button
+                  onClick={() => { setRentIdx(i); setRentPeriod('day'); setRentQty(1); setRentDate(0); setRentDone(false); }}
+                  className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
+                >
+                  {L('Rentar', 'Rent')}
+                </button>
+              )}
             </Card>
           ))}
         </div>
@@ -1486,8 +1511,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
       {/* rental booking modal */}
       <Overlay open={rentIdx !== null} onClose={() => setRentIdx(null)} width={440}>
-        {rentIdx !== null && !rentDone && (() => {
-          const it = RENTAL[rentIdx];
+        {rentIdx !== null && rentalItems[rentIdx] && !rentDone && (() => {
+          const it = rentalItems[rentIdx];
           const periods: RentPeriod[] = it.hour != null ? ['hour', 'day', 'week'] : ['day', 'week'];
           const pLabel = (p: RentPeriod) => ({ hour: L('Hora', 'Hour'), day: L('Día', 'Day'), week: L('Semana', 'Week') }[p]);
           const fee = rentRate(it, rentPeriod) * rentQty;
