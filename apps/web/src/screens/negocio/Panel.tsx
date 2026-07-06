@@ -258,7 +258,7 @@ export function PanelScreen() {
           <div key={gi} className="mb-2">
             {gp.label && (
               <div className="flex items-center justify-between px-2 pb-1 pt-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2">{gp.label}</span>
+                <span className="text-[10.5px] font-extrabold uppercase tracking-[.06em] text-ink">{gp.label}</span>
                 {gp.add && (
                   <button onClick={gp.add.onAdd} className="cursor-pointer text-[9.5px] font-extrabold" style={{ color: gp.add.color }}>
                     {gp.add.label}
