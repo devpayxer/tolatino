@@ -22,6 +22,7 @@ import {
   Utensils, X, Zap,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ChipRow } from '@/components/ChipRow';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
@@ -405,22 +406,22 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
 
           {/* category filter */}
-          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1 py-1">
+          <ChipRow className="-mx-1 px-1 py-1">
             {catFilters.map(([id, label, n]) => (
               <button key={id} onClick={() => setCat(id)} className={chip(cat === id)}>
                 {label}<span className={`ml-1.5 font-extrabold ${cat === id ? 'text-white/80' : 'text-muted-2'}`}>{n}</span>
               </button>
             ))}
-          </div>
+          </ChipRow>
 
           {/* smart sets */}
-          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
+          <ChipRow className="-mx-1 px-1">
             {smartSets.map(([Icon, label, n, c]) => (
               <span key={label} className="flex flex-none items-center gap-1.5 rounded-full border border-hair bg-white px-2.5 py-1.5 text-[11px] font-bold text-ink-2">
                 <Icon size={12} strokeWidth={2.2} className={c} />{label}<span className="font-extrabold text-ink">{n}</span>
               </span>
             ))}
-          </div>
+          </ChipRow>
 
           <div className="flex items-center justify-between px-0.5">
             <span className="text-[13px] font-extrabold text-ink">
@@ -973,11 +974,11 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={draft.desc} onChange={(e) => upDraft({ desc: e.target.value })} placeholder={L('Ingredientes clave, qué lo hace especial…', 'Key ingredients, what makes it special…')} rows={3} className={`${inputCls} resize-none`} /></div>
         <div>
           <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
-          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
+          <ChipRow className="-mx-1 px-1">
             {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => (
               <button key={c.id} onClick={() => upDraft({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>
             ))}
-          </div>
+          </ChipRow>
         </div>
         <div>
           <div className={fieldLabel}>{L('Etiquetas', 'Flags')}</div>
@@ -1024,14 +1025,14 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div>
           <div className={fieldLabel}>{L('Horario', 'Schedule')}</div>
-          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
+          <ChipRow className="-mx-1 px-1">
             {[
               ['all-day', L('Todo el día', 'All day')] as [string, string],
               ...cfg.dayparts.map((p) => [p.id, L(p.es, p.en).split(' · ')[0]] as [string, string]),
             ].map(([k, lab]) => (
               <button key={k} onClick={() => upDraft({ sched: k })} className={chip(draft.sched === k)}>{lab}</button>
             ))}
-          </div>
+          </ChipRow>
         </div>
         <div>
           <div className={fieldLabel}>{L('Días disponibles', 'Days available')}</div>
@@ -1224,16 +1225,18 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       }
     >
       {/* stepper */}
-      <div className="no-scrollbar -mx-1 mb-4 flex min-w-0 gap-2 overflow-x-auto px-1">
-        {wizStepDefs.map((label, i) => {
-          const active = wizStep === i; const done = i < wizStep || (i <= wizMax && i !== wizStep);
-          return (
-            <button key={label} onClick={() => { if (i <= wizMax) setWizStep(i); }} className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
-              <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>
-              {label}
-            </button>
-          );
-        })}
+      <div className="mb-4">
+        <ChipRow className="-mx-1 px-1">
+          {wizStepDefs.map((label, i) => {
+            const active = wizStep === i; const done = i < wizStep || (i <= wizMax && i !== wizStep);
+            return (
+              <button key={label} onClick={() => { if (i <= wizMax) setWizStep(i); }} className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
+                <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>
+                {label}
+              </button>
+            );
+          })}
+        </ChipRow>
       </div>
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
@@ -1321,11 +1324,11 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={es ? edit.es : edit.en} onChange={(e) => upEdit(es ? { es: e.target.value } : { en: e.target.value })} rows={3} className={`${inputCls} resize-none`} /></div>
         <div>
           <div className={fieldLabel}>{L('Categoría', 'Category')}</div>
-          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
+          <ChipRow className="-mx-1 px-1">
             {cfg.categories.filter((c) => c.visible || c.id === edit.cat).map((c) => (
               <button key={c.id} onClick={() => upEdit({ cat: c.id })} className={chip(edit.cat === c.id)}>{catLabel(c)}</button>
             ))}
-          </div>
+          </ChipRow>
         </div>
         <div className="flex flex-col gap-3.5 sm:flex-row sm:gap-3">
           <div className="sm:flex-1"><div className={fieldLabel}>{L('Precio', 'Price')}</div><div className="flex items-center rounded-field border-[1.5px] border-lilac-line px-3 focus-within:border-primary"><span className="text-[13px] font-bold text-muted-2">$</span><input value={edit.price} onChange={(e) => upEdit({ price: Number(String(e.target.value).replace(/[^0-9.]/g, '')) || 0 })} className="min-w-0 flex-1 border-none bg-transparent px-2 py-2.5 text-[13px] font-semibold text-ink outline-none" /></div></div>
@@ -1425,10 +1428,12 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   return (
     <div className="relative pb-8">
-      <div className="no-scrollbar -mx-1 mb-4 flex min-w-0 gap-2 overflow-x-auto px-1">
-        {subtabDefs.map(([k, label]) => (
-          <button key={k} onClick={() => setSubtab(k)} className={chip(subtab === k)}>{label}</button>
-        ))}
+      <div className="mb-4">
+        <ChipRow className="-mx-1 px-1">
+          {subtabDefs.map(([k, label]) => (
+            <button key={k} onClick={() => setSubtab(k)} className={chip(subtab === k)}>{label}</button>
+          ))}
+        </ChipRow>
       </div>
       {subtab === 'items' && renderItems()}
       {subtab === 'categories' && renderCategories()}
