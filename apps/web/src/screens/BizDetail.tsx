@@ -437,14 +437,42 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     </>
   );
 
+  // Catalog (display-only) card: restaurant-menu layout — name … price on one
+  // line (price pinned right, so no empty gutter), description below, sale line
+  // last. Fills the width on mobile and tiles into a grid on wider screens.
+  const catalogCard = (it: MenuItem) => (
+    <div key={B(it.n)} className="flex items-start gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card">
+      <span className="relative h-[60px] w-[60px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-[13.5px] font-extrabold text-ink">{B(it.n)}</span>
+            {it.tag && (
+              <span className="flex-none rounded-md px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[.04em]" style={{ background: it.tagBg, color: it.tagC }}>
+                {B(it.tag)}
+              </span>
+            )}
+          </span>
+          <span className={`flex-none text-[14px] font-extrabold ${it.orig ? 'text-[#E0568F]' : 'text-ink'}`}>{money(it.price)}</span>
+        </span>
+        <span className="mt-0.5 line-clamp-2 text-[11.5px] font-semibold leading-snug text-muted">{B(it.d)}</span>
+        {it.orig && (
+          <span className="mt-1 flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-muted line-through">{money(it.orig)}</span>
+            <span className="rounded-md bg-pink-bg px-1.5 py-0.5 text-[9.5px] font-extrabold text-pink-dark">
+              −{Math.round((1 - it.price / it.orig) * 100)}%
+            </span>
+          </span>
+        )}
+      </span>
+    </div>
+  );
+
   const itemCard = (catKey: string, it: MenuItem, withAdd = false, displayOnly = false) => {
-    if (displayOnly) {
-      return (
-        <div key={B(it.n)} className="flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
-          {itemBody(it)}
-        </div>
-      );
-    }
+    if (displayOnly) return catalogCard(it);
     return (
       <button
         key={B(it.n)}
@@ -798,7 +826,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                 <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('platillos', 'items')}</span>
               </div>
-              <div className="flex flex-col gap-2.5">{c.items.map((it) => itemCard(c.key, it, false, menuDisplayOnly))}</div>
+              <div className={menuDisplayOnly ? 'grid gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, false, menuDisplayOnly))}</div>
             </div>
           ))}
         </div>
