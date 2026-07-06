@@ -27,6 +27,7 @@ import { StaffModule } from '@/screens/negocio/modules/Staff';
 import { RentalModule } from '@/screens/negocio/modules/Rental';
 import { EventsModule } from '@/screens/negocio/modules/Events';
 import { ProductsModule } from '@/screens/negocio/modules/Products';
+import { FulfillmentModule } from '@/screens/negocio/modules/Fulfillment';
 import { ServicesModule } from '@/screens/negocio/modules/Services';
 import { FoodModule } from '@/screens/negocio/modules/Food';
 import { ListingModule } from '@/screens/negocio/modules/Listing';
@@ -43,7 +44,7 @@ import { PaymentsModule } from '@/screens/negocio/modules/Payments';
 const RICH_MODULES = new Set<TabKey>([
   'listing', 'hours', 'photos', 'related', 'settings', 'messages', 'payments',
   'updates', 'billing', 'customers', 'orders', 'reviews', 'staff', 'jobs',
-  'rental', 'events', 'products', 'shipping', 'services', 'bookings', 'menu',
+  'rental', 'events', 'products', 'fulfillment', 'shipping', 'drivers', 'services', 'bookings', 'menu',
 ]);
 
 const RUBRO_FROM_ONB: Record<string, Rubro> = {
@@ -456,7 +457,8 @@ export function PanelScreen() {
           {(tab === 'staff' || tab === 'jobs') && <StaffModule ctx={ctx} tab={tab} />}
           {tab === 'rental' && <RentalModule ctx={ctx} tab={tab} />}
           {tab === 'events' && <EventsModule ctx={ctx} tab={tab} />}
-          {(tab === 'products' || tab === 'shipping') && <ProductsModule ctx={ctx} tab={tab} />}
+          {tab === 'products' && <ProductsModule ctx={ctx} tab={tab} />}
+          {(tab === 'fulfillment' || tab === 'shipping' || tab === 'drivers') && <FulfillmentModule ctx={ctx} tab={tab} />}
           {(tab === 'services' || tab === 'bookings') && <ServicesModule ctx={ctx} tab={tab} />}
           {tab === 'menu' && <FoodModule ctx={ctx} tab={tab} />}
           {tab === 'listing' && <ListingModule ctx={ctx} />}

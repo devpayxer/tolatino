@@ -14,7 +14,7 @@ export type Tier = 'free' | 'verified' | 'premium';
 export type Rubro = 'restaurant' | 'beauty' | 'auto' | 'retail' | 'rental';
 export type TabKey =
   | 'insights' | 'listing' | 'photos' | 'hours' | 'related'
-  | 'menu' | 'services' | 'bookings' | 'products' | 'shipping' | 'drivers' | 'rental' | 'events'
+  | 'menu' | 'services' | 'bookings' | 'products' | 'fulfillment' | 'shipping' | 'drivers' | 'rental' | 'events'
   | 'customers' | 'orders' | 'messages' | 'reviews' | 'updates'
   | 'payments' | 'staff' | 'jobs' | 'modules' | 'billing' | 'settings';
 
@@ -95,12 +95,10 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
         it('services', L('Servicios', 'Services'), ci.svc, { count: am.services ? '14' : null, locked: !am.services }),
         ...(am.services ? [it('bookings', L('Reservas', 'Bookings'), Calendar, { count: am.bookings ? '24' : null, live: am.bookings, locked: !am.bookings, indent: true })] : []),
         it('products', L('Productos', 'Products'), Package, { count: am.products ? '42' : null, locked: !am.products }),
-        ...(am.products
-          ? [
-              it('shipping', L('Zonas de envío', 'Shipping zones'), Route, { locked: !am.products, indent: true }),
-              it('drivers', L('Repartidores', 'Drivers'), HardHat, { count: '3', locked: !am.products, indent: true }),
-            ]
-          : []),
+        // Shared fulfillment (delivery + shipping) — used by BOTH the Food menu
+        // (local delivery) and Products (delivery + national shipping). Visible
+        // whenever either is on; the module reads/writes business-wide settings.
+        it('fulfillment', L('Entregas y envíos', 'Delivery & shipping'), Truck, { locked: !(am.menu || am.products) }),
         it('rental', L('Renta', 'Rental'), Bike, { count: am.rental ? '12' : null, locked: !am.rental }),
         it('events', L('Eventos y boletos', 'Events & tickets'), Ticket, { count: am.events ? '4' : null, locked: !am.events }),
       ],
@@ -141,7 +139,8 @@ export function pageHead(tab: TabKey, ctx: PanelCtx) {
     menu: [L('Menú de comida', 'Food menu'), L('Organiza tu menú por secciones · activa entrega.', 'Organize your menu by sections · enables delivery.')],
     services: [L('Servicios', 'Services'), L('Servicios bookables o solo informativos.', 'Bookable or inquiry-only services.')],
     bookings: [L('Reservas', 'Bookings'), L('Citas, depósitos y disponibilidad.', 'Appointments, deposits and availability.')],
-    products: [L('Productos', 'Products'), L('Catálogo, inventario, variantes y envío.', 'Catalog, inventory, variants and shipping.')],
+    products: [L('Productos', 'Products'), L('Catálogo, inventario, variantes y colecciones.', 'Catalog, inventory, variants and collections.')],
+    fulfillment: [L('Entregas y envíos', 'Delivery & shipping'), L('Entrega local y envío — compartido con Menú y Productos.', 'Local delivery and shipping — shared by Menu and Products.')],
     shipping: [L('Zonas de envío', 'Shipping zones'), L('Área de entrega local, recogida y envío nacional.', 'Local delivery area, pickup and national shipping.')],
     drivers: [L('Repartidores', 'Drivers'), L('Repartidor propio o apps externas.', 'Own driver or external apps.')],
     rental: [L('Renta', 'Rental'), L('Artículos para rentar con precio por día.', 'Rentable items with daily pricing.')],

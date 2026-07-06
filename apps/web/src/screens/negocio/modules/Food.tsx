@@ -159,7 +159,7 @@ const DEMO_ITEMS: Item[] = [
 
 // =====================================================================
 export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
-  const { L, es } = ctx;
+  const { L, es, go } = ctx;
   void tab;
 
   const admin = useBizAdmin();
@@ -1524,6 +1524,16 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   return (
     <div className="relative pb-8">
+      {/* Local delivery is configured in the shared "Entregas y envíos" module
+          (same zones/drivers a shop uses) — a menu just turns delivery on. */}
+      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} strokeWidth={2} /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[12.5px] font-extrabold text-ink">{L('Entrega local y envíos', 'Local delivery & shipping')}</span>
+          <span className="block text-[10.5px] font-semibold leading-snug text-muted-2">{L('Zonas, repartidores y apps de reparto para tus pedidos', 'Zones, drivers & delivery apps for your orders')}</span>
+        </span>
+        <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
+      </button>
       <div className="mb-4">
         <ChipRow className="-mx-1 px-1">
           {subtabDefs.map(([k, label]) => (

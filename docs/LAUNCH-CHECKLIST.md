@@ -213,7 +213,7 @@ backing them with real Supabase tables/RPCs when each feature goes live.
 - [x] **Staff / Jobs** — roster, schedule (gantt), attendance, payroll, roles matrix; job pipeline. Free gates Horario/Asistencia/Nómina + 2-member cap.
 - [x] **Rental** — items/availability, calendar, deposits, damages, pricing; rent-out + return/refund flows; add-item wizard.
 - [x] **Events & Tickets** — upcoming/drafts/past/recurring/promoters, manage detail (check-in QR), 4-step add-event wizard.
-- [x] **Products & Shipping** — catalog/inventory/variants/collections/discounts; zones/pickup/national/drivers; 4-step add-product wizard.
+- [x] **Products** — catalog/inventory/variants/collections/discounts; 4-step add-product wizard. (Delivery/shipping moved to the shared **Entregas y envíos** module — see below.)
 - [x] **Services & Bookings** — catalog + bookable/inquiry toggle, reservations (calendar/tables/list/rules); 4-step add-service wizard.
 - [x] **Food menu** — 7 sub-tabs (Platillos/Categorías/Modificadores/Horarios/Promociones/Alérgenos/Stock-86) + 6-step add-item wizard with live preview.
 - [x] **Food menu — FULL admin (2026-07-06).** Every sub-tab is now real CRUD:
@@ -280,6 +280,28 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     business hours + service days/capacity when scheduling matters.
   - [ ] **SMS reminders & auto-deposits** (Premium teaser in the module) — build
     when the notifications + payments phases land.
+- [x] **Entregas y envíos — SHARED fulfillment module (2026-07-06).** Pulled
+  delivery/shipping OUT of Products into a standalone module
+  (`modules/Fulfillment.tsx`) shared by BOTH the Food menu (local delivery) and
+  Products (delivery + national shipping) — a restaurant and a shop configure
+  fulfillment ONCE. Two sections matching the owner's model: **Delivery (entrega
+  local)** = Zonas + Repartidores (propios / apps externas: Uber Direct, DoorDash
+  Drive, Rappi/Uber Eats); **Shipping (envío)** = Recoger en tienda + Envío
+  nacional (**Tarifa propia** / **Transportistas** USPS·UPS·FedEx). No migration
+  — the data was already business-scoped in `businesses.settings` { shipping,
+  drivers } (jsonb); this was a UI extraction + nav rewire. Sidebar shows the
+  module whenever Menú **or** Productos is on; the legacy `shipping`/`drivers`
+  tab ids deep-link into it; Products & Food each carry a shortcut card to it.
+  Verified: tsc + build clean; 0 overflow at 392px across both sections,
+  sub-tabs and own/external toggles. Deferred:
+  - [ ] **External delivery/shipping integrations are display-only stubs.** The
+    provider cards (Uber Direct, DoorDash Drive, Rappi; USPS/UPS/FedEx) toggle +
+    persist a preference but call no real API. Wire the actual dispatch/label
+    APIs (e.g. Shippo/EasyPost for carrier rates+labels; Uber Direct/DoorDash
+    Drive APIs for on-demand couriers) when the logistics/payments phase lands.
+  - [ ] **Own delivery zones are still editable-lite.** "Nueva zona" appends a
+    placeholder zone; a full zone editor (draw radius on the map, per-zone fee/
+    ETA/min-order) comes with the real MapLibre integration.
 - [x] **Shell polish (mobile chrome, 2026-07-04)** — the dashboard now mirrors the
   handoff on mobile: dark top bar on Inicio (light elsewhere), business identity
   card at the top of Inicio, and the fixed bottom-tab bar

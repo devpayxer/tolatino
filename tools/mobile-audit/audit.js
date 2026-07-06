@@ -18,7 +18,7 @@ const TABS = [
   ['services', 'Servicios'],
   ['bookings', 'Reservas'],
   ['products', 'Productos'],
-  ['shipping', 'Zonas de envío'],
+  ['fulfillment', 'Entregas y envíos'],
   ['rental', 'Renta'],
   ['events', 'Eventos y boletos'],
   ['customers', 'Clientes'],
