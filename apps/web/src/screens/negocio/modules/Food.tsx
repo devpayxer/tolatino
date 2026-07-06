@@ -27,8 +27,10 @@ import { uploadImage } from '@/lib/image';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 import {
   defaultMenuConfig, demoMenuConfig, hourLabel, normalizeMenuConfig,
@@ -44,7 +46,7 @@ type Item = {
   id: number; dbId?: string; name: string; cat: string; price: number; compareAt?: number;
   es: string; en: string; diet: string[]; allergens: number[]; mods: string[];
   stock: Stock; popular: boolean; isNew: boolean; loves: number; visible: boolean;
-  dailyLimit?: string; imageUrl?: string;
+  dailyLimit?: string; imageUrl?: string; tags?: string[]; // custom owner tags
   extra?: Record<string, unknown>; // pass-through attrs (channels/sched/days/rules)
 };
 
@@ -57,7 +59,7 @@ const blankAllergens = () => [0, 0, 0, 0, 0, 0, 0];
 const FALLBACK_CAT: MenuCategory = { id: '_', es: 'Menú', en: 'Menu', icon: 'utensils', tile: '#EFEBFF 0 8px,#E5DEF9 8px 16px', visible: true };
 
 // Map a business_items row (kind='menu') ⇄ the module's rich Item.
-const KNOWN_ATTRS = new Set(['en', 'diet', 'allergens', 'mods', 'stock', 'popular', 'isNew', 'loves', 'compareAt', 'dailyLimit']);
+const KNOWN_ATTRS = new Set(['en', 'diet', 'allergens', 'mods', 'stock', 'popular', 'isNew', 'loves', 'compareAt', 'dailyLimit', 'tags']);
 function rowToItem(r: BizItemRow, idx: number): Item {
   const a = (r.attrs ?? {}) as Record<string, unknown>;
   const extra: Record<string, unknown> = {};
@@ -82,6 +84,7 @@ function rowToItem(r: BizItemRow, idx: number): Item {
     visible: r.available,
     dailyLimit: a.dailyLimit != null ? String(a.dailyLimit) : undefined,
     imageUrl: r.image_url ?? undefined,
+    tags: (a.tags as string[]) ?? [],
     extra,
   };
 }
@@ -91,6 +94,7 @@ const itemAttrs = (it: Item): Record<string, unknown> => ({
   popular: it.popular, isNew: it.isNew, loves: it.loves,
   ...(it.compareAt != null ? { compareAt: it.compareAt } : {}),
   ...(it.dailyLimit ? { dailyLimit: it.dailyLimit } : {}),
+  ...(it.tags?.length ? { tags: it.tags } : {}),
 });
 function itemToRow(it: Item, businessId: string, sort: number): NewBizItem {
   return {
@@ -107,14 +111,14 @@ type Draft = {
   channels: Record<string, boolean>; sched: string; days: number[];
   mods: Record<string, boolean>; diet: string[]; allergens: number[]; stock: Stock;
   flags: Record<string, boolean>; dailyLimit: string; visible: boolean; publishMode: string;
-  rules: Record<number, boolean>; photoUrl: string;
+  rules: Record<number, boolean>; photoUrl: string; tags: string[];
 };
 const newDraft = (cat: string): Draft => ({
   name: '', descEs: '', descEn: '', cat, price: '', compareAt: '',
   channels: { dinein: true, pickup: true, delivery: true, catering: false },
   sched: 'all-day', days: [1, 1, 1, 1, 1, 1, 1], mods: {}, diet: [], stock: 'in',
   allergens: blankAllergens(), flags: { isNew: true, popular: false, featured: false },
-  dailyLimit: '', visible: true, publishMode: 'now', rules: { 0: true, 1: true, 2: false }, photoUrl: '',
+  dailyLimit: '', visible: true, publishMode: 'now', rules: { 0: true, 1: true, 2: false }, photoUrl: '', tags: [],
 });
 
 // ---------- shared UI atoms ----------
@@ -242,9 +246,18 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [modSheet, setModSheet] = useState<{ open: boolean; initial: ModGroup | null }>({ open: false, initial: null });
   const [dpSheet, setDpSheet] = useState<{ open: boolean; initial: Daypart | null }>({ open: false, initial: null });
   const [promoSheet, setPromoSheet] = useState<{ open: boolean; initial: Promo | null; createType: PromoType }>({ open: false, initial: null, createType: 'percent' });
+  const [catFromWiz, setCatFromWiz] = useState(false); // category sheet opened from the wizard → auto-select on create
+  const [tagSheet, setTagSheet] = useState(false); // quick "new tag" popup
 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
   const upDraft = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
+
+  // ── draft recovery: autosave the CREATE draft so the owner can leave & resume ─
+  const draftKey = 'tl:draft:menu:' + (real?.id ?? 'demo');
+  useEffect(() => {
+    if (view === 'wizard' && editingId == null) saveDraft(draftKey, draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, view, editingId]);
 
   const lowCount = items.filter((i) => i.stock === 'low').length;
   const outCount = items.filter((i) => i.stock === 'out').length;
@@ -252,7 +265,16 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const countIn = (catId: string) => items.filter((i) => i.cat === catId).length;
   const usedBy = (groupId: string) => items.filter((i) => i.mods.includes(groupId)).length;
 
-  const startAdd = () => { setEditingId(null); setDraft(newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'pizza')); setWizStep(0); setWizMax(0); setView('wizard'); };
+  const startAdd = () => {
+    setEditingId(null);
+    const fresh = newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'pizza');
+    const saved = loadDraft<Draft>(draftKey);
+    if (saved && (saved.name?.trim() || saved.descEs || saved.descEn || saved.price || saved.photoUrl)) {
+      setDraft({ ...fresh, ...saved });
+      flash(L('Borrador recuperado', 'Draft restored'));
+    } else setDraft(fresh);
+    setWizStep(0); setWizMax(0); setView('wizard');
+  };
 
   // Editing reuses the SAME full wizard, pre-filled from the item — so every
   // field (channels, schedule, days, allergens, límite, flags, foto…) is editable,
@@ -270,7 +292,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       flags: { isNew: it.isNew, popular: it.popular, featured: !!ex.featured },
       dailyLimit: it.dailyLimit ?? '', visible: it.visible, publishMode: 'now',
       rules: (ex.rules as Record<number, boolean>) ?? { 0: true, 1: true, 2: false },
-      photoUrl: it.imageUrl ?? '',
+      photoUrl: it.imageUrl ?? '', tags: it.tags ? [...it.tags] : [],
     };
   };
   const startEdit = (it: Item) => { setEditingId(it.id); setDraft(draftFromItem(it)); setWizStep(0); setWizMax(wizStepDefs.length - 1); setView('wizard'); };
@@ -279,7 +301,14 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const upsertCategory = (c: MenuCategory) => {
     const exists = cfg.categories.some((x) => x.id === c.id);
     saveCfg({ ...cfg, categories: exists ? cfg.categories.map((x) => (x.id === c.id ? c : x)) : [...cfg.categories, c] });
+    if (!exists && catFromWiz) upDraft({ cat: c.id }); // just created from the wizard → select it
+    setCatFromWiz(false);
     flash(exists ? L('Categoría guardada', 'Category saved') : L('Categoría creada', 'Category created'));
+  };
+  // Create a custom tag/etiqueta (reusable) and select it on the current draft.
+  const addTag = (label: string) => {
+    if (!cfg.tags.includes(label)) saveCfg({ ...cfg, tags: [...cfg.tags, label] });
+    if (!draft.tags.includes(label)) upDraft({ tags: [...draft.tags, label] });
   };
   const deleteCategory = (id: string) => { saveCfg({ ...cfg, categories: cfg.categories.filter((x) => x.id !== id) }); flash(L('Categoría eliminada', 'Category deleted')); };
   const moveCategory = (id: string, dir: -1 | 1) => {
@@ -543,6 +572,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className="rounded-md bg-lilac-2 px-2 py-0.5 text-[9.5px] font-bold text-ink-2">{catLabel(c)}</span>
                       {i.popular && <span className="rounded-md bg-amber-bg px-2 py-0.5 text-[9.5px] font-extrabold text-amber-ink">🔥 {L('Popular', 'Popular')}</span>}
                       {i.diet.map((d) => <span key={d} className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{d}</span>)}
+                      {(i.tags ?? []).map((t) => <span key={t} className="rounded-md bg-lilac-2 px-1.5 py-0.5 text-[9px] font-extrabold text-ink-2">{t}</span>)}
                       {i.mods.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{i.mods.length} {L('opciones', 'options')}</span>}
                       {!i.visible && <span className="rounded-md bg-lilac-line px-2 py-0.5 text-[9.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}
                     </span>
@@ -1005,6 +1035,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     popular: !!draft.flags.popular,
     isNew: !!draft.flags.isNew,
     dailyLimit: draft.dailyLimit || undefined,
+    tags: draft.tags,
     extra: { channels: draft.channels, sched: draft.sched, days: draft.days, rules: draft.rules, featured: !!draft.flags.featured },
   });
 
@@ -1016,6 +1047,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     };
     setItems((xs) => [it, ...xs]);
     persistNew(it);
+    clearDraft(draftKey);
   };
 
   // Save the wizard draft back onto the item being edited (keeps dbId + loves).
@@ -1095,14 +1127,17 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => (
               <button key={c.id} onClick={() => upDraft({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>
             ))}
+            <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
           </ChipRow>
         </div>
         <div>
           <div className={fieldLabel}>{L('Etiquetas', 'Flags')}</div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {([['isNew', L('Nuevo', 'New')], ['popular', L('Popular', 'Popular')], ['featured', L('Destacado', 'Featured')]] as [string, string][]).map(([k, lab]) => (
               <button key={k} onClick={() => upDraft({ flags: { ...draft.flags, [k]: !draft.flags[k] } })} className={chip(!!draft.flags[k])}>{lab}</button>
             ))}
+            {cfg.tags.map((t) => { const on = draft.tags.includes(t); return <button key={t} onClick={() => upDraft({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{t}</button>; })}
+            <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
           </div>
         </div>
         <div>
@@ -1465,7 +1500,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <>
       <CategoryEditor
         open={catSheet.open}
-        onClose={() => setCatSheet((s) => ({ ...s, open: false }))}
+        onClose={() => { setCatSheet((s) => ({ ...s, open: false })); setCatFromWiz(false); }}
         L={L}
         initial={catSheet.initial}
         itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0}
@@ -1519,7 +1554,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ============ RENDER ============
   // Add/edit both use the SAME full-page wizard (no cramped popups).
-  if (view === 'wizard') return <>{wizardPage}{editorSheets}{deleteConfirm}<Toast msg={toast} /></>;
+  if (view === 'wizard') return <>{wizardPage}{editorSheets}<QuickTagSheet open={tagSheet} onClose={() => setTagSheet(false)} L={L} onCreate={addTag} existing={['Nuevo', 'Popular', 'Destacado', ...cfg.tags]} />{deleteConfirm}<Toast msg={toast} /></>;
   if (view === 'success') return <>{successPage}<Toast msg={toast} /></>;
 
   return (

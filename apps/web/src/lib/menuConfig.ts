@@ -65,6 +65,7 @@ export type MenuConfig = {
   mods: ModGroup[];
   dayparts: Daypart[];
   promos: Promo[];
+  tags: string[]; // reusable custom tags the owner created (beyond the built-ins)
   automation: MenuAutomation;
   // Menu mode: false = display-only (show dishes + prices, no online orders —
   // the common case for a small restaurant); true = accept online orders (adds
@@ -120,6 +121,7 @@ export const defaultMenuConfig = (): MenuConfig => ({
   mods: [],
   dayparts: [],
   promos: [],
+  tags: [],
   automation: { ...DEFAULT_AUTOMATION },
   ordering: false,
 });
@@ -148,6 +150,7 @@ export const demoMenuConfig = (): MenuConfig => ({
     { id: 'pr2', type: 'happy', es: 'Happy hour de vino', en: 'Happy hour wine', descEs: 'Copas de la casa a $8, 4–6 PM', descEn: '$8 house wine, 4–6 PM', timeStart: 16, timeEnd: 18, status: 'active' },
     { id: 'pr3', type: 'bogo', es: 'Compra pizza, llévate tiramisú', en: 'Buy a pizza, get a tiramisù', descEs: 'Tiramisú gratis con cualquier pizza', descEn: 'Free tiramisù with any pizza', status: 'scheduled', startDate: '2026-08-01' },
   ],
+  tags: ['Casero', 'De temporada'],
   automation: { ...DEFAULT_AUTOMATION },
   ordering: true, // demo showcases the full online-ordering flow
 });
@@ -172,6 +175,7 @@ export function normalizeMenuConfig(raw: unknown): MenuConfig {
     mods: Array.isArray(r.mods) ? r.mods : [],
     dayparts: Array.isArray(r.dayparts) ? r.dayparts : [],
     promos: Array.isArray(r.promos) ? r.promos : [],
+    tags: Array.isArray(r.tags) ? r.tags : [],
     automation: { ...DEFAULT_AUTOMATION, ...(r.automation ?? {}) },
     ordering: r.ordering === true, // default display-only
   };

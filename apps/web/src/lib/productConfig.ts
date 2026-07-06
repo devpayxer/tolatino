@@ -64,6 +64,7 @@ export type ProductConfig = {
   optionSets: OptionSet[];
   collections: Collection[];
   discounts: Discount[];
+  tags: string[]; // reusable custom badges the owner created (beyond the built-ins)
   automation: ProductAutomation;
   // Shop mode: false = display-only (show products + prices, no checkout — a
   // showcase for a business that just lists what it sells); true = sell online
@@ -105,6 +106,7 @@ export const defaultProductConfig = (): ProductConfig => ({
   optionSets: [],
   collections: [],
   discounts: [],
+  tags: [],
   automation: { ...DEFAULT_PRODUCT_AUTOMATION },
   selling: false,
 });
@@ -129,6 +131,7 @@ export const demoProductConfig = (): ProductConfig => ({
     { id: 'gift10', code: 'GIFT10', type: 'amount', value: 10, descEs: 'Sets de regalo · fiestas', descEn: 'Gift sets · holiday', auto: false, status: 'active' },
     { id: 'summer', code: 'SUMMER', type: 'percent', value: 10, descEs: 'Terminó 30 sep', descEn: 'Ended Sep 30', auto: false, status: 'paused' },
   ],
+  tags: ['Hecho a mano', 'Orgánico'],
   automation: { ...DEFAULT_PRODUCT_AUTOMATION },
   selling: true, // demo showcases the full online-selling flow
 });
@@ -143,6 +146,7 @@ export function normalizeProductConfig(raw: unknown): ProductConfig {
     optionSets: Array.isArray(r.optionSets) ? r.optionSets : [],
     collections: Array.isArray(r.collections) ? r.collections : [],
     discounts: Array.isArray(r.discounts) ? r.discounts : [],
+    tags: Array.isArray(r.tags) ? r.tags : [],
     automation: { ...DEFAULT_PRODUCT_AUTOMATION, ...(r.automation ?? {}) },
     selling: r.selling === true, // default display-only
   };

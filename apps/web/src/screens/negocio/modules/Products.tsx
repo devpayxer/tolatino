@@ -26,11 +26,13 @@ import {
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
+import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 import {
   defaultProductConfig, demoProductConfig, normalizeProductConfig, variantCount,
@@ -182,10 +184,19 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   const [optSheet, setOptSheet] = useState<{ open: boolean; initial: OptionSet | null }>({ open: false, initial: null });
   const [collSheet, setCollSheet] = useState<{ open: boolean; initial: Collection | null }>({ open: false, initial: null });
   const [discSheet, setDiscSheet] = useState<{ open: boolean; initial: Discount | null }>({ open: false, initial: null });
+  const [catFromWiz, setCatFromWiz] = useState(false); // category sheet opened from the wizard → auto-select on create
+  const [tagSheet, setTagSheet] = useState(false); // quick "new tag" popup
 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
   const upD = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
   const money = (n: number) => '$' + n.toFixed(2);
+
+  // ── draft recovery: autosave the CREATE draft so the owner can leave & resume ─
+  const draftKey = 'tl:draft:product:' + (real?.id ?? 'demo');
+  useEffect(() => {
+    if (view === 'wizard' && editingId == null) saveDraft(draftKey, draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, view, editingId]);
 
   // ── photo upload (same pipeline as Comunidad/Food) ─────────────────────────
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -204,7 +215,14 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   const upsertCategory = (c: ProductCategory) => {
     const exists = cfg.categories.some((x) => x.id === c.id);
     saveCfg({ ...cfg, categories: exists ? cfg.categories.map((x) => (x.id === c.id ? c : x)) : [...cfg.categories, c] });
+    if (!exists && catFromWiz) upD({ cat: c.id }); // just created from the wizard → select it
+    setCatFromWiz(false);
     flash(exists ? L('Categoría guardada', 'Category saved') : L('Categoría creada', 'Category created'));
+  };
+  // Create a custom tag/etiqueta (reusable) and select it on the current draft.
+  const addTag = (label: string) => {
+    if (!cfg.tags.includes(label)) saveCfg({ ...cfg, tags: [...cfg.tags, label] });
+    if (!draft.badges.includes(label)) upD({ badges: [...draft.badges, label] });
   };
   const deleteCategory = (id: string) => { saveCfg({ ...cfg, categories: cfg.categories.filter((x) => x.id !== id) }); flash(L('Categoría eliminada', 'Category deleted')); };
   const moveCategory = (id: string, dir: -1 | 1) => {
@@ -252,7 +270,16 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
     [L('Revisar', 'Review'), L('Revisar y publicar', 'Review & publish')],
   ];
   const draftReady = !!draft.name.trim() && !!draft.price;
-  const startAdd = () => { setEditingId(null); setDraft(newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'pantry')); setWizStep(0); setWizMax(0); setView('wizard'); };
+  const startAdd = () => {
+    setEditingId(null);
+    const fresh = newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'pantry');
+    const saved = loadDraft<Draft>(draftKey);
+    if (saved && (saved.name?.trim() || saved.descEs || saved.descEn || saved.price || saved.photoUrl)) {
+      setDraft({ ...fresh, ...saved });
+      flash(L('Borrador recuperado', 'Draft restored'));
+    } else setDraft(fresh);
+    setWizStep(0); setWizMax(0); setView('wizard');
+  };
   const startEdit = (p: Prod) => {
     setEditingId(p.id);
     setDraft({
@@ -271,7 +298,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
     options: draft.options, fulfill: draft.fulfill, tax: draft.tax, badges: draft.badges,
     imageUrl: draft.photoUrl || undefined,
   });
-  const addFromDraft = () => { const p: Prod = { id: nextId(), sales: '$0', ...draftFields() }; setProducts((l) => [p, ...l]); persistNew(p); };
+  const addFromDraft = () => { const p: Prod = { id: nextId(), sales: '$0', ...draftFields() }; setProducts((l) => [p, ...l]); persistNew(p); clearDraft(draftKey); };
   const saveFromDraft = () => {
     if (editingId == null) return;
     setProducts((l) => { const next = l.map((p) => (p.id === editingId ? { ...p, ...draftFields() } : p)); persistPatch(next.find((p) => p.id === editingId)); return next; });
@@ -392,6 +419,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
                     <ChipRow className="-mx-1 px-1">
                       {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>)}
+                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </ChipRow>
                   </div>
                   <div>
@@ -414,7 +442,8 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                   <div>
                     <div className={fieldLabel}>{L('Etiquetas', 'Badges')}</div>
                     <div className="flex flex-wrap gap-2">
-                      {BADGES.map((t) => { const on = draft.badges.includes(t); return <button key={t} onClick={() => upD({ badges: on ? draft.badges.filter((x) => x !== t) : [...draft.badges, t] })} className={chip(on)}>{tagLabel(t, L)}</button>; })}
+                      {[...BADGES, ...cfg.tags].map((t) => { const on = draft.badges.includes(t); return <button key={t} onClick={() => upD({ badges: on ? draft.badges.filter((x) => x !== t) : [...draft.badges, t] })} className={chip(on)}>{BADGES.includes(t) ? tagLabel(t, L) : t}</button>; })}
+                      <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </div>
                   </div>
                 </div>
@@ -545,6 +574,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         </ModulePage>
         {editorSheets()}
+        <QuickTagSheet open={tagSheet} onClose={() => setTagSheet(false)} L={L} onCreate={addTag} existing={[...BADGES, ...cfg.tags]} />
         <ConfirmDialog open={confirmDel} onClose={() => setConfirmDel(false)} onConfirm={() => { setConfirmDel(false); deleteEditing(); }} title={L('¿Eliminar producto?', 'Delete product?')} message={L(`“${draft.name || L('Este producto', 'This product')}” se quitará de tu tienda. Esta acción no se puede deshacer.`, `“${draft.name || 'This product'}” will be removed from your shop. This can’t be undone.`)} confirmLabel={L('Eliminar', 'Delete')} cancelLabel={L('Cancelar', 'Cancel')} />
         <Toast msg={toast} />
       </>
@@ -555,7 +585,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   function editorSheets() {
     return (
       <>
-        <ProductCategoryEditor open={catSheet.open} onClose={() => setCatSheet((s) => ({ ...s, open: false }))} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
+        <ProductCategoryEditor open={catSheet.open} onClose={() => { setCatSheet((s) => ({ ...s, open: false })); setCatFromWiz(false); }} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
         <OptionSetEditor open={optSheet.open} onClose={() => setOptSheet((s) => ({ ...s, open: false }))} L={L} initial={optSheet.initial} usedCount={optSheet.initial ? optUsedBy(optSheet.initial.id) : 0} onSave={upsertOptionSet} onDelete={deleteOptionSet} />
         <CollectionEditor open={collSheet.open} onClose={() => setCollSheet((s) => ({ ...s, open: false }))} L={L} initial={collSheet.initial} products={products.map((p) => ({ dbId: p.dbId, id: p.id, name: p.name }))} onSave={upsertCollection} onDelete={deleteCollection} />
         <DiscountEditor open={discSheet.open} onClose={() => setDiscSheet((s) => ({ ...s, open: false }))} L={L} initial={discSheet.initial} onSave={upsertDiscount} onDelete={deleteDiscount} />

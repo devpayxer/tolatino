@@ -23,11 +23,13 @@ import {
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
+import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 import {
   defaultServiceConfig, demoServiceConfig, normalizeServiceConfig,
@@ -208,9 +210,18 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [catSheet, setCatSheet] = useState<{ open: boolean; initial: ServiceCategory | null }>({ open: false, initial: null });
   const [addonSheet, setAddonSheet] = useState<{ open: boolean; initial: ServiceAddon | null }>({ open: false, initial: null });
   const [bookFilter, setBookFilter] = useState<'all' | BkStatus>('all');
+  const [catFromWiz, setCatFromWiz] = useState(false); // category sheet opened from the wizard → auto-select on create
+  const [tagSheet, setTagSheet] = useState(false); // quick "new tag" popup
 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
   const upD = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
+
+  // ── draft recovery: autosave the CREATE draft so the owner can leave & resume ─
+  const draftKey = 'tl:draft:service:' + (real?.id ?? 'demo');
+  useEffect(() => {
+    if (view === 'wizard' && editingId == null) saveDraft(draftKey, draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, view, editingId]);
 
   // ── photo upload (same pipeline as Comunidad/Food) ─────────────────────────
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -229,7 +240,14 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const upsertCategory = (c: ServiceCategory) => {
     const exists = cfg.categories.some((x) => x.id === c.id);
     saveCfg({ ...cfg, categories: exists ? cfg.categories.map((x) => (x.id === c.id ? c : x)) : [...cfg.categories, c] });
+    if (!exists && catFromWiz) upD({ cat: c.id }); // just created from the wizard → select it
+    setCatFromWiz(false);
     flash(exists ? L('Categoría guardada', 'Category saved') : L('Categoría creada', 'Category created'));
+  };
+  // Create a custom tag/etiqueta (reusable) and select it on the current draft.
+  const addTag = (label: string) => {
+    if (!cfg.tags.includes(label)) saveCfg({ ...cfg, tags: [...cfg.tags, label] });
+    if (!draft.tags.includes(label)) upD({ tags: [...draft.tags, label] });
   };
   const deleteCategory = (id: string) => { saveCfg({ ...cfg, categories: cfg.categories.filter((x) => x.id !== id) }); flash(L('Categoría eliminada', 'Category deleted')); };
   const moveCategory = (id: string, dir: -1 | 1) => {
@@ -262,7 +280,16 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     [L('Revisar', 'Review'), L('Revisar y publicar', 'Review & publish')],
   ];
   const draftReady = !!draft.name.trim() && (!!draft.price || draft.priceType === 'cotiza');
-  const startAdd = () => { setEditingId(null); setDraft(newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'general')); setWizStep(0); setWizMax(0); setView('wizard'); };
+  const startAdd = () => {
+    setEditingId(null);
+    const fresh = newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'general');
+    const saved = loadDraft<Draft>(draftKey);
+    if (saved && (saved.name?.trim() || saved.descEs || saved.descEn || saved.price || saved.photoUrl)) {
+      setDraft({ ...fresh, ...saved });
+      flash(L('Borrador recuperado', 'Draft restored'));
+    } else setDraft(fresh);
+    setWizStep(0); setWizMax(0); setView('wizard');
+  };
   const startEdit = (s: Svc) => {
     setEditingId(s.id);
     setDraft({
@@ -278,7 +305,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     deposit: draft.deposit, addons: draft.addons, tags: draft.tags, days: draft.days, capacity: draft.capacity,
     imageUrl: draft.photoUrl || undefined,
   });
-  const addFromDraft = () => { const s: Svc = { id: nextId(), ...draftFields() }; setServices((l) => [s, ...l]); persistNew(s); };
+  const addFromDraft = () => { const s: Svc = { id: nextId(), ...draftFields() }; setServices((l) => [s, ...l]); persistNew(s); clearDraft(draftKey); };
   const saveFromDraft = () => {
     if (editingId == null) return;
     setServices((l) => { const next = l.map((s) => (s.id === editingId ? { ...s, ...draftFields() } : s)); persistPatch(next.find((s) => s.id === editingId)); return next; });
@@ -416,6 +443,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
                     <ChipRow className="-mx-1 px-1">
                       {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>)}
+                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </ChipRow>
                   </div>
                   <div>
@@ -438,7 +466,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div>
                     <div className={fieldLabel}>{L('Etiquetas', 'Tags')}</div>
                     <div className="flex flex-wrap gap-2">
-                      {['Más reservado', 'Familiar', 'Premium', 'Nuevo'].map((t) => { const on = draft.tags.includes(t); return <button key={t} onClick={() => upD({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{tagLabel(t, L)}</button>; })}
+                      {[...SVC_TAGS, ...cfg.tags].map((t) => { const on = draft.tags.includes(t); return <button key={t} onClick={() => upD({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{SVC_TAGS.includes(t) ? tagLabel(t, L) : t}</button>; })}
+                      <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </div>
                   </div>
                 </div>
@@ -577,6 +606,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         </ModulePage>
         {editorSheets()}
+        <QuickTagSheet open={tagSheet} onClose={() => setTagSheet(false)} L={L} onCreate={addTag} existing={[...SVC_TAGS, ...cfg.tags]} />
         <ConfirmDialog open={confirmDel} onClose={() => setConfirmDel(false)} onConfirm={() => { setConfirmDel(false); deleteEditing(); }} title={L('¿Eliminar servicio?', 'Delete service?')} message={L(`“${draft.name || L('Este servicio', 'This service')}” se quitará de tu listado. Esta acción no se puede deshacer.`, `“${draft.name || 'This service'}” will be removed from your listing. This can’t be undone.`)} confirmLabel={L('Eliminar', 'Delete')} cancelLabel={L('Cancelar', 'Cancel')} />
         <Toast msg={toast} />
       </>
@@ -589,7 +619,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   function editorSheets() {
     return (
       <>
-        <ServiceCategoryEditor open={catSheet.open} onClose={() => setCatSheet((s) => ({ ...s, open: false }))} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
+        <ServiceCategoryEditor open={catSheet.open} onClose={() => { setCatSheet((s) => ({ ...s, open: false })); setCatFromWiz(false); }} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
         <ServiceAddonEditor open={addonSheet.open} onClose={() => setAddonSheet((s) => ({ ...s, open: false }))} L={L} initial={addonSheet.initial} usedCount={addonSheet.initial ? addonUsedBy(addonSheet.initial.id) : 0} onSave={upsertAddon} onDelete={deleteAddon} />
       </>
     );
@@ -827,6 +857,7 @@ type Draft = {
   dur: string; bookable: boolean; deposit: boolean; addons: string[]; tags: string[]; days: string[]; capacity: string; photoUrl: string;
 };
 const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', priceType: 'fijo', dur: '60 min', bookable: true, deposit: false, addons: [], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '1', photoUrl: '' });
+const SVC_TAGS = ['Más reservado', 'Familiar', 'Premium', 'Nuevo'];
 const tagLabel = (t: string, L: (es: string, en: string) => string) => ({ 'Más reservado': L('Más reservado', 'Most booked'), Familiar: L('Familiar', 'Family'), Premium: 'Premium', Nuevo: L('Nuevo', 'New') } as Record<string, string>)[t] ?? t;
 
 // Sample bookings for demo (no dbId → no persistence, no status actions).

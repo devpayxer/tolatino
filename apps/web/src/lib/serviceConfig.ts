@@ -28,6 +28,7 @@ export type ServiceAddon = {
 export type ServiceConfig = {
   categories: ServiceCategory[];
   addons: ServiceAddon[];
+  tags: string[]; // reusable custom tags the owner created (beyond the built-ins)
   // Mode: false = display-only (show services + prices, no online booking — for a
   // business that just wants to showcase); true = accept online bookings (the
   // Reservar flow + deposits).
@@ -59,6 +60,7 @@ export const DEFAULT_SERVICE_CATEGORIES: ServiceCategory[] = [
 export const defaultServiceConfig = (): ServiceConfig => ({
   categories: DEFAULT_SERVICE_CATEGORIES.map((c) => ({ ...c })),
   addons: [],
+  tags: [],
   booking: false,
 });
 
@@ -76,6 +78,7 @@ export const demoServiceConfig = (): ServiceConfig => ({
     { id: 'photos', es: 'Fotografía del evento', en: 'Event photography', price: 120 },
     { id: 'setup', es: 'Montaje en sitio', en: 'On-site setup', price: 45 },
   ],
+  tags: ['A domicilio', 'Bilingüe'],
   booking: true,
 });
 
@@ -87,6 +90,7 @@ export function normalizeServiceConfig(raw: unknown): ServiceConfig {
   return {
     categories: Array.isArray(r.categories) && r.categories.length ? r.categories : base.categories,
     addons: Array.isArray(r.addons) ? r.addons : [],
+    tags: Array.isArray(r.tags) ? r.tags : [],
     booking: r.booking === true, // default display-only
   };
 }

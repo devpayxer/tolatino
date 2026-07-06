@@ -311,6 +311,22 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   - [ ] **Collections on membership sync.** A collection stores member product
     ids; if a product is deleted its id can linger in a collection (harmless —
     the public strip only shows the collection name). Prune on delete later.
+- [x] **Wizard UX across Menú / Servicios / Productos (2026-07-06).** Three
+  shared improvements to all three create/edit wizards:
+  - **Draft recovery.** The CREATE draft autosaves to `localStorage`
+    (`lib/draftStore.ts`, keyed per business+module); if the owner leaves
+    mid-creation, reopening the wizard restores it with a "Borrador recuperado"
+    toast. Cleared on publish. (Client-only; not synced across devices — that
+    would need a server drafts table, deferred.)
+  - **Inline "+ Agregar" categoría.** A dashed chip in the wizard's Categoría row
+    opens the module's existing category editor as a popup and auto-selects the
+    new category on the draft — no need to leave the wizard.
+  - **Inline "+ Agregar" etiqueta.** A shared popup (`components/QuickTagSheet.tsx`)
+    creates a custom tag, stored in a reusable `tags: string[]` on each config
+    (menu/service/product) and selected on the draft. Menú items gained a `tags`
+    field (business_items.attrs) shown on the admin card. No migration (tags live
+    in the existing config + attrs jsonb). Deferred: custom tags aren't yet shown
+    on the PUBLIC listing (dashboard-only for now).
 - [x] **Entregas y envíos — SHARED fulfillment module (2026-07-06).** Pulled
   delivery/shipping OUT of Products into a standalone module
   (`modules/Fulfillment.tsx`) shared by BOTH the Food menu (local delivery) and
