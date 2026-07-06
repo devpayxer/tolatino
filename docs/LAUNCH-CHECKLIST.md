@@ -327,6 +327,39 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     field (business_items.attrs) shown on the admin card. No migration (tags live
     in the existing config + attrs jsonb). Deferred: custom tags aren't yet shown
     on the PUBLIC listing (dashboard-only for now).
+- [x] **Entregas y envíos — OPERATIONAL flow (DoorDash/Instacart-style, 2026-07-06).**
+  Turned the fulfillment settings panel into a real ops experience on top of the
+  config. Two sides, each with an operational board + setup tabs:
+  - **Delivery · Despacho** — a live dispatch board over real `business_orders`
+    (channel='delivery'): KPIs + status filter + order cards that advance through
+    Nuevo → Aceptar → Preparando → Listo → **Asignar repartidor** (sheet: own
+    drivers or external apps) → Recogido → **En camino** (live-tracking mini map +
+    ETA) → Entregado, plus cancel. Setup tabs: Zonas, Repartidores (propios · apps
+    externas), **Ajustes** (pedido mínimo, tiempo de prep, auto-asignar, live
+    tracking).
+  - **Shipping · Envíos** — a shipment queue (channel='ship'): Empacar → **Crear
+    etiqueta** (sheet: transportista + paquete → tracking #) → Enviado → En
+    tránsito → Entregado. Setup: Recoger, Transportistas (propio · USPS/UPS/FedEx),
+    **Ajustes** (envío gratis, manejo, paquete, origen).
+  - Per-order operational state persists to `business_orders.fulfillment` jsonb +
+    a `ship` channel (migration **0049**); core `status` still writes the existing
+    enum so the Pedidos tab keeps working. Best-effort persistence — the board is
+    fully interactive in-session even before 0049 is applied; demo is fully
+    interactive on sample orders. Setup persists to `businesses.settings`. Deferred:
+  - [ ] **External couriers/carriers are stubs.** Uber Direct / DoorDash Drive /
+    Rappi (dispatch) and USPS/UPS/FedEx via Shippo/EasyPost (labels+rates) toggle
+    and are selectable, but call no real API — the tracking number on "Crear
+    etiqueta" is a demo. Wire the real dispatch/label APIs from the **Admin
+    dashboard** (founder's plan) in the logistics phase.
+  - [ ] **No live GPS / real ETA.** The on-the-way mini map is a styled placeholder
+    with a static ETA — real driver GPS + ETA needs the courier API or a driver
+    app + MapLibre.
+  - [ ] **Consumer doesn't create `ship` orders yet.** The channel + queue exist,
+    but the public checkout still only places dinein/pickup/delivery orders — wire
+    a "shipping" option at checkout (with the shipping address) when payments land.
+  - [ ] **Order has no address column.** Delivery/ship destination is shown from a
+    denormalized string in `fulfillment.address`; link real `user_addresses`
+    (0014, has PostGIS geo) to the order at checkout for routing/zone assignment.
 - [x] **Entregas y envíos — SHARED fulfillment module (2026-07-06).** Pulled
   delivery/shipping OUT of Products into a standalone module
   (`modules/Fulfillment.tsx`) shared by BOTH the Food menu (local delivery) and
