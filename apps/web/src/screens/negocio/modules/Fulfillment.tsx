@@ -29,17 +29,15 @@ import { supabase } from '@/lib/supabase';
 import { ChipRow } from '@/components/ChipRow';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { Toast } from '@/screens/negocio/modules/_page';
+import { ZoneEditor, DriverEditor, type Zone, type OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
 
-// ---- setup persistence model (businesses.settings jsonb) ----
-type Zone = { color: string; es: string; en: string; rad: string; time: string; feeEs: string; feeEn: string };
-type OwnDriver = { initials: string; color: string; dot: string; name: string; sEs: string; sEn: string; orderEs: string; orderEn: string; km: string; eta: string };
-
+// ---- setup persistence model (businesses.settings jsonb; Zone/OwnDriver types
+// live in FulfillmentEditors as the single source) ----
 const ZONE_SEED: Zone[] = [
   { color: '#7B61FF', es: 'Zona 1 · Centro', en: 'Zone 1 · Core', rad: '0–1.2 mi', time: '30–45 min', feeEs: 'Gratis +$25', feeEn: 'Free +$25' },
   { color: '#F0466E', es: 'Zona 2 · Ampliada', en: 'Zone 2 · Greater', rad: '1.2–3 mi', time: '45–60 min', feeEs: '$5', feeEn: '$5' },
   { color: '#F4B740', es: 'Zona 3 · Exterior', en: 'Zone 3 · Outer', rad: '3–8 mi', time: '60–90 min', feeEs: '$12', feeEn: '$12' },
 ];
-const ZONE_COLORS = ['#7B61FF', '#F0466E', '#F4B740'];
 const DRIVER_SEED: OwnDriver[] = [
   { initials: 'MP', color: '#7B61FF', dot: '#1F9D57', name: 'Marco P.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2487 → Z2', orderEn: '#2487 → Z2', km: '1.8 mi', eta: 'ETA 5 min' },
   { initials: 'DR', color: '#2A5C8A', dot: '#1F9D57', name: 'Diego R.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2484 → Z1', orderEn: '#2484 → Z1', km: '0.9 mi', eta: 'ETA 2 min' },
@@ -153,10 +151,30 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     if (!persistable || !real) return;
     admin.update({ settings: { ...(real.settings ?? {}), shipping: buildShipping(o), drivers: o.drivers ?? drivers, delivery_ops: delOps, shipping_ops: shipOps, ...extra } });
   };
-  const addZone = () => {
-    const n = zones.length + 1;
-    const next: Zone[] = [...zones, { color: ZONE_COLORS[zones.length % ZONE_COLORS.length], es: `Zona ${n}`, en: `Zone ${n}`, rad: '—', time: '—', feeEs: '$0', feeEn: '$0' }];
-    setZones(next); persistSettings({}, { zones: next }); flash(L('Nueva zona creada', 'New zone created'));
+  // ── zone + driver editor sheets (full CRUD, persisted to businesses.settings) ─
+  const [zoneSheet, setZoneSheet] = useState<{ idx: number; initial: Zone | null } | null>(null);
+  const [driverSheet, setDriverSheet] = useState<{ idx: number; initial: OwnDriver | null } | null>(null);
+  const upsertZone = (z: Zone) => {
+    if (!zoneSheet) return;
+    const next = zoneSheet.idx < 0 ? [...zones, z] : zones.map((v, i) => (i === zoneSheet.idx ? z : v));
+    setZones(next); persistSettings({}, { zones: next });
+    flash(zoneSheet.idx < 0 ? L('Zona creada', 'Zone created') : L('Zona actualizada', 'Zone updated'));
+  };
+  const deleteZone = () => {
+    if (!zoneSheet || zoneSheet.idx < 0) return;
+    const next = zones.filter((_, i) => i !== zoneSheet.idx);
+    setZones(next); persistSettings({}, { zones: next }); flash(L('Zona eliminada', 'Zone deleted'));
+  };
+  const upsertDriver = (d: OwnDriver) => {
+    if (!driverSheet) return;
+    const next = driverSheet.idx < 0 ? [...drivers, d] : drivers.map((v, i) => (i === driverSheet.idx ? d : v));
+    setDrivers(next); persistSettings({}, { drivers: next });
+    flash(driverSheet.idx < 0 ? L('Repartidor agregado', 'Driver added') : L('Repartidor actualizado', 'Driver updated'));
+  };
+  const deleteDriver = () => {
+    if (!driverSheet || driverSheet.idx < 0) return;
+    const next = drivers.filter((_, i) => i !== driverSheet.idx);
+    setDrivers(next); persistSettings({}, { drivers: next }); flash(L('Repartidor eliminado', 'Driver removed'));
   };
 
   // ── orders (business_orders) ────────────────────────────────────────────────
@@ -363,14 +381,15 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
       </div>
       <div className="flex flex-col gap-2.5">
         {zones.map((z, zi) => (
-          <div key={zi} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
+          <button key={zi} onClick={() => setZoneSheet({ idx: zi, initial: z })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left hover:border-primary">
             <span className="h-3 w-3 flex-none rounded-full" style={{ background: z.color }} />
             <div className="min-w-0 flex-1">
               <div className="text-[12.5px] font-extrabold text-ink">{L(z.es, z.en)}</div>
               <div className="mt-0.5 text-[10px] font-medium text-muted-2">{z.rad} · ETA {z.time}</div>
             </div>
             <span className="flex-none text-[13px] font-extrabold text-ink">{L(z.feeEs, z.feeEn)}</span>
-          </div>
+            <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
+          </button>
         ))}
         <div className="flex items-center gap-3 rounded-card-sm bg-lilac-2 p-3">
           <Truck size={16} strokeWidth={2} className="flex-none text-primary-dark" />
@@ -379,7 +398,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             <div className="mt-0.5 text-[10px] font-medium leading-snug text-ink-3">{L('Más allá de la última zona se ofrece envío o recoger.', 'Beyond the last zone we offer shipping or pickup.')}</div>
           </div>
         </div>
-        <button onClick={addZone} className={dashBtn}>+ {L('Nueva zona', 'New zone')}</button>
+        <button onClick={() => setZoneSheet({ idx: -1, initial: null })} className={dashBtn}>+ {L('Nueva zona', 'New zone')}</button>
       </div>
     </div>
   );
@@ -400,20 +419,24 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
       )}
       {driverTab === 'own' ? (
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-          {drivers.map((d) => (
-            <div key={d.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
+          {drivers.map((d, di) => (
+            <button key={d.name + di} onClick={() => setDriverSheet({ idx: di, initial: d })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left hover:border-primary">
               <span className="relative flex-none">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
                 <span className="absolute -bottom-px -right-px h-3 w-3 rounded-full border-2 border-white" style={{ background: d.dot }} />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[12.5px] font-extrabold text-ink">{d.name}</div>
-                <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{L(d.sEs, d.sEn)} · {L(d.orderEs, d.orderEn)}</div>
+                <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{L(d.sEs, d.sEn)} · {d.phone ? d.phone : L(d.orderEs, d.orderEn)}</div>
               </div>
-              <div className="flex-none text-right"><div className="text-[11.5px] font-extrabold text-ink">{d.km}</div><div className="text-[9.5px] font-semibold text-muted-2">{d.eta}</div></div>
-            </div>
+              {d.km && d.km !== '—' ? (
+                <div className="flex-none text-right"><div className="text-[11.5px] font-extrabold text-ink">{d.km}</div><div className="text-[9.5px] font-semibold text-muted-2">{d.eta}</div></div>
+              ) : (
+                <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
+              )}
+            </button>
           ))}
-          <button onClick={() => flash(L('Invitación de repartidor — próximamente', 'Driver invite — coming soon'))} className={dashBtn}>+ {L('Invitar repartidor', 'Invite driver')}</button>
+          <button onClick={() => setDriverSheet({ idx: -1, initial: null })} className={dashBtn}>+ {L('Agregar repartidor', 'Add driver')}</button>
         </div>
       ) : (
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
@@ -782,6 +805,27 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
           </div>
         )}
       </Overlay>
+
+      {/* zone editor (create / edit / delete) */}
+      <ZoneEditor
+        open={zoneSheet !== null}
+        onClose={() => setZoneSheet(null)}
+        L={L}
+        initial={zoneSheet?.initial ?? null}
+        index={zoneSheet && zoneSheet.idx >= 0 ? zoneSheet.idx + 1 : zones.length + 1}
+        onSave={upsertZone}
+        onDelete={deleteZone}
+      />
+
+      {/* driver editor (create / edit / delete) */}
+      <DriverEditor
+        open={driverSheet !== null}
+        onClose={() => setDriverSheet(null)}
+        L={L}
+        initial={driverSheet?.initial ?? null}
+        onSave={upsertDriver}
+        onDelete={deleteDriver}
+      />
 
       <Toast msg={toast} />
     </div>

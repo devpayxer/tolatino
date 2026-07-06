@@ -341,6 +341,14 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     etiqueta** (sheet: transportista + paquete → tracking #) → Enviado → En
     tránsito → Entregado. Setup: Recoger, Transportistas (propio · USPS/UPS/FedEx),
     **Ajustes** (envío gratis, manejo, paquete, origen).
+  - **Setup tabs are full CRUD (2026-07-06).** Zonas and Repartidores are no
+    longer read-only: tap any card to edit, "+ Nueva zona" / "+ Agregar repartidor"
+    to create, trash + confirm to delete — real editor sheets
+    (`modules/FulfillmentEditors.tsx`: `ZoneEditor` edits name es/en · radio · ETA ·
+    tarifa es/en · color; `DriverEditor` edits nombre · teléfono · estado · color,
+    deriving initials/dot/status labels). Both persist to `businesses.settings`
+    (`shipping.delivery.zones` + `drivers` jsonb). Ajustes (delivery + shipping)
+    persist via "Guardar ajustes". No migration — flexible jsonb.
   - Per-order operational state persists to `business_orders.fulfillment` jsonb +
     a `ship` channel (migration **0049**); core `status` still writes the existing
     enum so the Pedidos tab keeps working. Best-effort persistence — the board is
