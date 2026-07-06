@@ -102,16 +102,16 @@ function itemToRow(it: Item, businessId: string, sort: number): NewBizItem {
 const money = (n: number | string) => '$' + Number(n || 0).toFixed(2);
 
 type Draft = {
-  name: string; desc: string; cat: string; price: string; compareAt: string;
+  name: string; descEs: string; descEn: string; cat: string; price: string; compareAt: string;
   channels: Record<string, boolean>; sched: string; days: number[];
-  mods: Record<string, boolean>; diet: string[]; allergens: number[];
+  mods: Record<string, boolean>; diet: string[]; allergens: number[]; stock: Stock;
   flags: Record<string, boolean>; dailyLimit: string; visible: boolean; publishMode: string;
   rules: Record<number, boolean>; photoUrl: string;
 };
 const newDraft = (cat: string): Draft => ({
-  name: '', desc: '', cat, price: '', compareAt: '',
+  name: '', descEs: '', descEn: '', cat, price: '', compareAt: '',
   channels: { dinein: true, pickup: true, delivery: true, catering: false },
-  sched: 'all-day', days: [1, 1, 1, 1, 1, 1, 1], mods: {}, diet: [],
+  sched: 'all-day', days: [1, 1, 1, 1, 1, 1, 1], mods: {}, diet: [], stock: 'in',
   allergens: blankAllergens(), flags: { isNew: true, popular: false, featured: false },
   dailyLimit: '', visible: true, publishMode: 'now', rules: { 0: true, 1: true, 2: false }, photoUrl: '',
 });
@@ -171,7 +171,6 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // the flow stays explorable without uploading anything.
   const [photoBusy, setPhotoBusy] = useState(false);
   const wizFileRef = useRef<HTMLInputElement>(null);
-  const editFileRef = useRef<HTMLInputElement>(null);
   const pickPhoto = async (file: File | null | undefined, apply: (url: string) => void) => {
     if (!file || !file.type.startsWith('image/') || photoBusy) return;
     setPhotoBusy(true);
@@ -231,8 +230,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
   const [cat, setCat] = useState<string>('all');
   const [query, setQuery] = useState('');
-  const [sheetId, setSheetId] = useState<number | null>(null);
-  const [edit, setEdit] = useState<Item | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null); // null = creating; else editing this item
   const [wizStep, setWizStep] = useState(0);
   const [wizMax, setWizMax] = useState(0);
   const [draft, setDraft] = useState<Draft>(() => newDraft('pizza'));
@@ -252,7 +250,28 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const countIn = (catId: string) => items.filter((i) => i.cat === catId).length;
   const usedBy = (groupId: string) => items.filter((i) => i.mods.includes(groupId)).length;
 
-  const startAdd = () => { setDraft(newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'pizza')); setWizStep(0); setWizMax(0); setView('wizard'); };
+  const startAdd = () => { setEditingId(null); setDraft(newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'pizza')); setWizStep(0); setWizMax(0); setView('wizard'); };
+
+  // Editing reuses the SAME full wizard, pre-filled from the item — so every
+  // field (channels, schedule, days, allergens, límite, flags, foto…) is editable,
+  // not the trimmed sheet. All steps are unlocked (it's real data).
+  const draftFromItem = (it: Item): Draft => {
+    const ex = (it.extra ?? {}) as Record<string, unknown>;
+    return {
+      name: it.name, descEs: it.es, descEn: it.en, cat: it.cat,
+      price: it.price ? String(it.price) : '', compareAt: it.compareAt != null ? String(it.compareAt) : '',
+      channels: (ex.channels as Record<string, boolean>) ?? { dinein: true, pickup: true, delivery: true, catering: false },
+      sched: (ex.sched as string) ?? 'all-day',
+      days: Array.isArray(ex.days) ? (ex.days as number[]) : [1, 1, 1, 1, 1, 1, 1],
+      mods: Object.fromEntries(it.mods.map((id) => [id, true])),
+      diet: [...it.diet], allergens: [...it.allergens], stock: it.stock,
+      flags: { isNew: it.isNew, popular: it.popular, featured: !!ex.featured },
+      dailyLimit: it.dailyLimit ?? '', visible: it.visible, publishMode: 'now',
+      rules: (ex.rules as Record<number, boolean>) ?? { 0: true, 1: true, 2: false },
+      photoUrl: it.imageUrl ?? '',
+    };
+  };
+  const startEdit = (it: Item) => { setEditingId(it.id); setDraft(draftFromItem(it)); setWizStep(0); setWizMax(wizStepDefs.length - 1); setView('wizard'); };
 
   // ── structure mutations (all persist via saveCfg) ───────────────────────────
   const upsertCategory = (c: MenuCategory) => {
@@ -469,7 +488,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               return (
                 <button
                   key={i.id}
-                  onClick={() => { setSheetId(i.id); setEdit({ ...i }); }}
+                  onClick={() => startEdit(i)}
                   className="flex cursor-pointer gap-3 rounded-tile border border-hair bg-white p-3 text-left"
                   style={{ opacity: i.visible ? 1 : 0.6 }}
                 >
@@ -941,37 +960,76 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     L('Stock y disponibilidad', 'Stock & availability'), L('Revisar y publicar', 'Review & publish'),
   ][wizStep];
 
-  // Turn the wizard draft into a real menu item (adds to the list + persists).
+  // Shared field mapping from the wizard draft (create + edit both use it).
+  const draftFields = () => ({
+    name: draft.name.trim() || L('Nuevo platillo', 'New item'),
+    cat: draft.cat,
+    price: Number(draft.price) || 0,
+    compareAt: Number(draft.compareAt) || undefined,
+    es: draft.descEs || draft.descEn,
+    en: draft.descEn || draft.descEs,
+    diet: draft.diet,
+    allergens: draft.allergens,
+    mods: cfg.mods.filter((m) => draft.mods[m.id]).map((m) => m.id),
+    imageUrl: draft.photoUrl || undefined,
+    stock: draft.stock,
+    popular: !!draft.flags.popular,
+    isNew: !!draft.flags.isNew,
+    dailyLimit: draft.dailyLimit || undefined,
+    extra: { channels: draft.channels, sched: draft.sched, days: draft.days, rules: draft.rules, featured: !!draft.flags.featured },
+  });
+
+  // Create a brand-new item from the wizard draft (adds to the list + persists).
   const addFromDraft = () => {
     const it: Item = {
-      id: nextId(),
-      name: draft.name.trim() || L('Nuevo platillo', 'New item'),
-      cat: draft.cat,
-      price: Number(draft.price) || 0,
-      compareAt: Number(draft.compareAt) || undefined,
-      es: draft.desc,
-      en: draft.desc,
-      diet: draft.diet,
-      allergens: draft.allergens,
-      mods: cfg.mods.filter((m) => draft.mods[m.id]).map((m) => m.id),
-      imageUrl: draft.photoUrl || undefined,
-      stock: 'in',
-      popular: !!draft.flags.popular,
-      isNew: !!draft.flags.isNew,
-      loves: 0,
+      id: nextId(), ...draftFields(), loves: 0,
       visible: draft.publishMode === 'draft' ? false : draft.visible,
-      dailyLimit: draft.dailyLimit || undefined,
-      extra: { channels: draft.channels, sched: draft.sched, days: draft.days, rules: draft.rules },
     };
     setItems((xs) => [it, ...xs]);
     persistNew(it);
   };
 
+  // Save the wizard draft back onto the item being edited (keeps dbId + loves).
+  const saveFromDraft = () => {
+    if (editingId == null) return;
+    setItems((xs) => {
+      const next = xs.map((i) => (i.id === editingId ? { ...i, ...draftFields(), visible: draft.visible } : i));
+      persistPatch(next.find((i) => i.id === editingId));
+      return next;
+    });
+  };
+
+  // From the edit wizard: duplicate the item (with current draft edits) as new,
+  // or delete the one being edited. Both return to the list.
+  const duplicateFromDraft = () => {
+    const copy: Item = {
+      id: nextId(), ...draftFields(),
+      name: `${draft.name.trim() || L('Nuevo platillo', 'New item')} ${L('(copia)', '(copy)')}`,
+      loves: 0, isNew: false, popular: false, visible: draft.visible,
+    };
+    setItems((xs) => [copy, ...xs]);
+    persistNew(copy);
+    setView('module'); setEditingId(null);
+    flash(L('Platillo duplicado', 'Item duplicated'));
+  };
+  const deleteEditing = () => {
+    if (editingId == null) return;
+    const target = items.find((i) => i.id === editingId);
+    setItems((xs) => xs.filter((i) => i.id !== editingId));
+    if (persistable && target?.dbId) deleteBizItem(target.dbId);
+    setView('module'); setEditingId(null);
+    flash(L('Platillo eliminado', 'Item deleted'));
+  };
+
   const wizNext = () => {
-    if (wizStep >= wizStepDefs.length - 1) { addFromDraft(); setView('success'); return; }
+    if (wizStep >= wizStepDefs.length - 1) {
+      if (editingId != null) { saveFromDraft(); setView('module'); flash(L('Cambios guardados', 'Changes saved')); }
+      else { addFromDraft(); setView('success'); }
+      return;
+    }
     const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
   };
-  const wizBack = () => { if (wizStep === 0) { setView('module'); return; } setWizStep((s) => s - 1); };
+  const wizBack = () => { if (wizStep === 0) { setView('module'); setEditingId(null); return; } setWizStep((s) => s - 1); };
   const nextGated =
     wizStep === 0 ? !!draft.name.trim() :
       wizStep === 1 ? !!draft.price && chanDefs.some((c) => draft.channels[c[0]]) :
@@ -992,7 +1050,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className={`text-[15px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del platillo', 'Item name')}</span>
           <span className="flex-none text-[15px] font-extrabold text-ink">{draft.price ? '$' + draft.price : '$0.00'}</span>
         </div>
-        <div className="mt-1 text-[11.5px] font-medium leading-relaxed text-ink-3">{draft.desc || L('La descripción aparece aquí…', 'Description appears here…')}</div>
+        <div className="mt-1 text-[11.5px] font-medium leading-relaxed text-ink-3">{(es ? draft.descEs : draft.descEn) || L('La descripción aparece aquí…', 'Description appears here…')}</div>
       </div>
     </div>
   );
@@ -1001,7 +1059,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     if (wizStep === 0) return (
       <div className="flex flex-col gap-3.5">
         <div><div className={fieldLabel}>{L('Nombre del platillo', 'Item name')} *</div><input value={draft.name} onChange={(e) => upDraft({ name: e.target.value })} placeholder={L('Ej. Margherita al horno', 'e.g. Wood-fired Margherita')} className={inputCls} /></div>
-        <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={draft.desc} onChange={(e) => upDraft({ desc: e.target.value })} placeholder={L('Ingredientes clave, qué lo hace especial…', 'Key ingredients, what makes it special…')} rows={3} className={`${inputCls} resize-none`} /></div>
+        <div><div className={fieldLabel}>{L('Descripción', 'Description')} <span className="font-semibold text-muted">· {es ? 'ES' : 'EN'}</span></div><textarea value={es ? draft.descEs : draft.descEn} onChange={(e) => upDraft(es ? { descEs: e.target.value } : { descEn: e.target.value })} placeholder={L('Ingredientes clave, qué lo hace especial…', 'Key ingredients, what makes it special…')} rows={3} className={`${inputCls} resize-none`} /></div>
         <div>
           <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
           <ChipRow className="-mx-1 px-1">
@@ -1173,6 +1231,14 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
     if (wizStep === 4) return (
       <div className="flex flex-col gap-3.5">
+        <div>
+          <div className={fieldLabel}>{L('Disponibilidad', 'Availability')}</div>
+          <div className="flex gap-1.5">
+            {([['in', L('En stock', 'In stock')], ['low', L('Bajo', 'Low')], ['out', '86']] as [Stock, string][]).map(([k, lab]) => (
+              <button key={k} onClick={() => upDraft({ stock: k })} className={`min-w-0 flex-1 cursor-pointer truncate rounded-[9px] px-2 py-2.5 text-[11.5px] font-extrabold ${draft.stock === k ? (k === 'out' ? 'bg-pink-dark text-white' : k === 'low' ? 'bg-amber-ink text-white' : 'bg-primary text-white') : 'bg-lilac-2 text-ink-2'}`}>{lab}</button>
+            ))}
+          </div>
+        </div>
         <div className="flex gap-3">
           <div className="flex-1"><div className={fieldLabel}>{L('Límite diario', 'Daily limit')}</div><input value={draft.dailyLimit} onChange={(e) => upDraft({ dailyLimit: e.target.value.replace(/[^0-9]/g, '') })} placeholder={L('Ilimitado', 'Unlimited')} inputMode="numeric" className={inputCls} /></div>
           <div className="flex-1"><div className={fieldLabel}>{L('Al agotarse', 'When out')}</div><div className="rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-[12.5px] font-semibold text-ink">{L('Auto-pausar en 0', 'Auto-pause at 0')}</div></div>
@@ -1209,6 +1275,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const modsSel = cfg.mods.filter((m) => draft.mods[m.id]).map((m) => L(m.es, m.en));
     const algC = draft.allergens.filter((v) => v === 2).length;
     const algM = draft.allergens.filter((v) => v === 1).length;
+    const editing = editingId != null;
     const reviewRows: [string, string, boolean, number][] = [
       [L('Nombre', 'Name'), draft.name || '—', !!draft.name, 0],
       [L('Categoría', 'Category'), catLabel(draftCat), true, 0],
@@ -1217,15 +1284,15 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       [L('Modificadores', 'Modifiers'), modsSel.length ? modsSel.join(', ') : L('Ninguno', 'None'), true, 2],
       [L('Dieta', 'Dietary'), draft.diet.length ? draft.diet.join(', ') : L('Ninguna', 'None'), true, 3],
       [L('Alérgenos', 'Allergens'), (algC ? algC + L(' contiene', ' contains') : '') + (algC && algM ? ' · ' : '') + (algM ? algM + L(' puede', ' may') : '') || L('Ninguno', 'None marked'), true, 3],
-      ['Stock', (draft.dailyLimit ? L('Límite ', 'Limit ') + draft.dailyLimit : L('Ilimitado', 'Unlimited')) + ' · ' + (draft.visible ? L('Visible', 'Visible') : L('Oculto', 'Hidden')), true, 4],
+      ['Stock', L(STOCK_META[draft.stock].es, STOCK_META[draft.stock].en) + ' · ' + (draft.dailyLimit ? L('Límite ', 'Limit ') + draft.dailyLimit : L('Ilimitado', 'Unlimited')) + ' · ' + (draft.visible ? L('Visible', 'Visible') : L('Oculto', 'Hidden')), true, 4],
     ];
     return (
       <div className="flex flex-col gap-3.5">
         <div className={`flex items-center gap-3 rounded-btn-lg border p-3 ${ready ? 'border-green-bg bg-green-bg/50' : 'border-amber-bg bg-amber-bg/50'}`}>
           <span className={`flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-white ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? <Check size={16} strokeWidth={2.8} /> : <AlertTriangle size={15} strokeWidth={2.4} />}</span>
           <div className="min-w-0 flex-1">
-            <div className={`text-[12px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos esenciales', 'A few essentials are missing')}</div>
-            <div className="text-[10.5px] font-medium leading-snug text-ink-3">{ready ? L('Todo en orden. Publicar lo activa al instante.', 'All set. Publishing makes it live instantly.') : L('Agrega nombre y precio antes de publicar.', 'Add a name and price before publishing.')}</div>
+            <div className={`text-[12px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos esenciales', 'A few essentials are missing')}</div>
+            <div className="text-[10.5px] font-medium leading-snug text-ink-3">{ready ? (editing ? L('Los cambios se publican al instante.', 'Changes go live instantly.') : L('Todo en orden. Publicar lo activa al instante.', 'All set. Publishing makes it live instantly.')) : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
           </div>
         </div>
         <div className="overflow-hidden rounded-btn-lg border border-hair">
@@ -1237,46 +1304,62 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             </div>
           ))}
         </div>
-        <div>
-          <div className={fieldLabel}>{L('Opciones de publicación', 'Publish options')}</div>
-          <div className="flex flex-col gap-2">
-            {([['now', L('Publicar ahora', 'Publish now'), L('Aparece en tu menú al instante.', 'Goes live immediately.'), Zap], ['schedule', L('Programar', 'Schedule'), L('Elige fecha y hora.', 'Pick a date & time.'), Calendar], ['draft', L('Guardar borrador', 'Save as draft'), L('Oculto hasta que estés listo.', 'Hidden until ready.'), Copy]] as [string, string, string, LucideIcon][]).map(([k, lab, sub, Icon]) => {
-              const on = draft.publishMode === k;
-              return (
-                <button key={k} onClick={() => upDraft({ publishMode: k })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                  <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Icon size={15} className="text-primary-dark" strokeWidth={2} /></span>
-                  <span className="min-w-0 flex-1 text-left">
-                    <span className="block text-[12px] font-extrabold text-ink">{lab}</span>
-                    <span className="block text-[10px] font-medium text-muted-2">{sub}</span>
-                  </span>
-                  <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border-[1.5px] ${on ? 'border-primary' : 'border-lilac-line'}`}>{on && <span className="h-2 w-2 rounded-full bg-primary" />}</span>
-                </button>
-              );
-            })}
+        {editing ? (
+          // Editing an existing item → manage it (duplicate / delete) instead of
+          // choosing a publish mode.
+          <div>
+            <div className={fieldLabel}>{L('Administrar platillo', 'Manage item')}</div>
+            <div className="flex gap-2.5">
+              <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink">
+                <Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}
+              </button>
+              <button onClick={deleteEditing} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">
+                <Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <div className={fieldLabel}>{L('Opciones de publicación', 'Publish options')}</div>
+            <div className="flex flex-col gap-2">
+              {([['now', L('Publicar ahora', 'Publish now'), L('Aparece en tu menú al instante.', 'Goes live immediately.'), Zap], ['schedule', L('Programar', 'Schedule'), L('Elige fecha y hora.', 'Pick a date & time.'), Calendar], ['draft', L('Guardar borrador', 'Save as draft'), L('Oculto hasta que estés listo.', 'Hidden until ready.'), Copy]] as [string, string, string, LucideIcon][]).map(([k, lab, sub, Icon]) => {
+                const on = draft.publishMode === k;
+                return (
+                  <button key={k} onClick={() => upDraft({ publishMode: k })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                    <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Icon size={15} className="text-primary-dark" strokeWidth={2} /></span>
+                    <span className="min-w-0 flex-1 text-left">
+                      <span className="block text-[12px] font-extrabold text-ink">{lab}</span>
+                      <span className="block text-[10px] font-medium text-muted-2">{sub}</span>
+                    </span>
+                    <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border-[1.5px] ${on ? 'border-primary' : 'border-lilac-line'}`}>{on && <span className="h-2 w-2 rounded-full bg-primary" />}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   const wizardPage = (
     <ModulePage
-      title={L('Agregar platillo', 'Add menu item')}
+      title={editingId != null ? L('Editar platillo', 'Edit item') : L('Agregar platillo', 'Add menu item')}
       subtitle={`${catLabel(draftCat)} · ${L('Paso', 'Step')} ${wizStep + 1}/${wizStepDefs.length}`}
-      onBack={() => setView('module')}
-      backLabel={L('Cancelar', 'Cancel')}
+      onBack={() => { setView('module'); setEditingId(null); }}
+      backLabel={editingId != null ? L('Cerrar', 'Close') : L('Cancelar', 'Cancel')}
       maxW={940}
       footer={
         <div className="flex items-center gap-3">
           <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">
-            {wizStep === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
+            {wizStep === 0 ? (editingId != null ? L('Cerrar', 'Close') : L('Cancelar', 'Cancel')) : L('Atrás', 'Back')}
           </button>
           <button
             onClick={wizNext}
             disabled={!nextGated}
             className={`flex-1 rounded-btn-lg py-3.5 text-[13.5px] font-extrabold text-white ${nextGated ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}
           >
-            {wizStep >= wizStepDefs.length - 1 ? L('Publicar platillo', 'Publish item') : L('Continuar', 'Continue')}
+            {wizStep >= wizStepDefs.length - 1 ? (editingId != null ? L('Guardar cambios', 'Save changes') : L('Publicar platillo', 'Publish item')) : L('Continuar', 'Continue')}
           </button>
         </div>
       }
@@ -1344,109 +1427,6 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     );
   })();
 
-  // ============ EDIT PAGE ============
-  const editDirty = sheetId != null && edit != null && JSON.stringify(edit) !== JSON.stringify(items.find((i) => i.id === sheetId));
-  const closeSheet = () => { setSheetId(null); setEdit(null); };
-  const upEdit = (p: Partial<Item>) => setEdit((e) => (e ? { ...e, ...p } : e));
-  const saveEdit = () => { if (edit) setItems((xs) => { const next = xs.map((i) => (i.id === sheetId ? { ...i, ...edit } : i)); persistPatch(next.find((i) => i.id === sheetId)); return next; }); closeSheet(); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); };
-  const deleteItem = () => { const target = items.find((i) => i.id === sheetId); setItems((xs) => xs.filter((i) => i.id !== sheetId)); if (persistable && target?.dbId) deleteBizItem(target.dbId); closeSheet(); flash(L('Platillo eliminado', 'Item deleted')); };
-  // Duplicate the item being edited (with any unsaved tweaks) as a new item.
-  const duplicateItem = () => {
-    if (!edit) return;
-    const copy: Item = { ...edit, id: nextId(), dbId: undefined, name: `${edit.name} ${L('(copia)', '(copy)')}`, loves: 0, isNew: false, popular: false };
-    setItems((xs) => [copy, ...xs]);
-    persistNew(copy);
-    closeSheet();
-    flash(L('Platillo duplicado', 'Item duplicated'));
-  };
-
-  const editPage = sheetId != null && edit != null && (
-    <ModulePage
-      title={L('Editar platillo', 'Edit item')}
-      subtitle={catLabel(catOf(edit.cat))}
-      onBack={closeSheet}
-      action={<span className={`rounded-md px-2 py-1 text-[9.5px] font-extrabold ${editDirty ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{editDirty ? L('Sin guardar', 'Unsaved') : L('Sincronizado', 'Synced')}</span>}
-      footer={
-        <div className="flex gap-2.5">
-          <button onClick={deleteItem} className="cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
-          <button onClick={duplicateItem} className="flex cursor-pointer items-center gap-1.5 rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-3 text-[12.5px] font-extrabold text-ink">
-            <Copy size={13} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}
-          </button>
-          <button onClick={saveEdit} disabled={!editDirty} className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${editDirty ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}>{L('Guardar', 'Save')}</button>
-        </div>
-      }
-    >
-      <div className="flex flex-col gap-3.5">
-        {/* Real item photo: upload/change (same compression pipeline) or remove. */}
-        <div className="relative h-[150px] overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${catOf(edit.cat).tile})` }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {edit.imageUrl && <img src={edit.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-          <button type="button" onClick={() => editFileRef.current?.click()} disabled={photoBusy} className="absolute bottom-3 right-3 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">
-            {photoBusy ? L('Subiendo…', 'Uploading…') : edit.imageUrl ? L('Cambiar foto', 'Change photo') : `📷 ${L('Subir foto', 'Upload photo')}`}
-          </button>
-          {edit.imageUrl && (
-            <button type="button" onClick={() => upEdit({ imageUrl: undefined })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-3 top-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card">
-              <Trash2 size={14} strokeWidth={2.2} />
-            </button>
-          )}
-          <input ref={editFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f, (url) => upEdit({ imageUrl: url })); }} />
-        </div>
-        <div><div className={fieldLabel}>{L('Nombre del platillo', 'Item name')}</div><input value={edit.name} onChange={(e) => upEdit({ name: e.target.value })} className={inputCls} /></div>
-        <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={es ? edit.es : edit.en} onChange={(e) => upEdit(es ? { es: e.target.value } : { en: e.target.value })} rows={3} className={`${inputCls} resize-none`} /></div>
-        <div>
-          <div className={fieldLabel}>{L('Categoría', 'Category')}</div>
-          <ChipRow className="-mx-1 px-1">
-            {cfg.categories.filter((c) => c.visible || c.id === edit.cat).map((c) => (
-              <button key={c.id} onClick={() => upEdit({ cat: c.id })} className={chip(edit.cat === c.id)}>{catLabel(c)}</button>
-            ))}
-          </ChipRow>
-        </div>
-        <div className="flex flex-col gap-3.5 sm:flex-row sm:gap-3">
-          <div className="sm:flex-1"><div className={fieldLabel}>{L('Precio', 'Price')}</div><div className="flex items-center rounded-field border-[1.5px] border-lilac-line px-3 focus-within:border-primary"><span className="text-[13px] font-bold text-muted-2">$</span><input value={edit.price} onChange={(e) => upEdit({ price: Number(String(e.target.value).replace(/[^0-9.]/g, '')) || 0 })} className="min-w-0 flex-1 border-none bg-transparent px-2 py-2.5 text-[13px] font-semibold text-ink outline-none" /></div></div>
-          <div className="sm:flex-1">
-            <div className={fieldLabel}>{L('Disponibilidad', 'Availability')}</div>
-            <div className="flex min-w-0 gap-1.5">
-              {([['in', L('En stock', 'In')], ['low', L('Bajo', 'Low')], ['out', '86']] as [Stock, string][]).map(([k, lab]) => (
-                <button key={k} onClick={() => upEdit({ stock: k })} className={`min-w-0 flex-1 cursor-pointer truncate rounded-[9px] px-2 py-2.5 text-[11px] font-extrabold ${edit.stock === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{lab}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-        {cfg.mods.length > 0 && (
-          <div>
-            <div className={fieldLabel}>{L('Grupos de opciones', 'Option groups')}</div>
-            <div className="flex flex-wrap gap-2">
-              {cfg.mods.map((m) => {
-                const on = edit.mods.includes(m.id);
-                return (
-                  <button key={m.id} onClick={() => upEdit({ mods: on ? edit.mods.filter((x) => x !== m.id) : [...edit.mods, m.id] })} className={chip(on)}>
-                    {L(m.es, m.en)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        <div>
-          <div className={fieldLabel}>{L('Etiquetas dietéticas', 'Dietary tags')}</div>
-          <div className="flex flex-wrap gap-2">
-            {([['V', L('Vegetariano', 'Vegetarian')], ['VG', L('Vegano', 'Vegan')], ['GF', L('Sin gluten', 'Gluten-free')], ['Picante', L('Picante', 'Spicy')]] as [string, string][]).map(([k, lab]) => {
-              const has = edit.diet.includes(k);
-              return <button key={k} onClick={() => upEdit({ diet: has ? edit.diet.filter((x) => x !== k) : [...edit.diet, k] })} className={chip(has)}>{lab}</button>;
-            })}
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-field border border-hair bg-white p-3">
-          <span className="min-w-0 flex-1">
-            <span className="block text-[12.5px] font-bold text-ink">{L('Visible en el listado', 'Visible on listing')}</span>
-            <span className="block text-[10px] font-medium leading-snug text-muted-2">{L('Apágalo para ocultar sin eliminar.', 'Turn off to hide without deleting.')}</span>
-          </span>
-          <Toggle on={edit.visible} onClick={() => upEdit({ visible: !edit.visible })} />
-        </div>
-      </div>
-    </ModulePage>
-  );
-
   // Structure editor sheets (shared across views so the wizard can open them).
   const editorSheets = (
     <>
@@ -1492,10 +1472,9 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ============ RENDER ============
-  // Edit / create flows take over the screen as full pages (no cramped popups).
+  // Add/edit both use the SAME full-page wizard (no cramped popups).
   if (view === 'wizard') return <>{wizardPage}{editorSheets}<Toast msg={toast} /></>;
   if (view === 'success') return <>{successPage}<Toast msg={toast} /></>;
-  if (editPage) return <>{editPage}{editorSheets}<Toast msg={toast} /></>;
 
   return (
     <div className="relative pb-8">
