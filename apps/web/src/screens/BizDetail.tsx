@@ -14,7 +14,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, type PublicMenu, type PublicServices, type PubSvc } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, type PublicMenu, type PublicServices, type PubSvc, type PublicShop } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
@@ -107,10 +107,27 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const svcBooking = realServices?.booking ?? false;
   // Display-only services: real services with booking off → showcase (no Reservar).
   const svcDisplayOnly = realServices != null && !realServices.booking;
-  // Option groups for an item: per-item groups on a real menu; the per-category
-  // fixture groups otherwise. A real menu never mixes in fixture groups.
-  const groupsFor = (catKey: string, item: MenuItem) =>
-    realMenu ? realMenu.groups[`${catKey}::${item.n[0]}`] ?? [] : OPTION_GROUPS[catKey] ?? [];
+
+  // Real shop (business_items kind='product' + product_config, migration 0048).
+  // Null → the Tienda tab keeps the sample fixtures. selling off → display-only
+  // (products + prices, no cart). Cat keys are prefixed `sh:` (from the RPC).
+  const [realShop, setRealShop] = useState<PublicShop | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setRealShop(null);
+    fetchBusinessProducts(b.slug).then((s) => { if (!cancelled) setRealShop(s); });
+    return () => { cancelled = true; };
+  }, [b.slug]);
+  const shopCats = realShop?.cats ?? SHOP;
+  const shopDisplayOnly = realShop != null && !realShop.selling;
+
+  // Option groups for an item: per-item groups on a real menu / real shop (`sh:`
+  // keys route to the shop); the per-category fixture groups otherwise.
+  const groupsFor = (catKey: string, item: MenuItem) => {
+    const key = `${catKey}::${item.n[0]}`;
+    if (catKey.startsWith('sh:')) return realShop?.groups[key] ?? [];
+    return realMenu ? realMenu.groups[key] ?? [] : OPTION_GROUPS[catKey] ?? [];
+  };
 
   // Approved related listings (migration 0044). Empty offline / when none linked →
   // the tab falls back to nearby fixtures so the prototype stays populated.
@@ -925,7 +942,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                 <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('platillos', 'items')}</span>
               </div>
-              <div className={menuDisplayOnly ? 'grid gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, false, menuDisplayOnly))}</div>
+              <div className={menuDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, false, menuDisplayOnly))}</div>
             </div>
           ))}
         </div>
@@ -933,21 +950,46 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
       {tab === 'shop' && (
         <div className="pt-4">
-          <div className="no-scrollbar mb-4 flex gap-3 overflow-x-auto">
-            {SHOP_PROMOS.map((p) => (
-              <div key={p.t[0]} className="w-[200px] flex-none rounded-card-sm p-3.5" style={{ background: `repeating-linear-gradient(135deg,${p.bg})` }}>
-                <div className="text-[14px] font-extrabold" style={{ color: p.c }}>{B(p.t)}</div>
-                <div className="mt-0.5 text-[11.5px] font-bold text-ink-3">{B(p.sub)}</div>
-              </div>
-            ))}
-          </div>
-          {SHOP.map((c) => (
+          {/* display-only shop → a clear "this is a catalog; call to buy" note */}
+          {shopDisplayOnly && (
+            <div className="mb-4 flex items-center gap-3 rounded-card-sm border border-lilac-line bg-lilac-2 p-3">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white text-primary-dark">
+                <Menu size={16} strokeWidth={2.2} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12.5px] font-extrabold text-ink">{L('Catálogo informativo', 'Catalog for viewing')}</span>
+                <span className="block text-[11px] font-semibold leading-snug text-muted">{L('Este negocio muestra sus productos y precios. Para comprar, llámalo o visítalo.', 'This business shows its products & prices. To buy, call or visit.')}</span>
+              </span>
+              <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                <Phone size={13} strokeWidth={2.4} />{L('Llamar', 'Call')}
+              </a>
+            </div>
+          )}
+          {/* featured collections (real) or the fixture promo strip */}
+          {(realShop ? realShop.collections.length > 0 : true) && (
+            <div className="no-scrollbar mb-4 flex gap-3 overflow-x-auto">
+              {realShop
+                ? realShop.collections.map((c) => (
+                    <div key={c.es} className="w-[200px] flex-none rounded-card-sm p-3.5" style={{ background: `repeating-linear-gradient(135deg,${c.tile})` }}>
+                      <div className="text-[9.5px] font-extrabold uppercase tracking-[.06em] text-ink-3">{L('Colección', 'Collection')}</div>
+                      <div className="mt-0.5 text-[14px] font-extrabold text-ink">{L(c.es, c.en)}</div>
+                    </div>
+                  ))
+                : SHOP_PROMOS.map((p) => (
+                    <div key={p.t[0]} className="w-[200px] flex-none rounded-card-sm p-3.5" style={{ background: `repeating-linear-gradient(135deg,${p.bg})` }}>
+                      <div className="text-[14px] font-extrabold" style={{ color: p.c }}>{B(p.t)}</div>
+                      <div className="mt-0.5 text-[11.5px] font-bold text-ink-3">{B(p.sub)}</div>
+                    </div>
+                  ))}
+            </div>
+          )}
+          {shopCats.map((c) => (
             <div key={c.key} className="mb-5">
               <div className="mb-2.5 flex items-baseline gap-2">
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                 <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('productos', 'products')}</span>
               </div>
-              <div className="flex flex-col gap-2.5">{c.items.map((it) => itemCard(c.key, it, true))}</div>
+              <div className={shopDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, realShop ? realShop.selling : true, shopDisplayOnly))}</div>
             </div>
           ))}
         </div>
@@ -978,7 +1020,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                   <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                   <span className="text-[11.5px] font-bold text-muted">{c.items.length} {c.items.length === 1 ? L('servicio', 'service') : L('servicios', 'services')}</span>
                 </div>
-                <div className="grid gap-2.5 sm:grid-cols-2">{c.items.map((s) => svcCard(s))}</div>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">{c.items.map((s) => svcCard(s))}</div>
               </div>
             ))}
           </div>
@@ -1162,7 +1204,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       )}
 
       {/* cart bar */}
-      {cartCount > 0 && !menuDisplayOnly && (
+      {cartCount > 0 && !(tab === 'menu' && menuDisplayOnly) && !(tab === 'shop' && shopDisplayOnly) && (
         <button
           onClick={() => { setCartOpen(true); setCartDone(false); }}
           className="fixed bottom-[86px] left-1/2 z-40 flex w-[calc(100%-28px)] max-w-[640px] -translate-x-1/2 cursor-pointer items-center justify-between rounded-2xl bg-ink px-5 py-3.5 text-white shadow-modal md:bottom-6"

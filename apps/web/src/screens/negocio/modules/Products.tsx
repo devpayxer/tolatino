@@ -1,802 +1,814 @@
 'use client';
 
-// Productos module (business dashboard) — the online-shop CATALOG. Sub-tabs:
-// Catálogo · Inventario · Variantes · Colecciones · Descuentos, plus a sell-
-// online vs catalog-only switch. Includes a 4-step "add product" wizard
-// (Detalles → Precio → Inventario → Revisar) with a live preview + success
-// screen, an edit bottom-sheet, and live filtering/toggles. Mobile-first; on
-// desktop content widens into multi-column grids with a sticky summary rail.
-// Delivery + shipping (zones, drivers, pickup, carriers) now live in the SHARED
-// `Entregas y envíos` module (modules/Fulfillment.tsx) — reachable from the rail
-// + a shortcut card — so Products and the Food menu configure fulfillment once.
+// Productos module (business dashboard) — fully functional, mirroring the Food
+// module. Products live in business_items (kind='product'); the structure
+// (categories, reusable option sets/variants, curated collections, discounts,
+// sell mode) lives in businesses.product_config (migration 0048). Sub-tabs:
+//   • Catálogo — product cards (tap → the shared 5-step wizard: create/edit/
+//     duplicate/delete-confirmed, photo, price/sale, variants, inventory), plus a
+//     "Modo de la tienda" toggle (Solo catálogo vs Vender en línea).
+//   • Categorías / Variantes / Colecciones / Descuentos — real CRUD via editor
+//     sheets. • Inventario — real stock from the catalog.
+// Display-only mode hides the +/cart on the public listing. Fully explorable in
+// demo (local sample); a signed-in owner persists to Supabase.
+//
+// Delivery + shipping (zones, drivers, pickup, carriers) live in the SHARED
+// `Entregas y envíos` module (modules/Fulfillment.tsx) — reachable via a shortcut
+// card — so Products and the Food menu configure fulfillment once.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
-  Boxes, Check, CreditCard, HardHat,
-  Layers, MapPin, Package, Percent, Plus, Route, Search,
-  Store, Tag, Truck, Upload, Zap,
+  Check, CheckCircle2, ChevronDown, ChevronUp, Copy, CreditCard,
+  HardHat, Layers, Loader2, Pencil, Plus, Search, Store,
+  Trash2, Truck, Upload,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ChipRow } from '@/components/ChipRow';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import { uploadImage } from '@/lib/image';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
+import {
+  defaultProductConfig, demoProductConfig, normalizeProductConfig, variantCount,
+  type Collection, type Discount, type OptionSet, type ProductCategory, type ProductConfig,
+} from '@/lib/productConfig';
+import {
+  CollectionEditor, DiscountEditor, OptionSetEditor, ProductCategoryEditor, prodCatIcon,
+} from '@/screens/negocio/modules/ProductEditors';
 
-// ---------- static content model (ported from the Products handoff prototype) ----------
+const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 
-type Cat = { id: string; es: string; en: string; tile: string };
-const CATS: Cat[] = [
-  { id: 'pantry', es: 'Despensa', en: 'Pantry', tile: '#F3D9C8 0 8px,#E8C3AC 8px 16px' },
-  { id: 'merch', es: 'Mercancía', en: 'Merch', tile: '#EAE2F8 0 8px,#DCCEF2 8px 16px' },
-  { id: 'baking', es: 'Repostería', en: 'Baking', tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px' },
-  { id: 'coffee', es: 'Café', en: 'Coffee', tile: '#EDE0D4 0 8px,#DFCBB6 8px 16px' },
-  { id: 'books', es: 'Libros', en: 'Books', tile: '#E4ECFB 0 8px,#D7E3F6 8px 16px' },
-];
+const FALLBACK_CAT: ProductCategory = { id: 'pantry', es: 'Productos', en: 'Products', icon: 'package', tile: '#F3D9C8 0 8px,#E8C3AC 8px 16px', visible: true };
 
-type Product = { id: number; dbId?: string; name: string; sku: string; price: number; stock: number; cat: string; variants: number; sales: string };
+type Prod = {
+  id: number; dbId?: string; name: string; cat: string;
+  price: number; compareAt?: number; descEs: string; descEn: string;
+  sku: string; stock: number; reorder: number;
+  options: string[]; fulfill: string; tax: string;
+  badges: string[]; sales: string; imageUrl?: string; extra?: Record<string, unknown>;
+};
 
-// Map a business_items row (kind='product') ↔ Product.
-function rowToProduct(r: BizItemRow, idx: number): Product {
+const KNOWN_ATTRS = new Set(['en', 'sku', 'stock', 'reorder', 'compareAt', 'options', 'fulfill', 'tax', 'badges', 'sales']);
+function rowToProd(r: BizItemRow, idx: number): Prod {
   const a = (r.attrs ?? {}) as Record<string, unknown>;
+  const extra: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(a)) if (!KNOWN_ATTRS.has(k)) extra[k] = v;
   return {
     id: idx + 1,
     dbId: r.id,
     name: r.name,
-    sku: String(a.sku ?? ''),
+    cat: r.section ?? FALLBACK_CAT.id,
     price: Number(r.price ?? 0),
+    compareAt: a.compareAt != null ? Number(a.compareAt) : undefined,
+    descEs: r.description ?? '',
+    descEn: String(a.en ?? r.description ?? ''),
+    sku: String(a.sku ?? ''),
     stock: Number(a.stock ?? 0),
-    cat: r.section ?? 'pantry',
-    variants: Number(a.variants ?? 0),
+    reorder: Number(a.reorder ?? 0),
+    options: (a.options as string[]) ?? [],
+    fulfill: String(a.fulfill ?? 'ship'),
+    tax: String(a.tax ?? 'goods'),
+    badges: (a.badges as string[]) ?? [],
     sales: String(a.sales ?? '$0'),
+    imageUrl: r.image_url ?? undefined,
+    extra,
   };
 }
-function productToRow(p: Product, businessId: string, sort: number): NewBizItem {
+const prodAttrs = (p: Prod): Record<string, unknown> => ({
+  ...(p.extra ?? {}),
+  en: p.descEn, sku: p.sku, stock: p.stock, reorder: p.reorder,
+  compareAt: p.compareAt ?? null, options: p.options, fulfill: p.fulfill, tax: p.tax,
+  badges: p.badges, sales: p.sales,
+});
+function prodToRow(p: Prod, businessId: string, sort: number): NewBizItem {
   return {
-    business_id: businessId,
-    kind: 'product',
-    name: p.name,
-    description: null,
-    price: p.price,
-    unit: null,
-    section: p.cat,
-    available: true,
-    sort,
-    image_url: null,
-    attrs: { sku: p.sku, stock: p.stock, variants: p.variants, sales: p.sales },
+    business_id: businessId, kind: 'product', name: p.name, description: p.descEs,
+    price: p.price, unit: null, section: p.cat, available: true, sort,
+    image_url: p.imageUrl ?? null, attrs: prodAttrs(p),
   };
 }
-const SEED: Product[] = [
-  { id: 1, name: 'Mermelada fresa-ruibarbo · 6oz', sku: 'JAM-001', price: 14, stock: 42, cat: 'pantry', variants: 3, sales: '$1,820' },
-  { id: 2, name: 'Libro de recetas Country Loaf', sku: 'BOOK-001', price: 42, stock: 12, cat: 'books', variants: 1, sales: '$924' },
-  { id: 3, name: 'Tote de lona To’Latino', sku: 'MRC-001', price: 28, stock: 84, cat: 'merch', variants: 2, sales: '$2,128' },
-  { id: 4, name: 'Masa madre · 100g', sku: 'STR-001', price: 18, stock: 5, cat: 'baking', variants: 1, sales: '$486' },
-  { id: 5, name: 'Canasta de fermentado', sku: 'TOL-001', price: 32, stock: 24, cat: 'baking', variants: 2, sales: '$640' },
-  { id: 6, name: 'Aceite de oliva · 500ml', sku: 'OIL-001', price: 24, stock: 0, cat: 'pantry', variants: 1, sales: '$2,400' },
-  { id: 7, name: 'Café en grano · 12oz', sku: 'COF-001', price: 19, stock: 62, cat: 'coffee', variants: 3, sales: '$1,178' },
+
+// ---------- shared styles ----------
+const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
+const inputCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary';
+const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12.5px] font-extrabold text-primary-dark';
+
+function Switch({ on, onClick, big }: { on: boolean; onClick: () => void; big?: boolean }) {
+  const w = big ? 46 : 38; const k = big ? 20 : 17;
+  return (
+    <span role="switch" aria-checked={on} onClick={onClick} className="relative inline-block flex-none cursor-pointer rounded-full transition-colors" style={{ width: w, height: big ? 26 : 23, background: on ? '#7B61FF' : '#D8D2E6' }}>
+      <span className="absolute top-[3px] rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,.18)] transition-all" style={{ width: k, height: k, left: on ? w - k - 3 : 3 }} />
+    </span>
+  );
+}
+
+const BADGES = ['Nuevo', 'Oferta', 'Popular', 'Local'];
+const tagLabel = (t: string, L: (es: string, en: string) => string) =>
+  ({ Nuevo: L('Nuevo', 'New'), Oferta: L('Oferta', 'Sale'), Popular: L('Popular', 'Popular'), Local: L('Local', 'Local') } as Record<string, string>)[t] ?? t;
+
+// Demo products (sample so the module is explorable without signing in).
+const DEMO_PRODS: Prod[] = [
+  { id: 1, name: 'Mermelada fresa-ruibarbo · 6oz', cat: 'pantry', price: 14, compareAt: 18, descEs: 'Hecha en lotes pequeños con fruta local.', descEn: 'Small-batch with local fruit.', sku: 'JAM-001', stock: 42, reorder: 20, options: ['gift'], fulfill: 'ship', tax: 'goods', badges: ['Oferta'], sales: '$1,820' },
+  { id: 2, name: 'Libro de recetas Country Loaf', cat: 'books', price: 42, descEs: 'Guía completa de masa madre.', descEn: 'Complete sourdough guide.', sku: 'BOOK-001', stock: 12, reorder: 8, options: [], fulfill: 'ship', tax: 'goods', badges: ['Popular'], sales: '$924' },
+  { id: 3, name: 'Tote de lona To’Latino', cat: 'merch', price: 28, descEs: 'Lona resistente, serigrafía a mano.', descEn: 'Heavy canvas, hand-screened.', sku: 'MRC-001', stock: 84, reorder: 30, options: ['tee'], fulfill: 'ship', tax: 'goods', badges: [], sales: '$2,128' },
+  { id: 4, name: 'Masa madre · 100g', cat: 'baking', price: 18, descEs: 'Fermento activo listo para hornear.', descEn: 'Active starter ready to bake.', sku: 'STR-001', stock: 5, reorder: 15, options: [], fulfill: 'local', tax: 'goods', badges: ['Local'], sales: '$486' },
+  { id: 5, name: 'Café en grano · 12oz', cat: 'coffee', price: 19, descEs: 'Tueste medio, notas de chocolate.', descEn: 'Medium roast, chocolate notes.', sku: 'COF-001', stock: 62, reorder: 25, options: ['size', 'grind'], fulfill: 'ship', tax: 'goods', badges: ['Nuevo'], sales: '$1,178' },
+  { id: 6, name: 'Aceite de oliva · 500ml', cat: 'pantry', price: 24, descEs: 'Prensado en frío, primera cosecha.', descEn: 'Cold-pressed, first harvest.', sku: 'OIL-001', stock: 0, reorder: 12, options: [], fulfill: 'pickup', tax: 'goods', badges: [], sales: '$2,400' },
 ];
 
-// Fulfillment (delivery zones, pickup, national shipping, drivers) lives in the
-// SHARED `Entregas y envíos` module (modules/Fulfillment.tsx) — it reads/writes
-// the same businesses.settings jsonb and is used by both Products and the Food
-// menu. Products is now purely the catalog.
-
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
-
-type ProdTab = 'catalog' | 'inventory' | 'variants' | 'collections' | 'discounts';
-type View = 'module' | 'wizard' | 'success';
-type Draft = { name: string; desc: string; cat: string; price: string; sku: string; tax: string; variants: boolean; stock: string; reorder: string; fulfill: string; photo: boolean };
-type Edit = { id: number; name: string; price: string; stock: string; cat: string };
-
-const newDraft = (): Draft => ({ name: '', desc: '', cat: 'pantry', price: '', sku: '', tax: 'goods', variants: false, stock: '', reorder: '', fulfill: 'ship', photo: false });
-
+// =====================================================================
 export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, ci, go } = ctx;
-  void es;
-
-  const [prodTab, setProdTab] = useState<ProdTab>('catalog');
-  const [sellOn, setSellOn] = useState(true);
-  const [cat, setCat] = useState('all');
-  const [query, setQuery] = useState('');
-
-  const [products, setProducts] = useState<Product[]>(SEED);
   const admin = useBizAdmin();
+  const { user } = useAuth();
   const real = admin.active;
-  const persistable = !admin.demo && !!real; // real signed-in business → persist
+  const persistable = !admin.demo && !!real;
 
-  // Load the real business's products (demo keeps the sample seed).
+  // ── config (categories / option sets / collections / discounts / sell mode) ──
+  const [cfg, setCfg] = useState<ProductConfig>(demoProductConfig);
   useEffect(() => {
-    if (!persistable || !real) {
-      setProducts(SEED);
-      return;
-    }
+    setCfg(admin.demo ? demoProductConfig() : real?.product_config ? normalizeProductConfig(real.product_config) : defaultProductConfig());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+  const saveCfg = (next: ProductConfig) => { setCfg(next); if (persistable) admin.update({ product_config: next }); };
+  const catOf = (id: string): ProductCategory => cfg.categories.find((c) => c.id === id) ?? FALLBACK_CAT;
+  const catLabel = (c: ProductCategory) => L(c.es, c.en);
+  const optSetOf = (id: string) => cfg.optionSets.find((o) => o.id === id);
+
+  // ── products (business_items kind='product') ───────────────────────────────
+  const [products, setProducts] = useState<Prod[]>(DEMO_PRODS);
+  useEffect(() => {
+    if (!persistable || !real) { setProducts(DEMO_PRODS); return; }
     let cancelled = false;
     (async () => {
       const rows = await listBizItems(real.id, 'product');
-      if (!cancelled) setProducts(rows.map(rowToProduct));
+      if (!cancelled) setProducts(rows.map(rowToProd));
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
 
-  const nextProdId = () => (products.length ? Math.max(...products.map((p) => p.id)) : 0) + 1;
-  const persistNewProd = async (p: Product) => {
+  const nextId = () => (products.length ? Math.max(...products.map((p) => p.id)) : 0) + 1;
+  const persistNew = async (p: Prod) => {
     if (!persistable || !real) return;
-    const dbId = await insertBizItem(productToRow(p, real.id, products.length));
-    if (dbId) setProducts((ps) => ps.map((x) => (x.id === p.id ? { ...x, dbId } : x)));
+    const dbId = await insertBizItem(prodToRow(p, real.id, products.length));
+    if (dbId) setProducts((l) => l.map((x) => (x.id === p.id ? { ...x, dbId } : x)));
   };
-  const persistProdPatch = (p: Product | undefined) => {
-    if (persistable && p?.dbId) updateBizItem(p.dbId, { name: p.name, price: p.price, section: p.cat, attrs: { sku: p.sku, stock: p.stock, variants: p.variants, sales: p.sales } });
+  const persistPatch = (p: Prod | undefined) => {
+    if (persistable && p?.dbId) updateBizItem(p.dbId, { name: p.name, description: p.descEs, price: p.price, section: p.cat, image_url: p.imageUrl ?? null, attrs: prodAttrs(p) });
   };
-  const [collState, setCollState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: false, 3: true });
 
-  const [sheet, setSheet] = useState<Edit | null>(null);
-  const [view, setView] = useState<View>('module');
+  const countIn = (catId: string) => products.filter((p) => p.cat === catId).length;
+  const optUsedBy = (optId: string) => products.filter((p) => p.options.includes(optId)).length;
+
+  // ── ui state ────────────────────────────────────────────────────────────────
+  const [sub, setSub] = useState<'catalog' | 'cats' | 'variants' | 'collections' | 'discounts' | 'inventory'>('catalog');
+  const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [wizStep, setWizStep] = useState(0);
   const [wizMax, setWizMax] = useState(0);
-  const [draft, setDraft] = useState<Draft>(newDraft);
+  const [draft, setDraft] = useState<Draft>(() => newDraft('pantry'));
+  const [confirmDel, setConfirmDel] = useState(false);
   const [toast, setToast] = useState('');
+  const [query, setQuery] = useState('');
+  const [catFilter, setCatFilter] = useState('all');
+  const [catSheet, setCatSheet] = useState<{ open: boolean; initial: ProductCategory | null }>({ open: false, initial: null });
+  const [optSheet, setOptSheet] = useState<{ open: boolean; initial: OptionSet | null }>({ open: false, initial: null });
+  const [collSheet, setCollSheet] = useState<{ open: boolean; initial: Collection | null }>({ open: false, initial: null });
+  const [discSheet, setDiscSheet] = useState<{ open: boolean; initial: Discount | null }>({ open: false, initial: null });
 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
-
-  const catOf = (id: string) => CATS.find((c) => c.id === id) ?? CATS[0];
+  const upD = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
   const money = (n: number) => '$' + n.toFixed(2);
+
+  // ── photo upload (same pipeline as Comunidad/Food) ─────────────────────────
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pickPhoto = async (file: File | null | undefined) => {
+    if (!file || !file.type.startsWith('image/') || photoBusy) return;
+    setPhotoBusy(true);
+    try {
+      const url = !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 1200);
+      upD({ photoUrl: url });
+    } catch { flash(L('No se pudo subir la foto.', "Couldn't upload the photo.")); }
+    setPhotoBusy(false);
+  };
+
+  // ── structure mutations ─────────────────────────────────────────────────────
+  const upsertCategory = (c: ProductCategory) => {
+    const exists = cfg.categories.some((x) => x.id === c.id);
+    saveCfg({ ...cfg, categories: exists ? cfg.categories.map((x) => (x.id === c.id ? c : x)) : [...cfg.categories, c] });
+    flash(exists ? L('Categoría guardada', 'Category saved') : L('Categoría creada', 'Category created'));
+  };
+  const deleteCategory = (id: string) => { saveCfg({ ...cfg, categories: cfg.categories.filter((x) => x.id !== id) }); flash(L('Categoría eliminada', 'Category deleted')); };
+  const moveCategory = (id: string, dir: -1 | 1) => {
+    const i = cfg.categories.findIndex((x) => x.id === id); const j = i + dir;
+    if (i < 0 || j < 0 || j >= cfg.categories.length) return;
+    const next = [...cfg.categories]; [next[i], next[j]] = [next[j], next[i]]; saveCfg({ ...cfg, categories: next });
+  };
+  const toggleCategory = (id: string) => saveCfg({ ...cfg, categories: cfg.categories.map((x) => (x.id === id ? { ...x, visible: !x.visible } : x)) });
+
+  const upsertOptionSet = (o: OptionSet) => {
+    const exists = cfg.optionSets.some((x) => x.id === o.id);
+    saveCfg({ ...cfg, optionSets: exists ? cfg.optionSets.map((x) => (x.id === o.id ? o : x)) : [...cfg.optionSets, o] });
+    flash(exists ? L('Conjunto guardado', 'Option set saved') : L('Conjunto creado', 'Option set created'));
+  };
+  const deleteOptionSet = (id: string) => {
+    saveCfg({ ...cfg, optionSets: cfg.optionSets.filter((x) => x.id !== id) });
+    setProducts((l) => l.map((p) => (p.options.includes(id) ? { ...p, options: p.options.filter((x) => x !== id) } : p)));
+    flash(L('Conjunto eliminado', 'Option set deleted'));
+  };
+
+  const upsertCollection = (c: Collection) => {
+    const exists = cfg.collections.some((x) => x.id === c.id);
+    saveCfg({ ...cfg, collections: exists ? cfg.collections.map((x) => (x.id === c.id ? c : x)) : [...cfg.collections, c] });
+    flash(exists ? L('Colección guardada', 'Collection saved') : L('Colección creada', 'Collection created'));
+  };
+  const deleteCollection = (id: string) => { saveCfg({ ...cfg, collections: cfg.collections.filter((x) => x.id !== id) }); flash(L('Colección eliminada', 'Collection deleted')); };
+
+  const upsertDiscount = (d: Discount) => {
+    const exists = cfg.discounts.some((x) => x.id === d.id);
+    saveCfg({ ...cfg, discounts: exists ? cfg.discounts.map((x) => (x.id === d.id ? d : x)) : [...cfg.discounts, d] });
+    flash(exists ? L('Descuento guardado', 'Discount saved') : L('Descuento creado', 'Discount created'));
+  };
+  const deleteDiscount = (id: string) => { saveCfg({ ...cfg, discounts: cfg.discounts.filter((x) => x.id !== id) }); flash(L('Descuento eliminado', 'Discount deleted')); };
+  const toggleDiscount = (id: string) => saveCfg({ ...cfg, discounts: cfg.discounts.map((d) => (d.id === id ? { ...d, status: d.status === 'active' ? 'paused' : 'active' } : d)) });
 
   const stockPill = (s: number): [string, string] =>
     s === 0 ? [L('Agotado', 'Out'), 'bg-pink-bg text-pink-dark'] : s <= 8 ? [L('Bajo', 'Low'), 'bg-amber-bg text-amber-ink'] : [L('En stock', 'In stock'), 'bg-green-bg text-green-dark'];
 
-  // ---------- shared styles ----------
-  const chip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
-  const dashBtn = 'w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-line bg-lilac-3 px-3 py-3.5 text-[12.5px] font-extrabold text-primary-dark';
+  // ── wizard: draft ⇄ product ─────────────────────────────────────────────────
+  const wizSteps: [string, string][] = [
+    [L('Detalles', 'Details'), L('Detalles del producto', 'Product details')],
+    [L('Precio', 'Pricing'), L('Precio y SKU', 'Pricing & SKU')],
+    [L('Variantes', 'Variants'), L('Opciones y variantes', 'Options & variants')],
+    [L('Inventario', 'Inventory'), L('Inventario y entrega', 'Inventory & fulfillment')],
+    [L('Revisar', 'Review'), L('Revisar y publicar', 'Review & publish')],
+  ];
+  const draftReady = !!draft.name.trim() && !!draft.price;
+  const startAdd = () => { setEditingId(null); setDraft(newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'pantry')); setWizStep(0); setWizMax(0); setView('wizard'); };
+  const startEdit = (p: Prod) => {
+    setEditingId(p.id);
+    setDraft({
+      name: p.name, descEs: p.descEs, descEn: p.descEn, cat: p.cat, price: String(p.price),
+      compareAt: p.compareAt != null ? String(p.compareAt) : '', sku: p.sku, stock: String(p.stock),
+      reorder: String(p.reorder), options: [...p.options], fulfill: p.fulfill, tax: p.tax,
+      badges: [...p.badges], photoUrl: p.imageUrl ?? '',
+    });
+    setWizStep(0); setWizMax(wizSteps.length - 1); setView('wizard');
+  };
+  const draftFields = () => ({
+    name: draft.name.trim() || L('Nuevo producto', 'New product'), cat: draft.cat,
+    price: Number(draft.price) || 0, compareAt: draft.compareAt ? Number(draft.compareAt) || undefined : undefined,
+    descEs: draft.descEs || draft.descEn, descEn: draft.descEn || draft.descEs,
+    sku: draft.sku, stock: Number(draft.stock) || 0, reorder: Number(draft.reorder) || 0,
+    options: draft.options, fulfill: draft.fulfill, tax: draft.tax, badges: draft.badges,
+    imageUrl: draft.photoUrl || undefined,
+  });
+  const addFromDraft = () => { const p: Prod = { id: nextId(), sales: '$0', ...draftFields() }; setProducts((l) => [p, ...l]); persistNew(p); };
+  const saveFromDraft = () => {
+    if (editingId == null) return;
+    setProducts((l) => { const next = l.map((p) => (p.id === editingId ? { ...p, ...draftFields() } : p)); persistPatch(next.find((p) => p.id === editingId)); return next; });
+  };
+  const duplicateFromDraft = () => {
+    const p: Prod = { id: nextId(), sales: '$0', ...draftFields(), name: `${draft.name.trim() || L('Nuevo producto', 'New product')} ${L('(copia)', '(copy)')}` };
+    setProducts((l) => [p, ...l]); persistNew(p); setView('module'); setEditingId(null); flash(L('Producto duplicado', 'Product duplicated'));
+  };
+  const deleteEditing = () => {
+    if (editingId == null) return;
+    const target = products.find((p) => p.id === editingId);
+    setProducts((l) => l.filter((p) => p.id !== editingId));
+    if (persistable && target?.dbId) deleteBizItem(target.dbId);
+    setView('module'); setEditingId(null); flash(L('Producto eliminado', 'Product deleted'));
+  };
+  const wizNext = () => {
+    if (wizStep >= wizSteps.length - 1) {
+      if (editingId != null) { saveFromDraft(); setView('module'); flash(L('Cambios guardados', 'Changes saved')); }
+      else { addFromDraft(); setView('success'); }
+      return;
+    }
+    const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
+  };
+  const wizBack = () => { if (wizStep === 0) { setView('module'); setEditingId(null); return; } setWizStep((s) => s - 1); };
+  const nextGated = wizStep === 0 ? !!draft.name.trim() : wizStep === 1 ? !!draft.price : true;
 
-  const Toggle = ({ on, onClick }: { on: boolean; onClick: () => void }) => (
-    <button
-      onClick={onClick}
-      aria-pressed={on}
-      className={`relative h-[26px] w-[46px] flex-none cursor-pointer rounded-full transition-colors ${on ? 'bg-primary' : 'bg-lilac-line'}`}
-    >
-      <span className={`absolute top-[3px] h-5 w-5 rounded-full bg-white shadow-sm transition-all ${on ? 'left-[23px]' : 'left-[3px]'}`} />
-    </button>
-  );
+  // ============================ SUCCESS ============================
+  if (view === 'success') {
+    const dc = catOf(draft.cat);
+    return (
+      <>
+        <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setSub('catalog'); }}>
+          <div className="mx-auto flex max-w-[440px] flex-col items-center pb-4 pt-4 text-center">
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} strokeWidth={2.4} /></span>
+            <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo producto', 'New product')) + ' ' + L('está activo', 'is live')}</div>
+            <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en la pestaña Tienda de tu listado público.', "It now appears on your public listing's Shop tab.")}</div>
+            <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
+              <div className="relative h-[104px]" style={{ background: stripe(dc.tile) }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+              </div>
+              <div className="flex items-center justify-between p-3.5">
+                <div className="min-w-0">
+                  <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo producto', 'New product')}</div>
+                  <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{catLabel(dc)} · {draft.price ? money(Number(draft.price)) : '$0.00'}</div>
+                </div>
+                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Activo', 'Live')}</span>
+              </div>
+            </div>
+            <div className="mt-5 flex w-full flex-col gap-2.5">
+              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro producto', 'Add another product')}</button>
+              <button onClick={() => { setView('module'); setSub('catalog'); }} className="rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a productos', 'Back to products')}</button>
+            </div>
+          </div>
+        </ModulePage>
+        <Toast msg={toast} />
+      </>
+    );
+  }
 
-  // ---------- catalog ----------
+  // ============================ WIZARD ============================
+  if (view === 'wizard') {
+    const dc = catOf(draft.cat);
+    const preview = (
+      <div className={`overflow-hidden ${cardCls}`}>
+        <div className="relative h-[96px]" style={{ background: stripe(dc.tile) }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        </div>
+        <div className="flex items-start justify-between gap-2.5 p-3.5">
+          <div className="min-w-0">
+            <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del producto', 'Product name')}</div>
+            <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{catLabel(dc)}{draft.sku ? ` · ${draft.sku}` : ''}</div>
+          </div>
+          <span className="whitespace-nowrap text-[14px] font-extrabold text-ink">{draft.price ? money(Number(draft.price)) : '$0.00'}</span>
+        </div>
+      </div>
+    );
+
+    return (
+      <>
+        <ModulePage
+          title={editingId != null ? L('Editar producto', 'Edit product') : L('Nuevo producto', 'New product')}
+          subtitle={`${catLabel(dc)} · ${L('Paso', 'Step')} ${wizStep + 1}/${wizSteps.length}`}
+          onBack={() => { setView('module'); setEditingId(null); }}
+          backLabel={editingId != null ? L('Cerrar', 'Close') : L('Cancelar', 'Cancel')}
+          maxW={940}
+          footer={
+            <div className="flex items-center gap-3">
+              <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">{wizStep === 0 ? (editingId != null ? L('Cerrar', 'Close') : L('Cancelar', 'Cancel')) : L('Atrás', 'Back')}</button>
+              <button onClick={wizNext} disabled={!nextGated} className={`flex-1 rounded-btn-lg py-3.5 text-[13.5px] font-extrabold text-white ${nextGated ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}>{wizStep >= wizSteps.length - 1 ? (editingId != null ? L('Guardar cambios', 'Save changes') : L('Publicar producto', 'Publish product')) : L('Continuar', 'Continue')}</button>
+            </div>
+          }
+        >
+          <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[340px_1fr]">
+            <div className="flex flex-col gap-3 xl:sticky xl:top-0">
+              <ChipRow className="-mx-1 px-1">
+                {wizSteps.map(([lbl], i) => {
+                  const active = wizStep === i, done = i < wizMax && i !== wizStep;
+                  return (
+                    <button key={lbl} onClick={() => { if (i <= wizMax) setWizStep(i); }} className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
+                      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>{lbl}
+                    </button>
+                  );
+                })}
+              </ChipRow>
+              {preview}
+            </div>
+
+            <div className={`${cardCls} p-4 md:p-5`}>
+              <div className="mb-4 text-[13.5px] font-extrabold text-ink">{wizSteps[wizStep][1]}</div>
+
+              {wizStep === 0 && (
+                <div className="flex flex-col gap-4">
+                  <div><div className={fieldLabel}>{L('Nombre del producto', 'Product name')} *</div><input value={draft.name} onChange={(e) => upD({ name: e.target.value })} placeholder={L('Ej. Mermelada de fresa', 'e.g. Strawberry jam')} className={inputCls} /></div>
+                  <div><div className={fieldLabel}>{L('Descripción', 'Description')} <span className="font-semibold text-muted">· {es ? 'ES' : 'EN'}</span></div><textarea value={es ? draft.descEs : draft.descEn} onChange={(e) => upD(es ? { descEs: e.target.value } : { descEn: e.target.value })} rows={3} placeholder={L('Materiales, tamaño, qué lo hace especial…', 'Materials, size, what makes it special…')} className={`${inputCls} resize-none leading-relaxed`} /></div>
+                  <div>
+                    <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
+                    <ChipRow className="-mx-1 px-1">
+                      {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>)}
+                    </ChipRow>
+                  </div>
+                  <div>
+                    <div className={fieldLabel}>{L('Foto', 'Photo')}</div>
+                    {draft.photoUrl ? (
+                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
+                        <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
+                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} strokeWidth={2.2} /></button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0]); }} disabled={photoBusy} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60">
+                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" strokeWidth={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
+                          : (<><Upload size={20} className="text-primary" strokeWidth={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
+                      </button>
+                    )}
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f); }} />
+                  </div>
+                  <div>
+                    <div className={fieldLabel}>{L('Etiquetas', 'Badges')}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {BADGES.map((t) => { const on = draft.badges.includes(t); return <button key={t} onClick={() => upD({ badges: on ? draft.badges.filter((x) => x !== t) : [...draft.badges, t] })} className={chip(on)}>{tagLabel(t, L)}</button>; })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {wizStep === 1 && (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
+                    <div className="flex-1">
+                      <div className={fieldLabel}>{L('Precio', 'Price')} *</div>
+                      <div className="flex items-center rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
+                        <span className="text-[13px] font-bold text-muted-2">$</span>
+                        <input value={draft.price} onChange={(e) => upD({ price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="0.00" className="w-full bg-transparent px-2 py-3 text-[13px] font-semibold text-ink outline-none" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className={fieldLabel}>{L('Precio de lista', 'Compare-at')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
+                      <div className="flex items-center rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
+                        <span className="text-[13px] font-bold text-muted-2">$</span>
+                        <input value={draft.compareAt} onChange={(e) => upD({ compareAt: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="0.00" className="w-full bg-transparent px-2 py-3 text-[13px] font-semibold text-ink outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-4 sm:flex-row">
+                    <div className="flex-1"><div className={fieldLabel}>SKU</div><input value={draft.sku} onChange={(e) => upD({ sku: e.target.value })} placeholder="ABC-001" className={inputCls} /></div>
+                    <div className="flex-1">
+                      <div className={fieldLabel}>{L('Categoría fiscal', 'Tax category')}</div>
+                      <ChipRow className="-mx-1 px-1">
+                        {([['prep', L('Preparada', 'Prepared')], ['goods', L('Empacado', 'Packaged')], ['exempt', L('Exento', 'Exempt')]] as [string, string][]).map(([k, lbl]) => <button key={k} onClick={() => upD({ tax: k })} className={chip(draft.tax === k)}>{lbl}</button>)}
+                      </ChipRow>
+                    </div>
+                  </div>
+                  {draft.compareAt && Number(draft.compareAt) > Number(draft.price) && (
+                    <div className="rounded-field bg-pink-bg px-3 py-2 text-[10.5px] font-semibold text-pink-dark">{L('Se mostrará como oferta', 'Will show as a sale')} · −{Math.round((1 - Number(draft.price) / Number(draft.compareAt)) * 100)}%</div>
+                  )}
+                </div>
+              )}
+
+              {wizStep === 2 && (
+                <div className="flex flex-col gap-2.5">
+                  <div className="text-[11px] font-medium leading-relaxed text-muted">{L('Conjuntos de opciones reutilizables (talla, color…). Sus combinaciones son variantes vendibles. Opcional.', 'Reusable option sets (size, color…). Their combinations are sellable variants. Optional.')}</div>
+                  {cfg.optionSets.length === 0 && (
+                    <div className="rounded-field border-[1.5px] border-dashed border-lilac-line bg-app px-4 py-5 text-center text-[12px] font-semibold text-muted">{L('Aún no tienes conjuntos de opciones.', "You don't have option sets yet.")}</div>
+                  )}
+                  {cfg.optionSets.map((o) => {
+                    const on = draft.options.includes(o.id);
+                    return (
+                      <button key={o.id} onClick={() => upD({ options: on ? draft.options.filter((x) => x !== o.id) : [...draft.options, o.id] })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
+                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Layers size={15} className="text-primary-dark" strokeWidth={2.2} /></span>
+                        <span className="min-w-0 flex-1 text-left"><span className="block text-[12.5px] font-extrabold text-ink">{L(o.es, o.en)}</span><span className="block text-[10px] font-semibold text-muted-2">{o.values.map((v) => L(v.es, v.en ?? v.es)).join(' · ')}</span></span>
+                        <span className="flex-none text-[10px] font-extrabold text-muted-2">{o.single ? L('variante', 'variant') : L('extra', 'add-on')}</span>
+                      </button>
+                    );
+                  })}
+                  {draft.options.length > 0 && (() => { const n = variantCount(draft.options, cfg.optionSets); return n > 0 ? <div className="rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-primary-dark">{n} {L('variantes vendibles', 'sellable variants')}</div> : null; })()}
+                  <button onClick={() => setOptSheet({ open: true, initial: null })} className="mt-1 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12px] font-extrabold text-primary-dark">+ {L('Nuevo conjunto', 'New option set')}</button>
+                </div>
+              )}
+
+              {wizStep === 3 && (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
+                    <div className="flex-1"><div className={fieldLabel}>{L('Cantidad en stock', 'Stock qty')}</div><input value={draft.stock} onChange={(e) => upD({ stock: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="0" className={inputCls} /></div>
+                    <div className="flex-1"><div className={fieldLabel}>{L('Reordenar en', 'Reorder at')}</div><input value={draft.reorder} onChange={(e) => upD({ reorder: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="10" className={inputCls} /></div>
+                  </div>
+                  <div>
+                    <div className={fieldLabel}>{L('Entrega', 'Fulfillment')}</div>
+                    <div className="flex flex-col gap-2">
+                      {([['ship', L('Envío', 'Shipping'), L('Transportista a domicilio', 'Carrier to address'), Truck], ['local', L('Entrega local', 'Local delivery'), L('Tus repartidores o apps', 'Your drivers or apps'), HardHat], ['pickup', L('Recoger', 'Pickup'), L('Recoger en tienda', 'In-store pickup'), Store]] as [string, string, string, LucideIcon][]).map(([k, lbl, subL, Icon]) => {
+                        const on = draft.fulfill === k;
+                        return (
+                          <button key={k} onClick={() => upD({ fulfill: k })} className={`flex items-center gap-3 rounded-btn-lg border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                            <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
+                            <Icon size={16} strokeWidth={2} className={on ? 'text-primary-dark' : 'text-muted-2'} />
+                            <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{lbl}</span><span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{subL}</span></span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button onClick={() => go('fulfillment')} className="mt-2 text-[11px] font-extrabold text-primary-dark">{L('Configurar zonas y envío →', 'Configure zones & shipping →')}</button>
+                  </div>
+                </div>
+              )}
+
+              {wizStep === 4 && (() => {
+                const editing = editingId != null;
+                const optNames = draft.options.map((id) => optSetOf(id)).filter(Boolean).map((o) => L(o!.es, o!.en));
+                const rows: [string, string, boolean, number][] = [
+                  [L('Nombre', 'Name'), draft.name || '—', !!draft.name, 0],
+                  [L('Categoría', 'Category'), catLabel(dc), true, 0],
+                  [L('Precio', 'Price'), draft.price ? money(Number(draft.price)) : '—', !!draft.price, 1],
+                  ['SKU', draft.sku || '—', !!draft.sku, 1],
+                  [L('Variantes', 'Variants'), optNames.length ? optNames.join(', ') : L('Ninguna', 'None'), true, 2],
+                  [L('Stock', 'Stock'), draft.stock || '0', true, 3],
+                ];
+                return (
+                  <div className="flex flex-col gap-4">
+                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#A7E3C0] bg-green-bg' : 'border-[#FDE68A] bg-amber-bg'}`}>
+                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
+                      <div className="min-w-0">
+                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
+                        <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá en tu tienda al instante.', "It'll appear in your shop instantly.") : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
+                      </div>
+                    </div>
+                    <div className="overflow-hidden rounded-btn-lg border border-hair">
+                      {rows.map((r, i, a) => (
+                        <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
+                          <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
+                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-faint'}`}>{r[1]}</span>
+                          <button onClick={() => setWizStep(r[3])} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
+                        </div>
+                      ))}
+                    </div>
+                    {editing && (
+                      <div>
+                        <div className={fieldLabel}>{L('Administrar producto', 'Manage product')}</div>
+                        <div className="flex gap-2.5">
+                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </ModulePage>
+        {editorSheets()}
+        <ConfirmDialog open={confirmDel} onClose={() => setConfirmDel(false)} onConfirm={() => { setConfirmDel(false); deleteEditing(); }} title={L('¿Eliminar producto?', 'Delete product?')} message={L(`“${draft.name || L('Este producto', 'This product')}” se quitará de tu tienda. Esta acción no se puede deshacer.`, `“${draft.name || 'This product'}” will be removed from your shop. This can’t be undone.`)} confirmLabel={L('Eliminar', 'Delete')} cancelLabel={L('Cancelar', 'Cancel')} />
+        <Toast msg={toast} />
+      </>
+    );
+  }
+
+  // ============================ MODULE ============================
+  function editorSheets() {
+    return (
+      <>
+        <ProductCategoryEditor open={catSheet.open} onClose={() => setCatSheet((s) => ({ ...s, open: false }))} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
+        <OptionSetEditor open={optSheet.open} onClose={() => setOptSheet((s) => ({ ...s, open: false }))} L={L} initial={optSheet.initial} usedCount={optSheet.initial ? optUsedBy(optSheet.initial.id) : 0} onSave={upsertOptionSet} onDelete={deleteOptionSet} />
+        <CollectionEditor open={collSheet.open} onClose={() => setCollSheet((s) => ({ ...s, open: false }))} L={L} initial={collSheet.initial} products={products.map((p) => ({ dbId: p.dbId, id: p.id, name: p.name }))} onSave={upsertCollection} onDelete={deleteCollection} />
+        <DiscountEditor open={discSheet.open} onClose={() => setDiscSheet((s) => ({ ...s, open: false }))} L={L} initial={discSheet.initial} onSave={upsertDiscount} onDelete={deleteDiscount} />
+      </>
+    );
+  }
+
+  // ---- catalog ----
   const filtered = useMemo(() => {
-    let list = cat === 'all' ? products : products.filter((p) => p.cat === cat);
+    let list = catFilter === 'all' ? products : products.filter((p) => p.cat === catFilter);
     const q = query.trim().toLowerCase();
     if (q) list = list.filter((p) => (p.name + ' ' + p.sku).toLowerCase().includes(q));
     return list;
-  }, [products, cat, query]);
+  }, [products, catFilter, query]);
+  const catFilters = [{ id: 'all', label: L('Todos', 'All') }, ...cfg.categories.filter((c) => products.some((p) => p.cat === c.id)).map((c) => ({ id: c.id, label: catLabel(c) }))];
 
-  const catFilters = [{ id: 'all', label: L('Todos', 'All') }, ...CATS.filter((c) => products.some((p) => p.cat === c.id)).map((c) => ({ id: c.id, label: L(c.es, c.en) }))];
-
-  const catalogView = (
-    <div className="flex flex-col gap-3.5">
-      {/* sell online vs catalog only */}
-      <div className={`rounded-card-sm border-[1.5px] bg-white p-3.5 ${sellOn ? 'border-primary/30' : 'border-hair'}`}>
-        <div className="flex items-center gap-3">
-          <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-btn ${sellOn ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
-            <CreditCard size={19} strokeWidth={2} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[13.5px] font-extrabold text-ink">{sellOn ? L('Venta en línea activa', 'Online sale active') : L('Solo catálogo', 'Catalog only')}</div>
-            <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">
-              {sellOn ? L('Vende con inventario, envío y checkout.', 'Sell with inventory, shipping & checkout.') : L('Muestra productos con precio, sin comprar.', 'Show products with prices, no checkout.')}
-            </div>
-          </div>
-          <Toggle on={sellOn} onClick={() => setSellOn((v) => !v)} />
+  const catalog = (
+    <div className="flex flex-col gap-4">
+      {/* MODE: display-only vs online selling */}
+      <div className={`${cardCls} p-3.5`}>
+        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CreditCard size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Modo de la tienda', 'Shop mode')}</div>
+        <div className="flex rounded-full bg-lilac-2 p-0.5">
+          <button onClick={() => { if (cfg.selling) { saveCfg({ ...cfg, selling: false }); flash(L('Tienda en modo Solo catálogo', 'Shop set to Catalog only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.selling ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo catálogo', 'Catalog only')}</button>
+          <button onClick={() => { if (!cfg.selling) { saveCfg({ ...cfg, selling: true }); flash(L('Tienda con venta en línea', 'Shop set to Online selling')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.selling ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Vender en línea', 'Sell online')}</button>
         </div>
+        <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
+          {cfg.selling
+            ? L('Tu listado muestra tus productos y los clientes pueden comprar en línea (carrito y checkout).', 'Your listing shows products and customers can buy online (cart & checkout).')
+            : L('Tu listado muestra tus productos y precios. Los clientes te llaman o visitan para comprar — sin checkout.', 'Your listing shows products & prices. Customers call or visit to buy — no checkout.')}
+        </p>
       </div>
 
       {/* search */}
       <div className="flex items-center gap-2.5 rounded-field border border-hair bg-white px-3 py-2.5">
         <Search size={15} strokeWidth={2.2} className="flex-none text-muted-2" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={L('Buscar productos…', 'Search products…')}
-          className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted-2"
-        />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L('Buscar productos…', 'Search products…')} className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted-2" />
       </div>
 
-      {/* category filters */}
-      <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
-        {catFilters.map((c) => (
-          <button key={c.id} onClick={() => setCat(c.id)} className={chip(cat === c.id)}>{c.label}</button>
-        ))}
-      </div>
+      {catFilters.length > 1 && (
+        <ChipRow className="-mx-1 px-1">
+          {catFilters.map((c) => <button key={c.id} onClick={() => setCatFilter(c.id)} className={chip(catFilter === c.id)}>{c.label}</button>)}
+        </ChipRow>
+      )}
 
-      {/* product cards */}
       {filtered.length === 0 ? (
-        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Ningún producto coincide con tu búsqueda.', 'No products match your search.')}</div>
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{products.length === 0 ? L('Aún no tienes productos — agrega el primero.', 'No products yet — add your first one.') : L('Ningún producto coincide con tu búsqueda.', 'No products match your search.')}</div>
       ) : (
-        <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
           {filtered.map((p) => {
             const [lab, pillCls] = stockPill(p.stock);
             return (
-              <button
-                key={p.id}
-                onClick={() => setSheet({ id: p.id, name: p.name, price: String(p.price), stock: String(p.stock), cat: p.cat })}
-                className={`flex cursor-pointer gap-3 rounded-card-sm border border-hair bg-white p-2.5 text-left transition-shadow hover:shadow-card-lg`}
-              >
-                <span className="h-[60px] w-[60px] flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${catOf(p.cat).tile})` }} />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-start justify-between gap-2">
-                    <span className="text-[13px] font-extrabold leading-tight text-ink">{p.name}</span>
-                    <span className="flex-none text-[13px] font-extrabold text-ink">{money(p.price)}</span>
+              <button key={p.id} onClick={() => startEdit(p)} className={`${cardCls} cursor-pointer p-3 text-left`}>
+                <div className="flex gap-3">
+                  <span className="relative h-[60px] w-[60px] flex-none overflow-hidden rounded-tile" style={{ background: stripe(catOf(p.cat).tile) }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {p.imageUrl && <img src={p.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                   </span>
-                  <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-md bg-lilac-2 px-2 py-0.5 text-[9.5px] font-bold text-ink-2">{L(catOf(p.cat).es, catOf(p.cat).en)}</span>
-                    <span className="text-[9.5px] font-semibold text-muted-2">SKU {p.sku}</span>
-                    {p.variants > 1 && <span className="rounded-md bg-lilac px-2 py-0.5 text-[9.5px] font-extrabold text-primary-dark">{p.variants} {L('variantes', 'variants')}</span>}
-                  </span>
-                  {sellOn && (
-                    <span className="mt-1.5 flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9.5px] font-extrabold ${pillCls}`}>
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        {p.stock === 0 ? lab : p.stock}
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{p.name}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                      <span className="flex flex-none items-center gap-1.5">
+                        {p.compareAt && p.compareAt > p.price && <span className="text-[11px] font-bold text-muted line-through">{money(p.compareAt)}</span>}
+                        <span className={`whitespace-nowrap text-[13.5px] font-extrabold ${p.compareAt && p.compareAt > p.price ? 'text-[#E0568F]' : 'text-ink'}`}>{money(p.price)}</span>
                       </span>
-                      <span className="text-[9.5px] font-semibold text-muted-2">{p.sales} {L('vendido', 'sold')}</span>
                     </span>
-                  )}
-                </span>
+                    <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{catLabel(catOf(p.cat))}{p.sku ? ` · ${p.sku}` : ''}</span>
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {cfg.selling && <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold ${pillCls}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{p.stock === 0 ? lab : p.stock}</span>}
+                      {p.options.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{variantCount(p.options, cfg.optionSets) || p.options.length} {L('variantes', 'variants')}</span>}
+                      {p.badges.map((t) => <span key={t} className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[9px] font-extrabold text-amber-ink">{tagLabel(t, L)}</span>)}
+                    </span>
+                  </span>
+                </div>
               </button>
             );
           })}
         </div>
       )}
 
-      <button onClick={startWizard} className="flex cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm xl:hidden">
-        <Plus size={16} strokeWidth={2.6} />{L('Agregar producto', 'Add product')}
-      </button>
+      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} strokeWidth={2.6} />{L('Nuevo producto', 'New product')}</button>
     </div>
   );
 
-  // ---------- inventory ----------
-  const invRaw = [
-    { name: 'Mermelada fresa · 6oz', sku: 'JAM-001', on: 42, reorder: 20, incoming: 0, st: 'ok', cat: 'pantry' },
-    { name: 'Libro de recetas', sku: 'BOOK-001', on: 12, reorder: 8, incoming: 24, st: 'ok', cat: 'books' },
-    { name: 'Tote de lona', sku: 'MRC-001', on: 84, reorder: 30, incoming: 0, st: 'ok', cat: 'merch' },
-    { name: 'Masa madre · 100g', sku: 'STR-001', on: 5, reorder: 15, incoming: 50, st: 'low', cat: 'baking' },
-    { name: 'Aceite de oliva · 500ml', sku: 'OIL-001', on: 0, reorder: 12, incoming: 36, st: 'out', cat: 'pantry' },
-    { name: 'Café en grano · 12oz', sku: 'COF-001', on: 62, reorder: 25, incoming: 0, st: 'ok', cat: 'coffee' },
-  ] as const;
-
-  const inventoryView = (
-    <div className="flex flex-col gap-3.5">
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className={`${cardCls} p-3`}>
-          <div className="text-[9px] font-bold text-muted-2">{L('Valor inv.', 'Inv. value')}</div>
-          <div className="mt-0.5 text-[16px] font-extrabold text-ink">$5,480</div>
-          <div className="text-[9px] font-extrabold text-muted-2">7 SKU</div>
-        </div>
-        <div className="rounded-card-sm border border-amber/40 bg-amber-bg p-3">
-          <div className="text-[9px] font-bold text-amber-ink">{L('Reabastecer', 'Reorder')}</div>
-          <div className="mt-0.5 text-[16px] font-extrabold text-ink">2</div>
-          <div className="text-[9px] font-extrabold text-amber-ink">⚠ {L('Bajo umbral', 'Below')}</div>
-        </div>
-        <div className={`${cardCls} p-3`}>
-          <div className="text-[9px] font-bold text-muted-2">{L('Entrante', 'Incoming')}</div>
-          <div className="mt-0.5 text-[16px] font-extrabold text-ink">110</div>
-          <div className="text-[9px] font-extrabold text-primary-dark">3 PO</div>
-        </div>
-      </div>
-      <div className={`${cardCls} overflow-hidden`}>
-        {invRaw.map((r, i) => {
-          const [lab, pillCls] = stockPill(r.st === 'out' ? 0 : r.st === 'low' ? 5 : 40);
-          const onC = r.st === 'out' ? 'text-pink-dark' : r.st === 'low' ? 'text-amber-ink' : 'text-ink';
+  // ---- categories ----
+  const categoriesTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3 text-[11.5px] font-medium leading-relaxed text-ink-3">{cfg.categories.length}{L(' categorías · toca para editar · reordena con las flechas · activa/desactiva para mostrar', ' categories · tap to edit · reorder with the arrows · toggle to show')}</div>
+      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+        {cfg.categories.map((c, i) => {
+          const Icon = prodCatIcon(c.icon); const n = countIn(c.id);
           return (
-            <div key={r.sku} className={`flex items-center gap-3 px-3.5 py-3 ${i < invRaw.length - 1 ? 'border-b border-hair' : ''}`}>
-              <span className="h-10 w-10 flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${catOf(r.cat).tile})` }} />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[12px] font-extrabold text-ink">{r.name}</div>
-                <div className="mt-0.5 text-[9.5px] font-semibold text-muted-2">
-                  SKU {r.sku} · {L('Reordenar en', 'Reorder at')} {r.reorder}
-                  {r.incoming > 0 && <span className="text-primary-dark"> · +{r.incoming} {L('entrante', 'incoming')}</span>}
+            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
+              <span className="flex flex-none flex-col">
+                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} strokeWidth={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} strokeWidth={2.6} /></button>
+              </span>
+              <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('producto', 'product') : L('productos', 'products')}</div>
                 </div>
-              </div>
-              <div className="flex-none text-right">
-                <div className={`text-[15px] font-extrabold ${onC}`}>{r.on}</div>
-                <span className={`mt-0.5 inline-block rounded-md px-1.5 py-px text-[8.5px] font-extrabold ${pillCls}`}>{lab}</span>
-              </div>
+              </button>
+              <Switch big on={c.visible} onClick={() => toggleCategory(c.id)} />
             </div>
           );
         })}
       </div>
+      <button onClick={() => setCatSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nueva categoría', 'New category')}</button>
     </div>
   );
 
-  // ---------- variants ----------
-  const grinds = [L('Grano entero', 'Whole bean'), 'Espresso', L('Filtro', 'Filter')];
-  const sizes = ['12 oz', '2 lb'];
-  const vPrice: Record<string, number> = { '12 oz': 19, '2 lb': 46 };
-  const vStock = [[40, 12], [14, 6], [8, 2]];
-  const variantRows = grinds.flatMap((g, gi) => sizes.map((s, si) => ({ name: `${g} · ${s}`, price: money(vPrice[s]), stock: vStock[gi][si] })));
-
-  const optionSet = (title: string, values: string[]) => (
-    <div className="mb-3 last:mb-0">
-      <div className="mb-1.5 text-[10.5px] font-extrabold text-ink-soft">{title} · {values.length}</div>
-      <div className="flex flex-wrap gap-1.5">
-        {values.map((v) => <span key={v} className="rounded-btn bg-lilac-2 px-2.5 py-1.5 text-[11px] font-bold text-ink-soft">{v}</span>)}
-        <span className="cursor-pointer rounded-btn border-[1.5px] border-dashed border-lilac-line px-2.5 py-1.5 text-[11px] font-extrabold text-primary-dark">+ {L('Valor', 'Value')}</span>
+  // ---- variants (option sets) ----
+  const variantsTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Layers size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{L('Conjuntos de opciones reutilizables', 'Reusable option sets')}</span><span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea talla/color una vez, úsalo en cualquier producto.', 'Build size/color once, use it on any product.')}</span></span>
       </div>
-    </div>
-  );
-
-  const variantsView = (
-    <div className="flex flex-col gap-3.5">
-      <div className="flex items-center gap-3 rounded-card-sm bg-lilac-2 p-3.5">
-        <Zap size={16} strokeWidth={2} className="flex-none text-primary-dark" />
-        <div>
-          <div className="text-[11.5px] font-extrabold text-ink">{L('Editando variantes', 'Editing variants')} · Café en grano</div>
-          <div className="mt-0.5 text-[10px] font-medium leading-snug text-ink-3">{L('Las opciones se combinan en variantes vendibles.', 'Options combine into sellable variants.')}</div>
+      {cfg.optionSets.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no hay conjuntos — crea el primero (ej. Talla, Color).', 'No option sets yet — create your first (e.g. Size, Color).')}</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+          {cfg.optionSets.map((o) => {
+            const used = optUsedBy(o.id); const n = variantCount([o.id], cfg.optionSets);
+            return (
+              <button key={o.id} onClick={() => setOptSheet({ open: true, initial: o })} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Layers size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(o.es, o.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="mt-0.5 block truncate text-[10.5px] font-semibold text-ink-3">{o.values.map((v) => L(v.es, v.en ?? v.es)).join(' · ')}</span>
+                  <span className="mt-1 block text-[10px] font-semibold text-muted-2">{o.single ? `${n} ${L('variantes', 'variants')}` : L('extras', 'add-ons')} · {used} {used === 1 ? L('producto', 'product') : L('productos', 'products')}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
-      </div>
-      <div>
-        <div className="mb-2 px-0.5 text-[12px] font-extrabold text-ink">{L('Conjuntos de opciones', 'Option sets')}</div>
-        <div className={`${cardCls} p-3.5`}>
-          {optionSet(L('Molienda', 'Grind'), grinds)}
-          {optionSet(L('Tamaño', 'Size'), sizes)}
-        </div>
-      </div>
-      <div className="flex items-center justify-between px-0.5">
-        <span className="text-[12px] font-extrabold text-ink">{L('Variantes', 'Variants')} <span className="text-muted-2">{variantRows.length}</span></span>
-        <span className="text-[10px] font-semibold text-muted-2">{grinds.length} × {sizes.length}</span>
-      </div>
-      <div className={`${cardCls} overflow-hidden`}>
-        {variantRows.map((v, i) => (
-          <div key={v.name} className={`flex items-center gap-2.5 px-3.5 py-3 ${i < variantRows.length - 1 ? 'border-b border-hair' : ''}`}>
-            <span className="flex-1 text-[12px] font-semibold text-ink">{v.name}</span>
-            <span className="text-[12.5px] font-extrabold text-ink">{v.price}</span>
-            <span className={`w-9 text-right text-[11px] font-bold ${v.stock < 10 ? 'text-amber-ink' : 'text-ink'}`}>{v.stock}</span>
-          </div>
-        ))}
-      </div>
+      )}
+      <button onClick={() => setOptSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nuevo conjunto', 'New option set')}</button>
     </div>
   );
 
-  // ---------- collections ----------
-  const collRaw = [
-    { es: 'Sets de regalo', en: 'Gift sets', n: 6, tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', dEs: 'Paquetes curados de temporada', dEn: 'Curated seasonal bundles' },
-    { es: 'Básicos de despensa', en: 'Pantry staples', n: 12, tile: '#F3D9C8 0 8px,#E8C3AC 8px 16px', dEs: 'Mermeladas, aceites, miel, sal', dEn: 'Jams, oils, honey, salt' },
-    { es: 'Kit de repostería', en: 'Home baking kit', n: 8, tile: '#F3E2CE 0 8px,#ECD3B4 8px 16px', dEs: 'Masa madre, canasta, harina', dEn: 'Starter, banneton, flour' },
-    { es: 'Programa de café', en: 'Coffee program', n: 5, tile: '#EDE0D4 0 8px,#DFCBB6 8px 16px', dEs: 'Granos, equipo, suscripciones', dEn: 'Beans, gear, subscriptions' },
-  ];
-
-  const collectionsView = (
-    <div className="flex flex-col gap-3.5">
-      <div className="px-0.5 text-[11.5px] font-medium leading-snug text-ink-2">{L('Agrupa productos en colecciones. Destaca algunas en tu listado.', 'Group products into collections. Feature some on your listing.')}</div>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        {collRaw.map((c, i) => {
-          const on = collState[i];
-          return (
-            <div key={c.es} className={`${cardCls} overflow-hidden`}>
-              <div className="relative h-[70px]" style={{ background: `repeating-linear-gradient(135deg,${c.tile})` }}>
-                {on && <span className="absolute left-2.5 top-2.5 rounded-md bg-ink px-2 py-0.5 text-[9px] font-extrabold text-white">★ {L('Destacada', 'Featured')}</span>}
-                <span className="absolute bottom-2.5 right-2.5 rounded-md bg-ink/50 px-2 py-0.5 text-[9.5px] font-bold text-white">{c.n} {L('artículos', 'items')}</span>
+  // ---- collections ----
+  const collectionsTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3 text-[11.5px] font-medium leading-relaxed text-ink-3">{L('Agrupa productos en colecciones. Destaca algunas como franjas en tu tienda.', 'Group products into collections. Feature some as strips on your shop.')}</div>
+      {cfg.collections.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no hay colecciones — crea la primera (ej. Sets de regalo).', 'No collections yet — create your first (e.g. Gift sets).')}</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {cfg.collections.map((c) => (
+            <button key={c.id} onClick={() => setCollSheet({ open: true, initial: c })} className={`cursor-pointer overflow-hidden text-left ${cardCls}`}>
+              <div className="relative h-[70px]" style={{ background: stripe(c.tile) }}>
+                {c.featured && <span className="absolute left-2.5 top-2.5 rounded-md bg-ink px-2 py-0.5 text-[9px] font-extrabold text-white">★ {L('Destacada', 'Featured')}</span>}
+                <span className="absolute bottom-2.5 right-2.5 rounded-md bg-ink/50 px-2 py-0.5 text-[9.5px] font-bold text-white">{c.productIds.length} {L('artículos', 'items')}</span>
               </div>
               <div className="flex items-center gap-2.5 p-3">
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</div>
-                  <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{L(c.dEs, c.dEn)}</div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></div>
+                  {(c.descEs || c.descEn) && <div className="mt-0.5 truncate text-[10.5px] font-medium text-muted-2">{L(c.descEs ?? '', c.descEn ?? '')}</div>}
                 </div>
-                <Toggle on={on} onClick={() => setCollState((s) => ({ ...s, [i]: !on }))} />
               </div>
-            </div>
-          );
-        })}
-      </div>
-      <button onClick={() => flash(L('Nueva colección creada', 'New collection created'))} className={dashBtn}>+ {L('Nueva colección', 'New collection')}</button>
-    </div>
-  );
-
-  // ---------- discounts ----------
-  const discRaw = [
-    { code: 'WELCOME15', val: '15%', iconCls: 'bg-lilac text-primary-dark', cEs: 'Primer pedido', cEn: 'First order', used: 248, auto: false, ended: false },
-    { code: 'FREESHIP75', val: '🚚', iconCls: 'bg-blue-bg text-blue', cEs: 'Pedidos sobre $75', cEn: 'Orders over $75', used: 412, auto: true, ended: false },
-    { code: 'GIFT10', val: '$10', iconCls: 'bg-green-bg text-green-dark', cEs: 'Sets de regalo · fiestas', cEn: 'Gift sets · holiday', used: 64, auto: false, ended: false },
-    { code: 'LOCAL20', val: '20%', iconCls: 'bg-amber-bg text-amber-ink', cEs: 'Recoger · ZIP local', cEn: 'Pickup · local ZIP', used: 90, auto: false, ended: false },
-    { code: 'SUMMER', val: '10%', iconCls: 'bg-lilac-2 text-muted-2', cEs: 'Terminó 30 sep', cEn: 'Ended Sep 30', used: 520, auto: false, ended: true },
-  ];
-
-  const discountsView = (
-    <div className="flex flex-col gap-3.5">
-      <div className="grid grid-cols-3 gap-2.5">
-        {[
-          { l: L('Códigos', 'Active codes'), v: '4', d: null },
-          { l: L('Canjes 30d', 'Redeems 30d'), v: '814', d: '▲ 16%' },
-          { l: L('Otorgado', 'Given 30d'), v: '$4.2k', d: null },
-        ].map((s) => (
-          <div key={s.l} className={`${cardCls} p-3`}>
-            <div className="text-[9px] font-bold text-muted-2">{s.l}</div>
-            <div className="mt-0.5 text-[18px] font-extrabold text-ink">{s.v}</div>
-            {s.d && <div className="text-[9px] font-extrabold text-green">{s.d}</div>}
-          </div>
-        ))}
-      </div>
-      <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        {discRaw.map((d) => (
-          <div key={d.code} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 ${d.ended ? 'opacity-60' : ''}`}>
-            <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-btn text-[13px] font-extrabold ${d.iconCls}`}>{d.val}</span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-[12.5px] font-extrabold text-ink">{d.code}</span>
-                {d.auto && <span className="rounded bg-lilac px-1.5 py-px text-[8px] font-extrabold text-primary-dark">{L('Auto', 'Auto')}</span>}
-              </div>
-              <div className="mt-0.5 text-[10px] font-medium text-muted-2">{L(d.cEs, d.cEn)} · {d.used} {L('usos', 'used')}</div>
-            </div>
-            <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${d.ended ? 'bg-lilac-2 text-muted-2' : 'bg-green-bg text-green-dark'}`}>{d.ended ? L('Terminó', 'Ended') : L('Activo', 'Active')}</span>
-          </div>
-        ))}
-      </div>
-      <button onClick={() => flash(L('Nuevo descuento creado', 'New discount created'))} className={dashBtn}>+ {L('Nuevo descuento', 'New discount')}</button>
-    </div>
-  );
-
-  // ---------- wizard ----------
-  const dCat = catOf(draft.cat);
-  const wizStepDefs: [string, string][] = [
-    [L('Detalles', 'Details'), L('Detalles del producto', 'Product details')],
-    [L('Precio', 'Pricing'), L('Precio y SKU', 'Pricing & SKU')],
-    [L('Inventario', 'Inventory'), L('Inventario y cumplimiento', 'Inventory & fulfillment')],
-    [L('Revisar', 'Review'), L('Revisar y publicar', 'Review & publish')],
-  ];
-  const upD = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
-  const pReady = !!draft.name && !!draft.price;
-
-  function startWizard() {
-    setDraft(newDraft());
-    setWizStep(0);
-    setWizMax(0);
-    setView('wizard');
-  }
-  // Turn the wizard draft into a real product (adds to the catalog + persists).
-  const addProductFromDraft = () => {
-    const p: Product = {
-      id: nextProdId(),
-      name: draft.name.trim() || L('Nuevo producto', 'New product'),
-      sku: draft.sku,
-      price: Number(draft.price) || 0,
-      stock: Number(draft.stock) || 0,
-      cat: draft.cat,
-      variants: draft.variants ? 1 : 0,
-      sales: '$0',
-    };
-    setProducts((ps) => [p, ...ps]);
-    persistNewProd(p);
-  };
-  const wizNext = () => {
-    if (wizStep >= wizStepDefs.length - 1) { addProductFromDraft(); setView('success'); return; }
-    const n = wizStep + 1;
-    setWizStep(n);
-    setWizMax((m) => Math.max(m, n));
-  };
-  const wizBack = () => {
-    if (wizStep === 0) { setView('module'); return; }
-    setWizStep((s) => s - 1);
-  };
-
-  const fieldCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2 focus:border-primary';
-  const fieldLabel = 'mb-1.5 block text-[11px] font-extrabold text-ink-soft';
-  const miniChip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3 py-1.5 text-[11.5px] ${on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-soft'}`;
-
-  const fulfillDefs: [string, string, string, typeof Truck][] = [
-    ['ship', L('Envío', 'Shipping'), L('Transportista a domicilio', 'Carrier to address'), Truck],
-    ['local', L('Entrega local', 'Local delivery'), L('Tus repartidores o apps', 'Your drivers or apps'), HardHat],
-    ['pickup', L('Recoger', 'Pickup'), L('Recoger en tienda', 'In-store pickup'), Store],
-  ];
-  const taxDefs: [string, string][] = [['prep', L('Comida preparada', 'Prepared food')], ['goods', L('Empacado', 'Packaged')], ['exempt', L('Exento', 'Exempt')]];
-
-  const wizardPreview = (
-    <div className={`${cardCls} overflow-hidden`}>
-      <div className="h-24" style={{ background: `repeating-linear-gradient(135deg,${dCat.tile})` }} />
-      <div className="flex items-start justify-between gap-2.5 p-3">
-        <div className="min-w-0">
-          <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del producto', 'Product name')}</div>
-          <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{L(dCat.es, dCat.en)}</div>
-        </div>
-        <span className="flex-none text-[14px] font-extrabold text-ink">{draft.price ? '$' + draft.price : '$0.00'}</span>
-      </div>
-    </div>
-  );
-
-  const wizardBody = (
-    <div className={`${cardCls} p-4`}>
-      <div className="mb-3.5 text-[13.5px] font-extrabold text-ink">{wizStepDefs[wizStep][1]}</div>
-      {wizStep === 0 && (
-        <div className="flex flex-col gap-3.5">
-          <div>
-            <label className={fieldLabel}>{L('Nombre del producto', 'Product name')} *</label>
-            <input value={draft.name} onChange={(e) => upD({ name: e.target.value })} placeholder={L('Ej. Mermelada de fresa', 'e.g. Strawberry jam')} className={fieldCls} />
-          </div>
-          <div>
-            <label className={fieldLabel}>{L('Descripción', 'Description')}</label>
-            <textarea value={draft.desc} onChange={(e) => upD({ desc: e.target.value })} placeholder={L('Detalles, materiales, tamaño…', 'Details, materials, size…')} rows={2} className={`${fieldCls} resize-none`} />
-          </div>
-          <div>
-            <label className={fieldLabel}>{L('Categoría', 'Category')} *</label>
-            <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
-              {CATS.map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={miniChip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
-            </div>
-          </div>
-          <div>
-            <label className={fieldLabel}>{L('Fotos', 'Photos')}</label>
-            <button onClick={() => upD({ photo: !draft.photo })} className="relative flex h-28 w-full flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-lilac-3">
-              {draft.photo && <span className="absolute inset-0" style={{ background: `repeating-linear-gradient(135deg,${dCat.tile})` }} />}
-              {!draft.photo && <><Upload size={20} strokeWidth={2} className="text-primary" /><span className="text-[12px] font-bold text-ink-soft">{L('Toca para subir', 'Tap to upload')}</span></>}
             </button>
-          </div>
-        </div>
-      )}
-      {wizStep === 1 && (
-        <div className="flex flex-col gap-3.5">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className={fieldLabel}>{L('Precio', 'Price')} *</label>
-              <div className="flex items-center rounded-field border-[1.5px] border-lilac-line px-3 focus-within:border-primary">
-                <span className="text-[13px] font-bold text-muted-2">$</span>
-                <input value={draft.price} onChange={(e) => upD({ price: e.target.value })} placeholder="0.00" inputMode="decimal" className="min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[13px] font-semibold text-ink outline-none" />
-              </div>
-            </div>
-            <div className="flex-1">
-              <label className={fieldLabel}>SKU</label>
-              <input value={draft.sku} onChange={(e) => upD({ sku: e.target.value })} placeholder="ABC-001" className={fieldCls} />
-            </div>
-          </div>
-          <div>
-            <label className={fieldLabel}>{L('Categoría fiscal', 'Tax category')}</label>
-            <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
-              {taxDefs.map(([id, lab]) => <button key={id} onClick={() => upD({ tax: id })} className={miniChip(draft.tax === id)}>{lab}</button>)}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-field border border-hair bg-lilac-3 p-3">
-            <div className="flex-1">
-              <div className="text-[12.5px] font-bold text-ink">{L('¿Tiene variantes?', 'Has variants?')}</div>
-              <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L('Tamaños, colores, sabores…', 'Sizes, colors, flavors…')}</div>
-            </div>
-            <Toggle on={draft.variants} onClick={() => upD({ variants: !draft.variants })} />
-          </div>
-        </div>
-      )}
-      {wizStep === 2 && (
-        <div className="flex flex-col gap-3.5">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className={fieldLabel}>{L('Cantidad', 'Stock qty')}</label>
-              <input value={draft.stock} onChange={(e) => upD({ stock: e.target.value })} placeholder="0" inputMode="numeric" className={fieldCls} />
-            </div>
-            <div className="flex-1">
-              <label className={fieldLabel}>{L('Reordenar en', 'Reorder at')}</label>
-              <input value={draft.reorder} onChange={(e) => upD({ reorder: e.target.value })} placeholder="10" inputMode="numeric" className={fieldCls} />
-            </div>
-          </div>
-          <div>
-            <label className={fieldLabel}>{L('Cumplimiento', 'Fulfillment')}</label>
-            <div className="flex flex-col gap-2">
-              {fulfillDefs.map(([id, lab, sub, Icon]) => {
-                const on = draft.fulfill === id;
-                return (
-                  <button key={id} onClick={() => upD({ fulfill: id })} className={`flex items-center gap-3 rounded-field border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                    <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} strokeWidth={3.4} className="text-white" />}</span>
-                    <Icon size={16} strokeWidth={2} className={on ? 'text-primary-dark' : 'text-muted-2'} />
-                    <span className="flex-1">
-                      <span className="block text-[12px] font-extrabold text-ink">{lab}</span>
-                      <span className="block text-[10px] font-semibold text-muted-2">{sub}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-      {wizStep === 3 && (
-        <div className="flex flex-col gap-3.5">
-          <div className={`flex items-center gap-3 rounded-field border p-3 ${pReady ? 'border-green/40 bg-green-bg' : 'border-amber/40 bg-amber-bg'}`}>
-            <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-btn bg-white text-[14px] font-extrabold ${pReady ? 'text-green-dark' : 'text-amber-ink'}`}>{pReady ? '✓' : '⚠'}</span>
-            <div className="flex-1">
-              <div className={`text-[12px] font-extrabold ${pReady ? 'text-green-dark' : 'text-amber-ink'}`}>{pReady ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing')}</div>
-              <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{pReady ? L('Aparecerá en tu tienda al instante.', 'It’ll appear in your shop instantly.') : L('Agrega nombre y precio antes de publicar.', 'Add a name and price before publishing.')}</div>
-            </div>
-          </div>
-          <div className={`${cardCls} overflow-hidden`}>
-            {([
-              [L('Nombre', 'Name'), draft.name || '—', !!draft.name, 0],
-              [L('Categoría', 'Category'), L(dCat.es, dCat.en), true, 0],
-              [L('Precio', 'Price'), draft.price ? '$' + draft.price : '—', !!draft.price, 1],
-              ['SKU', draft.sku || '—', !!draft.sku, 1],
-              [L('Cumplimiento', 'Fulfillment'), ({ ship: L('Envío', 'Shipping'), local: L('Entrega local', 'Local delivery'), pickup: L('Recoger', 'Pickup') } as Record<string, string>)[draft.fulfill], true, 2],
-            ] as [string, string, boolean, number][]).map((r, i, a) => (
-              <div key={r[0]} className={`flex items-center gap-2.5 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
-                <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
-                <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-faint'}`}>{r[1]}</span>
-                <button onClick={() => setWizStep(r[3])} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const wizardPage = (
-    <ModulePage
-      title={L('Agregar producto', 'Add product')}
-      subtitle={`${L(dCat.es, dCat.en)} · ${L('Paso', 'Step')} ${wizStep + 1}/${wizStepDefs.length}`}
-      onBack={() => setView('module')}
-      backLabel={L('Cancelar', 'Cancel')}
-      maxW={940}
-      footer={
-        <div className="flex items-center gap-3">
-          <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">
-            {wizStep === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
-          </button>
-          <button onClick={wizNext} className="flex-1 cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm">
-            {wizStep >= wizStepDefs.length - 1 ? L('Publicar producto', 'Publish product') : L('Continuar', 'Continue')}
-          </button>
-        </div>
-      }
-    >
-      {/* step chips */}
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
-        {wizStepDefs.map(([lab], i) => {
-          const active = wizStep === i;
-          const done = i < wizStep || (i <= wizMax && i !== wizStep);
-          return (
-            <button key={lab} onClick={() => { if (i <= wizMax) setWizStep(i); }} className={`flex flex-none cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
-              <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-lilac-line'}`}>{done ? '✓' : i + 1}</span>
-              {lab}
-            </button>
-          );
-        })}
-      </div>
-      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
-        <div className="flex flex-col gap-4 xl:sticky xl:top-0 xl:self-start">{wizardPreview}</div>
-        {wizardBody}
-      </div>
-    </ModulePage>
-  );
-
-  // ---------- success ----------
-  const successPage = (
-    <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setProdTab('catalog'); }}>
-      <div className="flex flex-col items-center pb-4 pt-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-card-sm bg-green-bg text-green"><Check size={32} strokeWidth={2.6} /></div>
-        <div className="mt-3.5 text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo producto', 'New product'))} {L('está activo', 'is live')}</div>
-        <div className="mt-2 max-w-[320px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en tu tienda en línea.', 'It now appears in your online shop.')}</div>
-        <div className={`mt-5 w-full max-w-[440px] overflow-hidden text-left ${cardCls}`}>
-          <div className="h-[104px]" style={{ background: `repeating-linear-gradient(135deg,${dCat.tile})` }} />
-          <div className="flex items-center justify-between p-3">
-            <div className="min-w-0">
-              <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo producto', 'New product')}</div>
-              <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{L(dCat.es, dCat.en)} · {draft.price ? '$' + draft.price : '$0.00'}</div>
-            </div>
-            <span className="flex-none rounded-btn bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Activo', 'Live')}</span>
-          </div>
-        </div>
-        <div className="mt-5 flex w-full max-w-[440px] flex-col gap-2.5">
-          <button onClick={startWizard} className="cursor-pointer rounded-btn bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm">+ {L('Agregar otro producto', 'Add another product')}</button>
-          <button onClick={() => { setView('module'); setProdTab('catalog'); }} className="cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a productos', 'Back to products')}</button>
-        </div>
-      </div>
-    </ModulePage>
-  );
-
-  // ---------- edit product (full page) ----------
-  const saveSheet = () => {
-    if (!sheet) return;
-    setProducts((ps) => {
-      const next = ps.map((p) => (p.id === sheet.id ? { ...p, name: sheet.name, price: Number(sheet.price) || p.price, stock: Number(sheet.stock) || 0 } : p));
-      persistProdPatch(next.find((p) => p.id === sheet.id));
-      return next;
-    });
-    setSheet(null);
-    flash(L('Guardado · tienda actualizada', 'Saved · shop updated'));
-  };
-  const deleteSheet = () => {
-    if (!sheet) return;
-    const target = products.find((p) => p.id === sheet.id);
-    setProducts((ps) => ps.filter((p) => p.id !== sheet.id));
-    if (persistable && target?.dbId) deleteBizItem(target.dbId);
-    setSheet(null);
-    flash(L('Producto eliminado', 'Product deleted'));
-  };
-
-  const editPage = sheet && (
-    <ModulePage
-      title={L('Editar producto', 'Edit product')}
-      subtitle={L(catOf(sheet.cat).es, catOf(sheet.cat).en)}
-      onBack={() => setSheet(null)}
-      footer={
-        <div className="flex gap-2.5">
-          <button onClick={deleteSheet} className="cursor-pointer rounded-btn border-[1.5px] border-pink/40 bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
-          <button onClick={saveSheet} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar cambios', 'Save changes')}</button>
-        </div>
-      }
-    >
-      <div className="flex flex-col gap-3.5">
-        <div className="h-28 overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${catOf(sheet.cat).tile})` }} />
-        <div>
-          <label className={fieldLabel}>{L('Nombre del producto', 'Product name')}</label>
-          <input value={sheet.name} onChange={(e) => setSheet({ ...sheet, name: e.target.value })} className={fieldCls} />
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className={fieldLabel}>{L('Precio', 'Price')}</label>
-            <input value={sheet.price} onChange={(e) => setSheet({ ...sheet, price: e.target.value })} inputMode="decimal" className={fieldCls} />
-          </div>
-          <div className="flex-1">
-            <label className={fieldLabel}>{L('Cantidad', 'Stock qty')}</label>
-            <input value={sheet.stock} onChange={(e) => setSheet({ ...sheet, stock: e.target.value })} inputMode="numeric" className={fieldCls} />
-          </div>
-        </div>
-      </div>
-    </ModulePage>
-  );
-
-  // ---------- module body (sub-tabs + content) ----------
-  const prodSub: [ProdTab, string, typeof Boxes][] = [
-    ['catalog', L('Catálogo', 'Catalog'), Package],
-    ['inventory', L('Inventario', 'Inventory'), Boxes],
-    ['variants', L('Variantes', 'Variants'), Layers],
-    ['collections', L('Colecciones', 'Collections'), Tag],
-    ['discounts', L('Descuentos', 'Discounts'), Percent],
-  ];
-
-  const content =
-    prodTab === 'catalog' ? catalogView
-      : prodTab === 'inventory' ? inventoryView
-        : prodTab === 'variants' ? variantsView
-          : prodTab === 'collections' ? collectionsView
-            : discountsView;
-
-  // contextual sticky side rail (desktop material)
-  const railLinks = (rows: { Icon: typeof Route; cls: string; title: string; sub: string; right?: string; onClick: () => void }[]) => (
-    <div className={`${cardCls} p-4`}>
-      <div className="mb-3 text-[13px] font-extrabold text-ink">{L('Envío y entrega', 'Shipping & delivery')}</div>
-      <div className="flex flex-col gap-2.5">
-        {rows.map((r) => (
-          <button key={r.title} onClick={r.onClick} className="flex items-center gap-2.5 text-left">
-            <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-btn ${r.cls}`}><r.Icon size={16} strokeWidth={2.2} /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[12px] font-extrabold text-ink">{r.title}</span>
-              <span className="block text-[10.5px] font-semibold text-muted-2">{r.sub}</span>
-            </span>
-            <span className="text-[13px] font-extrabold text-muted-2">{r.right ?? '›'}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  const rail = (
-    <div className="flex flex-col gap-4 xl:sticky xl:top-[74px] xl:self-start">
-      <div className={`${cardCls} p-4`}>
-        <div className="mb-0.5 text-[13px] font-extrabold text-ink">{L('Resumen de tienda', 'Shop summary')}</div>
-        <div className="mb-3 flex items-center gap-1.5 text-[10.5px] font-semibold text-muted-2">
-          <span className="flex h-4 w-4 items-center justify-center rounded bg-lilac text-[7px] font-extrabold text-primary-dark">{ci.initials}</span>
-          {ci.name}
-        </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          {([[L('Productos', 'Products'), '7'], [L('En stock', 'In stock'), '5'], [L('Valor inv.', 'Inv. value'), '$5.4k'], [L('Ventas 30d', 'Sales 30d'), '$9.6k']] as [string, string][]).map(([l, v]) => (
-            <div key={l} className="rounded-btn-lg bg-app p-3">
-              <div className="text-[10px] font-bold text-muted-2">{l}</div>
-              <div className="mt-0.5 text-[17px] font-extrabold text-ink">{v}</div>
-            </div>
           ))}
         </div>
-      </div>
-      {railLinks([
-        { Icon: MapPin, cls: 'bg-green-bg text-green-dark', title: L('Entrega local', 'Local delivery'), sub: L('Zonas y repartidores', 'Zones & drivers'), onClick: () => go('fulfillment') },
-        { Icon: Truck, cls: 'bg-blue-bg text-blue', title: L('Envío nacional', 'National shipping'), sub: 'USPS · UPS · FedEx', onClick: () => go('fulfillment') },
-      ])}
+      )}
+      <button onClick={() => setCollSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nueva colección', 'New collection')}</button>
     </div>
   );
 
-  // Edit / create flows take over the screen as full pages (no cramped popups).
-  if (view === 'wizard') return <>{wizardPage}<Toast msg={toast} /></>;
-  if (view === 'success') return <>{successPage}<Toast msg={toast} /></>;
-  if (editPage) return <>{editPage}<Toast msg={toast} /></>;
+  // ---- discounts ----
+  const activeDisc = cfg.discounts.filter((d) => d.status === 'active').length;
+  const discountsTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3.5 grid grid-cols-3 gap-2.5">
+        {([[L('Activos', 'Active'), String(activeDisc)], [L('Total', 'Total'), String(cfg.discounts.length)], [L('Automáticos', 'Automatic'), String(cfg.discounts.filter((d) => d.auto).length)]] as [string, string][]).map(([l, v]) => (
+          <div key={l} className={`${cardCls} p-3`}><div className="text-[9px] font-bold text-muted-2">{l}</div><div className="mt-0.5 text-[18px] font-extrabold text-ink">{v}</div></div>
+        ))}
+      </div>
+      {cfg.discounts.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no hay descuentos — crea el primero (ej. WELCOME15).', 'No discounts yet — create your first (e.g. WELCOME15).')}</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+          {cfg.discounts.map((d) => {
+            const val = d.type === 'percent' ? `${d.value ?? 0}%` : d.type === 'amount' ? `$${d.value ?? 0}` : d.type === 'shipping' ? '🚚' : '2×1';
+            const paused = d.status === 'paused';
+            return (
+              <div key={d.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${paused ? 'opacity-60' : ''}`}>
+                <button onClick={() => setDiscSheet({ open: true, initial: d })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-lilac text-[13px] font-extrabold text-primary-dark">{val}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5"><span className="truncate font-mono text-[12.5px] font-extrabold text-ink">{d.code}</span>{d.auto && <span className="rounded bg-lilac px-1.5 py-px text-[8px] font-extrabold text-primary-dark">{L('Auto', 'Auto')}</span>}<Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></div>
+                    <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{L(d.descEs, d.descEn)}</div>
+                  </div>
+                </button>
+                <button onClick={() => toggleDiscount(d.id)} className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${paused ? 'bg-lilac-2 text-muted-2' : 'bg-green-bg text-green-dark'}`}>{paused ? L('Pausado', 'Paused') : L('Activo', 'Active')}</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <button onClick={() => setDiscSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nuevo descuento', 'New discount')}</button>
+    </div>
+  );
+
+  // ---- inventory (real, from the catalog) ----
+  const invValue = products.reduce((n, p) => n + p.price * p.stock, 0);
+  const lowCount = products.filter((p) => p.stock > 0 && p.stock <= (p.reorder || 8)).length;
+  const outCount = products.filter((p) => p.stock === 0).length;
+  const inventoryTab = (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-3 gap-2.5">
+        <div className={`${cardCls} p-3`}><div className="text-[9px] font-bold text-muted-2">{L('Valor inv.', 'Inv. value')}</div><div className="mt-0.5 text-[16px] font-extrabold text-ink">{money(invValue)}</div><div className="text-[9px] font-extrabold text-muted-2">{products.length} SKU</div></div>
+        <div className="rounded-card-sm border border-amber/40 bg-amber-bg p-3"><div className="text-[9px] font-bold text-amber-ink">{L('Reabastecer', 'Reorder')}</div><div className="mt-0.5 text-[16px] font-extrabold text-ink">{lowCount}</div><div className="text-[9px] font-extrabold text-amber-ink">⚠ {L('Bajo umbral', 'Below')}</div></div>
+        <div className="rounded-card-sm border border-pink-bg bg-pink-bg p-3"><div className="text-[9px] font-bold text-pink-dark">{L('Agotados', 'Out')}</div><div className="mt-0.5 text-[16px] font-extrabold text-ink">{outCount}</div><div className="text-[9px] font-extrabold text-pink-dark">{L('Sin stock', 'No stock')}</div></div>
+      </div>
+      {products.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Agrega productos para ver tu inventario.', 'Add products to see your inventory.')}</div>
+      ) : (
+        <div className={`${cardCls} overflow-hidden`}>
+          {products.map((p, i) => {
+            const [lab, pillCls] = stockPill(p.stock);
+            const onC = p.stock === 0 ? 'text-pink-dark' : p.stock <= (p.reorder || 8) ? 'text-amber-ink' : 'text-ink';
+            return (
+              <button key={p.id} onClick={() => startEdit(p)} className={`flex w-full cursor-pointer items-center gap-3 px-3.5 py-3 text-left ${i < products.length - 1 ? 'border-b border-hair' : ''}`}>
+                <span className="relative h-10 w-10 flex-none overflow-hidden rounded-tile" style={{ background: stripe(catOf(p.cat).tile) }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {p.imageUrl && <img src={p.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[12px] font-extrabold text-ink">{p.name}</div>
+                  <div className="mt-0.5 text-[9.5px] font-semibold text-muted-2">{p.sku ? `SKU ${p.sku} · ` : ''}{L('Reordenar en', 'Reorder at')} {p.reorder || 0}</div>
+                </div>
+                <div className="flex-none text-right">
+                  <div className={`text-[15px] font-extrabold ${onC}`}>{p.stock}</div>
+                  <span className={`mt-0.5 inline-block rounded-md px-1.5 py-px text-[8.5px] font-extrabold ${pillCls}`}>{lab}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  const subDefs: [typeof sub, string, string | null][] = [
+    ['catalog', L('Catálogo', 'Catalog'), null],
+    ['cats', L('Categorías', 'Categories'), String(cfg.categories.length)],
+    ['variants', L('Variantes', 'Variants'), String(cfg.optionSets.length)],
+    ['collections', L('Colecciones', 'Collections'), String(cfg.collections.length)],
+    ['discounts', L('Descuentos', 'Discounts'), String(cfg.discounts.length)],
+    ['inventory', L('Inventario', 'Inventory'), null],
+  ];
 
   return (
     <div className="relative pb-8">
@@ -811,7 +823,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
 
-      {/* delivery + shipping now live in the shared "Entregas y envíos" module */}
+      {/* delivery + shipping live in the shared "Entregas y envíos" module */}
       <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} strokeWidth={2} /></span>
         <span className="min-w-0 flex-1">
@@ -821,20 +833,26 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
         <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
       </button>
 
-      {/* sub-tabs */}
-      <div className="no-scrollbar -mx-1 mb-4 flex items-center gap-2 min-w-0 overflow-x-auto px-1">
-        {prodSub.map(([k, label]) => <button key={k} onClick={() => setProdTab(k)} className={chip(prodTab === k)}>{label}</button>)}
-        <button onClick={startWizard} className="ml-auto hidden flex-none cursor-pointer items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 text-[12.5px] font-extrabold text-white shadow-cta-sm xl:flex">
-          <Plus size={15} strokeWidth={2.6} />{L('Agregar producto', 'Add product')}
-        </button>
+      <div className="mb-4">
+        <ChipRow className="-mx-1 px-1">
+          {subDefs.map(([k, label, badge]) => (
+            <button key={k} onClick={() => setSub(k)} className={chip(sub === k)}>{label}{badge != null && <span className={`ml-1.5 font-extrabold ${sub === k ? 'text-white/80' : 'text-muted-2'}`}>{badge}</span>}</button>
+          ))}
+        </ChipRow>
       </div>
 
-      <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
-        <div className="min-w-0">{content}</div>
-        {rail}
-      </div>
+      {sub === 'catalog' ? catalog : sub === 'cats' ? categoriesTab : sub === 'variants' ? variantsTab : sub === 'collections' ? collectionsTab : sub === 'discounts' ? discountsTab : inventoryTab}
 
+      {editorSheets()}
       <Toast msg={toast} />
     </div>
   );
 }
+
+// ---------- draft ----------
+type Draft = {
+  name: string; descEs: string; descEn: string; cat: string; price: string; compareAt: string;
+  sku: string; stock: string; reorder: string; options: string[]; fulfill: string; tax: string;
+  badges: string[]; photoUrl: string;
+};
+const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', compareAt: '', sku: '', stock: '', reorder: '', options: [], fulfill: 'ship', tax: 'goods', badges: [], photoUrl: '' });

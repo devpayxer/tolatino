@@ -13,6 +13,7 @@ import { CAT, type CatKey } from '@/lib/tiles';
 import { useApp } from '@/lib/state';
 import { normalizeMenuConfig } from '@/lib/menuConfig';
 import { normalizeServiceConfig } from '@/lib/serviceConfig';
+import { normalizeProductConfig } from '@/lib/productConfig';
 import type { Bi, MenuCat, MenuItem, OptionGroup } from '@/data/bizdetail';
 
 const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -209,6 +210,74 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
   if (cats.length === 0) return null;
 
   return { cats, addons, booking: cfg.booking };
+}
+
+/** The real public shop for a listing: products grouped by the owner's product
+ *  categories (keys prefixed `sh:` so option groups never collide with the menu),
+ *  per-item option groups (variant/option sets), featured collections (promo
+ *  strip) and the selling mode (false = display-only → no cart). */
+export type PublicShop = { cats: MenuCat[]; groups: Record<string, OptionGroup[]>; collections: { es: string; en: string; tile: string }[]; selling: boolean };
+
+/** Fetch + map a business's real products by slug (migration 0048). Returns null
+ *  when offline / no published products — BizDetail falls back to the fixtures. */
+export async function fetchBusinessProducts(slug: string): Promise<PublicShop | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('business_products_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const row = data[0] as { items: unknown; config: unknown };
+  const rows = Array.isArray(row.items) ? (row.items as Record<string, unknown>[]) : [];
+  if (rows.length === 0) return null;
+  const cfg = normalizeProductConfig(row.config);
+
+  const groups: Record<string, OptionGroup[]> = {};
+  const toItem = (r: Record<string, unknown>, tile: string, catKey: string): MenuItem => {
+    const a = (r.attrs ?? {}) as Record<string, unknown>;
+    const name = String(r.name);
+    const dEs = String(r.description ?? '');
+    const price = Number(r.price ?? 0);
+    const compareAt = a.compareAt != null ? Number(a.compareAt) : undefined;
+    const badges = Array.isArray(a.badges) ? (a.badges as string[]) : [];
+    const tag: Bi | undefined = badges.includes('Popular') ? ['Popular', 'Popular'] : badges.includes('Nuevo') ? ['Nuevo', 'New'] : badges.includes('Oferta') ? ['Oferta', 'Sale'] : badges.includes('Local') ? ['Local', 'Local'] : undefined;
+    const item: MenuItem = {
+      n: [name, name],
+      d: [dEs, String(a.en ?? dEs)],
+      price,
+      orig: compareAt && compareAt > price ? compareAt : undefined,
+      tag,
+      tagBg: tag ? '#EFEBFF' : undefined,
+      tagC: tag ? '#6D4DF6' : undefined,
+      bg: tile,
+      img: r.image_url != null ? String(r.image_url) : undefined,
+    };
+    // per-item option groups from the business's reusable option sets
+    const optIds = Array.isArray(a.options) ? (a.options as string[]) : [];
+    const gs = optIds
+      .map((id) => cfg.optionSets.find((o) => o.id === id))
+      .filter((o): o is NonNullable<typeof o> => !!o)
+      .map((o): OptionGroup => ({
+        id: o.id,
+        name: [o.es, o.en],
+        type: o.single ? 'single' : 'multi',
+        choices: o.values.map((v) => ({ label: [v.es, v.en ?? v.es] as Bi, price: v.price })),
+      }));
+    if (gs.length) groups[`${catKey}::${name}`] = gs;
+    return item;
+  };
+
+  const cats: MenuCat[] = [];
+  const used = new Set<Record<string, unknown>>();
+  for (const c of cfg.categories.filter((c) => c.visible)) {
+    const key = `sh:${c.id}`;
+    const inCat = rows.filter((r) => r.section === c.id);
+    inCat.forEach((r) => used.add(r));
+    if (inCat.length) cats.push({ key, name: [c.es, c.en], items: inCat.map((r) => toItem(r, c.tile, key)) });
+  }
+  const rest = rows.filter((r) => !used.has(r));
+  if (rest.length) cats.push({ key: 'sh:_rest', name: ['Tienda', 'Shop'], items: rest.map((r) => toItem(r, '#F3D9C8 0 8px,#E8C3AC 8px 16px', 'sh:_rest')) });
+  if (cats.length === 0) return null;
+
+  const collections = cfg.collections.filter((c) => c.featured).map((c) => ({ es: c.es, en: c.en, tile: c.tile }));
+  return { cats, groups, collections, selling: cfg.selling };
 }
 
 /** Fetch a single business by its public slug (geo-independent). Returns a

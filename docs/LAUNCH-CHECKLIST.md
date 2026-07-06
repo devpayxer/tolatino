@@ -280,6 +280,37 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     business hours + service days/capacity when scheduling matters.
   - [ ] **SMS reminders & auto-deposits** (Premium teaser in the module) — build
     when the notifications + payments phases land.
+- [x] **Productos — FULL admin (2026-07-06).** Same treatment as the Food menu.
+  Products live in `business_items` (kind='product'); the structure (categories,
+  reusable option sets/variants, curated collections, discounts, sell mode) lives
+  in `businesses.product_config` (migration **0048**). Sub-tabs, all real CRUD:
+  **Catálogo** (product cards → shared **5-step wizard** Detalles → Precio →
+  Variantes → Inventario → Revisar, for create AND edit, with live preview, real
+  **photo upload** → `business_items.image_url`, compare-at/sale price, duplicate,
+  delete-confirmed), **Categorías** (create/edit/reorder/hide/delete-guarded),
+  **Variantes** (reusable option sets → sellable-variant count), **Colecciones**
+  (curated groups with a featured flag + member picker), **Descuentos** (code/
+  %/$/free-ship/BOGO, auto-apply, active/paused), and **Inventario** (real KPIs +
+  stock from the catalog). A **"Modo de la tienda"** toggle (Solo catálogo vs
+  Vender en línea) persists `product_config.selling`. The public listing's
+  **Tienda tab renders the real shop** (grouped by the owner's categories, per-
+  item option/variant picker, featured collections as a strip); display-only mode
+  hides the +/cart and shows a "Catálogo informativo · Llamar" note. Delivery/
+  shipping stays in the shared Entregas module. Deferred:
+  - [ ] **Selling is not transactional.** "Vender en línea" surfaces the cart/+
+    buttons (orders record via myActivity) but there's no payment/checkout — wire
+    real checkout + payments before promoting online selling. Same status as the
+    Food menu's online-ordering.
+  - [ ] **Variant-level stock/price.** Option sets define sellable variants and
+    per-value price deltas, but per-variant inventory (stock by SKU combination)
+    is not tracked yet — product-level stock only. Add a variant matrix when
+    inventory-by-variant matters.
+  - [ ] **Discount redemption + cart application.** Discounts are managed (code/
+    type/auto/status) and shown, but redemption analytics and applying them to
+    cart pricing at checkout land with the transaction phase.
+  - [ ] **Collections on membership sync.** A collection stores member product
+    ids; if a product is deleted its id can linger in a collection (harmless —
+    the public strip only shows the collection name). Prune on delete later.
 - [x] **Entregas y envíos — SHARED fulfillment module (2026-07-06).** Pulled
   delivery/shipping OUT of Products into a standalone module
   (`modules/Fulfillment.tsx`) shared by BOTH the Food menu (local delivery) and
