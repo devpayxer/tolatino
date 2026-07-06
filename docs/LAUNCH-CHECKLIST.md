@@ -244,6 +244,37 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     items regardless of the hour; filter by active daypart when it matters.
   - [ ] **Wizard "Programar" publish option** publishes immediately (only
     "Guardar borrador" hides); add real scheduled publishing later.
+- [x] **Servicios — FULL admin (2026-07-06).** Replicated the Food treatment for
+  bookable services (peluquería, carwash, tastings, classes, catering, etc.).
+  Two top-level modes: **Servicios** (catalog + Categorías + Add-ons sub-tabs)
+  and **Reservas** (manage bookings). Real CRUD: services (create/edit/duplicate/
+  delete-confirmed → `business_items` kind='service'), categories (create/edit/
+  reorder/hide/delete-guarded), reusable **add-ons** (priced extras, used across
+  services). Shared **5-step wizard** (Detalles → Precio → Add-ons → Reserva →
+  Revisar) for create AND edit, with live preview, service photos (shared image
+  pipeline → `business_items.image_url`), price type (fijo/por persona/cotizar),
+  duration, deposit toggle, bookable-vs-inquiry, capacity + available days.
+  Structure persisted in `businesses.service_config` (migration **0046**). The
+  **Reservas** mode reads real `business_bookings` (0027) with KPIs, a status
+  filter and per-booking actions (confirmar → iniciar → completar / cancelar).
+  The public listing's **Servicios tab renders the real services** (grouped by
+  the owner's categories, add-on picker + per-person party size + deposit summary
+  in the booking sheet). Deferred:
+  - [x] **Service mode: display-only vs online bookings (2026-07-06)** —
+    `service_config.booking` (default FALSE = showcase). Dashboard toggle on the
+    Catálogo tab; the public Servicios tab hides the Reservar button and shows a
+    "Servicios informativos · Llamar" note when booking is off. Per-service
+    `bookable` still distinguishes Reservar (appointment + time slot) from
+    Consultar (inquiry lead, no time slot) when booking mode is ON.
+  - [ ] **Deposits are not transactional.** The booking sheet computes a deposit
+    (= estimated total when "requiere depósito") and stores it on the booking,
+    but no money moves — wire real payments before promoting paid deposits.
+  - [ ] **Availability/day enforcement.** Per-service available days + capacity
+    are stored and shown, but the public date/time picker offers fixed sample
+    slots (`SVC_DATES`/`SVC_TIMES`) regardless — generate real slots from the
+    business hours + service days/capacity when scheduling matters.
+  - [ ] **SMS reminders & auto-deposits** (Premium teaser in the module) — build
+    when the notifications + payments phases land.
 - [x] **Shell polish (mobile chrome, 2026-07-04)** — the dashboard now mirrors the
   handoff on mobile: dark top bar on Inicio (light elsewhere), business identity
   card at the top of Inicio, and the fixed bottom-tab bar

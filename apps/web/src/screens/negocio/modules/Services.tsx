@@ -1,259 +1,311 @@
 'use client';
 
-// Servicios / Reservas module (business dashboard). MODE TOGGLE Servicios ·
-// Reservas. Servicios: a service catalog grouped by category (each service with
-// a bookable↔inquiry toggle + an edit bottom-sheet), an analytics card and
-// pending-inquiries list, plus a "Categorías" sub-tab to show/hide categories.
-// Reservas: KPIs + sub-tabs Calendario (month grid) / Mesas (floor plan) / Lista
-// (booking list + filters) / Reglas (booking rules + custom fields). A 4-step
-// "add service" wizard (Detalles → Precio/duración → Disponibilidad → Revisar)
-// ends in a success screen that returns to the list. Mobile-first; on desktop
-// the analytics/inquiries + day detail move into a sticky side rail and lists go
-// multi-column. Real state: mode, sub-tabs, bookable toggles, edit sheet, wizard.
+// Servicios / Reservas module (business dashboard) — fully functional, mirroring
+// the Food module. Services live in business_items (kind='service'); the structure
+// (categories, reusable add-ons, booking mode) lives in businesses.service_config
+// (migration 0046). Two top-level modes:
+//  • Servicios — catalog (grouped by config categories, each service editable via
+//    the shared 5-step wizard: create/edit/duplicate/delete-confirmed, photo,
+//    add-ons, price/duration, bookable), plus Categorías + Add-ons sub-tabs (real
+//    CRUD) and a "Modo del listado" toggle (Solo mostrar vs Aceptar reservas).
+//  • Reservas — manage real bookings (business_bookings) with status actions,
+//    KPIs and calendar/list views.
+// Display-only mode hides the Reservar button on the public listing. Fully
+// explorable in demo (local sample); a signed-in owner persists to Supabase.
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  CalendarCheck, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight,
-  DollarSign, Gift, GraduationCap, Lock, MessageSquare, Plus, Sparkles, Tag,
-  Users, Utensils, Wine, Wrench, XCircle,
-} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import {
+  CalendarCheck, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight,
+  ChevronUp, Copy, DollarSign, Loader2, Lock, MessageSquare, Pencil, Plus, ShoppingBag,
+  Sparkles, Store, Trash2, Upload, Users, Wrench, XCircle, Zap,
+} from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { ChipRow } from '@/components/ChipRow';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
-import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
+import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-
-// ---------- static model ----------
-type CatId = 'tastings' | 'classes' | 'private' | 'catering';
-type Svc = {
-  id: number; dbId?: string; cat: CatId; name: string; price: string; dur: string; bookable: boolean;
-  es: string; en: string; tile: string; tags: string[];
-};
-
-const SVC_CAT_IDS = new Set<CatId>(['tastings', 'classes', 'private', 'catering']);
-// Map a business_items row (kind='service') ↔ the module's Svc. Service prices
-// are free-text ($85 / Cotización / Desde $12/pers), so they live in attrs.
-function rowToSvc(r: BizItemRow, idx: number): Svc {
-  const a = (r.attrs ?? {}) as Record<string, unknown>;
-  const cat = (r.section as CatId) ?? 'classes';
-  return {
-    id: idx + 1,
-    dbId: r.id,
-    cat: SVC_CAT_IDS.has(cat) ? cat : 'classes',
-    name: r.name,
-    price: String(a.priceLabel ?? ''),
-    dur: String(a.dur ?? ''),
-    bookable: !!a.bookable,
-    es: r.description ?? '',
-    en: String(a.en ?? r.description ?? ''),
-    tile: String(a.tile ?? '#EFE3D0 0 8px,#E2CFB2 8px 16px'),
-    tags: (a.tags as string[]) ?? [],
-  };
-}
-function svcToRow(s: Svc, businessId: string, sort: number): NewBizItem {
-  return {
-    business_id: businessId,
-    kind: 'service',
-    name: s.name,
-    description: s.es,
-    price: null,
-    unit: null,
-    section: s.cat,
-    available: true,
-    sort,
-    image_url: null,
-    attrs: { en: s.en, dur: s.dur, bookable: s.bookable, tile: s.tile, tags: s.tags, priceLabel: s.price },
-  };
-}
-
-const SVC_CATS: { id: CatId; es: string; en: string; tile: string; Icon: LucideIcon; sEs: string; sEn: string }[] = [
-  { id: 'tastings', es: 'Degustaciones', en: 'Tastings', tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', Icon: Wine, sEs: 'Cena · con reserva', sEn: 'Dinner · by booking' },
-  { id: 'classes', es: 'Clases y talleres', en: 'Classes & workshops', tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', Icon: GraduationCap, sEs: 'Fines de semana', sEn: 'Weekends' },
-  { id: 'private', es: 'Eventos privados', en: 'Private events', tile: '#E3F5EA 0 8px,#D6E7D0 8px 16px', Icon: Gift, sEs: 'Bajo cotización', sEn: 'By quote' },
-  { id: 'catering', es: 'Catering', en: 'Catering', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', Icon: Utensils, sEs: 'Solo consulta', sEn: 'Inquiry only' },
-];
-
-const SEED: Svc[] = [
-  { id: 1, cat: 'classes', name: 'Sourdough 101', price: '$85', dur: '2h', bookable: true, es: 'Aprende a hornear masa madre desde el fermento inicial. Incluye masa madre para llevar.', en: 'Learn to bake sourdough from the starter. Includes a starter to take home.', tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', tags: ['Más reservado'] },
-  { id: 2, cat: 'classes', name: 'Pizza para familias', price: '$60', dur: '90 min', bookable: true, es: 'Taller práctico de pizza al horno de leña para toda la familia.', en: 'Hands-on wood-fired pizza workshop for the whole family.', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', tags: ['Familiar'] },
-  { id: 3, cat: 'tastings', name: 'Menú degustación', price: '$140', dur: '5 tiempos', bookable: true, es: '5 tiempos con maridaje de vino opcional. Mar–Dom, solo cena.', en: '5 courses with optional wine pairing. Tue–Sun, dinner only.', tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', tags: ['Premium'] },
-  { id: 4, cat: 'tastings', name: 'Cata de vinos', price: '$45', dur: '75 min', bookable: true, es: 'Cata guiada de vinos de California e Italia con quesos artesanales.', en: 'Guided tasting of California & Italy wines with artisan cheese.', tile: '#F3D9E2 0 8px,#E8BFCD 8px 16px', tags: [] },
-  { id: 5, cat: 'private', name: 'Comedor privado', price: 'Cotización', dur: '8–24 pers.', bookable: false, es: 'Reserva nuestra sala trasera para cenas privadas y eventos corporativos.', en: 'Book our back room for private dinners and corporate events.', tile: '#E3F5EA 0 8px,#D6E7D0 8px 16px', tags: [] },
-  { id: 6, cat: 'catering', name: 'Catering · entrega', price: 'Desde $12/pers', dur: '20+ pers.', bookable: false, es: 'Catering para oficinas y eventos. Entrega o montaje en sitio.', en: 'Office & event catering. Drop-off or on-site setup.', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px', tags: [] },
-];
+import { uploadImage } from '@/lib/image';
+import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
+import {
+  defaultServiceConfig, demoServiceConfig, normalizeServiceConfig,
+  type ServiceAddon, type ServiceCategory, type ServiceConfig,
+} from '@/lib/serviceConfig';
+import { ServiceAddonEditor, ServiceCategoryEditor, svcCatIcon } from '@/screens/negocio/modules/ServiceEditors';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 
-type Draft = {
-  name: string; desc: string; cat: CatId; price: string;
-  priceType: 'fijo' | 'persona' | 'cotiza'; dur: string; tags: string[];
-  bookable: boolean; deposit: boolean; capacity: string; days: string[];
+type PriceType = 'fijo' | 'persona' | 'cotiza';
+type Svc = {
+  id: number; dbId?: string; name: string; es: string; en: string; cat: string;
+  price: string; priceType: PriceType; dur: string; bookable: boolean; deposit: boolean;
+  addons: string[]; tags: string[]; days: string[]; capacity: string; imageUrl?: string;
+  extra?: Record<string, unknown>;
 };
-const newDraft = (): Draft => ({ name: '', desc: '', cat: 'classes', price: '', priceType: 'fijo', dur: '60 min', tags: [], bookable: true, deposit: true, capacity: '1', days: ['Vie', 'Sáb', 'Dom'] });
 
-// ---------- bookings (Reservas) model ----------
-// Card shape used by the calendar/floor/list booking views. Real rows carry a
-// `dbId` + `status`; demo fixtures carry neither (so demo shows no DB actions).
+const FALLBACK_CAT: ServiceCategory = { id: '_', es: 'Servicios', en: 'Services', icon: 'sparkles', tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', visible: true };
+const DAY_KEYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+const KNOWN_ATTRS = new Set(['en', 'priceType', 'dur', 'bookable', 'deposit', 'addons', 'tags', 'days', 'capacity']);
+function rowToSvc(r: BizItemRow, idx: number): Svc {
+  const a = (r.attrs ?? {}) as Record<string, unknown>;
+  const extra: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(a)) if (!KNOWN_ATTRS.has(k)) extra[k] = v;
+  const pt = (a.priceType as PriceType) ?? (r.price != null ? 'fijo' : 'cotiza');
+  return {
+    id: idx + 1,
+    dbId: r.id,
+    name: r.name,
+    es: r.description ?? '',
+    en: String(a.en ?? r.description ?? ''),
+    cat: r.section ?? FALLBACK_CAT.id,
+    price: r.price != null ? String(r.price) : (a.priceLabel != null ? String(a.priceLabel).replace(/[^0-9.]/g, '') : ''),
+    priceType: pt,
+    dur: String(a.dur ?? '60 min'),
+    bookable: a.bookable !== false,
+    deposit: !!a.deposit,
+    addons: (a.addons as string[]) ?? [],
+    tags: (a.tags as string[]) ?? [],
+    days: (a.days as string[]) ?? ['Vie', 'Sáb', 'Dom'],
+    capacity: String(a.capacity ?? '1'),
+    imageUrl: r.image_url ?? undefined,
+    extra,
+  };
+}
+const svcAttrs = (s: Svc): Record<string, unknown> => ({
+  ...(s.extra ?? {}),
+  en: s.en, priceType: s.priceType, dur: s.dur, bookable: s.bookable, deposit: s.deposit,
+  addons: s.addons, tags: s.tags, days: s.days, capacity: s.capacity,
+});
+function svcToRow(s: Svc, businessId: string, sort: number): NewBizItem {
+  return {
+    business_id: businessId, kind: 'service', name: s.name, description: s.es,
+    price: s.priceType === 'cotiza' ? null : Number(s.price) || 0, unit: null,
+    section: s.cat, available: true, sort, image_url: s.imageUrl ?? null, attrs: svcAttrs(s),
+  };
+}
+
+// ---------- bookings (Reservas) model — real business_bookings (0027) ----------
 type BkStatus = 'pending' | 'confirmed' | 'seated' | 'done' | 'cancelled';
-type Bk = {
-  dbId?: string; time: string; nm: string; kind: 'reservations' | 'classes' | 'private';
-  type: string; table: string; deposit: string; vip: boolean; notes: string;
-  st: 'ok' | 'pending'; status?: BkStatus;
-};
-// One row of the private `business_bookings` table (migration 0027).
 type BookingRow = {
   id: string; service_name: string | null; customer_name: string; party_size: number | null;
   starts_at: string; status: BkStatus; deposit: number | null; notes: string | null; created_at: string;
 };
-// Status → badge copy + token classes. Also used for the demo two-state badge
-// (pending/ok) so wiring real statuses leaves the demo render byte-identical.
 const BK_STATUS: Record<BkStatus, { es: string; en: string; cls: string }> = {
   pending: { es: 'Por confirmar', en: 'Pending', cls: 'bg-pink-bg text-pink-dark' },
   confirmed: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
-  seated: { es: 'Sentada', en: 'Seated', cls: 'bg-lilac-2 text-primary-dark' },
+  seated: { es: 'En curso', en: 'In progress', cls: 'bg-lilac-2 text-primary-dark' },
   done: { es: 'Completada', en: 'Done', cls: 'bg-lilac-2 text-ink-2' },
   cancelled: { es: 'Cancelada', en: 'Cancelled', cls: 'bg-lilac-2 text-muted-2' },
 };
-const bookingTime = (iso: string): string => {
+const bookingWhen = (iso: string, es: boolean): string => {
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(es ? 'es-US' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' +
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
-// Map a business_bookings row ↔ the module's booking card. There are no
-// table/kind/vip columns (owner-managed reservations), so those fall back to
-// sensible defaults and the party size folds into the type line.
-function rowToBk(r: BookingRow, es: boolean): Bk {
-  const dep = r.deposit == null ? 0 : Number(r.deposit);
-  const svc = r.service_name || (es ? 'Reserva' : 'Reservation');
-  const type = r.party_size != null ? (es ? `${svc} · ${r.party_size} pers.` : `${svc} · party ${r.party_size}`) : svc;
-  return {
-    dbId: r.id, time: bookingTime(r.starts_at), nm: r.customer_name, kind: 'reservations',
-    type, table: '', deposit: dep > 0 ? `$${dep}` : '', vip: false, notes: r.notes ?? '',
-    st: r.status === 'pending' ? 'pending' : 'ok', status: r.status,
-  };
-}
 
-// ---------- small switch ----------
 function Switch({ on, onClick, big }: { on: boolean; onClick: () => void; big?: boolean }) {
-  const w = big ? 42 : 38;
-  const k = big ? 19 : 17;
+  const w = big ? 42 : 38; const k = big ? 19 : 17;
   return (
-    <span
-      role="switch"
-      aria-checked={on}
-      onClick={onClick}
-      className="relative inline-block flex-none cursor-pointer rounded-full transition-colors"
-      style={{ width: w, height: big ? 25 : 23, background: on ? '#7B61FF' : '#D8D2E6' }}
-    >
-      <span
-        className="absolute top-[3px] rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,.18)] transition-all"
-        style={{ width: k, height: k, left: on ? w - k - 3 : 3 }}
-      />
+    <span role="switch" aria-checked={on} onClick={onClick} className="relative inline-block flex-none cursor-pointer rounded-full transition-colors" style={{ width: w, height: big ? 25 : 23, background: on ? '#7B61FF' : '#D8D2E6' }}>
+      <span className="absolute top-[3px] rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,.18)] transition-all" style={{ width: k, height: k, left: on ? w - k - 3 : 3 }} />
     </span>
   );
 }
 
+const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
+const inputCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary';
+const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12.5px] font-extrabold text-primary-dark';
+
+// Demo services (sample so the module is explorable without signing in).
+const DEMO_SVCS: Svc[] = [
+  { id: 1, name: 'Sourdough 101', es: 'Aprende a hornear masa madre desde el fermento inicial. Incluye masa madre para llevar.', en: 'Learn to bake sourdough from the starter. Includes a starter to take home.', cat: 'classes', price: '85', priceType: 'fijo', dur: '2h', bookable: true, deposit: true, addons: ['starter'], tags: ['Más reservado'], days: ['Sáb', 'Dom'], capacity: '8–16', imageUrl: undefined },
+  { id: 2, name: 'Pizza para familias', es: 'Taller práctico de pizza al horno de leña para toda la familia.', en: 'Hands-on wood-fired pizza workshop for the whole family.', cat: 'classes', price: '60', priceType: 'fijo', dur: '90 min', bookable: true, deposit: true, addons: [], tags: ['Familiar'], days: ['Vie', 'Sáb', 'Dom'], capacity: '2–6' },
+  { id: 3, name: 'Menú degustación', es: '5 tiempos con maridaje de vino opcional. Mar–Dom, solo cena.', en: '5 courses with optional wine pairing. Tue–Sun, dinner only.', cat: 'tastings', price: '140', priceType: 'persona', dur: '2h', bookable: true, deposit: true, addons: ['wine'], tags: ['Premium'], days: ['Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'], capacity: '2–6' },
+  { id: 4, name: 'Cata de vinos', es: 'Cata guiada de vinos de California e Italia con quesos artesanales.', en: 'Guided tasting of California & Italy wines with artisan cheese.', cat: 'tastings', price: '45', priceType: 'persona', dur: '75 min', bookable: true, deposit: false, addons: [], tags: [], days: ['Vie', 'Sáb'], capacity: '8–16' },
+  { id: 5, name: 'Comedor privado', es: 'Reserva nuestra sala trasera para cenas privadas y eventos corporativos.', en: 'Book our back room for private dinners and corporate events.', cat: 'private', price: '', priceType: 'cotiza', dur: '3h+', bookable: false, deposit: false, addons: ['photos', 'setup'], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '20+' },
+  { id: 6, name: 'Catering · entrega', es: 'Catering para oficinas y eventos. Entrega o montaje en sitio.', en: 'Office & event catering. Drop-off or on-site setup.', cat: 'catering', price: '12', priceType: 'persona', dur: '3h+', bookable: false, deposit: false, addons: ['setup'], tags: [], days: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'], capacity: '20+' },
+];
+
+// =====================================================================
 export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
-
-  const [mode, setMode] = useState<'services' | 'bookings'>(tab === 'bookings' ? 'bookings' : 'services');
-  const [svcSub, setSvcSub] = useState<'catalog' | 'cats'>('catalog');
-  const [bookSub, setBookSub] = useState<'calendar' | 'floor' | 'list' | 'rules'>('calendar');
-  const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
-
-  const [services, setServices] = useState<Svc[]>(SEED);
-  const [bookable, setBookable] = useState<Record<number, boolean>>(() => Object.fromEntries(SEED.map((s) => [s.id, s.bookable])));
-  const [bookingRows, setBookingRows] = useState<BookingRow[] | null>(null); // real bookings (null = demo → keep fixture)
   const admin = useBizAdmin();
+  const { user } = useAuth();
   const real = admin.active;
-  const persistable = !admin.demo && !!real; // real signed-in business → persist
+  const persistable = !admin.demo && !!real;
 
-  // Load the real business's services (demo keeps the sample seed).
+  // ── config (categories / add-ons / booking mode) ──────────────────────────
+  const [cfg, setCfg] = useState<ServiceConfig>(demoServiceConfig);
   useEffect(() => {
-    if (!persistable || !real) {
-      setServices(SEED);
-      setBookable(Object.fromEntries(SEED.map((s) => [s.id, s.bookable])));
-      return;
-    }
+    setCfg(admin.demo ? demoServiceConfig() : real?.service_config ? normalizeServiceConfig(real.service_config) : defaultServiceConfig());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+  const saveCfg = (next: ServiceConfig) => { setCfg(next); if (persistable) admin.update({ service_config: next }); };
+  const catOf = (id: string): ServiceCategory => cfg.categories.find((c) => c.id === id) ?? FALLBACK_CAT;
+  const catLabel = (c: ServiceCategory) => L(c.es, c.en);
+  const addonOf = (id: string) => cfg.addons.find((a) => a.id === id);
+
+  // ── services (business_items kind='service') ───────────────────────────────
+  const [services, setServices] = useState<Svc[]>(DEMO_SVCS);
+  useEffect(() => {
+    if (!persistable || !real) { setServices(DEMO_SVCS); return; }
     let cancelled = false;
     (async () => {
       const rows = await listBizItems(real.id, 'service');
-      if (cancelled) return;
-      const svcs = rows.map(rowToSvc);
-      setServices(svcs);
-      setBookable(Object.fromEntries(svcs.map((s) => [s.id, s.bookable])));
+      if (!cancelled) setServices(rows.map(rowToSvc));
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
 
-  // Load the real business's bookings (demo keeps the sample day). Private table,
-  // owner-only via RLS; ordered by start time like the SQL index.
-  useEffect(() => {
-    if (!persistable || !real || !supabase) {
-      setBookingRows(null);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await supabase!
-        .from('business_bookings')
-        .select('id,service_name,customer_name,party_size,starts_at,status,deposit,notes,created_at')
-        .eq('business_id', real.id)
-        .order('starts_at', { ascending: true });
-      if (cancelled) return;
-      setBookingRows(error || !Array.isArray(data) ? [] : (data as unknown as BookingRow[]));
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [real?.id, admin.demo]);
-
-  const persistNewSvc = async (s: Svc) => {
+  const nextId = () => (services.length ? Math.max(...services.map((s) => s.id)) : 0) + 1;
+  const persistNew = async (s: Svc) => {
     if (!persistable || !real) return;
     const dbId = await insertBizItem(svcToRow(s, real.id, services.length));
     if (dbId) setServices((l) => l.map((x) => (x.id === s.id ? { ...x, dbId } : x)));
   };
-  const persistSvcPatch = (s: Svc | undefined) => {
-    if (persistable && s?.dbId) updateBizItem(s.dbId, { name: s.name, description: s.es, section: s.cat, attrs: { en: s.en, dur: s.dur, bookable: s.bookable, tile: s.tile, tags: s.tags, priceLabel: s.price } });
+  const persistPatch = (s: Svc | undefined) => {
+    if (persistable && s?.dbId) updateBizItem(s.dbId, { name: s.name, description: s.es, price: s.priceType === 'cotiza' ? null : Number(s.price) || 0, section: s.cat, image_url: s.imageUrl ?? null, attrs: svcAttrs(s) });
   };
-  const [catShow, setCatShow] = useState<Record<CatId, boolean>>({ tastings: true, classes: true, private: true, catering: true });
-  const [ruleSt, setRuleSt] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: true, 4: false });
-  const [fieldSt, setFieldSt] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: false, 3: false, 4: true });
-  const [selDay, setSelDay] = useState(14);
-  const [bookFilter, setBookFilter] = useState<'all' | 'reservations' | 'classes' | 'private'>('all');
+  const patchSvc = (id: number, p: Partial<Svc>) =>
+    setServices((l) => { const next = l.map((s) => (s.id === id ? { ...s, ...p } : s)); persistPatch(next.find((s) => s.id === id)); return next; });
 
-  const [wizStep, setWizStep] = useState(0);
-  const [wizMax, setWizMax] = useState(0);
-  const [draft, setDraft] = useState<Draft>(newDraft);
+  const countIn = (catId: string) => services.filter((s) => s.cat === catId).length;
+  const addonUsedBy = (addonId: string) => services.filter((s) => s.addons.includes(addonId)).length;
 
-  const [sheetId, setSheetId] = useState<number | null>(null);
-  const [edit, setEdit] = useState<Partial<Svc>>({});
-
-  const [toast, setToast] = useState('');
-  const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
-
-  // Advance a real booking's status (optimistic local update, then persist).
-  // Demo rows (no dbId) never surface the action buttons that call this.
-  const setBookingStatus = async (b: Bk, status: BkStatus) => {
-    if (!b.dbId) return;
-    setBookingRows((rows) => (rows ? rows.map((r) => (r.id === b.dbId ? { ...r, status } : r)) : rows));
-    if (persistable && supabase) await supabase.from('business_bookings').update({ status }).eq('id', b.dbId);
+  // ── bookings (business_bookings) ───────────────────────────────────────────
+  const [bookingRows, setBookingRows] = useState<BookingRow[] | null>(null);
+  const reloadBookings = () => {
+    if (!persistable || !real || !supabase) { setBookingRows(null); return; }
+    supabase.from('business_bookings')
+      .select('id,service_name,customer_name,party_size,starts_at,status,deposit,notes,created_at')
+      .eq('business_id', real.id).order('starts_at', { ascending: true })
+      .then(({ data, error }) => setBookingRows(error || !Array.isArray(data) ? [] : (data as unknown as BookingRow[])));
+  };
+  useEffect(() => { reloadBookings(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [real?.id, admin.demo]);
+  const setBookingStatus = async (id: string, status: BkStatus) => {
+    setBookingRows((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, status } : r)) : rows));
+    if (persistable && supabase) await supabase.from('business_bookings').update({ status }).eq('id', id);
     flash(L('Reserva actualizada', 'Booking updated'));
   };
-  const bkBadge = (b: Bk) => (b.status ? BK_STATUS[b.status] : b.st === 'pending' ? BK_STATUS.pending : BK_STATUS.confirmed);
 
-  const upD = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
-  const catOf = (id: CatId) => SVC_CATS.find((c) => c.id === id)!;
-  const catName = (id: CatId) => L(catOf(id).es, catOf(id).en);
-  const tagLabel = (t: string) => ({ 'Más reservado': L('Más reservado', 'Most booked'), Familiar: L('Familiar', 'Family'), Premium: L('Premium', 'Premium'), Nuevo: L('Nuevo', 'New') }[t] ?? t);
+  // ── ui state ────────────────────────────────────────────────────────────────
+  const [mode, setMode] = useState<'services' | 'bookings'>(tab === 'bookings' ? 'bookings' : 'services');
+  const [svcSub, setSvcSub] = useState<'catalog' | 'cats' | 'addons'>('catalog');
+  const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [wizStep, setWizStep] = useState(0);
+  const [wizMax, setWizMax] = useState(0);
+  const [draft, setDraft] = useState<Draft>(() => newDraft('general'));
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [toast, setToast] = useState('');
+  const [catSheet, setCatSheet] = useState<{ open: boolean; initial: ServiceCategory | null }>({ open: false, initial: null });
+  const [addonSheet, setAddonSheet] = useState<{ open: boolean; initial: ServiceAddon | null }>({ open: false, initial: null });
+  const [bookFilter, setBookFilter] = useState<'all' | BkStatus>('all');
+
+  const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
+  const upD = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
+
+  // ── photo upload (same pipeline as Comunidad/Food) ─────────────────────────
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const pickPhoto = async (file: File | null | undefined) => {
+    if (!file || !file.type.startsWith('image/') || photoBusy) return;
+    setPhotoBusy(true);
+    try {
+      const url = !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 1200);
+      upD({ photoUrl: url });
+    } catch { flash(L('No se pudo subir la foto.', "Couldn't upload the photo.")); }
+    setPhotoBusy(false);
+  };
+
+  // ── structure mutations ─────────────────────────────────────────────────────
+  const upsertCategory = (c: ServiceCategory) => {
+    const exists = cfg.categories.some((x) => x.id === c.id);
+    saveCfg({ ...cfg, categories: exists ? cfg.categories.map((x) => (x.id === c.id ? c : x)) : [...cfg.categories, c] });
+    flash(exists ? L('Categoría guardada', 'Category saved') : L('Categoría creada', 'Category created'));
+  };
+  const deleteCategory = (id: string) => { saveCfg({ ...cfg, categories: cfg.categories.filter((x) => x.id !== id) }); flash(L('Categoría eliminada', 'Category deleted')); };
+  const moveCategory = (id: string, dir: -1 | 1) => {
+    const i = cfg.categories.findIndex((x) => x.id === id); const j = i + dir;
+    if (i < 0 || j < 0 || j >= cfg.categories.length) return;
+    const next = [...cfg.categories]; [next[i], next[j]] = [next[j], next[i]]; saveCfg({ ...cfg, categories: next });
+  };
+  const toggleCategory = (id: string) => saveCfg({ ...cfg, categories: cfg.categories.map((x) => (x.id === id ? { ...x, visible: !x.visible } : x)) });
+  const upsertAddon = (a: ServiceAddon) => {
+    const exists = cfg.addons.some((x) => x.id === a.id);
+    saveCfg({ ...cfg, addons: exists ? cfg.addons.map((x) => (x.id === a.id ? a : x)) : [...cfg.addons, a] });
+    flash(exists ? L('Add-on guardado', 'Add-on saved') : L('Add-on creado', 'Add-on created'));
+  };
+  const deleteAddon = (id: string) => {
+    saveCfg({ ...cfg, addons: cfg.addons.filter((x) => x.id !== id) });
+    // also detach from services locally (persist happens on their next save)
+    setServices((l) => l.map((s) => (s.addons.includes(id) ? { ...s, addons: s.addons.filter((x) => x !== id) } : s)));
+    flash(L('Add-on eliminado', 'Add-on deleted'));
+  };
+
+  const priceLabelOf = (s: { priceType: PriceType; price: string }) =>
+    s.priceType === 'cotiza' ? L('Cotización', 'Quote') : s.price ? `$${s.price}${s.priceType === 'persona' ? L('/pers', '/pp') : ''}` : L('Gratis', 'Free');
+
+  // ── wizard: draft ⇄ service ─────────────────────────────────────────────────
+  const wizSteps: [string, string][] = [
+    [L('Detalles', 'Details'), L('Detalles del servicio', 'Service details')],
+    [L('Precio', 'Pricing'), L('Precio y duración', 'Pricing & duration')],
+    [L('Add-ons', 'Add-ons'), L('Extras y add-ons', 'Extras & add-ons')],
+    [L('Reserva', 'Booking'), L('Cómo se reserva', 'How it books')],
+    [L('Revisar', 'Review'), L('Revisar y publicar', 'Review & publish')],
+  ];
+  const draftReady = !!draft.name.trim() && (!!draft.price || draft.priceType === 'cotiza');
+  const startAdd = () => { setEditingId(null); setDraft(newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'general')); setWizStep(0); setWizMax(0); setView('wizard'); };
+  const startEdit = (s: Svc) => {
+    setEditingId(s.id);
+    setDraft({
+      name: s.name, descEs: s.es, descEn: s.en, cat: s.cat, price: s.price, priceType: s.priceType,
+      dur: s.dur, bookable: s.bookable, deposit: s.deposit, addons: [...s.addons], tags: [...s.tags],
+      days: [...s.days], capacity: s.capacity, photoUrl: s.imageUrl ?? '',
+    });
+    setWizStep(0); setWizMax(wizSteps.length - 1); setView('wizard');
+  };
+  const draftFields = () => ({
+    name: draft.name.trim() || L('Nuevo servicio', 'New service'), es: draft.descEs || draft.descEn, en: draft.descEn || draft.descEs,
+    cat: draft.cat, price: draft.price, priceType: draft.priceType, dur: draft.dur, bookable: draft.bookable,
+    deposit: draft.deposit, addons: draft.addons, tags: draft.tags, days: draft.days, capacity: draft.capacity,
+    imageUrl: draft.photoUrl || undefined,
+  });
+  const addFromDraft = () => { const s: Svc = { id: nextId(), ...draftFields() }; setServices((l) => [s, ...l]); persistNew(s); };
+  const saveFromDraft = () => {
+    if (editingId == null) return;
+    setServices((l) => { const next = l.map((s) => (s.id === editingId ? { ...s, ...draftFields() } : s)); persistPatch(next.find((s) => s.id === editingId)); return next; });
+  };
+  const duplicateFromDraft = () => {
+    const s: Svc = { id: nextId(), ...draftFields(), name: `${draft.name.trim() || L('Nuevo servicio', 'New service')} ${L('(copia)', '(copy)')}` };
+    setServices((l) => [s, ...l]); persistNew(s); setView('module'); setEditingId(null); flash(L('Servicio duplicado', 'Service duplicated'));
+  };
+  const deleteEditing = () => {
+    if (editingId == null) return;
+    const target = services.find((s) => s.id === editingId);
+    setServices((l) => l.filter((s) => s.id !== editingId));
+    if (persistable && target?.dbId) deleteBizItem(target.dbId);
+    setView('module'); setEditingId(null); flash(L('Servicio eliminado', 'Service deleted'));
+  };
+  const wizNext = () => {
+    if (wizStep >= wizSteps.length - 1) {
+      if (editingId != null) { saveFromDraft(); setView('module'); flash(L('Cambios guardados', 'Changes saved')); }
+      else { addFromDraft(); setView('success'); }
+      return;
+    }
+    const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
+  };
+  const wizBack = () => { if (wizStep === 0) { setView('module'); setEditingId(null); return; } setWizStep((s) => s - 1); };
+  const nextGated = wizStep === 0 ? !!draft.name.trim() : wizStep === 1 ? (!!draft.price || draft.priceType === 'cotiza') : true;
 
   // ============================ FREE GATE ============================
-  // Servicios/Reservas is a Verified+ module. Free listings see the upsell.
   if (isFree) {
     return (
       <div className="mx-auto flex max-w-[560px] flex-col gap-4 pb-8">
@@ -264,17 +316,6 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {L(`Publica servicios reservables para ${ci.name}, cobra depósitos y gestiona tu calendario. Disponible en el plan Verified.`, `Publish bookable services for ${ci.name}, take deposits and manage your calendar. Available on the Verified plan.`)}
           </div>
           <button onClick={() => ctx.go('billing')} className="mt-4 rounded-btn-lg bg-primary px-6 py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Iniciar verificación', 'Start verification')}</button>
-        </div>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          {([[CalendarCheck, L('Reservas y depósitos', 'Bookings & deposits'), L('Citas con anticipo automático.', 'Appointments with auto-deposits.')], [MessageSquare, L('Consultas y cotizaciones', 'Inquiries & quotes'), L('Recolecta leads para servicios a medida.', 'Collect leads for custom work.')]] as [LucideIcon, string, string][]).map(([Icon, title, sub]) => (
-            <div key={title} className="flex items-start gap-3 rounded-card-sm border border-hair bg-white p-3.5 shadow-card">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-lilac-2 text-primary-dark"><Icon size={17} strokeWidth={2.2} /></span>
-              <div>
-                <div className="text-[12.5px] font-extrabold text-ink">{title}</div>
-                <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">{sub}</div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     );
@@ -287,27 +328,24 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <>
         <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setMode('services'); setSvcSub('catalog'); }}>
           <div className="mx-auto flex max-w-[440px] flex-col items-center pb-4 pt-4 text-center">
-            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green">
-              <CheckCircle2 size={34} strokeWidth={2.4} />
-            </span>
-            <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">
-              {(draft.name || L('Nuevo servicio', 'New service')) + ' ' + L('está activo', 'is live')}
-            </div>
-            <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">
-              {L('Ya aparece en la pestaña de Servicios de tu listado público.', "It now appears on your public listing's Services tab.")}
-            </div>
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} strokeWidth={2.4} /></span>
+            <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo servicio', 'New service')) + ' ' + L('está activo', 'is live')}</div>
+            <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en la pestaña de Servicios de tu listado público.', "It now appears on your public listing's Services tab.")}</div>
             <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
-              <div className="h-[104px]" style={{ background: stripe(dc.tile) }} />
+              <div className="relative h-[104px]" style={{ background: stripe(dc.tile) }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+              </div>
               <div className="flex items-center justify-between p-3.5">
                 <div className="min-w-0">
                   <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo servicio', 'New service')}</div>
-                  <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{catName(draft.cat)} · {draft.dur} · {draft.priceType === 'cotiza' ? L('Cotización', 'Quote') : draft.price ? `$${draft.price}` : '$0'}</div>
+                  <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{catLabel(dc)} · {draft.dur} · {priceLabelOf(draft)}</div>
                 </div>
                 <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-dark">{draft.bookable ? L('Reservable', 'Bookable') : L('Consulta', 'Inquiry')}</span>
               </div>
             </div>
             <div className="mt-5 flex w-full flex-col gap-2.5">
-              <button onClick={() => { setDraft(newDraft()); setWizStep(0); setWizMax(0); setView('wizard'); }} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro servicio', 'Add another service')}</button>
+              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro servicio', 'Add another service')}</button>
               <button onClick={() => { setView('module'); setMode('services'); setSvcSub('catalog'); }} className="rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a servicios', 'Back to services')}</button>
             </div>
           </div>
@@ -320,204 +358,226 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ============================ WIZARD ============================
   if (view === 'wizard') {
     const dc = catOf(draft.cat);
-    const steps: [string, string][] = [[L('Detalles', 'Details'), L('Detalles del servicio', 'Service details')], [L('Precio', 'Pricing'), L('Precio y duración', 'Pricing & duration')], [L('Disponibilidad', 'Availability'), L('Cómo y cuándo se vende', 'How & when it sells')], [L('Revisar', 'Review'), L('Revisar y publicar', 'Review & publish')]];
-    const ready = !!draft.name && (!!draft.price || draft.priceType === 'cotiza');
-    const goStep = (n: number) => { if (n <= wizMax) setWizStep(n); };
-    const next = () => {
-      if (wizStep >= steps.length - 1) {
-        if (!ready) return flash(L('Agrega nombre y precio antes de publicar', 'Add a name and price before publishing'));
-        const id = Math.max(0, ...services.map((s) => s.id)) + 1;
-        const svc: Svc = { id, cat: draft.cat, name: draft.name, price: draft.priceType === 'cotiza' ? 'Cotización' : `$${draft.price || '0'}`, dur: draft.dur, bookable: draft.bookable, es: draft.desc, en: draft.desc, tile: dc.tile, tags: draft.tags };
-        setServices((l) => [svc, ...l]);
-        setBookable((b) => ({ ...b, [id]: draft.bookable }));
-        persistNewSvc(svc);
-        setView('success');
-        return;
-      }
-      const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
-    };
-    const back = () => { if (wizStep === 0) { setView('module'); return; } setWizStep((s) => s - 1); };
-
-    const label = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
-    const field = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary';
-    const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-soft'}`;
-    const seg = (on: boolean) => `flex-none cursor-pointer rounded-lg px-3 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
-
     const preview = (
       <div className={`overflow-hidden ${cardCls}`}>
-        <div className="h-[96px]" style={{ background: stripe(dc.tile) }} />
+        <div className="relative h-[96px]" style={{ background: stripe(dc.tile) }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        </div>
         <div className="flex items-start justify-between gap-2.5 p-3.5">
           <div className="min-w-0">
             <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del servicio', 'Service name')}</div>
-            <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{catName(draft.cat)} · {draft.dur}</div>
+            <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{catLabel(dc)} · {draft.dur}</div>
           </div>
-          <span className="whitespace-nowrap text-[14px] font-extrabold text-ink">{draft.priceType === 'cotiza' ? L('Cotización', 'Quote') : draft.price ? `$${draft.price}` : '$0'}</span>
+          <span className="whitespace-nowrap text-[14px] font-extrabold text-ink">{priceLabelOf(draft)}</span>
         </div>
       </div>
     );
+    const seg = (on: boolean) => `flex-1 cursor-pointer rounded-lg px-3 py-2 text-center text-[11px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
 
     return (
       <>
         <ModulePage
-          title={L('Nuevo servicio', 'New service')}
-          subtitle={`${catName(draft.cat)} · ${L('Paso', 'Step')} ${wizStep + 1}/${steps.length}`}
-          onBack={() => setView('module')}
-          backLabel={L('Cancelar', 'Cancel')}
+          title={editingId != null ? L('Editar servicio', 'Edit service') : L('Nuevo servicio', 'New service')}
+          subtitle={`${catLabel(dc)} · ${L('Paso', 'Step')} ${wizStep + 1}/${wizSteps.length}`}
+          onBack={() => { setView('module'); setEditingId(null); }}
+          backLabel={editingId != null ? L('Cerrar', 'Close') : L('Cancelar', 'Cancel')}
           maxW={940}
           footer={
             <div className="flex items-center gap-3">
-              <button onClick={back} className="flex h-11 w-11 flex-none items-center justify-center rounded-btn-lg bg-lilac-2 text-ink"><ChevronLeft size={18} strokeWidth={2.4} /></button>
-              <div className="hidden flex-1 text-center text-[11px] font-semibold text-muted-2 sm:block">{L('Paso ', 'Step ')}{wizStep + 1}{L(' de ', ' of ')}{steps.length}</div>
-              <button onClick={next} className="flex-1 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta-sm sm:flex-none sm:px-8">{wizStep >= steps.length - 1 ? L('Publicar servicio', 'Publish service') : L('Continuar', 'Continue')}</button>
+              <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">{wizStep === 0 ? (editingId != null ? L('Cerrar', 'Close') : L('Cancelar', 'Cancel')) : L('Atrás', 'Back')}</button>
+              <button onClick={wizNext} disabled={!nextGated} className={`flex-1 rounded-btn-lg py-3.5 text-[13.5px] font-extrabold text-white ${nextGated ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}>{wizStep >= wizSteps.length - 1 ? (editingId != null ? L('Guardar cambios', 'Save changes') : L('Publicar servicio', 'Publish service')) : L('Continuar', 'Continue')}</button>
             </div>
           }
         >
-        <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[340px_1fr]">
-          <div className="flex flex-col gap-3 xl:sticky xl:top-0">
-            <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
-              {steps.map(([lbl], i) => {
-                const active = wizStep === i, done = i < wizMax && i !== wizStep;
-                return (
-                  <button key={lbl} onClick={() => goStep(i)} className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
-                    <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>
-                    {lbl}
-                  </button>
-                );
-              })}
+          <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[340px_1fr]">
+            <div className="flex flex-col gap-3 xl:sticky xl:top-0">
+              <ChipRow className="-mx-1 px-1">
+                {wizSteps.map(([lbl], i) => {
+                  const active = wizStep === i, done = i < wizMax && i !== wizStep;
+                  return (
+                    <button key={lbl} onClick={() => { if (i <= wizMax) setWizStep(i); }} className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
+                      <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>{lbl}
+                    </button>
+                  );
+                })}
+              </ChipRow>
+              {preview}
             </div>
-            {preview}
-          </div>
 
-          <div className={`${cardCls} p-4 md:p-5`}>
-            <div className="mb-4 text-[13.5px] font-extrabold text-ink">{steps[wizStep][1]}</div>
+            <div className={`${cardCls} p-4 md:p-5`}>
+              <div className="mb-4 text-[13.5px] font-extrabold text-ink">{wizSteps[wizStep][1]}</div>
 
-            {wizStep === 0 && (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <div className={label}>{L('Nombre del servicio', 'Service name')} *</div>
-                  <input value={draft.name} onChange={(e) => upD({ name: e.target.value })} placeholder={L('Ej. Clase de pan', 'e.g. Bread class')} className={field} />
-                </div>
-                <div>
-                  <div className={label}>{L('Descripción', 'Description')}</div>
-                  <textarea value={draft.desc} onChange={(e) => upD({ desc: e.target.value })} rows={3} placeholder={L('Qué incluye, para quién, qué lo hace especial…', 'What it includes, for whom, what makes it special…')} className={`${field} resize-none leading-relaxed`} />
-                </div>
-                <div>
-                  <div className={label}>{L('Categoría', 'Category')} *</div>
-                  <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1 pb-0.5">
-                    {SVC_CATS.map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
+              {wizStep === 0 && (
+                <div className="flex flex-col gap-4">
+                  <div><div className={fieldLabel}>{L('Nombre del servicio', 'Service name')} *</div><input value={draft.name} onChange={(e) => upD({ name: e.target.value })} placeholder={L('Ej. Corte de cabello', 'e.g. Haircut')} className={inputCls} /></div>
+                  <div><div className={fieldLabel}>{L('Descripción', 'Description')} <span className="font-semibold text-muted">· {es ? 'ES' : 'EN'}</span></div><textarea value={es ? draft.descEs : draft.descEn} onChange={(e) => upD(es ? { descEs: e.target.value } : { descEn: e.target.value })} rows={3} placeholder={L('Qué incluye, para quién, qué lo hace especial…', 'What it includes, for whom, what makes it special…')} className={`${inputCls} resize-none leading-relaxed`} /></div>
+                  <div>
+                    <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
+                    <ChipRow className="-mx-1 px-1">
+                      {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>)}
+                    </ChipRow>
                   </div>
-                </div>
-                <div>
-                  <div className={label}>{L('Etiquetas', 'Tags')}</div>
-                  <div className="flex flex-wrap gap-2">
-                    {['Más reservado', 'Familiar', 'Premium', 'Nuevo'].map((t) => {
-                      const on = draft.tags.includes(t);
-                      return <button key={t} onClick={() => upD({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{tagLabel(t)}</button>;
-                    })}
+                  <div>
+                    <div className={fieldLabel}>{L('Foto', 'Photo')}</div>
+                    {draft.photoUrl ? (
+                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
+                        <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
+                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} strokeWidth={2.2} /></button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0]); }} disabled={photoBusy} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60">
+                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" strokeWidth={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
+                          : (<><Upload size={20} className="text-primary" strokeWidth={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
+                      </button>
+                    )}
+                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f); }} />
                   </div>
-                </div>
-              </div>
-            )}
-
-            {wizStep === 1 && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-4 sm:flex-row">
-                  <div className="flex-1">
-                    <div className={label}>{L('Precio', 'Price')} *</div>
-                    <div className="flex items-center rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
-                      <span className="text-[13px] font-bold text-muted-2">$</span>
-                      <input value={draft.price} onChange={(e) => upD({ price: e.target.value })} inputMode="decimal" placeholder="0" className="w-full bg-transparent px-2 py-3 text-[13px] font-semibold text-ink outline-none" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className={label}>{L('Tipo', 'Type')}</div>
-                    <div className="no-scrollbar flex gap-1.5 min-w-0 overflow-x-auto">
-                      {([['fijo', L('Fijo', 'Fixed')], ['persona', L('Por pers.', 'Per person')], ['cotiza', L('Cotizar', 'Quote')]] as const).map(([k, lbl]) => <button key={k} onClick={() => upD({ priceType: k })} className={seg(draft.priceType === k)}>{lbl}</button>)}
+                  <div>
+                    <div className={fieldLabel}>{L('Etiquetas', 'Tags')}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {['Más reservado', 'Familiar', 'Premium', 'Nuevo'].map((t) => { const on = draft.tags.includes(t); return <button key={t} onClick={() => upD({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{tagLabel(t, L)}</button>; })}
                     </div>
                   </div>
                 </div>
-                <div>
-                  <div className={label}>{L('Duración', 'Duration')}</div>
-                  <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1 pb-0.5">
-                    {['30 min', '60 min', '90 min', '2h', '3h+'].map((d) => <button key={d} onClick={() => upD({ dur: d })} className={chip(draft.dur === d)}>{d}</button>)}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 rounded-btn-lg border border-hair bg-app p-3.5">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[12.5px] font-bold text-ink">{L('Requiere depósito', 'Require deposit')}</div>
-                    <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('Cobra un anticipo al reservar.', 'Charge upfront at booking.')}</div>
-                  </div>
-                  <Switch big on={draft.deposit} onClick={() => upD({ deposit: !draft.deposit })} />
-                </div>
-              </div>
-            )}
+              )}
 
-            {wizStep === 2 && (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <div className={label}>{L('¿Cómo se vende?', 'How is it sold?')}</div>
-                  <div className="flex flex-col gap-2.5">
-                    {([['bookable', L('Reservable', 'Bookable'), L('Acepta citas y depósitos', 'Accepts appointments & deposits'), CalendarCheck], ['inquiry', L('Solo consulta', 'Inquiry only'), L('Recolecta leads para cotizar', 'Collects leads to quote'), MessageSquare]] as const).map(([k, lbl, sub, Icon]) => {
-                      const on = (k === 'bookable') === draft.bookable;
-                      return (
-                        <button key={k} onClick={() => upD({ bookable: k === 'bookable' })} className={`flex items-center gap-3 rounded-btn-lg border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-lilac text-primary-dark"><Icon size={16} strokeWidth={2.2} /></span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-[12.5px] font-extrabold text-ink">{lbl}</span>
-                            <span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{sub}</span>
-                          </span>
-                          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border-[1.5px] ${on ? 'border-primary' : 'border-muted-faint'}`}>{on && <span className="h-2 w-2 rounded-full bg-primary" />}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                {draft.bookable && (
-                  <>
-                    <div>
-                      <div className={label}>{L('Capacidad por sesión', 'Capacity per session')}</div>
-                      <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1 pb-0.5">
-                        {['1', '2–6', '8–16', '20+'].map((c) => <button key={c} onClick={() => upD({ capacity: c })} className={chip(draft.capacity === c)}>{c}</button>)}
+              {wizStep === 1 && (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
+                    <div className="flex-1">
+                      <div className={fieldLabel}>{L('Precio', 'Price')} {draft.priceType !== 'cotiza' && '*'}</div>
+                      <div className={`flex items-center rounded-field border-[1.5px] px-3.5 ${draft.priceType === 'cotiza' ? 'border-lilac-line bg-lilac-2 opacity-60' : 'border-lilac-line bg-white focus-within:border-primary'}`}>
+                        <span className="text-[13px] font-bold text-muted-2">$</span>
+                        <input value={draft.price} onChange={(e) => upD({ price: e.target.value.replace(/[^0-9.]/g, '') })} disabled={draft.priceType === 'cotiza'} inputMode="decimal" placeholder="0" className="w-full bg-transparent px-2 py-3 text-[13px] font-semibold text-ink outline-none" />
                       </div>
                     </div>
-                    <div>
-                      <div className={label}>{L('Días disponibles', 'Available days')}</div>
-                      <div className="flex flex-wrap gap-2">
-                        {(es ? ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']).map((d, i) => {
-                          const key = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][i];
-                          const on = draft.days.includes(key);
-                          return <button key={key} onClick={() => upD({ days: on ? draft.days.filter((x) => x !== key) : [...draft.days, key] })} className={`h-9 w-11 flex-none rounded-lg text-[11px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>{d}</button>;
-                        })}
+                    <div className="flex-1">
+                      <div className={fieldLabel}>{L('Tipo de precio', 'Price type')}</div>
+                      <div className="flex gap-1.5">
+                        {([['fijo', L('Fijo', 'Fixed')], ['persona', L('Por pers.', 'Per person')], ['cotiza', L('Cotizar', 'Quote')]] as [PriceType, string][]).map(([k, lbl]) => <button key={k} onClick={() => upD({ priceType: k })} className={seg(draft.priceType === k)}>{lbl}</button>)}
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {wizStep === 3 && (
-              <div className="flex flex-col gap-4">
-                <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${ready ? 'border-[#A7E3C0] bg-green-bg' : 'border-[#FDE68A] bg-amber-bg'}`}>
-                  <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? '✓' : '⚠'}</span>
-                  <div className="min-w-0">
-                    <div className={`text-[12px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing')}</div>
-                    <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{ready ? L('Todo en orden. Aparecerá en tu listado al instante.', "All set. It'll appear on your listing instantly.") : L('Agrega nombre y precio antes de publicar.', 'Add a name and price before publishing.')}</div>
+                  </div>
+                  <div>
+                    <div className={fieldLabel}>{L('Duración', 'Duration')}</div>
+                    <ChipRow className="-mx-1 px-1">
+                      {['30 min', '45 min', '60 min', '90 min', '2h', '3h+'].map((d) => <button key={d} onClick={() => upD({ dur: d })} className={chip(draft.dur === d)}>{d}</button>)}
+                    </ChipRow>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-btn-lg border border-hair bg-app p-3.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12.5px] font-bold text-ink">{L('Requiere depósito', 'Require deposit')}</div>
+                      <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('Cobra un anticipo al reservar.', 'Charge upfront at booking.')}</div>
+                    </div>
+                    <Switch big on={draft.deposit} onClick={() => upD({ deposit: !draft.deposit })} />
                   </div>
                 </div>
-                <div className="overflow-hidden rounded-btn-lg border border-hair">
-                  {([[L('Nombre', 'Name'), draft.name || '—', !!draft.name, 0], [L('Categoría', 'Category'), catName(draft.cat), true, 0], [L('Precio', 'Price'), draft.priceType === 'cotiza' ? L('Cotización', 'By quote') : draft.price ? `$${draft.price}${draft.priceType === 'persona' ? L('/pers', '/person') : ''}` : '—', !!draft.price || draft.priceType === 'cotiza', 1], [L('Duración', 'Duration'), draft.dur, true, 1], [L('Modo', 'Mode'), draft.bookable ? L('Reservable', 'Bookable') : L('Solo consulta', 'Inquiry only'), true, 2]] as [string, string, boolean, number][]).map((r, i, a) => (
-                    <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
-                      <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
-                      <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-faint'}`}>{r[1]}</span>
-                      <button onClick={() => goStep(r[3])} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
-                    </div>
-                  ))}
+              )}
+
+              {wizStep === 2 && (
+                <div className="flex flex-col gap-2.5">
+                  <div className="text-[11px] font-medium leading-relaxed text-muted">{L('Extras reutilizables que el cliente agrega al reservar. Opcional.', 'Reusable extras the customer adds when booking. Optional.')}</div>
+                  {cfg.addons.length === 0 && (
+                    <div className="rounded-field border-[1.5px] border-dashed border-lilac-line bg-app px-4 py-5 text-center text-[12px] font-semibold text-muted">{L('Aún no tienes add-ons.', "You don't have add-ons yet.")}</div>
+                  )}
+                  {cfg.addons.map((a) => {
+                    const on = draft.addons.includes(a.id);
+                    return (
+                      <button key={a.id} onClick={() => upD({ addons: on ? draft.addons.filter((x) => x !== a.id) : [...draft.addons, a.id] })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
+                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Zap size={15} className="text-primary-dark" strokeWidth={2.2} /></span>
+                        <span className="min-w-0 flex-1 text-left"><span className="block text-[12.5px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span></span>
+                        <span className="flex-none text-[12px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => setAddonSheet({ open: true, initial: null })} className="mt-1 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12px] font-extrabold text-primary-dark">+ {L('Nuevo add-on', 'New add-on')}</button>
                 </div>
-              </div>
-            )}
+              )}
+
+              {wizStep === 3 && (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <div className={fieldLabel}>{L('¿Cómo se vende?', 'How is it sold?')}</div>
+                    <div className="flex flex-col gap-2.5">
+                      {([['bookable', L('Reservable', 'Bookable'), L('Acepta citas y depósitos', 'Accepts appointments & deposits'), CalendarCheck], ['inquiry', L('Solo consulta', 'Inquiry only'), L('Recolecta leads para cotizar', 'Collects leads to quote'), MessageSquare]] as const).map(([k, lbl, sub, Icon]) => {
+                        const on = (k === 'bookable') === draft.bookable;
+                        return (
+                          <button key={k} onClick={() => upD({ bookable: k === 'bookable' })} className={`flex items-center gap-3 rounded-btn-lg border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-lilac text-primary-dark"><Icon size={16} strokeWidth={2.2} /></span>
+                            <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{lbl}</span><span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{sub}</span></span>
+                            <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border-[1.5px] ${on ? 'border-primary' : 'border-muted-faint'}`}>{on && <span className="h-2 w-2 rounded-full bg-primary" />}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {draft.bookable && (
+                    <>
+                      <div>
+                        <div className={fieldLabel}>{L('Capacidad por sesión', 'Capacity per session')}</div>
+                        <ChipRow className="-mx-1 px-1">{['1', '2–6', '8–16', '20+'].map((c) => <button key={c} onClick={() => upD({ capacity: c })} className={chip(draft.capacity === c)}>{c}</button>)}</ChipRow>
+                      </div>
+                      <div>
+                        <div className={fieldLabel}>{L('Días disponibles', 'Available days')}</div>
+                        <div className="flex flex-wrap gap-2">
+                          {(es ? DAY_KEYS : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']).map((d, i) => { const key = DAY_KEYS[i]; const on = draft.days.includes(key); return <button key={key} onClick={() => upD({ days: on ? draft.days.filter((x) => x !== key) : [...draft.days, key] })} className={`h-9 w-11 flex-none rounded-lg text-[11px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>{d}</button>; })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {wizStep === 4 && (() => {
+                const editing = editingId != null;
+                const addonNames = draft.addons.map((id) => addonOf(id)).filter(Boolean).map((a) => L(a!.es, a!.en ?? a!.es));
+                const rows: [string, string, boolean, number][] = [
+                  [L('Nombre', 'Name'), draft.name || '—', !!draft.name, 0],
+                  [L('Categoría', 'Category'), catLabel(dc), true, 0],
+                  [L('Precio', 'Price'), priceLabelOf(draft), !!draft.price || draft.priceType === 'cotiza', 1],
+                  [L('Duración', 'Duration'), draft.dur, true, 1],
+                  [L('Add-ons', 'Add-ons'), addonNames.length ? addonNames.join(', ') : L('Ninguno', 'None'), true, 2],
+                  [L('Modo', 'Mode'), draft.bookable ? L('Reservable', 'Bookable') : L('Solo consulta', 'Inquiry only'), true, 3],
+                ];
+                return (
+                  <div className="flex flex-col gap-4">
+                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#A7E3C0] bg-green-bg' : 'border-[#FDE68A] bg-amber-bg'}`}>
+                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
+                      <div className="min-w-0">
+                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
+                        <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá en tu listado al instante.', "It'll appear on your listing instantly.") : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
+                      </div>
+                    </div>
+                    <div className="overflow-hidden rounded-btn-lg border border-hair">
+                      {rows.map((r, i, a) => (
+                        <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
+                          <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
+                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-faint'}`}>{r[1]}</span>
+                          <button onClick={() => setWizStep(r[3])} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
+                        </div>
+                      ))}
+                    </div>
+                    {editing && (
+                      <div>
+                        <div className={fieldLabel}>{L('Administrar servicio', 'Manage service')}</div>
+                        <div className="flex gap-2.5">
+                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
-        </div>
         </ModulePage>
+        {editorSheets()}
+        <ConfirmDialog open={confirmDel} onClose={() => setConfirmDel(false)} onConfirm={() => { setConfirmDel(false); deleteEditing(); }} title={L('¿Eliminar servicio?', 'Delete service?')} message={L(`“${draft.name || L('Este servicio', 'This service')}” se quitará de tu listado. Esta acción no se puede deshacer.`, `“${draft.name || 'This service'}” will be removed from your listing. This can’t be undone.`)} confirmLabel={L('Eliminar', 'Delete')} cancelLabel={L('Cancelar', 'Cancel')} />
         <Toast msg={toast} />
       </>
     );
@@ -525,305 +585,151 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ============================ MODULE ============================
   const modeBtn = (on: boolean) => `flex flex-1 items-center justify-center gap-2 rounded-btn py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
-  const chipCls = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+
+  function editorSheets() {
+    return (
+      <>
+        <ServiceCategoryEditor open={catSheet.open} onClose={() => setCatSheet((s) => ({ ...s, open: false }))} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
+        <ServiceAddonEditor open={addonSheet.open} onClose={() => setAddonSheet((s) => ({ ...s, open: false }))} L={L} initial={addonSheet.initial} usedCount={addonSheet.initial ? addonUsedBy(addonSheet.initial.id) : 0} onSave={upsertAddon} onDelete={deleteAddon} />
+      </>
+    );
+  }
 
   // ---- services · catalog ----
-  const groups = SVC_CATS.map((c) => ({ cat: c, list: services.filter((s) => s.cat === c.id) })).filter((g) => g.list.length);
-
-  const analyticsCard = (
-    <div className={`${cardCls} p-4`}>
-      <div className="mb-3 text-[12.5px] font-extrabold text-ink">{L('Ingresos por servicios · 30 días', 'Service revenue · 30 days')}</div>
-      <div className="mb-3 grid grid-cols-3 gap-2.5">
-        {[[L('Ingresos', 'Revenue'), '$24.8k', '▲ 38%'], [L('Reservas', 'Bookings'), '128', '▲ 22%'], [L('Conversión', 'Conversion'), '62%', '▲ 8pp']].map((k) => (
-          <div key={k[0]} className="rounded-btn-lg bg-app p-2.5">
-            <div className="text-[9px] font-semibold text-muted-2">{k[0]}</div>
-            <div className="mt-1 text-[16px] font-extrabold text-ink">{k[1]}</div>
-            <div className="text-[9px] font-extrabold text-green">{k[2]}</div>
-          </div>
-        ))}
-      </div>
-      <div className="mb-2 text-[10px] font-extrabold uppercase tracking-[.05em] text-muted-faint">{L('Mejores ingresos', 'Best earners')}</div>
-      {([['Sourdough 101', '48 · $4,080', '100%', '#4F46E5'], ['Comedor privado', '28 · $3,920', '92%', '#7C6BFF'], ['Pizza para familias', '22 · $2,860', '70%', '#A78BFA'], ['Cata de vinos', '18 · $1,440', '55%', '#10B981']] as [string, string, string, string][]).map((b) => (
-        <div key={b[0]} className="py-1.5">
-          <div className="mb-1 flex justify-between text-[11.5px]"><span className="truncate font-bold text-ink">{b[0]}</span><span className="flex-none pl-2 font-bold text-muted-2">{b[1]}</span></div>
-          <span className="block h-[5px] overflow-hidden rounded-full bg-lilac-2"><span className="block h-full rounded-full" style={{ width: b[2], background: b[3] }} /></span>
-        </div>
-      ))}
-    </div>
-  );
-
-  const inquiriesCard = (
-    <div className={`${cardCls} p-4`}>
-      <div className="mb-3 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink"><MessageSquare size={14} strokeWidth={2.2} className="text-primary-dark" />{L('Consultas pendientes', 'Pending inquiries')}</span>
-        <span className="rounded-lg bg-amber-bg px-2 py-0.5 text-[9.5px] font-extrabold text-amber-ink">8</span>
-      </div>
-      <div className="flex flex-col">
-        {([['MV', '#7B61FF', 'Mariana V.', L('Comedor privado · 18 pers.', 'Private dining · 18 ppl'), '9 Nov · 7 PM'], ['MT', '#1F9D57', 'Mission Tech', L('Catering · 80 pers.', 'Catering · 80 ppl'), '18 Oct · 12 PM'], ['SJ', '#E8954A', 'Sarah J.', L('Pastel de boda · cata', 'Wedding cake · tasting'), 'Nov']] as [string, string, string, string, string][]).map((i, idx, a) => (
-          <div key={i[2]} className={`flex items-center gap-2.5 py-2.5 ${idx < a.length - 1 ? 'border-b border-hair' : ''}`}>
-            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ background: i[1] }}>{i[0]}</span>
-            <div className="min-w-0 flex-1">
-              <div className="text-[12px] font-extrabold text-ink">{i[2]}</div>
-              <div className="truncate text-[10px] font-medium text-muted-2">{i[3]} · {i[4]}</div>
-            </div>
-            <button onClick={() => flash(L('Cotización enviada', 'Quote sent'))} className="flex-none rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Cotizar', 'Quote')}</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const groups = cfg.categories.filter((c) => c.visible).map((c) => ({ cat: c, list: services.filter((s) => s.cat === c.id) }))
+    .concat([{ cat: FALLBACK_CAT, list: services.filter((s) => !cfg.categories.some((c) => c.id === s.cat)) }])
+    .filter((g) => g.list.length);
 
   const catalog = (
-    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_340px]">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 rounded-card-sm bg-lilac-2 p-3">
-          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-primary text-white"><CalendarCheck size={16} strokeWidth={2.2} /></span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-extrabold text-ink">{L('Módulo de reservas activo', 'Bookings module active')}</div>
-            <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{L('Los servicios reservables aceptan reservas y depósitos.', 'Bookable services accept bookings & deposits.')}</div>
-          </div>
-          <button onClick={() => setMode('bookings')} className="flex-none rounded-[9px] bg-white px-2.5 py-2 text-[10.5px] font-extrabold text-primary-dark">{L('Reservas', 'Bookings')} ›</button>
+    <div className="flex flex-col gap-4">
+      {/* MODE: display-only vs online bookings */}
+      <div className={`${cardCls} p-3.5`}>
+        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CalendarCheck size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Modo del listado', 'Listing mode')}</div>
+        <div className="flex rounded-full bg-lilac-2 p-0.5">
+          <button onClick={() => { if (cfg.booking) { saveCfg({ ...cfg, booking: false }); flash(L('Servicios en modo Solo mostrar', 'Services set to Display only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.booking ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo mostrar', 'Display only')}</button>
+          <button onClick={() => { if (!cfg.booking) { saveCfg({ ...cfg, booking: true }); flash(L('Servicios con reservas en línea', 'Services set to Online bookings')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.booking ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Aceptar reservas', 'Accept bookings')}</button>
         </div>
+        <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
+          {cfg.booking
+            ? L('Tu listado muestra tus servicios y los clientes pueden reservar en línea (botón Reservar).', 'Your listing shows services and customers can book online (Reservar button).')
+            : L('Tu listado muestra tus servicios y precios. Los clientes te llaman o visitan para reservar — sin reservas en línea.', 'Your listing shows services & prices. Customers call or visit to book — no online booking.')}
+        </p>
+      </div>
 
-        {groups.map((g) => (
-          <div key={g.cat.id}>
-            <div className="mb-2.5 flex items-center gap-2.5">
-              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-white" style={{ background: stripe(g.cat.tile) }}><g.cat.Icon size={16} strokeWidth={2.2} /></span>
-              <div className="min-w-0">
-                <div className="text-[13px] font-extrabold text-ink">{L(g.cat.es, g.cat.en)}</div>
-                <div className="text-[10px] font-semibold text-muted-2">{g.list.length} {L('servicios', 'services')} · {L(g.cat.sEs, g.cat.sEn)}</div>
-              </div>
-            </div>
-            <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-1">
-              {g.list.map((s) => {
-                const bk = bookable[s.id];
-                return (
-                  <div key={s.id} className={`${cardCls} p-3`}>
-                    <button onClick={() => { setSheetId(s.id); setEdit({ ...s, es: s.es }); }} className="flex w-full gap-3 text-left">
-                      <span className="h-[60px] w-[60px] flex-none rounded-tile" style={{ background: stripe(s.tile) }} />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-start justify-between gap-2">
-                          <span className="text-[13.5px] font-extrabold text-ink">{s.name}</span>
-                          <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{s.price}</span>
-                        </span>
-                        <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{s.dur} · {bk ? L('reservable', 'bookable') : L('solo consulta', 'inquiry only')}</span>
-                        <span className="mt-1.5 line-clamp-2 block text-[11px] font-medium leading-snug text-ink-3">{L(s.es, s.en)}</span>
-                      </span>
-                    </button>
-                    <div className="mt-2.5 flex items-center justify-between border-t border-dashed border-hair pt-2.5">
-                      <div className="flex items-center gap-2">
-                        <Switch on={bk} onClick={() => setBookable((b) => ({ ...b, [s.id]: !bk }))} />
-                        <span className={`text-[10.5px] font-bold ${bk ? 'text-primary-dark' : 'text-muted-2'}`}>{bk ? L('Reservas activas', 'Bookings on') : L('Solo consulta', 'Inquiry only')}</span>
-                      </div>
-                      <button onClick={() => bk ? setMode('bookings') : flash(L('8 leads sin cotizar', '8 uncontacted leads'))} className="text-[10.5px] font-extrabold text-primary-dark">{bk ? L('Ver reservas', 'View bookings') : L('Leads · 8', 'Leads · 8')} ›</button>
-                    </div>
-                  </div>
-                );
-              })}
+      {groups.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no tienes servicios — agrega el primero.', 'No services yet — add your first one.')}</div>
+      ) : groups.map((g) => (
+        <div key={g.cat.id}>
+          <div className="mb-2.5 flex items-center gap-2.5">
+            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-white" style={{ background: stripe(g.cat.tile) }}>{(() => { const Icon = svcCatIcon(g.cat.icon); return <Icon size={16} strokeWidth={2.2} />; })()}</span>
+            <div className="min-w-0">
+              <div className="text-[13px] font-extrabold text-ink">{catLabel(g.cat)}</div>
+              <div className="text-[10px] font-semibold text-muted-2">{g.list.length} {g.list.length === 1 ? L('servicio', 'service') : L('servicios', 'services')}</div>
             </div>
           </div>
-        ))}
-      </div>
+          <div className="grid gap-2.5 md:grid-cols-2">
+            {g.list.map((s) => (
+              <button key={s.id} onClick={() => startEdit(s)} className={`${cardCls} cursor-pointer p-3 text-left`}>
+                <div className="flex gap-3">
+                  <span className="relative h-[60px] w-[60px] flex-none overflow-hidden rounded-tile" style={{ background: stripe(catOf(s.cat).tile) }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {s.imageUrl && <img src={s.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{s.name}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                      <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{priceLabelOf(s)}</span>
+                    </span>
+                    <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{s.dur} · {s.bookable ? L('reservable', 'bookable') : L('solo consulta', 'inquiry only')}</span>
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {s.deposit && <span className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')}</span>}
+                      {s.addons.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{s.addons.length} {L('add-ons', 'add-ons')}</span>}
+                      {s.tags.map((t) => <span key={t} className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[9px] font-extrabold text-amber-ink">{tagLabel(t, L)}</span>)}
+                    </span>
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
 
-      <div className="flex flex-col gap-4 xl:sticky xl:top-[74px]">
-        {analyticsCard}
-        {inquiriesCard}
-      </div>
+      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} strokeWidth={2.6} />{L('Nuevo servicio', 'New service')}</button>
     </div>
   );
 
   // ---- services · categories ----
-  const categories = (
+  const categoriesTab = (
     <div className="mx-auto max-w-[720px]">
-      <div className="mb-3 text-[11.5px] font-medium leading-relaxed text-ink-3">{L('Agrupa tus servicios en secciones. Activa/desactiva para mostrar en el listado.', 'Group services into sections. Toggle to show on the listing.')}</div>
+      <div className="mb-3 text-[11.5px] font-medium leading-relaxed text-ink-3">{cfg.categories.length}{L(' categorías · toca para editar · reordena con las flechas · activa/desactiva para mostrar', ' categories · tap to edit · reorder with the arrows · toggle to show')}</div>
       <div className="grid gap-2.5 md:grid-cols-2">
-        {SVC_CATS.map((c) => {
-          const on = catShow[c.id];
-          const n = services.filter((s) => s.cat === c.id).length;
+        {cfg.categories.map((c, i) => {
+          const Icon = svcCatIcon(c.icon); const n = countIn(c.id);
           return (
-            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${on ? '' : 'opacity-60'}`}>
-              <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><c.Icon size={18} strokeWidth={2.2} /></span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span>
-                  {!on && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}
+            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
+              <span className="flex flex-none flex-col">
+                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} strokeWidth={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} strokeWidth={2.6} /></button>
+              </span>
+              <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('servicio', 'service') : L('servicios', 'services')}</div>
                 </div>
-                <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {L('servicios', 'services')} · {L(c.sEs, c.sEn)}</div>
-              </div>
-              <Switch big on={on} onClick={() => setCatShow((s) => ({ ...s, [c.id]: !on }))} />
+              </button>
+              <Switch big on={c.visible} onClick={() => toggleCategory(c.id)} />
             </div>
           );
         })}
       </div>
-      <button onClick={() => flash(L('Nueva categoría creada', 'New category created'))} className="mt-3.5 w-full rounded-card-sm border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-3.5 text-[12.5px] font-extrabold text-primary-dark">+ {L('Nueva categoría', 'New category')}</button>
+      <button onClick={() => setCatSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nueva categoría', 'New category')}</button>
     </div>
   );
 
-  // ---- bookings ----
-  const kpis = [
-    { Icon: CalendarDays, c: '#6D4DF6', bg: '#EFEBFF', label: L('Próximas · 30d', 'Upcoming · 30d'), value: '128', delta: '▲ 22%', dC: 'text-green' },
-    { Icon: Users, c: '#2A5C8A', bg: '#E4ECFB', label: L('Tamaño prom.', 'Avg party'), value: '3.4', delta: '▲ 0.4', dC: 'text-green' },
-    { Icon: XCircle, c: '#9A6A12', bg: '#FCEFD6', label: L('No-shows', 'No-show rate'), value: '4.2%', delta: '▼ 1.8pp', dC: 'text-green' },
-    { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Depósitos', 'Deposits held'), value: '$2,840', delta: L('8 activos', '8 active'), dC: 'text-muted-2' },
+  // ---- services · add-ons ----
+  const addonsTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Zap size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{L('Extras reutilizables', 'Reusable extras')}</span><span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea un add-on una vez, úsalo en cualquier servicio.', 'Build an add-on once, use it on any service.')}</span></span>
+      </div>
+      {cfg.addons.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no hay add-ons — crea el primero (ej. Lavado, Diseño de barba).', 'No add-ons yet — create your first (e.g. Wash, Beard design).')}</div>
+      ) : (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {cfg.addons.map((a) => {
+            const used = addonUsedBy(a.id);
+            return (
+              <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{used} {used === 1 ? L('servicio', 'service') : L('servicios', 'services')}</span>
+                </span>
+                <span className="flex-none text-[13px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <button onClick={() => setAddonSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nuevo add-on', 'New add-on')}</button>
+    </div>
+  );
+
+  // ---- bookings (Reservas) ----
+  const bkList = (bookingRows ?? DEMO_BOOKINGS).filter((b) => bookFilter === 'all' || b.status === bookFilter);
+  const upcoming = (bookingRows ?? DEMO_BOOKINGS).filter((b) => b.status === 'pending' || b.status === 'confirmed').length;
+  const pending = (bookingRows ?? DEMO_BOOKINGS).filter((b) => b.status === 'pending').length;
+  const depositsHeld = (bookingRows ?? DEMO_BOOKINGS).filter((b) => b.status !== 'cancelled').reduce((n, b) => n + (b.deposit ?? 0), 0);
+
+  const kpis: { Icon: LucideIcon; c: string; bg: string; label: string; value: string }[] = [
+    { Icon: CalendarDays, c: '#6D4DF6', bg: '#EFEBFF', label: L('Próximas', 'Upcoming'), value: String(upcoming) },
+    { Icon: MessageSquare, c: '#9A6A12', bg: '#FCEFD6', label: L('Por confirmar', 'Pending'), value: String(pending) },
+    { Icon: Users, c: '#2A5C8A', bg: '#E4ECFB', label: L('Total', 'Total'), value: String((bookingRows ?? DEMO_BOOKINGS).length) },
+    { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Depósitos', 'Deposits'), value: `$${depositsHeld}` },
   ];
-
-  const dows = es ? ['L', 'M', 'X', 'J', 'V', 'S', 'D'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const eventDays: Record<number, string[]> = { 2: ['#D6336C', '#7B61FF'], 5: ['#7B61FF'], 8: ['#D6336C'], 11: ['#1F9D57'], 14: ['#D6336C', '#7B61FF'], 18: ['#D6336C'], 22: ['#7B61FF', '#1F9D57'], 25: ['#D6336C'], 28: ['#1F9D57'], 31: ['#D6336C', '#7B61FF'] };
-
-  // Real business → its bookings (mapped from business_bookings). Demo keeps the
-  // sample day. Re-maps on language toggle for the ES/EN type line.
-  const bookingsRaw = useMemo<Bk[]>(() => {
-    if (bookingRows) return bookingRows.map((r) => rowToBk(r, es));
-    return [
-      { time: '7:00 PM', nm: 'Daniel K.', kind: 'reservations', type: L('Reserva · 2 pers.', 'Reservation · party 2'), table: 'T1', deposit: '', vip: false, notes: L('Aniversario — mesa junto a la ventana.', 'Anniversary — window table please.'), st: 'ok' },
-      { time: '7:30 PM', nm: 'Anna F.', kind: 'reservations', type: L('Menú degustación · 2', 'Tasting menu · party 2'), table: 'T4', deposit: '$140', vip: true, notes: L('Maridaje de vino. Alergia: marisco.', 'Wine pairing. Allergy: shellfish.'), st: 'ok' },
-      { time: '7:45 PM', nm: 'James T.', kind: 'reservations', type: L('Reserva · 6 pers.', 'Reservation · party 6'), table: 'T9', deposit: '$50', vip: false, notes: L('Trae pastel de cumpleaños.', 'Bringing birthday cake.'), st: 'pending' },
-      { time: '8:00 PM', nm: 'Sofia R.', kind: 'classes', type: L('Sourdough 101 · clase', 'Sourdough 101 · class'), table: '14/16', deposit: '$85', vip: false, notes: '', st: 'ok' },
-      { time: '8:30 PM', nm: 'Mission Tech', kind: 'private', type: L('Comedor privado · 18', 'Private dining · 18'), table: L('Sala', 'Back room'), deposit: '$500', vip: true, notes: L('2 vegetarianos, 1 sin gluten.', '2 vegetarian, 1 GF.'), st: 'ok' },
-    ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingRows, es]);
-  const bookingList = bookFilter === 'all' ? bookingsRaw : bookingsRaw.filter((b) => b.kind === bookFilter);
-
-  const filterChip = (on: boolean) => `flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
-
-  const bookingCards = (
-    <div className="flex flex-col gap-2.5">
-      {bookingList.map((b) => {
-        const dt = b.st === 'pending' ? { bg: '#FDE7EF', c: '#D6336C' } : b.kind === 'private' ? { bg: '#E3F5EA', c: '#1F8A4C' } : { bg: '#EFEBFF', c: '#6D4DF6' };
-        return (
-          <div key={b.nm + b.time} className={`${cardCls} flex gap-3 p-3`}>
-            <div className="w-12 flex-none rounded-btn-lg py-1.5 text-center" style={{ background: dt.bg }}>
-              <div className="text-[8.5px] font-bold" style={{ color: dt.c }}>{b.time.split(' ')[1]}</div>
-              <div className="text-[14px] font-extrabold leading-none" style={{ color: dt.c }}>{b.time.split(':')[0]}</div>
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[12.5px] font-extrabold text-ink">{b.nm}</span>
-                {b.vip && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">★ VIP</span>}
-              </div>
-              <div className="mt-0.5 text-[10.5px] font-semibold text-ink-3">{b.type}</div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                {b.table && <span className="rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-bold text-ink-2">{b.table}</span>}
-                {b.deposit && <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')} {b.deposit}</span>}
-              </div>
-              {b.notes && <div className="mt-1.5 rounded-r-md border-l-2 border-lilac-line bg-app px-2 py-1.5 text-[10px] font-medium italic leading-snug text-muted-2">&ldquo;{b.notes}&rdquo;</div>}
-            </div>
-            <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${bkBadge(b).cls}`}>{L(bkBadge(b).es, bkBadge(b).en)}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const dayHeader = (
-    <div className="mb-2.5 flex items-center justify-between gap-2">
-      <span className="text-[13px] font-extrabold text-ink">{L('Octubre ', 'October ')}{selDay}{L(' · reservas', ' · bookings')}</span>
-      <div className="no-scrollbar flex gap-1.5 min-w-0 overflow-x-auto">
-        {([['all', L('Todas', 'All')], ['reservations', L('Reservas', 'Reservations')], ['classes', L('Clases', 'Classes')], ['private', L('Privados', 'Private')]] as const).map(([k, lbl]) => (
-          <button key={k} onClick={() => setBookFilter(k)} className={filterChip(bookFilter === k)}>{lbl}</button>
-        ))}
-      </div>
-    </div>
-  );
-
-  const calendarCard = (
-    <div className={`${cardCls} p-4`}>
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-[13px] font-extrabold text-ink">{L('Octubre', 'October')} 2025</span>
-        <div className="flex gap-1.5">
-          <button className="flex h-7 w-7 items-center justify-center rounded-lg border border-hair bg-white text-ink-2"><ChevronLeft size={14} strokeWidth={2.4} /></button>
-          <button className="flex h-7 w-7 items-center justify-center rounded-lg border border-hair bg-white text-ink-2"><ChevronRight size={14} strokeWidth={2.4} /></button>
-        </div>
-      </div>
-      <div className="mb-1.5 grid grid-cols-7 gap-1 text-center">{dows.map((d, i) => <span key={i} className="text-[9px] font-extrabold text-muted-faint">{d}</span>)}</div>
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: 35 }, (_, i) => {
-          const dn = i - 1 + 1; const vis = dn >= 1 && dn <= 31;
-          const today = dn === 14, sel = dn === selDay;
-          const dots = vis && eventDays[dn] ? eventDays[dn] : [];
-          return (
-            <button key={i} onClick={() => vis && setSelDay(dn)} className={`flex aspect-square flex-col items-center justify-center rounded-lg text-[11px] font-extrabold ${sel ? 'bg-primary text-white' : today ? 'bg-lilac text-primary-dark' : vis ? 'bg-app text-ink' : 'cursor-default bg-transparent text-transparent'}`}>
-              <span>{vis ? dn : ''}</span>
-              <span className="mt-0.5 flex h-1 gap-0.5">{dots.map((c, j) => <span key={j} className="h-1 w-1 rounded-full" style={{ background: sel ? '#fff' : c }} />)}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-3 flex flex-wrap gap-3 border-t border-hair pt-3">
-        {([['#D6336C', L('Reservas', 'Reservations')], ['#7B61FF', L('Clases', 'Classes')], ['#1F9D57', L('Privados', 'Private')]] as [string, string][]).map((l) => (
-          <span key={l[1]} className="flex items-center gap-1.5 text-[9.5px] font-bold text-ink-2"><span className="h-2 w-2 rounded-full" style={{ background: l[0] }} />{l[1]}</span>
-        ))}
-      </div>
-    </div>
-  );
-
-  const tables = [
-    { l: 'T1·2', s: 'free', x: '6%', y: '14%', w: 54, h: 36, r: false }, { l: 'T2·4', s: 'taken', x: '32%', y: '14%', w: 54, h: 36, r: false }, { l: 'T3·4', s: 'taken', x: '58%', y: '14%', w: 54, h: 36, r: false },
-    { l: 'T4·6', s: 'held', x: '6%', y: '40%', w: 72, h: 36, r: false }, { l: 'T5·2', s: 'free', x: '44%', y: '40%', w: 54, h: 36, r: false }, { l: 'T6·6', s: 'taken', x: '70%', y: '40%', w: 72, h: 36, r: false },
-    { l: 'B1', s: 'free', x: '6%', y: '70%', w: 34, h: 34, r: true }, { l: 'B2', s: 'taken', x: '24%', y: '70%', w: 34, h: 34, r: true }, { l: 'P3·4', s: 'held', x: '58%', y: '70%', w: 64, h: 34, r: false },
-  ];
-  const tblColor: Record<string, string[]> = { free: ['#BBF7D0', '#22C55E', '#137A3A'], taken: ['#FCA5A5', '#DC2626', '#B91C1C'], held: ['#C7D2FE', '#4F46E5', '#3730A3'] };
-
-  const floorCard = (
-    <div className={`${cardCls} p-4`}>
-      <div className="mb-3 text-[12.5px] font-extrabold text-ink">{L('Plano de mesas', 'Floor plan')} · 7 PM</div>
-      <div className="relative h-[230px] overflow-hidden rounded-btn-lg border border-hair bg-app">
-        <span className="absolute left-3 top-2.5 text-[9px] font-extrabold uppercase tracking-[.05em] text-muted-faint">{L('Comedor', 'Main dining')}</span>
-        {tables.map((tb) => {
-          const c = tblColor[tb.s];
-          return <div key={tb.l} className="absolute flex items-center justify-center text-[9px] font-extrabold" style={{ left: tb.x, top: tb.y, width: tb.w, height: tb.h, background: c[0], border: `1.5px solid ${c[1]}`, borderRadius: tb.r ? 99 : 8, color: c[2] }}>{tb.l}</div>;
-        })}
-      </div>
-      <div className="mt-3 flex flex-wrap gap-3">
-        {([['#BBF7D0', '#22C55E', L('Libre', 'Available'), '8'], ['#FCA5A5', '#DC2626', L('Ocupada', 'Seated'), '7'], ['#C7D2FE', '#4F46E5', L('Reservada', 'Reserved'), '4']] as [string, string, string, string][]).map((l) => (
-          <span key={l[2]} className="flex items-center gap-1.5 text-[9.5px] font-bold text-ink-2"><span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: l[0], border: `1.5px solid ${l[1]}` }} />{l[2]} {l[3]}</span>
-        ))}
-      </div>
-      <div className="mt-2 text-[10px] font-semibold text-muted-2">{L('Capacidad', 'Capacity')}: 64 {L('lugares', 'seats')} · 73% {L('uso', 'utilization')}</div>
-    </div>
-  );
-
-  const rulesCard = (
-    <div className="grid items-start gap-4 xl:grid-cols-2">
-      <div>
-        <div className="mb-2.5 text-[12px] font-extrabold text-ink">{L('Reglas de reserva', 'Booking rules')}</div>
-        <div className={`${cardCls} px-3.5`}>
-          {[L('Reservas con 30 días de anticipación', 'Reservations open 30 days ahead'), L('Depósito de $25 para grupos de 6+', '$25 deposit for parties of 6+'), L('Cancelación con 24h', '24h cancellation policy'), L('Auto-confirmar grupos ≤ 4', 'Auto-confirm parties ≤ 4'), L('Permitir lista de espera', 'Allow waitlist when full')].map((r, i, a) => (
-            <div key={i} className={`flex items-center justify-between gap-3 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
-              <span className="text-[12px] font-semibold text-ink">{r}</span>
-              <Switch big on={!!ruleSt[i]} onClick={() => setRuleSt((s) => ({ ...s, [i]: !s[i] }))} />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div>
-        <div className="mb-2.5 text-[12px] font-extrabold text-ink">{L('Campos de reserva', 'Booking fields')}</div>
-        <div className={`${cardCls} p-3.5`}>
-          <div className="mb-3 flex items-center gap-2.5 rounded-btn-lg bg-lilac-2 p-2.5">
-            <Tag size={15} strokeWidth={2} className="flex-none text-primary-dark" />
-            <div className="min-w-0">
-              <div className="text-[11.5px] font-extrabold text-ink">{L('Campos de reserva · Restaurante', 'Booking fields · Restaurant')}</div>
-              <div className="mt-0.5 text-[10px] font-medium leading-snug text-ink-3">{L('Lo que tus clientes llenan. Cambia según la categoría.', 'What guests fill in. Changes by category.')}</div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            {[L('Tamaño del grupo', 'Party size'), L('Fecha y hora', 'Date & time'), L('Preferencia de mesa', 'Seating preference'), L('Restricciones dietéticas', 'Dietary restrictions'), L('Teléfono (recordatorios SMS)', 'Phone (SMS reminders)')].map((f, i) => {
-              const req = !!fieldSt[i];
-              return (
-                <button key={i} onClick={() => setFieldSt((s) => ({ ...s, [i]: !s[i] }))} className="flex items-center gap-2.5 rounded-lg bg-app px-3 py-2.5 text-left">
-                  <Tag size={12} strokeWidth={2.2} className="flex-none text-muted-faint" />
-                  <span className="flex-1 text-[11.5px] font-semibold text-ink">{f}</span>
-                  <span className={`flex-none rounded-md px-2 py-0.5 text-[9px] font-extrabold ${req ? 'bg-pink-bg text-pink-dark' : 'bg-lilac-2 text-muted-2'}`}>{req ? L('Obligatorio', 'Required') : L('Opcional', 'Optional')}</span>
-                </button>
-              );
-            })}
-            <button onClick={() => flash(L('Campo personalizado agregado', 'Custom field added'))} className="mt-1 self-start rounded-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 px-3 py-2 text-[10.5px] font-extrabold text-primary-dark">+ {L('Campo personalizado', 'Custom field')}</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const bkFilterChip = (on: boolean) => `flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
 
   const bookings = (
     <div className="flex flex-col gap-4">
@@ -833,139 +739,71 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: k.bg }}><k.Icon size={16} strokeWidth={2.2} style={{ color: k.c }} /></span>
             <div className="mt-2 text-[10px] font-semibold text-muted-2">{k.label}</div>
             <div className="mt-0.5 text-[19px] font-extrabold text-ink">{k.value}</div>
-            <div className={`text-[9.5px] font-extrabold ${k.dC}`}>{k.delta}</div>
           </div>
         ))}
       </div>
 
-      <div className="flex gap-1.5 rounded-btn border border-hair bg-white p-1">
-        {([['calendar', L('Calendario', 'Calendar')], ['floor', L('Mesas', 'Floor')], ['list', L('Lista', 'List')], ['rules', L('Reglas', 'Rules')]] as const).map(([k, lbl]) => (
-          <button key={k} onClick={() => setBookSub(k)} className={`flex-1 rounded-[9px] py-2 text-[11px] font-extrabold ${bookSub === k ? 'bg-primary text-white' : 'text-ink-2'}`}>{lbl}</button>
+      <ChipRow className="-mx-1 px-1">
+        {([['all', L('Todas', 'All')], ['pending', L('Por confirmar', 'Pending')], ['confirmed', L('Confirmadas', 'Confirmed')], ['seated', L('En curso', 'In progress')], ['done', L('Completadas', 'Done')], ['cancelled', L('Canceladas', 'Cancelled')]] as [typeof bookFilter, string][]).map(([k, lbl]) => (
+          <button key={k} onClick={() => setBookFilter(k)} className={bkFilterChip(bookFilter === k)}>{lbl}</button>
         ))}
-      </div>
+      </ChipRow>
 
-      {bookSub === 'calendar' && (
-        <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1.4fr_1fr]">
-          {calendarCard}
-          <div className="xl:sticky xl:top-[74px]">{dayHeader}{bookingCards}</div>
+      {bkList.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{bookingRows == null ? L('Reservas de ejemplo — las reales de tus clientes aparecerán aquí.', 'Sample bookings — your real customer bookings appear here.') : L('Sin reservas en este filtro.', 'No bookings in this filter.')}</div>
+      ) : (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {bkList.map((b) => {
+            const bd = BK_STATUS[b.status];
+            const canAct = !!b.id && b.status !== 'done' && b.status !== 'cancelled' && bookingRows != null;
+            return (
+              <div key={b.id} className={`${cardCls} p-3`}>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn-lg bg-lilac-2 text-[13px] font-extrabold text-primary-dark">{(b.customer_name || '?').slice(0, 1).toUpperCase()}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5"><span className="truncate text-[12.5px] font-extrabold text-ink">{b.customer_name}</span></div>
+                    <div className="mt-0.5 text-[10.5px] font-semibold text-ink-3">{b.service_name || L('Reserva', 'Booking')}{b.party_size ? ` · ${b.party_size} ${L('pers', 'ppl')}` : ''}</div>
+                    <div className="mt-0.5 text-[10px] font-medium text-muted-2">{bookingWhen(b.starts_at, es)}</div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{b.deposit ? <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')} ${b.deposit}</span> : null}</div>
+                    {b.notes && <div className="mt-1.5 rounded-r-md border-l-2 border-lilac-line bg-app px-2 py-1.5 text-[10px] font-medium italic leading-snug text-muted-2">&ldquo;{b.notes}&rdquo;</div>}
+                  </div>
+                  <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${bd.cls}`}>{L(bd.es, bd.en)}</span>
+                </div>
+                {canAct && (
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-dashed border-hair pt-2.5">
+                    {b.status === 'pending' && <button onClick={() => setBookingStatus(b.id, 'confirmed')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Confirmar', 'Confirm')}</button>}
+                    {b.status === 'confirmed' && <button onClick={() => setBookingStatus(b.id, 'seated')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Iniciar', 'Start')}</button>}
+                    {b.status === 'seated' && <button onClick={() => setBookingStatus(b.id, 'done')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Completar', 'Complete')}</button>}
+                    {(b.status === 'pending' || b.status === 'confirmed') && <button onClick={() => setBookingStatus(b.id, 'cancelled')} className="rounded-lg border-[1.5px] border-pink-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-pink-dark">{L('Cancelar', 'Cancel')}</button>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
-      {bookSub === 'floor' && (
-        <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1.2fr_1fr]">
-          {floorCard}
-          <div className="xl:sticky xl:top-[74px]">{dayHeader}{bookingCards}</div>
-        </div>
-      )}
-      {bookSub === 'list' && <div>{dayHeader}<div className="grid gap-2.5 md:grid-cols-2">{bookingList.map((b) => {
-        const dt = b.st === 'pending' ? { bg: '#FDE7EF', c: '#D6336C' } : b.kind === 'private' ? { bg: '#E3F5EA', c: '#1F8A4C' } : { bg: '#EFEBFF', c: '#6D4DF6' };
-        const bd = bkBadge(b);
-        const canAct = !!b.dbId && !!b.status && b.status !== 'done' && b.status !== 'cancelled';
-        return (
-          <div key={b.nm + b.time} className={`${cardCls} p-3`}>
-            <div className="flex gap-3">
-              <div className="w-12 flex-none rounded-btn-lg py-1.5 text-center" style={{ background: dt.bg }}>
-                <div className="text-[8.5px] font-bold" style={{ color: dt.c }}>{b.time.split(' ')[1]}</div>
-                <div className="text-[14px] font-extrabold leading-none" style={{ color: dt.c }}>{b.time.split(':')[0]}</div>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5"><span className="text-[12.5px] font-extrabold text-ink">{b.nm}</span>{b.vip && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">★ VIP</span>}</div>
-                <div className="mt-0.5 text-[10.5px] font-semibold text-ink-3">{b.type}</div>
-                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{b.table && <span className="rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-bold text-ink-2">{b.table}</span>}{b.deposit && <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')} {b.deposit}</span>}</div>
-              </div>
-              <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${bd.cls}`}>{L(bd.es, bd.en)}</span>
-            </div>
-            {canAct && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-dashed border-hair pt-2.5">
-                {b.status === 'pending' && <button onClick={() => setBookingStatus(b, 'confirmed')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Confirmar', 'Confirm')}</button>}
-                {b.status === 'confirmed' && <button onClick={() => setBookingStatus(b, 'seated')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Sentar', 'Seat')}</button>}
-                {b.status === 'seated' && <button onClick={() => setBookingStatus(b, 'done')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Completar', 'Complete')}</button>}
-                {(b.status === 'pending' || b.status === 'confirmed') && <button onClick={() => setBookingStatus(b, 'cancelled')} className="rounded-lg border-[1.5px] border-pink-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-pink-dark">{L('Cancelar', 'Cancel')}</button>}
-              </div>
-            )}
-          </div>
-        );
-      })}</div></div>}
-      {bookSub === 'rules' && rulesCard}
     </div>
   );
 
-  // ---- edit page (full-screen) ----
-  const sheetSvc = services.find((s) => s.id === sheetId);
-  const closeSheet = () => { setSheetId(null); setEdit({}); };
-  const editPage = sheetSvc && (
-    <ModulePage
-      title={L('Editar servicio', 'Edit service')}
-      subtitle={catName(sheetSvc.cat)}
-      onBack={closeSheet}
-      footer={
-        <div className="flex gap-2.5">
-          <button onClick={() => { if (persistable && sheetSvc.dbId) deleteBizItem(sheetSvc.dbId); setServices((l) => l.filter((s) => s.id !== sheetSvc.id)); closeSheet(); flash(L('Servicio eliminado', 'Service deleted')); }} className="cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>
-          <button onClick={() => { setServices((l) => { const next = l.map((s) => s.id === sheetSvc.id ? { ...s, ...edit } as Svc : s); persistSvcPatch(next.find((s) => s.id === sheetSvc.id)); return next; }); closeSheet(); flash(L('Guardado · listado actualizado', 'Saved · listing updated')); }} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar cambios', 'Save changes')}</button>
-        </div>
-      }
-    >
-      <div className="flex flex-col gap-3.5">
-        <div className="h-[150px] overflow-hidden rounded-tile" style={{ background: stripe(sheetSvc.tile) }} />
-        <div>
-          <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Nombre del servicio', 'Service name')}</div>
-          <input value={edit.name ?? ''} onChange={(e) => setEdit((x) => ({ ...x, name: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
-        </div>
-        <div>
-          <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Descripción', 'Description')}</div>
-          <textarea value={edit.es ?? ''} onChange={(e) => setEdit((x) => ({ ...x, es: e.target.value, en: e.target.value }))} rows={3} className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[12px] font-medium leading-relaxed text-ink outline-none focus:border-primary" />
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Precio', 'Price')}</div>
-            <input value={edit.price ?? ''} onChange={(e) => setEdit((x) => ({ ...x, price: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
-          </div>
-          <div className="flex-1">
-            <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Duración', 'Duration')}</div>
-            <input value={edit.dur ?? ''} onChange={(e) => setEdit((x) => ({ ...x, dur: e.target.value }))} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-btn-lg border border-hair bg-app p-3.5">
-          <div className="min-w-0 flex-1">
-            <div className="text-[12.5px] font-bold text-ink">{L('Acepta reservas', 'Accept bookings')}</div>
-            <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L('Apágalo para solo recibir consultas.', 'Turn off to collect inquiries only.')}</div>
-          </div>
-          <Switch big on={!!bookable[sheetSvc.id]} onClick={() => setBookable((b) => ({ ...b, [sheetSvc.id]: !b[sheetSvc.id] }))} />
-        </div>
-      </div>
-    </ModulePage>
-  );
-
-  // Edit takes over the screen as a full page (no cramped bottom sheet).
-  if (editPage) return <>{editPage}<Toast msg={toast} /></>;
-
   return (
     <div className="relative pb-8">
-      {/* mode toggle */}
       <div className="mb-3 flex gap-2">
         <button onClick={() => setMode('services')} className={modeBtn(mode === 'services')}><Wrench size={14} strokeWidth={2} />{L('Servicios', 'Services')}</button>
-        <button onClick={() => setMode('bookings')} className={modeBtn(mode === 'bookings')}><CalendarDays size={14} strokeWidth={2} />{L('Reservas', 'Bookings')}{mode === 'bookings' && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">128</span>}</button>
+        <button onClick={() => setMode('bookings')} className={modeBtn(mode === 'bookings')}><CalendarDays size={14} strokeWidth={2} />{L('Reservas', 'Bookings')}{upcoming > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{upcoming}</span>}</button>
       </div>
 
-      {/* services sub-tabs */}
       {mode === 'services' && (
-        <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
-          <button onClick={() => setSvcSub('catalog')} className={chipCls(svcSub === 'catalog')}>{L('Catálogo', 'Catalog')}</button>
-          <button onClick={() => setSvcSub('cats')} className={chipCls(svcSub === 'cats')}>
-            {L('Categorías', 'Categories')}<span className={`ml-1.5 font-extrabold ${svcSub === 'cats' ? 'text-white/80' : 'text-muted-2'}`}>{SVC_CATS.length}</span>
-          </button>
+        <div className="mb-4">
+          <ChipRow className="-mx-1 px-1">
+            <button onClick={() => setSvcSub('catalog')} className={chip(svcSub === 'catalog')}>{L('Catálogo', 'Catalog')}</button>
+            <button onClick={() => setSvcSub('cats')} className={chip(svcSub === 'cats')}>{L('Categorías', 'Categories')}<span className={`ml-1.5 font-extrabold ${svcSub === 'cats' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.categories.length}</span></button>
+            <button onClick={() => setSvcSub('addons')} className={chip(svcSub === 'addons')}>{L('Add-ons', 'Add-ons')}<span className={`ml-1.5 font-extrabold ${svcSub === 'addons' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.addons.length}</span></button>
+          </ChipRow>
         </div>
       )}
 
-      {mode === 'services' ? (svcSub === 'catalog' ? catalog : categories) : bookings}
+      {mode === 'services' ? (svcSub === 'catalog' ? catalog : svcSub === 'cats' ? categoriesTab : addonsTab) : bookings}
 
-      {/* add-service CTA (services mode) */}
-      {mode === 'services' && (
-        <button onClick={() => { setDraft(newDraft()); setWizStep(0); setWizMax(0); setView('wizard'); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta md:w-auto md:px-8">
-          <Plus size={16} strokeWidth={2.6} />{L('Nuevo servicio', 'New service')}
-        </button>
-      )}
-
-      {/* premium teaser (verified only) */}
       {!isPremium && (
         <div className="mt-4 flex flex-wrap items-center gap-3.5 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-amber"><Sparkles size={18} strokeWidth={2.2} /></span>
@@ -977,7 +815,24 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
 
+      {editorSheets()}
       <Toast msg={toast} />
     </div>
   );
 }
+
+// ---------- draft ----------
+type Draft = {
+  name: string; descEs: string; descEn: string; cat: string; price: string; priceType: 'fijo' | 'persona' | 'cotiza';
+  dur: string; bookable: boolean; deposit: boolean; addons: string[]; tags: string[]; days: string[]; capacity: string; photoUrl: string;
+};
+const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', priceType: 'fijo', dur: '60 min', bookable: true, deposit: false, addons: [], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '1', photoUrl: '' });
+const tagLabel = (t: string, L: (es: string, en: string) => string) => ({ 'Más reservado': L('Más reservado', 'Most booked'), Familiar: L('Familiar', 'Family'), Premium: 'Premium', Nuevo: L('Nuevo', 'New') } as Record<string, string>)[t] ?? t;
+
+// Sample bookings for demo (no dbId → no persistence, no status actions).
+const DEMO_BOOKINGS: BookingRow[] = [
+  { id: 'd1', service_name: 'Sourdough 101', customer_name: 'Sofía R.', party_size: 2, starts_at: '2026-07-11T18:00:00Z', status: 'pending', deposit: 85, notes: 'Primera vez, alergia a nueces.', created_at: '' },
+  { id: 'd2', service_name: 'Menú degustación', customer_name: 'Anna F.', party_size: 2, starts_at: '2026-07-12T19:30:00Z', status: 'confirmed', deposit: 140, notes: 'Maridaje de vino. Aniversario.', created_at: '' },
+  { id: 'd3', service_name: 'Cata de vinos', customer_name: 'Daniel K.', party_size: 4, starts_at: '2026-07-13T15:00:00Z', status: 'confirmed', deposit: 0, notes: '', created_at: '' },
+  { id: 'd4', service_name: 'Comedor privado', customer_name: 'Mission Tech', party_size: 18, starts_at: '2026-07-20T18:00:00Z', status: 'done', deposit: 500, notes: '2 vegetarianos, 1 sin gluten.', created_at: '' },
+];

@@ -14,7 +14,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, type PublicMenu } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, type PublicMenu, type PublicServices, type PubSvc } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
@@ -31,6 +31,20 @@ type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' 
 type RentPeriod = 'hour' | 'day' | 'week';
 
 type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string };
+
+// A normalized booking target for the service sheet (real service or fixture).
+type SvcTarget = {
+  name: string;
+  descEs: string;
+  descEn: string;
+  price: number | null; // numeric → total math; null → quote/fixture
+  priceType: 'fijo' | 'persona' | 'cotiza';
+  priceLabel: Bi | null; // fixture's non-numeric price ("Desde $180")
+  dur: string;
+  bookable: boolean; // false → inquiry (no time slot, collects a lead)
+  deposit: boolean;
+  addons: PubSvc['addons'];
+};
 
 const initials = (name: string) =>
   name.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -79,6 +93,20 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const menuCats = realMenu?.cats ?? MENU;
   // Display-only menu: real menu with ordering off → showcase (no +/Pedir/cart).
   const menuDisplayOnly = realMenu != null && !realMenu.ordering;
+
+  // Real services (business_items kind='service' + service_config, migration 0046).
+  // Null → the Servicios tab keeps the sample fixtures so the prototype stays
+  // populated. booking off → display-only (services + prices, no online Reservar).
+  const [realServices, setRealServices] = useState<PublicServices | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setRealServices(null);
+    fetchBusinessServices(b.slug).then((s) => { if (!cancelled) setRealServices(s); });
+    return () => { cancelled = true; };
+  }, [b.slug]);
+  const svcBooking = realServices?.booking ?? false;
+  // Display-only services: real services with booking off → showcase (no Reservar).
+  const svcDisplayOnly = realServices != null && !realServices.booking;
   // Option groups for an item: per-item groups on a real menu; the per-category
   // fixture groups otherwise. A real menu never mixes in fixture groups.
   const groupsFor = (catKey: string, item: MenuItem) =>
@@ -114,9 +142,14 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [qty, setQty] = useState(1);
 
   // services / events / updates / reviews
-  const [svcIdx, setSvcIdx] = useState<number | null>(null);
+  // The booking sheet targets a normalized service (a real one, or a fixture) so
+  // one modal serves both. `price` numeric → total math; `priceLabel` carries a
+  // fixture's non-numeric price ("Desde $180"). bookable=false → inquiry (lead).
+  const [svcSel, setSvcSel] = useState<SvcTarget | null>(null);
   const [svcDate, setSvcDate] = useState(0);
   const [svcTime, setSvcTime] = useState(0);
+  const [svcPersons, setSvcPersons] = useState(1);
+  const [svcAddOns, setSvcAddOns] = useState<Record<string, boolean>>({});
   const [svcDone, setSvcDone] = useState(false);
   const [rentIdx, setRentIdx] = useState<number | null>(null);
   const [rentPeriod, setRentPeriod] = useState<RentPeriod>('day');
@@ -243,12 +276,46 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     return d.toISOString();
   };
 
+  // Open the booking sheet for any target (real service or fixture), fresh.
+  const openSvc = (t: SvcTarget) => {
+    setSvcSel(t);
+    setSvcDate(0);
+    setSvcTime(0);
+    setSvcPersons(1);
+    setSvcAddOns({});
+    setSvcDone(false);
+  };
+  const pubToTarget = (s: PubSvc): SvcTarget => ({
+    name: s.name, descEs: s.desc[0], descEn: s.desc[1], price: s.price, priceType: s.priceType,
+    priceLabel: null, dur: s.dur, bookable: s.bookable, deposit: s.deposit, addons: s.addons,
+  });
+  const fixtureToTarget = (f: (typeof SERVICES)[number]): SvcTarget => ({
+    name: B(f.n), descEs: f.d[0], descEn: f.d[1], price: null, priceType: 'cotiza',
+    priceLabel: f.price, dur: '', bookable: true, deposit: false, addons: [],
+  });
+  // Consumer price label for a real service card.
+  const svcPriceLabel = (s: PubSvc): string =>
+    s.priceType === 'cotiza' ? L('Cotización', 'Quote') : s.price ? `$${s.price}${s.priceType === 'persona' ? L('/persona', '/person') : ''}` : L('Gratis', 'Free');
+
+  // Booking sheet math: selected add-ons, base (× persons when per-person), total.
+  const svcChosenAddons = () => (svcSel ? svcSel.addons.filter((a) => svcAddOns[a.id]) : []);
+  const svcTotal = () => {
+    if (!svcSel || svcSel.price == null) return 0;
+    const base = svcSel.priceType === 'persona' ? svcSel.price * Math.max(1, svcPersons) : svcSel.price;
+    return base + svcChosenAddons().reduce((n, a) => n + a.price, 0);
+  };
+
   const confirmBooking = async () => {
-    if (svcIdx === null) return;
+    if (!svcSel) return;
     if (!user) { router.push('/entrar'); return; }
     setSvcDone(true); // keep the existing success screen (optimistic)
-    const { error } = await act.book(b.slug, B(SERVICES[svcIdx].n), svcStartISO(), null, null);
-    if (!error) flash(L('Reserva enviada · míralo en Mi cuenta', 'Booking sent · see it in My account'));
+    const chosen = svcChosenAddons().map((a) => B(a.name));
+    const label = chosen.length ? `${svcSel.name} · ${chosen.join(', ')}` : svcSel.name;
+    const total = svcTotal();
+    const dep = svcSel.deposit && total > 0 ? total : null;
+    const persons = svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : null;
+    const { error } = await act.book(b.slug, label, svcStartISO(), persons, dep);
+    if (!error) flash(svcSel.bookable ? L('Reserva enviada · míralo en Mi cuenta', 'Booking sent · see it in My account') : L('Solicitud enviada · míralo en Mi cuenta', 'Request sent · see it in My account'));
   };
 
   // Rental: rate per hour/day/week × qty, plus a refundable deposit. Start = the
@@ -500,6 +567,38 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </span>
         </span>
       </button>
+    );
+  };
+
+  // Real service card (Servicios tab). booking on + bookable → Reservar; booking
+  // on + inquiry-only → Consultar; booking off (display-only) → no action button.
+  const svcCard = (s: PubSvc) => {
+    const canBook = svcBooking && s.bookable;
+    const canInquire = svcBooking && !s.bookable;
+    return (
+      <div key={s.id} className="flex items-start gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card">
+        <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${s.tile})` }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {s.img && <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <span className="truncate text-[14px] font-extrabold text-ink">{s.name}</span>
+            <span className="flex-none text-[13.5px] font-extrabold text-primary-dark">{svcPriceLabel(s)}</span>
+          </div>
+          <div className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-muted">{B(s.desc)}</div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-[10.5px] font-bold text-muted-2">{s.dur}</span>
+            {s.deposit && <span className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')}</span>}
+            {s.addons.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{s.addons.length} {L('add-ons', 'add-ons')}</span>}
+          </div>
+          {(canBook || canInquire) && (
+            <button onClick={() => openSvc(pubToTarget(s))} className="mt-2.5 w-full cursor-pointer rounded-field bg-primary py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm sm:w-auto sm:px-5">
+              {canBook ? L('Reservar', 'Book') : L('Consultar', 'Ask')}
+            </button>
+          )}
+        </div>
+      </div>
     );
   };
 
@@ -856,20 +955,49 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
       {/* ============ SERVICES ============ */}
       {tab === 'services' && (
-        <div className="flex flex-col gap-2.5 pt-4">
-          {SERVICES.map((s, i) => (
-            <Card key={s.n[0]} className="flex items-center gap-3 p-4">
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-extrabold text-ink">{B(s.n)}</div>
-                <div className="mt-0.5 text-[12px] font-semibold text-muted">{B(s.d)}</div>
-                <div className="mt-1 text-[12.5px] font-extrabold text-primary-dark">{B(s.price)}</div>
+        realServices ? (
+          <div className="pt-4">
+            {/* display-only services → a clear "call to book" note (no Reservar) */}
+            {svcDisplayOnly && (
+              <div className="mb-4 flex items-center gap-3 rounded-card-sm border border-lilac-line bg-lilac-2 p-3">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white text-primary-dark">
+                  <Menu size={16} strokeWidth={2.2} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[12.5px] font-extrabold text-ink">{L('Servicios informativos', 'Services for viewing')}</span>
+                  <span className="block text-[11px] font-semibold leading-snug text-muted">{L('Este negocio muestra sus servicios y precios. Para reservar, llámalo o visítalo.', 'This business shows its services & prices. To book, call or visit.')}</span>
+                </span>
+                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                  <Phone size={13} strokeWidth={2.4} />{L('Llamar', 'Call')}
+                </a>
               </div>
-              <button onClick={() => { setSvcIdx(i); setSvcDate(0); setSvcTime(0); setSvcDone(false); }} className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">
-                {L('Reservar', 'Book')}
-              </button>
-            </Card>
-          ))}
-        </div>
+            )}
+            {realServices.cats.map((c) => (
+              <div key={c.key} className="mb-5">
+                <div className="mb-2.5 flex items-baseline gap-2">
+                  <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
+                  <span className="text-[11.5px] font-bold text-muted">{c.items.length} {c.items.length === 1 ? L('servicio', 'service') : L('servicios', 'services')}</span>
+                </div>
+                <div className="grid gap-2.5 sm:grid-cols-2">{c.items.map((s) => svcCard(s))}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5 pt-4">
+            {SERVICES.map((s) => (
+              <Card key={s.n[0]} className="flex items-center gap-3 p-4">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-extrabold text-ink">{B(s.n)}</div>
+                  <div className="mt-0.5 text-[12px] font-semibold text-muted">{B(s.d)}</div>
+                  <div className="mt-1 text-[12.5px] font-extrabold text-primary-dark">{B(s.price)}</div>
+                </div>
+                <button onClick={() => openSvc(fixtureToTarget(s))} className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">
+                  {L('Reservar', 'Book')}
+                </button>
+              </Card>
+            ))}
+          </div>
+        )
       )}
 
       {/* ============ RENTALS ============ */}
@@ -1217,43 +1345,97 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       </Overlay>
 
       {/* service booking modal */}
-      <Overlay open={svcIdx !== null} onClose={() => setSvcIdx(null)} width={440}>
-        {svcIdx !== null && !svcDone && (
-          <>
-            <OverlayTitle title={B(SERVICES[svcIdx].n)} onClose={() => setSvcIdx(null)} />
-            <div className="text-[12.5px] font-semibold text-muted">{B(SERVICES[svcIdx].d)}</div>
-            <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Elige fecha', 'Pick a date')}</div>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto">
-              {SVC_DATES.map((d, i) => (
-                <button key={d.sub} onClick={() => setSvcDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${svcDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
-                  <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
-                  <span className={`block text-[10.5px] font-bold ${svcDate === i ? 'text-white/80' : 'text-muted'}`}>{d.sub}</span>
-                </button>
-              ))}
-            </div>
-            <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Elige hora', 'Pick a time')}</div>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto">
-              {SVC_TIMES.map((t, i) => (
-                <button key={t} onClick={() => setSvcTime(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-[12.5px] font-extrabold ${svcTime === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
-                  {t}
-                </button>
-              ))}
-            </div>
-            <PrimaryBtn className="mt-5" onClick={confirmBooking}>
-              {L('Solicitar reserva', 'Request booking')}
-            </PrimaryBtn>
-          </>
-        )}
-        {svcIdx !== null && svcDone && (
+      <Overlay open={svcSel !== null} onClose={() => setSvcSel(null)} width={440}>
+        {svcSel !== null && !svcDone && (() => {
+          const total = svcTotal();
+          const showTotal = svcSel.price != null && total > 0;
+          return (
+            <>
+              <OverlayTitle title={svcSel.name} onClose={() => setSvcSel(null)} />
+              <div className="flex items-center gap-2 text-[12.5px] font-semibold text-muted">
+                <span className="min-w-0 flex-1">{L(svcSel.descEs, svcSel.descEn)}</span>
+                {svcSel.priceLabel && <span className="flex-none font-extrabold text-primary-dark">{B(svcSel.priceLabel)}</span>}
+              </div>
+
+              {/* per-person services → party size */}
+              {svcSel.priceType === 'persona' && (
+                <>
+                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Personas', 'People')}</div>
+                  <div className="flex w-fit items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
+                    <button onClick={() => setSvcPersons(Math.max(1, svcPersons - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
+                    <span className="w-6 text-center text-[14px] font-extrabold">{svcPersons}</span>
+                    <button onClick={() => setSvcPersons(svcPersons + 1)} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">+</button>
+                  </div>
+                </>
+              )}
+
+              <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{svcSel.bookable ? L('Elige fecha', 'Pick a date') : L('Fecha preferida', 'Preferred date')}</div>
+              <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                {SVC_DATES.map((d, i) => (
+                  <button key={d.sub} onClick={() => setSvcDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${svcDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                    <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
+                    <span className={`block text-[10.5px] font-bold ${svcDate === i ? 'text-white/80' : 'text-muted'}`}>{d.sub}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* time slot only for bookable (appointment) services */}
+              {svcSel.bookable && (
+                <>
+                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Elige hora', 'Pick a time')}</div>
+                  <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                    {SVC_TIMES.map((t, i) => (
+                      <button key={t} onClick={() => setSvcTime(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-[12.5px] font-extrabold ${svcTime === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* add-ons for this service */}
+              {svcSel.addons.length > 0 && (
+                <>
+                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Agrega extras', 'Add extras')}</div>
+                  <div className="flex flex-col gap-2">
+                    {svcSel.addons.map((a) => {
+                      const on = !!svcAddOns[a.id];
+                      return (
+                        <button key={a.id} onClick={() => setSvcAddOns((m) => ({ ...m, [a.id]: !on }))} className={`flex items-center gap-3 rounded-field border-[1.5px] p-2.5 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={11} className="text-white" strokeWidth={3.2} />}</span>
+                          <span className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-ink">{B(a.name)}</span>
+                          <span className="flex-none text-[12px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* total + deposit summary (numeric-priced services) */}
+              {showTotal && (
+                <div className="mt-4 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
+                  <div className="flex justify-between"><span>{L('Total estimado', 'Estimated total')}</span><span className="text-[14px] font-extrabold text-ink">{money(total)}</span></div>
+                  {svcSel.deposit && <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-primary-dark">{money(total)}</span></div>}
+                </div>
+              )}
+
+              <PrimaryBtn className="mt-5" onClick={confirmBooking}>
+                {svcSel.bookable ? L('Solicitar reserva', 'Request booking') : L('Solicitar información', 'Request info')}
+              </PrimaryBtn>
+            </>
+          );
+        })()}
+        {svcSel !== null && svcDone && (
           <div className="flex flex-col items-center px-2 py-6 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
               <Check size={28} strokeWidth={3} className="text-green" />
             </span>
-            <div className="mt-4 text-[19px] font-extrabold text-ink">{L('¡Solicitud enviada!', 'Request sent!')}</div>
+            <div className="mt-4 text-[19px] font-extrabold text-ink">{svcSel.bookable ? L('¡Solicitud enviada!', 'Request sent!') : L('¡Consulta enviada!', 'Inquiry sent!')}</div>
             <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
               {L('Te contactaremos pronto para confirmar los detalles.', "We'll contact you soon to confirm the details.")}
             </div>
-            <PrimaryBtn className="mt-5" onClick={() => { setSvcIdx(null); setSvcDone(false); }}>
+            <PrimaryBtn className="mt-5" onClick={() => { setSvcSel(null); setSvcDone(false); }}>
               {L('Listo', 'Done')}
             </PrimaryBtn>
           </div>

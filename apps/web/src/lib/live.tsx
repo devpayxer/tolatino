@@ -12,6 +12,7 @@ import { BUSINESSES, EVENTS, POSTS, type Business, type EventItem, type Post } f
 import { CAT, type CatKey } from '@/lib/tiles';
 import { useApp } from '@/lib/state';
 import { normalizeMenuConfig } from '@/lib/menuConfig';
+import { normalizeServiceConfig } from '@/lib/serviceConfig';
 import type { Bi, MenuCat, MenuItem, OptionGroup } from '@/data/bizdetail';
 
 const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
@@ -136,6 +137,78 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
 
   const active = cfg.promos.find((p) => p.status === 'active');
   return { cats, groups, promo: active ? [active.es, active.en] : null, ordering: cfg.ordering };
+}
+
+/** A public, consumer-facing add-on (resolved from service_config). */
+export type PubSvcAddon = { id: string; name: Bi; price: number };
+/** One public service (a `business_items` kind='service' row, consumer-shaped). */
+export type PubSvc = {
+  id: string;
+  name: string;
+  desc: Bi;
+  price: number | null; // null → quote / inquiry
+  priceType: 'fijo' | 'persona' | 'cotiza';
+  dur: string;
+  bookable: boolean; // false → inquiry only (no fixed slot, collects a lead)
+  deposit: boolean; // requires an upfront at booking
+  addons: PubSvcAddon[]; // resolved add-ons offered on this service
+  tile: string; // category striped tile (placeholder imagery)
+  img?: string; // real photo URL (live); tile stays as the fallback
+};
+export type PubSvcCat = { key: string; name: Bi; items: PubSvc[] };
+/** The real public services for a listing: items grouped by the owner's service
+ *  categories, the full add-on catalog (for the booking sheet), and the booking
+ *  mode (false = display-only → no online Reservar). */
+export type PublicServices = { cats: PubSvcCat[]; addons: PubSvcAddon[]; booking: boolean };
+
+/** Fetch + map a business's real services by slug (migration 0046). Returns null
+ *  when offline / no published services — BizDetail falls back to the fixtures. */
+export async function fetchBusinessServices(slug: string): Promise<PublicServices | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('business_services_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const row = data[0] as { items: unknown; config: unknown };
+  const rows = Array.isArray(row.items) ? (row.items as Record<string, unknown>[]) : [];
+  if (rows.length === 0) return null;
+  const cfg = normalizeServiceConfig(row.config);
+
+  const addons: PubSvcAddon[] = cfg.addons.map((a) => ({ id: a.id, name: [a.es, a.en ?? a.es], price: a.price }));
+  const addonById = new Map(addons.map((a) => [a.id, a]));
+
+  const toSvc = (r: Record<string, unknown>, tile: string): PubSvc => {
+    const a = (r.attrs ?? {}) as Record<string, unknown>;
+    const name = String(r.name);
+    const dEs = String(r.description ?? '');
+    const price = r.price != null ? Number(r.price) : null;
+    const priceType = (a.priceType as PubSvc['priceType']) ?? (price != null ? 'fijo' : 'cotiza');
+    const ids = Array.isArray(a.addons) ? (a.addons as string[]) : [];
+    return {
+      id: String(r.id),
+      name,
+      desc: [dEs, String(a.en ?? dEs)],
+      price,
+      priceType,
+      dur: String(a.dur ?? '60 min'),
+      bookable: a.bookable !== false,
+      deposit: !!a.deposit,
+      addons: ids.map((id) => addonById.get(id)).filter((x): x is PubSvcAddon => !!x),
+      tile,
+      img: r.image_url != null ? String(r.image_url) : undefined,
+    };
+  };
+
+  const cats: PubSvcCat[] = [];
+  const used = new Set<Record<string, unknown>>();
+  for (const c of cfg.categories.filter((c) => c.visible)) {
+    const inCat = rows.filter((r) => r.section === c.id);
+    inCat.forEach((r) => used.add(r));
+    if (inCat.length) cats.push({ key: c.id, name: [c.es, c.en], items: inCat.map((r) => toSvc(r, c.tile)) });
+  }
+  const rest = rows.filter((r) => !used.has(r));
+  if (rest.length) cats.push({ key: '_rest', name: ['Servicios', 'Services'], items: rest.map((r) => toSvc(r, '#EFE3D0 0 8px,#E2CFB2 8px 16px')) });
+  if (cats.length === 0) return null;
+
+  return { cats, addons, booking: cfg.booking };
 }
 
 /** Fetch a single business by its public slug (geo-independent). Returns a
