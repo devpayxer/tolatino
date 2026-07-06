@@ -49,7 +49,7 @@ type Prod = {
   id: number; dbId?: string; name: string; cat: string;
   price: number; compareAt?: number; descEs: string; descEn: string;
   sku: string; stock: number; reorder: number;
-  options: string[]; fulfill: string; tax: string;
+  options: string[]; fulfill: string[]; tax: string;
   badges: string[]; sales: string; imageUrl?: string; extra?: Record<string, unknown>;
 };
 
@@ -71,7 +71,7 @@ function rowToProd(r: BizItemRow, idx: number): Prod {
     stock: Number(a.stock ?? 0),
     reorder: Number(a.reorder ?? 0),
     options: (a.options as string[]) ?? [],
-    fulfill: String(a.fulfill ?? 'ship'),
+    fulfill: Array.isArray(a.fulfill) ? (a.fulfill as string[]) : a.fulfill ? [String(a.fulfill)] : ['ship'],
     tax: String(a.tax ?? 'goods'),
     badges: (a.badges as string[]) ?? [],
     sales: String(a.sales ?? '$0'),
@@ -114,12 +114,12 @@ const tagLabel = (t: string, L: (es: string, en: string) => string) =>
 
 // Demo products (sample so the module is explorable without signing in).
 const DEMO_PRODS: Prod[] = [
-  { id: 1, name: 'Mermelada fresa-ruibarbo · 6oz', cat: 'pantry', price: 14, compareAt: 18, descEs: 'Hecha en lotes pequeños con fruta local.', descEn: 'Small-batch with local fruit.', sku: 'JAM-001', stock: 42, reorder: 20, options: ['gift'], fulfill: 'ship', tax: 'goods', badges: ['Oferta'], sales: '$1,820' },
-  { id: 2, name: 'Libro de recetas Country Loaf', cat: 'books', price: 42, descEs: 'Guía completa de masa madre.', descEn: 'Complete sourdough guide.', sku: 'BOOK-001', stock: 12, reorder: 8, options: [], fulfill: 'ship', tax: 'goods', badges: ['Popular'], sales: '$924' },
-  { id: 3, name: 'Tote de lona To’Latino', cat: 'merch', price: 28, descEs: 'Lona resistente, serigrafía a mano.', descEn: 'Heavy canvas, hand-screened.', sku: 'MRC-001', stock: 84, reorder: 30, options: ['tee'], fulfill: 'ship', tax: 'goods', badges: [], sales: '$2,128' },
-  { id: 4, name: 'Masa madre · 100g', cat: 'baking', price: 18, descEs: 'Fermento activo listo para hornear.', descEn: 'Active starter ready to bake.', sku: 'STR-001', stock: 5, reorder: 15, options: [], fulfill: 'local', tax: 'goods', badges: ['Local'], sales: '$486' },
-  { id: 5, name: 'Café en grano · 12oz', cat: 'coffee', price: 19, descEs: 'Tueste medio, notas de chocolate.', descEn: 'Medium roast, chocolate notes.', sku: 'COF-001', stock: 62, reorder: 25, options: ['size', 'grind'], fulfill: 'ship', tax: 'goods', badges: ['Nuevo'], sales: '$1,178' },
-  { id: 6, name: 'Aceite de oliva · 500ml', cat: 'pantry', price: 24, descEs: 'Prensado en frío, primera cosecha.', descEn: 'Cold-pressed, first harvest.', sku: 'OIL-001', stock: 0, reorder: 12, options: [], fulfill: 'pickup', tax: 'goods', badges: [], sales: '$2,400' },
+  { id: 1, name: 'Mermelada fresa-ruibarbo · 6oz', cat: 'pantry', price: 14, compareAt: 18, descEs: 'Hecha en lotes pequeños con fruta local.', descEn: 'Small-batch with local fruit.', sku: 'JAM-001', stock: 42, reorder: 20, options: ['gift'], fulfill: ['ship', 'pickup'], tax: 'goods', badges: ['Oferta'], sales: '$1,820' },
+  { id: 2, name: 'Libro de recetas Country Loaf', cat: 'books', price: 42, descEs: 'Guía completa de masa madre.', descEn: 'Complete sourdough guide.', sku: 'BOOK-001', stock: 12, reorder: 8, options: [], fulfill: ['ship'], tax: 'goods', badges: ['Popular'], sales: '$924' },
+  { id: 3, name: 'Tote de lona To’Latino', cat: 'merch', price: 28, descEs: 'Lona resistente, serigrafía a mano.', descEn: 'Heavy canvas, hand-screened.', sku: 'MRC-001', stock: 84, reorder: 30, options: ['tee'], fulfill: ['ship'], tax: 'goods', badges: [], sales: '$2,128' },
+  { id: 4, name: 'Masa madre · 100g', cat: 'baking', price: 18, descEs: 'Fermento activo listo para hornear.', descEn: 'Active starter ready to bake.', sku: 'STR-001', stock: 5, reorder: 15, options: [], fulfill: ['local', 'pickup'], tax: 'goods', badges: ['Local'], sales: '$486' },
+  { id: 5, name: 'Café en grano · 12oz', cat: 'coffee', price: 19, descEs: 'Tueste medio, notas de chocolate.', descEn: 'Medium roast, chocolate notes.', sku: 'COF-001', stock: 62, reorder: 25, options: ['size', 'grind'], fulfill: ['ship', 'pickup'], tax: 'goods', badges: ['Nuevo'], sales: '$1,178' },
+  { id: 6, name: 'Aceite de oliva · 500ml', cat: 'pantry', price: 24, descEs: 'Prensado en frío, primera cosecha.', descEn: 'Cold-pressed, first harvest.', sku: 'OIL-001', stock: 0, reorder: 12, options: [], fulfill: ['pickup'], tax: 'goods', badges: [], sales: '$2,400' },
 ];
 
 // =====================================================================
@@ -258,7 +258,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
     setDraft({
       name: p.name, descEs: p.descEs, descEn: p.descEn, cat: p.cat, price: String(p.price),
       compareAt: p.compareAt != null ? String(p.compareAt) : '', sku: p.sku, stock: String(p.stock),
-      reorder: String(p.reorder), options: [...p.options], fulfill: p.fulfill, tax: p.tax,
+      reorder: String(p.reorder), options: [...p.options], fulfill: [...p.fulfill], tax: p.tax,
       badges: [...p.badges], photoUrl: p.imageUrl ?? '',
     });
     setWizStep(0); setWizMax(wizSteps.length - 1); setView('wizard');
@@ -482,12 +482,12 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className="flex-1"><div className={fieldLabel}>{L('Reordenar en', 'Reorder at')}</div><input value={draft.reorder} onChange={(e) => upD({ reorder: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="10" className={inputCls} /></div>
                   </div>
                   <div>
-                    <div className={fieldLabel}>{L('Entrega', 'Fulfillment')}</div>
+                    <div className={fieldLabel}>{L('Entrega', 'Fulfillment')} <span className="font-semibold text-muted">· {L('elige una o varias', 'pick one or more')}</span></div>
                     <div className="flex flex-col gap-2">
                       {([['ship', L('Envío', 'Shipping'), L('Transportista a domicilio', 'Carrier to address'), Truck], ['local', L('Entrega local', 'Local delivery'), L('Tus repartidores o apps', 'Your drivers or apps'), HardHat], ['pickup', L('Recoger', 'Pickup'), L('Recoger en tienda', 'In-store pickup'), Store]] as [string, string, string, LucideIcon][]).map(([k, lbl, subL, Icon]) => {
-                        const on = draft.fulfill === k;
+                        const on = draft.fulfill.includes(k);
                         return (
-                          <button key={k} onClick={() => upD({ fulfill: k })} className={`flex items-center gap-3 rounded-btn-lg border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                          <button key={k} onClick={() => upD({ fulfill: on ? draft.fulfill.filter((x) => x !== k) : [...draft.fulfill, k] })} className={`flex items-center gap-3 rounded-btn-lg border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
                             <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
                             <Icon size={16} strokeWidth={2} className={on ? 'text-primary-dark' : 'text-muted-2'} />
                             <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{lbl}</span><span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{subL}</span></span>
@@ -855,7 +855,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
 // ---------- draft ----------
 type Draft = {
   name: string; descEs: string; descEn: string; cat: string; price: string; compareAt: string;
-  sku: string; stock: string; reorder: string; options: string[]; fulfill: string; tax: string;
+  sku: string; stock: string; reorder: string; options: string[]; fulfill: string[]; tax: string;
   badges: string[]; photoUrl: string;
 };
-const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', compareAt: '', sku: '', stock: '', reorder: '', options: [], fulfill: 'ship', tax: 'goods', badges: [], photoUrl: '' });
+const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', compareAt: '', sku: '', stock: '', reorder: '', options: [], fulfill: ['ship'], tax: 'goods', badges: [], photoUrl: '' });
