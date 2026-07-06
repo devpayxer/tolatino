@@ -257,8 +257,8 @@ export function PanelScreen() {
         {nav.map((gp, gi) => (
           <div key={gi} className="mb-2">
             {gp.label && (
-              <div className="flex items-center justify-between px-2 pb-1 pt-2">
-                <span className="text-[10.5px] font-extrabold uppercase tracking-[.06em] text-ink">{gp.label}</span>
+              <div className="flex items-center justify-between px-2 pb-1.5 pt-2.5">
+                <span className="text-[15px] font-extrabold tracking-[-.02em] text-ink">{gp.label}</span>
                 {gp.add && (
                   <button onClick={gp.add.onAdd} className="cursor-pointer text-[9.5px] font-extrabold" style={{ color: gp.add.color }}>
                     {gp.add.label}
