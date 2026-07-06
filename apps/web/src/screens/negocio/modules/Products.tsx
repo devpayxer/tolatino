@@ -16,7 +16,7 @@
 // `Entregas y envíos` module (modules/Fulfillment.tsx) — reachable via a shortcut
 // card — so Products and the Food menu configure fulfillment once.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   Check, CheckCircle2, ChevronDown, ChevronUp, Copy, CreditCard,
@@ -564,12 +564,15 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   }
 
   // ---- catalog ----
-  const filtered = useMemo(() => {
+  // Plain computed (NOT useMemo) — it lives after the wizard/success early
+  // returns, so a hook here would change the hook count between renders (React
+  // #300). The product list is tiny; recomputing per render is free.
+  const filtered = (() => {
     let list = catFilter === 'all' ? products : products.filter((p) => p.cat === catFilter);
     const q = query.trim().toLowerCase();
     if (q) list = list.filter((p) => (p.name + ' ' + p.sku).toLowerCase().includes(q));
     return list;
-  }, [products, catFilter, query]);
+  })();
   const catFilters = [{ id: 'all', label: L('Todos', 'All') }, ...cfg.categories.filter((c) => products.some((p) => p.cat === c.id)).map((c) => ({ id: c.id, label: catLabel(c) }))];
 
   const catalog = (
