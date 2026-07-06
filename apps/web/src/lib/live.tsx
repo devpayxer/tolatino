@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase';
 import { BUSINESSES, EVENTS, POSTS, type Business, type EventItem, type Post } from '@/data/fixtures';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { useApp } from '@/lib/state';
+import { normalizeMenuConfig } from '@/lib/menuConfig';
+import type { Bi, MenuCat, MenuItem, OptionGroup } from '@/data/bizdetail';
 
 const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
@@ -66,6 +68,73 @@ export async function fetchBusinessPhotos(slug: string): Promise<string[]> {
   const { data, error } = await supabase.rpc('business_photos_by_slug', { in_slug: slug });
   if (error || !Array.isArray(data)) return [];
   return (data as { url: string }[]).map((r) => String(r.url)).filter(Boolean);
+}
+
+/** The real public menu for a listing: items grouped by the owner's menu
+ *  categories, per-item option groups (modifier groups from menu_config) keyed
+ *  by `catKey::itemNameEs`, and the first ACTIVE promo (for the hero badge). */
+export type PublicMenu = { cats: MenuCat[]; groups: Record<string, OptionGroup[]>; promo: Bi | null };
+
+/** Fetch + map a business's real menu by slug (migration 0045). Returns null
+ *  when offline / no published items — BizDetail falls back to the fixtures. */
+export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('business_menu_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const row = data[0] as { items: unknown; config: unknown };
+  const rows = Array.isArray(row.items) ? (row.items as Record<string, unknown>[]) : [];
+  const cfg = normalizeMenuConfig(row.config);
+
+  // Published = available (86'd items are hidden from the public menu).
+  const live = rows.filter((r) => {
+    const a = (r.attrs ?? {}) as Record<string, unknown>;
+    return a.stock !== 'out';
+  });
+  if (live.length === 0) return null;
+
+  const groups: Record<string, OptionGroup[]> = {};
+  const toMenuItem = (r: Record<string, unknown>, tile: string, catKey: string): MenuItem => {
+    const a = (r.attrs ?? {}) as Record<string, unknown>;
+    const name = String(r.name);
+    const dEs = String(r.description ?? '');
+    const item: MenuItem = {
+      n: [name, name],
+      d: [dEs, String(a.en ?? dEs)],
+      price: Number(r.price ?? 0),
+      orig: a.compareAt != null ? Number(a.compareAt) : undefined,
+      tag: a.popular ? ['Popular', 'Popular'] : a.isNew ? ['Nuevo', 'New'] : undefined,
+      tagBg: a.popular ? '#EFEBFF' : a.isNew ? '#FCEFD6' : undefined,
+      tagC: a.popular ? '#6D4DF6' : a.isNew ? '#9A6A12' : undefined,
+      bg: tile,
+    };
+    // per-item option groups from the business's reusable modifier groups
+    const modIds = Array.isArray(a.mods) ? (a.mods as string[]) : [];
+    const gs = modIds
+      .map((id) => cfg.mods.find((m) => m.id === id))
+      .filter((m): m is NonNullable<typeof m> => !!m)
+      .map((m): OptionGroup => ({
+        id: m.id,
+        name: [m.es, m.en],
+        type: m.single ? 'single' : 'multi',
+        choices: m.options.map((o) => ({ label: [o.es, o.en ?? o.es] as Bi, price: o.price })),
+      }));
+    if (gs.length) groups[`${catKey}::${name}`] = gs;
+    return item;
+  };
+
+  const cats: MenuCat[] = [];
+  const used = new Set<Record<string, unknown>>();
+  for (const c of cfg.categories.filter((c) => c.visible)) {
+    const inCat = live.filter((r) => r.section === c.id);
+    inCat.forEach((r) => used.add(r));
+    if (inCat.length) cats.push({ key: c.id, name: [c.es, c.en], items: inCat.map((r) => toMenuItem(r, c.tile, c.id)) });
+  }
+  const rest = live.filter((r) => !used.has(r));
+  if (rest.length) cats.push({ key: '_rest', name: ['Menú', 'Menu'], items: rest.map((r) => toMenuItem(r, '#EFEBFF 0 8px,#E5DEF9 8px 16px', '_rest')) });
+  if (cats.length === 0) return null;
+
+  const active = cfg.promos.find((p) => p.status === 'active');
+  return { cats, groups, promo: active ? [active.es, active.en] : null };
 }
 
 /** Fetch a single business by its public slug (geo-independent). Returns a

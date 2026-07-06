@@ -14,7 +14,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
-import { fetchBusinessPhotos, fetchBusinessBySlug } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, type PublicMenu } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
@@ -66,6 +66,21 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     fetchBusinessPhotos(b.slug).then((urls) => { if (!cancelled) setPhotos(urls); });
     return () => { cancelled = true; };
   }, [b.slug]);
+
+  // Real menu (business_items + menu_config, migration 0045). Null → the Menú
+  // tab keeps the sample fixtures so the prototype stays populated.
+  const [realMenu, setRealMenu] = useState<PublicMenu | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setRealMenu(null);
+    fetchBusinessMenu(b.slug).then((m) => { if (!cancelled) setRealMenu(m); });
+    return () => { cancelled = true; };
+  }, [b.slug]);
+  const menuCats = realMenu?.cats ?? MENU;
+  // Option groups for an item: per-item groups on a real menu; the per-category
+  // fixture groups otherwise. A real menu never mixes in fixture groups.
+  const groupsFor = (catKey: string, item: MenuItem) =>
+    realMenu ? realMenu.groups[`${catKey}::${item.n[0]}`] ?? [] : OPTION_GROUPS[catKey] ?? [];
 
   // Approved related listings (migration 0044). Empty offline / when none linked →
   // the tab falls back to nearby fixtures so the prototype stays populated.
@@ -156,7 +171,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const money = (n: number) => `$${n.toFixed(2)}`;
 
   const openItem = (catKey: string, item: MenuItem) => {
-    const groups = OPTION_GROUPS[catKey] ?? [];
+    const groups = groupsFor(catKey, item);
     const s: Record<string, number> = {};
     groups.forEach((g) => g.type === 'single' && (s[g.id] = 0));
     setSingle(s);
@@ -172,7 +187,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const addFromModal = () => {
     if (!itemModal) return;
-    const groups = OPTION_GROUPS[itemModal.catKey] ?? [];
+    const groups = groupsFor(itemModal.catKey, itemModal.item);
     let add = 0;
     const chosen: string[] = [];
     groups.forEach((g) =>
@@ -281,14 +296,15 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const modalUnit = useMemo(() => {
     if (!itemModal) return 0;
     let add = 0;
-    (OPTION_GROUPS[itemModal.catKey] ?? []).forEach((g) =>
+    groupsFor(itemModal.catKey, itemModal.item).forEach((g) =>
       g.choices.forEach((ch, i) => {
         const sel = g.type === 'single' ? single[g.id] === i : !!multi[`${g.id}:${i}`];
         if (sel) add += ch.price;
       }),
     );
     return itemModal.item.price + add;
-  }, [itemModal, single, multi]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemModal, single, multi, realMenu]);
 
   const tabs: [TabKey, string][] = [
     ['overview', 'Overview'],
@@ -465,7 +481,15 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
             </button>
           </div>
         </div>
-        {b.cat === 'FoodDrinks' && (
+        {/* hero promo badge: the first ACTIVE real promo; the fixture only when
+            no real menu is loaded (a real business never shows a fake promo). */}
+        {realMenu ? (
+          realMenu.promo && (
+            <span className="absolute bottom-3 left-3.5 max-w-[70%] truncate rounded-[10px] bg-[#F6E05E] px-[11px] py-[5px] text-[11.5px] font-extrabold text-ink">
+              {L(realMenu.promo[0], realMenu.promo[1])}
+            </span>
+          )
+        ) : b.cat === 'FoodDrinks' && (
           <span className="absolute bottom-3 left-3.5 rounded-[10px] bg-[#F6E05E] px-[11px] py-[5px] text-[11.5px] font-extrabold text-ink">
             {L('Martes 2x1', 'Taco Tue 2x1')}
           </span>
@@ -731,7 +755,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       {/* ============ MENU / SHOP ============ */}
       {tab === 'menu' && (
         <div className="pt-4">
-          {MENU.map((c) => (
+          {menuCats.map((c) => (
             <div key={c.key} className="mb-5">
               <div className="mb-2.5 flex items-baseline gap-2">
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
@@ -1019,7 +1043,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               </div>
               <span className="ml-auto text-[14px] font-extrabold text-ink">{money(itemModal.item.price)}</span>
             </div>
-            {(OPTION_GROUPS[itemModal.catKey] ?? []).map((g) => (
+            {groupsFor(itemModal.catKey, itemModal.item).map((g) => (
               <div key={g.id} className="mt-4">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-[13px] font-extrabold text-ink">{B(g.name)}</span>

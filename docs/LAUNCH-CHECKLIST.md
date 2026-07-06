@@ -216,6 +216,26 @@ backing them with real Supabase tables/RPCs when each feature goes live.
 - [x] **Products & Shipping** — catalog/inventory/variants/collections/discounts; zones/pickup/national/drivers; 4-step add-product wizard.
 - [x] **Services & Bookings** — catalog + bookable/inquiry toggle, reservations (calendar/tables/list/rules); 4-step add-service wizard.
 - [x] **Food menu** — 7 sub-tabs (Platillos/Categorías/Modificadores/Horarios/Promociones/Alérgenos/Stock-86) + 6-step add-item wizard with live preview.
+- [x] **Food menu — FULL admin (2026-07-06).** Every sub-tab is now real CRUD:
+  items (create/edit/duplicate/delete → `business_items` kind='menu'), categories
+  (create/edit/reorder/hide/delete-guarded), reusable modifier groups
+  (single/multi, required, priced options, duplicate), dayparts, promotions
+  (4 types + pause/activate/schedule), allergen matrix (tap-to-cycle, persisted
+  per item), stock automation — structure persisted in `businesses.menu_config`
+  (migration 0045). The public listing's **Menú tab renders the real menu**
+  (grouped by the owner's categories, per-item option pickers from their
+  modifier groups, active promo on the hero). Deferred:
+  - [ ] **Promo redemption analytics** (canjes/ingresos per promo) — display &
+    management only; wire real counts when the transaction phase lands, and
+    APPLY promos to cart pricing at checkout.
+  - [ ] **Item photos** — the wizard's photo slot is a placeholder; wire real
+    uploads (image pipeline → `business_items.image_url`, show on the public
+    menu card + modal).
+  - [ ] **Daypart/schedule enforcement on the public menu** — per-item
+    sched/days + dayparts are stored but the public Menú shows all published
+    items regardless of the hour; filter by active daypart when it matters.
+  - [ ] **Wizard "Programar" publish option** publishes immediately (only
+    "Guardar borrador" hides); add real scheduled publishing later.
 - [x] **Shell polish (mobile chrome, 2026-07-04)** — the dashboard now mirrors the
   handoff on mobile: dark top bar on Inicio (light elsewhere), business identity
   card at the top of Inicio, and the fixed bottom-tab bar
