@@ -228,9 +228,10 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   - [ ] **Promo redemption analytics** (canjes/ingresos per promo) — display &
     management only; wire real counts when the transaction phase lands, and
     APPLY promos to cart pricing at checkout.
-  - [ ] **Item photos** — the wizard's photo slot is a placeholder; wire real
-    uploads (image pipeline → `business_items.image_url`, show on the public
-    menu card + modal).
+  - [x] **Item photos (2026-07-06)** — real uploads via the shared image
+    pipeline (client WebP + EXIF strip, 1200px edge) → `business_items.
+    image_url`; wizard uploader with drag&drop/change/remove, edit-page
+    change/remove, thumbnails on admin cards + the public menu card & modal.
   - [ ] **Daypart/schedule enforcement on the public menu** — per-item
     sched/days + dayparts are stored but the public Menú shows all published
     items regardless of the hour; filter by active daypart when it matters.

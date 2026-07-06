@@ -106,6 +106,7 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
       tagBg: a.popular ? '#EFEBFF' : a.isNew ? '#FCEFD6' : undefined,
       tagC: a.popular ? '#6D4DF6' : a.isNew ? '#9A6A12' : undefined,
       bg: tile,
+      img: r.image_url != null ? String(r.image_url) : undefined,
     };
     // per-item option groups from the business's reusable modifier groups
     const modIds = Array.isArray(a.mods) ? (a.mods as string[]) : [];

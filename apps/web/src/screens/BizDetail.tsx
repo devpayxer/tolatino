@@ -410,7 +410,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       onClick={() => openItem(catKey, it)}
       className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card"
     >
-      <span className="h-[64px] w-[64px] flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }} />
+      <span className="relative h-[64px] w-[64px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+      </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="truncate text-[13.5px] font-extrabold text-ink">{B(it.n)}</span>
@@ -1036,7 +1039,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           <>
             <OverlayTitle title={L('Personaliza tu platillo', 'Customize your item')} onClose={() => setItemModal(null)} />
             <div className="flex items-center gap-3">
-              <span className="h-14 w-14 flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${itemModal.item.bg})` }} />
+              <span className="relative h-14 w-14 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${itemModal.item.bg})` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {itemModal.item.img && <img src={itemModal.item.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+              </span>
               <div className="min-w-0">
                 <div className="text-[15px] font-extrabold text-ink">{B(itemModal.item.n)}</div>
                 <div className="text-[12px] font-semibold text-muted">{B(itemModal.item.d)}</div>

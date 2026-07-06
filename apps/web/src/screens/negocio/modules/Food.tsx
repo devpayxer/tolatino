@@ -14,13 +14,16 @@
 // Demo mode (not signed in) keeps a rich local sample so everything stays
 // explorable; nothing persists. Mobile-first throughout.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Calendar, Check, ChevronDown, ChevronUp, Clock, Copy, Gift, Info,
-  Link2, Pencil, Plus, Search, ShieldCheck, ShoppingBag, Sparkles, Truck, Upload,
-  Utensils, X, Zap,
+  Link2, Loader2, Pencil, Plus, Search, ShieldCheck, ShoppingBag, Sparkles, Trash2,
+  Truck, Upload, Utensils, X, Zap,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import { uploadImage } from '@/lib/image';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
@@ -40,7 +43,7 @@ type Item = {
   id: number; dbId?: string; name: string; cat: string; price: number; compareAt?: number;
   es: string; en: string; diet: string[]; allergens: number[]; mods: string[];
   stock: Stock; popular: boolean; isNew: boolean; loves: number; visible: boolean;
-  dailyLimit?: string;
+  dailyLimit?: string; imageUrl?: string;
   extra?: Record<string, unknown>; // pass-through attrs (channels/sched/days/rules)
 };
 
@@ -77,6 +80,7 @@ function rowToItem(r: BizItemRow, idx: number): Item {
     loves: Number(a.loves ?? 0),
     visible: r.available,
     dailyLimit: a.dailyLimit != null ? String(a.dailyLimit) : undefined,
+    imageUrl: r.image_url ?? undefined,
     extra,
   };
 }
@@ -91,7 +95,7 @@ function itemToRow(it: Item, businessId: string, sort: number): NewBizItem {
   return {
     business_id: businessId, kind: 'menu', name: it.name, description: it.es,
     price: it.price, unit: null, section: it.cat, available: it.visible, sort,
-    image_url: null, attrs: itemAttrs(it),
+    image_url: it.imageUrl ?? null, attrs: itemAttrs(it),
   };
 }
 
@@ -102,14 +106,14 @@ type Draft = {
   channels: Record<string, boolean>; sched: string; days: number[];
   mods: Record<string, boolean>; diet: string[]; allergens: number[];
   flags: Record<string, boolean>; dailyLimit: string; visible: boolean; publishMode: string;
-  rules: Record<number, boolean>; photos: number;
+  rules: Record<number, boolean>; photoUrl: string;
 };
 const newDraft = (cat: string): Draft => ({
   name: '', desc: '', cat, price: '', compareAt: '',
   channels: { dinein: true, pickup: true, delivery: true, catering: false },
   sched: 'all-day', days: [1, 1, 1, 1, 1, 1, 1], mods: {}, diet: [],
   allergens: blankAllergens(), flags: { isNew: true, popular: false, featured: false },
-  dailyLimit: '', visible: true, publishMode: 'now', rules: { 0: true, 1: true, 2: false }, photos: 0,
+  dailyLimit: '', visible: true, publishMode: 'now', rules: { 0: true, 1: true, 2: false }, photoUrl: '',
 });
 
 // ---------- shared UI atoms ----------
@@ -158,8 +162,29 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   void tab;
 
   const admin = useBizAdmin();
+  const { user } = useAuth();
   const real = admin.active;
   const persistable = !admin.demo && !!real; // real signed-in business → persist
+
+  // Item photo upload — SAME compression protocol as Comunidad (client-side
+  // WebP + EXIF strip via lib/image). Demo / signed-out → local object URL so
+  // the flow stays explorable without uploading anything.
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const wizFileRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
+  const pickPhoto = async (file: File | null | undefined, apply: (url: string) => void) => {
+    if (!file || !file.type.startsWith('image/') || photoBusy) return;
+    setPhotoBusy(true);
+    try {
+      const url = !persistable || !user || !supabase
+        ? URL.createObjectURL(file)
+        : await uploadImage(file, user.id, 1200); // menu cards never need more than ~1200px
+      apply(url);
+    } catch {
+      flash(L('No se pudo subir la foto.', "Couldn't upload the photo."));
+    }
+    setPhotoBusy(false);
+  };
 
   // ── menu structure (categories / mods / dayparts / promos / automation) ────
   const [cfg, setCfg] = useState<MenuConfig>(demoMenuConfig);
@@ -195,7 +220,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   };
   const persistPatch = (it: Item | undefined) => {
     if (persistable && it?.dbId) {
-      updateBizItem(it.dbId, { name: it.name, description: it.es, price: it.price, section: it.cat, available: it.visible, attrs: itemAttrs(it) });
+      updateBizItem(it.dbId, { name: it.name, description: it.es, price: it.price, section: it.cat, available: it.visible, image_url: it.imageUrl ?? null, attrs: itemAttrs(it) });
     }
   };
   const patchItem = (id: number, p: Partial<Item>) =>
@@ -449,6 +474,8 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   style={{ opacity: i.visible ? 1 : 0.6 }}
                 >
                   <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${c.tile})` }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {i.imageUrl && <img src={i.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     {ribbon && (
                       <span className={`absolute left-0 top-0 rounded-br-[7px] px-1.5 py-0.5 text-[8px] font-extrabold text-white ${i.isNew ? 'bg-primary' : 'bg-amber'}`}>
                         {i.isNew ? L('Nuevo', 'New') : L('Bajo', 'Low')}
@@ -927,6 +954,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       diet: draft.diet,
       allergens: draft.allergens,
       mods: cfg.mods.filter((m) => draft.mods[m.id]).map((m) => m.id),
+      imageUrl: draft.photoUrl || undefined,
       stock: 'in',
       popular: !!draft.flags.popular,
       isNew: !!draft.flags.isNew,
@@ -952,6 +980,8 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const previewCard = (
     <div className="overflow-hidden rounded-tile border border-hair bg-white">
       <div className="relative h-[104px]" style={{ background: `repeating-linear-gradient(135deg,${draftCat.tile})` }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
         <div className="absolute left-2.5 top-2.5 flex gap-1.5">
           {draft.flags.isNew && <span className="rounded-md bg-lilac px-2 py-0.5 text-[9px] font-extrabold text-primary-dark">{L('Nuevo', 'New')}</span>}
           {draft.flags.popular && <span className="rounded-md bg-amber-bg px-2 py-0.5 text-[9px] font-extrabold text-amber-ink">{L('Popular', 'Popular')}</span>}
@@ -989,15 +1019,42 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         </div>
         <div>
-          <div className={fieldLabel}>{L('Fotos', 'Photos')}</div>
-          <button onClick={() => upDraft({ photos: draft.photos > 0 ? 0 : 1 })} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app">
-            {draft.photos > 0 && <span className="absolute inset-0" style={{ background: `repeating-linear-gradient(135deg,${draftCat.tile})` }} />}
-            {draft.photos === 0 && <>
-              <Upload size={20} className="text-primary" strokeWidth={2} />
-              <span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span>
-              <span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · 4:3 ideal', 'JPG or PNG · 4:3 best')}</span>
-            </>}
-          </button>
+          <div className={fieldLabel}>{L('Foto', 'Photo')}</div>
+          {draft.photoUrl ? (
+            <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
+              <button type="button" onClick={() => wizFileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">
+                {photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}
+              </button>
+              <button type="button" onClick={() => upDraft({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card">
+                <Trash2 size={14} strokeWidth={2.2} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => wizFileRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0], (url) => upDraft({ photoUrl: url })); }}
+              disabled={photoBusy}
+              className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60"
+            >
+              {photoBusy ? (
+                <>
+                  <Loader2 size={20} className="animate-spin text-primary" strokeWidth={2.2} />
+                  <span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span>
+                </>
+              ) : (
+                <>
+                  <Upload size={20} className="text-primary" strokeWidth={2} />
+                  <span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span>
+                  <span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · 4:3 ideal · se comprime sola', 'JPG or PNG · 4:3 best · auto-compressed')}</span>
+                </>
+              )}
+            </button>
+          )}
+          <input ref={wizFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f, (url) => upDraft({ photoUrl: url })); }} />
         </div>
       </div>
     );
@@ -1266,7 +1323,10 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {L(`Ya está en tu menú de ${catLabel(draftCat)} en ${chansSel} canales. Los cambios se publican al instante.`, `It's now on your menu across ${chansSel} channels. Changes go live instantly.`)}
         </div>
         <div className="mt-5 w-full overflow-hidden rounded-tile border border-hair bg-white text-left">
-          <div className="h-[110px]" style={{ background: `repeating-linear-gradient(135deg,${draftCat.tile})` }} />
+          <div className="relative h-[110px]" style={{ background: `repeating-linear-gradient(135deg,${draftCat.tile})` }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          </div>
           <div className="flex items-center justify-between p-3.5">
             <div className="min-w-0">
               <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo platillo', 'New item')}</div>
@@ -1317,8 +1377,19 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       }
     >
       <div className="flex flex-col gap-3.5">
+        {/* Real item photo: upload/change (same compression pipeline) or remove. */}
         <div className="relative h-[150px] overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${catOf(edit.cat).tile})` }}>
-          <span className="absolute bottom-3 right-3 rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink">📷 {L('Foto', 'Photo')}</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {edit.imageUrl && <img src={edit.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          <button type="button" onClick={() => editFileRef.current?.click()} disabled={photoBusy} className="absolute bottom-3 right-3 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">
+            {photoBusy ? L('Subiendo…', 'Uploading…') : edit.imageUrl ? L('Cambiar foto', 'Change photo') : `📷 ${L('Subir foto', 'Upload photo')}`}
+          </button>
+          {edit.imageUrl && (
+            <button type="button" onClick={() => upEdit({ imageUrl: undefined })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-3 top-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card">
+              <Trash2 size={14} strokeWidth={2.2} />
+            </button>
+          )}
+          <input ref={editFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f, (url) => upEdit({ imageUrl: url })); }} />
         </div>
         <div><div className={fieldLabel}>{L('Nombre del platillo', 'Item name')}</div><input value={edit.name} onChange={(e) => upEdit({ name: e.target.value })} className={inputCls} /></div>
         <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><textarea value={es ? edit.es : edit.en} onChange={(e) => upEdit(es ? { es: e.target.value } : { en: e.target.value })} rows={3} className={`${inputCls} resize-none`} /></div>

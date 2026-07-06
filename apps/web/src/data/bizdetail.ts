@@ -12,6 +12,7 @@ export type MenuItem = {
   tagBg?: string;
   tagC?: string;
   bg: string; // striped tile stops "A 0 8px,B 8px 16px"
+  img?: string; // real photo URL (live menus) — bg stays as the fallback
 };
 
 export type MenuCat = { key: string; name: Bi; items: MenuItem[] };
