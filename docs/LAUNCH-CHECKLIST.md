@@ -368,6 +368,23 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   - [ ] **Order has no address column.** Delivery/ship destination is shown from a
     denormalized string in `fulfillment.address`; link real `user_addresses`
     (0014, has PostGIS geo) to the order at checkout for routing/zone assignment.
+  - [ ] **Zone fee is NOT calculated by distance yet — DEFERRED to the payments
+    phase (founder's call, 2026-07-06).** Today a zone's "Tarifa" (`Gratis +$25`,
+    `$5`, `$12`) is descriptive config text, and the consumer cart uses a FIXED
+    placeholder delivery fee (`deliveryFee = 2.99` in `BizDetail.tsx`) + a 10%
+    service fee — it does not measure distance, match the customer to a zone, or
+    read the zone tarifa. The founder decided to leave it as-is until the payment
+    method is linked, then decide which pricing options actually work. When we wire
+    it: the real design is **server-side PostGIS** (non-negotiable #5, never
+    app-side math) — at checkout take the customer's `user_addresses.location`
+    (0014, geo ready) + the `businesses.location` point (0001/0002, geo ready),
+    compute distance with `ST_Distance`/`ST_DWithin` in an RPC/Edge Function, match
+    it to the first zone whose radius covers it → add that zone's fee as a cart
+    line; beyond the last zone → offer shipping/pickup. Prereqs still missing: a
+    **numeric radius per zone** (today `zone.rad` is free text like "0–1.2 mi", not
+    comparable) and the **address-on-order** item above. Model choice (radius bands
+    vs. base + per-mile) to be decided with the founder at that time; current build
+    uses radius bands, matching the map rings.
 - [x] **Entregas y envíos — SHARED fulfillment module (2026-07-06).** Pulled
   delivery/shipping OUT of Products into a standalone module
   (`modules/Fulfillment.tsx`) shared by BOTH the Food menu (local delivery) and
