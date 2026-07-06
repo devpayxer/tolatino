@@ -14,7 +14,8 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
-import { fetchBusinessPhotos } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug } from '@/lib/live';
+import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
@@ -65,6 +66,23 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     fetchBusinessPhotos(b.slug).then((urls) => { if (!cancelled) setPhotos(urls); });
     return () => { cancelled = true; };
   }, [b.slug]);
+
+  // Approved related listings (migration 0044). Empty offline / when none linked →
+  // the tab falls back to nearby fixtures so the prototype stays populated.
+  const [related, setRelated] = useState<PublicRelation[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    setRelated([]);
+    fetchBusinessRelations(b.slug).then((rows) => { if (!cancelled) setRelated(rows); });
+    return () => { cancelled = true; };
+  }, [b.slug]);
+  // Open a related listing by slug — reuse the loaded list, else fetch by slug.
+  const openRelated = async (slug: string) => {
+    const inList = all.find((x) => x.slug === slug);
+    if (inList) { onOpenOther(inList); onTab('overview'); return; }
+    const fetched = await fetchBusinessBySlug(slug);
+    if (fetched) { onOpenOther(fetched); onTab('overview'); }
+  };
   const cover = photos[0] ?? null;
   // Lightbox holds either a real photo URL (http) or a placeholder gradient.
   const isUrl = (s: string) => /^https?:\/\//.test(s);
@@ -837,19 +855,39 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       {/* ============ RELATED ============ */}
       {tab === 'related' && (
         <div className="flex flex-col gap-2.5 pt-4">
-          {all.filter((x) => x.id !== id).slice(0, 4).map((x) => (
-            <Card key={x.id} className="flex items-center gap-3 p-3.5" onClick={() => { onOpenOther(x); onTab('overview'); }}>
-              <span className="h-[56px] w-[56px] flex-none rounded-tile" style={{ background: bizTile(x) }} />
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5">
-                  <span className="truncate text-[13.5px] font-extrabold text-ink">{x.name}</span>
-                  {x.verified && <VerifiedBadge size={15} />}
-                </span>
-                <span className="mt-0.5 block text-[11.5px] font-bold text-muted">{L(CAT[x.cat].es, CAT[x.cat].en)} · {x.dist}</span>
-              </span>
-              <span className="flex-none text-[12.5px] font-extrabold text-ink">★ {x.rating}</span>
-            </Card>
-          ))}
+          {related.length > 0
+            ? // real approved links (migration 0044): sister listings, barbers, DJ…
+              related.map((r) => {
+                const role = r.otherIsTarget ? L(r.roleEs ?? '', r.roleEn ?? r.roleEs ?? '') : '';
+                const catInfo = CAT[r.categoryId as keyof typeof CAT];
+                return (
+                  <Card key={r.slug} className="flex items-center gap-3 p-3.5" onClick={() => openRelated(r.slug)}>
+                    <span className="h-[56px] w-[56px] flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${r.tileA ?? '#EFEBFF'} 0 11px,${r.tileB ?? '#E5DEF9'} 11px 22px)` }} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="truncate text-[13.5px] font-extrabold text-ink">{r.name}</span>
+                        {r.tier !== 'free' && <VerifiedBadge size={15} />}
+                        {role && <span className="flex-none rounded bg-lilac-2 px-1.5 py-0.5 text-[10px] font-bold text-ink-2">{role}</span>}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11.5px] font-bold text-muted">{catInfo ? L(catInfo.es, catInfo.en) : r.categoryId}{r.city ? ` · ${r.city}` : ''}</span>
+                    </span>
+                    <span className="flex-none text-[12.5px] font-extrabold text-ink">★ {r.rating.toFixed(1)}</span>
+                  </Card>
+                );
+              })
+            : all.filter((x) => x.id !== id).slice(0, 4).map((x) => (
+                <Card key={x.id} className="flex items-center gap-3 p-3.5" onClick={() => { onOpenOther(x); onTab('overview'); }}>
+                  <span className="h-[56px] w-[56px] flex-none rounded-tile" style={{ background: bizTile(x) }} />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-[13.5px] font-extrabold text-ink">{x.name}</span>
+                      {x.verified && <VerifiedBadge size={15} />}
+                    </span>
+                    <span className="mt-0.5 block text-[11.5px] font-bold text-muted">{L(CAT[x.cat].es, CAT[x.cat].en)} · {x.dist}</span>
+                  </span>
+                  <span className="flex-none text-[12.5px] font-extrabold text-ink">★ {x.rating}</span>
+                </Card>
+              ))}
         </div>
       )}
 

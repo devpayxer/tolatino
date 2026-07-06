@@ -12,6 +12,7 @@ const TABS = [
   ['listing', 'Información general'],
   ['hours', 'Horario'],
   ['photos', 'Fotos y media'],
+  ['related', 'Listados relacionados'],
   ['updates', 'Novedades'],
   ['menu', 'Menú de comida'],
   ['services', 'Servicios'],

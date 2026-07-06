@@ -162,6 +162,12 @@
     and pushes the owner, honoring the owner's notification prefs in
     `businesses.settings`. Reuse the same today/tomorrow window + copy as the
     banner. Also feed these into the header `Bell` count (currently a demo stub).
+  - [ ] **Listados relacionados — cross-owner request notifications.** When a
+    cross-owner link is requested (`business_relations` status `pending`,
+    migration 0044), the TARGET owner only sees it in the Related module's
+    "Solicitudes por aprobar" today — no push. When Web Push lands, notify the
+    target owner on a new pending request, and notify the requester when it's
+    approved/rejected. Feed both into the header `Bell` count.
 - [ ] **i18n via next-intl.** Copy is bilingual today via inline `L('es','en')`
   + a global ES/EN toggle (works). `CLAUDE.md` targets **next-intl** — migrate
   when it's worth it (SEO/locale routing).
