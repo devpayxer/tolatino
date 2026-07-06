@@ -232,6 +232,13 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     pipeline (client WebP + EXIF strip, 1200px edge) → `business_items.
     image_url`; wizard uploader with drag&drop/change/remove, edit-page
     change/remove, thumbnails on admin cards + the public menu card & modal.
+  - [x] **Menu mode: display-only vs online orders (2026-07-06)** —
+    `menu_config.ordering` (default FALSE = showcase). Dashboard toggle on the
+    Platillos tab; the public Menú tab hides the +/Pedir buttons + cart and
+    shows a "Menú informativo · Llamar" note when ordering is off. NOTE: online
+    ordering itself is still not transactional (no payments/delivery) — turning
+    it on today only surfaces the order buttons (orders create a record via
+    myActivity). Wire real checkout/payments before promoting "Online orders".
   - [ ] **Daypart/schedule enforcement on the public menu** — per-item
     sched/days + dayparts are stored but the public Menú shows all published
     items regardless of the hour; filter by active daypart when it matters.

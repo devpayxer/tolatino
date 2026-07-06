@@ -73,7 +73,7 @@ export async function fetchBusinessPhotos(slug: string): Promise<string[]> {
 /** The real public menu for a listing: items grouped by the owner's menu
  *  categories, per-item option groups (modifier groups from menu_config) keyed
  *  by `catKey::itemNameEs`, and the first ACTIVE promo (for the hero badge). */
-export type PublicMenu = { cats: MenuCat[]; groups: Record<string, OptionGroup[]>; promo: Bi | null };
+export type PublicMenu = { cats: MenuCat[]; groups: Record<string, OptionGroup[]>; promo: Bi | null; ordering: boolean };
 
 /** Fetch + map a business's real menu by slug (migration 0045). Returns null
  *  when offline / no published items — BizDetail falls back to the fixtures. */
@@ -135,7 +135,7 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
   if (cats.length === 0) return null;
 
   const active = cfg.promos.find((p) => p.status === 'active');
-  return { cats, groups, promo: active ? [active.es, active.en] : null };
+  return { cats, groups, promo: active ? [active.es, active.en] : null, ordering: cfg.ordering };
 }
 
 /** Fetch a single business by its public slug (geo-independent). Returns a

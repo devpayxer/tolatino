@@ -436,6 +436,33 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-3">
+          {/* menu MODE: display-only vs online orders (not every restaurant takes
+              orders — some just showcase dishes + prices). Persisted in menu_config. */}
+          <div className={`${cardCls} p-3.5`}>
+            <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink">
+              <ShoppingBag size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Modo del menú', 'Menu mode')}
+            </div>
+            <div className="flex rounded-full bg-lilac-2 p-0.5">
+              <button
+                onClick={() => { if (cfg.ordering) { saveCfg({ ...cfg, ordering: false }); flash(L('Menú en modo Solo mostrar', 'Menu set to Display only')); } }}
+                className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.ordering ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}
+              >
+                {L('Solo mostrar', 'Display only')}
+              </button>
+              <button
+                onClick={() => { if (!cfg.ordering) { saveCfg({ ...cfg, ordering: true }); flash(L('Menú con Pedidos en línea', 'Menu set to Online orders')); } }}
+                className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.ordering ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}
+              >
+                {L('Pedidos en línea', 'Online orders')}
+              </button>
+            </div>
+            <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
+              {cfg.ordering
+                ? L('Tu listado muestra el menú y los clientes pueden ordenar en línea (botones Pedir + carrito).', 'Your listing shows the menu and customers can order online (Order buttons + cart).')
+                : L('Tu listado muestra el menú y los precios. Los clientes te llaman o visitan para ordenar — sin pedidos en línea.', 'Your listing shows the menu & prices. Customers call or visit to order — no online ordering.')}
+            </p>
+          </div>
+
           {/* listing link banner */}
           <div className="flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
             <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Link2 size={15} className="text-white" strokeWidth={2.2} /></span>
@@ -1161,7 +1188,11 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div className="flex items-center gap-2.5 rounded-field bg-green-bg px-3 py-2.5">
           <Info size={15} className="flex-none text-green-dark" strokeWidth={2} />
-          <div className="text-[10.5px] font-medium leading-snug text-green-dark">{L('Los pedidos por Entrega incluyen 12% de comisión.', 'Delivery orders include a 12% partner fee.')}</div>
+          <div className="text-[10.5px] font-medium leading-snug text-green-dark">
+            {cfg.ordering
+              ? L('Los pedidos por Entrega incluyen 12% de comisión.', 'Delivery orders include a 12% partner fee.')
+              : L('Tu menú está en modo Solo mostrar — estos canales son informativos.', 'Your menu is in Display-only mode — these channels are informational.')}
+          </div>
         </div>
       </div>
     );

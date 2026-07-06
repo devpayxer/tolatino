@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, Menu, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -77,6 +77,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     return () => { cancelled = true; };
   }, [b.slug]);
   const menuCats = realMenu?.cats ?? MENU;
+  // Display-only menu: real menu with ordering off → showcase (no +/Pedir/cart).
+  const menuDisplayOnly = realMenu != null && !realMenu.ordering;
   // Option groups for an item: per-item groups on a real menu; the per-category
   // fixture groups otherwise. A real menu never mixes in fixture groups.
   const groupsFor = (catKey: string, item: MenuItem) =>
@@ -404,12 +406,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       on ? 'bg-ink font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-soft'
     }`;
 
-  const itemCard = (catKey: string, it: MenuItem, withAdd = false) => (
-    <button
-      key={B(it.n)}
-      onClick={() => openItem(catKey, it)}
-      className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card"
-    >
+  // `displayOnly` = a showcase menu (dishes + prices, no online orders): the card
+  // is a plain, non-interactive row with no +/Pedir actions and no cart.
+  const itemBody = (it: MenuItem) => (
+    <>
       <span className="relative h-[64px] w-[64px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
@@ -434,27 +434,46 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           )}
         </span>
       </span>
-      <span className="flex flex-none flex-col items-center gap-1.5">
-        <span
-          onClick={(e) => {
-            if (withAdd) {
-              e.stopPropagation();
-              addSimple(catKey, it);
-            }
-          }}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-lilac text-primary-dark"
-        >
-          <Plus size={15} strokeWidth={2.8} />
-        </span>
-        <span
-          onClick={(e) => { e.stopPropagation(); orderItem(catKey, it); }}
-          className="cursor-pointer whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[10px] font-extrabold text-white shadow-cta-sm"
-        >
-          {L('Pedir', 'Order')}
-        </span>
-      </span>
-    </button>
+    </>
   );
+
+  const itemCard = (catKey: string, it: MenuItem, withAdd = false, displayOnly = false) => {
+    if (displayOnly) {
+      return (
+        <div key={B(it.n)} className="flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+          {itemBody(it)}
+        </div>
+      );
+    }
+    return (
+      <button
+        key={B(it.n)}
+        onClick={() => openItem(catKey, it)}
+        className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card"
+      >
+        {itemBody(it)}
+        <span className="flex flex-none flex-col items-center gap-1.5">
+          <span
+            onClick={(e) => {
+              if (withAdd) {
+                e.stopPropagation();
+                addSimple(catKey, it);
+              }
+            }}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-lilac text-primary-dark"
+          >
+            <Plus size={15} strokeWidth={2.8} />
+          </span>
+          <span
+            onClick={(e) => { e.stopPropagation(); orderItem(catKey, it); }}
+            className="cursor-pointer whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[10px] font-extrabold text-white shadow-cta-sm"
+          >
+            {L('Pedir', 'Order')}
+          </span>
+        </span>
+      </button>
+    );
+  };
 
   return (
     <div className="mx-auto max-w-[680px]">
@@ -758,13 +777,28 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       {/* ============ MENU / SHOP ============ */}
       {tab === 'menu' && (
         <div className="pt-4">
+          {/* display-only menu → a clear "this is a menu to view; call to order" note */}
+          {menuDisplayOnly && (
+            <div className="mb-4 flex items-center gap-3 rounded-card-sm border border-lilac-line bg-lilac-2 p-3">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white text-primary-dark">
+                <Menu size={16} strokeWidth={2.2} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12.5px] font-extrabold text-ink">{L('Menú informativo', 'Menu for viewing')}</span>
+                <span className="block text-[11px] font-semibold leading-snug text-muted">{L('Este negocio muestra su menú y precios. Para ordenar, llámalo o visítalo.', 'This business shows its menu & prices. To order, call or visit.')}</span>
+              </span>
+              <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                <Phone size={13} strokeWidth={2.4} />{L('Llamar', 'Call')}
+              </a>
+            </div>
+          )}
           {menuCats.map((c) => (
             <div key={c.key} className="mb-5">
               <div className="mb-2.5 flex items-baseline gap-2">
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                 <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('platillos', 'items')}</span>
               </div>
-              <div className="flex flex-col gap-2.5">{c.items.map((it) => itemCard(c.key, it))}</div>
+              <div className="flex flex-col gap-2.5">{c.items.map((it) => itemCard(c.key, it, false, menuDisplayOnly))}</div>
             </div>
           ))}
         </div>
@@ -972,7 +1006,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       )}
 
       {/* cart bar */}
-      {cartCount > 0 && (
+      {cartCount > 0 && !menuDisplayOnly && (
         <button
           onClick={() => { setCartOpen(true); setCartDone(false); }}
           className="fixed bottom-[86px] left-1/2 z-40 flex w-[calc(100%-28px)] max-w-[640px] -translate-x-1/2 cursor-pointer items-center justify-between rounded-2xl bg-ink px-5 py-3.5 text-white shadow-modal md:bottom-6"

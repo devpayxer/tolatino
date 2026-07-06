@@ -66,6 +66,10 @@ export type MenuConfig = {
   dayparts: Daypart[];
   promos: Promo[];
   automation: MenuAutomation;
+  // Menu mode: false = display-only (show dishes + prices, no online orders —
+  // the common case for a small restaurant); true = accept online orders (adds
+  // the +/Pedir buttons + cart on the public listing).
+  ordering: boolean;
 };
 
 export const menuId = () =>
@@ -109,13 +113,15 @@ export const DEFAULT_CATEGORIES: MenuCategory[] = [
 
 export const DEFAULT_AUTOMATION: MenuAutomation = { auto86: true, notifyLow: true, resetDaily: true, backorders: false };
 
-/** Starting config for a REAL business (standard categories, build the rest). */
+/** Starting config for a REAL business (standard categories, build the rest).
+ *  Display-only by default — the owner opts into online ordering. */
 export const defaultMenuConfig = (): MenuConfig => ({
   categories: DEFAULT_CATEGORIES.map((c) => ({ ...c })),
   mods: [],
   dayparts: [],
   promos: [],
   automation: { ...DEFAULT_AUTOMATION },
+  ordering: false,
 });
 
 /** Rich sample config for DEMO mode (mirrors the module's original showcase). */
@@ -143,6 +149,7 @@ export const demoMenuConfig = (): MenuConfig => ({
     { id: 'pr3', type: 'bogo', es: 'Compra pizza, llévate tiramisú', en: 'Buy a pizza, get a tiramisù', descEs: 'Tiramisú gratis con cualquier pizza', descEn: 'Free tiramisù with any pizza', status: 'scheduled', startDate: '2026-08-01' },
   ],
   automation: { ...DEFAULT_AUTOMATION },
+  ordering: true, // demo showcases the full online-ordering flow
 });
 
 function schedFor(id: string): { es: string; en: string } {
@@ -166,6 +173,7 @@ export function normalizeMenuConfig(raw: unknown): MenuConfig {
     dayparts: Array.isArray(r.dayparts) ? r.dayparts : [],
     promos: Array.isArray(r.promos) ? r.promos : [],
     automation: { ...DEFAULT_AUTOMATION, ...(r.automation ?? {}) },
+    ordering: r.ordering === true, // default display-only
   };
 }
 
