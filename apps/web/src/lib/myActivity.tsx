@@ -9,7 +9,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { buyEventTickets } from '@/lib/live';
+import { buyEventTickets, buyEventTicketsMulti } from '@/lib/live';
 import { useAuth } from '@/lib/auth';
 
 type BizRef = { name: string; slug: string } | null;
@@ -38,6 +38,7 @@ type Ctx = {
   book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
   rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
   buyTickets: (eventSlug: string, tierId: string, qty: number) => Promise<{ error: string | null; code?: string }>;
+  buyTicketsMulti: (eventSlug: string, items: { tierId: string; qty: number }[]) => Promise<{ error: string | null; codes?: string[]; tickets?: { code: string; tierId: string }[] }>;
   rsvp: (eventSlug: string, on: boolean) => Promise<{ error: string | null }>;
   // Customer self-service: cancel one's own order/booking/rental (RLS: own rows).
   cancel: (kind: 'order' | 'booking' | 'rental', id: string) => Promise<{ error: string | null }>;
@@ -155,6 +156,20 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     }
   }, [user, refresh]);
 
+  // Atomic multi-tier purchase via buy_event_tickets_multi (migration 0064): one
+  // all-or-nothing order across every selected tier (no partial order if a later
+  // tier sold out). Returns the codes + per-ticket tier so the UI can label each.
+  const buyTicketsMulti = useCallback<Ctx['buyTicketsMulti']>(async (eventSlug, items) => {
+    if (!supabase || !user) return { error: 'auth' };
+    try {
+      const rows = await buyEventTicketsMulti(eventSlug, items);
+      refresh();
+      return { error: null, codes: rows.map((r) => r.code), tickets: rows.map((r) => ({ code: r.code, tierId: r.tierId })) };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : 'error' };
+    }
+  }, [user, refresh]);
+
   const rsvp = useCallback<Ctx['rsvp']>(async (eventSlug, on) => {
     if (!supabase || !user) return { error: 'auth' };
     const evId = await idOf('events', eventSlug);
@@ -180,7 +195,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
   const goingIds = useMemo(() => new Set(going.map((g) => g.event_id)), [going]);
   const goingSlugs = useMemo(() => new Set(going.map((g) => g.events?.slug).filter(Boolean) as string[]), [going]);
 
-  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, rsvp, cancel };
+  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, buyTicketsMulti, rsvp, cancel };
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 

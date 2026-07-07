@@ -556,8 +556,49 @@ backing them with real Supabase tables/RPCs when each feature goes live.
       first. Tab is "Muy pronto"; the desktop tip is future-tense.
     - [ ] **Ajustes controls** — waitlist, ticket transfers, 24h reminders, refunds all
       need payments/notifications; listed as "Muy pronto", not faked.
-    - [ ] **`/eventos/[slug]` public page + SEO + real deep-link share** — success/detail
-      share currently copies the `/eventos` list URL (a real page); build the slug route.
+    - [x] **Deep-link share** — DONE (Phase 1, 2026-07-07): `/eventos/?e=<slug>` opens the
+      event detail (mirrors `?b=`), share button builds that URL basePath-correctly. The
+      SEO half is the real deferral below (SSR).
+- [x] **Eventos Phase 1 — deep-link, atomic order, event search (2026-07-07).** Migration
+  **0064** + client wiring. (1) **Shareable deep link** `/eventos/?e=<slug>` (query-param
+  pattern — a static `/eventos/[slug]` route is impossible for user-generated events under
+  `output:'export'`); refactored the detail from an index into an OBJECT (`detailEv`) so
+  deep-linked + server-only search results open correctly; share builds the slug URL from
+  the current pathname (basePath-safe); a slug that no longer resolves flashes a message
+  instead of failing silently. (2) **Atomic multi-tier purchase** `buy_event_tickets_multi`
+  — locks every requested tier in deterministic id order (deadlock-free), validates all
+  capacities/windows before issuing any ticket, all-or-nothing (fixes the old per-tier loop
+  that could leave a partial order); ONE aggregated organizer notice per order via a
+  txn-local flag; success screen lists every code labeled by tier. (3) **Server event
+  search** `search_events` (FTS over a widened `search_tsv` trigger doc — title+venue+desc+
+  cat — + trigram fuzzy, published+upcoming, geo-scoped, **category/free filters pushed
+  into SQL** so a filtered search can't under-return, ranked+paginated); `/eventos` list
+  gets debounced server search + a numbered pager (9/page); header dropdown Eventos group
+  upgraded to the same server FTS. Retired the narrow 0002 generated `search_vector`.
+  (4) **List-page static metadata** (crawler-visible in `out/eventos/index.html`) + a client
+  effect that sets `document.title`/`meta description` per open event (browser tab/history +
+  Googlebot JS render — honestly NOT social unfurls). Verified: tsc + build (metadata baked)
+  + `eventos-p0.js` audit 0 overflow + deep-link renders & strips `?e=`.
+  - **Deferred (honest, logged):**
+    - [ ] **Per-event crawler + SOCIAL-share SEO needs SSR/ISR (infra decision).** Under
+      `output:'export'` every `?e=` link serves the same shell HTML; social scrapers
+      (WhatsApp/Facebook/iMessage/X/Slack/Discord) don't run JS → shared links preview the
+      generic site card; Googlebot renders JS so the client title/meta are indexable but JS-
+      render crawl budget doesn't scale to 1M+ UGC events. Real fix: `@cloudflare/next-on-pages`
+      or OpenNext (edge SSR on Workers + `generateMetadata` per event = crawler- AND unfurl-
+      safe, keeps Cloudflare) OR Next ISR on a Node host. Decide at the traffic/SEO-matters
+      point; coordinate with the hosting item. **Must not claim the client metadata "fixes SEO".**
+    - [ ] **Bounded events sitemap** — a build-time `app/sitemap.ts` emitting a BOUNDED
+      featured/upcoming set of `/eventos/?e=<slug>` URLs (top N per active city), never 1M
+      UGC URLs. Pairs with, doesn't replace, the SSR fix.
+    - [ ] **Server-side event search: date filter + load-more** — `search_events` takes
+      `in_cat`/`in_free` but not a date param, and the client fetches 60 relevance rows then
+      paginates client-side (date chip applies over those 60). Add `in_date` + `in_offset`-
+      driven "Cargar más" when event search volume grows so a date-filtered search can't
+      under-return past the first 60 matches.
+    - [ ] **Comunidad/posts server-FTS parity** — header + Comunidad post suggestions stay
+      client-substring; `posts` already have a generated `search_vector` + GIN (0002), so a
+      `search_posts` RPC mirroring `search_events` is a small add for full grouped-search parity.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

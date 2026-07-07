@@ -3,9 +3,9 @@
 // Eventos (`/eventos`) — Handoff v2: featured banner (purple band), filter
 // chips + date chips, event grid with real "Voy" state, detail + tickets.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarPlus, Check, MapPin, Navigation, Share2, Ticket } from 'lucide-react';
+import { CalendarPlus, Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Ticket } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -13,7 +13,12 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
-import { useLiveData, fetchEventBySlug, type PubEvent } from '@/lib/live';
+import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, type PubEvent } from '@/lib/live';
+
+const PAGE_SIZE = 9;
+// Base tab title for the list state — MUST match the static metadata in
+// app/(cliente)/eventos/page.tsx so closing an event restores a consistent title.
+const LIST_TITLE = "Eventos cerca de ti — To'Latino";
 
 
 // ── event-detail helpers (full date, calendar, share, directions) ──
@@ -47,14 +52,27 @@ const mapsUrl = (lat: number | null, lng: number | null, venue: string) =>
   lat != null && lng != null
     ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`
     : `https://www.openstreetmap.org/search?query=${encodeURIComponent(venue)}`;
-// friendly ES/EN copy for a buy_event_tickets error
+// friendly ES/EN copy for a buy_event_tickets(_multi) error — the RPC names the
+// offending tier after a colon (e.g. "sold out: VIP"), which we surface.
 const buyErr = (msg: string, L: (a: string, b: string) => string): string => {
-  if (/sold out/i.test(msg)) return L('Agotado — elige otro nivel', 'Sold out — pick another tier');
-  if (/sales closed/i.test(msg)) return L('La venta de este nivel ya cerró', 'Sales for this tier are closed');
-  if (/not on sale/i.test(msg)) return L('Este nivel aún no está en venta', 'This tier is not on sale yet');
+  const tier = (msg.split(':')[1] ?? '').trim();
+  const s = tier ? ` (${tier})` : '';
+  if (/sold out/i.test(msg)) return L(`Agotado${s} — elige otro nivel`, `Sold out${s} — pick another tier`);
+  if (/sales closed/i.test(msg)) return L(`La venta ya cerró${s}`, `Sales are closed${s}`);
+  if (/not on sale/i.test(msg)) return L(`Aún no está en venta${s}`, `Not on sale yet${s}`);
   if (/auth/i.test(msg)) return L('Inicia sesión para comprar', 'Sign in to buy');
+  if (/cancelled/i.test(msg)) return L('El evento fue cancelado', 'The event was cancelled');
+  if (/no tickets|tier not found|not on sale.*event/i.test(msg)) return L('Elige al menos un boleto', 'Pick at least one ticket');
   return L('No se pudo completar la compra', "Couldn't complete the purchase");
 };
+// Upsert <meta name="description"> — the client half of per-event metadata (browser
+// tab/history + Googlebot's JS render; NOT social unfurls, which need SSR).
+function setMetaDesc(content: string) {
+  if (typeof document === 'undefined') return;
+  let m = document.querySelector('meta[name="description"]');
+  if (!m) { m = document.createElement('meta'); m.setAttribute('name', 'description'); document.head.appendChild(m); }
+  m.setAttribute('content', content);
+}
 
 export function EventosScreen() {
   const { L } = useLang();
@@ -65,51 +83,114 @@ export function EventosScreen() {
   const act = useMyActivity();
   const [cat, setCat] = useState<string>('all'); // 'all' | 'free' | an EVENT_CATS id
   const [date, setDate] = useState<'all' | string>('all');
-  const [detailId, setDetailId] = useState<number | null>(null);
+  // Detail is an OBJECT, not an index (Negocios pattern) — so a deep-linked or
+  // server-only search result (neither is an index into EVENTS) opens correctly.
+  const [detailEv, setDetailEv] = useState<EventItem | null>(null);
   const [pub, setPub] = useState<PubEvent | null>(null); // rich detail (tiers/organizer) for a live event
   const [pubLoading, setPubLoading] = useState(false);
   const [tierQty, setTierQty] = useState<Record<string, number>>({}); // per-tier selection
   const [buying, setBuying] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
   const [boughtCode, setBoughtCode] = useState<string | null>(null);
+  const [boughtTickets, setBoughtTickets] = useState<{ code: string; name: [string, string] }[]>([]);
+  const [page, setPage] = useState(1);
+  const [serverEvents, setServerEvents] = useState<EventItem[] | null>(null); // server FTS results while searching
   const [toast, setToast] = useState('');
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 2200);
   };
-  const openDetail = (id: number) => { setDetailId(id); setTierQty({}); setBuying(false); setOrderDone(false); setBoughtCode(null); };
+  const openDetail = (e: EventItem) => { setDetailEv(e); setTierQty({}); setBuying(false); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); };
+  const closeDetail = () => { setDetailEv(null); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); };
 
   const catLabel = (id: string): string => { const c = EVENT_CAT_BY_ID[id]; return c ? L(c.es, c.en) : id; };
   const B = (t: [string, string]) => L(t[0], t[1]); // render a Bi tuple in the active language
   const sl = app.search.trim().toLowerCase();
+  const rawQ = app.search.trim();
   // Attendee count without double-counting: live events (slug) already bake the
   // user's RSVP into `going` from the DB, so trust it; only fixture events get the
   // local optimistic +1. Detail uses the fresh `pub.going` when it has loaded.
   const dateKey = (e: EventItem) => (e.iso ? e.iso.slice(0, 10) : `${e.dEs}-${e.day}`);
   const goingCount = (e: EventItem) => (e.slug ? e.going : e.going + (app.going[e.id] ? 1 : 0));
 
+  // Server-side event search (migration 0064): real relevance + fuzzy across the
+  // whole radius (not just the ~50-event geo slice), with category/free pushed into
+  // SQL so a filtered search can't under-return. Debounced; falls back to the client
+  // geo list when the box is empty / offline.
+  useEffect(() => {
+    if (!rawQ) { setServerEvents(null); return; }
+    let cancelled = false;
+    const t = window.setTimeout(() => {
+      void searchEvents({
+        q: rawQ, lat: app.coords?.lat ?? null, lng: app.coords?.lng ?? null,
+        cat: cat !== 'all' && cat !== 'free' ? cat : null,
+        free: cat === 'free' ? true : null, limit: 60,
+      }).then((rows) => { if (!cancelled) setServerEvents(rows); });
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(t); };
+  }, [rawQ, cat, app.coords?.lat, app.coords?.lng]);
+
+  // Deep link: /eventos?e=<slug> opens that event directly (shared links). Resolve
+  // from the loaded list first; else fetch by slug (geo-independent). Runs once; the
+  // ?e= param is stripped so closing lands on a clean /eventos. A slug that no longer
+  // resolves (draft/deleted/offline) flashes a message instead of failing silently.
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || typeof window === 'undefined') return;
+    const eSlug = new URLSearchParams(window.location.search).get('e');
+    if (!eSlug) return;
+    deepLinked.current = true;
+    window.history.replaceState(null, '', window.location.pathname);
+    const local = EVENTS.find((x) => x.slug === eSlug);
+    if (local) { openDetail(local); return; }
+    let cancelled = false;
+    void fetchEventBySlug(eSlug).then((p) => {
+      if (cancelled) return;
+      if (!p) { flash(L('Este evento ya no está disponible', 'This event is no longer available')); return; }
+      openDetail(eventItemFromPub(p));
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [EVENTS]);
+
+  // While searching, the server already applied q + cat/free; the client only layers
+  // the date chip on top. Empty query → the client filters the geo EVENTS list.
+  const usingServer = sl.length > 0 && serverEvents != null;
   const list = useMemo(() => {
-    let l = EVENTS.slice();
-    if (sl) l = l.filter((e) => `${e.tEs} ${e.tEn} ${e.lEs} ${e.lEn}`.toLowerCase().includes(sl));
-    if (cat === 'free') l = l.filter((e) => e.free);
-    else if (cat !== 'all') l = l.filter((e) => e.cat === cat);
+    let l = usingServer ? serverEvents!.slice() : EVENTS.slice();
+    if (!usingServer) {
+      if (sl) l = l.filter((e) => `${e.tEs} ${e.tEn} ${e.lEs} ${e.lEn}`.toLowerCase().includes(sl));
+      if (cat === 'free') l = l.filter((e) => e.free);
+      else if (cat !== 'all') l = l.filter((e) => e.cat === cat);
+    }
     if (date !== 'all') l = l.filter((e) => dateKey(e) === date);
     return l;
-  }, [sl, cat, date, EVENTS]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sl, cat, date, EVENTS, serverEvents, usingServer]);
 
+  // Date chips reflect the ACTIVE list (server results when searching), so a chip
+  // always maps to a visible result.
+  const dateSrc = usingServer ? (serverEvents ?? []) : EVENTS;
   const dates = useMemo(() => {
     const seen = new Set<string>();
-    return EVENTS.filter((e) => {
+    return dateSrc.filter((e) => {
       const k = dateKey(e);
       if (seen.has(k)) return false;
       seen.add(k);
       return true;
     }).map((e) => ({ key: dateKey(e), dEs: e.dEs, day: e.day }));
-  }, [EVENTS]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateSrc]);
+
+  // Pagination over the filtered list.
+  useEffect(() => { setPage(1); }, [sl, cat, date, serverEvents]);
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const curPage = Math.min(page, totalPages);
+  const pageList = list.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
 
   const fe = EVENTS[0]; // featured — may be undefined when a city has no events
   const feOn = fe ? (fe.slug ? act.goingSlugs.has(fe.slug) : !!app.going[fe.id]) : false;
-  const detail = detailId !== null ? EVENTS[detailId] : null;
+  const detail = detailEv;
   const detailOn = detail ? (detail.slug ? act.goingSlugs.has(detail.slug) : !!app.going[detail.id]) : false;
 
   // Load the rich event (tiers, organizer, full date, geo) when a live event opens.
@@ -122,6 +203,23 @@ export function EventosScreen() {
     return () => { cancelled = true; };
   }, [detailSlug]);
   const reloadPub = () => { if (detailSlug) void fetchEventBySlug(detailSlug).then(setPub); };
+
+  // While an event is open, reflect it in the tab title + meta description (browser
+  // history + Googlebot's JS render — NOT social unfurls, which need SSR). Restores
+  // the list defaults on close/unmount so the base title stays consistent.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (detail) {
+      const title = L(detail.tEs, detail.tEn);
+      const place = L(detail.lEs, detail.lEn);
+      document.title = `${title} — To'Latino`;
+      setMetaDesc(L(`${title} en ${place}. Consigue tu lugar en To’Latino.`, `${title} at ${place}. Get your spot on To’Latino.`));
+    } else {
+      document.title = LIST_TITLE;
+      setMetaDesc(L('Conciertos, ferias, talleres y fiestas de la comunidad latina cerca de ti. Consigue boletos, en español.', 'Concerts, fairs, workshops and parties from the Latino community near you. Get tickets, in Spanish.'));
+    }
+    return () => { if (typeof document !== 'undefined') document.title = LIST_TITLE; };
+  }, [detail, L]);
 
   const tiers = pub?.tiers ?? [];
   const hasTiers = tiers.length > 0;
@@ -150,30 +248,40 @@ export function EventosScreen() {
 
   const setQ = (id: string, n: number, max: number) => setTierQty((m) => ({ ...m, [id]: Math.max(0, Math.min(max, n)) }));
 
-  // Buy the selected tiers — one capacity-checked RPC call per tier (buy_event_tickets
-  // locks the tier + verifies availability). Stops + surfaces the reason on the first
-  // failure (e.g. a tier sold out between load and purchase).
+  // Buy the selected tiers in ONE atomic order (buy_event_tickets_multi, migration
+  // 0064): every tier is locked + capacity-checked before any ticket is issued, so a
+  // tier selling out mid-order can't leave a partial purchase. Surfaces the reason
+  // (naming the sold-out tier) on failure.
   const buyNow = async () => {
     if (!pub || buying) return;
     if (pub.status === 'cancelled') { flash(L('Evento cancelado', 'Event cancelled')); return; }
     if (!user) { router.push('/entrar'); return; }
     if (selectedTiers.length === 0) { flash(L('Elige al menos un boleto', 'Pick at least one ticket')); return; }
     setBuying(true);
-    let firstCode: string | null = null;
-    for (const t of selectedTiers) {
-      const { error, code } = await act.buyTickets(pub.slug, t.id, tierQty[t.id] ?? 0);
-      if (error) { setBuying(false); reloadPub(); flash(buyErr(error, L)); return; }
-      if (code && !firstCode) firstCode = code;
-    }
+    const items = selectedTiers.map((t) => ({ tierId: t.id, qty: tierQty[t.id] ?? 0 }));
+    const { error, codes, tickets } = await act.buyTicketsMulti(pub.slug, items);
     setBuying(false);
-    setBoughtCode(firstCode);
+    if (error) { reloadPub(); flash(buyErr(error, L)); return; }
+    // label each issued code with its tier for the success screen
+    const named = (tickets ?? []).map((tk) => {
+      const t = tiers.find((x) => x.id === tk.tierId);
+      return { code: tk.code, name: (t ? t.name : ['Boleto', 'Ticket']) as [string, string] };
+    });
+    setBoughtTickets(named);
+    setBoughtCode(codes?.[0] ?? null);
     setOrderDone(true);
     reloadPub();
   };
 
-  // Native share when available (mobile), else copy the link.
-  const doShare = async (title: string) => {
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/eventos` : '';
+  // Native share when available (mobile), else copy the link. Builds a deep link to
+  // THIS event (/eventos/?e=<slug>) using the current pathname, so the basePath is
+  // correct on both the Cloudflare root and the /tolatino GitHub Pages preview.
+  const doShare = async (title: string, slug?: string) => {
+    let url = '';
+    if (typeof window !== 'undefined') {
+      const base = `${window.location.origin}${window.location.pathname}`;
+      url = slug ? `${base}?e=${encodeURIComponent(slug)}` : base;
+    }
     const text = L('Mira este evento en To’Latino', 'Check out this event on To’Latino');
     try {
       if (typeof navigator !== 'undefined' && navigator.share) { await navigator.share({ title, text, url }); return; }
@@ -214,7 +322,7 @@ export function EventosScreen() {
       <div
         className="relative mb-[22px] flex cursor-pointer flex-col items-start gap-[18px] overflow-hidden rounded-[22px] p-[22px] shadow-band md:flex-row md:items-center md:gap-[26px] md:p-[28px]"
         style={{ background: 'linear-gradient(150deg,#6743E2,#8268FF)' }}
-        onClick={() => openDetail(0)}
+        onClick={() => openDetail(fe)}
       >
         <span className="flex h-[68px] w-[68px] flex-none flex-col items-center justify-center rounded-2xl bg-white">
           <span className="text-[10.5px] font-extrabold uppercase text-primary-dark">{fe.dEs}</span>
@@ -234,7 +342,7 @@ export function EventosScreen() {
           onClick={(ev) => {
             ev.stopPropagation();
             if (feOn) rsvpToggle(fe);
-            else openDetail(0);
+            else openDetail(fe);
           }}
           className={`relative flex-none cursor-pointer rounded-[13px] px-6 py-[13px] text-[14px] font-extrabold ${
             feOn ? 'bg-[rgba(255,255,255,.22)] text-white' : 'bg-white text-primary-press'
@@ -295,11 +403,11 @@ export function EventosScreen() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {list.map((e) => (
+          {pageList.map((e) => (
             <Card
-              key={e.id}
+              key={e.slug ?? e.id}
               className="overflow-hidden transition-shadow hover:shadow-card-lg"
-              onClick={() => openDetail(e.id)}
+              onClick={() => openDetail(e)}
             >
               <div className="relative h-[110px]" style={{ background: eventTile(e) }}>
                 <span className="absolute left-3 top-3 flex h-[46px] w-[46px] flex-col items-center justify-center rounded-btn bg-white shadow-card">
@@ -332,8 +440,36 @@ export function EventosScreen() {
         </div>
       )}
 
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <button
+            onClick={() => setPage(Math.max(1, curPage - 1))}
+            className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage > 1 ? 'cursor-pointer' : 'opacity-40'}`}
+          >
+            <ChevronLeft size={15} strokeWidth={2.4} />
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              onClick={() => setPage(n)}
+              className={`flex h-[34px] min-w-[34px] cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] px-2 text-[12.5px] font-extrabold ${
+                n === curPage ? 'border-primary bg-primary text-white shadow-cta-sm' : 'border-lilac-line bg-white text-ink-soft'
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+          <button
+            onClick={() => setPage(Math.min(totalPages, curPage + 1))}
+            className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage < totalPages ? 'cursor-pointer' : 'opacity-40'}`}
+          >
+            <ChevronRight size={15} strokeWidth={2.4} />
+          </button>
+        </div>
+      )}
+
       {/* event detail + tickets */}
-      <Overlay open={!!detail} onClose={() => setDetailId(null)} width={480}>
+      <Overlay open={!!detail} onClose={closeDetail} width={480}>
         {detail && !orderDone && (
           <>
             <div className="relative -m-4 mb-3 h-[130px] rounded-t-panel md:-m-5 md:mb-3 md:rounded-t-card" style={{ background: pub?.coverUrl ? `center/cover url(${pub.coverUrl})` : eventTile(detail) }}>
@@ -342,7 +478,7 @@ export function EventosScreen() {
                 <span className="text-[19px] font-extrabold leading-none text-ink">{detail.day}</span>
               </span>
             </div>
-            <OverlayTitle title={L(detail.tEs, detail.tEn)} onClose={() => setDetailId(null)} />
+            <OverlayTitle title={L(detail.tEs, detail.tEn)} onClose={closeDetail} />
 
             {cancelled && (
               <div className="mb-2 rounded-field bg-pink-bg px-3.5 py-2.5 text-[12.5px] font-extrabold text-pink-dark">
@@ -387,7 +523,7 @@ export function EventosScreen() {
                 <CalendarPlus size={15} strokeWidth={2.2} /> {L('Calendario', 'Calendar')}
               </button>
               <button
-                onClick={() => doShare(L(detail.tEs, detail.tEn))}
+                onClick={() => doShare(L(detail.tEs, detail.tEn), detail.slug)}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-2.5 text-[12px] font-extrabold text-ink-soft"
               >
                 <Share2 size={15} strokeWidth={2.2} /> {L('Compartir', 'Share')}
@@ -472,16 +608,25 @@ export function EventosScreen() {
             <div className="mt-4 text-[19px] font-extrabold text-ink">
               {anyPaid ? L('¡Boletos reservados!', 'Tickets reserved!') : L('¡Boletos confirmados!', 'Tickets confirmed!')}
             </div>
-            {boughtCode && (
+            {boughtTickets.length > 0 ? (
+              <div className="mt-3 flex w-full max-w-[300px] flex-col gap-2">
+                {boughtTickets.map((tk, i) => (
+                  <div key={`${tk.code}-${i}`} className="rounded-card border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 px-4 py-3 text-left">
+                    <div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-muted-2">{B(tk.name)}</div>
+                    <div className="mt-0.5 font-mono text-[20px] font-extrabold tracking-[.12em] text-primary-dark">{tk.code}</div>
+                  </div>
+                ))}
+              </div>
+            ) : boughtCode ? (
               <div className="mt-3 w-full max-w-[280px] rounded-card border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 px-4 py-3">
                 <div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-muted-2">{L('Código', 'Code')}</div>
                 <div className="mt-0.5 font-mono text-[22px] font-extrabold tracking-[.12em] text-primary-dark">{boughtCode}</div>
               </div>
-            )}
+            ) : null}
             <div className="mt-3 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
               {L('Encuéntralos en Mi cuenta → Mis boletos, con su código para la entrada.', 'Find them in My account → My tickets, with the code for entry.')}
             </div>
-            <PrimaryBtn className="mt-5" onClick={() => { setDetailId(null); setOrderDone(false); }}>
+            <PrimaryBtn className="mt-5" onClick={closeDetail}>
               {L('Listo', 'Done')}
             </PrimaryBtn>
           </div>

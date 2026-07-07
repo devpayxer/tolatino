@@ -477,6 +477,83 @@ export async function buyEventTickets(slug: string, tierId: string, qty: number)
   return { code: String((data[0] as Record<string, unknown>).code) };
 }
 
+/** Map an `events_near` / `search_events` row → the app's EventItem shape (both
+ *  RPCs return the same 15 columns). Shared by the geo provider, the by-slug deep
+ *  link, and server search so all three stay identical. */
+export function mapEventRow(r: Record<string, unknown>, i: number): EventItem {
+  const d = new Date(String(r.starts_at));
+  return {
+    id: i,
+    slug: r.slug != null ? String(r.slug) : undefined,
+    iso: String(r.starts_at),
+    dEs: MONTHS_ES[d.getMonth()],
+    day: String(d.getDate()).padStart(2, '0'),
+    cat: r.cat as EventItem['cat'],
+    tEs: String(r.title_es),
+    tEn: String(r.title_en),
+    lEs: String(r.venue_es),
+    lEn: String(r.venue_en),
+    going: Number(r.going_count ?? 0),
+    free: r.price_label == null,
+    price: (r.price_label as string) ?? undefined,
+    t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
+    timeEs: String(r.time_label_es ?? ''),
+    timeEn: String(r.time_label_en ?? ''),
+    descEs: String(r.desc_es ?? ''),
+    descEn: String(r.desc_en ?? ''),
+  };
+}
+
+/** Build a card-level EventItem from a rich PubEvent — used by the /eventos?e=<slug>
+ *  deep link to render the detail overlay for an event that isn't in the geo list.
+ *  id=-1 marks it as detail-only (never an index into EVENTS). */
+export function eventItemFromPub(p: PubEvent): EventItem {
+  const d = new Date(p.startsAt);
+  return {
+    id: -1, slug: p.slug, iso: p.startsAt,
+    dEs: MONTHS_ES[d.getMonth()], day: String(d.getDate()).padStart(2, '0'),
+    cat: p.cat, tEs: p.title[0], tEn: p.title[1], lEs: p.venue[0], lEn: p.venue[1],
+    going: p.going, free: p.priceLabel == null, price: p.priceLabel ?? undefined,
+    t: p.tile, timeEs: p.timeLabel[0], timeEn: p.timeLabel[1], descEs: p.desc[0], descEn: p.desc[1],
+  };
+}
+
+/** A ticket issued by buy_event_tickets_multi (migration 0064). */
+export type BoughtTicket = { ticketId: string; code: string; tierId: string };
+
+/** Buy an ATOMIC multi-tier order (migration 0064): locks every requested tier,
+ *  validates all capacities/windows, issues all tickets or none. Throws with a
+ *  reason naming the sold-out/closed tier (e.g. "sold out: VIP"). */
+export async function buyEventTicketsMulti(slug: string, items: { tierId: string; qty: number }[]): Promise<BoughtTicket[]> {
+  if (!supabase) throw new Error('offline');
+  const { data, error } = await supabase.rpc('buy_event_tickets_multi', {
+    in_slug: slug, in_items: items.map((i) => ({ tier_id: i.tierId, qty: i.qty })),
+  });
+  if (error) throw new Error(error.message || 'error');
+  if (!Array.isArray(data)) throw new Error('error');
+  return (data as Record<string, unknown>[]).map((r) => ({
+    ticketId: String(r.ticket_id), code: String(r.code), tierId: String(r.tier_id),
+  }));
+}
+
+/** Server-side event search (migration 0064): Postgres full-text + trigram fuzzy,
+ *  published + upcoming only, geo-scoped, category/free filters pushed into SQL,
+ *  ranked by relevance then soonest, paginated. Returns [] offline / on error so
+ *  the caller falls back to the client geo list. */
+export async function searchEvents(opts: {
+  q?: string; lat?: number | null; lng?: number | null;
+  cat?: string | null; free?: boolean | null; limit?: number; offset?: number;
+}): Promise<EventItem[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('search_events', {
+    in_q: opts.q ?? null, user_lat: opts.lat ?? null, user_lng: opts.lng ?? null,
+    radius_m: RADIUS_M, in_cat: opts.cat ?? null, in_free: opts.free ?? null,
+    max_results: opts.limit ?? 30, in_offset: opts.offset ?? 0,
+  });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r, i) => mapEventRow(r, i));
+}
+
 /** Server-side business search (migration 0055): Postgres full-text + trigram
  *  fuzzy, geo-scoped, filtered + ranked by relevance then distance. Returns []
  *  offline / on error so the caller falls back to the client geo list. */
@@ -567,29 +644,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
       }
 
       if (!ev.error && Array.isArray(ev.data)) {
-        next.events = (ev.data as Record<string, unknown>[]).map((r, i): EventItem => {
-          const d = new Date(String(r.starts_at));
-          return {
-            id: i,
-            slug: r.slug != null ? String(r.slug) : undefined,
-            iso: String(r.starts_at),
-            dEs: MONTHS_ES[d.getMonth()],
-            day: String(d.getDate()).padStart(2, '0'),
-            cat: r.cat as EventItem['cat'],
-            tEs: String(r.title_es),
-            tEn: String(r.title_en),
-            lEs: String(r.venue_es),
-            lEn: String(r.venue_en),
-            going: Number(r.going_count ?? 0),
-            free: r.price_label == null,
-            price: (r.price_label as string) ?? undefined,
-            t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
-            timeEs: String(r.time_label_es ?? ''),
-            timeEn: String(r.time_label_en ?? ''),
-            descEs: String(r.desc_es ?? ''),
-            descEn: String(r.desc_en ?? ''),
-          };
-        });
+        next.events = (ev.data as Record<string, unknown>[]).map((r, i) => mapEventRow(r, i));
         next.live = true;
       }
 

@@ -91,10 +91,13 @@ uploads, not committed).
   viewport (kept multi-field forms from blowing past the screen).
 
 ## ⚠️ ACTION NEEDED FROM THE FOUNDER (apply in the SQL Editor)
-- ⏳ **Apply `0063_events_discovery_integrity.sql`** (idempotent) — the Eventos P0
-  hardening: fixes past/cancelled events polluting discovery, hides drafts, blocks
-  RSVP on cancelled, adds `owner_events_summary()` (real dashboard totals) +
-  `cancel_event()` (soft-cancel + notify attendees). Full SQL pasted in chat.
+- ⏳ **Apply `0064_events_multi_ticket_search.sql`** (idempotent) — Eventos Phase 1:
+  `buy_event_tickets_multi` (atomic multi-tier order) + `search_events` (server FTS,
+  category/free filters, paginated) + widened `search_tsv` trigger; retires the old
+  generated `search_vector`. Full SQL pasted in chat.
+- ✅ **`0063_events_discovery_integrity.sql` applied** (2026-07-07) — Eventos P0
+  hardening: past/cancelled events dropped from discovery, drafts hidden, RSVP on
+  cancelled blocked, `owner_events_summary()` + `cancel_event()`.
 - ✅ **`0013`→`0018` applied** (2026-07-04, verified: single 16-arg `create_business`).
   The old "not unique / owner_id missing" blocker is resolved; publish + Hazleton
   ownership work.
@@ -259,9 +262,24 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   and the date-chip year collapse. Verified: tsc + build + `eventos-p0.js` audit (0
   overflow). Newly-deferred items (online events, visibility, drafts, recurring,
   promoters, Ajustes controls, `/eventos/[slug]` page) logged in LAUNCH-CHECKLIST.
+- **Eventos Phase 1 — deep-link, atomic order, event search** (migration **0064**):
+  designed via a 6-agent ultracode workflow (map → synthesize → adversarial critique).
+  (1) **Shareable deep link** `/eventos/?e=<slug>` (query-param pattern; a static
+  `/eventos/[slug]` route is impossible for UGC under `output:'export'`) — refactored the
+  detail from an index to an OBJECT so deep-linked/server-search results open; share URL is
+  basePath-safe; unresolved slug flashes a message. (2) **Atomic multi-tier purchase**
+  `buy_event_tickets_multi` (locks all tiers deterministically, all-or-nothing, one
+  aggregated organizer notice; success lists every code by tier) — replaces the per-tier
+  loop that could leave a partial order. (3) **Server event search** `search_events` (FTS +
+  trigram, published+upcoming, category/free filters in SQL, ranked+paginated) wired into
+  `/eventos` (debounced + numbered pager) and the header dropdown; retired the narrow 0002
+  generated `search_vector`. (4) **List-page static metadata** + per-event client title/meta
+  (browser + Googlebot; NOT social unfurls — SSR deferred honestly). Verified: tsc + build
+  (metadata baked) + audit 0 overflow + deep-link strips `?e=`.
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM
-  tiles + business coords). Not shipped as fake/broken.
+  tiles + business coords), **per-event crawler/social SEO (needs SSR/ISR)**. Not shipped
+  as fake/broken.
 
 ## Next steps (priority order)
 1. **Founder applies `0019`+`0020`+`0031`+`0032`** (above) so Fotos/Módulos and the
