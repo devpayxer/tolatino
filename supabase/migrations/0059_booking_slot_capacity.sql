@@ -6,6 +6,14 @@
 -- Still SECURITY DEFINER, still exposes NO customer data (only slot + seats).
 -- business_bookings RLS stays locked. Idempotent. Apply: paste + Run.
 
+-- Ensure the booking↔service link exists (originally added in 0052). If that
+-- migration was never applied, service_id is missing and the function below can't
+-- reference it (Postgres 42703) — so add it here, idempotently, first.
+alter table public.business_bookings
+  add column if not exists service_id uuid references public.business_items(id) on delete set null;
+create index if not exists business_bookings_service_idx
+  on public.business_bookings (service_id, starts_at);
+
 -- return type changes (day date → slot timestamptz), which CREATE OR REPLACE can't
 -- do — drop the old signature first (Postgres 42P13).
 drop function if exists public.booking_load_by_service(uuid);
