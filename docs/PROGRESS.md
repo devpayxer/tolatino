@@ -218,6 +218,13 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   marks out-of-stock variant values "Agotado"/disabled, opens on the first in-stock
   one, caps qty, and shows "Solo N disponibles". Falls back to product-level stock.
 - **Customer self-service cancel** on Mi cuenta (early orders/bookings/rentals).
+- **Realtime Mi cuenta** (migration **0060**): the customer's transaction rows update
+  live when the owner advances a status. `MyActivityProvider` subscribes to the five
+  transaction tables (user_id-filtered) → `refresh()`; 0060 publishes them to
+  `supabase_realtime`. Reuses the notifications realtime pattern.
+- **Global search suggestions → server FTS** (no migration): header business
+  suggestions call `search_businesses` (debounced), so the preview surfaces the full
+  catalog, not just the loaded geo slice. Closes the Handoff global-search rule.
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM
   tiles + business coords). Not shipped as fake/broken.

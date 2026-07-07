@@ -86,6 +86,24 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
   }, [user, version]);
 
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
+
+  // Live updates: when the owner advances a status (or a new row lands), reflect it
+  // on Mi cuenta immediately. Filtered to the signed-in customer's own rows; RLS
+  // (0032) means realtime only delivers those anyway. Tables published in 0060.
+  useEffect(() => {
+    if (!supabase || !user) return;
+    const filt = `user_id=eq.${user.id}`;
+    const ch = supabase
+      .channel(`myactivity-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'business_orders', filter: filt }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'business_bookings', filter: filt }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'business_rentals', filter: filt }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_tickets', filter: filt }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_attendance', filter: filt }, () => refresh())
+      .subscribe();
+    return () => { supabase!.removeChannel(ch); };
+  }, [user, refresh]);
+
   const custName = profile?.display_name ?? null;
 
   // slug → uuid (public read). Returns null if not found / offline.

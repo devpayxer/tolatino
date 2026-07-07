@@ -458,6 +458,16 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   client-side (small datasets). Fully closes the Handoff "global search with grouped
   live suggestions" rule. Verified: an RPC-intercepted full-catalog business (not in
   the client slice) appears in the dropdown, 0 pageerrors / 0 overflow.
+- [x] **Realtime status on Mi cuenta (2026-07-07).** The customer's orders/bookings/
+  rentals/tickets/RSVPs now update the instant the owner advances a status — not on
+  the next reload. `MyActivityProvider` subscribes (one channel, `user_id`-filtered)
+  to the five transaction tables and calls `refresh()` on any change, reusing the
+  proven realtime pattern from notifications.tsx. Migration **0060** publishes the
+  five tables to `supabase_realtime` (idempotent, guarded like 0007/0053/0054); dual
+  customer↔owner RLS (0032) means each side only receives its own rows. Verified:
+  tsc + build + consumer audit (/cuenta) green. (Realtime delivery itself needs a live
+  Supabase session — can't be exercised in the sandbox; logic mirrors the working
+  notifications subscription.)
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /
