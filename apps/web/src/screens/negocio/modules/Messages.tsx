@@ -11,6 +11,7 @@ import { ChevronLeft, Loader2, MessageCircle, Send, Store } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { subscribeInbox, sendChatMessage } from '@/lib/chat';
 import type { PanelCtx } from '@/screens/negocio/tabs';
 
 type Convo = { id: string; name: string; initials: string; color: string; last: string; unread: number; lastAt: string };
@@ -48,39 +49,37 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
   const threadEnd = useRef<HTMLDivElement>(null);
 
   // load conversations
-  useEffect(() => {
-    if (!persistable || !real || !supabase) {
-      setConvos(admin.demo ? DEMO_CONVOS : []);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
-      const { data } = await supabase!
-        .from('business_conversations')
-        .select('id,customer_name,customer_initials,customer_color,last_at,unread')
-        .eq('business_id', real.id)
-        .order('last_at', { ascending: false });
-      if (cancelled) return;
-      setConvos(
-        ((data as Record<string, unknown>[]) ?? []).map((r) => ({
-          id: String(r.id),
-          name: String(r.customer_name),
-          initials: String(r.customer_initials ?? ''),
-          color: String(r.customer_color ?? '#7B61FF'),
-          last: '',
-          unread: Number(r.unread ?? 0),
-          lastAt: String(r.last_at),
-        })),
-      );
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const reloadConvos = useCallback(async () => {
+    if (!persistable || !real || !supabase) { setConvos(admin.demo ? DEMO_CONVOS : []); return; }
+    const { data } = await supabase
+      .from('business_conversations')
+      .select('id,customer_name,customer_initials,customer_color,last_at,unread')
+      .eq('business_id', real.id)
+      .order('last_at', { ascending: false });
+    setConvos(((data as Record<string, unknown>[]) ?? []).map((r) => ({
+      id: String(r.id), name: String(r.customer_name), initials: String(r.customer_initials ?? ''),
+      color: String(r.customer_color ?? '#7B61FF'), last: '', unread: Number(r.unread ?? 0), lastAt: String(r.last_at),
+    })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [real?.id, admin.demo]);
+  }, [real?.id, persistable, admin.demo]);
+
+  useEffect(() => {
+    setLoading(true);
+    reloadConvos().finally(() => setLoading(false));
+  }, [reloadConvos]);
+
+  // realtime: new customer messages arrive live → update the open thread + list
+  useEffect(() => {
+    if (!persistable || !real) return;
+    return subscribeInbox(({ conversationId, id, fromOwner, body, at }) => {
+      if (conversationId === activeId) {
+        setMsgs((m) => (m.some((x) => x.id === id) ? m : [...m, { id, fromOwner, body, at }]));
+        if (!fromOwner && supabase) supabase.from('business_conversations').update({ unread: 0 }).eq('id', conversationId);
+      }
+      reloadConvos();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, activeId, persistable]);
 
   // load the active thread
   const loadThread = useCallback(
@@ -114,13 +113,13 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
     const body = draft.trim();
     if (!body || !activeId || sending) return;
     setSending(true);
-    const optimistic: Msg = { id: `local-${msgs.length}`, fromOwner: true, body, at: new Date(0).toISOString() };
-    setMsgs((m) => [...m, optimistic]);
+    const tempId = `local-${msgs.length}`;
+    setMsgs((m) => [...m, { id: tempId, fromOwner: true, body, at: new Date().toISOString() }]);
     setDraft('');
     setConvos((cs) => cs.map((c) => (c.id === activeId ? { ...c, last: body } : c)));
     if (persistable && supabase) {
-      await supabase.from('business_messages').insert({ conversation_id: activeId, from_owner: true, body });
-      await supabase.from('business_conversations').update({ last_at: new Date().toISOString() }).eq('id', activeId);
+      const row = await sendChatMessage(activeId, true, body); // trigger bumps last_at
+      if (row) setMsgs((m) => { const swapped = m.map((x) => (x.id === tempId ? row : x)); return swapped.filter((x, i, a) => a.findIndex((y) => y.id === x.id) === i); });
     }
     setSending(false);
   };

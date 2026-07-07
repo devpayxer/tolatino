@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
+import { startConversation, fetchChatMessages, sendChatMessage, markConversationRead, subscribeChat, type ChatMsg } from '@/lib/chat';
 import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
@@ -73,7 +74,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const app = useApp();
   const savedBiz = useSavedBiz();
   const act = useMyActivity();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
   const id = b.id;
 
@@ -87,6 +88,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const [tab, setTab] = useState<TabKey>('overview');
   const [contactOpen, setContactOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatConvId, setChatConvId] = useState<string | null>(null);
+  const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([]);
+  const [chatDraft, setChatDraft] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [weekOpen, setWeekOpen] = useState(false);
   const [photoTile, setPhotoTile] = useState<string | null>(null);
 
@@ -251,6 +258,32 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const msgOn = !!b.acceptsMessages && msgDigits.length > 0;
   const msgIsSms = b.messageChannel === 'sms';
   const msgHref = msgIsSms ? `sms:+${intlDigits}` : `https://wa.me/${intlDigits}`;
+
+  // In-app chat (buyer ↔ seller, migration 0053).
+  const custName = profile?.display_name ?? (user?.email ? user.email.split('@')[0] : 'Cliente');
+  const custInitials = custName.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'TÚ';
+  const openChat = async () => {
+    setContactOpen(false);
+    if (!user) { router.push('/entrar'); return; }
+    setChatOpen(true); setChatBusy(true); setChatMsgs([]);
+    const id = await startConversation(b.slug, custName, custInitials, '#7B61FF');
+    setChatConvId(id);
+    if (id) { const m = await fetchChatMessages(id); setChatMsgs(m); markConversationRead(id, 'customer'); }
+    setChatBusy(false);
+  };
+  const sendChat = async () => {
+    const body = chatDraft.trim();
+    if (!body || !chatConvId || chatBusy) return;
+    setChatDraft('');
+    const m = await sendChatMessage(chatConvId, false, body);
+    if (m) setChatMsgs((l) => (l.some((x) => x.id === m.id) ? l : [...l, m]));
+    else { setChatDraft(body); flash(L('No se pudo enviar', "Couldn't send")); }
+  };
+  useEffect(() => {
+    if (!chatOpen || !chatConvId) return;
+    return subscribeChat(chatConvId, (m) => setChatMsgs((l) => (l.some((x) => x.id === m.id) ? l : [...l, m])));
+  }, [chatOpen, chatConvId]);
+  useEffect(() => { if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMsgs, chatOpen]);
 
   const cartCount = Object.values(cart).reduce((n, l) => n + l.qty, 0);
   const cartTotal = Object.values(cart).reduce((n, l) => n + l.qty * l.unit, 0);
@@ -1375,14 +1408,16 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         <OverlayTitle title={L('Contacto y opciones', 'Contact & options')} onClose={() => setContactOpen(false)} />
         <div className="flex flex-col">
           {([
+            // In-app chat — always available; the message lands in the owner's inbox.
+            { Icon: MessageCircle, label: L('Enviar mensaje', 'Send a message'), sub: L('Chatea en la app', 'Chat in the app'), color: '#7B61FF', bg: '#EFEBFF', onClick: openChat },
             { Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA' },
-            // Mensaje only shows when the owner opted in; opens SMS or WhatsApp.
-            ...(msgOn ? [{ Icon: MessageCircle, label: L('Mensaje', 'Message'), sub: msgIsSms ? L('Mensaje de texto', 'Text message') : 'WhatsApp', color: '#6D4DF6', bg: '#EFEBFF', href: msgHref }] : []),
+            // WhatsApp/SMS only when the owner opted in.
+            ...(msgOn ? [{ Icon: Send, label: msgIsSms ? L('Mensaje de texto', 'Text message') : 'WhatsApp', sub: phone, color: '#1F9D57', bg: '#E3F5EA', href: msgHref }] : []),
             // Sitio web only shows when the owner set one; opens the real site.
             ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#2F6FED', bg: '#E5EFFB', href: `https://${b.website}` }] : []),
             { Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6' },
             { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#8A86A0', bg: '#F1EFFA' },
-          ] as { Icon: typeof Phone; label: string; sub: string; color: string; bg: string; href?: string }[]).map(({ Icon, label, sub, color, bg, href }) => {
+          ] as { Icon: typeof Phone; label: string; sub: string; color: string; bg: string; href?: string; onClick?: () => void }[]).map(({ Icon, label, sub, color, bg, href, onClick }) => {
             const inner = (
               <>
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px]" style={{ background: bg }}>
@@ -1398,12 +1433,43 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
             return href ? (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer" onClick={() => setContactOpen(false)} className={cls}>{inner}</a>
             ) : (
-              <button key={label} onClick={() => setContactOpen(false)} className={cls}>{inner}</button>
+              <button key={label} onClick={() => (onClick ? onClick() : setContactOpen(false))} className={cls}>{inner}</button>
             );
           })}
           <button onClick={() => setContactOpen(false)} className="mt-1 w-full cursor-pointer rounded-btn px-2 py-2.5 text-left text-[12.5px] font-bold text-pink-dark hover:bg-pink-bg">
             {L('Reportar un problema', 'Report a problem')}
           </button>
+        </div>
+      </Overlay>
+
+      {/* in-app chat (buyer ↔ seller) */}
+      <Overlay open={chatOpen} onClose={() => setChatOpen(false)} width={440}>
+        <OverlayTitle title={b.name} onClose={() => setChatOpen(false)} />
+        <div className="flex h-[58vh] flex-col md:h-[440px]">
+          <div className="flex-1 overflow-y-auto py-2">
+            {chatBusy && chatMsgs.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-[12.5px] font-semibold text-muted">{L('Cargando…', 'Loading…')}</div>
+            ) : chatMsgs.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-lilac-2 text-primary-dark"><MessageCircle size={22} strokeWidth={2.2} /></span>
+                <div className="text-[13px] font-extrabold text-ink">{L(`Escríbele a ${b.name}`, `Message ${b.name}`)}</div>
+                <div className="text-[11.5px] font-semibold leading-snug text-muted">{L('Pregunta por disponibilidad, precios o tu pedido. Te responden aquí mismo.', 'Ask about availability, pricing or your order. They reply right here.')}</div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {chatMsgs.map((m) => (
+                  <div key={m.id} className={`flex ${m.fromOwner ? 'justify-start' : 'justify-end'}`}>
+                    <span className={`max-w-[78%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[12.5px] font-semibold leading-snug ${m.fromOwner ? 'bg-lilac-2 text-ink' : 'bg-primary text-white'}`}>{m.body}</span>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 border-t border-hair pt-2.5">
+            <input value={chatDraft} onChange={(e) => setChatDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendChat(); }} placeholder={L('Escribe un mensaje…', 'Type a message…')} className="min-w-0 flex-1 rounded-full border-[1.5px] border-lilac-line bg-white px-4 py-2.5 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
+            <button onClick={sendChat} disabled={!chatDraft.trim()} aria-label={L('Enviar', 'Send')} className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-primary text-white shadow-cta-sm disabled:opacity-40"><Send size={16} strokeWidth={2.4} /></button>
+          </div>
         </div>
       </Overlay>
 

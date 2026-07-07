@@ -375,6 +375,25 @@ backing them with real Supabase tables/RPCs when each feature goes live.
       seat total. Deferred: real time-SLOT scheduling (the times are still fixture
       slots — capacity is enforced per DAY, not per time-slot) and per-variant SKU
       stock for products.
+- [x] **In-app chat — buyer ↔ seller (2026-07-07).** Real two-way messaging, not
+  just an external WhatsApp/SMS link. The owner inbox (`modules/Messages.tsx`,
+  business_conversations + business_messages, migration 0029) already existed;
+  this adds the CUSTOMER side + realtime (migration **0053**):
+  - Customer participation: `business_conversations.customer_user_id` +
+    `customer_unread`, one conversation per (business, customer), with RLS letting
+    the customer read/update their own conversation and read/send its messages
+    (owner policies unchanged — RLS combines with OR). A `start_conversation` RPC
+    (SECURITY DEFINER) get-or-creates the conversation by slug; a trigger keeps
+    `last_at` + per-side unread fresh on every insert.
+  - Realtime: `business_messages` added to the `supabase_realtime` publication;
+    both sides subscribe (`lib/chat.tsx` — startConversation / fetchChatMessages /
+    sendChatMessage / markConversationRead / subscribeChat / subscribeInbox).
+  - Consumer: BizDetail contact sheet → "Enviar mensaje" opens an in-app chat
+    panel (auth-gated → /entrar); loads history, sends, live-updates. Dashboard
+    Messages now subscribes to inbound messages (live thread + inbox refresh).
+  - Deferred: attachments/images in chat, typing indicators, read receipts,
+    push/email notification on a new message (see Notifications track), blocking/
+    spam controls.
 - [x] **Wizard UX across Menú / Servicios / Productos (2026-07-06).** Three
   shared improvements to all three create/edit wizards:
   - **Draft recovery.** The CREATE draft autosaves to `localStorage`
