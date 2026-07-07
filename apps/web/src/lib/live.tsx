@@ -249,6 +249,7 @@ export async function fetchBusinessProducts(slug: string): Promise<PublicShop | 
       tagC: tag ? '#6D4DF6' : undefined,
       bg: tile,
       img: r.image_url != null ? String(r.image_url) : undefined,
+      stock: a.stock != null ? Number(a.stock) : undefined,
     };
     // per-item option groups from the business's reusable option sets
     const optIds = Array.isArray(a.options) ? (a.options as string[]) : [];

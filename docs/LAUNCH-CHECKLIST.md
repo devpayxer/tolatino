@@ -360,9 +360,15 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     - [ ] **Per-day-per-qty precision.** A day is blocked only when FULLY booked;
       it doesn't yet check that a multi-unit request fits every day of a range
       (e.g. 2 of 3 units taken, renter wants 2). Fine at low volume.
-    - [ ] **Bookings & products need the same treatment.** Reservas (slot/party
-      capacity) and Productos (per-variant stock) still lack real availability
-      enforcement — apply the same pattern next.
+    - [x] **Productos: stock enforced on the consumer (2026-07-07).** The public
+      shop reads each product's `stock` (business_items.attrs) → out-of-stock
+      shows "Agotado" and blocks add/order/open; low stock (≤5) shows "Quedan N";
+      the cart is capped at available units (simple + variant items). Product-level
+      stock only — per-VARIANT (SKU) stock is still deferred. `stock` defaults to 0
+      so sellers must set it (add an "untracked inventory" opt-out later).
+    - [ ] **Reservas need session capacity.** A bookable service's session
+      capacity isn't enforced yet — apply the rental pattern (service_id on
+      business_bookings + a busy-load RPC) so a class/tasting can't be overbooked.
 - [x] **Wizard UX across Menú / Servicios / Productos (2026-07-06).** Three
   shared improvements to all three create/edit wizards:
   - **Draft recovery.** The CREATE draft autosaves to `localStorage`

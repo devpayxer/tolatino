@@ -252,6 +252,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const money = (n: number) => `$${n.toFixed(2)}`;
 
   const openItem = (catKey: string, item: MenuItem) => {
+    if (shopStock(catKey, item) === 0) { flash(L('Agotado', 'Sold out')); return; }
     const groups = groupsFor(catKey, item);
     const s: Record<string, number> = {};
     groups.forEach((g) => g.type === 'single' && (s[g.id] = 0));
@@ -261,8 +262,17 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     setItemModal({ catKey, item });
   };
 
+  // Shop products track inventory; menu items don't. Returns units left, or null
+  // (untracked → no gating).
+  const shopStock = (catKey: string, it: MenuItem) => (catKey.startsWith('sh:') && typeof it.stock === 'number' ? it.stock : null);
+
   const addSimple = (catKey: string, item: MenuItem) => {
     const key = `${catKey}:${B(item.n)}`;
+    const stk = shopStock(catKey, item);
+    if (stk != null) {
+      if (stk <= 0) { flash(L('Agotado', 'Sold out')); return; }
+      if ((cart[key]?.qty ?? 0) >= stk) { flash(L('No hay más unidades', 'No more units available')); return; }
+    }
     setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + 1, name: B(item.n), unit: item.price, optsLabel: '', bg: item.bg } }));
   };
 
@@ -282,6 +292,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     );
     const unit = itemModal.item.price + add;
     const key = `${itemModal.catKey}:${B(itemModal.item.n)}|${chosen.join(',')}`;
+    const stk = shopStock(itemModal.catKey, itemModal.item);
+    if (stk != null && (cart[key]?.qty ?? 0) + qty > stk) { flash(L('No hay suficientes unidades', 'Not enough units in stock')); return; }
     setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg } }));
     setItemModal(null);
   };
@@ -303,6 +315,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   // Quick single-item order. Fixture prices are numeric, so total = unit price.
   const orderItem = (catKey: string, it: MenuItem) => {
+    if (shopStock(catKey, it) === 0) { flash(L('Agotado', 'Sold out')); return; }
     if (!user) { router.push('/entrar'); return; }
     act.placeOrder(b.slug, [{ name: B(it.n), qty: 1, price: it.price }], it.price, 'pickup');
     flash(L('Pedido enviado · míralo en Mi cuenta', 'Order sent · see it in My account'));
@@ -652,31 +665,36 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const itemCard = (catKey: string, it: MenuItem, withAdd = false, displayOnly = false) => {
     if (displayOnly) return catalogCard(it);
+    const stk = shopStock(catKey, it);
+    const soldOut = stk === 0;
+    const low = stk != null && stk > 0 && stk <= 5;
     return (
       <button
         key={B(it.n)}
-        onClick={() => openItem(catKey, it)}
-        className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card"
+        onClick={() => { if (!soldOut) openItem(catKey, it); }}
+        className={`flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card ${soldOut ? 'cursor-default opacity-75' : 'cursor-pointer'}`}
       >
         {itemBody(it)}
         <span className="flex flex-none flex-col items-center gap-1.5">
-          <span
-            onClick={(e) => {
-              if (withAdd) {
-                e.stopPropagation();
-                addSimple(catKey, it);
-              }
-            }}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-lilac text-primary-dark"
-          >
-            <Plus size={15} strokeWidth={2.8} />
-          </span>
-          <span
-            onClick={(e) => { e.stopPropagation(); orderItem(catKey, it); }}
-            className="cursor-pointer whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[10px] font-extrabold text-white shadow-cta-sm"
-          >
-            {L('Pedir', 'Order')}
-          </span>
+          {soldOut ? (
+            <span className="whitespace-nowrap rounded-full bg-lilac-2 px-2.5 py-1.5 text-[10px] font-extrabold text-muted-2">{L('Agotado', 'Sold out')}</span>
+          ) : (
+            <>
+              {low && <span className="whitespace-nowrap rounded-md bg-amber-bg px-1.5 py-0.5 text-[8.5px] font-extrabold text-amber-ink">{L('Quedan', 'Left')} {stk}</span>}
+              <span
+                onClick={(e) => { if (withAdd) { e.stopPropagation(); addSimple(catKey, it); } }}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-lilac text-primary-dark"
+              >
+                <Plus size={15} strokeWidth={2.8} />
+              </span>
+              <span
+                onClick={(e) => { e.stopPropagation(); orderItem(catKey, it); }}
+                className="cursor-pointer whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[10px] font-extrabold text-white shadow-cta-sm"
+              >
+                {L('Pedir', 'Order')}
+              </span>
+            </>
+          )}
         </span>
       </button>
     );

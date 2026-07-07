@@ -13,6 +13,7 @@ export type MenuItem = {
   tagC?: string;
   bg: string; // striped tile stops "A 0 8px,B 8px 16px"
   img?: string; // real photo URL (live menus) — bg stays as the fallback
+  stock?: number; // shop products only: units left (0 = sold out); undefined = untracked
 };
 
 export type MenuCat = { key: string; name: Bi; items: MenuItem[] };
