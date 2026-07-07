@@ -227,6 +227,14 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
 - **Global search suggestions → server FTS** (no migration): header business
   suggestions call `search_businesses` (debounced), so the preview surfaces the full
   catalog, not just the loaded geo slice. Closes the Handoff global-search rule.
+- **Eventos y boletos → Eventbrite parity** (migration **0061**): `event_tiers`
+  (price/capacity/sales-window per tier), `buy_event_tickets` (no overselling),
+  `event_by_slug`, `checkin_ticket`, triggers for tier.sold + going_count + organizer
+  notifications. Consumer: rich detail (full date, directions, organizer,
+  add-to-calendar ICS, share) + real tier picker + entry-code ticket in Mi cuenta.
+  Dashboard: real tier editor + code-based check-in + real KPIs; wizard seeds a real
+  "Entrada general" tier. Deferred (honest): Stripe charging, SES email, QR-image +
+  camera scanner, map tiles, recurring/drafts/promoters.
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM
   tiles + business coords). Not shipped as fake/broken.

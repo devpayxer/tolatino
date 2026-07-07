@@ -35,6 +35,9 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   booking_status: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
   rental_new: { icon: 'tag', color: '#6D4DF6', bg: '#EFEBFF' },
   rental_status: { icon: 'tag', color: '#1F8A4C', bg: '#E3F5EA' },
+  ticket_new: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
+  ticket_status: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
+  rsvp_new: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
   message: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
 };
 const STATUS: Record<string, [string, string]> = {
@@ -42,6 +45,7 @@ const STATUS: Record<string, [string, string]> = {
   completed: ['completado', 'completed'], cancelled: ['cancelado', 'cancelled'],
   pending: ['pendiente', 'pending'], confirmed: ['confirmado', 'confirmed'], seated: ['en curso', 'in progress'],
   done: ['completado', 'done'], out: ['entregado', 'handed out'], returned: ['devuelto', 'returned'],
+  used: ['usado', 'used'], refunded: ['reembolsado', 'refunded'],
 };
 const money = (v: unknown) => (v == null ? '' : `$${Number(v).toFixed(2)}`);
 const st = (v: unknown): [string, string] => STATUS[String(v)] ?? [String(v ?? ''), String(v ?? '')];
@@ -55,6 +59,9 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
     case 'booking_status': { const [a, b] = st(d.status); return { title: [`Tu reserva está ${a}`, `Your booking is ${b}`], sub: [s('service'), s('service')] }; }
     case 'rental_new': return { title: ['Nueva renta', 'New rental'], sub: [s('item') || s('name'), s('item') || s('name')] };
     case 'rental_status': { const [a, b] = st(d.status); return { title: [`Tu renta está ${a}`, `Your rental is ${b}`], sub: [s('item'), s('item')] }; }
+    case 'ticket_new': return { title: ['Boletos vendidos', 'Tickets sold'], sub: [`${s('event')} · ${s('qty')} · ${s('name')}`, `${s('event')} · ${s('qty')} · ${s('name')}`] };
+    case 'ticket_status': { const [a, b] = st(d.status); return { title: [`Tu boleto: ${a}`, `Your ticket: ${b}`], sub: [s('event'), s('event')] }; }
+    case 'rsvp_new': return { title: ['Nuevo asistente', 'New attendee'], sub: [s('event'), s('event')] };
     case 'message': return { title: [`Mensaje de ${s('name')}`, `Message from ${s('name')}`], sub: [s('preview'), s('preview')] };
     default: return { title: ['Notificación', 'Notification'], sub: ['', ''] };
   }

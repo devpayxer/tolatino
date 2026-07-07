@@ -468,6 +468,34 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   tsc + build + consumer audit (/cuenta) green. (Realtime delivery itself needs a live
   Supabase session — can't be exercised in the sandbox; logic mirrors the working
   notifications subscription.)
+- [x] **Eventos y boletos → Eventbrite parity (2026-07-07).** Benchmarked vs
+  Eventbrite; rebuilt the whole events + ticketing spine. Migration **0061**:
+  `event_tiers` (General/VIP/… each its own price, capacity, sold, sales window);
+  `event_tickets` gains `tier_id` + `unit_price` snapshot + `used_at`; events gain
+  `ends_at`/`cover_url`/`status`; **`buy_event_tickets`** (locks the tier, verifies
+  availability + sales window, no overselling); **`event_by_slug`** (event + live
+  tiers + organizer + geo); **`checkin_ticket`** (organizer validates a code → used,
+  once); triggers keep `event_tiers.sold` + `events.going_count` accurate (the "N
+  asisten" counter was dead) and notify the organizer on ticket sale + RSVP.
+  - **Consumer:** rich event detail — full date, venue + OSM directions,
+    organizer, attendee count, **add-to-calendar (ICS, no dependency)**, native
+    share, and real **ticket tiers** (per-tier price + availability + "Agotado" +
+    qty steppers, running total). Free events keep RSVP. Success shows the entry
+    code. Mi cuenta "Mis boletos" is a ticket stub with the prominent code.
+  - **Dashboard:** real **tier editor** (add/edit/delete on `event_tiers`),
+    real **check-in** (code-entry → `checkin_ticket` → admitido/ya usado/no válido,
+    with a live buyer list), real per-tier "Ventas por nivel" + hero KPIs from real
+    tickets; the create wizard now collects a real price + capacity and seeds a real
+    "Entrada general" tier (fixing the old always-$85 bug).
+  - Verified: tsc + build + RPC-intercepted Playwright (3 tiers, VIP sold-out,
+    running total $30, 0 overflow); dashboard + consumer audits green.
+  - **Deferred (honest, need external setup / later):** real charging (Stripe —
+    tickets are reserved, `unit_price` snapshotted); ticket **email** delivery (SES);
+    **QR image + camera scanner** for check-in (code-entry validates now — no QR
+    dependency); **map embed** (tiles — directions link works now); per-event **deep
+    link** (`?e=slug`); recurring-series generation, saved drafts, promoter/affiliate
+    (still fixture in the dashboard); waitlist capture; event notification **kinds**
+    added client-side (`ticket_new`/`ticket_status`/`rsvp_new`).
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

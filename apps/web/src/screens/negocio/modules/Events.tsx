@@ -47,6 +47,9 @@ type EventDbRow = {
 type TicketRow = {
   id: string; customer_name: string | null; qty: number; total: number | null; code: string; status: string; created_at: string;
 };
+type EventTier = {
+  id: string; name_es: string; name_en: string; price: number; capacity: number | null; sold: number; sort: number;
+};
 const TICKET_STATUS: Record<string, { es: string; en: string; cls: string }> = {
   confirmed: { es: 'Confirmado', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
   used:      { es: 'Usado',      en: 'Used',      cls: 'bg-lilac-2 text-ink-2' },
@@ -72,7 +75,7 @@ const EMPTY_EVENT: EventRow = {
   tile: '#EFEBFF 0 9px,#E5DEF9 9px 18px', status: ['', ''], statusBg: '#E3F5EA', statusC: '#1F8A4C',
 };
 type Attendee = { initials: string; color: string; name: string; tier: string; tierBg: string; tierC: string; diet: string; base: boolean };
-type EventDraft = { name: string; desc: string; type: string; date: string; time: string; location: string; recurring: boolean; vis: string };
+type EventDraft = { name: string; desc: string; type: string; date: string; time: string; location: string; price: string; capacity: string; recurring: boolean; vis: string };
 
 export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
@@ -227,12 +230,92 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const ticketsSold = (ticketRows ?? []).reduce((n, t) => n + (t.qty || 0), 0);
   const ticketsRevenue = (ticketRows ?? []).reduce((n, t) => n + (Number(t.total) || 0), 0);
 
-  const tierDefs = useMemo(() => [
-    { label: 'General', priceN: 85, color: '#7B61FF', sold: Math.round(mgEv.sold * 0.6), cap: Math.round(mgEv.cap * 0.6) },
-    { label: L('Pareja', 'Pair'), priceN: 160, color: '#1F9D57', sold: Math.round(mgEv.sold * 0.25), cap: Math.round(mgEv.cap * 0.25) },
-    { label: 'VIP', priceN: 250, color: '#D6336C', sold: Math.round(mgEv.sold * 0.15), cap: Math.max(1, Math.round(mgEv.cap * 0.15)) },
-  ], [mgEv, L]);
-  const maxTierSold = Math.max(...tierDefs.map((x) => x.sold), 1);
+  // Real ticket tiers for the managed event (event_tiers, migration 0061). Owner CRUD
+  // via RLS. Demo / no-uuid → null, and the Boletos tab shows the sample tier design.
+  const [tierList, setTierList] = useState<EventTier[] | null>(null);
+  const [tierEdit, setTierEdit] = useState<string | 'new' | null>(null); // which tier is open in the inline editor
+  const [tierForm, setTierForm] = useState<{ name: string; price: string; capacity: string }>({ name: '', price: '', capacity: '' });
+  const [tierBusy, setTierBusy] = useState(false);
+  const reloadTiers = async () => {
+    if (!mgEv.dbId || !supabase) return;
+    const { data } = await supabase.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort').eq('event_id', mgEv.dbId).order('sort');
+    setTierList(Array.isArray(data) ? (data as unknown as EventTier[]) : []);
+  };
+  useEffect(() => {
+    if (!persistable || !mgEv.dbId || !supabase) { setTierList(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort').eq('event_id', mgEv.dbId).order('sort');
+      if (cancelled) return;
+      setTierList(error || !Array.isArray(data) ? [] : (data as unknown as EventTier[]));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mgEv.dbId, admin.demo]);
+  const openTierEdit = (t: EventTier | null) => {
+    setTierEdit(t ? t.id : 'new');
+    setTierForm(t ? { name: L(t.name_es, t.name_en), price: String(t.price), capacity: t.capacity == null ? '' : String(t.capacity) } : { name: '', price: '', capacity: '' });
+  };
+  const saveTier = async () => {
+    if (!mgEv.dbId || !supabase || tierBusy) return;
+    const name = tierForm.name.trim();
+    if (!name) { flash(L('Ponle un nombre al nivel', 'Name the tier')); return; }
+    const price = Number(tierForm.price) || 0;
+    const capacity = tierForm.capacity.trim() === '' ? null : Math.max(0, Number(tierForm.capacity) || 0);
+    setTierBusy(true);
+    if (tierEdit === 'new') {
+      await supabase.from('event_tiers').insert({ event_id: mgEv.dbId, name_es: name, name_en: name, price, capacity, sort: tierList?.length ?? 0 });
+    } else if (tierEdit) {
+      await supabase.from('event_tiers').update({ name_es: name, name_en: name, price, capacity }).eq('id', tierEdit);
+    }
+    setTierBusy(false); setTierEdit(null); await reloadTiers();
+    flash(L('Nivel guardado', 'Tier saved'));
+  };
+  const deleteTier = async (id: string) => {
+    if (!supabase) return;
+    await supabase.from('event_tiers').delete().eq('id', id);
+    setTierEdit(null); await reloadTiers();
+    flash(L('Nivel eliminado', 'Tier removed'));
+  };
+
+  // Real door check-in: validate a ticket code (checkin_ticket RPC, migration 0061)
+  // → flips it to used once; the buyer list below reflects the new status.
+  const [checkinCode, setCheckinCode] = useState('');
+  const [checkinBusy, setCheckinBusy] = useState(false);
+  const [checkinRes, setCheckinRes] = useState<{ ok: boolean; msg: string; buyer: string | null; qty: number | null; tier: string | null; already: boolean } | null>(null);
+  const reloadTickets = async () => {
+    if (!mgEv.dbId || !supabase) return;
+    const { data } = await supabase.from('event_tickets').select('id,customer_name,qty,total,code,status,created_at').eq('event_id', mgEv.dbId).order('created_at', { ascending: false });
+    setTicketRows(Array.isArray(data) ? (data as unknown as TicketRow[]) : []);
+  };
+  const runCheckin = async () => {
+    const code = checkinCode.trim();
+    if (!code || checkinBusy || !supabase) return;
+    setCheckinBusy(true);
+    const { data, error } = await supabase.rpc('checkin_ticket', { in_code: code });
+    setCheckinBusy(false);
+    if (error || !Array.isArray(data) || data.length === 0) {
+      setCheckinRes({ ok: false, msg: 'error', buyer: null, qty: null, tier: null, already: false });
+      return;
+    }
+    const r = data[0] as Record<string, unknown>;
+    setCheckinRes({ ok: !!r.ok, msg: String(r.msg ?? ''), buyer: r.buyer ? String(r.buyer) : null, qty: r.qty != null ? Number(r.qty) : null, tier: r.tier ? String(r.tier) : null, already: !!r.already });
+    setCheckinCode('');
+    reloadTickets();
+  };
+  const usedQty = (ticketRows ?? []).filter((t) => t.status === 'used').reduce((n, t) => n + (t.qty || 0), 0);
+
+  // Tiers to render: real ones for a signed-in owner, else the sample design.
+  const TIER_COLORS = ['#7B61FF', '#1F9D57', '#D6336C', '#2F6FED', '#9A6A12'];
+  const realTiers = persistable && tierList != null;
+  const displayTiers = realTiers
+    ? tierList!.map((t, i) => ({ id: t.id, label: L(t.name_es, t.name_en), priceN: Number(t.price), color: TIER_COLORS[i % TIER_COLORS.length], sold: t.sold, cap: t.capacity ?? Math.max(t.sold, 1), unlimited: t.capacity == null, tier: t }))
+    : [
+        { id: 'g', label: 'General', priceN: 85, color: '#7B61FF', sold: Math.round(mgEv.sold * 0.6), cap: Math.round(mgEv.cap * 0.6), unlimited: false, tier: null as EventTier | null },
+        { id: 'p', label: L('Pareja', 'Pair'), priceN: 160, color: '#1F9D57', sold: Math.round(mgEv.sold * 0.25), cap: Math.round(mgEv.cap * 0.25), unlimited: false, tier: null as EventTier | null },
+        { id: 'v', label: 'VIP', priceN: 250, color: '#D6336C', sold: Math.round(mgEv.sold * 0.15), cap: Math.max(1, Math.round(mgEv.cap * 0.15)), unlimited: false, tier: null as EventTier | null },
+      ];
+  const maxTierSold = Math.max(...displayTiers.map((x) => x.sold), 1);
 
   // ---------- shared UI helpers ----------
   const chip = (on: boolean) =>
@@ -519,10 +602,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div className="grid grid-cols-4 gap-1.5 p-3">
         {[
-          { v: `${mgEv.sold}/${mgEv.cap}`, l: L('Vendidos', 'Sold') },
-          { v: `$${revenue.toLocaleString()}`, l: L('Ingresos', 'Revenue') },
-          { v: `${checkedInCount}/${mgEv.sold}`, l: L('Ingresaron', 'Checked in') },
-          { v: '3', l: L('Espera', 'Waitlist') },
+          { v: persistable ? `${ticketsSold}` : `${mgEv.sold}/${mgEv.cap}`, l: L('Vendidos', 'Sold') },
+          { v: `$${(persistable ? ticketsRevenue : revenue).toLocaleString()}`, l: L('Ingresos', 'Revenue') },
+          { v: persistable ? `${usedQty}/${ticketsSold}` : `${checkedInCount}/${mgEv.sold}`, l: L('Ingresaron', 'Checked in') },
+          { v: persistable ? '—' : '3', l: L('Espera', 'Waitlist') },
         ].map((s) => (
           <div key={s.l} className="rounded-[10px] bg-lilac-3 px-1 py-2 text-center">
             <div className="text-[14px] font-extrabold text-ink">{s.v}</div>
@@ -540,8 +623,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="grid items-start gap-3 xl:grid-cols-2">
       <div className={`${cardCls} p-3.5`}>
         <div className="mb-2.5 text-[12.5px] font-extrabold text-ink">{L('Ventas por nivel', 'Sales by tier')}</div>
-        {tierDefs.map((r) => (
-          <div key={r.label} className="py-1.5">
+        {displayTiers.length === 0 && <div className="py-3 text-[11.5px] font-semibold text-muted-2">{L('Aún no hay niveles de boleto.', 'No ticket tiers yet.')}</div>}
+        {displayTiers.map((r) => (
+          <div key={r.id} className="py-1.5">
             <div className="mb-1.5 flex justify-between">
               <span className="text-[11.5px] font-bold text-ink">{r.label} <span className="font-semibold text-muted-2">${r.priceN}</span></span>
               <span className="text-[11px] font-bold text-muted-2">{r.sold} · ${(r.sold * r.priceN).toLocaleString()}</span>
@@ -595,19 +679,65 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- Check-in ----
-  const checkinView = (
+  const checkinBanner = checkinRes && (
+    <div className={`mt-3 rounded-btn-lg px-3 py-2.5 text-left ${checkinRes.ok ? 'bg-[#123a26]' : checkinRes.already ? 'bg-[#3a3212]' : 'bg-[#3a1420]'}`}>
+      <div className={`text-[13px] font-extrabold ${checkinRes.ok ? 'text-[#7BE0A8]' : checkinRes.already ? 'text-amber' : 'text-pink'}`}>
+        {checkinRes.ok ? L('✓ Admitido', '✓ Admitted') : checkinRes.already ? L('Ya había ingresado', 'Already checked in') : checkinRes.msg === 'reembolsado' ? L('Boleto reembolsado', 'Ticket refunded') : L('Código no válido', 'Invalid code')}
+      </div>
+      {checkinRes.buyer && <div className="mt-0.5 text-[11px] font-semibold text-white/75">{checkinRes.buyer}{checkinRes.tier ? ` · ${checkinRes.tier}` : ''}{checkinRes.qty ? ` · ${checkinRes.qty} ${checkinRes.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}` : ''}</div>}
+    </div>
+  );
+  const checkinView = persistable ? (
+    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[320px_1fr]">
+      <div className="rounded-card p-5" style={{ background: '#1E1B2E' }}>
+        <div className="text-center text-[11px] font-extrabold uppercase tracking-[.06em] text-white/60">{L('Validar boleto', 'Validate ticket')}</div>
+        <div className="mt-3 flex gap-2">
+          <input
+            value={checkinCode}
+            onChange={(e) => setCheckinCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => { if (e.key === 'Enter') runCheckin(); }}
+            placeholder={L('Código del boleto', 'Ticket code')}
+            className="min-w-0 flex-1 rounded-btn bg-white/10 px-3 py-2.5 text-center font-mono text-[15px] font-extrabold uppercase tracking-[.14em] text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-white/40 focus:bg-white/15"
+          />
+          <button onClick={runCheckin} disabled={checkinBusy || !checkinCode.trim()} className="flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white disabled:opacity-40">{L('Validar', 'Check')}</button>
+        </div>
+        {checkinBanner}
+        <div className="mt-3 text-center text-[10.5px] font-semibold text-white/50">{L('El invitado muestra el código de su boleto (Mi cuenta → Mis boletos).', 'The guest shows the code from their ticket (My account → My tickets).')}</div>
+        <div className="mt-4 flex justify-center gap-6 border-t border-white/10 pt-4">
+          <div className="text-center"><div className="text-[18px] font-extrabold text-[#7BE0A8]">{usedQty}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Ingresaron', 'Checked in')}</div></div>
+          <div className="text-center"><div className="text-[18px] font-extrabold text-white">{ticketsSold}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Vendidos', 'Sold')}</div></div>
+          <div className="text-center"><div className="text-[18px] font-extrabold text-amber">{Math.max(0, ticketsSold - usedQty)}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Faltan', 'Remaining')}</div></div>
+        </div>
+      </div>
+      <div>
+        <div className="mb-2.5 px-0.5 text-[12px] font-extrabold text-ink">{L('Boletos', 'Tickets')} · {ticketsSold}</div>
+        {(ticketRows ?? []).length === 0 ? (
+          <div className="rounded-btn-lg border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{L('Aún no hay boletos vendidos.', 'No tickets sold yet.')}</div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {(ticketRows ?? []).map((t) => {
+              const used = t.status === 'used';
+              return (
+                <div key={t.id} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[12px] font-extrabold text-ink">{t.customer_name || L('Cliente', 'Customer')}</div>
+                    <div className="mt-0.5 font-mono text-[10.5px] font-bold tracking-[.1em] text-muted-2">{t.code} · {t.qty} {t.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}</div>
+                  </div>
+                  <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${used ? 'bg-green-bg text-green-dark' : 'bg-lilac-2 text-ink-2'}`}>{used ? L('Ingresó', 'In') : L('Válido', 'Valid')}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  ) : (
+    // demo (not signed in): the sample scan design stays explorable
     <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
       <div className="rounded-card p-5 text-center" style={{ background: '#1E1B2E' }}>
-        <div className="text-[11px] font-extrabold uppercase tracking-[.06em] text-white/60">{L('Escanear boletos', 'Scan tickets')}</div>
-        <div className="mx-auto my-4 flex h-[180px] w-[180px] items-center justify-center rounded-tile bg-white p-3.5">
-          <QrGrid />
-        </div>
-        <div className="text-[12px] font-bold text-white/80">{L('Apunta a la cámara del invitado', "Point at the guest's ticket")}</div>
-        <div className="mt-4 flex justify-center gap-5 border-t border-white/10 pt-4">
-          <div><div className="text-[18px] font-extrabold text-[#7BE0A8]">{checkedInCount}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Ingresaron', 'Checked in')}</div></div>
-          <div><div className="text-[18px] font-extrabold text-white">{mgEv.sold}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Vendidos', 'Sold')}</div></div>
-          <div><div className="text-[18px] font-extrabold text-amber">{mgEv.sold - checkedInCount}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Faltan', 'Remaining')}</div></div>
-        </div>
+        <div className="text-[11px] font-extrabold uppercase tracking-[.06em] text-white/60">{L('Validar boleto', 'Validate ticket')}</div>
+        <div className="mx-auto my-4 flex h-[180px] w-[180px] items-center justify-center rounded-tile bg-white p-3.5"><QrGrid /></div>
+        <div className="text-[12px] font-bold text-white/80">{L('Inicia sesión con tu negocio para validar boletos reales.', 'Sign in with your business to validate real tickets.')}</div>
       </div>
       <div>
         <div className="mb-2.5 px-0.5 text-[12px] font-extrabold text-ink">{L('Lista de check-in', 'Check-in list')}</div>
@@ -622,7 +752,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div className="mt-0.5 text-[9.5px] font-medium text-muted-2">{a.tier}{inn && ` · ${L('ingresó', 'checked in')}`}</div>
                 </div>
                 {inn ? (
-                  <button onClick={() => { setCheckedIn((s) => ({ ...s, [a.name]: false })); }} className="flex h-6 w-6 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg" aria-label={L('Deshacer', 'Undo')}>
+                  <button onClick={() => setCheckedIn((s) => ({ ...s, [a.name]: false }))} className="flex h-6 w-6 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg" aria-label={L('Deshacer', 'Undo')}>
                     <Check size={13} strokeWidth={3} className="text-green" />
                   </button>
                 ) : (
@@ -637,6 +767,29 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- Boletos ----
+  const tierInput = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[13px] font-bold text-ink outline-none focus:border-primary';
+  const tierFormCard = (
+    <div className="rounded-btn-lg border-[1.5px] border-primary bg-lilac-3 p-3.5">
+      <div className="flex flex-col gap-2.5">
+        <input value={tierForm.name} onChange={(e) => setTierForm((f) => ({ ...f, name: e.target.value }))} placeholder={L('Nombre (General, VIP…)', 'Name (General, VIP…)')} className={tierInput} />
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Precio $ · 0 = gratis', 'Price $ · 0 = free')}</label>
+            <input value={tierForm.price} onChange={(e) => setTierForm((f) => ({ ...f, price: e.target.value.replace(/[^0-9.]/g, '') }))} inputMode="decimal" placeholder="0" className={tierInput} />
+          </div>
+          <div className="flex-1">
+            <label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Cupo · vacío = sin límite', 'Capacity · blank = unlimited')}</label>
+            <input value={tierForm.capacity} onChange={(e) => setTierForm((f) => ({ ...f, capacity: e.target.value.replace(/[^0-9]/g, '') }))} inputMode="numeric" placeholder="∞" className={tierInput} />
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button onClick={saveTier} disabled={tierBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{tierBusy ? L('Guardando…', 'Saving…') : L('Guardar', 'Save')}</button>
+        <button onClick={() => setTierEdit(null)} className="cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+        {tierEdit !== 'new' && tierEdit && <button onClick={() => deleteTier(tierEdit)} className="cursor-pointer rounded-btn bg-pink-bg px-4 py-2.5 text-[12px] font-extrabold text-pink-dark">{L('Eliminar', 'Remove')}</button>}
+      </div>
+    </div>
+  );
   const ticketsView = (
     <div className="flex flex-col gap-3">
       {/* Real ticket sales bought by customers (event_tickets). Shows when the
@@ -666,26 +819,41 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
       <div className="grid gap-2.5 md:grid-cols-2">
-        {tierDefs.map((tk) => {
-          const pct = Math.round((tk.sold / tk.cap) * 100);
+        {displayTiers.map((tk) => {
+          if (realTiers && tierEdit === tk.id) return <div key={tk.id}>{tierFormCard}</div>;
+          const pct = tk.unlimited ? 0 : Math.round((tk.sold / Math.max(tk.cap, 1)) * 100);
           return (
-            <div key={tk.label} className="rounded-btn-lg border border-hair bg-white p-3.5">
+            <div key={tk.id} className="rounded-btn-lg border border-hair bg-white p-3.5">
               <div className="mb-2 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: tk.color }} />
-                <span className="text-[13px] font-extrabold text-ink">{tk.label}</span>
-                <span className="ml-auto text-[13px] font-extrabold text-ink">${tk.priceN}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{tk.label}</span>
+                <span className="flex-none text-[13px] font-extrabold text-ink">{tk.priceN > 0 ? `$${tk.priceN}` : L('Gratis', 'Free')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-lilac-line">
                   <div className="h-full rounded-full" style={{ width: `${pct}%`, background: tk.color }} />
                 </div>
-                <span className="whitespace-nowrap text-[10px] font-bold text-muted-2">{tk.sold}/{tk.cap}</span>
+                <span className="whitespace-nowrap text-[10px] font-bold text-muted-2">{tk.unlimited ? `${tk.sold} · ${L('sin límite', 'unlimited')}` : `${tk.sold}/${tk.cap}`}</span>
               </div>
+              {realTiers && tk.tier && (
+                <div className="mt-2.5 flex gap-2 border-t border-hair pt-2.5">
+                  <button onClick={() => openTierEdit(tk.tier)} className="cursor-pointer text-[11px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
+                  <button onClick={() => deleteTier(tk.id)} className="ml-auto cursor-pointer text-[11px] font-extrabold text-pink-dark">{L('Eliminar', 'Remove')}</button>
+                </div>
+              )}
             </div>
           );
         })}
+        {realTiers && tierEdit === 'new' && <div>{tierFormCard}</div>}
       </div>
-      <button onClick={() => flash(L('Nuevo nivel de boleto', 'New ticket tier'))} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-3 text-[12.5px] font-extrabold text-primary-dark">+ {L('Agregar nivel', 'Add tier')}</button>
+      {(!realTiers || tierEdit !== 'new') && (
+        <button
+          onClick={() => (realTiers ? openTierEdit(null) : flash(L('Inicia sesión con tu negocio para crear niveles', 'Sign in with your business to create tiers')))}
+          className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-3 text-[12.5px] font-extrabold text-primary-dark"
+        >
+          + {L('Agregar nivel', 'Add tier')}
+        </button>
+      )}
     </div>
   );
 
@@ -767,10 +935,6 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const typeLabel = (typeDefs.find((x) => x[0] === draft.type) || typeDefs[0])[1];
   const wizStepDefs: [string, string][] = [['details', L('Detalles', 'Details')], ['tickets', L('Boletos', 'Tickets')], ['dateloc', L('Fecha/lugar', 'Date/place')], ['review', L('Revisar', 'Review')]];
 
-  const draftTiers = [
-    { label: 'General', cap: 40, priceN: 85, bg: '#EFEBFF', c: '#6D4DF6' },
-    { label: 'VIP', cap: 8, priceN: 250, bg: '#FDE7EF', c: '#D6336C' },
-  ];
   const visDefs: [string, string][] = [['public', L('Público', 'Public')], ['followers', L('Seguidores', 'Followers first')], ['unlisted', L('No listado', 'Unlisted')]];
   const eReady = !!(draft.name && draft.date);
 
@@ -797,21 +961,26 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   const wizStep1 = (
-    <div className="flex flex-col gap-3">
-      <p className="text-[11px] font-medium leading-relaxed text-muted">{L('Define los niveles de boleto. Puedes agregar más después.', 'Set ticket tiers. You can add more later.')}</p>
-      {draftTiers.map((tk) => (
-        <div key={tk.label} className="flex items-center gap-2.5 rounded-btn border border-hair bg-lilac-3 p-3">
-          <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg" style={{ background: tk.bg }}>
-            <Ticket size={15} strokeWidth={2} style={{ color: tk.c }} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-extrabold text-ink">{tk.label}</div>
-            <div className="mt-0.5 text-[10px] font-medium text-muted-2">{tk.cap} {L('lugares', 'spots')}</div>
-          </div>
-          <span className="text-[13px] font-extrabold text-ink">${tk.priceN}</span>
+    <div className="flex flex-col gap-3.5">
+      <p className="text-[11px] font-medium leading-relaxed text-muted">{L('Crea el boleto de entrada general. Podrás agregar niveles (VIP, pareja…) y ajustar cupos después en Boletos.', 'Create the general-admission ticket. You can add tiers (VIP, pair…) and adjust capacity later in Tickets.')}</p>
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <label className={labelCls}>{L('Precio $', 'Price $')}</label>
+          <input value={draft.price} onChange={(e) => upD({ price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder={L('0 = gratis', '0 = free')} className={fieldCls} />
         </div>
-      ))}
-      <button onClick={() => flash(L('Agrega otro nivel', 'Add another tier'))} className="w-full cursor-pointer rounded-btn border-[1.5px] border-dashed border-lilac-ring bg-white py-2.5 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar nivel', 'Add tier')}</button>
+        <div className="flex-1">
+          <label className={labelCls}>{L('Cupo', 'Capacity')}</label>
+          <input value={draft.capacity} onChange={(e) => upD({ capacity: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder={L('∞ sin límite', '∞ unlimited')} className={fieldCls} />
+        </div>
+      </div>
+      <div className="flex items-center gap-2.5 rounded-btn border border-hair bg-lilac-3 p-3">
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Ticket size={15} strokeWidth={2} className="text-primary-dark" /></span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[12px] font-extrabold text-ink">{L('Entrada general', 'General admission')}</div>
+          <div className="mt-0.5 text-[10px] font-medium text-muted-2">{draft.capacity ? `${draft.capacity} ${L('lugares', 'spots')}` : L('Sin límite', 'Unlimited')}</div>
+        </div>
+        <span className="text-[13px] font-extrabold text-ink">{Number(draft.price) > 0 ? `$${draft.price}` : L('Gratis', 'Free')}</span>
+      </div>
     </div>
   );
 
@@ -889,8 +1058,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const startsAt = Number.isNaN(d0.getTime()) ? new Date().toISOString() : d0.toISOString();
     const sd = new Date(startsAt);
     const [tileA, tileB] = draftTile.split(',').map((s) => s.trim().split(' ')[0]);
-    const priceN = draftTiers[0].priceN;
-    const priceLabel = '$' + priceN;
+    const priceN = Number(draft.price) || 0;
+    const priceLabel = priceN > 0 ? '$' + priceN : null; // null = free on the card
+    const capN = draft.capacity.trim() === '' ? null : Math.max(0, Number(draft.capacity) || 0);
     const pCat = EVENT_CAT_MAP[draft.type] ?? 'familia';
     const local: EventRow = {
       id: nextId(),
@@ -898,10 +1068,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       mon: (es ? MON_ES : MON_EN)[sd.getMonth()],
       day: String(sd.getDate()).padStart(2, '0'),
       time: draft.time || fmtTime(sd),
-      price: priceLabel,
+      price: priceLabel ?? L('Gratis', 'Free'),
       priceN,
       sold: 0,
-      cap: 48,
+      cap: capN ?? 48,
       tile: draftTile,
       status: ['Vendiendo', 'Selling'],
       statusBg: '#E3F5EA',
@@ -910,7 +1080,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setEvents((xs) => [local, ...xs]);
     if (persistable && real && user && supabase) {
       (async () => {
-        const { error } = await supabase!.rpc('create_event', {
+        const { data: slug, error } = await supabase!.rpc('create_event', {
           p_title_es: draft.name.trim(),
           p_title_en: draft.name.trim(),
           p_venue_es: draft.location || '',
@@ -928,6 +1098,13 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           p_lat: null,
           p_lng: null,
         });
+        // Give the new event a real "Entrada general" tier from the wizard's price so
+        // it's immediately sellable (the owner adds VIP/etc. tiers in Boletos).
+        if (!error && slug) {
+          const { data: ev } = await supabase!.from('events').select('id').eq('slug', String(slug)).maybeSingle();
+          const evId = (ev as { id: string } | null)?.id;
+          if (evId) await supabase!.from('event_tiers').insert({ event_id: evId, name_es: 'Entrada general', name_en: 'General admission', price: priceN, capacity: capN, sort: 0 });
+        }
         // Reconcile with the DB truth (real slug/id/going_count; backfills dbId).
         if (!error) { const rows = await fetchEvents(user.id); setEvents(rows); }
       })();
@@ -1061,7 +1238,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 }
 
 function newDraft(): EventDraft {
-  return { name: '', desc: '', type: 'clase', date: '', time: '', location: '', recurring: false, vis: 'public' };
+  return { name: '', desc: '', type: 'clase', date: '', time: '', location: '', price: '', capacity: '', recurring: false, vis: 'public' };
 }
 
 // Deterministic faux-QR grid (matches the prototype's check-in card).
