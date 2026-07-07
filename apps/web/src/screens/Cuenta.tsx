@@ -414,9 +414,30 @@ export function CuentaScreen() {
           {backBar(L('Mis boletos', 'My tickets'))}
           {act.tickets.length === 0 ? txEmpty(L('Aún no tienes boletos.', 'No tickets yet.')) : (
             <div className="flex flex-col gap-2.5">
-              {act.tickets.map((t) => txItem(t.id, evTitle(t.events),
-                `${t.qty} ${t.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')} · ${L('código', 'code')} ${t.code}`,
-                <>{t.total != null && Number(t.total) > 0 && <span className="text-[13px] font-extrabold text-ink">{money(t.total)}</span>}{pill(t.status)}</>))}
+              {act.tickets.map((t) => {
+                const used = t.status === 'used';
+                const tierName = t.event_tiers ? L(t.event_tiers.name_es, t.event_tiers.name_en) : null;
+                return (
+                  <div key={t.id} className={`${cardCls} overflow-hidden`}>
+                    <div className="flex items-center gap-3 p-3.5">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13.5px] font-extrabold text-ink">{evTitle(t.events)}</span>
+                        <span className="block truncate text-[11.5px] font-semibold text-muted">{t.events ? `${L(t.events.venue_es ?? '', t.events.venue_en ?? '')} · ${dt(t.events.starts_at)}` : ''}</span>
+                        <span className="mt-0.5 block truncate text-[11px] font-bold text-muted-2">
+                          {tierName ? `${tierName} · ` : ''}{t.qty} {t.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}
+                          {t.total != null && Number(t.total) > 0 ? ` · ${money(t.total)}` : ''}
+                        </span>
+                      </span>
+                      {used ? <span className="flex-none rounded-full bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-muted-2">{L('Usado', 'Used')}</span> : pill(t.status)}
+                    </div>
+                    {/* ticket stub: the entry code the organizer validates at check-in */}
+                    <div className={`flex items-center justify-between gap-2 border-t border-dashed border-lilac-line px-3.5 py-2.5 ${used ? 'bg-lilac-2/40 opacity-60' : 'bg-lilac-3'}`}>
+                      <span className="text-[10px] font-extrabold uppercase tracking-[.08em] text-muted-2">{L('Código de entrada', 'Entry code')}</span>
+                      <span className="font-mono text-[17px] font-extrabold tracking-[.14em] text-primary-dark">{t.code}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

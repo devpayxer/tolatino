@@ -9,6 +9,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { buyEventTickets } from '@/lib/live';
 import { useAuth } from '@/lib/auth';
 
 type BizRef = { name: string; slug: string } | null;
@@ -18,7 +19,7 @@ export type OrderItem = { name: string; qty: number; price?: number };
 export type MyOrder = { id: string; business_id: string; code: string | null; items: OrderItem[]; total: number | null; channel: string | null; status: string; created_at: string; businesses: BizRef };
 export type MyBooking = { id: string; business_id: string; service_name: string | null; party_size: number | null; starts_at: string; status: string; deposit: number | null; created_at: string; businesses: BizRef };
 export type MyRental = { id: string; business_id: string; item_name: string; start_at: string; end_at: string | null; qty: number; total: number | null; status: string; created_at: string; businesses: BizRef };
-export type MyTicket = { id: string; event_id: string; qty: number; total: number | null; code: string; status: string; created_at: string; events: EvRef };
+export type MyTicket = { id: string; event_id: string; qty: number; total: number | null; unit_price: number | null; code: string; status: string; used_at: string | null; created_at: string; events: EvRef; event_tiers: { name_es: string; name_en: string } | null };
 export type MyGoing = { event_id: string; created_at: string; events: EvRef };
 
 type Ctx = {
@@ -36,7 +37,7 @@ type Ctx = {
   placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string) => Promise<{ error: string | null }>;
   book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
   rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
-  buyTickets: (eventSlug: string, qty: number, total: number | null) => Promise<{ error: string | null }>;
+  buyTickets: (eventSlug: string, tierId: string, qty: number) => Promise<{ error: string | null; code?: string }>;
   rsvp: (eventSlug: string, on: boolean) => Promise<{ error: string | null }>;
   // Customer self-service: cancel one's own order/booking/rental (RLS: own rows).
   cancel: (kind: 'order' | 'booking' | 'rental', id: string) => Promise<{ error: string | null }>;
@@ -71,7 +72,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
         supabase!.from('business_orders').select(`id,business_id,code,items,total,channel,status,created_at,${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('business_bookings').select(`id,business_id,service_name,party_size,starts_at,status,deposit,created_at,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }),
         supabase!.from('business_rentals').select(`id,business_id,item_name,start_at,end_at,qty,total,status,created_at,${BIZ}`).eq('user_id', uid).order('start_at', { ascending: false }),
-        supabase!.from('event_tickets').select(`id,event_id,qty,total,code,status,created_at,${EV}`).eq('user_id', uid).order('created_at', { ascending: false }),
+        supabase!.from('event_tickets').select(`id,event_id,qty,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('event_attendance').select(`event_id,created_at,${EV}`).eq('user_id', uid).order('created_at', { ascending: false }),
       ]);
       if (cancelled) return;
@@ -140,14 +141,19 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     return { error: error ? error.message : null };
   }, [user, custName, refresh, idOf]);
 
-  const buyTickets = useCallback<Ctx['buyTickets']>(async (eventSlug, qty, total) => {
+  // Capacity-checked purchase via buy_event_tickets (migration 0061): the RPC locks
+  // the tier, verifies availability + sales window, snapshots unit_price, issues the
+  // ticket + code. Throws a reason (sold out / sales closed) we surface to the buyer.
+  const buyTickets = useCallback<Ctx['buyTickets']>(async (eventSlug, tierId, qty) => {
     if (!supabase || !user) return { error: 'auth' };
-    const evId = await idOf('events', eventSlug);
-    if (!evId) return { error: 'event-not-found' };
-    const { error } = await supabase.from('event_tickets').insert({ event_id: evId, user_id: user.id, customer_name: custName, qty, total });
-    if (!error) refresh();
-    return { error: error ? error.message : null };
-  }, [user, custName, refresh, idOf]);
+    try {
+      const { code } = await buyEventTickets(eventSlug, tierId, qty);
+      refresh();
+      return { error: null, code };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : 'error' };
+    }
+  }, [user, refresh]);
 
   const rsvp = useCallback<Ctx['rsvp']>(async (eventSlug, on) => {
     if (!supabase || !user) return { error: 'auth' };

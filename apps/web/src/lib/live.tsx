@@ -419,6 +419,64 @@ export async function postReview(slug: string, rating: number, body: string, pho
   return String(data);
 }
 
+// ── events + ticketing (migration 0061) ──
+export type PubTier = {
+  id: string; name: [string, string]; price: number;
+  capacity: number | null; sold: number; remaining: number | null;
+  salesStart: string | null; salesEnd: string | null;
+};
+export type PubEvent = {
+  slug: string; title: [string, string]; venue: [string, string];
+  cat: string; city: string; startsAt: string; endsAt: string | null;
+  timeLabel: [string, string]; priceLabel: string | null;
+  desc: [string, string]; tile: [string, string]; coverUrl: string | null;
+  status: string; going: number; lat: number | null; lng: number | null;
+  organizer: string; tiers: PubTier[];
+};
+
+/** A single event + its live ticket tiers by slug (migration 0061). null offline / not found. */
+export async function fetchEventBySlug(slug: string): Promise<PubEvent | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('event_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const r = data[0] as Record<string, unknown>;
+  const tiersRaw = Array.isArray(r.tiers) ? (r.tiers as Record<string, unknown>[]) : [];
+  return {
+    slug: String(r.slug),
+    title: [String(r.title_es), String(r.title_en ?? r.title_es)],
+    venue: [String(r.venue_es), String(r.venue_en ?? r.venue_es)],
+    cat: String(r.cat ?? ''), city: String(r.city ?? ''),
+    startsAt: String(r.starts_at), endsAt: r.ends_at != null ? String(r.ends_at) : null,
+    timeLabel: [String(r.time_label_es ?? ''), String(r.time_label_en ?? '')],
+    priceLabel: r.price_label != null ? String(r.price_label) : null,
+    desc: [String(r.desc_es ?? ''), String(r.desc_en ?? r.desc_es ?? '')],
+    tile: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
+    coverUrl: r.cover_url != null ? String(r.cover_url) : null,
+    status: String(r.status ?? 'published'), going: Number(r.going_count ?? 0),
+    lat: r.lat != null ? Number(r.lat) : null, lng: r.lng != null ? Number(r.lng) : null,
+    organizer: String(r.organizer ?? 'Organizador'),
+    tiers: tiersRaw.map((t) => ({
+      id: String(t.id), name: [String(t.name_es), String(t.name_en ?? t.name_es)],
+      price: Number(t.price ?? 0),
+      capacity: t.capacity != null ? Number(t.capacity) : null,
+      sold: Number(t.sold ?? 0),
+      remaining: t.remaining != null ? Number(t.remaining) : null,
+      salesStart: t.sales_start != null ? String(t.sales_start) : null,
+      salesEnd: t.sales_end != null ? String(t.sales_end) : null,
+    })),
+  };
+}
+
+/** Buy tickets for one tier — capacity-checked, atomic (migration 0061). Returns the
+ *  ticket code, or throws with a reason (sold out / sales closed / not found). */
+export async function buyEventTickets(slug: string, tierId: string, qty: number): Promise<{ code: string }> {
+  if (!supabase) throw new Error('offline');
+  const { data, error } = await supabase.rpc('buy_event_tickets', { in_slug: slug, in_tier_id: tierId, in_qty: qty });
+  if (error) throw new Error(error.message || 'error');
+  if (!Array.isArray(data) || data.length === 0) throw new Error('error');
+  return { code: String((data[0] as Record<string, unknown>).code) };
+}
+
 /** Server-side business search (migration 0055): Postgres full-text + trigram
  *  fuzzy, geo-scoped, filtered + ranked by relevance then distance. Returns []
  *  offline / on error so the caller falls back to the client geo list. */
