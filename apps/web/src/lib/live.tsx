@@ -376,6 +376,28 @@ export async function fetchRentalBusy(itemId: string): Promise<{ start: string; 
   }));
 }
 
+/** Server-side business search (migration 0055): Postgres full-text + trigram
+ *  fuzzy, geo-scoped, filtered + ranked by relevance then distance. Returns []
+ *  offline / on error so the caller falls back to the client geo list. */
+export async function searchBusinesses(opts: {
+  q?: string; lat?: number | null; lng?: number | null; city?: string | null;
+  cat?: string | null; price?: string | null; minRating?: number | null;
+  limit?: number; offset?: number;
+}): Promise<Business[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('search_businesses', {
+    in_q: opts.q ?? null,
+    user_lat: opts.lat ?? null, user_lng: opts.lng ?? null, in_city: opts.city ?? null,
+    in_cat: opts.cat && opts.cat !== 'all' ? opts.cat : null,
+    in_price: opts.price ?? null, in_min_rating: opts.minRating ?? null,
+    max_results: opts.limit ?? 40, in_offset: opts.offset ?? 0,
+  });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[])
+    .filter((r) => isCatKey(String(r.category_id)))
+    .map((r, i) => mapBusinessRow(r, i, (r.distance_m as number | null) ?? null));
+}
+
 /** Fetch a single business by its public slug (geo-independent). Returns a
  *  mapped Business or null (offline / not found / unknown category). */
 export async function fetchBusinessBySlug(slug: string): Promise<Business | null> {

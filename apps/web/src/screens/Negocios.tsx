@@ -12,7 +12,7 @@ import { useApp } from '@/lib/state';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
-import { useLiveData, fetchBusinessBySlug } from '@/lib/live';
+import { useLiveData, fetchBusinessBySlug, searchBusinesses } from '@/lib/live';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useNow } from '@/lib/useNow';
 import { bizStatus, isOpenNow, statusLabel } from '@/lib/hours';
@@ -105,8 +105,27 @@ export function NegociosScreen() {
     patch({ features: f.features.includes(es) ? f.features.filter((x) => x !== es) : [...f.features, es] });
 
   const sl = app.search.trim().toLowerCase();
+
+  // Server-side full-text search (migration 0055) — real relevance + fuzzy across
+  // the whole radius, not just the ~50-business geo slice. Debounced; falls back
+  // to the client substring filter when empty / offline / still loading.
+  const rawQ = app.search.trim();
+  const [serverResults, setServerResults] = useState<Business[] | null>(null);
+  useEffect(() => {
+    if (!rawQ) { setServerResults(null); return; }
+    let cancelled = false;
+    const t = window.setTimeout(() => {
+      void searchBusinesses({
+        q: rawQ, lat: app.coords?.lat ?? null, lng: app.coords?.lng ?? null, city: app.city,
+        cat: f.cat, price: f.price, minRating: f.rating ? parseFloat(f.rating) : null, limit: 40,
+      }).then((rows) => { if (!cancelled) setServerResults(rows); });
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(t); };
+  }, [rawQ, f.cat, f.price, f.rating, app.city, app.coords?.lat, app.coords?.lng]);
+
   const results = useMemo(() => {
-    let list = BUSINESSES.slice();
+    const usingServer = sl.length > 0 && serverResults != null && serverResults.length > 0;
+    let list = (usingServer ? serverResults! : BUSINESSES).slice();
     if (onlySaved) list = list.filter((b) => savedBiz.isSaved(b.slug));
     if (f.cat !== 'all') list = list.filter((b) => b.cat === f.cat);
     if (f.subCat) list = list.filter((b) => (b.subcats ?? []).includes(f.subCat as string));
@@ -119,7 +138,8 @@ export function NegociosScreen() {
       const d = parseFloat(b.dist);
       return Number.isNaN(d) || d <= f.maxDist;
     });
-    if (sl) {
+    // client substring only when NOT using the server results (server already ranked/matched)
+    if (sl && !usingServer) {
       list = list.filter((b) => {
         const subs = (b.subcats ?? []).map((s) => `${s} ${SUB_EN[s] ?? ''}`).join(' ');
         return `${b.name} ${CAT[b.cat].es} ${CAT[b.cat].en} ${b.specEs} ${b.specEn} ${subs}`.toLowerCase().includes(sl);
@@ -129,7 +149,7 @@ export function NegociosScreen() {
     // is stable, so the backend's relevance order is kept inside each tier.
     list = list.slice().sort((a, b) => (a.verified ? 0 : 1) - (b.verified ? 0 : 1));
     return list;
-  }, [f, sl, BUSINESSES, onlySaved, savedBiz.saved, now]);
+  }, [f, sl, serverResults, BUSINESSES, onlySaved, savedBiz.saved, now]);
 
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
