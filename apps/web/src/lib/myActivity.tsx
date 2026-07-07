@@ -19,7 +19,8 @@ export type OrderItem = { name: string; qty: number; price?: number };
 export type MyOrder = { id: string; business_id: string; code: string | null; items: OrderItem[]; total: number | null; channel: string | null; status: string; created_at: string; businesses: BizRef };
 export type MyBooking = { id: string; business_id: string; service_name: string | null; party_size: number | null; starts_at: string; status: string; deposit: number | null; created_at: string; businesses: BizRef };
 export type MyRental = { id: string; business_id: string; item_name: string; start_at: string; end_at: string | null; qty: number; total: number | null; status: string; created_at: string; businesses: BizRef };
-export type MyTicket = { id: string; event_id: string; qty: number; total: number | null; unit_price: number | null; code: string; status: string; used_at: string | null; created_at: string; events: EvRef; event_tiers: { name_es: string; name_en: string } | null };
+export type MyTicket = { id: string; event_id: string; qty: number; admitted: number; total: number | null; unit_price: number | null; code: string; status: string; used_at: string | null; created_at: string; events: EvRef; event_tiers: { name_es: string; name_en: string } | null };
+export type MyWaitlist = { event_id: string; tier_id: string | null; status: string };
 export type MyGoing = { event_id: string; created_at: string; events: EvRef };
 
 type Ctx = {
@@ -38,7 +39,11 @@ type Ctx = {
   book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
   rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
   buyTickets: (eventSlug: string, tierId: string, qty: number) => Promise<{ error: string | null; code?: string }>;
-  buyTicketsMulti: (eventSlug: string, items: { tierId: string; qty: number }[]) => Promise<{ error: string | null; codes?: string[]; tickets?: { code: string; tierId: string }[] }>;
+  buyTicketsMulti: (eventSlug: string, items: { tierId: string; qty: number }[], promo?: string) => Promise<{ error: string | null; codes?: string[]; tickets?: { code: string; tierId: string }[] }>;
+  waitlist: MyWaitlist[];
+  waitlistTierIds: Set<string>;
+  joinWaitlist: (eventSlug: string, tierId: string | null) => Promise<{ error: string | null }>;
+  leaveWaitlist: (eventSlug: string, tierId: string | null) => Promise<{ error: string | null }>;
   rsvp: (eventSlug: string, on: boolean) => Promise<{ error: string | null }>;
   // Customer self-service: cancel one's own order/booking/rental (RLS: own rows).
   cancel: (kind: 'order' | 'booking' | 'rental', id: string) => Promise<{ error: string | null }>;
@@ -57,11 +62,12 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
   const [rentals, setRentals] = useState<MyRental[]>([]);
   const [tickets, setTickets] = useState<MyTicket[]>([]);
   const [going, setGoing] = useState<MyGoing[]>([]);
+  const [waitlist, setWaitlist] = useState<MyWaitlist[]>([]);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
     if (!supabase || !user) {
-      setOrders([]); setBookings([]); setRentals([]); setTickets([]); setGoing([]);
+      setOrders([]); setBookings([]); setRentals([]); setTickets([]); setGoing([]); setWaitlist([]);
       setLoading(false);
       return;
     }
@@ -69,12 +75,13 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     (async () => {
       const uid = user.id;
-      const [o, b, r, t, g] = await Promise.all([
+      const [o, b, r, t, g, w] = await Promise.all([
         supabase!.from('business_orders').select(`id,business_id,code,items,total,channel,status,created_at,${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('business_bookings').select(`id,business_id,service_name,party_size,starts_at,status,deposit,created_at,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }),
         supabase!.from('business_rentals').select(`id,business_id,item_name,start_at,end_at,qty,total,status,created_at,${BIZ}`).eq('user_id', uid).order('start_at', { ascending: false }),
-        supabase!.from('event_tickets').select(`id,event_id,qty,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }),
+        supabase!.from('event_tickets').select(`id,event_id,qty,admitted,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('event_attendance').select(`event_id,created_at,${EV}`).eq('user_id', uid).order('created_at', { ascending: false }),
+        supabase!.from('event_waitlist').select('event_id,tier_id,status').eq('user_id', uid),
       ]);
       if (cancelled) return;
       if (!o.error && o.data) setOrders(o.data as unknown as MyOrder[]);
@@ -82,6 +89,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
       if (!r.error && r.data) setRentals(r.data as unknown as MyRental[]);
       if (!t.error && t.data) setTickets(t.data as unknown as MyTicket[]);
       if (!g.error && g.data) setGoing(g.data as unknown as MyGoing[]);
+      if (!w.error && w.data) setWaitlist(w.data as unknown as MyWaitlist[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -102,6 +110,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'business_rentals', filter: filt }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_tickets', filter: filt }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_attendance', filter: filt }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_waitlist', filter: filt }, () => refresh())
       .subscribe();
     return () => { supabase!.removeChannel(ch); };
   }, [user, refresh]);
@@ -159,15 +168,30 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
   // Atomic multi-tier purchase via buy_event_tickets_multi (migration 0064): one
   // all-or-nothing order across every selected tier (no partial order if a later
   // tier sold out). Returns the codes + per-ticket tier so the UI can label each.
-  const buyTicketsMulti = useCallback<Ctx['buyTicketsMulti']>(async (eventSlug, items) => {
+  const buyTicketsMulti = useCallback<Ctx['buyTicketsMulti']>(async (eventSlug, items, promo) => {
     if (!supabase || !user) return { error: 'auth' };
     try {
-      const rows = await buyEventTicketsMulti(eventSlug, items);
+      const rows = await buyEventTicketsMulti(eventSlug, items, promo);
       refresh();
       return { error: null, codes: rows.map((r) => r.code), tickets: rows.map((r) => ({ code: r.code, tierId: r.tierId })) };
     } catch (e) {
       return { error: e instanceof Error ? e.message : 'error' };
     }
+  }, [user, refresh]);
+
+  // Waitlist join/leave (migration 0065). "Avísame si se libera" — we notify, we
+  // don't hold a seat (first to re-buy wins). RPCs resolve the slug + own the row.
+  const joinWaitlist = useCallback<Ctx['joinWaitlist']>(async (eventSlug, tierId) => {
+    if (!supabase || !user) return { error: 'auth' };
+    const { error } = await supabase.rpc('join_waitlist', { in_slug: eventSlug, in_tier_id: tierId });
+    if (!error) refresh();
+    return { error: error ? error.message : null };
+  }, [user, refresh]);
+  const leaveWaitlist = useCallback<Ctx['leaveWaitlist']>(async (eventSlug, tierId) => {
+    if (!supabase || !user) return { error: 'auth' };
+    const { error } = await supabase.rpc('leave_waitlist', { in_slug: eventSlug, in_tier_id: tierId });
+    if (!error) refresh();
+    return { error: error ? error.message : null };
   }, [user, refresh]);
 
   const rsvp = useCallback<Ctx['rsvp']>(async (eventSlug, on) => {
@@ -194,8 +218,10 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
 
   const goingIds = useMemo(() => new Set(going.map((g) => g.event_id)), [going]);
   const goingSlugs = useMemo(() => new Set(going.map((g) => g.events?.slug).filter(Boolean) as string[]), [going]);
+  // tiers the user is actively waiting on (for the "En espera ✓" toggle on sold-out tiers).
+  const waitlistTierIds = useMemo(() => new Set(waitlist.filter((w) => w.tier_id && w.status !== 'converted').map((w) => w.tier_id!)), [waitlist]);
 
-  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, buyTicketsMulti, rsvp, cancel };
+  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, buyTicketsMulti, waitlist, waitlistTierIds, joinWaitlist, leaveWaitlist, rsvp, cancel };
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 

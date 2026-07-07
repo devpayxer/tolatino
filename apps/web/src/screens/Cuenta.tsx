@@ -22,6 +22,7 @@ import { useSavedBiz } from '@/lib/savedBiz';
 import { useLiveData } from '@/lib/live';
 import { useMyActivity } from '@/lib/myActivity';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Qr } from '@/components/Qr';
 import { Avatar, Card, YouAvatar } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
@@ -430,10 +431,22 @@ export function CuentaScreen() {
                       </span>
                       {used ? <span className="flex-none rounded-full bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-muted-2">{L('Usado', 'Used')}</span> : pill(t.status)}
                     </div>
-                    {/* ticket stub: the entry code the organizer validates at check-in */}
-                    <div className={`flex items-center justify-between gap-2 border-t border-dashed border-lilac-line px-3.5 py-2.5 ${used ? 'bg-lilac-2/40 opacity-60' : 'bg-lilac-3'}`}>
-                      <span className="text-[10px] font-extrabold uppercase tracking-[.08em] text-muted-2">{L('Código de entrada', 'Entry code')}</span>
-                      <span className="font-mono text-[17px] font-extrabold tracking-[.14em] text-primary-dark">{t.code}</span>
+                    {/* ticket stub: a real scannable QR of the entry code (organizer scans
+                        or types it). One QR per ticket row; a group ticket admits N at the door. */}
+                    <div className={`flex flex-col items-center gap-2 border-t border-dashed border-lilac-line px-3.5 py-3 ${used ? 'bg-lilac-2/40' : 'bg-lilac-3'}`}>
+                      <div className={used ? 'relative opacity-40' : 'relative'}>
+                        <Qr value={t.code} size={156} />
+                        {used && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <span className="rounded-full bg-ink px-3 py-1 text-[11px] font-extrabold text-white">{L('Usado', 'Used')}</span>
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-mono text-[15px] font-extrabold tracking-[.14em] text-primary-dark">{t.code}</span>
+                      <span className="text-[10.5px] font-semibold text-muted-2">{L('Muestra este código en la entrada', 'Show this at the door')}</span>
+                      {t.qty > 1 && t.admitted > 0 && (
+                        <span className="text-[10.5px] font-bold text-green-dark">{t.admitted}/{t.qty} {L('ingresaron', 'checked in')}</span>
+                      )}
                     </div>
                   </div>
                 );

@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check, DollarSign, ImagePlus, MapPin, Megaphone, Navigation, Plus,
-  QrCode, RefreshCw, Search, Share2, Ticket, Trash2, TrendingUp, Users, X,
+  QrCode, RefreshCw, Search, Share2, Tag, Ticket, Trash2, TrendingUp, Users, X,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
@@ -23,12 +23,14 @@ import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
 import { searchAddress, censusGeocode, sameAddress, type Address } from '@/lib/geo';
 import { EVENT_CATS, EVENT_CAT_BY_ID } from '@/data/fixtures';
+import { Qr } from '@/components/Qr';
+import { QrScanner, useBarcodeSupport } from '@/components/QrScanner';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
 type View = 'list' | 'manage' | 'wizard' | 'success';
 type ListTab = 'upcoming' | 'drafts' | 'past' | 'recurring' | 'promoters';
-type ManageTab = 'overview' | 'attendees' | 'checkin' | 'tickets' | 'settings';
+type ManageTab = 'overview' | 'attendees' | 'checkin' | 'tickets' | 'waitlist' | 'settings';
 
 type EventRow = {
   id: number; dbId?: string; name: string; mon: string; day: string; time: string; price: string;
@@ -49,10 +51,10 @@ type EventDbRow = {
 // A ticket a customer bought for this event (event_tickets) — the other side of
 // the consumer's "Comprar boletos" action. customer_name is stored on insert.
 type TicketRow = {
-  id: string; customer_name: string | null; qty: number; total: number | null; code: string; status: string; created_at: string;
+  id: string; customer_name: string | null; qty: number; admitted: number; total: number | null; code: string; status: string; created_at: string;
 };
 type EventTier = {
-  id: string; name_es: string; name_en: string; price: number; capacity: number | null; sold: number; sort: number;
+  id: string; name_es: string; name_en: string; price: number; capacity: number | null; sold: number; sort: number; visible: boolean;
 };
 const TICKET_STATUS: Record<string, { es: string; en: string; cls: string }> = {
   confirmed: { es: 'Confirmado', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
@@ -254,7 +256,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     (async () => {
       const { data, error } = await supabase!
         .from('event_tickets')
-        .select('id,customer_name,qty,total,code,status,created_at')
+        .select('id,customer_name,qty,admitted,total,code,status,created_at')
         .eq('event_id', mgEv.dbId)
         .order('created_at', { ascending: false });
       if (cancelled) return;
@@ -270,18 +272,18 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // via RLS. Demo / no-uuid → null, and the Boletos tab shows the sample tier design.
   const [tierList, setTierList] = useState<EventTier[] | null>(null);
   const [tierEdit, setTierEdit] = useState<string | 'new' | null>(null); // which tier is open in the inline editor
-  const [tierForm, setTierForm] = useState<{ name: string; price: string; capacity: string }>({ name: '', price: '', capacity: '' });
+  const [tierForm, setTierForm] = useState<{ name: string; price: string; capacity: string; hidden: boolean }>({ name: '', price: '', capacity: '', hidden: false });
   const [tierBusy, setTierBusy] = useState(false);
   const reloadTiers = async () => {
     if (!mgEv.dbId || !supabase) return;
-    const { data } = await supabase.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort').eq('event_id', mgEv.dbId).order('sort');
+    const { data } = await supabase.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort,visible').eq('event_id', mgEv.dbId).order('sort');
     setTierList(Array.isArray(data) ? (data as unknown as EventTier[]) : []);
   };
   useEffect(() => {
     if (!persistable || !mgEv.dbId || !supabase) { setTierList(null); return; }
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase!.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort').eq('event_id', mgEv.dbId).order('sort');
+      const { data, error } = await supabase!.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort,visible').eq('event_id', mgEv.dbId).order('sort');
       if (cancelled) return;
       setTierList(error || !Array.isArray(data) ? [] : (data as unknown as EventTier[]));
     })();
@@ -290,7 +292,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   }, [mgEv.dbId, admin.demo]);
   const openTierEdit = (t: EventTier | null) => {
     setTierEdit(t ? t.id : 'new');
-    setTierForm(t ? { name: L(t.name_es, t.name_en), price: String(t.price), capacity: t.capacity == null ? '' : String(t.capacity) } : { name: '', price: '', capacity: '' });
+    setTierForm(t ? { name: L(t.name_es, t.name_en), price: String(t.price), capacity: t.capacity == null ? '' : String(t.capacity), hidden: t.visible === false } : { name: '', price: '', capacity: '', hidden: false });
   };
   const saveTier = async () => {
     if (!mgEv.dbId || !supabase || tierBusy) return;
@@ -300,9 +302,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const capacity = tierForm.capacity.trim() === '' ? null : Math.max(0, Number(tierForm.capacity) || 0);
     setTierBusy(true);
     if (tierEdit === 'new') {
-      await supabase.from('event_tiers').insert({ event_id: mgEv.dbId, name_es: name, name_en: name, price, capacity, sort: tierList?.length ?? 0 });
+      await supabase.from('event_tiers').insert({ event_id: mgEv.dbId, name_es: name, name_en: name, price, capacity, sort: tierList?.length ?? 0, visible: !tierForm.hidden });
     } else if (tierEdit) {
-      await supabase.from('event_tiers').update({ name_es: name, name_en: name, price, capacity }).eq('id', tierEdit);
+      await supabase.from('event_tiers').update({ name_es: name, name_en: name, price, capacity, visible: !tierForm.hidden }).eq('id', tierEdit);
     }
     setTierBusy(false); setTierEdit(null); await reloadTiers();
     flash(L('Nivel guardado', 'Tier saved'));
@@ -314,32 +316,114 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     flash(L('Nivel eliminado', 'Tier removed'));
   };
 
+  // Promo codes (event_promo_codes, migration 0065). Owner CRUD. Access codes unlock a
+  // hidden tier (fully real); percent/amount adjust the reserved total (charging = payments).
+  type PromoRow = { id: string; code: string; kind: string; value: number; tier_id: string | null; max_uses: number | null; used: number; active: boolean };
+  const [promoRows, setPromoRows] = useState<PromoRow[] | null>(null);
+  const [promoAdd, setPromoAdd] = useState(false);
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoForm, setPromoForm] = useState<{ code: string; kind: 'percent' | 'amount' | 'access'; value: string; tierId: string; maxUses: string }>({ code: '', kind: 'percent', value: '', tierId: '', maxUses: '' });
+  const reloadPromos = async () => {
+    if (!mgEv.dbId || !supabase) return;
+    const { data } = await supabase.from('event_promo_codes').select('id,code,kind,value,tier_id,max_uses,used,active').eq('event_id', mgEv.dbId).order('created_at');
+    setPromoRows(Array.isArray(data) ? (data as unknown as PromoRow[]) : []);
+  };
+  useEffect(() => {
+    if (!persistable || !mgEv.dbId || !supabase) { setPromoRows(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!.from('event_promo_codes').select('id,code,kind,value,tier_id,max_uses,used,active').eq('event_id', mgEv.dbId).order('created_at');
+      if (!cancelled) setPromoRows(error || !Array.isArray(data) ? [] : (data as unknown as PromoRow[]));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mgEv.dbId, admin.demo]);
+  const savePromo = async () => {
+    if (!mgEv.dbId || !supabase || promoBusy) return;
+    const code = promoForm.code.trim().toUpperCase();
+    if (!code) { flash(L('Escribe un código', 'Enter a code')); return; }
+    if (promoForm.kind === 'access' && !promoForm.tierId) { flash(L('Elige el nivel que desbloquea', 'Pick the tier it unlocks')); return; }
+    const value = promoForm.kind === 'access' ? 0 : Number(promoForm.value) || 0;
+    if (promoForm.kind !== 'access' && value <= 0) { flash(L('Pon un valor de descuento', 'Set a discount value')); return; }
+    setPromoBusy(true);
+    const { error } = await supabase.from('event_promo_codes').insert({
+      event_id: mgEv.dbId, code, kind: promoForm.kind, value,
+      tier_id: promoForm.tierId || null, max_uses: promoForm.maxUses.trim() === '' ? null : Math.max(1, Number(promoForm.maxUses) || 1),
+    });
+    setPromoBusy(false);
+    if (error) { flash(/duplicate|unique/i.test(error.message) ? L('Ese código ya existe', 'That code already exists') : L('No se pudo guardar', "Couldn't save")); return; }
+    setPromoAdd(false); setPromoForm({ code: '', kind: 'percent', value: '', tierId: '', maxUses: '' });
+    await reloadPromos();
+    flash(L('Código creado', 'Code created'));
+  };
+  const deletePromo = async (id: string) => {
+    if (!supabase) return;
+    await supabase.from('event_promo_codes').delete().eq('id', id);
+    await reloadPromos();
+    flash(L('Código eliminado', 'Code removed'));
+  };
+
   // Real door check-in: validate a ticket code (checkin_ticket RPC, migration 0061)
   // → flips it to used once; the buyer list below reflects the new status.
   const [checkinCode, setCheckinCode] = useState('');
   const [checkinBusy, setCheckinBusy] = useState(false);
-  const [checkinRes, setCheckinRes] = useState<{ ok: boolean; msg: string; buyer: string | null; qty: number | null; tier: string | null; already: boolean } | null>(null);
+  const [checkinRes, setCheckinRes] = useState<{ ok: boolean; msg: string; buyer: string | null; qty: number | null; admitted: number | null; tier: string | null; already: boolean; code: string } | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
+  const scanSupported = useBarcodeSupport(); // camera scan only where BarcodeDetector exists
   const reloadTickets = async () => {
     if (!mgEv.dbId || !supabase) return;
-    const { data } = await supabase.from('event_tickets').select('id,customer_name,qty,total,code,status,created_at').eq('event_id', mgEv.dbId).order('created_at', { ascending: false });
+    const { data } = await supabase.from('event_tickets').select('id,customer_name,qty,admitted,total,code,status,created_at').eq('event_id', mgEv.dbId).order('created_at', { ascending: false });
     setTicketRows(Array.isArray(data) ? (data as unknown as TicketRow[]) : []);
   };
-  const runCheckin = async () => {
-    const code = checkinCode.trim();
+  // Admit N guests of a (possibly group) ticket per scan (checkin_ticket, migration
+  // 0065). codeArg comes from the camera scanner / a per-row +1 button; otherwise the
+  // manual input. qtyArg admits that many (default 1).
+  const runCheckin = async (codeArg?: string, qtyArg?: number) => {
+    const code = (codeArg ?? checkinCode).trim().toUpperCase();
     if (!code || checkinBusy || !supabase) return;
     setCheckinBusy(true);
-    const { data, error } = await supabase.rpc('checkin_ticket', { in_code: code });
+    const { data, error } = await supabase.rpc('checkin_ticket', { in_code: code, in_qty: qtyArg ?? 1 });
     setCheckinBusy(false);
     if (error || !Array.isArray(data) || data.length === 0) {
-      setCheckinRes({ ok: false, msg: 'error', buyer: null, qty: null, tier: null, already: false });
+      setCheckinRes({ ok: false, msg: 'error', buyer: null, qty: null, admitted: null, tier: null, already: false, code });
       return;
     }
     const r = data[0] as Record<string, unknown>;
-    setCheckinRes({ ok: !!r.ok, msg: String(r.msg ?? ''), buyer: r.buyer ? String(r.buyer) : null, qty: r.qty != null ? Number(r.qty) : null, tier: r.tier ? String(r.tier) : null, already: !!r.already });
-    setCheckinCode('');
+    setCheckinRes({ ok: !!r.ok, msg: String(r.msg ?? ''), buyer: r.buyer ? String(r.buyer) : null, qty: r.qty != null ? Number(r.qty) : null, admitted: r.admitted != null ? Number(r.admitted) : null, tier: r.tier ? String(r.tier) : null, already: !!r.already, code });
+    if (!codeArg) setCheckinCode('');
     reloadTickets();
   };
-  const usedQty = (ticketRows ?? []).filter((t) => t.status === 'used').reduce((n, t) => n + (t.qty || 0), 0);
+  const admittedQty = (ticketRows ?? []).reduce((n, t) => n + (t.admitted || 0), 0);
+
+  // Waitlist roster for the managed event (event_waitlist, migration 0065). Owner-scoped via RLS.
+  type WaitRow = { id: string; customer_name: string | null; tier_id: string | null; status: string; created_at: string };
+  const [waitRows, setWaitRows] = useState<WaitRow[] | null>(null);
+  const [waitBusy, setWaitBusy] = useState(false);
+  const reloadWaitlist = async () => {
+    if (!mgEv.dbId || !supabase) return;
+    const { data } = await supabase.from('event_waitlist').select('id,customer_name,tier_id,status,created_at').eq('event_id', mgEv.dbId).order('created_at');
+    setWaitRows(Array.isArray(data) ? (data as unknown as WaitRow[]) : []);
+  };
+  useEffect(() => {
+    if (!persistable || !mgEv.dbId || !supabase) { setWaitRows(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!.from('event_waitlist').select('id,customer_name,tier_id,status,created_at').eq('event_id', mgEv.dbId).order('created_at');
+      if (!cancelled) setWaitRows(error || !Array.isArray(data) ? [] : (data as unknown as WaitRow[]));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mgEv.dbId, admin.demo]);
+  const waitlistActive = (waitRows ?? []).filter((w) => w.status === 'active').length;
+  const notifyWaitlist = async () => {
+    if (!mgEv.dbId || !supabase || waitBusy) return;
+    setWaitBusy(true);
+    const { data, error } = await supabase.rpc('notify_waitlist', { in_event_id: mgEv.dbId, in_tier_id: null });
+    setWaitBusy(false);
+    if (error) { flash(L('No se pudo avisar', "Couldn't notify")); return; }
+    await reloadWaitlist();
+    flash(L(`Avisamos a ${Number(data) || 0}`, `Notified ${Number(data) || 0}`));
+  };
 
   // Tiers to render: real ones for a signed-in owner, else the sample design.
   const TIER_COLORS = ['#7B61FF', '#1F9D57', '#D6336C', '#2F6FED', '#9A6A12'];
@@ -593,6 +677,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     ['attendees', L('Asistentes', 'Attendees'), persistable ? ticketsSold : mgEv.sold],
     ['checkin', L('Check-in', 'Check-in'), null],
     ['tickets', L('Boletos', 'Tickets'), null],
+    ['waitlist', L('Lista de espera', 'Waitlist'), persistable ? (waitlistActive || null) : 3],
     ['settings', L('Ajustes', 'Settings'), null],
   ];
 
@@ -610,8 +695,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {[
           { v: persistable ? `${ticketsSold}` : `${mgEv.sold}/${mgEv.cap}`, l: L('Vendidos', 'Sold') },
           { v: `$${(persistable ? ticketsRevenue : revenue).toLocaleString()}`, l: L('Ingresos', 'Revenue') },
-          { v: persistable ? `${usedQty}/${ticketsSold}` : `${checkedInCount}/${mgEv.sold}`, l: L('Ingresaron', 'Checked in') },
-          { v: persistable ? '—' : '3', l: L('Espera', 'Waitlist') },
+          { v: persistable ? `${admittedQty}/${ticketsSold}` : `${checkedInCount}/${mgEv.sold}`, l: L('Ingresaron', 'Checked in') },
+          { v: persistable ? String(waitlistActive) : '3', l: L('Espera', 'Waitlist') },
         ].map((s) => (
           <div key={s.l} className="rounded-[10px] bg-lilac-3 px-1 py-2 text-center">
             <div className="text-[14px] font-extrabold text-ink">{s.v}</div>
@@ -729,12 +814,19 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- Check-in ----
+  const remaining = checkinRes && checkinRes.admitted != null && checkinRes.qty != null ? checkinRes.qty - checkinRes.admitted : 0;
   const checkinBanner = checkinRes && (
     <div className={`mt-3 rounded-btn-lg px-3 py-2.5 text-left ${checkinRes.ok ? 'bg-[#123a26]' : checkinRes.already ? 'bg-[#3a3212]' : 'bg-[#3a1420]'}`}>
       <div className={`text-[13px] font-extrabold ${checkinRes.ok ? 'text-[#7BE0A8]' : checkinRes.already ? 'text-amber' : 'text-pink'}`}>
         {checkinRes.ok ? L('✓ Admitido', '✓ Admitted') : checkinRes.already ? L('Ya había ingresado', 'Already checked in') : checkinRes.msg === 'reembolsado' ? L('Boleto reembolsado', 'Ticket refunded') : L('Código no válido', 'Invalid code')}
+        {checkinRes.admitted != null && checkinRes.qty != null && checkinRes.qty > 1 ? ` · ${checkinRes.admitted}/${checkinRes.qty}` : ''}
       </div>
-      {checkinRes.buyer && <div className="mt-0.5 text-[11px] font-semibold text-white/75">{checkinRes.buyer}{checkinRes.tier ? ` · ${checkinRes.tier}` : ''}{checkinRes.qty ? ` · ${checkinRes.qty} ${checkinRes.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}` : ''}</div>}
+      {checkinRes.buyer && <div className="mt-0.5 text-[11px] font-semibold text-white/75">{checkinRes.buyer}{checkinRes.tier ? ` · ${checkinRes.tier}` : ''}</div>}
+      {checkinRes.ok && remaining > 0 && (
+        <button onClick={() => runCheckin(checkinRes.code, remaining)} className="mt-2 cursor-pointer rounded-btn bg-primary px-3 py-1.5 text-[11px] font-extrabold text-white">
+          {L('Admitir los', 'Admit the')} {remaining} {L('restantes', 'remaining')}
+        </button>
+      )}
     </div>
   );
   const checkinView = persistable ? (
@@ -749,14 +841,23 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             placeholder={L('Código del boleto', 'Ticket code')}
             className="min-w-0 flex-1 rounded-btn bg-white/10 px-3 py-2.5 text-center font-mono text-[15px] font-extrabold uppercase tracking-[.14em] text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-white/40 focus:bg-white/15"
           />
-          <button onClick={runCheckin} disabled={checkinBusy || !checkinCode.trim()} className="flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white disabled:opacity-40">{L('Validar', 'Check')}</button>
+          <button onClick={() => runCheckin()} disabled={checkinBusy || !checkinCode.trim()} className="flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white disabled:opacity-40">{L('Validar', 'Check')}</button>
         </div>
+        {scanSupported && (
+          scanOpen ? (
+            <div className="mt-3"><QrScanner onCode={(v) => { setScanOpen(false); void runCheckin(v); }} onClose={() => setScanOpen(false)} L={L} /></div>
+          ) : (
+            <button onClick={() => setScanOpen(true)} className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn bg-white/10 py-2.5 text-[12px] font-extrabold text-white">
+              <QrCode size={15} strokeWidth={2.2} /> {L('Escanear con cámara', 'Scan with camera')}
+            </button>
+          )
+        )}
         {checkinBanner}
         <div className="mt-3 text-center text-[10.5px] font-semibold text-white/50">{L('El invitado muestra el código de su boleto (Mi cuenta → Mis boletos).', 'The guest shows the code from their ticket (My account → My tickets).')}</div>
         <div className="mt-4 flex justify-center gap-6 border-t border-white/10 pt-4">
-          <div className="text-center"><div className="text-[18px] font-extrabold text-[#7BE0A8]">{usedQty}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Ingresaron', 'Checked in')}</div></div>
+          <div className="text-center"><div className="text-[18px] font-extrabold text-[#7BE0A8]">{admittedQty}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Ingresaron', 'Checked in')}</div></div>
           <div className="text-center"><div className="text-[18px] font-extrabold text-white">{ticketsSold}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Vendidos', 'Sold')}</div></div>
-          <div className="text-center"><div className="text-[18px] font-extrabold text-amber">{Math.max(0, ticketsSold - usedQty)}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Faltan', 'Remaining')}</div></div>
+          <div className="text-center"><div className="text-[18px] font-extrabold text-amber">{Math.max(0, ticketsSold - admittedQty)}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Faltan', 'Remaining')}</div></div>
         </div>
       </div>
       <div>
@@ -766,14 +867,21 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         ) : (
           <div className="flex flex-col gap-2">
             {(ticketRows ?? []).map((t) => {
-              const used = t.status === 'used';
+              const fully = t.admitted >= t.qty;
+              const partial = t.admitted > 0 && !fully;
               return (
                 <div key={t.id} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-2.5">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[12px] font-extrabold text-ink">{t.customer_name || L('Cliente', 'Customer')}</div>
-                    <div className="mt-0.5 font-mono text-[10.5px] font-bold tracking-[.1em] text-muted-2">{t.code} · {t.qty} {t.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}</div>
+                    <div className="mt-0.5 font-mono text-[10.5px] font-bold tracking-[.1em] text-muted-2">{t.code} · {t.admitted}/{t.qty} {L('ingresaron', 'in')}</div>
                   </div>
-                  <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${used ? 'bg-green-bg text-green-dark' : 'bg-lilac-2 text-ink-2'}`}>{used ? L('Ingresó', 'In') : L('Válido', 'Valid')}</span>
+                  {t.status === 'refunded' ? (
+                    <span className="flex-none rounded-md bg-lilac-2 px-2 py-1 text-[9px] font-extrabold text-ink-2">{L('Reembolsado', 'Refunded')}</span>
+                  ) : fully ? (
+                    <span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Ingresó', 'In')}</span>
+                  ) : (
+                    <button onClick={() => runCheckin(t.code, 1)} disabled={checkinBusy} className={`flex-none cursor-pointer rounded-md px-2.5 py-1 text-[9px] font-extrabold disabled:opacity-50 ${partial ? 'bg-amber-bg text-amber-ink' : 'bg-primary text-white'}`}>+1 {L('admitir', 'admit')}</button>
+                  )}
                 </div>
               );
             })}
@@ -786,7 +894,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
       <div className="rounded-card p-5 text-center" style={{ background: '#1E1B2E' }}>
         <div className="text-[11px] font-extrabold uppercase tracking-[.06em] text-white/60">{L('Validar boleto', 'Validate ticket')}</div>
-        <div className="mx-auto my-4 flex h-[180px] w-[180px] items-center justify-center rounded-tile bg-white p-3.5"><QrGrid /></div>
+        <div className="mx-auto my-4 flex h-[180px] w-[180px] items-center justify-center rounded-tile bg-white p-3.5"><Qr value="TOLATINO" size={150} /></div>
         <div className="text-[12px] font-bold text-white/80">{L('Inicia sesión con tu negocio para validar boletos reales.', 'Sign in with your business to validate real tickets.')}</div>
       </div>
       <div>
@@ -832,6 +940,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <input value={tierForm.capacity} onChange={(e) => setTierForm((f) => ({ ...f, capacity: e.target.value.replace(/[^0-9]/g, '') }))} inputMode="numeric" placeholder="∞" className={tierInput} />
           </div>
         </div>
+        <button onClick={() => setTierForm((f) => ({ ...f, hidden: !f.hidden }))} className="flex items-center gap-2 text-left">
+          <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-[6px] border-[1.5px] ${tierForm.hidden ? 'border-primary bg-primary' : 'border-lilac-line bg-white'}`}>{tierForm.hidden && <Check size={13} strokeWidth={3} className="text-white" />}</span>
+          <span className="text-[11.5px] font-bold text-ink-soft">{L('Oculto — solo visible con código de acceso', 'Hidden — only shown with an access code')}</span>
+        </button>
       </div>
       <div className="mt-3 flex gap-2">
         <button onClick={saveTier} disabled={tierBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{tierBusy ? L('Guardando…', 'Saving…') : L('Guardar', 'Save')}</button>
@@ -904,7 +1016,92 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           + {L('Agregar nivel', 'Add tier')}
         </button>
       )}
+
+      {realTiers && (
+        <div className="mt-4 border-t border-hair pt-4">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink">
+            <Tag size={14} strokeWidth={2.2} className="text-primary-dark" /> {L('Códigos promocionales', 'Promo codes')}
+          </div>
+          <div className="mb-2.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('“Acceso” desbloquea un nivel oculto (real ya). Los descuentos ajustan el precio apartado; el cobro llega con pagos.', '“Access” unlocks a hidden tier (real now). Discounts adjust the reserved price; charging arrives with payments.')}</div>
+          <div className="flex flex-col gap-2">
+            {(promoRows ?? []).map((p) => (
+              <div key={p.id} className="flex items-center gap-2.5 rounded-btn-lg border border-hair bg-white p-2.5">
+                <span className="flex-none rounded bg-lilac-2 px-2 py-1 font-mono text-[11px] font-extrabold text-primary-dark">{p.code}</span>
+                <div className="min-w-0 flex-1 text-[10.5px] font-bold text-muted-2">
+                  {p.kind === 'access' ? L('Acceso', 'Access') : p.kind === 'percent' ? `${p.value}% ${L('desc.', 'off')}` : `$${p.value} ${L('desc.', 'off')}`}
+                  {' · '}{p.used}{p.max_uses != null ? `/${p.max_uses}` : ''} {L('usos', 'uses')}
+                </div>
+                <button onClick={() => deletePromo(p.id)} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Eliminar', 'Remove')}><Trash2 size={14} strokeWidth={2} /></button>
+              </div>
+            ))}
+          </div>
+          {promoAdd ? (
+            <div className="mt-2 rounded-btn-lg border-[1.5px] border-primary bg-lilac-3 p-3">
+              <input value={promoForm.code} onChange={(e) => setPromoForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder={L('CÓDIGO', 'CODE')} className={`${tierInput} mb-2`} />
+              <div className="mb-2 flex gap-1.5">
+                {(['percent', 'amount', 'access'] as const).map((k) => (
+                  <button key={k} onClick={() => setPromoForm((f) => ({ ...f, kind: k }))} className={chip(promoForm.kind === k)}>{k === 'percent' ? '%' : k === 'amount' ? '$' : L('Acceso', 'Access')}</button>
+                ))}
+              </div>
+              {promoForm.kind === 'access' ? (
+                <select value={promoForm.tierId} onChange={(e) => setPromoForm((f) => ({ ...f, tierId: e.target.value }))} className={`${tierInput} mb-2`}>
+                  <option value="">{L('Nivel a desbloquear…', 'Tier to unlock…')}</option>
+                  {(tierList ?? []).map((t) => <option key={t.id} value={t.id}>{L(t.name_es, t.name_en)}{t.visible ? '' : ` (${L('oculto', 'hidden')})`}</option>)}
+                </select>
+              ) : (
+                <input value={promoForm.value} onChange={(e) => setPromoForm((f) => ({ ...f, value: e.target.value.replace(/[^0-9.]/g, '') }))} inputMode="decimal" placeholder={promoForm.kind === 'percent' ? L('% de descuento', '% off') : L('$ de descuento', '$ off')} className={`${tierInput} mb-2`} />
+              )}
+              <input value={promoForm.maxUses} onChange={(e) => setPromoForm((f) => ({ ...f, maxUses: e.target.value.replace(/[^0-9]/g, '') }))} inputMode="numeric" placeholder={L('Usos máx · vacío = ilimitado', 'Max uses · blank = unlimited')} className={`${tierInput} mb-2`} />
+              <div className="flex gap-2">
+                <button onClick={savePromo} disabled={promoBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{promoBusy ? L('Guardando…', 'Saving…') : L('Crear código', 'Create code')}</button>
+                <button onClick={() => setPromoAdd(false)} className="cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setPromoAdd(true)} className="mt-2 w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar código', 'Add code')}</button>
+          )}
+        </div>
+      )}
     </div>
+  );
+
+  // ---- Lista de espera ----
+  const tierName = (id: string | null) => { const t = (tierList ?? []).find((x) => x.id === id); return t ? L(t.name_es, t.name_en) : L('Cualquiera', 'Any'); };
+  const WAIT_STATUS: Record<string, [string, string, string]> = {
+    active: ['En espera', 'Waiting', 'bg-amber-bg text-amber-ink'],
+    notified: ['Avisado', 'Notified', 'bg-green-bg text-green-dark'],
+    converted: ['Compró', 'Bought', 'bg-lilac-2 text-ink-2'],
+  };
+  const waitlistView = persistable ? (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-btn-lg bg-lilac-2 p-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-[11.5px] font-extrabold text-ink">{waitlistActive} {L('en espera', 'waiting')}</div>
+          <div className="mt-0.5 text-[10px] font-medium leading-snug text-ink-3">{L('Avísales cuando se liberen lugares. Notifica — no aparta; el primero en comprar lo toma.', 'Tell them when spots free up. It notifies — it doesn\'t hold; first to buy takes it.')}</div>
+        </div>
+        <button onClick={notifyWaitlist} disabled={waitBusy || waitlistActive === 0} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-40">{waitBusy ? L('Avisando…', 'Notifying…') : L('Avisar a la lista', 'Notify the list')}</button>
+      </div>
+      {(waitRows ?? []).length === 0 ? (
+        <div className="rounded-card-sm border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Nadie en lista de espera todavía.', 'No one on the waitlist yet.')}</div>
+      ) : (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {(waitRows ?? []).map((w) => {
+            const st = WAIT_STATUS[w.status] ?? WAIT_STATUS.active;
+            return (
+              <div key={w.id} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[12px] font-extrabold text-ink">{w.customer_name || L('Cliente', 'Customer')}</div>
+                  <div className="mt-0.5 text-[10px] font-medium text-muted-2">{tierName(w.tier_id)}</div>
+                </div>
+                <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${st[2]}`}>{L(st[0], st[1])}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  ) : (
+    comingSoon(Users, L('Lista de espera', 'Waitlist'), L('Cuando un nivel se agota, los interesados entran a la lista y les avisas al liberarse lugares.', 'When a tier sells out, interested guests join the list and you notify them when spots free up.'))
   );
 
   // ---- Ajustes ----
@@ -987,6 +1184,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {manageTab === 'attendees' && attendeesView}
           {manageTab === 'checkin' && checkinView}
           {manageTab === 'tickets' && ticketsView}
+          {manageTab === 'waitlist' && waitlistView}
           {manageTab === 'settings' && settingsView}
         </div>
       </div>
@@ -1382,17 +1580,4 @@ function newDraft(): EventDraft {
     venue: '', lat: null, lng: null,
     tiers: [{ id: nextTid(), name: 'Entrada general', price: '', capacity: '' }], vis: 'public',
   };
-}
-
-// Deterministic faux-QR grid (matches the prototype's check-in card).
-function QrGrid() {
-  const n = 11;
-  const seed = new Set([0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 21, 23, 24, 26, 28, 30, 33, 35, 36, 38, 40, 42, 44, 47, 49, 51, 53, 55, 56, 58, 60, 62, 64, 66, 68, 70, 73, 75, 77, 79, 81, 83, 86, 88, 90, 92, 95, 97, 99, 101, 103, 105, 108, 110, 113, 115, 117, 119]);
-  return (
-    <div className="grid h-full w-full gap-[2px]" style={{ gridTemplateColumns: `repeat(${n},1fr)`, gridTemplateRows: `repeat(${n},1fr)` }}>
-      {Array.from({ length: n * n }, (_, i) => (
-        <span key={i} className="rounded-[1px]" style={{ background: seed.has(i) || i % 7 === 0 || i % 5 === 2 ? '#1E1B2E' : 'transparent' }} />
-      ))}
-    </div>
-  );
 }

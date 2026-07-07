@@ -431,7 +431,7 @@ export type PubEvent = {
   timeLabel: [string, string]; priceLabel: string | null;
   desc: [string, string]; tile: [string, string]; coverUrl: string | null;
   status: string; going: number; lat: number | null; lng: number | null;
-  organizer: string; tiers: PubTier[];
+  organizer: string; organizerSlug: string | null; tiers: PubTier[];
 };
 
 /** A single event + its live ticket tiers by slug (migration 0061). null offline / not found. */
@@ -455,6 +455,7 @@ export async function fetchEventBySlug(slug: string): Promise<PubEvent | null> {
     status: String(r.status ?? 'published'), going: Number(r.going_count ?? 0),
     lat: r.lat != null ? Number(r.lat) : null, lng: r.lng != null ? Number(r.lng) : null,
     organizer: String(r.organizer ?? 'Organizador'),
+    organizerSlug: r.organizer_slug != null ? String(r.organizer_slug) : null,
     tiers: tiersRaw.map((t) => ({
       id: String(t.id), name: [String(t.name_es), String(t.name_en ?? t.name_es)],
       price: Number(t.price ?? 0),
@@ -524,16 +525,53 @@ export type BoughtTicket = { ticketId: string; code: string; tierId: string };
 /** Buy an ATOMIC multi-tier order (migration 0064): locks every requested tier,
  *  validates all capacities/windows, issues all tickets or none. Throws with a
  *  reason naming the sold-out/closed tier (e.g. "sold out: VIP"). */
-export async function buyEventTicketsMulti(slug: string, items: { tierId: string; qty: number }[]): Promise<BoughtTicket[]> {
+export async function buyEventTicketsMulti(slug: string, items: { tierId: string; qty: number }[], promo?: string): Promise<BoughtTicket[]> {
   if (!supabase) throw new Error('offline');
   const { data, error } = await supabase.rpc('buy_event_tickets_multi', {
-    in_slug: slug, in_items: items.map((i) => ({ tier_id: i.tierId, qty: i.qty })),
+    in_slug: slug, in_items: items.map((i) => ({ tier_id: i.tierId, qty: i.qty })), in_promo: promo ?? null,
   });
   if (error) throw new Error(error.message || 'error');
   if (!Array.isArray(data)) throw new Error('error');
   return (data as Record<string, unknown>[]).map((r) => ({
     ticketId: String(r.ticket_id), code: String(r.code), tierId: String(r.tier_id),
   }));
+}
+
+/** Result of validating a promo code (migration 0065). Access codes unlock a hidden
+ *  tier (fully real now); percent/amount discounts adjust the snapshotted total only
+ *  (charging lands with payments). */
+export type PromoResult =
+  | { ok: true; kind: 'access'; tierId: string; tier: PubTier; msg: string }
+  | { ok: true; kind: 'percent' | 'amount'; value: number; tierId: string | null; msg: string }
+  | { ok: false; msg: string };
+
+export async function validatePromo(slug: string, code: string): Promise<PromoResult> {
+  if (!supabase) return { ok: false, msg: 'offline' };
+  const { data, error } = await supabase.rpc('validate_promo', { in_slug: slug, in_code: code });
+  if (error || !Array.isArray(data) || data.length === 0) return { ok: false, msg: 'error' };
+  const r = data[0] as Record<string, unknown>;
+  if (!r.ok) return { ok: false, msg: String(r.msg ?? 'Código no válido') };
+  const kind = String(r.kind);
+  if (kind === 'access') {
+    const t = (r.tier ?? {}) as Record<string, unknown>;
+    const tier: PubTier = {
+      id: String(t.id), name: [String(t.name_es), String(t.name_en ?? t.name_es)], price: Number(t.price ?? 0),
+      capacity: t.capacity != null ? Number(t.capacity) : null, sold: Number(t.sold ?? 0),
+      remaining: t.remaining != null ? Number(t.remaining) : null,
+      salesStart: t.sales_start != null ? String(t.sales_start) : null, salesEnd: t.sales_end != null ? String(t.sales_end) : null,
+    };
+    return { ok: true, kind: 'access', tierId: String(r.tier_id), tier, msg: String(r.msg ?? '') };
+  }
+  return { ok: true, kind: kind === 'amount' ? 'amount' : 'percent', value: Number(r.value ?? 0), tierId: r.tier_id != null ? String(r.tier_id) : null, msg: String(r.msg ?? '') };
+}
+
+/** The organizer's OTHER upcoming events by an anchor event slug (migration 0065).
+ *  Same 15 columns as events_near → reuses mapEventRow. [] offline / error. */
+export async function fetchEventsByOwner(slug: string): Promise<EventItem[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('events_by_owner', { in_slug: slug, max_results: 12 });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r, i) => mapEventRow(r, i));
 }
 
 /** Server-side event search (migration 0064): Postgres full-text + trigram fuzzy,

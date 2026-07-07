@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarPlus, Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Ticket } from 'lucide-react';
+import { CalendarPlus, Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Store, Tag, Ticket } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -13,7 +13,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
-import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, type PubEvent } from '@/lib/live';
+import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, fetchEventsByOwner, validatePromo, type PubEvent, type PubTier } from '@/lib/live';
 
 const PAGE_SIZE = 9;
 // Base tab title for the list state — MUST match the static metadata in
@@ -52,6 +52,14 @@ const mapsUrl = (lat: number | null, lng: number | null, venue: string) =>
   lat != null && lng != null
     ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`
     : `https://www.openstreetmap.org/search?query=${encodeURIComponent(venue)}`;
+// A zero-dependency embedded OSM map (no MapLibre bundle, no Google billing). The
+// bbox longitude span is widened by 1/cos(lat) so the pin stays visually centered.
+const mapEmbedUrl = (lat: number, lng: number) => {
+  const dLat = 0.004;
+  const dLng = 0.004 / Math.max(0.2, Math.cos((lat * Math.PI) / 180));
+  const bbox = [lng - dLng, lat - dLat, lng + dLng, lat + dLat].map((n) => n.toFixed(6)).join('%2C');
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat.toFixed(6)}%2C${lng.toFixed(6)}`;
+};
 // friendly ES/EN copy for a buy_event_tickets(_multi) error — the RPC names the
 // offending tier after a colon (e.g. "sold out: VIP"), which we surface.
 const buyErr = (msg: string, L: (a: string, b: string) => string): string => {
@@ -95,13 +103,25 @@ export function EventosScreen() {
   const [boughtTickets, setBoughtTickets] = useState<{ code: string; name: [string, string] }[]>([]);
   const [page, setPage] = useState(1);
   const [serverEvents, setServerEvents] = useState<EventItem[] | null>(null); // server FTS results while searching
+  // promo (migration 0065): access codes unlock a hidden tier; %/$ discounts adjust
+  // the snapshotted total (charging lands with payments).
+  const [promoInput, setPromoInput] = useState('');
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [promoApplied, setPromoApplied] = useState('');
+  const [unlockedTiers, setUnlockedTiers] = useState<PubTier[]>([]);
+  const [discount, setDiscount] = useState<{ kind: 'percent' | 'amount'; value: number; tierId: string | null } | null>(null);
+  // organizer profile sheet
+  const [orgOpen, setOrgOpen] = useState(false);
+  const [orgEvents, setOrgEvents] = useState<EventItem[] | null>(null);
   const [toast, setToast] = useState('');
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 2200);
   };
-  const openDetail = (e: EventItem) => { setDetailEv(e); setTierQty({}); setBuying(false); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); };
-  const closeDetail = () => { setDetailEv(null); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); };
+  const resetPromo = () => { setPromoInput(''); setPromoMsg(null); setPromoApplied(''); setUnlockedTiers([]); setDiscount(null); };
+  const openDetail = (e: EventItem) => { setDetailEv(e); setTierQty({}); setBuying(false); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); resetPromo(); };
+  const closeDetail = () => { setDetailEv(null); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); resetPromo(); };
 
   const catLabel = (id: string): string => { const c = EVENT_CAT_BY_ID[id]; return c ? L(c.es, c.en) : id; };
   const B = (t: [string, string]) => L(t[0], t[1]); // render a Bi tuple in the active language
@@ -221,15 +241,27 @@ export function EventosScreen() {
     return () => { if (typeof document !== 'undefined') document.title = LIST_TITLE; };
   }, [detail, L]);
 
-  const tiers = pub?.tiers ?? [];
+  // tiers = the event's visible tiers + any hidden tier unlocked by an access code.
+  const tiers = useMemo(() => {
+    const base = pub?.tiers ?? [];
+    return [...base, ...unlockedTiers.filter((u) => !base.some((t) => t.id === u.id))];
+  }, [pub, unlockedTiers]);
   const hasTiers = tiers.length > 0;
   const cancelled = pub?.status === 'cancelled'; // event_by_slug still resolves cancelled events so we can say so
   const eventPast = pub ? new Date(pub.endsAt ?? new Date(new Date(pub.startsAt).getTime() + 3 * 3600 * 1000).toISOString()) < new Date() : false;
-  const tierRemaining = (t: PubEvent['tiers'][number]) => (t.remaining == null ? Infinity : t.remaining);
+  const tierRemaining = (t: PubTier) => (t.remaining == null ? Infinity : t.remaining);
   const selectedTiers = tiers.filter((t) => (tierQty[t.id] ?? 0) > 0);
   const orderTotal = selectedTiers.reduce((s, t) => s + t.price * (tierQty[t.id] ?? 0), 0);
   const orderQty = selectedTiers.reduce((s, t) => s + (tierQty[t.id] ?? 0), 0);
   const anyPaid = selectedTiers.some((t) => t.price > 0);
+  // discount only affects the RESERVED total (snapshot); real charging lands with payments.
+  const discountAmount = (() => {
+    if (!discount) return 0;
+    const gross = selectedTiers.reduce((s, t) => (discount.tierId == null || discount.tierId === t.id ? s + t.price * (tierQty[t.id] ?? 0) : s), 0);
+    if (gross <= 0) return 0;
+    return discount.kind === 'percent' ? gross * (discount.value / 100) : Math.min(gross, discount.value);
+  })();
+  const netTotal = Math.max(0, orderTotal - discountAmount);
 
   // "Voy" toggle. Live events (with a slug) write attendance via the API — never
   // as a guest (route to /entrar). Fixture events (no slug) keep the local demo
@@ -259,7 +291,7 @@ export function EventosScreen() {
     if (selectedTiers.length === 0) { flash(L('Elige al menos un boleto', 'Pick at least one ticket')); return; }
     setBuying(true);
     const items = selectedTiers.map((t) => ({ tierId: t.id, qty: tierQty[t.id] ?? 0 }));
-    const { error, codes, tickets } = await act.buyTicketsMulti(pub.slug, items);
+    const { error, codes, tickets } = await act.buyTicketsMulti(pub.slug, items, promoApplied || undefined);
     setBuying(false);
     if (error) { reloadPub(); flash(buyErr(error, L)); return; }
     // label each issued code with its tier for the success screen
@@ -272,6 +304,37 @@ export function EventosScreen() {
     setOrderDone(true);
     reloadPub();
   };
+
+  // Apply a promo code: access → unlock a hidden tier; percent/amount → snapshot discount.
+  const applyPromo = async () => {
+    if (!pub || promoBusy) return;
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoBusy(true);
+    const res = await validatePromo(pub.slug, code);
+    setPromoBusy(false);
+    if (!res.ok) { setPromoMsg({ ok: false, text: res.msg || L('Código no válido', 'Invalid code') }); return; }
+    setPromoApplied(code);
+    setPromoMsg({ ok: true, text: res.msg || L('Código aplicado', 'Code applied') });
+    if (res.kind === 'access') { setUnlockedTiers((xs) => (xs.some((t) => t.id === res.tier.id) ? xs : [...xs, res.tier])); setDiscount(null); }
+    else { setDiscount({ kind: res.kind, value: res.value, tierId: res.tierId }); }
+  };
+
+  // Waitlist toggle on a sold-out tier ("Avísame si se libera" — we notify, don't hold).
+  const toggleWaitlist = (t: PubTier) => {
+    if (!pub) return;
+    if (!user) { router.push('/entrar'); return; }
+    if (act.waitlistTierIds.has(t.id)) void act.leaveWaitlist(pub.slug, t.id);
+    else { void act.joinWaitlist(pub.slug, t.id); flash(L('Te avisamos si se libera un lugar', "We'll tell you if a spot opens")); }
+  };
+
+  // Organizer profile: their other upcoming events.
+  const openOrganizer = () => {
+    if (!detail?.slug) return;
+    setOrgOpen(true); setOrgEvents(null);
+    void fetchEventsByOwner(detail.slug).then(setOrgEvents);
+  };
+  const openOrgEvent = (e: EventItem) => { setOrgOpen(false); openDetail(e); };
 
   // Native share when available (mobile), else copy the link. Builds a deep link to
   // THIS event (/eventos/?e=<slug>) using the current pathname, so the basePath is
@@ -506,9 +569,15 @@ export function EventosScreen() {
               <Navigation size={12} strokeWidth={2.4} className="flex-none" />
               <span className="flex-none">{L('Cómo llegar', 'Directions')}</span>
             </a>
+            {/* embedded venue map (zero-dep OSM) — only when we have coordinates */}
+            {pub?.lat != null && pub?.lng != null && (
+              <div className="mt-2 overflow-hidden rounded-card border-[1.5px] border-lilac-line">
+                <iframe title={L('Mapa del lugar', 'Venue map')} src={mapEmbedUrl(pub.lat, pub.lng)} loading="lazy" className="block h-[168px] w-full" style={{ border: 0 }} />
+              </div>
+            )}
             {/* organizer + attendee count */}
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-bold text-muted-2">
-              {pub && <span>{L('Por', 'By')} <span className="text-ink-soft">{pub.organizer}</span></span>}
+              {pub && <span>{L('Por', 'By')} <button onClick={openOrganizer} className="cursor-pointer font-extrabold text-primary-dark hover:underline">{pub.organizer}</button></span>}
               <span>· {pub ? pub.going : goingCount(detail)} {L('asisten', 'going')}</span>
               <span>· {catLabel(detail.cat)}</span>
             </div>
@@ -558,7 +627,12 @@ export function EventosScreen() {
                             </div>
                           </div>
                           {soldOut ? (
-                            <span className="flex-none rounded-full bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-pink-dark">{L('Agotado', 'Sold out')}</span>
+                            <button
+                              onClick={() => toggleWaitlist(t)}
+                              className={`flex-none cursor-pointer rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${act.waitlistTierIds.has(t.id) ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'}`}
+                            >
+                              {act.waitlistTierIds.has(t.id) ? L('En espera ✓', 'Waiting ✓') : L('Avísame', 'Notify me')}
+                            </button>
                           ) : (
                             <span className="flex flex-none items-center gap-2.5 rounded-full bg-lilac-2 px-2 py-1">
                               <button onClick={() => setQ(t.id, q - 1, max)} disabled={q <= 0} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[15px] font-extrabold text-ink disabled:opacity-40">−</button>
@@ -571,18 +645,59 @@ export function EventosScreen() {
                     );
                   })}
                 </div>
+
+                {tiers.some((t) => tierRemaining(t) <= 0) && (
+                  <div className="mt-2 text-[10.5px] font-semibold leading-snug text-muted-2">
+                    {L('¿Agotado? Toca “Avísame” y te avisamos si se libera — no lo apartamos, el primero en comprar lo toma.', "Sold out? Tap “Notify me” and we'll tell you if a spot opens — we don't hold it, first to buy takes it.")}
+                  </div>
+                )}
+
+                {/* promo code (access unlocks a hidden tier; %/$ adjust the reserved total) */}
+                <div className="mt-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3 focus-within:border-primary">
+                      <Tag size={14} strokeWidth={2.2} className="flex-none text-muted-2" />
+                      <input
+                        value={promoInput}
+                        onChange={(e) => { setPromoInput(e.target.value); setPromoMsg(null); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') applyPromo(); }}
+                        placeholder={L('Código promocional', 'Promo code')}
+                        className="min-w-0 flex-1 bg-transparent py-2.5 text-[12.5px] font-bold uppercase text-ink outline-none placeholder:font-semibold placeholder:normal-case placeholder:text-muted-2"
+                      />
+                    </div>
+                    <button onClick={applyPromo} disabled={promoBusy || !promoInput.trim()} className="flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-4 py-2.5 text-[12px] font-extrabold text-primary-dark disabled:opacity-40">
+                      {promoBusy ? '…' : L('Aplicar', 'Apply')}
+                    </button>
+                  </div>
+                  {promoMsg && (
+                    <div className={`mt-1 text-[10.5px] font-bold ${promoMsg.ok ? 'text-green-dark' : 'text-pink-dark'}`}>{promoMsg.ok ? '✓ ' : ''}{promoMsg.text}</div>
+                  )}
+                </div>
+
                 {orderQty > 0 && (
-                  <div className="mt-2.5 flex items-center justify-between rounded-field bg-lilac-2 px-3.5 py-2 text-[12.5px] font-bold text-ink-2">
-                    <span>{orderQty} {orderQty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}</span>
-                    <span className="text-[14px] font-extrabold text-ink">{anyPaid ? `$${orderTotal.toFixed(2)}` : L('Gratis', 'Free')}</span>
+                  <div className="mt-2.5 flex flex-col gap-1 rounded-field bg-lilac-2 px-3.5 py-2 text-[12.5px] font-bold text-ink-2">
+                    <div className="flex items-center justify-between">
+                      <span>{orderQty} {orderQty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}</span>
+                      {anyPaid ? (
+                        <span className="flex items-center gap-1.5">
+                          {discountAmount > 0 && <span className="text-[11px] font-semibold text-muted-2 line-through">${orderTotal.toFixed(2)}</span>}
+                          <span className="text-[14px] font-extrabold text-ink">${netTotal.toFixed(2)}</span>
+                        </span>
+                      ) : (
+                        <span className="text-[14px] font-extrabold text-ink">{L('Gratis', 'Free')}</span>
+                      )}
+                    </div>
+                    {discountAmount > 0 && <div className="text-[10.5px] font-bold text-green-dark">{L('Descuento aplicado', 'Discount applied')} · −${discountAmount.toFixed(2)}</div>}
                   </div>
                 )}
                 <PrimaryBtn className="mt-3" disabled={buying || orderQty === 0 || cancelled || eventPast} onClick={buyNow}>
-                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${orderTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
+                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${netTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
                 </PrimaryBtn>
                 {anyPaid && (
                   <div className="mt-1.5 text-center text-[10.5px] font-semibold text-muted-2">
-                    {L('Apartas tu lugar ahora; el cobro se habilita al conectar pagos.', 'Reserve now; charging turns on once payments are connected.')}
+                    {discountAmount > 0
+                      ? L('Precio con descuento apartado; el cobro se habilita al conectar pagos.', 'Discounted price reserved; charging turns on once payments are connected.')
+                      : L('Apartas tu lugar ahora; el cobro se habilita al conectar pagos.', 'Reserve now; charging turns on once payments are connected.')}
                   </div>
                 )}
               </div>
@@ -629,6 +744,40 @@ export function EventosScreen() {
             <PrimaryBtn className="mt-5" onClick={closeDetail}>
               {L('Listo', 'Done')}
             </PrimaryBtn>
+          </div>
+        )}
+      </Overlay>
+
+      {/* organizer profile — their other upcoming events */}
+      <Overlay open={orgOpen} onClose={() => setOrgOpen(false)} width={480}>
+        <OverlayTitle title={pub?.organizer ?? L('Organizador', 'Organizer')} onClose={() => setOrgOpen(false)} />
+        {pub?.organizerSlug && (
+          <button
+            onClick={() => router.push(`/negocios/?b=${encodeURIComponent(pub.organizerSlug!)}`)}
+            className="mb-3 flex w-full items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-2.5 text-[12px] font-extrabold text-primary-dark"
+          >
+            <Store size={14} strokeWidth={2.2} /> {L('Ver su negocio', 'View their business')}
+          </button>
+        )}
+        <div className="mb-2 text-[12.5px] font-extrabold text-ink">{L('Otros eventos', 'Other events')}</div>
+        {orgEvents == null ? (
+          <div className="py-8 text-center text-[12px] font-semibold text-muted-2">{L('Cargando…', 'Loading…')}</div>
+        ) : orgEvents.length === 0 ? (
+          <div className="py-8 text-center text-[12px] font-semibold text-muted-2">{L('No tiene otros eventos próximos.', 'No other upcoming events.')}</div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {orgEvents.map((e) => (
+              <button key={e.slug ?? e.id} onClick={() => openOrgEvent(e)} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-2.5 text-left hover:shadow-card">
+                <span className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-btn" style={{ background: eventTile(e) }}>
+                  <span className="text-[8px] font-extrabold uppercase text-primary-dark">{e.dEs}</span>
+                  <span className="text-[14px] font-extrabold leading-none text-ink">{e.day}</span>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12.5px] font-extrabold text-ink">{L(e.tEs, e.tEn)}</span>
+                  <span className="block truncate text-[11px] font-semibold text-muted-2">{L(e.lEs, e.lEn)} · {e.free ? L('Gratis', 'Free') : e.price}</span>
+                </span>
+              </button>
+            ))}
           </div>
         )}
       </Overlay>

@@ -599,6 +599,46 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     - [ ] **Comunidad/posts server-FTS parity** — header + Comunidad post suggestions stay
       client-substring; `posts` already have a generated `search_vector` + GIN (0002), so a
       `search_posts` RPC mirroring `search_events` is a small add for full grouped-search parity.
+- [x] **Eventos Phase 2 — run-the-event core (2026-07-07).** Designed via a 6-agent workflow
+  (5 mappers → synthesis → critique); the QR encoder was pre-verified (`qrcode-generator`, MIT,
+  zero-dep) before building. Migration **0065** + a large client pass. Ships, all real:
+  - **Individual admissions** — `event_tickets.admitted` (0..qty) + redesigned `checkin_ticket(code,qty)`
+    that admits N guests of a group ticket per scan (row-locked, no over-admit; flips `used` only on the
+    last guest, so `tier.sold` + the one buyer notice stay correct). Dashboard shows `admitted/qty`, an
+    "admit remaining" button + per-buyer +1; Mi cuenta shows a live `2/4 ingresaron`.
+  - **Real QR** — `Qr` component renders a genuinely scannable SVG from `qrcode-generator` (structurally
+    verified: dark-module count == path rects, quiet zone, `fill:#fff`/`fill:#1E1B2E` in CSS). Attendee
+    sees it in Mi cuenta; organizer scans via `BarcodeDetector` (`QrScanner`, Chromium/Android) with a
+    clean fallback to the existing code-entry on iOS/Firefox. The fake decorative `QrGrid` is deleted.
+  - **Waitlist** — `event_waitlist` + RLS + `join/leave_waitlist` + `notify_waitlist` (organizer blast) +
+    a seat-freed trigger (real, dormant until a ticket-refund flow exists). Consumer "Avísame" toggle on
+    sold-out tiers (honest: notifies, doesn't hold — first to buy wins); organizer waitlist tab + KPI.
+  - **Promo codes** — `event_promo_codes` + owner RLS + `validate_promo` + `buy_event_tickets_multi(…,in_promo)`.
+    **Access codes unlock hidden tiers = fully real now**, and this closed a latent hole (the buy RPC never
+    checked `tier.visible` — a hidden-tier UUID was buyable by anyone). The tier editor gains an **"Oculto"**
+    toggle so organizers can create the hidden tier. %/$ discounts adjust the **snapshotted** total only
+    (never "ahorraste $X"; inside the "el cobro se habilita al conectar pagos" frame).
+  - **Map embed** — zero-dep OSM `export/embed.html` iframe with a pin (no MapLibre bundle/billing).
+  - **Organizer profile** — `event_by_slug` gains `organizer_slug`; `events_by_owner` RPC; tap the organizer
+    → a sheet of their other upcoming events (+ optional link to their `/negocios?b=` listing).
+  - Verified: tsc + build clean; QR render structurally correct + CSS fills present; `/eventos` + dashboard
+    Próximos 0 overflow at 392px.
+  - **Deferred (honest, logged):**
+    - [ ] **Single-ticket refund UI** — a `refunded` ticket is read-only at check-in today; building refund
+      also **activates** the waitlist seat-freed trigger (already keyed on `→refunded`). Natural next step.
+    - [ ] **Discount ACTUAL charging** — %/$ only shrink the reserved `unit_price`/`total`; no money until
+      Stripe. `max_uses` counts reservations, not paid redemptions; amount-discount per-line cent rounding
+      resolves at payments. Access codes are fully real now (a reservation IS the grant).
+    - [ ] **No seat held for a notified waitlister** — first to re-buy wins (needs a payments/checkout hold).
+    - [ ] **iOS/Firefox camera scan** — no `BarcodeDetector`; camera button hidden, manual code entry is the
+      honest fallback. Add jsQR / zxing-wasm for iOS camera parity later.
+    - [ ] **On-device QR scan confirmation** — render is structurally correct + battle-tested encoder; a
+      real phone-camera scan of a live ticket is the final sign-off (sandbox has no camera).
+    - [ ] **OSM public tile rate limits** — `export/embed.html` uses openstreetmap.org's shared tiles; self-host
+      or move to MapLibre/MapTiler when event-detail traffic grows.
+    - [ ] **Recurring events** — still "Muy pronto" (own phase).
+    - [ ] At 1M+ rows, add the `event_tickets.admitted` CHECK as `NOT VALID` then `VALIDATE CONSTRAINT` to
+      avoid a long ACCESS EXCLUSIVE lock (the inline CHECK is fine at current volume).
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

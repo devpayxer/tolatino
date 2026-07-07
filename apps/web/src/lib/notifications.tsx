@@ -39,6 +39,7 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   ticket_status: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
   rsvp_new: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
   event_cancelled: { icon: 'calendar', color: '#D6336C', bg: '#FDE7EF' },
+  waitlist_open: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
   message: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
 };
 const STATUS: Record<string, [string, string]> = {
@@ -64,6 +65,7 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
     case 'ticket_status': { const [a, b] = st(d.status); return { title: [`Tu boleto: ${a}`, `Your ticket: ${b}`], sub: [s('event'), s('event')] }; }
     case 'rsvp_new': return { title: ['Nuevo asistente', 'New attendee'], sub: [s('event'), s('event')] };
     case 'event_cancelled': return { title: ['Evento cancelado', 'Event cancelled'], sub: [s('event'), s('event')] };
+    case 'waitlist_open': return { title: ['¡Se liberó un lugar!', 'A spot opened up!'], sub: [s('event'), s('event')] };
     case 'message': return { title: [`Mensaje de ${s('name')}`, `Message from ${s('name')}`], sub: [s('preview'), s('preview')] };
     default: return { title: ['Notificación', 'Notification'], sub: ['', ''] };
   }

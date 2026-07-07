@@ -91,7 +91,13 @@ uploads, not committed).
   viewport (kept multi-field forms from blowing past the screen).
 
 ## ⚠️ ACTION NEEDED FROM THE FOUNDER (apply in the SQL Editor)
-- ⏳ **Apply `0064_events_multi_ticket_search.sql`** (idempotent) — Eventos Phase 1:
+- ⏳ **Apply `0065_events_phase2.sql`** (idempotent) — Eventos Phase 2: individual
+  admissions (`event_tickets.admitted` + redesigned `checkin_ticket`), waitlist
+  (`event_waitlist` + join/leave/notify + seat-freed trigger), promo codes
+  (`event_promo_codes` + `validate_promo` + `buy_event_tickets_multi` gains `in_promo`
+  + closes the hidden-tier hole), and `event_by_slug` gains `organizer_slug` +
+  `events_by_owner`. Full SQL pasted in chat.
+- ✅ **`0064_events_multi_ticket_search.sql` applied** (2026-07-07) — Eventos Phase 1:
   `buy_event_tickets_multi` (atomic multi-tier order) + `search_events` (server FTS,
   category/free filters, paginated) + widened `search_tsv` trigger; retires the old
   generated `search_vector`. Full SQL pasted in chat.
@@ -276,10 +282,24 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   generated `search_vector`. (4) **List-page static metadata** + per-event client title/meta
   (browser + Googlebot; NOT social unfurls — SSR deferred honestly). Verified: tsc + build
   (metadata baked) + audit 0 overflow + deep-link strips `?e=`.
+- **Eventos Phase 2 — run-the-event core** (migration **0065**): designed via a 6-agent
+  workflow. **Individual admissions** (`event_tickets.admitted` + a redesigned
+  `checkin_ticket(code,qty)` that admits N of a group per scan, row-locked; dashboard
+  `admitted/qty` + "admit remaining" + per-buyer +1; Mi cuenta live progress). **Real QR**
+  (`qrcode-generator`, zero-dep MIT) — attendee's scannable ticket in Mi cuenta + an
+  organizer `BarcodeDetector` camera scanner (Chromium/Android) with a clean code-entry
+  fallback; the fake `QrGrid` is gone. **Waitlist** (`event_waitlist` + join/leave/notify +
+  seat-freed trigger) — consumer "Avísame" on sold-out tiers (notifies, doesn't hold) +
+  organizer tab/KPI/blast. **Promo codes** (`event_promo_codes` + `validate_promo` +
+  `buy_event_tickets_multi` gains `in_promo`) — access codes unlock hidden tiers (real;
+  closed a latent hidden-tier-purchase hole; tier editor gains an "Oculto" toggle); %/$
+  discounts adjust the snapshotted total only. **Map embed** (zero-dep OSM iframe) +
+  **organizer profile** (`events_by_owner` → their other upcoming events). Verified: tsc +
+  build + QR structural check + 0 overflow.
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
-  payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM
-  tiles + business coords), **per-event crawler/social SEO (needs SSR/ISR)**. Not shipped
-  as fake/broken.
+  payments (Stripe), push/email delivery (VAPID+Edge Function+SES), **per-event crawler/social
+  SEO (needs SSR/ISR)**, single-ticket refund UI (activates the waitlist seat-freed path),
+  iOS camera QR (jsQR/zxing), recurring events. Not shipped as fake/broken.
 
 ## Next steps (priority order)
 1. **Founder applies `0019`+`0020`+`0031`+`0032`** (above) so Fotos/Módulos and the
