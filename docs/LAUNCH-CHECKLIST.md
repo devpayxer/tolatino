@@ -325,7 +325,9 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     the item detail with **Rentar** (walk-in rent-out flow) + **Devolver**
     (condition-check refund flow) + **Editar**), **Categorías** (create/edit/
     reorder/hide/delete-guarded), **Extras** (reusable priced add-ons: entrega,
-    montaje, seguro…), and **Precios** (rate overview). A **"Modo del listado"**
+    montaje, seguro…), **Políticas** (managed reusable rental terms — exención/
+    depósito/cargo/seguro — full CRUD, each item toggles which apply; also
+    creatable inline from the wizard), and **Precios** (rate overview). A **"Modo del listado"**
     toggle (Solo mostrar vs Aceptar rentas) persists `rental_config.renting`.
   - **Rentas** — operations: **Solicitudes** (real `business_rentals` requests
     with status progression), **Calendario**, **Depósitos**, **Daños**.

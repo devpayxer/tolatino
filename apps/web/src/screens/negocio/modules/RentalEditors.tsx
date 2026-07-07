@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { RENTAL_TILES, rentId, type RentalAddon, type RentalCategory } from '@/lib/rentalConfig';
+import { RENTAL_TILES, rentId, type RentalAddon, type RentalCategory, type RentalPolicy } from '@/lib/rentalConfig';
 
 export type Lx = (es: string, en: string) => string;
 
@@ -175,6 +175,70 @@ export function RentalAddonEditor({
             onConfirm={() => { setConfirming(false); onDelete(initial.id); onClose(); }}
             title={L('¿Eliminar extra?', 'Delete add-on?')}
             message={L(`“${initial.es}” se eliminará y se quitará de los artículos que lo usan. No se puede deshacer.`, `“${initial.en ?? initial.es}” will be deleted and removed from items using it. This can’t be undone.`)}
+            confirmLabel={L('Eliminar', 'Delete')}
+            cancelLabel={L('Cancelar', 'Cancel')}
+          />
+        )}
+      </div>
+    </Overlay>
+  );
+}
+
+// ── Policy / waiver ───────────────────────────────────────────────────────────
+export function RentalPolicyEditor({
+  open, onClose, L, initial, onSave, onDelete,
+}: {
+  open: boolean; onClose: () => void; L: Lx;
+  initial: RentalPolicy | null;
+  onSave: (p: RentalPolicy) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [es, setEs] = useState('');
+  const [en, setEn] = useState('');
+  const [subEs, setSubEs] = useState('');
+  const [subEn, setSubEn] = useState('');
+  const [def, setDef] = useState(true);
+  const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setEs(initial?.es ?? ''); setEn(initial?.en ?? ''); setSubEs(initial?.subEs ?? ''); setSubEn(initial?.subEn ?? '');
+    setDef(initial ? initial.default : true); setConfirming(false);
+  }, [open, initial]);
+
+  const save = () => {
+    const name = es.trim(); if (!name) return;
+    onSave({ id: initial?.id ?? rentId(), es: name, en: en.trim() || name, subEs: subEs.trim() || undefined, subEn: subEn.trim() || subEs.trim() || undefined, default: def });
+    onClose();
+  };
+
+  return (
+    <Overlay open={open} onClose={onClose} width={430}>
+      <OverlayTitle title={initial ? L('Editar política', 'Edit policy') : L('Nueva política', 'New policy')} onClose={onClose} />
+      <div className="flex flex-col gap-3.5">
+        <div className="flex gap-3">
+          <div className="flex-1"><div className={fieldLabel}>{L('Nombre (español)', 'Name (Spanish)')} *</div><input value={es} onChange={(e) => setEs(e.target.value)} placeholder={L('Ej. Exención de responsabilidad', 'e.g. Liability waiver')} className={inputCls} /></div>
+          <div className="flex-1"><div className={fieldLabel}>{L('Nombre (inglés)', 'Name (English)')}</div><input value={en} onChange={(e) => setEn(e.target.value)} placeholder={L('Opcional', 'Optional')} className={inputCls} /></div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1"><div className={fieldLabel}>{L('Detalle (español)', 'Helper (Spanish)')}</div><input value={subEs} onChange={(e) => setSubEs(e.target.value)} placeholder={L('Ej. Requerida al rentar', 'e.g. Required at rental')} className={inputCls} /></div>
+          <div className="flex-1"><div className={fieldLabel}>{L('Detalle (inglés)', 'Helper (English)')}</div><input value={subEn} onChange={(e) => setSubEn(e.target.value)} placeholder={L('Opcional', 'Optional')} className={inputCls} /></div>
+        </div>
+        <button type="button" onClick={() => setDef((v) => !v)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-3 text-left">
+          <span className={`relative h-[25px] w-[42px] flex-none rounded-full transition-colors ${def ? 'bg-primary' : 'bg-lilac-line'}`}><span className={`absolute top-[3px] h-[19px] w-[19px] rounded-full bg-white shadow-sm transition-all ${def ? 'left-[20px]' : 'left-[3px]'}`} /></span>
+          <span className="min-w-0 flex-1"><span className="block text-[12px] font-bold text-ink">{L('Activa por defecto', 'On by default')}</span><span className="block text-[10px] font-medium text-muted-2">{L('Se pre-selecciona en cada artículo nuevo.', 'Pre-selected on every new item.')}</span></span>
+        </button>
+        <div className="mt-1 flex gap-2.5">
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear política', 'Create policy')}</button>
+        </div>
+        {initial && (
+          <ConfirmDialog
+            open={confirming}
+            onClose={() => setConfirming(false)}
+            onConfirm={() => { setConfirming(false); onDelete(initial.id); onClose(); }}
+            title={L('¿Eliminar política?', 'Delete policy?')}
+            message={L(`“${initial.es}” se eliminará y se quitará de los artículos que la usan. No se puede deshacer.`, `“${initial.en}” will be deleted and removed from items using it. This can’t be undone.`)}
             confirmLabel={L('Eliminar', 'Delete')}
             cancelLabel={L('Cancelar', 'Cancel')}
           />

@@ -35,10 +35,10 @@ import { uploadImage } from '@/lib/image';
 import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 import {
-  defaultRentalConfig, demoRentalConfig, normalizeRentalConfig,
-  type RentalAddon, type RentalCategory, type RentalConfig,
+  DEFAULT_RENTAL_POLICIES, defaultRentalConfig, demoRentalConfig, normalizeRentalConfig,
+  type RentalAddon, type RentalCategory, type RentalConfig, type RentalPolicy,
 } from '@/lib/rentalConfig';
-import { RentalAddonEditor, RentalCategoryEditor, rentCatIcon } from '@/screens/negocio/modules/RentalEditors';
+import { RentalAddonEditor, RentalCategoryEditor, RentalPolicyEditor, rentCatIcon } from '@/screens/negocio/modules/RentalEditors';
 
 type Period = 'hour' | 'day' | 'week';
 type Condition = 'perfect' | 'minor' | 'major';
@@ -64,10 +64,15 @@ type Item = {
   cat: string; tile: string; booked: number; stock: number; out: number;
   unitEs: string; unitEn: string; dep: number; hour: number | null; day: number; week: number;
   availEs: string; availEn: string; addons: string[]; tags: string[];
-  waivers: boolean[]; imageUrl?: string;
+  policies: string[]; imageUrl?: string;
 };
 
-const DEFAULT_WAIVERS = [true, true, true, false];
+// Default policy ids pre-selected on a new item (the config policies flagged default).
+const DEFAULT_POLICY_IDS = DEFAULT_RENTAL_POLICIES.filter((p) => p.default).map((p) => p.id);
+// Back-compat: an older item stored attrs.waivers as a bool[4] index-aligned to
+// the 4 default policies; map true indices → policy ids.
+const waiversToPolicies = (w: unknown): string[] =>
+  Array.isArray(w) ? DEFAULT_RENTAL_POLICIES.filter((_, i) => (w as boolean[])[i]).map((p) => p.id) : [...DEFAULT_POLICY_IDS];
 
 // Map a business_items row (kind='rental') ↔ the module's bilingual Item.
 function rowToRental(r: BizItemRow, idx: number): Item {
@@ -94,7 +99,7 @@ function rowToRental(r: BizItemRow, idx: number): Item {
     availEn: String(a.availEn ?? ''),
     addons: Array.isArray(a.addons) ? (a.addons as string[]) : [],
     tags: Array.isArray(a.tags) ? (a.tags as string[]) : [],
-    waivers: Array.isArray(a.waivers) ? (a.waivers as boolean[]) : [...DEFAULT_WAIVERS],
+    policies: Array.isArray(a.policies) ? (a.policies as string[]) : waiversToPolicies(a.waivers),
     imageUrl: r.image_url ?? undefined,
   };
 }
@@ -113,7 +118,7 @@ function rentalToRow(it: Item, businessId: string, sort: number): NewBizItem {
     attrs: {
       nameEn: it.en, descEn: it.descEn, unitEn: it.unitEn, tile: it.tile, booked: it.booked,
       stock: it.stock, out: it.out, dep: it.dep, hour: it.hour, day: it.day, week: it.week,
-      availEs: it.availEs, availEn: it.availEn, addons: it.addons, tags: it.tags, waivers: it.waivers,
+      availEs: it.availEs, availEn: it.availEn, addons: it.addons, tags: it.tags, policies: it.policies,
     },
   };
 }
@@ -138,11 +143,11 @@ const AVAILS: [string, string][] = [['Siempre', 'Always'], ['Entre semana', 'Wee
 type Draft = {
   name: string; nameEn: string; descEs: string; descEn: string; cat: string; stock: string;
   unitEs: string; unitEn: string; hour: string; day: string; week: string; dep: string;
-  addons: string[]; tags: string[]; avail: string; waivers: boolean[]; photoUrl: string;
+  addons: string[]; tags: string[]; avail: string; policies: string[]; photoUrl: string;
 };
-const newDraft = (cat: string): Draft => ({
+const newDraft = (cat: string, policies: string[]): Draft => ({
   name: '', nameEn: '', descEs: '', descEn: '', cat, stock: '1', unitEs: '', unitEn: '',
-  hour: '', day: '', week: '', dep: '', addons: [], tags: [], avail: 'Siempre', waivers: [...DEFAULT_WAIVERS], photoUrl: '',
+  hour: '', day: '', week: '', dep: '', addons: [], tags: [], avail: 'Siempre', policies, photoUrl: '',
 });
 
 // =====================================================================
@@ -171,10 +176,10 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const c = demoRentalConfig().categories;
     const t = (id: string) => c.find((x) => x.id === id)?.tile ?? FALLBACK_CAT.tile;
     return [
-      { id: 1, es: 'Salón de eventos', en: 'Event hall', descEs: 'Quinces, bodas y fiestas · hasta 120', descEn: 'Quinces, weddings & parties · up to 120', cat: 'space', tile: t('space'), booked: 6, stock: 1, out: 1, unitEs: 'espacio', unitEn: 'space', dep: 150, hour: 60, day: 350, week: 1400, availEs: 'Siempre', availEn: 'Always', addons: ['delivery', 'setup'], tags: ['Para eventos'], waivers: [...DEFAULT_WAIVERS] },
-      { id: 2, es: 'Mesa larga · 8 lugares', en: 'Long table · 8 seats', descEs: 'Mesa de banquete con sillas', descEn: 'Banquet table with chairs', cat: 'furniture', tile: t('furniture'), booked: 2, stock: 4, out: 0, unitEs: 'mesa', unitEn: 'table', dep: 40, hour: null, day: 45, week: 180, availEs: 'Siempre', availEn: 'Always', addons: ['delivery'], tags: [], waivers: [...DEFAULT_WAIVERS] },
-      { id: 3, es: 'Vajilla de fiesta · 100', en: 'Party tableware · 100', descEs: 'Platos, copas y cubiertos completos', descEn: 'Full plates, glasses & cutlery', cat: 'tableware', tile: t('tableware'), booked: 1, stock: 2, out: 0, unitEs: 'juego', unitEn: 'set', dep: 200, hour: null, day: 120, week: 480, availEs: '48h aviso', availEn: '48h notice', addons: ['delivery', 'pickup'], tags: ['Más rentado'], waivers: [...DEFAULT_WAIVERS] },
-      { id: 4, es: 'Bocina y micrófono', en: 'Speaker & microphone', descEs: 'Sonido profesional para tu evento', descEn: 'Pro sound for your event', cat: 'equipo', tile: t('equipo'), booked: 3, stock: 3, out: 1, unitEs: 'equipo', unitEn: 'kit', dep: 80, hour: 25, day: 90, week: 360, availEs: 'Entre semana', availEn: 'Weekdays', addons: ['setup', 'insurance'], tags: [], waivers: [...DEFAULT_WAIVERS] },
+      { id: 1, es: 'Salón de eventos', en: 'Event hall', descEs: 'Quinces, bodas y fiestas · hasta 120', descEn: 'Quinces, weddings & parties · up to 120', cat: 'space', tile: t('space'), booked: 6, stock: 1, out: 1, unitEs: 'espacio', unitEn: 'space', dep: 150, hour: 60, day: 350, week: 1400, availEs: 'Siempre', availEn: 'Always', addons: ['delivery', 'setup'], tags: ['Para eventos'], policies: [...DEFAULT_POLICY_IDS] },
+      { id: 2, es: 'Mesa larga · 8 lugares', en: 'Long table · 8 seats', descEs: 'Mesa de banquete con sillas', descEn: 'Banquet table with chairs', cat: 'furniture', tile: t('furniture'), booked: 2, stock: 4, out: 0, unitEs: 'mesa', unitEn: 'table', dep: 40, hour: null, day: 45, week: 180, availEs: 'Siempre', availEn: 'Always', addons: ['delivery'], tags: [], policies: [...DEFAULT_POLICY_IDS] },
+      { id: 3, es: 'Vajilla de fiesta · 100', en: 'Party tableware · 100', descEs: 'Platos, copas y cubiertos completos', descEn: 'Full plates, glasses & cutlery', cat: 'tableware', tile: t('tableware'), booked: 1, stock: 2, out: 0, unitEs: 'juego', unitEn: 'set', dep: 200, hour: null, day: 120, week: 480, availEs: '48h aviso', availEn: '48h notice', addons: ['delivery', 'pickup'], tags: ['Más rentado'], policies: [...DEFAULT_POLICY_IDS] },
+      { id: 4, es: 'Bocina y micrófono', en: 'Speaker & microphone', descEs: 'Sonido profesional para tu evento', descEn: 'Pro sound for your event', cat: 'equipo', tile: t('equipo'), booked: 3, stock: 3, out: 1, unitEs: 'equipo', unitEn: 'kit', dep: 80, hour: 25, day: 90, week: 360, availEs: 'Entre semana', availEn: 'Weekdays', addons: ['setup', 'insurance'], tags: [], policies: [...DEFAULT_POLICY_IDS] },
     ];
   };
   const [items, setItems] = useState<Item[]>(demoSeed);
@@ -226,7 +231,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ── ui state ────────────────────────────────────────────────────────────────
   const [mode, setMode] = useState<'items' | 'ops'>('items');
-  const [itemSub, setItemSub] = useState<'catalog' | 'cats' | 'addons' | 'pricing'>('catalog');
+  const [itemSub, setItemSub] = useState<'catalog' | 'cats' | 'addons' | 'policies' | 'pricing'>('catalog');
   const [opSub, setOpSub] = useState<'requests' | 'calendar' | 'deposits' | 'damage'>('requests');
   const [openId, setOpenId] = useState<number | null>(null);
   const [flow, setFlow] = useState<null | 'rentout' | 'return'>(null);
@@ -234,12 +239,14 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [wizStep, setWizStep] = useState(0);
   const [wizMax, setWizMax] = useState(0);
-  const [draft, setDraft] = useState<Draft>(() => newDraft('general'));
+  const [draft, setDraft] = useState<Draft>(() => newDraft('general', [...DEFAULT_POLICY_IDS]));
   const [confirmDel, setConfirmDel] = useState(false);
   const [toast, setToast] = useState('');
   const [catSheet, setCatSheet] = useState<{ open: boolean; initial: RentalCategory | null }>({ open: false, initial: null });
   const [addonSheet, setAddonSheet] = useState<{ open: boolean; initial: RentalAddon | null }>({ open: false, initial: null });
+  const [policySheet, setPolicySheet] = useState<{ open: boolean; initial: RentalPolicy | null }>({ open: false, initial: null });
   const [catFromWiz, setCatFromWiz] = useState(false);
+  const [policyFromWiz, setPolicyFromWiz] = useState(false);
   const [tagSheet, setTagSheet] = useState(false);
 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
@@ -296,6 +303,19 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setItems((l) => l.map((s) => (s.addons.includes(id) ? { ...s, addons: s.addons.filter((x) => x !== id) } : s)));
     flash(L('Extra eliminado', 'Add-on deleted'));
   };
+  const policyUsedBy = (id: string) => items.filter((s) => s.policies.includes(id)).length;
+  const upsertPolicy = (p: RentalPolicy) => {
+    const exists = cfg.policies.some((x) => x.id === p.id);
+    saveCfg({ ...cfg, policies: exists ? cfg.policies.map((x) => (x.id === p.id ? p : x)) : [...cfg.policies, p] });
+    if (!exists && policyFromWiz) upD({ policies: [...draft.policies, p.id] });
+    setPolicyFromWiz(false);
+    flash(exists ? L('Política guardada', 'Policy saved') : L('Política creada', 'Policy created'));
+  };
+  const deletePolicy = (id: string) => {
+    saveCfg({ ...cfg, policies: cfg.policies.filter((x) => x.id !== id) });
+    setItems((l) => l.map((s) => (s.policies.includes(id) ? { ...s, policies: s.policies.filter((x) => x !== id) } : s)));
+    flash(L('Política eliminada', 'Policy deleted'));
+  };
 
   // ── wizard: draft ⇄ item ────────────────────────────────────────────────────
   const wizSteps: [string, string][] = [
@@ -318,7 +338,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const startAdd = () => {
     setEditingId(null);
-    const fresh = newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'general');
+    const fresh = newDraft(cfg.categories.find((c) => c.visible)?.id ?? 'general', cfg.policies.filter((p) => p.default).map((p) => p.id));
     const saved = loadDraft<Draft>(draftKey);
     if (saved && (saved.name?.trim() || saved.descEs || saved.descEn || saved.day || saved.photoUrl)) {
       setDraft({ ...fresh, ...saved });
@@ -332,7 +352,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       name: s.es, nameEn: s.en, descEs: s.descEs, descEn: s.descEn, cat: s.cat, stock: String(s.stock || 1),
       unitEs: s.unitEs, unitEn: s.unitEn, hour: s.hour != null ? String(s.hour) : '', day: String(s.day || ''),
       week: s.week ? String(s.week) : '', dep: s.dep ? String(s.dep) : '', addons: [...s.addons], tags: [...s.tags],
-      avail: s.availEs || 'Siempre', waivers: [...s.waivers], photoUrl: s.imageUrl ?? '',
+      avail: s.availEs || 'Siempre', policies: [...s.policies], photoUrl: s.imageUrl ?? '',
     });
     setWizStep(0); setWizMax(wizSteps.length - 1); setOpenId(null); setFlow(null); setView('wizard');
   };
@@ -343,7 +363,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       descEs: draft.descEs, descEn: draft.descEn || draft.descEs, cat: draft.cat, tile: catOf(draft.cat).tile,
       booked: 0, stock: Number(draft.stock) || 1, out: 0, unitEs: draft.unitEs.trim() || 'unidad', unitEn: draft.unitEn.trim() || draft.unitEs.trim() || 'unit',
       dep: Number(draft.dep) || 0, hour: draft.hour ? Number(draft.hour) : null, day: Number(draft.day) || 0, week: Number(draft.week) || 0,
-      availEs: availPair[0], availEn: availPair[1], addons: draft.addons, tags: draft.tags, waivers: draft.waivers, imageUrl: draft.photoUrl || undefined,
+      availEs: availPair[0], availEn: availPair[1], addons: draft.addons, tags: draft.tags, policies: draft.policies, imageUrl: draft.photoUrl || undefined,
     };
   };
   const addFromDraft = () => { const s: Item = { id: nextId(), ...draftFields() }; setItems((l) => [s, ...l]); persistNew(s); clearDraft(draftKey); };
@@ -378,6 +398,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <>
         <RentalCategoryEditor open={catSheet.open} onClose={() => { setCatSheet((s) => ({ ...s, open: false })); setCatFromWiz(false); }} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
         <RentalAddonEditor open={addonSheet.open} onClose={() => setAddonSheet((s) => ({ ...s, open: false }))} L={L} initial={addonSheet.initial} usedCount={addonSheet.initial ? addonUsedBy(addonSheet.initial.id) : 0} onSave={upsertAddon} onDelete={deleteAddon} />
+        <RentalPolicyEditor open={policySheet.open} onClose={() => { setPolicySheet((s) => ({ ...s, open: false })); setPolicyFromWiz(false); }} L={L} initial={policySheet.initial} onSave={upsertPolicy} onDelete={deletePolicy} />
       </>
     );
   }
@@ -572,13 +593,19 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   </div>
                   <div>
                     <div className={fieldLabel}>{L('Políticas', 'Policies')}</div>
+                    <div className="mb-2 text-[10.5px] font-medium leading-snug text-muted">{L('Elige las que aplican a este artículo. Gestiónalas en la pestaña Políticas.', 'Pick the ones that apply to this item. Manage them in the Policies tab.')}</div>
                     <div className="flex flex-col gap-2">
-                      {WAIVER_DEFS(L).map(([label, sub], i) => (
-                        <div key={label} className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
-                          <span className="min-w-0 flex-1"><span className="block text-[12px] font-bold text-ink">{label}</span><span className="block text-[10px] font-medium text-muted-2">{sub}</span></span>
-                          <Toggle on={draft.waivers[i]} onClick={() => upD({ waivers: draft.waivers.map((v, j) => (j === i ? !v : v)) })} />
-                        </div>
-                      ))}
+                      {cfg.policies.map((p) => {
+                        const on = draft.policies.includes(p.id);
+                        const toggle = () => upD({ policies: on ? draft.policies.filter((x) => x !== p.id) : [...draft.policies, p.id] });
+                        return (
+                          <div key={p.id} className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
+                            <button type="button" onClick={toggle} className="min-w-0 flex-1 cursor-pointer text-left"><span className="block text-[12px] font-bold text-ink">{L(p.es, p.en)}</span>{(p.subEs || p.subEn) && <span className="block text-[10px] font-medium text-muted-2">{L(p.subEs ?? '', p.subEn ?? p.subEs ?? '')}</span>}</button>
+                            <Toggle on={on} onClick={toggle} />
+                          </div>
+                        );
+                      })}
+                      <button onClick={() => { setPolicyFromWiz(true); setPolicySheet({ open: true, initial: null }); }} className="w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12px] font-extrabold text-primary-dark">+ {L('Nueva política', 'New policy')}</button>
                     </div>
                   </div>
                 </div>
@@ -642,6 +669,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <>
         <ItemDetail item={selected} ctx={ctx} catName={catLabelOf(selected.cat)} tile={tileOf(selected)} statusOf={statusOf} availOf={availOf}
+          policyList={cfg.policies.filter((p) => selected.policies.includes(p.id))}
           onClose={() => setOpenId(null)} onEdit={() => startEdit(selected)} onRentOut={() => setFlow('rentout')} onReturn={() => setFlow('return')} />
         <Toast msg={toast} />
       </>
@@ -807,6 +835,35 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
       <button onClick={() => setAddonSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nuevo extra', 'New add-on')}</button>
+    </div>
+  );
+
+  // ---- items · policies ----
+  const policiesTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Shield size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{L('Políticas y exenciones', 'Policies & waivers')}</span><span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea los términos de renta (exención, depósito, cargos…) y elige cuáles aplican a cada artículo.', 'Create rental terms (waiver, deposit, fees…) and choose which apply to each item.')}</span></span>
+      </div>
+      {cfg.policies.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no hay políticas — crea la primera (ej. Exención de responsabilidad).', 'No policies yet — create your first (e.g. Liability waiver).')}</div>
+      ) : (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {cfg.policies.map((p) => {
+            const used = policyUsedBy(p.id);
+            return (
+              <button key={p.id} onClick={() => setPolicySheet({ open: true, initial: p })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Shield size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(p.es, p.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />{p.default && <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Por defecto', 'Default')}</span>}</span>
+                  <span className="mt-0.5 block truncate text-[10px] font-semibold text-muted-2">{(p.subEs || p.subEn) ? L(p.subEs ?? '', p.subEn ?? p.subEs ?? '') : `${used} ${used === 1 ? L('artículo', 'item') : L('artículos', 'items')}`}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <button onClick={() => setPolicySheet({ open: true, initial: null })} className={addBtn}>+ {L('Nueva política', 'New policy')}</button>
     </div>
   );
 
@@ -1002,6 +1059,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button onClick={() => setItemSub('catalog')} className={chip(itemSub === 'catalog')}>{L('Catálogo', 'Catalog')}</button>
               <button onClick={() => setItemSub('cats')} className={chip(itemSub === 'cats')}>{L('Categorías', 'Categories')}<span className={`ml-1.5 font-extrabold ${itemSub === 'cats' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.categories.length}</span></button>
               <button onClick={() => setItemSub('addons')} className={chip(itemSub === 'addons')}>{L('Extras', 'Add-ons')}<span className={`ml-1.5 font-extrabold ${itemSub === 'addons' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.addons.length}</span></button>
+              <button onClick={() => setItemSub('policies')} className={chip(itemSub === 'policies')}>{L('Políticas', 'Policies')}<span className={`ml-1.5 font-extrabold ${itemSub === 'policies' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.policies.length}</span></button>
               <button onClick={() => setItemSub('pricing')} className={chip(itemSub === 'pricing')}>{L('Precios', 'Pricing')}</button>
             </>
           ) : (
@@ -1016,7 +1074,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       {mode === 'items'
-        ? (itemSub === 'catalog' ? catalog : itemSub === 'cats' ? categoriesTab : itemSub === 'addons' ? addonsTab : pricingPane)
+        ? (itemSub === 'catalog' ? catalog : itemSub === 'cats' ? categoriesTab : itemSub === 'addons' ? addonsTab : itemSub === 'policies' ? policiesTab : pricingPane)
         : (opSub === 'requests' ? requestsPane : opSub === 'calendar' ? calendarPane : opSub === 'deposits' ? depositsPane : damagePane)}
 
       {!isPremium && mode === 'items' && itemSub === 'catalog' && (
@@ -1036,27 +1094,19 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 }
 
-// ---------- waiver defs ----------
-const WAIVER_DEFS = (L: (es: string, en: string) => string): [string, string][] => [
-  [L('Exención de responsabilidad', 'Liability waiver'), L('Requerida al rentar', 'Required at rental')],
-  [L('Depósito reembolsable', 'Refundable deposit'), L('Se devuelve al regresar', 'Returned on return')],
-  [L('Cargo por retraso', 'Late return fee'), L('$50/hora después', '$50/hour after')],
-  [L('Seguro requerido', 'Insurance required'), L('Verificación de cobertura', 'Coverage verification')],
-];
-
 // ---------- Item detail page ----------
 function ItemDetail({
-  item, ctx, catName, tile, statusOf, availOf, onClose, onEdit, onRentOut, onReturn,
+  item, ctx, catName, tile, statusOf, availOf, policyList, onClose, onEdit, onRentOut, onReturn,
 }: {
   item: Item; ctx: PanelCtx; catName: string; tile: string;
   statusOf: (it: Item) => { cls: string; dot: string; label: string };
   availOf: (it: Item) => number;
+  policyList: RentalPolicy[];
   onClose: () => void; onEdit: () => void; onRentOut: () => void; onReturn: () => void;
 }) {
   const { L } = ctx;
   const s = statusOf(item);
   const rates = [{ l: L('Hora', 'Hour'), v: item.hour }, { l: L('Día', 'Day'), v: item.day }, { l: L('Semana', 'Week'), v: item.week }];
-  const waiverLabels = WAIVER_DEFS(L);
   return (
     <ModulePage
       title={L(item.es, item.en)}
@@ -1108,17 +1158,19 @@ function ItemDetail({
           <div className="mt-1.5 text-[10.5px] font-semibold text-muted-2">{availOf(item)}/{item.stock} {L('disponibles', 'available')}</div>
         </div>
 
-        <div>
-          <div className="mb-2 text-[12px] font-extrabold text-ink">{L('Exención y políticas', 'Waiver & policies')}</div>
-          <div className={`${cardCls} px-3.5`}>
-            {waiverLabels.map(([w], i) => (
-              <div key={w} className="flex items-center justify-between gap-3 border-b border-hair py-3 last:border-0">
-                <span className="text-[12px] font-semibold text-ink">{w}</span>
-                <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${item.waivers[i] ? 'bg-green-bg text-green-dark' : 'bg-lilac-2 text-muted-2'}`}>{item.waivers[i] ? L('Activo', 'On') : L('Inactivo', 'Off')}</span>
-              </div>
-            ))}
+        {policyList.length > 0 && (
+          <div>
+            <div className="mb-2 text-[12px] font-extrabold text-ink">{L('Exención y políticas', 'Waiver & policies')}</div>
+            <div className={`${cardCls} px-3.5`}>
+              {policyList.map((p) => (
+                <div key={p.id} className="flex items-center justify-between gap-3 border-b border-hair py-3 last:border-0">
+                  <span className="min-w-0"><span className="block text-[12px] font-semibold text-ink">{L(p.es, p.en)}</span>{(p.subEs || p.subEn) && <span className="block text-[10px] font-medium text-muted-2">{L(p.subEs ?? '', p.subEn ?? p.subEs ?? '')}</span>}</span>
+                  <span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Activo', 'On')}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </ModulePage>
   );

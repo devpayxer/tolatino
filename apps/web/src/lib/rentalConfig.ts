@@ -26,9 +26,21 @@ export type RentalAddon = {
   price: number; // extra charge; 0 = free add-on
 };
 
+// A reusable rental policy / waiver term (e.g. "Exención de responsabilidad",
+// "Depósito reembolsable"). Rental items toggle which policies apply by id.
+export type RentalPolicy = {
+  id: string;
+  es: string;
+  en: string;
+  subEs?: string; // short helper line
+  subEn?: string;
+  default: boolean; // pre-selected on a new item
+};
+
 export type RentalConfig = {
   categories: RentalCategory[];
   addons: RentalAddon[];
+  policies: RentalPolicy[];
   tags: string[]; // reusable custom tags the owner created (beyond the built-ins)
   // Mode: false = display-only (show items + rates, no online rentals — for a
   // business that just wants to showcase); true = accept online rentals (the
@@ -56,11 +68,21 @@ export const DEFAULT_RENTAL_CATEGORIES: RentalCategory[] = [
   { id: 'general', es: 'Artículos', en: 'Items', icon: 'boxes', tile: RENTAL_TILES[0], visible: true },
 ];
 
+// Sensible starter policies every business tends to want — fully editable /
+// deletable, and the owner can add their own.
+export const DEFAULT_RENTAL_POLICIES: RentalPolicy[] = [
+  { id: 'liability', es: 'Exención de responsabilidad', en: 'Liability waiver', subEs: 'Requerida al rentar', subEn: 'Required at rental', default: true },
+  { id: 'deposit', es: 'Depósito reembolsable', en: 'Refundable deposit', subEs: 'Se devuelve al regresar', subEn: 'Returned on return', default: true },
+  { id: 'latefee', es: 'Cargo por retraso', en: 'Late return fee', subEs: '$50/hora después', subEn: '$50/hour after', default: true },
+  { id: 'insurance', es: 'Seguro requerido', en: 'Insurance required', subEs: 'Verificación de cobertura', subEn: 'Coverage verification', default: false },
+];
+
 /** Starting config for a REAL business — display-only by default (opt into
  *  online rentals), one generic category to rename. */
 export const defaultRentalConfig = (): RentalConfig => ({
   categories: DEFAULT_RENTAL_CATEGORIES.map((c) => ({ ...c })),
   addons: [],
+  policies: DEFAULT_RENTAL_POLICIES.map((p) => ({ ...p })),
   tags: [],
   renting: false,
 });
@@ -79,6 +101,7 @@ export const demoRentalConfig = (): RentalConfig => ({
     { id: 'pickup', es: 'Recolección', en: 'Pickup', price: 20 },
     { id: 'insurance', es: 'Seguro de daños', en: 'Damage insurance', price: 15 },
   ],
+  policies: DEFAULT_RENTAL_POLICIES.map((p) => ({ ...p })),
   tags: ['Más rentado', 'Para eventos'],
   renting: true,
 });
@@ -91,6 +114,7 @@ export function normalizeRentalConfig(raw: unknown): RentalConfig {
   return {
     categories: Array.isArray(r.categories) && r.categories.length ? r.categories : base.categories,
     addons: Array.isArray(r.addons) ? r.addons : [],
+    policies: Array.isArray(r.policies) ? r.policies : base.policies,
     tags: Array.isArray(r.tags) ? r.tags : [],
     renting: r.renting === true, // default display-only
   };
