@@ -25,7 +25,7 @@ import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 const FEAT_EN: Record<string, string> = {};
 for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
-import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_DATES, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
+import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
 type RentPeriod = 'hour' | 'day' | 'week';
@@ -366,6 +366,24 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     else d.setDate(d.getDate() + rentQty);
     return d.toISOString();
   };
+  // Real start-date chips (today + next 4 days). Replaces the stale SVC_DATES
+  // fixture so "Hoy" is actually today; rentDate/svcDate index into this. Computed
+  // in the browser, so it reflects the user's real current date.
+  const dateChips = useMemo<{ lab: Bi; sub: Bi }[]>(() => {
+    const wdEs = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const wdEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const moEs = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const moEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const base = new Date();
+    return Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+      const dow = d.getDay(), day = d.getDate();
+      const lab: Bi = i === 0 ? ['Hoy', 'Today'] : i === 1 ? ['Mañana', 'Tomorrow'] : [wdEs[dow], wdEn[dow]];
+      const sub: Bi = [`${moEs[d.getMonth()]} ${day}`, `${moEn[d.getMonth()]} ${day}`];
+      return { lab, sub };
+    });
+  }, []);
+
   const confirmRental = async () => {
     if (rentIdx === null) return;
     if (!user) { router.push('/entrar'); return; }
@@ -1438,10 +1456,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
               <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{svcSel.bookable ? L('Elige fecha', 'Pick a date') : L('Fecha preferida', 'Preferred date')}</div>
               <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                {SVC_DATES.map((d, i) => (
-                  <button key={d.sub} onClick={() => setSvcDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${svcDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                {dateChips.map((d, i) => (
+                  <button key={i} onClick={() => setSvcDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${svcDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
                     <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
-                    <span className={`block text-[10.5px] font-bold ${svcDate === i ? 'text-white/80' : 'text-muted'}`}>{d.sub}</span>
+                    <span className={`block text-[10.5px] font-bold ${svcDate === i ? 'text-white/80' : 'text-muted'}`}>{B(d.sub)}</span>
                   </button>
                 ))}
               </div>
@@ -1539,10 +1557,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
               <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Fecha de inicio', 'Start date')}</div>
               <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                {SVC_DATES.map((d, i) => (
-                  <button key={d.sub} onClick={() => setRentDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${rentDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                {dateChips.map((d, i) => (
+                  <button key={i} onClick={() => setRentDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${rentDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
                     <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
-                    <span className={`block text-[10.5px] font-bold ${rentDate === i ? 'text-white/80' : 'text-muted'}`}>{d.sub}</span>
+                    <span className={`block text-[10.5px] font-bold ${rentDate === i ? 'text-white/80' : 'text-muted'}`}>{B(d.sub)}</span>
                   </button>
                 ))}
               </div>
