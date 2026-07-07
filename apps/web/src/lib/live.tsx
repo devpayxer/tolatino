@@ -221,14 +221,15 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
  *  strip) and the selling mode (false = display-only → no cart). */
 export type PublicShop = { cats: MenuCat[]; groups: Record<string, OptionGroup[]>; collections: { es: string; en: string; tile: string }[]; selling: boolean };
 
-/** Per-day seat load for a bookable service (migration 0052) — the booking sheet
- *  blocks dates whose session is full. Exposes only day + seats (SECURITY DEFINER
+/** Per-slot seat load for a bookable service (migration 0059) — the booking sheet
+ *  disables the exact time slots that are full (capacity = seats per session).
+ *  `slot` is the ISO start timestamp. Exposes only slot + seats (SECURITY DEFINER
  *  RPC, no customer data). Returns [] offline / pre-migration / on error. */
-export async function fetchBookingLoad(serviceId: string): Promise<{ day: string; seats: number }[]> {
+export async function fetchBookingLoad(serviceId: string): Promise<{ slot: string; seats: number }[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc('booking_load_by_service', { in_service_id: serviceId });
   if (error || !Array.isArray(data)) return [];
-  return (data as Record<string, unknown>[]).map((r) => ({ day: String(r.day), seats: Number(r.seats ?? 0) }));
+  return (data as Record<string, unknown>[]).map((r) => ({ slot: String(r.slot), seats: Number(r.seats ?? 0) }));
 }
 
 /** Fetch + map a business's real products by slug (migration 0048). Returns null

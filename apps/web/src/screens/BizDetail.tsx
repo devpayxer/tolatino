@@ -224,7 +224,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   // one modal serves both. `price` numeric → total math; `priceLabel` carries a
   // fixture's non-numeric price ("Desde $180"). bookable=false → inquiry (lead).
   const [svcSel, setSvcSel] = useState<SvcTarget | null>(null);
-  const [svcBusy, setSvcBusy] = useState<Record<string, number>>({}); // yyyy-mm-dd → seats already booked
+  const [svcSlotBusy, setSvcSlotBusy] = useState<Record<number, number>>({}); // slot epoch(ms) → seats already booked
   const [svcDate, setSvcDate] = useState(0);
   const [svcTime, setSvcTime] = useState(-1); // selected slot: minute-of-day (-1 = none yet)
   const [svcPersons, setSvcPersons] = useState(1);
@@ -442,21 +442,27 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     setSvcAddOns({});
     setSvcDone(false);
   };
-  // When a real bookable service opens, load its per-day seat load (migration
-  // 0052) so full sessions can't be over-booked.
+  // When a real bookable service opens, load its per-SLOT seat load (migration
+  // 0059) so a specific time can't be over-booked. Keyed by the slot's epoch(ms)
+  // because a timestamptz round-trips as a different string than toISOString().
   useEffect(() => {
-    if (!svcSel || !svcSel.id || !svcSel.bookable || svcSel.capMax <= 0) { setSvcBusy({}); return; }
+    if (!svcSel || !svcSel.id || !svcSel.bookable || svcSel.capMax <= 0) { setSvcSlotBusy({}); return; }
     let cancelled = false;
-    setSvcBusy({});
+    setSvcSlotBusy({});
     fetchBookingLoad(svcSel.id).then((rows) => {
       if (cancelled) return;
-      const map: Record<string, number> = {};
-      for (const r of rows) map[r.day] = (map[r.day] || 0) + r.seats;
-      setSvcBusy(map);
+      const map: Record<number, number> = {};
+      for (const r of rows) { const t = new Date(r.slot).getTime(); if (!Number.isNaN(t)) map[t] = (map[t] || 0) + r.seats; }
+      setSvcSlotBusy(map);
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [svcSel?.id, svcSel?.bookable, svcSel?.capMax]);
+  // A generated slot's canonical instant (local date + minute → epoch), matching
+  // how a booking's starts_at was created (svcStartISO). Seats booked at that slot.
+  const slotEpoch = (dayISO: string, minute: number) => { const d = parseISO(dayISO); d.setHours(Math.floor(minute / 60), minute % 60, 0, 0); return d.getTime(); };
+  const slotSeats = (dayISO: string, minute: number) => svcSlotBusy[slotEpoch(dayISO, minute)] ?? 0;
+  const slotFull = (dayISO: string, minute: number) => svcSel != null && svcSel.capMax > 0 && slotSeats(dayISO, minute) >= svcSel.capMax;
   const pubToTarget = (s: PubSvc): SvcTarget => ({
     name: s.name, descEs: s.desc[0], descEn: s.desc[1], price: s.price, priceType: s.priceType,
     priceLabel: null, dur: s.dur, bookable: s.bookable, deposit: s.deposit, addons: s.addons,
@@ -485,10 +491,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       if (svcSlots.length === 0) { flash(L('Cerrado ese día — elige otra fecha', 'Closed that day — pick another date')); return; }
       if (svcTime < 0) { flash(L('Elige una hora', 'Pick a time')); return; }
     }
-    // block a full session (capacity truth, migration 0052)
+    // block a full slot (per-session capacity truth, migration 0059)
     if (svcSel.bookable && svcSel.capMax > 0) {
       const iso = dateChips[svcDate]?.iso;
-      if (iso && (svcBusy[iso] ?? 0) >= svcSel.capMax) { flash(L('Ese día está lleno — elige otro', 'That day is full — pick another')); return; }
+      if (iso && svcTime >= 0 && slotFull(iso, svcTime)) { flash(L('Ese horario está lleno — elige otro', 'That time is full — pick another')); return; }
     }
     if (!user) { router.push('/entrar'); return; }
     setSvcDone(true); // keep the existing success screen (optimistic)
@@ -594,13 +600,25 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     return bookingSlots(b.hours, b.hoursExceptions, parseISO(iso), parseDurMin(svcSel.dur), now);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [svcSel?.bookable, svcSel?.dur, svcHasHours, svcDate, dateChips, b.hours, b.hoursExceptions, now]);
-  // Keep the selected slot valid: when the day/slot set changes, snap to the first
-  // available slot (or clear it if that day is closed).
+  // Keep the selected slot valid: when the day/slot set (or its load) changes, snap
+  // to the first slot that isn't full — or clear it if the day is closed/fully booked.
   useEffect(() => {
     if (!svcSel?.bookable) return;
-    if (!svcSlots.includes(svcTime)) setSvcTime(svcSlots[0] ?? -1);
+    const iso = dateChips[svcDate]?.iso;
+    const open = iso ? svcSlots.filter((t) => !slotFull(iso, t)) : svcSlots;
+    if (svcTime < 0 || !open.includes(svcTime)) setSvcTime(open[0] ?? -1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [svcSlots]);
+  }, [svcSlots, svcSlotBusy]);
+  // Per date chip: is EVERY slot that day already full? (grey the day out). Only
+  // meaningful when hours + capacity are tracked; otherwise never "full".
+  const svcDayFull = useMemo<boolean[]>(() => {
+    if (!svcSel?.bookable || !svcHasHours || svcSel.capMax <= 0) return dateChips.map(() => false);
+    return dateChips.map((c) => {
+      const slots = bookingSlots(b.hours, b.hoursExceptions, parseISO(c.iso), parseDurMin(svcSel!.dur), now);
+      return slots.length > 0 && slots.every((t) => slotFull(c.iso, t));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [svcSel?.bookable, svcSel?.dur, svcSel?.capMax, svcHasHours, dateChips, b.hours, b.hoursExceptions, now, svcSlotBusy]);
 
   const confirmRental = async () => {
     if (rentIdx === null) return;
@@ -1739,17 +1757,13 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{svcSel.bookable ? L('Elige fecha', 'Pick a date') : L('Fecha preferida', 'Preferred date')}</div>
               <div className="no-scrollbar flex gap-2 overflow-x-auto">
                 {dateChips.map((d, i) => {
-                  const cap = svcSel.bookable ? svcSel.capMax : 0;
-                  const booked = svcBusy[d.iso] ?? 0;
-                  const full = cap > 0 && booked >= cap;
-                  const left = cap > 0 && cap < 9999 ? cap - booked : null;
+                  const full = svcSel.bookable && (svcDayFull[i] ?? false);
                   const on = svcDate === i && !full;
                   return (
                     <button key={i} disabled={full} onClick={() => setSvcDate(i)} className={`flex-none rounded-btn px-3.5 py-2 text-center ${on ? 'bg-primary text-white' : full ? 'cursor-not-allowed bg-lilac-2 opacity-50' : 'cursor-pointer bg-lilac-2 text-ink-soft'}`}>
                       <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
                       <span className={`block text-[10.5px] font-bold ${on ? 'text-white/80' : 'text-muted'}`}>{B(d.sub)}</span>
-                      {full ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-pink-dark">{L('Lleno', 'Full')}</span>
-                        : left != null && left <= 3 ? <span className={`mt-0.5 block text-[8.5px] font-extrabold ${on ? 'text-white/80' : 'text-amber-ink'}`}>{left} {L('libres', 'left')}</span> : null}
+                      {full ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-pink-dark">{L('Lleno', 'Full')}</span> : null}
                     </button>
                   );
                 })}
@@ -1766,11 +1780,24 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                     </div>
                   ) : (
                     <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                      {svcSlots.map((t) => (
-                        <button key={t} onClick={() => setSvcTime(t)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-[12.5px] font-extrabold ${svcTime === t ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
-                          {fmtShort(t)}
-                        </button>
-                      ))}
+                      {svcSlots.map((t) => {
+                        const iso = dateChips[svcDate]?.iso;
+                        const full = !!iso && slotFull(iso, t);
+                        const left = iso && svcSel!.capMax > 0 && svcSel!.capMax < 9999 ? svcSel!.capMax - slotSeats(iso, t) : null;
+                        const sel = svcTime === t && !full;
+                        return (
+                          <button
+                            key={t}
+                            disabled={full}
+                            onClick={() => setSvcTime(t)}
+                            className={`flex-none rounded-btn px-3.5 py-2 text-center ${sel ? 'bg-primary text-white' : full ? 'cursor-not-allowed bg-lilac-2 opacity-50' : 'cursor-pointer bg-lilac-2 text-ink-soft'}`}
+                          >
+                            <span className="block text-[12.5px] font-extrabold">{fmtShort(t)}</span>
+                            {full ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-pink-dark">{L('Lleno', 'Full')}</span>
+                              : left != null && left <= 3 ? <span className={`mt-0.5 block text-[8.5px] font-extrabold ${sel ? 'text-white/80' : 'text-amber-ink'}`}>{left} {L('libres', 'left')}</span> : null}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </>

@@ -205,6 +205,12 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   bucket, no new policy); the reviews list shows a thumbnail row per review.
   NOTE both 0057 and 0058 **drop** `reviews_by_slug` before recreating — adding a
   return column can't be done via CREATE OR REPLACE (42P13).
+- **Per-slot booking capacity** (migration **0059**): `booking_load_by_service`
+  regrouped by exact slot timestamp; the booking sheet disables only full slots
+  ("Lleno"), shows "N libres", auto-selects the first open slot, greys a day only
+  when all its slots are full. Slot↔booking matched by epoch(ms) (timestamptz
+  round-trip). Fixes the old over-blocking where any capMax bookings marked the
+  whole day full.
 - **Customer self-service cancel** on Mi cuenta (early orders/bookings/rentals).
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM

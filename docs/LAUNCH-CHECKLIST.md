@@ -421,6 +421,18 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   list renders a horizontal thumbnail row under each review body. Verified with an
   RPC intercept: 3–4 thumbnails render + the picker shows, 0 pageerrors / 0 overflow
   at 392px. Deferred: full-screen photo lightbox; per-photo moderation.
+- [x] **Per-slot booking capacity (2026-07-07).** 0052 exposed seat load per DAY, but
+  capacity is "seats per session" (a session = a time slot), so three bookings in
+  different slots wrongly marked the whole day full. Migration **0059** regroups
+  `booking_load_by_service` by the exact slot timestamp (drop+recreate — return type
+  changed, 42P13). The booking sheet now disables only the slots actually at capacity
+  ("Lleno"), shows "N libres" when ≤3 seats remain, auto-selects the first open slot,
+  greys a date only when EVERY slot that day is full, and blocks a full-slot submit.
+  Slot↔booking matching is by **epoch(ms)** (a timestamptz round-trips as a different
+  string than toISOString) — unit-verified. Still SECURITY DEFINER, no customer data.
+  Verified: mocked service (cap 2) + a full-slot load → 5 "Lleno" disabled slots,
+  first open slot auto-selected, 0 pageerrors / 0 overflow at 392px; consumer audit
+  0/20. Deferred: staff/resource-aware capacity (multiple providers per slot).
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /
