@@ -7,11 +7,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Calendar, Plus, Store, Users } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useNotifications } from '@/lib/notifications';
 import { VIEW_PATH } from '@/data/fixtures';
 
 export function BottomNav() {
   const { L } = useLang();
   const app = useApp();
+  const { unreadCount } = useNotifications();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -49,9 +51,9 @@ export function BottomNav() {
         >
           <span className="relative">
             <Bell size={22} strokeWidth={2} className="text-muted-2" />
-            {app.unreadCount > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -right-1.5 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[9px] font-extrabold text-white">
-                {app.unreadCount}
+                {unreadCount}
               </span>
             )}
           </span>

@@ -8,6 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Briefcase, Calendar, Car, Home, MapPin, Plus, Search, Store, Truck, Users, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useNotifications } from '@/lib/notifications';
 import { useAuth } from '@/lib/auth';
 import { Avatar, Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
 import { NAV_CATS, VIEW_PATH, bizTile, eventTile } from '@/data/fixtures';
@@ -143,6 +144,7 @@ function SearchDropdown() {
 export function AppHeader() {
   const { L } = useLang();
   const app = useApp();
+  const { unreadCount } = useNotifications();
   const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -171,9 +173,9 @@ export function AppHeader() {
             aria-label={L('Notificaciones', 'Notifications')}
           >
             <Bell size={18} strokeWidth={2} className="text-ink" />
-            {app.unreadCount > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute right-[5px] top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[9px] font-extrabold text-white">
-                {app.unreadCount}
+                {unreadCount}
               </span>
             )}
           </button>

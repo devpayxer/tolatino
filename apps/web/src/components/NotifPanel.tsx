@@ -1,36 +1,39 @@
 'use client';
 
 // Notifications panel (Handoff v2): bell → panel/sheet with Todas/No-leídas
-// filters, Hoy/Esta semana/Anteriores groups, read/unread state.
+// filters, Hoy/Esta semana/Anteriores groups, read/unread state. Backed by real
+// per-user notifications (lib/notifications) — signed in → live rows (realtime);
+// logged out → demo fixtures.
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Calendar, Heart, MessageCircle, Store, Tag, User } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { useNotifications, type NotifItem } from '@/lib/notifications';
 import { Overlay, OverlayTitle } from '@/components/ui';
-import { NOTIFS, VIEW_PATH, type Notif } from '@/data/fixtures';
 
 const ICONS = { heart: Heart, message: MessageCircle, calendar: Calendar, store: Store, user: User, tag: Tag };
 
 export function NotifPanel() {
   const { L } = useLang();
+  const B = (p: [string, string]) => L(p[0], p[1]);
   const app = useApp();
   const router = useRouter();
+  const { items, unreadCount, markRead, markAllRead } = useNotifications();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-  const isUnread = (n: Notif) => n.unread && !app.notifRead[n.id];
-  const filtered = NOTIFS.filter((n) => filter === 'all' || isUnread(n));
+  const filtered = items.filter((n) => filter === 'all' || !n.read);
   const groups: ['hoy' | 'semana' | 'antes', string][] = [
     ['hoy', L('Hoy', 'Today')],
     ['semana', L('Esta semana', 'This week')],
     ['antes', L('Anteriores', 'Earlier')],
   ];
 
-  const open = (n: Notif) => {
-    app.markNotifRead(n.id);
+  const open = (n: NotifItem) => {
+    markRead(n.id);
     app.setNotifOpen(false);
-    router.push(VIEW_PATH[n.view]);
+    router.push(n.link);
   };
 
   return (
@@ -40,7 +43,7 @@ export function NotifPanel() {
         {(
           [
             ['all', L('Todas', 'All')],
-            ['unread', L('No leídas', 'Unread') + (app.unreadCount ? ` (${app.unreadCount})` : '')],
+            ['unread', L('No leídas', 'Unread') + (unreadCount ? ` (${unreadCount})` : '')],
           ] as const
         ).map(([k, label]) => (
           <button
@@ -54,7 +57,7 @@ export function NotifPanel() {
           </button>
         ))}
         <button
-          onClick={app.markAllNotifsRead}
+          onClick={markAllRead}
           className="ml-auto cursor-pointer text-[11.5px] font-extrabold text-primary-dark"
         >
           {L('Marcar todo leído', 'Mark all read')}
@@ -73,14 +76,14 @@ export function NotifPanel() {
         </div>
       ) : (
         groups.map(([g, label]) => {
-          const items = filtered.filter((n) => n.g === g);
-          if (!items.length) return null;
+          const gItems = filtered.filter((n) => n.group === g);
+          if (!gItems.length) return null;
           return (
             <div key={g} className="mb-1">
               <div className="px-2 pb-1 pt-2.5 text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2">{label}</div>
-              {items.map((n) => {
-                const Icon = ICONS[n.ic];
-                const unread = isUnread(n);
+              {gItems.map((n) => {
+                const Icon = ICONS[n.icon];
+                const unread = !n.read;
                 return (
                   <button
                     key={n.id}
@@ -92,12 +95,12 @@ export function NotifPanel() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className={`block text-[12.5px] font-extrabold leading-snug ${unread ? 'text-ink' : 'text-ink-2'}`}>
-                        {L(n.titleEs, n.titleEn)}
+                        {B(n.title)}
                       </span>
-                      <span className="mt-px block truncate text-[11px] font-semibold text-muted">{L(n.subEs, n.subEn)}</span>
+                      <span className="mt-px block truncate text-[11px] font-semibold text-muted">{B(n.sub)}</span>
                     </span>
                     <span className="flex flex-none flex-col items-end gap-1">
-                      <span className="text-[10.5px] font-bold text-muted-2">{L(n.timeEs, n.timeEn)}</span>
+                      <span className="text-[10.5px] font-bold text-muted-2">{B(n.time)}</span>
                       {unread && <span className="h-2 w-2 rounded-full bg-primary" />}
                     </span>
                   </button>
