@@ -27,7 +27,7 @@ import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 const FEAT_EN: Record<string, string> = {};
 for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
-import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
+import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
 type RentMode = 'day' | 'hour';
@@ -357,7 +357,17 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     if (shopStock(catKey, item) === 0) { flash(L('Agotado', 'Sold out')); return; }
     const groups = groupsFor(catKey, item);
     const s: Record<string, number> = {};
-    groups.forEach((g) => g.type === 'single' && (s[g.id] = 0));
+    groups.forEach((g) => {
+      if (g.type !== 'single') return;
+      // default to the first value that keeps the running combo in stock (so we
+      // don't open on a sold-out variant); index 0 when not per-variant tracked.
+      let idx = 0;
+      if (item.variantStock) {
+        const found = g.choices.findIndex((_, i) => { const st = variantStockAt(item, groups, s, g.id, i); return st == null || st > 0; });
+        idx = found >= 0 ? found : 0;
+      }
+      s[g.id] = idx;
+    });
     setSingle(s);
     setMulti({});
     setQty(1);
@@ -367,6 +377,19 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   // Shop products track inventory; menu items don't. Returns units left, or null
   // (untracked → no gating).
   const shopStock = (catKey: string, it: MenuItem) => (catKey.startsWith('sh:') && typeof it.stock === 'number' ? it.stock : null);
+
+  // Per-variant stock (attrs.variantStock, keyed `setId:idx|…`). The key is built
+  // from the SINGLE option groups' selected indices — the same string the owner's
+  // editor writes. Returns units left for a selection, or null when this product
+  // doesn't track per-variant (fall back to product-level shopStock). `override`
+  // swaps one axis' value so we can ask "what if they pick this instead?".
+  const variantKeyWith = (groups: OptionGroup[], sel: Record<string, number>, overrideId?: string, overrideIdx?: number) =>
+    groups.filter((g) => g.type === 'single').map((g) => `${g.id}:${g.id === overrideId ? overrideIdx : (sel[g.id] ?? 0)}`).join('|');
+  const variantStockAt = (it: MenuItem, groups: OptionGroup[], sel: Record<string, number>, overrideId?: string, overrideIdx?: number): number | null => {
+    if (!it.variantStock) return null;
+    const k = variantKeyWith(groups, sel, overrideId, overrideIdx);
+    return k in it.variantStock ? it.variantStock[k] : null;
+  };
 
   const addSimple = (catKey: string, item: MenuItem) => {
     const key = `${catKey}:${B(item.n)}`;
@@ -394,8 +417,15 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     );
     const unit = itemModal.item.price + add;
     const key = `${itemModal.catKey}:${B(itemModal.item.n)}|${chosen.join(',')}`;
-    const stk = shopStock(itemModal.catKey, itemModal.item);
-    if (stk != null && (cart[key]?.qty ?? 0) + qty > stk) { flash(L('No hay suficientes unidades', 'Not enough units in stock')); return; }
+    const inCart = cart[key]?.qty ?? 0;
+    const vstk = variantStockAt(itemModal.item, groups, single);
+    if (vstk != null) {
+      if (vstk <= 0) { flash(L('Esa variante está agotada', 'That variant is sold out')); return; }
+      if (inCart + qty > vstk) { flash(L('No hay suficientes unidades de esa variante', 'Not enough of that variant in stock')); return; }
+    } else {
+      const stk = shopStock(itemModal.catKey, itemModal.item);
+      if (stk != null && inCart + qty > stk) { flash(L('No hay suficientes unidades', 'Not enough units in stock')); return; }
+    }
     setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg } }));
     setItemModal(null);
   };
@@ -660,6 +690,15 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     return itemModal.item.price + add;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemModal, single, multi, realMenu]);
+  // clamp qty when the picked variant (or item) has fewer units than the current qty
+  useEffect(() => {
+    if (!itemModal) return;
+    const g = groupsFor(itemModal.catKey, itemModal.item);
+    const v = variantStockAt(itemModal.item, g, single);
+    const cap = v != null ? v : shopStock(itemModal.catKey, itemModal.item);
+    if (cap != null && cap > 0 && qty > cap) setQty(cap);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [single, itemModal]);
 
   const tabs: [TabKey, string][] = [
     ['overview', 'Overview'],
@@ -1610,7 +1649,13 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
       {/* item customization modal */}
       <Overlay open={!!itemModal} onClose={() => setItemModal(null)} width={440}>
-        {itemModal && (
+        {itemModal && (() => {
+          const mGroups = groupsFor(itemModal.catKey, itemModal.item);
+          const mVarStock = variantStockAt(itemModal.item, mGroups, single); // null = not per-variant
+          const mProdStock = shopStock(itemModal.catKey, itemModal.item);
+          const mMax = mVarStock != null ? mVarStock : mProdStock != null ? mProdStock : Infinity;
+          const mSoldOut = mMax <= 0;
+          return (
           <>
             <OverlayTitle title={L('Personaliza tu platillo', 'Customize your item')} onClose={() => setItemModal(null)} />
             <div className="flex items-center gap-3">
@@ -1624,7 +1669,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               </div>
               <span className="ml-auto text-[14px] font-extrabold text-ink">{money(itemModal.item.price)}</span>
             </div>
-            {groupsFor(itemModal.catKey, itemModal.item).map((g) => (
+            {mGroups.map((g) => (
               <div key={g.id} className="mt-4">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-[13px] font-extrabold text-ink">{B(g.name)}</span>
@@ -1633,43 +1678,53 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 <div className="flex flex-col gap-1.5">
                   {g.choices.map((ch, i) => {
                     const sel = g.type === 'single' ? single[g.id] === i : !!multi[`${g.id}:${i}`];
+                    // per-variant: this value is sold out if picking it (with the
+                    // other axes as chosen) yields a 0-stock variant.
+                    const vSoldOut = g.type === 'single' && variantStockAt(itemModal.item, mGroups, single, g.id, i) === 0;
                     return (
                       <button
                         key={ch.label[0]}
+                        disabled={vSoldOut}
                         onClick={() =>
                           g.type === 'single'
                             ? setSingle((m) => ({ ...m, [g.id]: i }))
                             : setMulti((m) => ({ ...m, [`${g.id}:${i}`]: !m[`${g.id}:${i}`] }))
                         }
-                        className="flex w-full cursor-pointer items-center gap-3 rounded-field border border-hair bg-white px-3 py-2.5 text-left"
+                        className={`flex w-full items-center gap-3 rounded-field border px-3 py-2.5 text-left ${vSoldOut ? 'cursor-not-allowed border-hair bg-lilac-2/50 opacity-60' : 'cursor-pointer border-hair bg-white'}`}
                       >
                         {g.type === 'multi' ? (
                           <span className={`flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] ${sel ? 'bg-primary text-white' : 'border-2 border-[#D9D5E6]'}`}>
                             {sel && <Check size={13} strokeWidth={3.4} />}
                           </span>
                         ) : (
-                          <span className={`h-[22px] w-[22px] flex-none rounded-full ${sel ? 'border-[7px] border-primary' : 'border-2 border-[#D9D5E6]'}`} />
+                          <span className={`h-[22px] w-[22px] flex-none rounded-full ${sel && !vSoldOut ? 'border-[7px] border-primary' : 'border-2 border-[#D9D5E6]'}`} />
                         )}
-                        <span className="flex-1 text-[13px] font-bold text-ink">{B(ch.label)}</span>
-                        {ch.price > 0 && <span className="text-[12px] font-extrabold text-muted">+{money(ch.price)}</span>}
+                        <span className={`flex-1 text-[13px] font-bold ${vSoldOut ? 'text-muted-2 line-through' : 'text-ink'}`}>{B(ch.label)}</span>
+                        {vSoldOut ? <span className="text-[10.5px] font-extrabold text-pink-dark">{L('Agotado', 'Sold out')}</span>
+                          : ch.price > 0 ? <span className="text-[12px] font-extrabold text-muted">+{money(ch.price)}</span> : null}
                       </button>
                     );
                   })}
                 </div>
               </div>
             ))}
+            {/* per-variant stock hint for the current selection */}
+            {mVarStock != null && mVarStock > 0 && mVarStock <= 5 && (
+              <div className="mt-3 text-[11.5px] font-bold text-amber-ink">{L(`Solo ${mVarStock} disponibles`, `Only ${mVarStock} left`)}</div>
+            )}
             <div className="mt-5 flex items-center gap-3">
               <div className="flex flex-none items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
                 <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
                 <span className="w-4 text-center text-[14px] font-extrabold">{qty}</span>
-                <button onClick={() => setQty(qty + 1)} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">+</button>
+                <button onClick={() => setQty(Math.min(mMax, qty + 1))} disabled={qty >= mMax} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink disabled:opacity-40">+</button>
               </div>
-              <PrimaryBtn className="mt-0" onClick={addFromModal}>
-                {L('Agregar', 'Add')} {qty} · {money(modalUnit * qty)}
+              <PrimaryBtn className="mt-0" disabled={mSoldOut} onClick={addFromModal}>
+                {mSoldOut ? L('Agotado', 'Sold out') : `${L('Agregar', 'Add')} ${qty} · ${money(modalUnit * qty)}`}
               </PrimaryBtn>
             </div>
           </>
-        )}
+          );
+        })()}
       </Overlay>
 
       {/* cart sheet / checkout */}

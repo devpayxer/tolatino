@@ -35,7 +35,7 @@ import { uploadImage } from '@/lib/image';
 import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 import {
-  defaultProductConfig, demoProductConfig, normalizeProductConfig, variantCount,
+  defaultProductConfig, demoProductConfig, normalizeProductConfig, variantCount, variantCombos,
   type Collection, type Discount, type OptionSet, type ProductCategory, type ProductConfig,
 } from '@/lib/productConfig';
 import {
@@ -53,9 +53,10 @@ type Prod = {
   sku: string; stock: number; reorder: number;
   options: string[]; fulfill: string[]; tax: string;
   badges: string[]; sales: string; imageUrl?: string; extra?: Record<string, unknown>;
+  variantStock?: Record<string, number>; // per-variant units, keyed `setId:idx|…`
 };
 
-const KNOWN_ATTRS = new Set(['en', 'sku', 'stock', 'reorder', 'compareAt', 'options', 'fulfill', 'tax', 'badges', 'sales']);
+const KNOWN_ATTRS = new Set(['en', 'sku', 'stock', 'reorder', 'compareAt', 'options', 'fulfill', 'tax', 'badges', 'sales', 'variantStock']);
 function rowToProd(r: BizItemRow, idx: number): Prod {
   const a = (r.attrs ?? {}) as Record<string, unknown>;
   const extra: Record<string, unknown> = {};
@@ -78,6 +79,9 @@ function rowToProd(r: BizItemRow, idx: number): Prod {
     badges: (a.badges as string[]) ?? [],
     sales: String(a.sales ?? '$0'),
     imageUrl: r.image_url ?? undefined,
+    variantStock: a.variantStock && typeof a.variantStock === 'object' && !Array.isArray(a.variantStock)
+      ? Object.fromEntries(Object.entries(a.variantStock as Record<string, unknown>).map(([k, v]) => [k, Number(v)]))
+      : undefined,
     extra,
   };
 }
@@ -86,6 +90,7 @@ const prodAttrs = (p: Prod): Record<string, unknown> => ({
   en: p.descEn, sku: p.sku, stock: p.stock, reorder: p.reorder,
   compareAt: p.compareAt ?? null, options: p.options, fulfill: p.fulfill, tax: p.tax,
   badges: p.badges, sales: p.sales,
+  variantStock: p.variantStock && Object.keys(p.variantStock).length ? p.variantStock : null,
 });
 function prodToRow(p: Prod, businessId: string, sort: number): NewBizItem {
   return {
@@ -286,18 +291,30 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       name: p.name, descEs: p.descEs, descEn: p.descEn, cat: p.cat, price: String(p.price),
       compareAt: p.compareAt != null ? String(p.compareAt) : '', sku: p.sku, stock: String(p.stock),
       reorder: String(p.reorder), options: [...p.options], fulfill: [...p.fulfill], tax: p.tax,
-      badges: [...p.badges], photoUrl: p.imageUrl ?? '',
+      badges: [...p.badges], photoUrl: p.imageUrl ?? '', variantStock: p.variantStock ? { ...p.variantStock } : {},
     });
     setWizStep(0); setWizMax(wizSteps.length - 1); setView('wizard');
   };
-  const draftFields = () => ({
-    name: draft.name.trim() || L('Nuevo producto', 'New product'), cat: draft.cat,
-    price: Number(draft.price) || 0, compareAt: draft.compareAt ? Number(draft.compareAt) || undefined : undefined,
-    descEs: draft.descEs || draft.descEn, descEn: draft.descEn || draft.descEs,
-    sku: draft.sku, stock: Number(draft.stock) || 0, reorder: Number(draft.reorder) || 0,
-    options: draft.options, fulfill: draft.fulfill, tax: draft.tax, badges: draft.badges,
-    imageUrl: draft.photoUrl || undefined,
-  });
+  const draftFields = () => {
+    // per-variant products: keep only stock for CURRENT combos, and use their sum as
+    // the product-level stock (so catalog pills + product-level gating stay correct).
+    const combos = variantCombos(draft.options, cfg.optionSets);
+    const hasVariants = combos.length > 0;
+    const variantStock = hasVariants
+      ? Object.fromEntries(combos.map((c) => [c.key, Math.max(0, Number(draft.variantStock[c.key]) || 0)]))
+      : undefined;
+    const stock = hasVariants
+      ? Object.values(variantStock!).reduce((a, b) => a + b, 0)
+      : Number(draft.stock) || 0;
+    return {
+      name: draft.name.trim() || L('Nuevo producto', 'New product'), cat: draft.cat,
+      price: Number(draft.price) || 0, compareAt: draft.compareAt ? Number(draft.compareAt) || undefined : undefined,
+      descEs: draft.descEs || draft.descEn, descEn: draft.descEn || draft.descEs,
+      sku: draft.sku, stock, reorder: Number(draft.reorder) || 0,
+      options: draft.options, fulfill: draft.fulfill, tax: draft.tax, badges: draft.badges,
+      imageUrl: draft.photoUrl || undefined, variantStock,
+    };
+  };
   const addFromDraft = () => { const p: Prod = { id: nextId(), sales: '$0', ...draftFields() }; setProducts((l) => [p, ...l]); persistNew(p); clearDraft(draftKey); };
   const saveFromDraft = () => {
     if (editingId == null) return;
@@ -506,10 +523,39 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
 
               {wizStep === 3 && (
                 <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-4 sm:flex-row">
-                    <div className="flex-1"><div className={fieldLabel}>{L('Cantidad en stock', 'Stock qty')}</div><input value={draft.stock} onChange={(e) => upD({ stock: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="0" className={inputCls} /></div>
-                    <div className="flex-1"><div className={fieldLabel}>{L('Reordenar en', 'Reorder at')}</div><input value={draft.reorder} onChange={(e) => upD({ reorder: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="10" className={inputCls} /></div>
-                  </div>
+                  {(() => {
+                    const combos = variantCombos(draft.options, cfg.optionSets);
+                    if (combos.length === 0) return (
+                      <div className="flex flex-col gap-4 sm:flex-row">
+                        <div className="flex-1"><div className={fieldLabel}>{L('Cantidad en stock', 'Stock qty')}</div><input value={draft.stock} onChange={(e) => upD({ stock: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="0" className={inputCls} /></div>
+                        <div className="flex-1"><div className={fieldLabel}>{L('Reordenar en', 'Reorder at')}</div><input value={draft.reorder} onChange={(e) => upD({ reorder: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="10" className={inputCls} /></div>
+                      </div>
+                    );
+                    // per-variant stock grid (product has one or more variant axes)
+                    const total = combos.reduce((n, c) => n + (Number(draft.variantStock[c.key]) || 0), 0);
+                    return (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div className={fieldLabel}>{L('Stock por variante', 'Stock per variant')}</div>
+                          <span className="text-[11px] font-extrabold text-primary-dark">{total} {L('en total', 'total')}</span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {combos.map((c) => (
+                            <div key={c.key} className="flex items-center gap-3 rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-3 py-2">
+                              <span className="min-w-0 flex-1 truncate text-[12.5px] font-extrabold text-ink">{L(c.labelEs, c.labelEn)}</span>
+                              <input
+                                value={draft.variantStock[c.key] != null ? String(draft.variantStock[c.key]) : ''}
+                                onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); upD({ variantStock: { ...draft.variantStock, [c.key]: v === '' ? 0 : Number(v) } }); }}
+                                inputMode="numeric" placeholder="0"
+                                className="w-20 flex-none rounded-field border-[1.5px] border-lilac-line bg-app px-3 py-2 text-center text-[13px] font-extrabold text-ink outline-none focus:border-primary"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex-1"><div className={fieldLabel}>{L('Reordenar en', 'Reorder at')}</div><input value={draft.reorder} onChange={(e) => upD({ reorder: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="10" className={inputCls} /></div>
+                      </div>
+                    );
+                  })()}
                   <div>
                     <div className={fieldLabel}>{L('Entrega', 'Fulfillment')} <span className="font-semibold text-muted">· {L('elige una o varias', 'pick one or more')}</span></div>
                     <div className="flex flex-col gap-2">
@@ -886,6 +932,6 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
 type Draft = {
   name: string; descEs: string; descEn: string; cat: string; price: string; compareAt: string;
   sku: string; stock: string; reorder: string; options: string[]; fulfill: string[]; tax: string;
-  badges: string[]; photoUrl: string;
+  badges: string[]; photoUrl: string; variantStock: Record<string, number>;
 };
-const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', compareAt: '', sku: '', stock: '', reorder: '', options: [], fulfill: ['ship'], tax: 'goods', badges: [], photoUrl: '' });
+const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', compareAt: '', sku: '', stock: '', reorder: '', options: [], fulfill: ['ship'], tax: 'goods', badges: [], photoUrl: '', variantStock: {} });

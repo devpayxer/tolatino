@@ -433,6 +433,22 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   Verified: mocked service (cap 2) + a full-slot load → 5 "Lleno" disabled slots,
   first open slot auto-selected, 0 pageerrors / 0 overflow at 392px; consumer audit
   0/20. Deferred: staff/resource-aware capacity (multiple providers per slot).
+- [x] **Per-variant / SKU stock (2026-07-07).** A product with a size/color axis had
+  ONE stock number for all variants — now each sellable variant (cartesian over the
+  product's SINGLE option sets) carries its own count. **No migration** (stored in
+  `business_items.attrs.variantStock`, keyed `setId:idx|…` — the SAME key the consumer
+  builds from its selected options, via the shared `variantCombos` in productConfig).
+  Dashboard (Products wizard → Inventario): when a product has ≥1 variant axis, the
+  single stock field is replaced by a **per-variant stock grid** (each combo → a qty
+  input), and the product-level `stock` becomes the sum (so catalog pills + product
+  gating stay correct). Consumer (item sheet): a variant value that would make the
+  selection out of stock shows "Agotado" + is disabled + struck through; the sheet
+  opens on the first in-stock variant; qty is capped at the picked variant's stock;
+  "Solo N disponibles" hint; Add blocks/greys when the variant is sold out. Falls
+  back to product-level stock when a product isn't per-variant tracked. Verified:
+  mocked shop (Talla S/M/L, M=0) → M disabled+"Agotado", S auto-selected, 0 overflow;
+  dashboard audit + consumer audit green; tsc + build. Deferred: per-variant SKU codes
+  + price overrides; low-stock alerts per variant; hide-out-of-stock automation.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

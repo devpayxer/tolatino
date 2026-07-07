@@ -263,6 +263,9 @@ export async function fetchBusinessProducts(slug: string): Promise<PublicShop | 
       bg: tile,
       img: r.image_url != null ? String(r.image_url) : undefined,
       stock: a.stock != null ? Number(a.stock) : undefined,
+      variantStock: a.variantStock && typeof a.variantStock === 'object' && !Array.isArray(a.variantStock)
+        ? Object.fromEntries(Object.entries(a.variantStock as Record<string, unknown>).map(([k, v]) => [k, Number(v)]))
+        : undefined,
     };
     // per-item option groups from the business's reusable option sets
     const optIds = Array.isArray(a.options) ? (a.options as string[]) : [];

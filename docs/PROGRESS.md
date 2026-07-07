@@ -211,6 +211,12 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   when all its slots are full. Slot↔booking matched by epoch(ms) (timestamptz
   round-trip). Fixes the old over-blocking where any capMax bookings marked the
   whole day full.
+- **Per-variant / SKU stock** (no migration): each sellable variant (cartesian over
+  a product's single option sets) carries its own count in
+  `business_items.attrs.variantStock` (shared `variantCombos` key in productConfig).
+  Dashboard Products wizard shows a per-variant stock grid; the consumer item sheet
+  marks out-of-stock variant values "Agotado"/disabled, opens on the first in-stock
+  one, caps qty, and shows "Solo N disponibles". Falls back to product-level stock.
 - **Customer self-service cancel** on Mi cuenta (early orders/bookings/rentals).
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM

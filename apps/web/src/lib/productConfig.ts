@@ -158,3 +158,26 @@ export function variantCount(setIds: string[], sets: OptionSet[]): number {
   if (!chosen.length) return 0;
   return chosen.reduce((n, s) => n * Math.max(1, s.values.length), 1);
 }
+
+// One sellable variant: a stable key + a bilingual label + the per-axis selection.
+export type VariantCombo = { key: string; labelEs: string; labelEn: string };
+
+/**
+ * Every sellable variant (cartesian over the product's SINGLE option sets, in the
+ * given id order). The `key` is `setId:valueIndex|…` — the SAME string the consumer
+ * builds from its selected options, so per-variant stock (attrs.variantStock[key])
+ * lines up on both sides. Empty when the product has no single option set.
+ */
+export function variantCombos(setIds: string[], sets: OptionSet[]): VariantCombo[] {
+  const chosen = setIds.map((id) => sets.find((s) => s.id === id)).filter((s): s is OptionSet => !!s && s.single && s.values.length > 0);
+  if (!chosen.length) return [];
+  let acc: { parts: string[]; es: string[]; en: string[] }[] = [{ parts: [], es: [], en: [] }];
+  for (const s of chosen) {
+    const next: typeof acc = [];
+    s.values.forEach((v, i) => {
+      for (const c of acc) next.push({ parts: [...c.parts, `${s.id}:${i}`], es: [...c.es, v.es], en: [...c.en, v.en ?? v.es] });
+    });
+    acc = next;
+  }
+  return acc.map((c) => ({ key: c.parts.join('|'), labelEs: c.es.join(' · '), labelEn: c.en.join(' · ') }));
+}
