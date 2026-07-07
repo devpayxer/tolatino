@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, Globe, Heart, MapPin, Menu, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, Store, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Globe, Heart, MapPin, Menu, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, Store, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -28,7 +28,17 @@ for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FE
 import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
-type RentPeriod = 'hour' | 'day' | 'week';
+type RentMode = 'day' | 'hour';
+// Rental-calendar date helpers (local-day math on yyyy-mm-dd strings).
+const isoDay = (y: number, m: number, d: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+const parseISO = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const spanDaysInc = (a: string, b: string) => Math.round((parseISO(b).getTime() - parseISO(a).getTime()) / 86400000) + 1;
+const MO_LONG_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const MO_LONG_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MO_SH_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MO_SH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const AVAIL_EN: Record<string, string> = { 'Entre semana': 'Weekdays', 'Fines de semana': 'Weekends', '48h aviso': '48h notice', 'Siempre': 'Always' };
+const WD_MON1: [string, string][] = [['L', 'M'], ['M', 'T'], ['X', 'W'], ['J', 'T'], ['V', 'F'], ['S', 'S'], ['D', 'S']];
 
 type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string };
 
@@ -132,7 +142,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     return () => { cancelled = true; };
   }, [b.slug]);
   const rentalItems: PubRental[] = realRentals?.items
-    ?? RENTAL.map((r, i) => ({ id: `fx${i}`, n: r.n, d: r.d, tile: r.tile, hour: r.hour, day: r.day, week: r.week, dep: r.dep, addons: [], catKey: '_', catName: ['Renta', 'Rentals'] as Bi }));
+    ?? RENTAL.map((r, i) => ({ id: `fx${i}`, n: r.n, d: r.d, tile: r.tile, hour: r.hour, day: r.day, week: r.week, dep: r.dep, addons: [], avail: '', catKey: '_', catName: ['Renta', 'Rentals'] as Bi }));
   const rentDisplayOnly = realRentals != null && !realRentals.renting;
 
   // Option groups for an item: per-item groups on a real menu / real shop (`sh:`
@@ -183,9 +193,11 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [svcAddOns, setSvcAddOns] = useState<Record<string, boolean>>({});
   const [svcDone, setSvcDone] = useState(false);
   const [rentIdx, setRentIdx] = useState<number | null>(null);
-  const [rentPeriod, setRentPeriod] = useState<RentPeriod>('day');
-  const [rentQty, setRentQty] = useState(1);
-  const [rentDate, setRentDate] = useState(0);
+  const [rentMode, setRentMode] = useState<RentMode>('day');
+  const [rentStart, setRentStart] = useState<string | null>(null); // yyyy-mm-dd
+  const [rentEnd, setRentEnd] = useState<string | null>(null);
+  const [rentHours, setRentHours] = useState(2);
+  const [rentCal, setRentCal] = useState<{ y: number; m: number }>(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [rentDone, setRentDone] = useState(false);
   const [evIdx, setEvIdx] = useState<number | null>(null);
   const [evGoing, setEvGoing] = useState<Record<number, boolean>>({});
@@ -349,22 +361,40 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     if (!error) flash(svcSel.bookable ? L('Reserva enviada · míralo en Mi cuenta', 'Booking sent · see it in My account') : L('Solicitud enviada · míralo en Mi cuenta', 'Request sent · see it in My account'));
   };
 
-  // Rental: rate per hour/day/week × qty, plus a refundable deposit. Start = the
-  // picked SVC_DATES day at 9am; end derived from period × qty.
-  const rentRate = (it: PubRental, p: RentPeriod) =>
-    p === 'hour' ? it.hour ?? it.day : p === 'week' ? it.week : it.day;
-  const rentStartISO = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + rentDate);
-    d.setHours(9, 0, 0, 0);
-    return d.toISOString();
+  // Rental: the customer picks a start day (or a start→end range) on a real
+  // calendar, gated by the item's availability config. Fee = day-rate × days
+  // (weekly rate auto-applied for 7+ day spans) or hour-rate × hours, plus a
+  // refundable deposit.
+  const rentSpan = () => (rentStart ? (rentMode === 'hour' ? 1 : rentEnd ? spanDaysInc(rentStart, rentEnd) : 1) : 0);
+  const rentQtyVal = () => (rentMode === 'hour' ? rentHours : rentSpan());
+  const rentFee = (it: PubRental) => {
+    if (rentMode === 'hour') return (it.hour ?? it.day) * rentHours;
+    const n = rentSpan();
+    if (it.week > 0 && n >= 7) { const w = Math.floor(n / 7), r = n % 7; return w * it.week + r * it.day; }
+    return n * it.day;
   };
+  const rentStartISO = () => { const d = rentStart ? parseISO(rentStart) : new Date(); d.setHours(9, 0, 0, 0); return d.toISOString(); };
   const rentEndISO = () => {
-    const d = new Date(rentStartISO());
-    if (rentPeriod === 'hour') d.setHours(d.getHours() + rentQty);
-    else if (rentPeriod === 'week') d.setDate(d.getDate() + rentQty * 7);
-    else d.setDate(d.getDate() + rentQty);
-    return d.toISOString();
+    if (rentMode === 'hour') { const d = rentStart ? parseISO(rentStart) : new Date(); d.setHours(9 + rentHours, 0, 0, 0); return d.toISOString(); }
+    const base = rentEnd ?? rentStart;
+    const d = base ? parseISO(base) : new Date(); d.setHours(18, 0, 0, 0); return d.toISOString();
+  };
+  // Is a calendar day selectable, per the item's availability rule + not past?
+  const rentDayEnabled = (rule: string, dt: Date) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (dt < today) return false;
+    if (rule === '48h aviso') { const min = new Date(today); min.setDate(min.getDate() + 2); if (dt < min) return false; }
+    const dow = dt.getDay();
+    if (rule === 'Entre semana' && (dow === 0 || dow === 6)) return false;
+    if (rule === 'Fines de semana' && dow !== 0 && dow !== 6) return false;
+    return true;
+  };
+  // Tap a day: single-select (hour) or start→end range (day).
+  const rentPick = (dISO: string) => {
+    if (rentMode === 'hour') { setRentStart(dISO); setRentEnd(null); return; }
+    if (!rentStart || rentEnd || dISO < rentStart) { setRentStart(dISO); setRentEnd(null); return; }
+    if (dISO === rentStart) { setRentEnd(null); return; }
+    setRentEnd(dISO);
   };
   // Real start-date chips (today + next 4 days). Replaces the stale SVC_DATES
   // fixture so "Hoy" is actually today; rentDate/svcDate index into this. Computed
@@ -386,11 +416,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const confirmRental = async () => {
     if (rentIdx === null) return;
-    if (!user) { router.push('/entrar'); return; }
     const it = rentalItems[rentIdx];
-    const fee = rentRate(it, rentPeriod) * rentQty;
+    if (!rentStart) { flash(L('Elige la fecha de renta', 'Pick a rental date')); return; }
+    if (!user) { router.push('/entrar'); return; }
+    const fee = rentFee(it);
     setRentDone(true); // optimistic success screen
-    const { error } = await act.rent(b.slug, B(it.n), rentStartISO(), rentEndISO(), rentQty, fee + it.dep, it.dep);
+    const { error } = await act.rent(b.slug, B(it.n), rentStartISO(), rentEndISO(), rentQtyVal(), fee + it.dep, it.dep);
     if (!error) flash(L('Renta solicitada · míralo en Mi cuenta', 'Rental requested · see it in My account'));
   };
 
@@ -1099,7 +1130,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               </div>
               {!rentDisplayOnly && (
                 <button
-                  onClick={() => { setRentIdx(i); setRentPeriod('day'); setRentQty(1); setRentDate(0); setRentDone(false); }}
+                  onClick={() => { setRentIdx(i); setRentMode('day'); setRentStart(null); setRentEnd(null); setRentHours(2); const d = new Date(); setRentCal({ y: d.getFullYear(), m: d.getMonth() }); setRentDone(false); }}
                   className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
                 >
                   {L('Rentar', 'Rent')}
@@ -1531,42 +1562,79 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       <Overlay open={rentIdx !== null} onClose={() => setRentIdx(null)} width={440}>
         {rentIdx !== null && rentalItems[rentIdx] && !rentDone && (() => {
           const it = rentalItems[rentIdx];
-          const periods: RentPeriod[] = it.hour != null ? ['hour', 'day', 'week'] : ['day', 'week'];
-          const pLabel = (p: RentPeriod) => ({ hour: L('Hora', 'Hour'), day: L('Día', 'Day'), week: L('Semana', 'Week') }[p]);
-          const fee = rentRate(it, rentPeriod) * rentQty;
+          const rule = it.avail;
+          const first = new Date(rentCal.y, rentCal.m, 1);
+          const lead = (first.getDay() + 6) % 7; // Monday-first
+          const dim = new Date(rentCal.y, rentCal.m + 1, 0).getDate();
+          const totalCells = Math.ceil((lead + dim) / 7) * 7;
+          const now = new Date();
+          const prevDisabled = rentCal.y < now.getFullYear() || (rentCal.y === now.getFullYear() && rentCal.m <= now.getMonth());
+          const span = rentSpan();
+          const fee = rentFee(it);
+          const shortD = (isoStr: string) => { const dt = parseISO(isoStr); return L(`${MO_SH_ES[dt.getMonth()]} ${dt.getDate()}`, `${MO_SH_EN[dt.getMonth()]} ${dt.getDate()}`); };
+          const shiftMonth = (dir: number) => setRentCal((c) => { const d = new Date(c.y, c.m + dir, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
+          const dayLbl = rentMode === 'hour' ? `${rentHours} ${rentHours === 1 ? L('hora', 'hour') : L('horas', 'hours')}` : `${span} ${span === 1 ? L('día', 'day') : L('días', 'days')}`;
           return (
             <>
               <OverlayTitle title={B(it.n)} onClose={() => setRentIdx(null)} />
               <div className="text-[12.5px] font-semibold text-muted">{B(it.d)}</div>
 
-              <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Periodo', 'Period')}</div>
-              <div className="flex gap-1.5">
-                {periods.map((p) => (
-                  <button key={p} onClick={() => setRentPeriod(p)} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[12.5px] font-extrabold ${rentPeriod === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
-                    {pLabel(p)}
-                  </button>
-                ))}
+              {/* by-day vs by-hour (only when the item has an hourly rate) */}
+              {it.hour != null && (
+                <div className="mt-4 flex gap-1.5">
+                  {([['day', L('Por día', 'By day')], ['hour', L('Por hora', 'By hour')]] as [RentMode, string][]).map(([m, lab]) => (
+                    <button key={m} onClick={() => { setRentMode(m); setRentEnd(null); }} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[12.5px] font-extrabold ${rentMode === m ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>{lab}</button>
+                  ))}
+                </div>
+              )}
+
+              {/* calendar */}
+              <div className="mb-2 mt-4 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-[13px] font-extrabold text-ink">{rentMode === 'hour' ? L('Elige el día', 'Pick the day') : L('Elige las fechas', 'Pick the dates')}</div>
+                  {rule && rule !== 'Siempre' && <div className="mt-0.5 text-[10.5px] font-semibold text-muted-2">{L('Disponible', 'Available')}: {L(rule, AVAIL_EN[rule] ?? rule)}</div>}
+                </div>
+                <div className="flex flex-none items-center gap-1">
+                  <button onClick={() => shiftMonth(-1)} disabled={prevDisabled} aria-label={L('Mes anterior', 'Previous month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={16} strokeWidth={2.4} /></button>
+                  <span className="w-[104px] text-center text-[12px] font-extrabold text-ink">{L(MO_LONG_ES[rentCal.m], MO_LONG_EN[rentCal.m])} {rentCal.y}</span>
+                  <button onClick={() => shiftMonth(1)} aria-label={L('Mes siguiente', 'Next month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"><ChevronRight size={16} strokeWidth={2.4} /></button>
+                </div>
+              </div>
+              <div className="mb-1.5 grid grid-cols-7 gap-1">{WD_MON1.map((w, i) => <span key={i} className="text-center text-[10px] font-extrabold text-muted-faint">{L(w[0], w[1])}</span>)}</div>
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: totalCells }, (_, i) => {
+                  const dnum = i - lead + 1;
+                  if (dnum < 1 || dnum > dim) return <span key={i} />;
+                  const dISO = isoDay(rentCal.y, rentCal.m, dnum);
+                  const enabled = rentDayEnabled(rule, new Date(rentCal.y, rentCal.m, dnum));
+                  const isEnd = dISO === rentStart || dISO === rentEnd;
+                  const inRange = !!rentStart && !!rentEnd && dISO > rentStart && dISO < rentEnd;
+                  return (
+                    <button key={i} disabled={!enabled} onClick={() => rentPick(dISO)}
+                      className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-faint'}`}>{dnum}</button>
+                  );
+                })}
               </div>
 
-              <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Cantidad', 'Quantity')}</div>
-              <div className="flex w-fit items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
-                <button onClick={() => setRentQty(Math.max(1, rentQty - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
-                <span className="w-6 text-center text-[14px] font-extrabold">{rentQty}</span>
-                <button onClick={() => setRentQty(rentQty + 1)} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">+</button>
+              {rentMode === 'hour' && (
+                <>
+                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Horas', 'Hours')}</div>
+                  <div className="flex w-fit items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
+                    <button onClick={() => setRentHours((q) => Math.max(1, q - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
+                    <span className="w-6 text-center text-[14px] font-extrabold">{rentHours}</span>
+                    <button onClick={() => setRentHours((q) => q + 1)} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">+</button>
+                  </div>
+                </>
+              )}
+
+              <div className="mt-3 rounded-field bg-app px-3.5 py-2.5 text-[12px] font-bold text-ink-2">
+                {rentStart
+                  ? <>{shortD(rentStart)}{rentMode === 'day' && rentEnd ? ` – ${shortD(rentEnd)}` : ''} · <span className="text-primary-dark">{dayLbl}</span>{rentMode === 'day' && rentStart && !rentEnd && <span className="ml-1 font-semibold text-muted">· {L('toca el día final para un rango', 'tap an end day for a range')}</span>}</>
+                  : <span className="font-semibold text-muted">{L('Toca un día para empezar', 'Tap a day to start')}</span>}
               </div>
 
-              <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Fecha de inicio', 'Start date')}</div>
-              <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                {dateChips.map((d, i) => (
-                  <button key={i} onClick={() => setRentDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${rentDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
-                    <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
-                    <span className={`block text-[10.5px] font-bold ${rentDate === i ? 'text-white/80' : 'text-muted'}`}>{B(d.sub)}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-4 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
-                <div className="flex justify-between"><span>{L('Renta', 'Rental')} · {rentQty} × {pLabel(rentPeriod)}</span><span>{money(fee)}</span></div>
+              <div className="mt-3 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
+                <div className="flex justify-between"><span>{L('Renta', 'Rental')}{rentStart ? ` · ${dayLbl}` : ''}</span><span>{money(fee)}</span></div>
                 <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable', 'Refundable deposit')}</span><span>{money(it.dep)}</span></div>
                 <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
                   <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(fee + it.dep)}</span>
@@ -1574,7 +1642,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               </div>
 
               <PrimaryBtn className="mt-4" onClick={confirmRental}>
-                {L('Solicitar renta', 'Request rental')}
+                {rentStart ? L('Solicitar renta', 'Request rental') : L('Elige la fecha', 'Pick a date')}
               </PrimaryBtn>
             </>
           );

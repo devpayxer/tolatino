@@ -335,7 +335,13 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     → `business_rentals_by_slug`, migration 0050 — RPC includes `price`), with the
     Rentar sheet; display-only mode (renting off) hides Rentar and shows a "llama
     o visita para rentar" note. The item card tap → detail keeps the RentOut/Return
-    ops (a superset of the Servicios tap→edit — Editar lives in the detail). Deferred:
+    ops (a superset of the Servicios tap→edit — Editar lives in the detail).
+  - The consumer **Rentar sheet is a real month calendar** (2026-07-07): navigate
+    months, pick a single day or a **start→end range** (day-count drives the fee;
+    weekly rate auto-applies for 7+ day spans), or **by-hour** when the item has an
+    hourly rate. Days are gated by the item's **availability config** (Siempre /
+    Entre semana / Fines de semana / 48h aviso) + never past — carried to the
+    consumer as `PubRental.avail`. Replaced the old hardcoded 5-chip date fixture. Deferred:
   - [ ] **Renting is not transactional.** "Aceptar rentas" surfaces the Rentar
     flow (requests insert via `business_rentals`) but there's no deposit charge /
     payment — wire real checkout + deposit holds with the payments phase (same
@@ -344,9 +350,11 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     Solicitudes is real (`business_rentals`); the calendar, deposit ledger and
     damage log are illustrative fixtures — back them with real
     rentals/deposits/damage rows when the rental transaction loop is built.
-  - [ ] **Per-unit availability is a count, not a schedule.** Stock/out is a
-    number; real per-unit calendar blocking (which unit is out which dates) needs
-    a bookings-style availability table when volume warrants.
+  - [ ] **Per-unit availability is a count + a coarse rule, not a live schedule.**
+    The Rentar calendar enforces the item's availability rule (weekday/weekend/48h)
+    + past, but NOT which specific dates are already booked (stock/out is just a
+    number). Real per-date blocking (which unit is out which dates, greying booked
+    days) needs a bookings-style availability table — add when volume warrants.
 - [x] **Wizard UX across Menú / Servicios / Productos (2026-07-06).** Three
   shared improvements to all three create/edit wizards:
   - **Draft recovery.** The CREATE draft autosaves to `localStorage`

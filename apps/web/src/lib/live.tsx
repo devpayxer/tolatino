@@ -294,6 +294,7 @@ export type PubRental = {
   dep: number; // refundable deposit
   img?: string; // real photo URL (live); tile stays as the fallback
   addons: PubRentalAddon[]; // resolved priced extras offered on this item
+  avail: string; // availability rule (es): 'Siempre'|'Entre semana'|'Fines de semana'|'48h aviso'
   catKey: string;
   catName: Bi;
 };
@@ -335,6 +336,7 @@ export async function fetchBusinessRentals(slug: string): Promise<PublicRentals 
       dep: Number(a.dep ?? 0),
       img: r.image_url != null ? String(r.image_url) : undefined,
       addons: ids.map((id) => addonById.get(id)).filter((x): x is PubRentalAddon => !!x),
+      avail: String(a.availEs ?? ''),
       catKey: cat?.id ?? '_rest',
       catName: cat ? [cat.es, cat.en] : ['Renta', 'Rentals'],
     };
