@@ -350,11 +350,19 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     Solicitudes is real (`business_rentals`); the calendar, deposit ledger and
     damage log are illustrative fixtures — back them with real
     rentals/deposits/damage rows when the rental transaction loop is built.
-  - [ ] **Per-unit availability is a count + a coarse rule, not a live schedule.**
-    The Rentar calendar enforces the item's availability rule (weekday/weekend/48h)
-    + past, but NOT which specific dates are already booked (stock/out is just a
-    number). Real per-date blocking (which unit is out which dates, greying booked
-    days) needs a bookings-style availability table — add when volume warrants.
+  - [x] **Availability truth — no double-booking (2026-07-07).** The Rentar
+    calendar now greys out (struck-through, non-selectable) days already booked to
+    capacity: each rental request stores `item_id` (migration **0051**) and the
+    consumer reads busy date-ranges via `rental_busy_by_item` (SECURITY DEFINER
+    RPC → dates + qty only, no customer data; `business_rentals` RLS stays locked).
+    A day is blocked when booked units ≥ stock. Plus the availability rule
+    (weekday/weekend/48h) + past. Remaining refinements (deferred):
+    - [ ] **Per-day-per-qty precision.** A day is blocked only when FULLY booked;
+      it doesn't yet check that a multi-unit request fits every day of a range
+      (e.g. 2 of 3 units taken, renter wants 2). Fine at low volume.
+    - [ ] **Bookings & products need the same treatment.** Reservas (slot/party
+      capacity) and Productos (per-variant stock) still lack real availability
+      enforcement — apply the same pattern next.
 - [x] **Wizard UX across Menú / Servicios / Productos (2026-07-06).** Three
   shared improvements to all three create/edit wizards:
   - **Draft recovery.** The CREATE draft autosaves to `localStorage`

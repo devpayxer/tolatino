@@ -35,7 +35,7 @@ type Ctx = {
   // slug → id, then insert with user_id = the customer.
   placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string) => Promise<{ error: string | null }>;
   book: (businessSlug: string, serviceName: string, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
-  rent: (businessSlug: string, itemName: string, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
+  rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
   buyTickets: (eventSlug: string, qty: number, total: number | null) => Promise<{ error: string | null }>;
   rsvp: (eventSlug: string, on: boolean) => Promise<{ error: string | null }>;
 };
@@ -111,11 +111,11 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     return { error: error ? error.message : null };
   }, [user, custName, refresh, idOf]);
 
-  const rent = useCallback<Ctx['rent']>(async (businessSlug, itemName, startAt, endAt, qty, total, deposit) => {
+  const rent = useCallback<Ctx['rent']>(async (businessSlug, itemName, itemId, startAt, endAt, qty, total, deposit) => {
     if (!supabase || !user) return { error: 'auth' };
     const bizId = await idOf('businesses', businessSlug);
     if (!bizId) return { error: 'business-not-found' };
-    const { error } = await supabase.from('business_rentals').insert({ business_id: bizId, user_id: user.id, customer_name: custName, item_name: itemName, start_at: startAt, end_at: endAt, qty, total, deposit, status: 'pending' });
+    const { error } = await supabase.from('business_rentals').insert({ business_id: bizId, user_id: user.id, customer_name: custName, item_name: itemName, item_id: itemId, start_at: startAt, end_at: endAt, qty, total, deposit, status: 'pending' });
     if (!error) refresh();
     return { error: error ? error.message : null };
   }, [user, custName, refresh, idOf]);

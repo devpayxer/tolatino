@@ -351,6 +351,18 @@ export async function fetchBusinessRentals(slug: string): Promise<PublicRentals 
   return { items, addons, renting: cfg.renting };
 }
 
+/** Busy date-ranges for a rental item (migration 0051) — the calendar greys out
+ *  days already booked to capacity. Exposes only dates + qty (SECURITY DEFINER
+ *  RPC, no customer data). Returns [] offline / pre-migration / on error. */
+export async function fetchRentalBusy(itemId: string): Promise<{ start: string; end: string; qty: number }[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('rental_busy_by_item', { in_item_id: itemId });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({
+    start: String(r.starts), end: String(r.ends ?? r.starts), qty: Number(r.qty ?? 1),
+  }));
+}
+
 /** Fetch a single business by its public slug (geo-independent). Returns a
  *  mapped Business or null (offline / not found / unknown category). */
 export async function fetchBusinessBySlug(slug: string): Promise<Business | null> {

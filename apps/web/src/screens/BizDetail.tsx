@@ -14,7 +14,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
@@ -199,6 +199,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [rentHours, setRentHours] = useState(2);
   const [rentUnits, setRentUnits] = useState(1); // how many units to rent (≤ stock)
   const [rentAddons, setRentAddons] = useState<string[]>([]); // selected add-on ids
+  const [rentBusy, setRentBusy] = useState<Record<string, number>>({}); // yyyy-mm-dd → units already booked
   const [rentCal, setRentCal] = useState<{ y: number; m: number }>(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [rentDone, setRentDone] = useState(false);
   const [evIdx, setEvIdx] = useState<number | null>(null);
@@ -402,6 +403,31 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     if (dISO === rentStart) { setRentEnd(null); return; }
     setRentEnd(dISO);
   };
+  // When the Rentar sheet opens for a real item, load its busy dates (migration
+  // 0051) so the calendar can grey out days already booked to capacity.
+  useEffect(() => {
+    if (rentIdx === null) return;
+    const it = rentalItems[rentIdx];
+    if (!it || it.id.startsWith('fx')) { setRentBusy({}); return; }
+    let cancelled = false;
+    setRentBusy({});
+    fetchRentalBusy(it.id).then((ranges) => {
+      if (cancelled) return;
+      const map: Record<string, number> = {};
+      for (const r of ranges) {
+        let d = parseISO(r.start);
+        const end = parseISO(r.end);
+        for (let guard = 0; d <= end && guard < 400; guard++) {
+          const k = isoDay(d.getFullYear(), d.getMonth(), d.getDate());
+          map[k] = (map[k] || 0) + r.qty;
+          d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+        }
+      }
+      setRentBusy(map);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rentIdx]);
   // Real start-date chips (today + next 4 days). Replaces the stale SVC_DATES
   // fixture so "Hoy" is actually today; rentDate/svcDate index into this. Computed
   // in the browser, so it reflects the user's real current date.
@@ -426,7 +452,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     if (!rentStart) { flash(L('Elige la fecha de renta', 'Pick a rental date')); return; }
     if (!user) { router.push('/entrar'); return; }
     setRentDone(true); // optimistic success screen
-    const { error } = await act.rent(b.slug, B(it.n), rentStartISO(), rentEndISO(), rentUnits, rentGrand(it), rentDepositTotal(it));
+    const itemId = it.id.startsWith('fx') ? null : it.id;
+    const { error } = await act.rent(b.slug, B(it.n), itemId, rentStartISO(), rentEndISO(), rentUnits, rentGrand(it), rentDepositTotal(it));
     if (!error) flash(L('Renta solicitada · míralo en Mi cuenta', 'Rental requested · see it in My account'));
   };
 
@@ -1613,15 +1640,19 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                   const dnum = i - lead + 1;
                   if (dnum < 1 || dnum > dim) return <span key={i} />;
                   const dISO = isoDay(rentCal.y, rentCal.m, dnum);
-                  const enabled = rentDayEnabled(rule, new Date(rentCal.y, rentCal.m, dnum));
+                  const booked = (rentBusy[dISO] ?? 0) >= maxUnits; // fully booked that day
+                  const enabled = rentDayEnabled(rule, new Date(rentCal.y, rentCal.m, dnum)) && !booked;
                   const isEnd = dISO === rentStart || dISO === rentEnd;
                   const inRange = !!rentStart && !!rentEnd && dISO > rentStart && dISO < rentEnd;
                   return (
                     <button key={i} disabled={!enabled} onClick={() => rentPick(dISO)}
-                      className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-faint'}`}>{dnum}</button>
+                      className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : booked ? 'cursor-not-allowed text-muted-faint line-through' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-faint'}`}>{dnum}</button>
                   );
                 })}
               </div>
+              {Object.keys(rentBusy).length > 0 && (
+                <div className="mt-1.5 text-[10.5px] font-semibold text-muted-2"><span className="line-through">00</span> = {L('días ya rentados', 'days already booked')}</div>
+              )}
 
               {rentMode === 'hour' && (
                 <>
