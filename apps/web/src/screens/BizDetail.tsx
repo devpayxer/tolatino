@@ -14,7 +14,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
@@ -38,6 +38,12 @@ const MO_LONG_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'Jul
 const MO_SH_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MO_SH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const AVAIL_EN: Record<string, string> = { 'Entre semana': 'Weekdays', 'Fines de semana': 'Weekends', '48h aviso': '48h notice', 'Siempre': 'Always' };
+// Max seats-per-session from a capacity range string ('8–16'→16, '20+'→unlimited).
+const capMaxOf = (cap: string): number => {
+  if (cap.includes('+')) return 9999;
+  const nums = (cap.match(/\d+/g) || []).map(Number);
+  return nums.length ? Math.max(...nums) : 0; // 0 = untracked (no gating)
+};
 const WD_MON1: [string, string][] = [['L', 'M'], ['M', 'T'], ['X', 'W'], ['J', 'T'], ['V', 'F'], ['S', 'S'], ['D', 'S']];
 
 type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string };
@@ -54,6 +60,8 @@ type SvcTarget = {
   bookable: boolean; // false → inquiry (no time slot, collects a lead)
   deposit: boolean;
   addons: PubSvc['addons'];
+  id: string | null; // real service item id (null → fixture; no capacity gating)
+  capMax: number; // seats per session (0 = untracked)
 };
 
 const initials = (name: string) =>
@@ -187,6 +195,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   // one modal serves both. `price` numeric → total math; `priceLabel` carries a
   // fixture's non-numeric price ("Desde $180"). bookable=false → inquiry (lead).
   const [svcSel, setSvcSel] = useState<SvcTarget | null>(null);
+  const [svcBusy, setSvcBusy] = useState<Record<string, number>>({}); // yyyy-mm-dd → seats already booked
   const [svcDate, setSvcDate] = useState(0);
   const [svcTime, setSvcTime] = useState(0);
   const [svcPersons, setSvcPersons] = useState(1);
@@ -344,13 +353,29 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     setSvcAddOns({});
     setSvcDone(false);
   };
+  // When a real bookable service opens, load its per-day seat load (migration
+  // 0052) so full sessions can't be over-booked.
+  useEffect(() => {
+    if (!svcSel || !svcSel.id || !svcSel.bookable || svcSel.capMax <= 0) { setSvcBusy({}); return; }
+    let cancelled = false;
+    setSvcBusy({});
+    fetchBookingLoad(svcSel.id).then((rows) => {
+      if (cancelled) return;
+      const map: Record<string, number> = {};
+      for (const r of rows) map[r.day] = (map[r.day] || 0) + r.seats;
+      setSvcBusy(map);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [svcSel?.id, svcSel?.bookable, svcSel?.capMax]);
   const pubToTarget = (s: PubSvc): SvcTarget => ({
     name: s.name, descEs: s.desc[0], descEn: s.desc[1], price: s.price, priceType: s.priceType,
     priceLabel: null, dur: s.dur, bookable: s.bookable, deposit: s.deposit, addons: s.addons,
+    id: s.id, capMax: capMaxOf(s.capacity),
   });
   const fixtureToTarget = (f: (typeof SERVICES)[number]): SvcTarget => ({
     name: B(f.n), descEs: f.d[0], descEn: f.d[1], price: null, priceType: 'cotiza',
-    priceLabel: f.price, dur: '', bookable: true, deposit: false, addons: [],
+    priceLabel: f.price, dur: '', bookable: true, deposit: false, addons: [], id: null, capMax: 0,
   });
   // Consumer price label for a real service card.
   const svcPriceLabel = (s: PubSvc): string =>
@@ -366,6 +391,11 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const confirmBooking = async () => {
     if (!svcSel) return;
+    // block a full session (capacity truth, migration 0052)
+    if (svcSel.bookable && svcSel.capMax > 0) {
+      const iso = dateChips[svcDate]?.iso;
+      if (iso && (svcBusy[iso] ?? 0) >= svcSel.capMax) { flash(L('Ese día está lleno — elige otro', 'That day is full — pick another')); return; }
+    }
     if (!user) { router.push('/entrar'); return; }
     setSvcDone(true); // keep the existing success screen (optimistic)
     const chosen = svcChosenAddons().map((a) => B(a.name));
@@ -373,7 +403,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     const total = svcTotal();
     const dep = svcSel.deposit && total > 0 ? total : null;
     const persons = svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : null;
-    const { error } = await act.book(b.slug, label, svcStartISO(), persons, dep);
+    const { error } = await act.book(b.slug, label, svcSel.id, svcStartISO(), persons, dep);
     if (!error) flash(svcSel.bookable ? L('Reserva enviada · míralo en Mi cuenta', 'Booking sent · see it in My account') : L('Solicitud enviada · míralo en Mi cuenta', 'Request sent · see it in My account'));
   };
 
@@ -444,7 +474,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   // Real start-date chips (today + next 4 days). Replaces the stale SVC_DATES
   // fixture so "Hoy" is actually today; rentDate/svcDate index into this. Computed
   // in the browser, so it reflects the user's real current date.
-  const dateChips = useMemo<{ lab: Bi; sub: Bi }[]>(() => {
+  const dateChips = useMemo<{ lab: Bi; sub: Bi; iso: string }[]>(() => {
     const wdEs = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const wdEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const moEs = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -455,7 +485,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       const dow = d.getDay(), day = d.getDate();
       const lab: Bi = i === 0 ? ['Hoy', 'Today'] : i === 1 ? ['Mañana', 'Tomorrow'] : [wdEs[dow], wdEn[dow]];
       const sub: Bi = [`${moEs[d.getMonth()]} ${day}`, `${moEn[d.getMonth()]} ${day}`];
-      return { lab, sub };
+      return { lab, sub, iso: isoDay(d.getFullYear(), d.getMonth(), day) };
     });
   }, []);
 
@@ -1537,12 +1567,21 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
               <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{svcSel.bookable ? L('Elige fecha', 'Pick a date') : L('Fecha preferida', 'Preferred date')}</div>
               <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                {dateChips.map((d, i) => (
-                  <button key={i} onClick={() => setSvcDate(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-center ${svcDate === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
-                    <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
-                    <span className={`block text-[10.5px] font-bold ${svcDate === i ? 'text-white/80' : 'text-muted'}`}>{B(d.sub)}</span>
-                  </button>
-                ))}
+                {dateChips.map((d, i) => {
+                  const cap = svcSel.bookable ? svcSel.capMax : 0;
+                  const booked = svcBusy[d.iso] ?? 0;
+                  const full = cap > 0 && booked >= cap;
+                  const left = cap > 0 && cap < 9999 ? cap - booked : null;
+                  const on = svcDate === i && !full;
+                  return (
+                    <button key={i} disabled={full} onClick={() => setSvcDate(i)} className={`flex-none rounded-btn px-3.5 py-2 text-center ${on ? 'bg-primary text-white' : full ? 'cursor-not-allowed bg-lilac-2 opacity-50' : 'cursor-pointer bg-lilac-2 text-ink-soft'}`}>
+                      <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
+                      <span className={`block text-[10.5px] font-bold ${on ? 'text-white/80' : 'text-muted'}`}>{B(d.sub)}</span>
+                      {full ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-pink-dark">{L('Lleno', 'Full')}</span>
+                        : left != null && left <= 3 ? <span className={`mt-0.5 block text-[8.5px] font-extrabold ${on ? 'text-white/80' : 'text-amber-ink'}`}>{left} {L('libres', 'left')}</span> : null}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* time slot only for bookable (appointment) services */}

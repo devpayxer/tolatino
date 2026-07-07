@@ -366,9 +366,15 @@ backing them with real Supabase tables/RPCs when each feature goes live.
       the cart is capped at available units (simple + variant items). Product-level
       stock only — per-VARIANT (SKU) stock is still deferred. `stock` defaults to 0
       so sellers must set it (add an "untracked inventory" opt-out later).
-    - [ ] **Reservas need session capacity.** A bookable service's session
-      capacity isn't enforced yet — apply the rental pattern (service_id on
-      business_bookings + a busy-load RPC) so a class/tasting can't be overbooked.
+    - [x] **Reservas: session capacity enforced (2026-07-07).** A bookable
+      service's per-session capacity (from the `capacity` range, e.g. '8–16'→16)
+      is now respected: each booking stores `service_id` (migration **0052**) and
+      the booking sheet reads per-day seat load via `booking_load_by_service`
+      (SECURITY DEFINER RPC → day + seats only, no PII). A full day shows "Lleno"
+      + is disabled; ≤3 remaining shows "N libres". party_size counts toward the
+      seat total. Deferred: real time-SLOT scheduling (the times are still fixture
+      slots — capacity is enforced per DAY, not per time-slot) and per-variant SKU
+      stock for products.
 - [x] **Wizard UX across Menú / Servicios / Productos (2026-07-06).** Three
   shared improvements to all three create/edit wizards:
   - **Draft recovery.** The CREATE draft autosaves to `localStorage`

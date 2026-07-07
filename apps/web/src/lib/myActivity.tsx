@@ -34,7 +34,7 @@ type Ctx = {
   // Consumer objects carry the public `slug`, not the DB uuid — creators resolve
   // slug → id, then insert with user_id = the customer.
   placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string) => Promise<{ error: string | null }>;
-  book: (businessSlug: string, serviceName: string, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
+  book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
   rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
   buyTickets: (eventSlug: string, qty: number, total: number | null) => Promise<{ error: string | null }>;
   rsvp: (eventSlug: string, on: boolean) => Promise<{ error: string | null }>;
@@ -102,11 +102,11 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     return { error: error ? error.message : null };
   }, [user, custName, refresh, idOf]);
 
-  const book = useCallback<Ctx['book']>(async (businessSlug, serviceName, startsAt, partySize, deposit) => {
+  const book = useCallback<Ctx['book']>(async (businessSlug, serviceName, serviceId, startsAt, partySize, deposit) => {
     if (!supabase || !user) return { error: 'auth' };
     const bizId = await idOf('businesses', businessSlug);
     if (!bizId) return { error: 'business-not-found' };
-    const { error } = await supabase.from('business_bookings').insert({ business_id: bizId, user_id: user.id, customer_name: custName, service_name: serviceName, starts_at: startsAt, party_size: partySize, deposit, status: 'pending' });
+    const { error } = await supabase.from('business_bookings').insert({ business_id: bizId, user_id: user.id, customer_name: custName, service_name: serviceName, service_id: serviceId, starts_at: startsAt, party_size: partySize, deposit, status: 'pending' });
     if (!error) refresh();
     return { error: error ? error.message : null };
   }, [user, custName, refresh, idOf]);

@@ -156,6 +156,7 @@ export type PubSvc = {
   addons: PubSvcAddon[]; // resolved add-ons offered on this service
   tile: string; // category striped tile (placeholder imagery)
   img?: string; // real photo URL (live); tile stays as the fallback
+  capacity: string; // seats-per-session range ('1' | '2–6' | '8–16' | '20+')
 };
 export type PubSvcCat = { key: string; name: Bi; items: PubSvc[] };
 /** The real public services for a listing: items grouped by the owner's service
@@ -196,6 +197,7 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
       addons: ids.map((id) => addonById.get(id)).filter((x): x is PubSvcAddon => !!x),
       tile,
       img: r.image_url != null ? String(r.image_url) : undefined,
+      capacity: String(a.capacity ?? ''),
     };
   };
 
@@ -218,6 +220,16 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
  *  per-item option groups (variant/option sets), featured collections (promo
  *  strip) and the selling mode (false = display-only → no cart). */
 export type PublicShop = { cats: MenuCat[]; groups: Record<string, OptionGroup[]>; collections: { es: string; en: string; tile: string }[]; selling: boolean };
+
+/** Per-day seat load for a bookable service (migration 0052) — the booking sheet
+ *  blocks dates whose session is full. Exposes only day + seats (SECURITY DEFINER
+ *  RPC, no customer data). Returns [] offline / pre-migration / on error. */
+export async function fetchBookingLoad(serviceId: string): Promise<{ day: string; seats: number }[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('booking_load_by_service', { in_service_id: serviceId });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({ day: String(r.day), seats: Number(r.seats ?? 0) }));
+}
 
 /** Fetch + map a business's real products by slug (migration 0048). Returns null
  *  when offline / no published products — BizDetail falls back to the fixtures. */
