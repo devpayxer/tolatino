@@ -375,6 +375,14 @@ backing them with real Supabase tables/RPCs when each feature goes live.
       seat total. Deferred: real time-SLOT scheduling (the times are still fixture
       slots — capacity is enforced per DAY, not per time-slot) and per-variant SKU
       stock for products.
+- [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
+  customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
+  **Cancelar** action (with confirm) on still-early items (order `new`; booking /
+  rental `pending`|`confirmed`) → `myActivity.cancel` updates status to `cancelled`
+  under RLS (own rows) + refreshes; the owner sees it in their dashboard and the
+  status-change notification fires (migration 0054). Verified: /cuenta renders 0
+  pageerrors / 0 overflow (the action itself is auth-gated → needs a live session).
+  Deferred: live realtime status on Mi cuenta; owner-notified-on-customer-cancel.
 - [x] **Server-side search — scalable FTS (2026-07-07).** Consumer text search was
   a client-side substring match over the ~50-business geo slice (misses matches
   beyond the radius, no ranking). Now real Postgres full-text search (migration

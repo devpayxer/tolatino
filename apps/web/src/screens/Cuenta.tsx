@@ -21,6 +21,7 @@ import { useFollows } from '@/lib/follows';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useLiveData } from '@/lib/live';
 import { useMyActivity } from '@/lib/myActivity';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Avatar, Card, YouAvatar } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
@@ -66,6 +67,7 @@ export function CuentaScreen() {
   const [bio, setBio] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [toast, setToast] = useState('');
+  const [cancelTarget, setCancelTarget] = useState<{ kind: 'order' | 'booking' | 'rental'; id: string } | null>(null);
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 1800);
@@ -94,6 +96,24 @@ export function CuentaScreen() {
     </div>
   );
   const evTitle = (e: { title_es: string; title_en: string } | null) => (e ? L(e.title_es, e.title_en) : L('Evento', 'Event'));
+
+  // Customer self-service cancel (only while the request is still early).
+  const cancellable = (kind: 'order' | 'booking' | 'rental', status: string) =>
+    kind === 'order' ? status === 'new' : status === 'pending' || status === 'confirmed';
+  const cancelBtn = (kind: 'order' | 'booking' | 'rental', id: string, status: string) =>
+    cancellable(kind, status) ? (
+      <button onClick={() => setCancelTarget({ kind, id })} className="mt-0.5 cursor-pointer rounded-full border-[1.5px] border-pink-bg bg-white px-2.5 py-1 text-[10px] font-extrabold text-pink-dark">
+        {L('Cancelar', 'Cancel')}
+      </button>
+    ) : null;
+  const doCancel = async () => {
+    if (!cancelTarget) return;
+    const t = cancelTarget;
+    setCancelTarget(null);
+    const { error } = await act.cancel(t.kind, t.id);
+    setToast(error ? L('No se pudo cancelar', "Couldn't cancel") : L('Cancelado', 'Cancelled'));
+    window.setTimeout(() => setToast(''), 1900);
+  };
 
   const openPerfil = () => {
     if (guest) return router.push('/entrar');
@@ -354,7 +374,7 @@ export function CuentaScreen() {
             <div className="flex flex-col gap-2.5">
               {act.orders.map((o) => txItem(o.id, o.businesses?.name ?? L('Negocio', 'Business'),
                 `${(o.items ?? []).map((i) => `${i.qty}× ${i.name}`).join(', ') || '—'} · ${dt(o.created_at)}`,
-                <>{o.total != null && <span className="text-[13px] font-extrabold text-ink">{money(o.total)}</span>}{pill(o.status)}</>))}
+                <>{o.total != null && <span className="text-[13px] font-extrabold text-ink">{money(o.total)}</span>}{pill(o.status)}{cancelBtn('order', o.id, o.status)}</>))}
             </div>
           )}
         </div>
@@ -368,7 +388,7 @@ export function CuentaScreen() {
             <div className="flex flex-col gap-2.5">
               {act.bookings.map((b) => txItem(b.id, b.businesses?.name ?? L('Negocio', 'Business'),
                 `${b.service_name ?? L('Servicio', 'Service')}${b.party_size ? ` · ${b.party_size} ${L('personas', 'people')}` : ''} · ${dt(b.starts_at)}`,
-                pill(b.status)))}
+                <>{pill(b.status)}{cancelBtn('booking', b.id, b.status)}</>))}
             </div>
           )}
         </div>
@@ -382,7 +402,7 @@ export function CuentaScreen() {
             <div className="flex flex-col gap-2.5">
               {act.rentals.map((r) => txItem(r.id, r.businesses?.name ?? L('Negocio', 'Business'),
                 `${r.qty}× ${r.item_name} · ${dt(r.start_at)}`,
-                <>{r.total != null && <span className="text-[13px] font-extrabold text-ink">{money(r.total)}</span>}{pill(r.status)}</>))}
+                <>{r.total != null && <span className="text-[13px] font-extrabold text-ink">{money(r.total)}</span>}{pill(r.status)}{cancelBtn('rental', r.id, r.status)}</>))}
             </div>
           )}
         </div>
@@ -425,6 +445,16 @@ export function CuentaScreen() {
       {toast && (
         <div className="fixed bottom-24 left-1/2 z-[70] -translate-x-1/2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">{toast}</div>
       )}
+
+      <ConfirmDialog
+        open={cancelTarget !== null}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={doCancel}
+        title={L('¿Cancelar esta solicitud?', 'Cancel this request?')}
+        message={L('Se marcará como cancelada en tu actividad y en el panel del negocio. No se puede deshacer.', 'It will be marked cancelled in your activity and on the business dashboard. This can’t be undone.')}
+        confirmLabel={L('Sí, cancelar', 'Yes, cancel')}
+        cancelLabel={L('No', 'No')}
+      />
     </div>
   );
 }

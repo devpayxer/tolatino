@@ -38,6 +38,8 @@ type Ctx = {
   rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
   buyTickets: (eventSlug: string, qty: number, total: number | null) => Promise<{ error: string | null }>;
   rsvp: (eventSlug: string, on: boolean) => Promise<{ error: string | null }>;
+  // Customer self-service: cancel one's own order/booking/rental (RLS: own rows).
+  cancel: (kind: 'order' | 'booking' | 'rental', id: string) => Promise<{ error: string | null }>;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -143,10 +145,18 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     return { error: error ? error.message : null };
   }, [user, refresh, idOf]);
 
+  const cancel = useCallback<Ctx['cancel']>(async (kind, id) => {
+    if (!supabase || !user) return { error: 'auth' };
+    const table = kind === 'order' ? 'business_orders' : kind === 'booking' ? 'business_bookings' : 'business_rentals';
+    const { error } = await supabase.from(table).update({ status: 'cancelled' }).eq('id', id).eq('user_id', user.id);
+    if (!error) refresh();
+    return { error: error ? error.message : null };
+  }, [user, refresh]);
+
   const goingIds = useMemo(() => new Set(going.map((g) => g.event_id)), [going]);
   const goingSlugs = useMemo(() => new Set(going.map((g) => g.events?.slug).filter(Boolean) as string[]), [going]);
 
-  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, rsvp };
+  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, rsvp, cancel };
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 
