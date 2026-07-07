@@ -385,8 +385,16 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   reviews (fixtures fallback when none) and "Publicar reseña" persists via
   `post_review` (auth-gated → /entrar) with optimistic add + refetch. Verified:
   a persisted review not in the fixtures renders in the Reseñas tab, 0 pageerrors
-  / 0 overflow. Deferred: photo reviews, owner reply, helpful-vote persistence,
+  / 0 overflow. Deferred: photo reviews, helpful-vote persistence,
   verified-purchase badge, moderation.
+- [x] **Owner reply shown on the public listing (2026-07-07).** The owner could
+  already reply to a review from the dashboard (`reply_es`/`reply_en`/`replied_at`,
+  migration **0023**), but `reviews_by_slug` never returned those columns so the
+  response never reached the consumer. Migration **0057** widens `reviews_by_slug`
+  to include the reply; BizDetail renders it under the review as a purple-accented
+  "Respuesta de {negocio} · {fecha}" block (design tokens, ES/EN). Table-stakes for
+  a trustworthy listing (Yelp/Google both show it). Verified with an RPC intercept:
+  the reply block renders and no h-overflow at 392px.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /
@@ -398,8 +406,10 @@ backing them with real Supabase tables/RPCs when each feature goes live.
 - [x] **Server-side search — scalable FTS (2026-07-07).** Consumer text search was
   a client-side substring match over the ~50-business geo slice (misses matches
   beyond the radius, no ranking). Now real Postgres full-text search (migration
-  **0055**): a generated `businesses.search_tsv` (name + specialty + subcategories
-  + category) with a GIN index, a `businesses_name` trigram index for fuzzy/typo
+  **0055**): a `businesses.search_tsv` (name + specialty + subcategories
+  + category) maintained by a BEFORE INSERT/UPDATE trigger + backfill (a GENERATED
+  column can't call `to_tsvector`, which is STABLE not IMMUTABLE — Postgres 42P17),
+  with a GIN index, a `businesses_name` trigram index for fuzzy/typo
   matches, and a `search_businesses` RPC (FTS + `websearch_to_tsquery` + `similarity`
   fallback, geo-scoped, category/price/rating filters, ranked by relevance then
   distance, paginated) returning the same shape as `businesses_v2` (client reuses

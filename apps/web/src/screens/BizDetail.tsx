@@ -1381,12 +1381,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           </div>
           <div className="flex flex-col gap-3">
             {[
-              ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#7B61FF', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0 })),
+              ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#7B61FF', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0, reply: null as Bi | null, repliedAt: null as string | null })),
               ...(realReviews.length > 0
-                ? realReviews.map((r) => ({ id: r.id, ini: r.initials, name: r.mine ? L('Tú', 'You') : r.name, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], stars: r.rating, when: reviewWhen(r.createdAt), text: r.body, base: 0 }))
+                ? realReviews.map((r) => ({ id: r.id, ini: r.initials, name: r.mine ? L('Tú', 'You') : r.name, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], stars: r.rating, when: reviewWhen(r.createdAt), text: r.body, base: 0, reply: r.reply, repliedAt: r.repliedAt }))
                 : [
-                    ...(revRaw ? [{ id: 'r0', ini: initials(rvName || 'V'), name: rvName || L('Vecino', 'Neighbor'), color: AVATAR_PALETTE[id % AVATAR_PALETTE.length], stars: 5, when: ['hace 2 días', '2d'] as Bi, text: [quote, quote] as Bi, base: 12 }] : []),
-                    ...SEED_REVIEWS,
+                    ...(revRaw ? [{ id: 'r0', ini: initials(rvName || 'V'), name: rvName || L('Vecino', 'Neighbor'), color: AVATAR_PALETTE[id % AVATAR_PALETTE.length], stars: 5, when: ['hace 2 días', '2d'] as Bi, text: [quote, quote] as Bi, base: 12, reply: null as Bi | null, repliedAt: null as string | null }] : []),
+                    ...SEED_REVIEWS.map((r) => ({ ...r, reply: null as Bi | null, repliedAt: null as string | null })),
                   ]),
             ]
               .filter((r) => reviewFilter === 'all' || r.stars === +reviewFilter)
@@ -1403,6 +1403,19 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                       <span className="text-[11px] font-semibold text-muted-2">{B(r.when)}</span>
                     </div>
                     <div className="mt-2.5 text-[13px] font-medium leading-[1.55] text-ink-soft">{B(r.text)}</div>
+                    {r.reply && (r.reply[0] || r.reply[1]) && (
+                      <div className="mt-3 rounded-xl border-l-[3px] border-primary bg-lilac-3 px-3.5 py-2.5">
+                        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                          <span className="text-[11.5px] font-extrabold text-primary-dark">
+                            {L(`Respuesta de ${b.name}`, `Response from ${b.name}`)}
+                          </span>
+                          {r.repliedAt && (
+                            <span className="whitespace-nowrap text-[10.5px] font-semibold text-muted-2">· {B(reviewWhen(r.repliedAt))}</span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-[12.5px] font-medium leading-[1.5] text-ink-soft">{B(r.reply)}</div>
+                      </div>
+                    )}
                     <button
                       onClick={() => setReviewHelpful((m) => ({ ...m, [r.id]: !m[r.id] }))}
                       className={`mt-2.5 cursor-pointer text-[11.5px] font-extrabold ${on ? 'text-primary' : 'text-muted-2'}`}

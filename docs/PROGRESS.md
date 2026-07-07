@@ -3,7 +3,7 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-05.
+> Last updated: 2026-07-07.
 
 ## How this project ships (read first)
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,
@@ -168,6 +168,37 @@ dashboard (dual customer↔owner RLS, migration 0032).
   dashboard 0, **consumer 0/20** (`tools/mobile-audit/consumer.js`), publish 0.
 - Deferred (see LAUNCH-CHECKLIST §5): business-side RSVP **names** (attendance has
   no name column); rentals/tickets are request-stage, **not charged** yet.
+
+## Professional-depth arc — DONE (2026-07-07)
+A push to make the consumer + owner experience compete with any existing platform.
+Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwright,
+0 pageerrors / 0 overflow at 392px). Migrations pasted in chat; founder applied
+**0046–0057** (`0055`+`0056`+`0057` applied 2026-07-07).
+- **Renta module** rebuilt to Servicios-level depth: categories, per-item config,
+  add-ons, policies/availability, calendar day-picking + qty + deposit; consumer
+  Renta tab with availability truth (no double-booking across Rentas/Productos/
+  Reservas via SECURITY DEFINER busy-date / seat-load RPCs).
+- **In-app chat** (`lib/chat.tsx`): realtime customer↔business threads
+  (`business_conversations`/`business_messages`), "Enviar mensaje" from the contact
+  sheet, inbox + thread subscribe.
+- **Auto notifications** (`lib/notifications.tsx`, migration 0054): DB triggers
+  generate a per-user feed on real events; realtime badge + panel when signed in,
+  fixtures when logged out.
+- **Scalable search** (migration **0055**): Postgres FTS (`search_tsv` trigger-
+  maintained tsvector + GIN + trigram fuzzy) via `search_businesses` RPC; Negocios
+  calls it debounced, falls back to client filter when empty. NOTE: `search_tsv` is
+  trigger-maintained, not a GENERATED column (`to_tsvector` is STABLE → 42P17); 0055
+  also drops the superseded 0001 `search_businesses` overload so the grant is
+  unambiguous (42725).
+- **Real reviews** (migration **0056**): one review per user per business, author
+  RLS, `post_review` upsert, `reviews_by_slug`, trigger syncing `rating`+`reviews_count`.
+- **Owner reply on the public listing** (migration **0057**): `reviews_by_slug`
+  widened to return `reply_es`/`reply_en`/`replied_at`; BizDetail shows the business's
+  response under each review.
+- **Customer self-service cancel** on Mi cuenta (early orders/bookings/rentals).
+- **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
+  payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM
+  tiles + business coords). Not shipped as fake/broken.
 
 ## Next steps (priority order)
 1. **Founder applies `0019`+`0020`+`0031`+`0032`** (above) so Fotos/Módulos and the

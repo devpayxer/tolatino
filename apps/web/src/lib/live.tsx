@@ -377,18 +377,28 @@ export async function fetchRentalBusy(itemId: string): Promise<{ start: string; 
 }
 
 // ── real reviews (migration 0056) ──
-export type PubReview = { id: string; name: string; initials: string; rating: number; body: [string, string]; createdAt: string; mine: boolean };
+export type PubReview = {
+  id: string; name: string; initials: string; rating: number; body: [string, string];
+  createdAt: string; mine: boolean;
+  reply: [string, string] | null; repliedAt: string | null;
+};
 
-/** A business's real reviews by slug (migration 0056). [] offline / none. */
+/** A business's real reviews by slug (migration 0056; owner reply from 0057). [] offline / none. */
 export async function fetchBusinessReviews(slug: string): Promise<PubReview[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc('reviews_by_slug', { in_slug: slug });
   if (error || !Array.isArray(data)) return [];
-  return (data as Record<string, unknown>[]).map((r) => ({
-    id: String(r.id), name: String(r.author_name ?? 'Cliente'), initials: String(r.author_initials ?? 'C'),
-    rating: Number(r.rating ?? 5), body: [String(r.body_es ?? ''), String(r.body_en ?? r.body_es ?? '')],
-    createdAt: String(r.created_at), mine: !!r.is_mine,
-  }));
+  return (data as Record<string, unknown>[]).map((r) => {
+    const rEs = r.reply_es == null ? '' : String(r.reply_es);
+    const rEn = r.reply_en == null ? '' : String(r.reply_en);
+    const reply = rEs || rEn ? ([rEs || rEn, rEn || rEs] as [string, string]) : null;
+    return {
+      id: String(r.id), name: String(r.author_name ?? 'Cliente'), initials: String(r.author_initials ?? 'C'),
+      rating: Number(r.rating ?? 5), body: [String(r.body_es ?? ''), String(r.body_en ?? r.body_es ?? '')],
+      createdAt: String(r.created_at), mine: !!r.is_mine,
+      reply, repliedAt: reply && r.replied_at != null ? String(r.replied_at) : null,
+    };
+  });
 }
 
 /** Post (or update) the signed-in user's review for a business. Returns the review
