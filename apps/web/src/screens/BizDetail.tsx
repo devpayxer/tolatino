@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
+import { uploadPostImages } from '@/lib/image';
 import { startConversation, fetchChatMessages, sendChatMessage, markConversationRead, subscribeChat, type ChatMsg } from '@/lib/chat';
 import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
@@ -248,20 +249,44 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [writeOpen, setWriteOpen] = useState(false);
   const [myStars, setMyStars] = useState(5);
   const [myText, setMyText] = useState('');
-  const [myReviews, setMyReviews] = useState<{ id: string; stars: number; text: string }[]>([]);
+  const [myPhotos, setMyPhotos] = useState<{ file: File; url: string }[]>([]);
+  const [revBusy, setRevBusy] = useState(false); // uploading + posting
+  const reviewFileInput = useRef<HTMLInputElement>(null);
+  const [myReviews, setMyReviews] = useState<{ id: string; stars: number; text: string; photos: string[] }[]>([]);
   // Real persisted reviews (migration 0056). Empty → the tab keeps the fixtures.
   const [realReviews, setRealReviews] = useState<PubReview[]>([]);
   const loadReviews = () => { void fetchBusinessReviews(b.slug).then(setRealReviews); };
   useEffect(() => { setRealReviews([]); setMyReviews([]); loadReviews(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [b.slug]);
+  const MAX_REVIEW_PHOTOS = 6;
+  const onPickReviewPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith('image/'));
+    setMyPhotos((list) => [...list, ...picked.slice(0, MAX_REVIEW_PHOTOS - list.length).map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+    e.target.value = ''; // allow re-picking the same file
+  };
+  const removeReviewPhoto = (i: number) =>
+    setMyPhotos((list) => { URL.revokeObjectURL(list[i].url); return list.filter((_, j) => j !== i); });
+  const clearReviewPhotos = () => setMyPhotos((list) => (list.forEach((p) => URL.revokeObjectURL(p.url)), []));
+
   const submitReview = async () => {
     const text = myText.trim();
-    if (!text) return;
-    setWriteOpen(false);
-    if (!user) { router.push('/entrar'); return; }
-    setMyReviews((l) => [{ id: `u${l.length}`, stars: myStars, text }, ...l]); // optimistic
-    const id = await postReview(b.slug, myStars, text);
-    if (id) { setMyReviews([]); loadReviews(); flash(L('¡Gracias por tu reseña!', 'Thanks for your review!')); }
-    else flash(L('No se pudo publicar', "Couldn't post"));
+    if (!text || revBusy) return;
+    if (!user) { setWriteOpen(false); router.push('/entrar'); return; }
+    setRevBusy(true);
+    // compress + upload photos first (client-side WebP, own uid folder — lib/image)
+    let urls: string[] = [];
+    if (myPhotos.length) {
+      try { urls = await uploadPostImages(myPhotos.map((p) => p.file), user.id); }
+      catch { setRevBusy(false); flash(L('No se pudieron subir las fotos', "Couldn't upload photos")); return; }
+    }
+    const id = await postReview(b.slug, myStars, text, urls);
+    setRevBusy(false);
+    if (id) {
+      clearReviewPhotos();
+      setWriteOpen(false);
+      setMyReviews([]);
+      loadReviews();
+      flash(L('¡Gracias por tu reseña!', 'Thanks for your review!'));
+    } else flash(L('No se pudo publicar', "Couldn't post"));
   };
 
   const saved = savedBiz.isSaved(b.slug);
@@ -1408,18 +1433,18 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 {lab}
               </button>
             ))}
-            <button onClick={() => { setWriteOpen(true); setMyStars(5); setMyText(''); }} className="ml-auto flex-none cursor-pointer rounded-full bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white shadow-cta-sm">
+            <button onClick={() => { setWriteOpen(true); setMyStars(5); setMyText(''); clearReviewPhotos(); }} className="ml-auto flex-none cursor-pointer rounded-full bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white shadow-cta-sm">
               {L('Escribir reseña', 'Write a review')}
             </button>
           </div>
           <div className="flex flex-col gap-3">
             {[
-              ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#7B61FF', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0, reply: null as Bi | null, repliedAt: null as string | null })),
+              ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#7B61FF', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0, reply: null as Bi | null, repliedAt: null as string | null, photos: r.photos })),
               ...(realReviews.length > 0
-                ? realReviews.map((r) => ({ id: r.id, ini: r.initials, name: r.mine ? L('Tú', 'You') : r.name, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], stars: r.rating, when: reviewWhen(r.createdAt), text: r.body, base: 0, reply: r.reply, repliedAt: r.repliedAt }))
+                ? realReviews.map((r) => ({ id: r.id, ini: r.initials, name: r.mine ? L('Tú', 'You') : r.name, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], stars: r.rating, when: reviewWhen(r.createdAt), text: r.body, base: 0, reply: r.reply, repliedAt: r.repliedAt, photos: r.photos }))
                 : [
-                    ...(revRaw ? [{ id: 'r0', ini: initials(rvName || 'V'), name: rvName || L('Vecino', 'Neighbor'), color: AVATAR_PALETTE[id % AVATAR_PALETTE.length], stars: 5, when: ['hace 2 días', '2d'] as Bi, text: [quote, quote] as Bi, base: 12, reply: null as Bi | null, repliedAt: null as string | null }] : []),
-                    ...SEED_REVIEWS.map((r) => ({ ...r, reply: null as Bi | null, repliedAt: null as string | null })),
+                    ...(revRaw ? [{ id: 'r0', ini: initials(rvName || 'V'), name: rvName || L('Vecino', 'Neighbor'), color: AVATAR_PALETTE[id % AVATAR_PALETTE.length], stars: 5, when: ['hace 2 días', '2d'] as Bi, text: [quote, quote] as Bi, base: 12, reply: null as Bi | null, repliedAt: null as string | null, photos: [] as string[] }] : []),
+                    ...SEED_REVIEWS.map((r) => ({ ...r, reply: null as Bi | null, repliedAt: null as string | null, photos: [] as string[] })),
                   ]),
             ]
               .filter((r) => reviewFilter === 'all' || r.stars === +reviewFilter)
@@ -1436,6 +1461,14 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                       <span className="text-[11px] font-semibold text-muted-2">{B(r.when)}</span>
                     </div>
                     <div className="mt-2.5 text-[13px] font-medium leading-[1.55] text-ink-soft">{B(r.text)}</div>
+                    {r.photos.length > 0 && (
+                      <div className="no-scrollbar mt-2.5 flex gap-2 overflow-x-auto">
+                        {r.photos.map((src) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={src} src={src} alt="" loading="lazy" className="h-20 w-20 flex-none rounded-field object-cover" />
+                        ))}
+                      </div>
+                    )}
                     {r.reply && (r.reply[0] || r.reply[1]) && (
                       <div className="mt-3 rounded-xl border-l-[3px] border-primary bg-lilac-3 px-3.5 py-2.5">
                         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
@@ -1979,8 +2012,36 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           placeholder={L('Cuéntale a la comunidad tu experiencia…', 'Tell the community about your experience…')}
           className="w-full resize-none rounded-field border-[1.5px] border-[#ECE9F6] bg-app px-3.5 py-3 text-[13.5px] font-medium outline-none placeholder:text-muted focus:border-primary"
         />
-        <PrimaryBtn className="mt-3" disabled={!myText.trim()} onClick={submitReview}>
-          {L('Publicar reseña', 'Post review')}
+
+        {/* photo picker — reviewers upload to their own uid folder (lib/image) */}
+        <input ref={reviewFileInput} type="file" accept="image/*" multiple onChange={onPickReviewPhotos} className="hidden" />
+        <div className="mt-3 flex flex-wrap gap-2">
+          {myPhotos.map((p, i) => (
+            <div key={p.url} className="relative h-16 w-16 overflow-hidden rounded-field">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.url} alt="" className="h-full w-full object-cover" />
+              <button
+                onClick={() => removeReviewPhoto(i)}
+                className="absolute right-0.5 top-0.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-ink/70 text-white"
+                aria-label={L('Quitar foto', 'Remove photo')}
+              >
+                <X size={12} strokeWidth={3} />
+              </button>
+            </div>
+          ))}
+          {myPhotos.length < MAX_REVIEW_PHOTOS && (
+            <button
+              onClick={() => reviewFileInput.current?.click()}
+              className="flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-field border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 text-primary-dark"
+            >
+              <Plus size={16} strokeWidth={2.6} />
+              <span className="text-[9.5px] font-extrabold">{L('Fotos', 'Photos')}</span>
+            </button>
+          )}
+        </div>
+
+        <PrimaryBtn className="mt-4" disabled={!myText.trim() || revBusy} onClick={submitReview}>
+          {revBusy ? L('Publicando…', 'Posting…') : L('Publicar reseña', 'Post review')}
         </PrimaryBtn>
       </Overlay>
 

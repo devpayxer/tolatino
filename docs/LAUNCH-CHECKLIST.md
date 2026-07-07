@@ -409,6 +409,18 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   unit-checked (stepping, past-slot filter, closed-day). Deferred: **per-slot**
   capacity (today capacity is per-day via 0052) — disable an individual time once
   it's fully booked; staff/resource-aware scheduling.
+- [x] **Photo reviews (2026-07-07).** The last piece to reach review parity with
+  Yelp/Google/DoorDash and the strongest trust signal a listing carries. Migration
+  **0058**: `reviews.photos text[]`; `post_review` gains an optional photo-URL array
+  (caps at 6; the old 3-arg overload is dropped so a 3-arg call isn't ambiguous —
+  42725); `reviews_by_slug` returns `photos` (dropped+recreated because adding a
+  return column can't be done with CREATE OR REPLACE — 42P13). Reviewers upload in
+  the "Tu reseña" sheet (compress→WebP→own uid folder via the existing `post-photos`
+  bucket + `uploadPostImages`; **no new bucket/policy**), see thumbnail previews with
+  remove, and the sheet shows a "Publicando…" busy state during upload. The reviews
+  list renders a horizontal thumbnail row under each review body. Verified with an
+  RPC intercept: 3–4 thumbnails render + the picker shows, 0 pageerrors / 0 overflow
+  at 392px. Deferred: full-screen photo lightbox; per-photo moderation.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

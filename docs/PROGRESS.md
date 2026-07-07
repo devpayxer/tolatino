@@ -199,6 +199,12 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   time slots from the business's real open hours × the service duration
   (`bookingSlots` in `lib/hours.ts`), drops past slots for today, blocks closed days,
   auto-selects the first slot. Replaces the old fixed 9/12/3/6 list.
+- **Photo reviews** (migration **0058**): `reviews.photos text[]`; `post_review`
+  takes photo URLs (old 3-arg overload dropped); `reviews_by_slug` returns photos.
+  Reviewers upload in the "Tu reseña" sheet (reuses `uploadPostImages` → `post-photos`
+  bucket, no new policy); the reviews list shows a thumbnail row per review.
+  NOTE both 0057 and 0058 **drop** `reviews_by_slug` before recreating — adding a
+  return column can't be done via CREATE OR REPLACE (42P13).
 - **Customer self-service cancel** on Mi cuenta (early orders/bookings/rentals).
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM

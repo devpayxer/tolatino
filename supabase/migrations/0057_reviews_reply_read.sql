@@ -5,6 +5,10 @@
 -- table-stakes for a trustworthy listing (Yelp/Google both show it). This widens
 -- reviews_by_slug to include the reply. Idempotent. Apply: paste + Run.
 
+-- 0056 defined reviews_by_slug with 8 output columns. Adding the reply columns
+-- changes the return type, which CREATE OR REPLACE cannot do (Postgres 42P13) —
+-- drop the old signature first.
+drop function if exists public.reviews_by_slug(text, int);
 create or replace function public.reviews_by_slug(in_slug text, max_results int default 40)
 returns table (
   id uuid, author_name text, author_initials text, rating int,

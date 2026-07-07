@@ -381,9 +381,10 @@ export type PubReview = {
   id: string; name: string; initials: string; rating: number; body: [string, string];
   createdAt: string; mine: boolean;
   reply: [string, string] | null; repliedAt: string | null;
+  photos: string[];
 };
 
-/** A business's real reviews by slug (migration 0056; owner reply from 0057). [] offline / none. */
+/** A business's real reviews by slug (migration 0056; owner reply 0057; photos 0058). [] offline / none. */
 export async function fetchBusinessReviews(slug: string): Promise<PubReview[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc('reviews_by_slug', { in_slug: slug });
@@ -392,20 +393,24 @@ export async function fetchBusinessReviews(slug: string): Promise<PubReview[]> {
     const rEs = r.reply_es == null ? '' : String(r.reply_es);
     const rEn = r.reply_en == null ? '' : String(r.reply_en);
     const reply = rEs || rEn ? ([rEs || rEn, rEn || rEs] as [string, string]) : null;
+    const photos = Array.isArray(r.photos) ? (r.photos as unknown[]).map(String).filter(Boolean) : [];
     return {
       id: String(r.id), name: String(r.author_name ?? 'Cliente'), initials: String(r.author_initials ?? 'C'),
       rating: Number(r.rating ?? 5), body: [String(r.body_es ?? ''), String(r.body_en ?? r.body_es ?? '')],
       createdAt: String(r.created_at), mine: !!r.is_mine,
       reply, repliedAt: reply && r.replied_at != null ? String(r.replied_at) : null,
+      photos,
     };
   });
 }
 
-/** Post (or update) the signed-in user's review for a business. Returns the review
- *  id, or null (offline / not signed in / error). */
-export async function postReview(slug: string, rating: number, body: string): Promise<string | null> {
+/** Post (or update) the signed-in user's review for a business, with optional photo
+ *  URLs (migration 0058). Returns the review id, or null (offline / not signed in). */
+export async function postReview(slug: string, rating: number, body: string, photos: string[] = []): Promise<string | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.rpc('post_review', { in_slug: slug, in_rating: rating, in_body: body });
+  const { data, error } = await supabase.rpc('post_review', {
+    in_slug: slug, in_rating: rating, in_body: body, in_photos: photos,
+  });
   if (error || !data) return null;
   return String(data);
 }
