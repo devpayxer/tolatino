@@ -18,7 +18,7 @@ import { useSavedBiz } from '@/lib/savedBiz';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
-import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
+import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 
 // es → en lookup for feature labels ("Lo que ofrece"), so the owner-selected
@@ -26,7 +26,7 @@ import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 const FEAT_EN: Record<string, string> = {};
 for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
-import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, SVC_TIMES, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
+import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem } from '@/data/bizdetail';
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
 type RentMode = 'day' | 'hour';
@@ -45,6 +45,19 @@ const capMaxOf = (cap: string): number => {
   const nums = (cap.match(/\d+/g) || []).map(Number);
   return nums.length ? Math.max(...nums) : 0; // 0 = untracked (no gating)
 };
+// Service duration string → minutes ("30 min", "1 h", "1 h 30 min", bare "45").
+// Drives the length of each bookable slot; 30 min default when unparseable.
+const parseDurMin = (dur: string | undefined): number => {
+  if (!dur) return 30;
+  const h = dur.match(/(\d+)\s*h/i);
+  const m = dur.match(/(\d+)\s*m/i);
+  let mins = (h ? Number(h[1]) * 60 : 0) + (m ? Number(m[1]) : 0);
+  if (!mins) { const n = dur.match(/\d+/); mins = n ? Number(n[0]) : 30; }
+  return Math.max(15, mins || 30);
+};
+// Slots when the business has no weekly hours configured (booking on but hours
+// unset): keep the old fixed offering so booking still works. 9am/12pm/3pm/6pm.
+const FALLBACK_SLOTS = [540, 720, 900, 1080];
 const WD_MON1: [string, string][] = [['L', 'M'], ['M', 'T'], ['X', 'W'], ['J', 'T'], ['V', 'F'], ['S', 'S'], ['D', 'S']];
 const reviewWhen = (iso: string): Bi => {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -212,7 +225,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [svcSel, setSvcSel] = useState<SvcTarget | null>(null);
   const [svcBusy, setSvcBusy] = useState<Record<string, number>>({}); // yyyy-mm-dd → seats already booked
   const [svcDate, setSvcDate] = useState(0);
-  const [svcTime, setSvcTime] = useState(0);
+  const [svcTime, setSvcTime] = useState(-1); // selected slot: minute-of-day (-1 = none yet)
   const [svcPersons, setSvcPersons] = useState(1);
   const [svcAddOns, setSvcAddOns] = useState<Record<string, boolean>>({});
   const [svcDone, setSvcDone] = useState(false);
@@ -385,17 +398,13 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     flash(L('Pedido enviado · míralo en Mi cuenta', 'Order sent · see it in My account'));
   };
 
-  // Build a real ISO from the existing picker: svcDate = day offset from today
-  // (0 = Hoy, 1 = Mañana, …); svcTime parsed from the "9:00 am" label.
+  // Build a real ISO from the picker: svcDate → the chosen date chip, svcTime → the
+  // selected slot's minute-of-day. Falls back to now/noon if nothing valid.
   const svcStartISO = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + svcDate);
-    const m = (SVC_TIMES[svcTime] || '').match(/(\d+):(\d+)\s*(am|pm)/i);
-    if (m) {
-      let h = Number(m[1]) % 12;
-      if (/pm/i.test(m[3])) h += 12;
-      d.setHours(h, Number(m[2]), 0, 0);
-    }
+    const iso = dateChips[svcDate]?.iso;
+    const d = iso ? parseISO(iso) : new Date();
+    const min = svcTime >= 0 ? svcTime : 720;
+    d.setHours(Math.floor(min / 60), min % 60, 0, 0);
     return d.toISOString();
   };
 
@@ -403,7 +412,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const openSvc = (t: SvcTarget) => {
     setSvcSel(t);
     setSvcDate(0);
-    setSvcTime(0);
+    setSvcTime(-1); // resolved to the first real slot by the effect below
     setSvcPersons(1);
     setSvcAddOns({});
     setSvcDone(false);
@@ -446,6 +455,11 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const confirmBooking = async () => {
     if (!svcSel) return;
+    // must pick a real slot (bookable services only)
+    if (svcSel.bookable) {
+      if (svcSlots.length === 0) { flash(L('Cerrado ese día — elige otra fecha', 'Closed that day — pick another date')); return; }
+      if (svcTime < 0) { flash(L('Elige una hora', 'Pick a time')); return; }
+    }
     // block a full session (capacity truth, migration 0052)
     if (svcSel.bookable && svcSel.capMax > 0) {
       const iso = dateChips[svcDate]?.iso;
@@ -543,6 +557,25 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       return { lab, sub, iso: isoDay(d.getFullYear(), d.getMonth(), day) };
     });
   }, []);
+  // Real bookable time slots for the selected service + date: derived from the
+  // business's open hours × the service duration (migration-free, all client-side).
+  // No weekly hours configured → keep the old fixed offering so booking still works.
+  const svcHasHours = Array.isArray(b.hours) && b.hours.length === 7;
+  const svcSlots = useMemo<number[]>(() => {
+    if (!svcSel?.bookable) return [];
+    if (!svcHasHours) return FALLBACK_SLOTS;
+    const iso = dateChips[svcDate]?.iso;
+    if (!iso) return [];
+    return bookingSlots(b.hours, b.hoursExceptions, parseISO(iso), parseDurMin(svcSel.dur), now);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [svcSel?.bookable, svcSel?.dur, svcHasHours, svcDate, dateChips, b.hours, b.hoursExceptions, now]);
+  // Keep the selected slot valid: when the day/slot set changes, snap to the first
+  // available slot (or clear it if that day is closed).
+  useEffect(() => {
+    if (!svcSel?.bookable) return;
+    if (!svcSlots.includes(svcTime)) setSvcTime(svcSlots[0] ?? -1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [svcSlots]);
 
   const confirmRental = async () => {
     if (rentIdx === null) return;
@@ -1689,17 +1722,24 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 })}
               </div>
 
-              {/* time slot only for bookable (appointment) services */}
+              {/* time slot only for bookable (appointment) services — real slots
+                  from the business's open hours × service duration */}
               {svcSel.bookable && (
                 <>
                   <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Elige hora', 'Pick a time')}</div>
-                  <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                    {SVC_TIMES.map((t, i) => (
-                      <button key={t} onClick={() => setSvcTime(i)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-[12.5px] font-extrabold ${svcTime === i ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+                  {svcSlots.length === 0 ? (
+                    <div className="rounded-field bg-lilac-2 px-3.5 py-3 text-[12px] font-semibold text-ink-2">
+                      {L('Cerrado ese día — elige otra fecha', 'Closed that day — pick another date')}
+                    </div>
+                  ) : (
+                    <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                      {svcSlots.map((t) => (
+                        <button key={t} onClick={() => setSvcTime(t)} className={`flex-none cursor-pointer rounded-btn px-3.5 py-2.5 text-[12.5px] font-extrabold ${svcTime === t ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                          {fmtShort(t)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
 

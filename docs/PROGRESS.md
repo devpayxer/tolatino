@@ -195,6 +195,10 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
 - **Owner reply on the public listing** (migration **0057**): `reviews_by_slug`
   widened to return `reply_es`/`reply_en`/`replied_at`; BizDetail shows the business's
   response under each review.
+- **Real time-slot booking** (no migration): the Servicios booking sheet generates
+  time slots from the business's real open hours × the service duration
+  (`bookingSlots` in `lib/hours.ts`), drops past slots for today, blocks closed days,
+  auto-selects the first slot. Replaces the old fixed 9/12/3/6 list.
 - **Customer self-service cancel** on Mi cuenta (early orders/bookings/rentals).
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM

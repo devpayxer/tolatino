@@ -395,6 +395,20 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   "Respuesta de {negocio} · {fecha}" block (design tokens, ES/EN). Table-stakes for
   a trustworthy listing (Yelp/Google both show it). Verified with an RPC intercept:
   the reply block renders and no h-overflow at 392px.
+- [x] **Real time-slot booking (2026-07-07).** The Servicios booking sheet offered a
+  fixed 4-time list (9/12/3/6) regardless of when the business is open. Now the time
+  slots are generated from the business's **real open hours for the chosen day ×
+  the service's duration** (`bookingSlots` in `lib/hours.ts`, using the same
+  `effectiveIntervals`/exception logic that drives the open/closed badge). Slots
+  that fit fully before close; on "today", slots already in the past are dropped;
+  a closed day shows "Cerrado ese día — elige otra fecha" and blocks submit; the
+  first slot auto-selects and the picked minute flows into the booking's real
+  start datetime. No hours configured → falls back to the old fixed list so booking
+  still works. No migration (client-side off existing `businesses.hours`). Verified:
+  26 real slots render off fixture hours, 0 pageerrors / 0 overflow at 392px; logic
+  unit-checked (stepping, past-slot filter, closed-day). Deferred: **per-slot**
+  capacity (today capacity is per-day via 0052) — disable an individual time once
+  it's fully booked; staff/resource-aware scheduling.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

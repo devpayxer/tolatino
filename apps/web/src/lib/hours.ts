@@ -113,6 +113,34 @@ export function fmtDayHours(day: Interval[], closedLabel: string): string {
 }
 
 /**
+ * Real bookable time slots for a service on a given date: the business's open
+ * intervals for that weekday (date overrides applied), stepped by the service's
+ * duration, with each slot fully fitting before close. Returns slot-start minutes
+ * (same calendar day, so 0..1439). For "today", slots already in the past (before
+ * `now` + `leadMin`) are dropped. Empty ⇒ closed that day / no hours configured.
+ */
+export function bookingSlots(
+  hours: WeekHours | undefined,
+  exceptions: HoursException[] | undefined,
+  d: Date,
+  durationMin: number,
+  now?: Date | null,
+  leadMin = 0,
+): number[] {
+  if (!validWeek(hours)) return [];
+  const dur = Math.max(15, Math.round(durationMin) || 30);
+  const isToday = now != null && isoDate(now) === isoDate(d);
+  const cutoff = isToday ? now!.getHours() * 60 + now!.getMinutes() + Math.max(0, leadMin) : -1;
+  const out: number[] = [];
+  for (const [open, close] of effectiveIntervals(hours, exceptions, d)) {
+    for (let t = open; t + dur <= close && t < 1440; t += dur) {
+      if (t > cutoff) out.push(t);
+    }
+  }
+  return out;
+}
+
+/**
  * Resolve the live status. `now == null` (pre-mount) or missing hours →
  * fall back to the stored `open` boolean so the label stays sensible.
  */
