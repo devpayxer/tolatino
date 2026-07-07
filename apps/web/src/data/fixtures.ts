@@ -459,6 +459,7 @@ export const EVENT_CAT_BY_ID: Record<string, { es: string; en: string; tile: [st
 export type EventItem = {
   id: number;
   slug?: string; // supabase events.slug — present on live events; drives tickets/RSVP
+  iso?: string;  // supabase events.starts_at — the real date, keys date chips without year collapse
   dEs: string;
   day: string;
   cat: string; // one of EVENT_CATS ids

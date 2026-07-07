@@ -82,24 +82,29 @@ export function EventosScreen() {
   const catLabel = (id: string): string => { const c = EVENT_CAT_BY_ID[id]; return c ? L(c.es, c.en) : id; };
   const B = (t: [string, string]) => L(t[0], t[1]); // render a Bi tuple in the active language
   const sl = app.search.trim().toLowerCase();
+  // Attendee count without double-counting: live events (slug) already bake the
+  // user's RSVP into `going` from the DB, so trust it; only fixture events get the
+  // local optimistic +1. Detail uses the fresh `pub.going` when it has loaded.
+  const dateKey = (e: EventItem) => (e.iso ? e.iso.slice(0, 10) : `${e.dEs}-${e.day}`);
+  const goingCount = (e: EventItem) => (e.slug ? e.going : e.going + (app.going[e.id] ? 1 : 0));
 
   const list = useMemo(() => {
     let l = EVENTS.slice();
     if (sl) l = l.filter((e) => `${e.tEs} ${e.tEn} ${e.lEs} ${e.lEn}`.toLowerCase().includes(sl));
     if (cat === 'free') l = l.filter((e) => e.free);
     else if (cat !== 'all') l = l.filter((e) => e.cat === cat);
-    if (date !== 'all') l = l.filter((e) => `${e.dEs}-${e.day}` === date);
+    if (date !== 'all') l = l.filter((e) => dateKey(e) === date);
     return l;
   }, [sl, cat, date, EVENTS]);
 
   const dates = useMemo(() => {
     const seen = new Set<string>();
     return EVENTS.filter((e) => {
-      const k = `${e.dEs}-${e.day}`;
+      const k = dateKey(e);
       if (seen.has(k)) return false;
       seen.add(k);
       return true;
-    }).map((e) => ({ key: `${e.dEs}-${e.day}`, dEs: e.dEs, day: e.day }));
+    }).map((e) => ({ key: dateKey(e), dEs: e.dEs, day: e.day }));
   }, [EVENTS]);
 
   const fe = EVENTS[0]; // featured — may be undefined when a city has no events
@@ -120,6 +125,8 @@ export function EventosScreen() {
 
   const tiers = pub?.tiers ?? [];
   const hasTiers = tiers.length > 0;
+  const cancelled = pub?.status === 'cancelled'; // event_by_slug still resolves cancelled events so we can say so
+  const eventPast = pub ? new Date(pub.endsAt ?? new Date(new Date(pub.startsAt).getTime() + 3 * 3600 * 1000).toISOString()) < new Date() : false;
   const tierRemaining = (t: PubEvent['tiers'][number]) => (t.remaining == null ? Infinity : t.remaining);
   const selectedTiers = tiers.filter((t) => (tierQty[t.id] ?? 0) > 0);
   const orderTotal = selectedTiers.reduce((s, t) => s + t.price * (tierQty[t.id] ?? 0), 0);
@@ -130,13 +137,13 @@ export function EventosScreen() {
   // as a guest (route to /entrar). Fixture events (no slug) keep the local demo
   // behavior. Optimistic app.going keeps the count/label instant either way.
   const rsvpToggle = (e: EventItem) => {
-    const on = e.slug ? act.goingSlugs.has(e.slug) : !!app.going[e.id];
     if (e.slug) {
       if (!user) {
         router.push('/entrar');
         return;
       }
-      void act.rsvp(e.slug, !on);
+      void act.rsvp(e.slug, !act.goingSlugs.has(e.slug));
+      return;
     }
     app.toggleGoing(e.id);
   };
@@ -148,6 +155,7 @@ export function EventosScreen() {
   // failure (e.g. a tier sold out between load and purchase).
   const buyNow = async () => {
     if (!pub || buying) return;
+    if (pub.status === 'cancelled') { flash(L('Evento cancelado', 'Event cancelled')); return; }
     if (!user) { router.push('/entrar'); return; }
     if (selectedTiers.length === 0) { flash(L('Elige al menos un boleto', 'Pick at least one ticket')); return; }
     setBuying(true);
@@ -219,7 +227,7 @@ export function EventosScreen() {
           <span className="block text-[22px] font-extrabold tracking-[-.02em] text-white md:text-[28px]">{L(fe.tEs, fe.tEn)}</span>
           <span className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-[rgba(255,255,255,.85)]">
             <MapPin size={13} strokeWidth={2.4} />
-            {L(fe.lEs, fe.lEn)} · {fe.going + (feOn ? 1 : 0)} {L('asisten', 'going')}
+            {L(fe.lEs, fe.lEn)} · {goingCount(fe)} {L('asisten', 'going')}
           </span>
         </span>
         <button
@@ -314,7 +322,7 @@ export function EventosScreen() {
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-hair pt-3">
                   <span className="text-[11.5px] font-bold text-muted-2">
-                    {e.going + (app.going[e.id] ? 1 : 0)} {L('asisten', 'going')}
+                    {goingCount(e)} {L('asisten', 'going')}
                   </span>
                   {goingBtn(e)}
                 </div>
@@ -336,6 +344,17 @@ export function EventosScreen() {
             </div>
             <OverlayTitle title={L(detail.tEs, detail.tEn)} onClose={() => setDetailId(null)} />
 
+            {cancelled && (
+              <div className="mb-2 rounded-field bg-pink-bg px-3.5 py-2.5 text-[12.5px] font-extrabold text-pink-dark">
+                {L('Este evento fue cancelado por el organizador.', 'This event was cancelled by the organizer.')}
+              </div>
+            )}
+            {!cancelled && eventPast && (
+              <div className="mb-2 rounded-field bg-lilac-2 px-3.5 py-2.5 text-[12.5px] font-extrabold text-ink-soft">
+                {L('Este evento ya terminó.', 'This event has ended.')}
+              </div>
+            )}
+
             {/* full date · time */}
             <div className="text-[13px] font-extrabold text-ink">
               {pub ? B(fullDate(pub.startsAt)) : ''}{pub && L(detail.timeEs, detail.timeEn) ? ' · ' : ''}{L(detail.timeEs, detail.timeEn)}
@@ -354,7 +373,7 @@ export function EventosScreen() {
             {/* organizer + attendee count */}
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-bold text-muted-2">
               {pub && <span>{L('Por', 'By')} <span className="text-ink-soft">{pub.organizer}</span></span>}
-              <span>· {(pub?.going ?? detail.going) + (detailOn && !pub ? 1 : 0)} {L('asisten', 'going')}</span>
+              <span>· {pub ? pub.going : goingCount(detail)} {L('asisten', 'going')}</span>
               <span>· {catLabel(detail.cat)}</span>
             </div>
 
@@ -422,8 +441,8 @@ export function EventosScreen() {
                     <span className="text-[14px] font-extrabold text-ink">{anyPaid ? `$${orderTotal.toFixed(2)}` : L('Gratis', 'Free')}</span>
                   </div>
                 )}
-                <PrimaryBtn className="mt-3" disabled={buying || orderQty === 0} onClick={buyNow}>
-                  {buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${orderTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
+                <PrimaryBtn className="mt-3" disabled={buying || orderQty === 0 || cancelled || eventPast} onClick={buyNow}>
+                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${orderTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
                 </PrimaryBtn>
                 {anyPaid && (
                   <div className="mt-1.5 text-center text-[10.5px] font-semibold text-muted-2">
@@ -436,9 +455,10 @@ export function EventosScreen() {
                 {detail.slug && pubLoading && <div className="mt-4 text-center text-[12px] font-semibold text-muted-2">{L('Cargando boletos…', 'Loading tickets…')}</div>}
                 <PrimaryBtn
                   className={`mt-4 ${detailOn ? '!bg-green-bg !text-green-dark !shadow-none' : ''}`}
+                  disabled={cancelled || eventPast}
                   onClick={() => rsvpToggle(detail)}
                 >
-                  {detailOn ? L('Voy ✓', 'Going ✓') : L('Asistir · Gratis', 'Attend · Free')}
+                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : detailOn ? L('Voy ✓', 'Going ✓') : L('Asistir · Gratis', 'Attend · Free')}
                 </PrimaryBtn>
               </>
             )}

@@ -91,6 +91,10 @@ uploads, not committed).
   viewport (kept multi-field forms from blowing past the screen).
 
 ## ⚠️ ACTION NEEDED FROM THE FOUNDER (apply in the SQL Editor)
+- ⏳ **Apply `0063_events_discovery_integrity.sql`** (idempotent) — the Eventos P0
+  hardening: fixes past/cancelled events polluting discovery, hides drafts, blocks
+  RSVP on cancelled, adds `owner_events_summary()` (real dashboard totals) +
+  `cancel_event()` (soft-cancel + notify attendees). Full SQL pasted in chat.
 - ✅ **`0013`→`0018` applied** (2026-07-04, verified: single 16-arg `create_business`).
   The old "not unique / owner_id missing" blocker is resolved; publish + Hazleton
   ownership work.
@@ -241,6 +245,20 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   lat/lng)** (step 2), **multi-tier ticket builder** (step 3), review + per-step
   gating (step 4). Backed by an atomic `create_event_full` RPC (event + cover + geo +
   end-time + all tiers). Replaces the thin free-text wizard.
+- **Eventos P0 — correctness & honesty pass** (migration **0063**): after a 10-agent
+  ultracode audit, fixed the discovery + counting bugs and de-faked the organizer
+  dashboard. `events_near` now returns only published + upcoming (index-accelerated
+  `st_dwithin`); `event_by_slug` hides drafts (cancelled still resolves → "Cancelado"
+  banner); a DB guard blocks RSVP on non-published events. New `owner_events_summary()`
+  drives real KPIs + rail (was hardcoded 186/$14.2k/212); Pasados/Asistentes/sales-
+  sparkline now built from real `event_tickets`. New `cancel_event()` **soft-cancels**
+  (tickets preserved) + notifies every attendee (`event_cancelled` kind) — replaces the
+  old hard-delete that cascaded away sold tickets. Removed unbacked controls (wizard
+  online toggle + visibility chips, 5 fake Ajustes toggles) and the fixture Borradores/
+  Recurrentes/Promotores tabs → honest "Muy pronto". Fixed the "asisten" double-count
+  and the date-chip year collapse. Verified: tsc + build + `eventos-p0.js` audit (0
+  overflow). Newly-deferred items (online events, visibility, drafts, recurring,
+  promoters, Ajustes controls, `/eventos/[slug]` page) logged in LAUNCH-CHECKLIST.
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM
   tiles + business coords). Not shipped as fake/broken.

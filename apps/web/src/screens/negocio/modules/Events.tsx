@@ -33,7 +33,7 @@ type ManageTab = 'overview' | 'attendees' | 'checkin' | 'tickets' | 'settings';
 type EventRow = {
   id: number; dbId?: string; name: string; mon: string; day: string; time: string; price: string;
   priceN: number; sold: number; cap: number; tile: string; status: [string, string];
-  statusBg: string; statusC: string;
+  statusBg: string; statusC: string; lifecycle?: string; startsMs?: number;
 };
 
 // A row from the public `events` table (migration 0002 + 0022), the columns the
@@ -43,7 +43,7 @@ type EventDbRow = {
   venue_es: string | null; venue_en: string | null; cat: string; city: string;
   starts_at: string; time_label_es: string | null; time_label_en: string | null;
   price_label: string | null; going_count: number; desc_es: string | null; desc_en: string | null;
-  tile_a: string | null; tile_b: string | null;
+  tile_a: string | null; tile_b: string | null; status: string | null;
 };
 
 // A ticket a customer bought for this event (event_tickets) — the other side of
@@ -93,9 +93,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [listTab, setListTab] = useState<ListTab>('upcoming');
   const [manageTab, setManageTab] = useState<ManageTab>('overview');
   const [manageId, setManageId] = useState(1);
-  const [recurState, setRecurState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: false });
-  const [settingState, setSettingState] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: false, 4: true });
   const [checkedIn, setCheckedIn] = useState<Record<string, boolean>>({});
+  const [askCancel, setAskCancel] = useState(false); // two-step confirm for "Cancelar evento"
+  const [cancelBusy, setCancelBusy] = useState(false);
   const [attendeeQuery, setAttendeeQuery] = useState('');
   const [ticketRows, setTicketRows] = useState<TicketRow[] | null>(null);
   const [wizStep, setWizStep] = useState(0);
@@ -144,6 +144,13 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const almost = cap > 0 && sold / cap >= 0.85;
     const tl = L(r.time_label_es ?? '', r.time_label_en ?? '');
     const priceN = Number((r.price_label ?? '').replace(/[^0-9.]/g, '')) || 0;
+    const life = r.status ?? 'published';
+    // Badge reflects the real lifecycle: cancelled / draft override the sold-through state.
+    const badge: [[string, string], string, string] =
+      life === 'cancelled' ? [['Cancelado', 'Cancelled'], '#FDE7EF', '#D6336C']
+      : life === 'draft'   ? [['Borrador', 'Draft'], '#FCEFD6', '#9A6A12']
+      : almost             ? [['Casi lleno', 'Almost full'], '#FCEFD6', '#9A6A12']
+      :                      [['Vendiendo', 'Selling'], '#E3F5EA', '#1F8A4C'];
     return {
       id: idx + 1,
       dbId: r.id,
@@ -156,9 +163,11 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       sold,
       cap,
       tile: `${r.tile_a ?? '#EFEBFF'} 0 9px,${r.tile_b ?? '#E5DEF9'} 9px 18px`,
-      status: almost ? ['Casi lleno', 'Almost full'] : ['Vendiendo', 'Selling'],
-      statusBg: almost ? '#FCEFD6' : '#E3F5EA',
-      statusC: almost ? '#9A6A12' : '#1F8A4C',
+      status: badge[0],
+      statusBg: badge[1],
+      statusC: badge[2],
+      lifecycle: life,
+      startsMs: valid ? d.getTime() : 0,
     };
   };
 
@@ -167,7 +176,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     if (!supabase) return [];
     const { data, error } = await supabase
       .from('events')
-      .select('id,slug,title_es,title_en,venue_es,venue_en,cat,city,starts_at,time_label_es,time_label_en,price_label,going_count,desc_es,desc_en,tile_a,tile_b')
+      .select('id,slug,title_es,title_en,venue_es,venue_en,cat,city,starts_at,time_label_es,time_label_en,price_label,going_count,desc_es,desc_en,tile_a,tile_b,status')
       .eq('owner_id', ownerId)
       .order('starts_at', { ascending: true });
     if (error || !Array.isArray(data)) return [];
@@ -186,28 +195,39 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, real?.id, admin.demo, es]);
 
-  const drafts = useMemo(() => [
-    { name: L('Fin de Año · Cata y Burbujas', 'NYE · Tasting & Bubbles'), date: L('31 Dic', 'Dec 31'), time: '8 PM – 1 AM', price: '$185', tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px', ready: [[L('Detalles', 'Details'), true], [L('Fecha', 'Date'), true], [L('Boletos', 'Tickets'), false], [L('Fotos', 'Photos'), false]] as [string, boolean][] },
-    { name: L('Serie de Pan de Invierno', 'Winter Bread Series'), date: L('Ene (sin fecha)', 'Jan (TBD)'), time: '10 AM – 1 PM', price: '$90', tile: '#F3E2CE 0 9px,#ECD3B4 9px 18px', ready: [[L('Detalles', 'Details'), true], [L('Fecha', 'Date'), false], [L('Boletos', 'Tickets'), true], [L('Fotos', 'Photos'), false]] as [string, boolean][] },
-  ], [L]);
+  // Real aggregate totals for the KPIs + "Este mes" rail (owner_events_summary,
+  // migration 0063) — replaces the hardcoded 186 / $14.2k / 212 placeholders.
+  const [summary, setSummary] = useState<{ upcoming: number; ticketsSold: number; revenue: number; attendees: number } | null>(null);
+  useEffect(() => {
+    if (!persistable || !user || !supabase) { setSummary(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase!.rpc('owner_events_summary');
+      if (cancelled) return;
+      const r = Array.isArray(data) && data[0] ? (data[0] as Record<string, unknown>) : null;
+      setSummary(error || !r ? null : {
+        upcoming: Number(r.upcoming ?? 0), ticketsSold: Number(r.tickets_sold ?? 0),
+        revenue: Number(r.revenue ?? 0), attendees: Number(r.attendees ?? 0),
+      });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, real?.id, admin.demo, events.length]);
 
+  // Upcoming vs. past split. Real owners: by real start time (3h grace so an event
+  // in progress stays "upcoming"). Demo: the seed is all upcoming; past uses the sample.
+  const PAST_GRACE = 3 * 3600 * 1000;
+  const nowMs = Date.now();
+  const isUpcoming = (e: EventRow) => e.startsMs == null || e.startsMs >= nowMs - PAST_GRACE;
+  const upcomingList = persistable ? events.filter(isUpcoming) : events;
+  const pastList = persistable ? events.filter((e) => !isUpcoming(e)) : [];
+
+  // Demo-only sample past events (a signed-in owner sees their real pastList).
   const pastEvents = useMemo(() => [
     { name: L('Mercado Navideño', 'Holiday Market'), date: L('14 Dic 2024', 'Dec 14, 2024'), sold: 142, rev: '$3,840', rating: '4.9', tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px' },
     { name: L('Clase de tamales', 'Tamales Class'), date: L('8 Dic 2024', 'Dec 8, 2024'), sold: 24, rev: '$1,200', rating: '5.0', tile: '#FCE3DC 0 9px,#F6CEC2 9px 18px' },
     { name: L('Noche de jazz', 'Jazz Night'), date: L('23 Nov 2024', 'Nov 23, 2024'), sold: 86, rev: '$2,580', rating: '4.7', tile: '#E4ECFB 0 9px,#D7E3F6 9px 18px' },
   ], [L]);
-
-  const recRaw = useMemo(() => [
-    { name: L('Martes de tacos en vivo', 'Live Taco Tuesdays'), cadence: L('Cada martes', 'Every Tuesday'), next: L('Próx: 14 oct', 'Next: Oct 14'), bg: '#FCEFD6', c: '#9A6A12' },
-    { name: L('Brunch dominical', 'Sunday Brunch'), cadence: L('Cada domingo', 'Every Sunday'), next: L('Próx: 12 oct', 'Next: Oct 12'), bg: '#E3F5EA', c: '#1F8A4C' },
-    { name: L('Cata mensual', 'Monthly Tasting'), cadence: L('Primer viernes', 'First Friday'), next: L('Próx: 1 nov', 'Next: Nov 1'), bg: '#EFEBFF', c: '#6D4DF6' },
-  ], [L]);
-
-  const promoters = useMemo(() => [
-    { initials: 'CR', color: '#7B61FF', name: 'Carlos R.', code: 'CARLOS10', commission: '10%', sales: '$1,240', sold: 28 },
-    { initials: 'LM', color: '#1F9D57', name: 'Lupita M.', code: 'LUPITA15', commission: '15%', sales: '$890', sold: 19 },
-    { initials: 'DJ', color: '#E8954A', name: 'DJ Sonido', code: 'SONIDO', commission: '12%', sales: '$2,100', sold: 42 },
-  ], []);
 
   const attendees = useMemo<Attendee[]>(() => [
     { initials: 'ML', color: '#7B61FF', name: 'Maria Lopez', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: L('Vegetariano', 'Vegetarian'), base: true },
@@ -337,10 +357,16 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const chip = (on: boolean) =>
     `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 
-  const Toggle = ({ on, onClick }: { on: boolean; onClick: () => void }) => (
-    <button onClick={onClick} className="relative h-[25px] w-[42px] flex-none cursor-pointer rounded-full transition-colors" style={{ background: on ? '#7B61FF' : '#D8D2E6' }} aria-pressed={on}>
-      <span className="absolute top-[3px] h-[19px] w-[19px] rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,.18)] transition-all" style={{ left: on ? '20px' : '3px' }} />
-    </button>
+
+  // Honest placeholder for features on the roadmap but not yet built (matches the
+  // app's "Muy pronto" pattern) — never fake data dressed up as working.
+  const comingSoon = (Icon: typeof RefreshCw, title: string, desc: string) => (
+    <div className="flex flex-col items-center rounded-card-sm border border-hair bg-white px-6 py-12 text-center shadow-card">
+      <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-tile bg-lilac-3"><Icon size={22} strokeWidth={2} className="text-primary-dark" /></span>
+      <div className="text-[14px] font-extrabold text-ink">{title}</div>
+      <div className="mt-1 max-w-[340px] text-[11.5px] font-medium leading-relaxed text-muted">{desc}</div>
+      <span className="mt-3 rounded-full bg-amber-bg px-3 py-1 text-[10px] font-extrabold uppercase tracking-[.05em] text-amber-ink">{L('Muy pronto', 'Coming soon')}</span>
+    </div>
   );
 
   const goManage = (id: number, mt: ManageTab = 'overview') => { setManageId(id); setManageTab(mt); setView('manage'); };
@@ -351,18 +377,25 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ==================================================================
   const listTabs: [ListTab, string, number | null][] = [
     ['upcoming', L('Próximos', 'Upcoming'), null],
-    ['drafts', L('Borradores', 'Drafts'), drafts.length],
-    ['past', L('Pasados', 'Past'), null],
+    ['drafts', L('Borradores', 'Drafts'), null],
+    ['past', L('Pasados', 'Past'), persistable ? pastList.length || null : null],
     ['recurring', L('Recurrentes', 'Recurring'), null],
     ['promoters', L('Promotores', 'Promoters'), null],
   ];
 
   // ---- Próximos ----
-  const kpis = [
-    { label: L('Próximos', 'Upcoming'), value: String(events.length), delta: null as string | null },
-    { label: L('Boletos', 'Tickets'), value: '186', delta: '▲ 24%' },
-    { label: L('Ingresos', 'Revenue'), value: '$14.2k', delta: '▲ 18%' },
-  ];
+  // Real owner → live totals from owner_events_summary; demo → sample with deltas.
+  const kpis = persistable
+    ? [
+        { label: L('Próximos', 'Upcoming'), value: String(summary?.upcoming ?? upcomingList.length), delta: null as string | null },
+        { label: L('Boletos', 'Tickets'), value: String(summary?.ticketsSold ?? 0), delta: null as string | null },
+        { label: L('Ingresos', 'Revenue'), value: `$${(summary?.revenue ?? 0).toLocaleString()}`, delta: null as string | null },
+      ]
+    : [
+        { label: L('Próximos', 'Upcoming'), value: String(events.length), delta: null as string | null },
+        { label: L('Boletos', 'Tickets'), value: '186', delta: '▲ 24%' },
+        { label: L('Ingresos', 'Revenue'), value: '$14.2k', delta: '▲ 18%' },
+      ];
 
   const upcomingView = (
     <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
@@ -377,8 +410,17 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           ))}
         </div>
 
+        {upcomingList.length === 0 && (
+          <div className="rounded-card-sm border border-hair bg-white py-12 text-center shadow-card">
+            <div className="text-[13.5px] font-extrabold text-ink">{L('Aún no tienes eventos próximos', 'No upcoming events yet')}</div>
+            <div className="mt-1 text-[11.5px] font-medium text-muted-2">{L('Crea tu primer evento y ponlo en venta en minutos.', 'Create your first event and put it on sale in minutes.')}</div>
+            <button onClick={startWizard} className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
+              <Plus size={15} strokeWidth={2.6} />{L('Crear evento', 'Create event')}
+            </button>
+          </div>
+        )}
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-          {events.map((e) => {
+          {upcomingList.map((e) => {
             const pct = Math.round((e.sold / e.cap) * 100);
             const barC = e.sold / e.cap > 0.85 ? '#E8954A' : '#7B61FF';
             return (
@@ -419,14 +461,21 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {/* desktop rail */}
       <div className="hidden flex-col gap-4 xl:sticky xl:top-[74px] xl:flex">
         <div className={`${cardCls} p-4`}>
-          <div className="mb-3 text-[13px] font-extrabold text-ink">{L('Este mes', 'This month')}</div>
+          <div className="mb-3 text-[13px] font-extrabold text-ink">{persistable ? L('Tus totales', 'Your totals') : L('Este mes', 'This month')}</div>
           <div className="flex flex-col gap-2.5">
-            {[
-              { Icon: Ticket, c: '#6D4DF6', bg: '#F1EFFA', t: L('Boletos vendidos', 'Tickets sold'), r: '186' },
-              { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', t: L('Ingresos', 'Revenue'), r: '$14.2k' },
-              { Icon: Users, c: '#2A5C8A', bg: '#E4ECFB', t: L('Asistentes', 'Attendees'), r: '212' },
-              { Icon: RefreshCw, c: '#9A6A12', bg: '#FCEFD6', t: L('Recurrentes', 'Recurring'), r: '2' },
-            ].map((s) => (
+            {(persistable
+              ? [
+                  { Icon: Ticket, c: '#6D4DF6', bg: '#F1EFFA', t: L('Boletos vendidos', 'Tickets sold'), r: String(summary?.ticketsSold ?? 0) },
+                  { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', t: L('Ingresos', 'Revenue'), r: `$${(summary?.revenue ?? 0).toLocaleString()}` },
+                  { Icon: Users, c: '#2A5C8A', bg: '#E4ECFB', t: L('Asistentes', 'Attendees'), r: String(summary?.attendees ?? 0) },
+                ]
+              : [
+                  { Icon: Ticket, c: '#6D4DF6', bg: '#F1EFFA', t: L('Boletos vendidos', 'Tickets sold'), r: '186' },
+                  { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', t: L('Ingresos', 'Revenue'), r: '$14.2k' },
+                  { Icon: Users, c: '#2A5C8A', bg: '#E4ECFB', t: L('Asistentes', 'Attendees'), r: '212' },
+                  { Icon: RefreshCw, c: '#9A6A12', bg: '#FCEFD6', t: L('Recurrentes', 'Recurring'), r: '2' },
+                ]
+            ).map((s) => (
               <div key={s.t} className="flex items-center gap-2.5">
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px]" style={{ background: s.bg }}>
                   <s.Icon size={15} strokeWidth={2.2} style={{ color: s.c }} />
@@ -440,7 +489,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#6743E2,#8268FF)' }}>
           <div className="text-[13px] font-extrabold">💡 {L('Consejo', 'Tip')}</div>
           <div className="mt-1 text-[11.5px] font-semibold leading-snug text-white/85">
-            {L('Invita promotores con un código: comparten tu evento y ganan comisión por boleto.', 'Invite promoters with a code: they share your event and earn commission per ticket.')}
+            {L('Pronto podrás invitar promotores con un código: comparten tu evento y ganan comisión por boleto.', 'Soon you\'ll invite promoters with a code: they share your event and earn commission per ticket.')}
           </div>
           <button onClick={() => setListTab('promoters')} className="mt-2.5 cursor-pointer rounded-[10px] bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-primary-press">{L('Ver promotores', 'View promoters')}</button>
         </div>
@@ -448,50 +497,34 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ---- Borradores ----
-  const draftsView = (
-    <div className="flex flex-col gap-4">
-      <p className="text-[11.5px] font-medium leading-relaxed text-muted">{L('Termina de configurar antes de publicar. Cada evento necesita detalles, fecha, boletos y fotos.', 'Finish setup before publishing. Each needs details, date, tickets and photos.')}</p>
-      <div className="grid gap-3 md:grid-cols-2">
-        {drafts.map((d) => {
-          const done = d.ready.filter((r) => r[1]).length;
-          const isReady = done === d.ready.length;
-          return (
-            <div key={d.name} className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
-              <div className="relative h-20" style={{ background: `repeating-linear-gradient(135deg,${d.tile})` }}>
-                <div className="absolute inset-0 bg-white/40" />
-                <span className="absolute left-2.5 top-2.5 rounded-[7px] bg-amber-bg px-2.5 py-1 text-[9px] font-extrabold text-amber-ink">{L('Borrador', 'Draft')}</span>
-                <span className="absolute right-2.5 top-2.5 rounded-[7px] px-2.5 py-1 text-[9px] font-extrabold" style={{ background: isReady ? '#E3F5EA' : '#F1EFFA', color: isReady ? '#1F8A4C' : '#9A96AE' }}>{done}/{d.ready.length} {L('listo', 'ready')}</span>
-              </div>
-              <div className="p-3.5">
-                <div className="text-[14px] font-extrabold text-ink">{d.name}</div>
-                <div className="mt-0.5 text-[11px] font-medium text-muted-2">{d.date} · {d.time} · {d.price}</div>
-                <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {d.ready.map(([label, ok]) => (
-                    <span key={label} className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[9.5px] font-bold" style={{ background: ok ? '#E3F5EA' : '#F7F6FC', color: ok ? '#1F8A4C' : '#9A96AE', borderColor: ok ? '#A7E3C0' : 'rgba(30,27,46,.08)' }}>
-                      {ok ? '✓' : '○'} {label}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <button onClick={startWizard} className="flex-1 cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[11.5px] font-extrabold text-ink">{L('Continuar', 'Continue')}</button>
-                  <button
-                    onClick={() => { if (isReady) { flash(L('Evento publicado', 'Event published')); setListTab('upcoming'); } else flash(L('Completa la lista para publicar', 'Complete the checklist to publish')); }}
-                    className={`cursor-pointer rounded-btn px-4 py-2.5 text-[11.5px] font-extrabold text-white ${isReady ? 'bg-primary shadow-cta-sm' : 'bg-lilac-line'}`}
-                  >
-                    {L('Publicar', 'Publish')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+  // ---- Borradores ---- (draft-saving lands with the next phase; honest for now)
+  const draftsView = comingSoon(
+    ImagePlus,
+    L('Guarda eventos como borrador', 'Save events as drafts'),
+    L('Pronto podrás dejar un evento a medias y terminarlo después. Por ahora el asistente publica en un paso.', "Soon you'll be able to leave an event half-finished and complete it later. For now the wizard publishes in one pass."),
   );
 
-  // ---- Pasados ----
-  const pastView = (
+  // ---- Pasados ---- real for a signed-in owner; sample when exploring in demo
+  const pastView = persistable ? (
+    pastList.length === 0 ? (
+      <div className="rounded-card-sm border border-hair bg-white py-12 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Todavía no tienes eventos pasados.', 'No past events yet.')}</div>
+    ) : (
+      <div className="grid gap-2.5 md:grid-cols-2">
+        {pastList.map((e) => (
+          <button key={e.dbId ?? e.id} onClick={() => goManage(e.id)} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left opacity-90 shadow-card hover:opacity-100">
+            <span className="flex h-12 w-12 flex-none flex-col items-center justify-center rounded-[11px]" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }}>
+              <span className="text-[8px] font-extrabold text-pink-dark">{e.mon}</span>
+              <span className="text-[15px] font-extrabold leading-none text-ink">{e.day}</span>
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[12.5px] font-extrabold text-ink">{e.name}</div>
+              <div className="mt-0.5 text-[10px] font-medium text-muted-2">{e.sold} {L('asistentes', 'attendees')}{e.lifecycle === 'cancelled' ? ` · ${L('Cancelado', 'Cancelled')}` : ''}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    )
+  ) : (
     <div className="grid gap-2.5 md:grid-cols-2">
       {pastEvents.map((e) => (
         <div key={e.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 opacity-90 shadow-card">
@@ -509,61 +542,18 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ---- Recurrentes ----
-  const recurringView = (
-    <div className="flex flex-col gap-4">
-      <p className="text-[11.5px] font-medium leading-relaxed text-muted">{L('Eventos que se repiten automáticamente en tu calendario.', 'Events that auto-repeat on your calendar.')}</p>
-      <div className="grid gap-2.5 md:grid-cols-2">
-        {recRaw.map((r, i) => {
-          const on = recurState[i];
-          return (
-            <div key={r.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card" style={{ opacity: on ? 1 : 0.6 }}>
-              <span className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-[11px]" style={{ background: r.bg }}>
-                <RefreshCw size={18} strokeWidth={2} style={{ color: r.c }} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[12.5px] font-extrabold text-ink">{r.name}</div>
-                <div className="mt-0.5 text-[10px] font-medium text-muted-2">{r.cadence} · {r.next}</div>
-              </div>
-              <Toggle on={on} onClick={() => setRecurState((s) => ({ ...s, [i]: !on }))} />
-            </div>
-          );
-        })}
-      </div>
-      <button onClick={startWizard} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-3 text-[12.5px] font-extrabold text-primary-dark">+ {L('Nuevo recurrente', 'New recurring')}</button>
-    </div>
+  // ---- Recurrentes ---- (auto-repeat series — roadmap, not yet built)
+  const recurringView = comingSoon(
+    RefreshCw,
+    L('Eventos recurrentes', 'Recurring events'),
+    L('Repite un evento cada semana o mes automáticamente, sin recrearlo cada vez. En camino.', 'Repeat an event every week or month automatically, without recreating it each time. On the way.'),
   );
 
-  // ---- Promotores ----
-  const promotersView = (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3 rounded-btn-lg bg-lilac-2 p-3">
-        <Megaphone size={16} strokeWidth={2} className="flex-none text-primary-dark" />
-        <div className="flex-1">
-          <div className="text-[11.5px] font-extrabold text-ink">{L('Promotores y afiliados', 'Promoters & affiliates')}</div>
-          <div className="mt-0.5 text-[10px] font-medium leading-snug text-ink-3">{L('Comparten un código y ganan comisión por boleto vendido.', 'They share a code and earn commission per ticket.')}</div>
-        </div>
-      </div>
-      <div className="grid gap-2.5 md:grid-cols-2">
-        {promoters.map((p) => (
-          <div key={p.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: p.color }}>{p.initials}</span>
-            <div className="min-w-0 flex-1">
-              <div className="text-[12.5px] font-extrabold text-ink">{p.name}</div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] font-medium text-muted-2">
-                <span className="rounded bg-lilac-2 px-1.5 py-px font-extrabold text-primary-dark">{p.code}</span>
-                <span>· {p.commission} {L('comisión', 'commission')}</span>
-              </div>
-            </div>
-            <div className="flex-none text-right">
-              <div className="text-[13px] font-extrabold text-ink">{p.sales}</div>
-              <div className="text-[9px] font-bold text-muted-2">{p.sold} {L('vendidos', 'sold')}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <button onClick={() => flash(L('Invitación de promotor enviada', 'Promoter invite sent'))} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-3 text-[12.5px] font-extrabold text-primary-dark">+ {L('Invitar promotor', 'Invite promoter')}</button>
-    </div>
+  // ---- Promotores ---- (affiliate codes + commissions — needs payments first)
+  const promotersView = comingSoon(
+    Megaphone,
+    L('Promotores y afiliados', 'Promoters & affiliates'),
+    L('Da a tus promotores un código para compartir y págales comisión por boleto. Se habilita al conectar pagos.', 'Give promoters a code to share and pay them commission per ticket. Unlocks when payments are connected.'),
   );
 
   const listBody = (
@@ -600,7 +590,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ==================================================================
   const manageTabs: [ManageTab, string, number | null][] = [
     ['overview', L('Resumen', 'Overview'), null],
-    ['attendees', L('Asistentes', 'Attendees'), mgEv.sold],
+    ['attendees', L('Asistentes', 'Attendees'), persistable ? ticketsSold : mgEv.sold],
     ['checkin', L('Check-in', 'Check-in'), null],
     ['tickets', L('Boletos', 'Tickets'), null],
     ['settings', L('Ajustes', 'Settings'), null],
@@ -610,7 +600,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
       <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${mgEv.tile})` }}>
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.5))' }} />
-        <span className="absolute right-2.5 top-2.5 rounded-[7px] bg-green-bg px-2.5 py-1 text-[9px] font-extrabold text-green-dark">{L('Vendiendo', 'Selling')}</span>
+        <span className="absolute right-2.5 top-2.5 rounded-[7px] px-2.5 py-1 text-[9px] font-extrabold" style={{ background: mgEv.statusBg, color: mgEv.statusC }}>{L(mgEv.status[0], mgEv.status[1]) || L('Vendiendo', 'Selling')}</span>
         <div className="absolute bottom-2.5 left-3">
           <div className="text-[15px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{mgEv.name}</div>
           <div className="text-[10px] font-semibold text-white/85">{mgEv.time} · {mgEv.price}</div>
@@ -633,8 +623,22 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- Resumen ----
-  const salesBars = [3, 5, 4, 8, 6, 12, 9, 14, 11, 18, 22, 16];
-  const maxBar = Math.max(...salesBars);
+  // Real owner → a true last-14-days ticket-sales sparkline bucketed from
+  // event_tickets.created_at; demo → the sample curve.
+  const TL_DAYS = 14;
+  const realTimeline = (() => {
+    const buckets = new Array(TL_DAYS).fill(0) as number[];
+    const midnight = new Date(nowMs); midnight.setHours(0, 0, 0, 0);
+    const startMs = midnight.getTime() - (TL_DAYS - 1) * 86400000;
+    for (const t of ticketRows ?? []) {
+      const idx = Math.floor((new Date(t.created_at).getTime() - startMs) / 86400000);
+      if (idx >= 0 && idx < TL_DAYS) buckets[idx] += t.qty || 0;
+    }
+    return buckets;
+  })();
+  const salesBars = persistable ? realTimeline : [3, 5, 4, 8, 6, 12, 9, 14, 11, 18, 22, 16];
+  const maxBar = Math.max(...salesBars, 1);
+  const timelineEmpty = persistable && salesBars.every((v) => v === 0);
   const overviewView = (
     <div className="grid items-start gap-3 xl:grid-cols-2">
       <div className={`${cardCls} p-3.5`}>
@@ -653,44 +657,74 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         ))}
       </div>
       <div className={`${cardCls} p-3.5`}>
-        <div className="mb-2.5 text-[12.5px] font-extrabold text-ink">{L('Línea de ventas', 'Sales timeline')}</div>
-        <div className="flex h-[70px] items-end gap-[5px]">
-          {salesBars.map((v, i) => (
-            <div key={i} className="flex-1 rounded-t-[4px]" style={{ height: `${Math.round((v / maxBar) * 60) + 6}px`, background: i === salesBars.length - 2 ? '#7B61FF' : '#D9CFF6' }} />
-          ))}
-        </div>
-        <div className="mt-2 text-[9.5px] font-semibold text-muted-2">{L('Pico de ventas hace 2 días tras el email.', 'Sales peaked 2 days ago after the email.')}</div>
+        <div className="mb-2.5 text-[12.5px] font-extrabold text-ink">{L('Ventas · últimos 14 días', 'Sales · last 14 days')}</div>
+        {timelineEmpty ? (
+          <div className="py-6 text-center text-[11.5px] font-semibold text-muted-2">{L('Sin ventas en los últimos 14 días.', 'No sales in the last 14 days.')}</div>
+        ) : (
+          <>
+            <div className="flex h-[70px] items-end gap-[5px]">
+              {salesBars.map((v, i) => (
+                <div key={i} className="flex-1 rounded-t-[4px]" style={{ height: `${Math.round((v / maxBar) * 60) + 6}px`, background: i === salesBars.length - 1 ? '#7B61FF' : '#D9CFF6' }} />
+              ))}
+            </div>
+            <div className="mt-2 text-[9.5px] font-semibold text-muted-2">{persistable ? L('Boletos vendidos por día.', 'Tickets sold per day.') : L('Pico de ventas hace 2 días tras el email.', 'Sales peaked 2 days ago after the email.')}</div>
+          </>
+        )}
       </div>
     </div>
   );
 
   // ---- Asistentes ----
-  const filteredAttendees = attendees.filter((a) => a.name.toLowerCase().includes(attendeeQuery.trim().toLowerCase()));
+  const aq = attendeeQuery.trim().toLowerCase();
+  const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || 'C';
+  const ATT_COLORS = ['#7B61FF', '#1F9D57', '#E8954A', '#D6336C', '#2A5C8A'];
+  // Real owner → the actual buyers from event_tickets; demo → the sample roster.
+  const realAttendees = (ticketRows ?? []).map((t, i) => ({
+    key: t.id, name: t.customer_name || L('Cliente', 'Customer'), color: ATT_COLORS[i % ATT_COLORS.length],
+    code: t.code, qty: t.qty, used: t.status === 'used', refunded: t.status === 'refunded',
+  })).filter((a) => a.name.toLowerCase().includes(aq) || a.code.toLowerCase().includes(aq));
+  const filteredAttendees = attendees.filter((a) => a.name.toLowerCase().includes(aq));
   const attendeesView = (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2.5 rounded-btn border border-hair bg-white px-3 py-2.5">
         <Search size={15} strokeWidth={2.2} className="text-muted-2" />
-        <input value={attendeeQuery} onChange={(e) => setAttendeeQuery(e.target.value)} placeholder={L('Buscar asistentes…', 'Search attendees…')} className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-ink outline-none placeholder:text-muted-2" />
+        <input value={attendeeQuery} onChange={(e) => setAttendeeQuery(e.target.value)} placeholder={L('Buscar por nombre o código…', 'Search by name or code…')} className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-ink outline-none placeholder:text-muted-2" />
       </div>
-      <div className="grid gap-2.5 md:grid-cols-2">
-        {filteredAttendees.map((a) => {
-          const inn = isCheckedIn(a);
-          return (
-            <div key={a.name} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3">
-              <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: a.color }}>{a.initials}</span>
+      {persistable ? (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {realAttendees.map((a) => (
+            <div key={a.key} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3">
+              <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: a.color }}>{initialsOf(a.name)}</span>
               <div className="min-w-0 flex-1">
-                <div className="text-[12px] font-extrabold text-ink">{a.name}</div>
-                <div className="mt-0.5 flex items-center gap-1.5">
-                  <span className="rounded px-1.5 py-px text-[8px] font-extrabold" style={{ background: a.tierBg, color: a.tierC }}>{a.tier}</span>
-                  {a.diet && <span className="text-[9px] font-semibold text-muted-2">{a.diet}</span>}
-                </div>
+                <div className="truncate text-[12px] font-extrabold text-ink">{a.name}</div>
+                <div className="mt-0.5 font-mono text-[9.5px] font-bold tracking-[.08em] text-muted-2">{a.code} · {a.qty} {a.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}</div>
               </div>
-              <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: inn ? '#E3F5EA' : '#F1EFFA', color: inn ? '#1F8A4C' : '#9A96AE' }}>{inn ? L('Ingresó', 'Checked in') : L('Confirmado', 'Going')}</span>
+              <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: a.used ? '#E3F5EA' : a.refunded ? '#FDE7EF' : '#F1EFFA', color: a.used ? '#1F8A4C' : a.refunded ? '#D6336C' : '#9A96AE' }}>{a.used ? L('Ingresó', 'Checked in') : a.refunded ? L('Reembolsado', 'Refunded') : L('Confirmado', 'Going')}</span>
             </div>
-          );
-        })}
-        {filteredAttendees.length === 0 && <div className="col-span-full py-8 text-center text-[12px] font-semibold text-muted">{L('Sin resultados', 'No results')}</div>}
-      </div>
+          ))}
+          {realAttendees.length === 0 && <div className="col-span-full rounded-btn-lg border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{aq ? L('Sin resultados', 'No results') : L('Aún no hay asistentes. Aparecerán aquí cuando compren boletos.', 'No attendees yet. They show up here once they buy tickets.')}</div>}
+        </div>
+      ) : (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {filteredAttendees.map((a) => {
+            const inn = isCheckedIn(a);
+            return (
+              <div key={a.name} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3">
+                <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: a.color }}>{a.initials}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[12px] font-extrabold text-ink">{a.name}</div>
+                  <div className="mt-0.5 flex items-center gap-1.5">
+                    <span className="rounded px-1.5 py-px text-[8px] font-extrabold" style={{ background: a.tierBg, color: a.tierC }}>{a.tier}</span>
+                    {a.diet && <span className="text-[9px] font-semibold text-muted-2">{a.diet}</span>}
+                  </div>
+                </div>
+                <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: inn ? '#E3F5EA' : '#F1EFFA', color: inn ? '#1F8A4C' : '#9A96AE' }}>{inn ? L('Ingresó', 'Checked in') : L('Confirmado', 'Going')}</span>
+              </div>
+            );
+          })}
+          {filteredAttendees.length === 0 && <div className="col-span-full py-8 text-center text-[12px] font-semibold text-muted">{L('Sin resultados', 'No results')}</div>}
+        </div>
+      )}
     </div>
   );
 
@@ -874,41 +908,59 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- Ajustes ----
-  const settingsRows: [string, string][] = [
+  // These controls need payments (refunds/transfers) or notifications (reminders)
+  // wired first, so we list them honestly as upcoming instead of faking toggles.
+  const upcomingSettings: [string, string][] = [
     [L('Lista de espera', 'Waitlist'), L('Acepta inscritos cuando se llene.', 'Accept signups when full.')],
     [L('Transferir boletos', 'Allow transfers'), L('Los invitados pueden ceder su boleto.', 'Guests can transfer their ticket.')],
     [L('Recordatorio 24h', '24h reminder'), L('Email y push antes del evento.', 'Email + push before the event.')],
     [L('Reembolsos', 'Refunds'), L('Hasta 48h antes del evento.', 'Up to 48h before the event.')],
-    [L('Mostrar asistentes', 'Show attendee count'), L('Visible en la página pública.', 'Visible on the public page.')],
   ];
+  const cancelEvent = async () => {
+    if (cancelBusy) return;
+    if (persistable && mgEv.dbId && supabase) {
+      setCancelBusy(true);
+      const { error } = await supabase.rpc('cancel_event', { in_event_id: mgEv.dbId });
+      setCancelBusy(false);
+      if (error) { flash(L('No se pudo cancelar', "Couldn't cancel")); return; }
+      // Soft-cancel: keep the row (tickets preserved), reflect the new status locally.
+      setEvents((xs) => xs.map((x) => (x.id === mgEv.id ? { ...x, lifecycle: 'cancelled', status: ['Cancelado', 'Cancelled'], statusBg: '#FDE7EF', statusC: '#D6336C' } : x)));
+      flash(L('Evento cancelado — se avisó a los asistentes', 'Event cancelled — attendees notified'));
+    } else {
+      flash(L('Evento cancelado', 'Event cancelled'));
+    }
+    setAskCancel(false);
+    setView('list');
+  };
+  const alreadyCancelled = mgEv.lifecycle === 'cancelled';
   const settingsView = (
     <div className="flex flex-col gap-4">
-      <div className={`${cardCls} px-3.5`}>
-        {settingsRows.map(([title, sub], i) => (
-          <div key={title} className={`flex items-center justify-between gap-3 py-3 ${i < settingsRows.length - 1 ? 'border-b border-hair' : ''}`}>
+      <div className={`${cardCls} p-3.5`}>
+        <div className="mb-1 text-[12.5px] font-extrabold text-ink">{L('Más controles en camino', 'More controls on the way')}</div>
+        <div className="mb-2.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('Se habilitan al conectar pagos y notificaciones.', 'Unlock once payments and notifications are connected.')}</div>
+        {upcomingSettings.map(([title, sub], i) => (
+          <div key={title} className={`flex items-center justify-between gap-3 py-3 ${i < upcomingSettings.length - 1 ? 'border-b border-hair' : ''}`}>
             <div className="min-w-0 flex-1">
               <div className="text-[12px] font-bold text-ink">{title}</div>
               <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{sub}</div>
             </div>
-            <Toggle on={!!settingState[i]} onClick={() => setSettingState((s) => ({ ...s, [i]: !s[i] }))} />
+            <span className="flex-none rounded-full bg-amber-bg px-2 py-1 text-[9px] font-extrabold uppercase tracking-[.04em] text-amber-ink">{L('Muy pronto', 'Soon')}</span>
           </div>
         ))}
       </div>
-      <button
-        onClick={() => {
-          // Real owner → delete the event row; demo → local flash only (unchanged).
-          if (persistable && mgEv.dbId && supabase) {
-            void supabase.from('events').delete().eq('id', mgEv.dbId).then(() => {
-              setEvents((xs) => xs.filter((x) => x.id !== mgEv.id));
-              flash(L('Evento cancelado', 'Event cancelled'));
-              setView('list');
-            });
-          } else {
-            flash(L('Evento cancelado', 'Event cancelled'));
-          }
-        }}
-        className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"
-      >{L('Cancelar evento', 'Cancel event')}</button>
+      {alreadyCancelled ? (
+        <div className="rounded-btn-lg bg-pink-bg py-3 text-center text-[12.5px] font-extrabold text-pink-dark">{L('Este evento está cancelado.', 'This event is cancelled.')}</div>
+      ) : askCancel ? (
+        <div className="rounded-btn-lg border-[1.5px] border-pink-bg bg-white p-3.5">
+          <div className="text-[12px] font-bold text-ink">{L('¿Cancelar este evento? Se avisará a quienes ya tienen boleto y dejará de venderse.', 'Cancel this event? Ticket holders will be notified and sales will stop.')}</div>
+          <div className="mt-3 flex gap-2">
+            <button onClick={() => setAskCancel(false)} className="flex-1 cursor-pointer rounded-btn border border-hair bg-white py-2.5 text-[12px] font-extrabold text-ink-soft">{L('No, volver', 'No, go back')}</button>
+            <button onClick={cancelEvent} disabled={cancelBusy} className="flex-1 cursor-pointer rounded-btn bg-pink-dark py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{cancelBusy ? L('Cancelando…', 'Cancelling…') : L('Sí, cancelar', 'Yes, cancel')}</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setAskCancel(true)} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">{L('Cancelar evento', 'Cancel event')}</button>
+      )}
     </div>
   );
 
@@ -988,7 +1040,6 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const wizCatName = L(wizCat.es, wizCat.en);
   const draftTile = `${wizCat.tile[0]} 0 9px,${wizCat.tile[1]} 9px 18px`;
   const wizStepDefs: [string, string][] = [['details', L('Detalles', 'Details')], ['dateloc', L('Fecha y lugar', 'Date & place')], ['tickets', L('Boletos', 'Tickets')], ['review', L('Revisar', 'Review')]];
-  const visDefs: [string, string][] = [['public', L('Público', 'Public')], ['followers', L('Seguidores', 'Followers first')], ['unlisted', L('No listado', 'Unlisted')]];
   // ready to publish = name + date + at least one named ticket tier
   const eReady = !!draft.name.trim() && !!draft.date && draft.tiers.some((t) => t.name.trim());
   // per-step gate for the "Continuar" button
@@ -1052,38 +1103,29 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <input type="time" value={draft.endTime} onChange={(e) => upD({ endTime: e.target.value })} className={fieldCls} />
         </div>
       </div>
-      <div className="flex items-center gap-3 rounded-field border border-hair bg-lilac-3 p-3">
-        <div className="flex-1">
-          <div className="text-[12.5px] font-bold text-ink">{L('Evento en línea', 'Online event')}</div>
-          <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L('Sin dirección física; comparte el enlace después.', 'No physical address; share the link later.')}</div>
+      <div className="relative">
+        <label className={labelCls}>{L('Dirección', 'Address')}</label>
+        <div className="flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
+          <MapPin size={15} strokeWidth={2.2} className={draft.lat != null ? 'text-green' : 'text-muted-2'} />
+          <input value={draft.venue} onChange={(e) => upD({ venue: e.target.value, lat: null, lng: null })} placeholder={L('Escribe la calle y número…', 'Type the street address…')} className="min-w-0 flex-1 bg-transparent py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
+          {addrSearching && <RefreshCw size={14} className="animate-spin text-muted-2" />}
+          {draft.lat != null && !addrSearching && <Check size={15} strokeWidth={3} className="text-green" />}
         </div>
-        <Toggle on={draft.online} onClick={() => upD({ online: !draft.online, ...(draft.online ? {} : { venue: '', lat: null, lng: null }) })} />
-      </div>
-      {!draft.online && (
-        <div className="relative">
-          <label className={labelCls}>{L('Dirección', 'Address')}</label>
-          <div className="flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
-            <MapPin size={15} strokeWidth={2.2} className={draft.lat != null ? 'text-green' : 'text-muted-2'} />
-            <input value={draft.venue} onChange={(e) => upD({ venue: e.target.value, lat: null, lng: null })} placeholder={L('Escribe la calle y número…', 'Type the street address…')} className="min-w-0 flex-1 bg-transparent py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
-            {addrSearching && <RefreshCw size={14} className="animate-spin text-muted-2" />}
-            {draft.lat != null && !addrSearching && <Check size={15} strokeWidth={3} className="text-green" />}
+        {addrResults.length > 0 && (
+          <div className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
+            {addrResults.map((a, i) => (
+              <button key={`${a.formatted}-${i}`} onClick={() => chooseAddr(a)} className="flex w-full cursor-pointer items-start gap-2 rounded-field p-2.5 text-left hover:bg-app">
+                <MapPin size={14} className="mt-0.5 flex-none text-primary" strokeWidth={2.4} />
+                <span className="min-w-0 text-[12.5px] font-bold text-ink-soft">
+                  {a.formatted}
+                  {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
+                </span>
+              </button>
+            ))}
           </div>
-          {addrResults.length > 0 && (
-            <div className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
-              {addrResults.map((a, i) => (
-                <button key={`${a.formatted}-${i}`} onClick={() => chooseAddr(a)} className="flex w-full cursor-pointer items-start gap-2 rounded-field p-2.5 text-left hover:bg-app">
-                  <MapPin size={14} className="mt-0.5 flex-none text-primary" strokeWidth={2.4} />
-                  <span className="min-w-0 text-[12.5px] font-bold text-ink-soft">
-                    {a.formatted}
-                    {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="mt-1 text-[10px] font-semibold text-muted-2">{draft.lat != null ? L('📍 Ubicación fijada — se mostrará el mapa y "cómo llegar".', '📍 Location set — the map + directions will show.') : L('Elige una sugerencia para fijar el mapa.', 'Pick a suggestion to set the map.')}</div>
-        </div>
-      )}
+        )}
+        <div className="mt-1 text-[10px] font-semibold text-muted-2">{draft.lat != null ? L('📍 Ubicación fijada — se mostrará el mapa y "cómo llegar".', '📍 Location set — the map + directions will show.') : L('Elige una sugerencia para fijar el mapa.', 'Pick a suggestion to set the map.')}</div>
+      </div>
     </div>
   );
 
@@ -1140,12 +1182,6 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <button onClick={() => setWizStep(step)} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
           </div>
         ))}
-      </div>
-      <div>
-        <label className={labelCls}>{L('Visibilidad', 'Visibility')}</label>
-        <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto">
-          {visDefs.map(([k, lab]) => <button key={k} onClick={() => upD({ vis: k })} className={chip(draft.vis === k)}>{lab}</button>)}
-        </div>
       </div>
     </div>
   );
@@ -1296,8 +1332,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       <div className="mt-5 flex w-full max-w-[420px] flex-col gap-2.5">
-        <button onClick={() => { flash(L('Enlace del evento copiado', 'Event link copied')); }} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
-          <Share2 size={16} strokeWidth={2.4} />{L('Compartir evento', 'Share event')}
+        <button onClick={() => { const url = typeof window !== 'undefined' ? `${window.location.origin}/eventos` : ''; if (typeof navigator !== 'undefined' && navigator.clipboard && url) void navigator.clipboard.writeText(url); flash(L('Enlace de eventos copiado', 'Events link copied')); }} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
+          <Share2 size={16} strokeWidth={2.4} />{L('Compartir eventos', 'Share events')}
         </button>
         <button onClick={() => { setView('list'); setListTab('upcoming'); }} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a eventos', 'Back to events')}</button>
       </div>

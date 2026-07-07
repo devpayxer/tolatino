@@ -518,6 +518,46 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   overflow at 392px. Deferred: recurring-series generation, saved drafts, promoter/
   affiliate; address autocomplete needs live Photon/Census (sandbox-blocked; mirrors
   the working business address flow); cover persists once Supabase Storage is live.
+- [x] **Eventos P0 — correctness & honesty pass (2026-07-07).** After a 10-agent
+  ultracode audit of the whole Eventos flow, fixed the correctness bugs and removed
+  every fixture that rendered as real. Migration **0063**:
+  - **Discovery integrity:** `events_near` now returns only **published + still-upcoming**
+    events (was: every event forever, incl. past/draft/cancelled), geo-filtered with
+    **`st_dwithin`** (GIST-index-accelerated) + a partial `events_discovery_idx`.
+    `event_by_slug` hides **drafts** (cancelled still resolve so the detail page can
+    show a "Cancelado" banner). A **BEFORE-INSERT guard** blocks RSVP on non-published
+    events at the DB (covers every client path).
+  - **Real organizer dashboard:** `owner_events_summary()` RPC (owner-scoped, indexed)
+    powers the top KPIs + "Tus totales" rail with **live** boletos/ingresos/asistentes
+    (replaced hardcoded 186 / $14.2k / 212). Upcoming vs. **Pasados** split by real
+    start time; **Asistentes** roster + **Resumen** 14-day sales sparkline built from
+    real `event_tickets` (were fixtures); manage hero badge reflects real lifecycle.
+  - **Proper cancel:** `cancel_event()` RPC **soft-cancels** (status→cancelled, tickets
+    preserved) and **notifies every ticket holder + RSVP** (new `event_cancelled`
+    notification kind) — the old button hard-deleted the row, cascading away all sold
+    tickets. Consumer shows a Cancelado/terminado banner and disables buy/RSVP.
+  - **No fake controls shipped as final:** the wizard's unbacked **online toggle** +
+    **visibility chips** removed; the 5 fake Ajustes toggles replaced with an honest
+    "Muy pronto" list; the fixture **Borradores / Recurrentes / Promotores** tabs
+    replaced with honest "Muy pronto" placeholders; card/featured/detail "asisten"
+    double-count fixed; date-chip year-collapse fixed (keys on real ISO date).
+  - Verified: tsc + build clean; `tools/mobile-audit/eventos-p0.js` — 0 overflow at
+    392px across consumer list/detail + dashboard tabs + manage/Ajustes.
+  - **Deferred here → build in later phases (honest, logged):**
+    - [ ] **Online events** — hidden until there's an `online_url` column + a join/link
+      flow (a "share the link later" toggle with nowhere to store the link is a broken
+      promise). Build with the event-detail phase.
+    - [ ] **Event visibility** (public / followers-first / unlisted) — hidden until the
+      access-control (RLS scoping + follower graph) exists; today all events are public.
+    - [ ] **Saved drafts** — the wizard publishes in one pass; `events.status='draft'`
+      exists but there's no save-draft/resume flow yet. Borradores tab is "Muy pronto".
+    - [ ] **Recurring series** — auto-repeat generation not built. Tab is "Muy pronto".
+    - [ ] **Promoters / affiliates** — promo codes + per-ticket commission need payments
+      first. Tab is "Muy pronto"; the desktop tip is future-tense.
+    - [ ] **Ajustes controls** — waitlist, ticket transfers, 24h reminders, refunds all
+      need payments/notifications; listed as "Muy pronto", not faked.
+    - [ ] **`/eventos/[slug]` public page + SEO + real deep-link share** — success/detail
+      share currently copies the `/eventos` list URL (a real page); build the slug route.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /
