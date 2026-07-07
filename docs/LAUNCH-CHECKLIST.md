@@ -375,6 +375,18 @@ backing them with real Supabase tables/RPCs when each feature goes live.
       seat total. Deferred: real time-SLOT scheduling (the times are still fixture
       slots — capacity is enforced per DAY, not per time-slot) and per-variant SKU
       stock for products.
+- [x] **Real reviews — persisted + rating sync (2026-07-07).** "Escribir reseña"
+  only added to local state before; now reviews persist and drive the rating.
+  Migration **0056**: `reviews.user_id` + a unique (business_id, user_id), author
+  self-service RLS (insert/update/delete own), a `post_review` RPC (upsert one
+  review per user per business), a `reviews_by_slug` RPC for the listing, and a
+  **trigger that keeps `businesses.rating` (avg) + `reviews_count` in sync** on
+  every review change (so cards/search stay accurate). BizDetail loads the real
+  reviews (fixtures fallback when none) and "Publicar reseña" persists via
+  `post_review` (auth-gated → /entrar) with optimistic add + refetch. Verified:
+  a persisted review not in the fixtures renders in the Reseñas tab, 0 pageerrors
+  / 0 overflow. Deferred: photo reviews, owner reply, helpful-vote persistence,
+  verified-purchase badge, moderation.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

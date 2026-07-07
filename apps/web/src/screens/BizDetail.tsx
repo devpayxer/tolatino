@@ -15,7 +15,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, fmtDayHours, fmtLong, statusLabel } from '@/lib/hours';
@@ -46,6 +46,14 @@ const capMaxOf = (cap: string): number => {
   return nums.length ? Math.max(...nums) : 0; // 0 = untracked (no gating)
 };
 const WD_MON1: [string, string][] = [['L', 'M'], ['M', 'T'], ['X', 'W'], ['J', 'T'], ['V', 'F'], ['S', 'S'], ['D', 'S']];
+const reviewWhen = (iso: string): Bi => {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (d <= 0) return ['hoy', 'today'];
+  if (d === 1) return ['ayer', '1d'];
+  if (d < 7) return [`hace ${d} d`, `${d}d`];
+  const w = Math.floor(d / 7);
+  return [`hace ${w} sem`, `${w}w`];
+};
 
 type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string };
 
@@ -228,6 +236,20 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [myStars, setMyStars] = useState(5);
   const [myText, setMyText] = useState('');
   const [myReviews, setMyReviews] = useState<{ id: string; stars: number; text: string }[]>([]);
+  // Real persisted reviews (migration 0056). Empty → the tab keeps the fixtures.
+  const [realReviews, setRealReviews] = useState<PubReview[]>([]);
+  const loadReviews = () => { void fetchBusinessReviews(b.slug).then(setRealReviews); };
+  useEffect(() => { setRealReviews([]); setMyReviews([]); loadReviews(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [b.slug]);
+  const submitReview = async () => {
+    const text = myText.trim();
+    if (!text) return;
+    setWriteOpen(false);
+    if (!user) { router.push('/entrar'); return; }
+    setMyReviews((l) => [{ id: `u${l.length}`, stars: myStars, text }, ...l]); // optimistic
+    const id = await postReview(b.slug, myStars, text);
+    if (id) { setMyReviews([]); loadReviews(); flash(L('¡Gracias por tu reseña!', 'Thanks for your review!')); }
+    else flash(L('No se pudo publicar', "Couldn't post"));
+  };
 
   const saved = savedBiz.isSaved(b.slug);
   const now = useNow();
@@ -1360,8 +1382,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           <div className="flex flex-col gap-3">
             {[
               ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#7B61FF', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0 })),
-              ...(revRaw ? [{ id: 'r0', ini: initials(rvName || 'V'), name: rvName || L('Vecino', 'Neighbor'), color: AVATAR_PALETTE[id % AVATAR_PALETTE.length], stars: 5, when: ['hace 2 días', '2d'] as Bi, text: [quote, quote] as Bi, base: 12 }] : []),
-              ...SEED_REVIEWS,
+              ...(realReviews.length > 0
+                ? realReviews.map((r) => ({ id: r.id, ini: r.initials, name: r.mine ? L('Tú', 'You') : r.name, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], stars: r.rating, when: reviewWhen(r.createdAt), text: r.body, base: 0 }))
+                : [
+                    ...(revRaw ? [{ id: 'r0', ini: initials(rvName || 'V'), name: rvName || L('Vecino', 'Neighbor'), color: AVATAR_PALETTE[id % AVATAR_PALETTE.length], stars: 5, when: ['hace 2 días', '2d'] as Bi, text: [quote, quote] as Bi, base: 12 }] : []),
+                    ...SEED_REVIEWS,
+                  ]),
             ]
               .filter((r) => reviewFilter === 'all' || r.stars === +reviewFilter)
               .map((r) => {
@@ -1900,15 +1926,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
           placeholder={L('Cuéntale a la comunidad tu experiencia…', 'Tell the community about your experience…')}
           className="w-full resize-none rounded-field border-[1.5px] border-[#ECE9F6] bg-app px-3.5 py-3 text-[13.5px] font-medium outline-none placeholder:text-muted focus:border-primary"
         />
-        <PrimaryBtn
-          className="mt-3"
-          disabled={!myText.trim()}
-          onClick={() => {
-            if (!myText.trim()) return;
-            setMyReviews((l) => [{ id: `u${l.length}`, stars: myStars, text: myText.trim() }, ...l]);
-            setWriteOpen(false);
-          }}
-        >
+        <PrimaryBtn className="mt-3" disabled={!myText.trim()} onClick={submitReview}>
           {L('Publicar reseña', 'Post review')}
         </PrimaryBtn>
       </Overlay>

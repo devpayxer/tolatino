@@ -376,6 +376,30 @@ export async function fetchRentalBusy(itemId: string): Promise<{ start: string; 
   }));
 }
 
+// ── real reviews (migration 0056) ──
+export type PubReview = { id: string; name: string; initials: string; rating: number; body: [string, string]; createdAt: string; mine: boolean };
+
+/** A business's real reviews by slug (migration 0056). [] offline / none. */
+export async function fetchBusinessReviews(slug: string): Promise<PubReview[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('reviews_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({
+    id: String(r.id), name: String(r.author_name ?? 'Cliente'), initials: String(r.author_initials ?? 'C'),
+    rating: Number(r.rating ?? 5), body: [String(r.body_es ?? ''), String(r.body_en ?? r.body_es ?? '')],
+    createdAt: String(r.created_at), mine: !!r.is_mine,
+  }));
+}
+
+/** Post (or update) the signed-in user's review for a business. Returns the review
+ *  id, or null (offline / not signed in / error). */
+export async function postReview(slug: string, rating: number, body: string): Promise<string | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('post_review', { in_slug: slug, in_rating: rating, in_body: body });
+  if (error || !data) return null;
+  return String(data);
+}
+
 /** Server-side business search (migration 0055): Postgres full-text + trigram
  *  fuzzy, geo-scoped, filtered + ranked by relevance then distance. Returns []
  *  offline / on error so the caller falls back to the client geo list. */
