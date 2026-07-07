@@ -39,6 +39,13 @@ update public.businesses set search_tsv = to_tsvector('simple',
 create index if not exists businesses_search_gin on public.businesses using gin (search_tsv);
 create index if not exists businesses_name_trgm on public.businesses using gin (name gin_trgm_ops);
 
+-- 0001 shipped an older search_businesses(q, user_lat, user_lng, category,
+-- max_results, result_offset). This migration's signature differs, so a bare
+-- CREATE OR REPLACE would leave TWO overloads and make the grant below ambiguous
+-- (Postgres error 42725). Drop the superseded overload first — nothing calls it
+-- anymore (the client uses the named-arg signature below).
+drop function if exists public.search_businesses(text, double precision, double precision, text, int, int);
+
 create or replace function public.search_businesses(
   in_q          text default null,
   user_lat      double precision default null,
@@ -114,6 +121,6 @@ create or replace function public.search_businesses(
   limit greatest(1, least(max_results, 60));
 $$;
 
-grant execute on function public.search_businesses to anon, authenticated;
+grant execute on function public.search_businesses(text, double precision, double precision, text, text, text, numeric, int, int, double precision) to anon, authenticated;
 
 notify pgrst, 'reload schema';
