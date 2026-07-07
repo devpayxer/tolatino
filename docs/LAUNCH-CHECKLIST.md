@@ -449,6 +449,15 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   mocked shop (Talla S/M/L, M=0) → M disabled+"Agotado", S auto-selected, 0 overflow;
   dashboard audit + consumer audit green; tsc + build. Deferred: per-variant SKU codes
   + price overrides; low-stock alerts per variant; hide-out-of-stock automation.
+- [x] **Header search suggestions → server FTS (2026-07-07).** The global header's
+  live-suggestions dropdown filtered only the loaded ~50-business geo slice, so a
+  business beyond the radius showed "no results" in the preview even though the
+  committed Negocios search (server FTS) would find it. The Negocios suggestion group
+  now calls the same `search_businesses` RPC (debounced 220ms, geo-scoped), falling
+  back to the client substring filter when empty/offline. Eventos/Comunidad stay
+  client-side (small datasets). Fully closes the Handoff "global search with grouped
+  live suggestions" rule. Verified: an RPC-intercepted full-catalog business (not in
+  the client slice) appears in the dropdown, 0 pageerrors / 0 overflow.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

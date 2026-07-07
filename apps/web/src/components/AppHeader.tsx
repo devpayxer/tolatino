@@ -4,6 +4,7 @@
 // bell · publish · avatar, plus the horizontal 7-category bar and the live
 // grouped search-suggestions dropdown.
 
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Briefcase, Calendar, Car, Home, MapPin, Plus, Search, Store, Truck, Users, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
@@ -11,8 +12,8 @@ import { useApp } from '@/lib/state';
 import { useNotifications } from '@/lib/notifications';
 import { useAuth } from '@/lib/auth';
 import { Avatar, Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
-import { NAV_CATS, VIEW_PATH, bizTile, eventTile } from '@/data/fixtures';
-import { useLiveData } from '@/lib/live';
+import { NAV_CATS, VIEW_PATH, bizTile, eventTile, type Business } from '@/data/fixtures';
+import { useLiveData, searchBusinesses } from '@/lib/live';
 import { CAT, tile } from '@/lib/tiles';
 
 const NAV_ICONS = { users: Users, store: Store, calendar: Calendar, truck: Truck, home: Home, car: Car, briefcase: Briefcase };
@@ -75,9 +76,24 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
 
 function SearchDropdown() {
   const { L } = useLang();
-  const { query, setQuery, setSearch } = useApp();
+  const { query, setQuery, setSearch, city, coords } = useApp();
   const { businesses: BUSINESSES, events: EVENTS, posts: POSTS } = useLiveData();
   const router = useRouter();
+  // Full-catalog business suggestions via server FTS (same RPC the Negocios
+  // section uses), so the preview surfaces matches beyond the loaded geo slice.
+  // Debounced; falls back to the client substring filter when empty/offline.
+  const [serverBiz, setServerBiz] = useState<Business[] | null>(null);
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setServerBiz(null); return; }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      searchBusinesses({ q, lat: coords?.lat ?? null, lng: coords?.lng ?? null, city, limit: 6 })
+        .then((r) => { if (!cancelled) setServerBiz(r); });
+    }, 220);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query, city, coords?.lat, coords?.lng]);
+
   const ql = query.trim().toLowerCase();
   if (!ql) return null;
 
@@ -87,9 +103,10 @@ function SearchDropdown() {
     router.push(VIEW_PATH[view]);
   };
 
-  const bizHits = BUSINESSES.filter((b) =>
+  const clientBizHits = BUSINESSES.filter((b) =>
     `${b.name} ${CAT[b.cat].es} ${CAT[b.cat].en} ${b.specEs} ${b.specEn}`.toLowerCase().includes(ql),
   );
+  const bizHits = serverBiz != null && serverBiz.length > 0 ? serverBiz : clientBizHits;
   const evHits = EVENTS.filter((e) => `${e.tEs} ${e.tEn} ${e.lEs} ${e.lEn}`.toLowerCase().includes(ql));
   const postHits = POSTS.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(ql));
   const total = bizHits.length + evHits.length + postHits.length;
