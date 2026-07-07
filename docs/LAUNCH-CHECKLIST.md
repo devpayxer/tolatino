@@ -496,6 +496,28 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     link** (`?e=slug`); recurring-series generation, saved drafts, promoter/affiliate
     (still fixture in the dashboard); waitlist capture; event notification **kinds**
     added client-side (`ticket_new`/`ticket_status`/`rsvp_new`).
+- [x] **Professional event-creation wizard (2026-07-07).** The first wizard was too
+  thin (4 fixed types, one flat ticket, free-text date/place, no coordinates). Fully
+  rebuilt to Eventbrite standard. Migration **0062**: widened `events.cat` to 13 pro
+  categories + a single atomic **`create_event_full`** RPC (event + cover + start/end
+  time + real lat/lng + status + an ARRAY of tiers, returns slug).
+  - **Step 1 Detalles:** cover-photo upload (`uploadImage` → `cover_url`), name,
+    description, **13-category picker** (shared `EVENT_CATS` taxonomy — consumer
+    filters read it too).
+  - **Step 2 Fecha y lugar:** native **date picker** + **start/end time** pickers,
+    online-event toggle, and **geo address autocomplete** (reuses `searchAddress` +
+    `censusGeocode` — the same free pipeline as the business flow) capturing real
+    **lat/lng** → drives the map/directions + geo radius. Replaces the old free-text
+    date + plain location field.
+  - **Step 3 Boletos:** **multi-tier builder** — add/remove multiple tiers, each
+    name/price/capacity (was a single flat price).
+  - **Step 4 Revisar:** live summary + per-step gating (can't advance without the
+    essentials) + visibility.
+  Verified: tsc + build + a Playwright walkthrough of all 4 steps (category chips,
+  cover upload, date + 2 time pickers, address field, tier add 1→2, review) — 0
+  overflow at 392px. Deferred: recurring-series generation, saved drafts, promoter/
+  affiliate; address autocomplete needs live Photon/Census (sandbox-blocked; mirrors
+  the working business address flow); cover persists once Supabase Storage is live.
 - [x] **Customer self-service cancel (2026-07-07).** "Mi cuenta" already showed the
   customer's real orders/bookings/rentals/tickets (`useMyActivity`); added a
   **Cancelar** action (with confirm) on still-early items (order `new`; booking /

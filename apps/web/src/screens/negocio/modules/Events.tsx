@@ -9,16 +9,20 @@
 // success screen. Mobile-first single column; on desktop the list gains a
 // sticky rail and the manage/wizard panels widen into multi-column layouts.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Check, DollarSign, MapPin, Megaphone, Plus,
-  QrCode, RefreshCw, Search, Share2, Ticket, TrendingUp, Users,
+  Check, DollarSign, ImagePlus, MapPin, Megaphone, Navigation, Plus,
+  QrCode, RefreshCw, Search, Share2, Ticket, Trash2, TrendingUp, Users, X,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useAuth } from '@/lib/auth';
+import { useApp } from '@/lib/state';
 import { supabase } from '@/lib/supabase';
+import { uploadImage } from '@/lib/image';
+import { searchAddress, censusGeocode, sameAddress, type Address } from '@/lib/geo';
+import { EVENT_CATS, EVENT_CAT_BY_ID } from '@/data/fixtures';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
@@ -56,11 +60,6 @@ const TICKET_STATUS: Record<string, { es: string; en: string; cls: string }> = {
   refunded:  { es: 'Reembolsado', en: 'Refunded', cls: 'bg-lilac-2 text-ink-2' },
 };
 
-// The public events table only allows four categories; map the wizard's event
-// "type" to the nearest one (there is no 'mercado' source type in the wizard).
-const EVENT_CAT_MAP: Record<string, 'musica' | 'mercado' | 'familia' | 'comida'> = {
-  clase: 'familia', cata: 'comida', cena: 'comida', musica: 'musica',
-};
 const MON_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 const MON_EN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const fmtTime = (d: Date) => {
@@ -75,7 +74,15 @@ const EMPTY_EVENT: EventRow = {
   tile: '#EFEBFF 0 9px,#E5DEF9 9px 18px', status: ['', ''], statusBg: '#E3F5EA', statusC: '#1F8A4C',
 };
 type Attendee = { initials: string; color: string; name: string; tier: string; tierBg: string; tierC: string; diet: string; base: boolean };
-type EventDraft = { name: string; desc: string; type: string; date: string; time: string; location: string; price: string; capacity: string; recurring: boolean; vis: string };
+type EventTierDraft = { id: string; name: string; price: string; capacity: string };
+type EventDraft = {
+  name: string; desc: string; cat: string; coverUrl: string;
+  date: string; startTime: string; endTime: string; online: boolean;
+  venue: string; lat: number | null; lng: number | null;
+  tiers: EventTierDraft[]; vis: string;
+};
+let tierSeq = 0;
+const nextTid = () => 't' + (++tierSeq);
 
 export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
@@ -106,6 +113,15 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const real = admin.active;
   const persistable = !admin.demo && !!real; // real signed-in business → persist
   const { user } = useAuth();
+  const app = useApp();
+
+  // ---------- wizard: address autocomplete + cover upload state ----------
+  const [addrResults, setAddrResults] = useState<Address[]>([]);
+  const [addrSearching, setAddrSearching] = useState(false);
+  const addrAbort = useRef<AbortController | null>(null);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const pickedRef = useRef(false); // guards the address effect from re-searching after a pick
 
   // ---------- seed data (DEMO sample events) ----------
   const seedEvents = useMemo<EventRow[]>(() => [
@@ -929,20 +945,79 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // WIZARD — Detalles → Boletos → Fecha/lugar → Revisar
   // ==================================================================
   const upD = (patch: Partial<EventDraft>) => setDraft((d) => ({ ...d, ...patch }));
-  const typeTiles: Record<string, string> = { clase: '#F3E2CE 0 9px,#ECD3B4 9px 18px', cata: '#F3D9E2 0 9px,#E8BFCD 9px 18px', cena: '#FCE3DC 0 9px,#F6CEC2 9px 18px', musica: '#E4ECFB 0 9px,#D7E3F6 9px 18px' };
-  const draftTile = typeTiles[draft.type] || typeTiles.clase;
-  const typeDefs: [string, string][] = [['clase', L('Clase/Taller', 'Class/Workshop')], ['cata', L('Cata', 'Tasting')], ['cena', L('Cena', 'Dinner')], ['musica', L('Música', 'Music')]];
-  const typeLabel = (typeDefs.find((x) => x[0] === draft.type) || typeDefs[0])[1];
-  const wizStepDefs: [string, string][] = [['details', L('Detalles', 'Details')], ['tickets', L('Boletos', 'Tickets')], ['dateloc', L('Fecha/lugar', 'Date/place')], ['review', L('Revisar', 'Review')]];
 
+  // Address autocomplete: debounced searchAddress (our free geo pipeline), biased to
+  // the current city; picking a suggestion captures the real lat/lng.
+  useEffect(() => {
+    if (pickedRef.current) { pickedRef.current = false; return; }
+    const q = draft.venue.trim();
+    if (draft.online || q.length < 3) { addrAbort.current?.abort(); setAddrResults([]); setAddrSearching(false); return; }
+    setAddrSearching(true);
+    const t = setTimeout(async () => {
+      addrAbort.current?.abort();
+      const ctrl = new AbortController(); addrAbort.current = ctrl;
+      try { setAddrResults(await searchAddress(q, { lat: app.coords.lat, lng: app.coords.lng, city: app.city }, ctrl.signal)); }
+      catch { if (!ctrl.signal.aborted) setAddrResults([]); }
+      finally { if (!ctrl.signal.aborted) setAddrSearching(false); }
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.venue, draft.online]);
+  const chooseAddr = async (raw: Address) => {
+    pickedRef.current = true;
+    upD({ venue: raw.formatted, lat: raw.lat, lng: raw.lng });
+    setAddrResults([]);
+    if (raw.approx) {
+      const exact = await censusGeocode(raw.formatted);
+      if (exact && sameAddress(raw.formatted, exact.formatted)) { pickedRef.current = true; upD({ venue: exact.formatted, lat: exact.lat, lng: exact.lng }); }
+    }
+  };
+  const pickCover = async (file: File | null | undefined) => {
+    if (!file || !file.type.startsWith('image/') || coverBusy) return;
+    setCoverBusy(true);
+    try { const url = !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 1600); upD({ coverUrl: url }); }
+    catch { flash(L('No se pudo subir la foto.', "Couldn't upload the photo.")); }
+    setCoverBusy(false);
+  };
+  const addTier = () => upD({ tiers: [...draft.tiers, { id: nextTid(), name: '', price: '', capacity: '' }] });
+  const setTierField = (id: string, patch: Partial<EventTierDraft>) => upD({ tiers: draft.tiers.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
+  const removeTier = (id: string) => { if (draft.tiers.length > 1) upD({ tiers: draft.tiers.filter((t) => t.id !== id) }); };
+  const to12h = (hhmm: string) => { if (!hhmm) return ''; const [h, m] = hhmm.split(':').map(Number); if (isNaN(h)) return ''; const ap = h >= 12 ? 'pm' : 'am'; return `${h % 12 || 12}:${String(m ?? 0).padStart(2, '0')} ${ap}`; };
+  const wizTimeLabel = draft.startTime ? (draft.endTime ? `${to12h(draft.startTime)} – ${to12h(draft.endTime)}` : to12h(draft.startTime)) : '';
+  const wizCat = EVENT_CAT_BY_ID[draft.cat] ?? EVENT_CATS[0];
+  const wizCatName = L(wizCat.es, wizCat.en);
+  const draftTile = `${wizCat.tile[0]} 0 9px,${wizCat.tile[1]} 9px 18px`;
+  const wizStepDefs: [string, string][] = [['details', L('Detalles', 'Details')], ['dateloc', L('Fecha y lugar', 'Date & place')], ['tickets', L('Boletos', 'Tickets')], ['review', L('Revisar', 'Review')]];
   const visDefs: [string, string][] = [['public', L('Público', 'Public')], ['followers', L('Seguidores', 'Followers first')], ['unlisted', L('No listado', 'Unlisted')]];
-  const eReady = !!(draft.name && draft.date);
+  // ready to publish = name + date + at least one named ticket tier
+  const eReady = !!draft.name.trim() && !!draft.date && draft.tiers.some((t) => t.name.trim());
+  // per-step gate for the "Continuar" button
+  const stepValid = wizStep === 0 ? !!draft.name.trim() : wizStep === 1 ? !!draft.date : wizStep === 2 ? draft.tiers.some((t) => t.name.trim()) : true;
+  // price range for the preview + review
+  const paidPrices = draft.tiers.map((t) => Number(t.price) || 0).filter((p) => p > 0);
+  const priceSummary = paidPrices.length ? `${L('Desde', 'From')} $${Math.min(...paidPrices)}` : L('Gratis', 'Free');
 
   const fieldCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[13px] font-semibold text-ink outline-none focus:border-primary';
   const labelCls = 'mb-1.5 block text-[11px] font-extrabold text-ink-soft';
 
+  // ── Step 0 · Detalles: cover, name, description, category ──
   const wizStep0 = (
     <div className="flex flex-col gap-3.5">
+      <div>
+        <label className={labelCls}>{L('Foto de portada', 'Cover photo')}</label>
+        <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickCover(f); }} />
+        <button onClick={() => coverInputRef.current?.click()} className="relative flex h-[132px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-card-sm border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={draft.coverUrl ? { backgroundImage: `url(${draft.coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: `repeating-linear-gradient(135deg,${draftTile})` }}>
+          {!draft.coverUrl && (
+            <span className="flex flex-col items-center gap-1 text-primary-dark">
+              <ImagePlus size={22} strokeWidth={2} />
+              <span className="text-[11px] font-extrabold">{coverBusy ? L('Subiendo…', 'Uploading…') : L('Sube una foto', 'Upload a photo')}</span>
+            </span>
+          )}
+          {draft.coverUrl && (
+            <span className="absolute bottom-2 right-2 rounded-full bg-ink/70 px-2.5 py-1 text-[10px] font-extrabold text-white">{coverBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</span>
+          )}
+        </button>
+      </div>
       <div>
         <label className={labelCls}>{L('Nombre del evento', 'Event name')} *</label>
         <input value={draft.name} onChange={(e) => upD({ name: e.target.value })} placeholder={L('Ej. Cena de Fin de Año', "e.g. New Year's Eve Dinner")} className={fieldCls} />
@@ -952,73 +1027,101 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <textarea value={draft.desc} onChange={(e) => upD({ desc: e.target.value })} rows={3} placeholder={L('Qué incluye, quién presenta, qué esperar…', "What's included, who hosts, what to expect…")} className={`${fieldCls} resize-none text-[12px] font-medium leading-relaxed`} />
       </div>
       <div>
-        <label className={labelCls}>{L('Tipo de evento', 'Event type')} *</label>
-        <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto pb-0.5">
-          {typeDefs.map(([k, lab]) => <button key={k} onClick={() => upD({ type: k })} className={chip(draft.type === k)}>{lab}</button>)}
+        <label className={labelCls}>{L('Categoría', 'Category')} *</label>
+        <div className="flex flex-wrap gap-2">
+          {EVENT_CATS.map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
         </div>
       </div>
     </div>
   );
 
+  // ── Step 1 · Fecha y lugar: real date + start/end time + geo address autofill ──
   const wizStep1 = (
     <div className="flex flex-col gap-3.5">
-      <p className="text-[11px] font-medium leading-relaxed text-muted">{L('Crea el boleto de entrada general. Podrás agregar niveles (VIP, pareja…) y ajustar cupos después en Boletos.', 'Create the general-admission ticket. You can add tiers (VIP, pair…) and adjust capacity later in Tickets.')}</p>
-      <div className="flex gap-3">
-        <div className="flex-1">
-          <label className={labelCls}>{L('Precio $', 'Price $')}</label>
-          <input value={draft.price} onChange={(e) => upD({ price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder={L('0 = gratis', '0 = free')} className={fieldCls} />
-        </div>
-        <div className="flex-1">
-          <label className={labelCls}>{L('Cupo', 'Capacity')}</label>
-          <input value={draft.capacity} onChange={(e) => upD({ capacity: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder={L('∞ sin límite', '∞ unlimited')} className={fieldCls} />
-        </div>
-      </div>
-      <div className="flex items-center gap-2.5 rounded-btn border border-hair bg-lilac-3 p-3">
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Ticket size={15} strokeWidth={2} className="text-primary-dark" /></span>
-        <div className="min-w-0 flex-1">
-          <div className="text-[12px] font-extrabold text-ink">{L('Entrada general', 'General admission')}</div>
-          <div className="mt-0.5 text-[10px] font-medium text-muted-2">{draft.capacity ? `${draft.capacity} ${L('lugares', 'spots')}` : L('Sin límite', 'Unlimited')}</div>
-        </div>
-        <span className="text-[13px] font-extrabold text-ink">{Number(draft.price) > 0 ? `$${draft.price}` : L('Gratis', 'Free')}</span>
-      </div>
-    </div>
-  );
-
-  const wizStep2 = (
-    <div className="flex flex-col gap-3.5">
-      <div className="flex gap-3">
-        <div className="flex-1">
-          <label className={labelCls}>{L('Fecha', 'Date')} *</label>
-          <input value={draft.date} onChange={(e) => upD({ date: e.target.value })} placeholder={L('31 dic 2025', 'Dec 31, 2025')} className={fieldCls} />
-        </div>
-        <div className="flex-1">
-          <label className={labelCls}>{L('Hora', 'Time')}</label>
-          <input value={draft.time} onChange={(e) => upD({ time: e.target.value })} placeholder="8 PM" className={fieldCls} />
-        </div>
-      </div>
       <div>
-        <label className={labelCls}>{L('Ubicación', 'Location')}</label>
-        <div className="flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
-          <MapPin size={15} strokeWidth={2.2} className="text-muted-2" />
-          <input value={draft.location} onChange={(e) => upD({ location: e.target.value })} placeholder={L('En tu negocio o dirección', 'At your venue or address')} className="min-w-0 flex-1 bg-transparent py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
+        <label className={labelCls}>{L('Fecha', 'Date')} *</label>
+        <input type="date" value={draft.date} onChange={(e) => upD({ date: e.target.value })} className={fieldCls} />
+      </div>
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <label className={labelCls}>{L('Empieza', 'Starts')}</label>
+          <input type="time" value={draft.startTime} onChange={(e) => upD({ startTime: e.target.value })} className={fieldCls} />
+        </div>
+        <div className="flex-1">
+          <label className={labelCls}>{L('Termina', 'Ends')}</label>
+          <input type="time" value={draft.endTime} onChange={(e) => upD({ endTime: e.target.value })} className={fieldCls} />
         </div>
       </div>
       <div className="flex items-center gap-3 rounded-field border border-hair bg-lilac-3 p-3">
         <div className="flex-1">
-          <div className="text-[12.5px] font-bold text-ink">{L('¿Se repite?', 'Recurring?')}</div>
-          <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L('Crea una serie semanal o mensual.', 'Create a weekly or monthly series.')}</div>
+          <div className="text-[12.5px] font-bold text-ink">{L('Evento en línea', 'Online event')}</div>
+          <div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L('Sin dirección física; comparte el enlace después.', 'No physical address; share the link later.')}</div>
         </div>
-        <Toggle on={draft.recurring} onClick={() => upD({ recurring: !draft.recurring })} />
+        <Toggle on={draft.online} onClick={() => upD({ online: !draft.online, ...(draft.online ? {} : { venue: '', lat: null, lng: null }) })} />
       </div>
+      {!draft.online && (
+        <div className="relative">
+          <label className={labelCls}>{L('Dirección', 'Address')}</label>
+          <div className="flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
+            <MapPin size={15} strokeWidth={2.2} className={draft.lat != null ? 'text-green' : 'text-muted-2'} />
+            <input value={draft.venue} onChange={(e) => upD({ venue: e.target.value, lat: null, lng: null })} placeholder={L('Escribe la calle y número…', 'Type the street address…')} className="min-w-0 flex-1 bg-transparent py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
+            {addrSearching && <RefreshCw size={14} className="animate-spin text-muted-2" />}
+            {draft.lat != null && !addrSearching && <Check size={15} strokeWidth={3} className="text-green" />}
+          </div>
+          {addrResults.length > 0 && (
+            <div className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
+              {addrResults.map((a, i) => (
+                <button key={`${a.formatted}-${i}`} onClick={() => chooseAddr(a)} className="flex w-full cursor-pointer items-start gap-2 rounded-field p-2.5 text-left hover:bg-app">
+                  <MapPin size={14} className="mt-0.5 flex-none text-primary" strokeWidth={2.4} />
+                  <span className="min-w-0 text-[12.5px] font-bold text-ink-soft">
+                    {a.formatted}
+                    {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="mt-1 text-[10px] font-semibold text-muted-2">{draft.lat != null ? L('📍 Ubicación fijada — se mostrará el mapa y "cómo llegar".', '📍 Location set — the map + directions will show.') : L('Elige una sugerencia para fijar el mapa.', 'Pick a suggestion to set the map.')}</div>
+        </div>
+      )}
     </div>
   );
 
+  // ── Step 2 · Boletos: multi-tier builder ──
+  const wizStep2 = (
+    <div className="flex flex-col gap-3">
+      <p className="text-[11px] font-medium leading-relaxed text-muted">{L('Agrega uno o más niveles (General, VIP, Niños…). Precio 0 = gratis. Cupo vacío = sin límite.', 'Add one or more tiers (General, VIP, Kids…). Price 0 = free. Blank capacity = unlimited.')}</p>
+      {draft.tiers.map((t, i) => (
+        <div key={t.id} className="rounded-btn-lg border border-hair bg-white p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="flex h-6 w-6 flex-none items-center justify-center rounded-lg bg-lilac"><Ticket size={13} strokeWidth={2} className="text-primary-dark" /></span>
+            <span className="text-[11px] font-extrabold text-muted-2">{L('Nivel', 'Tier')} {i + 1}</span>
+            {draft.tiers.length > 1 && <button onClick={() => removeTier(t.id)} className="ml-auto cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Quitar', 'Remove')}><Trash2 size={15} strokeWidth={2} /></button>}
+          </div>
+          <input value={t.name} onChange={(e) => setTierField(t.id, { name: e.target.value })} placeholder={L('Nombre (General, VIP…)', 'Name (General, VIP…)')} className={`${fieldCls} mb-2`} />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Precio $', 'Price $')}</label>
+              <input value={t.price} onChange={(e) => setTierField(t.id, { price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder={L('0 = gratis', '0 = free')} className={fieldCls} />
+            </div>
+            <div className="flex-1">
+              <label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Cupo', 'Capacity')}</label>
+              <input value={t.capacity} onChange={(e) => setTierField(t.id, { capacity: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="∞" className={fieldCls} />
+            </div>
+          </div>
+        </div>
+      ))}
+      <button onClick={addTier} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-3 text-[12.5px] font-extrabold text-primary-dark">+ {L('Agregar otro nivel', 'Add another tier')}</button>
+    </div>
+  );
+
+  // ── Step 3 · Revisar ──
   const reviewRows: [string, string, boolean, number][] = [
-    [L('Nombre', 'Name'), draft.name || '—', !!draft.name, 0],
-    [L('Tipo', 'Type'), typeLabel, true, 0],
-    [L('Boletos', 'Tickets'), `2 ${L('niveles · 48 lugares', 'tiers · 48 spots')}`, true, 1],
-    [L('Fecha', 'Date'), draft.date ? draft.date + (draft.time ? ` · ${draft.time}` : '') : '—', !!draft.date, 2],
-    [L('Ubicación', 'Location'), draft.location || L('Tu negocio', 'Your venue'), true, 2],
+    [L('Nombre', 'Name'), draft.name || '—', !!draft.name.trim(), 0],
+    [L('Categoría', 'Category'), wizCatName, true, 0],
+    [L('Fecha', 'Date'), draft.date ? draft.date + (wizTimeLabel ? ` · ${wizTimeLabel}` : '') : '—', !!draft.date, 1],
+    [L('Lugar', 'Place'), draft.online ? L('En línea', 'Online') : draft.venue || '—', draft.online || !!draft.venue, 1],
+    [L('Boletos', 'Tickets'), `${draft.tiers.length} ${draft.tiers.length === 1 ? L('nivel', 'tier') : L('niveles', 'tiers')} · ${priceSummary}`, true, 2],
   ];
   const wizStep3 = (
     <div className="flex flex-col gap-3.5">
@@ -1026,7 +1129,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-white text-[14px] font-extrabold" style={{ color: eReady ? '#176B3A' : '#9A6A12' }}>{eReady ? '✓' : '⚠'}</span>
         <div className="flex-1">
           <div className="text-[12px] font-extrabold" style={{ color: eReady ? '#176B3A' : '#9A6A12' }}>{eReady ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing')}</div>
-          <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{eReady ? L('Los boletos se abren al publicar.', 'Tickets open when you publish.') : L('Agrega nombre y fecha antes de publicar.', 'Add a name and date before publishing.')}</div>
+          <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{eReady ? L('Se pondrá en venta al publicar.', 'It goes on sale when you publish.') : L('Agrega nombre, fecha y al menos un boleto.', 'Add a name, date and at least one ticket.')}</div>
         </div>
       </div>
       <div className="overflow-hidden rounded-field border border-hair">
@@ -1047,31 +1150,35 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  const wizTitles = [L('Detalles del evento', 'Event details'), L('Niveles de boleto', 'Ticket tiers'), L('Fecha y ubicación', 'Date & location'), L('Revisar y publicar', 'Review & publish')];
+  const wizTitles = [L('Detalles del evento', 'Event details'), L('Fecha y ubicación', 'Date & location'), L('Niveles de boleto', 'Ticket tiers'), L('Revisar y publicar', 'Review & publish')];
 
   const nextId = () => (events.length ? Math.max(...events.map((e) => e.id)) : 0) + 1;
 
   // Turn the wizard draft into a live event: optimistic local add always, plus a
   // real `create_event` RPC when a signed-in owner is present (demo = local only).
+  // ISO start/end from the date + native time inputs (local → UTC).
+  const startsAtISO = () => { const d = new Date(`${draft.date}T${draft.startTime || '00:00'}`); return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString(); };
+  const endsAtISO = () => { if (!draft.endTime || !draft.date) return null; const d = new Date(`${draft.date}T${draft.endTime}`); return isNaN(d.getTime()) ? null : d.toISOString(); };
+
+  // Publish: one atomic create_event_full RPC (event + ALL tiers + cover + geo).
   const addFromDraft = () => {
-    const d0 = new Date(draft.date); // date is free-text; best-effort parse
-    const startsAt = Number.isNaN(d0.getTime()) ? new Date().toISOString() : d0.toISOString();
+    const startsAt = startsAtISO();
     const sd = new Date(startsAt);
-    const [tileA, tileB] = draftTile.split(',').map((s) => s.trim().split(' ')[0]);
-    const priceN = Number(draft.price) || 0;
-    const priceLabel = priceN > 0 ? '$' + priceN : null; // null = free on the card
-    const capN = draft.capacity.trim() === '' ? null : Math.max(0, Number(draft.capacity) || 0);
-    const pCat = EVENT_CAT_MAP[draft.type] ?? 'familia';
+    const tiers = draft.tiers
+      .filter((t) => t.name.trim())
+      .map((t) => ({ name: t.name.trim(), price: Number(t.price) || 0, capacity: t.capacity.trim() }));
+    const paid = tiers.map((t) => t.price).filter((p) => p > 0);
+    const priceLabel = paid.length ? '$' + Math.min(...paid) : null;
     const local: EventRow = {
       id: nextId(),
       name: draft.name.trim() || L('Nuevo evento', 'New event'),
       mon: (es ? MON_ES : MON_EN)[sd.getMonth()],
       day: String(sd.getDate()).padStart(2, '0'),
-      time: draft.time || fmtTime(sd),
+      time: wizTimeLabel || fmtTime(sd),
       price: priceLabel ?? L('Gratis', 'Free'),
-      priceN,
+      priceN: paid.length ? Math.min(...paid) : 0,
       sold: 0,
-      cap: capN ?? 48,
+      cap: 48,
       tile: draftTile,
       status: ['Vendiendo', 'Selling'],
       statusBg: '#E3F5EA',
@@ -1080,31 +1187,23 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setEvents((xs) => [local, ...xs]);
     if (persistable && real && user && supabase) {
       (async () => {
-        const { data: slug, error } = await supabase!.rpc('create_event', {
-          p_title_es: draft.name.trim(),
-          p_title_en: draft.name.trim(),
-          p_venue_es: draft.location || '',
-          p_venue_en: draft.location || '',
-          p_cat: pCat,
+        const { error } = await supabase!.rpc('create_event_full', {
+          p_title: draft.name.trim(),
+          p_desc: draft.desc || '',
+          p_cat: draft.cat,
           p_starts_at: startsAt,
-          p_time_label_es: draft.time || '',
-          p_time_label_en: draft.time || '',
-          p_price_label: priceLabel,
-          p_desc_es: draft.desc || '',
-          p_desc_en: draft.desc || '',
+          p_ends_at: endsAtISO(),
+          p_time_label_es: wizTimeLabel,
+          p_time_label_en: wizTimeLabel,
+          p_venue: draft.online ? L('Evento en línea', 'Online event') : draft.venue,
           p_city: real.city || '',
-          p_tile_a: tileA,
-          p_tile_b: tileB,
-          p_lat: null,
-          p_lng: null,
+          p_lat: draft.online ? null : draft.lat,
+          p_lng: draft.online ? null : draft.lng,
+          p_cover_url: draft.coverUrl || null,
+          p_tile_a: wizCat.tile[0],
+          p_tile_b: wizCat.tile[1],
+          p_tiers: tiers,
         });
-        // Give the new event a real "Entrada general" tier from the wizard's price so
-        // it's immediately sellable (the owner adds VIP/etc. tiers in Boletos).
-        if (!error && slug) {
-          const { data: ev } = await supabase!.from('events').select('id').eq('slug', String(slug)).maybeSingle();
-          const evId = (ev as { id: string } | null)?.id;
-          if (evId) await supabase!.from('event_tiers').insert({ event_id: evId, name_es: 'Entrada general', name_en: 'General admission', price: priceN, capacity: capN, sort: 0 });
-        }
         // Reconcile with the DB truth (real slug/id/going_count; backfills dbId).
         if (!error) { const rows = await fetchEvents(user.id); setEvents(rows); }
       })();
@@ -1112,15 +1211,17 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   };
 
   const wizNext = () => {
-    if (wizStep >= wizStepDefs.length - 1) { addFromDraft(); setView('success'); return; }
+    if (wizStep >= wizStepDefs.length - 1) { if (!eReady) return; addFromDraft(); setView('success'); return; }
+    if (!stepValid) return;
     const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
   };
   const wizBack = () => { if (wizStep === 0) { setView('list'); return; } setWizStep((s) => s - 1); };
+  const canAdvance = wizStep >= wizStepDefs.length - 1 ? eReady : stepValid;
 
   const wizardPage = (
     <ModulePage
       title={L('Crear evento', 'Create event')}
-      subtitle={`${typeLabel} · ${L('Paso ', 'Step ')}${wizStep + 1}${L(' de ', ' of ')}${wizStepDefs.length}`}
+      subtitle={`${wizCatName} · ${L('Paso ', 'Step ')}${wizStep + 1}${L(' de ', ' of ')}${wizStepDefs.length}`}
       onBack={() => setView('list')}
       backLabel={L('Cancelar', 'Cancel')}
       maxW={940}
@@ -1129,7 +1230,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">
             {wizStep === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
           </button>
-          <button onClick={wizNext} className="flex-1 cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
+          <button onClick={wizNext} disabled={!canAdvance} className="flex-1 cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta disabled:cursor-not-allowed disabled:opacity-40">
             {wizStep >= wizStepDefs.length - 1 ? L('Publicar evento', 'Publish event') : L('Continuar', 'Continue')}
           </button>
         </div>
@@ -1149,11 +1250,12 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
         <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card xl:sticky xl:top-0">
-          <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${draftTile})` }}>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.45))' }} />
-            <div className="absolute bottom-2.5 left-3">
-              <div className="text-[14px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{draft.name || L('Nombre del evento', 'Event name')}</div>
-              <div className="text-[10px] font-semibold text-white/85">{(draft.date || L('Fecha por definir', 'Date TBD'))}{draft.time ? ` · ${draft.time}` : ''}</div>
+          <div className="relative h-24" style={draft.coverUrl ? { backgroundImage: `url(${draft.coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: `repeating-linear-gradient(135deg,${draftTile})` }}>
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.55))' }} />
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-extrabold text-primary-dark">{wizCatName}</span>
+            <div className="absolute bottom-2.5 left-3 right-3">
+              <div className="truncate text-[14px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{draft.name || L('Nombre del evento', 'Event name')}</div>
+              <div className="text-[10px] font-semibold text-white/85">{(draft.date || L('Fecha por definir', 'Date TBD'))}{wizTimeLabel ? ` · ${wizTimeLabel}` : ''}{draft.online ? ` · ${L('En línea', 'Online')}` : ''}</div>
             </div>
           </div>
           <div className="p-3 text-[10.5px] font-semibold text-muted-2">{L('Vista previa · así se verá tu evento', 'Preview · how your event will look')}</div>
@@ -1188,7 +1290,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="absolute bottom-2.5 left-3 text-[15px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{draft.name || L('Nuevo evento', 'New event')}</div>
         </div>
         <div className="flex items-center justify-between p-3.5">
-          <div className="text-[11.5px] font-medium text-muted-2">{(draft.date || L('Fecha por definir', 'Date TBD'))}{draft.time ? ` · ${draft.time}` : ''}</div>
+          <div className="text-[11.5px] font-medium text-muted-2">{(draft.date || L('Fecha por definir', 'Date TBD'))}{wizTimeLabel ? ` · ${wizTimeLabel}` : ''}</div>
           <span className="flex-none rounded-lg bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('En venta', 'On sale')}</span>
         </div>
       </div>
@@ -1238,7 +1340,12 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 }
 
 function newDraft(): EventDraft {
-  return { name: '', desc: '', type: 'clase', date: '', time: '', location: '', price: '', capacity: '', recurring: false, vis: 'public' };
+  return {
+    name: '', desc: '', cat: 'musica', coverUrl: '',
+    date: '', startTime: '', endTime: '', online: false,
+    venue: '', lat: null, lng: null,
+    tiers: [{ id: nextTid(), name: 'Entrada general', price: '', capacity: '' }], vis: 'public',
+  };
 }
 
 // Deterministic faux-QR grid (matches the prototype's check-in card).

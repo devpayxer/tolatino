@@ -435,12 +435,33 @@ export const NEIGHBORS = [
 export const TAG_BIZ_NAMES = ['Taquería La Esperanza', 'Salón Glamour', 'Taller Don Beto', 'Panadería Dulce Hogar'];
 
 // ---------- events ----------
+// Professional event category taxonomy (Eventbrite-grade). Stable ids drive the DB
+// `events.cat` (migration 0062) + the striped-tile placeholder; both the consumer
+// filters and the create wizard read this single source.
+export const EVENT_CATS: { id: string; es: string; en: string; tile: [string, string] }[] = [
+  { id: 'musica', es: 'Música', en: 'Music', tile: ['#E5DEF9', '#D9CEF3'] },
+  { id: 'nightlife', es: 'Vida nocturna', en: 'Nightlife', tile: ['#E8E4FB', '#DCD6F6'] },
+  { id: 'comida', es: 'Comida y bebida', en: 'Food & drink', tile: ['#FCEBD6', '#F6DCBF'] },
+  { id: 'familia', es: 'Familia y niños', en: 'Family & kids', tile: ['#FBE9F0', '#F5D8E6'] },
+  { id: 'comunidad', es: 'Comunidad', en: 'Community', tile: ['#E3F5EA', '#D6E7D0'] },
+  { id: 'arte', es: 'Arte y cultura', en: 'Arts & culture', tile: ['#F3E2CE', '#ECD3B4'] },
+  { id: 'deportes', es: 'Deportes', en: 'Sports & fitness', tile: ['#E7EEFB', '#DAE5F6'] },
+  { id: 'negocios', es: 'Negocios', en: 'Business', tile: ['#ECE3F8', '#E2D6F3'] },
+  { id: 'salud', es: 'Salud y bienestar', en: 'Health & wellness', tile: ['#D6F3EF', '#C3E9E3'] },
+  { id: 'mercado', es: 'Mercado y bazar', en: 'Market & bazaar', tile: ['#FCF1C7', '#F6E8AE'] },
+  { id: 'fe', es: 'Religión y fe', en: 'Faith', tile: ['#EFEBFF', '#E5DEF9'] },
+  { id: 'taller', es: 'Talleres y clases', en: 'Workshops & classes', tile: ['#F3D9E2', '#E8BFCD'] },
+  { id: 'otro', es: 'Otro', en: 'Other', tile: ['#EAE2F8', '#DCCEF2'] },
+];
+export const EVENT_CAT_BY_ID: Record<string, { es: string; en: string; tile: [string, string] }> =
+  Object.fromEntries(EVENT_CATS.map((c) => [c.id, { es: c.es, en: c.en, tile: c.tile }]));
+
 export type EventItem = {
   id: number;
   slug?: string; // supabase events.slug — present on live events; drives tickets/RSVP
   dEs: string;
   day: string;
-  cat: 'musica' | 'mercado' | 'familia' | 'comida';
+  cat: string; // one of EVENT_CATS ids
   tEs: string;
   tEn: string;
   lEs: string;

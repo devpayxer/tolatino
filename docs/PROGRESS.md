@@ -232,9 +232,15 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   `event_by_slug`, `checkin_ticket`, triggers for tier.sold + going_count + organizer
   notifications. Consumer: rich detail (full date, directions, organizer,
   add-to-calendar ICS, share) + real tier picker + entry-code ticket in Mi cuenta.
-  Dashboard: real tier editor + code-based check-in + real KPIs; wizard seeds a real
-  "Entrada general" tier. Deferred (honest): Stripe charging, SES email, QR-image +
-  camera scanner, map tiles, recurring/drafts/promoters.
+  Dashboard: real tier editor + code-based check-in + real KPIs. Deferred (honest):
+  Stripe charging, SES email, QR-image + camera scanner, map tiles, recurring/drafts/
+  promoters.
+- **Professional event-creation wizard** (migration **0062**): rebuilt to Eventbrite
+  standard — cover-photo upload + 13-category picker (step 1), native date + start/end
+  time pickers + online toggle + **geo address autocomplete (searchAddress → real
+  lat/lng)** (step 2), **multi-tier ticket builder** (step 3), review + per-step
+  gating (step 4). Backed by an atomic `create_event_full` RPC (event + cover + geo +
+  end-time + all tiers). Replaces the thin free-text wizard.
 - **Honestly deferred** (need the founder's external setup, in LAUNCH-CHECKLIST):
   payments (Stripe), push/email delivery (VAPID+Edge Function+SES), live map (OSM
   tiles + business coords). Not shipped as fake/broken.

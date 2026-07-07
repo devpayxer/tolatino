@@ -12,15 +12,9 @@ import { useAuth } from '@/lib/auth';
 import { useMyActivity } from '@/lib/myActivity';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
-import { eventTile, type EventItem } from '@/data/fixtures';
+import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
 import { useLiveData, fetchEventBySlug, type PubEvent } from '@/lib/live';
 
-const CAT_LABEL = (L: (a: string, b: string) => string): Record<EventItem['cat'], string> => ({
-  musica: L('Vida Nocturna', 'Nightlife'),
-  mercado: L('Mercado', 'Market'),
-  familia: L('Familia', 'Family'),
-  comida: L('Comida', 'Food'),
-});
 
 // ── event-detail helpers (full date, calendar, share, directions) ──
 const WD_ES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -69,7 +63,7 @@ export function EventosScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const act = useMyActivity();
-  const [cat, setCat] = useState<'all' | 'free' | EventItem['cat']>('all');
+  const [cat, setCat] = useState<string>('all'); // 'all' | 'free' | an EVENT_CATS id
   const [date, setDate] = useState<'all' | string>('all');
   const [detailId, setDetailId] = useState<number | null>(null);
   const [pub, setPub] = useState<PubEvent | null>(null); // rich detail (tiers/organizer) for a live event
@@ -85,7 +79,7 @@ export function EventosScreen() {
   };
   const openDetail = (id: number) => { setDetailId(id); setTierQty({}); setBuying(false); setOrderDone(false); setBoughtCode(null); };
 
-  const catLabel = CAT_LABEL(L);
+  const catLabel = (id: string): string => { const c = EVENT_CAT_BY_ID[id]; return c ? L(c.es, c.en) : id; };
   const B = (t: [string, string]) => L(t[0], t[1]); // render a Bi tuple in the active language
   const sl = app.search.trim().toLowerCase();
 
@@ -243,18 +237,9 @@ export function EventosScreen() {
       </div>
       )}
 
-      {/* filter chips */}
+      {/* filter chips — all pro categories, horizontally scrollable */}
       <div className="no-scrollbar -mx-3.5 mb-3 flex gap-2 overflow-x-auto px-3.5">
-        {(
-          [
-            ['all', L('Todos', 'All')],
-            ['free', L('Gratis', 'Free')],
-            ['musica', catLabel.musica],
-            ['comida', catLabel.comida],
-            ['familia', catLabel.familia],
-            ['mercado', catLabel.mercado],
-          ] as const
-        ).map(([k, lab]) => (
+        {[['all', L('Todos', 'All')], ['free', L('Gratis', 'Free')], ...EVENT_CATS.map((c) => [c.id, L(c.es, c.en)] as [string, string])].map(([k, lab]) => (
           <Chip key={k} active={cat === k} onClick={() => setCat(k)}>
             {lab}
           </Chip>
@@ -321,7 +306,7 @@ export function EventosScreen() {
                 </span>
               </div>
               <div className="p-3.5">
-                <div className="text-[10px] font-extrabold uppercase tracking-[.05em] text-muted">{catLabel[e.cat]}</div>
+                <div className="text-[10px] font-extrabold uppercase tracking-[.05em] text-muted">{catLabel(e.cat)}</div>
                 <div className="mt-1 text-[15px] font-extrabold text-ink">{L(e.tEs, e.tEn)}</div>
                 <div className="mt-1 flex items-center gap-1 text-[12px] font-semibold text-muted">
                   <MapPin size={12} strokeWidth={2.4} />
@@ -370,7 +355,7 @@ export function EventosScreen() {
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-bold text-muted-2">
               {pub && <span>{L('Por', 'By')} <span className="text-ink-soft">{pub.organizer}</span></span>}
               <span>· {(pub?.going ?? detail.going) + (detailOn && !pub ? 1 : 0)} {L('asisten', 'going')}</span>
-              <span>· {catLabel[detail.cat]}</span>
+              <span>· {catLabel(detail.cat)}</span>
             </div>
 
             {/* add-to-calendar · share */}
