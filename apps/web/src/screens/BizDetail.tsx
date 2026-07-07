@@ -1521,8 +1521,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                     {r.photos.length > 0 && (
                       <div className="no-scrollbar mt-2.5 flex gap-2 overflow-x-auto">
                         {r.photos.map((src) => (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={src} src={src} alt="" loading="lazy" className="h-20 w-20 flex-none rounded-field object-cover" />
+                          <button key={src} onClick={() => setPhotoTile(src)} className="flex-none cursor-pointer">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={src} alt="" loading="lazy" className="h-20 w-20 rounded-field object-cover" />
+                          </button>
                         ))}
                       </div>
                     )}
