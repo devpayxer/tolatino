@@ -8,17 +8,34 @@
 
 create extension if not exists pg_trgm;
 
--- generated search document (name + specialty + subcategories + category); 'simple'
--- config = tokenize/lowercase without stemming (works for ES + EN + brand names).
-alter table public.businesses
-  add column if not exists search_tsv tsvector
-  generated always as (
-    to_tsvector('simple',
-      coalesce(name, '') || ' ' ||
-      coalesce(specialty_es, '') || ' ' || coalesce(specialty_en, '') || ' ' ||
-      coalesce(array_to_string(subcategories, ' '), '') || ' ' ||
-      coalesce(category_id, ''))
-  ) stored;
+-- search document (name + specialty + subcategories + category); 'simple' config =
+-- tokenize/lowercase without stemming (works for ES + EN + brand names).
+-- NOTE: to_tsvector(regconfig, text) is STABLE, not IMMUTABLE, so it can't back a
+-- GENERATED column (Postgres error 42P17). We keep search_tsv as a plain column and
+-- maintain it with a BEFORE INSERT/UPDATE trigger + a one-time backfill instead.
+alter table public.businesses add column if not exists search_tsv tsvector;
+
+create or replace function public.tg_business_search_tsv() returns trigger
+language plpgsql as $$
+begin
+  new.search_tsv := to_tsvector('simple',
+    coalesce(new.name, '') || ' ' ||
+    coalesce(new.specialty_es, '') || ' ' || coalesce(new.specialty_en, '') || ' ' ||
+    coalesce(array_to_string(new.subcategories, ' '), '') || ' ' ||
+    coalesce(new.category_id, ''));
+  return new;
+end $$;
+drop trigger if exists trg_business_search_tsv on public.businesses;
+create trigger trg_business_search_tsv before insert or update on public.businesses
+  for each row execute function public.tg_business_search_tsv();
+
+-- backfill existing rows (trigger only fires on future writes)
+update public.businesses set search_tsv = to_tsvector('simple',
+  coalesce(name, '') || ' ' ||
+  coalesce(specialty_es, '') || ' ' || coalesce(specialty_en, '') || ' ' ||
+  coalesce(array_to_string(subcategories, ' '), '') || ' ' ||
+  coalesce(category_id, ''));
+
 create index if not exists businesses_search_gin on public.businesses using gin (search_tsv);
 create index if not exists businesses_name_trgm on public.businesses using gin (name gin_trgm_ops);
 
