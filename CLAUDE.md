@@ -66,6 +66,25 @@ and bookings** to nearby local users, in their own language and culture.
    security, stubbed features, infra swaps), **append it to that file** — don't
    just say it in chat. Read it before launch-related work; check items off only
    when truly done.
+8. **Benchmark against the best in class — build to compete and win.** This is how
+   the founder wants the whole project built. Before building or revising ANY
+   section or feature, first identify the successful, established apps that own that
+   category and study what makes them work, then build the To'Latino version to
+   **match or beat** them — professional, modern, and **feature-complete**. Reference
+   points per surface (compare to these every time; add others as needed):
+   **Comunidad → Nextdoor / Facebook Groups; Negocios + reseñas → Yelp / Google
+   Business; comida y delivery → DoorDash / Uber Eats; tienda / productos + variantes
+   → Amazon / Shopify; servicios y reservas → Fresha / OpenTable / Booksy; renta →
+   Turo / Airbnb; eventos y boletos → Eventbrite; transporte → Uber / Lyft; bienes
+   raíces → Zillow; dealer de carros → CarGurus / Facebook Marketplace; trabajos →
+   Ind:eed; mensajería → WhatsApp; búsqueda / descubrimiento → Google.** The bar for
+   every task is **"would this compete with the leader in its category?"** — every
+   feature a serious competitor has, done **fully** (no stubs, no fake/broken states,
+   no "good enough" placeholder shipped as final). If a feature genuinely can't be
+   finished now (needs the founder's external setup, e.g. payments/push/maps), say so
+   honestly and log it in `docs/LAUNCH-CHECKLIST.md` — never disguise an incomplete
+   feature as done. This does NOT override the design system (#2) or the paste/scale/
+   Spanish rules — compete **within** those constraints, using the Handoff's look.
 
 ## Tech stack (the agreed base — keep in sync)
 
@@ -226,8 +245,13 @@ infra/        # Docker Compose, deployment
 ```
 
 ## Definition of done (per feature)
+- **Competitive bar met (#8):** benchmarked against the category leader; matches or
+  beats it; feature-complete with no stubbed/fake/broken states shipped as final
+  (anything unfinished is honestly logged in `docs/LAUNCH-CHECKLIST.md`).
 - Mobile layout correct first; responsive up to tablet/desktop without breaking it.
 - Uses only design-system tokens/components.
 - Spanish copy present (English secondary); no hardcoded user-facing English.
 - Considers scale (indexed queries, pagination, no N+1, caching where it matters).
 - No unnecessary paid dependency introduced.
+- Verified end-to-end (tsc + build + the relevant mobile audit / intercept), not just
+  written.

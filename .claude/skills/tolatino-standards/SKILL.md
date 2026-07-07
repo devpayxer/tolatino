@@ -6,7 +6,8 @@ description: >-
   features, or architecture for the To'Latino super-app. Guarantees mobile-first
   design, strict adherence to the established design system (never improvised
   UI), Spanish-first copy, build-from-scratch / avoid-paid-services discipline,
-  and 1M+ scale-aware choices.
+  1M+ scale-aware choices, and benchmarking every section against the category
+  leader to ship a feature-complete competitor (no stubbed/fake states as final).
 ---
 
 # To'Latino Build Standards
@@ -65,11 +66,33 @@ it** rather than breaking the rule silently.
 - Rely on `CLAUDE.md` + this skill (prompt-cached) instead of re-explaining the
   project each task. Keep task prompts tight and scoped.
 
+## 7. Benchmark against the best — build to compete and win (how the founder wants it built)
+- Before building/revising **any** section or feature, name the successful apps that
+  own that category and study what makes them work, then build the To'Latino version
+  to **match or beat** them: professional, modern, **feature-complete**.
+- Category reference points (compare every time): **Comunidad → Nextdoor / FB Groups;
+  Negocios + reseñas → Yelp / Google Business; comida/delivery → DoorDash / Uber Eats;
+  tienda + variantes → Amazon / Shopify; servicios y reservas → Fresha / OpenTable /
+  Booksy; renta → Turo / Airbnb; eventos + boletos → Eventbrite; transporte → Uber /
+  Lyft; bienes raíces → Zillow; dealer → CarGurus; trabajos → Indeed; mensajería →
+  WhatsApp; búsqueda → Google.**
+- The bar for done is **"would this compete with the leader in its category?"** Every
+  feature a serious competitor has, done **fully** — **no stubs, no fake/broken states,
+  no "good enough" placeholder shipped as final.**
+- If a feature genuinely can't be finished now (needs the founder's external setup —
+  payments, push/email, maps), say so honestly and log it in
+  `docs/LAUNCH-CHECKLIST.md`. Never disguise an incomplete feature as complete.
+- This competes **within** the other rules — it never overrides the design system (#2),
+  Spanish-first (#3), or scale (#5). Beat the competitor using the Handoff's look.
+
 ## Pre-flight checklist (run before finishing any UI/feature task)
+- [ ] **Benchmarked vs. the category leader; matches/beats it; feature-complete —
+      nothing stubbed or faked shipped as final (unfinished → LAUNCH-CHECKLIST).**
 - [ ] Mobile layout designed/built first; responsive up without breaking it.
 - [ ] Only design-system tokens/components used; nothing improvised.
 - [ ] Spanish copy present via i18n; no hardcoded English.
 - [ ] Queries indexed/paginated; geo via PostGIS; scale considered.
 - [ ] No unnecessary paid dependency added.
+- [ ] Verified end-to-end (tsc + build + mobile audit / intercept), not just written.
 - [ ] If anything was missing from the design system or stack, the founder was
       asked rather than guessed.

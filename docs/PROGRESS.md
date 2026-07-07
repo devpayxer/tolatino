@@ -27,7 +27,9 @@
 - **Non-negotiables that bite every task:** design tokens only (no raw hex in
   `className`); Spanish-first `L('es','en')`; mobile-first; **#6 paste anything
   runnable (SQL/env/commands) in FULL in chat** (founder is copy-paste, no CLI);
-  **#7 record every deferral in `docs/LAUNCH-CHECKLIST.md`**.
+  **#7 record every deferral in `docs/LAUNCH-CHECKLIST.md`**; **#8 benchmark every
+  section vs. the category leader (Yelp/DoorDash/Amazon/Nextdoor/Uber/Eventbrite/…)
+  and ship a feature-complete competitor — no stubbed/fake states as final.**
 - **Sandbox limit:** Supabase / Photon / Vercel are network-blocked here — features
   are verified by **build + a Playwright mobile audit**, not live E2E.
 
