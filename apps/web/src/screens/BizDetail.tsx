@@ -700,7 +700,25 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [single, itemModal]);
 
-  const tabs: [TabKey, string][] = [
+  // Which surfaces this listing actually offers, so a real business never shows a
+  // tab full of fixtures it never configured (e.g. a remittance shop rendering a
+  // taco menu). Catalog tabs appear only when the owner published REAL data;
+  // fixture-only tabs (updates/events/staff) appear only when the owner explicitly
+  // enabled that module (businesses.modules). Overview/related/reviews are always on.
+  const modOn = (k: string) => b.modules?.[k] === true;
+  const tabShown: Record<TabKey, boolean> = {
+    overview: true,
+    related: true,
+    reviews: true,
+    menu: realMenu != null,
+    shop: realShop != null,
+    services: realServices != null,
+    rentals: realRentals != null,
+    updates: modOn('updates'),
+    events: modOn('events'),
+    staff: modOn('staff'),
+  };
+  const allTabs: [TabKey, string][] = [
     ['overview', 'Overview'],
     ['updates', 'Updates'],
     ['menu', L('Menú', 'Menu')],
@@ -712,6 +730,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     ['related', L('Relacionados', 'Related')],
     ['reviews', L('Reseñas', 'Reviews')],
   ];
+  const tabs = allTabs.filter(([k]) => tabShown[k]);
+  // If the active tab becomes hidden (e.g. real data resolved to none), fall back.
+  useEffect(() => {
+    if (!tabShown[tab]) setTab('overview');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, realMenu, realShop, realServices, realRentals, b.slug]);
 
   // Overview = the full, browse-y view (hero + meta). Any other tab switches to a
   // focused mode: the hero collapses into a compact pinned header (title + tabs

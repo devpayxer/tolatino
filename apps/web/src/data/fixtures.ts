@@ -67,6 +67,10 @@ export type Business = {
   messagePhone?: string; // separate messaging number; falls back to `phone`
   descEs?: string;
   descEn?: string;
+  // Owner-enabled surfaces (from the dashboard, `businesses.modules`). Gates which
+  // detail tabs appear so a real listing never shows fixtures it never configured.
+  // Absent on demo fixtures.
+  modules?: Record<string, boolean>;
 };
 
 export const BUSINESSES: Business[] = [

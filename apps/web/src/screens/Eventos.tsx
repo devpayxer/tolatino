@@ -72,8 +72,9 @@ const buyErr = (msg: string, L: (a: string, b: string) => string): string => {
   if (/cancelled/i.test(msg)) return L('El evento fue cancelado', 'The event was cancelled');
   if (/no tickets|tier not found|not on sale.*event/i.test(msg)) return L('Elige al menos un boleto', 'Pick at least one ticket');
   if (/promo/i.test(msg)) return L('El código promocional ya no es válido', 'The promo code is no longer valid');
-  // Unknown error → surface the raw reason so it's diagnosable (trimmed).
-  return msg ? `⚠ ${msg.slice(0, 110)}` : L('No se pudo completar la compra', "Couldn't complete the purchase");
+  if (/event not found|event not on sale/i.test(msg)) return L('Este evento ya no está disponible', 'This event is no longer available');
+  // Any other error → friendly copy (never surface raw DB text to buyers).
+  return L('No se pudo completar la compra. Intenta de nuevo.', "Couldn't complete the purchase. Try again.");
 };
 // Upsert <meta name="description"> — the client half of per-event metadata (browser
 // tab/history + Googlebot's JS render; NOT social unfurls, which need SSR).
@@ -204,14 +205,18 @@ export function EventosScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateSrc]);
 
-  // Pagination over the filtered list.
-  useEffect(() => { setPage(1); }, [sl, cat, date, serverEvents]);
-  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
-  const curPage = Math.min(page, totalPages);
-  const pageList = list.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
-
-  const fe = EVENTS[0]; // featured — may be undefined when a city has no events
+  // Featured hero: only on the default, unfiltered view — never while searching or
+  // filtering (otherwise an unrelated event shows above "Sin resultados"). It's the
+  // first of the ACTIVE list, and excluded from the grid below so it isn't duplicated.
+  const fe = (usingServer || !!sl || cat !== 'all' || date !== 'all') ? null : list[0];
   const feOn = fe ? (fe.slug ? act.goingSlugs.has(fe.slug) : !!app.going[fe.id]) : false;
+
+  // Pagination over the filtered list (minus the featured hero when it's shown).
+  useEffect(() => { setPage(1); }, [sl, cat, date, serverEvents]);
+  const gridList = fe ? list.slice(1) : list;
+  const totalPages = Math.max(1, Math.ceil(gridList.length / PAGE_SIZE));
+  const curPage = Math.min(page, totalPages);
+  const pageList = gridList.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
   const detail = detailEv;
   const detailOn = detail ? (detail.slug ? act.goingSlugs.has(detail.slug) : !!app.going[detail.id]) : false;
 

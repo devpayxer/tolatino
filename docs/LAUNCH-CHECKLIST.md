@@ -873,6 +873,17 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   `SUBCATS` taxonomy (today it's a hardcoded fixture — approved customs only go
   live on the proposing business, not as a standard chip for everyone).
 
+- [ ] **BizDetail public events / staff / updates — wire real data (2026-07-08 audit).**
+  Detail tabs are now gated: catalog tabs (Menú/Tienda/Servicios/Renta) show only
+  when the owner published real items, and the fixture-only tabs (Updates/Eventos/
+  Equipo) show only when the owner enabled that module in `businesses.modules` — so
+  real unconfigured listings no longer render placeholder tacos/staff. But the
+  **content** of those three tabs is still the prototype fixtures (DETAIL_EVENTS /
+  STAFF / UPDATE_POSTS), even for a configured business (today only
+  `hz-barberia-primera`). Before launch, wire real public data: owner events via
+  `events_by_owner` (exists), plus new `business_staff`-by-slug and
+  `business_updates`-by-slug RPCs, and render real rows instead of fixtures.
+
 ---
 
-_Last updated: 2026-07-05. Add to this file as new deferrals appear._
+_Last updated: 2026-07-08. Add to this file as new deferrals appear._

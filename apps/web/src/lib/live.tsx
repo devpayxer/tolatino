@@ -61,6 +61,8 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     messagePhone: r.message_phone != null ? String(r.message_phone) : undefined,
     descEs: r.about_es != null ? String(r.about_es) : undefined,
     descEn: r.about_en != null ? String(r.about_en) : undefined,
+    // owner-enabled surfaces (business_by_slug returns `modules`; feed RPCs don't)
+    modules: (r.modules as Record<string, boolean> | null) ?? undefined,
   };
 }
 
