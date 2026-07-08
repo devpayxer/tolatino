@@ -45,13 +45,27 @@ function colorFor(seed: string): string {
   return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 
-function friendly(msg: string | undefined): string {
+// Auth failures return a STABLE code (never a localized sentence) so the UI can
+// render it in the active language via authErrorText() — Spanish-first, EN secondary.
+export type AuthErrCode = 'email_taken' | 'invalid_login' | 'weak_password' | 'bad_email' | 'not_configured' | 'generic';
+function friendly(msg: string | undefined): AuthErrCode {
   const m = (msg || '').toLowerCase();
-  if (m.includes('already registered') || m.includes('already been registered')) return 'Ese correo ya tiene una cuenta. Inicia sesión.';
-  if (m.includes('invalid login')) return 'Correo o contraseña incorrectos.';
-  if (m.includes('password')) return 'La contraseña debe tener al menos 6 caracteres.';
-  if (m.includes('email')) return 'Revisa el correo que escribiste.';
-  return msg || 'Algo salió mal. Intenta de nuevo.';
+  if (m.includes('already registered') || m.includes('already been registered')) return 'email_taken';
+  if (m.includes('invalid login')) return 'invalid_login';
+  if (m.includes('password')) return 'weak_password';
+  if (m.includes('email')) return 'bad_email';
+  return 'generic';
+}
+/** Localize an auth error code. Pass the app's L('es','en'). */
+export function authErrorText(code: string | null | undefined, L: (a: string, b: string) => string): string {
+  switch (code) {
+    case 'email_taken': return L('Ese correo ya tiene una cuenta. Inicia sesión.', 'That email already has an account. Sign in.');
+    case 'invalid_login': return L('Correo o contraseña incorrectos.', 'Incorrect email or password.');
+    case 'weak_password': return L('La contraseña debe tener al menos 6 caracteres.', 'Password must be at least 6 characters.');
+    case 'bad_email': return L('Revisa el correo que escribiste.', 'Check the email you entered.');
+    case 'not_configured': return L('El inicio de sesión no está configurado.', 'Sign-in is not configured.');
+    default: return L('Algo salió mal. Intenta de nuevo.', 'Something went wrong. Try again.');
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -86,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   const signUp: AuthCtx['signUp'] = async (name, email, password, loc) => {
-    if (!supabase) return { error: 'Auth no está configurado.' };
+    if (!supabase) return { error: 'not_configured' };
     const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
     if (error) return { error: friendly(error.message) };
     const u = data.user;
@@ -107,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn: AuthCtx['signIn'] = async (email, password) => {
-    if (!supabase) return { error: 'Auth no está configurado.' };
+    if (!supabase) return { error: 'not_configured' };
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     return { error: error ? friendly(error.message) : null };
   };

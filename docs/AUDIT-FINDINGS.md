@@ -61,8 +61,17 @@ prevent recurrence); #2 violates the "no fake state as final" non-negotiable.
   - [x] #4 raw `⚠ <reason>` buy error — reverted to friendly ES/EN copy
   - [x] #5 featured banner ignores filters / duplicates — filter-aware + excluded from grid
   - [x] #10 `event_waitlist` realtime — added to publication in 0068, live-verified
-- [ ] Batch B (i18n + polish): #6, #7, #8, #9, #11, #12, #13, #14, #15
-- [ ] Batch C (design tokens): #16, #17, #18, #19, #20
+- [x] **Batch B (i18n + functional)** — DONE + verified (tsc + build clean)
+  - [x] #6 auth errors i18n — `auth.tsx` returns stable codes + `authErrorText(code,L)`; Onboarding localizes
+  - [x] #7 mobile search dropdown — now anchored under the mobile input (second `SearchDropdown` in a `relative` mobile row; desktop one gated `md:block`)
+  - [x] #8 promo result i18n — localized client-side from the result, not the server's Spanish `msg`
+  - [x] #11 "Ver todos los resultados" — routes to the section with the most hits
+  - [x] #12 fake post success — signed-in user w/ no profile now gets an error, not a fake "¡Publicado!"
+  - [x] #13 comment count — falls back to the loaded thread count on Saved/Following posts
+  - [x] #14 RSVP "asisten" count — live-data refresh after RSVP so the number updates
+  - [ ] #9 legacy `category_id='food'` — DEFERRED (3 old superseded seeds only; `create_business` writes canonical keys) → LAUNCH-CHECKLIST
+  - [ ] #15 online-event dead code — DEFERRED (unreachable, not a live bug) → LAUNCH-CHECKLIST
+- [ ] Batch C (design tokens + touch targets): #16 (shared Switch <44px — 6 files, needs a shared component), #17 (review stars <44px), #18 (accent-primary), #19 (heart fill), #20 (gray hexes)
 - [ ] Re-run business-dashboard finder (failed structured output)
 
 ### Deferred (logged in LAUNCH-CHECKLIST)

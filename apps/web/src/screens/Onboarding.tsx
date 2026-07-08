@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { Check, ChevronLeft, LocateFixed, Lock, Mail, MapPin, Search, User as UserIcon } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { useAuth } from '@/lib/auth';
+import { useAuth, authErrorText } from '@/lib/auth';
 import { PrimaryBtn, Wordmark } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { POPULAR_CITIES, getBrowserLocation, nearestCity, searchCities, type Place } from '@/lib/geo';
@@ -40,7 +40,7 @@ export function OnboardingScreen() {
     setBusy(true);
     const { error } = await auth.signUp(name, email, password, { label: app.city, lat: app.coords.lat, lng: app.coords.lng });
     setBusy(false);
-    if (error) return setErr(error);
+    if (error) return setErr(authErrorText(error, L));
     setStep('location');
   };
 
@@ -50,7 +50,7 @@ export function OnboardingScreen() {
     setBusy(true);
     const { error } = await auth.signIn(email, password);
     setBusy(false);
-    if (error) return setErr(error);
+    if (error) return setErr(authErrorText(error, L));
     router.push('/comunidad');
   };
 

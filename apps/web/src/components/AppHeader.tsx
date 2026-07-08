@@ -160,7 +160,12 @@ function SearchDropdown() {
         </div>
       ) : (
         <button
-          onClick={() => go('negocios')}
+          onClick={() => {
+            // land on the section with the most matches, not always Negocios
+            const best = ([['negocios', bizHits.length], ['eventos', evHits.length], ['comunidad', postHits.length]] as [ 'negocios' | 'eventos' | 'comunidad', number][])
+              .sort((a, b) => b[1] - a[1])[0][0];
+            go(best);
+          }}
           className="mt-1.5 flex w-full cursor-pointer items-center justify-between rounded-btn bg-lilac-3 px-3.5 py-3 text-[12.5px] font-extrabold text-primary-dark"
         >
           {L('Ver todos los resultados', 'See all results')}
@@ -226,12 +231,16 @@ export function AppHeader() {
             <YouAvatar size={36} onClick={() => app.setUserOpen(true)} />
           )}
         </div>
-        <SearchDropdown />
+        {/* desktop: dropdown anchors to the centered top-bar search box */}
+        <div className="hidden md:block">
+          <SearchDropdown />
+        </div>
       </div>
 
-      {/* mobile: own search row */}
-      <div className="px-3.5 pb-[11px] md:hidden">
+      {/* mobile: own search row — relative so the dropdown anchors under THIS input */}
+      <div className="relative px-3.5 pb-[11px] md:hidden">
         <SearchBox mobile />
+        <SearchDropdown />
       </div>
 
       {/* 7-category bar — centered when it fits, scrolls from the start when it

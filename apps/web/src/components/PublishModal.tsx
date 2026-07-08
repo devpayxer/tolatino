@@ -284,6 +284,13 @@ export function PublishModal() {
       return;
     }
 
+    // Signed in with a backend but the profile row didn't load: don't silently
+    // fall through to a local-only post and fake a success — surface the problem.
+    if (supabase && auth.user && !auth.profile) {
+      setPostErr(L('No pudimos cargar tu perfil. Recarga la página e intenta de nuevo.', "We couldn't load your profile. Reload the page and try again."));
+      return;
+    }
+
     // No backend (or demo mode): local-only post.
     addLocalPost(txt, opts);
     setDone(true);

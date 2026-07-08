@@ -377,9 +377,14 @@ export function ComunidadScreen() {
   const topComments = (pid: string) => [...(SEED_COMMENTS[pid] ?? []), ...(dbTop[pid] ?? []), ...(userComments[pid] ?? [])];
   const repliesFor = (cid: string) => [...(SEED_REPLIES[cid] ?? []), ...(dbReplies[cid] ?? []), ...(userReplies[cid] ?? [])];
   // Feed count: real posts use the DB total (loaded for the whole visible feed
-  // and kept live via bumpComment); fixtures count their local comments.
-  const commentCount = (pid: string) =>
-    isUuid(pid) ? (it.commentCount[pid] ?? 0) : topComments(pid).reduce((n, c) => n + 1 + repliesFor(c.id).length, 0);
+  // and kept live via bumpComment); fixtures count their local comments. The
+  // Interactions provider only tracks the HOME feed, so for Saved/Following posts
+  // (not in that set) fall back to the loaded thread count instead of showing 0.
+  const commentCount = (pid: string) => {
+    if (!isUuid(pid)) return topComments(pid).reduce((n, c) => n + 1 + repliesFor(c.id).length, 0);
+    const loaded = topComments(pid).reduce((n, c) => n + 1 + repliesFor(c.id).length, 0);
+    return it.commentCount[pid] ?? loaded;
+  };
 
   const threadPost = [...allPosts, ...viewFeed].find((p) => p.id === threadPostId) ?? null;
   const canComment = commentText.trim().length > 0 || !!commentBiz;

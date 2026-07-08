@@ -88,7 +88,7 @@ function setMetaDesc(content: string) {
 export function EventosScreen() {
   const { L } = useLang();
   const app = useApp();
-  const { events: EVENTS } = useLiveData();
+  const { events: EVENTS, refresh: refreshLive } = useLiveData();
   const { user } = useAuth();
   const router = useRouter();
   const act = useMyActivity();
@@ -279,7 +279,9 @@ export function EventosScreen() {
         router.push('/entrar');
         return;
       }
-      void act.rsvp(e.slug, !act.goingSlugs.has(e.slug));
+      // refresh the live events after the RSVP writes so the "asisten" count
+      // (baked into event.going by the DB) reflects the change without a reload.
+      Promise.resolve(act.rsvp(e.slug, !act.goingSlugs.has(e.slug))).then(() => refreshLive());
       return;
     }
     app.toggleGoing(e.id);
@@ -320,9 +322,18 @@ export function EventosScreen() {
     setPromoBusy(true);
     const res = await validatePromo(pub.slug, code);
     setPromoBusy(false);
-    if (!res.ok) { setPromoMsg({ ok: false, text: res.msg || L('Código no válido', 'Invalid code') }); return; }
+    if (!res.ok) {
+      // The RPC's msg is Spanish-only; localize client-side (Spanish-first, EN secondary).
+      const m = (res.msg || '').toLowerCase();
+      const text = m.includes('agot') ? L('Código agotado', 'Code fully used')
+        : (m.includes('no disponible') || m.includes('evento')) ? L('Evento no disponible', 'Event not available')
+        : (m.includes('ingresa') || m.includes('vac')) ? L('Ingresa un código', 'Enter a code')
+        : L('Código no válido', 'Invalid code');
+      setPromoMsg({ ok: false, text });
+      return;
+    }
     setPromoApplied(code);
-    setPromoMsg({ ok: true, text: res.msg || L('Código aplicado', 'Code applied') });
+    setPromoMsg({ ok: true, text: L(res.kind === 'access' ? 'Boleto desbloqueado' : 'Código aplicado', res.kind === 'access' ? 'Ticket unlocked' : 'Code applied') });
     if (res.kind === 'access') { setUnlockedTiers((xs) => (xs.some((t) => t.id === res.tier.id) ? xs : [...xs, res.tier])); setDiscount(null); }
     else { setDiscount({ kind: res.kind, value: res.value, tierId: res.tierId }); }
   };
