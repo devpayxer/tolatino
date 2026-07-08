@@ -71,7 +71,9 @@ const buyErr = (msg: string, L: (a: string, b: string) => string): string => {
   if (/auth/i.test(msg)) return L('Inicia sesión para comprar', 'Sign in to buy');
   if (/cancelled/i.test(msg)) return L('El evento fue cancelado', 'The event was cancelled');
   if (/no tickets|tier not found|not on sale.*event/i.test(msg)) return L('Elige al menos un boleto', 'Pick at least one ticket');
-  return L('No se pudo completar la compra', "Couldn't complete the purchase");
+  if (/promo/i.test(msg)) return L('El código promocional ya no es válido', 'The promo code is no longer valid');
+  // Unknown error → surface the raw reason so it's diagnosable (trimmed).
+  return msg ? `⚠ ${msg.slice(0, 110)}` : L('No se pudo completar la compra', "Couldn't complete the purchase");
 };
 // Upsert <meta name="description"> — the client half of per-event metadata (browser
 // tab/history + Googlebot's JS render; NOT social unfurls, which need SSR).
