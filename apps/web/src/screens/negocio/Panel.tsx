@@ -108,9 +108,10 @@ export function PanelScreen() {
   const ctx: PanelCtx = useMemo(
     () => ({
       L, es: L('x', 'y') === 'x', tier, rubro, ci, isFree, isPremium, mods, photoCount,
+      isReal: !!real, reviewsCount: real ? (real.reviews_count ?? 0) : null,
       go: (t) => { setTab(t); setDrawer(false); },
     }),
-    [L, tier, rubro, ci, isFree, isPremium, mods, photoCount],
+    [L, tier, rubro, ci, isFree, isPremium, mods, photoCount, real],
   );
 
   const initialsOf = (n: string) => n.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'TL';
@@ -145,11 +146,19 @@ export function PanelScreen() {
       ? { bg: '#1E1B2E', c: '#F4B740', text: '✦ Premium' }
       : { bg: '#F1EFFA', c: '#6D4DF6', text: 'Verified' };
 
-  const stats = {
-    rating: isFree ? '—' : '4.8',
-    s1v: isFree ? '108' : '1,420', s1l: L('Vistas/sem', 'Views/wk'),
-    s2v: isFree ? '12' : '284', s2l: isFree ? L('Visitas', 'Visits') : L('Seguidores', 'Followers'),
-  };
+  // A real business shows its REAL rating + reviews (and '—' for untracked stats
+  // like weekly views) — never the demo showcase numbers. Demo keeps the sample.
+  const stats = real
+    ? {
+        rating: (real.reviews_count ?? 0) > 0 ? Number(real.rating).toFixed(1) : '—',
+        s1v: '—', s1l: L('Vistas/sem', 'Views/wk'),
+        s2v: String(real.reviews_count ?? 0), s2l: L('Reseñas', 'Reviews'),
+      }
+    : {
+        rating: isFree ? '—' : '4.8',
+        s1v: isFree ? '108' : '1,420', s1l: L('Vistas/sem', 'Views/wk'),
+        s2v: isFree ? '12' : '284', s2l: isFree ? L('Visitas', 'Visits') : L('Seguidores', 'Followers'),
+      };
 
   const nav = buildNav(ctx);
   const head = pageHead(tab, ctx);
@@ -345,9 +354,11 @@ export function PanelScreen() {
               aria-label={L('Notificaciones', 'Notifications')}
             >
               <Bell size={16} strokeWidth={2.2} className={isInicio ? 'text-white lg:text-ink' : 'text-ink'} />
-              <span className="absolute right-0.5 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[8.5px] font-extrabold text-white">
-                {isFree ? '2' : '7'}
-              </span>
+              {!real && (
+                <span className="absolute right-0.5 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[8.5px] font-extrabold text-white">
+                  {isFree ? '2' : '7'}
+                </span>
+              )}
             </button>
             {bizAvatar('h-9 w-9 rounded-full text-[11px]')}
           </div>
@@ -477,9 +488,9 @@ export function PanelScreen() {
         {(
           [
             ['insights', BarChart3, L('Inicio', 'Home'), null],
-            ['orders', ShoppingBag, L('Pedidos', 'Orders'), isFree ? null : '12'],
+            ['orders', ShoppingBag, L('Pedidos', 'Orders'), real ? null : isFree ? null : '12'],
             ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
-            ['reviews', Star, L('Reseñas', 'Reviews'), isFree ? null : '3'],
+            ['reviews', Star, L('Reseñas', 'Reviews'), real ? null : isFree ? null : '3'],
           ] as const
         ).map(([k, Icon, label, badge]) => {
           const active = tab === k;

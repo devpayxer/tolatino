@@ -77,10 +77,24 @@ prevent recurrence); #2 violates the "no fake state as final" non-negotiable.
   - [x] #18 `accent-[#7B61FF]` → `accent-primary` (Negocios, Hours)
   - [x] #19 heart fill `#F0466E` → `fill="currentColor"` (Negocios, BizDetail ×2, Updates)
   - [x] #20 gray hexes → tokens (Negocios `border-lilac-line`/`text-muted`/`bg-muted-faint`; BizDetail `text-muted`/`bg-lilac-line`)
-- [~] Re-run business-dashboard finder (re-running now for full coverage)
+- [x] **Business-dashboard finder** — re-ran (full coverage). DB wiring verified SOLID
+  (every rpc arg, `.from` column, insert/update key, and status/kind CHECK value
+  matches the live schema — no P0/P1). 3 fake-count/gating findings, fixed:
+  - [x] D1 (P2) Panel shell showed fabricated badges/stats to REAL businesses
+    (nav counts 68/14/4.2k/412…, sidebar 4.8★/1,420 views/284 followers, bell 2/7,
+    bottom-nav 12/3) contradicting the real pages → now suppressed for real
+    businesses (demo keeps showcase); rating/reviews driven from real data
+    (`tabs.tsx` `buildNav`/`activeMods` + `Panel.tsx` stats/bell/bottom-nav).
+  - [x] D2 (P3) Free tier forced the food Menú on every rubro → now unlocks the
+    module matching the rubro (services/products/rental/menu) (`tabs.tsx activeMods`).
+  - [ ] D3 (P3) signed-in user with NO business sees demo fixtures in catalog
+    modules vs empty state elsewhere → DEFERRED (edge state; broad multi-module
+    change) → LAUNCH-CHECKLIST.
 
 ### Deferred (logged, not user-facing bugs)
-- #9 legacy `category_id='food'` (3 old superseded seeds) · #15 online-event dead code · BizDetail events/staff/updates real-data wiring — all in LAUNCH-CHECKLIST.
+- #9 legacy `category_id='food'` (3 old superseded seeds) · #15 online-event dead code ·
+  BizDetail events/staff/updates real-data wiring · D3 no-business demo fixtures —
+  all in LAUNCH-CHECKLIST.
 
 ### Deferred (logged in LAUNCH-CHECKLIST)
 - BizDetail public **events / staff / updates** tabs still render prototype fixture

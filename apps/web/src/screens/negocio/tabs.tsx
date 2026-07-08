@@ -42,6 +42,8 @@ export type PanelCtx = {
   isPremium: boolean;
   mods: Mods;
   photoCount?: number; // real gallery photo count for the active business (nav badge)
+  isReal: boolean; // true when a real signed-in business is active (not demo) → suppress fabricated counts
+  reviewsCount?: number | null; // real reviews count for the active business (nav badge when isReal)
   go: (tab: TabKey) => void;
 };
 
@@ -60,15 +62,26 @@ export type NavItem = {
 export type NavGroup = { label: string; add?: { label: string; color: string; onAdd?: () => void } | null; items: NavItem[] };
 
 export function activeMods(ctx: PanelCtx): Mods {
-  const { isFree, mods } = ctx;
-  if (isFree) return { menu: true, services: false, bookings: false, products: false, rental: false, events: false, updates: false, staff: false };
+  const { isFree, mods, rubro } = ctx;
+  if (isFree) {
+    // Free tier unlocks the ONE module that matches the rubro — not always the
+    // food menu (a beauty/auto listing gets Servicios, retail gets Productos, etc.).
+    const primary: keyof Mods = rubro === 'retail' ? 'products' : rubro === 'rental' ? 'rental' : rubro === 'beauty' || rubro === 'auto' ? 'services' : 'menu';
+    const base: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, updates: false, staff: false };
+    base[primary] = true;
+    return base;
+  }
   return { ...mods, bookings: mods.services && mods.bookings };
 }
 
 export function buildNav(ctx: PanelCtx): NavGroup[] {
-  const { L, isFree, ci, go, photoCount } = ctx;
+  const { L, isFree, ci, go, photoCount, isReal, reviewsCount } = ctx;
   // Real gallery count when known (>0); no badge otherwise.
   const photoBadge = photoCount != null && photoCount > 0 ? String(photoCount) : null;
+  // Fabricated showcase counts are for DEMO only — a real business must never see
+  // invented badge numbers that contradict its (real) module pages.
+  const dc = (v: string | null) => (isReal ? null : v);
+  const reviewsBadge = isReal ? (reviewsCount && reviewsCount > 0 ? String(reviewsCount) : null) : isFree ? '3' : '412';
   const am = activeMods(ctx);
   const it = (id: TabKey, label: string, Icon: LucideIcon, opts: Partial<NavItem> & { lockedFree?: boolean } = {}): NavItem => ({
     id, label, Icon,
@@ -91,34 +104,34 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
       label: L('Módulos', 'Modules'),
       add: { label: '⚙ Setup', color: '#6D4DF6', onAdd: () => go('modules') },
       items: [
-        it('menu', L('Menú de comida', 'Food menu'), Utensils, { count: am.menu ? (isFree ? '8' : '68') : null, locked: !am.menu }),
-        it('services', L('Servicios', 'Services'), ci.svc, { count: am.services ? '14' : null, locked: !am.services }),
-        ...(am.services ? [it('bookings', L('Reservas', 'Bookings'), Calendar, { count: am.bookings ? '24' : null, live: am.bookings, locked: !am.bookings, indent: true })] : []),
-        it('products', L('Productos', 'Products'), Package, { count: am.products ? '42' : null, locked: !am.products }),
+        it('menu', L('Menú de comida', 'Food menu'), Utensils, { count: am.menu ? dc(isFree ? '8' : '68') : null, locked: !am.menu }),
+        it('services', L('Servicios', 'Services'), ci.svc, { count: am.services ? dc('14') : null, locked: !am.services }),
+        ...(am.services ? [it('bookings', L('Reservas', 'Bookings'), Calendar, { count: am.bookings ? dc('24') : null, live: am.bookings, locked: !am.bookings, indent: true })] : []),
+        it('products', L('Productos', 'Products'), Package, { count: am.products ? dc('42') : null, locked: !am.products }),
         // Shared fulfillment (delivery + shipping) — used by BOTH the Food menu
         // (local delivery) and Products (delivery + national shipping). Visible
         // whenever either is on; the module reads/writes business-wide settings.
         it('fulfillment', L('Entregas y envíos', 'Delivery & shipping'), Truck, { locked: !(am.menu || am.products) }),
-        it('rental', L('Renta', 'Rental'), Bike, { count: am.rental ? '12' : null, locked: !am.rental }),
-        it('events', L('Eventos y boletos', 'Events & tickets'), Ticket, { count: am.events ? '4' : null, locked: !am.events }),
+        it('rental', L('Renta', 'Rental'), Bike, { count: am.rental ? dc('12') : null, locked: !am.rental }),
+        it('events', L('Eventos y boletos', 'Events & tickets'), Ticket, { count: am.events ? dc('4') : null, locked: !am.events }),
       ],
     },
     {
       label: L('Clientes', 'Customers'),
       items: [
-        it('customers', L('Clientes', 'Customers'), Users, { count: isFree ? '12' : '4.2k' }),
-        it('orders', L('Pedidos', 'Orders'), ShoppingBag, { count: isFree ? null : '12', live: !isFree, lockedFree: true }),
-        it('messages', L('Mensajes', 'Messages'), MessageCircle, { count: isFree ? '2' : '7', live: !isFree, warn: isFree }),
-        it('reviews', L('Reseñas', 'Reviews'), Star, { count: isFree ? '3' : '412', warn: !isFree }),
-        it('updates', L('Novedades', 'Updates'), Megaphone, { count: am.updates ? '18' : null, locked: !am.updates }),
+        it('customers', L('Clientes', 'Customers'), Users, { count: dc(isFree ? '12' : '4.2k') }),
+        it('orders', L('Pedidos', 'Orders'), ShoppingBag, { count: dc(isFree ? null : '12'), live: !isFree, lockedFree: true }),
+        it('messages', L('Mensajes', 'Messages'), MessageCircle, { count: dc(isFree ? '2' : '7'), live: !isFree, warn: isFree }),
+        it('reviews', L('Reseñas', 'Reviews'), Star, { count: reviewsBadge, warn: !isFree && !isReal }),
+        it('updates', L('Novedades', 'Updates'), Megaphone, { count: am.updates ? dc('18') : null, locked: !am.updates }),
       ],
     },
     {
       label: L('Cuenta', 'Account'),
       items: [
         it('payments', L('Pagos', 'Payouts'), DollarSign, { lockedFree: true }),
-        it('staff', L('Personal', 'Staff'), User, { count: am.staff ? '14' : null, locked: !am.staff }),
-        ...(am.staff ? [it('jobs', L('Empleos', 'Jobs'), Briefcase, { count: '3', indent: true })] : []),
+        it('staff', L('Personal', 'Staff'), User, { count: am.staff ? dc('14') : null, locked: !am.staff }),
+        ...(am.staff ? [it('jobs', L('Empleos', 'Jobs'), Briefcase, { count: dc('3'), indent: true })] : []),
         it('modules', L('Configurar módulos', 'Module setup'), LayoutGrid),
         it('billing', L('Plan y facturación', 'Billing & plan'), CreditCard),
         it('settings', L('Ajustes', 'Settings'), Settings),

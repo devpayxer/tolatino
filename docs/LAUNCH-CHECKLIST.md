@@ -884,6 +884,17 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   `events_by_owner` (exists), plus new `business_staff`-by-slug and
   `business_updates`-by-slug RPCs, and render real rows instead of fixtures.
 
+- [ ] **Business panel: signed-in user with NO business → uniform empty state
+  (2026-07-08 audit, D3).** When a user is signed in but owns no business
+  (`admin.active == null && !admin.demo`), the catalog/customer modules (Food,
+  Products, Services, Rental, Events, Customers, Staff, Updates) currently fall
+  back to their DEMO seed data (e.g. 9 sample dishes, fixture orders), while
+  Listing/Photos/Hours/Messages/Payments/Related correctly show a "Conecta tu
+  negocio" empty state — so the same panel looks half-real. Before launch, treat
+  `active == null && !demo` as the empty state uniformly across all modules
+  (show "Conecta tu negocio" instead of demo seeds). Edge state (most users reach
+  the panel via onboarding which creates the business first), so deferred.
+
 ---
 
 _Last updated: 2026-07-08. Add to this file as new deferrals appear._
