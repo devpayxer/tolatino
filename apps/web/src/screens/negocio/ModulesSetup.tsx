@@ -5,6 +5,7 @@
 
 import { Bike, Lock, Megaphone, Package, Ticket, Utensils } from 'lucide-react';
 import type { Mods, PanelCtx } from '@/screens/negocio/tabs';
+import { Switch } from '@/components/ui';
 
 export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: keyof Mods) => void }) {
   const { L, ci, isFree, mods } = ctx;
@@ -33,13 +34,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
                   Verified
                 </span>
               ) : (
-                <button
-                  onClick={() => onToggle(m.key)}
-                  className={`relative h-[24px] w-[42px] flex-none cursor-pointer rounded-full transition-colors ${on ? 'bg-primary' : 'bg-[#D8D2E6]'}`}
-                  aria-label={m.label}
-                >
-                  <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow transition-all ${on ? 'left-[21px]' : 'left-[3px]'}`} />
-                </button>
+                <Switch on={on} onClick={() => onToggle(m.key)} label={m.label} />
               )}
             </div>
             <div className="mt-3 text-[14px] font-extrabold text-ink">{m.label}</div>

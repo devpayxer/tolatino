@@ -16,7 +16,7 @@ import { listSuggestions, proposeSuggestion, cancelSuggestion, type Suggestion, 
 import { TaxonomyPicker } from '@/screens/negocio/modules/TaxonomyPicker';
 import { SUBCATS, FEATURES_COMMON, FEATURES_BY_CAT } from '@/data/fixtures';
 import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
-import { VerifiedBadge } from '@/components/ui';
+import { Switch, VerifiedBadge } from '@/components/ui';
 import type { PanelCtx } from '@/screens/negocio/tabs';
 import { Toast } from '@/screens/negocio/modules/_page';
 
@@ -483,16 +483,12 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                   <span className="block text-[12.5px] font-extrabold text-ink">{L('Contacto por mensaje', 'Contact by message')}</span>
                   <span className="mt-0.5 block text-[11px] font-semibold leading-snug text-muted">{L('Muestra un botón de Mensaje en tu ficha.', 'Show a Message button on your listing.')}</span>
                 </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={draft.acceptsMessages}
-                  aria-label={L('Contacto por mensaje', 'Contact by message')}
+                <Switch
+                  on={draft.acceptsMessages}
                   onClick={() => set('acceptsMessages', !draft.acceptsMessages)}
-                  className={`relative h-[25px] w-[44px] flex-none cursor-pointer rounded-full transition-colors ${draft.acceptsMessages ? 'bg-primary' : 'bg-[#D8D2E6]'}`}
-                >
-                  <span className={`absolute top-[3px] h-[19px] w-[19px] rounded-full bg-white shadow transition-all ${draft.acceptsMessages ? 'left-[22px]' : 'left-[3px]'}`} />
-                </button>
+                  label={L('Contacto por mensaje', 'Contact by message')}
+                  big
+                />
               </div>
               {draft.acceptsMessages && (
                 <div className="mt-3 border-t border-hair pt-3">

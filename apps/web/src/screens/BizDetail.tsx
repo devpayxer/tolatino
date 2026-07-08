@@ -292,7 +292,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const saved = savedBiz.isSaved(b.slug);
   const now = useNow();
   const status = statusLabel(bizStatus(b.hours, now, b.open, b.hoursExceptions), L);
-  const statusTone = status.tone === 'open' ? 'text-green' : status.tone === 'soon' ? 'text-amber-ink' : 'text-[#A59FB6]';
+  const statusTone = status.tone === 'open' ? 'text-green' : status.tone === 'soon' ? 'text-amber-ink' : 'text-muted';
   // A date-specific override active today (holiday / vacation / weather) — shown
   // on the "Hoy" line so the special hours (or closure + reason) are explicit.
   const todayEx = now ? activeException(b.hoursExceptions, now) : null;
@@ -980,7 +980,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               <Share size={16} strokeWidth={2.2} className="text-ink" />
             </button>
             <button onClick={() => savedBiz.toggle(b.slug)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Guardar', 'Save')}>
-              <Heart size={16} strokeWidth={2.2} className="text-pink" fill={saved ? '#F0466E' : 'none'} />
+              <Heart size={16} strokeWidth={2.2} className="text-pink" fill={saved ? 'currentColor' : 'none'} />
             </button>
           </div>
         </div>
@@ -1055,7 +1055,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
             {b.verified && <VerifiedBadge size={16} />}
             <div className="ml-auto flex flex-none items-center gap-1.5">
               <button onClick={() => savedBiz.toggle(b.slug)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Guardar', 'Save')}>
-                <Heart size={15} strokeWidth={2.2} className="text-pink" fill={saved ? '#F0466E' : 'none'} />
+                <Heart size={15} strokeWidth={2.2} className="text-pink" fill={saved ? 'currentColor' : 'none'} />
               </button>
               <button onClick={() => setContactOpen(true)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Contacto y opciones', 'Contact & options')}>
                 <MoreHorizontal size={18} className="text-primary-dark" />
@@ -1182,7 +1182,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               ].map(([n, pct]) => (
                 <div key={n} className="flex items-center gap-2">
                   <span className="w-2 text-[10px] font-bold text-muted-2">{n}</span>
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-[#ECEAF4]">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-lilac-line">
                     <div className="h-full bg-amber" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
@@ -2108,7 +2108,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         <OverlayTitle title={L('Tu reseña', 'Your review')} onClose={() => setWriteOpen(false)} />
         <div className="flex justify-center gap-1 py-2 text-[30px]">
           {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} onClick={() => setMyStars(n)} className="cursor-pointer" style={{ color: n <= myStars ? '#F4B740' : '#D9D5E6' }}>
+            <button key={n} onClick={() => setMyStars(n)} className={`flex h-11 w-11 cursor-pointer items-center justify-center ${n <= myStars ? 'text-amber' : 'text-muted-faint'}`}>
               {n <= myStars ? '★' : '☆'}
             </button>
           ))}

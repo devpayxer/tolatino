@@ -190,7 +190,7 @@ export function NegociosScreen() {
 
   const seg = (on: boolean) =>
     `flex-1 cursor-pointer rounded-[9px] border-[1.5px] py-2 text-center text-[12.5px] font-extrabold ${
-      on ? 'border-primary bg-lilac-3 text-ink' : 'border-[#ECEAF4] bg-white text-ink-soft'
+      on ? 'border-primary bg-lilac-3 text-ink' : 'border-lilac-line bg-white text-ink-soft'
     }`;
 
   if (detailBiz !== null) {
@@ -385,7 +385,7 @@ export function NegociosScreen() {
                   max={DIST_MAX}
                   value={f.maxDist}
                   onChange={(e) => patch({ maxDist: parseInt(e.target.value, 10) })}
-                  className="w-full accent-[#7B61FF]"
+                  className="w-full accent-primary"
                 />
                 <div className="mt-1 flex justify-between text-[10.5px] font-bold text-muted-faint">
                   <span>{DIST_MIN} mi</span>
@@ -600,12 +600,12 @@ function SaveBtn({ b, size = 17 }: { b: Business; size?: number }) {
       className="ml-auto flex-none cursor-pointer p-1"
       aria-label={savedOn ? L('Quitar de guardados', 'Remove from saved') : L('Guardar', 'Save')}
     >
-      <Heart size={size} strokeWidth={2.2} className={savedOn ? 'text-pink' : 'text-[#D6D1E2]'} fill={savedOn ? '#F0466E' : 'none'} />
+      <Heart size={size} strokeWidth={2.2} className={savedOn ? 'text-pink' : 'text-muted-faint'} fill={savedOn ? 'currentColor' : 'none'} />
     </button>
   );
 }
 
-const TONE_CLASS = { open: 'text-green', soon: 'text-amber-ink', closed: 'text-[#A59FB6]' } as const;
+const TONE_CLASS = { open: 'text-green', soon: 'text-amber-ink', closed: 'text-muted' } as const;
 
 /** Rating · reviews · price · live open/closed status — shared meta row. */
 function BizMeta({ b }: { b: Business }) {
@@ -738,7 +738,7 @@ function BizCardBasic({ b, onOpen }: { b: Business; onOpen: () => void }) {
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-1 rounded-full border border-hair px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-muted-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#D6D1E2]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-muted-faint" />
               {L('Sin verificar', 'Unverified')}
             </span>
             <span className="text-[11.5px] font-bold text-muted">{L(CAT[b.cat].es, CAT[b.cat].en)} · {b.dist}</span>

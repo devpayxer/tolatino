@@ -325,7 +325,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
             {p.status === 'live' ? (
               <div className="flex flex-wrap items-center gap-4 px-3.5 py-3 text-[10.5px] font-bold text-muted">
                 <span className="flex items-center gap-1"><Eye_ /> {p.views}</span>
-                <span className="flex items-center gap-1 text-pink"><Heart size={13} strokeWidth={2.2} fill="#F0466E" /> {p.likes}</span>
+                <span className="flex items-center gap-1 text-pink"><Heart size={13} strokeWidth={2.2} fill="currentColor" /> {p.likes}</span>
                 <span className="flex items-center gap-1"><MessageCircle size={13} strokeWidth={2.2} /> {p.comments}</span>
                 <span className="flex items-center gap-1"><Bookmark size={13} strokeWidth={2.2} /> {p.saves}</span>
               </div>

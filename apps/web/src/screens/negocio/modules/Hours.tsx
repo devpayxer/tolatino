@@ -237,7 +237,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                       <input type="date" value={fDate} min={todayISO()} onChange={(e) => setFDate(e.target.value)} className={dateFieldCls} />
                     </label>
                     <label className="flex cursor-pointer items-center gap-2">
-                      <input type="checkbox" checked={fRange} onChange={(e) => setFRange(e.target.checked)} className="h-4 w-4 accent-[#7B61FF]" />
+                      <input type="checkbox" checked={fRange} onChange={(e) => setFRange(e.target.checked)} className="h-4 w-4 accent-primary" />
                       <span className="text-[12px] font-bold text-ink-soft">{L('Varios días (vacaciones)', 'Multiple days (vacation)')}</span>
                     </label>
                     {fRange && (

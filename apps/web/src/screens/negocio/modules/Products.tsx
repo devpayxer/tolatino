@@ -26,6 +26,7 @@ import {
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Switch } from '@/components/ui';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -105,15 +106,6 @@ const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
 const inputCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary';
 const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12.5px] font-extrabold text-primary-dark';
-
-function Switch({ on, onClick, big }: { on: boolean; onClick: () => void; big?: boolean }) {
-  const w = big ? 46 : 38; const k = big ? 20 : 17;
-  return (
-    <span role="switch" aria-checked={on} onClick={onClick} className="relative inline-block flex-none cursor-pointer rounded-full transition-colors" style={{ width: w, height: big ? 26 : 23, background: on ? '#7B61FF' : '#D8D2E6' }}>
-      <span className="absolute top-[3px] rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,.18)] transition-all" style={{ width: k, height: k, left: on ? w - k - 3 : 3 }} />
-    </span>
-  );
-}
 
 const BADGES = ['Nuevo', 'Oferta', 'Popular', 'Local'];
 const tagLabel = (t: string, L: (es: string, en: string) => string) =>

@@ -71,8 +71,16 @@ prevent recurrence); #2 violates the "no fake state as final" non-negotiable.
   - [x] #14 RSVP "asisten" count — live-data refresh after RSVP so the number updates
   - [ ] #9 legacy `category_id='food'` — DEFERRED (3 old superseded seeds only; `create_business` writes canonical keys) → LAUNCH-CHECKLIST
   - [ ] #15 online-event dead code — DEFERRED (unreachable, not a live bug) → LAUNCH-CHECKLIST
-- [ ] Batch C (design tokens + touch targets): #16 (shared Switch <44px — 6 files, needs a shared component), #17 (review stars <44px), #18 (accent-primary), #19 (heart fill), #20 (gray hexes)
-- [ ] Re-run business-dashboard finder (failed structured output)
+- [x] **Batch C (design tokens + touch targets)** — DONE + verified (tsc + build clean)
+  - [x] #16 shared `Switch` extracted to `components/ui.tsx` with a ≥44px hit area + tokens; migrated Services, Products, Settings, Listing, Cuenta, ModulesSetup (killed the 6 hand-rolled copies + raw `#7B61FF`/`#D8D2E6`)
+  - [x] #17 review stars now h-11 w-11 (44px) + `text-amber`/`text-muted-faint` tokens
+  - [x] #18 `accent-[#7B61FF]` → `accent-primary` (Negocios, Hours)
+  - [x] #19 heart fill `#F0466E` → `fill="currentColor"` (Negocios, BizDetail ×2, Updates)
+  - [x] #20 gray hexes → tokens (Negocios `border-lilac-line`/`text-muted`/`bg-muted-faint`; BizDetail `text-muted`/`bg-lilac-line`)
+- [~] Re-run business-dashboard finder (re-running now for full coverage)
+
+### Deferred (logged, not user-facing bugs)
+- #9 legacy `category_id='food'` (3 old superseded seeds) · #15 online-event dead code · BizDetail events/staff/updates real-data wiring — all in LAUNCH-CHECKLIST.
 
 ### Deferred (logged in LAUNCH-CHECKLIST)
 - BizDetail public **events / staff / updates** tabs still render prototype fixture

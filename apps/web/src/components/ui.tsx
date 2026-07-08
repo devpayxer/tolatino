@@ -97,6 +97,36 @@ export function Chip({
   );
 }
 
+/** On/off toggle. The visual pill stays compact, but the tappable area is ≥44px
+ *  (mobile touch minimum) and colors come from tokens — never raw hex. Replaces
+ *  the hand-rolled per-screen switches. */
+export function Switch({ on, onClick, big, label }: { on: boolean; onClick: () => void; big?: boolean; label?: string }) {
+  const w = big ? 44 : 40;
+  const h = big ? 26 : 24;
+  const k = h - 6;
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={onClick}
+      className="relative flex min-h-11 flex-none cursor-pointer items-center"
+      style={{ width: w }}
+    >
+      <span
+        className={`relative block w-full rounded-full transition-colors ${on ? 'bg-primary' : 'bg-lilac-ring'}`}
+        style={{ height: h }}
+      >
+        <span
+          className="absolute top-[3px] rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,.18)] transition-all"
+          style={{ width: k, height: k, left: on ? w - k - 3 : 3 }}
+        />
+      </span>
+    </button>
+  );
+}
+
 export function SoonTag({ label }: { label: string }) {
   return (
     <span className="rounded-full bg-amber-bg px-1.5 py-0.5 text-[8.5px] font-extrabold tracking-[.03em] text-amber-ink">

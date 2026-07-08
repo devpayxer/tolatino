@@ -23,6 +23,7 @@ import {
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Switch } from '@/components/ui';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -109,15 +110,6 @@ const bookingWhen = (iso: string, es: boolean): string => {
   return d.toLocaleDateString(es ? 'es-US' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' +
     d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
-
-function Switch({ on, onClick, big }: { on: boolean; onClick: () => void; big?: boolean }) {
-  const w = big ? 42 : 38; const k = big ? 19 : 17;
-  return (
-    <span role="switch" aria-checked={on} onClick={onClick} className="relative inline-block flex-none cursor-pointer rounded-full transition-colors" style={{ width: w, height: big ? 25 : 23, background: on ? '#7B61FF' : '#D8D2E6' }}>
-      <span className="absolute top-[3px] rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,.18)] transition-all" style={{ width: k, height: k, left: on ? w - k - 3 : 3 }} />
-    </span>
-  );
-}
 
 const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';

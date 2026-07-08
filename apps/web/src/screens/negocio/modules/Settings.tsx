@@ -11,6 +11,7 @@ import { Bell, ChevronRight, Globe, Image as ImageIcon, LogOut, Mail, Shield, St
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useAuth } from '@/lib/auth';
 import { LangToggle } from '@/components/AppHeader';
+import { Switch } from '@/components/ui';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { Toast } from '@/screens/negocio/modules/_page';
 
@@ -18,17 +19,7 @@ type Notifs = { orders: boolean; messages: boolean; reviews: boolean; marketing:
 const DEFAULT_NOTIFS: Notifs = { orders: true, messages: true, reviews: true, marketing: false };
 
 function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      className={`relative h-[25px] w-[44px] flex-none cursor-pointer rounded-full transition-colors ${on ? 'bg-primary' : 'bg-[#D8D2E6]'}`}
-    >
-      <span className={`absolute top-[3px] h-[19px] w-[19px] rounded-full bg-white shadow transition-all ${on ? 'left-[22px]' : 'left-[3px]'}`} />
-    </button>
-  );
+  return <Switch on={on} onClick={onClick} label={label} big />;
 }
 
 export function SettingsModule({ ctx }: { ctx: PanelCtx }) {

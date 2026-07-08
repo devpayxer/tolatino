@@ -23,7 +23,7 @@ import { useLiveData } from '@/lib/live';
 import { useMyActivity } from '@/lib/myActivity';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Qr } from '@/components/Qr';
-import { Avatar, Card, YouAvatar } from '@/components/ui';
+import { Avatar, Card, Switch, YouAvatar } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 
@@ -340,9 +340,7 @@ export function CuentaScreen() {
               {([['posts', L('Respuestas a mis posts', 'Replies to my posts')], ['follows', L('Nuevos seguidores', 'New followers')], ['events', L('Eventos cerca', 'Events nearby')], ['marketing', L('Novedades de To’Latino', 'To’Latino news')]] as [keyof Notifs, string][]).map(([k, label]) => (
                 <div key={k} className="flex items-center gap-3 py-2">
                   <span className="min-w-0 flex-1 text-[13px] font-bold text-ink">{label}</span>
-                  <button onClick={() => toggleNotif(k)} role="switch" aria-checked={notifs[k]} aria-label={label} className={`relative h-[25px] w-[44px] flex-none cursor-pointer rounded-full transition-colors ${notifs[k] ? 'bg-primary' : 'bg-[#D8D2E6]'}`}>
-                    <span className={`absolute top-[3px] h-[19px] w-[19px] rounded-full bg-white shadow transition-all ${notifs[k] ? 'left-[22px]' : 'left-[3px]'}`} />
-                  </button>
+                  <Switch on={notifs[k]} onClick={() => toggleNotif(k)} label={label} big />
                 </div>
               ))}
             </div>
