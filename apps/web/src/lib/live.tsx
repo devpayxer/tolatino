@@ -487,6 +487,7 @@ export function mapEventRow(r: Record<string, unknown>, i: number): EventItem {
     id: i,
     slug: r.slug != null ? String(r.slug) : undefined,
     iso: String(r.starts_at),
+    cover: r.cover_url != null ? String(r.cover_url) : undefined,
     dEs: MONTHS_ES[d.getMonth()],
     day: String(d.getDate()).padStart(2, '0'),
     cat: r.cat as EventItem['cat'],
@@ -511,7 +512,7 @@ export function mapEventRow(r: Record<string, unknown>, i: number): EventItem {
 export function eventItemFromPub(p: PubEvent): EventItem {
   const d = new Date(p.startsAt);
   return {
-    id: -1, slug: p.slug, iso: p.startsAt,
+    id: -1, slug: p.slug, iso: p.startsAt, cover: p.coverUrl ?? undefined,
     dEs: MONTHS_ES[d.getMonth()], day: String(d.getDate()).padStart(2, '0'),
     cat: p.cat, tEs: p.title[0], tEn: p.title[1], lEs: p.venue[0], lEn: p.venue[1],
     going: p.going, free: p.priceLabel == null, price: p.priceLabel ?? undefined,

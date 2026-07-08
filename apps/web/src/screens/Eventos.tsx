@@ -472,7 +472,7 @@ export function EventosScreen() {
               className="overflow-hidden transition-shadow hover:shadow-card-lg"
               onClick={() => openDetail(e)}
             >
-              <div className="relative h-[110px]" style={{ background: eventTile(e) }}>
+              <div className="relative h-[110px] bg-cover bg-center" style={{ background: e.cover ? `center/cover url(${e.cover})` : eventTile(e) }}>
                 <span className="absolute left-3 top-3 flex h-[46px] w-[46px] flex-col items-center justify-center rounded-btn bg-white shadow-card">
                   <span className="text-[9px] font-extrabold uppercase text-primary-dark">{e.dEs}</span>
                   <span className="text-[17px] font-extrabold leading-none text-ink">{e.day}</span>

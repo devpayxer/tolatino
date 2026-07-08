@@ -460,6 +460,7 @@ export type EventItem = {
   id: number;
   slug?: string; // supabase events.slug — present on live events; drives tickets/RSVP
   iso?: string;  // supabase events.starts_at — the real date, keys date chips without year collapse
+  cover?: string; // supabase events.cover_url — real cover photo for the list card (else gradient)
   dEs: string;
   day: string;
   cat: string; // one of EVENT_CATS ids
