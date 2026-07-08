@@ -104,32 +104,83 @@ rama de producción. Verifica que producción tenga el último commit:
 
 ---
 
-## Paso 3 — Smoke test por feature (encuentra los bugs de UI/lógica)
-Prueba en el sitio real, **firmado con tu cuenta**, en el teléfono. Para CADA fila: si falla,
-toma captura del error (dejé el error mostrando el motivo técnico real, ⚠), y anota el paso.
+## Paso 3 — Smoke test de TODO el app (encuentra los bugs de UI/lógica)
+Prueba en el sitio real, **firmado con tu cuenta**, en el teléfono. Para CADA casilla: si
+falla, toma captura del error (el mensaje ⚠ muestra el motivo técnico real) y anota el paso.
+Idealmente prueba con **2 cuentas**: una como CLIENTE y otra como DUEÑO de un negocio, para
+ver los dos lados (ej. compras algo con la cuenta cliente → llega al panel del dueño).
 
-### Eventos (lo del arco reciente)
-- [ ] Crear evento con foto de portada → aparece en el listado **con la foto en la tarjeta**.
-- [ ] Comprar boleto **gratis** (Entrada general) → éxito + aparece en Mi cuenta → Mis boletos con **QR**.
+Marca: ✅ funciona · ❌ falla (anota el error) · ⚠️ raro/incompleto.
+
+### A. Entrada y cuenta
+- [ ] **Landing** (`/`): carga, se ve bien en móvil, los botones llevan a la app.
+- [ ] **Registro/Login** (`/entrar`): OTP por email (y/o teléfono) → recibes el código → entra.
+- [ ] **Cambio de idioma** ES/EN (toggle del header): TODO el texto cambia, sin inglés pegado.
+- [ ] **Selector de ciudad** (header): buscar ciudad / "usar mi ubicación" → la ciudad se propaga a todo.
+- [ ] **Búsqueda global** (header): escribe algo → sugerencias agrupadas (Negocios/Eventos/Comunidad) → al tocar, abre.
+
+### B. Comunidad (`/comunidad`)
+- [ ] Ver el feed (posts cercanos por geo).
+- [ ] **Publicar** un post (recomendación / pregunta / encuesta / aviso local) → aparece en el feed.
+- [ ] **Votar** en una encuesta → el conteo sube.
+- [ ] **Like** a un post y a un comentario → se guarda.
+- [ ] Comentar / responder → aparece.
+
+### C. Negocios (`/negocios`) + ficha del negocio (BizDetail)
+- [ ] Listado de negocios cercanos; **filtros** (categoría, precio, rating) filtran.
+- [ ] **Búsqueda** por texto → resultados por relevancia (no solo los cercanos).
+- [ ] Abrir una ficha; deep-link `?b=<slug>` abre esa ficha directo.
+- [ ] **Guardar** (corazón) un negocio → aparece en Mi cuenta → Guardados.
+- [ ] **Reseñas**: leer; **escribir una reseña con foto** → aparece; el **dueño puede responder**.
+- [ ] **Menú/Comida**: ver el menú → armar un pedido (con opciones) → ordenar → confirma.
+- [ ] **Productos**: ver productos con **variantes** (talla/color) y **stock** → agregar → ordenar.
+- [ ] **Servicios + reserva**: elegir servicio → **elegir un horario disponible** → reservar → confirma.
+- [ ] **Renta**: elegir artículo → periodo/cantidad/fecha → rentar → confirma.
+- [ ] **Relacionados**: se ven negocios relacionados.
+- [ ] **Chat**: iniciar conversación con el negocio → el mensaje llega al panel del dueño.
+
+### D. Eventos (`/eventos`)
+- [ ] Listado con la **foto de portada en la tarjeta** (no solo el degradado).
+- [ ] Filtros (categoría/gratis) y chips de fecha filtran; **paginación** funciona.
+- [ ] Detalle: fecha completa, **mapa embebido**, "cómo llegar", **organizador tocable** → sus otros eventos.
+- [ ] Comprar boleto **gratis** → éxito → aparece en Mi cuenta → Mis boletos con **QR real**.
 - [ ] Comprar boleto **de pago** (VIP) → éxito.
-- [ ] Aplicar **código de descuento** → precio baja → comprar → éxito.
-- [ ] Crear un **nivel oculto** + un **código de acceso** que lo desbloquea → el código revela el nivel.
-- [ ] En un nivel **agotado** → botón **"Avísame"** (lista de espera) → aparece en el panel del organizador.
-- [ ] **Check-in**: en el panel del negocio → Check-in → escribir el código del boleto → "Admitido".
-- [ ] Boleto de grupo (qty 2+) → admitir **1**, luego los **restantes** (admisiones individuales).
-- [ ] **Escáner de cámara** (solo Android/Chrome) → escanear el QR de Mi cuenta → admite.
-- [ ] **Mapa** embebido en el detalle + tocar el **organizador** → sus otros eventos.
-- [ ] **Cancelar** un evento (panel → Ajustes) → el cliente ve "Cancelado" y no puede comprar.
+- [ ] **Código de descuento** → baja el precio → comprar → éxito.
+- [ ] **Nivel oculto** + **código de acceso** que lo desbloquea → el código revela el nivel.
+- [ ] Nivel **agotado** → **"Avísame"** (lista de espera) → aparece en el panel del organizador.
+- [ ] **Voy** (RSVP) en un evento gratis → sube el conteo → aparece en Mi cuenta → Voy.
+- [ ] **Compartir** un evento → el link `?e=<slug>` abre ese evento.
 
-### El resto del app (arco anterior — verificar que sigue bien)
-- [ ] **Negocios**: buscar (búsqueda por relevancia), abrir un listado, ver reseñas + fotos.
-- [ ] **Reseña**: dejar una reseña con foto → aparece; el dueño puede responder.
-- [ ] **Reserva de servicio** (Servicios) → elegir horario → reservar → aparece en Mi cuenta y en el panel.
-- [ ] **Renta** → periodo/cantidad/fecha → rentar → aparece en ambos lados.
-- [ ] **Pedido de menú/productos** (con variantes/stock) → ordenar → aparece.
-- [ ] **Mi cuenta**: pedidos/reservas/rentas/boletos con estado en vivo (realtime) + cancelar.
-- [ ] **Alertas** (campanita): al comprar/reservar, al dueño le llega la notificación.
-- [ ] **Comunidad**: publicar un post → aparece en el feed.
+### E. Mi cuenta (`/cuenta`)
+- [ ] Perfil: editar nombre/bio/foto → se guarda.
+- [ ] **Mis pedidos / reservas / rentas / boletos**: aparecen con su estado.
+- [ ] **Realtime**: cuando el dueño cambia el estado (ej. pedido → listo), Mi cuenta se actualiza sola.
+- [ ] **Cancelar** un pedido/reserva/renta propio → cambia a "cancelado".
+- [ ] **Campanita (Alertas)**: al comprar/reservar, al **dueño** le llega la notificación; al cambiar estado, a ti.
+- [ ] Guardados, seguidos, direcciones: se listan y editan.
+
+### F. Panel del negocio (`/negocio`) — con cuenta de DUEÑO
+- [ ] **Crear negocio** (`/negocio/publicar`) → se crea y aparece.
+- [ ] **Inicio/Insights**: los números son reales (no demo) para tu negocio.
+- [ ] **Listado**: editar nombre/descripción/categoría → se guarda y se refleja en la ficha pública.
+- [ ] **Horarios**: editar → se reflejan (abierto/cerrado en la ficha).
+- [ ] **Fotos**: subir fotos de galería → aparecen en la ficha.
+- [ ] **Comida / Productos / Servicios / Renta**: crear/editar/borrar ítems → aparecen en la ficha pública.
+- [ ] **Eventos**: crear evento (wizard) → aparece; gestionar (tiers, check-in, lista de espera, promo, ajustes).
+- [ ] **Pedidos/Reservas/Rentas entrantes** (Fulfillment/Customers): ver lo que compran los clientes → avanzar estado.
+- [ ] **Mensajes**: responder chats de clientes.
+- [ ] **Equipo/Staff, Ajustes, Billing/Pagos**: revisar si son reales o demo (marcar los que sean placeholder).
+- [ ] **Actualizaciones/Updates**: publicar una actualización del negocio.
+
+### G. Secciones "Muy pronto" (deben verse elegantes, no rotas)
+- [ ] **Transporte, Bienes Raíces, Dealer de carros (Autos), Trabajos**: muestran placeholder "Muy pronto"
+      + formulario de lista de espera (no una pantalla en blanco ni error).
+
+> **Qué es un bug real vs. lo diferido a propósito:** algunas cosas están *honestamente*
+> pendientes y registradas en `docs/LAUNCH-CHECKLIST.md` (pagos/Stripe, push/email, secciones
+> "Muy pronto", reembolsos, cámara en iOS). Eso **no** es un bug — es trabajo futuro conocido.
+> Un **bug** es algo que *dice* que funciona pero da error o hace algo incorrecto. Revisa el
+> LAUNCH-CHECKLIST para no reportar como bug lo que ya está marcado como "pendiente".
 
 ---
 
