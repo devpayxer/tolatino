@@ -74,6 +74,8 @@ export type Business = {
   // Seller has an active Stripe Connect account → the app offers "Pagar ahora"
   // (online card) instead of pay-on-pickup. Absent/false on demo fixtures.
   acceptsPayments?: boolean;
+  // The business's delivery offer (from its own settings; business_by_slug only).
+  delivery?: { on: boolean; fee: number; min: number; prep: number };
 };
 
 export const BUSINESSES: Business[] = [

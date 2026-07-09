@@ -60,7 +60,15 @@ type TicketLine = { tierId: string; qty: number };
 type BookingPayload = { service_name: string; service_id: string | null; starts_at: string; party_size: number | null; deposit: number | null };
 type RentalPayload = { item_name: string; item_id: string | null; start_at: string; end_at: string | null; qty: number; total: number; deposit: number | null };
 export type MarketplaceInput =
-  | { kind: 'order'; slug: string; items: OrderLine[]; channel?: string }
+  | {
+      kind: 'order'; slug: string; items: OrderLine[];
+      /** 'delivery' requires `address`; delivery fee + minimum are enforced server-side from the business's config. */
+      channel?: 'pickup' | 'delivery';
+      address?: { formatted: string; label?: string };
+      instructions?: string;
+      /** Tip in dollars — passes through 100% to the seller. */
+      tip?: number;
+    }
   | { kind: 'ticket'; slug: string; items: TicketLine[] }
   | { kind: 'booking'; slug: string; subtotal: number; payload: BookingPayload }
   | { kind: 'rental'; slug: string; subtotal: number; payload: RentalPayload };

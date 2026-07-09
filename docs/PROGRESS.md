@@ -54,6 +54,21 @@
   street-address pipeline (Photon + US Census + synthesized suggestions, US-only,
   locality-aware). Saved-addresses manager. **Migration target: Pelias (config flip).**
 - **Eventos** + "Muy pronto" placeholders (Transporte/Bienes Raíces/Autos/Trabajos).
+- **Food ordering — DoorDash-grade (2026-07-09, migrations 0074+0075):** El Sabor
+  de Quisqueya carries a REAL 150-dish menu (15 categories × 10, 9 reusable
+  modifier groups, bilingual, seeded via `scripts/seed-menu-sabor.mjs` in the exact
+  shape the Food module edits). Cart checkout: **Entrega/Recoger** toggle, saved-
+  address picker (+ new address), delivery instructions, driver tip (10/15/20%/
+  custom, 100% pass-through), full fee breakdown that EXACTLY matches the Stripe
+  charge, minimum-order + address guards (server-side from the business's own
+  `settings`). Client tracking in Mi cuenta: live status timeline (Ordenado →
+  Aceptado → Listo → En camino → Entregado), receipt, cancel while new, "Reportar
+  un problema" → real chat to the business. Owner side (Entregas board): accept →
+  ready → assign driver (roster CRUD, empty-start for real businesses) → picked
+  up → on the way → delivered; card shows address, instructions, tip; client is
+  notified at EVERY transition (order_status incl. dispatch states). Verified E2E
+  autonomously (paid $24.87 delivery order → fulfilled → 6 client notifications)
+  then cleaned.
 - **Marketplace payments (Stripe Connect, test mode — 2026-07-09):** real card
   checkout for **Pedidos** (cart / one-tap), **Boletos** (Eventos tier picker),
   **Reservas** (service deposit) and **Renta** (rental fee) via **destination

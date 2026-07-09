@@ -60,8 +60,13 @@ Deno.serve(async (req) => {
     let payload: Record<string, unknown> = {};
     const ref = slug;
 
+    // Extra money on top of the goods value P: delivery fee + tip go 100% to the
+    // seller (no platform cut); the 5% buyer service fee applies to P only.
+    let deliveryFee = 0;   // dollars
+    let tip = 0;           // dollars
+
     if (kind === 'order') {
-      const biz = (await get(`businesses?slug=eq.${encodeURIComponent(slug)}&select=id,name,stripe_account_id,connect_charges_enabled`))?.[0];
+      const biz = (await get(`businesses?slug=eq.${encodeURIComponent(slug)}&select=id,name,stripe_account_id,connect_charges_enabled,settings`))?.[0];
       if (!biz) return json({ error: 'business not found' }, 404);
       if (!biz.connect_charges_enabled || !biz.stripe_account_id) return json({ error: 'seller_not_payable' }, 400);
       businessId = biz.id; sellerAccount = biz.stripe_account_id; productName = `${biz.name} · Pedido`;
@@ -72,7 +77,38 @@ Deno.serve(async (req) => {
       }));
       if (lines.some((l) => !(l.price >= 0) || l.price > 100000)) return json({ error: 'bad line price' }, 400);
       subtotal = lines.reduce((a, l) => a + l.price * l.qty, 0);
-      payload = { items: lines, total: subtotal, channel: String(body?.channel ?? 'pickup') };
+
+      const channel = body?.channel === 'delivery' ? 'delivery' : 'pickup';
+      const settings = (biz.settings ?? {}) as Record<string, never>;
+      if (channel === 'delivery') {
+        // Delivery fee + minimum come from the BUSINESS's own config (never the client).
+        const del = (settings as Record<string, Record<string, Record<string, unknown>>>)?.shipping?.delivery;
+        if (!del || del.on === false) return json({ error: 'no_delivery' }, 400);
+        deliveryFee = Math.max(0, Number(String(del.fee ?? '0').replace(/[^0-9.]/g, '')) || 0);
+        const minOrder = Number(((settings as Record<string, Record<string, unknown>>)?.delivery_ops?.minOrder as string) ?? '0') || 0;
+        if (subtotal < minOrder) return json({ error: 'below_minimum', minimum: minOrder }, 400);
+        const addr = (body?.address ?? {}) as Record<string, unknown>;
+        if (!addr.formatted || String(addr.formatted).trim().length < 5) return json({ error: 'address_required' }, 400);
+      }
+      tip = Math.max(0, Math.min(500, Number(body?.tip ?? 0) || 0));
+
+      const addr = (body?.address ?? null) as Record<string, unknown> | null;
+      payload = {
+        items: lines, total: subtotal, channel,
+        fulfillment: {
+          ...(channel === 'delivery'
+            ? {
+                address: String(addr?.formatted ?? ''),
+                ...(addr?.label ? { address_label: String(addr.label) } : {}),
+                ...(body?.instructions ? { instructions: String(body.instructions).slice(0, 300) } : {}),
+                dispatch: 'unassigned',
+              }
+            : {}),
+          subtotal, delivery_fee: deliveryFee, tip,
+          service_fee: Math.round(subtotal * 5) / 100,
+          paid_total: Math.round(subtotal * 105 + deliveryFee * 100 + tip * 100) / 100,
+        },
+      };
     } else if (kind === 'booking' || kind === 'rental') {
       // Booking deposit / rental fee — the payable base (P) is computed by the
       // client from the service/rental config; validated here (re-price server-side
@@ -107,8 +143,11 @@ Deno.serve(async (req) => {
 
     const subtotalCents = Math.round(subtotal * 100);
     if (subtotalCents <= 0) return json({ error: 'nothing to pay' }, 400);
-    const amountCents = Math.round(subtotalCents * 1.05);       // buyer pays P + 5%
-    const feeCents = Math.round(subtotalCents * 0.15);          // platform keeps 15% of P
+    // Buyer pays P + 5% (+ delivery + tip on orders); platform keeps 15% of P.
+    // Delivery fee and tip pass through to the seller untouched.
+    const extrasCents = Math.round(deliveryFee * 100) + Math.round(tip * 100);
+    const amountCents = Math.round(subtotalCents * 1.05) + extrasCents;
+    const feeCents = Math.round(subtotalCents * 0.15);
     if (amountCents < 50) return json({ error: 'amount too low' }, 400); // Stripe USD minimum
 
     // Stage the purchase (service role → bypasses RLS).

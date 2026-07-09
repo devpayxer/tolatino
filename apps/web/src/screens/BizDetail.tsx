@@ -16,6 +16,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
+import { useAddresses } from '@/lib/addresses';
 import { startMarketplaceCheckout } from '@/lib/stripe';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
@@ -348,30 +349,64 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const cartCount = Object.values(cart).reduce((n, l) => n + l.qty, 0);
   const cartTotal = Object.values(cart).reduce((n, l) => n + l.qty * l.unit, 0);
-  // Payment-aware totals. When the seller has connected Stripe (acceptsPayments)
-  // the buyer pays online: subtotal + a 5% service fee (the To'Latino buyer fee) —
-  // the displayed Total EXACTLY matches what Stripe charges. Otherwise it's a
-  // pay-on-pickup order with no fee.
+  // ---- DoorDash-grade checkout ------------------------------------------------
+  // When the seller has connected Stripe (acceptsPayments) the buyer pays online
+  // and the displayed Total EXACTLY matches the Stripe charge: subtotal + 5%
+  // service fee (+ the business's own delivery fee + tip on delivery orders).
+  // Sellers without payments keep the pay-at-pickup order (no fees).
   const payOnline = !!b.acceptsPayments;
-  const serviceFee = payOnline && cartCount > 0 ? +(cartTotal * 0.05).toFixed(2) : 0;
-  const grandTotal = cartTotal + serviceFee;
+  const del = b.delivery; // the business's real delivery offer (fee / min / prep)
+  const deliveryAvailable = payOnline && !!del?.on;
+  const [orderChannel, setOrderChannel] = useState<'pickup' | 'delivery'>('pickup');
+  const isDelivery = deliveryAvailable && orderChannel === 'delivery';
+  const [cartView, setCartView] = useState<'cart' | 'address'>('cart');
+  const [addrId, setAddrId] = useState<string | null>(null);
+  const [instructions, setInstructions] = useState('');
+  const [tipPct, setTipPct] = useState<number>(0.15); // 0 = no tip
+  const [tipCustom, setTipCustom] = useState('');     // dollars when "Otra"
+  const [customTipOn, setCustomTipOn] = useState(false);
   const [paying, setPaying] = useState(false);
+  const addressStore = useAddresses();
+  const chosenAddr = addressStore.addresses.find((a) => a.id === addrId)
+    ?? addressStore.addresses.find((a) => a.is_default)
+    ?? addressStore.addresses[0];
+
+  const deliveryFee = isDelivery ? (del?.fee ?? 0) : 0;
+  const serviceFee = payOnline && cartCount > 0 ? +(cartTotal * 0.05).toFixed(2) : 0;
+  const tip = isDelivery ? (customTipOn ? Math.max(0, Math.min(500, parseFloat(tipCustom) || 0)) : +(cartTotal * tipPct).toFixed(2)) : 0;
+  const grandTotal = +(cartTotal + serviceFee + deliveryFee + tip).toFixed(2);
+  const belowMin = isDelivery && cartTotal < (del?.min ?? 0);
 
   const money = (n: number) => `$${n.toFixed(2)}`;
+
+  // Default to delivery when the business offers it (DoorDash's default).
+  useEffect(() => {
+    if (deliveryAvailable) setOrderChannel('delivery');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deliveryAvailable, b.slug]);
 
   // Route the current cart to Stripe (destination charge → seller's account minus
   // the To'Latino fee). The order is created by the webhook once payment lands.
   const payCart = async () => {
     if (!user) { router.push('/entrar'); return; }
-    if (cartCount === 0 || paying) return;
+    if (cartCount === 0 || paying || belowMin) return;
+    if (isDelivery && !chosenAddr) { setCartView('address'); return; }
     setPaying(true);
     const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit, opts: l.optsLabel || undefined }));
-    const { url, error } = await startMarketplaceCheckout({ kind: 'order', slug: b.slug, items, channel: 'pickup' });
+    const { url, error } = await startMarketplaceCheckout({
+      kind: 'order', slug: b.slug, items,
+      channel: isDelivery ? 'delivery' : 'pickup',
+      ...(isDelivery && chosenAddr ? { address: { formatted: chosenAddr.formatted, label: chosenAddr.label ?? undefined } } : {}),
+      ...(isDelivery && instructions.trim() ? { instructions: instructions.trim() } : {}),
+      ...(tip > 0 ? { tip } : {}),
+    });
     if (url) { window.location.href = url; return; }
     setPaying(false);
     flash(error === 'seller_not_payable'
       ? L('Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet')
-      : L('No se pudo iniciar el pago', 'Could not start payment'));
+      : error === 'below_minimum'
+        ? L('No llegas al mínimo para entrega', "You haven't reached the delivery minimum")
+        : L('No se pudo iniciar el pago', 'Could not start payment'));
   };
 
   // Pay-on-pickup order (seller without online payments): persist a real order.
@@ -1815,9 +1850,54 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
         })()}
       </Overlay>
 
-      {/* cart sheet / checkout */}
-      <Overlay open={cartOpen} onClose={() => setCartOpen(false)} width={440}>
-        {!cartDone ? (
+      {/* cart sheet / checkout (DoorDash-grade: canal, dirección, propina, desglose) */}
+      <Overlay open={cartOpen} onClose={() => { setCartOpen(false); setCartView('cart'); }} width={440}>
+        {cartDone ? (
+          <div className="flex flex-col items-center px-2 py-6 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
+              <Check size={28} strokeWidth={3} className="text-green" />
+            </span>
+            <div className="mt-4 text-[19px] font-extrabold text-ink">{L('¡Pedido realizado!', 'Order placed!')}</div>
+            <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
+              {L('Tu comida está en preparación. Te avisaremos cuando salga.', "Your food is being prepared. We'll notify you when it's on the way.")}
+            </div>
+            <PrimaryBtn className="mt-5" onClick={() => { setCart({}); setCartOpen(false); setCartDone(false); }}>
+              {L('Seguir explorando', 'Keep browsing')}
+            </PrimaryBtn>
+          </div>
+        ) : cartView === 'address' ? (
+          <>
+            <OverlayTitle title={L('Dirección de entrega', 'Delivery address')} onClose={() => setCartView('cart')} />
+            {addressStore.addresses.length === 0 ? (
+              <div className="py-6 text-center">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lilac"><MapPin size={20} className="text-primary" strokeWidth={2.2} /></span>
+                <div className="mt-3 text-[13.5px] font-extrabold text-ink">{L('Aún no tienes direcciones guardadas', 'No saved addresses yet')}</div>
+                <div className="mx-auto mt-1 max-w-[280px] text-[12px] font-semibold text-muted">{L('Agrega tu dirección para recibir tu pedido.', 'Add your address to get your order delivered.')}</div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {addressStore.addresses.map((a) => {
+                  const on = (chosenAddr?.id ?? null) === a.id;
+                  return (
+                    <button key={a.id} onClick={() => { setAddrId(a.id); setCartView('cart'); }} className={`flex items-center gap-3 rounded-field border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                      <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${on ? 'bg-primary' : 'bg-lilac-2'}`}>
+                        <MapPin size={15} strokeWidth={2.4} className={on ? 'text-white' : 'text-primary'} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-extrabold text-ink">{a.label || L('Dirección', 'Address')}{a.is_default ? ` · ${L('Principal', 'Default')}` : ''}</span>
+                        <span className="block truncate text-[11.5px] font-semibold text-muted">{a.formatted}</span>
+                      </span>
+                      {on && <Check size={16} strokeWidth={3} className="flex-none text-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <button onClick={() => app.setAddressOpen(true)} className="mt-3 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-3 text-[12.5px] font-extrabold text-primary-dark">
+              {L('+ Nueva dirección', '+ New address')}
+            </button>
+          </>
+        ) : (
           <>
             <OverlayTitle title={L('Tu pedido', 'Your order')} onClose={() => setCartOpen(false)} />
             {cartCount === 0 ? (
@@ -1827,7 +1907,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               </div>
             ) : (
               <>
-                <div className="flex max-h-[300px] flex-col gap-2.5 overflow-y-auto">
+                <div className="flex max-h-[240px] flex-col gap-2.5 overflow-y-auto">
                   {Object.entries(cart).map(([k, l]) => (
                     <div key={k} className="flex items-center gap-3">
                       <span className="h-11 w-11 flex-none rounded-[10px]" style={{ background: `repeating-linear-gradient(135deg,${l.bg})` }} />
@@ -1844,37 +1924,101 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                     </div>
                   ))}
                 </div>
+
+                {/* Entrega / Recoger */}
+                {payOnline && (
+                  <div className="mt-3.5 flex gap-1 rounded-full bg-lilac-2 p-1">
+                    {deliveryAvailable && (
+                      <button onClick={() => setOrderChannel('delivery')} className={`flex-1 cursor-pointer rounded-full py-2 text-center ${orderChannel === 'delivery' ? 'bg-white shadow-cta-sm' : ''}`}>
+                        <span className={`block text-[11.5px] font-extrabold ${orderChannel === 'delivery' ? 'text-primary-dark' : 'text-muted'}`}>{L('Entrega', 'Delivery')}</span>
+                        <span className="block text-[9.5px] font-bold text-muted">{del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min'}</span>
+                      </button>
+                    )}
+                    <button onClick={() => setOrderChannel('pickup')} className={`flex-1 cursor-pointer rounded-full py-2 text-center ${!isDelivery ? 'bg-white shadow-cta-sm' : ''}`}>
+                      <span className={`block text-[11.5px] font-extrabold ${!isDelivery ? 'text-primary-dark' : 'text-muted'}`}>{L('Recoger', 'Pickup')}</span>
+                      <span className="block text-[9.5px] font-bold text-muted">{del?.prep ? `${del.prep} min` : '15–25 min'}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* dirección + instrucciones (solo entrega) */}
+                {isDelivery && (
+                  <>
+                    <button onClick={() => setCartView('address')} className="mt-3 flex w-full cursor-pointer items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-3 text-left">
+                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-lilac-2"><MapPin size={15} strokeWidth={2.4} className="text-primary" /></span>
+                      <span className="min-w-0 flex-1">
+                        {chosenAddr ? (
+                          <>
+                            <span className="block truncate text-[12.5px] font-extrabold text-ink">{chosenAddr.label || L('Entregar en', 'Deliver to')}</span>
+                            <span className="block truncate text-[11.5px] font-semibold text-muted">{chosenAddr.formatted}</span>
+                          </>
+                        ) : (
+                          <span className="block text-[12.5px] font-extrabold text-primary-dark">{L('Elige tu dirección de entrega', 'Choose your delivery address')}</span>
+                        )}
+                      </span>
+                      <ChevronRight size={16} className="flex-none text-muted" />
+                    </button>
+                    <input
+                      value={instructions}
+                      onChange={(e) => setInstructions(e.target.value)}
+                      maxLength={300}
+                      placeholder={L('Instrucciones: timbre, apto, dejar en puerta…', 'Instructions: buzzer, apt, leave at door…')}
+                      className="mt-2 w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
+                    />
+                    {/* propina para el repartidor */}
+                    <div className="mt-3 text-[12px] font-extrabold text-ink">{L('Propina para el repartidor', 'Tip for your driver')} <span className="font-semibold text-muted">· {L('100% para él/ella', '100% goes to them')}</span></div>
+                    <div className="mt-1.5 flex gap-1.5">
+                      {[0, 0.1, 0.15, 0.2].map((p) => {
+                        const on = !customTipOn && tipPct === p;
+                        return (
+                          <button key={p} onClick={() => { setCustomTipOn(false); setTipPct(p); }} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-2 text-center text-[11.5px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
+                            {p === 0 ? L('Sin', 'None') : `${p * 100}%`}
+                          </button>
+                        );
+                      })}
+                      <button onClick={() => setCustomTipOn(true)} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-2 text-center text-[11.5px] font-extrabold ${customTipOn ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
+                        {L('Otra', 'Other')}
+                      </button>
+                    </div>
+                    {customTipOn && (
+                      <input
+                        value={tipCustom} inputMode="decimal"
+                        onChange={(e) => setTipCustom(e.target.value.replace(/[^0-9.]/g, ''))}
+                        placeholder={L('Propina en $ — ej. 4.00', 'Tip in $ — e.g. 4.00')}
+                        className="mt-2 w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
+                      />
+                    )}
+                  </>
+                )}
+
+                {/* desglose — coincide EXACTO con el cobro de Stripe */}
                 <div className="mt-4 flex flex-col gap-1.5 border-t border-hair pt-3 text-[12.5px] font-semibold text-ink-2">
                   <div className="flex justify-between"><span>{L('Subtotal', 'Subtotal')}</span><span>{money(cartTotal)}</span></div>
+                  {isDelivery && <div className="flex justify-between"><span>{L('Tarifa de entrega', 'Delivery fee')}</span><span>{money(deliveryFee)}</span></div>}
                   {payOnline && <div className="flex justify-between"><span>{L('Tarifa de servicio (5%)', 'Service fee (5%)')}</span><span>{money(serviceFee)}</span></div>}
+                  {tip > 0 && <div className="flex justify-between"><span>{L('Propina', 'Tip')}</span><span>{money(tip)}</span></div>}
                   <div className="flex justify-between text-[14px] font-extrabold text-ink"><span>{L('Total', 'Total')}</span><span>{money(grandTotal)}</span></div>
                   <div className="mt-1 text-[11px] font-semibold text-muted">
                     {payOnline
                       ? L('Pago seguro con tarjeta. Recibirás confirmación al instante.', 'Secure card payment. You’ll get instant confirmation.')
-                      : L('Pagas al recoger o al recibir. Sin cargos en línea.', 'Pay on pickup or delivery. No online charge.')}
+                      : L('Pagas al recoger. Sin cargos en línea.', 'Pay at pickup. No online charge.')}
                   </div>
                 </div>
-                <PrimaryBtn className="mt-4" onClick={payOnline ? payCart : placeCart} disabled={paying}>
+                {belowMin && (
+                  <div className="mt-2 rounded-field bg-amber-bg px-3 py-2 text-[11.5px] font-bold text-amber-ink">
+                    {L(`Pedido mínimo para entrega: $${(del?.min ?? 0).toFixed(2)} — agrega ${money((del?.min ?? 0) - cartTotal)} más`, `Delivery minimum is $${(del?.min ?? 0).toFixed(2)} — add ${money((del?.min ?? 0) - cartTotal)} more`)}
+                  </div>
+                )}
+                <PrimaryBtn className="mt-4" onClick={payOnline ? payCart : placeCart} disabled={paying || belowMin}>
                   {paying
                     ? L('Procesando…', 'Processing…')
-                    : <>{payOnline ? L('Pagar ahora · ', 'Pay now · ') : L('Realizar pedido · ', 'Place order · ')}{money(grandTotal)}</>}
+                    : isDelivery && !chosenAddr
+                      ? L('Elige tu dirección', 'Choose your address')
+                      : <>{payOnline ? L('Pagar · ', 'Pay · ') : L('Realizar pedido · ', 'Place order · ')}{money(grandTotal)}</>}
                 </PrimaryBtn>
               </>
             )}
           </>
-        ) : (
-          <div className="flex flex-col items-center px-2 py-6 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-              <Check size={28} strokeWidth={3} className="text-green" />
-            </span>
-            <div className="mt-4 text-[19px] font-extrabold text-ink">{L('¡Pedido realizado!', 'Order placed!')}</div>
-            <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
-              {L('Tu comida está en preparación. Te avisaremos cuando salga.', "Your food is being prepared. We'll notify you when it's on the way.")}
-            </div>
-            <PrimaryBtn className="mt-5" onClick={() => { setCart({}); setCartOpen(false); setCartDone(false); }}>
-              {L('Seguir explorando', 'Keep browsing')}
-            </PrimaryBtn>
-          </div>
         )}
       </Overlay>
 

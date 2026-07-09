@@ -959,6 +959,20 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
   finished Stripe checkout) accumulate. Add a periodic cleanup (e.g. delete/expire
   `pending` older than 24h). Harmless (nothing was charged/fulfilled), just hygiene.
 
+### Food delivery (2026-07-09) — polish deferrals
+- [ ] **Dish photos.** The 150-dish menu uses the design-system striped tiles;
+  the owner can upload a real photo per dish from the Food module (imageUrl is
+  wired) — content task, not code.
+- [ ] **Driver GPS / live map.** The "En camino" mini-map is illustrative; real
+  courier GPS tracking needs a driver app (post-launch phase).
+- [ ] **Owner-set ETA.** Advancing to "En camino" stamps a fixed 10-min ETA;
+  let the owner pick the ETA when dispatching (small UI).
+- [ ] **Double notification at delivery.** Marking delivered fires dispatch
+  `delivered` + status `completed` (two client pushes ~1s apart). Debounce in
+  the trigger later.
+- [ ] **Tips on pickup orders.** Tips are delivery-only today; DoorDash also
+  allows pickup tips — add if wanted.
+
 ---
 
 _Last updated: 2026-07-09. Add to this file as new deferrals appear._

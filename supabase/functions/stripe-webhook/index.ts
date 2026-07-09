@@ -91,6 +91,7 @@ async function fulfillMarketplace(url: string, service: string, stripeKey: strin
       const r = await rpc(url, service, 'fulfill_order', {
         in_buyer: pending.buyer_id, in_business: pending.business_id,
         in_items: payload.items ?? [], in_total: payload.total ?? (pending.subtotal / 100), in_channel: payload.channel ?? 'pickup',
+        in_fulfillment: payload.fulfillment ?? {},
       });
       if (r.ok && Array.isArray(r.data) && r.data.length) { result = r.data[0]; ok = true; }
       else { errMsg = (r.data as { message?: string })?.message || 'order fulfillment failed'; }

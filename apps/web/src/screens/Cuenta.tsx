@@ -10,7 +10,7 @@
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Bell, Bike, Bookmark, CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, Globe, HelpCircle,
+  Bell, Bike, Bookmark, CalendarCheck, CalendarDays, Check, ChevronLeft, ChevronRight, Globe, HelpCircle,
   LayoutDashboard, LogIn, LogOut, Mail, MapPin, Megaphone, Plus, ShoppingBag, Star, Ticket, Trash2, User, Users,
 } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
@@ -20,10 +20,11 @@ import { useAddresses } from '@/lib/addresses';
 import { useFollows } from '@/lib/follows';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useLiveData } from '@/lib/live';
-import { useMyActivity } from '@/lib/myActivity';
+import { useMyActivity, type MyOrder } from '@/lib/myActivity';
+import { startConversation, sendChatMessage } from '@/lib/chat';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Qr } from '@/components/Qr';
-import { Avatar, Card, Switch, YouAvatar } from '@/components/ui';
+import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Switch, YouAvatar } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 
@@ -44,6 +45,17 @@ const STATUS: Record<string, { es: string; en: string; bg: string; c: string }> 
   cancelled: { es: 'Cancelado', en: 'Cancelled', bg: '#F1EFFA', c: '#8A86A0' },
   used: { es: 'Usado', en: 'Used', bg: '#F1EFFA', c: '#8A86A0' },
   refunded: { es: 'Reembolsado', en: 'Refunded', bg: '#F1EFFA', c: '#8A86A0' },
+  on_the_way: { es: 'En camino', en: 'On the way', bg: '#E5EFFB', c: '#2F6FED' },
+  delivered: { es: 'Entregado', en: 'Delivered', bg: '#E3F5EA', c: '#1F8A4C' },
+};
+
+// DoorDash-style client stage: fold order status + dispatch into ONE stage key.
+const orderStageKey = (o: MyOrder): string => {
+  if (o.status === 'cancelled') return 'cancelled';
+  const d = o.fulfillment?.dispatch;
+  if (o.status === 'completed' || d === 'delivered') return o.channel === 'delivery' ? 'delivered' : 'completed';
+  if (o.channel === 'delivery' && (d === 'picked_up' || d === 'on_the_way')) return 'on_the_way';
+  return o.status; // new | preparing | ready
 };
 type Notifs = { posts: boolean; follows: boolean; events: boolean; marketing: boolean };
 const DEFAULT_NOTIFS: Notifs = { posts: true, follows: true, events: true, marketing: false };
@@ -73,6 +85,13 @@ export function CuentaScreen() {
     setToast(m);
     window.setTimeout(() => setToast(''), 1800);
   };
+
+  // Order detail sheet (DoorDash-style tracking): selection + live row refresh,
+  // and the "report a problem" mini-form (sends a real chat to the business).
+  const [orderSelId, setOrderSelId] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState('');
+  const [reportBusy, setReportBusy] = useState(false);
 
   const guest = auth.configured && !auth.user;
   const p = auth.profile;
@@ -371,9 +390,19 @@ export function CuentaScreen() {
           {backBar(L('Mis pedidos', 'My orders'))}
           {act.orders.length === 0 ? txEmpty(L('Aún no tienes pedidos.', 'No orders yet.')) : (
             <div className="flex flex-col gap-2.5">
-              {act.orders.map((o) => txItem(o.id, o.businesses?.name ?? L('Negocio', 'Business'),
-                `${(o.items ?? []).map((i) => `${i.qty}× ${i.name}`).join(', ') || '—'} · ${dt(o.created_at)}`,
-                <>{o.total != null && <span className="text-[13px] font-extrabold text-ink">{money(o.total)}</span>}{pill(o.status)}{cancelBtn('order', o.id, o.status)}</>))}
+              {act.orders.map((o) => (
+                <button key={o.id} onClick={() => { setOrderSelId(o.id); setReportOpen(false); setReportText(''); }} className={`${cardCls} flex cursor-pointer items-center gap-3 p-3.5 text-left`}>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-extrabold text-ink">{o.businesses?.name ?? L('Negocio', 'Business')}{o.code ? <span className="font-bold text-muted"> · {o.code}</span> : null}</span>
+                    <span className="block truncate text-[11.5px] font-semibold text-muted">{`${(o.items ?? []).map((i) => `${i.qty}× ${i.name}`).join(', ') || '—'} · ${dt(o.created_at)}`}</span>
+                  </span>
+                  <span className="flex flex-none flex-col items-end gap-1">
+                    {o.total != null && <span className="text-[13px] font-extrabold text-ink">{money(o.fulfillment?.paid_total ?? o.total)}</span>}
+                    {pill(orderStageKey(o))}
+                  </span>
+                  <ChevronRight size={16} className="flex-none text-muted" />
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -487,6 +516,137 @@ export function CuentaScreen() {
         confirmLabel={L('Sí, cancelar', 'Yes, cancel')}
         cancelLabel={L('No', 'No')}
       />
+
+      {/* ── order detail / tracking (DoorDash-style) ── */}
+      <Overlay open={orderSelId !== null} onClose={() => setOrderSelId(null)} width={460}>
+        {(() => {
+          const o = act.orders.find((x) => x.id === orderSelId); // live row → the timeline advances in real time
+          if (!o) return null;
+          const f = o.fulfillment ?? {};
+          const isDel = o.channel === 'delivery';
+          const stage = orderStageKey(o);
+          const steps: { key: string; es: string; en: string }[] = isDel
+            ? [
+                { key: 'new', es: 'Ordenado', en: 'Ordered' },
+                { key: 'preparing', es: 'Aceptado · preparando', en: 'Accepted · preparing' },
+                { key: 'ready', es: 'Listo', en: 'Ready' },
+                { key: 'on_the_way', es: 'En camino', en: 'On the way' },
+                { key: 'delivered', es: 'Entregado', en: 'Delivered' },
+              ]
+            : [
+                { key: 'new', es: 'Ordenado', en: 'Ordered' },
+                { key: 'preparing', es: 'Preparando', en: 'Preparing' },
+                { key: 'ready', es: 'Listo para recoger', en: 'Ready for pickup' },
+                { key: 'completed', es: 'Completado', en: 'Completed' },
+              ];
+          const idx = stage === 'cancelled' ? -1 : Math.max(0, steps.findIndex((s) => s.key === stage));
+          return (
+            <>
+              <OverlayTitle title={o.businesses?.name ?? L('Pedido', 'Order')} onClose={() => setOrderSelId(null)} />
+              <div className="flex items-center justify-between">
+                <span className="text-[11.5px] font-bold text-muted">{o.code ?? ''} · {dt(o.created_at)}</span>
+                {pill(stage)}
+              </div>
+
+              {/* timeline */}
+              {stage === 'cancelled' ? (
+                <div className="mt-3 rounded-field bg-pink-bg px-3.5 py-3 text-[12.5px] font-bold text-pink-dark">
+                  {L('Este pedido fue cancelado.', 'This order was cancelled.')}
+                </div>
+              ) : (
+                <div className="mt-4 flex flex-col">
+                  {steps.map((s, i) => {
+                    const done = i < idx; const now = i === idx;
+                    return (
+                      <div key={s.key} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-full ${done ? 'bg-green' : now ? 'bg-primary' : 'bg-lilac-line'}`}>
+                            {done ? <Check size={13} strokeWidth={3.4} className="text-white" /> : <span className={`h-2 w-2 rounded-full ${now ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
+                          </span>
+                          {i < steps.length - 1 && <span className={`w-[2.5px] flex-1 ${done ? 'bg-green' : 'bg-lilac-line'}`} style={{ minHeight: 18 }} />}
+                        </div>
+                        <div className={`pb-3 pt-0.5 text-[12.5px] ${now ? 'font-extrabold text-ink' : done ? 'font-bold text-ink-soft' : 'font-semibold text-muted'}`}>
+                          {L(s.es, s.en)}
+                          {now && s.key === 'on_the_way' && f.driver && (
+                            <span className="block text-[11px] font-semibold text-muted">{L(`${f.driver} lleva tu pedido`, `${f.driver} has your order`)}{f.eta ? ` · ETA ${f.eta}` : ''}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* entrega */}
+              {isDel && (f.address || f.instructions) && (
+                <div className="rounded-field bg-lilac-2 px-3.5 py-3 text-[12px] font-semibold text-ink-2">
+                  {f.address && <div className="flex items-start gap-2"><MapPin size={13} strokeWidth={2.4} className="mt-0.5 flex-none text-primary" /><span>{f.address_label ? `${f.address_label} · ` : ''}{f.address}</span></div>}
+                  {f.instructions && <div className="mt-1.5 text-[11.5px] text-muted">“{f.instructions}”</div>}
+                </div>
+              )}
+
+              {/* artículos + recibo */}
+              <div className="mt-3 flex flex-col gap-1.5 text-[12.5px] font-semibold text-ink-2">
+                {(o.items ?? []).map((it, i) => (
+                  <div key={i} className="flex justify-between gap-3">
+                    <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}{it.opts ? <span className="text-muted"> · {it.opts}</span> : null}</span>
+                    {it.price != null && <span className="flex-none">{money(it.price * it.qty)}</span>}
+                  </div>
+                ))}
+                <div className="mt-1 flex flex-col gap-1 border-t border-hair pt-2">
+                  {f.subtotal != null && <div className="flex justify-between"><span>{L('Subtotal', 'Subtotal')}</span><span>{money(f.subtotal)}</span></div>}
+                  {!!f.delivery_fee && <div className="flex justify-between"><span>{L('Entrega', 'Delivery')}</span><span>{money(f.delivery_fee)}</span></div>}
+                  {!!f.service_fee && <div className="flex justify-between"><span>{L('Servicio (5%)', 'Service (5%)')}</span><span>{money(f.service_fee)}</span></div>}
+                  {!!f.tip && <div className="flex justify-between"><span>{L('Propina', 'Tip')}</span><span>{money(f.tip)}</span></div>}
+                  <div className="flex justify-between text-[13.5px] font-extrabold text-ink"><span>{L('Total pagado', 'Total paid')}</span><span>{money(f.paid_total ?? o.total)}</span></div>
+                </div>
+              </div>
+
+              {/* acciones */}
+              <div className="mt-4 flex flex-col gap-2">
+                {o.status === 'new' && (
+                  <button onClick={() => { setOrderSelId(null); setCancelTarget({ kind: 'order', id: o.id }); }} className="w-full cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white py-2.5 text-[12.5px] font-extrabold text-pink-dark">
+                    {L('Cancelar pedido', 'Cancel order')}
+                  </button>
+                )}
+                {!reportOpen ? (
+                  <button onClick={() => setReportOpen(true)} className="w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-ink">
+                    {L('Reportar un problema', 'Report a problem')}
+                  </button>
+                ) : (
+                  <div className="rounded-field border-[1.5px] border-lilac-line bg-white p-3">
+                    <div className="text-[12px] font-extrabold text-ink">{L('¿Qué pasó con tu pedido?', 'What went wrong with your order?')}</div>
+                    <textarea
+                      value={reportText} onChange={(e) => setReportText(e.target.value)} maxLength={500} rows={3}
+                      placeholder={L('Ej. faltó un platillo, llegó frío, dirección equivocada…', 'E.g. missing item, arrived cold, wrong address…')}
+                      className="mt-2 w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-app px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
+                    />
+                    <div className="mt-2 flex gap-2">
+                      <button onClick={() => { setReportOpen(false); setReportText(''); }} className="flex-none cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Cerrar', 'Close')}</button>
+                      <PrimaryBtn
+                        disabled={!reportText.trim() || reportBusy}
+                        onClick={async () => {
+                          if (!o.businesses?.slug || reportBusy) return;
+                          setReportBusy(true);
+                          const nm = p?.display_name?.trim() || 'Cliente';
+                          const ini = (nm.split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || 'CL').toUpperCase();
+                          const convId = await startConversation(o.businesses.slug, nm, ini, '#7B61FF');
+                          const ok = convId ? await sendChatMessage(convId, false, `⚠️ ${L('Problema con mi pedido', 'Problem with my order')} ${o.code ?? ''}: ${reportText.trim()}`) : null;
+                          setReportBusy(false);
+                          if (ok) { setReportOpen(false); setReportText(''); flash(L('Reporte enviado — el negocio te responderá', 'Report sent — the business will reply')); }
+                          else flash(L('No se pudo enviar', "Couldn't send"));
+                        }}
+                      >
+                        {reportBusy ? L('Enviando…', 'Sending…') : L('Enviar al negocio', 'Send to business')}
+                      </PrimaryBtn>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
+      </Overlay>
     </div>
   );
 }

@@ -68,7 +68,11 @@ type OrderItem = { name: string; qty: number; price?: number };
 type OStatus = 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 type Dispatch = 'unassigned' | 'assigned' | 'picked_up' | 'on_the_way' | 'delivered';
 type ShipStep = 'to_pack' | 'packed' | 'labeled' | 'shipped' | 'in_transit' | 'delivered';
-type Fulfil = { address?: string; dispatch?: Dispatch; driver?: string; eta?: string; ship?: ShipStep; carrier?: string; tracking?: string; pkg?: string };
+type Fulfil = {
+  address?: string; dispatch?: Dispatch; driver?: string; eta?: string; ship?: ShipStep; carrier?: string; tracking?: string; pkg?: string;
+  // paid-checkout receipt (written by the payments webhook — migration 0074)
+  address_label?: string; instructions?: string; subtotal?: number; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number;
+};
 type OrderRow = { id: string; code: string | null; customer_name: string | null; items: OrderItem[]; total: number | null; channel: string; status: OStatus; created_at: string; fulfillment: Fulfil };
 
 const DEMO_ORDERS: OrderRow[] = [
@@ -126,8 +130,10 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   useEffect(() => {
     const s = (real?.settings ?? {}) as Record<string, unknown>;
     const ship = (s.shipping ?? {}) as { delivery?: { zones?: Zone[] }; pickup?: { rules?: boolean[] }; national?: { carriers?: boolean[] }; external?: boolean[] };
-    setZones(Array.isArray(ship.delivery?.zones) && ship.delivery!.zones!.length ? ship.delivery!.zones! : ZONE_SEED);
-    setDrivers(Array.isArray(s.drivers) && (s.drivers as OwnDriver[]).length ? (s.drivers as OwnDriver[]) : DRIVER_SEED);
+    // Real businesses start EMPTY (add their own zones/drivers); only demo mode
+    // shows the sample setup — a real panel never renders invented people.
+    setZones(Array.isArray(ship.delivery?.zones) && ship.delivery!.zones!.length ? ship.delivery!.zones! : admin.demo ? ZONE_SEED : []);
+    setDrivers(Array.isArray(s.drivers) && (s.drivers as OwnDriver[]).length ? (s.drivers as OwnDriver[]) : admin.demo ? DRIVER_SEED : []);
     setPickState(arrToRec(Array.isArray(ship.pickup?.rules) ? ship.pickup!.rules! : PICK_DEF));
     setCarrierState(arrToRec(Array.isArray(ship.national?.carriers) ? ship.national!.carriers! : CARRIER_DEF));
     setExtState(arrToRec(Array.isArray(ship.external) ? ship.external! : EXT_DEF));
@@ -331,8 +337,14 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                   <div className="flex flex-none flex-col items-end gap-1">
                     <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${bd.cls}`}>{L(bd.es, bd.en)}</span>
                     <span className="text-[13px] font-extrabold text-ink">{money(o.total)}</span>
+                    {!!o.fulfillment.tip && <span className="rounded-full bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Propina', 'Tip')} {money(o.fulfillment.tip)}</span>}
                   </div>
                 </div>
+                {o.fulfillment.instructions && (
+                  <div className="mt-2 rounded-field bg-amber-bg px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-ink">
+                    📝 {o.fulfillment.instructions}
+                  </div>
+                )}
 
                 {o.fulfillment.driver && (
                   <div className="mt-2.5 flex items-center gap-2 rounded-field bg-lilac-2 px-2.5 py-1.5">
@@ -754,15 +766,28 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
           <div className="flex flex-col gap-3">
             <div className="rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-semibold text-ink-2">{assignFor.code} · {assignFor.customer_name} · {assignFor.fulfillment.address}</div>
             <div className="text-[11px] font-extrabold text-ink-soft">{L('Tus repartidores', 'Your drivers')}</div>
-            <div className="flex flex-col gap-2">
-              {drivers.map((d) => (
-                <button key={d.name} onClick={() => assignDriver(d.name)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-2.5 text-left hover:border-primary">
-                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
-                  <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{d.name}</span><span className="block text-[10px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}</span></span>
-                  <span className="flex-none text-[10.5px] font-extrabold text-primary-dark">{L('Asignar', 'Assign')} ›</span>
+            {drivers.length === 0 ? (
+              <div className="rounded-field bg-lilac-2 px-3.5 py-3 text-center">
+                <div className="text-[12px] font-extrabold text-ink">{L('Aún no tienes repartidores', 'No drivers yet')}</div>
+                <div className="mt-0.5 text-[11px] font-semibold text-muted">{L('Agrega a tu equipo de entrega para asignar pedidos.', 'Add your delivery team to assign orders.')}</div>
+                <button onClick={() => { setAssignFor(null); setDriverSheet({ idx: -1, initial: null }); }} className="mt-2.5 cursor-pointer rounded-btn bg-primary px-4 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                  + {L('Agregar repartidor', 'Add driver')}
                 </button>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {drivers.map((d) => (
+                  <button key={d.name} onClick={() => assignDriver(d.name)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-2.5 text-left hover:border-primary">
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
+                    <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{d.name}</span><span className="block text-[10px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}</span></span>
+                    <span className="flex-none text-[10.5px] font-extrabold text-primary-dark">{L('Asignar', 'Assign')} ›</span>
+                  </button>
+                ))}
+                <button onClick={() => { setAssignFor(null); setDriverSheet({ idx: -1, initial: null }); }} className="cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-white p-2.5 text-[11.5px] font-extrabold text-primary-dark">
+                  + {L('Agregar repartidor', 'Add driver')}
+                </button>
+              </div>
+            )}
             <div className="text-[11px] font-extrabold text-ink-soft">{L('O usa una app externa', 'Or use an external app')}</div>
             <div className="flex flex-wrap gap-2">
               {EXT_APPS.filter((_, i) => extState[i]).map((a) => (

@@ -65,6 +65,12 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     modules: (r.modules as Record<string, boolean> | null) ?? undefined,
     // seller can take online card payments (business_by_slug only)
     acceptsPayments: r.accepts_payments === true,
+    // the business's own delivery offer (fee / minimum / prep time)
+    delivery: (() => {
+      const d = r.delivery as Record<string, unknown> | null | undefined;
+      if (!d || d.on !== true) return undefined;
+      return { on: true, fee: Number(d.fee ?? 0), min: Number(d.min ?? 0), prep: Number(d.prep ?? 25) };
+    })(),
   };
 }
 

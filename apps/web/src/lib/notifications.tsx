@@ -56,7 +56,18 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
   const s = (k: string) => String(d[k] ?? '');
   switch (kind) {
     case 'order_new': return { title: ['Nuevo pedido', 'New order'], sub: [`${s('code')} · ${money(d.total)}`.trim(), `${s('code')} · ${money(d.total)}`.trim()] };
-    case 'order_status': { const [a, b] = st(d.status); return { title: [`Tu pedido está ${a}`, `Your order is ${b}`], sub: [s('code'), s('code')] }; }
+    case 'order_status': {
+      const from = [s('business') || s('code'), s('business') || s('code')] as [string, string];
+      // Dispatch transitions (delivery lifecycle) read like DoorDash's pushes.
+      if (d.dispatch === 'assigned') return { title: ['Repartidor asignado a tu pedido', 'A driver was assigned to your order'], sub: from };
+      if (d.dispatch === 'picked_up') return { title: [`${s('driver') || 'El repartidor'} recogió tu pedido`, `${s('driver') || 'Your driver'} picked up your order`], sub: from };
+      if (d.dispatch === 'on_the_way') return { title: ['¡Tu pedido va en camino! 🛵', 'Your order is on the way! 🛵'], sub: from };
+      if (d.dispatch === 'delivered') return { title: ['Tu pedido fue entregado ✅', 'Your order was delivered ✅'], sub: from };
+      const [a, b] = st(d.status);
+      if (d.status === 'preparing') return { title: ['El negocio aceptó tu pedido y lo está preparando', 'The business accepted your order and is preparing it'], sub: from };
+      if (d.status === 'ready') return { title: ['Tu pedido está listo 🎉', 'Your order is ready 🎉'], sub: from };
+      return { title: [`Tu pedido está ${a}`, `Your order is ${b}`], sub: from };
+    }
     case 'booking_new': return { title: ['Nueva reserva', 'New booking'], sub: [s('service') || s('name'), s('service') || s('name')] };
     case 'booking_status': { const [a, b] = st(d.status); return { title: [`Tu reserva está ${a}`, `Your booking is ${b}`], sub: [s('service'), s('service')] }; }
     case 'rental_new': return { title: ['Nueva renta', 'New rental'], sub: [s('item') || s('name'), s('item') || s('name')] };
