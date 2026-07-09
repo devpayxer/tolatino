@@ -23,6 +23,7 @@ import { ModulesSetup } from '@/screens/negocio/ModulesSetup';
 import { UpdatesModule } from '@/screens/negocio/modules/Updates';
 import { BillingModule } from '@/screens/negocio/modules/Billing';
 import { CustomersModule } from '@/screens/negocio/modules/Customers';
+import { CocinaModule } from '@/screens/negocio/modules/Cocina';
 import { StaffModule } from '@/screens/negocio/modules/Staff';
 import { RentalModule } from '@/screens/negocio/modules/Rental';
 import { EventsModule } from '@/screens/negocio/modules/Events';
@@ -464,7 +465,8 @@ export function PanelScreen() {
           {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={toggleMod} />}
           {tab === 'updates' && <UpdatesModule ctx={ctx} />}
           {tab === 'billing' && <BillingModule ctx={ctx} tab={tab} />}
-          {(tab === 'customers' || tab === 'orders' || tab === 'reviews') && <CustomersModule ctx={ctx} tab={tab} />}
+          {tab === 'orders' && <CocinaModule ctx={ctx} />}
+          {(tab === 'customers' || tab === 'reviews') && <CustomersModule ctx={ctx} tab={tab} />}
           {(tab === 'staff' || tab === 'jobs') && <StaffModule ctx={ctx} tab={tab} />}
           {tab === 'rental' && <RentalModule ctx={ctx} tab={tab} />}
           {tab === 'events' && <EventsModule ctx={ctx} tab={tab} />}

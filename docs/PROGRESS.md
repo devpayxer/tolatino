@@ -64,7 +64,20 @@
   with address/when/payment/tip/charge-summary → real Stripe). Opens for any
   restaurant whose menu has `ordering: true` (replaces the old cart). Wired to real
   business_by_slug + business_menu_by_slug + marketplace-checkout; verified in the
-  real browser from the Negocios list. **Cocina + Menú phases are the next passes.**
+  real browser from the Negocios list. Phase 2 **Cocina** is rebuilt pixel-perfect
+  as `apps/web/src/screens/negocio/modules/Cocina.tsx` — the restaurant order-
+  management board (today stats + EN VIVO · status tabs Nuevos/Preparando/Listos/
+  En camino/Completados · order cards) → order detail (status banner, progress
+  timeline, customer + address card, "Para preparar" items, assigned-driver card,
+  Pago y liquidación showing the 15% To'Latino commission + net payout) → incoming-
+  order dialog (prep-time chips, Aceptar/Rechazar) → assign-driver / reject /
+  notifications bottom sheets. Wired to REAL `business_orders` for the owner's
+  active business (RLS owner-updatable) with realtime; the `orders` panel tab now
+  routes here (was CustomersModule). Verified in the real browser as the El Sabor
+  owner (b@b.com): board + detail render pixel-faithful on real orders, and
+  clicking **Aceptar** flips the order to `preparing` in the DB AND notifies the
+  client (a@a.com) — the full Cliente·Negocio·Plataforma loop. **Phase 3 Menú
+  (builder) is the next pass.**
 - **Food ordering — DoorDash-grade (2026-07-09, migrations 0074+0075):** El Sabor
   de Quisqueya carries a REAL 150-dish menu (15 categories × 10, 9 reusable
   modifier groups, bilingual, seeded via `scripts/seed-menu-sabor.mjs` in the exact
