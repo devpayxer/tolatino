@@ -55,8 +55,9 @@
   locality-aware). Saved-addresses manager. **Migration target: Pelias (config flip).**
 - **Eventos** + "Muy pronto" placeholders (Transporte/Bienes Raíces/Autos/Trabajos).
 - **Marketplace payments (Stripe Connect, test mode — 2026-07-09):** real card
-  checkout for **Pedidos** (BizDetail cart / one-tap order) and **Boletos** (Eventos
-  tier picker) via **destination charges**. Buyer pays `P + 5%`, To'Latino keeps
+  checkout for **Pedidos** (cart / one-tap), **Boletos** (Eventos tier picker),
+  **Reservas** (service deposit) and **Renta** (rental fee) via **destination
+  charges** (migrations 0072 + 0073). Buyer pays `P + 5%`, To'Latino keeps
   `15% of P` (`application_fee`), the seller's connected account gets `≈P − 10%`.
   Flow: `startMarketplaceCheckout` → `marketplace-checkout` Edge Function stages the
   purchase in `pending_purchases` + builds a Stripe Checkout Session → buyer pays →
@@ -318,10 +319,9 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
    future date / any CVC / any ZIP): buy a Pedido from El Sabor (`hz-sabor-quisqueya`)
    and 2× "Salsa mix" tickets → confirm in Stripe the split (buyer `P+5%`, platform
    fee `15% of P`, seller transfer `P−10%`) + the order/tickets appear in "Mi cuenta".
-2. **Extend paid checkout to Reservas + Renta** (same `pending_purchases`/webhook
-   pattern; add `fulfill_booking`/`fulfill_rental` + route the BizDetail buttons).
-3. **Before real-money launch:** rotate the `sk_test` key, re-price orders against
-   the catalog server-side, and wire `%`/`$` promos into paid ticket checkout (see
+2. **Before real-money launch:** rotate the `sk_test` key, re-price orders/bookings/
+   rentals against their config server-side, wire `%`/`$` promos into paid ticket
+   checkout, and add a real rental security-deposit hold (see
    `docs/LAUNCH-CHECKLIST.md` → "Payments — marketplace checkout").
 4. Continue **`docs/LAUNCH-CHECKLIST.md`** deferrals: delivery logistics, saved-biz
    cross-city, claim/verify, moderation, push, next-intl.

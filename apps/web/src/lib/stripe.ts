@@ -54,12 +54,16 @@ export async function getConnectStatus(businessId: string): Promise<ConnectStatu
 
 // ---- Marketplace checkout (buyer pays the seller via Connect) ---------------
 
-export type MarketplaceKind = 'order' | 'ticket';
+export type MarketplaceKind = 'order' | 'ticket' | 'booking' | 'rental';
 type OrderLine = { name: string; qty: number; price: number; opts?: string };
 type TicketLine = { tierId: string; qty: number };
+type BookingPayload = { service_name: string; service_id: string | null; starts_at: string; party_size: number | null; deposit: number | null };
+type RentalPayload = { item_name: string; item_id: string | null; start_at: string; end_at: string | null; qty: number; total: number; deposit: number | null };
 export type MarketplaceInput =
   | { kind: 'order'; slug: string; items: OrderLine[]; channel?: string }
-  | { kind: 'ticket'; slug: string; items: TicketLine[] };
+  | { kind: 'ticket'; slug: string; items: TicketLine[] }
+  | { kind: 'booking'; slug: string; subtotal: number; payload: BookingPayload }
+  | { kind: 'rental'; slug: string; subtotal: number; payload: RentalPayload };
 
 /**
  * Start a real marketplace Checkout for a consumer purchase (order / tickets).

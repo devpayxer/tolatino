@@ -566,12 +566,23 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       if (iso && svcTime >= 0 && slotFull(iso, svcTime)) { flash(L('Ese horario está lleno — elige otro', 'That time is full — pick another')); return; }
     }
     if (!user) { router.push('/entrar'); return; }
-    setSvcDone(true); // keep the existing success screen (optimistic)
     const chosen = svcChosenAddons().map((a) => B(a.name));
     const label = chosen.length ? `${svcSel.name} · ${chosen.join(', ')}` : svcSel.name;
     const total = svcTotal();
     const dep = svcSel.deposit && total > 0 ? total : null;
     const persons = svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : null;
+    // Booking with a deposit/price + seller takes cards → charge the deposit online
+    // via Stripe; the confirmed booking is created by the webhook once paid.
+    if (payOnline && svcSel.deposit && total > 0) {
+      const { url } = await startMarketplaceCheckout({
+        kind: 'booking', slug: b.slug, subtotal: total,
+        payload: { service_name: label, service_id: svcSel.id ?? null, starts_at: svcStartISO(), party_size: persons, deposit: total },
+      });
+      if (url) { window.location.href = url; return; }
+      flash(L('No se pudo iniciar el pago', 'Could not start payment'));
+      return;
+    }
+    setSvcDone(true); // keep the existing success screen (optimistic pay-later / inquiry)
     const { error } = await act.book(b.slug, label, svcSel.id, svcStartISO(), persons, dep);
     if (!error) flash(svcSel.bookable ? L('Reserva enviada · míralo en Mi cuenta', 'Booking sent · see it in My account') : L('Solicitud enviada · míralo en Mi cuenta', 'Request sent · see it in My account'));
   };
@@ -694,8 +705,20 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     const it = rentalItems[rentIdx];
     if (!rentStart) { flash(L('Elige la fecha de renta', 'Pick a rental date')); return; }
     if (!user) { router.push('/entrar'); return; }
-    setRentDone(true); // optimistic success screen
     const itemId = it.id.startsWith('fx') ? null : it.id;
+    const fee = rentSubtotal(it);
+    // Payable rental (seller takes cards + a real fee) → charge the rental fee online
+    // via Stripe; the refundable security deposit is collected at pickup.
+    if (payOnline && fee > 0) {
+      const { url } = await startMarketplaceCheckout({
+        kind: 'rental', slug: b.slug, subtotal: fee,
+        payload: { item_name: B(it.n), item_id: itemId, start_at: rentStartISO(), end_at: rentEndISO(), qty: rentUnits, total: rentGrand(it), deposit: rentDepositTotal(it) },
+      });
+      if (url) { window.location.href = url; return; }
+      flash(L('No se pudo iniciar el pago', 'Could not start payment'));
+      return;
+    }
+    setRentDone(true); // optimistic success screen (pay-later / inquiry)
     const { error } = await act.rent(b.slug, B(it.n), itemId, rentStartISO(), rentEndISO(), rentUnits, rentGrand(it), rentDepositTotal(it));
     if (!error) flash(L('Renta solicitada · míralo en Mi cuenta', 'Rental requested · see it in My account'));
   };
@@ -1952,12 +1975,20 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               {showTotal && (
                 <div className="mt-4 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
                   <div className="flex justify-between"><span>{L('Total estimado', 'Estimated total')}</span><span className="text-[14px] font-extrabold text-ink">{money(total)}</span></div>
-                  {svcSel.deposit && <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-primary-dark">{money(total)}</span></div>}
+                  {svcSel.deposit && payOnline && total > 0
+                    ? <>
+                        <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-ink">{money(total)}</span></div>
+                        <div className="mt-0.5 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio (5%)', 'Service fee (5%)')}</span><span className="font-extrabold text-ink">{money(+(total * 0.05).toFixed(2))}</span></div>
+                        <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas hoy', 'You pay today')}</span><span className="font-extrabold text-primary-dark">{money(+(total * 1.05).toFixed(2))}</span></div>
+                      </>
+                    : svcSel.deposit && <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-primary-dark">{money(total)}</span></div>}
                 </div>
               )}
 
               <PrimaryBtn className="mt-5" onClick={confirmBooking}>
-                {svcSel.bookable ? L('Solicitar reserva', 'Request booking') : L('Solicitar información', 'Request info')}
+                {payOnline && svcSel.deposit && total > 0
+                  ? `${L('Pagar reserva · ', 'Pay booking · ')}${money(+(total * 1.05).toFixed(2))}`
+                  : svcSel.bookable ? L('Solicitar reserva', 'Request booking') : L('Solicitar información', 'Request info')}
               </PrimaryBtn>
             </>
           );
@@ -2098,14 +2129,24 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 {selectedAddons.map((a) => (
                   <div key={a.id} className="mt-1 flex justify-between text-[11.5px]"><span>{B(a.name)}</span><span>{a.price ? money(a.price) : L('Gratis', 'Free')}</span></div>
                 ))}
-                <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable', 'Refundable deposit')}{rentUnits > 1 ? ` · ${rentUnits}×` : ''}</span><span>{money(it.dep * rentUnits)}</span></div>
-                <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
-                  <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(rentGrand(it))}</span>
-                </div>
+                <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable', 'Refundable deposit')}{payOnline && rentSubtotal(it) > 0 ? L(' · al recoger', ' · at pickup') : ''}{rentUnits > 1 ? ` · ${rentUnits}×` : ''}</span><span>{money(it.dep * rentUnits)}</span></div>
+                {payOnline && rentSubtotal(it) > 0 && (
+                  <>
+                    <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio (5%)', 'Service fee (5%)')}</span><span>{money(+(rentSubtotal(it) * 0.05).toFixed(2))}</span></div>
+                    <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
+                      <span>{L('Pagas hoy', 'You pay today')}</span><span className="text-primary-dark">{money(+(rentSubtotal(it) * 1.05).toFixed(2))}</span>
+                    </div>
+                  </>
+                )}
+                {!(payOnline && rentSubtotal(it) > 0) && (
+                  <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
+                    <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(rentGrand(it))}</span>
+                  </div>
+                )}
               </div>
 
               <PrimaryBtn className="mt-4" onClick={confirmRental}>
-                {rentStart ? L('Solicitar renta', 'Request rental') : L('Elige la fecha', 'Pick a date')}
+                {!rentStart ? L('Elige la fecha', 'Pick a date') : payOnline && rentSubtotal(it) > 0 ? `${L('Pagar renta · ', 'Pay rental · ')}${money(+(rentSubtotal(it) * 1.05).toFixed(2))}` : L('Solicitar renta', 'Request rental')}
               </PrimaryBtn>
             </>
           );

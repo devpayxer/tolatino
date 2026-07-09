@@ -36,7 +36,9 @@ Deno.serve(async (req) => {
     const kind = String(body?.kind ?? '');
     const slug = String(body?.slug ?? '');
     const items = Array.isArray(body?.items) ? body.items : [];
-    if ((kind !== 'order' && kind !== 'ticket') || !slug || items.length === 0) return json({ error: 'bad request' }, 400);
+    const KINDS = ['order', 'ticket', 'booking', 'rental'];
+    if (!KINDS.includes(kind) || !slug) return json({ error: 'bad request' }, 400);
+    if ((kind === 'order' || kind === 'ticket') && items.length === 0) return json({ error: 'bad request' }, 400);
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -71,6 +73,20 @@ Deno.serve(async (req) => {
       if (lines.some((l) => !(l.price >= 0) || l.price > 100000)) return json({ error: 'bad line price' }, 400);
       subtotal = lines.reduce((a, l) => a + l.price * l.qty, 0);
       payload = { items: lines, total: subtotal, channel: String(body?.channel ?? 'pickup') };
+    } else if (kind === 'booking' || kind === 'rental') {
+      // Booking deposit / rental fee — the payable base (P) is computed by the
+      // client from the service/rental config; validated here (re-price server-side
+      // before real-money launch — see LAUNCH-CHECKLIST). Payload carries the row
+      // fields the webhook needs to create the confirmed booking/rental.
+      const biz = (await get(`businesses?slug=eq.${encodeURIComponent(slug)}&select=id,name,stripe_account_id,connect_charges_enabled`))?.[0];
+      if (!biz) return json({ error: 'business not found' }, 404);
+      if (!biz.connect_charges_enabled || !biz.stripe_account_id) return json({ error: 'seller_not_payable' }, 400);
+      businessId = biz.id; sellerAccount = biz.stripe_account_id;
+      productName = `${biz.name} · ${kind === 'booking' ? 'Reserva' : 'Renta'}`;
+      const sub = Number(body?.subtotal ?? 0);
+      if (!(sub > 0) || sub > 100000) return json({ error: 'bad amount' }, 400);
+      subtotal = sub;
+      payload = (body?.payload && typeof body.payload === 'object') ? body.payload : {};
     } else {
       const ev = (await get(`events?slug=eq.${encodeURIComponent(slug)}&select=id,owner_id,title_es,status`))?.[0];
       if (!ev) return json({ error: 'event not found' }, 404);

@@ -909,11 +909,22 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
   Stripe → Developers → API keys → **Roll** the secret key, then update the
   `STRIPE_SECRET_KEY` secret. (Test mode → no real money, but do it before touching
   live keys.)
-- [ ] **Bookings + Rentals paid checkout.** Same pattern as orders/tickets (the
-  `pending_purchases` + webhook infra is generic — add `kind = 'booking' | 'rental'`
-  and `fulfill_booking` / `fulfill_rental` service RPCs, then route the BizDetail
-  booking/rental "Reservar/Rentar" buttons through `startMarketplaceCheckout`).
-  Deposits (partial charge) need a `deposit vs full` decision.
+- [x] **Bookings + Rentals paid checkout — DONE (0073, 2026-07-09).** Same pattern
+  as orders/tickets: `kind = 'booking' | 'rental'`, `fulfill_booking` /
+  `fulfill_rental` service RPCs, BizDetail booking/rental buttons route through
+  `startMarketplaceCheckout`. Booking charges the **deposit** (when the service has
+  a deposit + price); rental charges the **rental fee** (`rentSubtotal`). Residual
+  deferrals below.
+- [ ] **Rental security-deposit hold at pickup.** Paid rentals charge only the
+  rental FEE online; the refundable security deposit is shown as "collected at
+  pickup" (not charged/held). For a Turo-grade flow, add a real deposit
+  authorization hold (PaymentIntent `capture_method=manual` on the deposit,
+  captured on damage / released on return).
+- [ ] **Re-price bookings/rentals server-side.** Like orders, the booking deposit /
+  rental fee is computed client-side and validated (`> 0`, `< 100000`) server-side,
+  not re-derived from the service/rental config. Recompute from
+  `service_config`/`rental_config` before real-money launch (tickets are already
+  server-priced).
 - [ ] **Re-price orders against the catalog before real-money launch.** For orders
   the checkout function totals the **submitted** line items (qty × unit, validated
   `> 0`), not a re-price against the live menu/product prices. A tampered client

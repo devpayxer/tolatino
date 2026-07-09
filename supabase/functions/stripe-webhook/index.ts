@@ -100,6 +100,24 @@ async function fulfillMarketplace(url: string, service: string, stripeKey: strin
       });
       if (r.ok && Array.isArray(r.data) && r.data.length) { result = { tickets: (r.data as { code: string }[]).map((x) => x.code) }; ok = true; }
       else { errMsg = (r.data as { message?: string })?.message || 'ticket fulfillment failed'; }
+    } else if (pending.kind === 'booking') {
+      const r = await rpc(url, service, 'fulfill_booking', {
+        in_buyer: pending.buyer_id, in_business: pending.business_id,
+        in_service_name: payload.service_name ?? null, in_service_id: payload.service_id ?? null,
+        in_starts_at: payload.starts_at ?? null, in_party_size: payload.party_size ?? null,
+        in_deposit: payload.deposit ?? (pending.subtotal / 100),
+      });
+      if (r.ok && Array.isArray(r.data) && r.data.length) { result = r.data[0]; ok = true; }
+      else { errMsg = (r.data as { message?: string })?.message || 'booking fulfillment failed'; }
+    } else if (pending.kind === 'rental') {
+      const r = await rpc(url, service, 'fulfill_rental', {
+        in_buyer: pending.buyer_id, in_business: pending.business_id,
+        in_item_name: payload.item_name ?? null, in_item_id: payload.item_id ?? null,
+        in_start_at: payload.start_at ?? null, in_end_at: payload.end_at ?? null,
+        in_qty: payload.qty ?? 1, in_total: payload.total ?? (pending.subtotal / 100), in_deposit: payload.deposit ?? null,
+      });
+      if (r.ok && Array.isArray(r.data) && r.data.length) { result = r.data[0]; ok = true; }
+      else { errMsg = (r.data as { message?: string })?.message || 'rental fulfillment failed'; }
     }
   } catch (e) {
     errMsg = String(e);
