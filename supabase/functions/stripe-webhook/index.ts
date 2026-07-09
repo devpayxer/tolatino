@@ -78,7 +78,7 @@ async function applySub(url: string, service: string, businessId: string, custom
 async function fulfillMarketplace(url: string, service: string, stripeKey: string, obj: Record<string, unknown>, meta: Record<string, string>) {
   const pendingId = meta.pending_id;
   if (!pendingId) return;
-  const pending = (await (await fetch(`${url}/rest/v1/pending_purchases?id=eq.${pendingId}&select=*`, { headers: svcHeaders(service) })).json()))?.[0];
+  const pending = (await (await fetch(`${url}/rest/v1/pending_purchases?id=eq.${pendingId}&select=*`, { headers: svcHeaders(service) })).json())?.[0];
   if (!pending || pending.status !== 'pending') return; // unknown / already handled
   const intent = (obj.payment_intent as string | undefined) ?? null;
   const payload = (pending.payload ?? {}) as Record<string, unknown>;
