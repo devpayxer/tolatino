@@ -10,7 +10,7 @@
 // grids with a sticky side rail. Upgrade takes over the screen as a full-screen
 // ModulePage; Cancel is a small centered confirm dialog (never a bottom sheet).
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle, Calendar, Check, Download, FileText, Image as ImageIcon,
   Lock, Mail, MapPin, MessageSquare, Pencil, Plus, Shield, ShoppingBag,
@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import type { PanelCtx, TabKey, Tier } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { useBizAdmin } from '@/lib/bizAdmin';
+import { startCheckout, openBillingPortal } from '@/lib/stripe';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
@@ -27,6 +29,8 @@ type AddonKey = 'featured' | 'boost' | 'seats' | 'sms';
 export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L } = ctx;
   void tab; // panel-level key ('billing'); sub-tabs are managed locally below.
+  const admin = useBizAdmin();
+  const real = admin.active; // real signed-in business → charge via Stripe; demo → local restyle
 
   // Local plan state so upgrade/cancel restyle the card live (like the prototype).
   const [tier, setTier] = useState<Tier>(ctx.tier);
@@ -40,11 +44,25 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [pick, setPick] = useState<'verified' | 'premium'>('premium');
   const [toast, setToast] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 2000);
   };
+
+  // Keep the card in sync with the real business tier (updates after the webhook).
+  useEffect(() => { setTier(ctx.tier); }, [ctx.tier]);
+
+  // Handle the return from Stripe Checkout (?checkout=success|cancel).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search).get('checkout');
+    if (q === 'success') flash(L('¡Pago recibido! Activando tu plan…', 'Payment received! Activating your plan…'));
+    else if (q === 'cancel') flash(L('Pago cancelado', 'Checkout canceled'));
+    if (q) window.history.replaceState({}, '', window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const meta = { free: { name: 'Free', price: '$0/mes' }, verified: { name: 'Verified', price: '$19/mes' }, premium: { name: 'Premium', price: '$49/mes' } }[tier];
   const renewDate = L('14 Nov', 'Nov 14');
@@ -53,12 +71,31 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setPick(p ?? (isFree ? 'verified' : 'premium'));
     setUpgradeOpen(true);
   };
-  const confirmUpgrade = () => {
+  const confirmUpgrade = async () => {
+    // Real business → Stripe Checkout (redirect). Demo → local restyle (showcase).
+    if (real && !admin.demo) {
+      setBusy(true);
+      const { url, error } = await startCheckout(pick, real.id);
+      setBusy(false);
+      if (url) { window.location.href = url; return; }
+      flash(error === 'offline' ? L('Sin conexión', 'Offline') : L('No se pudo iniciar el pago. Intenta de nuevo.', 'Could not start checkout. Try again.'));
+      return;
+    }
     setTier(pick);
     setUpgradeOpen(false);
     flash(L('¡Listo! Ahora eres ', "You're now on ") + (pick === 'verified' ? 'Verified' : 'Premium'));
   };
-  const confirmCancel = () => {
+  const confirmCancel = async () => {
+    // Real business → Stripe Billing Portal (manage / cancel). Demo → local restyle.
+    if (real && !admin.demo) {
+      setBusy(true);
+      const { url, error } = await openBillingPortal(real.id);
+      setBusy(false);
+      if (url) { window.location.href = url; return; }
+      setCancelOpen(false);
+      flash(error === 'no subscription' ? L('No tienes una suscripción activa', 'No active subscription') : L('No se pudo abrir el portal', 'Could not open the portal'));
+      return;
+    }
     setTier('free');
     setCancelOpen(false);
     flash(L('Plan cancelado · activo hasta 14 Nov', 'Plan canceled · active until Nov 14'));
@@ -469,8 +506,8 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       onBack={() => setUpgradeOpen(false)}
       footer={
         <>
-          <button onClick={confirmUpgrade} className="w-full cursor-pointer rounded-btn-lg bg-primary p-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
-            {L('Confirmar · ', 'Confirm · ')}{pickMeta[0]} {pickMeta[1]}
+          <button onClick={confirmUpgrade} disabled={busy} className="w-full cursor-pointer rounded-btn-lg bg-primary p-3.5 text-[13.5px] font-extrabold text-white shadow-cta disabled:opacity-60">
+            {busy ? L('Redirigiendo a Stripe…', 'Redirecting to Stripe…') : <>{L('Confirmar · ', 'Confirm · ')}{pickMeta[0]} {pickMeta[1]}</>}
           </button>
           <div className="mt-2.5 text-center text-[9.5px] font-medium leading-snug text-muted-2">
             {L('Se cobra hoy. Renovación automática mensual. Cancela cuando quieras.', 'Charged today. Auto-renews monthly. Cancel anytime.')}
