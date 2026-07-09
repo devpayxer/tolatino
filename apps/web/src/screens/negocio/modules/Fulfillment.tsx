@@ -69,9 +69,9 @@ type OStatus = 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 type Dispatch = 'unassigned' | 'assigned' | 'picked_up' | 'on_the_way' | 'delivered';
 type ShipStep = 'to_pack' | 'packed' | 'labeled' | 'shipped' | 'in_transit' | 'delivered';
 type Fulfil = {
-  address?: string; dispatch?: Dispatch; driver?: string; eta?: string; ship?: ShipStep; carrier?: string; tracking?: string; pkg?: string;
+  address?: string; dispatch?: Dispatch; driver?: string; driver_phone?: string; eta?: string; ship?: ShipStep; carrier?: string; tracking?: string; pkg?: string;
   // paid-checkout receipt (written by the payments webhook — migration 0074)
-  address_label?: string; instructions?: string; subtotal?: number; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number;
+  address_label?: string; instructions?: string; subtotal?: number; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number; eta_range?: string;
 };
 type OrderRow = { id: string; code: string | null; customer_name: string | null; items: OrderItem[]; total: number | null; channel: string; status: OStatus; created_at: string; fulfillment: Fulfil };
 
@@ -239,7 +239,14 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     const d = o.fulfillment.dispatch ?? 'unassigned';
     return d === 'unassigned' ? L('Asignar repartidor', 'Assign driver') : d === 'assigned' ? L('Marcar recogido', 'Picked up') : d === 'picked_up' ? L('En camino', 'On the way') : L('Entregado', 'Delivered');
   };
-  const assignDriver = (name: string) => { if (assignFor) { setFulfil(assignFor, { dispatch: 'assigned', driver: name }); flash(L(`Asignado a ${name}`, `Assigned to ${name}`)); } setAssignFor(null); };
+  const assignDriver = (name: string, phone?: string) => {
+    if (assignFor) {
+      // the driver's phone rides along so the CLIENT can call them from tracking
+      setFulfil(assignFor, { dispatch: 'assigned', driver: name, ...(phone ? { driver_phone: phone } : {}) });
+      flash(L(`Asignado a ${name}`, `Assigned to ${name}`));
+    }
+    setAssignFor(null);
+  };
 
   // ---- shipping pipeline ----
   const shipStage = (o: OrderRow): 'to_pack' | 'labeled' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled' => {
@@ -777,7 +784,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             ) : (
               <div className="flex flex-col gap-2">
                 {drivers.map((d) => (
-                  <button key={d.name} onClick={() => assignDriver(d.name)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-2.5 text-left hover:border-primary">
+                  <button key={d.name} onClick={() => assignDriver(d.name, d.phone)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-2.5 text-left hover:border-primary">
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
                     <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{d.name}</span><span className="block text-[10px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}</span></span>
                     <span className="flex-none text-[10.5px] font-extrabold text-primary-dark">{L('Asignar', 'Assign')} ›</span>

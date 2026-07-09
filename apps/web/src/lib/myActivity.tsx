@@ -20,7 +20,7 @@ export type OrderItem = { name: string; qty: number; price?: number; opts?: stri
 export type OrderFulfil = {
   address?: string; address_label?: string; instructions?: string;
   dispatch?: 'unassigned' | 'assigned' | 'picked_up' | 'on_the_way' | 'delivered';
-  driver?: string; eta?: string;
+  driver?: string; driver_phone?: string; eta?: string; eta_range?: string;
   subtotal?: number; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number;
 };
 export type MyOrder = { id: string; business_id: string; code: string | null; items: OrderItem[]; total: number | null; channel: string | null; status: string; created_at: string; fulfillment: OrderFulfil | null; businesses: BizRef };

@@ -93,8 +93,9 @@ Deno.serve(async (req) => {
       tip = Math.max(0, Math.min(500, Number(body?.tip ?? 0) || 0));
 
       const addr = (body?.address ?? null) as Record<string, unknown> | null;
+      const prep = Number(((settings as Record<string, Record<string, unknown>>)?.delivery_ops?.prepTime as string) ?? '20') || 20;
       payload = {
-        items: lines, total: subtotal, channel,
+        items: lines, total: subtotal, channel, business: biz.name, business_slug: slug,
         fulfillment: {
           ...(channel === 'delivery'
             ? {
@@ -102,8 +103,9 @@ Deno.serve(async (req) => {
                 ...(addr?.label ? { address_label: String(addr.label) } : {}),
                 ...(body?.instructions ? { instructions: String(body.instructions).slice(0, 300) } : {}),
                 dispatch: 'unassigned',
+                eta_range: `${prep + 10}–${prep + 25} min`,
               }
-            : {}),
+            : { eta_range: `${prep} min` }),
           subtotal, delivery_fee: deliveryFee, tip,
           service_fee: Math.round(subtotal * 5) / 100,
           paid_total: Math.round(subtotal * 105 + deliveryFee * 100 + tip * 100) / 100,
@@ -181,7 +183,7 @@ Deno.serve(async (req) => {
       'metadata[pending_id]': pending.id,
       'metadata[purchase_kind]': kind,
       'metadata[business_id]': businessId ?? '',
-      success_url: `${base}${path}?pay=success`,
+      success_url: `${base}${path}?pay=success&pid=${pending.id}`,
       cancel_url: `${base}${path}?pay=cancel`,
     });
     if (session.error) {

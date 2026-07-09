@@ -7,11 +7,11 @@
 // notification prefs, the user's own posts, and quick links to Guardados /
 // Siguiendo / Notificaciones / the business panel. No improvised UI.
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Bell, Bike, Bookmark, CalendarCheck, CalendarDays, Check, ChevronLeft, ChevronRight, Globe, HelpCircle,
-  LayoutDashboard, LogIn, LogOut, Mail, MapPin, Megaphone, Plus, ShoppingBag, Star, Ticket, Trash2, User, Users,
+  LayoutDashboard, LogIn, LogOut, Mail, MapPin, Megaphone, Phone, Plus, ShoppingBag, Star, Ticket, Trash2, User, Users,
 } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -92,6 +92,23 @@ export function CuentaScreen() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
+
+  // Deep link from the payment confirmation: /cuenta/?sec=pedidos&order=<id>
+  // jumps straight to that section (and opens the order's live tracking).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search);
+    const s = q.get('sec');
+    const ord = q.get('order');
+    if (s && ['perfil', 'direcciones', 'posts', 'config', 'pedidos', 'reservas', 'rentas', 'boletos', 'voy'].includes(s)) setSec(s as Sec);
+    if (ord) setOrderSelId(ord);
+    if (s || ord) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('sec');
+      url.searchParams.delete('order');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  }, []);
 
   const guest = auth.configured && !auth.user;
   const p = auth.profile;
@@ -548,6 +565,13 @@ export function CuentaScreen() {
                 {pill(stage)}
               </div>
 
+              {/* ETA banner while the order is live */}
+              {!['cancelled', 'delivered', 'completed'].includes(stage) && f.eta_range && (
+                <div className="mt-3 flex items-center gap-2 rounded-field bg-lilac-2 px-3.5 py-2.5 text-[12.5px] font-extrabold text-primary-dark">
+                  ⏱ {isDel ? L(`Llega en aprox. ${f.eta_range}`, `Arriving in about ${f.eta_range}`) : L(`Listo en aprox. ${f.eta_range}`, `Ready in about ${f.eta_range}`)}
+                </div>
+              )}
+
               {/* timeline */}
               {stage === 'cancelled' ? (
                 <div className="mt-3 rounded-field bg-pink-bg px-3.5 py-3 text-[12.5px] font-bold text-pink-dark">
@@ -574,6 +598,31 @@ export function CuentaScreen() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* en camino → mini-mapa ilustrativo + tarjeta del repartidor (design: Order Tracking) */}
+              {stage === 'on_the_way' && (
+                <div className="relative mb-3 h-[86px] overflow-hidden rounded-field border border-hair" style={{ background: '#EAEEF6' }}>
+                  <div className="absolute left-[-10px] top-[32px] h-[6px] w-[150%] bg-white" style={{ transform: 'rotate(-8deg)' }} />
+                  <div className="absolute left-[38%] top-[-10px] h-[150%] w-[6px] bg-white" style={{ transform: 'rotate(9deg)' }} />
+                  <span className="absolute left-[20%] top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={13} strokeWidth={2.4} /></span>
+                  <span className="absolute right-[16%] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 border-white bg-green shadow-card" />
+                  <span className="absolute bottom-1.5 right-2 rounded-md bg-white/90 px-2 py-0.5 text-[9.5px] font-extrabold text-ink shadow-card">{f.eta ? `ETA ${f.eta}` : L('En ruta', 'En route')}</span>
+                </div>
+              )}
+              {f.driver && (stage === 'on_the_way' || stage === 'delivered' || f.dispatch === 'assigned' || f.dispatch === 'picked_up') && (
+                <div className="mb-3 flex items-center gap-3 rounded-field border border-hair bg-white p-3 shadow-card">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-lilac-2 text-[12px] font-extrabold text-primary-dark">{(f.driver.split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || 'R').toUpperCase()}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-extrabold text-ink">{f.driver}</span>
+                    <span className="block text-[11px] font-semibold text-muted">{L('Tu repartidor', 'Your driver')}</span>
+                  </span>
+                  {f.driver_phone && (
+                    <a href={`tel:${f.driver_phone.replace(/[^\d+]/g, '')}`} aria-label={L('Llamar al repartidor', 'Call driver')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg text-green-dark">
+                      <Phone size={15} strokeWidth={2.4} />
+                    </a>
+                  )}
                 </div>
               )}
 

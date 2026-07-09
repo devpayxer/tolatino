@@ -71,7 +71,7 @@ const reviewWhen = (iso: string): Bi => {
   return [`hace ${w} sem`, `${w}w`];
 };
 
-type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string };
+type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string; note?: string };
 
 // A normalized booking target for the service sheet (real service or fixture).
 type SvcTarget = {
@@ -140,6 +140,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     return () => { cancelled = true; };
   }, [b.slug]);
   const menuCats = realMenu?.cats ?? MENU;
+  // Owner-tagged "Popular" dishes across categories → the top section + purple chip.
+  const menuPopular = menuCats.flatMap((c) => c.items.filter((it) => it.tag && it.tag[0] === 'Popular').map((item) => ({ catKey: c.key, item }))).slice(0, 8);
   // Display-only menu: real menu with ordering off → showcase (no +/Pedir/cart).
   const menuDisplayOnly = realMenu != null && !realMenu.ordering;
 
@@ -217,6 +219,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const [cartOpen, setCartOpen] = useState(false);
   const [cartDone, setCartDone] = useState(false);
   const [itemModal, setItemModal] = useState<{ catKey: string; item: MenuItem } | null>(null);
+  const [modalNote, setModalNote] = useState(''); // per-item special instructions (design: Item Detail)
   const [single, setSingle] = useState<Record<string, number>>({});
   const [multi, setMulti] = useState<Record<string, boolean>>({});
   const [qty, setQty] = useState(1);
@@ -392,7 +395,10 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     if (cartCount === 0 || paying || belowMin) return;
     if (isDelivery && !chosenAddr) { setCartView('address'); return; }
     setPaying(true);
-    const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit, opts: l.optsLabel || undefined }));
+    const items = Object.values(cart).map((l) => ({
+      name: l.name, qty: l.qty, price: l.unit,
+      opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined,
+    }));
     const { url, error } = await startMarketplaceCheckout({
       kind: 'order', slug: b.slug, items,
       channel: isDelivery ? 'delivery' : 'pickup',
@@ -414,8 +420,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     if (!user) { router.push('/entrar'); return; }
     if (cartCount === 0 || paying) return;
     setPaying(true);
-    const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit }));
-    const { error } = await act.placeOrder(b.slug, items, cartTotal, 'pickup');
+    const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit, opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined }));
+    const { error } = await act.placeOrder(b.slug, items, +cartTotal.toFixed(2), 'pickup');
     setPaying(false);
     if (error) { flash(L('No se pudo enviar el pedido', 'Could not place order')); return; }
     setCartDone(true);
@@ -439,6 +445,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
     setSingle(s);
     setMulti({});
     setQty(1);
+    setModalNote('');
     setItemModal({ catKey, item });
   };
 
@@ -484,7 +491,8 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       }),
     );
     const unit = itemModal.item.price + add;
-    const key = `${itemModal.catKey}:${B(itemModal.item.n)}|${chosen.join(',')}`;
+    const note = modalNote.trim().slice(0, 200);
+    const key = `${itemModal.catKey}:${B(itemModal.item.n)}|${chosen.join(',')}${note ? `|${note}` : ''}`;
     const inCart = cart[key]?.qty ?? 0;
     const vstk = variantStockAt(itemModal.item, groups, single);
     if (vstk != null) {
@@ -494,7 +502,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
       const stk = shopStock(itemModal.catKey, itemModal.item);
       if (stk != null && inCart + qty > stk) { flash(L('No hay suficientes unidades', 'Not enough units in stock')); return; }
     }
-    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg } }));
+    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg, note: note || undefined } }));
     setItemModal(null);
   };
 
@@ -1370,8 +1378,54 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
               </a>
             </div>
           )}
+          {/* delivery / pickup offer badges (design: Store Menu header chips) */}
+          {!menuDisplayOnly && payOnline && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {deliveryAvailable && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-bg px-2.5 py-1 text-[10.5px] font-extrabold text-green-dark">
+                  🛵 {L('Entrega', 'Delivery')} {money(del?.fee ?? 0)} · {del?.prep ? `${del.prep + 10}–${del.prep + 25} min` : '30–45 min'}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1 rounded-full bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">
+                🥡 {L('Recoger', 'Pickup')} · {del?.prep ? `${del.prep} min` : '15–25 min'}
+              </span>
+              {deliveryAvailable && (del?.min ?? 0) > 0 && (
+                <span className="inline-flex items-center rounded-full bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-ink-soft">
+                  {L('Mínimo', 'Min.')} {money(del?.min ?? 0)} {L('en entrega', 'for delivery')}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* horizontal category tabs (design: Popular · Burgers · Sides …) */}
+          {menuCats.length > 1 && (
+            <div className="no-scrollbar -mx-1 mb-4 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+              {menuPopular.length >= 3 && (
+                <button onClick={() => document.getElementById('menu-cat-_pop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="flex-none cursor-pointer rounded-full bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">
+                  ⭐ {L('Populares', 'Popular')}
+                </button>
+              )}
+              {menuCats.map((c) => (
+                <button key={c.key} onClick={() => document.getElementById(`menu-cat-${c.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="flex-none cursor-pointer rounded-full bg-lilac-2 px-3.5 py-2 text-[12px] font-extrabold text-ink-soft">
+                  {B(c.name)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Populares — the dishes the owner marked popular, first (like DoorDash) */}
+          {menuPopular.length >= 3 && (
+            <div id="menu-cat-_pop" className="mb-5 scroll-mt-[130px]">
+              <div className="mb-2.5 flex items-baseline gap-2">
+                <span className="text-[15.5px] font-extrabold text-ink">{L('Populares', 'Popular items')}</span>
+                <span className="text-[11.5px] font-bold text-muted">{menuPopular.length} {L('platillos', 'items')}</span>
+              </div>
+              <div className={menuDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{menuPopular.map(({ catKey, item }) => itemCard(catKey, item, false, menuDisplayOnly))}</div>
+            </div>
+          )}
+
           {menuCats.map((c) => (
-            <div key={c.key} className="mb-5">
+            <div key={c.key} id={`menu-cat-${c.key}`} className="mb-5 scroll-mt-[130px]">
               <div className="mb-2.5 flex items-baseline gap-2">
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                 <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('platillos', 'items')}</span>
@@ -1835,6 +1889,15 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
             {mVarStock != null && mVarStock > 0 && mVarStock <= 5 && (
               <div className="mt-3 text-[11.5px] font-bold text-amber-ink">{L(`Solo ${mVarStock} disponibles`, `Only ${mVarStock} left`)}</div>
             )}
+            {/* special instructions (design: Item Detail) — travels with the order line */}
+            <div className="mb-1.5 mt-4 text-[13px] font-extrabold text-ink">{L('Instrucciones especiales', 'Special instructions')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
+            <input
+              value={modalNote}
+              onChange={(e) => setModalNote(e.target.value)}
+              maxLength={200}
+              placeholder={L('Ej. sin cebolla, salsa aparte…', 'E.g. no onions, sauce on the side…')}
+              className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
+            />
             <div className="mt-5 flex items-center gap-3">
               <div className="flex flex-none items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
                 <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
@@ -1914,6 +1977,7 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13px] font-extrabold text-ink">{l.name}</span>
                         {l.optsLabel && <span className="block truncate text-[11px] font-semibold text-muted">{l.optsLabel}</span>}
+                        {l.note && <span className="block truncate text-[10.5px] font-semibold italic text-muted-2">“{l.note}”</span>}
                       </span>
                       <span className="flex flex-none items-center gap-2 rounded-full bg-lilac-2 px-1.5 py-1">
                         <button onClick={() => decLine(k)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-extrabold">−</button>
@@ -1971,13 +2035,15 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                       {[0, 0.1, 0.15, 0.2].map((p) => {
                         const on = !customTipOn && tipPct === p;
                         return (
-                          <button key={p} onClick={() => { setCustomTipOn(false); setTipPct(p); }} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-2 text-center text-[11.5px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
-                            {p === 0 ? L('Sin', 'None') : `${p * 100}%`}
+                          <button key={p} onClick={() => { setCustomTipOn(false); setTipPct(p); }} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-1.5 text-center ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                            <span className={`block text-[11.5px] font-extrabold ${on ? 'text-primary-dark' : 'text-ink-soft'}`}>{p === 0 ? L('Sin', 'None') : `${p * 100}%`}</span>
+                            {p > 0 && <span className="block text-[9.5px] font-bold text-muted">{money(+(cartTotal * p).toFixed(2))}</span>}
                           </button>
                         );
                       })}
-                      <button onClick={() => setCustomTipOn(true)} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-2 text-center text-[11.5px] font-extrabold ${customTipOn ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
-                        {L('Otra', 'Other')}
+                      <button onClick={() => setCustomTipOn(true)} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-1.5 text-center ${customTipOn ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                        <span className={`block text-[11.5px] font-extrabold ${customTipOn ? 'text-primary-dark' : 'text-ink-soft'}`}>{L('Otra', 'Other')}</span>
+                        <span className="block text-[9.5px] font-bold text-muted">$</span>
                       </button>
                     </div>
                     {customTipOn && (
