@@ -7,11 +7,12 @@
 // payments" state rather than fake payout rows. Demo shows a sample summary.
 
 import { useEffect, useState } from 'react';
-import { DollarSign, Loader2, Receipt, ShoppingBag, Store } from 'lucide-react';
+import { Check, DollarSign, ExternalLink, Loader2, Receipt, ShoppingBag, Store } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import type { PanelCtx } from '@/screens/negocio/tabs';
+import { startConnectOnboarding, getConnectStatus, type ConnectStatus } from '@/lib/stripe';
 
 type Summary = { revenue: number; orders: number };
 
@@ -49,6 +50,35 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
+
+  // Stripe Connect account status (payouts to the seller's bank).
+  const [connect, setConnect] = useState<ConnectStatus | null>(null);
+  const [connectBusy, setConnectBusy] = useState(false);
+  useEffect(() => {
+    if (!persistable || !real) { setConnect(null); return; }
+    let cancelled = false;
+    getConnectStatus(real.id).then((s) => { if (!cancelled) setConnect(s); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  // On return from Stripe onboarding (?connect=done|refresh), re-sync + clean the URL.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !real) return;
+    if (new URLSearchParams(window.location.search).get('connect')) {
+      getConnectStatus(real.id).then(setConnect);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id]);
+
+  const connectOnboard = async () => {
+    if (!real) return;
+    setConnectBusy(true);
+    const { url } = await startConnectOnboarding(real.id);
+    setConnectBusy(false);
+    if (url) window.location.href = url;
+  };
 
   if (admin.loading || loading) {
     return (
@@ -99,19 +129,37 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
         {L('Ingresos de pedidos completados en To’Latino.', 'Revenue from completed To’Latino orders.')}
       </div>
 
-      {/* honest deferred-payouts state (payments need Stripe — evaluated at the transaction phase) */}
-      <div className="mt-4 rounded-card border border-hair bg-white p-5 text-center shadow-card">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lilac">
-          <DollarSign size={22} className="text-primary" strokeWidth={2.2} />
-        </span>
-        <h3 className="mt-3 text-[15px] font-extrabold text-ink">{L('Depósitos automáticos', 'Automatic payouts')}</h3>
-        <p className="mx-auto mt-1.5 max-w-[380px] text-[12.5px] font-semibold leading-relaxed text-muted">
-          {L('Para recibir pagos y depósitos a tu banco, conectaremos un procesador de pagos. Está en camino — por ahora gestionas los pedidos y sus totales desde Pedidos.', "To receive payments and bank deposits we'll connect a payment processor. It's on the way — for now you manage orders and their totals in Pedidos.")}
-        </p>
-        <span className="mt-3 inline-block rounded-full bg-amber-bg px-3 py-1 text-[11px] font-extrabold text-amber-ink">
-          {L('Próximamente', 'Coming soon')}
-        </span>
-      </div>
+      {/* Stripe Connect — real payouts to the seller's bank */}
+      {(() => {
+        const active = !!connect?.charges_enabled;
+        const pending = !!connect?.details_submitted && !connect?.charges_enabled;
+        return (
+          <div className="mt-4 rounded-card border border-hair bg-white p-5 shadow-card">
+            <div className="flex items-start gap-3">
+              <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-full ${active ? 'bg-green-bg' : 'bg-lilac'}`}>
+                {active ? <Check size={22} className="text-green-dark" strokeWidth={2.6} /> : <DollarSign size={22} className="text-primary" strokeWidth={2.2} />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-[15px] font-extrabold text-ink">{L('Recibir pagos y depósitos', 'Receive payments & payouts')}</h3>
+                <p className="mt-1 text-[12.5px] font-semibold leading-relaxed text-muted">
+                  {active
+                    ? L('Tu cuenta está conectada. Los cobros de pedidos, boletos y reservas se depositan a tu banco automáticamente.', 'Your account is connected. Order, ticket and booking payments deposit to your bank automatically.')
+                    : pending
+                      ? L('Stripe está verificando tu cuenta. Completa los datos pendientes para empezar a recibir pagos.', 'Stripe is verifying your account. Finish the pending details to start receiving payments.')
+                      : L('Conecta una cuenta con Stripe para cobrar a tus clientes y recibir depósitos a tu banco. Toma unos minutos.', 'Connect a Stripe account to charge customers and get bank deposits. It takes a few minutes.')}
+                </p>
+                {active ? (
+                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-bg px-3 py-1 text-[11px] font-extrabold text-green-dark"><Check size={12} strokeWidth={3} />{L('Recibiendo pagos', 'Receiving payments')}</span>
+                ) : (
+                  <button onClick={connectOnboard} disabled={connectBusy || connect === null} className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-60">
+                    {connectBusy ? L('Abriendo Stripe…', 'Opening Stripe…') : <>{pending ? L('Continuar verificación', 'Continue verification') : L('Conectar con Stripe', 'Connect with Stripe')}<ExternalLink size={13} strokeWidth={2.4} /></>}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

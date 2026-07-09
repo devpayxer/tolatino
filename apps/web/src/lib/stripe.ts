@@ -24,3 +24,30 @@ export async function openBillingPortal(businessId: string): Promise<{ url?: str
   if (data?.url) return { url: data.url as string };
   return { error: (data?.error as string) || 'portal failed' };
 }
+
+// ---- Connect (marketplace payouts) ----------------------------------------
+
+export type ConnectStatus = { connected: boolean; charges_enabled: boolean; details_submitted: boolean };
+
+/** Start Connect Express onboarding for a business. Returns the hosted URL. */
+export async function startConnectOnboarding(businessId: string): Promise<{ url?: string; error?: string }> {
+  if (!supabase) return { error: 'offline' };
+  const { data, error } = await supabase.functions.invoke('connect-onboard', { body: { businessId, origin: origin() } });
+  if (error) return { error: error.message };
+  if (data?.url) return { url: data.url as string };
+  return { error: (data?.error as string) || 'onboarding failed' };
+}
+
+/** Read + sync the business's Connect account status. */
+export async function getConnectStatus(businessId: string): Promise<ConnectStatus & { error?: string }> {
+  const empty = { connected: false, charges_enabled: false, details_submitted: false };
+  if (!supabase) return { ...empty, error: 'offline' };
+  const { data, error } = await supabase.functions.invoke('connect-status', { body: { businessId } });
+  if (error) return { ...empty, error: error.message };
+  return {
+    connected: !!data?.connected,
+    charges_enabled: !!data?.charges_enabled,
+    details_submitted: !!data?.details_submitted,
+    error: (data?.error as string) || undefined,
+  };
+}
