@@ -10,6 +10,7 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useMyActivity } from '@/lib/myActivity';
+import { startMarketplaceCheckout } from '@/lib/stripe';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
@@ -269,6 +270,10 @@ export function EventosScreen() {
     return discount.kind === 'percent' ? gross * (discount.value / 100) : Math.min(gross, discount.value);
   })();
   const netTotal = Math.max(0, orderTotal - discountAmount);
+  // Paid tickets whose organizer has connected Stripe → charge online (card).
+  // The buyer pays orderTotal + a 5% service fee (matches what Stripe charges).
+  const payOnline = anyPaid && !!pub?.acceptsPayments;
+  const onlineCharge = +(orderTotal * 1.05).toFixed(2);
 
   // "Voy" toggle. Live events (with a slug) write attendance via the API — never
   // as a guest (route to /entrar). Fixture events (no slug) keep the local demo
@@ -298,8 +303,26 @@ export function EventosScreen() {
     if (pub.status === 'cancelled') { flash(L('Evento cancelado', 'Event cancelled')); return; }
     if (!user) { router.push('/entrar'); return; }
     if (selectedTiers.length === 0) { flash(L('Elige al menos un boleto', 'Pick at least one ticket')); return; }
-    setBuying(true);
     const items = selectedTiers.map((t) => ({ tierId: t.id, qty: tierQty[t.id] ?? 0 }));
+
+    // Paid tickets → charge the buyer's card via Stripe (destination charge to the
+    // organizer's connected account, minus the To'Latino fee). Tickets are issued
+    // by the webhook once payment succeeds. Free tiers keep the instant-issue path.
+    if (payOnline) {
+      setBuying(true);
+      const { url } = await startMarketplaceCheckout({ kind: 'ticket', slug: pub.slug, items });
+      if (url) { window.location.href = url; return; }
+      setBuying(false);
+      flash(L('No se pudo iniciar el pago', 'Could not start payment'));
+      return;
+    }
+    // Paid ticket but the organizer hasn't connected payouts → can't sell online.
+    if (anyPaid && !pub.acceptsPayments) {
+      flash(L('Venta de boletos no disponible por ahora', 'Ticket sales unavailable right now'));
+      return;
+    }
+
+    setBuying(true);
     const { error, codes, tickets } = await act.buyTicketsMulti(pub.slug, items, promoApplied || undefined);
     setBuying(false);
     if (error) { reloadPub(); flash(buyErr(error, L)); return; }
@@ -709,13 +732,15 @@ export function EventosScreen() {
                   </div>
                 )}
                 <PrimaryBtn className="mt-3" disabled={buying || orderQty === 0 || cancelled || eventPast} onClick={buyNow}>
-                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${netTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
+                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : payOnline ? `${L('Pagar', 'Pay')} ${orderQty} · $${onlineCharge.toFixed(2)}` : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${netTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
                 </PrimaryBtn>
                 {anyPaid && (
                   <div className="mt-1.5 text-center text-[10.5px] font-semibold text-muted-2">
-                    {discountAmount > 0
-                      ? L('Precio con descuento apartado; el cobro se habilita al conectar pagos.', 'Discounted price reserved; charging turns on once payments are connected.')
-                      : L('Apartas tu lugar ahora; el cobro se habilita al conectar pagos.', 'Reserve now; charging turns on once payments are connected.')}
+                    {payOnline
+                      ? L('Pago seguro con tarjeta · incluye 5% de tarifa de servicio.', 'Secure card payment · includes a 5% service fee.')
+                      : discountAmount > 0
+                        ? L('Precio con descuento apartado; el cobro se habilita al conectar pagos.', 'Discounted price reserved; charging turns on once payments are connected.')
+                        : L('Apartas tu lugar ahora; el cobro se habilita al conectar pagos.', 'Reserve now; charging turns on once payments are connected.')}
                   </div>
                 )}
               </div>

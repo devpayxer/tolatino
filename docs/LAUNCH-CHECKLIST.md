@@ -895,6 +895,59 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   (show "Conecta tu negocio" instead of demo seeds). Edge state (most users reach
   the panel via onboarding which creates the business first), so deferred.
 
+## Payments — marketplace checkout (Stripe Connect, 2026-07-09)
+
+Real card checkout via **destination charges** is now live for **Pedidos (orders)**
+and **Boletos (event tickets)**: the buyer pays `P + 5%`, To'Latino keeps `15% of P`
+as the Stripe `application_fee`, and the seller's connected account receives `≈P − 10%`.
+Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, and
+**fulfilled by `stripe-webhook`** (creates the order / issues the tickets + records
+`payments`). Everything below is a deliberate follow-up:
+
+- [ ] **Rotate the exposed `sk_test` key.** The test secret key was pasted in chat
+  earlier; it's stored only in the Supabase secret store now, but still rotate it:
+  Stripe → Developers → API keys → **Roll** the secret key, then update the
+  `STRIPE_SECRET_KEY` secret. (Test mode → no real money, but do it before touching
+  live keys.)
+- [ ] **Bookings + Rentals paid checkout.** Same pattern as orders/tickets (the
+  `pending_purchases` + webhook infra is generic — add `kind = 'booking' | 'rental'`
+  and `fulfill_booking` / `fulfill_rental` service RPCs, then route the BizDetail
+  booking/rental "Reservar/Rentar" buttons through `startMarketplaceCheckout`).
+  Deposits (partial charge) need a `deposit vs full` decision.
+- [ ] **Re-price orders against the catalog before real-money launch.** For orders
+  the checkout function totals the **submitted** line items (qty × unit, validated
+  `> 0`), not a re-price against the live menu/product prices. A tampered client
+  could submit a lower unit price. Tickets are already priced server-side from
+  `event_tiers` (safe). Before going live, recompute order line prices from
+  `business_items`/`menu_config` server-side (match variant/option modifiers).
+- [ ] **Percent / amount promo codes on PAID ticket checkout.** Access-code
+  unlocked tiers work on the paid path (priced from the DB), but `%`/`$` discount
+  codes are **ignored** when paying online (the buyer is charged full tier price +
+  5%). Wire discounts into the Stripe amount + `fulfill_event_tickets_multi` promo
+  arg so paid checkout honors them.
+- [ ] **Delivery logistics + delivery fee.** The old cart's fake `$2.99 Envío` +
+  `10% Servicio` rows were removed (the only real fee now is the 5% buyer service
+  fee that matches the Stripe charge). Real delivery (driver assignment, delivery
+  fee that pays the courier, delivery vs pickup channel picker) is a separate
+  feature — build when the delivery phase starts (benchmark: DoorDash/Uber Eats).
+- [ ] **Paid tickets require the organizer to have connected Stripe.** Events link
+  by `owner_id`; paid-ticket checkout routes payout to the **first connected
+  business** owned by that user. If the organizer has no connected business, paid
+  tiers show "Venta de boletos no disponible por ahora" (free tiers still issue).
+  Consider an explicit per-event payout account + an organizer onboarding nudge.
+- [ ] **Connect `account.updated` webhook (optional).** Seller charge-status is
+  synced **on demand** (connect-status runs when the Payments tab loads / on return
+  from onboarding), which is enough. For instant updates, add a Stripe **Connect**
+  webhook endpoint listening to `account.updated` (the handler already exists in
+  `stripe-webhook`; a normal account webhook won't receive connected-account events).
+- [ ] **Buyer-paid amount vs order total.** `business_orders.total` stores the goods
+  subtotal `P` (the seller-facing order value); the buyer actually paid `P + 5%`
+  (visible on the Stripe receipt + in `payments.amount`). If "Mi cuenta" should show
+  the exact amount charged, read it from `payments` instead of the order total.
+- [ ] **Abandoned `pending_purchases` cleanup.** Rows left `pending` (buyer never
+  finished Stripe checkout) accumulate. Add a periodic cleanup (e.g. delete/expire
+  `pending` older than 24h). Harmless (nothing was charged/fulfilled), just hygiene.
+
 ---
 
-_Last updated: 2026-07-08. Add to this file as new deferrals appear._
+_Last updated: 2026-07-09. Add to this file as new deferrals appear._

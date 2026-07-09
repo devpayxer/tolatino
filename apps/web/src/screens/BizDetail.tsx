@@ -16,6 +16,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
+import { startMarketplaceCheckout } from '@/lib/stripe';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
@@ -347,11 +348,43 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
 
   const cartCount = Object.values(cart).reduce((n, l) => n + l.qty, 0);
   const cartTotal = Object.values(cart).reduce((n, l) => n + l.qty * l.unit, 0);
-  const deliveryFee = cartCount > 0 ? 2.99 : 0;
-  const serviceFee = cartCount > 0 ? +(cartTotal * 0.1).toFixed(2) : 0;
-  const grandTotal = cartTotal + deliveryFee + serviceFee;
+  // Payment-aware totals. When the seller has connected Stripe (acceptsPayments)
+  // the buyer pays online: subtotal + a 5% service fee (the To'Latino buyer fee) —
+  // the displayed Total EXACTLY matches what Stripe charges. Otherwise it's a
+  // pay-on-pickup order with no fee.
+  const payOnline = !!b.acceptsPayments;
+  const serviceFee = payOnline && cartCount > 0 ? +(cartTotal * 0.05).toFixed(2) : 0;
+  const grandTotal = cartTotal + serviceFee;
+  const [paying, setPaying] = useState(false);
 
   const money = (n: number) => `$${n.toFixed(2)}`;
+
+  // Route the current cart to Stripe (destination charge → seller's account minus
+  // the To'Latino fee). The order is created by the webhook once payment lands.
+  const payCart = async () => {
+    if (!user) { router.push('/entrar'); return; }
+    if (cartCount === 0 || paying) return;
+    setPaying(true);
+    const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit, opts: l.optsLabel || undefined }));
+    const { url, error } = await startMarketplaceCheckout({ kind: 'order', slug: b.slug, items, channel: 'pickup' });
+    if (url) { window.location.href = url; return; }
+    setPaying(false);
+    flash(error === 'seller_not_payable'
+      ? L('Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet')
+      : L('No se pudo iniciar el pago', 'Could not start payment'));
+  };
+
+  // Pay-on-pickup order (seller without online payments): persist a real order.
+  const placeCart = async () => {
+    if (!user) { router.push('/entrar'); return; }
+    if (cartCount === 0 || paying) return;
+    setPaying(true);
+    const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit }));
+    const { error } = await act.placeOrder(b.slug, items, cartTotal, 'pickup');
+    setPaying(false);
+    if (error) { flash(L('No se pudo enviar el pedido', 'Could not place order')); return; }
+    setCartDone(true);
+  };
 
   const openItem = (catKey: string, item: MenuItem) => {
     if (shopStock(catKey, item) === 0) { flash(L('Agotado', 'Sold out')); return; }
@@ -449,6 +482,12 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
   const orderItem = (catKey: string, it: MenuItem) => {
     if (shopStock(catKey, it) === 0) { flash(L('Agotado', 'Sold out')); return; }
     if (!user) { router.push('/entrar'); return; }
+    // Seller takes online payments → one-tap item goes straight to Stripe checkout.
+    if (payOnline) {
+      void startMarketplaceCheckout({ kind: 'order', slug: b.slug, items: [{ name: B(it.n), qty: 1, price: it.price }], channel: 'pickup' })
+        .then(({ url, error }) => { if (url) window.location.href = url; else flash(error === 'seller_not_payable' ? L('Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet') : L('No se pudo iniciar el pago', 'Could not start payment')); });
+      return;
+    }
     act.placeOrder(b.slug, [{ name: B(it.n), qty: 1, price: it.price }], it.price, 'pickup');
     flash(L('Pedido enviado · míralo en Mi cuenta', 'Order sent · see it in My account'));
   };
@@ -1784,12 +1823,18 @@ export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: 
                 </div>
                 <div className="mt-4 flex flex-col gap-1.5 border-t border-hair pt-3 text-[12.5px] font-semibold text-ink-2">
                   <div className="flex justify-between"><span>{L('Subtotal', 'Subtotal')}</span><span>{money(cartTotal)}</span></div>
-                  <div className="flex justify-between"><span>{L('Envío', 'Delivery')}</span><span>{money(deliveryFee)}</span></div>
-                  <div className="flex justify-between"><span>{L('Servicio', 'Service')}</span><span>{money(serviceFee)}</span></div>
+                  {payOnline && <div className="flex justify-between"><span>{L('Tarifa de servicio (5%)', 'Service fee (5%)')}</span><span>{money(serviceFee)}</span></div>}
                   <div className="flex justify-between text-[14px] font-extrabold text-ink"><span>{L('Total', 'Total')}</span><span>{money(grandTotal)}</span></div>
+                  <div className="mt-1 text-[11px] font-semibold text-muted">
+                    {payOnline
+                      ? L('Pago seguro con tarjeta. Recibirás confirmación al instante.', 'Secure card payment. You’ll get instant confirmation.')
+                      : L('Pagas al recoger o al recibir. Sin cargos en línea.', 'Pay on pickup or delivery. No online charge.')}
+                  </div>
                 </div>
-                <PrimaryBtn className="mt-4" onClick={() => setCartDone(true)}>
-                  {L('Realizar pedido · ', 'Place order · ')}{money(grandTotal)}
+                <PrimaryBtn className="mt-4" onClick={payOnline ? payCart : placeCart} disabled={paying}>
+                  {paying
+                    ? L('Procesando…', 'Processing…')
+                    : <>{payOnline ? L('Pagar ahora · ', 'Pay now · ') : L('Realizar pedido · ', 'Place order · ')}{money(grandTotal)}</>}
                 </PrimaryBtn>
               </>
             )}

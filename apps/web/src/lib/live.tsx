@@ -63,6 +63,8 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     descEn: r.about_en != null ? String(r.about_en) : undefined,
     // owner-enabled surfaces (business_by_slug returns `modules`; feed RPCs don't)
     modules: (r.modules as Record<string, boolean> | null) ?? undefined,
+    // seller can take online card payments (business_by_slug only)
+    acceptsPayments: r.accepts_payments === true,
   };
 }
 
@@ -434,6 +436,8 @@ export type PubEvent = {
   desc: [string, string]; tile: [string, string]; coverUrl: string | null;
   status: string; going: number; lat: number | null; lng: number | null;
   organizer: string; organizerSlug: string | null; tiers: PubTier[];
+  // The organizer has a connected Stripe account → paid tickets are sold online.
+  acceptsPayments: boolean;
 };
 
 /** A single event + its live ticket tiers by slug (migration 0061). null offline / not found. */
@@ -467,6 +471,7 @@ export async function fetchEventBySlug(slug: string): Promise<PubEvent | null> {
       salesStart: t.sales_start != null ? String(t.sales_start) : null,
       salesEnd: t.sales_end != null ? String(t.sales_end) : null,
     })),
+    acceptsPayments: r.accepts_payments === true,
   };
 }
 

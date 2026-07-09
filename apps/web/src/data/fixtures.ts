@@ -71,6 +71,9 @@ export type Business = {
   // detail tabs appear so a real listing never shows fixtures it never configured.
   // Absent on demo fixtures.
   modules?: Record<string, boolean>;
+  // Seller has an active Stripe Connect account → the app offers "Pagar ahora"
+  // (online card) instead of pay-on-pickup. Absent/false on demo fixtures.
+  acceptsPayments?: boolean;
 };
 
 export const BUSINESSES: Business[] = [

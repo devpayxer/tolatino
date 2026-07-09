@@ -18,6 +18,7 @@ import { AddressModal } from '@/components/AddressModal';
 import { NotifPanel } from '@/components/NotifPanel';
 import { PublishModal } from '@/components/PublishModal';
 import { UserMenu } from '@/components/UserMenu';
+import { PurchaseReturnToast } from '@/components/PurchaseReturnToast';
 
 export default function ClienteLayout({ children }: { children: ReactNode }) {
   return (
@@ -38,6 +39,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
       <NotifPanel />
       <UserMenu />
       <PublishModal />
+      <PurchaseReturnToast />
     </div>
     </InteractionsProvider>
     </MyActivityProvider>

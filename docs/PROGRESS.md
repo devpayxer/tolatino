@@ -3,7 +3,7 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-07.
+> Last updated: 2026-07-09.
 
 ## How this project ships (read first)
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,
@@ -54,6 +54,16 @@
   street-address pipeline (Photon + US Census + synthesized suggestions, US-only,
   locality-aware). Saved-addresses manager. **Migration target: Pelias (config flip).**
 - **Eventos** + "Muy pronto" placeholders (Transporte/Bienes Raíces/Autos/Trabajos).
+- **Marketplace payments (Stripe Connect, test mode — 2026-07-09):** real card
+  checkout for **Pedidos** (BizDetail cart / one-tap order) and **Boletos** (Eventos
+  tier picker) via **destination charges**. Buyer pays `P + 5%`, To'Latino keeps
+  `15% of P` (`application_fee`), the seller's connected account gets `≈P − 10%`.
+  Flow: `startMarketplaceCheckout` → `marketplace-checkout` Edge Function stages the
+  purchase in `pending_purchases` + builds a Stripe Checkout Session → buyer pays →
+  `stripe-webhook` **fulfills** (`fulfill_order` / `fulfill_event_tickets_multi`) +
+  records `payments`; failed fulfillment (e.g. tickets sold out) **auto-refunds**.
+  Sellers without a connected account keep pay-on-pickup (orders) / free-issue (free
+  tiers). Migration **0072**. Return toast via `?pay=success|cancel` (PurchaseReturnToast).
 
 ### Business dashboard (`/negocio`)
 Reached via user menu → **"Panel de negocio"**. Plan- (free/verified/premium) and
@@ -146,10 +156,12 @@ local-only) so every editor stays explorable + auditable.
   / business_messages 0029), mobile list↔thread, demo sample inbox.
 - [x] **Pedidos** — orders list + status changes on business_orders (0028).
 - [x] **Clientes** — customer directory on business_customers (0030).
-- [x] **Pagos** — real revenue from completed orders; automatic payouts show an
-  honest "connect payments" state (Stripe deferred per CLAUDE.md, transaction phase).
-- [x] **Plan y facturación** — reflects the business's real tier (via bizAdmin); the
-  card/invoices are placeholders until payments (Stripe) is connected.
+- [x] **Pagos** — real revenue from completed orders **+ live Stripe Connect
+  onboarding** (Express account → "Recibiendo pagos" state, charges_enabled synced
+  via the `connect-status` fn). Sellers get bank payouts through destination charges.
+- [x] **Plan y facturación** — reflects the business's real tier (via bizAdmin) and
+  runs **real Stripe subscription Checkout + Billing Portal** (0070; `stripe-checkout`
+  / `stripe-portal` / `stripe-webhook` Edge Functions flip the tier on payment).
 - [x] **Reservas** — booking list + status lifecycle on business_bookings (0027).
 
 **Every dashboard section is now real-data backed** (payouts honestly deferred to a
@@ -302,12 +314,17 @@ Each item is real-data backed and verified (tsc + build + RPC-intercepted Playwr
   iOS camera QR (jsQR/zxing), recurring events. Not shipped as fake/broken.
 
 ## Next steps (priority order)
-1. **Founder applies `0019`+`0020`+`0031`+`0032`** (above) so Fotos/Módulos and the
-   transaction loop persist in prod.
-2. **Continue the dashboard-real conversion** in nav order, backing each remaining
-   rollup/visual surface with Supabase and keeping the audit green.
-3. Continue **`docs/LAUNCH-CHECKLIST.md`** deferrals: real event creation, delivery
-   checkout, saved-biz cross-city, claim/verify, moderation, push, next-intl, payments.
+1. **Founder E2E-tests marketplace checkout** with card `4242 4242 4242 4242` (any
+   future date / any CVC / any ZIP): buy a Pedido from El Sabor (`hz-sabor-quisqueya`)
+   and 2× "Salsa mix" tickets → confirm in Stripe the split (buyer `P+5%`, platform
+   fee `15% of P`, seller transfer `P−10%`) + the order/tickets appear in "Mi cuenta".
+2. **Extend paid checkout to Reservas + Renta** (same `pending_purchases`/webhook
+   pattern; add `fulfill_booking`/`fulfill_rental` + route the BizDetail buttons).
+3. **Before real-money launch:** rotate the `sk_test` key, re-price orders against
+   the catalog server-side, and wire `%`/`$` promos into paid ticket checkout (see
+   `docs/LAUNCH-CHECKLIST.md` → "Payments — marketplace checkout").
+4. Continue **`docs/LAUNCH-CHECKLIST.md`** deferrals: delivery logistics, saved-biz
+   cross-city, claim/verify, moderation, push, next-intl.
 
 ## Map of key files
 ```

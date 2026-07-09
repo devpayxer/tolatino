@@ -1,10 +1,16 @@
-// stripe-webhook — Stripe calls this on subscription events. Deployed with
-// verify_jwt = false (Stripe has no Supabase JWT). We verify Stripe's signature
-// (HMAC-SHA256 over "timestamp.payload") with STRIPE_WEBHOOK_SECRET, then apply the
-// subscription to the DB via the apply_subscription RPC using the service role.
+// stripe-webhook — Stripe calls this on subscription AND marketplace (Connect)
+// events. Deployed with verify_jwt = false (Stripe has no Supabase JWT); we verify
+// Stripe's signature (HMAC-SHA256 over "timestamp.payload") with STRIPE_WEBHOOK_SECRET,
+// then act with the service role.
 //
-// Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET.
-// Auto-injected: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+//   · subscription events              → apply_subscription (flip the business tier)
+//   · marketplace checkout.session.completed (mode=payment) → FULFILL the staged
+//     purchase (create the order / issue the tickets) + record the payment. If
+//     fulfillment fails after payment (e.g. tickets sold out), the buyer is
+//     automatically refunded (transfer + our fee reversed) and notified.
+//   · account.updated                  → sync the seller's Connect charge status.
+//
+// Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET.  Auto: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 
 async function verifySig(payload: string, header: string, secret: string): Promise<boolean> {
   const parts: Record<string, string> = {};
@@ -33,16 +39,93 @@ async function stripeGet(path: string, key: string) {
   const r = await fetch(`https://api.stripe.com/v1/${path}`, { headers: { Authorization: `Bearer ${key}` } });
   return r.json();
 }
-
-async function apply(url: string, service: string, businessId: string, customer: string, subId: string, plan: string, status: string, periodEnd: number) {
-  await fetch(`${url}/rest/v1/rpc/apply_subscription`, {
+async function stripePost(path: string, key: string, form: Record<string, string>) {
+  const r = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: 'POST',
-    headers: { apikey: service, Authorization: `Bearer ${service}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      in_business: businessId, in_customer: customer, in_sub: subId, in_plan: plan, in_status: status,
-      in_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
-    }),
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(form).toString(),
   });
+  return r.json();
+}
+
+// PostgREST helpers (service role).
+function svcHeaders(service: string) {
+  return { apikey: service, Authorization: `Bearer ${service}`, 'Content-Type': 'application/json' };
+}
+async function rpc(url: string, service: string, fn: string, args: Record<string, unknown>): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const res = await fetch(`${url}/rest/v1/rpc/${fn}`, { method: 'POST', headers: svcHeaders(service), body: JSON.stringify(args) });
+  const text = await res.text();
+  let data: unknown = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  return { ok: res.ok, status: res.status, data };
+}
+async function patchPending(url: string, service: string, id: string, patch: Record<string, unknown>) {
+  await fetch(`${url}/rest/v1/pending_purchases?id=eq.${id}`, {
+    method: 'PATCH', headers: svcHeaders(service),
+    body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
+  });
+}
+
+async function applySub(url: string, service: string, businessId: string, customer: string, subId: string, plan: string, status: string, periodEnd: number) {
+  await rpc(url, service, 'apply_subscription', {
+    in_business: businessId, in_customer: customer, in_sub: subId, in_plan: plan, in_status: status,
+    in_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+  });
+}
+
+// Fulfill a marketplace purchase once Stripe confirms payment. Idempotent: only a
+// still-'pending' staged row is acted on, so Stripe retries never double-fulfill.
+async function fulfillMarketplace(url: string, service: string, stripeKey: string, obj: Record<string, unknown>, meta: Record<string, string>) {
+  const pendingId = meta.pending_id;
+  if (!pendingId) return;
+  const pending = (await (await fetch(`${url}/rest/v1/pending_purchases?id=eq.${pendingId}&select=*`, { headers: svcHeaders(service) })).json()))?.[0];
+  if (!pending || pending.status !== 'pending') return; // unknown / already handled
+  const intent = (obj.payment_intent as string | undefined) ?? null;
+  const payload = (pending.payload ?? {}) as Record<string, unknown>;
+
+  let ok = false;
+  let result: unknown = null;
+  let errMsg = '';
+  try {
+    if (pending.kind === 'order') {
+      const r = await rpc(url, service, 'fulfill_order', {
+        in_buyer: pending.buyer_id, in_business: pending.business_id,
+        in_items: payload.items ?? [], in_total: payload.total ?? (pending.subtotal / 100), in_channel: payload.channel ?? 'pickup',
+      });
+      if (r.ok && Array.isArray(r.data) && r.data.length) { result = r.data[0]; ok = true; }
+      else { errMsg = (r.data as { message?: string })?.message || 'order fulfillment failed'; }
+    } else if (pending.kind === 'ticket') {
+      const r = await rpc(url, service, 'fulfill_event_tickets_multi', {
+        in_buyer: pending.buyer_id, in_slug: pending.ref, in_items: payload.items ?? [], in_promo: null,
+      });
+      if (r.ok && Array.isArray(r.data) && r.data.length) { result = { tickets: (r.data as { code: string }[]).map((x) => x.code) }; ok = true; }
+      else { errMsg = (r.data as { message?: string })?.message || 'ticket fulfillment failed'; }
+    }
+  } catch (e) {
+    errMsg = String(e);
+  }
+
+  if (ok) {
+    await rpc(url, service, 'mark_payment', {
+      in_business: pending.business_id, in_buyer: pending.buyer_id, in_kind: pending.kind, in_ref: pending.ref,
+      in_session: pending.stripe_session, in_intent: intent, in_amount: pending.amount, in_fee: pending.application_fee, in_status: 'paid',
+    });
+    await patchPending(url, service, pendingId, { status: 'fulfilled', stripe_payment_intent: intent, result });
+  } else {
+    // Paid but could not fulfill → make the buyer whole (reverse the transfer + our fee).
+    if (intent) {
+      try { await stripePost('refunds', stripeKey, { payment_intent: intent, reverse_transfer: 'true', refund_application_fee: 'true' }); } catch { /* logged below via status */ }
+    }
+    await rpc(url, service, 'mark_payment', {
+      in_business: pending.business_id, in_buyer: pending.buyer_id, in_kind: pending.kind, in_ref: pending.ref,
+      in_session: pending.stripe_session, in_intent: intent, in_amount: pending.amount, in_fee: pending.application_fee, in_status: 'refunded',
+    });
+    await patchPending(url, service, pendingId, { status: 'refunded', stripe_payment_intent: intent, error: errMsg });
+    await rpc(url, service, 'notify_user', {
+      in_user: pending.buyer_id, in_kind: 'purchase_refunded',
+      in_data: { kind: pending.kind, reason: errMsg }, in_link: '/mi-cuenta',
+    });
+  }
 }
 
 Deno.serve(async (req) => {
@@ -64,22 +147,39 @@ Deno.serve(async (req) => {
 
   try {
     const obj = (event.data?.object ?? {}) as Record<string, unknown>;
+    const meta = (obj.metadata ?? {}) as Record<string, string>;
+
     if (event.type === 'checkout.session.completed') {
-      const meta = (obj.metadata ?? {}) as Record<string, string>;
-      const businessId = meta.business_id;
-      const subId = obj.subscription as string | undefined;
-      const customer = obj.customer as string | undefined;
-      if (businessId && subId) {
-        const sub = await stripeGet(`subscriptions/${subId}`, STRIPE);
-        await apply(SUPABASE_URL, SERVICE, businessId, customer ?? '', subId, meta.plan || planFromSub(sub), sub.status, sub.current_period_end);
+      if (obj.mode === 'payment' && meta.purchase_kind) {
+        // Marketplace (Connect) purchase.
+        await fulfillMarketplace(SUPABASE_URL, SERVICE, STRIPE, obj, meta);
+      } else {
+        // Subscription checkout.
+        const businessId = meta.business_id;
+        const subId = obj.subscription as string | undefined;
+        const customer = obj.customer as string | undefined;
+        if (businessId && subId) {
+          const sub = await stripeGet(`subscriptions/${subId}`, STRIPE);
+          await applySub(SUPABASE_URL, SERVICE, businessId, customer ?? '', subId, meta.plan || planFromSub(sub), sub.status, sub.current_period_end);
+        }
       }
     } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
       const sub = obj as Record<string, unknown>;
-      const meta = (sub.metadata ?? {}) as Record<string, string>;
-      const businessId = meta.business_id;
+      const smeta = (sub.metadata ?? {}) as Record<string, string>;
+      const businessId = smeta.business_id;
       if (businessId) {
         const status = event.type === 'customer.subscription.deleted' ? 'canceled' : (sub.status as string);
-        await apply(SUPABASE_URL, SERVICE, businessId, (sub.customer as string) ?? '', (sub.id as string) ?? '', meta.plan || planFromSub(sub as never), status, sub.current_period_end as number);
+        await applySub(SUPABASE_URL, SERVICE, businessId, (sub.customer as string) ?? '', (sub.id as string) ?? '', smeta.plan || planFromSub(sub as never), status, sub.current_period_end as number);
+      }
+    } else if (event.type === 'account.updated') {
+      // Keep the seller's Connect status fresh (charges_enabled / details_submitted).
+      const acct = obj as Record<string, unknown>;
+      const businessId = (acct.metadata as Record<string, string> | undefined)?.business_id;
+      if (businessId) {
+        await rpc(SUPABASE_URL, SERVICE, 'apply_connect_status', {
+          in_business: businessId, in_account: acct.id as string,
+          in_charges: !!acct.charges_enabled, in_details: !!acct.details_submitted,
+        });
       }
     }
   } catch (e) {
