@@ -92,7 +92,26 @@ type SvcTarget = {
 const initials = (name: string) =>
   name.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-export function BizDetail({ b, all, onClose, onOpenOther }: { b: Business; all: Business[]; onClose: () => void; onOpenOther: (b: Business) => void }) {
+export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business; all: Business[]; onClose: () => void; onOpenOther: (b: Business) => void }) {
+  // The feed RPCs (businesses_near / search_businesses) don't carry the detail-
+  // only fields (acceptsPayments, delivery offer, modules, contact…) — only
+  // business_by_slug does. Hydrate on open so a listing opened FROM THE LIST
+  // behaves exactly like a deep link: online payment, delivery, tabs, everything.
+  const [hydrated, setHydrated] = useState<Business | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setHydrated(null);
+    // demo fixtures (no live row) skip the fetch; live rows always re-fetch
+    void fetchBusinessBySlug(bProp.slug).then((fresh) => {
+      if (cancelled || !fresh) return;
+      // keep the feed's identity + computed distance; take everything else fresh
+      setHydrated({ ...bProp, ...fresh, id: bProp.id, dist: bProp.dist });
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bProp.slug]);
+  const b = hydrated ?? bProp;
+
   const { L } = useLang();
   const B = (pair: Bi) => L(pair[0], pair[1]);
   const app = useApp();
