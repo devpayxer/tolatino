@@ -12,33 +12,48 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Check, ChevronRight, Clock, DollarSign, Flag, Gift, Heart, RefreshCw, Search,
-  ShoppingBag, Sparkles, Star, UserPlus, Users, Zap,
+  Check, ChevronRight, Clock, DollarSign, Download, Flag, Gift, Heart, Mail, Phone,
+  RefreshCw, Search, ShoppingBag, Sparkles, Star, UserPlus, Users, XCircle, Zap,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { supabase } from '@/lib/supabase';
+import { Overlay, OverlayTitle, Switch } from '@/components/ui';
 
 type Mode = 'customers' | 'orders' | 'reviews';
 type Seg = 'all' | 'new' | 'regulars' | 'vip' | 'risk';
-type OStatus = 'new' | 'preparing' | 'ready' | 'completed';
+type OStatus = 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 type Channel = 'delivery' | 'dinein' | 'pickup';
 type RvFilter = 'all' | 'need' | 'top' | 'low' | 'flagged';
 
 type Customer = {
-  id: number; dbId?: string; initials: string; color: string; name: string; visits: number;
-  spent: string; last: [string, string]; tag: [string, string]; vip: boolean;
+  id: number; dbId?: string; userId?: string | null; initials: string; color: string; name: string; visits: number;
+  spent: string; spentN?: number; points?: number; phone?: string | null; email?: string | null; notes?: string | null;
+  last: [string, string]; tag: [string, string]; vip: boolean;
   isNew: boolean; atRisk: boolean; b2b?: boolean;
 };
 type Order = {
   id: string; dbId?: string; who: [string, string]; placed: [string, string]; urgent: boolean;
   channel: Channel; status: OStatus; total: string; items: [string, string];
+  lines?: OrderItem[]; totalN?: number; createdAt?: string; userId?: string | null;
 };
 type Review = {
   id: number; dbId?: string; initials: string; color: string; name: [string, string]; stars: number;
   date: string; ch: 'Google' | 'Nearby' | 'Yelp'; helpful: number;
   text: [string, string]; ai: [string, string]; seededReply?: [string, string];
   reply_es?: string | null; reply_en?: string | null;
+};
+
+// Aggregate stats from the owner_customer_stats / owner_order_stats RPCs (0069).
+type CustStats = {
+  total: number; new_30d: number; returning_n: number; avg_ltv: number;
+  vip_n: number; vip_ltv: number; reg_n: number; reg_ltv: number;
+  occ_n: number; occ_ltv: number; new_seg_n: number; new_ltv: number;
+  risk_n: number; risk_ltv: number; enrolled: number;
+};
+type OrderStats = {
+  today_count: number; today_revenue: number; in_flight: number; total_count: number;
+  status: Record<string, number>; channel_today: Record<string, number>;
 };
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
@@ -49,10 +64,10 @@ const CH_TILE: Record<Channel, string> = {
   pickup: 'bg-amber-bg text-amber-ink',
 };
 const STATUS_DOT: Record<OStatus, string> = {
-  new: '#F0466E', preparing: '#F4B740', ready: '#7B61FF', completed: '#1F9D57',
+  new: '#F0466E', preparing: '#F4B740', ready: '#7B61FF', completed: '#1F9D57', cancelled: '#9A96AE',
 };
 const FLOW: Record<OStatus, OStatus | null> = {
-  new: 'preparing', preparing: 'ready', ready: 'completed', completed: null,
+  new: 'preparing', preparing: 'ready', ready: 'completed', completed: null, cancelled: null,
 };
 const CH_REVIEW: Record<Review['ch'], string> = {
   Google: 'bg-green-bg text-green-dark',
@@ -107,10 +122,10 @@ function rowToReview(r: ReviewRow, idx: number, es: boolean): Review {
 // pattern above: a real signed-in owner → load + map rows (`dbId` tracks the DB
 // uuid so writes target the right row); demo → keep the local fixture untouched.
 type CustomerRow = {
-  id: string; name: string; initials: string | null; color: string | null;
+  id: string; user_id: string | null; name: string; initials: string | null; color: string | null;
   phone: string | null; email: string | null; orders_count: number | null;
   spend: number | string | null; tag: string | null; notes: string | null;
-  last_order_at: string | null; created_at: string;
+  last_order_at: string | null; created_at: string; loyalty_points: number | null;
 };
 type OrderItem = { name?: string; qty?: number; price?: number };
 type OrderRow = {
@@ -139,11 +154,17 @@ function rowToCustomer(r: CustomerRow, idx: number): Customer {
   return {
     id: idx + 1,
     dbId: r.id,
+    userId: r.user_id,
     initials,
     color: r.color || RV_COLORS[idx % RV_COLORS.length],
     name: r.name,
     visits: Number(r.orders_count ?? 0) || 0,
     spent: money0(r.spend),
+    spentN: Number(r.spend ?? 0) || 0,
+    points: Number(r.loyalty_points ?? 0) || 0,
+    phone: r.phone,
+    email: r.email,
+    notes: r.notes,
     last: r.last_order_at ? [relTime(r.last_order_at, true), relTime(r.last_order_at, false)] : ['—', '—'],
     tag: tag ? [tag, tag] : ['Cliente', 'Customer'],
     vip,
@@ -185,7 +206,10 @@ function rowToOrder(r: OrderRow): Order {
     channel,
     status: r.status as OStatus,
     total: money2(r.total),
-    items: [line, line],
+    items: [line || 'Pedido', line || 'Order'],
+    lines: Array.isArray(r.items) ? r.items : [],
+    totalN: Number(r.total ?? 0) || 0,
+    createdAt: r.created_at,
   };
 }
 
@@ -247,8 +271,16 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [query, setQuery] = useState('');
   const [seg, setSeg] = useState<Seg>('all');
-  const [loyaltyOn, setLoyaltyOn] = useState(true);
-  const [rewards, setRewards] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true, 3: false });
+  // Loyalty config persists in businesses.settings.loyalty (real). Synced from the
+  // active business on load (effect below); toggling persists via admin.update.
+  const savedLoyalty = (((real?.settings as Record<string, unknown> | null)?.loyalty) ?? null) as { enabled?: boolean; rate?: number; rewards?: Record<string, boolean> } | null;
+  const [loyaltyOn, setLoyaltyOn] = useState(savedLoyalty?.enabled ?? true);
+  const [loyaltyRate, setLoyaltyRate] = useState<number>(savedLoyalty?.rate ?? 1);
+  const [rewards, setRewards] = useState<Record<number, boolean>>(
+    savedLoyalty?.rewards
+      ? { 0: !!savedLoyalty.rewards['0'], 1: !!savedLoyalty.rewards['1'], 2: !!savedLoyalty.rewards['2'], 3: !!savedLoyalty.rewards['3'] }
+      : { 0: true, 1: true, 2: true, 3: false },
+  );
 
   const [orders, setOrders] = useState<Order[]>(seedOrders);
   const [oStatus, setOStatus] = useState<OStatus>('new');
@@ -306,7 +338,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     (async () => {
       const { data, error } = await supabase!
         .from('business_customers')
-        .select('id,name,initials,color,phone,email,orders_count,spend,tag,notes,last_order_at,created_at')
+        .select('id,user_id,name,initials,color,phone,email,orders_count,spend,tag,notes,last_order_at,created_at,loyalty_points')
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
@@ -339,8 +371,56 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
 
+  // ---- real aggregate stats (Clientes KPIs/segments · Pedidos KPIs/mix) ------
+  const [custStats, setCustStats] = useState<CustStats | null>(null);
+  const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
+  const [statsV, setStatsV] = useState(0);
+  useEffect(() => {
+    if (!persistable || !real || !supabase) { setCustStats(null); setOrderStats(null); return; }
+    let cancelled = false;
+    (async () => {
+      const [cs, os] = await Promise.all([
+        supabase!.rpc('owner_customer_stats', { in_business: real.id }),
+        supabase!.rpc('owner_order_stats', { in_business: real.id }),
+      ]);
+      if (cancelled) return;
+      if (!cs.error && cs.data) setCustStats(cs.data as CustStats);
+      if (!os.error && os.data) setOrderStats(os.data as OrderStats);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo, statsV]);
+
+  // Sync loyalty controls from the active business whenever it changes.
+  useEffect(() => {
+    const lc = ((real?.settings as Record<string, unknown> | null)?.loyalty ?? null) as { enabled?: boolean; rate?: number; rewards?: Record<string, boolean> } | null;
+    if (!lc) return;
+    setLoyaltyOn(lc.enabled ?? true);
+    setLoyaltyRate(lc.rate ?? 1);
+    if (lc.rewards) setRewards({ 0: !!lc.rewards['0'], 1: !!lc.rewards['1'], 2: !!lc.rewards['2'], 3: !!lc.rewards['3'] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id]);
+
+  // Persist loyalty config to businesses.settings.loyalty (real only).
+  const persistLoyalty = (patch: { enabled?: boolean; rate?: number; rewards?: Record<number, boolean> }) => {
+    if (!persistable || !real) return;
+    const cur = (real.settings as Record<string, unknown> | null) ?? {};
+    const nextRewards = patch.rewards ?? rewards;
+    void admin.update({ settings: { ...cur, loyalty: {
+      enabled: patch.enabled ?? loyaltyOn,
+      rate: patch.rate ?? loyaltyRate,
+      points_per_dollar: patch.rate ?? loyaltyRate,
+      rewards: { '0': !!nextRewards[0], '1': !!nextRewards[1], '2': !!nextRewards[2], '3': !!nextRewards[3] },
+    } } });
+  };
+
+  // Detail sheets: customer history + order detail.
+  const [selCust, setSelCust] = useState<Customer | null>(null);
+  const [custOrders, setCustOrders] = useState<Order[] | null>(null);
+  const [selOrder, setSelOrder] = useState<Order | null>(null);
+
   // ---- derived --------------------------------------------------------------
-  const inFlight = orders.filter((o) => o.status !== 'completed').length;
+  const inFlight = orderStats ? orderStats.in_flight : orders.filter((o) => o.status !== 'completed' && o.status !== 'cancelled').length;
   const needReply = reviews.filter((r) => !posted[r.id] && !flagged[r.id]).length;
 
   const modes: [Mode, string, number][] = [
@@ -364,13 +444,79 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
+  // ---- actions --------------------------------------------------------------
+  // Open a customer → load their real order history (match by buyer id, else name).
+  const openCustomer = (c: Customer) => {
+    setSelCust(c);
+    setCustOrders(null);
+    if (!persistable || !real || !supabase) { setCustOrders([]); return; }
+    void (async () => {
+      let q = supabase!.from('business_orders')
+        .select('id,code,customer_name,items,total,channel,status,created_at')
+        .eq('business_id', real.id).order('created_at', { ascending: false }).limit(50);
+      q = c.userId ? q.eq('user_id', c.userId) : q.ilike('customer_name', c.name);
+      const { data } = await q;
+      setCustOrders(Array.isArray(data) ? (data as OrderRow[]).map(rowToOrder) : []);
+    })();
+  };
+
+  // Save notes / tag edits on the open customer (optimistic + persist).
+  const saveCustomer = async (patch: { notes?: string; tag?: string }) => {
+    if (!selCust) return;
+    const apply = (x: Customer): Customer => ({ ...x, notes: patch.notes ?? x.notes, tag: patch.tag ? [patch.tag, patch.tag] : x.tag });
+    setSelCust((c) => (c ? apply(c) : c));
+    const id = selCust.dbId;
+    setRealCustomers((list) => (list && id ? list.map((x) => (x.dbId === id ? apply(x) : x)) : list));
+    if (persistable && id && supabase) await supabase.from('business_customers').update(patch).eq('id', id);
+    flash(L('Cliente actualizado', 'Customer updated'));
+  };
+
+  // CSV export of the current customer directory (client-side).
+  const exportCsv = () => {
+    const head = es ? ['Nombre', 'Visitas', 'Gasto', 'Puntos', 'Etiqueta', 'Última orden'] : ['Name', 'Visits', 'Spend', 'Points', 'Tag', 'Last order'];
+    const rows = [head, ...customers.map((c) => [c.name, String(c.visits), c.spent, String(c.points ?? 0), c.tag[0], c.last[0]])];
+    const csv = rows.map((r) => r.map((f) => `"${String(f).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = `clientes-${real?.slug ?? 'tolatino'}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    flash(L('CSV exportado', 'CSV exported'));
+  };
+
+  // Cancel / reject an order (real → 'cancelled'; the notify trigger tells the buyer).
+  const cancelOrder = async (o: Order) => {
+    setOrders((list) => list.map((x) => ((o.dbId ? x.dbId === o.dbId : x.id === o.id) ? { ...x, status: 'cancelled' as OStatus } : x)));
+    setSelOrder(null);
+    flash(L(`${o.id} cancelado`, `${o.id} cancelled`));
+    if (persistable && o.dbId && supabase) {
+      const { error } = await supabase.from('business_orders').update({ status: 'cancelled' }).eq('id', o.dbId);
+      if (error) flash(L('No se pudo cancelar', 'Could not cancel')); else setStatsV((v) => v + 1);
+    }
+  };
+
+  // Honest suggested reply — a rating-aware template (true AI is the Premium tease).
+  const replyTemplate = (r: Review) => {
+    const first = (es ? r.name[0] : r.name[1]).split(/\s+/)[0] || (es ? 'cliente' : 'there');
+    return r.stars >= 4
+      ? L(`¡Gracias por tu reseña, ${first}! Nos alegra que hayas tenido una buena experiencia. ¡Te esperamos pronto!`, `Thanks for your review, ${first}! So glad you had a great experience — hope to see you again soon!`)
+      : L(`Gracias por tu comentario, ${first}. Lamentamos que la experiencia no fuera la mejor; nos encantaría remediarlo. Escríbenos y lo resolvemos.`, `Thanks for the feedback, ${first}. We're sorry it wasn't your best experience — we'd love to make it right. Reach out and we'll fix it.`);
+  };
+
   // ---- CLIENTES -------------------------------------------------------------
-  const custKpis = [
-    { Icon: Users, c: '#6D4DF6', bg: '#EFEBFF', label: L('Total', 'Total'), value: '4,284', delta: '▲ 6%' },
-    { Icon: UserPlus, c: '#D6336C', bg: '#FDE7EF', label: L('Nuevos 30d', 'New 30d'), value: '62', delta: '▲ 28%' },
-    { Icon: RefreshCw, c: '#1F8A4C', bg: '#E3F5EA', label: L('Recurrencia', 'Return rate'), value: '72%', delta: '▲ 4pp' },
-    { Icon: DollarSign, c: '#9A6A12', bg: '#FCEFD6', label: L('LTV prom.', 'Avg LTV'), value: '$184', delta: '▲ 9%' },
-  ];
+  const nf = (n: number) => (Number(n) || 0).toLocaleString('en-US');
+  const custKpis = custStats
+    ? [
+        { Icon: Users, c: '#6D4DF6', bg: '#EFEBFF', label: L('Total', 'Total'), value: nf(custStats.total), delta: '' },
+        { Icon: UserPlus, c: '#D6336C', bg: '#FDE7EF', label: L('Nuevos 30d', 'New 30d'), value: nf(custStats.new_30d), delta: '' },
+        { Icon: RefreshCw, c: '#1F8A4C', bg: '#E3F5EA', label: L('Recurrencia', 'Return rate'), value: `${custStats.total ? Math.round((custStats.returning_n / custStats.total) * 100) : 0}%`, delta: '' },
+        { Icon: DollarSign, c: '#9A6A12', bg: '#FCEFD6', label: L('LTV prom.', 'Avg LTV'), value: money0(custStats.avg_ltv), delta: '' },
+      ]
+    : [
+        { Icon: Users, c: '#6D4DF6', bg: '#EFEBFF', label: L('Total', 'Total'), value: '4,284', delta: '▲ 6%' },
+        { Icon: UserPlus, c: '#D6336C', bg: '#FDE7EF', label: L('Nuevos 30d', 'New 30d'), value: '62', delta: '▲ 28%' },
+        { Icon: RefreshCw, c: '#1F8A4C', bg: '#E3F5EA', label: L('Recurrencia', 'Return rate'), value: '72%', delta: '▲ 4pp' },
+        { Icon: DollarSign, c: '#9A6A12', bg: '#FCEFD6', label: L('LTV prom.', 'Avg LTV'), value: '$184', delta: '▲ 9%' },
+      ];
 
   const segTabs: [Seg, string][] = [
     ['all', L('Todos', 'All')],
@@ -394,12 +540,22 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const tagStyle = (c: Customer) =>
     c.atRisk ? 'bg-amber-bg text-amber-ink' : c.isNew ? 'bg-green-bg text-green-dark' : c.b2b ? 'bg-lilac text-primary-dark' : c.vip ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted-2';
 
-  const segments: [string, string, string, string, number][] = [
-    [L('VIP · top 10%', 'VIP · top 10%'), '428', '$840', '#4F46E5', 86],
-    [L('Recurrentes', 'Regulars'), '1,284', '$184', '#7C6BFF', 64],
-    [L('Ocasionales', 'Occasional'), '2,104', '$58', '#A78BFA', 42],
-    [L('Nuevos', 'New'), '184', '$24', '#34D399', 12],
-  ];
+  const segTotal = custStats?.total || 0;
+  const barW = (n: number) => (segTotal > 0 && n > 0 ? Math.max(4, Math.round((n / segTotal) * 100)) : 0);
+  const segments: [string, string, string, string, number][] = custStats
+    ? [
+        [L('VIP · top 10%', 'VIP · top 10%'), nf(custStats.vip_n), `${money0(custStats.vip_ltv)}`, '#4F46E5', barW(custStats.vip_n)],
+        [L('Recurrentes', 'Regulars'), nf(custStats.reg_n), `${money0(custStats.reg_ltv)}`, '#7C6BFF', barW(custStats.reg_n)],
+        [L('Ocasionales', 'Occasional'), nf(custStats.occ_n), `${money0(custStats.occ_ltv)}`, '#A78BFA', barW(custStats.occ_n)],
+        [L('Nuevos', 'New'), nf(custStats.new_seg_n), `${money0(custStats.new_ltv)}`, '#34D399', barW(custStats.new_seg_n)],
+        [L('En riesgo', 'At risk'), nf(custStats.risk_n), `${money0(custStats.risk_ltv)}`, '#F4B740', barW(custStats.risk_n)],
+      ]
+    : [
+        [L('VIP · top 10%', 'VIP · top 10%'), '428', '$840', '#4F46E5', 86],
+        [L('Recurrentes', 'Regulars'), '1,284', '$184', '#7C6BFF', 64],
+        [L('Ocasionales', 'Occasional'), '2,104', '$58', '#A78BFA', 42],
+        [L('Nuevos', 'New'), '184', '$24', '#34D399', 12],
+      ];
 
   const rewardDefs: [string, string][] = [
     [L('Regalo de cumpleaños', 'Birthday gift'), L('Postre gratis', 'Free dessert')],
@@ -409,13 +565,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
 
   const Toggle = ({ on, onClick, big }: { on: boolean; onClick: () => void; big?: boolean }) => (
-    <button
-      onClick={onClick}
-      aria-pressed={on}
-      className={`relative flex-none cursor-pointer rounded-full transition-colors ${big ? 'h-[25px] w-[44px]' : 'h-[22px] w-[38px]'} ${on ? 'bg-primary' : 'bg-lilac-line'}`}
-    >
-      <span className={`absolute top-[3px] rounded-full bg-white shadow-sm transition-all ${big ? 'h-[19px] w-[19px]' : 'h-[16px] w-[16px]'} ${on ? (big ? 'left-[22px]' : 'left-[19px]') : 'left-[3px]'}`} />
-    </button>
+    <Switch on={on} onClick={onClick} big={big} />
   );
 
   const customersView = (
@@ -426,14 +576,19 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 focus-within:border-primary">
-            <Search size={16} strokeWidth={2.2} className="flex-none text-muted-2" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={L('Buscar por nombre, teléfono…', 'Search by name, phone…')}
-              className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted"
-            />
+          <div className="flex items-center gap-2.5">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 focus-within:border-primary">
+              <Search size={16} strokeWidth={2.2} className="flex-none text-muted-2" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={L('Buscar por nombre, teléfono…', 'Search by name, phone…')}
+                className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted"
+              />
+            </div>
+            <button onClick={exportCsv} className="flex flex-none items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12px] font-extrabold text-ink-soft" title={L('Exportar CSV', 'Export CSV')}>
+              <Download size={15} strokeWidth={2.2} className="text-muted-2" /><span className="hidden sm:inline">{L('Exportar', 'Export')}</span>
+            </button>
           </div>
 
           <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
@@ -449,7 +604,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               </div>
             ) : (
               custList.map((c) => (
-                <div key={c.id} className={`${cardCls} flex items-center gap-3 p-3`}>
+                <button key={c.id} onClick={() => openCustomer(c)} className={`${cardCls} flex w-full cursor-pointer items-center gap-3 p-3 text-left transition-shadow hover:shadow-card-lg`}>
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: c.color }}>{c.initials}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
@@ -458,13 +613,15 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     </div>
                     <div className="mt-0.5 text-[10px] font-semibold text-muted-2">
                       {c.visits} {L('visitas', 'visits')} · {L('última', 'last')} {L(c.last[0], c.last[1])}
+                      {(c.points ?? 0) > 0 && <> · {nf(c.points ?? 0)} pts</>}
                     </div>
                   </div>
                   <div className="flex-none text-right">
                     <div className="text-[13px] font-extrabold text-ink">{c.spent}</div>
                     <span className={`mt-1 inline-block rounded px-1.5 py-px text-[8.5px] font-extrabold ${tagStyle(c)}`}>{L(c.tag[0], c.tag[1])}</span>
                   </div>
-                </div>
+                  <ChevronRight size={16} strokeWidth={2.2} className="flex-none text-muted-faint" />
+                </button>
               ))
             )}
           </div>
@@ -493,12 +650,14 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className={`${cardCls} p-4`}>
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[13px] font-extrabold text-ink">{L('Lealtad y recompensas', 'Loyalty & rewards')}</span>
-              <Toggle big on={loyaltyOn} onClick={() => { setLoyaltyOn((v) => !v); flash(loyaltyOn ? L('Programa de lealtad pausado', 'Loyalty program paused') : L('Programa de lealtad activo', 'Loyalty program on')); }} />
+              <Toggle big on={loyaltyOn} onClick={() => { const nv = !loyaltyOn; setLoyaltyOn(nv); persistLoyalty({ enabled: nv }); flash(nv ? L('Programa de lealtad activo', 'Loyalty program on') : L('Programa de lealtad pausado', 'Loyalty program paused')); }} />
             </div>
             <div className="rounded-btn-lg bg-lilac-3 p-3" style={{ opacity: loyaltyOn ? 1 : 0.45 }}>
-              <div className="text-[11.5px] font-extrabold text-ink">{L('Gana 1 punto por cada $1', 'Earn 1 point per $1 spent')}</div>
+              <div className="text-[11.5px] font-extrabold text-ink">{L(`Gana ${loyaltyRate} punto${loyaltyRate === 1 ? '' : 's'} por cada $1`, `Earn ${loyaltyRate} point${loyaltyRate === 1 ? '' : 's'} per $1 spent`)}</div>
               <div className="mt-1 text-[10.5px] font-semibold leading-snug text-ink-3">
-                {L('100 pts = $10 de crédito · 284 inscritos · $4,820 canjeados este mes.', '100 pts = $10 credit · 284 enrolled · $4,820 redeemed this month.')}
+                {custStats
+                  ? L(`100 pts = $10 de crédito · ${nf(custStats.enrolled)} inscritos`, `100 pts = $10 credit · ${nf(custStats.enrolled)} enrolled`)
+                  : L('100 pts = $10 de crédito · 284 inscritos · $4,820 canjeados este mes.', '100 pts = $10 credit · 284 enrolled · $4,820 redeemed this month.')}
               </div>
             </div>
             <div className="mt-3 flex flex-col gap-2" style={{ opacity: loyaltyOn ? 1 : 0.45 }}>
@@ -509,7 +668,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <span className="block text-[11.5px] font-extrabold text-ink">{label}</span>
                     <span className="block text-[9.5px] font-semibold text-muted-2">{sub}</span>
                   </span>
-                  <Toggle on={!!rewards[i]} onClick={() => setRewards((r) => ({ ...r, [i]: !r[i] }))} />
+                  <Toggle on={!!rewards[i]} onClick={() => { const nr = { ...rewards, [i]: !rewards[i] }; setRewards(nr); persistLoyalty({ rewards: nr }); }} />
                 </div>
               ))}
             </div>
@@ -520,17 +679,25 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- PEDIDOS --------------------------------------------------------------
-  const orderKpis = [
-    { Icon: ShoppingBag, c: '#D6336C', bg: '#FDE7EF', label: L('Pedidos hoy', 'Orders today'), value: '38', delta: '▲ 18%', dC: '#1F9D57' },
-    { Icon: Clock, c: '#9A6A12', bg: '#FCEFD6', label: L('En curso', 'In flight'), value: String(inFlight), delta: L('1 urgente', '1 urgent'), dC: '#9A96AE' },
-    { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', label: L('Ingresos', 'Revenue'), value: '$1,847', delta: '▲ 12%', dC: '#1F9D57' },
-    { Icon: Clock, c: '#6D4DF6', bg: '#EFEBFF', label: L('Prep prom.', 'Avg prep'), value: '18m', delta: '▼ 2m', dC: '#1F9D57' },
-  ];
+  const urgentN = orders.filter((o) => o.urgent && o.status === 'new').length;
+  const orderKpis = orderStats
+    ? [
+        { Icon: ShoppingBag, c: '#D6336C', bg: '#FDE7EF', label: L('Pedidos hoy', 'Orders today'), value: nf(orderStats.today_count), delta: '', dC: '#1F9D57' },
+        { Icon: Clock, c: '#9A6A12', bg: '#FCEFD6', label: L('En curso', 'In flight'), value: nf(orderStats.in_flight), delta: urgentN ? L(`${urgentN} urgente${urgentN === 1 ? '' : 's'}`, `${urgentN} urgent`) : '', dC: '#9A96AE' },
+        { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', label: L('Ingresos hoy', 'Revenue today'), value: money0(orderStats.today_revenue), delta: '', dC: '#1F9D57' },
+        { Icon: Check, c: '#6D4DF6', bg: '#EFEBFF', label: L('Completados', 'Completed'), value: nf(orderStats.status?.completed ?? 0), delta: '', dC: '#1F9D57' },
+      ]
+    : [
+        { Icon: ShoppingBag, c: '#D6336C', bg: '#FDE7EF', label: L('Pedidos hoy', 'Orders today'), value: '38', delta: '▲ 18%', dC: '#1F9D57' },
+        { Icon: Clock, c: '#9A6A12', bg: '#FCEFD6', label: L('En curso', 'In flight'), value: String(inFlight), delta: L('1 urgente', '1 urgent'), dC: '#9A96AE' },
+        { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', label: L('Ingresos', 'Revenue'), value: '$1,847', delta: '▲ 12%', dC: '#1F9D57' },
+        { Icon: Clock, c: '#6D4DF6', bg: '#EFEBFF', label: L('Prep prom.', 'Avg prep'), value: '18m', delta: '▼ 2m', dC: '#1F9D57' },
+      ];
 
   const statusMeta: Record<OStatus, [string, string]> = {
-    new: [L('Nuevos', 'New'), 'new'], preparing: [L('Preparando', 'Preparing'), 'preparing'], ready: [L('Listos', 'Ready'), 'ready'], completed: [L('Completados', 'Completed'), 'completed'],
+    new: [L('Nuevos', 'New'), 'new'], preparing: [L('Preparando', 'Preparing'), 'preparing'], ready: [L('Listos', 'Ready'), 'ready'], completed: [L('Completados', 'Completed'), 'completed'], cancelled: [L('Cancelados', 'Cancelled'), 'cancelled'],
   };
-  const statusKeys: OStatus[] = ['new', 'preparing', 'ready', 'completed'];
+  const statusKeys: OStatus[] = ['new', 'preparing', 'ready', 'completed', 'cancelled'];
   const advLabel = (s: OStatus, ch: Channel) =>
     s === 'new' ? L('Aceptar', 'Accept') : s === 'preparing' ? L('Marcar listo', 'Mark ready') : ch === 'delivery' ? L('Dar al repartidor', 'Hand to driver') : L('Completar', 'Complete');
   const chLabel = (ch: Channel) => ch === 'delivery' ? L('Entrega', 'Delivery') : ch === 'dinein' ? L('Mostrador', 'Dine-in') : L('Recoger', 'Pickup');
@@ -540,20 +707,30 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     if (!nx) return;
     // Optimistic local advance (match by DB uuid when present, else display code).
     setOrders((list) => list.map((x) => ((o.dbId ? x.dbId === o.dbId : x.id === o.id) ? { ...x, status: nx } : x)));
+    setSelOrder((s) => (s && (o.dbId ? s.dbId === o.dbId : s.id === o.id) ? { ...s, status: nx } : s));
     flash(`${o.id} → ${statusMeta[nx][0]}`);
     // Persist only for a real, signed-in business; demo mutations stay local.
     if (persistable && o.dbId && supabase) {
       const { error } = await supabase.from('business_orders').update({ status: nx }).eq('id', o.dbId);
-      if (error) flash(L('No se pudo actualizar el pedido', 'Could not update the order'));
+      if (error) flash(L('No se pudo actualizar el pedido', 'Could not update the order')); else setStatsV((v) => v + 1);
     }
   };
 
   const orderList = orders.filter((o) => o.status === oStatus);
-  const channelMix: [string, Channel, string, string][] = [
-    ['#6D4DF6', 'dinein', L('Mostrador', 'Dine-in'), '42%'],
-    ['#D6336C', 'delivery', L('Entrega', 'Delivery'), '34%'],
-    ['#9A6A12', 'pickup', L('Recoger', 'Pickup'), '24%'],
-  ];
+  const chToday = orderStats?.channel_today ?? {};
+  const chTotal = Object.values(chToday).reduce((s, n) => s + Number(n || 0), 0);
+  const chPct = (ch: Channel) => (chTotal > 0 ? `${Math.round((Number(chToday[ch] ?? 0) / chTotal) * 100)}%` : '0%');
+  const channelMix: [string, Channel, string, string][] = orderStats
+    ? [
+        ['#6D4DF6', 'dinein', L('Mostrador', 'Dine-in'), chPct('dinein')],
+        ['#D6336C', 'delivery', L('Entrega', 'Delivery'), chPct('delivery')],
+        ['#9A6A12', 'pickup', L('Recoger', 'Pickup'), chPct('pickup')],
+      ]
+    : [
+        ['#6D4DF6', 'dinein', L('Mostrador', 'Dine-in'), '42%'],
+        ['#D6336C', 'delivery', L('Entrega', 'Delivery'), '34%'],
+        ['#9A6A12', 'pickup', L('Recoger', 'Pickup'), '24%'],
+      ];
 
   const ordersView = (
     <>
@@ -585,8 +762,9 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             ) : (
               orderList.map((o) => {
                 const done = o.status === 'completed';
+                const cxl = o.status === 'cancelled';
                 return (
-                  <div key={o.id} className={`overflow-hidden rounded-card-sm border bg-white shadow-card ${o.urgent && !done ? 'border-[rgba(240,70,110,.35)]' : 'border-hair'}`}>
+                  <div key={o.id} onClick={() => setSelOrder(o)} className={`cursor-pointer overflow-hidden rounded-card-sm border bg-white shadow-card transition-shadow hover:shadow-card-lg ${o.urgent && !done && !cxl ? 'border-[rgba(240,70,110,.35)]' : 'border-hair'}`}>
                     <div className="p-3.5">
                       <div className="mb-1.5 flex items-center justify-between">
                         <span className="font-mono text-[11.5px] font-extrabold text-primary-dark">{o.id}</span>
@@ -594,7 +772,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       </div>
                       <div className="mb-1 flex items-center gap-2">
                         <span className="text-[13px] font-extrabold text-ink">{L(o.who[0], o.who[1])}</span>
-                        {o.urgent && !done && <span className="flex items-center gap-0.5 rounded bg-pink-bg px-1.5 py-px text-[8px] font-extrabold text-pink-dark"><Zap size={9} strokeWidth={2.6} />{L('Urgente', 'Urgent')}</span>}
+                        {o.urgent && !done && !cxl && <span className="flex items-center gap-0.5 rounded bg-pink-bg px-1.5 py-px text-[8px] font-extrabold text-pink-dark"><Zap size={9} strokeWidth={2.6} />{L('Urgente', 'Urgent')}</span>}
                       </div>
                       <div className="line-clamp-2 text-[11px] font-semibold leading-snug text-ink-3">{L(o.items[0], o.items[1])}</div>
                       <div className="mt-2.5 flex items-center justify-between">
@@ -605,8 +783,12 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-extrabold text-green-dark">
                           <Check size={12} strokeWidth={3} />{L('Pagado y cerrado', 'Paid & closed')}
                         </div>
+                      ) : cxl ? (
+                        <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-extrabold text-muted-2">
+                          <XCircle size={12} strokeWidth={2.6} />{L('Cancelado', 'Cancelled')}
+                        </div>
                       ) : (
-                        <button onClick={() => advance(o)} className="mt-3 flex w-full items-center justify-center gap-1 rounded-field bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                        <button onClick={(e) => { e.stopPropagation(); advance(o); }} className="mt-3 flex w-full items-center justify-center gap-1 rounded-field bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">
                           {advLabel(o.status, o.channel)}<ChevronRight size={14} strokeWidth={2.6} />
                         </button>
                       )}
@@ -631,8 +813,8 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               ))}
             </div>
             <div className="mt-3 rounded-btn-lg bg-lilac-2 p-3">
-              <div className="text-[12px] font-extrabold text-primary-dark">⏱ {L('Prep prom. bajó a 18 min', 'Avg prep down to 18 min')}</div>
-              <div className="mt-0.5 text-[11px] font-semibold text-ink-3">{L('2 min más rápido que la semana pasada.', '2 min faster than last week.')}</div>
+              <div className="text-[12px] font-extrabold text-primary-dark">{orderStats ? `${money0(orderStats.today_revenue)} · ${nf(orderStats.today_count)} ${L('pedidos hoy', 'orders today')}` : `⏱ ${L('Prep prom. 18 min', 'Avg prep 18 min')}`}</div>
+              <div className="mt-0.5 text-[11px] font-semibold text-ink-3">{orderStats ? (orderStats.in_flight > 0 ? L(`${nf(orderStats.in_flight)} en curso ahora`, `${nf(orderStats.in_flight)} in flight now`) : L('Todo al día.', 'All caught up.')) : L('2 min más rápido que la semana pasada.', '2 min faster than last week.')}</div>
             </div>
           </div>
           <div className={`${cardCls} p-4`}>
@@ -654,9 +836,16 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- RESEÑAS --------------------------------------------------------------
-  const ratingBars: [number, number, string][] = [
-    [5, 78, '#1F9D57'], [4, 14, '#1F9D57'], [3, 5, '#F4B740'], [2, 2, '#D6336C'], [1, 1, '#D6336C'],
-  ];
+  // Real rating summary from the loaded reviews (per-star breakdown, avg, replied%).
+  const rvCount = reviews.length;
+  const rvAvg = rvCount ? reviews.reduce((s, r) => s + r.stars, 0) / rvCount : 0;
+  const repliedN = reviews.filter((r) => posted[r.id]).length;
+  const repliedPct = rvCount ? Math.round((repliedN / rvCount) * 100) : 0;
+  const barColor = (star: number) => (star >= 4 ? '#1F9D57' : star === 3 ? '#F4B740' : '#D6336C');
+  const ratingBars: [number, number, string][] = [5, 4, 3, 2, 1].map((star) => {
+    const n = reviews.filter((r) => r.stars === star).length;
+    return [star, rvCount ? Math.round((n / rvCount) * 100) : 0, barColor(star)] as [number, number, string];
+  });
   const rvFilters: [RvFilter, string, number | null][] = [
     ['all', L('Todas', 'All'), null],
     ['need', L('Sin responder', 'Need reply'), needReply],
@@ -673,8 +862,11 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   });
 
   const aiDraft = (r: Review) => {
-    setReplyText((t) => ({ ...t, [r.id]: L(r.ai[0], r.ai[1]) }));
-    flash(L('Borrador con IA listo — revísalo', 'AI draft ready — review it'));
+    // Real reviews have no canned r.ai text → use a rating-aware template. Demo
+    // fixtures carry a bespoke r.ai sample, so prefer it when present.
+    const draft = (r.ai[0] || r.ai[1]) ? L(r.ai[0], r.ai[1]) : replyTemplate(r);
+    setReplyText((t) => ({ ...t, [r.id]: draft }));
+    flash(L('Borrador listo — revísalo', 'Draft ready — review it'));
   };
   const startEdit = (r: Review) => {
     setReplyText((t) => ({ ...t, [r.id]: posted[r.id]?.[0] ?? '' }));
@@ -721,9 +913,9 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {/* rating summary (mobile: on top) */}
         <div className={`${cardCls} flex items-center gap-5 p-5 xl:hidden`}>
           <div className="flex-none text-center">
-            <div className="text-[38px] font-extrabold leading-none text-ink">4.8</div>
-            <div className="mt-1 flex justify-center"><Stars n={5} /></div>
-            <div className="mt-1 text-[9.5px] font-semibold text-muted-2">412 {L('reseñas', 'reviews')}</div>
+            <div className="text-[38px] font-extrabold leading-none text-ink">{rvCount ? rvAvg.toFixed(1) : '—'}</div>
+            <div className="mt-1 flex justify-center"><Stars n={Math.round(rvAvg)} /></div>
+            <div className="mt-1 text-[9.5px] font-semibold text-muted-2">{nf(rvCount)} {L('reseñas', 'reviews')}</div>
           </div>
           <div className="min-w-0 flex-1">
             {ratingBars.map(([star, pct, c]) => (
@@ -787,7 +979,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   ) : (
                     <div className="mt-3 rounded-btn-lg border border-dashed border-lilac-ring p-3">
                       <div className="mb-2 flex items-center gap-1.5 text-[9.5px] font-extrabold text-primary-dark">
-                        <Sparkles size={12} strokeWidth={2.2} />{L('Respuesta sugerida por IA', 'AI-suggested reply')}
+                        <Sparkles size={12} strokeWidth={2.2} />{L('Respuesta sugerida', 'Suggested reply')}
                       </div>
                       <textarea
                         value={draft}
@@ -801,7 +993,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                           <Flag size={11} strokeWidth={2.4} />{isFlagged ? L('Quitar reporte', 'Unflag') : L('Reportar', 'Flag')}
                         </button>
                         <button onClick={() => aiDraft(r)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-primary-dark">
-                          <Sparkles size={11} strokeWidth={2.4} />{L('Borrador IA', 'AI draft')}
+                          <Sparkles size={11} strokeWidth={2.4} />{L('Sugerir', 'Suggest')}
                         </button>
                         <button onClick={() => sendReply(r)} className="cursor-pointer rounded-field bg-primary px-3.5 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm">
                           {L('Responder', 'Send reply')}
@@ -827,9 +1019,9 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="hidden flex-col gap-4 xl:sticky xl:top-[74px] xl:flex">
         <div className={`${cardCls} p-5`}>
           <div className="text-center">
-            <div className="text-[40px] font-extrabold leading-none text-ink">4.8</div>
-            <div className="mt-1 flex justify-center"><Stars n={5} /></div>
-            <div className="mt-1 text-[10px] font-semibold text-muted-2">412 {L('reseñas', 'reviews')}</div>
+            <div className="text-[40px] font-extrabold leading-none text-ink">{rvCount ? rvAvg.toFixed(1) : '—'}</div>
+            <div className="mt-1 flex justify-center"><Stars n={Math.round(rvAvg)} /></div>
+            <div className="mt-1 text-[10px] font-semibold text-muted-2">{nf(rvCount)} {L('reseñas', 'reviews')}</div>
           </div>
           <div className="mt-4">
             {ratingBars.map(([star, pct, c]) => (
@@ -847,9 +1039,9 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mb-3 text-[13px] font-extrabold text-ink">{L('Reputación', 'Reputation')}</div>
           <div className="grid grid-cols-2 gap-2.5">
             {[
-              [L('Respuestas', 'Replied'), '88%', '▲ 5%'],
-              [L('Recomiendan', 'Recommend'), '94%', '▲ 2%'],
-              [L('Resp. prom.', 'Avg reply'), '3h', '▼ 1h'],
+              [L('Reseñas', 'Reviews'), nf(rvCount), ''],
+              [L('Promedio', 'Average'), rvCount ? rvAvg.toFixed(1) : '—', ''],
+              [L('Respondidas', 'Replied'), `${repliedPct}%`, ''],
               [L('Sin responder', 'Need reply'), String(needReply), ''],
             ].map(([l, v, d]) => (
               <div key={l} className="rounded-btn-lg bg-app p-3">
@@ -908,6 +1100,98 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </span>
           <button onClick={() => ctx.go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar', 'Upgrade')}</button>
         </div>
+      )}
+
+      {/* customer detail: stats · tag · notes · real order history */}
+      {selCust && (
+        <Overlay open onClose={() => { setSelCust(null); setCustOrders(null); }} align="right" width={460}>
+          <OverlayTitle title={selCust.name} onClose={() => { setSelCust(null); setCustOrders(null); }} />
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-[15px] font-extrabold text-white" style={{ background: selCust.color }}>{selCust.initials}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5"><span className="truncate text-[14px] font-extrabold text-ink">{selCust.name}</span>{selCust.vip && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">VIP</span>}</div>
+              <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] font-semibold text-muted-2">
+                {selCust.phone && <span className="flex items-center gap-1"><Phone size={11} strokeWidth={2.2} />{selCust.phone}</span>}
+                {selCust.email && <span className="flex items-center gap-1"><Mail size={11} strokeWidth={2.2} />{selCust.email}</span>}
+                {!selCust.phone && !selCust.email && <span>{L('última', 'last')} {L(selCust.last[0], selCust.last[1])}</span>}
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2.5">
+            {([[L('Órdenes', 'Orders'), nf(selCust.visits)], [L('Gasto', 'Spend'), selCust.spent], [L('Puntos', 'Points'), nf(selCust.points ?? 0)]] as [string, string][]).map(([l, v]) => (
+              <div key={l} className="rounded-btn-lg bg-app p-3 text-center"><div className="text-[9.5px] font-bold text-muted">{l}</div><div className="mt-0.5 text-[16px] font-extrabold text-ink">{v}</div></div>
+            ))}
+          </div>
+          <div className="mt-4">
+            <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Etiqueta', 'Tag')}</div>
+            <div className="flex flex-wrap gap-2">
+              {['VIP', 'Recurrente', 'Nuevo', 'En riesgo', 'B2B'].map((t) => (
+                <button key={t} onClick={() => saveCustomer({ tag: t })} className={`cursor-pointer rounded-full px-3 py-1.5 text-[11px] font-extrabold ${selCust.tag[0] === t ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>{t}</button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Notas', 'Notes')}</div>
+            <textarea defaultValue={selCust.notes ?? ''} onBlur={(e) => { if ((e.target.value ?? '') !== (selCust.notes ?? '')) saveCustomer({ notes: e.target.value }); }} rows={2} placeholder={L('Preferencias, alergias, contexto…', 'Preferences, allergies, context…')} className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[12px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary" />
+          </div>
+          <div className="mt-4">
+            <div className="mb-2 text-[11px] font-extrabold text-ink-soft">{L('Historial de órdenes', 'Order history')}</div>
+            {custOrders == null ? (
+              <div className="py-4 text-center text-[12px] font-semibold text-muted">{L('Cargando…', 'Loading…')}</div>
+            ) : custOrders.length === 0 ? (
+              <div className="rounded-btn-lg bg-app py-5 text-center text-[12px] font-semibold text-muted">{L('Sin órdenes todavía.', 'No orders yet.')}</div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {custOrders.map((o) => (
+                  <div key={o.dbId ?? o.id} className="flex items-center gap-2.5 rounded-btn-lg bg-app px-3 py-2.5">
+                    <span className="h-2 w-2 flex-none rounded-full" style={{ background: STATUS_DOT[o.status] }} />
+                    <span className="min-w-0 flex-1"><span className="block truncate text-[11.5px] font-bold text-ink">{L(o.items[0], o.items[1])}</span><span className="text-[9.5px] font-semibold text-muted-2">{o.id} · {L(o.placed[0], o.placed[1])}</span></span>
+                    <span className="flex-none text-[12px] font-extrabold text-ink">{o.total}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Overlay>
+      )}
+
+      {/* order detail: items + prices · status · accept / advance / cancel */}
+      {selOrder && (
+        <Overlay open onClose={() => setSelOrder(null)} width={440}>
+          <OverlayTitle title={selOrder.id} onClose={() => setSelOrder(null)} />
+          <div className="flex items-center justify-between">
+            <span className="text-[14px] font-extrabold text-ink">{L(selOrder.who[0], selOrder.who[1])}</span>
+            <span className={`rounded px-2 py-0.5 text-[9.5px] font-extrabold ${CH_TILE[selOrder.channel]}`}>{chLabel(selOrder.channel)}</span>
+          </div>
+          <div className="mt-1 flex items-center gap-1.5 text-[10.5px] font-semibold text-muted-2">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS_DOT[selOrder.status] }} />{statusMeta[selOrder.status][0]} · {L(selOrder.placed[0], selOrder.placed[1])}
+          </div>
+          <div className="mt-4 flex flex-col gap-1.5">
+            {(selOrder.lines && selOrder.lines.length > 0) ? selOrder.lines.map((it, i) => (
+              <div key={i} className="flex items-center gap-2 text-[12.5px]">
+                <span className="flex-none font-extrabold text-primary-dark">{Number(it.qty ?? 1)}×</span>
+                <span className="min-w-0 flex-1 truncate font-semibold text-ink">{it.name ?? '—'}</span>
+                {it.price != null && <span className="flex-none font-bold text-ink-soft">{money2(Number(it.price) * Number(it.qty ?? 1))}</span>}
+              </div>
+            )) : <div className="text-[12px] font-semibold text-muted">{L(selOrder.items[0], selOrder.items[1])}</div>}
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-hair pt-3">
+            <span className="text-[12px] font-bold text-muted">{L('Total', 'Total')}</span>
+            <span className="text-[18px] font-extrabold text-ink">{selOrder.total}</span>
+          </div>
+          {selOrder.status !== 'completed' && selOrder.status !== 'cancelled' && (
+            <div className="mt-4 flex gap-2.5">
+              <button onClick={() => cancelOrder(selOrder)} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} strokeWidth={2.4} />{L('Cancelar', 'Cancel')}</button>
+              <button onClick={() => advance(selOrder)} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm">{advLabel(selOrder.status, selOrder.channel)}<ChevronRight size={15} strokeWidth={2.6} /></button>
+            </div>
+          )}
+          {selOrder.status === 'completed' && (
+            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-green-bg py-3 text-[12px] font-extrabold text-green-dark"><Check size={14} strokeWidth={3} />{L('Pagado y cerrado', 'Paid & closed')}</div>
+          )}
+          {selOrder.status === 'cancelled' && (
+            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-app py-3 text-[12px] font-extrabold text-muted-2"><XCircle size={14} strokeWidth={2.6} />{L('Pedido cancelado', 'Order cancelled')}</div>
+          )}
+        </Overlay>
       )}
 
       {toast && (
