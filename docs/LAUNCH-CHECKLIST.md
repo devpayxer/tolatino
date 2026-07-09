@@ -94,6 +94,26 @@
   (audience fits — Latinos use WhatsApp heavily).
 - [ ] **Transactional email.** None wired yet. Start with **Amazon SES**
   (~$0.10/1k) for confirmations/notifications; consider self-hosted Postal later.
+- [ ] **Supabase advisor: `rls_disabled_in_public` on `spatial_ref_sys`
+  (known PostGIS exception — NOT a data risk).** The security-advisor email flags
+  this table. Verified 2026-07-09: **every table holding user data already has RLS
+  enabled with owner-scoped policies** (profiles/businesses/business_orders/
+  payments/pending_purchases/user_addresses/notifications/… — checked the full
+  `pg_class`/`pg_policies` list). The ONLY flagged table is **`spatial_ref_sys`**,
+  a PostGIS system table of ~8,500 static EPSG map-projection rows — **no user
+  data**. It's owned by `supabase_admin`, so we **cannot** self-remediate: enabling
+  RLS fails (`must be owner of table spatial_ref_sys`) and revoking the `anon`
+  INSERT/UPDATE/DELETE grant is a silent no-op (the grant was made by
+  `supabase_admin`; our `postgres` role can't assume it — `pg_has_role` = false).
+  Residual risk is low (an attacker with only the public key could delete/corrupt
+  reference rows → break `ST_Transform`/geo, an availability nuisance, restorable;
+  **no data leak**). **Do NOT click "Resolve issue" in the email** (act via the
+  Supabase dashboard, not email links). Resolution options: (a) **dismiss** this
+  finding in Supabase Security Advisor as a known PostGIS exception; (b) or open a
+  Supabase support request to enable RLS / revoke on the extension table (needs
+  their internal role); (c) heavier — move the PostGIS extension out of `public`
+  into a `gis` schema (also needs elevated privileges; not worth it for reference
+  data). Revisit if Supabase ships a way to lock it down.
 
 ## 3. Incomplete / stubbed features
 
