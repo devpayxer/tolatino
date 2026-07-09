@@ -54,17 +54,22 @@
   street-address pipeline (Photon + US Census + synthesized suggestions, US-only,
   locality-aware). Saved-addresses manager. **Migration target: Pelias (config flip).**
 - **Eventos** + "Muy pronto" placeholders (Transporte/Bienes Raíces/Autos/Trabajos).
-- **Ordering flow rebuilt from the design handoff (2026-07-09):** the founder
-  delivered a Claude-Design handoff (`design_handoff_pedidos/`: Cliente · Cocina ·
-  Menú). Phase 1 **Cliente** is rebuilt pixel-perfect as
-  `apps/web/src/screens/order/OrderFlow.tsx` — a full-screen restaurant ordering
-  experience (hero → info → Entrega/Recoger → address → search → 🔥 Los más
-  pedidos → sticky category chips → sections → item sheet with addon groups +
-  special instructions + live price → cart with upsell + AMIGO10 promo → checkout
-  with address/when/payment/tip/charge-summary → real Stripe). Opens for any
-  restaurant whose menu has `ordering: true` (replaces the old cart). Wired to real
-  business_by_slug + business_menu_by_slug + marketplace-checkout; verified in the
-  real browser from the Negocios list. Phase 2 **Cocina** is rebuilt pixel-perfect
+- **Food ordering lives in the business single-page "Menú" tab (2026-07-09).**
+  The client ordering experience is the DoorDash-grade **Menú tab** inside
+  `BizDetail.tsx` (delivery/pickup chips with fee+ETA, horizontal category tabs,
+  ⭐ Populares, item cards → item sheet with addon groups + special instructions →
+  cart with tip/fees/AMIGO10 → checkout → real Stripe). Wired to real
+  business_by_slug + business_menu_by_slug + marketplace-checkout.
+  **Scope correction (founder):** an earlier pass replaced the ENTIRE business
+  single-page with a full-screen `OrderFlow` component for orderable restaurants —
+  the founder wanted the original single-page design kept and only the **Menú** tab
+  to carry the food menu, so that full-page takeover was reverted and
+  `screens/order/OrderFlow.tsx` + `orderIcons.tsx` deleted. Rule going forward for
+  the menu: **only ADD missing professional touches to the Menú tab; don't rebuild
+  the single-page.** Verified in the real browser from the Negocios list: El Sabor
+  opens as the single-page (hero · Overview/Menú/Tienda/Relacionados/Reseñas tabs ·
+  Lo que ofrece · Horario · Fotos · Ubicación · Reseñas); the Menú tab orders
+  (add → cart bar). Phase 2 **Cocina** is rebuilt pixel-perfect
   as `apps/web/src/screens/negocio/modules/Cocina.tsx` — the restaurant order-
   management board (today stats + EN VIVO · status tabs Nuevos/Preparando/Listos/
   En camino/Completados · order cards) → order detail (status banner, progress
