@@ -13,6 +13,8 @@ export type MenuItem = {
   tagC?: string;
   bg: string; // striped tile stops "A 0 8px,B 8px 16px"
   img?: string; // real photo URL (live menus) — bg stays as the fallback
+  kcal?: number; // calories (ordering flow) — from attrs.kcal
+  desc2?: Bi; // longer bilingual description (falls back to d)
   stock?: number; // shop products only: units left (0 = sold out); undefined = untracked
   variantStock?: Record<string, number>; // per-variant units, keyed `setId:idx|…` (undefined = not tracked per variant)
 };
@@ -79,7 +81,9 @@ export const SHOP: MenuCat[] = [
   },
 ];
 
-export type OptionGroup = { id: string; name: Bi; type: 'single' | 'multi'; choices: { label: Bi; price: number }[] };
+export type OptionGroup = { id: string; name: Bi; type: 'single' | 'multi'; required?: boolean; max?: number; choices: { label: Bi; price: number }[] };
+/** Per-item badge for the ordering flow (design: Popular/Nuevo/Picante/Vegano). */
+export type MenuBadge = '' | 'Popular' | 'Nuevo' | 'Picante' | 'Vegano' | 'Vegetariano';
 
 export const OPTION_GROUPS: Record<string, OptionGroup[]> = {
   tacos: [

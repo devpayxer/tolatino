@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
     // seller (no platform cut); the 5% buyer service fee applies to P only.
     let deliveryFee = 0;   // dollars
     let tip = 0;           // dollars
+    let discount = 0;      // dollars (promo — platform absorbed)
 
     if (kind === 'order') {
       const biz = (await get(`businesses?slug=eq.${encodeURIComponent(slug)}&select=id,name,stripe_account_id,connect_charges_enabled,settings`))?.[0];
@@ -91,6 +92,8 @@ Deno.serve(async (req) => {
         if (!addr.formatted || String(addr.formatted).trim().length < 5) return json({ error: 'address_required' }, 400);
       }
       tip = Math.max(0, Math.min(500, Number(body?.tip ?? 0) || 0));
+      // AMIGO10 promo: 10% off the goods, capped at $5 (absorbed by the platform).
+      if (String(body?.promo ?? '').toUpperCase() === 'AMIGO10') discount = Math.min(5, Math.round(subtotal * 0.1 * 100) / 100);
 
       const addr = (body?.address ?? null) as Record<string, unknown> | null;
       const prep = Number(((settings as Record<string, Record<string, unknown>>)?.delivery_ops?.prepTime as string) ?? '20') || 20;
@@ -148,8 +151,9 @@ Deno.serve(async (req) => {
     // Buyer pays P + 5% (+ delivery + tip on orders); platform keeps 15% of P.
     // Delivery fee and tip pass through to the seller untouched.
     const extrasCents = Math.round(deliveryFee * 100) + Math.round(tip * 100);
-    const amountCents = Math.round(subtotalCents * 1.05) + extrasCents;
-    const feeCents = Math.round(subtotalCents * 0.15);
+    const discountCents = Math.round(discount * 100);
+    const amountCents = Math.round(subtotalCents * 1.05) + extrasCents - discountCents;
+    const feeCents = Math.max(0, Math.round(subtotalCents * 0.15) - discountCents); // platform absorbs the promo
     if (amountCents < 50) return json({ error: 'amount too low' }, 400); // Stripe USD minimum
 
     // Stage the purchase (service role → bypasses RLS).

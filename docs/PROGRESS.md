@@ -54,6 +54,17 @@
   street-address pipeline (Photon + US Census + synthesized suggestions, US-only,
   locality-aware). Saved-addresses manager. **Migration target: Pelias (config flip).**
 - **Eventos** + "Muy pronto" placeholders (Transporte/Bienes Raíces/Autos/Trabajos).
+- **Ordering flow rebuilt from the design handoff (2026-07-09):** the founder
+  delivered a Claude-Design handoff (`design_handoff_pedidos/`: Cliente · Cocina ·
+  Menú). Phase 1 **Cliente** is rebuilt pixel-perfect as
+  `apps/web/src/screens/order/OrderFlow.tsx` — a full-screen restaurant ordering
+  experience (hero → info → Entrega/Recoger → address → search → 🔥 Los más
+  pedidos → sticky category chips → sections → item sheet with addon groups +
+  special instructions + live price → cart with upsell + AMIGO10 promo → checkout
+  with address/when/payment/tip/charge-summary → real Stripe). Opens for any
+  restaurant whose menu has `ordering: true` (replaces the old cart). Wired to real
+  business_by_slug + business_menu_by_slug + marketplace-checkout; verified in the
+  real browser from the Negocios list. **Cocina + Menú phases are the next passes.**
 - **Food ordering — DoorDash-grade (2026-07-09, migrations 0074+0075):** El Sabor
   de Quisqueya carries a REAL 150-dish menu (15 categories × 10, 9 reusable
   modifier groups, bilingual, seeded via `scripts/seed-menu-sabor.mjs` in the exact

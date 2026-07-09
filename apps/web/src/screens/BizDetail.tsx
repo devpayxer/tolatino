@@ -18,6 +18,7 @@ import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
 import { startMarketplaceCheckout } from '@/lib/stripe';
+import { OrderFlow } from '@/screens/order/OrderFlow';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
@@ -1079,6 +1080,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       </div>
     );
   };
+
+  // Restaurant with online ordering → the full-screen OrderFlow (design handoff
+  // "Ordenar"): hero → menu → item+addons → cart → checkout → real Stripe. This
+  // replaces the tab/cart experience for orderable restaurants.
+  if (realMenu?.ordering) {
+    return <OrderFlow b={b} menu={realMenu} onClose={onClose} />;
+  }
 
   return (
     <div className="mx-auto max-w-[680px]">

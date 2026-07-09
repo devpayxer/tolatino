@@ -112,8 +112,9 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
     const dEs = String(r.description ?? '');
     const item: MenuItem = {
       n: [name, name],
-      d: [dEs, String(a.en ?? dEs)],
+      d: [dEs, String((a.en_desc ?? a.en) ?? dEs)],
       price: Number(r.price ?? 0),
+      kcal: a.kcal != null ? Number(a.kcal) : undefined,
       orig: a.compareAt != null ? Number(a.compareAt) : undefined,
       tag: a.popular ? ['Popular', 'Popular'] : a.isNew ? ['Nuevo', 'New'] : undefined,
       tagBg: a.popular ? '#EFEBFF' : a.isNew ? '#FCEFD6' : undefined,
@@ -130,6 +131,8 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
         id: m.id,
         name: [m.es, m.en],
         type: m.single ? 'single' : 'multi',
+        required: !!m.required,
+        max: m.single ? 1 : m.options.length,
         choices: m.options.map((o) => ({ label: [o.es, o.en ?? o.es] as Bi, price: o.price })),
       }));
     if (gs.length) groups[`${catKey}::${name}`] = gs;

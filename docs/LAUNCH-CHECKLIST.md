@@ -959,6 +959,30 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
   finished Stripe checkout) accumulate. Add a periodic cleanup (e.g. delete/expire
   `pending` older than 24h). Harmless (nothing was charged/fulfilled), just hygiene.
 
+### Ordering flow — design handoff "Ordenar" (2026-07-09)
+The Cliente phase of the pedidos handoff (`design_handoff_pedidos/`) is rebuilt
+pixel-perfect as `apps/web/src/screens/order/OrderFlow.tsx` (opens for any
+restaurant whose menu has `ordering: true`; verified in-browser). Follow-ups:
+- [ ] **Fee rates: design uses 10% service + 8.25% tax + 15% commission; we kept
+  the founder's tested economics (5% buyer service fee, 15% platform commission,
+  no separate tax line).** The handoff README says "ajustar tasas a las reales del
+  negocio", so the STRUCTURE is faithful and the RATES are the real ones. If the
+  founder wants the literal 10% + tax, wire real tax collection/remittance first
+  (per-jurisdiction) — do NOT charge tax without remittance set up.
+- [ ] **In-app tracking + post-order (design screens 5–6) inside OrderFlow.** The
+  prototype's `track` + `done` views (live map, driver card, stepper, rating,
+  receipt, report) are currently served by the real post-payment confirmation
+  (PurchaseReturnToast) + Cuenta order tracking. Fold the design's track/done
+  screens into OrderFlow, driven by the real `business_orders` status + realtime.
+- [ ] **AMIGO10 promo** is wired end-to-end (client summary + server discount,
+  platform-absorbed). Make promo codes real/configurable per business later.
+- [ ] **Payment method list is display-only** (Visa/MC/Apple Pay chips) — the real
+  charge always goes through Stripe Checkout on "Realizar pedido". Wire saved
+  cards / Payment Element when moving off Stripe-hosted Checkout.
+- [ ] **Cocina + Menú phases** of the handoff (`ToLatino Cocina.dc.html`,
+  `ToLatino Menu Builder.dc.html`) still to be rebuilt pixel-perfect into
+  `/negocio` (Fulfillment + Food modules).
+
 ### Food delivery (2026-07-09) — polish deferrals
 - [ ] **Dish photos.** The 150-dish menu uses the design-system striped tiles;
   the owner can upload a real photo per dish from the Food module (imageUrl is
