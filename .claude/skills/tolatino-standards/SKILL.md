@@ -61,10 +61,16 @@ it** rather than breaking the rule silently.
 - Plan search via Postgres FTS now, Meilisearch when volume demands it.
 
 ## 6. Model & cost discipline (Claude Code)
-- Opus 4.8 for architecture / data modeling / security / the design-system
-  foundation; Sonnet 4.6 for everyday features; Haiku 4.5 for mechanical work.
+- Opus-tier for architecture / data modeling / security / hard debugging;
+  Sonnet-tier as the DEFAULT for everyday features; Haiku-tier for mechanical work.
 - Rely on `CLAUDE.md` + this skill (prompt-cached) instead of re-explaining the
   project each task. Keep task prompts tight and scoped.
+- **The founder is bootstrapped and credits are scarce — treat them like his
+  money, because they are.** Don't burn tokens on redundant exploration: read
+  `docs/PROGRESS.md` first, reuse the existing audit harness
+  (`tools/mobile-audit/`), and reuse established patterns instead of rebuilding.
+  Multi-agent orchestration (ultracode/workflows) only when the founder asks or
+  the task genuinely needs it — it is many times the cost of a normal pass.
 
 ## 7. Benchmark against the best — build to compete and win (how the founder wants it built)
 - Before building/revising **any** section or feature, name the successful apps that
@@ -85,6 +91,43 @@ it** rather than breaking the rule silently.
 - This competes **within** the other rules — it never overrides the design system (#2),
   Spanish-first (#3), or scale (#5). Beat the competitor using the Handoff's look.
 
+## 8. Follow the EXISTING design & flow — additive-only UI (hard rule, learned the hard way)
+The founder has ALREADY approved the app's current screens and flows. Your job on
+any UI request is to **add what's missing, never replace what exists.**
+- **Before touching any screen:** locate the existing screen/pattern/flow it
+  belongs to and work WITHIN it. Example that must never repeat: online food
+  ordering lives inside the business single-page's **"Menú" tab** — an earlier
+  session replaced the whole single-page with a new full-screen flow and the
+  founder rejected it entirely. Rebuilding a page he likes = wasted credits + trust.
+- **"Mejora X" means:** open X, keep its structure, and add the missing
+  professional touches (states, polish, edge cases) — not redesign X.
+- **New screen genuinely needed?** Derive it from the closest existing screen +
+  the design tokens, then send a **screenshot preview for approval BEFORE wiring
+  data**. The founder should never have to leave for an external design tool for
+  something derivable from what's already in the repo — offer the
+  "mock → screenshot → approval → wire" loop instead.
+
+## 9. Proof, sweeps, and the 3-side rule (how work gets accepted here)
+- **Every UI change ships with real-browser screenshot proof** (mobile 402px
+  viewport first). Use `tools/mobile-audit/` (Playwright + async curl relay for
+  Supabase; serve `apps/web/out` with `npx serve out -l 4173 --no-clipboard`,
+  never `-s`). "It compiles" is not verified.
+- **One report = a pattern.** When the founder reports a UX defect in one spot
+  (background scrolls under a popup, demo data flashing, a janky transition),
+  assume it exists platform-wide: fix it at the SHARED primitive (e.g.
+  `<Overlay>`, `useLiveData`, `scrollLock`) and sweep every surface — he should
+  never have to report the same bug twice in two places.
+- **Transitions must be professional.** No flashes, blinks, jumps, layout
+  shifts, or demo-content flashes. Never animate layout from scroll JS (it lags
+  a frame and flickers) — reserve the space and fade opacity/transform on the
+  compositor; measure pre-paint (`useLayoutEffect`). Verify with slow-scroll
+  step audits, not by eye.
+- **Every marketplace process has 3 sides:** Cliente (a@a.com) · Negocio
+  (b@b.com — El Sabor de Quisqueya, his ONLY test business) · Plataforma
+  (To'Latino fees/notifications). A process is done only when all three are
+  correct — and all test artifacts are reverted (orders/notifications back to
+  baseline, e2e users deleted).
+
 ## Pre-flight checklist (run before finishing any UI/feature task)
 - [ ] **Benchmarked vs. the category leader; matches/beats it; feature-complete —
       nothing stubbed or faked shipped as final (unfinished → LAUNCH-CHECKLIST).**
@@ -94,5 +137,11 @@ it** rather than breaking the rule silently.
 - [ ] Queries indexed/paginated; geo via PostGIS; scale considered.
 - [ ] No unnecessary paid dependency added.
 - [ ] Verified end-to-end (tsc + build + mobile audit / intercept), not just written.
+- [ ] **Additive to the existing screen/flow — nothing the founder already
+      approved was replaced or redesigned (#8).**
+- [ ] **Real-browser screenshot proof sent; transitions flash/jump-free; if the
+      task was a reported bug, the same pattern was swept platform-wide (#9).**
+- [ ] **3 sides checked (Cliente · Negocio · Plataforma) and test artifacts
+      reverted (#9).**
 - [ ] If anything was missing from the design system or stack, the founder was
       asked rather than guessed.

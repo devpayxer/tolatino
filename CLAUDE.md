@@ -159,6 +159,21 @@ once and **prompt-cached** (cached reads ≈ 0.1× input cost), so keeping stand
 here — and giving each task a tight, well-scoped prompt — minimizes repeated token
 spend. Don't re-explain the project per task; point at this file.
 
+**Founder's quick guide (how to spend less per task):**
+- **Default the session to a Sonnet-tier model** (`/model` → Sonnet). Switch up to
+  the top tier only for architecture, data modeling, or a bug Sonnet failed to
+  fix; switch back after. Top tiers cost several times more per message.
+- **One task per message.** A screenshot + one line ("aquí, el botón X no hace Y")
+  beats a long explanation — cheaper and clearer.
+- **Don't re-explain the project or the design** — the skill + `docs/PROGRESS.md`
+  carry it between sessions. If Claude seems lost, say "lee PROGRESS.md".
+- **"ultracode" = heavy multi-agent mode, many times the cost.** Use it only for
+  big audits/verifications, not day-to-day fixes.
+- **For new UI, ask for a preview first:** "hazme un mock y mándame screenshot
+  antes de conectar datos" — approving a screenshot is far cheaper than rebuilding
+  a wired screen twice. No external design tool needed for derivable screens;
+  Claude must offer the mock → screenshot → approval → wire loop (skill §8).
+
 ## Design system — in the repo (source of truth)
 
 **Handoff v2 (2026-07-02, "Plataforma multicanal") supersedes the first design
