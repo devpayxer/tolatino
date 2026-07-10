@@ -956,7 +956,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     let raf = 0;
     const spy = () => {
       raf = 0;
-      const line = (headerHRef.current ?? 150) + barHRef.current + chipHRef.current + 4;
+      // The line sits just BELOW where a jumped-to section lands (its
+      // scrollMarginTop = sticky bars + 8), so clicking a category marks THAT
+      // category active — not its left neighbor. Must stay > menuScrollMargin.
+      const line = (headerHRef.current ?? 150) + barHRef.current + chipHRef.current + 14;
       let cur = keys[0];
       for (const k of keys) {
         const el = document.getElementById(`menu-cat-${k}`);
@@ -964,6 +967,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         if (el.getBoundingClientRect().top <= line) cur = k;
         else break;
       }
+      // Near the page bottom the last short sections can't reach the line, so the
+      // last category would never light up — force it once we've hit the bottom.
+      const doc = document.documentElement;
+      if (window.innerHeight + window.scrollY >= doc.scrollHeight - 2) cur = keys[keys.length - 1];
       setActiveCat((p) => (p === cur ? p : cur));
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(spy); };
