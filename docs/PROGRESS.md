@@ -3,7 +3,38 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-09.
+> Last updated: 2026-07-10.
+
+## Platform polish batch (2026-07-10) — all verified in a real browser
+- **Business single-page restored** (founder correction): the food menu lives ONLY
+  in the "Menú" tab of `BizDetail.tsx`; the full-page OrderFlow takeover was
+  reverted/deleted. **Rule: menu work is ADDITIVE to the Menú tab — never rebuild
+  the single-page.**
+- **Menú tab, DoorDash-grade:** sticky category rail pinned under the tab bar +
+  scroll-spy (active chip tracks the visible section, auto-centers; frozen during
+  click-jumps and reset on tab entry so it never flashes); desktop hover arrows
+  ◁▷ on the rail; product-card **quantity stepper** ( + → [🗑]1[+] → [−]N[+] ),
+  no more "Pedir" one-tap button.
+- **Site-wide modal scroll-lock:** `lib/scrollLock.ts` (ref-counted, iOS-safe)
+  wired into the shared `<Overlay>` (≈84 modals) + bespoke overlays
+  (ConfirmDialog, photo viewer, Billing cancel, Panel drawer, ModulePage).
+- **No demo flash on load:** `useLiveData` gained `loading`; with a real backend
+  it starts EMPTY + skeletons (`SkeletonList` in ui.tsx) in Negocios/Eventos/
+  Comunidad — fixtures only when no backend or on query error.
+- **Constant-layout sticky header on BizDetail:** the compact title's 50px is
+  ALWAYS reserved in the sticky bar (Overview overlaps it via `-mt-[46px]`);
+  pinning only FADES it (stuck boolean → opacity/transform). Zero layout writes
+  on scroll = no jump/flicker; tab switches settle on their first frame.
+- **Verification harness:** `tools/mobile-audit/*.js` — Playwright + async curl
+  relay for `*.supabase.co` (sandbox proxy can't MITM Chromium TLS). Key scripts:
+  `single-page`, `menu-sticky`, `menu-stepper`, `spy-click/noflash/tabentry`,
+  `scroll-lock`, `sticky-collapse`, `tab-switch`, `no-demo-flash`, `desktop-arrows`,
+  `cocina-ui/accept`. Serve `apps/web/out` with `npx serve out -l 4173 --no-clipboard`
+  (NOT `-s` — SPA mode breaks the multi-page export). Mint sessions via GoTrue
+  admin generate_link (scratchpad `mint-session.mjs` pattern; never echo keys).
+- **Supabase security-advisor email:** verified false alarm for user data; the
+  only flagged table is PostGIS `spatial_ref_sys` (can't self-remediate — see
+  LAUNCH-CHECKLIST §2 for the analysis + options).
 
 ## How this project ships (read first)
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,
