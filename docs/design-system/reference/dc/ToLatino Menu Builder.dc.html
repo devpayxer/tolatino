@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="./tolatino-menu.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+a{color:#6D4DF6;text-decoration:none}
+a:hover{color:#5A3FE0}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+@keyframes tlsheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes tlfade{from{opacity:0}to{opacity:1}}
+@keyframes tlpop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+</style>
+</helmet>
+
+<div style="{{ pageStyle }}">
+
+  <div style="{{ frameStyle }}">
+
+    <!-- STATUS BAR (mobile) -->
+    <sc-if value="{{ showStatusBar }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 6px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+    </sc-if>
+    <sc-if value="{{ showStatusBar }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:25;display:flex;gap:3px;background:rgba(255,255,255,.92);border:1px solid rgba(30,27,46,.08);border-radius:999px;padding:3px;box-shadow:0 4px 14px rgba(60,50,110,.16)">
+      <a href="ToLatino Ordenar.dc.html" style="padding:4px 10px;border-radius:999px;font:800 9.5px 'Plus Jakarta Sans';color:#6E6A85">Cliente</a>
+      <a href="ToLatino Cocina.dc.html" style="padding:4px 10px;border-radius:999px;font:800 9.5px 'Plus Jakarta Sans';color:#6E6A85">Cocina</a>
+      <span style="padding:4px 10px;border-radius:999px;font:800 9.5px 'Plus Jakarta Sans';background:#7B61FF;color:#fff">Menú</span>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showTopBar }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:16px;padding:12px 20px;background:#fff;border-bottom:1px solid rgba(30,27,46,.08);z-index:8">
+      <div style="font:800 20px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline;flex:none"><span>To’</span><span style="color:#7B61FF">Latino</span><span style="display:inline-block;width:6px;height:6px;background:#F4B740;transform:rotate(45deg);margin-left:5px;align-self:center"></span></div>
+      <span style="font:700 12px 'Plus Jakarta Sans';color:#9A96AE;flex:none">· Panel de negocio</span>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:4px;background:#F1EFFA;border-radius:999px;padding:4px;flex:none">
+        <a href="ToLatino Ordenar.dc.html" style="padding:7px 13px;border-radius:999px;font:800 11px 'Plus Jakarta Sans';color:#6E6A85">Cliente</a>
+        <a href="ToLatino Cocina.dc.html" style="padding:7px 13px;border-radius:999px;font:800 11px 'Plus Jakarta Sans';color:#6E6A85">Cocina</a>
+        <span style="padding:7px 13px;border-radius:999px;font:800 11px 'Plus Jakarta Sans';background:#7B61FF;color:#fff">Menú</span>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 10px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <button style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E">Menú de comida</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ headSub }}</div></div>
+      <a href="ToLatino Ordenar.dc.html" style="display:flex;align-items:center;gap:6px;background:#EFEBFF;border:none;cursor:pointer;padding:8px 11px;border-radius:10px;font:800 11px 'Plus Jakarta Sans';color:#6D4DF6;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>Ver listado</a>
+    </div>
+
+    <!-- SUBTABS -->
+    <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:11px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+      <sc-for list="{{ subtabs }}" as="s" hint-placeholder-count="4"><button onClick="{{ s.onTap }}" style="{{ s.style }}">{{ s.label }}</button></sc-for>
+    </div>
+
+    <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 16px">
+
+      <!-- ============ ITEMS TAB ============ -->
+      <sc-if value="{{ isItems }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Platillos">
+        <!-- publish banner -->
+        <div style="display:flex;align-items:center;gap:11px;background:#EFEBFF;border-radius:13px;padding:11px 13px;margin-bottom:12px">
+          <span style="width:30px;height:30px;border-radius:9px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 0 1 4-4h3a4 4 0 0 1 0 8h-1"></path><path d="M15 12a4 4 0 0 1-4 4H8a4 4 0 0 1 0-8h1"></path></svg></span>
+          <div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">Este menú alimenta tu listado</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">Cada cambio aparece al instante para tus clientes.</div></div>
+        </div>
+
+        <!-- search -->
+        <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid rgba(30,27,46,.1);border-radius:12px;padding:10px 13px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg><input value="{{ query }}" onInput="{{ onQuery }}" placeholder="Buscar platillos, ingredientes…" style="flex:1;border:none;outline:none;background:none;font:500 13px 'Plus Jakarta Sans';color:#1E1B2E"></div>
+
+        <!-- category filter -->
+        <div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding:12px 0 6px">
+          <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}<span style="{{ c.nStyle }}">{{ c.n }}</span></button></sc-for>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 2px 10px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ listLabel }} <span style="color:#9A96AE">{{ shownCount }}</span></span><span style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ hiddenSummary }}</span></div>
+
+        <!-- item cards -->
+        <div style="{{ itemsGridStyle }}">
+          <sc-for list="{{ items }}" as="it" hint-placeholder-count="6">
+          <div onClick="{{ it.onTap }}" style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:11px;display:flex;gap:12px;cursor:pointer;opacity:{{ it.op }}">
+            <div style="width:60px;height:60px;border-radius:12px;flex:none;position:relative;overflow:hidden;background:repeating-linear-gradient(135deg,{{ it.tileA }} 0 9px,{{ it.tileB }} 9px 18px);display:flex;align-items:center;justify-content:center">{{ it.glyph }}<sc-if value="{{ it.badge }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:0;left:0;background:{{ it.badgeBg }};color:{{ it.badgeC }};font:800 8px 'Plus Jakarta Sans';padding:2px 6px;border-bottom-right-radius:7px">{{ it.badge }}</span></sc-if></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</span><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E;white-space:nowrap">{{ it.price }}</span></div>
+              <div style="font:500 11px 'Plus Jakarta Sans';color:#8A86A0;margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">{{ it.desc }}</div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px">
+                <span style="background:#F1EFFA;color:#6E6A85;padding:3px 8px;border-radius:7px;font:700 9.5px 'Plus Jakarta Sans'">{{ it.cat }}</span>
+                <sc-if value="{{ it.addonCount }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:3px;background:#EFEBFF;color:#6D4DF6;padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ it.addonCount }} addons</span></sc-if>
+                <span style="font:600 9.5px 'Plus Jakarta Sans';color:#B7B3C6">{{ it.kcal }}</span>
+                <sc-if value="{{ it.hidden }}" hint-placeholder-val="{{ false }}"><span style="background:#ECE8F4;color:#9A96AE;padding:3px 8px;border-radius:7px;font:800 9.5px 'Plus Jakarta Sans'">Oculto</span></sc-if>
+              </div>
+            </div>
+          </div>
+          </sc-for>
+          <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:40px 20px;color:#9A96AE;font:600 13px 'Plus Jakarta Sans'">Sin resultados.</div></sc-if>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ CATEGORIES TAB ============ -->
+      <sc-if value="{{ isCats }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Categorias">
+        <div style="font:500 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-bottom:12px;line-height:1.45">{{ catCount }} categorías · arrastra para ordenar · activa/desactiva para mostrar en el listado.</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ catRows }}" as="c" hint-placeholder-count="8"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:11px;display:flex;align-items:center;gap:11px;opacity:{{ c.op }}"><span style="color:#C9C5D6;flex:none;cursor:grab"><svg width="16" height="16" viewBox="0 0 24 24" fill="#C9C5D6"><circle cx="9" cy="6" r="1.6"></circle><circle cx="15" cy="6" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="18" r="1.6"></circle><circle cx="15" cy="18" r="1.6"></circle></svg></span><div style="width:44px;height:44px;border-radius:11px;flex:none;position:relative;overflow:hidden;background:repeating-linear-gradient(135deg,{{ c.tileA }} 0 8px,{{ c.tileB }} 8px 16px);display:flex;align-items:center;justify-content:center">{{ c.glyph }}</div><div style="flex:1;min-width:0"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ c.name }}</div><div style="font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:3px">{{ c.n }} platillos</div></div><div onClick="{{ c.onToggle }}" style="width:42px;height:25px;border-radius:13px;background:{{ c.track }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ c.knob }};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.18)"></span></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ Agregar categoría</button>
+        <div style="height:40px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ ADDONS TAB ============ -->
+      <sc-if value="{{ isAddons }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Addons">
+        <div style="display:flex;align-items:center;gap:11px;background:#EFEBFF;border-radius:13px;padding:11px 13px;margin-bottom:14px"><span style="width:30px;height:30px;border-radius:9px;background:#7B61FF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"></path></svg></span><div style="flex:1"><div style="font:800 12px 'Plus Jakarta Sans';color:#1E1B2E">Grupos de addons reutilizables</div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#7C7790;margin-top:1px;line-height:1.4">Crea un grupo una vez y adjúntalo a cualquier platillo.</div></div></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ addonGroups }}" as="m" hint-placeholder-count="6"><div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:14px;padding:13px"><div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><span style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ m.name }}</span><sc-if value="{{ m.req }}" hint-placeholder-val="{{ false }}"><span style="background:#EFEBFF;color:#6D4DF6;padding:2px 7px;border-radius:6px;font:800 8.5px 'Plus Jakarta Sans'">Obligatorio</span></sc-if><span style="margin-left:auto;font:600 10px 'Plus Jakarta Sans';color:#9A96AE">{{ m.typeLabel }} · {{ m.used }}</span></div><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ m.opts }}" as="o" hint-placeholder-count="3"><span style="background:#F7F6FC;border:1px solid rgba(30,27,46,.08);color:#56506E;padding:5px 9px;border-radius:8px;font:700 10.5px 'Plus Jakarta Sans'">{{ o.label }} <span style="color:{{ o.priceC }}">{{ o.price }}</span></span></sc-for><sc-if value="{{ m.more }}" hint-placeholder-val="{{ false }}"><span style="color:#9A96AE;padding:5px 4px;font:700 10.5px 'Plus Jakarta Sans'">{{ m.more }}</span></sc-if></div></div></sc-for>
+        </div>
+        <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:13px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans';margin-top:14px">+ Nuevo grupo de addons</button>
+        <div style="height:40px"></div>
+      </div>
+      </sc-if>
+
+      <!-- ============ PUBLISH TAB ============ -->
+      <sc-if value="{{ isPublish }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Publicacion">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px">
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">Publicados</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ pubCount }}</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">Categorías</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ catCount }}</div></div>
+          <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:13px;padding:11px"><div style="font:600 9px 'Plus Jakarta Sans';color:#9A96AE">Con addons</div><div style="font:800 19px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ addonItemCount }}</div></div>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:16px;overflow:hidden">
+          <div style="height:120px;position:relative;background:repeating-linear-gradient(135deg,{{ r.tileA }} 0 12px,{{ r.tileB }} 12px 24px)"><div style="position:absolute;left:14px;bottom:12px;background:#F6E05E;color:#1E1B2E;padding:4px 10px;border-radius:9px;font:800 10.5px 'Plus Jakarta Sans'">🔥 {{ r.deal }}</div></div>
+          <div style="padding:14px">
+            <div style="display:flex;align-items:center;gap:7px"><span style="font:800 17px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.name }}</span><span style="display:inline-flex;width:17px;height:17px;border-radius:50%;background:#7B61FF;align-items:center;justify-content:center;flex:none"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></div>
+            <div style="font:600 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-top:5px">★ {{ r.rating }} · {{ r.cuisine }} · {{ pubCount }} platillos en el menú</div>
+            <a href="ToLatino Ordenar.dc.html" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:13px;border:none;background:#7B61FF;color:#fff;padding:14px;border-radius:13px;font:800 13.5px 'Plus Jakarta Sans';cursor:pointer;box-shadow:0 12px 24px rgba(123,97,255,.28)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>Ver como cliente</a>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;background:#E3F5EA;border-radius:13px;padding:12px 13px;margin-top:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F8A4C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><polyline points="9 12 11 14 15 10"></polyline></svg><div style="font:600 11px 'Plus Jakarta Sans';color:#176B3A;line-height:1.45">Tu menú está sincronizado. Los cambios de precio, stock y addons se publican en segundos.</div></div>
+        <div style="height:40px"></div>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <!-- FOOTER: add item -->
+    <sc-if value="{{ isItems }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+      <button onClick="{{ startAdd }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:#7B61FF;color:#fff;padding:14px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(123,97,255,.3)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Agregar platillo</button>
+    </div>
+    </sc-if>
+
+    <!-- ============ ADD / EDIT SHEET ============ -->
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:30;background:rgba(28,24,46,.5);animation:tlfade .2s ease"></div>
+    <div data-noscroll style="{{ sheetWrapStyle }}">
+      <div style="flex:none;padding:9px 0 4px;display:flex;justify-content:center;position:relative"><span style="width:42px;height:5px;border-radius:3px;background:#E3DEF2"></span><button onClick="{{ closeSheet }}" style="position:absolute;right:14px;top:8px;width:30px;height:30px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button></div>
+
+      <div data-noscroll style="flex:1;overflow-y:auto;min-height:0;padding:6px 18px 8px">
+        <div style="font:800 17px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:2px">{{ sheetTitle }}</div>
+
+        <!-- live preview -->
+        <div style="background:#F7F6FC;border:1px solid rgba(30,27,46,.06);border-radius:14px;padding:11px;display:flex;gap:12px;margin:12px 0 16px">
+          <div style="width:56px;height:56px;border-radius:12px;flex:none;background:repeating-linear-gradient(135deg,{{ dTileA }} 0 9px,{{ dTileB }} 9px 18px);display:flex;align-items:center;justify-content:center">{{ dGlyph }}</div>
+          <div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:8px"><span style="font:800 13.5px 'Plus Jakarta Sans';color:{{ dNameC }}">{{ dName }}</span><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ dPrice }}</span></div><div style="font:500 10.5px 'Plus Jakarta Sans';color:#8A86A0;margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ dDesc }}</div><div style="font:700 9.5px 'Plus Jakarta Sans';color:#6D4DF6;margin-top:5px">{{ dAddonLabel }}</div></div>
+        </div>
+
+        <!-- fields -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">Nombre del platillo *</div><input value="{{ draft.name }}" onInput="{{ onName }}" placeholder="Ej. Hamburguesa con Queso" style="width:100%;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E;outline:none"></div>
+          <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">Descripción</div><textarea value="{{ draft.desc }}" onInput="{{ onDesc }}" placeholder="Ingredientes clave, qué lo hace especial…" data-noscroll style="width:100%;height:64px;resize:none;border:1.5px solid #E2DEF4;border-radius:11px;padding:11px 13px;font:500 12.5px 'Plus Jakarta Sans';color:#1E1B2E;outline:none;line-height:1.5"></textarea></div>
+          <div style="display:flex;gap:11px">
+            <div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">Precio *</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 13px"><span style="font:700 13px 'Plus Jakarta Sans';color:#9A96AE">$</span><input value="{{ draft.price }}" onInput="{{ onPrice }}" placeholder="0.00" style="flex:1;border:none;outline:none;padding:11px 8px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"></div></div>
+            <div style="flex:1"><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">Calorías</div><div style="display:flex;align-items:center;border:1.5px solid #E2DEF4;border-radius:11px;padding:0 13px"><input value="{{ draft.kcal }}" onInput="{{ onKcal }}" placeholder="—" style="flex:1;border:none;outline:none;padding:11px 8px;font:600 13px 'Plus Jakarta Sans';color:#1E1B2E"><span style="font:700 11px 'Plus Jakarta Sans';color:#9A96AE">Cal</span></div></div>
+          </div>
+          <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">Categoría *</div><div data-noscroll style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ draftCats }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.onTap }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+          <div><div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin-bottom:6px">Etiqueta</div><div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ draftBadges }}" as="b" hint-placeholder-count="4"><button onClick="{{ b.onTap }}" style="{{ b.style }}">{{ b.label }}</button></sc-for></div></div>
+        </div>
+
+        <!-- ADDONS attach -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(30,27,46,.08)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">Addons y opciones</span><span style="font:800 11px 'Plus Jakarta Sans';color:#6D4DF6">{{ draftAddonCount }} adjuntos</span></div>
+          <div style="font:500 11px 'Plus Jakarta Sans';color:#8A86A0;line-height:1.45;margin-bottom:12px">Adjunta grupos reutilizables: tamaños, extras, salsas, bebida del combo. Toca para activar.</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ draftMods }}" as="m" hint-placeholder-count="5">
+            <button onClick="{{ m.onTap }}" style="{{ m.style }}">
+              <span style="{{ m.ck }}"><sc-if value="{{ m.on }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></span>
+              <span style="flex:1;min-width:0;text-align:left"><span style="display:flex;align-items:center;gap:6px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ m.name }}</span><sc-if value="{{ m.req }}" hint-placeholder-val="{{ false }}"><span style="background:#EFEBFF;color:#6D4DF6;padding:1px 6px;border-radius:5px;font:800 8px 'Plus Jakarta Sans'">Oblig.</span></sc-if></span><span style="display:block;font:600 10px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ m.meta }}</span></span>
+            </button>
+            </sc-for>
+          </div>
+          <button style="width:100%;border:1.5px dashed #C9C2E6;background:#F7F6FC;color:#6D4DF6;cursor:pointer;padding:12px;border-radius:11px;font:800 12px 'Plus Jakarta Sans';margin-top:10px">+ Crear grupo de addons</button>
+        </div>
+        <div style="height:8px"></div>
+      </div>
+
+      <!-- sheet footer -->
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:12px 18px 18px;border-top:1px solid rgba(30,27,46,.08);background:#fff">
+        <sc-if value="{{ isEdit }}" hint-placeholder-val="{{ false }}"><button onClick="{{ deleteItem }}" style="flex:none;border:1.5px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:14px 16px;border-radius:13px;font:800 12.5px 'Plus Jakarta Sans'">Eliminar</button></sc-if>
+        <button onClick="{{ saveItem }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:{{ saveBg }};color:#fff;padding:15px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 10px 22px rgba(123,97,255,.28)">{{ saveLabel }}</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- TOAST -->
+    <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:92px;left:50%;transform:translateX(-50%);z-index:42;background:#1E1B2E;color:#fff;padding:11px 18px;border-radius:12px;font:700 12.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px rgba(28,24,46,.4);white-space:nowrap;animation:tlpop .2s ease"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v == null || v === '') ? d : v; } catch (e) { return d; } }
+  _bs() { const s = this._qp('screen', ''); return ['items', 'categories', 'addons', 'publish'].includes(s) ? s : 'items'; }
+  state = {
+    subtab: this._bs(), bp: (function(){var w=(typeof window!=='undefined'&&window.innerWidth)||1200;return w<768?'mobile':w<1024?'tablet':'desktop';})(), cat: 'all', query: '',
+    items: null, catState: null, sheet: null,
+    toast: '', toastT: null, _ready: false,
+  };
+  componentDidMount() {
+    if (!window.TOLATINO_MENU) { this._poll = setInterval(() => { if (window.TOLATINO_MENU) { clearInterval(this._poll); this.setState({ _ready: true }); } }, 60); }
+    const sc = this._qp('screen', '');
+    if (sc === 'add') { this.setState({ sheet: { mode: 'add', draft: this.newDraft() } }); }
+    if (sc === 'edit') { const t = setInterval(() => { if (window.TOLATINO_MENU) { clearInterval(t); this.openEdit(1); } }, 60); }
+    this._onResize = () => { const w = window.innerWidth; const bp = w < 768 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop'; if (bp !== this.state.bp) this.setState({ bp }); };
+    this._onResize(); window.addEventListener('resize', this._onResize);
+  }
+  componentWillUnmount() { clearInterval(this._poll); clearTimeout(this.state.toastT); if (this._onResize) window.removeEventListener('resize', this._onResize); }
+  M() { return window.TOLATINO_MENU; }
+  money(n) { return '$' + (Math.round(Number(n) * 100) / 100).toFixed(2); }
+  flash(m) { clearTimeout(this.state.toastT); const tt = setTimeout(() => this.setState({ toast: '' }), 1900); this.setState({ toast: m, toastT: tt }); }
+
+  IC(name, s, stroke) {
+    const P = {
+      bag: ['M6 8h12l1 12H5z', 'M9 8a3 3 0 0 1 6 0'], burger: ['M4 9a8 8 0 0 1 16 0z', 'M3 13h18', 'M4 16h16a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z'],
+      drumstick: ['M15 3a5 5 0 0 0-5 8l-1 1a3 3 0 1 0 3 3l1-1a5 5 0 0 0 8-5 5 5 0 0 0-6-6z', 'M8.5 15.5 4 20'],
+      sun: ['M12 4V2M12 22v-2M5 5 3.5 3.5M20.5 20.5 19 19M4 12H2M22 12h-2M5 19l-1.5 1.5M20.5 3.5 19 5', 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'],
+      fries: ['M6 9l1 11h10l1-11', 'M6 9h12', 'M9 9V4M12 9V3M15 9V5'], smile: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M8.5 14a4 4 0 0 0 7 0', 'M9 9.5h.01M15 9.5h.01'],
+      leaf: ['M4 12c0 5 3 8 8 8 0-8-3-12-8-12', 'M20 5c0 9-5 12-9 13'], wrap: ['M5 4h14l-3 16H8z', 'M8 8h8M8 12h8'],
+      icecream: ['M8 10a4 4 0 0 1 8 0', 'M8 10h8l-4 11z', 'M9 14h6'], coffee: ['M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z', 'M17 9h2a2 2 0 0 1 0 4h-2', 'M7 4v1M10 4v1M13 4v1'],
+      cup: ['M6 4h12l-1 16H7z', 'M9 9h6'], shake: ['M7 8h10l-1 12H8z', 'M7 8a5 5 0 0 1 10 0', 'M13 4l2-2'],
+      star: ['M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.3l6.1-.7z'], users: ['M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z', 'M22 20v-2a4 4 0 0 0-3-3.9', 'M16 4.1a4 4 0 0 1 0 7.8'],
+      sparkle: ['M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z', 'M18 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z'],
+    };
+    const paths = P[name] || P.bag;
+    return React.createElement('svg', { width: s || 15, height: s || 15, viewBox: '0 0 24 24', fill: 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  flat() {
+    if (this.state.items) return this.state.items;
+    const M = this.M(); if (!M) return [];
+    const out = [];
+    M.categories.forEach((c) => c.items.forEach((i) => out.push({ id: i.id, cat: i.cat, name: i.name, desc: i.desc, price: i.price, kcal: i.kcal, badge: i.badge, mods: (i.mods || []).slice(), visible: true })));
+    return out;
+  }
+  catOf(id) { return this.M().categories.find((c) => c.id === id); }
+  badgeStyle(b) { const map = { Popular: ['#FCEFD6', '#9A6A12'], Nuevo: ['#EFEBFF', '#6D4DF6'], Picante: ['#FDE7EF', '#D6336C'], Vegano: ['#E3F5EA', '#1F8A4C'], Vegetariano: ['#E3F5EA', '#1F8A4C'] }; return map[b] || ['#F1EFFA', '#6E6A85']; }
+  glyph(cat, s) { const c = this.catOf(cat) || {}; return this.IC(c.icon || 'bag', s || 26, 'rgba(30,27,46,.34)'); }
+
+  newDraft() { return { id: null, name: '', desc: '', cat: 'burgers', price: '', kcal: '', badge: '', mods: ['patty', 'cheese', 'addBurger', 'sauce'] }; }
+
+  renderVals() {
+    const M = this.M();
+    if (!M) return { isItems: false, isCats: false, isAddons: false, isPublish: false, sheetOpen: false, toastShow: false, headSub: '' };
+    const st = this.state; const money = (n) => this.money(n); const groups = M.groups;
+    const cats = M.categories; const items = this.flat();
+    const bp = st.bp; const isMobile = bp === 'mobile'; const isTablet = bp === 'tablet'; const isDesktop = bp === 'desktop';
+    const pageStyle = (isTablet || isDesktop) ? 'min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center' : 'min-height:100vh;background:#F4F2F9;display:flex;flex-direction:column';
+    const frameW = isDesktop ? '980px' : isTablet ? '600px' : '100%';
+    const frameStyle = 'position:relative;width:' + frameW + ';max-width:100%;height:100vh;margin:0 auto;background:#F4F2F9;overflow:hidden;display:flex;flex-direction:column' + ((isTablet || isDesktop) ? ';box-shadow:0 0 60px rgba(60,50,110,.14)' : '');
+    const itemsGridStyle = isDesktop ? 'display:grid;grid-template-columns:repeat(2,1fr);gap:11px;align-items:start' : 'display:flex;flex-direction:column;gap:10px';
+    const sheetWrapStyle = isMobile ? 'position:absolute;left:0;right:0;bottom:0;z-index:31;max-height:94%;display:flex;flex-direction:column;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -18px 50px rgba(28,24,46,.3);animation:tlsheet .26s cubic-bezier(.4,0,.2,1)' : 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:31;width:560px;max-width:calc(100% - 40px);max-height:92%;display:flex;flex-direction:column;background:#fff;border-radius:24px;box-shadow:0 30px 70px rgba(28,24,46,.4);animation:tlpop .24s ease';
+    const catSt = st.catState || cats.reduce((o, c) => { o[c.id] = true; return o; }, {});
+
+    const subtabDefs = [['items', 'Platillos'], ['categories', 'Categorías'], ['addons', 'Addons'], ['publish', 'Publicación']];
+    const subtabs = subtabDefs.map((s) => ({ label: s[1], onTap: () => this.setState({ subtab: s[0] }), style: 'flex:none;border:none;cursor:pointer;padding:8px 14px;border-radius:999px;font:' + (st.subtab === s[0] ? '800' : '700') + ' 12.5px \'Plus Jakarta Sans\';' + (st.subtab === s[0] ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E') }));
+
+    // ITEMS
+    const q = st.query.trim().toLowerCase();
+    let filtered = st.cat === 'all' ? items : items.filter((i) => i.cat === st.cat);
+    if (q) filtered = filtered.filter((i) => (i.name + ' ' + i.desc).toLowerCase().includes(q));
+    const chip = (on) => 'flex:none;border:none;cursor:pointer;padding:7px 12px;border-radius:999px;font:' + (on ? '800' : '700') + ' 11.5px \'Plus Jakarta Sans\';display:flex;align-items:center;' + (on ? 'background:#1E1B2E;color:#fff' : 'background:#fff;color:#56506E;border:1px solid rgba(30,27,46,.1)');
+    const catFilters = [{ id: 'all', label: 'Todos', n: items.length }].concat(cats.map((c) => ({ id: c.id, label: c.name, n: items.filter((i) => i.cat === c.id).length }))).map((c) => ({ label: c.label, n: c.n, onTap: () => this.setState({ cat: c.id }), style: chip(st.cat === c.id), nStyle: 'margin-left:6px;font-weight:800;color:' + (st.cat === c.id ? 'rgba(255,255,255,.75)' : '#9A96AE') }));
+    const itemRows = filtered.map((i) => { const [bb, bc] = this.badgeStyle(i.badge); const c = this.catOf(i.cat); return {
+      name: i.name, desc: i.desc, price: money(i.price), cat: c.name, tileA: c.tileA, tileB: c.tileB, glyph: this.glyph(i.cat, 26),
+      badge: i.badge, badgeBg: bb, badgeC: bc, addonCount: (i.mods || []).length || 0, kcal: i.kcal + ' Cal', hidden: !i.visible, op: i.visible ? '1' : '.55',
+      onTap: () => this.openEdit(i.id),
+    }; });
+    const hiddenN = items.filter((i) => !i.visible).length;
+
+    // CATEGORIES
+    const catRows = cats.map((c) => { const on = catSt[c.id] !== false; return { name: c.name, n: items.filter((i) => i.cat === c.id).length, tileA: c.tileA, tileB: c.tileB, glyph: this.IC(c.icon, 20, 'rgba(30,27,46,.5)'), op: on ? '1' : '.55', track: on ? '#7B61FF' : '#D8D2E6', knob: on ? '20px' : '3px', onToggle: () => this.setState({ catState: Object.assign({}, catSt, { [c.id]: !on }) }) }; });
+
+    // ADDONS library
+    const usedCount = (gid) => items.filter((i) => (i.mods || []).includes(gid)).length;
+    const addonGroups = Object.keys(groups).map((gid) => { const g = groups[gid]; const opts = g.opts.slice(0, 3).map((o) => ({ label: o[0], price: o[1] > 0 ? '+' + money(o[1]) : (o[1] < 0 ? money(o[1]) : '$0'), priceC: o[1] ? '#1E1B2E' : '#9A96AE' })); return {
+      name: g.name, req: g.required, typeLabel: g.type === 'single' ? 'Elige uno' : 'Elige varios', used: usedCount(gid) + ' platillos', opts, more: g.opts.length > 3 ? ('+' + (g.opts.length - 3) + ' más') : '' }; });
+
+    // PUBLISH
+    const R = M.restaurant;
+    const addonItemCount = items.filter((i) => (i.mods || []).length > 0).length;
+
+    // ADD/EDIT SHEET
+    const sh = st.sheet; let sheetVals = {};
+    if (sh) {
+      const d = sh.draft; const c = this.catOf(d.cat) || cats[0];
+      const draftCats = cats.map((x) => ({ label: x.name, onTap: () => this.upDraft({ cat: x.id }), style: chip(d.cat === x.id) }));
+      const badgeDefs = ['Popular', 'Nuevo', 'Picante', 'Vegano', 'Vegetariano'];
+      const draftBadges = badgeDefs.map((b) => ({ label: b, onTap: () => this.upDraft({ badge: d.badge === b ? '' : b }), style: 'border:none;cursor:pointer;padding:7px 12px;border-radius:999px;font:800 11px \'Plus Jakarta Sans\';' + (d.badge === b ? 'background:#7B61FF;color:#fff' : 'background:#F1EFFA;color:#56506E') }));
+      const draftMods = Object.keys(groups).map((gid) => { const g = groups[gid]; const on = d.mods.includes(gid); return {
+        name: g.name, req: g.required, meta: (g.type === 'single' ? 'Elige uno' : 'Elige varios') + ' · ' + g.opts.length + ' opciones', on,
+        onTap: () => { const has = d.mods.includes(gid); this.upDraft({ mods: has ? d.mods.filter((x) => x !== gid) : d.mods.concat([gid]) }); },
+        style: 'display:flex;align-items:center;gap:11px;width:100%;border:1.5px solid ' + (on ? '#7B61FF' : '#E2DEF4') + ';background:' + (on ? '#F7F5FF' : '#fff') + ';cursor:pointer;padding:11px 12px;border-radius:12px',
+        ck: 'width:20px;height:20px;border-radius:6px;border:1.5px solid ' + (on ? '#7B61FF' : '#D8D2E6') + ';display:flex;align-items:center;justify-content:center;flex:none;background:' + (on ? '#7B61FF' : '#fff') }; });
+      const ready = d.name && d.price;
+      sheetVals = { sheetOpen: true, sheetTitle: sh.mode === 'edit' ? 'Editar platillo' : 'Nuevo platillo', isEdit: sh.mode === 'edit',
+        dTileA: c.tileA, dTileB: c.tileB, dGlyph: this.glyph(d.cat, 26), dName: d.name || 'Nombre del platillo', dNameC: d.name ? '#1E1B2E' : '#C0BBD0', dPrice: d.price ? money(d.price) : '$0.00', dDesc: d.desc || 'La descripción aparece aquí…', dAddonLabel: d.mods.length + ' grupos de addons · ' + c.name,
+        draft: d, draftCats, draftBadges, draftMods, draftAddonCount: d.mods.length,
+        saveBg: ready ? '#7B61FF' : '#C9C2E6', saveLabel: sh.mode === 'edit' ? 'Guardar cambios' : 'Publicar platillo' };
+    }
+
+    return {
+      headSub: R.name + ' · ' + items.length + ' platillos · ' + cats.length + ' categorías',
+      pageStyle, frameStyle, itemsGridStyle, sheetWrapStyle, showStatusBar: isMobile, showTopBar: !isMobile,
+      subtabs, isItems: st.subtab === 'items', isCats: st.subtab === 'categories', isAddons: st.subtab === 'addons', isPublish: st.subtab === 'publish',
+      query: st.query, onQuery: (e) => this.setState({ query: e.target.value }),
+      catFilters, items: itemRows, noResults: filtered.length === 0,
+      listLabel: st.cat === 'all' ? 'Todos los platillos' : this.catOf(st.cat).name, shownCount: filtered.length, hiddenSummary: hiddenN + ' ocultos',
+      catCount: cats.length, catRows,
+      addonGroups,
+      pubCount: items.length, addonItemCount,
+      r: { name: R.name, rating: R.rating, cuisine: R.cuisine, tileA: R.tileA, tileB: R.tileB, deal: R.dealText },
+      startAdd: () => this.setState({ sheet: { mode: 'add', draft: this.newDraft() } }),
+      closeSheet: () => this.setState({ sheet: null }),
+      onName: (e) => this.upDraft({ name: e.target.value }), onDesc: (e) => this.upDraft({ desc: e.target.value }), onPrice: (e) => this.upDraft({ price: e.target.value }), onKcal: (e) => this.upDraft({ kcal: e.target.value }),
+      saveItem: () => this.saveItem(), deleteItem: () => this.deleteItem(),
+      ...sheetVals,
+      toastShow: !!st.toast, toastMsg: st.toast,
+    };
+  }
+
+  upDraft(patch) { this.setState((s) => ({ sheet: Object.assign({}, s.sheet, { draft: Object.assign({}, s.sheet.draft, patch) }) })); }
+  openEdit(id) { const it = this.flat().find((x) => x.id === id); if (!it) return; this.setState({ sheet: { mode: 'edit', draft: { id: it.id, name: it.name, desc: it.desc, cat: it.cat, price: String(it.price), kcal: String(it.kcal), badge: it.badge, mods: (it.mods || []).slice() } } }); }
+  saveItem() {
+    const d = this.state.sheet.draft; if (!d.name || !d.price) return;
+    const items = this.flat().slice();
+    if (this.state.sheet.mode === 'edit') { const idx = items.findIndex((x) => x.id === d.id); if (idx >= 0) items[idx] = Object.assign({}, items[idx], { name: d.name, desc: d.desc, cat: d.cat, price: Number(d.price) || 0, kcal: Number(d.kcal) || 0, badge: d.badge, mods: d.mods }); }
+    else { const id = Math.max(0, ...items.map((x) => x.id)) + 1; items.push({ id, cat: d.cat, name: d.name, desc: d.desc, price: Number(d.price) || 0, kcal: Number(d.kcal) || 0, badge: d.badge, mods: d.mods, visible: true }); }
+    this.setState({ items, sheet: null, cat: d.cat, subtab: 'items' });
+    this.flash(this.state.sheet && this.state.sheet.mode === 'edit' ? 'Guardado · listado actualizado ✓' : 'Publicado en tu listado ✓');
+  }
+  deleteItem() { const d = this.state.sheet.draft; this.setState({ items: this.flat().filter((x) => x.id !== d.id), sheet: null }); this.flash('Platillo eliminado'); }
+}
+</script>
+</body>
+</html>

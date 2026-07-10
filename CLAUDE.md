@@ -197,22 +197,41 @@ spend. Don't re-explain the project per task; point at this file.
 
 ## Design system — in the repo (source of truth)
 
-**Handoff v2 (2026-07-02, "Plataforma multicanal") supersedes the first design
-system.** The founder scrapped the first app and delivered a new handoff from
-Claude's design tool. It is committed under **`docs/design-system/`**. Read it
-before building any UI; never improvise. Key files:
-- **`docs/design-system/HANDOFF.md`** — the full spec: every screen, design
-  tokens (colors/type/radii/shadows/spacing), interactions, state, responsive
-  behavior, and how to map the "Studio" prototype to the real app. **This is
-  the design half of project memory;** this root `CLAUDE.md` is the master.
-- **`docs/design-system/PROMPT.md`** — the founder's build brief for the handoff.
-- **`docs/design-system/reference/dc/`** — high-fidelity interactive HTML
-  prototypes (look/copy/interaction source of truth; do NOT copy their
-  inline-styled HTML). `To'Latino Studio.dc.html` is the **master file**
-  (landing + client app + embedded business panel, 3 synced device frames —
-  the multi-device canvas itself is review scaffolding, discard it). The
-  business panel lives in `To'Latino Business Dashboard[.Mobile].dc.html` and
-  the `ToLatino *Module*.dc.html` sub-modules.
+**Handoff COMPLETO (2026-07-10, "Plataforma multicanal") is the current,
+canonical handoff — read it before ANY UI work; never improvise.** It merges
+two prior partial uploads (an earlier "Plataforma" handoff and a separate
+"Pedidos" handoff from another session) into one package. Committed under
+**`docs/design-system/`**:
+- **`docs/design-system/README.md`** — **master index, start here.** Vision,
+  route map, shared design tokens, file map, phased build plan.
+- **`docs/design-system/01-plataforma.md`** — **Dominio A** in full: Bienvenida
+  (landing), Cliente (Comunidad/Negocios/Eventos/Muy pronto), Panel de negocio
+  + its modules. Design tokens, every screen, interactions, state, responsive
+  behavior.
+- **`docs/design-system/02-pedidos.md`** — **Dominio B** in full: the
+  DoorDash-style food-ordering layer (Cliente Ordenar · Cocina · Menú Builder),
+  its shared data model (`tolatino-menu.js`), and the charge/payout math
+  (10% service, 8.25% tax, AMIGO10 promo, 15% To'Latino commission).
+- **`docs/design-system/PROMPT.md`** — the founder's build brief.
+- **`docs/design-system/Guia visual.html`** — printable contact sheet of the
+  15 Pedidos screens (open in a browser → Cmd/Ctrl+P → Save as PDF).
+- **`docs/design-system/reference/dc/`** — 18 high-fidelity interactive HTML
+  prototypes (look/behavior source of truth; do NOT copy their inline-styled
+  HTML). `To'Latino Studio.dc.html` is Domain A's master file (landing +
+  client app + embedded business panel, 3 synced device frames — the
+  multi-device canvas is review scaffolding, discard it). The business panel
+  lives in `To'Latino Business Dashboard[.Mobile].dc.html` + the
+  `ToLatino *Module*.dc.html` sub-modules. Domain B adds `ToLatino
+  Ordenar.dc.html` (client ordering), `ToLatino Cocina.dc.html` (kitchen/order
+  management), `ToLatino Menu Builder.dc.html` (menu editor) — each is
+  deep-linkable via `?screen=` (see `02-pedidos.md` for the screen names).
+
+**Both domains are the SAME app** — Domain B is a vertical layer over Domain A
+(Cliente-Ordenar lives inside the citizen app; Cocina/Menú live inside the
+existing business panel, NOT as separate takeover screens — see skill §8's
+`ToLatino Customers Module.dc.html` lesson: a Domain-B screen (Cocina) still
+has to graft additively onto whatever Domain-A screen already occupies that
+panel tab, never replace it wholesale).
 
 ### Product architecture (from Handoff v2)
 One responsive app, three surfaces:
@@ -225,13 +244,13 @@ One responsive app, three surfaces:
 3. **Negocio** → business admin panel (`/negocio/*`), sidebar/drawer varying by
    plan (Free/Verified/Premium) and rubro (Restaurante/Belleza/Auto/Tienda/Renta).
 
-### Design hard-rules (from Handoff v2 — enforce on every UI task)
+### Design hard-rules (from the complete Handoff — enforce on every UI task)
 - **Spanish-first:** every user-facing string is `L('es','en')` (global ES/EN
   toggle). Never hardcode one language.
 - **Tokens only:** primary `#7B61FF` (as `primary` token), ink `#1E1B2E`, amber
   diamond `#F4B740`, app bg `#F4F2F9`; Plus Jakarta Sans (400–800). Consume
   named Tailwind tokens — never raw hex in components. Full table in
-  `HANDOFF.md` → Design Tokens.
+  `README.md` / `01-plataforma.md` / `02-pedidos.md` → Design Tokens.
 - **Mobile-first, pixel-perfect** (≤767px = 1 column, own search row, **bottom
   nav: Comunidad · Negocios · ＋ FAB (Publicar) · Eventos · Alertas**); tablet
   768–1023 (2 cols, no bottom bar); desktop ≥1024 (multi-column, sidebar

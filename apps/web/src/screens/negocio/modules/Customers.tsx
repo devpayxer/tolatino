@@ -10,15 +10,16 @@
 // Mobile-first; on desktop the secondary panels move into a sticky side rail and
 // lists spread into multi-column grids. All state is real & local.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check, ChevronRight, Clock, DollarSign, Download, Flag, Gift, Heart, Mail, Phone,
-  RefreshCw, Search, ShoppingBag, Sparkles, Star, UserPlus, Users, XCircle, Zap,
+  RefreshCw, Search, ShoppingBag, Sparkles, Star, Truck, UserPlus, Users, XCircle, Zap,
 } from 'lucide-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { supabase } from '@/lib/supabase';
 import { Overlay, OverlayTitle, Switch } from '@/components/ui';
+import type { OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
 
 type Mode = 'customers' | 'orders' | 'reviews';
 type Seg = 'all' | 'new' | 'regulars' | 'vip' | 'risk';
@@ -32,10 +33,19 @@ type Customer = {
   last: [string, string]; tag: [string, string]; vip: boolean;
   isNew: boolean; atRisk: boolean; b2b?: boolean;
 };
+// Delivery/prep/payout metadata (business_orders.fulfillment jsonb, migration
+// 0049/0074 — no schema change needed for any of §Pedidos' new features below).
+type Fulfil = {
+  address?: string; address_label?: string; instructions?: string; tip?: number;
+  dispatch?: 'unassigned' | 'assigned' | 'picked_up' | 'on_the_way' | 'delivered';
+  driver?: string; driver_phone?: string; eta?: string; prep?: number;
+  subtotal?: number; delivery_fee?: number; service_fee?: number; paid_total?: number;
+};
 type Order = {
   id: string; dbId?: string; who: [string, string]; placed: [string, string]; urgent: boolean;
   channel: Channel; status: OStatus; total: string; items: [string, string];
   lines?: OrderItem[]; totalN?: number; createdAt?: string; userId?: string | null;
+  fulfillment?: Fulfil;
 };
 type Review = {
   id: number; dbId?: string; initials: string; color: string; name: [string, string]; stars: number;
@@ -132,6 +142,7 @@ type OrderRow = {
   id: string; code: string | null; customer_name: string | null;
   items: OrderItem[] | null; total: number | string | null;
   channel: string | null; status: string; created_at: string;
+  fulfillment: Record<string, unknown> | null;
 };
 
 const money0 = (n: number | string | null) => `$${(Math.round(Number(n ?? 0)) || 0).toLocaleString('en-US')}`;
@@ -210,6 +221,7 @@ function rowToOrder(r: OrderRow): Order {
     lines: Array.isArray(r.items) ? r.items : [],
     totalN: Number(r.total ?? 0) || 0,
     createdAt: r.created_at,
+    fulfillment: (r.fulfillment as Fulfil | null) ?? {},
   };
 }
 
@@ -360,14 +372,37 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     (async () => {
       const { data, error } = await supabase!
         .from('business_orders')
-        .select('id,code,customer_name,items,total,channel,status,created_at')
+        .select('id,code,customer_name,items,total,channel,status,created_at,fulfillment')
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
       const rows = error || !Array.isArray(data) ? [] : (data as OrderRow[]);
+      rows.forEach((r) => seenOrderIds.current.add(r.id)); // don't re-toast orders already on screen
       setOrders(rows.map(rowToOrder));
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo]);
+
+  // NEW (Cocina handoff): realtime "new order" awareness — prepend + a toast, so
+  // the owner doesn't have to reload to see it. No modal takeover (keeps the
+  // existing screen exactly as before); accepting still happens by tapping the
+  // card, same as any other order.
+  const seenOrderIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!persistable || !real || !supabase) return;
+    const ch = supabase.channel(`pedidos-${real.id}`).on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'business_orders', filter: `business_id=eq.${real.id}` },
+      (payload) => {
+        const row = payload.new as OrderRow;
+        if (seenOrderIds.current.has(row.id)) return;
+        seenOrderIds.current.add(row.id);
+        setOrders((list) => (list.some((o) => o.dbId === row.id) ? list : [rowToOrder(row), ...list]));
+        if (row.status === 'new') flash(L(`¡Nuevo pedido! ${row.code ?? ''}`, `New order! ${row.code ?? ''}`));
+      },
+    ).subscribe();
+    return () => { supabase!.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
 
@@ -452,7 +487,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     if (!persistable || !real || !supabase) { setCustOrders([]); return; }
     void (async () => {
       let q = supabase!.from('business_orders')
-        .select('id,code,customer_name,items,total,channel,status,created_at')
+        .select('id,code,customer_name,items,total,channel,status,created_at,fulfillment')
         .eq('business_id', real.id).order('created_at', { ascending: false }).limit(50);
       q = c.userId ? q.eq('user_id', c.userId) : q.ilike('customer_name', c.name);
       const { data } = await q;
@@ -698,8 +733,6 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     new: [L('Nuevos', 'New'), 'new'], preparing: [L('Preparando', 'Preparing'), 'preparing'], ready: [L('Listos', 'Ready'), 'ready'], completed: [L('Completados', 'Completed'), 'completed'], cancelled: [L('Cancelados', 'Cancelled'), 'cancelled'],
   };
   const statusKeys: OStatus[] = ['new', 'preparing', 'ready', 'completed', 'cancelled'];
-  const advLabel = (s: OStatus, ch: Channel) =>
-    s === 'new' ? L('Aceptar', 'Accept') : s === 'preparing' ? L('Marcar listo', 'Mark ready') : ch === 'delivery' ? L('Dar al repartidor', 'Hand to driver') : L('Completar', 'Complete');
   const chLabel = (ch: Channel) => ch === 'delivery' ? L('Entrega', 'Delivery') : ch === 'dinein' ? L('Mostrador', 'Dine-in') : L('Recoger', 'Pickup');
 
   const advance = async (o: Order) => {
@@ -714,6 +747,72 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       const { error } = await supabase.from('business_orders').update({ status: nx }).eq('id', o.dbId);
       if (error) flash(L('No se pudo actualizar el pedido', 'Could not update the order')); else setStatsV((v) => v + 1);
     }
+  };
+
+  // NEW (Cocina handoff) — additive order-action sheets: prep time on accept,
+  // assign a real driver before "en camino", reject with a reason. None of
+  // this changes the DB schema (fulfillment jsonb already supports it, 0049/
+  // 0074) or the existing card/detail layout — same single action button,
+  // smarter behind it.
+  const [prepFor, setPrepFor] = useState<Order | null>(null);
+  const [prepMin, setPrepMin] = useState(15);
+  const [assignFor, setAssignFor] = useState<Order | null>(null);
+  const [rejectFor, setRejectFor] = useState<Order | null>(null);
+  const ownDrivers: OwnDriver[] = (real?.settings as Record<string, unknown> | null)?.drivers as OwnDriver[] | undefined ?? [];
+  const EXTERNAL_DRIVERS: { name: string; rate: string }[] = [
+    { name: 'Uber Direct', rate: '$8.50 · ~6 min' },
+    { name: 'DoorDash Drive', rate: '$9.00 · ~9 min' },
+  ];
+  const REJECT_REASONS: [string, string][] = [
+    [L('Artículo agotado', 'Item sold out'), 'sold_out'],
+    [L('Cocina saturada', 'Kitchen overloaded'), 'overloaded'],
+    [L('Cerramos por hoy', 'Closed for today'), 'closed'],
+    [L('Fuera de zona de entrega', 'Out of delivery zone'), 'out_of_zone'],
+  ];
+
+  const writeFulfil = (o: Order, patch: Partial<Fulfil>) => {
+    const merged: Fulfil = { ...o.fulfillment, ...patch };
+    setOrders((list) => list.map((x) => ((o.dbId ? x.dbId === o.dbId : x.id === o.id) ? { ...x, fulfillment: merged } : x)));
+    setSelOrder((s) => (s && (o.dbId ? s.dbId === o.dbId : s.id === o.id) ? { ...s, fulfillment: merged } : s));
+    if (persistable && o.dbId && supabase) void supabase.from('business_orders').update({ fulfillment: merged }).eq('id', o.dbId);
+  };
+  // Accept with a prep time (10/15/20/30 min) — the incoming-order step Cocina
+  // added; advances new → preparing same as before, plus records `prep`.
+  const acceptOrder = (o: Order, prep: number) => {
+    writeFulfil(o, { prep });
+    void advance(o);
+    setPrepFor(null);
+    flash(L(`Pedido aceptado · ${prep} min`, `Order accepted · ${prep} min`));
+  };
+  // Assign a real driver (own roster or an external gig service) before a
+  // delivery order goes out — previously "Dar al repartidor" advanced the
+  // order with no record of who actually delivered it.
+  const assignDriver = (o: Order, name: string, phone?: string) => {
+    writeFulfil(o, { dispatch: 'on_the_way', driver: name, ...(phone ? { driver_phone: phone } : {}), eta: `Llega ~${5 + Math.floor(Math.random() * 6)} min` });
+    setAssignFor(null);
+    flash(L(`${name} asignado`, `${name} assigned`));
+  };
+  // Reject a new order with a reason (customer is notified, not charged) —
+  // same DB effect as `cancelOrder`, distinct toast copy.
+  const rejectOrder = async (o: Order, reasonEs: string) => {
+    setOrders((list) => list.map((x) => ((o.dbId ? x.dbId === o.dbId : x.id === o.id) ? { ...x, status: 'cancelled' as OStatus } : x)));
+    setSelOrder(null); setRejectFor(null); setPrepFor(null);
+    flash(L(`Pedido rechazado · ${reasonEs}`, `Order rejected`));
+    if (persistable && o.dbId && supabase) await supabase.from('business_orders').update({ status: 'cancelled' }).eq('id', o.dbId);
+  };
+  // The one action button on a card/detail — same position, label/behavior now
+  // routes through the new sheets where a real decision is needed.
+  const cardAction = (o: Order): { label: string; onClick: () => void } | null => {
+    if (o.status === 'new') return { label: L('Aceptar', 'Accept'), onClick: () => { setPrepMin(15); setPrepFor(o); } };
+    if (o.status === 'preparing') return { label: L('Marcar listo', 'Mark ready'), onClick: () => void advance(o) };
+    if (o.status === 'ready') {
+      if (o.channel === 'delivery') {
+        if (o.fulfillment?.dispatch === 'on_the_way') return { label: L('Marcar entregado', 'Mark delivered'), onClick: () => void advance(o) };
+        return { label: L('Asignar repartidor', 'Assign driver'), onClick: () => setAssignFor(o) };
+      }
+      return { label: L('Completar', 'Complete'), onClick: () => void advance(o) };
+    }
+    return null;
   };
 
   const orderList = orders.filter((o) => o.status === oStatus);
@@ -763,6 +862,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               orderList.map((o) => {
                 const done = o.status === 'completed';
                 const cxl = o.status === 'cancelled';
+                const ca = cardAction(o);
                 return (
                   <div key={o.id} onClick={() => setSelOrder(o)} className={`cursor-pointer overflow-hidden rounded-card-sm border bg-white shadow-card transition-shadow hover:shadow-card-lg ${o.urgent && !done && !cxl ? 'border-[rgba(240,70,110,.35)]' : 'border-hair'}`}>
                     <div className="p-3.5">
@@ -779,6 +879,12 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         <span className={`rounded px-2 py-0.5 text-[9px] font-extrabold ${CH_TILE[o.channel]}`}>{chLabel(o.channel)}</span>
                         <span className="text-[14px] font-extrabold text-ink">{o.total}</span>
                       </div>
+                      {/* NEW: driver line once assigned (was silently absent before) */}
+                      {o.fulfillment?.driver && !done && !cxl && (
+                        <div className="mt-2 flex items-center gap-1.5 rounded-md bg-green-bg px-2 py-1 text-[10px] font-extrabold text-green-dark">
+                          <Truck size={11} strokeWidth={2.4} />{o.fulfillment.driver}{o.fulfillment.eta ? ` · ${o.fulfillment.eta}` : ''}
+                        </div>
+                      )}
                       {done ? (
                         <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-extrabold text-green-dark">
                           <Check size={12} strokeWidth={3} />{L('Pagado y cerrado', 'Paid & closed')}
@@ -787,11 +893,11 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-extrabold text-muted-2">
                           <XCircle size={12} strokeWidth={2.6} />{L('Cancelado', 'Cancelled')}
                         </div>
-                      ) : (
-                        <button onClick={(e) => { e.stopPropagation(); advance(o); }} className="mt-3 flex w-full items-center justify-center gap-1 rounded-field bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">
-                          {advLabel(o.status, o.channel)}<ChevronRight size={14} strokeWidth={2.6} />
+                      ) : ca ? (
+                        <button onClick={(e) => { e.stopPropagation(); ca.onClick(); }} className="mt-3 flex w-full items-center justify-center gap-1 rounded-field bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                          {ca.label}<ChevronRight size={14} strokeWidth={2.6} />
                         </button>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 );
@@ -1179,10 +1285,41 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="text-[12px] font-bold text-muted">{L('Total', 'Total')}</span>
             <span className="text-[18px] font-extrabold text-ink">{selOrder.total}</span>
           </div>
+          {/* NEW: assigned-driver card (Cocina) */}
+          {selOrder.fulfillment?.driver && (
+            <div className="mt-3 flex items-center gap-2.5 rounded-btn-lg bg-green-bg p-3">
+              <Truck size={16} strokeWidth={2.2} className="flex-none text-green-dark" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[12px] font-extrabold text-ink">{selOrder.fulfillment.driver}</div>
+                {selOrder.fulfillment.eta && <div className="text-[10.5px] font-semibold text-muted-2">{selOrder.fulfillment.eta}</div>}
+              </div>
+            </div>
+          )}
+          {/* NEW: Pago y liquidación (Cocina) — 15% To'Latino commission + net payout */}
+          {(() => {
+            const sub = selOrder.fulfillment?.subtotal ?? selOrder.totalN ?? 0;
+            const tip = selOrder.fulfillment?.tip ?? 0;
+            const commission = Math.round(sub * 0.15 * 100) / 100;
+            const payout = Math.round((sub - commission) * 100) / 100;
+            return (
+              <div className="mt-3 rounded-btn-lg bg-app p-3">
+                <div className="mb-2 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Pago y liquidación', 'Payment & payout')}</div>
+                <div className="flex items-center justify-between text-[11.5px] font-bold text-ink-soft"><span>{L('Subtotal', 'Subtotal')}</span><span>{money2(sub)}</span></div>
+                {tip > 0 && <div className="mt-1 flex items-center justify-between text-[11.5px] font-bold text-ink-soft"><span>{L('Propina (100% repartidor)', 'Tip (100% to driver)')}</span><span>{money2(tip)}</span></div>}
+                <div className="mt-1 flex items-center justify-between text-[11.5px] font-bold text-pink-dark"><span>{L("Comisión To'Latino (15%)", "To'Latino commission (15%)")}</span><span>-{money2(commission)}</span></div>
+                <div className="mt-2 flex items-center justify-between border-t border-hair pt-2">
+                  <span className="text-[12.5px] font-extrabold text-ink">{L('Tu pago neto', 'Your net payout')}</span>
+                  <span className="text-[15px] font-extrabold text-green-dark">{money2(payout)}</span>
+                </div>
+              </div>
+            );
+          })()}
           {selOrder.status !== 'completed' && selOrder.status !== 'cancelled' && (
             <div className="mt-4 flex gap-2.5">
-              <button onClick={() => cancelOrder(selOrder)} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} strokeWidth={2.4} />{L('Cancelar', 'Cancel')}</button>
-              <button onClick={() => advance(selOrder)} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm">{advLabel(selOrder.status, selOrder.channel)}<ChevronRight size={15} strokeWidth={2.6} /></button>
+              <button onClick={() => (selOrder.status === 'new' ? setRejectFor(selOrder) : cancelOrder(selOrder))} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} strokeWidth={2.4} />{L('Cancelar', 'Cancel')}</button>
+              {(() => { const ca = cardAction(selOrder); return ca && (
+                <button onClick={ca.onClick} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm">{ca.label}<ChevronRight size={15} strokeWidth={2.6} /></button>
+              ); })()}
             </div>
           )}
           {selOrder.status === 'completed' && (
@@ -1191,6 +1328,72 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {selOrder.status === 'cancelled' && (
             <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-app py-3 text-[12px] font-extrabold text-muted-2"><XCircle size={14} strokeWidth={2.6} />{L('Pedido cancelado', 'Order cancelled')}</div>
           )}
+        </Overlay>
+      )}
+
+      {/* NEW (Cocina handoff): prep-time sheet — accept with a prep time, or
+          reject straight from here (doubles as the incoming-order step). */}
+      {prepFor && (
+        <Overlay open onClose={() => setPrepFor(null)} width={380}>
+          <OverlayTitle title={L('Aceptar pedido', 'Accept order')} onClose={() => setPrepFor(null)} />
+          <div className="text-[13px] font-extrabold text-ink">{prepFor.id} · {L(prepFor.who[0], prepFor.who[1])}</div>
+          <div className="mt-0.5 text-[11px] font-semibold text-muted-2">{L(prepFor.items[0], prepFor.items[1])}</div>
+          <div className="mt-4 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Tiempo de preparación', 'Prep time')}</div>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {[10, 15, 20, 30].map((m) => (
+              <button key={m} onClick={() => setPrepMin(m)} className={`rounded-field py-2.5 text-[12.5px] font-extrabold ${prepMin === m ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>{m} min</button>
+            ))}
+          </div>
+          <div className="mt-4 flex gap-2.5">
+            <button onClick={() => { setRejectFor(prepFor); setPrepFor(null); }} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} strokeWidth={2.4} />{L('Rechazar', 'Reject')}</button>
+            <button onClick={() => acceptOrder(prepFor, prepMin)} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm"><Check size={15} strokeWidth={2.8} />{L(`Aceptar · ${prepMin} min`, `Accept · ${prepMin} min`)}</button>
+          </div>
+        </Overlay>
+      )}
+
+      {/* NEW (Cocina handoff): assign a real driver before "en camino" */}
+      {assignFor && (
+        <Overlay open onClose={() => setAssignFor(null)} width={400}>
+          <OverlayTitle title={L('Asignar repartidor', 'Assign driver')} onClose={() => setAssignFor(null)} />
+          <div className="text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Tus repartidores', 'Your drivers')}</div>
+          {ownDrivers.length === 0 && (
+            <div className="mt-1.5 text-[11.5px] font-semibold text-muted-2">{L('Aún no tienes repartidores. Agrégalos en Entregas.', 'No drivers yet. Add them in Delivery.')}</div>
+          )}
+          <div className="mt-2 flex flex-col gap-2">
+            {ownDrivers.map((d, i) => (
+              <button key={i} onClick={() => assignDriver(assignFor, d.name, d.phone)} className="flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-left">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12.5px] font-extrabold text-ink">{d.name}</span>
+                  <span className="block text-[10.5px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Apps externas (respaldo)', 'External apps (backup)')}</div>
+          <div className="mt-2 flex flex-col gap-2">
+            {EXTERNAL_DRIVERS.map((e) => (
+              <button key={e.name} onClick={() => assignDriver(assignFor, `${e.name} (externo)`)} className="flex items-center justify-between rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-left">
+                <span className="text-[12.5px] font-extrabold text-ink">{e.name}</span>
+                <span className="text-[10.5px] font-extrabold text-primary-dark">{e.rate}</span>
+              </button>
+            ))}
+          </div>
+        </Overlay>
+      )}
+
+      {/* NEW (Cocina handoff): reject with a reason — customer is notified, not charged */}
+      {rejectFor && (
+        <Overlay open onClose={() => setRejectFor(null)} width={380}>
+          <OverlayTitle title={L('Rechazar pedido', 'Reject order')} onClose={() => setRejectFor(null)} />
+          <div className="text-[11.5px] font-semibold text-muted">{L('Elige el motivo. Se le avisará al cliente y no se le cobrará.', "Pick a reason. The customer is notified and won't be charged.")}</div>
+          <div className="mt-3 flex flex-col gap-2">
+            {REJECT_REASONS.map(([label]) => (
+              <button key={label} onClick={() => rejectOrder(rejectFor, label)} className="flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line px-3.5 py-3 text-left text-[12.5px] font-bold text-ink">
+                <XCircle size={14} strokeWidth={2.4} className="flex-none text-pink-dark" />{label}
+              </button>
+            ))}
+          </div>
         </Overlay>
       )}
 

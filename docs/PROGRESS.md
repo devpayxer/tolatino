@@ -26,15 +26,69 @@
   pinning only FADES it (stuck boolean → opacity/transform). Zero layout writes
   on scroll = no jump/flicker; tab switches settle on their first frame.
 - **Verification harness:** `tools/mobile-audit/*.js` — Playwright + async curl
-  relay for `*.supabase.co` (sandbox proxy can't MITM Chromium TLS). Key scripts:
-  `single-page`, `menu-sticky`, `menu-stepper`, `spy-click/noflash/tabentry`,
-  `scroll-lock`, `sticky-collapse`, `tab-switch`, `no-demo-flash`, `desktop-arrows`,
-  `cocina-ui/accept`. Serve `apps/web/out` with `npx serve out -l 4173 --no-clipboard`
-  (NOT `-s` — SPA mode breaks the multi-page export). Mint sessions via GoTrue
-  admin generate_link (scratchpad `mint-session.mjs` pattern; never echo keys).
+  relay for `*.supabase.co` (sandbox proxy can't MITM Chromium TLS; use `execFile`,
+  not `execFileSync` — the sync form starves Playwright's event loop under load).
+  Key scripts: `single-page`, `menu-sticky`, `menu-stepper`, `spy-click/noflash/
+  tabentry`, `scroll-lock`, `sticky-collapse`, `tab-switch`, `no-demo-flash`,
+  `desktop-arrows`, `pedidos-restored`. Serve `apps/web/out` with `npx serve out
+  -l 4173 --no-clipboard` (NOT `-s` — SPA mode breaks the multi-page export).
+  Mint sessions via GoTrue admin generate_link (scratchpad `mint-session.mjs`
+  pattern; never echo keys).
 - **Supabase security-advisor email:** verified false alarm for user data; the
   only flagged table is PostGIS `spatial_ref_sys` (can't self-remediate — see
   LAUNCH-CHECKLIST §2 for the analysis + options).
+
+### Dashboard Pedidos restored + Cocina handoff grafted in additively (2026-07-10)
+Second instance of the same lesson as the Menú-tab correction above, this time
+on the business side: a session had fully replaced the dashboard's "Pedidos" tab
+(`CustomersModule`'s orders mode — KPI cards, status chips, order-card grid, a
+lightweight detail overlay) with a standalone rebuild of the handoff's
+`ToLatino Cocina.dc.html` (full "EN VIVO" board). The founder rejected the
+replacement and asked for the original screen back with only the NEW
+capabilities Cocina brought layered in.
+- **Reverted:** `Panel.tsx`'s `orders` tab routes back to `CustomersModule`
+  (matches `customers`/`reviews`, as originally); deleted the standalone
+  `modules/Cocina.tsx` + its `cocina-ui.js`/`cocina-accept.js` audits (orphaned).
+- **Grafted in additively** (same cards/KPIs/overlay, smarter behind them — no
+  schema change, `fulfillment` jsonb from 0049/0074 already covers it):
+  - **Accept → prep time.** Tapping "Aceptar" on a new order opens a small sheet
+    (10/15/20/30 min chips) before advancing to `preparing`; also doubles as the
+    reject entry point.
+  - **Real driver assignment.** A `ready` delivery order's action button becomes
+    **"Asignar repartidor"** (own roster from `business.settings.drivers` +
+    external Uber Direct/DoorDash Drive backup) until a driver is set
+    (`fulfillment.dispatch='on_the_way'`), then becomes **"Marcar entregado."**
+    Previously "Dar al repartidor" silently jumped straight to `completed` with
+    no record of who delivered it — a real functional gap now closed.
+  - **Reject with a reason** (Artículo agotado / Cocina saturada / Cerramos por
+    hoy / Fuera de zona) — customer notified, not charged, same as `cancelOrder`
+    under the hood.
+  - **Pago y liquidación** in the order-detail overlay: subtotal, tip (100% to
+    driver), 15% To'Latino commission, net payout — inserted between the
+    existing Total row and the Cancelar/action buttons.
+  - **Realtime "new order" toast** (Supabase channel on `business_orders`
+    INSERT) — prepends the order + a toast; no modal takeover, accepting still
+    happens by tapping the card like any other order.
+- **Rule for future Domain-B work (skill §8):** a `.dc.html` filename existing in
+  the handoff does NOT mean rebuild that screen from scratch — if an app screen
+  already occupies that role, graft the new design's capabilities into it.
+- Verified in the real browser as b@b.com (El Sabor): board matches the original
+  screenshot-for-screenshot (KPI cards, Clientes/Pedidos/Reseñas toggle, status
+  chips — no "EN VIVO"); accept→prep-sheet, reject→reason-sheet, assign-driver
+  (own + external), and the payout math ($15.48 sub → -$2.32 commission →
+  $13.16 net) all verified live against real orders, then reverted to baseline.
+
+### Design handoff consolidated (2026-07-10)
+The founder re-uploaded the **complete, canonical handoff** (`docs/design-
+system/`), merging two prior partial uploads from different sessions (a
+"Plataforma" handoff and a separate "Pedidos" handoff) into one package with a
+proper index. New structure: `README.md` (master index) → `01-plataforma.md`
+(Domain A) + `02-pedidos.md` (Domain B, incl. the charge/payout formulas) →
+`reference/dc/*.dc.html` (18 prototypes, now including `Ordenar`/`Cocina`/`Menu
+Builder`/`tolatino-menu.js`) → `Guia visual.html` (printable contact sheet). The
+old `HANDOFF.md` was byte-identical to the new `01-plataforma.md` — removed to
+avoid two competing sources of truth. `CLAUDE.md` § Design system rewritten to
+point at the new structure.
 
 ## How this project ships (read first)
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,

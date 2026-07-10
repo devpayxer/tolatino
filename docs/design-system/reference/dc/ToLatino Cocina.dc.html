@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+a{color:#6D4DF6;text-decoration:none}
+a:hover{color:#5A3FE0}
+[data-noscroll]{scrollbar-width:none}
+[data-noscroll]::-webkit-scrollbar{display:none}
+@keyframes tlsheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes tlfade{from{opacity:0}to{opacity:1}}
+@keyframes tlpop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes tlpulse{0%{box-shadow:0 0 0 0 rgba(240,70,110,.5)}70%{box-shadow:0 0 0 14px rgba(240,70,110,0)}100%{box-shadow:0 0 0 0 rgba(240,70,110,0)}}
+@keyframes tlblink{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</helmet>
+
+<div style="{{ pageStyle }}">
+
+  <div style="{{ frameStyle }}">
+
+    <!-- STATUS BAR (mobile) -->
+    <sc-if value="{{ showStatusBar }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:13px 24px 6px;font:700 14px 'Plus Jakarta Sans';color:#1E1B2E"><span>9:41</span><div style="display:flex;align-items:center;gap:7px"><div style="display:flex;gap:2px;align-items:flex-end;height:11px"><span style="width:3px;height:5px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:7px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:9px;background:#1E1B2E;border-radius:1px"></span><span style="width:3px;height:11px;background:#1E1B2E;border-radius:1px"></span></div><div style="width:20px;height:11px;border:1.5px solid #1E1B2E;border-radius:3px;display:flex;align-items:center;padding:1.5px"><span style="height:100%;width:11px;background:#1E1B2E;border-radius:1px"></span></div></div></div>
+    </sc-if>
+    <sc-if value="{{ showStatusBar }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:25;display:flex;gap:3px;background:rgba(255,255,255,.92);border:1px solid rgba(30,27,46,.08);border-radius:999px;padding:3px;box-shadow:0 4px 14px rgba(60,50,110,.16)">
+      <a href="ToLatino Ordenar.dc.html" style="padding:4px 10px;border-radius:999px;font:800 9.5px 'Plus Jakarta Sans';color:#6E6A85">Cliente</a>
+      <span style="padding:4px 10px;border-radius:999px;font:800 9.5px 'Plus Jakarta Sans';background:#7B61FF;color:#fff">Cocina</span>
+      <a href="ToLatino Menu Builder.dc.html" style="padding:4px 10px;border-radius:999px;font:800 9.5px 'Plus Jakarta Sans';color:#6E6A85">Menú</a>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showTopBar }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;display:flex;align-items:center;gap:16px;padding:12px 20px;background:#fff;border-bottom:1px solid rgba(30,27,46,.08);z-index:8">
+      <div style="font:800 20px 'Plus Jakarta Sans';color:#1E1B2E;letter-spacing:-.02em;display:flex;align-items:baseline;flex:none"><span>To’</span><span style="color:#7B61FF">Latino</span><span style="display:inline-block;width:6px;height:6px;background:#F4B740;transform:rotate(45deg);margin-left:5px;align-self:center"></span></div>
+      <span style="font:700 12px 'Plus Jakarta Sans';color:#9A96AE;flex:none">· Panel de negocio</span>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:4px;background:#F1EFFA;border-radius:999px;padding:4px;flex:none">
+        <a href="ToLatino Ordenar.dc.html" style="padding:7px 13px;border-radius:999px;font:800 11px 'Plus Jakarta Sans';color:#6E6A85">Cliente</a>
+        <span style="padding:7px 13px;border-radius:999px;font:800 11px 'Plus Jakarta Sans';background:#7B61FF;color:#fff">Cocina</span>
+        <a href="ToLatino Menu Builder.dc.html" style="padding:7px 13px;border-radius:999px;font:800 11px 'Plus Jakarta Sans';color:#6E6A85">Menú</a>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- HEADER -->
+    <div style="flex:none;display:flex;align-items:center;gap:11px;padding:6px 14px 11px;background:#fff;border-bottom:1px solid rgba(30,27,46,.07)">
+      <sc-if value="{{ inDetail }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goBoard }}" style="width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button></sc-if>
+      <div style="flex:1;min-width:0"><div style="font:800 16px 'Plus Jakarta Sans';color:#1E1B2E;display:flex;align-items:center;gap:7px">{{ headTitle }}<sc-if value="{{ onBoard }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:4px;background:#E3F5EA;color:#1F8A4C;padding:2px 7px;border-radius:6px;font:800 8.5px 'Plus Jakarta Sans'"><span style="width:6px;height:6px;border-radius:50%;background:#1F9D57;animation:tlblink 1.4s infinite"></span>EN VIVO</span></sc-if></div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ headSub }}</div></div>
+      <button onClick="{{ openNotif }}" style="position:relative;width:36px;height:36px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><sc-if value="{{ notifCount }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#F0466E;color:#fff;font:800 9px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;border:2px solid #fff">{{ notifCount }}</span></sc-if></button>
+    </div>
+
+    <!-- ============================ BOARD ============================ -->
+    <sc-if value="{{ onBoard }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Cocina · Pedidos" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <!-- today stats -->
+      <div data-noscroll style="flex:none;display:flex;gap:9px;overflow-x:auto;padding:12px 14px 4px;background:#fff">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4"><div style="flex:none;min-width:96px;background:{{ s.bg }};border-radius:13px;padding:10px 12px"><div style="font:600 9px 'Plus Jakarta Sans';color:{{ s.labelC }}">{{ s.label }}</div><div style="font:800 17px 'Plus Jakarta Sans';color:#1E1B2E;margin-top:2px">{{ s.value }}</div><div style="font:800 9px 'Plus Jakarta Sans';color:{{ s.deltaC }};margin-top:1px">{{ s.delta }}</div></div></sc-for>
+      </div>
+
+      <!-- status tabs -->
+      <div data-noscroll style="flex:none;display:flex;gap:7px;overflow-x:auto;padding:12px 14px;background:#fff;border-bottom:1px solid rgba(30,27,46,.06)">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5"><button onClick="{{ t.onTap }}" style="{{ t.style }}">{{ t.label }}<span style="{{ t.nStyle }}">{{ t.n }}</span></button></sc-for>
+      </div>
+
+      <!-- order list -->
+      <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 14px 20px">
+        <div style="{{ cardsGridStyle }}">
+          <sc-for list="{{ cards }}" as="o" hint-placeholder-count="4">
+          <div style="background:#fff;border:1px solid {{ o.borderC }};border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(60,50,110,.05)">
+            <div onClick="{{ o.onTap }}" style="padding:13px 14px;cursor:pointer">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:38px;height:38px;border-radius:11px;background:{{ o.custColor }};color:#fff;font:800 13px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">{{ o.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:7px"><span style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ o.short }}</span><span style="{{ o.modeStyle }}">{{ o.modeLabel }}</span></div>
+                  <div style="font:600 11.5px 'Plus Jakarta Sans';color:#8A86A0;margin-top:2px">{{ o.custName }} · {{ o.timeLabel }}</div>
+                </div>
+                <div style="text-align:right;flex:none"><div style="font:800 15px 'Plus Jakarta Sans';color:#1E1B2E">{{ o.total }}</div><div style="font:700 10px 'Plus Jakarta Sans';color:#9A96AE">{{ o.itemCount }} art.</div></div>
+              </div>
+              <div style="font:600 12px 'Plus Jakarta Sans';color:#4A4660;margin-top:10px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ o.itemsLine }}</div>
+              <sc-if value="{{ o.driverLine }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:7px;margin-top:9px;background:#E3F5EA;border-radius:9px;padding:7px 10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1F8A4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="13" height="10" rx="1.5"></rect><path d="M14 9h4l3 3v4h-7"></path><circle cx="6" cy="18" r="2"></circle><circle cx="17.5" cy="18" r="2"></circle></svg><span style="font:700 10.5px 'Plus Jakarta Sans';color:#176B3A">{{ o.driverLine }}</span></div></sc-if>
+              <sc-if value="{{ o.ratingLine }}" hint-placeholder-val="{{ false }}"><div style="font:700 11px 'Plus Jakarta Sans';color:#9A6A12;margin-top:8px">{{ o.ratingLine }}</div></sc-if>
+            </div>
+            <sc-if value="{{ o.hasActions }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:9px;padding:0 14px 13px">
+              <sc-if value="{{ o.hasReject }}" hint-placeholder-val="{{ false }}"><button onClick="{{ o.onReject }}" style="flex:none;border:1.5px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:11px 14px;border-radius:11px;font:800 12px 'Plus Jakarta Sans'">Rechazar</button></sc-if>
+              <button onClick="{{ o.onAction }}" style="{{ o.actionStyle }}">{{ o.actionIcon }}{{ o.actionLabel }}</button>
+            </div>
+            </sc-if>
+          </div>
+          </sc-for>
+          <sc-if value="{{ emptyTab }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:56px 20px;color:#9A96AE;font:600 13px 'Plus Jakarta Sans'">Nada por aquí ahora mismo 👍</div></sc-if>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============================ ORDER DETAIL ============================ -->
+    <sc-if value="{{ inDetail }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Detalle del pedido" style="{{ paneStyle }}">
+      <div data-noscroll style="flex:1;overflow-y:auto;padding:14px 16px 16px">
+        <!-- status banner -->
+        <div style="display:flex;align-items:center;gap:12px;background:{{ d.statusBg }};border:1px solid {{ d.statusBorder }};border-radius:15px;padding:13px 14px">
+          <span style="width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none">{{ d.statusIcon }}</span>
+          <div style="flex:1;min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:{{ d.statusC }}">{{ d.statusTitle }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#6E6A85;margin-top:1px">{{ d.statusSub }}</div></div>
+          <span style="{{ d.modeStyle }}">{{ d.modeLabel }}</span>
+        </div>
+
+        <!-- timeline -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:14px;margin-top:12px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">Progreso del pedido</div>
+          <div style="display:flex;flex-direction:column;gap:1px">
+            <sc-for list="{{ d.timeline }}" as="t" hint-placeholder-count="4">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="display:flex;flex-direction:column;align-items:center;flex:none"><div style="{{ t.dotStyle }}"><sc-if value="{{ t.done }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></sc-if></div><sc-if value="{{ t.line }}" hint-placeholder-val="{{ true }}"><div style="width:2.5px;height:22px;background:{{ t.lineC }};border-radius:2px"></div></sc-if></div>
+              <div style="flex:1;min-width:0;padding-bottom:11px"><div style="font:{{ t.weight }} 12.5px 'Plus Jakarta Sans';color:{{ t.titleC }}">{{ t.title }}</div><sc-if value="{{ t.sub }}" hint-placeholder-val="{{ false }}"><div style="font:500 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ t.sub }}</div></sc-if></div>
+              <span style="font:700 10.5px 'Plus Jakarta Sans';color:#B7B3C6;flex:none">{{ t.time }}</span>
+            </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- customer -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:14px;margin-top:12px">
+          <div style="display:flex;align-items:center;gap:11px">
+            <div style="width:44px;height:44px;border-radius:50%;background:{{ d.custColor }};color:#fff;font:800 15px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">{{ d.initials }}</div>
+            <div style="flex:1;min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.custName }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ d.custMeta }}</div></div>
+            <div style="display:flex;gap:8px;flex:none"><button style="width:38px;height:38px;border-radius:50%;background:#EFEBFF;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3l1.6 4.6-2 1.4a11 11 0 0 0 5 5l1.4-2 4.6 1.6V20a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"></path></svg></button><button style="width:38px;height:38px;border-radius:50%;background:#EFEBFF;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></button></div>
+          </div>
+          <sc-if value="{{ d.isDelivery }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:flex-start;gap:9px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(30,27,46,.06)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A96AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.4"></circle></svg>
+            <div style="flex:1;min-width:0"><div style="font:700 12px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.addr }}</div><div style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:2px">{{ d.dropoff }}</div></div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ d.note }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:flex-start;gap:9px;margin-top:10px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:11px;padding:10px 12px"><span style="font-size:13px">📝</span><div style="flex:1;min-width:0"><div style="font:800 10px 'Plus Jakarta Sans';color:#9A6A12;text-transform:uppercase;letter-spacing:.04em">Nota del cliente</div><div style="font:600 12px 'Plus Jakarta Sans';color:#7A5A12;margin-top:2px;line-height:1.4">{{ d.note }}</div></div></div></sc-if>
+        </div>
+
+        <!-- items to make -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:14px;margin-top:12px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:4px">Para preparar · {{ d.itemCount }} artículos</div>
+          <sc-for list="{{ d.items }}" as="i" hint-placeholder-count="3">
+          <div style="display:flex;gap:11px;padding:11px 0;border-bottom:1px solid rgba(30,27,46,.05)">
+            <span style="min-width:26px;height:26px;padding:0 6px;border-radius:8px;background:#EFEBFF;color:#6D4DF6;font:800 12px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">{{ i.qty }}×</span>
+            <div style="flex:1;min-width:0">
+              <div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ i.name }}</div>
+              <sc-if value="{{ i.mods }}" hint-placeholder-val="{{ false }}"><div style="font:500 11px 'Plus Jakarta Sans';color:#8A86A0;margin-top:3px;line-height:1.4">{{ i.mods }}</div></sc-if>
+              <sc-if value="{{ i.note }}" hint-placeholder-val="{{ false }}"><div style="font:700 10.5px 'Plus Jakarta Sans';color:#D6336C;margin-top:3px">⚠ {{ i.note }}</div></sc-if>
+            </div>
+            <span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;flex:none">{{ i.total }}</span>
+          </div>
+          </sc-for>
+        </div>
+
+        <!-- driver assigned card -->
+        <sc-if value="{{ d.hasDriver }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:14px;margin-top:12px">
+          <div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E;margin-bottom:11px">Repartidor asignado</div>
+          <div style="display:flex;align-items:center;gap:11px">
+            <div style="width:44px;height:44px;border-radius:50%;background:{{ d.driverColor }};color:#fff;font:800 15px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">{{ d.driverInitials }}</div>
+            <div style="flex:1;min-width:0"><div style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.driverName }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ d.driverMeta }}</div></div>
+            <span style="background:#E3F5EA;color:#1F8A4C;padding:6px 10px;border-radius:9px;font:800 10.5px 'Plus Jakarta Sans';flex:none">{{ d.driverEta }}</span>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- payment / payout -->
+        <div style="background:#fff;border:1px solid rgba(30,27,46,.08);border-radius:15px;padding:14px;margin-top:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><span style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">Pago y liquidación</span><span style="display:inline-flex;align-items:center;gap:5px;background:#E3F5EA;color:#1F8A4C;padding:3px 8px;border-radius:7px;font:800 9px 'Plus Jakarta Sans'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1F8A4C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ d.payStatus }}</span></div>
+          <sc-for list="{{ d.payRows }}" as="p" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;padding:4px 0"><span style="font:{{ p.weight }} 12px 'Plus Jakarta Sans';color:{{ p.labelC }}">{{ p.label }}</span><span style="font:{{ p.weight }} 12px 'Plus Jakarta Sans';color:{{ p.valueC }}">{{ p.value }}</span></div></sc-for>
+          <div style="height:1px;background:rgba(30,27,46,.08);margin:9px 0"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font:800 13.5px 'Plus Jakarta Sans';color:#1E1B2E">Tu pago neto</span><span style="font:800 17px 'Plus Jakarta Sans';color:#1F8A4C">{{ d.payout }}</span></div>
+          <div style="display:flex;align-items:center;gap:7px;margin-top:9px;background:#F7F6FC;border-radius:10px;padding:9px 11px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6D4DF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg><span style="font:600 10.5px 'Plus Jakarta Sans';color:#6E6A85">{{ d.payMethod }} · Depósito estimado {{ d.payoutDate }}</span></div>
+        </div>
+        <div style="height:8px"></div>
+      </div>
+
+      <!-- action footer -->
+      <sc-if value="{{ d.hasFooter }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none;padding:11px 16px 16px;background:#fff;border-top:1px solid rgba(30,27,46,.07)">
+        <div style="display:flex;gap:10px">
+          <sc-if value="{{ d.footerReject }}" hint-placeholder-val="{{ false }}"><button onClick="{{ d.onReject }}" style="flex:none;border:1.5px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:15px 18px;border-radius:14px;font:800 13.5px 'Plus Jakarta Sans'">Rechazar</button></sc-if>
+          <button onClick="{{ d.onAction }}" style="{{ d.footerStyle }}">{{ d.footerIcon }}{{ d.footerLabel }}</button>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ============================ INCOMING ORDER DIALOG ============================ -->
+    <sc-if value="{{ incomingOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:40;background:rgba(28,24,46,.55);display:flex;align-items:center;justify-content:center;padding:20px;animation:tlfade .2s ease">
+      <div style="width:100%;max-width:440px;background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 30px 70px rgba(28,24,46,.4);animation:tlpop .28s cubic-bezier(.34,1.4,.5,1)">
+        <div style="background:#F0466E;padding:18px 18px 16px;text-align:center;position:relative">
+          <div style="width:52px;height:52px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;animation:tlpulse 1.6s infinite"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F0466E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></div>
+          <div style="font:800 18px 'Plus Jakarta Sans';color:#fff">¡Nuevo pedido!</div>
+          <div style="font:600 12px 'Plus Jakarta Sans';color:rgba(255,255,255,.9);margin-top:3px">{{ inc.short }} · {{ inc.modeLabel }} · hace {{ inc.ago }}</div>
+        </div>
+        <div style="padding:16px 18px">
+          <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
+            <div style="width:40px;height:40px;border-radius:12px;background:{{ inc.custColor }};color:#fff;font:800 14px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">{{ inc.initials }}</div>
+            <div style="flex:1;min-width:0"><div style="font:800 14px 'Plus Jakarta Sans';color:#1E1B2E">{{ inc.custName }}</div><div style="font:600 11px 'Plus Jakarta Sans';color:#9A96AE">{{ inc.itemCount }} artículos · {{ inc.total }}</div></div>
+          </div>
+          <div style="background:#F7F6FC;border-radius:12px;padding:11px 13px;max-height:120px;overflow:hidden">
+            <sc-for list="{{ inc.items }}" as="i" hint-placeholder-count="2"><div style="display:flex;gap:8px;padding:3px 0"><span style="font:800 11px 'Plus Jakarta Sans';color:#6D4DF6;min-width:20px">{{ i.qty }}×</span><span style="flex:1;font:600 11.5px 'Plus Jakarta Sans';color:#4A4660;min-width:0">{{ i.name }}</span></div></sc-for>
+          </div>
+
+          <div style="font:800 11px 'Plus Jakarta Sans';color:#56506E;margin:14px 0 8px">Tiempo de preparación</div>
+          <div style="display:flex;gap:7px">
+            <sc-for list="{{ prepChips }}" as="p" hint-placeholder-count="4"><button onClick="{{ p.onTap }}" style="{{ p.style }}">{{ p.label }}</button></sc-for>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button onClick="{{ incReject }}" style="flex:none;border:1.5px solid #F0C9D3;background:#fff;color:#D6336C;cursor:pointer;padding:15px 18px;border-radius:14px;font:800 13.5px 'Plus Jakarta Sans'">Rechazar</button>
+            <button onClick="{{ incAccept }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:none;background:#1F9D57;color:#fff;cursor:pointer;padding:15px;border-radius:14px;font:800 14px 'Plus Jakarta Sans';box-shadow:0 12px 24px rgba(31,157,87,.32)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>Aceptar · {{ prepSel }} min</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============================ SECONDARY SHEETS ============================ -->
+    <sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:absolute;inset:0;z-index:34;background:rgba(28,24,46,.5);animation:tlfade .2s ease"></div>
+    <div data-noscroll style="{{ modalWrapStyle }}">
+      <div style="position:sticky;top:0;background:#fff;padding:9px 0 6px;display:flex;justify-content:center;border-radius:24px 24px 0 0;z-index:2"><span style="width:42px;height:5px;border-radius:3px;background:#E3DEF2"></span></div>
+      <div style="padding:2px 18px 22px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><span style="font:800 17px 'Plus Jakarta Sans';color:#1E1B2E">{{ modalTitle }}</span><button onClick="{{ closeModal }}" style="width:30px;height:30px;border-radius:50%;background:#F1EFFA;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1E1B2E" stroke-width="2.6" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg></button></div>
+
+        <!-- ASSIGN DRIVER -->
+        <sc-if value="{{ mAssign }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font:800 10px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px">Tus repartidores</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ ownDrivers }}" as="d" hint-placeholder-count="3">
+            <button onClick="{{ d.onTap }}" style="{{ d.style }}">
+              <div style="width:42px;height:42px;border-radius:50%;background:{{ d.color }};color:#fff;font:800 14px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">{{ d.initials }}</div>
+              <div style="flex:1;min-width:0;text-align:left"><div style="font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.name }}</div><div style="display:flex;align-items:center;gap:5px;margin-top:2px"><span style="width:7px;height:7px;border-radius:50%;background:{{ d.dot }};flex:none"></span><span style="font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE">{{ d.status }} · ★ {{ d.rating }}</span></div></div>
+              <span style="font:800 10px 'Plus Jakarta Sans';color:{{ d.etaC }};flex:none;text-align:right">{{ d.eta }}</span>
+            </button>
+            </sc-for>
+          </div>
+          <div style="font:800 10px 'Plus Jakarta Sans';color:#A8A4B8;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 9px">Apps externas (respaldo)</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ extDrivers }}" as="d" hint-placeholder-count="2">
+            <button onClick="{{ d.onTap }}" style="display:flex;align-items:center;gap:11px;width:100%;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;padding:11px 13px;border-radius:13px">
+              <span style="width:42px;height:42px;border-radius:12px;background:{{ d.color }};color:#fff;font:800 17px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;flex:none">{{ d.badge }}</span>
+              <span style="flex:1;min-width:0;text-align:left"><span style="display:block;font:800 13px 'Plus Jakarta Sans';color:#1E1B2E">{{ d.name }}</span><span style="display:block;font:600 10.5px 'Plus Jakarta Sans';color:#9A96AE;margin-top:1px">{{ d.sub }}</span></span>
+              <span style="font:800 10.5px 'Plus Jakarta Sans';color:#6D4DF6;flex:none">{{ d.rate }}</span>
+            </button>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- REJECT -->
+        <sc-if value="{{ mReject }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font:500 12px 'Plus Jakarta Sans';color:#8A86A0;line-height:1.5;margin-bottom:12px">Elige el motivo. Se le avisará al cliente y no se le cobrará.</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ rejectOpts }}" as="r" hint-placeholder-count="4"><button onClick="{{ r.onTap }}" style="display:flex;align-items:center;gap:11px;width:100%;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;padding:13px;border-radius:12px;text-align:left"><span style="width:32px;height:32px;border-radius:9px;background:#FDE7EF;display:flex;align-items:center;justify-content:center;flex:none">{{ r.icon }}</span><span style="flex:1;font:700 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ r.label }}</span></button></sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- NOTIFICATIONS -->
+        <sc-if value="{{ mNotif }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="4"><div style="display:flex;gap:11px;padding:12px 0;border-bottom:1px solid rgba(30,27,46,.06)"><span style="width:38px;height:38px;border-radius:11px;background:{{ n.bg }};display:flex;align-items:center;justify-content:center;flex:none">{{ n.icon }}</span><div style="flex:1;min-width:0"><div style="font:800 12.5px 'Plus Jakarta Sans';color:#1E1B2E">{{ n.title }}</div><div style="font:500 11px 'Plus Jakarta Sans';color:#8A86A0;margin-top:2px;line-height:1.4">{{ n.sub }}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none"><span style="font:600 9.5px 'Plus Jakarta Sans';color:#B7B3C6">{{ n.time }}</span><sc-if value="{{ n.unread }}" hint-placeholder-val="{{ false }}"><span style="width:8px;height:8px;border-radius:50%;background:#7B61FF"></span></sc-if></div></div></sc-for>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- TOAST -->
+    <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:42;background:#1E1B2E;color:#fff;padding:12px 18px;border-radius:12px;font:700 12.5px 'Plus Jakarta Sans';display:flex;align-items:center;gap:8px;box-shadow:0 12px 30px rgba(28,24,46,.4);white-space:nowrap;animation:tlpop .2s ease"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>{{ toastMsg }}</div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 440, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  _qp(k, d) { try { const v = new URLSearchParams(location.search).get(k); return (v == null || v === '') ? d : v; } catch (e) { return d; } }
+  _bv() { const s = this._qp('screen', ''); return (s === 'detail' || s === 'assign') ? 'detail' : 'board'; }
+  state = {
+    view: this._bv(), bp: (function(){var w=(typeof window!=='undefined'&&window.innerWidth)||1200;return w<768?'mobile':w<1024?'tablet':'desktop';})(), tab: 'nuevo', activeId: null,
+    orders: null, modal: null, incoming: (this._qp('screen', '') === '' || this._qp('screen', '') === 'incoming'), prep: 15,
+    toast: '', toastT: null,
+  };
+  componentDidMount() { const s = this._qp('screen', ''); if (s === 'detail') this.setState({ activeId: '#A-1088' }); if (s === 'assign') this.setState({ activeId: '#A-1085', modal: 'assign' }); this._onResize = () => { const w = window.innerWidth; const bp = w < 768 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop'; if (bp !== this.state.bp) this.setState({ bp }); }; this._onResize(); window.addEventListener('resize', this._onResize); }
+  componentWillUnmount() { clearTimeout(this.state.toastT); if (this._onResize) window.removeEventListener('resize', this._onResize); }
+  flash(m) { clearTimeout(this.state.toastT); const tt = setTimeout(() => this.setState({ toast: '' }), 1900); this.setState({ toast: m, toastT: tt }); }
+
+  IC(name, s, stroke, fill) {
+    const P = {
+      bell: ['M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0'],
+      check: ['M20 6 9 17l-5-5'],
+      truck: ['M1 6h13v10H1z', 'M14 9h4l3 3v4h-7', 'M6 18a2 2 0 1 0 0-.01M17.5 18a2 2 0 1 0 0-.01'],
+      fire: ['M12 3s5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 1-3s0 2 2 2 1-4 2-5 3 2 2 3z'],
+      bag: ['M6 8h12l1 12H5z', 'M9 8a3 3 0 0 1 6 0'],
+      clock: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M12 7v5l3 2'],
+      dollar: ['M12 2v20', 'M17 6a4 4 0 0 0-4-2.5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1A4 4 0 0 1 7 18'],
+      star: ['M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.3l6.1-.7z'],
+      pin: ['M12 21s7-6.4 7-11.5A7 7 0 0 0 5 9.5C5 14.6 12 21 12 21z', 'M12 12a2.4 2.4 0 1 0 0-5 2.4 2.4 0 0 0 0 5z'],
+      x: ['M18 6 6 18M6 6l12 12'],
+      chef: ['M6 11a4 4 0 1 1 1-7.9A4 4 0 0 1 15 2a4 4 0 0 1 3 8', 'M6 11h12v6a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z'],
+      box: ['M21 8 12 3 3 8v8l9 5 9-5z', 'M3 8l9 5 9-5M12 13v8'],
+      user: ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'],
+      alert: ['M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z', 'M12 9v4M12 17h.01'],
+      slash: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M5.5 5.5l13 13'],
+      review: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
+      card: ['M2 5h20v14H2z', 'M2 10h20'],
+    };
+    const paths = P[name] || P.check;
+    return React.createElement('svg', { width: s || 15, height: s || 15, viewBox: '0 0 24 24', fill: fill || 'none', stroke: stroke || '#6D4DF6', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, paths.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+
+  seed() {
+    return [
+      { id: '#A-1091', mode: 'delivery', status: 'nuevo', incoming: true, initials: 'ML', color: '#7B61FF', cust: 'María López', phone: '(832) 555-0148', addr: '5821 Bellaire Blvd · Apt 4B, Houston', dropoff: 'Dejar en la puerta · portón azul', note: 'Sin cebolla en la hamburguesa, por favor.', placed: '8:02', ago: '30 s', sub: 22.96, tip: 4.13,
+        items: [{ q: 1, n: 'Combo Amigo Clásico', m: 'Papas gajo · Coca-Cola · Tocino', note: 'Sin cebolla' }, { q: 2, n: 'Malteada de Vainilla', m: 'Grande · Crema batida' }, { q: 1, n: 'Papas con Queso', m: '' }] },
+      { id: '#A-1090', mode: 'delivery', status: 'nuevo', initials: 'JT', color: '#1F9D57', cust: 'James Turner', phone: '(713) 555-0092', addr: '1200 McKinney St · Suite 900', dropoff: 'Entregar en recepción', note: '', placed: '8:01', ago: '2 min', sub: 18.47, tip: 3.00,
+        items: [{ q: 1, n: 'Combo Pollo Crujiente', m: 'Papas clásicas · Sprite' }, { q: 1, n: 'Nuggets (10 pz)', m: 'BBQ · Ranch' }] },
+      { id: '#A-1088', mode: 'delivery', status: 'preparando', initials: 'CR', color: '#E8954A', cust: 'Carla Ríos', phone: '(832) 555-0177', addr: '4410 Hillcroft Ave · Apt 12', dropoff: 'Dejar en la puerta', note: 'Extra servilletas.', placed: '7:54', ago: '9 min', accepted: '7:56', sub: 31.20, tip: 5.20,
+        items: [{ q: 2, n: 'Rey Amigo', m: 'Doble · Tocino · Pepper Jack' }, { q: 1, n: 'Aros de Cebolla', m: '' }, { q: 2, n: 'Refresco (Grande)', m: 'Coca-Cola' }] },
+      { id: '#A-1087', mode: 'pickup', status: 'preparando', initials: 'DL', color: '#2F6FED', cust: 'Diego Luna', phone: '(281) 555-0043', addr: '', dropoff: '', note: '', placed: '7:57', ago: '6 min', accepted: '7:58', sub: 14.98, tip: 0,
+        items: [{ q: 1, n: 'Combo Doble Amigo', m: 'Papas clásicas · Fanta' }, { q: 1, n: 'Pay de Manzana', m: '' }] },
+      { id: '#A-1085', mode: 'delivery', status: 'listo', initials: 'AM', color: '#E0568F', cust: 'Ana Mendoza', phone: '(832) 555-0210', addr: '7302 Gulfton St · Apt 3', dropoff: 'Tocar el timbre', note: '', placed: '7:48', ago: '15 min', accepted: '7:50', ready: '8:00', sub: 26.40, tip: 4.40,
+        items: [{ q: 1, n: 'Caja Familiar (4 Burgers)', m: '' }, { q: 1, n: 'Papas Familiares', m: '' }] },
+      { id: '#A-1082', mode: 'delivery', status: 'camino', initials: 'RS', color: '#7B61FF', cust: 'Rosa Salas', phone: '(713) 555-0301', addr: '5900 Renwick Dr · Apt 8', dropoff: 'Dejar en la puerta', note: '', placed: '7:38', ago: '25 min', accepted: '7:40', ready: '7:52', assigned: '7:53', sub: 19.90, tip: 3.50,
+        driver: { initials: 'SR', color: '#1F9D57', name: 'Sofía R.', vehicle: 'Toyota Corolla · JHT-5521', eta: 'Llega ~6 min' },
+        items: [{ q: 1, n: 'Combo BBQ Bacon', m: 'Papas gajo · Té helado' }, { q: 1, n: 'Churros (5 pz)', m: '' }] },
+      { id: '#A-1079', mode: 'delivery', status: 'completado', initials: 'MG', color: '#1F9D57', cust: 'Miguel Gómez', phone: '', addr: '', dropoff: '', note: '', placed: '7:20', ago: '43 min', accepted: '7:22', ready: '7:34', assigned: '7:35', delivered: '7:48', sub: 24.50, tip: 4.00, rating: 5,
+        driver: { initials: 'MP', color: '#7B61FF', name: 'Marco P.', vehicle: 'Honda CBR · GHT-2481', eta: 'Entregado' },
+        items: [{ q: 1, n: 'Combo Rey Amigo', m: 'Papas grandes · Coca-Cola' }, { q: 1, n: 'McFlurry Oreo', m: '' }] },
+      { id: '#A-1076', mode: 'pickup', status: 'completado', initials: 'LP', color: '#E8954A', cust: 'Lucía Paredes', phone: '', addr: '', dropoff: '', note: '', placed: '7:05', ago: '58 min', accepted: '7:06', ready: '7:16', delivered: '7:20', sub: 11.48, tip: 0, rating: 4,
+        items: [{ q: 1, n: 'Combo Fish Amigo', m: 'Papas clásicas · Agua' }] },
+    ];
+  }
+  orders() { return this.state.orders || this.seed(); }
+  setOrders(next) { this.setState({ orders: next }); }
+  money(n) { return '$' + (Math.round(n * 100) / 100).toFixed(2); }
+  active() { const id = this.state.activeId; return this.orders().find((o) => o.id === id); }
+
+  patch(id, patch) { this.setOrders(this.orders().map((o) => o.id === id ? Object.assign({}, o, patch) : o)); }
+
+  accept(id, prep) { const t = this.now(); this.patch(id, { status: 'preparando', incoming: false, accepted: t, prep }); this.flash('Pedido aceptado · ' + prep + ' min'); }
+  reject(id) { this.patch(id, { status: 'rechazado', incoming: false }); this.flash('Pedido rechazado'); }
+  ready(id) { this.patch(id, { status: 'listo', ready: this.now() }); this.flash('Marcado como listo'); }
+  assign(id, driver) { this.patch(id, { status: 'camino', assigned: this.now(), driver }); this.flash(driver.name + ' asignado · en camino'); }
+  deliver(id) { this.patch(id, { status: 'completado', delivered: this.now() }); this.flash('Pedido entregado ✓'); }
+  now() { const h = 8, m = 4 + Math.floor(Math.random() * 12); return h + ':' + (m < 10 ? '0' + m : m); }
+
+  modeStyle(mode) { const d = mode === 'delivery'; return 'display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:7px;font:800 8.5px \'Plus Jakarta Sans\';background:' + (d ? '#EFEBFF' : '#FCEFD6') + ';color:' + (d ? '#6D4DF6' : '#9A6A12'); }
+  modeLabel(mode) { return mode === 'delivery' ? 'ENTREGA' : 'RECOGER'; }
+
+  statusMeta(s) {
+    return {
+      nuevo: { title: 'Pedido nuevo', sub: 'Acéptalo para empezar a cocinar', bg: '#FDE7EF', border: '#F8C7D6', c: '#D6336C', icon: this.IC('bell', 20, '#D6336C') },
+      preparando: { title: 'En preparación', sub: 'Cocinando ahora en cocina', bg: '#FEF3C7', border: '#FDE68A', c: '#9A6A12', icon: this.IC('chef', 20, '#9A6A12') },
+      listo: { title: 'Listo', sub: 'Empacado y esperando repartidor', bg: '#EFEBFF', border: '#D7CCF7', c: '#6D4DF6', icon: this.IC('box', 20, '#6D4DF6') },
+      camino: { title: 'En camino', sub: 'El repartidor va hacia el cliente', bg: '#E3F5EA', border: '#B7E3C8', c: '#1F8A4C', icon: this.IC('truck', 20, '#1F8A4C') },
+      completado: { title: 'Entregado', sub: 'Pedido completado con éxito', bg: '#E3F5EA', border: '#B7E3C8', c: '#1F8A4C', icon: this.IC('check', 20, '#1F8A4C') },
+      rechazado: { title: 'Rechazado', sub: 'Pedido cancelado', bg: '#F1EFFA', border: '#E2DEF4', c: '#9A96AE', icon: this.IC('slash', 20, '#9A96AE') },
+    }[s];
+  }
+
+  detailFor(o) {
+    const money = (n) => this.money(n);
+    const sm = this.statusMeta(o.status);
+    const itemCount = o.items.reduce((n, i) => n + i.q, 0);
+    // pricing per item — split subtotal proportionally by simple weights (demo)
+    const items = o.items.map((i, idx) => ({ qty: i.q, name: i.n, mods: i.m, note: i.note, total: money((o.sub / itemCount) * i.q) }));
+    const tax = Math.round(o.sub * 0.0825 * 100) / 100;
+    const commission = Math.round(o.sub * 0.15 * 100) / 100;
+    const payout = Math.round((o.sub - commission) * 100) / 100;
+    const payRows = [
+      { label: 'Subtotal comida', value: money(o.sub), weight: '600', labelC: '#6E6A85', valueC: '#1E1B2E' },
+      { label: 'Impuestos (recaudados)', value: money(tax), weight: '600', labelC: '#6E6A85', valueC: '#1E1B2E' },
+    ];
+    if (o.mode === 'delivery' && o.tip) payRows.push({ label: 'Propina (100% al repartidor)', value: money(o.tip), weight: '600', labelC: '#6E6A85', valueC: '#9A96AE' });
+    payRows.push({ label: 'Comisión To’Latino (15%)', value: '-' + money(commission), weight: '700', labelC: '#D6336C', valueC: '#D6336C' });
+
+    // timeline
+    const steps = o.mode === 'delivery'
+      ? [['nuevo', 'Pedido recibido', o.placed, ''], ['preparando', 'Aceptado y en preparación', o.accepted, o.prep ? o.prep + ' min estimados' : ''], ['listo', 'Listo para recoger', o.ready, ''], ['camino', 'Repartidor en camino', o.assigned, o.driver ? o.driver.name : ''], ['completado', 'Entregado', o.delivered, '']]
+      : [['nuevo', 'Pedido recibido', o.placed, ''], ['preparando', 'Aceptado y en preparación', o.accepted, ''], ['listo', 'Listo para recoger', o.ready, ''], ['completado', 'Recogido', o.delivered, '']];
+    const order = ['nuevo', 'preparando', 'listo', 'camino', 'completado'];
+    const curIdx = order.indexOf(o.status);
+    const timeline = steps.map((s, i, arr) => { const si = order.indexOf(s[0]); const done = si < curIdx || o.status === 'completado' && s[0] === 'completado'; const isDone = si <= curIdx && (s[2] || si < curIdx); const active = s[0] === o.status;
+      const reached = si <= curIdx; return {
+        title: s[1], sub: s[3], time: s[2] || (reached ? '' : '—'),
+        done: reached && (s[0] !== o.status || o.status === 'completado'),
+        weight: reached ? '800' : '600', titleC: reached ? '#1E1B2E' : '#B0ACC0',
+        dotStyle: 'width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;background:' + (reached ? (active && o.status !== 'completado' ? '#7B61FF' : '#1F9D57') : '#E3DEF2'),
+        line: i < arr.length - 1, lineC: si < curIdx ? '#1F9D57' : '#E3DEF2',
+      }; });
+
+    // footer action
+    let footer = null;
+    if (o.status === 'nuevo') footer = { label: 'Aceptar pedido', icon: this.IC('check', 16, '#fff'), reject: true, act: () => this.accept(o.id, 15), style: this.primaryBtn('#1F9D57') };
+    else if (o.status === 'preparando') footer = { label: 'Marcar como listo', icon: this.IC('box', 16, '#fff'), act: () => this.ready(o.id), style: this.primaryBtn('#7B61FF') };
+    else if (o.status === 'listo' && o.mode === 'delivery') footer = { label: 'Asignar repartidor', icon: this.IC('truck', 16, '#fff'), act: () => this.setState({ modal: 'assign' }), style: this.primaryBtn('#7B61FF') };
+    else if (o.status === 'listo' && o.mode === 'pickup') footer = { label: 'Marcar como recogido', icon: this.IC('check', 16, '#fff'), act: () => this.deliver(o.id), style: this.primaryBtn('#1F9D57') };
+    else if (o.status === 'camino') footer = { label: 'Marcar como entregado', icon: this.IC('check', 16, '#fff'), act: () => this.deliver(o.id), style: this.primaryBtn('#1F9D57') };
+
+    return {
+      statusBg: sm.bg, statusBorder: sm.border, statusC: sm.c, statusIcon: sm.icon, statusTitle: sm.title, statusSub: sm.sub,
+      modeStyle: this.modeStyle(o.mode), modeLabel: this.modeLabel(o.mode), isDelivery: o.mode === 'delivery',
+      timeline,
+      custColor: o.color, initials: o.initials, custName: o.cust, custMeta: (o.phone || 'Cliente To’Latino') + (o.mode === 'delivery' ? '' : ' · Recoge en tienda'),
+      addr: o.addr, dropoff: o.dropoff, note: o.note,
+      itemCount, items,
+      hasDriver: !!o.driver, driverColor: o.driver ? o.driver.color : '#7B61FF', driverInitials: o.driver ? o.driver.initials : '', driverName: o.driver ? o.driver.name : '', driverMeta: o.driver ? o.driver.vehicle : '', driverEta: o.driver ? o.driver.eta : '',
+      payStatus: 'Pagado', payRows, payout: money(payout), payMethod: 'Visa ···· 4242', payoutDate: 'vie 11 jul',
+      hasFooter: !!footer, footerReject: footer && footer.reject, footerLabel: footer ? footer.label : '', footerIcon: footer ? footer.icon : null, footerStyle: footer ? footer.style : '', onAction: footer ? footer.act : (() => {}), onReject: () => this.setState({ modal: 'reject' }),
+    };
+  }
+  primaryBtn(bg) { return 'flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;background:' + bg + ';color:#fff;padding:15px;border-radius:14px;font:800 13.5px \'Plus Jakarta Sans\';box-shadow:0 12px 24px ' + (bg === '#1F9D57' ? 'rgba(31,157,87,.3)' : 'rgba(123,97,255,.3)'); }
+
+  cardActionFor(o) {
+    const money = (n) => this.money(n);
+    if (o.status === 'nuevo') return { label: 'Aceptar', icon: this.IC('check', 14, '#fff'), reject: true, style: this.cardBtn('#1F9D57'), act: () => this.accept(o.id, 15) };
+    if (o.status === 'preparando') return { label: 'Marcar listo', icon: this.IC('box', 14, '#fff'), style: this.cardBtn('#7B61FF'), act: () => this.ready(o.id) };
+    if (o.status === 'listo' && o.mode === 'delivery') return { label: 'Asignar repartidor', icon: this.IC('truck', 14, '#fff'), style: this.cardBtn('#7B61FF'), act: () => this.setState({ activeId: o.id, modal: 'assign' }) };
+    if (o.status === 'listo') return { label: 'Recogido', icon: this.IC('check', 14, '#fff'), style: this.cardBtn('#1F9D57'), act: () => this.deliver(o.id) };
+    if (o.status === 'camino') return { label: 'Entregado', icon: this.IC('check', 14, '#fff'), style: this.cardBtn('#1F9D57'), act: () => this.deliver(o.id) };
+    return null;
+  }
+  cardBtn(bg) { return 'flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:none;cursor:pointer;background:' + bg + ';color:#fff;padding:11px;border-radius:11px;font:800 12px \'Plus Jakarta Sans\''; }
+
+  renderVals() {
+    const st = this.state; const orders = this.orders(); const money = (n) => this.money(n);
+    const view = st.view;
+    const bp = st.bp; const isMobile = bp === 'mobile'; const isTablet = bp === 'tablet'; const isDesktop = bp === 'desktop';
+    const pageStyle = (isTablet || isDesktop) ? 'min-height:100vh;background:#E7E5EC;display:flex;flex-direction:column;align-items:center' : 'min-height:100vh;background:#F4F2F9;display:flex;flex-direction:column';
+    const frameW = isDesktop ? '1160px' : isTablet ? '600px' : '100%';
+    const frameStyle = 'position:relative;width:' + frameW + ';max-width:100%;height:100vh;margin:0 auto;background:#F4F2F9;overflow:hidden;display:flex;flex-direction:column' + ((isTablet || isDesktop) ? ';box-shadow:0 0 60px rgba(60,50,110,.14)' : '');
+    const paneStyle = isDesktop ? 'flex:1;display:flex;flex-direction:column;min-height:0;width:100%;max-width:820px;margin:0 auto' : 'flex:1;display:flex;flex-direction:column;min-height:0';
+    const cardsGridStyle = isDesktop ? 'display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start' : 'display:flex;flex-direction:column;gap:11px';
+    const modalWrapStyle = isMobile ? 'position:absolute;left:0;right:0;bottom:0;z-index:35;max-height:88%;overflow-y:auto;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -18px 50px rgba(28,24,46,.3);animation:tlsheet .24s ease' : 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:35;width:480px;max-width:calc(100% - 40px);max-height:86%;overflow-y:auto;background:#fff;border-radius:24px;box-shadow:0 30px 70px rgba(28,24,46,.4);animation:tlpop .24s ease';
+    const count = (s) => orders.filter((o) => o.status === s).length;
+
+    // stats
+    const doneToday = 63; const revToday = 842;
+    const stats = [
+      { label: 'Ingresos hoy', value: '$' + revToday, delta: '▲ 14%', deltaC: '#1F9D57', bg: '#E3F5EA', labelC: '#1F8A4C' },
+      { label: 'Pedidos', value: doneToday + '', delta: count('nuevo') + ' nuevos', deltaC: '#D6336C', bg: '#FDE7EF', labelC: '#D6336C' },
+      { label: 'Tiempo prom.', value: '24 min', delta: 'meta 25', deltaC: '#9A96AE', bg: '#EFEBFF', labelC: '#6D4DF6' },
+      { label: 'Aceptación', value: '98%', delta: '▲ 2%', deltaC: '#1F9D57', bg: '#FEF3C7', labelC: '#9A6A12' },
+    ];
+
+    // tabs
+    const tabDefs = [['nuevo', 'Nuevos'], ['preparando', 'Preparando'], ['listo', 'Listos'], ['camino', 'En camino'], ['completado', 'Completados']];
+    const tabs = tabDefs.map((t) => { const on = st.tab === t[0]; const n = count(t[0]); return { label: t[1], n: n, onTap: () => this.setState({ tab: t[0] }),
+      style: 'flex:none;display:flex;align-items:center;gap:6px;border:none;cursor:pointer;padding:8px 13px;border-radius:999px;font:' + (on ? '800' : '700') + ' 12px \'Plus Jakarta Sans\';' + (on ? 'background:#1E1B2E;color:#fff' : 'background:#F1EFFA;color:#56506E'),
+      nStyle: 'min-width:17px;height:17px;padding:0 4px;border-radius:9px;font:800 10px \'Plus Jakarta Sans\';display:flex;align-items:center;justify-content:center;background:' + (on ? 'rgba(255,255,255,.22)' : (t[0] === 'nuevo' && n ? '#F0466E' : '#E2DEF4')) + ';color:' + (on ? '#fff' : (t[0] === 'nuevo' && n ? '#fff' : '#6E6A85')) }; });
+
+    // cards for active tab
+    const list = orders.filter((o) => o.status === st.tab);
+    const cards = list.map((o) => { const ca = this.cardActionFor(o); const itemCount = o.items.reduce((n, i) => n + i.q, 0); const itemsLine = o.items.map((i) => i.q + '× ' + i.n).join(' · '); return {
+      short: o.id, initials: o.initials, custColor: o.color, custName: o.cust, timeLabel: 'hace ' + o.ago,
+      modeStyle: this.modeStyle(o.mode), modeLabel: this.modeLabel(o.mode),
+      total: money(o.sub + (o.tip || 0)), itemCount, itemsLine,
+      borderC: o.status === 'nuevo' ? '#F8C7D6' : 'rgba(30,27,46,.08)',
+      driverLine: o.driver && o.status === 'camino' ? (o.driver.name + ' · ' + o.driver.eta) : '',
+      ratingLine: o.status === 'completado' ? ('★'.repeat(o.rating || 5) + ' · calificado por el cliente') : '',
+      onTap: () => this.setState({ view: 'detail', activeId: o.id }),
+      hasActions: !!ca, hasReject: ca && ca.reject, actionLabel: ca ? ca.label : '', actionIcon: ca ? ca.icon : null, actionStyle: ca ? ca.style : '', onAction: ca ? ca.act : (() => {}), onReject: () => this.setState({ activeId: o.id, modal: 'reject' }),
+    }; });
+
+    // incoming
+    const incOrder = orders.find((o) => o.incoming && o.status === 'nuevo');
+    const incomingOpen = st.incoming && !!incOrder && !st.modal;
+    let inc = {};
+    if (incOrder) { const ic = incOrder.items.reduce((n, i) => n + i.q, 0); inc = { short: incOrder.id, modeLabel: this.modeLabel(incOrder.mode), ago: incOrder.ago, initials: incOrder.initials, custColor: incOrder.color, custName: incOrder.cust, itemCount: ic, total: money(incOrder.sub + (incOrder.tip || 0)), items: incOrder.items.map((i) => ({ qty: i.q, name: i.n })) }; }
+    const prepDefs = [10, 15, 20, 30];
+    const prepChips = prepDefs.map((p) => ({ label: p + ' min', onTap: () => this.setState({ prep: p }), style: 'flex:1;border:1.5px solid ' + (st.prep === p ? '#1F9D57' : '#E2DEF4') + ';background:' + (st.prep === p ? '#E9F8EF' : '#fff') + ';color:' + (st.prep === p ? '#1F8A4C' : '#56506E') + ';cursor:pointer;padding:10px;border-radius:11px;font:800 12px \'Plus Jakarta Sans\'' }));
+
+    // detail
+    const act = this.active();
+    const d = act ? this.detailFor(act) : {};
+
+    // assign drivers
+    const ownDefs = [
+      { id: 'mp', initials: 'MP', color: '#7B61FF', name: 'Marco P.', dot: '#1F9D57', status: 'Libre · en el local', rating: '4.9', eta: 'Sale ahora', etaC: '#1F8A4C', vehicle: 'Honda CBR · GHT-2481' },
+      { id: 'lg', initials: 'LG', color: '#E8954A', name: 'Luis G.', dot: '#1F9D57', status: 'Libre · a 3 min', rating: '4.7', eta: 'Sale ~3 min', etaC: '#1F8A4C', vehicle: 'Nissan Versa · KLM-3390' },
+      { id: 'sr', initials: 'SR', color: '#1F9D57', name: 'Sofía R.', dot: '#F4B740', status: 'En ruta · #A-1082', rating: '4.8', eta: 'Libre ~8 min', etaC: '#9A6A12', vehicle: 'Toyota Corolla · JHT-5521' },
+    ];
+    const ownDrivers = ownDefs.map((d0) => ({ initials: d0.initials, color: d0.color, name: d0.name, dot: d0.dot, status: d0.status, rating: d0.rating, eta: d0.eta, etaC: d0.etaC,
+      onTap: () => { if (act) this.assign(act.id, { initials: d0.initials, color: d0.color, name: d0.name, vehicle: d0.vehicle, eta: 'Llega ~' + (5 + Math.floor(Math.random() * 6)) + ' min' }); this.setState({ modal: null }); },
+      style: 'display:flex;align-items:center;gap:11px;width:100%;border:1.5px solid #E2DEF4;background:#fff;cursor:pointer;padding:11px 13px;border-radius:13px' }));
+    const extDefs = [
+      { badge: 'U', color: '#000', name: 'Uber Direct', sub: 'Conductor bajo demanda', rate: '$8.50 · ~6 min' },
+      { badge: 'D', color: '#FF3008', name: 'DoorDash Drive', sub: 'Respaldo de flota externa', rate: '$9.00 · ~9 min' },
+    ];
+    const extDrivers = extDefs.map((e) => ({ badge: e.badge, color: e.color, name: e.name, sub: e.sub, rate: e.rate,
+      onTap: () => { if (act) this.assign(act.id, { initials: e.badge, color: e.color, name: e.name + ' (externo)', vehicle: 'Conductor de ' + e.name, eta: 'Llega ~' + (6 + Math.floor(Math.random() * 6)) + ' min' }); this.setState({ modal: null }); } }));
+
+    // reject
+    const rejectDefs = ['Artículo agotado', 'Cocina saturada', 'Cerramos por hoy', 'Fuera de zona de entrega'];
+    const rejectOpts = rejectDefs.map((r) => ({ label: r, icon: this.IC('slash', 15, '#D6336C'), onTap: () => { if (act) this.reject(act.id); this.setState({ modal: null, view: 'board', incoming: false }); } }));
+
+    // notifications
+    const notifDefs = [
+      { icon: this.IC('bell', 17, '#D6336C'), bg: '#FDE7EF', title: 'Nuevo pedido · #A-1091', sub: 'María López · Entrega · $27.09', time: 'ahora', unread: true },
+      { icon: this.IC('truck', 17, '#1F8A4C'), bg: '#E3F5EA', title: 'Sofía R. recogió #A-1082', sub: 'En camino a Rosa Salas · ETA 6 min', time: '10 min', unread: true },
+      { icon: this.IC('star', 17, '#9A6A12'), bg: '#FEF3C7', title: 'Nueva reseña ★★★★★', sub: '“El mejor combo, llegó calientito” — Miguel G.', time: '18 min', unread: true },
+      { icon: this.IC('dollar', 17, '#1F8A4C'), bg: '#E3F5EA', title: 'Depósito programado', sub: '$1,284.50 llegará el viernes 11 jul', time: '1 h', unread: false },
+      { icon: this.IC('alert', 17, '#9A6A12'), bg: '#FEF3C7', title: 'Bajo stock: Papas gajo', sub: 'Quedan ~12 porciones', time: '2 h', unread: false },
+    ];
+    const notifs = notifDefs;
+
+    const modal = st.modal;
+    return {
+      inDetail: view === 'detail', onBoard: view === 'board',
+      pageStyle, frameStyle, paneStyle, cardsGridStyle, modalWrapStyle, showStatusBar: isMobile, showTopBar: !isMobile,
+      headTitle: view === 'detail' ? (act ? act.id : 'Pedido') : 'Pedidos', headSub: view === 'detail' ? 'Burger Amigo · cocina' : (count('nuevo') + ' nuevos · ' + count('preparando') + ' en cocina · ' + count('camino') + ' en ruta'),
+      goBoard: () => this.setState({ view: 'board', activeId: null }),
+      notifCount: notifDefs.filter((n) => n.unread).length, openNotif: () => this.setState({ modal: 'notif' }),
+      stats, tabs, cards, emptyTab: cards.length === 0,
+      d,
+      incomingOpen, inc, prepChips, prepSel: st.prep,
+      incAccept: () => { if (incOrder) this.accept(incOrder.id, st.prep); this.setState({ incoming: false, tab: 'preparando' }); },
+      incReject: () => { if (incOrder) this.reject(incOrder.id); this.setState({ incoming: false }); },
+      modalOpen: !!modal, closeModal: () => this.setState({ modal: null }),
+      modalTitle: modal === 'assign' ? 'Asignar repartidor' : modal === 'reject' ? 'Rechazar pedido' : modal === 'notif' ? 'Notificaciones' : '',
+      mAssign: modal === 'assign', mReject: modal === 'reject', mNotif: modal === 'notif',
+      ownDrivers, extDrivers, rejectOpts, notifs,
+      toastShow: !!st.toast, toastMsg: st.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

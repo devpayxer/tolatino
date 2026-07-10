@@ -99,10 +99,18 @@ it** rather than breaking the rule silently.
 The founder has ALREADY approved the app's current screens and flows. Your job on
 any UI request is to **add what's missing, never replace what exists.**
 - **Before touching any screen:** locate the existing screen/pattern/flow it
-  belongs to and work WITHIN it. Example that must never repeat: online food
-  ordering lives inside the business single-page's **"Menú" tab** — an earlier
-  session replaced the whole single-page with a new full-screen flow and the
-  founder rejected it entirely. Rebuilding a page he likes = wasted credits + trust.
+  belongs to and work WITHIN it. Two examples that must never repeat (same
+  mistake, both sides of the same feature): (1) online food ordering lives
+  inside the business single-page's **"Menú" tab** — a session replaced the
+  whole single-page with a new full-screen flow and the founder rejected it
+  entirely; (2) the restaurant's order-management screen (dashboard "Pedidos"
+  tab, built on `ToLatino Customers Module.dc.html`) got fully swapped for the
+  handoff's standalone `ToLatino Cocina.dc.html` design — same error, other
+  side of the counter. **A design-file name existing in the handoff does NOT
+  mean rebuild that screen from scratch in the app** — if the app already has a
+  screen occupying that role, graft the new design's missing capabilities into
+  it (new sheets/fields/actions), keep the existing KPIs/cards/layout. Rebuilding
+  a page he likes = wasted credits + trust, whichever side of the app it's on.
 - **"Mejora X" means:** open X, keep its structure, and add the missing
   professional touches (states, polish, edge cases) — not redesign X.
 - **New screen genuinely needed?** Derive it from the closest existing screen +
