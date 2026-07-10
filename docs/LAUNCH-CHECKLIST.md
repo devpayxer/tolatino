@@ -980,28 +980,60 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
   `pending` older than 24h). Harmless (nothing was charged/fulfilled), just hygiene.
 
 ### Ordering flow — design handoff "Ordenar" (2026-07-09)
-The Cliente phase of the pedidos handoff (`design_handoff_pedidos/`) is rebuilt
-pixel-perfect as `apps/web/src/screens/order/OrderFlow.tsx` (opens for any
-restaurant whose menu has `ordering: true`; verified in-browser). Follow-ups:
+**Correction (2026-07-10):** the Cliente ordering experience does NOT live in a
+standalone `OrderFlow.tsx` full-screen takeover anymore — the founder rejected
+that (it replaced the whole business single-page). Online ordering lives inside
+`BizDetail.tsx`'s **"Menú" tab**, additive to the existing single-page design.
+`OrderFlow.tsx`/`orderIcons.tsx` were deleted. **Cocina + Menú Builder are also
+resolved:** Cocina's new capabilities (accept w/ prep time, real driver
+assignment, reject w/ reason, payout breakdown) were grafted additively into the
+dashboard's existing Pedidos screen (`Customers.tsx`), not a standalone rebuild;
+the existing Food module already matches/exceeds the Menú Builder spec (see
+PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
 - [ ] **Fee rates: design uses 10% service + 8.25% tax + 15% commission; we kept
   the founder's tested economics (5% buyer service fee, 15% platform commission,
   no separate tax line).** The handoff README says "ajustar tasas a las reales del
   negocio", so the STRUCTURE is faithful and the RATES are the real ones. If the
   founder wants the literal 10% + tax, wire real tax collection/remittance first
   (per-jurisdiction) — do NOT charge tax without remittance set up.
-- [ ] **In-app tracking + post-order (design screens 5–6) inside OrderFlow.** The
-  prototype's `track` + `done` views (live map, driver card, stepper, rating,
-  receipt, report) are currently served by the real post-payment confirmation
-  (PurchaseReturnToast) + Cuenta order tracking. Fold the design's track/done
-  screens into OrderFlow, driven by the real `business_orders` status + realtime.
 - [ ] **AMIGO10 promo** is wired end-to-end (client summary + server discount,
   platform-absorbed). Make promo codes real/configurable per business later.
 - [ ] **Payment method list is display-only** (Visa/MC/Apple Pay chips) — the real
   charge always goes through Stripe Checkout on "Realizar pedido". Wire saved
   cards / Payment Element when moving off Stripe-hosted Checkout.
-- [ ] **Cocina + Menú phases** of the handoff (`ToLatino Cocina.dc.html`,
-  `ToLatino Menu Builder.dc.html`) still to be rebuilt pixel-perfect into
-  `/negocio` (Fulfillment + Food modules).
+
+### Menú tab / carrito — add-to-cart stepper for items WITH addons (2026-07-10)
+- [ ] **Founder spec — build when we work the shopping cart properly, not now.**
+  Today's stepper on a product card ( `+` → `[🗑]1[+]` → `[−]N[+]` ) treats every
+  tap on `+`/`−` as "add/remove one of the SAME line" — fine for simple items,
+  but for an item with addon groups (customizable), the founder wants a real
+  decision point instead of silently repeating/removing a customization blind.
+  **Exact flow he specified:**
+  - **Tapping `+` on an item that has addons:** ask **"¿Lo deseas igual o
+    quieres cambiar algo?"** — *Igual* → add one more with the SAME selections
+    (today's behavior: increment the existing line's qty). *Cambiar algo* →
+    open the item's customize sheet fresh (empty/default selections, not
+    pre-filled from the existing line) so the customer builds a distinct
+    variant → adds as a NEW cart line alongside the first.
+  - **Tapping `−`/trash when 2+ DIFFERENT customized lines of that item exist
+    in the cart:** ask **which of the variants to remove**, showing the
+    DIFFERENCE between them (e.g. addon selections / notes that differ) so the
+    customer can tell them apart at a glance — not just "line 1" / "line 2".
+  - **No prompt needed when there's only one line** for that item (nothing to
+    choose between) — today's direct inc/dec stays for that case.
+  - Applies wherever this stepper exists: today the Menú tab's item cards; when
+    the **`/carrito`** screen itself is built, the same line-level stepper
+    there should follow the identical logic (same underlying cart, bigger view).
+  - **Open design questions to resolve when we build this** (founder invited a
+    "best way to do it" discussion, not a specific UI to copy): (1) sheet vs.
+    inline two-button prompt for "¿Igual o cambiar?" — likely a small centered
+    dialog, matching the design system's existing confirm-dialog pattern rather
+    than a full bottom sheet, since it's a fast binary choice; (2) how to render
+    "the difference" between two variants concisely — a diff-highlighted
+    one-line summary of just the addons that differ, not the full selection
+    list repeated twice; (3) whether removing via this prompt should
+    default-select the most-recently-added variant or force an explicit pick
+    every time.
 
 ### Food delivery (2026-07-09) — polish deferrals
 - [ ] **Dish photos.** The 150-dish menu uses the design-system striped tiles;
