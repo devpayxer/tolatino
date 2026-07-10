@@ -983,6 +983,20 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     setActiveCat(key);
     document.getElementById(`menu-cat-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+  // Desktop can't swipe a horizontal rail, so show hover arrows — but only for the
+  // direction that can still scroll. Track the rail's scroll position.
+  const [railNav, setRailNav] = useState({ left: false, right: false });
+  useEffect(() => {
+    const el = menuChipRailRef.current;
+    if (!el) return;
+    const update = () => setRailNav({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
+  }, [tab, realMenu, menuCats.length]);
+  const railBy = (dx: number) => menuChipRailRef.current?.scrollBy({ left: dx, behavior: 'smooth' });
 
   const tabButtons = tabs.map(([k, label]) => (
     <button
@@ -1513,21 +1527,37 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {/* horizontal category rail — pins under the tab bar and the active chip
               tracks the section in view (DoorDash-style scroll-spy). */}
           {menuCats.length > 1 && (
-            <div
-              ref={menuChipRailRef}
-              style={{ top: menuStickyTop }}
-              className="no-scrollbar sticky z-[15] -mx-3.5 mb-4 flex gap-1.5 overflow-x-auto border-b border-hair bg-app px-3.5 py-2.5 md:-mx-5 md:px-5"
-            >
-              {menuPopular.length >= 3 && (
-                <button data-cat="_pop" onClick={() => scrollToCat('_pop')} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_pop' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
-                  ⭐ {L('Populares', 'Popular')}
-                </button>
+            <div style={{ top: menuStickyTop }} className="group sticky z-[15] -mx-3.5 mb-4 border-b border-hair bg-app md:-mx-5">
+              <div ref={menuChipRailRef} className="no-scrollbar flex gap-1.5 overflow-x-auto px-3.5 py-2.5 md:px-5">
+                {menuPopular.length >= 3 && (
+                  <button data-cat="_pop" onClick={() => scrollToCat('_pop')} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_pop' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
+                    ⭐ {L('Populares', 'Popular')}
+                  </button>
+                )}
+                {menuCats.map((c) => (
+                  <button key={c.key} data-cat={c.key} onClick={() => scrollToCat(c.key)} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === c.key ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
+                    {B(c.name)}
+                  </button>
+                ))}
+              </div>
+              {/* desktop-only hover arrows (a mouse can't swipe a horizontal rail);
+                  each shows only while that direction can still scroll. */}
+              {railNav.left && (
+                <>
+                  <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 hidden w-14 bg-gradient-to-r from-app to-transparent opacity-0 transition-opacity group-hover:opacity-100 md:block" />
+                  <button type="button" aria-label={L('Categorías anteriores', 'Previous categories')} onClick={() => railBy(-240)} className="absolute left-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-hair bg-white text-ink opacity-0 shadow-card transition-opacity hover:bg-lilac-2 group-hover:opacity-100 md:flex">
+                    <ChevronLeft size={17} strokeWidth={2.4} />
+                  </button>
+                </>
               )}
-              {menuCats.map((c) => (
-                <button key={c.key} data-cat={c.key} onClick={() => scrollToCat(c.key)} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === c.key ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
-                  {B(c.name)}
-                </button>
-              ))}
+              {railNav.right && (
+                <>
+                  <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 hidden w-14 bg-gradient-to-l from-app to-transparent opacity-0 transition-opacity group-hover:opacity-100 md:block" />
+                  <button type="button" aria-label={L('Más categorías', 'More categories')} onClick={() => railBy(240)} className="absolute right-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-hair bg-white text-ink opacity-0 shadow-card transition-opacity hover:bg-lilac-2 group-hover:opacity-100 md:flex">
+                    <ChevronRight size={17} strokeWidth={2.4} />
+                  </button>
+                </>
+              )}
             </div>
           )}
 
