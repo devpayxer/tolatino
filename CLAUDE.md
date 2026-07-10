@@ -184,6 +184,12 @@ spend. Don't re-explain the project per task; point at this file.
   needed for this app. Model tier × effort level compound, so an expensive model
   AND high effort together is the fastest way to burn a week's credits on one
   session.
+- **You don't have to figure out WHEN to escalate — Claude watches for it.**
+  Claude can't flip `/model`/`/effort` itself (those stay yours to set), but it
+  will proactively tell you the exact command to paste the moment a task
+  crosses into payments/security/data-model territory, or after a fix attempt
+  fails twice — never after grinding away at the wrong tier for a while. Full
+  protocol in the `tolatino-standards` skill §6.
 - **One task per message.** A screenshot + one line ("aquí, el botón X no hace Y")
   beats a long explanation — cheaper and clearer.
 - **Don't re-explain the project or the design** — the skill + `docs/PROGRESS.md`

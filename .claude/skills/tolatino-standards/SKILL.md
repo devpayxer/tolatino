@@ -72,6 +72,34 @@ it** rather than breaking the rule silently.
   Multi-agent orchestration (ultracode/workflows) only when the founder asks or
   the task genuinely needs it — it is many times the cost of a normal pass.
 
+### Self-escalation protocol (so the founder never has to guess when to upgrade)
+The founder is new to Claude Code and doesn't want to have to figure out when a
+task needs a stronger model/effort — that decision is Claude's job, every time.
+**Ground truth first: Claude cannot change the session's active model or Effort
+tier itself.** Those are client-side settings (`/model`, `/effort`) only the
+founder can set — never claim or imply an automatic session-wide switch that
+doesn't exist; that's the kind of false claim that costs trust later.
+What Claude actually does, in two tiers:
+1. **Fully automatic, no founder action, works right now:** for one bounded hard
+   sub-problem inside a task (root-causing a bug, a security-sensitive review, a
+   tricky data-model question) — spawn a sub-agent at a stronger model via the
+   `Agent` tool's `model` param. This doesn't touch the main session's tier at
+   all; use it freely when a sub-step, not the whole task, is the hard part.
+2. **Needs one paste from the founder, but Claude decides WHEN — proactively,
+   not after visible struggling:** stop and name the exact command to run
+   BEFORE burning further attempts, in every one of these cases:
+   - The task centers on payments/Stripe, RLS/security policies, or data-model/
+     migrations (matches §6's cost-of-being-wrong framework) — recommend
+     escalating **before starting**, not after something breaks.
+   - A fix attempt has already failed **twice** at the current tier — recommend
+     escalating before a third attempt, never grind a 4th/5th try at the same tier.
+   - The root cause is still unclear after real investigation (reading the actual
+     code/logs, not guessing) — recommend escalating rather than guessing further.
+   - The ask is always one plain line naming the exact command: *"Esto necesita
+     más potencia — escribe `/effort high` (o `/model` y elige el nivel
+     superior) y dime cuando esté listo, para continuar."* Never a vague "this
+     is hard" with no actionable next step.
+
 ## 7. Benchmark against the best — build to compete and win (how the founder wants it built)
 - Before building/revising **any** section or feature, name the successful apps that
   own that category and study what makes them work, then build the To'Latino version
