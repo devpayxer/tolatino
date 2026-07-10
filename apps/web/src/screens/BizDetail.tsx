@@ -947,6 +947,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Active category (scroll-spy). Recomputed on every scroll frame while on the
   // Menú tab: the last section whose header has passed under the sticky rail wins.
   const [activeCat, setActiveCat] = useState('');
+  const spyLock = useRef(false);            // freeze scroll-spy during a click-driven jump
+  const spySettle = useRef<number | null>(null);
   useEffect(() => {
     if (tab !== 'menu') return;
     const keys: string[] = [];
@@ -956,6 +958,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     let raf = 0;
     const spy = () => {
       raf = 0;
+      if (spyLock.current) return; // a chip was tapped — hold the highlight steady until the scroll settles
       // The line sits just BELOW where a jumped-to section lands (its
       // scrollMarginTop = sticky bars + 8), so clicking a category marks THAT
       // category active — not its left neighbor. Must stay > menuScrollMargin.
@@ -973,10 +976,19 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       if (window.innerHeight + window.scrollY >= doc.scrollHeight - 2) cur = keys[keys.length - 1];
       setActiveCat((p) => (p === cur ? p : cur));
     };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(spy); };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(spy);
+      // While a click-driven jump animates, release the freeze only once the
+      // scroll has settled (no scroll events for a beat) — so the highlight
+      // doesn't flicker through the categories it flies past.
+      if (spyLock.current) {
+        if (spySettle.current) window.clearTimeout(spySettle.current);
+        spySettle.current = window.setTimeout(() => { spyLock.current = false; }, 140);
+      }
+    };
     spy();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); };
+    return () => { window.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); if (spySettle.current) window.clearTimeout(spySettle.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, menuCats, menuPopular.length]);
   // Keep the active chip centered in the horizontal rail.
@@ -990,6 +1002,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   }, [activeCat, tab]);
   const scrollToCat = (key: string) => {
     setActiveCat(key);
+    // Freeze the spy for the animated jump so the highlight stays on the tapped
+    // chip instead of flashing through every category it scrolls past. The
+    // scroll-settle handler clears it; this timeout is a fallback if no scroll
+    // fires (e.g. tapping the already-active category).
+    spyLock.current = true;
+    if (spySettle.current) window.clearTimeout(spySettle.current);
+    spySettle.current = window.setTimeout(() => { spyLock.current = false; }, 800);
     document.getElementById(`menu-cat-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   // Desktop can't swipe a horizontal rail, so show hover arrows — but only for the
