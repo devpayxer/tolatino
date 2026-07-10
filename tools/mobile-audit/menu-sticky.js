@@ -3,19 +3,24 @@
 // chip tracks the section in view + auto-centers. Supabase relayed via curl.
 // Usage: SESSION_JSON=<file> SHOTS_DIR=<dir> node menu-sticky.js
 const { chromium } = require('playwright');
-const { execFileSync } = require('child_process');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const BASE = 'http://127.0.0.1:4173';
 const SHOTS = process.env.SHOTS_DIR || '/tmp';
 const session = JSON.parse(fs.readFileSync(process.env.SESSION_JSON, 'utf8'));
+// ASYNC relay so Playwright's event loop isn't starved (blocking curl starves it).
 function curlRelay(req) {
-  const args = ['-s', '-o', '-', '-w', '\n%{http_code}', '-X', req.method(), '--max-time', '25'];
-  const h = req.headers();
-  for (const k of ['apikey', 'authorization', 'content-type', 'prefer', 'accept', 'accept-profile', 'content-profile', 'x-client-info', 'range']) if (h[k]) args.push('-H', `${k}: ${h[k]}`);
-  const body = req.postData(); if (body != null) args.push('--data-binary', body);
-  args.push(req.url());
-  try { const out = execFileSync('curl', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }); const nl = out.lastIndexOf('\n'); return { status: parseInt(out.slice(nl + 1), 10) || 500, body: out.slice(0, nl) }; }
-  catch (e) { return { status: 502, body: String(e).slice(0, 200) }; }
+  return new Promise((resolve) => {
+    const args = ['-s', '-o', '-', '-w', '\n%{http_code}', '-X', req.method(), '--max-time', '25'];
+    const h = req.headers();
+    for (const k of ['apikey', 'authorization', 'content-type', 'prefer', 'accept', 'accept-profile', 'content-profile', 'x-client-info', 'range']) if (h[k]) args.push('-H', `${k}: ${h[k]}`);
+    const body = req.postData(); if (body != null) args.push('--data-binary', body);
+    args.push(req.url());
+    execFile('curl', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }, (err, stdout) => {
+      const out = stdout || ''; if (err && !out) return resolve({ status: 502, body: String(err).slice(0, 200) });
+      const nl = out.lastIndexOf('\n'); resolve({ status: parseInt(out.slice(nl + 1), 10) || 500, body: out.slice(0, nl) });
+    });
+  });
 }
 // which rail chip is active (purple) + the rail's pinned top, live from the DOM
 const probe = `(() => {
@@ -30,7 +35,7 @@ const probe = `(() => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const page = await browser.newPage({ viewport: { width: 402, height: 852 } });
   const fail = async (m) => { await page.screenshot({ path: `${SHOTS}/ms-FAIL.png` }); console.error('FAIL:', m); await browser.close(); process.exit(1); };
-  await page.route('**://*.supabase.co/**', async (route) => { const { status, body } = curlRelay(route.request()); await route.fulfill({ status, headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }, body }); });
+  await page.route('**://*.supabase.co/**', async (route) => { const { status, body } = await curlRelay(route.request()); await route.fulfill({ status, headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }, body }); });
   await page.route('**://fonts.googleapis.com/**', (r) => r.abort());
   await page.route('**://fonts.gstatic.com/**', (r) => r.abort());
   await page.addInitScript(([s]) => {
@@ -42,8 +47,8 @@ const probe = `(() => {
   const card = page.getByText('El Sabor de Quisqueya').first();
   for (let i = 0; i < 20; i++) { await page.waitForTimeout(1200); if (await card.isVisible().catch(() => false)) break; }
   await card.click();
-  for (let i = 0; i < 12; i++) { await page.waitForTimeout(1000); if (await page.getByRole('button', { name: /^Menú$/ }).first().isVisible().catch(() => false)) break; }
-  await page.getByRole('button', { name: /^Menú$/ }).first().click();
+  await page.waitForTimeout(5000);
+  await page.getByRole('button', { name: /^Menú$/ }).first().click({ timeout: 15000 });
   await page.waitForTimeout(1800);
 
   const at0 = await page.evaluate(probe);

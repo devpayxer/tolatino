@@ -4,7 +4,7 @@
 // (Overview · Updates · Menú · Tienda · Servicios · Eventos · Equipo ·
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Globe, Heart, MapPin, Menu, MessageCircle, Minus, MoreHorizontal, Navigation, Phone, Plus, Send, Share, Store, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
@@ -901,29 +901,36 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
 
   // Overview reveals the title row once the bar pins while scrolling; focused
   // tabs always show it. Track the pinned state via a cheap per-frame check.
-  const [stuck, setStuck] = useState(false);
+  // Scroll-LINKED collapse of the compact title row on Overview. Instead of
+  // toggling it on/off when the bar pins — which pops the layout and shoves the
+  // content below (the "brinco") — its height is tied 1:1 to how far you've
+  // scrolled past the pin point, so the page below never moves: the header
+  // collapses exactly as smoothly as you scroll (iOS large-title style). Focused
+  // tabs always show it. Written straight to the DOM (no per-frame re-render).
+  const titleWrapRef = useRef<HTMLDivElement>(null);
+  const titleInnerRef = useRef<HTMLDivElement>(null);
+  const pinStartRef = useRef(0);
+  const writeCollapse = useCallback(() => {
+    const wrap = titleWrapRef.current, inner = titleInnerRef.current, bar = barRef.current;
+    if (!wrap || !inner || !bar) return;
+    if (tab !== 'overview') { wrap.style.height = 'auto'; wrap.style.opacity = '1'; return; }
+    const headerPin = headerHRef.current ?? (window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
+    const H = inner.offsetHeight || 50;
+    const top = bar.getBoundingClientRect().top;
+    if (top > headerPin + 1) pinStartRef.current = window.scrollY + top - headerPin; // calibrate while above the pin
+    const c = Math.min(1, Math.max(0, (window.scrollY - pinStartRef.current) / H));
+    wrap.style.height = `${c * H}px`;
+    wrap.style.opacity = String(c);
+  }, [tab]);
+  // Re-assert after every render (React would otherwise reset the inline styles).
+  useLayoutEffect(() => { writeCollapse(); });
   useEffect(() => {
-    const el = barRef.current;
-    if (!el) return;
     let raf = 0;
-    const check = () => {
-      raf = 0;
-      const pin = headerHRef.current ?? (window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
-      setStuck(el.getBoundingClientRect().top <= pin + 0.5);
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(check);
-    };
-    check();
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; writeCollapse(); }); };
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [tab, headerH]);
-  const showTitle = focused || stuck;
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); if (raf) cancelAnimationFrame(raf); };
+  }, [writeCollapse]);
 
   // DoorDash-style Menú tab: a category rail that pins right under the tab bar and
   // an active chip that tracks the section in view (scroll-spy) + auto-centers in
@@ -937,12 +944,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   useEffect(() => {
     const el = barRef.current;
     if (!el) return;
-    const measure = () => { const h = Math.round(el.getBoundingClientRect().height); barHRef.current = h; setBarH(h); };
+    // barH feeds the Menú category rail's sticky offset only, so measure just on
+    // that tab — avoids re-rendering per frame while Overview's title collapses.
+    const measure = () => { if (tab !== 'menu') return; const h = Math.round(el.getBoundingClientRect().height); barHRef.current = h; setBarH(h); };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [tab, showTitle]);
+  }, [tab]);
   useEffect(() => {
     const el = menuChipRailRef.current;
     if (!el) return;
@@ -1317,8 +1326,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           focused ? '-mt-4 md:-mt-5 lg:-mt-[26px]' : 'mt-1'
         }`}
       >
-        <div className={`overflow-hidden transition-all duration-200 ${showTitle ? 'max-h-[64px] opacity-100' : 'max-h-0 opacity-0'}`}>
-          <div className="flex items-center gap-2 pb-2 pt-2.5">
+        <div ref={titleWrapRef} className="overflow-hidden" style={{ height: 0, opacity: 0 }}>
+          <div ref={titleInnerRef} className="flex items-center gap-2 pb-2 pt-2.5">
             <button onClick={() => onTab('overview')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
               <ChevronLeft size={16} strokeWidth={2.6} className="text-ink" />
             </button>
