@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Globe, Heart, MapPin, Menu, MessageCircle, MoreHorizontal, Navigation, Phone, Plus, Send, Share, Store, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Globe, Heart, MapPin, Menu, MessageCircle, Minus, MoreHorizontal, Navigation, Phone, Plus, Send, Share, Store, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -540,20 +540,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // /entrar instead (never insert as a guest). Item NAMES + the business slug
   // are stored; the creators resolve slug → uuid internally.
 
-  // Quick single-item order. Fixture prices are numeric, so total = unit price.
-  const orderItem = (catKey: string, it: MenuItem) => {
-    if (shopStock(catKey, it) === 0) { flash(L('Agotado', 'Sold out')); return; }
-    if (!user) { router.push('/entrar'); return; }
-    // Seller takes online payments → one-tap item goes straight to Stripe checkout.
-    if (payOnline) {
-      void startMarketplaceCheckout({ kind: 'order', slug: b.slug, items: [{ name: B(it.n), qty: 1, price: it.price }], channel: 'pickup' })
-        .then(({ url, error }) => { if (url) window.location.href = url; else flash(error === 'seller_not_payable' ? L('Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet') : L('No se pudo iniciar el pago', 'Could not start payment')); });
-      return;
-    }
-    act.placeOrder(b.slug, [{ name: B(it.n), qty: 1, price: it.price }], it.price, 'pickup');
-    flash(L('Pedido enviado · míralo en Mi cuenta', 'Order sent · see it in My account'));
-  };
-
   // Build a real ISO from the picker: svcDate → the chosen date chip, svcTime → the
   // selected slot's minute-of-day. Falls back to now/noon if nothing valid.
   const svcStartISO = () => {
@@ -1083,11 +1069,29 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     </div>
   );
 
-  const itemCard = (catKey: string, it: MenuItem, withAdd = false, displayOnly = false) => {
+  const itemCard = (catKey: string, it: MenuItem, displayOnly = false) => {
     if (displayOnly) return catalogCard(it);
     const stk = shopStock(catKey, it);
     const soldOut = stk === 0;
     const low = stk != null && stk > 0 && stk <= 5;
+    // Add-to-cart stepper: qty = this item summed across its cart lines (the simple
+    // line + any customized variants). Items with option groups open the sheet on
+    // first add / when the card is tapped (to customize); the stepper then inc/decs
+    // the most recent line. At qty 1 the left control is a trash (removes the item);
+    // at qty ≥ 2 it becomes a minus (one less).
+    const groups = groupsFor(catKey, it);
+    const hasOpts = groups.length > 0;
+    const simpleKey = `${catKey}:${B(it.n)}`;
+    const lineKeys = Object.keys(cart).filter((k) => k === simpleKey || k.startsWith(`${simpleKey}|`));
+    const qty = lineKeys.reduce((n, k) => n + cart[k].qty, 0);
+    const firstAdd = () => { if (hasOpts) openItem(catKey, it); else addSimple(catKey, it); };
+    const incOne = () => {
+      if (stk != null && qty >= stk) { flash(L('No hay más unidades', 'No more units available')); return; }
+      if (!hasOpts) { addSimple(catKey, it); return; }
+      const k = lineKeys[lineKeys.length - 1];
+      if (k) incLine(k); else openItem(catKey, it);
+    };
+    const decOne = () => { const k = lineKeys[lineKeys.length - 1]; if (k) decLine(k); };
     return (
       <button
         key={B(it.n)}
@@ -1095,24 +1099,42 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         className={`flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card ${soldOut ? 'cursor-default opacity-75' : 'cursor-pointer'}`}
       >
         {itemBody(it)}
-        <span className="flex flex-none flex-col items-center gap-1.5">
+        <span className="flex flex-none flex-col items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           {soldOut ? (
             <span className="whitespace-nowrap rounded-full bg-lilac-2 px-2.5 py-1.5 text-[10px] font-extrabold text-muted-2">{L('Agotado', 'Sold out')}</span>
           ) : (
             <>
               {low && <span className="whitespace-nowrap rounded-md bg-amber-bg px-1.5 py-0.5 text-[8.5px] font-extrabold text-amber-ink">{L('Quedan', 'Left')} {stk}</span>}
-              <span
-                onClick={(e) => { if (withAdd) { e.stopPropagation(); addSimple(catKey, it); } }}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-lilac text-primary-dark"
-              >
-                <Plus size={15} strokeWidth={2.8} />
-              </span>
-              <span
-                onClick={(e) => { e.stopPropagation(); orderItem(catKey, it); }}
-                className="cursor-pointer whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[10px] font-extrabold text-white shadow-cta-sm"
-              >
-                {L('Pedir', 'Order')}
-              </span>
+              {qty === 0 ? (
+                <span
+                  role="button"
+                  aria-label={L('Agregar', 'Add')}
+                  onClick={(e) => { e.stopPropagation(); firstAdd(); }}
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-lilac text-primary-dark shadow-card transition-transform active:scale-90"
+                >
+                  <Plus size={16} strokeWidth={2.8} />
+                </span>
+              ) : (
+                <span className="flex items-center gap-0.5 rounded-full border border-lilac-line bg-white p-0.5 shadow-card">
+                  <span
+                    role="button"
+                    aria-label={qty === 1 ? L('Eliminar', 'Remove') : L('Quitar uno', 'Remove one')}
+                    onClick={(e) => { e.stopPropagation(); decOne(); }}
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-primary-dark transition-transform active:scale-90"
+                  >
+                    {qty === 1 ? <Trash2 size={14} strokeWidth={2.2} /> : <Minus size={16} strokeWidth={2.8} />}
+                  </span>
+                  <span className="min-w-[20px] text-center text-[13.5px] font-extrabold tabular-nums text-ink">{qty}</span>
+                  <span
+                    role="button"
+                    aria-label={L('Agregar uno', 'Add one')}
+                    onClick={(e) => { e.stopPropagation(); incOne(); }}
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-cta-sm transition-transform active:scale-90"
+                  >
+                    <Plus size={16} strokeWidth={2.8} />
+                  </span>
+                </span>
+              )}
             </>
           )}
         </span>
@@ -1516,7 +1538,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 <span className="text-[15.5px] font-extrabold text-ink">{L('Populares', 'Popular items')}</span>
                 <span className="text-[11.5px] font-bold text-muted">{menuPopular.length} {L('platillos', 'items')}</span>
               </div>
-              <div className={menuDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{menuPopular.map(({ catKey, item }) => itemCard(catKey, item, false, menuDisplayOnly))}</div>
+              <div className={menuDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{menuPopular.map(({ catKey, item }) => itemCard(catKey, item, menuDisplayOnly))}</div>
             </div>
           )}
 
@@ -1526,7 +1548,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                 <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('platillos', 'items')}</span>
               </div>
-              <div className={menuDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, false, menuDisplayOnly))}</div>
+              <div className={menuDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, menuDisplayOnly))}</div>
             </div>
           ))}
         </div>
@@ -1573,7 +1595,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                 <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('productos', 'products')}</span>
               </div>
-              <div className={shopDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, realShop ? realShop.selling : true, shopDisplayOnly))}</div>
+              <div className={shopDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, shopDisplayOnly))}</div>
             </div>
           ))}
         </div>
