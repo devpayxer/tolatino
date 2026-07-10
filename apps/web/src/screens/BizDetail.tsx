@@ -860,7 +860,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Suppress the title fade for the one render caused by a tab switch, so the
   // swap is a clean single-frame cut instead of a ghosted cross-fade mid-page.
   const noFadeRef = useRef(false);
-  const onTab = (k: TabKey) => { noFadeRef.current = true; setTab(k); };
+  // Same-tab taps must not set noFade: setTab bails out on identical state, no
+  // render commits, and the reset effect below would never clear it — leaving the
+  // NEXT legitimate pin fade stripped of its transition.
+  const onTab = (k: TabKey) => { if (k === tab) return; noFadeRef.current = true; setTab(k); };
   useEffect(() => { noFadeRef.current = false; });
 
   // Pin the bar to the REAL app-header height (measured live) so it tucks flush —
@@ -1324,8 +1327,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           tabs the title simply stays visible. */}
       <div
         ref={barRef}
-        style={headerH != null ? { top: headerH } : undefined}
-        className={`sticky top-[150px] z-20 -mx-3.5 border-b border-hair md:top-[108px] md:-mx-5 ${
+        style={{ ...(headerH != null ? { top: headerH } : undefined), pointerEvents: !focused && !stuck ? 'none' : undefined }}
+        className={`sticky top-[150px] z-20 -mx-3.5 md:top-[108px] md:-mx-5 ${
           focused ? 'bg-app -mt-4 md:-mt-5 lg:-mt-[26px]' : '-mt-[46px]'
         }`}
       >
@@ -1349,7 +1352,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             </div>
           </div>
         </div>
-        <div className="no-scrollbar flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain bg-app px-3.5 pt-2.5 md:px-5">{tabButtons}</div>
+        {/* tabs row: pointer-events-auto re-enables input under the container's
+            unpinned pass-through; the hairline lives HERE (over this row's opaque
+            bg-app) so no 1px see-through slit exists while content scrolls under */}
+        <div className="no-scrollbar pointer-events-auto flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-app px-3.5 pt-2.5 md:px-5">{tabButtons}</div>
       </div>
 
       {/* ============ OVERVIEW ============ */}

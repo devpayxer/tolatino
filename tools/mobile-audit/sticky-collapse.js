@@ -80,7 +80,7 @@ const sample = `(() => {
   }
   const opStart = rows[0].op, opEnd = rows[rows.length - 1].op;
   const mutations = rows[rows.length - 1].mut;
-  const pinned = rows.filter(r => r.barTop <= 160).length > 0;
+  const pinned = rows.filter(r => r.barTop <= 162).length > 0; // sticky top is 161px on mobile (header 111 + title 50)
   await page.screenshot({ path: `${SHOTS}/sc-pinned.png` });
 
   console.log(`bar height: ${barMin}→${barMax} (must be constant) | pinned reached: ${pinned}`);
