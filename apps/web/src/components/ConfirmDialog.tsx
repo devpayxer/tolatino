@@ -6,6 +6,7 @@
 // mobile, centered card on desktop. Controlled: the caller owns `open`.
 
 import { AlertTriangle } from 'lucide-react';
+import { useScrollLock } from '@/lib/scrollLock';
 
 export function ConfirmDialog({
   open, onClose, onConfirm, title, message, confirmLabel, cancelLabel,
@@ -18,6 +19,7 @@ export function ConfirmDialog({
   confirmLabel: string;
   cancelLabel: string;
 }) {
+  useScrollLock(open);
   if (!open) return null;
   return (
     <div

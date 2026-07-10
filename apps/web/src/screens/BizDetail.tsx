@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
+import { useScrollLock } from '@/lib/scrollLock';
 import { uploadPostImages } from '@/lib/image';
 import { startConversation, fetchChatMessages, sendChatMessage, markConversationRead, subscribeChat, type ChatMsg } from '@/lib/chat';
 import { useMyActivity } from '@/lib/myActivity';
@@ -139,6 +140,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [weekOpen, setWeekOpen] = useState(false);
   const [photoTile, setPhotoTile] = useState<string | null>(null);
+  useScrollLock(!!photoTile); // full-screen photo viewer is a bespoke overlay (not <Overlay>)
 
   // Real gallery photos for this listing (by slug). Empty → placeholder tiles.
   const [photos, setPhotos] = useState<string[]>([]);

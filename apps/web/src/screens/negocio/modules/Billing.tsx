@@ -20,6 +20,7 @@ import type { PanelCtx, TabKey, Tier } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { startCheckout, openBillingPortal } from '@/lib/stripe';
+import { useScrollLock } from '@/lib/scrollLock';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 
@@ -42,6 +43,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [addons, setAddons] = useState<Record<AddonKey, boolean>>({ featured: false, boost: false, seats: false, sms: false });
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  useScrollLock(cancelOpen);
   const [pick, setPick] = useState<'verified' | 'premium'>('premium');
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState(false);

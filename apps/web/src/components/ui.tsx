@@ -4,6 +4,7 @@
 
 import { X } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
+import { useScrollLock } from '@/lib/scrollLock';
 
 /** CSS wordmark: To'(ink) + Latino(purple) + amber diamond. */
 export function Wordmark({ size = 'md', onClick }: { size?: 'sm' | 'md' | 'lg'; onClick?: () => void }) {
@@ -154,6 +155,7 @@ export function Overlay({
   width?: number;
   fullHeightSheet?: boolean;
 }) {
+  useScrollLock(open); // lock background scroll while this overlay is open (site-wide)
   if (!open) return null;
   const desktopAlign =
     align === 'right'

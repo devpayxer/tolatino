@@ -11,6 +11,7 @@
 
 import type { ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react';
+import { useScrollLock } from '@/lib/scrollLock';
 
 export function ModulePage({
   title,
@@ -31,6 +32,7 @@ export function ModulePage({
   children: ReactNode;
   maxW?: number;
 }) {
+  useScrollLock(true); // this is a full-screen takeover; lock the panel behind it
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-app">
       <header className="flex flex-none items-center gap-2.5 border-b border-hair bg-white px-3.5 py-2.5 md:px-5">

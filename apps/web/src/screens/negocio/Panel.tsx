@@ -11,6 +11,7 @@ import { BarChart3, Bell, Check, ChevronDown, ExternalLink, Menu, MessageCircle,
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { supabase } from '@/lib/supabase';
+import { useScrollLock } from '@/lib/scrollLock';
 import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
@@ -80,6 +81,7 @@ export function PanelScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo, tab]);
   const [drawer, setDrawer] = useState(false);
+  useScrollLock(drawer);
   const [mods, setMods] = useState<Mods>(DEFAULT_MODS);
 
   // Load the real business's saved module config (null → tier default).
