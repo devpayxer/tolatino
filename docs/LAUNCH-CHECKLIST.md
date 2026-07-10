@@ -1003,37 +1003,28 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
   cards / Payment Element when moving off Stripe-hosted Checkout.
 
 ### Menú tab / carrito — add-to-cart stepper for items WITH addons (2026-07-10)
-- [ ] **Founder spec — build when we work the shopping cart properly, not now.**
-  Today's stepper on a product card ( `+` → `[🗑]1[+]` → `[−]N[+]` ) treats every
-  tap on `+`/`−` as "add/remove one of the SAME line" — fine for simple items,
-  but for an item with addon groups (customizable), the founder wants a real
-  decision point instead of silently repeating/removing a customization blind.
-  **Exact flow he specified:**
-  - **Tapping `+` on an item that has addons:** ask **"¿Lo deseas igual o
-    quieres cambiar algo?"** — *Igual* → add one more with the SAME selections
-    (today's behavior: increment the existing line's qty). *Cambiar algo* →
-    open the item's customize sheet fresh (empty/default selections, not
-    pre-filled from the existing line) so the customer builds a distinct
-    variant → adds as a NEW cart line alongside the first.
-  - **Tapping `−`/trash when 2+ DIFFERENT customized lines of that item exist
-    in the cart:** ask **which of the variants to remove**, showing the
-    DIFFERENCE between them (e.g. addon selections / notes that differ) so the
-    customer can tell them apart at a glance — not just "line 1" / "line 2".
-  - **No prompt needed when there's only one line** for that item (nothing to
-    choose between) — today's direct inc/dec stays for that case.
-  - Applies wherever this stepper exists: today the Menú tab's item cards; when
-    the **`/carrito`** screen itself is built, the same line-level stepper
-    there should follow the identical logic (same underlying cart, bigger view).
-  - **Open design questions to resolve when we build this** (founder invited a
-    "best way to do it" discussion, not a specific UI to copy): (1) sheet vs.
-    inline two-button prompt for "¿Igual o cambiar?" — likely a small centered
-    dialog, matching the design system's existing confirm-dialog pattern rather
-    than a full bottom sheet, since it's a fast binary choice; (2) how to render
-    "the difference" between two variants concisely — a diff-highlighted
-    one-line summary of just the addons that differ, not the full selection
-    list repeated twice; (3) whether removing via this prompt should
-    default-select the most-recently-added variant or force an explicit pick
-    every time.
+- [x] **Menú tab card stepper — DONE (2026-07-10, `BizDetail.tsx`).** The
+  founder asked for this sooner than originally deferred. Built exactly as
+  specified: tapping `+` on a customizable item that already has a line in the
+  cart opens **"¿Lo deseas igual o quieres cambiar algo?"** (shows the last
+  selection; *Sí, igual* increments that line; *Cambiar algo* opens the item
+  sheet fresh — default selections, not pre-filled — as a new distinct line).
+  Tapping `−`/trash with **2+ different customized lines** of that item opens
+  **"¿Cuál deseas eliminar?"**, listing each variant (qty × its addon summary
+  + note) so the customer picks by reading the difference, not "line 1/2". No
+  prompt when there's only one line (direct inc/dec, as before). Verified live
+  (a@a.com, El Sabor, Mangú con los tres golpes): same→qty 2/1 line, cambiar→
+  qty 3/2 lines (Aguacate + Queso frito), remove-picker showed both and removed
+  the picked one, back-to-1-line reverted to direct decrement. `tools/mobile-
+  audit/addon-variant-prompts.js`. Resolved the 3 open design questions inline:
+  small centered `Overlay` dialogs (not a full sheet) for the binary choice;
+  "difference" shown as each variant's full addon summary side-by-side (not a
+  word-level diff — simple and sufficient, revisit only if items commonly carry
+  5+ addons and summaries get long); no default-select on removal, always an
+  explicit pick.
+- [ ] **`/carrito` — still to do.** Apply the SAME logic (identical helper
+  functions, same two dialogs) once the cart becomes its own dedicated screen —
+  today the cart is a sheet inside `BizDetail.tsx`, not yet a standalone route.
 
 ### Food delivery (2026-07-09) — polish deferrals
 - [ ] **Dish photos.** The 150-dish menu uses the design-system striped tiles;

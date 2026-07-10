@@ -240,6 +240,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [cartOpen, setCartOpen] = useState(false);
   const [cartDone, setCartDone] = useState(false);
   const [itemModal, setItemModal] = useState<{ catKey: string; item: MenuItem } | null>(null);
+  // Add-to-cart on a customizable item that's already in the cart is ambiguous —
+  // ask instead of silently repeating/dropping a customization. addPrompt =
+  // "+ tapped, item has ≥1 existing line" → same vs. customize fresh; removePrompt
+  // = "trash/− tapped, 2+ DIFFERENT variants exist" → which one. Same logic will
+  // drive the /carrito line-level stepper once that screen is built.
+  const [addPrompt, setAddPrompt] = useState<{ catKey: string; item: MenuItem } | null>(null);
+  const [removePrompt, setRemovePrompt] = useState<{ catKey: string; item: MenuItem } | null>(null);
   const [modalNote, setModalNote] = useState(''); // per-item special instructions (design: Item Detail)
   const [single, setSingle] = useState<Record<string, number>>({});
   const [multi, setMulti] = useState<Record<string, boolean>>({});
@@ -1148,13 +1155,21 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     const lineKeys = Object.keys(cart).filter((k) => k === simpleKey || k.startsWith(`${simpleKey}|`));
     const qty = lineKeys.reduce((n, k) => n + cart[k].qty, 0);
     const firstAdd = () => { if (hasOpts) openItem(catKey, it); else addSimple(catKey, it); };
+    // Customizable item + at least one existing line → "+" is ambiguous (repeat
+    // the last customization, or build a different one?), so ask instead of
+    // guessing. Simple items (no addons) and the very first add stay one-tap.
     const incOne = () => {
       if (stk != null && qty >= stk) { flash(L('No hay más unidades', 'No more units available')); return; }
       if (!hasOpts) { addSimple(catKey, it); return; }
-      const k = lineKeys[lineKeys.length - 1];
-      if (k) incLine(k); else openItem(catKey, it);
+      if (lineKeys.length === 0) { openItem(catKey, it); return; }
+      setAddPrompt({ catKey, item: it });
     };
-    const decOne = () => { const k = lineKeys[lineKeys.length - 1]; if (k) decLine(k); };
+    // Trash/− is only ambiguous once there are 2+ DIFFERENT customized lines for
+    // this item — a single line (however many units) has nothing to choose between.
+    const decOne = () => {
+      if (qty <= 1 || lineKeys.length <= 1) { const k = lineKeys[lineKeys.length - 1]; if (k) decLine(k); return; }
+      setRemovePrompt({ catKey, item: it });
+    };
     return (
       <button
         key={B(it.n)}
@@ -2120,6 +2135,75 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           );
         })()}
       </Overlay>
+
+      {/* "+"  on a customizable item already in the cart: same customization
+          again, or build a different one? (same logic will drive /carrito) */}
+      {addPrompt && (() => {
+        const key = `${addPrompt.catKey}:${B(addPrompt.item.n)}`;
+        const keys = Object.keys(cart).filter((k) => k === key || k.startsWith(`${key}|`));
+        const lastKey = keys[keys.length - 1];
+        const last = lastKey ? cart[lastKey] : null;
+        return (
+          <Overlay open onClose={() => setAddPrompt(null)} width={380}>
+            <OverlayTitle title={L('Agregar otro', 'Add another')} onClose={() => setAddPrompt(null)} />
+            <div className="text-[13.5px] font-extrabold text-ink">{B(addPrompt.item.n)}</div>
+            {last && (last.optsLabel || last.note) && (
+              <div className="mt-1 text-[11.5px] font-semibold leading-snug text-muted">
+                {L('Última selección:', 'Last selection:')} {last.optsLabel}{last.note ? `${last.optsLabel ? ' · ' : ''}“${last.note}”` : ''}
+              </div>
+            )}
+            <div className="mt-4 text-[13px] font-bold text-ink-2">{L('¿Lo deseas igual o quieres cambiar algo?', 'Want it the same, or change something?')}</div>
+            <div className="mt-4 flex flex-col gap-2.5">
+              <button
+                onClick={() => { if (lastKey) incLine(lastKey); setAddPrompt(null); }}
+                className="w-full cursor-pointer rounded-field bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm"
+              >
+                {L('Sí, igual', 'Yes, the same')}
+              </button>
+              <button
+                onClick={() => { const p = addPrompt; setAddPrompt(null); openItem(p.catKey, p.item); }}
+                className="w-full cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-3 text-[13px] font-extrabold text-ink"
+              >
+                {L('Cambiar algo', 'Change something')}
+              </button>
+            </div>
+          </Overlay>
+        );
+      })()}
+
+      {/* trash/− with 2+ different customized lines of the same item: which one? */}
+      {removePrompt && (() => {
+        const key = `${removePrompt.catKey}:${B(removePrompt.item.n)}`;
+        const keys = Object.keys(cart).filter((k) => k === key || k.startsWith(`${key}|`));
+        return (
+          <Overlay open onClose={() => setRemovePrompt(null)} width={400}>
+            <OverlayTitle title={L('¿Cuál deseas eliminar?', 'Which one do you want to remove?')} onClose={() => setRemovePrompt(null)} />
+            <div className="text-[11.5px] font-semibold leading-snug text-muted">
+              {L('Tienes varias versiones de este platillo en tu carrito.', 'You have a few versions of this item in your cart.')}
+            </div>
+            <div className="mt-3 flex flex-col gap-2">
+              {keys.map((k) => {
+                const line = cart[k];
+                if (!line) return null;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => { decLine(k); setRemovePrompt(null); }}
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-left"
+                  >
+                    <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-lilac text-[11px] font-extrabold text-primary-dark">{line.qty}×</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12.5px] font-extrabold text-ink">{line.optsLabel || L('Sin personalizar', 'No customization')}</span>
+                      {line.note && <span className="block text-[10.5px] font-semibold text-muted-2">“{line.note}”</span>}
+                    </span>
+                    <Trash2 size={15} strokeWidth={2.2} className="flex-none text-pink-dark" />
+                  </button>
+                );
+              })}
+            </div>
+          </Overlay>
+        );
+      })()}
 
       {/* cart sheet / checkout (DoorDash-grade: canal, dirección, propina, desglose) */}
       <Overlay open={cartOpen} onClose={() => { setCartOpen(false); setCartView('cart'); }} width={440}>
