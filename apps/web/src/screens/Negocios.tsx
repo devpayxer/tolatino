@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Heart, Map as MapIcon, MapPin, Phone, SlidersHorizontal, X } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, VerifiedBadge } from '@/components/ui';
+import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData, fetchBusinessBySlug, searchBusinesses } from '@/lib/live';
@@ -63,7 +63,7 @@ const DEFAULT_FILTERS: Filters = { cat: 'all', subCat: null, price: null, rating
 export function NegociosScreen() {
   const { L } = useLang();
   const app = useApp();
-  const { businesses: BUSINESSES } = useLiveData();
+  const { businesses: BUSINESSES, loading: liveLoading } = useLiveData();
   const savedBiz = useSavedBiz();
   const now = useNow();
   const [f, setF] = useState<Filters>(DEFAULT_FILTERS);
@@ -432,8 +432,14 @@ export function NegociosScreen() {
             {L('Negocios cerca de ti', 'Businesses near you')}
           </h1>
           <div className="mt-0.5 text-[12.5px] font-semibold text-muted">
-            <span className="font-extrabold text-ink">{results.length}</span>{' '}
-            {L(`negocios en ${app.cityShort}`, `businesses in ${app.cityShort}`)}
+            {liveLoading ? (
+              L(`Buscando cerca de ${app.cityShort}…`, `Searching near ${app.cityShort}…`)
+            ) : (
+              <>
+                <span className="font-extrabold text-ink">{results.length}</span>{' '}
+                {L(`negocios en ${app.cityShort}`, `businesses in ${app.cityShort}`)}
+              </>
+            )}
           </div>
         </div>
         <div className="ml-auto flex flex-none items-center gap-2">
@@ -494,7 +500,9 @@ export function NegociosScreen() {
             </div>
           )}
 
-          {results.length === 0 ? (
+          {liveLoading ? (
+            <SkeletonList count={6} className="grid gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" />
+          ) : results.length === 0 ? (
             <div className="rounded-card border border-hair bg-white p-10 text-center shadow-card">
               {onlySaved ? (
                 <>

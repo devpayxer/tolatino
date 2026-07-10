@@ -11,7 +11,7 @@ import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useMyActivity } from '@/lib/myActivity';
 import { startMarketplaceCheckout } from '@/lib/stripe';
-import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
+import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
 import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, fetchEventsByOwner, validatePromo, type PubEvent, type PubTier } from '@/lib/live';
@@ -89,7 +89,7 @@ function setMetaDesc(content: string) {
 export function EventosScreen() {
   const { L } = useLang();
   const app = useApp();
-  const { events: EVENTS, refresh: refreshLive } = useLiveData();
+  const { events: EVENTS, refresh: refreshLive, loading: liveLoading } = useLiveData();
   const { user } = useAuth();
   const router = useRouter();
   const act = useMyActivity();
@@ -491,7 +491,9 @@ export function EventosScreen() {
       </div>
 
       {/* grid */}
-      {list.length === 0 ? (
+      {liveLoading ? (
+        <SkeletonList count={6} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" />
+      ) : list.length === 0 ? (
         <Card className="p-10 text-center">
           {EVENTS.length === 0 ? (
             <>

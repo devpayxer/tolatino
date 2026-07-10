@@ -231,6 +231,47 @@ export function EmptyState({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
+/** Loading skeletons — shown while real data is fetched, so screens never flash
+ *  the demo fixtures. `card` = media card (Negocios/Eventos); `post` = feed post
+ *  (Comunidad). Pass the screen's own grid/stack classes via `className`. */
+function SkeletonCard() {
+  return (
+    <div className="overflow-hidden rounded-card border border-hair bg-white shadow-card">
+      <div className="aspect-[16/10] w-full animate-pulse bg-lilac-2" />
+      <div className="flex flex-col gap-2 p-3.5">
+        <div className="h-3.5 w-2/3 animate-pulse rounded bg-lilac-2" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-hair" />
+        <div className="h-3 w-1/3 animate-pulse rounded bg-hair" />
+      </div>
+    </div>
+  );
+}
+function SkeletonPost() {
+  return (
+    <div className="rounded-card border border-hair bg-white p-4 shadow-card">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 flex-none animate-pulse rounded-full bg-lilac-2" />
+        <div className="flex flex-col gap-1.5">
+          <div className="h-3 w-28 animate-pulse rounded bg-lilac-2" />
+          <div className="h-2.5 w-20 animate-pulse rounded bg-hair" />
+        </div>
+      </div>
+      <div className="mt-3.5 flex flex-col gap-2">
+        <div className="h-3 w-full animate-pulse rounded bg-hair" />
+        <div className="h-3 w-11/12 animate-pulse rounded bg-hair" />
+        <div className="h-3 w-2/3 animate-pulse rounded bg-hair" />
+      </div>
+    </div>
+  );
+}
+export function SkeletonList({ count = 6, variant = 'card', className = '' }: { count?: number; variant?: 'card' | 'post'; className?: string }) {
+  return (
+    <div className={className} aria-busy="true" aria-live="polite">
+      {Array.from({ length: count }, (_, i) => (variant === 'post' ? <SkeletonPost key={i} /> : <SkeletonCard key={i} />))}
+    </div>
+  );
+}
+
 /** Primary CTA button (purple, elevated). */
 export function PrimaryBtn({
   children,

@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { useInteractions } from '@/lib/interactions';
 import { useFollows } from '@/lib/follows';
 import { supabase } from '@/lib/supabase';
-import { Avatar, Card, EmptyState, Overlay, YouAvatar } from '@/components/ui';
+import { Avatar, Card, EmptyState, Overlay, SkeletonList, YouAvatar } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { ProfileNav } from '@/components/ProfileNav';
@@ -130,7 +130,7 @@ export function ComunidadScreen() {
   const auth = useAuth();
   const it = useInteractions();
   const follows = useFollows();
-  const { posts: POSTS, businesses: BUSINESSES } = useLiveData();
+  const { posts: POSTS, businesses: BUSINESSES, loading: liveLoading } = useLiveData();
   const [hood, setHood] = useState('all');
 
   // thread state
@@ -630,7 +630,9 @@ export function ComunidadScreen() {
           </div>
         )}
 
-        {posts.length === 0 ? (
+        {homeMode && liveLoading && posts.length === 0 ? (
+          <SkeletonList variant="post" count={5} className="flex flex-col gap-3.5" />
+        ) : posts.length === 0 ? (
           !homeMode && viewLoading ? (
             <EmptyState title={L('Cargando…', 'Loading…')} />
           ) : app.feedView === 'saved' ? (

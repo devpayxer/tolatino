@@ -656,11 +656,14 @@ type LiveData = {
   events: EventItem[];
   posts: Post[];
   live: boolean;
+  /** True until the FIRST real fetch resolves (only when a backend is
+   *  configured). Screens show skeletons instead of flashing demo fixtures. */
+  loading: boolean;
   /** Re-fetch from Supabase (e.g. right after publishing a post). */
   refresh: () => void;
 };
 
-const Ctx = createContext<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false, refresh: () => {} });
+const Ctx = createContext<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false, loading: false, refresh: () => {} });
 
 // ~80 km radius for businesses/events: keeps a whole metro together.
 const RADIUS_M = 80000;
@@ -670,7 +673,14 @@ const COMMUNITY_RADIUS_M = 48280;
 export function LiveDataProvider({ children }: { children: ReactNode }) {
   const { coords } = useApp();
   const [version, setVersion] = useState(0);
-  const [data, setData] = useState<Omit<LiveData, 'refresh'>>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false });
+  // With a real backend, start EMPTY + loading so screens render skeletons (never
+  // a flash of demo fixtures) until the first fetch lands. With no backend
+  // configured (pure static build), seed the fixtures as the intended demo.
+  const [data, setData] = useState<Omit<LiveData, 'refresh'>>(
+    supabase
+      ? { businesses: [], events: [], posts: [], live: false, loading: true }
+      : { businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false, loading: false },
+  );
 
   useEffect(() => {
     if (!supabase) return;
@@ -687,7 +697,10 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
       ]);
       if (cancelled) return;
 
-      const next: Omit<LiveData, 'refresh'> = { businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false };
+      // Base = fixtures so that if a query ERRORS (migrations not applied, etc.)
+      // we degrade to the demo rather than a blank screen; loading is done either
+      // way. Successful queries overwrite with real rows below.
+      const next: Omit<LiveData, 'refresh'> = { businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false, loading: false };
 
       // When a query SUCCEEDS we trust its result — even if empty (a city with
       // no listings genuinely shows none). Fixtures remain only if the query
