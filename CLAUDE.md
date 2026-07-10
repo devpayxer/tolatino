@@ -162,9 +162,19 @@ here — and giving each task a tight, well-scoped prompt — minimizes repeated
 spend. Don't re-explain the project per task; point at this file.
 
 **Founder's quick guide (how to spend less per task):**
-- **Default the session to a Sonnet-tier model** (`/model` → Sonnet). Switch up to
-  the top tier only for architecture, data modeling, or a bug Sonnet failed to
-  fix; switch back after. Top tiers cost several times more per message.
+- **Default the session to a Sonnet-tier model** (`/model` → Sonnet). Don't
+  default to the top tier "to avoid redoing work" — most rework this project has
+  hit came from **scope violations** (redesigning an approved screen) and
+  **missing verification**, not raw model capability; both are now hard rules
+  (skill §8–§9: additive-only UI, mandatory real-browser screenshot proof) that
+  bind every model tier equally. **Escalate by cost-of-being-wrong, not task
+  size:** go to the top tier specifically for payments/Stripe logic, RLS/security
+  policies, data-model/migrations, or a bug Sonnet already failed once on — being
+  wrong there is expensive or hard to spot by eye, so the premium is cheap
+  insurance. Everything else (UI, features, most bugs) stays on Sonnet; the
+  verification harness catches issues before they ship regardless of tier. Try
+  bumping Sonnet's Effort to `high` on one hard task before jumping models — it's
+  often enough and costs far less. Switch back to Sonnet after any escalation.
 - **Effort is a SEPARATE dial from the model** (`/effort` → low/medium/high/
   xhigh/max) — it controls how much the model reasons before acting, on top of
   whatever model is active, and higher effort costs several times more per turn
