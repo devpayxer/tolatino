@@ -165,6 +165,15 @@ spend. Don't re-explain the project per task; point at this file.
 - **Default the session to a Sonnet-tier model** (`/model` → Sonnet). Switch up to
   the top tier only for architecture, data modeling, or a bug Sonnet failed to
   fix; switch back after. Top tiers cost several times more per message.
+- **Effort is a SEPARATE dial from the model** (`/effort` → low/medium/high/
+  xhigh/max) — it controls how much the model reasons before acting, on top of
+  whatever model is active, and higher effort costs several times more per turn
+  regardless of model. **Default to medium** for everyday feature work; reserve
+  **high** for security-sensitive code (payments/RLS) or a bug medium couldn't
+  crack; avoid **xhigh/max** except the hardest architecture problems — rarely
+  needed for this app. Model tier × effort level compound, so an expensive model
+  AND high effort together is the fastest way to burn a week's credits on one
+  session.
 - **One task per message.** A screenshot + one line ("aquí, el botón X no hace Y")
   beats a long explanation — cheaper and clearer.
 - **Don't re-explain the project or the design** — the skill + `docs/PROGRESS.md`
