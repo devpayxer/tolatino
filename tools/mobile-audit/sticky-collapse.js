@@ -1,7 +1,11 @@
-// Verify the business page's sticky tab bar collapses SMOOTHLY (no "brinco"):
-// as you scroll across the pin point on Overview, the compact title row grows
-// scroll-linked and the content below must NOT jump down. We step the scroll
-// across the pin and assert no content element jumps down between steps.
+// Verify the business page's pin transition is professionally smooth:
+//  · the sticky bar's height is CONSTANT while scrolling (title space is always
+//    reserved — the reveal is opacity-only), so nothing can jump;
+//  · a content heading below never moves DOWN while scrolling down (no "brinco");
+//  · the compact title's opacity is 0 before the pin and 1 after it;
+//  · ZERO style/class mutations happen in the bar subtree during pure scrolling
+//    except the single stuck-flip render (the old impl mutated height per frame —
+//    that per-frame lag WAS the visible flicker on slow scroll).
 // Usage: SHOTS_DIR=<dir> node sticky-collapse.js
 const { chromium } = require('playwright');
 const { execFile } = require('child_process');
@@ -20,12 +24,24 @@ function curlRelay(req) {
     });
   });
 }
-// measure: sticky-bar height + the viewport-top of a stable content heading
-const sample = `(() => {
+const setup = `(() => {
   const bar = [...document.querySelectorAll('div')].find(d => getComputedStyle(d).position==='sticky' && /Overview/.test(d.textContent||'') && d.querySelector('button'));
-  const heads = [...document.querySelectorAll('*')].filter(e => e.children.length===0 && /^(Horario|Ubicación|Reseñas|Fotos)$/.test((e.textContent||'').trim()));
-  const ref = heads.map(e => e.getBoundingClientRect().top).find(t => t > 60 && t < 820);
-  return { barH: bar ? Math.round(bar.getBoundingClientRect().height) : -1, ref: ref != null ? Math.round(ref) : null, y: Math.round(window.scrollY) };
+  if (!bar) return 'NOBAR';
+  window.__mut = 0;
+  window.__mo = new MutationObserver(ms => { window.__mut += ms.length; });
+  window.__mo.observe(bar, { attributes: true, attributeFilter: ['style', 'class'], subtree: true });
+  window.__bar = bar;
+  return 'OK';
+})()`;
+const sample = `(() => {
+  const bar = window.__bar;
+  const title = bar.querySelector('span');
+  const titleRow = title ? title.parentElement : null;
+  const heads = [...document.querySelectorAll('*')].filter(e => e.children.length===0 && /^(Horario|Ubicación|Reseñas|Fotos|Acerca de)$/.test((e.textContent||'').trim()));
+  const ref = heads.map(e => e.getBoundingClientRect().top).find(t => t > 60 && t < 830);
+  return { barH: Math.round(bar.getBoundingClientRect().height), barTop: Math.round(bar.getBoundingClientRect().top),
+           op: titleRow ? +getComputedStyle(titleRow).opacity : -1,
+           ref: ref != null ? Math.round(ref) : null, y: Math.round(window.scrollY), mut: window.__mut };
 })()`;
 
 (async () => {
@@ -43,33 +59,41 @@ const sample = `(() => {
   const card = page.getByText('El Sabor de Quisqueya').first();
   for (let i = 0; i < 20; i++) { await page.waitForTimeout(1000); if (await card.isVisible().catch(() => false)) break; }
   await card.click();
-  await page.waitForTimeout(2500); // Overview
+  await page.waitForTimeout(2500); // Overview settle
+  if ((await page.evaluate(setup)) !== 'OK') return fail('sticky bar not found');
 
-  // step the scroll finely across the pin region and record bar height + a content ref
+  // slow scroll: small steps across the pin region
   const rows = [];
-  for (let y = 0; y <= 520; y += 12) {
+  for (let y = 0; y <= 560; y += 8) {
     await page.evaluate((yy) => window.scrollTo(0, yy), y);
-    await page.waitForTimeout(60);
+    await page.waitForTimeout(45);
     rows.push(await page.evaluate(sample));
   }
   const barMin = Math.min(...rows.map(r => r.barH));
   const barMax = Math.max(...rows.map(r => r.barH));
-
-  // find the biggest DOWNWARD jump of the content ref between consecutive steps
-  // (content jumping down as you scroll down = the "brinco"). Only where ref is set.
   let worstJump = 0, worstAt = null;
   for (let i = 1; i < rows.length; i++) {
     const a = rows[i - 1].ref, b = rows[i].ref;
     if (a == null || b == null) continue;
-    const delta = b - a; // positive = content moved DOWN while scrolling down (bad)
-    if (delta > worstJump) { worstJump = delta; worstAt = rows[i].y; }
+    const d = b - a;
+    if (d > worstJump) { worstJump = d; worstAt = rows[i].y; }
   }
-  await page.screenshot({ path: `${SHOTS}/sc-scrolled.png` });
-  console.log('bar height range while scrolling:', barMin, '→', barMax, '(title grows as it pins)');
-  console.log('worst downward content jump:', worstJump, 'px at scrollY', worstAt);
+  const opStart = rows[0].op, opEnd = rows[rows.length - 1].op;
+  const mutations = rows[rows.length - 1].mut;
+  const pinned = rows.filter(r => r.barTop <= 160).length > 0;
+  await page.screenshot({ path: `${SHOTS}/sc-pinned.png` });
 
-  if (barMax - barMin < 20) return fail('title row does not appear to collapse/expand (bar height ~constant): ' + barMin + '-' + barMax);
-  if (worstJump > 22) return fail(`content JUMPED down ${worstJump}px at scrollY ${worstAt} — not smooth`);
-  console.log('OK — the compact title collapses scroll-linked; content below never jumps (max downward step ' + worstJump + 'px).');
+  console.log(`bar height: ${barMin}→${barMax} (must be constant) | pinned reached: ${pinned}`);
+  console.log(`title opacity: start ${opStart} → end ${opEnd}`);
+  console.log(`worst downward content step: ${worstJump}px at scrollY ${worstAt}`);
+  console.log(`style/class mutations in bar during scroll: ${mutations}`);
+
+  if (!pinned) return fail('never reached the pinned state — page too short?');
+  if (barMax - barMin > 2) return fail(`bar height changed while scrolling (${barMin}→${barMax}) — layout not constant`);
+  if (worstJump > 4) return fail(`content jumped down ${worstJump}px at scrollY ${worstAt}`);
+  if (!(opStart < 0.05)) return fail('title visible before the pin (opacity ' + opStart + ')');
+  if (!(opEnd > 0.95)) return fail('title not shown after the pin (opacity ' + opEnd + ')');
+  if (mutations > 8) return fail(`bar mutated ${mutations} times during scroll — should only mutate at the stuck flip`);
+  console.log('OK — constant-height bar, fade-only reveal, no downward jumps, no per-frame mutations.');
   await browser.close();
 })();

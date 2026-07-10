@@ -4,7 +4,7 @@
 // (Overview · Updates · Menú · Tienda · Servicios · Eventos · Equipo ·
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Globe, Heart, MapPin, Menu, MessageCircle, Minus, MoreHorizontal, Navigation, Phone, Plus, Send, Share, Store, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
@@ -855,7 +855,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // switch so each tab opens from its start.
   const focused = tab !== 'overview';
   const barRef = useRef<HTMLDivElement>(null);
-  const onTab = (k: TabKey) => setTab(k);
+  // Pinned state — only drives OPACITY (never layout), so flipping it can't jump.
+  const [stuck, setStuck] = useState(false);
+  // Suppress the title fade for the one render caused by a tab switch, so the
+  // swap is a clean single-frame cut instead of a ghosted cross-fade mid-page.
+  const noFadeRef = useRef(false);
+  const onTab = (k: TabKey) => { noFadeRef.current = true; setTab(k); };
+  useEffect(() => { noFadeRef.current = false; });
 
   // Pin the bar to the REAL app-header height (measured live) so it tucks flush —
   // no gap, no overlap — on any breakpoint. Fallbacks are only for first paint.
@@ -886,6 +892,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // seamless: the bar never visibly moves, only the content below swaps.
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
+    // At scroll 0 the Overview bar sits mid-page (below the hero), i.e. unpinned;
+    // reset pre-paint so re-entering Overview never paints a stale stuck title.
+    setStuck(false);
     // Entering the Menú tab: snap the category rail highlight + horizontal
     // position to the FIRST category BEFORE paint, so it doesn't briefly show the
     // previously-active (or empty) chip and then slide back when the spy catches
@@ -899,60 +908,49 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  // Overview reveals the title row once the bar pins while scrolling; focused
-  // tabs always show it. Track the pinned state via a cheap per-frame check.
-  // Scroll-LINKED collapse of the compact title row on Overview. Instead of
-  // toggling it on/off when the bar pins — which pops the layout and shoves the
-  // content below (the "brinco") — its height is tied 1:1 to how far you've
-  // scrolled past the pin point, so the page below never moves: the header
-  // collapses exactly as smoothly as you scroll (iOS large-title style). Focused
-  // tabs always show it. Written straight to the DOM (no per-frame re-render).
-  const titleWrapRef = useRef<HTMLDivElement>(null);
-  const titleInnerRef = useRef<HTMLDivElement>(null);
-  const pinStartRef = useRef(0);
-  const writeCollapse = useCallback(() => {
-    const wrap = titleWrapRef.current, inner = titleInnerRef.current, bar = barRef.current;
-    if (!wrap || !inner || !bar) return;
-    if (tab !== 'overview') { wrap.style.height = 'auto'; wrap.style.opacity = '1'; return; }
-    const headerPin = headerHRef.current ?? (window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
-    const H = inner.offsetHeight || 50;
-    const top = bar.getBoundingClientRect().top;
-    if (top > headerPin + 1) pinStartRef.current = window.scrollY + top - headerPin; // calibrate while above the pin
-    const c = Math.min(1, Math.max(0, (window.scrollY - pinStartRef.current) / H));
-    wrap.style.height = `${c * H}px`;
-    wrap.style.opacity = String(c);
-  }, [tab]);
-  // Re-assert after every render (React would otherwise reset the inline styles).
-  useLayoutEffect(() => { writeCollapse(); });
+  // Track the pinned state with a rAF-throttled boolean. Because the title row's
+  // SPACE is always reserved in the bar (see the bar's JSX), flipping this only
+  // fades opacity on the compositor — zero layout writes on scroll, so slow
+  // scrolling across the pin point can't flicker or jump.
   useEffect(() => {
+    if (focused) return; // focused tabs always show the title; nothing to track
+    const el = barRef.current;
+    if (!el) return;
     let raf = 0;
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; writeCollapse(); }); };
+    const check = () => {
+      raf = 0;
+      const pin = headerHRef.current ?? (window.matchMedia('(min-width: 768px)').matches ? 108 : 150);
+      setStuck(el.getBoundingClientRect().top <= pin + 1);
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(check); };
+    check();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); if (raf) cancelAnimationFrame(raf); };
-  }, [writeCollapse]);
+  }, [focused, headerH]);
+  const showTitle = focused || stuck;
 
   // DoorDash-style Menú tab: a category rail that pins right under the tab bar and
   // an active chip that tracks the section in view (scroll-spy) + auto-centers in
   // the rail. We measure the tab bar height (barH) so the rail stacks flush below
   // it, and the rail height (chipH) so "jump to category" lands under both bars.
   const menuChipRailRef = useRef<HTMLDivElement>(null);
-  const [barH, setBarH] = useState(92);
+  const [barH, setBarH] = useState(94);
   const [chipH, setChipH] = useState(50);
-  const barHRef = useRef(92);
+  const barHRef = useRef(94);
   const chipHRef = useRef(50);
-  useEffect(() => {
+  // Pre-paint measures (the bar height is CONSTANT now — title space is always
+  // reserved — so these only matter on breakpoint/resize, never on scroll).
+  useLayoutEffect(() => {
     const el = barRef.current;
     if (!el) return;
-    // barH feeds the Menú category rail's sticky offset only, so measure just on
-    // that tab — avoids re-rendering per frame while Overview's title collapses.
-    const measure = () => { if (tab !== 'menu') return; const h = Math.round(el.getBoundingClientRect().height); barHRef.current = h; setBarH(h); };
+    const measure = () => { const h = Math.round(el.getBoundingClientRect().height); barHRef.current = h; setBarH(h); };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, [tab]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = menuChipRailRef.current;
     if (!el) return;
     const measure = () => { const h = Math.round(el.getBoundingClientRect().height); chipHRef.current = h; setChipH(h); };
@@ -1316,34 +1314,42 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       </div>
 
       {/* One sticky header for every tab. On a non-Overview tab the negative top
-          margin cancels the page's top padding so the bar sits flush at the very
-          top (locked, since the hero above is display:none). On Overview it sits
-          below the hero and reveals its title row once it pins while scrolling. */}
+          margin cancels the page's top padding so the bar sits flush at the top.
+          The compact title row ALWAYS occupies its 50px inside the sticky bar.
+          On Overview a -46px top margin lays that space, invisible, over the tail
+          of the content above — so the resting layout matches the design exactly
+          — and pinning only FADES the title in (opacity/transform on the
+          compositor). Nothing here ever changes layout, so the pin transition
+          cannot jump or flicker, no matter how slowly you scroll. On focused
+          tabs the title simply stays visible. */}
       <div
         ref={barRef}
         style={headerH != null ? { top: headerH } : undefined}
-        className={`sticky top-[150px] z-20 -mx-3.5 border-b border-hair bg-app px-3.5 md:top-[108px] md:-mx-5 md:px-5 ${
-          focused ? '-mt-4 md:-mt-5 lg:-mt-[26px]' : 'mt-1'
+        className={`sticky top-[150px] z-20 -mx-3.5 border-b border-hair md:top-[108px] md:-mx-5 ${
+          focused ? 'bg-app -mt-4 md:-mt-5 lg:-mt-[26px]' : '-mt-[46px]'
         }`}
       >
-        <div ref={titleWrapRef} className="overflow-hidden" style={{ height: 0, opacity: 0 }}>
-          <div ref={titleInnerRef} className="flex items-center gap-2 pb-2 pt-2.5">
-            <button onClick={() => onTab('overview')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
+        <div className="relative h-[50px] px-3.5 md:px-5" aria-hidden={!showTitle} style={{ pointerEvents: showTitle ? undefined : 'none' }}>
+          {/* the title's own backdrop — fades in with the pin so, before it, the
+              content above stays visible through the reserved (overlapped) space */}
+          {!focused && <div className={`absolute inset-0 bg-app ${noFadeRef.current ? '' : 'transition-opacity duration-200'} ${stuck ? 'opacity-100' : 'opacity-0'}`} />}
+          <div className={`relative flex h-full items-center gap-2 ${noFadeRef.current ? '' : 'transition-[opacity,transform] duration-200'} ${showTitle ? 'translate-y-0 opacity-100' : 'translate-y-[5px] opacity-0'}`}>
+            <button onClick={() => onTab('overview')} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
               <ChevronLeft size={16} strokeWidth={2.6} className="text-ink" />
             </button>
             <span className="truncate text-[15.5px] font-extrabold text-ink">{b.name}</span>
             {b.verified && <VerifiedBadge size={16} />}
             <div className="ml-auto flex flex-none items-center gap-1.5">
-              <button onClick={() => savedBiz.toggle(b.slug)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Guardar', 'Save')}>
+              <button onClick={() => savedBiz.toggle(b.slug)} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Guardar', 'Save')}>
                 <Heart size={15} strokeWidth={2.2} className="text-pink" fill={saved ? 'currentColor' : 'none'} />
               </button>
-              <button onClick={() => setContactOpen(true)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Contacto y opciones', 'Contact & options')}>
+              <button onClick={() => setContactOpen(true)} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Contacto y opciones', 'Contact & options')}>
                 <MoreHorizontal size={18} className="text-primary-dark" />
               </button>
             </div>
           </div>
         </div>
-        <div className="no-scrollbar flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain pt-2.5">{tabButtons}</div>
+        <div className="no-scrollbar flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain bg-app px-3.5 pt-2.5 md:px-5">{tabButtons}</div>
       </div>
 
       {/* ============ OVERVIEW ============ */}
