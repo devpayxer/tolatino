@@ -886,6 +886,17 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // seamless: the bar never visibly moves, only the content below swaps.
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
+    // Entering the Menú tab: snap the category rail highlight + horizontal
+    // position to the FIRST category BEFORE paint, so it doesn't briefly show the
+    // previously-active (or empty) chip and then slide back when the spy catches
+    // up — the flash you'd otherwise see coming from Overview.
+    if (tab === 'menu') {
+      spyLock.current = false; // fresh entry — let the spy track from the top immediately
+      if (spySettle.current) window.clearTimeout(spySettle.current);
+      setActiveCat(menuPopular.length >= 3 ? '_pop' : (menuCats[0]?.key ?? ''));
+      if (menuChipRailRef.current) menuChipRailRef.current.scrollLeft = 0;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   // Overview reveals the title row once the bar pins while scrolling; focused
