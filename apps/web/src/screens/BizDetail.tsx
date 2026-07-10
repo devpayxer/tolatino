@@ -926,6 +926,78 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   }, [tab, headerH]);
   const showTitle = focused || stuck;
 
+  // DoorDash-style Menú tab: a category rail that pins right under the tab bar and
+  // an active chip that tracks the section in view (scroll-spy) + auto-centers in
+  // the rail. We measure the tab bar height (barH) so the rail stacks flush below
+  // it, and the rail height (chipH) so "jump to category" lands under both bars.
+  const menuChipRailRef = useRef<HTMLDivElement>(null);
+  const [barH, setBarH] = useState(92);
+  const [chipH, setChipH] = useState(50);
+  const barHRef = useRef(92);
+  const chipHRef = useRef(50);
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const measure = () => { const h = Math.round(el.getBoundingClientRect().height); barHRef.current = h; setBarH(h); };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [tab, showTitle]);
+  useEffect(() => {
+    const el = menuChipRailRef.current;
+    if (!el) return;
+    const measure = () => { const h = Math.round(el.getBoundingClientRect().height); chipHRef.current = h; setChipH(h); };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [tab, realMenu]);
+  const menuStickyTop = (headerH ?? 150) + barH;        // where the rail pins
+  const menuScrollMargin = menuStickyTop + chipH + 8;   // section jump offset
+
+  // Active category (scroll-spy). Recomputed on every scroll frame while on the
+  // Menú tab: the last section whose header has passed under the sticky rail wins.
+  const [activeCat, setActiveCat] = useState('');
+  useEffect(() => {
+    if (tab !== 'menu') return;
+    const keys: string[] = [];
+    if (menuPopular.length >= 3) keys.push('_pop');
+    menuCats.forEach((c) => keys.push(c.key));
+    if (keys.length < 2) return;
+    let raf = 0;
+    const spy = () => {
+      raf = 0;
+      const line = (headerHRef.current ?? 150) + barHRef.current + chipHRef.current + 4;
+      let cur = keys[0];
+      for (const k of keys) {
+        const el = document.getElementById(`menu-cat-${k}`);
+        if (!el) continue;
+        if (el.getBoundingClientRect().top <= line) cur = k;
+        else break;
+      }
+      setActiveCat((p) => (p === cur ? p : cur));
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(spy); };
+    spy();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, menuCats, menuPopular.length]);
+  // Keep the active chip centered in the horizontal rail.
+  useEffect(() => {
+    if (tab !== 'menu' || !activeCat) return;
+    const rail = menuChipRailRef.current;
+    if (!rail) return;
+    const chip = rail.querySelector(`[data-cat="${CSS.escape(activeCat)}"]`) as HTMLElement | null;
+    if (!chip) return;
+    rail.scrollTo({ left: Math.max(0, chip.offsetLeft - rail.clientWidth / 2 + chip.clientWidth / 2), behavior: 'smooth' });
+  }, [activeCat, tab]);
+  const scrollToCat = (key: string) => {
+    setActiveCat(key);
+    document.getElementById(`menu-cat-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const tabButtons = tabs.map(([k, label]) => (
     <button
       key={k}
@@ -1416,16 +1488,21 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             </div>
           )}
 
-          {/* horizontal category tabs (design: Popular · Burgers · Sides …) */}
+          {/* horizontal category rail — pins under the tab bar and the active chip
+              tracks the section in view (DoorDash-style scroll-spy). */}
           {menuCats.length > 1 && (
-            <div className="no-scrollbar -mx-1 mb-4 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+            <div
+              ref={menuChipRailRef}
+              style={{ top: menuStickyTop }}
+              className="no-scrollbar sticky z-[15] -mx-3.5 mb-4 flex gap-1.5 overflow-x-auto border-b border-hair bg-app px-3.5 py-2.5 md:-mx-5 md:px-5"
+            >
               {menuPopular.length >= 3 && (
-                <button onClick={() => document.getElementById('menu-cat-_pop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="flex-none cursor-pointer rounded-full bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">
+                <button data-cat="_pop" onClick={() => scrollToCat('_pop')} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_pop' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
                   ⭐ {L('Populares', 'Popular')}
                 </button>
               )}
               {menuCats.map((c) => (
-                <button key={c.key} onClick={() => document.getElementById(`menu-cat-${c.key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="flex-none cursor-pointer rounded-full bg-lilac-2 px-3.5 py-2 text-[12px] font-extrabold text-ink-soft">
+                <button key={c.key} data-cat={c.key} onClick={() => scrollToCat(c.key)} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === c.key ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
                   {B(c.name)}
                 </button>
               ))}
@@ -1434,7 +1511,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
 
           {/* Populares — the dishes the owner marked popular, first (like DoorDash) */}
           {menuPopular.length >= 3 && (
-            <div id="menu-cat-_pop" className="mb-5 scroll-mt-[130px]">
+            <div id="menu-cat-_pop" style={{ scrollMarginTop: menuScrollMargin }} className="mb-5">
               <div className="mb-2.5 flex items-baseline gap-2">
                 <span className="text-[15.5px] font-extrabold text-ink">{L('Populares', 'Popular items')}</span>
                 <span className="text-[11.5px] font-bold text-muted">{menuPopular.length} {L('platillos', 'items')}</span>
@@ -1444,7 +1521,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           )}
 
           {menuCats.map((c) => (
-            <div key={c.key} id={`menu-cat-${c.key}`} className="mb-5 scroll-mt-[130px]">
+            <div key={c.key} id={`menu-cat-${c.key}`} style={{ scrollMarginTop: menuScrollMargin }} className="mb-5">
               <div className="mb-2.5 flex items-baseline gap-2">
                 <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
                 <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('platillos', 'items')}</span>
