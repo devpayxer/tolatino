@@ -77,11 +77,15 @@ it** rather than breaking the rule silently.
   own that category and study what makes them work, then build the To'Latino version
   to **match or beat** them: professional, modern, **feature-complete**.
 - Category reference points (compare every time): **Comunidad → Nextdoor / FB Groups;
-  Negocios + reseñas → Yelp / Google Business; comida/delivery → DoorDash / Uber Eats;
-  tienda + variantes → Amazon / Shopify; servicios y reservas → Fresha / OpenTable /
-  Booksy; renta → Turo / Airbnb; eventos + boletos → Eventbrite; transporte → Uber /
-  Lyft; bienes raíces → Zillow; dealer → CarGurus; trabajos → Indeed; mensajería →
-  WhatsApp; búsqueda → Google.**
+  Negocios + reseñas → Yelp / Google Business; comida/delivery → DoorDash / Uber Eats /
+  Instacart; tienda + variantes → Amazon / Shopify; servicios y reservas → Fresha /
+  OpenTable / Booksy; renta → Turo / Airbnb; eventos + boletos → Eventbrite;
+  transporte → Uber / Lyft / Busbud; bienes raíces → Zillow; dealer → CarGurus;
+  trabajos → Indeed; mensajería → WhatsApp; búsqueda → Google.**
+- **Why this bar exists (founder's words):** every flow must look and work at the
+  category leader's level or better — complete, trustworthy, professional —
+  because **if it doesn't inspire confianza, no customer has a reason to switch**
+  from the app they already use. That trust is the product.
 - The bar for done is **"would this compete with the leader in its category?"** Every
   feature a serious competitor has, done **fully** — **no stubs, no fake/broken states,
   no "good enough" placeholder shipped as final.**
@@ -105,7 +109,17 @@ any UI request is to **add what's missing, never replace what exists.**
   the design tokens, then send a **screenshot preview for approval BEFORE wiring
   data**. The founder should never have to leave for an external design tool for
   something derivable from what's already in the repo — offer the
-  "mock → screenshot → approval → wire" loop instead.
+  "mock → screenshot → approval → wire" loop instead. (Screens that already
+  exist in the handoff/app skip the mock — build faithful, screenshot as PROOF.)
+- **External mockups are FUNCTIONAL specs, never visual specs.** When the founder
+  brings a flow via Banani.co screenshots, sketches, or captures from other apps
+  (for features the reference apps don't have), extract the PROCESS and FEATURES
+  from them — then re-express the UI entirely in To'Latino's design system
+  (tokens, components, existing patterns). Never copy their look, spacing, or
+  styling. Simple flows don't need a mockup at all: his text + one capture is
+  a sufficient spec — don't ask him to produce artifacts he doesn't need to.
+- **These rules bind every session and every model tier equally** (Sonnet, Opus,
+  Haiku — switching models never changes how this project is built).
 
 ## 9. Proof, sweeps, and the 3-side rule (how work gets accepted here)
 - **Every UI change ships with real-browser screenshot proof** (mobile 402px

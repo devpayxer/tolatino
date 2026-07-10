@@ -73,11 +73,13 @@ and bookings** to nearby local users, in their own language and culture.
    **match or beat** them — professional, modern, and **feature-complete**. Reference
    points per surface (compare to these every time; add others as needed):
    **Comunidad → Nextdoor / Facebook Groups; Negocios + reseñas → Yelp / Google
-   Business; comida y delivery → DoorDash / Uber Eats; tienda / productos + variantes
-   → Amazon / Shopify; servicios y reservas → Fresha / OpenTable / Booksy; renta →
-   Turo / Airbnb; eventos y boletos → Eventbrite; transporte → Uber / Lyft; bienes
-   raíces → Zillow; dealer de carros → CarGurus / Facebook Marketplace; trabajos →
-   Ind:eed; mensajería → WhatsApp; búsqueda / descubrimiento → Google.** The bar for
+   Business; comida y delivery → DoorDash / Uber Eats / Instacart; tienda / productos
+   + variantes → Amazon / Shopify; servicios y reservas → Fresha / OpenTable / Booksy;
+   renta → Turo / Airbnb; eventos y boletos → Eventbrite; transporte → Uber / Lyft /
+   Busbud; bienes raíces → Zillow; dealer de carros → CarGurus / Facebook Marketplace;
+   trabajos → Indeed; mensajería → WhatsApp; búsqueda / descubrimiento → Google.**
+   Why the bar exists (founder): a flow that doesn't inspire **confianza** gives no
+   customer a reason to switch from the app they already use — trust IS the product. The bar for
    every task is **"would this compete with the leader in its category?"** — every
    feature a serious competitor has, done **fully** (no stubs, no fake/broken states,
    no "good enough" placeholder shipped as final). If a feature genuinely can't be
