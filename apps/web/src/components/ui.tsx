@@ -147,6 +147,7 @@ export function Overlay({
   align = 'center',
   width = 460,
   fullHeightSheet = false,
+  zIndex,
 }: {
   open: boolean;
   onClose: () => void;
@@ -154,6 +155,11 @@ export function Overlay({
   align?: 'center' | 'right' | 'top';
   width?: number;
   fullHeightSheet?: boolean;
+  // Base overlays share z-index 70. Pass a higher value for an overlay that must
+  // stack ABOVE another open overlay (e.g. a confirm/customize sheet opened from
+  // WITHIN the cart) — with equal z-index the later-in-DOM overlay would win and
+  // hide it.
+  zIndex?: number;
 }) {
   useScrollLock(open); // lock background scroll while this overlay is open (site-wide)
   if (!open) return null;
@@ -165,6 +171,7 @@ export function Overlay({
         : 'md:items-center md:justify-center md:p-6';
   return (
     <div
+      style={zIndex != null ? { zIndex } : undefined}
       className={`fixed inset-0 z-[70] flex items-end justify-center bg-[rgba(30,27,46,.45)] ${desktopAlign}`}
       onClick={onClose}
     >

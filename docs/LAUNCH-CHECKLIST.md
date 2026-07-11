@@ -1022,9 +1022,22 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
   word-level diff — simple and sufficient, revisit only if items commonly carry
   5+ addons and summaries get long); no default-select on removal, always an
   explicit pick.
-- [ ] **`/carrito` — still to do.** Apply the SAME logic (identical helper
-  functions, same two dialogs) once the cart becomes its own dedicated screen —
-  today the cart is a sheet inside `BizDetail.tsx`, not yet a standalone route.
+- [x] **Cart sheet per-line stepper — DONE (2026-07-11, `BizDetail.tsx`).** The
+  founder asked to extend the same flow to the cart (and to the customize
+  sheet's own stepper). Tapping `+` on a **customized** cart line now opens the
+  same **"¿Lo deseas igual o quieres cambiar algo?"** dialog: *Sí, igual* bumps
+  that exact line (`incLine(key)`); *Cambiar algo* opens the item sheet for a
+  new variant (`openItem`). Simple (no-addon) lines increment directly. Also
+  added to the **customize-sheet footer stepper**: `+` on an addon item prompts;
+  *Cambiar algo* adds the current combo and resets the sheet in place so you can
+  build another variant without leaving. Reused the existing `addPrompt` overlay
+  (extended with an optional `key` to target a specific cart line). Fixed a real
+  stacking bug found while building: overlays all shared `z-[70]`, so the cart
+  (later in DOM) hid a prompt opened from within it — added an optional `zIndex`
+  prop to the shared `<Overlay>` (sheet=80, its prompt=90, add/remove
+  prompts=80). Verified live: `tools/mobile-audit/stepper-igual-cambiar.js`.
+  Still open only if/when the cart becomes its OWN dedicated route (`/carrito`):
+  the logic will carry over unchanged since it's all in shared helpers.
 
 ### Food delivery (2026-07-09) — polish deferrals
 - [ ] **Dish photos.** The 150-dish menu uses the design-system striped tiles;

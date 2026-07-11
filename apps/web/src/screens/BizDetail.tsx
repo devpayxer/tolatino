@@ -266,10 +266,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Add-to-cart on a customizable item that's already in the cart is ambiguous —
   // ask instead of silently repeating/dropping a customization. addPrompt =
   // "+ tapped, item has ≥1 existing line" → same vs. customize fresh; removePrompt
-  // = "trash/− tapped, 2+ DIFFERENT variants exist" → which one. Same logic will
-  // drive the /carrito line-level stepper once that screen is built.
-  const [addPrompt, setAddPrompt] = useState<{ catKey: string; item: MenuItem } | null>(null);
+  // = "trash/− tapped, 2+ DIFFERENT variants exist" → which one. `key` targets a
+  // SPECIFIC cart line (the cart's per-line stepper); absent → the menu card's
+  // stepper, which acts on the item's most-recent line.
+  const [addPrompt, setAddPrompt] = useState<{ catKey: string; item: MenuItem; key?: string } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ catKey: string; item: MenuItem } | null>(null);
+  const [sheetAsk, setSheetAsk] = useState(false); // customize-sheet stepper: "+" on an addon item → igual/cambiar
   const [modalNote, setModalNote] = useState(''); // per-item special instructions (design: Item Detail)
   const [single, setSingle] = useState<Record<string, number>>({});
   const [multi, setMulti] = useState<Record<string, boolean>>({});
@@ -478,14 +480,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     setCartDone(true);
   };
 
-  const openItem = (catKey: string, item: MenuItem) => {
-    if (shopStock(catKey, item) === 0) { flash(L('Agotado', 'Sold out')); return; }
+  // Default single-option selections for a customize sheet: first in-stock value
+  // per single group (index 0 when not per-variant tracked). Shared by openItem
+  // (first open) and the sheet's "Cambiar algo" reset (build another variant).
+  const freshSingles = (catKey: string, item: MenuItem) => {
     const groups = groupsFor(catKey, item);
     const s: Record<string, number> = {};
     groups.forEach((g) => {
       if (g.type !== 'single') return;
-      // default to the first value that keeps the running combo in stock (so we
-      // don't open on a sold-out variant); index 0 when not per-variant tracked.
       let idx = 0;
       if (item.variantStock) {
         const found = g.choices.findIndex((_, i) => { const st = variantStockAt(item, groups, s, g.id, i); return st == null || st > 0; });
@@ -493,7 +495,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       }
       s[g.id] = idx;
     });
-    setSingle(s);
+    return s;
+  };
+
+  const openItem = (catKey: string, item: MenuItem) => {
+    if (shopStock(catKey, item) === 0) { flash(L('Agotado', 'Sold out')); return; }
+    setSingle(freshSingles(catKey, item));
     setMulti({});
     setQty(1);
     setModalNote('');
@@ -527,7 +534,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + 1, name: B(item.n), unit: item.price, optsLabel: '', bg: item.bg } }));
   };
 
-  const addFromModal = () => {
+  // `keepOpen`: after adding, don't close the sheet — reset it to fresh defaults
+  // so the customer can build ANOTHER, different variant without leaving (the
+  // sheet stepper's "Cambiar algo"). Default closes the sheet as before.
+  const addFromModal = (keepOpen = false) => {
     if (!itemModal) return;
     const groups = groupsFor(itemModal.catKey, itemModal.item);
     let add = 0;
@@ -554,7 +564,15 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       if (stk != null && inCart + qty > stk) { flash(L('No hay suficientes unidades', 'Not enough units in stock')); return; }
     }
     setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg, note: note || undefined } }));
-    setItemModal(null);
+    if (keepOpen) {
+      // stay in the sheet, reset to defaults for the next (different) variant
+      setSingle(freshSingles(itemModal.catKey, itemModal.item));
+      setMulti({});
+      setQty(1);
+      setModalNote('');
+    } else {
+      setItemModal(null);
+    }
   };
 
   const incLine = (k: string) => setCart((c) => ({ ...c, [k]: { ...c[k], qty: c[k].qty + 1 } }));
@@ -566,6 +584,31 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       else n[k] = { ...n[k], qty: q };
       return n;
     });
+
+  // Map a cart-line key back to the (catKey, MenuItem) that owns it. Line keys are
+  // `${catKey}:${name}` or `${catKey}:${name}|opts…`, so an item owns the line
+  // when its simpleKey is the whole key or its `|`-prefixed head. Used by the
+  // cart's per-line stepper to know if a line is customizable (has addons) and,
+  // for "Cambiar algo", to reopen the sheet for a different variant.
+  const lineOwner = (k: string): { catKey: string; item: MenuItem } | null => {
+    for (const c of [...menuCats, ...shopCats]) {
+      for (const it of c.items) {
+        const simpleKey = `${c.key}:${B(it.n)}`;
+        if (k === simpleKey || k.startsWith(`${simpleKey}|`)) return { catKey: c.key, item: it };
+      }
+    }
+    return null;
+  };
+  // Cart per-line "+": on a customizable line (item has addon groups), ask
+  // igual/cambiar just like the menu card; simple lines increment directly.
+  const incCartLine = (k: string) => {
+    const owner = lineOwner(k);
+    if (owner && groupsFor(owner.catKey, owner.item).length > 0) {
+      setAddPrompt({ catKey: owner.catKey, item: owner.item, key: k });
+      return;
+    }
+    incLine(k);
+  };
 
   // --- Real customer create-actions (myActivity) -------------------------
   // Every create inserts as the signed-in customer; guests are routed to
@@ -2097,7 +2140,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       )}
 
       {/* item customization modal */}
-      <Overlay open={!!itemModal} onClose={() => setItemModal(null)} width={440}>
+      <Overlay open={!!itemModal} onClose={() => setItemModal(null)} width={440} zIndex={80}>
         {itemModal && (() => {
           const mGroups = groupsFor(itemModal.catKey, itemModal.item);
           const mVarStock = variantStockAt(itemModal.item, mGroups, single); // null = not per-variant
@@ -2174,9 +2217,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <div className="flex flex-none items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
                 <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
                 <span className="w-4 text-center text-[14px] font-extrabold">{qty}</span>
-                <button onClick={() => setQty(Math.min(mMax, qty + 1))} disabled={qty >= mMax} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink disabled:opacity-40">+</button>
+                <button onClick={() => { if (mGroups.length > 0 && qty === 1) { setSheetAsk(true); return; } setQty(Math.min(mMax, qty + 1)); }} disabled={qty >= mMax} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink disabled:opacity-40">+</button>
               </div>
-              <PrimaryBtn className="mt-0" disabled={mSoldOut} onClick={addFromModal}>
+              <PrimaryBtn className="mt-0" disabled={mSoldOut} onClick={() => addFromModal()}>
                 {mSoldOut ? L('Agotado', 'Sold out') : `${L('Agregar', 'Add')} ${qty} · ${money(modalUnit * qty)}`}
               </PrimaryBtn>
             </div>
@@ -2185,15 +2228,43 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         })()}
       </Overlay>
 
+      {/* customize-sheet stepper "+": add another of THIS dish — the same, or a
+          different variant without leaving the sheet ("Cambiar algo" adds the
+          one you built and resets the sheet for the next). Stacks over the sheet. */}
+      {sheetAsk && itemModal && (
+        <Overlay open onClose={() => setSheetAsk(false)} width={380} zIndex={90}>
+          <OverlayTitle title={L('Agregar otro', 'Add another')} onClose={() => setSheetAsk(false)} />
+          <div className="text-[13.5px] font-extrabold text-ink">{B(itemModal.item.n)}</div>
+          <div className="mt-4 text-[13px] font-bold text-ink-2">{L('¿Lo deseas igual o quieres cambiar algo?', 'Want it the same, or change something?')}</div>
+          <div className="mt-4 flex flex-col gap-2.5">
+            <button
+              onClick={() => { setQty((q) => q + 1); setSheetAsk(false); }}
+              className="w-full cursor-pointer rounded-field bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm"
+            >
+              {L('Sí, igual', 'Yes, the same')}
+            </button>
+            <button
+              onClick={() => { addFromModal(true); setSheetAsk(false); }}
+              className="w-full cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2.5 text-[13px] font-extrabold text-ink"
+            >
+              {L('Cambiar algo', 'Change something')}
+              <span className="mt-0.5 block text-[10.5px] font-semibold text-muted">{L('Agrega este y arma otro distinto', 'Adds this one, then build another')}</span>
+            </button>
+          </div>
+        </Overlay>
+      )}
+
       {/* "+"  on a customizable item already in the cart: same customization
-          again, or build a different one? (same logic will drive /carrito) */}
+          again, or build a different one? Drives BOTH the menu card's stepper
+          (no `key` → the item's most-recent line) and the cart's per-line
+          stepper (`key` → that exact line). */}
       {addPrompt && (() => {
-        const key = `${addPrompt.catKey}:${B(addPrompt.item.n)}`;
-        const keys = Object.keys(cart).filter((k) => k === key || k.startsWith(`${key}|`));
-        const lastKey = keys[keys.length - 1];
+        const base = `${addPrompt.catKey}:${B(addPrompt.item.n)}`;
+        const keys = Object.keys(cart).filter((k) => k === base || k.startsWith(`${base}|`));
+        const lastKey = addPrompt.key ?? keys[keys.length - 1];
         const last = lastKey ? cart[lastKey] : null;
         return (
-          <Overlay open onClose={() => setAddPrompt(null)} width={380}>
+          <Overlay open onClose={() => setAddPrompt(null)} width={380} zIndex={80}>
             <OverlayTitle title={L('Agregar otro', 'Add another')} onClose={() => setAddPrompt(null)} />
             <div className="text-[13.5px] font-extrabold text-ink">{B(addPrompt.item.n)}</div>
             {last && (last.optsLabel || last.note) && (
@@ -2225,7 +2296,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         const key = `${removePrompt.catKey}:${B(removePrompt.item.n)}`;
         const keys = Object.keys(cart).filter((k) => k === key || k.startsWith(`${key}|`));
         return (
-          <Overlay open onClose={() => setRemovePrompt(null)} width={400}>
+          <Overlay open onClose={() => setRemovePrompt(null)} width={400} zIndex={80}>
             <OverlayTitle title={L('¿Cuál deseas eliminar?', 'Which one do you want to remove?')} onClose={() => setRemovePrompt(null)} />
             <div className="text-[11.5px] font-semibold leading-snug text-muted">
               {L('Tienes varias versiones de este platillo en tu carrito.', 'You have a few versions of this item in your cart.')}
@@ -2323,7 +2394,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       <span className="flex flex-none items-center gap-2 rounded-full bg-lilac-2 px-1.5 py-1">
                         <button onClick={() => decLine(k)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-extrabold">−</button>
                         <span className="w-3 text-center text-[12.5px] font-extrabold">{l.qty}</span>
-                        <button onClick={() => incLine(k)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-extrabold">+</button>
+                        <button onClick={() => incCartLine(k)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-extrabold">+</button>
                       </span>
                       <span className="w-14 flex-none text-right text-[13px] font-extrabold text-ink">{money(l.unit * l.qty)}</span>
                     </div>

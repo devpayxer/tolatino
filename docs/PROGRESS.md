@@ -5,6 +5,28 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-11.
 
+## "¿igual o cambiar?" flow extended to the sheet + cart steppers (2026-07-11)
+The addon add-another prompt ("¿Lo deseas igual o quieres cambiar algo?") that
+already lived on the **menu-card** stepper now also drives two more steppers,
+per the founder:
+- **Customize-sheet footer stepper** (`− 1 +` in "Personaliza tu platillo"): on
+  an addon item, `+` prompts; *Cambiar algo* adds the built combo and resets the
+  sheet in place so you build a different variant without leaving (`addFromModal`
+  gained a `keepOpen` param; `freshSingles` extracted for the reset).
+- **Cart per-line stepper**: `+` on a customized line prompts over the cart;
+  *Sí, igual* bumps that exact line, *Cambiar algo* opens the sheet for a new
+  variant. `lineOwner()` maps a cart-line key back to its (catKey, MenuItem);
+  the existing `addPrompt` overlay was extended with an optional `key`.
+- **Two real bugs caught by the browser tests while building:** (1) the sheet's
+  "Agregar" button passed the click *event* into the new `keepOpen` arg (truthy)
+  so the sheet never closed — fixed to `onClick={() => addFromModal()}`; (2) all
+  `<Overlay>`s shared `z-[70]`, so a prompt/sheet opened from *within* the cart
+  (later in DOM) rendered BEHIND it — added an optional `zIndex` prop to the
+  shared Overlay (sheet 80, its prompt 90, add/remove prompts 80). Verified:
+  `tools/mobile-audit/stepper-igual-cambiar.js`; menu-card flow
+  (`addon-variant-prompts.js`) + `scroll-lock`/`spy-modal-open`/`reorder` still
+  pass (Overlay is shared by ~84 modals).
+
 ## History reset to "Ordenar de nuevo" + icons kept (2026-07-11)
 Founder asked to roll the branch back to the "Ordenar de nuevo" commit and drop
 everything after — the Entrega/Recoger toggle experiment, the bordered card, the
