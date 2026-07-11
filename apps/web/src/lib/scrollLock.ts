@@ -10,7 +10,7 @@
 // LAST lock is released. Import `useScrollLock(active)` and pass your open flag —
 // the shared <Overlay> already does this, so anything built on it is covered.
 
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 let locks = 0;
 let savedScrollY = 0;
@@ -38,9 +38,15 @@ function release() {
 }
 
 /** Lock background scroll while `active` is true. Safe to call from many overlays
- *  at once — the page unlocks only when every holder has released. */
+ *  at once — the page unlocks only when every holder has released.
+ *  Engages via useLayoutEffect (sync, pre-paint) rather than useEffect: a regular
+ *  effect fires a frame after commit, and in that gap the browser's own scroll
+ *  anchoring can already nudge window.scrollY (e.g. as the sheet's content mounts)
+ *  before engage() reads it — pinning the WRONG scroll position and confusing
+ *  anything that reads window.scrollY while the sheet is open (e.g. a scroll-spy
+ *  behind it). Engaging pre-paint captures the true position before that drift. */
 export function useScrollLock(active: boolean) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active || typeof document === 'undefined') return;
     if (locks === 0) engage();
     locks += 1;

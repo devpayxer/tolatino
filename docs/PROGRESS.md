@@ -90,6 +90,21 @@ old `HANDOFF.md` was byte-identical to the new `01-plataforma.md` — removed to
 avoid two competing sources of truth. `CLAUDE.md` § Design system rewritten to
 point at the new structure.
 
+### Menú tab: category rail jumping on item-sheet open — fixed (2026-07-10)
+Founder-reported regression: opening a product's customize sheet snapped the
+category rail to the LAST category, even mid-scroll in a middle category. Root
+cause: `useScrollLock` pinned `<body>` (`position:fixed`) via a plain `useEffect`
+— a frame after the DOM commits — and in that gap the browser's own scroll
+anchoring could nudge `window.scrollY` before the lock captured it; once pinned,
+the document's collapsed scroll height then fooled the Menú tab's scroll-spy
+"near-bottom" clamp into forcing the last category active. Fixed in
+`lib/scrollLock.ts` (engage via `useLayoutEffect` — pre-paint, no drift window)
+and `BizDetail.tsx`'s spy (freeze recomputation outright while `body.position ===
+'fixed'`, holding the already-correct category steady while any sheet is open).
+Regression test: `tools/mobile-audit/spy-modal-open.js`. Swept the other spy/
+sticky/scroll-lock scripts for regressions — all still pass (shared primitive,
+~84 modals depend on it).
+
 ## How this project ships (read first)
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,
   `output: 'export'` static export, Tailwind). Build: `pnpm --filter @tolatino/web build`.

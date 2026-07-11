@@ -987,6 +987,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     const spy = () => {
       raf = 0;
       if (spyLock.current) return; // a chip was tapped — hold the highlight steady until the scroll settles
+      // While a sheet/modal is open, useScrollLock pins <body> with
+      // position:fixed — the document's scrollHeight collapses to the
+      // viewport height and window.scrollY reads 0, which the bottom-of-page
+      // clamp below misreads as "scrolled to the end", snapping the rail to
+      // the LAST category. Skip recomputing until the lock releases; the
+      // already-correct activeCat just holds steady while the sheet is open.
+      if (document.body.style.position === 'fixed') return;
       // The line sits just BELOW where a jumped-to section lands (its
       // scrollMarginTop = sticky bars + 8), so clicking a category marks THAT
       // category active — not its left neighbor. Must stay > menuScrollMargin.
