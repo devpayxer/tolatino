@@ -1404,12 +1404,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <div className="no-scrollbar pointer-events-auto flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-app px-3.5 pt-2.5 md:px-5">{tabButtons}</div>
       </div>
 
-      {/* Everything below the tab bar sits on its own `surface` background (set
-          apart from the app's `bg-app`) so the tab content reads as a distinct
-          zone instead of blending into the header — full-bleed via the same
-          -mx/px cancel-parent-padding trick the sticky rail below already uses. */}
-      <div className="-mx-3.5 bg-surface px-3.5 md:-mx-5 md:px-5">
-
       {/* ============ OVERVIEW ============ */}
       {tab === 'overview' && (
         <div className="pt-5">
@@ -2019,8 +2013,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           </div>
         </div>
       )}
-
-      </div>
 
       {/* cart bar */}
       {cartCount > 0 && !(tab === 'menu' && menuDisplayOnly) && !(tab === 'shop' && shopDisplayOnly) && (

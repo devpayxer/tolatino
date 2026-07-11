@@ -32,7 +32,6 @@ const config: Config = {
         lilac: { DEFAULT: '#EFEBFF', 2: '#F1EFFA', 3: '#F3F0FF', line: '#E7E3F4', ring: '#DCD4FA' }, // chips, avatars, soft bg
         app: '#F4F2F9', // app viewport background
         dash: '#E7E5EC', // dashboard background
-        surface: '#F8FAFC', // content area below a detail page's tab bar — set apart from `app` so it doesn't blend into the header
         teal: { DEFAULT: '#0E9384', bg: '#D6F3EF' }, // poll tag
       },
       borderColor: {
