@@ -20,7 +20,7 @@ const config: Config = {
           soft: '#4A4660', // mid-tone labels
         },
         muted: {
-          DEFAULT: '#8A86A0', // metadata, placeholders
+          DEFAULT: '#9D99B3', // metadata, placeholders — lightened 2026-07-11 (was #8A86A0)
           2: '#9A96AE',
           faint: '#B7B3C6', // disabled, counters
           faint2: '#B0ACC0',
