@@ -132,6 +132,26 @@ occurrence of that item on the page.
   chip and a document-height fraction instead, so they stay valid regardless
   of which chip legitimately leads).
 
+### Menú tab: Entrega/Recoger promoted to a real toggle (2026-07-11)
+Founder-requested, benchmarked against DoorDash's store-page delivery/pickup
+module: the old info-only badge row ("🛵 Entrega $0 · 30-45 min" + "🥡 Recoger ·
+20 min" + "Mínimo $12 en entrega" shown together, non-interactive) is now a
+segmented pill toggle + a single contextual time/fee line for whichever mode is
+selected — matching DoorDash's pattern but in our own tokens (lilac-2 track,
+white active pill, no copied DoorDash styling). Not a new UI concept: it's the
+SAME `orderChannel` state + toggle that already lived inside the cart sheet,
+promoted to the top of the Menú tab as one source of truth — selecting here
+also drives checkout, no separate selection to repeat later. Scoped to just
+this module per the founder's screenshot ("esta parte"); DoorDash's "Group
+order" (shared multi-person cart) and its "X min left to order" urgency banner
+from the reference screenshots were NOT built — bigger, separate features not
+literally requested; logged in `docs/LAUNCH-CHECKLIST.md` if wanted later.
+Verified in a real browser, mobile (402px) + desktop (1440px): toggle switches
+correctly, info line updates (fee+ETA for delivery, "sin costo"+ETA for
+pickup, minimum-for-delivery notice only shows when relevant). Swept
+`spy-*`/`desktop-arrows` — all still pass (this sits above the sticky rail,
+doesn't affect its pin math).
+
 ## How this project ships (read first)
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,
   `output: 'export'` static export, Tailwind). Build: `pnpm --filter @tolatino/web build`.

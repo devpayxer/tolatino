@@ -865,6 +865,14 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   `pending` (business confirms → hand-out → returned); tickets/deposits are
   recorded but **not charged** — payments come in the transaction phase
   (Stripe/etc., see §2). No real money moves yet.
+- [ ] **DoorDash-style "Group order" (shared multi-person cart).** Seen in the
+  founder's DoorDash reference screenshot (2026-07-11, Entrega/Recoger toggle
+  task) alongside the delivery/pickup module — deliberately NOT built then
+  (bigger, separate feature, not literally requested). Would need: an
+  invite-link/token per cart, a shared realtime cart multiple signed-in users
+  can add to concurrently, a per-person subtotal view, and a single checkout
+  that splits or combines payment. Build if/when the founder asks for it
+  explicitly.
 
 ## 6. Moderation & admin
 

@@ -1611,22 +1611,33 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </a>
             </div>
           )}
-          {/* delivery / pickup offer badges (design: Store Menu header chips) */}
+          {/* Entrega / Recoger — a real upfront choice (DoorDash-style), not just
+              info badges: picking here drives the SAME `orderChannel` state the
+              cart/checkout already uses, so it's a single source of truth — no
+              separate selection to repeat later, and switching here instantly
+              updates the time/fee line below. */}
           {!menuDisplayOnly && payOnline && (
-            <div className="mb-3 flex flex-wrap gap-1.5">
-              {deliveryAvailable && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-bg px-2.5 py-1 text-[10.5px] font-extrabold text-green-dark">
-                  🛵 {L('Entrega', 'Delivery')} {money(del?.fee ?? 0)} · {del?.prep ? `${del.prep + 10}–${del.prep + 25} min` : '30–45 min'}
+            <div className="mb-4">
+              <div className="flex gap-1 rounded-full bg-lilac-2 p-1">
+                {deliveryAvailable && (
+                  <button onClick={() => setOrderChannel('delivery')} className={`flex-1 cursor-pointer rounded-full py-2.5 text-center transition-colors ${orderChannel === 'delivery' ? 'bg-white shadow-cta-sm' : ''}`}>
+                    <span className={`text-[13px] font-extrabold ${orderChannel === 'delivery' ? 'text-primary-dark' : 'text-muted'}`}>🛵 {L('Entrega', 'Delivery')}</span>
+                  </button>
+                )}
+                <button onClick={() => setOrderChannel('pickup')} className={`flex-1 cursor-pointer rounded-full py-2.5 text-center transition-colors ${!isDelivery ? 'bg-white shadow-cta-sm' : ''}`}>
+                  <span className={`text-[13px] font-extrabold ${!isDelivery ? 'text-primary-dark' : 'text-muted'}`}>🥡 {L('Recoger', 'Pickup')}</span>
+                </button>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-field bg-lilac-3 px-3.5 py-2.5">
+                <span className="text-[12.5px] font-extrabold text-ink">
+                  {isDelivery
+                    ? `${del?.prep ? `${del.prep + 10}–${del.prep + 25}` : '30–45'} min · ${money(del?.fee ?? 0)}`
+                    : `${del?.prep ? `${del.prep} min` : '15–25 min'} · ${L('sin costo', 'no fee')}`}
                 </span>
-              )}
-              <span className="inline-flex items-center gap-1 rounded-full bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">
-                🥡 {L('Recoger', 'Pickup')} · {del?.prep ? `${del.prep} min` : '15–25 min'}
-              </span>
-              {deliveryAvailable && (del?.min ?? 0) > 0 && (
-                <span className="inline-flex items-center rounded-full bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-ink-soft">
-                  {L('Mínimo', 'Min.')} {money(del?.min ?? 0)} {L('en entrega', 'for delivery')}
-                </span>
-              )}
+                {isDelivery && (del?.min ?? 0) > 0 && (
+                  <span className="text-[11px] font-bold text-muted">{L('Mínimo', 'Min.')} {money(del?.min ?? 0)} {L('en entrega', 'for delivery')}</span>
+                )}
+              </div>
             </div>
           )}
 
