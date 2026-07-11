@@ -20,7 +20,7 @@ const config: Config = {
           soft: '#4A4660', // mid-tone labels
         },
         muted: {
-          DEFAULT: '#9D99B3', // metadata, placeholders — lightened 2026-07-11 (was #8A86A0)
+          DEFAULT: '#8A86A0', // metadata, placeholders
           2: '#9A96AE',
           faint: '#B7B3C6', // disabled, counters
           faint2: '#B0ACC0',
@@ -32,6 +32,7 @@ const config: Config = {
         lilac: { DEFAULT: '#EFEBFF', 2: '#F1EFFA', 3: '#F3F0FF', line: '#E7E3F4', ring: '#DCD4FA' }, // chips, avatars, soft bg
         app: '#F4F2F9', // app viewport background
         dash: '#E7E5EC', // dashboard background
+        surface: '#F8FAFC', // content area below a detail page's tab bar — set apart from `app` so it doesn't blend into the header
         teal: { DEFAULT: '#0E9384', bg: '#D6F3EF' }, // poll tag
       },
       borderColor: {
