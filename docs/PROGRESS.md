@@ -3,7 +3,21 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-10.
+> Last updated: 2026-07-11.
+
+## History reset to "Ordenar de nuevo" + icons kept (2026-07-11)
+Founder asked to roll the branch back to the "Ordenar de nuevo" commit and drop
+everything after — the Entrega/Recoger toggle experiment, the bordered card, the
+muted-text/`surface` background experiments — because he didn't like where those
+landed. **Kept**, per his explicit choice: the Lucide → **Tabler icon** swap he'd
+approved. Executed as: hard-reset to `9b08fe9`, then re-ran the icon codemod
+(`scratchpad/icon-migrate/migrate.mjs`) + the 8 `*Filled` variant fixes on that
+clean base, so icons are Tabler with none of the reverted experiments. Both
+branches force-pushed (with-lease). **Everything dropped is recoverable** from
+the `backup/before-revert-20260711` branch (pushed to origin) if any of it is
+wanted back. Note: the Entrega/Recoger is back to the older info-badge row (not
+the toggle); the rail chips (⭐/🔁) are emoji again — the emoji→icon polish was
+in a dropped commit and wasn't part of the "keep the icons" scope.
 
 ## Platform polish batch (2026-07-10) — all verified in a real browser
 - **Business single-page restored** (founder correction): the food menu lives ONLY

@@ -2,7 +2,7 @@
 
 // Shared UI primitives — compose every screen from these; don't fork markup.
 
-import { X } from 'lucide-react';
+import { IconX as X } from '@tabler/icons-react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 
@@ -201,7 +201,7 @@ export function OverlayTitle({ title, onClose, onBack }: { title: string; onClos
         className="ml-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
         aria-label="close"
       >
-        <X size={15} strokeWidth={2.8} />
+        <X size={15} stroke={2.8} />
       </button>
     </div>
   );

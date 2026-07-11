@@ -7,11 +7,8 @@
 // FoodEditors.
 
 import { useEffect, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  Brush, Camera, Car, Check, Droplets, Dumbbell, Gift, GraduationCap, Hand, Heart,
-  Home, Music, Scissors, Sparkles, Trash2, Users, Utensils, Wine, Wrench,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconBrush as Brush, IconCamera as Camera, IconCar as Car, IconCheck as Check, IconDroplets as Droplets, IconDumbbell as Dumbbell, IconGift as Gift, IconSchool as GraduationCap, IconHandFinger as Hand, IconHeart as Heart, IconHome as Home, IconMusic as Music, IconScissors as Scissors, IconSparkles as Sparkles, IconTrash as Trash2, IconUsers as Users, IconToolsKitchen2 as Utensils, IconGlassCocktail as Wine, IconTool as Wrench } from '@tabler/icons-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { SERVICE_TILES, svcId, type ServiceAddon, type ServiceCategory } from '@/lib/serviceConfig';
@@ -92,7 +89,7 @@ export function ServiceCategoryEditor({
           {initial && (
             <button onClick={() => { if (itemCount === 0) setConfirming(true); }} disabled={itemCount > 0} className={dangerBtn}
               title={itemCount > 0 ? L('Mueve sus servicios antes de eliminar', 'Move its services before deleting') : undefined}>
-              <Trash2 size={15} strokeWidth={2.2} />
+              <Trash2 size={15} stroke={2.2} />
             </button>
           )}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear categoría', 'Create category')}</button>
@@ -166,7 +163,7 @@ export function ServiceAddonEditor({
           </div>
         )}
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear add-on', 'Create add-on')}</button>
         </div>
         {initial && (

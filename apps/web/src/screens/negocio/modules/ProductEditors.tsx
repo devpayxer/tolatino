@@ -7,11 +7,8 @@
 // (product_config on the business row). Mirrors FoodEditors / ServiceEditors.
 
 import { useEffect, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  BookOpen, Check, Coffee, Cookie, Flower2, Gift, Home, Leaf, Package, Palette,
-  Plus, ShoppingBag, Shirt, Sparkles, Trash2, Wine, Wrench, X,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconBook2 as BookOpen, IconCheck as Check, IconCoffee as Coffee, IconCookie as Cookie, IconFlower as Flower2, IconGift as Gift, IconHome as Home, IconLeaf as Leaf, IconPackage as Package, IconPalette as Palette, IconPlus as Plus, IconShoppingBag as ShoppingBag, IconShirt as Shirt, IconSparkles as Sparkles, IconTrash as Trash2, IconGlassCocktail as Wine, IconTool as Wrench, IconX as X } from '@tabler/icons-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import {
@@ -94,7 +91,7 @@ export function ProductCategoryEditor({
           {initial && (
             <button onClick={() => { if (itemCount === 0) setConfirming(true); }} disabled={itemCount > 0} className={dangerBtn}
               title={itemCount > 0 ? L('Mueve sus productos antes de eliminar', 'Move its products before deleting') : undefined}>
-              <Trash2 size={15} strokeWidth={2.2} />
+              <Trash2 size={15} stroke={2.2} />
             </button>
           )}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear categoría', 'Create category')}</button>
@@ -182,11 +179,11 @@ export function OptionSetEditor({
                   <span className="text-[12px] font-bold text-muted-2">+$</span>
                   <input value={v.price ? String(v.price) : ''} onChange={(e) => setVal(i, { price: Number(e.target.value.replace(/[^0-9.]/g, '')) || 0 })} placeholder="0" inputMode="decimal" className="min-w-0 flex-1 border-none bg-transparent px-1 py-2.5 text-[13px] font-semibold text-ink outline-none" />
                 </div>
-                <button onClick={() => delVal(i)} disabled={values.length <= 1} aria-label={L('Quitar', 'Remove')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-lg text-muted-2 disabled:opacity-30"><X size={15} strokeWidth={2.4} /></button>
+                <button onClick={() => delVal(i)} disabled={values.length <= 1} aria-label={L('Quitar', 'Remove')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-lg text-muted-2 disabled:opacity-30"><X size={15} stroke={2.4} /></button>
               </div>
             ))}
           </div>
-          <button onClick={addVal} className="mt-2 flex items-center gap-1.5 text-[11.5px] font-extrabold text-primary-dark"><Plus size={13} strokeWidth={2.6} />{L('Agregar valor', 'Add value')}</button>
+          <button onClick={addVal} className="mt-2 flex items-center gap-1.5 text-[11.5px] font-extrabold text-primary-dark"><Plus size={13} stroke={2.6} />{L('Agregar valor', 'Add value')}</button>
         </div>
         {initial && usedCount > 0 && (
           <div className="rounded-field bg-lilac-2 px-3 py-2 text-[10.5px] font-semibold text-ink-2">
@@ -194,7 +191,7 @@ export function OptionSetEditor({
           </div>
         )}
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!ready} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear conjunto', 'Create set')}</button>
         </div>
         {initial && (
@@ -284,7 +281,7 @@ export function CollectionEditor({
                 const on = members.includes(p.dbId!);
                 return (
                   <button key={p.dbId} onClick={() => toggleMember(p.dbId!)} className={`flex items-center gap-2.5 rounded-field border-[1.5px] p-2.5 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                    <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
+                    <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" stroke={3.4} />}</span>
                     <span className="min-w-0 flex-1 truncate text-[12px] font-bold text-ink">{p.name}</span>
                   </button>
                 );
@@ -293,7 +290,7 @@ export function CollectionEditor({
           )}
         </div>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear colección', 'Create collection')}</button>
         </div>
         {initial && (
@@ -397,7 +394,7 @@ export function DiscountEditor({
           </button>
         </div>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!code.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear descuento', 'Create discount')}</button>
         </div>
         {initial && (

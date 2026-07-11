@@ -15,12 +15,8 @@
 // explorable; nothing persists. Mobile-first throughout.
 
 import { useEffect, useRef, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  AlertTriangle, Calendar, Check, ChevronDown, ChevronUp, Clock, Copy, Gift, Info,
-  Link2, Loader2, Pencil, Plus, Search, ShieldCheck, ShoppingBag, Sparkles, Trash2,
-  Truck, Upload, Utensils, X, Zap,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconAlertTriangle as AlertTriangle, IconCalendar as Calendar, IconCheck as Check, IconChevronDown as ChevronDown, IconChevronUp as ChevronUp, IconClock as Clock, IconCopy as Copy, IconGift as Gift, IconInfoCircle as Info, IconLink as Link2, IconLoader2 as Loader2, IconPencil as Pencil, IconPlus as Plus, IconSearch as Search, IconShieldCheck as ShieldCheck, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconTrash as Trash2, IconTruck as Truck, IconUpload as Upload, IconToolsKitchen2 as Utensils, IconX as X, IconBolt as Zap } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
@@ -436,7 +432,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className={`${cardCls} p-4`}>
         <div className="mb-2.5 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[13px] font-extrabold text-ink">
-            <AlertTriangle size={14} strokeWidth={2.2} className="text-amber-ink" />{L('Requiere atención', 'Needs attention')}
+            <AlertTriangle size={14} stroke={2.2} className="text-amber-ink" />{L('Requiere atención', 'Needs attention')}
           </span>
           <span className="rounded-md bg-amber-bg px-2 py-0.5 text-[9.5px] font-extrabold text-amber-ink">{lowCount + outCount}</span>
         </div>
@@ -444,7 +440,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {attention.map((a) => (
             <div key={a.title} className={`flex items-center gap-2.5 rounded-btn-lg border p-2.5 ${a.rose ? 'border-pink-bg bg-pink-bg/40' : 'border-amber-bg bg-amber-bg/40'}`}>
               <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-lg bg-white ${a.rose ? 'text-pink-dark' : 'text-amber-ink'}`}>
-                {a.rose ? <X size={13} strokeWidth={2.8} /> : <AlertTriangle size={13} strokeWidth={2.4} />}
+                {a.rose ? <X size={13} stroke={2.8} /> : <AlertTriangle size={13} stroke={2.4} />}
               </span>
               <span className="min-w-0 flex-1">
                 <span className={`block text-[11.5px] font-extrabold ${a.rose ? 'text-pink-dark' : 'text-amber-ink'}`}>{a.title}</span>
@@ -469,7 +465,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               orders — some just showcase dishes + prices). Persisted in menu_config. */}
           <div className={`${cardCls} p-3.5`}>
             <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink">
-              <ShoppingBag size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Modo del menú', 'Menu mode')}
+              <ShoppingBag size={15} stroke={2.2} className="text-primary-dark" />{L('Modo del menú', 'Menu mode')}
             </div>
             <div className="flex rounded-full bg-lilac-2 p-0.5">
               <button
@@ -494,7 +490,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
           {/* listing link banner */}
           <div className="flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
-            <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Link2 size={15} className="text-white" strokeWidth={2.2} /></span>
+            <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Link2 size={15} className="text-white" stroke={2.2} /></span>
             <span className="min-w-0 flex-1">
               <span className="block text-[12px] font-extrabold text-ink">{L('Este menú alimenta tu listado', 'This menu powers your listing')}</span>
               <span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Cada cambio aparece en tu página pública.', 'Every edit appears on your public page.')}</span>
@@ -503,7 +499,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
           {/* search */}
           <div className="flex items-center gap-2.5 rounded-field border border-hair-strong bg-white px-3 py-2.5">
-            <Search size={15} className="text-muted-2" strokeWidth={2.2} />
+            <Search size={15} className="text-muted-2" stroke={2.2} />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L('Buscar platillos, ingredientes…', 'Search items, ingredients…')} className="min-w-0 flex-1 border-none bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted-2" />
           </div>
 
@@ -583,7 +579,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
 
           <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm">
-            <Plus size={16} strokeWidth={2.6} />{L('Agregar platillo', 'Add item')}
+            <Plus size={16} stroke={2.6} />{L('Agregar platillo', 'Add item')}
           </button>
         </div>
 
@@ -608,8 +604,8 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           return (
             <div key={c.id} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3" style={{ opacity: c.visible ? 1 : 0.6 }}>
               <span className="flex flex-none flex-col">
-                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Move up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} strokeWidth={2.6} /></button>
-                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Move down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} strokeWidth={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Move up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Move down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
               </span>
               <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                 <span className="relative flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${c.tile})` }}>
@@ -618,7 +614,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span>
-                    <Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />
+                    <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
                     {!c.visible && <span className="flex-none rounded bg-lilac-line px-1.5 py-0.5 text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -640,7 +636,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const renderMods = () => (
     <div>
       <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Zap size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Zap size={15} className="text-white" stroke={2.2} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[12px] font-extrabold text-ink">{L('Reutilizables en tus platillos', 'Reusable across items')}</span>
           <span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea un grupo una vez, úsalo en cualquier platillo. Toca uno para editarlo.', 'Build a group once, use it on any item. Tap one to edit it.')}</span>
@@ -658,7 +654,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button key={m.id} onClick={() => setModSheet({ open: true, initial: m })} className="cursor-pointer rounded-btn-lg border border-hair bg-white p-3.5 text-left">
                 <div className="mb-2 flex items-center gap-1.5">
                   <span className="truncate text-[13px] font-extrabold text-ink">{L(m.es, m.en)}</span>
-                  <Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />
+                  <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
                   {m.required && <span className="flex-none rounded bg-lilac px-1.5 py-0.5 text-[8.5px] font-extrabold text-primary-dark">{L('Obligatorio', 'Required')}</span>}
                   <span className="ml-auto flex-none text-[10px] font-semibold text-muted-2">{m.single ? L('Elige uno', 'Choose one') : L('Elige varios', 'Choose multiple')} · {used} {used === 1 ? L('platillo', 'item') : L('platillos', 'items')}</span>
                 </div>
@@ -717,11 +713,11 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {cfg.dayparts.map((p) => (
               <div key={p.id} className="flex items-center gap-3 rounded-tile border border-hair bg-white p-3" style={{ opacity: p.on ? 1 : 0.6 }}>
                 <button onClick={() => setDpSheet({ open: true, initial: p })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
-                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[9px]" style={{ background: p.bg }}><Clock size={16} style={{ color: p.color }} strokeWidth={2.2} /></span>
+                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[9px]" style={{ background: p.bg }}><Clock size={16} style={{ color: p.color }} stroke={2.2} /></span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5">
                       <span className="truncate text-[12.5px] font-extrabold text-ink">{L(p.es, p.en)}</span>
-                      <Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />
+                      <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
                     </span>
                     <span className="block text-[10.5px] font-medium text-muted-2">{hourLabel(p.start)}–{hourLabel(p.end)} · {p.days.filter(Boolean).length === 7 ? L('todos los días', 'every day') : `${p.days.filter(Boolean).length} ${L('días', 'days')}`}</span>
                   </span>
@@ -782,7 +778,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <div className="p-3 pb-1.5">
                         <div className="flex items-center gap-1.5">
                           <span className="truncate text-[13.5px] font-extrabold text-ink">{L(p.es, p.en)}</span>
-                          <Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />
+                          <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
                         </div>
                         <div className="mt-1 text-[11px] font-medium leading-snug text-ink-3">
                           {L(p.descEs, p.descEn) || (p.type === 'percent' && p.value ? `${p.value}% off` : p.type === 'combo' && p.value ? `Combo ${money(p.value)}` : p.type === 'happy' && p.timeStart != null ? `${hourLabel(p.timeStart)}–${hourLabel(p.timeEnd ?? p.timeStart)}` : '')}
@@ -817,7 +813,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <span className="block text-[12px] font-extrabold text-ink">{L(t.es, t.en)}</span>
                     <span className="block text-[9.5px] font-medium leading-snug text-muted-2">{L(t.subEs, t.subEn)}</span>
                   </span>
-                  <Plus size={14} strokeWidth={2.6} className="flex-none text-primary-dark" />
+                  <Plus size={14} stroke={2.6} className="flex-none text-primary-dark" />
                 </button>
               ))}
             </div>
@@ -842,7 +838,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <div>
         <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
-          <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><ShieldCheck size={15} className="text-white" strokeWidth={2.2} /></span>
+          <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><ShieldCheck size={15} className="text-white" stroke={2.2} /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-[12px] font-extrabold text-ink">{L('Los alérgenos se muestran en tu menú público', 'Allergens appear on your public menu')}</span>
             <span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Toca una celda para marcar: contiene → puede contener → libre.', 'Tap a cell to mark: contains → may contain → free.')}</span>
@@ -905,7 +901,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* 86'd list */}
           <div className="overflow-hidden rounded-tile border border-pink-bg bg-white">
             <div className="flex items-center gap-1.5 bg-pink-bg/50 px-3.5 py-2.5">
-              <X size={14} className="text-pink-dark" strokeWidth={2.6} />
+              <X size={14} className="text-pink-dark" stroke={2.6} />
               <span className="text-[12px] font-extrabold text-pink-dark">{L('86’d ahora · oculto del menú', "Currently 86'd · hidden")}</span>
             </div>
             {stock86.length === 0 ? (
@@ -1150,7 +1146,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 {photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}
               </button>
               <button type="button" onClick={() => upDraft({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card">
-                <Trash2 size={14} strokeWidth={2.2} />
+                <Trash2 size={14} stroke={2.2} />
               </button>
             </div>
           ) : (
@@ -1164,12 +1160,12 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             >
               {photoBusy ? (
                 <>
-                  <Loader2 size={20} className="animate-spin text-primary" strokeWidth={2.2} />
+                  <Loader2 size={20} className="animate-spin text-primary" stroke={2.2} />
                   <span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span>
                 </>
               ) : (
                 <>
-                  <Upload size={20} className="text-primary" strokeWidth={2} />
+                  <Upload size={20} className="text-primary" stroke={2} />
                   <span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span>
                   <span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · 4:3 ideal · se comprime sola', 'JPG or PNG · 4:3 best · auto-compressed')}</span>
                 </>
@@ -1194,7 +1190,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               const on = draft.channels[k];
               return (
                 <button key={k} onClick={() => upDraft({ channels: { ...draft.channels, [k]: !on } })} className={`flex items-center gap-2 rounded-field border-[1.5px] px-3 py-2.5 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                  <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
+                  <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" stroke={3.4} />}</span>
                   <Icon size={15} strokeWidth={2} className={on ? 'text-primary-dark' : 'text-muted-2'} />
                   <span className="text-[12px] font-bold text-ink">{lab}</span>
                 </button>
@@ -1222,7 +1218,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         </div>
         <div className="flex items-center gap-2.5 rounded-field bg-green-bg px-3 py-2.5">
-          <Info size={15} className="flex-none text-green-dark" strokeWidth={2} />
+          <Info size={15} className="flex-none text-green-dark" stroke={2} />
           <div className="text-[10.5px] font-medium leading-snug text-green-dark">
             {cfg.ordering
               ? L('Los pedidos por Entrega incluyen 12% de comisión.', 'Delivery orders include a 12% partner fee.')
@@ -1244,8 +1240,8 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           const on = !!draft.mods[m.id];
           return (
             <button key={m.id} onClick={() => upDraft({ mods: { ...draft.mods, [m.id]: !on } })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-              <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
-              <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Zap size={15} className="text-primary-dark" strokeWidth={2.2} /></span>
+              <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" stroke={3.4} />}</span>
+              <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Zap size={15} className="text-primary-dark" stroke={2.2} /></span>
               <span className="min-w-0 flex-1 text-left">
                 <span className="flex items-center gap-1.5">
                   <span className="text-[12.5px] font-extrabold text-ink">{L(m.es, m.en)}</span>
@@ -1357,7 +1353,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <div className="flex flex-col gap-3.5">
         <div className={`flex items-center gap-3 rounded-btn-lg border p-3 ${ready ? 'border-green-bg bg-green-bg/50' : 'border-amber-bg bg-amber-bg/50'}`}>
-          <span className={`flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-white ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? <Check size={16} strokeWidth={2.8} /> : <AlertTriangle size={15} strokeWidth={2.4} />}</span>
+          <span className={`flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-white ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? <Check size={16} stroke={2.8} /> : <AlertTriangle size={15} stroke={2.4} />}</span>
           <div className="min-w-0 flex-1">
             <div className={`text-[12px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos esenciales', 'A few essentials are missing')}</div>
             <div className="text-[10.5px] font-medium leading-snug text-ink-3">{ready ? (editing ? L('Los cambios se publican al instante.', 'Changes go live instantly.') : L('Todo en orden. Publicar lo activa al instante.', 'All set. Publishing makes it live instantly.')) : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
@@ -1379,10 +1375,10 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className={fieldLabel}>{L('Administrar platillo', 'Manage item')}</div>
             <div className="flex gap-2.5">
               <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink">
-                <Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}
+                <Copy size={14} stroke={2.4} />{L('Duplicar', 'Duplicate')}
               </button>
               <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">
-                <Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}
+                <Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}
               </button>
             </div>
           </div>
@@ -1468,7 +1464,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setSubtab('items'); }}>
       <div className="mx-auto flex max-w-[420px] flex-col items-center pb-4 pt-6 text-center">
-        <div className="mb-3.5 flex h-16 w-16 items-center justify-center rounded-panel bg-green-bg text-green-dark"><Check size={32} strokeWidth={2.6} /></div>
+        <div className="mb-3.5 flex h-16 w-16 items-center justify-center rounded-panel bg-green-bg text-green-dark"><Check size={32} stroke={2.6} /></div>
         <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo platillo', 'New item'))} {L('está activo', 'is live')}</div>
         <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">
           {L(`Ya está en tu menú de ${catLabel(draftCat)} en ${chansSel} canales. Los cambios se publican al instante.`, `It's now on your menu across ${chansSel} channels. Changes go live instantly.`)}
@@ -1562,7 +1558,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {/* Local delivery is configured in the shared "Entregas y envíos" module
           (same zones/drivers a shop uses) — a menu just turns delivery on. */}
       <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} strokeWidth={2} /></span>
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} stroke={2} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[12.5px] font-extrabold text-ink">{L('Entrega local y envíos', 'Local delivery & shipping')}</span>
           <span className="block text-[10.5px] font-semibold leading-snug text-muted-2">{L('Zonas, repartidores y apps de reparto para tus pedidos', 'Zones, drivers & delivery apps for your orders')}</span>

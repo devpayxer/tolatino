@@ -14,12 +14,8 @@
 // explorable in demo (local sample); a signed-in owner persists to Supabase.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  CalendarCheck, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight,
-  ChevronUp, Copy, DollarSign, Loader2, Lock, MessageSquare, Pencil, Plus, ShoppingBag,
-  Sparkles, Store, Trash2, Upload, Users, Wrench, XCircle, Zap,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconChevronUp as ChevronUp, IconCopy as Copy, IconCurrencyDollar as DollarSign, IconLoader2 as Loader2, IconLock as Lock, IconMessage2 as MessageSquare, IconPencil as Pencil, IconPlus as Plus, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconBuildingStore as Store, IconTrash as Trash2, IconUpload as Upload, IconUsers as Users, IconTool as Wrench, IconCircleX as XCircle, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -329,7 +325,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <div className="mx-auto flex max-w-[560px] flex-col gap-4 pb-8">
         <div className="flex flex-col items-center rounded-card-sm border border-hair bg-white p-6 text-center shadow-card">
-          <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[16px] bg-lilac-2 text-primary-dark"><Lock size={26} strokeWidth={2.2} /></span>
+          <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[16px] bg-lilac-2 text-primary-dark"><Lock size={26} stroke={2.2} /></span>
           <div className="text-[17px] font-extrabold text-ink">{L('Servicios y reservas', 'Services & bookings')}</div>
           <div className="mt-2 max-w-[380px] text-[12.5px] font-medium leading-relaxed text-muted">
             {L(`Publica servicios reservables para ${ci.name}, cobra depósitos y gestiona tu calendario. Disponible en el plan Verified.`, `Publish bookable services for ${ci.name}, take deposits and manage your calendar. Available on the Verified plan.`)}
@@ -347,7 +343,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <>
         <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setMode('services'); setSvcSub('catalog'); }}>
           <div className="mx-auto flex max-w-[440px] flex-col items-center pb-4 pt-4 text-center">
-            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} strokeWidth={2.4} /></span>
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} stroke={2.4} /></span>
             <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo servicio', 'New service')) + ' ' + L('está activo', 'is live')}</div>
             <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en la pestaña de Servicios de tu listado público.', "It now appears on your public listing's Services tab.")}</div>
             <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
@@ -364,7 +360,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               </div>
             </div>
             <div className="mt-5 flex w-full flex-col gap-2.5">
-              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro servicio', 'Add another service')}</button>
+              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} stroke={2.6} />{L('Agregar otro servicio', 'Add another service')}</button>
               <button onClick={() => { setView('module'); setMode('services'); setSvcSub('catalog'); }} className="rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a servicios', 'Back to services')}</button>
             </div>
           </div>
@@ -445,12 +441,12 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
                         <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
-                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} strokeWidth={2.2} /></button>
+                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} stroke={2.2} /></button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0]); }} disabled={photoBusy} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60">
-                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" strokeWidth={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
-                          : (<><Upload size={20} className="text-primary" strokeWidth={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
+                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" stroke={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
+                          : (<><Upload size={20} className="text-primary" stroke={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
                       </button>
                     )}
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f); }} />
@@ -508,8 +504,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     const on = draft.addons.includes(a.id);
                     return (
                       <button key={a.id} onClick={() => upD({ addons: on ? draft.addons.filter((x) => x !== a.id) : [...draft.addons, a.id] })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
-                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Zap size={15} className="text-primary-dark" strokeWidth={2.2} /></span>
+                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" stroke={3.4} />}</span>
+                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Zap size={15} className="text-primary-dark" stroke={2.2} /></span>
                         <span className="min-w-0 flex-1 text-left"><span className="block text-[12.5px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span></span>
                         <span className="flex-none text-[12px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
                       </button>
@@ -586,8 +582,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <div>
                         <div className={fieldLabel}>{L('Administrar servicio', 'Manage service')}</div>
                         <div className="flex gap-2.5">
-                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}</button>
-                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}</button>
+                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} stroke={2.4} />{L('Duplicar', 'Duplicate')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
                         </div>
                       </div>
                     )}
@@ -626,7 +622,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="flex flex-col gap-4">
       {/* MODE: display-only vs online bookings */}
       <div className={`${cardCls} p-3.5`}>
-        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CalendarCheck size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Modo del listado', 'Listing mode')}</div>
+        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CalendarCheck size={15} stroke={2.2} className="text-primary-dark" />{L('Modo del listado', 'Listing mode')}</div>
         <div className="flex rounded-full bg-lilac-2 p-0.5">
           <button onClick={() => { if (cfg.booking) { saveCfg({ ...cfg, booking: false }); flash(L('Servicios en modo Solo mostrar', 'Services set to Display only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.booking ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo mostrar', 'Display only')}</button>
           <button onClick={() => { if (!cfg.booking) { saveCfg({ ...cfg, booking: true }); flash(L('Servicios con reservas en línea', 'Services set to Online bookings')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.booking ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Aceptar reservas', 'Accept bookings')}</button>
@@ -659,7 +655,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-start justify-between gap-2">
-                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{s.name}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{s.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
                       <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{priceLabelOf(s)}</span>
                     </span>
                     <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{s.dur} · {s.bookable ? L('reservable', 'bookable') : L('solo consulta', 'inquiry only')}</span>
@@ -676,7 +672,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       ))}
 
-      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} strokeWidth={2.6} />{L('Nuevo servicio', 'New service')}</button>
+      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} stroke={2.6} />{L('Nuevo servicio', 'New service')}</button>
     </div>
   );
 
@@ -690,13 +686,13 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           return (
             <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
               <span className="flex flex-none flex-col">
-                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} strokeWidth={2.6} /></button>
-                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} strokeWidth={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
               </span>
               <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('servicio', 'service') : L('servicios', 'services')}</div>
                 </div>
               </button>
@@ -713,7 +709,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const addonsTab = (
     <div className="mx-auto max-w-[720px]">
       <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Zap size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Zap size={15} className="text-white" stroke={2.2} /></span>
         <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{L('Extras reutilizables', 'Reusable extras')}</span><span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea un add-on una vez, úsalo en cualquier servicio.', 'Build an add-on once, use it on any service.')}</span></span>
       </div>
       {cfg.addons.length === 0 ? (
@@ -724,9 +720,9 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             const used = addonUsedBy(a.id);
             return (
               <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
                   <span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{used} {used === 1 ? L('servicio', 'service') : L('servicios', 'services')}</span>
                 </span>
                 <span className="flex-none text-[13px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
@@ -810,8 +806,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   return (
     <div className="relative pb-8">
       <div className="mb-3 flex gap-2">
-        <button onClick={() => setMode('services')} className={modeBtn(mode === 'services')}><Wrench size={14} strokeWidth={2} />{L('Servicios', 'Services')}</button>
-        <button onClick={() => setMode('bookings')} className={modeBtn(mode === 'bookings')}><CalendarDays size={14} strokeWidth={2} />{L('Reservas', 'Bookings')}{upcoming > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{upcoming}</span>}</button>
+        <button onClick={() => setMode('services')} className={modeBtn(mode === 'services')}><Wrench size={14} stroke={2} />{L('Servicios', 'Services')}</button>
+        <button onClick={() => setMode('bookings')} className={modeBtn(mode === 'bookings')}><CalendarDays size={14} stroke={2} />{L('Reservas', 'Bookings')}{upcoming > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{upcoming}</span>}</button>
       </div>
 
       {mode === 'services' && (
@@ -828,7 +824,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       {!isPremium && (
         <div className="mt-4 flex flex-wrap items-center gap-3.5 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
-          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-amber"><Sparkles size={18} strokeWidth={2.2} /></span>
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-amber"><Sparkles size={18} stroke={2.2} /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-[13.5px] font-extrabold">{L('Recordatorios SMS y depósitos automáticos', 'SMS reminders & auto-deposits')}</span>
             <span className="mt-0.5 block max-w-[520px] text-[11.5px] font-medium leading-snug text-[rgba(255,255,255,.7)]">{L('Reduce no-shows con recordatorios y cobra anticipos sin esfuerzo. Incluido en Premium.', 'Cut no-shows with reminders and collect deposits hands-free. Included with Premium.')}</span>

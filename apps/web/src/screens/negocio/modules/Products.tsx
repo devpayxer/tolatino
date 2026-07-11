@@ -17,12 +17,8 @@
 // card — so Products and the Food menu configure fulfillment once.
 
 import { useEffect, useRef, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  Check, CheckCircle2, ChevronDown, ChevronUp, Copy, CreditCard,
-  HardHat, Layers, Loader2, Pencil, Plus, Search, Store,
-  Trash2, Truck, Upload,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronUp as ChevronUp, IconCopy as Copy, IconCreditCard as CreditCard, IconHelmet as HardHat, IconLayersIntersect as Layers, IconLoader2 as Loader2, IconPencil as Pencil, IconPlus as Plus, IconSearch as Search, IconBuildingStore as Store, IconTrash as Trash2, IconTruck as Truck, IconUpload as Upload } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -341,7 +337,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       <>
         <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setSub('catalog'); }}>
           <div className="mx-auto flex max-w-[440px] flex-col items-center pb-4 pt-4 text-center">
-            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} strokeWidth={2.4} /></span>
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} stroke={2.4} /></span>
             <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo producto', 'New product')) + ' ' + L('está activo', 'is live')}</div>
             <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en la pestaña Tienda de tu listado público.', "It now appears on your public listing's Shop tab.")}</div>
             <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
@@ -358,7 +354,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
               </div>
             </div>
             <div className="mt-5 flex w-full flex-col gap-2.5">
-              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro producto', 'Add another product')}</button>
+              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} stroke={2.6} />{L('Agregar otro producto', 'Add another product')}</button>
               <button onClick={() => { setView('module'); setSub('catalog'); }} className="rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a productos', 'Back to products')}</button>
             </div>
           </div>
@@ -438,12 +434,12 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
                         <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
-                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} strokeWidth={2.2} /></button>
+                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} stroke={2.2} /></button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0]); }} disabled={photoBusy} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60">
-                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" strokeWidth={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
-                          : (<><Upload size={20} className="text-primary" strokeWidth={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
+                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" stroke={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
+                          : (<><Upload size={20} className="text-primary" stroke={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
                       </button>
                     )}
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f); }} />
@@ -501,8 +497,8 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                     const on = draft.options.includes(o.id);
                     return (
                       <button key={o.id} onClick={() => upD({ options: on ? draft.options.filter((x) => x !== o.id) : [...draft.options, o.id] })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
-                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Layers size={15} className="text-primary-dark" strokeWidth={2.2} /></span>
+                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" stroke={3.4} />}</span>
+                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Layers size={15} className="text-primary-dark" stroke={2.2} /></span>
                         <span className="min-w-0 flex-1 text-left"><span className="block text-[12.5px] font-extrabold text-ink">{L(o.es, o.en)}</span><span className="block text-[10px] font-semibold text-muted-2">{o.values.map((v) => L(v.es, v.en ?? v.es)).join(' · ')}</span></span>
                         <span className="flex-none text-[10px] font-extrabold text-muted-2">{o.single ? L('variante', 'variant') : L('extra', 'add-on')}</span>
                       </button>
@@ -555,7 +551,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                         const on = draft.fulfill.includes(k);
                         return (
                           <button key={k} onClick={() => upD({ fulfill: on ? draft.fulfill.filter((x) => x !== k) : [...draft.fulfill, k] })} className={`flex items-center gap-3 rounded-btn-lg border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                            <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
+                            <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" stroke={3.4} />}</span>
                             <Icon size={16} strokeWidth={2} className={on ? 'text-primary-dark' : 'text-muted-2'} />
                             <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{lbl}</span><span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{subL}</span></span>
                           </button>
@@ -600,8 +596,8 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                       <div>
                         <div className={fieldLabel}>{L('Administrar producto', 'Manage product')}</div>
                         <div className="flex gap-2.5">
-                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}</button>
-                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}</button>
+                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} stroke={2.4} />{L('Duplicar', 'Duplicate')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
                         </div>
                       </div>
                     )}
@@ -647,7 +643,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="flex flex-col gap-4">
       {/* MODE: display-only vs online selling */}
       <div className={`${cardCls} p-3.5`}>
-        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CreditCard size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Modo de la tienda', 'Shop mode')}</div>
+        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CreditCard size={15} stroke={2.2} className="text-primary-dark" />{L('Modo de la tienda', 'Shop mode')}</div>
         <div className="flex rounded-full bg-lilac-2 p-0.5">
           <button onClick={() => { if (cfg.selling) { saveCfg({ ...cfg, selling: false }); flash(L('Tienda en modo Solo catálogo', 'Shop set to Catalog only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.selling ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo catálogo', 'Catalog only')}</button>
           <button onClick={() => { if (!cfg.selling) { saveCfg({ ...cfg, selling: true }); flash(L('Tienda con venta en línea', 'Shop set to Online selling')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.selling ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Vender en línea', 'Sell online')}</button>
@@ -661,7 +657,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
 
       {/* search */}
       <div className="flex items-center gap-2.5 rounded-field border border-hair bg-white px-3 py-2.5">
-        <Search size={15} strokeWidth={2.2} className="flex-none text-muted-2" />
+        <Search size={15} stroke={2.2} className="flex-none text-muted-2" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L('Buscar productos…', 'Search products…')} className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted-2" />
       </div>
 
@@ -686,7 +682,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-start justify-between gap-2">
-                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{p.name}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{p.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
                       <span className="flex flex-none items-center gap-1.5">
                         {p.compareAt && p.compareAt > p.price && <span className="text-[11px] font-bold text-muted line-through">{money(p.compareAt)}</span>}
                         <span className={`whitespace-nowrap text-[13.5px] font-extrabold ${p.compareAt && p.compareAt > p.price ? 'text-[#E0568F]' : 'text-ink'}`}>{money(p.price)}</span>
@@ -706,7 +702,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
 
-      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} strokeWidth={2.6} />{L('Nuevo producto', 'New product')}</button>
+      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} stroke={2.6} />{L('Nuevo producto', 'New product')}</button>
     </div>
   );
 
@@ -720,13 +716,13 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
           return (
             <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
               <span className="flex flex-none flex-col">
-                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} strokeWidth={2.6} /></button>
-                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} strokeWidth={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
               </span>
               <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('producto', 'product') : L('productos', 'products')}</div>
                 </div>
               </button>
@@ -743,7 +739,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   const variantsTab = (
     <div className="mx-auto max-w-[720px]">
       <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Layers size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Layers size={15} className="text-white" stroke={2.2} /></span>
         <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{L('Conjuntos de opciones reutilizables', 'Reusable option sets')}</span><span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea talla/color una vez, úsalo en cualquier producto.', 'Build size/color once, use it on any product.')}</span></span>
       </div>
       {cfg.optionSets.length === 0 ? (
@@ -754,9 +750,9 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
             const used = optUsedBy(o.id); const n = variantCount([o.id], cfg.optionSets);
             return (
               <button key={o.id} onClick={() => setOptSheet({ open: true, initial: o })} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Layers size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Layers size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(o.es, o.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(o.es, o.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
                   <span className="mt-0.5 block truncate text-[10.5px] font-semibold text-ink-3">{o.values.map((v) => L(v.es, v.en ?? v.es)).join(' · ')}</span>
                   <span className="mt-1 block text-[10px] font-semibold text-muted-2">{o.single ? `${n} ${L('variantes', 'variants')}` : L('extras', 'add-ons')} · {used} {used === 1 ? L('producto', 'product') : L('productos', 'products')}</span>
                 </span>
@@ -785,7 +781,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
               </div>
               <div className="flex items-center gap-2.5 p-3">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></div>
                   {(c.descEs || c.descEn) && <div className="mt-0.5 truncate text-[10.5px] font-medium text-muted-2">{L(c.descEs ?? '', c.descEn ?? '')}</div>}
                 </div>
               </div>
@@ -818,7 +814,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                 <button onClick={() => setDiscSheet({ open: true, initial: d })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-lilac text-[13px] font-extrabold text-primary-dark">{val}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5"><span className="truncate font-mono text-[12.5px] font-extrabold text-ink">{d.code}</span>{d.auto && <span className="rounded bg-lilac px-1.5 py-px text-[8px] font-extrabold text-primary-dark">{L('Auto', 'Auto')}</span>}<Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></div>
+                    <div className="flex items-center gap-1.5"><span className="truncate font-mono text-[12.5px] font-extrabold text-ink">{d.code}</span>{d.auto && <span className="rounded bg-lilac px-1.5 py-px text-[8px] font-extrabold text-primary-dark">{L('Auto', 'Auto')}</span>}<Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></div>
                     <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{L(d.descEs, d.descEn)}</div>
                   </div>
                 </button>
@@ -896,7 +892,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
 
       {/* delivery + shipping live in the shared "Entregas y envíos" module */}
       <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} strokeWidth={2} /></span>
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} stroke={2} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[12.5px] font-extrabold text-ink">{L('Entregas y envíos', 'Delivery & shipping')}</span>
           <span className="block text-[10.5px] font-semibold leading-snug text-muted-2">{L('Zonas, repartidores y envío nacional — compartido con tu menú', 'Zones, drivers & national shipping — shared with your menu')}</span>

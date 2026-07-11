@@ -5,7 +5,7 @@
 // footer. Converts to explore or register.
 
 import { useRouter } from 'next/navigation';
-import { Calendar, Globe, MapPin, Search, Shield, Store, Users } from 'lucide-react';
+import { IconCalendar as Calendar, IconGlobe as Globe, IconMapPin as MapPin, IconSearch as Search, IconShield as Shield, IconBuildingStore as Store, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Avatar, SoonTag, Stars, Wordmark } from '@/components/ui';
@@ -54,7 +54,7 @@ export function LandingScreen() {
           onClick={() => app.setCityOpen(true)}
           className="hidden cursor-pointer items-center gap-1.5 rounded-full bg-lilac-2 px-3 py-2 text-[12px] font-extrabold text-ink md:flex"
         >
-          <MapPin size={13} className="text-primary" strokeWidth={2.4} />
+          <MapPin size={13} className="text-primary" stroke={2.4} />
           {app.city}
         </button>
         <div className="ml-auto flex items-center gap-2.5">
@@ -91,7 +91,7 @@ export function LandingScreen() {
 
             {/* hero search — hidden on mobile per handoff */}
             <div className="mt-[22px] hidden w-full max-w-[440px] items-center gap-2.5 rounded-btn-lg border border-hair bg-white py-[7px] pl-[15px] pr-[7px] shadow-[0_12px_30px_rgba(60,50,110,.1)] md:flex">
-              <Search size={16} className="flex-none text-primary" strokeWidth={2.2} />
+              <Search size={16} className="flex-none text-primary" stroke={2.2} />
               <input
                 value={app.query}
                 onChange={(e) => app.setQuery(e.target.value)}

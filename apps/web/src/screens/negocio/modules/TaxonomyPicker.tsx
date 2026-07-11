@@ -7,7 +7,7 @@
 // extras; pending proposals show as dashed amber chips the owner can cancel.
 
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { IconPlus as Plus, IconX as X } from '@tabler/icons-react';
 import type { Suggestion } from '@/lib/suggestions';
 
 export type ChipGroup = { title?: string; items: [string, string][] };
@@ -76,7 +76,7 @@ export function TaxonomyPicker({
               {s.label_es}
               <span className="rounded bg-white/70 px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase tracking-[.03em] text-amber-ink">{L('pendiente', 'pending')}</span>
               <button type="button" onClick={() => onCancelPending(s.id)} aria-label={L('Cancelar', 'Cancel')} className="cursor-pointer text-amber-ink/70 hover:text-amber-ink">
-                <X size={12} strokeWidth={2.8} />
+                <X size={12} stroke={2.8} />
               </button>
             </span>
           ))}
@@ -86,7 +86,7 @@ export function TaxonomyPicker({
               onClick={() => { setAdding(true); setVal(''); }}
               className="inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] border-dashed border-lilac-line bg-white px-3 py-2 text-[12px] font-extrabold text-primary-dark"
             >
-              <Plus size={13} strokeWidth={2.8} /> {L('Agregar', 'Add')}
+              <Plus size={13} stroke={2.8} /> {L('Agregar', 'Add')}
             </button>
           )}
         </div>

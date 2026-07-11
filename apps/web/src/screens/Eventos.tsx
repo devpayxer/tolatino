@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarPlus, Check, ChevronLeft, ChevronRight, MapPin, Navigation, Share2, Store, Tag, Ticket } from 'lucide-react';
+import { IconCalendarPlus as CalendarPlus, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconMapPin as MapPin, IconNavigation as Navigation, IconShare2 as Share2, IconBuildingStore as Store, IconTag as Tag, IconTicket as Ticket } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -438,7 +438,7 @@ export function EventosScreen() {
           </span>
           <span className="block text-[22px] font-extrabold tracking-[-.02em] text-white md:text-[28px]">{L(fe.tEs, fe.tEn)}</span>
           <span className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-[rgba(255,255,255,.85)]">
-            <MapPin size={13} strokeWidth={2.4} />
+            <MapPin size={13} stroke={2.4} />
             {L(fe.lEs, fe.lEn)} · {goingCount(fe)} {L('asisten', 'going')}
           </span>
         </span>
@@ -531,7 +531,7 @@ export function EventosScreen() {
                 <div className="text-[10px] font-extrabold uppercase tracking-[.05em] text-muted">{catLabel(e.cat)}</div>
                 <div className="mt-1 text-[15px] font-extrabold text-ink">{L(e.tEs, e.tEn)}</div>
                 <div className="mt-1 flex items-center gap-1 text-[12px] font-semibold text-muted">
-                  <MapPin size={12} strokeWidth={2.4} />
+                  <MapPin size={12} stroke={2.4} />
                   {L(e.lEs, e.lEn)}
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-hair pt-3">
@@ -552,7 +552,7 @@ export function EventosScreen() {
             onClick={() => setPage(Math.max(1, curPage - 1))}
             className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage > 1 ? 'cursor-pointer' : 'opacity-40'}`}
           >
-            <ChevronLeft size={15} strokeWidth={2.4} />
+            <ChevronLeft size={15} stroke={2.4} />
           </button>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
             <button
@@ -569,7 +569,7 @@ export function EventosScreen() {
             onClick={() => setPage(Math.min(totalPages, curPage + 1))}
             className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage < totalPages ? 'cursor-pointer' : 'opacity-40'}`}
           >
-            <ChevronRight size={15} strokeWidth={2.4} />
+            <ChevronRight size={15} stroke={2.4} />
           </button>
         </div>
       )}
@@ -607,9 +607,9 @@ export function EventosScreen() {
               target="_blank" rel="noopener noreferrer"
               className="mt-1 flex items-center gap-1.5 text-[12.5px] font-bold text-primary-dark"
             >
-              <MapPin size={13} strokeWidth={2.4} />
+              <MapPin size={13} stroke={2.4} />
               <span className="min-w-0 flex-1 truncate">{L(detail.lEs, detail.lEn)}</span>
-              <Navigation size={12} strokeWidth={2.4} className="flex-none" />
+              <Navigation size={12} stroke={2.4} className="flex-none" />
               <span className="flex-none">{L('Cómo llegar', 'Directions')}</span>
             </a>
             {/* embedded venue map (zero-dep OSM) — only when we have coordinates */}
@@ -632,13 +632,13 @@ export function EventosScreen() {
                 disabled={!pub}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-2.5 text-[12px] font-extrabold text-ink-soft disabled:opacity-40"
               >
-                <CalendarPlus size={15} strokeWidth={2.2} /> {L('Calendario', 'Calendar')}
+                <CalendarPlus size={15} stroke={2.2} /> {L('Calendario', 'Calendar')}
               </button>
               <button
                 onClick={() => doShare(L(detail.tEs, detail.tEn), detail.slug)}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-2.5 text-[12px] font-extrabold text-ink-soft"
               >
-                <Share2 size={15} strokeWidth={2.2} /> {L('Compartir', 'Share')}
+                <Share2 size={15} stroke={2.2} /> {L('Compartir', 'Share')}
               </button>
             </div>
 
@@ -651,7 +651,7 @@ export function EventosScreen() {
             {detail.slug && hasTiers ? (
               <div className="mt-4">
                 <div className="mb-2 flex items-center gap-1.5 text-[13.5px] font-extrabold text-ink">
-                  <Ticket size={16} strokeWidth={2.2} className="text-primary" /> {L('Boletos', 'Tickets')}
+                  <Ticket size={16} stroke={2.2} className="text-primary" /> {L('Boletos', 'Tickets')}
                 </div>
                 <div className="flex flex-col gap-2">
                   {tiers.map((t) => {
@@ -699,7 +699,7 @@ export function EventosScreen() {
                 <div className="mt-3">
                   <div className="flex items-center gap-2">
                     <div className="flex min-w-0 flex-1 items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3 focus-within:border-primary">
-                      <Tag size={14} strokeWidth={2.2} className="flex-none text-muted-2" />
+                      <Tag size={14} stroke={2.2} className="flex-none text-muted-2" />
                       <input
                         value={promoInput}
                         onChange={(e) => { setPromoInput(e.target.value); setPromoMsg(null); }}
@@ -763,7 +763,7 @@ export function EventosScreen() {
         {detail && orderDone && (
           <div className="flex flex-col items-center px-2 py-6 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-              <Check size={28} strokeWidth={3} className="text-green" />
+              <Check size={28} stroke={3} className="text-green" />
             </span>
             <div className="mt-4 text-[19px] font-extrabold text-ink">
               {anyPaid ? L('¡Boletos reservados!', 'Tickets reserved!') : L('¡Boletos confirmados!', 'Tickets confirmed!')}
@@ -801,7 +801,7 @@ export function EventosScreen() {
             onClick={() => router.push(`/negocios/?b=${encodeURIComponent(pub.organizerSlug!)}`)}
             className="mb-3 flex w-full items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-2.5 text-[12px] font-extrabold text-primary-dark"
           >
-            <Store size={14} strokeWidth={2.2} /> {L('Ver su negocio', 'View their business')}
+            <Store size={14} stroke={2.2} /> {L('Ver su negocio', 'View their business')}
           </button>
         )}
         <div className="mb-2 text-[12.5px] font-extrabold text-ink">{L('Otros eventos', 'Other events')}</div>
@@ -829,7 +829,7 @@ export function EventosScreen() {
 
       {toast && (
         <div className="fixed bottom-[86px] left-1/2 z-[70] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal md:bottom-6">
-          <Check size={14} strokeWidth={3} className="text-green" />
+          <Check size={14} stroke={3} className="text-green" />
           {toast}
         </div>
       )}

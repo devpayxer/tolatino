@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronRight, Clock, Loader2, Receipt, Ticket, X } from 'lucide-react';
+import { IconCheck as Check, IconChevronRight as ChevronRight, IconClock as Clock, IconLoader2 as Loader2, IconReceipt as Receipt, IconTicket as Ticket, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useMyActivity } from '@/lib/myActivity';
@@ -107,7 +107,7 @@ export function PurchaseReturnToast() {
           <div className="flex max-w-[92vw] items-center gap-2.5 rounded-full bg-ink px-4 py-2.5 text-[13px] font-extrabold text-white shadow-modal">
             {confirming
               ? <><Loader2 size={15} className="flex-none animate-spin" /><span className="truncate">{L('Confirmando tu pago…', 'Confirming your payment…')}</span></>
-              : <><span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-white/20"><X size={13} strokeWidth={3.2} /></span><span className="truncate">{toast}</span></>}
+              : <><span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-white/20"><X size={13} stroke={3.2} /></span><span className="truncate">{toast}</span></>}
           </div>
         </div>
       )}
@@ -118,7 +118,7 @@ export function PurchaseReturnToast() {
           <div className="flex flex-col">
             <div className="flex flex-col items-center pt-2 text-center">
               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-                <Check size={30} strokeWidth={3.2} className="text-green" />
+                <Check size={30} stroke={3.2} className="text-green" />
               </span>
               <div className="mt-3.5 text-[20px] font-extrabold text-ink">
                 {row.kind === 'order' ? L('¡Pedido confirmado!', 'Order placed!')
@@ -141,7 +141,7 @@ export function PurchaseReturnToast() {
             {/* ETA banner */}
             {row.kind === 'order' && f?.eta_range && (
               <div className="mt-4 flex items-center gap-3 rounded-card bg-primary px-4 py-3.5 text-white">
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20"><Clock size={19} strokeWidth={2.4} /></span>
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20"><Clock size={19} stroke={2.4} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[10.5px] font-bold uppercase tracking-[.04em] text-white/80">{isDelivery ? L('Llega en aprox.', 'Estimated arrival') : L('Listo para recoger en', 'Ready for pickup in')}</span>
                   <span className="block text-[17px] font-extrabold">{f.eta_range}</span>
@@ -159,7 +159,7 @@ export function PurchaseReturnToast() {
                   <div key={String(label)} className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-full ${done ? 'bg-green' : i === 1 ? 'bg-primary' : 'bg-lilac-line'}`}>
-                        {done ? <Check size={11} strokeWidth={3.6} className="text-white" /> : <span className={`h-1.5 w-1.5 rounded-full ${i === 1 ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
+                        {done ? <Check size={11} stroke={3.6} className="text-white" /> : <span className={`h-1.5 w-1.5 rounded-full ${i === 1 ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
                       </span>
                       {i < arr.length - 1 && <span className={`w-[2px] flex-1 ${done ? 'bg-green' : 'bg-lilac-line'}`} style={{ minHeight: 14 }} />}
                     </div>
@@ -178,7 +178,7 @@ export function PurchaseReturnToast() {
                 </div>
               ))}
               {row.kind === 'ticket' && row.result?.tickets && (
-                <div className="flex items-center gap-2 py-0.5"><Ticket size={14} className="flex-none text-primary" strokeWidth={2.4} />{row.result.tickets.length} {L('boletos emitidos', 'tickets issued')}</div>
+                <div className="flex items-center gap-2 py-0.5"><Ticket size={14} className="flex-none text-primary" stroke={2.4} />{row.result.tickets.length} {L('boletos emitidos', 'tickets issued')}</div>
               )}
               <div className="mt-1.5 flex justify-between border-t border-hair pt-2 text-[13.5px] font-extrabold text-ink">
                 <span>{L('Total pagado', 'Total charged')}</span><span>{money(row.amount / 100)}</span>
@@ -193,7 +193,7 @@ export function PurchaseReturnToast() {
               router.push(target);
             }}>
               {row.kind === 'order' ? L('Seguir mi pedido', 'Track my order') : L('Ver en Mi cuenta', 'View in My account')}
-              <ChevronRight size={15} strokeWidth={2.8} className="ml-0.5 inline" />
+              <ChevronRight size={15} stroke={2.8} className="ml-0.5 inline" />
             </PrimaryBtn>
             <button onClick={() => setRow(null)} className="mt-2 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-ink">
               {L('Seguir explorando', 'Keep browsing')}
@@ -202,7 +202,7 @@ export function PurchaseReturnToast() {
         ) : (
           // paid-but-refunded (fulfillment failed → auto-refund) — be honest about it
           <div className="flex flex-col items-center px-2 py-4 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-pink-bg"><Receipt size={24} className="text-pink-dark" strokeWidth={2.2} /></span>
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-pink-bg"><Receipt size={24} className="text-pink-dark" stroke={2.2} /></span>
             <div className="mt-3 text-[17px] font-extrabold text-ink">{L('Pago reembolsado', 'Payment refunded')}</div>
             <div className="mt-1 max-w-[300px] text-[12.5px] font-semibold leading-relaxed text-muted">
               {L('No pudimos completar tu compra (p. ej. se agotó) y tu pago fue reembolsado automáticamente.', "We couldn't complete your purchase (e.g. sold out) and your payment was automatically refunded.")}

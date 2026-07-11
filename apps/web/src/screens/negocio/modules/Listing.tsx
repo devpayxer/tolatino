@@ -9,7 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, ExternalLink, Globe, Image as ImageIcon, ListChecks, Loader2, Lock, MessageCircle, Shield, Star, Store, Tag } from 'lucide-react';
+import { IconClock as Clock, IconExternalLink as ExternalLink, IconGlobe as Globe, IconPhoto as ImageIcon, IconChecklist as ListChecks, IconLoader2 as Loader2, IconLock as Lock, IconMessageCircle as MessageCircle, IconShield as Shield, IconStar as Star, IconStarFilled as StarFilled, IconBuildingStore as Store, IconTag as Tag } from '@tabler/icons-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { formatPhone } from '@/lib/phone';
 import { listSuggestions, proposeSuggestion, cancelSuggestion, type Suggestion, type SuggestionTable } from '@/lib/suggestions';
@@ -247,7 +247,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     return (
       <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-          <Store size={24} className="text-primary" strokeWidth={2.2} />
+          <Store size={24} className="text-primary" stroke={2.2} />
         </span>
         <h3 className="mt-4 text-[17px] font-extrabold text-ink">{L('Conecta tu negocio', 'Connect your business')}</h3>
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -277,7 +277,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       className="flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-field border-[1.5px] border-dashed border-lilac-line bg-lilac-3 px-3.5 py-3 text-left transition-colors hover:bg-lilac-2"
     >
       <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white">
-        <Lock size={15} strokeWidth={2.2} className="text-primary-dark" />
+        <Lock size={15} stroke={2.2} className="text-primary-dark" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
@@ -391,7 +391,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
             {isFree ? proLock(Star, L('Destacar en la tarjeta', 'Feature on the card'), L('Elige las 3 que la gente ve en tu tarjeta al buscar.', 'Pick the 3 people see on your card in search.'))
             : <div className="rounded-field border border-hair bg-app p-3.5">
               <div className="flex items-center gap-2">
-                <Star size={14} strokeWidth={2.4} className="flex-none text-amber-ink" fill="#F4B740" />
+                <StarFilled size={14} className="flex-none text-amber" />
                 <span className="min-w-0 flex-1 text-[12.5px] font-extrabold text-ink">{L('Destacar en la tarjeta', 'Feature on the card')}</span>
                 <span className="flex-none rounded-full bg-white px-2 py-0.5 text-[11px] font-extrabold text-ink-2">{draft.cardFeatures.length}/3</span>
               </div>
@@ -415,7 +415,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                           onClick={() => toggleCard(es)}
                           className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-amber text-ink' : 'bg-lilac-2 text-ink-2'}`}
                         >
-                          <Star size={12} strokeWidth={2.6} fill={on ? '#1E1B2E' : 'none'} />
+                          {on ? <StarFilled size={12} /> : <Star size={12} stroke={2.6} />}
                           {L(es, FEAT_EN[es] ?? es)}
                         </button>
                       );
@@ -587,7 +587,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn" style={{ background: real.tier === 'free' ? '#FCEFD6' : '#E3F5EA' }}>
-                  <Shield size={16} strokeWidth={2.2} className={real.tier === 'free' ? 'text-amber-ink' : 'text-green-dark'} />
+                  <Shield size={16} stroke={2.2} className={real.tier === 'free' ? 'text-amber-ink' : 'text-green-dark'} />
                 </span>
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink">
@@ -600,7 +600,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
               <button onClick={() => go('photos')} className="flex cursor-pointer items-center gap-2.5 text-left">
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2">
-                  <ImageIcon size={16} strokeWidth={2.2} className="text-primary-dark" />
+                  <ImageIcon size={16} stroke={2.2} className="text-primary-dark" />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[12.5px] font-extrabold text-ink">{L('Fotos y media', 'Photos & media')}</span>
@@ -610,7 +610,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
               <button onClick={() => go('hours')} className="flex cursor-pointer items-center gap-2.5 text-left">
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2">
-                  <Clock size={16} strokeWidth={2.2} className="text-primary-dark" />
+                  <Clock size={16} stroke={2.2} className="text-primary-dark" />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[12.5px] font-extrabold text-ink">{L('Horario', 'Hours')}</span>
@@ -624,7 +624,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
             onClick={() => router.push(`/negocios?b=${real.slug}`)}
             className="flex cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark"
           >
-            <ExternalLink size={13} strokeWidth={2.4} />
+            <ExternalLink size={13} stroke={2.4} />
             {L('Ver listado público', 'View public listing')}
           </button>
         </div>

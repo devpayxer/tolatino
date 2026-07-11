@@ -5,7 +5,7 @@
 // comments → thread, save, share). All toggles carry real state.
 
 import { useState } from 'react';
-import { Bookmark, Check, MessageCircle, Share } from 'lucide-react';
+import { IconBookmark as Bookmark, IconBookmarkFilled as BookmarkFilled, IconCheck as Check, IconMessageCircle as MessageCircle, IconShare as Share } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { useInteractions } from '@/lib/interactions';
@@ -185,7 +185,7 @@ export function PostCard({
                 />
                 <span className="relative flex items-center justify-between gap-2.5">
                   <span className="flex items-center gap-[7px] text-[13px] font-extrabold text-ink">
-                    {chosen && <Check size={14} strokeWidth={3} className="text-primary" />}
+                    {chosen && <Check size={14} stroke={3} className="text-primary" />}
                     {label}
                   </span>
                   {voted && <span className="text-[12.5px] font-extrabold text-ink-2">{pct}%</span>}
@@ -225,7 +225,7 @@ export function PostCard({
           onClick={onOpenThread}
           className="flex cursor-pointer items-center gap-1.5 text-[13px] font-extrabold text-muted"
         >
-          <MessageCircle size={16} strokeWidth={2.2} />
+          <MessageCircle size={16} stroke={2.2} />
           {commentTotal}
         </button>
         <button
@@ -234,7 +234,7 @@ export function PostCard({
           className="ml-auto flex cursor-pointer items-center"
           aria-label={L('Guardar', 'Save')}
         >
-          <Bookmark size={16} strokeWidth={2.2} className={saveOn ? 'text-primary' : 'text-muted'} fill={saveOn ? '#7B61FF' : 'none'} />
+          {saveOn ? <BookmarkFilled size={16} className="text-primary" /> : <Bookmark size={16} stroke={2.2} className="text-muted" />}
         </button>
         <button
           disabled={preview}
@@ -242,7 +242,7 @@ export function PostCard({
           className={`flex cursor-pointer items-center gap-1.5 text-[12px] font-extrabold ${copied ? 'text-green-dark' : 'text-muted'}`}
           aria-label={L('Compartir', 'Share')}
         >
-          <Share size={16} strokeWidth={2.2} />
+          <Share size={16} stroke={2.2} />
           {copied && <span>{L('Copiado', 'Copied')}</span>}
         </button>
       </div>

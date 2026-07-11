@@ -6,7 +6,7 @@
 // KPIs, verification checklist and plan comparison.
 
 import { useState } from 'react';
-import { Calendar, Check, Eye, Lock, ShoppingBag, Star, Ticket, Truck, User, Utensils, DollarSign } from 'lucide-react';
+import { IconCalendar as Calendar, IconCheck as Check, IconEye as Eye, IconLock as Lock, IconShoppingBag as ShoppingBag, IconStar as Star, IconTicket as Ticket, IconTruck as Truck, IconUser as User, IconToolsKitchen2 as Utensils, IconCurrencyDollar as DollarSign } from '@tabler/icons-react';
 import { BigChart, Donut, HourBar, Spark } from '@/components/charts';
 import type { PanelCtx } from '@/screens/negocio/tabs';
 
@@ -137,7 +137,7 @@ export function InsightsPaid({ ctx }: { ctx: PanelCtx }) {
           {todos.map((t, i) => (
             <div key={t.nm} className={`flex items-center gap-3 py-2.5 ${i < todos.length - 1 ? 'border-b border-hair' : ''}`}>
               <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 ${t.done ? 'border-green bg-green' : 'border-[#D8D2E6] bg-white'}`}>
-                {t.done && <Check size={11} strokeWidth={3.6} className="text-white" />}
+                {t.done && <Check size={11} stroke={3.6} className="text-white" />}
               </span>
               <span className="min-w-0 flex-1">
                 <span className={`block text-[12.5px] font-extrabold ${t.done ? 'text-muted line-through' : 'text-ink'}`}>{t.nm}</span>
@@ -401,7 +401,7 @@ export function InsightsFree({ ctx }: { ctx: PanelCtx }) {
               <span className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: k.bg }}>
                 <k.Icon size={15} strokeWidth={2.2} style={{ color: k.c }} />
               </span>
-              {k.locked && <Lock size={13} className="text-muted-faint" strokeWidth={2.4} />}
+              {k.locked && <Lock size={13} className="text-muted-faint" stroke={2.4} />}
             </div>
             <div className="mt-2 text-[11px] font-bold text-muted">{k.label}</div>
             <div className="mt-0.5 text-[19px] font-extrabold" style={{ color: k.locked ? '#B7B3C6' : '#1E1B2E' }}>{k.value}</div>
@@ -423,7 +423,7 @@ export function InsightsFree({ ctx }: { ctx: PanelCtx }) {
             {checklist.map(([ok, t, d]) => (
               <div key={t} className={`flex items-center gap-3 rounded-btn-lg border p-3 ${ok ? 'border-[#A7E3C0] bg-[#ECFBF2]' : 'border-hair bg-white'}`}>
                 <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border-2 ${ok ? 'border-green bg-green' : 'border-[#D8D2E6] bg-white'}`}>
-                  {ok && <Check size={11} strokeWidth={3.6} className="text-white" />}
+                  {ok && <Check size={11} stroke={3.6} className="text-white" />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className={`block text-[12.5px] font-extrabold ${ok ? 'text-[#176B3A]' : 'text-ink'}`}>{t}</span>

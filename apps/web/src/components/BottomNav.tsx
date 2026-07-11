@@ -4,7 +4,7 @@
 // · Eventos · Alertas — per Handoff v2.
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Calendar, Plus, Store, Users } from 'lucide-react';
+import { IconBell as Bell, IconCalendar as Calendar, IconPlus as Plus, IconBuildingStore as Store, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useNotifications } from '@/lib/notifications';
@@ -41,7 +41,7 @@ export function BottomNav() {
             className="-mt-5 flex h-[54px] w-[54px] cursor-pointer items-center justify-center rounded-full bg-primary shadow-cta"
             aria-label={L('Publicar', 'Post')}
           >
-            <Plus size={26} strokeWidth={2.6} className="text-white" />
+            <Plus size={26} stroke={2.6} className="text-white" />
           </button>
         </div>
         {item(VIEW_PATH.eventos, Calendar, L('Eventos', 'Events'))}
@@ -50,7 +50,7 @@ export function BottomNav() {
           className="relative flex flex-1 cursor-pointer flex-col items-center gap-1 py-2"
         >
           <span className="relative">
-            <Bell size={22} strokeWidth={2} className="text-muted-2" />
+            <Bell size={22} stroke={2} className="text-muted-2" />
             {unreadCount > 0 && (
               <span className="absolute -right-1.5 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[9px] font-extrabold text-white">
                 {unreadCount}

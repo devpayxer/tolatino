@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronRight, Clock3, Link2, Loader2, Plus, Search, Store, Trash2, X } from 'lucide-react';
+import { IconCheck as Check, IconChevronRight as ChevronRight, IconClock as Clock3, IconLink as Link2, IconLoader2 as Loader2, IconPlus as Plus, IconSearch as Search, IconBuildingStore as Store, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
 import { useBizAdmin, type BizRow } from '@/lib/bizAdmin';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge, Overlay, OverlayTitle } from '@/components/ui';
@@ -163,7 +163,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
     return (
       <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-          <Store size={24} className="text-primary" strokeWidth={2.2} />
+          <Store size={24} className="text-primary" stroke={2.2} />
         </span>
         <h3 className="mt-4 text-[17px] font-extrabold text-ink">{L('Conecta tu negocio', 'Connect your business')}</h3>
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -193,12 +193,12 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
             <span>{catLabel(r.otherCategory)}</span>
             {pending ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-bg px-1.5 py-0.5 text-[10px] font-extrabold text-amber-ink">
-                <Clock3 size={10} strokeWidth={2.6} />
+                <Clock3 size={10} stroke={2.6} />
                 {L('Pendiente de aprobación', 'Pending approval')}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 rounded-full bg-green-bg px-1.5 py-0.5 text-[10px] font-extrabold text-green-dark">
-                <Check size={10} strokeWidth={3} />
+                <Check size={10} stroke={3} />
                 {r.sameOwner ? L('Tuyo · activo', 'Yours · active') : L('Activo', 'Active')}
               </span>
             )}
@@ -210,7 +210,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
           aria-label={pending ? L('Cancelar solicitud', 'Cancel request') : L('Quitar relación', 'Remove link')}
           className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-btn text-pink-dark disabled:opacity-50"
         >
-          {busy === r.relationId ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} strokeWidth={2.2} />}
+          {busy === r.relationId ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} stroke={2.2} />}
         </button>
       </div>
     );
@@ -221,7 +221,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
       <div className="mx-auto max-w-[640px]">
         <div className="rounded-card border border-hair bg-white p-4 shadow-card md:p-5">
           <div className="mb-1 flex items-center gap-2 text-[13px] font-extrabold text-ink">
-            <Link2 size={16} strokeWidth={2.2} className="text-primary-dark" />
+            <Link2 size={16} stroke={2.2} className="text-primary-dark" />
             {L('Listados relacionados', 'Related listings')}
           </div>
           <p className="mb-3.5 text-[12px] font-medium leading-relaxed text-muted">
@@ -233,7 +233,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
             onClick={() => setSheet(true)}
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn bg-primary py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
           >
-            <Plus size={15} strokeWidth={2.6} />
+            <Plus size={15} stroke={2.6} />
             {L('Relacionar un listado', 'Link a listing')}
           </button>
 
@@ -267,7 +267,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
                         disabled={busy === r.relationId}
                         className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50"
                       >
-                        {busy === r.relationId ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={2.8} />}
+                        {busy === r.relationId ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} stroke={2.8} />}
                         {L('Aprobar', 'Approve')}
                       </button>
                       <button
@@ -291,7 +291,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
             </div>
             {approved.length + pendingOut.length === 0 ? (
               <div className="rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app px-4 py-6 text-center">
-                <Link2 size={22} strokeWidth={2} className="mx-auto text-primary-dark" />
+                <Link2 size={22} stroke={2} className="mx-auto text-primary-dark" />
                 <div className="mt-2 text-[13px] font-extrabold text-ink">{L('Aún no hay listados relacionados', 'No linked listings yet')}</div>
                 <div className="mt-0.5 text-[11.5px] font-semibold text-muted">{L('Relaciona una sucursal, un aliado o un colaborador.', 'Link a branch, a partner or a collaborator.')}</div>
               </div>
@@ -323,7 +323,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
                       onClick={() => doRequest(rowToCandidate(b))}
                       className="flex flex-none cursor-pointer items-center gap-1 rounded-btn bg-lilac-2 px-3 py-2 text-[11.5px] font-extrabold text-primary-dark"
                     >
-                      <Plus size={13} strokeWidth={2.8} />
+                      <Plus size={13} stroke={2.8} />
                       {L('Relacionar', 'Link')}
                     </button>
                   </div>
@@ -418,7 +418,7 @@ function LinkSheet({
         <>
           <OverlayTitle title={L('Relacionar un listado', 'Link a listing')} onClose={onClose} />
           <div className="flex items-center gap-2 rounded-btn border-[1.5px] border-lilac-line bg-app px-3 py-2.5">
-            <Search size={15} className="flex-none text-muted" strokeWidth={2.2} />
+            <Search size={15} className="flex-none text-muted" stroke={2.2} />
             <input
               autoFocus
               value={q}
@@ -507,7 +507,7 @@ function LinkSheet({
             className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm"
           >
             {picked.sameOwner ? L('Relacionar', 'Link') : L('Enviar solicitud', 'Send request')}
-            <ChevronRight size={15} strokeWidth={2.6} />
+            <ChevronRight size={15} stroke={2.6} />
           </button>
         </>
       )}

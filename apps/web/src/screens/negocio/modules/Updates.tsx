@@ -8,10 +8,7 @@
 // into a sticky side rail. Real state: posting adds to the list + switches tab.
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Bookmark, Calendar, Check, Heart, Image as ImageIcon, MessageCircle, MoreHorizontal,
-  RefreshCw, Tag, Trash2, Video, Zap,
-} from 'lucide-react';
+import { IconBookmark as Bookmark, IconCalendar as Calendar, IconCheck as Check, IconHeartFilled as Heart, IconPhoto as ImageIcon, IconMessageCircle as MessageCircle, IconDots as MoreHorizontal, IconRefresh as RefreshCw, IconTag as Tag, IconTrash as Trash2, IconVideo as Video, IconBolt as Zap } from '@tabler/icons-react';
 import { VerifiedBadge } from '@/components/ui';
 import type { PanelCtx } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -212,9 +209,9 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
             ))}
           </div>
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <button onClick={() => setPhoto((v) => !v)} className={attach(photo)}><ImageIcon size={13} strokeWidth={2} />{L('Foto', 'Photo')}</button>
-            <button onClick={() => setVideo((v) => !v)} className={attach(video)}><Video size={13} strokeWidth={2} />{L('Video', 'Video')}</button>
-            <button onClick={() => setKind('offer')} className={attach(kind === 'offer')}><Tag size={13} strokeWidth={2} />{L('Oferta', 'Offer')}</button>
+            <button onClick={() => setPhoto((v) => !v)} className={attach(photo)}><ImageIcon size={13} stroke={2} />{L('Foto', 'Photo')}</button>
+            <button onClick={() => setVideo((v) => !v)} className={attach(video)}><Video size={13} stroke={2} />{L('Video', 'Video')}</button>
+            <button onClick={() => setKind('offer')} className={attach(kind === 'offer')}><Tag size={13} stroke={2} />{L('Oferta', 'Offer')}</button>
           </div>
         </div>
       </div>
@@ -223,7 +220,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
           {L('Borrador', 'Draft')}
         </button>
         <button onClick={() => create('scheduled')} className="flex cursor-pointer items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[11.5px] font-extrabold text-primary-dark">
-          <Calendar size={13} strokeWidth={2.2} />{L('Programar', 'Schedule')}
+          <Calendar size={13} stroke={2.2} />{L('Programar', 'Schedule')}
         </button>
         <button
           onClick={() => create('live')}
@@ -325,15 +322,15 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
             {p.status === 'live' ? (
               <div className="flex flex-wrap items-center gap-4 px-3.5 py-3 text-[10.5px] font-bold text-muted">
                 <span className="flex items-center gap-1"><Eye_ /> {p.views}</span>
-                <span className="flex items-center gap-1 text-pink"><Heart size={13} strokeWidth={2.2} fill="currentColor" /> {p.likes}</span>
-                <span className="flex items-center gap-1"><MessageCircle size={13} strokeWidth={2.2} /> {p.comments}</span>
-                <span className="flex items-center gap-1"><Bookmark size={13} strokeWidth={2.2} /> {p.saves}</span>
+                <span className="flex items-center gap-1 text-pink"><Heart size={13} /> {p.likes}</span>
+                <span className="flex items-center gap-1"><MessageCircle size={13} stroke={2.2} /> {p.comments}</span>
+                <span className="flex items-center gap-1"><Bookmark size={13} stroke={2.2} /> {p.saves}</span>
               </div>
             ) : (
               <div className="mt-2 flex justify-end gap-2 border-t border-hair px-3.5 py-3">
-                {p.status === 'scheduled' && <>{actionBtn(L('Reprogramar', 'Reschedule'))}<button className="flex cursor-pointer items-center gap-1 rounded-field bg-primary px-3 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm"><Zap size={12} strokeWidth={2.4} />{L('Publicar', 'Post now')}</button></>}
-                {p.status === 'draft' && <><button onClick={() => remove(p)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><Trash2 size={12} strokeWidth={2.2} />{L('Eliminar', 'Delete')}</button>{actionBtn(L('Publicar', 'Publish'), true)}</>}
-                {p.status === 'archived' && <button className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><RefreshCw size={12} strokeWidth={2.2} />{L('Reusar', 'Re-run')}</button>}
+                {p.status === 'scheduled' && <>{actionBtn(L('Reprogramar', 'Reschedule'))}<button className="flex cursor-pointer items-center gap-1 rounded-field bg-primary px-3 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm"><Zap size={12} stroke={2.4} />{L('Publicar', 'Post now')}</button></>}
+                {p.status === 'draft' && <><button onClick={() => remove(p)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><Trash2 size={12} stroke={2.2} />{L('Eliminar', 'Delete')}</button>{actionBtn(L('Publicar', 'Publish'), true)}</>}
+                {p.status === 'archived' && <button className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><RefreshCw size={12} stroke={2.2} />{L('Reusar', 'Re-run')}</button>}
               </div>
             )}
           </div>
@@ -369,7 +366,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />
+          <Check size={14} stroke={2.6} className="text-[#7BE0A8]" />
           {toast}
         </div>
       )}

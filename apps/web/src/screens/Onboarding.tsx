@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronLeft, LocateFixed, Lock, Mail, MapPin, Search, User as UserIcon } from 'lucide-react';
+import { IconCheck as Check, IconChevronLeft as ChevronLeft, IconCurrentLocation as LocateFixed, IconLock as Lock, IconMail as Mail, IconMapPin as MapPin, IconSearch as Search, IconUser as UserIcon } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth, authErrorText } from '@/lib/auth';
@@ -69,7 +69,7 @@ export function OnboardingScreen() {
             className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card"
             aria-label={L('Volver', 'Back')}
           >
-            <ChevronLeft size={17} strokeWidth={2.4} className="text-ink" />
+            <ChevronLeft size={17} stroke={2.4} className="text-ink" />
           </button>
         )}
         <Wordmark size="md" />
@@ -114,15 +114,15 @@ export function OnboardingScreen() {
               <p className="mt-1 text-[13px] font-medium text-muted">{L('Es gratis y toma un minuto.', 'It’s free and takes a minute.')}</p>
               <div className="mt-5 flex flex-col gap-3">
                 <label className="relative block">
-                  <UserIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" strokeWidth={2.2} />
+                  <UserIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" stroke={2.2} />
                   <input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Tu nombre', 'Your name')} className={`${inputCls} pl-10`} />
                 </label>
                 <label className="relative block">
-                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" strokeWidth={2.2} />
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" stroke={2.2} />
                   <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="email" placeholder={L('Correo electrónico', 'Email')} className={`${inputCls} pl-10`} />
                 </label>
                 <label className="relative block">
-                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" strokeWidth={2.2} />
+                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" stroke={2.2} />
                   <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" autoComplete="new-password" placeholder={L('Contraseña (mín. 6)', 'Password (min. 6)')} className={`${inputCls} pl-10`} />
                 </label>
               </div>
@@ -143,11 +143,11 @@ export function OnboardingScreen() {
               <p className="mt-1 text-[13px] font-medium text-muted">{L('Bienvenido de vuelta.', 'Welcome back.')}</p>
               <div className="mt-5 flex flex-col gap-3">
                 <label className="relative block">
-                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" strokeWidth={2.2} />
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" stroke={2.2} />
                   <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="email" placeholder={L('Correo electrónico', 'Email')} className={`${inputCls} pl-10`} />
                 </label>
                 <label className="relative block">
-                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" strokeWidth={2.2} />
+                  <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" stroke={2.2} />
                   <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" autoComplete="current-password" placeholder={L('Contraseña', 'Password')} className={`${inputCls} pl-10`} onKeyDown={(e) => e.key === 'Enter' && doLogin()} />
                 </label>
               </div>
@@ -168,7 +168,7 @@ export function OnboardingScreen() {
           {step === 'done' && (
             <div className="flex flex-col items-center text-center">
               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-                <Check size={28} strokeWidth={3} className="text-green" />
+                <Check size={28} stroke={3} className="text-green" />
               </span>
               <h1 className="mt-4 text-[22px] font-extrabold tracking-[-.02em] text-ink">{L('¡Listo!', 'All set!')}</h1>
               <p className="mt-1.5 max-w-[300px] text-[13px] font-medium text-muted">
@@ -248,7 +248,7 @@ function LocationStep({ onPick }: { onPick: (p: Place) => void }) {
     return (
       <div className="text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-          <MapPin size={24} className="text-primary" strokeWidth={2.2} />
+          <MapPin size={24} className="text-primary" stroke={2.2} />
         </span>
         <h1 className="mt-4 text-[20px] font-extrabold tracking-[-.02em] text-ink">
           {detected ? L('¿Es esta tu ciudad?', 'Is this your city?') : L('Confirma tu ciudad', 'Confirm your city')}
@@ -259,7 +259,7 @@ function LocationStep({ onPick }: { onPick: (p: Place) => void }) {
             : L('Revisa que sea correcta antes de continuar.', 'Make sure it’s right before continuing.')}
         </p>
         <div className="mx-auto mt-4 flex items-center justify-center gap-2.5 rounded-tile bg-app px-4 py-3.5">
-          <MapPin size={18} className="text-primary" strokeWidth={2.4} />
+          <MapPin size={18} className="text-primary" stroke={2.4} />
           <span className="text-[16px] font-extrabold text-ink">{pending.label}</span>
         </div>
         <PrimaryBtn className="mt-5" onClick={() => onPick(pending)}>
@@ -282,14 +282,14 @@ function LocationStep({ onPick }: { onPick: (p: Place) => void }) {
 
       <button onClick={detect} disabled={locating} className="mt-4 flex w-full cursor-pointer items-center gap-3 rounded-tile bg-lilac-3 p-3 text-left disabled:cursor-wait">
         <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-primary">
-          {locating ? <span className="h-4 w-4 animate-[spin_.8s_linear_infinite] rounded-full border-2 border-white border-t-transparent" /> : <LocateFixed size={17} className="text-white" strokeWidth={2.2} />}
+          {locating ? <span className="h-4 w-4 animate-[spin_.8s_linear_infinite] rounded-full border-2 border-white border-t-transparent" /> : <LocateFixed size={17} className="text-white" stroke={2.2} />}
         </span>
         <span className="text-[13.5px] font-extrabold text-ink">{locating ? L('Detectando…', 'Detecting…') : L('Usar mi ubicación actual', 'Use my current location')}</span>
       </button>
       {err && <div className="mt-2 rounded-btn bg-pink-bg px-3 py-2 text-[11.5px] font-semibold text-pink-dark">{err}</div>}
 
       <div className="mt-3 flex items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px]">
-        <Search size={15} className="flex-none text-primary" strokeWidth={2.2} />
+        <Search size={15} className="flex-none text-primary" stroke={2.2} />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={L('Escribe tu ciudad…', 'Type your city…')} className="min-w-0 flex-1 bg-transparent text-[13.5px] font-medium text-ink outline-none placeholder:text-muted" />
         {searching && <span className="h-3.5 w-3.5 flex-none animate-[spin_.8s_linear_infinite] rounded-full border-2 border-primary border-t-transparent" />}
       </div>
@@ -297,7 +297,7 @@ function LocationStep({ onPick }: { onPick: (p: Place) => void }) {
       <div className="mt-2 flex max-h-[240px] flex-col gap-0.5 overflow-y-auto">
         {list.map((p) => (
           <button key={`${p.label}-${p.lat}`} onClick={() => choose(p)} className="flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-2 py-2.5 text-left text-[13.5px] font-bold text-ink-soft hover:bg-app">
-            <MapPin size={14} className="text-primary" strokeWidth={2.4} />
+            <MapPin size={14} className="text-primary" stroke={2.4} />
             {p.label}
           </button>
         ))}

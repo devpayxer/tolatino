@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, LocateFixed, MapPin, Pencil, Search, Star, Trash2 } from 'lucide-react';
+import { IconCheck as Check, IconCurrentLocation as LocateFixed, IconMapPin as MapPin, IconPencil as Pencil, IconSearch as Search, IconStar as Star, IconTrash as Trash2 } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -195,7 +195,7 @@ export function AddressModal() {
           {locating ? (
             <span className="h-4 w-4 animate-[spin_.8s_linear_infinite] rounded-full border-2 border-white border-t-transparent" />
           ) : (
-            <LocateFixed size={17} className="text-white" strokeWidth={2.2} />
+            <LocateFixed size={17} className="text-white" stroke={2.2} />
           )}
         </span>
         <span className="min-w-0">
@@ -217,7 +217,7 @@ export function AddressModal() {
         />
       )}
       <div className="mt-2 flex items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px]">
-        <Search size={15} className="flex-none text-primary" strokeWidth={2.2} />
+        <Search size={15} className="flex-none text-primary" stroke={2.2} />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -236,12 +236,12 @@ export function AddressModal() {
               onClick={() => choose(a)}
               className="flex w-full cursor-pointer items-start gap-2.5 rounded-[10px] px-2 py-2.5 text-left hover:bg-app"
             >
-              <MapPin size={15} className="mt-0.5 flex-none text-primary" strokeWidth={2.4} />
+              <MapPin size={15} className="mt-0.5 flex-none text-primary" stroke={2.4} />
               <span className="min-w-0 text-[13px] font-bold text-ink-soft">
                 {a.formatted}
                 {a.verified && (
                   <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-[6px] bg-green-bg px-1.5 py-0.5 align-middle text-[9.5px] font-extrabold uppercase tracking-[.03em] text-green-dark">
-                    <Check size={9} strokeWidth={3.4} />
+                    <Check size={9} stroke={3.4} />
                     {L('Verificada', 'Verified')}
                   </span>
                 )}
@@ -301,7 +301,7 @@ export function AddressModal() {
                     <div className="flex flex-none items-center gap-0.5">
                       {!a.is_default && (
                         <button onClick={() => store.setDefault(a.id)} className="cursor-pointer p-1.5 text-muted hover:text-amber" aria-label={L('Predeterminada', 'Set default')}>
-                          <Star size={15} strokeWidth={2.2} />
+                          <Star size={15} stroke={2.2} />
                         </button>
                       )}
                       <button
@@ -312,10 +312,10 @@ export function AddressModal() {
                         className="cursor-pointer p-1.5 text-muted hover:text-primary"
                         aria-label={L('Editar etiqueta', 'Edit label')}
                       >
-                        <Pencil size={14} strokeWidth={2.2} />
+                        <Pencil size={14} stroke={2.2} />
                       </button>
                       <button onClick={() => del(a.id)} className="cursor-pointer p-1.5 text-muted hover:text-pink" aria-label={L('Eliminar', 'Delete')}>
-                        <Trash2 size={14} strokeWidth={2.2} />
+                        <Trash2 size={14} stroke={2.2} />
                       </button>
                     </div>
                   </div>
@@ -341,7 +341,7 @@ export function AddressModal() {
         <>
           {app.address && q.trim().length < 3 && (
             <div className="mt-3 flex items-center gap-2.5 rounded-tile bg-lilac-3 p-3">
-              <Check size={16} className="flex-none text-primary" strokeWidth={2.6} />
+              <Check size={16} className="flex-none text-primary" stroke={2.6} />
               <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{app.address}</span>
               <button
                 onClick={() => {

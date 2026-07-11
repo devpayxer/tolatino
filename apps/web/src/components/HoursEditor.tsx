@@ -9,7 +9,7 @@
 // stacked card so nothing overflows at 392px; two selects share a row via
 // `flex-1 min-w-0`.
 
-import { Lock, Plus, X } from 'lucide-react';
+import { IconLock as Lock, IconPlus as Plus, IconX as X } from '@tabler/icons-react';
 import { fmtShort, type Interval, type WeekHours } from '@/lib/hours';
 
 // Storage order: index 0 = Sunday.
@@ -164,7 +164,7 @@ export function HoursEditor({
                         aria-label={L('Quitar franja', 'Remove slot')}
                         className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
                       >
-                        <X size={14} strokeWidth={2.6} />
+                        <X size={14} stroke={2.6} />
                       </button>
                     )}
                   </div>
@@ -176,7 +176,7 @@ export function HoursEditor({
                       onClick={() => addFranja(d)}
                       className="flex cursor-pointer items-center gap-1.5 self-start text-[11.5px] font-extrabold text-primary-dark"
                     >
-                      <Plus size={13} strokeWidth={2.6} />
+                      <Plus size={13} stroke={2.6} />
                       {L('Otra franja', 'Add slot')}
                     </button>
                   ) : (
@@ -186,7 +186,7 @@ export function HoursEditor({
                       aria-label={L('Otra franja — función Pro', 'Add slot — Pro feature')}
                       className="flex cursor-pointer items-center gap-1.5 self-start rounded-full bg-[rgba(244,183,64,.16)] px-2.5 py-1 text-[11px] font-extrabold text-amber-ink"
                     >
-                      <Lock size={11} strokeWidth={2.6} />
+                      <Lock size={11} stroke={2.6} />
                       {L('Otra franja', 'Add slot')}
                       <span className="rounded bg-amber px-1 py-[1px] text-[8px] font-extrabold uppercase tracking-[.04em] text-ink">Pro</span>
                     </button>

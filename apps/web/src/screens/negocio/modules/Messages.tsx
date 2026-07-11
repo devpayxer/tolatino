@@ -7,7 +7,7 @@
 // sample inbox with local-only replies.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, Loader2, MessageCircle, Send, Store } from 'lucide-react';
+import { IconChevronLeft as ChevronLeft, IconLoader2 as Loader2, IconMessageCircle as MessageCircle, IconSend as Send, IconBuildingStore as Store } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -136,7 +136,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
     return (
       <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-          <Store size={24} className="text-primary" strokeWidth={2.2} />
+          <Store size={24} className="text-primary" stroke={2.2} />
         </span>
         <h3 className="mt-4 text-[17px] font-extrabold text-ink">{L('Conecta tu negocio', 'Connect your business')}</h3>
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -155,7 +155,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
     <div className="flex flex-col overflow-hidden rounded-card border border-hair bg-white shadow-card">
       {convos.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-4 py-14 text-center text-muted">
-          <MessageCircle size={26} strokeWidth={2} className="text-muted-faint" />
+          <MessageCircle size={26} stroke={2} className="text-muted-faint" />
           <span className="text-[13px] font-extrabold text-ink">{L('Sin mensajes todavía', 'No messages yet')}</span>
           <span className="text-[11.5px] font-semibold">{L('Tus clientes te escribirán desde tu listado.', 'Customers will message you from your listing.')}</span>
         </div>
@@ -186,7 +186,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
     <div className="flex h-[70vh] flex-col overflow-hidden rounded-card border border-hair bg-white shadow-card lg:h-[calc(100vh-220px)]">
       <div className="flex flex-none items-center gap-2.5 border-b border-hair px-3.5 py-2.5">
         <button onClick={() => setActiveId(null)} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink lg:hidden" aria-label={L('Volver', 'Back')}>
-          <ChevronLeft size={17} strokeWidth={2.4} />
+          <ChevronLeft size={17} stroke={2.4} />
         </button>
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: active.color }}>
           {active.initials}
@@ -217,7 +217,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
           aria-label={L('Enviar', 'Send')}
           className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-cta-sm disabled:opacity-50"
         >
-          <Send size={16} strokeWidth={2.4} />
+          <Send size={16} stroke={2.4} />
         </button>
       </div>
     </div>

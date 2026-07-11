@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { IconX as X } from '@tabler/icons-react';
 
 // BarcodeDetector is Chromium/Android only. This hook resolves true ONLY when the
 // browser can detect QR codes, so the scanner UI is HIDDEN (never broken) on
@@ -67,7 +67,7 @@ export function QrScanner({ onCode, onClose, L }: { onCode: (v: string) => void;
     <div className="relative overflow-hidden rounded-card bg-ink">
       <video ref={videoRef} autoPlay playsInline muted className="block h-[240px] w-full object-cover" />
       <button onClick={onClose} aria-label={L('Cerrar', 'Close')} className="absolute right-2 top-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-ink/70 text-white">
-        <X size={18} strokeWidth={2.4} />
+        <X size={18} stroke={2.4} />
       </button>
       <div className="absolute inset-x-0 bottom-0 bg-ink/60 px-3 py-2 text-center text-[11px] font-bold text-white">
         {err ? L('No se pudo abrir la cámara — usa el código manual.', "Couldn't open the camera — use the manual code.") : L('Apunta al código QR del boleto', "Point at the ticket's QR code")}

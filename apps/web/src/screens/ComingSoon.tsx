@@ -4,7 +4,7 @@
 // a working "¡Avísame!" waitlist form with success state.
 
 import { useState } from 'react';
-import { Briefcase, Car, Check, Home, Truck } from 'lucide-react';
+import { IconBriefcase as Briefcase, IconCar as Car, IconCheck as Check, IconHome as Home, IconTruck as Truck } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { SOON } from '@/data/fixtures';
@@ -36,7 +36,7 @@ export function ComingSoonScreen({ view }: { view: keyof typeof SOON }) {
 
       {done ? (
         <div className="mt-6 flex items-center gap-2.5 rounded-btn-lg bg-green-bg px-5 py-3.5 text-[13.5px] font-extrabold text-green-dark">
-          <Check size={17} strokeWidth={3} />
+          <Check size={17} stroke={3} />
           {L('¡Listo! Te avisamos cuando abra.', "Done! We'll let you know when it opens.")}
         </div>
       ) : (

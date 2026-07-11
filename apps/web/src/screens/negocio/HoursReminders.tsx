@@ -8,7 +8,7 @@
 // drives a scheduled push — see docs/LAUNCH-CHECKLIST.md.
 
 import { useMemo, useState } from 'react';
-import { CalendarClock, ChevronRight, X } from 'lucide-react';
+import { IconCalendarClock as CalendarClock, IconChevronRight as ChevronRight, IconX as X } from '@tabler/icons-react';
 import type { BizRow } from '@/lib/bizAdmin';
 import type { Lx } from '@/screens/negocio/tabs';
 import { fmtLong, upcomingExceptionReminders, type HoursException } from '@/lib/hours';
@@ -92,7 +92,7 @@ export function HoursReminders({
         return (
           <div key={it.key} className="flex items-start gap-3 rounded-card-sm border border-amber/40 bg-amber-bg/60 p-3 shadow-card">
             <span className="mt-0.5 flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-amber-bg text-amber-ink">
-              <CalendarClock size={17} strokeWidth={2.2} />
+              <CalendarClock size={17} stroke={2.2} />
             </span>
             <button onClick={() => onOpenHours(it.bizId)} className="min-w-0 flex-1 cursor-pointer text-left" aria-label={L('Ver horario', 'View hours')}>
               <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] font-extrabold text-ink">
@@ -109,7 +109,7 @@ export function HoursReminders({
               </span>
               <span className="mt-1 inline-flex items-center gap-0.5 text-[11.5px] font-extrabold text-primary-dark">
                 {L('Ver u editar horario', 'View or edit hours')}
-                <ChevronRight size={13} strokeWidth={2.6} />
+                <ChevronRight size={13} stroke={2.6} />
               </span>
             </button>
             <button
@@ -117,7 +117,7 @@ export function HoursReminders({
               aria-label={L('Descartar recordatorio', 'Dismiss reminder')}
               className="flex h-7 w-7 flex-none cursor-pointer items-center justify-center rounded-btn text-muted-2 hover:bg-white/60"
             >
-              <X size={15} strokeWidth={2.4} />
+              <X size={15} stroke={2.4} />
             </button>
           </div>
         );

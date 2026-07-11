@@ -9,10 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Bell, Bike, Bookmark, CalendarCheck, CalendarDays, Check, ChevronLeft, ChevronRight, Globe, HelpCircle,
-  LayoutDashboard, LogIn, LogOut, Mail, MapPin, Megaphone, Phone, Plus, ShoppingBag, Star, Ticket, Trash2, User, Users,
-} from 'lucide-react';
+import { IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconPhone as Phone, IconPlus as Plus, IconShoppingBag as ShoppingBag, IconStar as Star, IconTicket as Ticket, IconTrash as Trash2, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -186,7 +183,7 @@ export function CuentaScreen() {
         <div className="min-w-0 flex-1">
           <div className="truncate text-[16px] font-extrabold text-ink">{p?.display_name ?? L('Invitado', 'Guest')}</div>
           <button onClick={() => app.setCityOpen(true)} className="mt-1 inline-flex max-w-full cursor-pointer items-center gap-1 rounded-full bg-lilac-2 px-2.5 py-1 text-[11.5px] font-extrabold text-ink">
-            <MapPin size={12} className="flex-none text-primary" strokeWidth={2.4} />
+            <MapPin size={12} className="flex-none text-primary" stroke={2.4} />
             <span className="truncate">{app.city}</span>
           </button>
         </div>
@@ -222,7 +219,7 @@ export function CuentaScreen() {
   const backBar = (title: string) => (
     <div className="mb-4 flex items-center gap-2.5">
       <button onClick={() => setSec('home')} aria-label={L('Volver', 'Back')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink">
-        <ChevronLeft size={18} strokeWidth={2.4} />
+        <ChevronLeft size={18} stroke={2.4} />
       </button>
       <h1 className="text-[19px] font-extrabold tracking-[-.02em] text-ink">{title}</h1>
     </div>
@@ -235,7 +232,7 @@ export function CuentaScreen() {
         <div className="flex flex-col gap-4">
           {guest && (
             <div className="flex items-center gap-3 rounded-card border border-hair bg-white p-3.5 shadow-card">
-              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-lilac"><LogIn size={18} className="text-primary" strokeWidth={2.2} /></span>
+              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-lilac"><LogIn size={18} className="text-primary" stroke={2.2} /></span>
               <span className="min-w-0 flex-1 text-[12.5px] font-semibold text-ink-3">{L('Inicia sesión para editar tu perfil y guardar tu actividad.', 'Sign in to edit your profile and keep your activity.')}</span>
               <button onClick={() => router.push('/entrar')} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Entrar', 'Sign in')}</button>
             </div>
@@ -276,7 +273,7 @@ export function CuentaScreen() {
               onClick={async () => { await auth.signOut(); router.push('/comunidad'); }}
               className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-pink-bg bg-white py-3 text-[13px] font-extrabold text-pink-dark"
             >
-              <LogOut size={15} strokeWidth={2.4} />
+              <LogOut size={15} stroke={2.4} />
               {L('Cerrar sesión', 'Sign out')}
             </button>
           )}
@@ -299,7 +296,7 @@ export function CuentaScreen() {
             <div>
               <span className="mb-1.5 block text-[12px] font-extrabold text-ink">{L('Ciudad', 'City')}</span>
               <button onClick={() => app.setCityOpen(true)} className="flex w-full cursor-pointer items-center justify-between rounded-field border-[1.5px] border-lilac-line bg-app px-3.5 py-3 text-[13.5px] font-bold text-ink">
-                <span className="inline-flex items-center gap-2"><MapPin size={14} className="text-primary" strokeWidth={2.4} />{app.city}</span>
+                <span className="inline-flex items-center gap-2"><MapPin size={14} className="text-primary" stroke={2.4} />{app.city}</span>
                 <ChevronRight size={15} className="text-muted" />
               </button>
             </div>
@@ -320,7 +317,7 @@ export function CuentaScreen() {
             )}
             {addr.addresses.map((a) => (
               <div key={a.id} className={`${cardCls} flex items-center gap-3 p-3.5`}>
-                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2"><MapPin size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2"><MapPin size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[13px] font-extrabold text-ink">{a.label || L('Dirección', 'Address')}</span>
@@ -331,11 +328,11 @@ export function CuentaScreen() {
                 {!a.is_default && (
                   <button onClick={() => addr.setDefault(a.id)} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-2.5 py-1.5 text-[10.5px] font-extrabold text-primary-dark">{L('Predet.', 'Default')}</button>
                 )}
-                <button onClick={() => addr.remove(a.id)} aria-label={L('Eliminar', 'Delete')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-btn text-pink-dark"><Trash2 size={14} strokeWidth={2.2} /></button>
+                <button onClick={() => addr.remove(a.id)} aria-label={L('Eliminar', 'Delete')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-btn text-pink-dark"><Trash2 size={14} stroke={2.2} /></button>
               </div>
             ))}
             <button onClick={() => app.setAddressOpen(true)} className="flex cursor-pointer items-center justify-center gap-2 rounded-tile border-[1.5px] border-dashed border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-primary-dark">
-              <Plus size={15} strokeWidth={2.6} />
+              <Plus size={15} stroke={2.6} />
               {L('Agregar dirección', 'Add address')}
             </button>
           </div>
@@ -384,7 +381,7 @@ export function CuentaScreen() {
             <div className={`${cardCls} p-4`}>
               <div className="mb-2.5 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Cuenta', 'Account')}</div>
               <div className="flex items-center gap-3 py-1">
-                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2"><Mail size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2"><Mail size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-extrabold text-ink">{L('Correo', 'Email')}</span>
                   <span className="block truncate text-[11.5px] font-semibold text-muted">{auth.user?.email ?? '—'}</span>
@@ -392,7 +389,7 @@ export function CuentaScreen() {
               </div>
               {auth.user && (
                 <button onClick={async () => { await auth.signOut(); router.push('/comunidad'); }} className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-pink-bg bg-white py-2.5 text-[12.5px] font-extrabold text-pink-dark">
-                  <LogOut size={14} strokeWidth={2.4} />
+                  <LogOut size={14} stroke={2.4} />
                   {L('Cerrar sesión', 'Sign out')}
                 </button>
               )}
@@ -585,7 +582,7 @@ export function CuentaScreen() {
                       <div key={s.key} className="flex gap-3">
                         <div className="flex flex-col items-center">
                           <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-full ${done ? 'bg-green' : now ? 'bg-primary' : 'bg-lilac-line'}`}>
-                            {done ? <Check size={13} strokeWidth={3.4} className="text-white" /> : <span className={`h-2 w-2 rounded-full ${now ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
+                            {done ? <Check size={13} stroke={3.4} className="text-white" /> : <span className={`h-2 w-2 rounded-full ${now ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
                           </span>
                           {i < steps.length - 1 && <span className={`w-[2.5px] flex-1 ${done ? 'bg-green' : 'bg-lilac-line'}`} style={{ minHeight: 18 }} />}
                         </div>
@@ -606,7 +603,7 @@ export function CuentaScreen() {
                 <div className="relative mb-3 h-[86px] overflow-hidden rounded-field border border-hair" style={{ background: '#EAEEF6' }}>
                   <div className="absolute left-[-10px] top-[32px] h-[6px] w-[150%] bg-white" style={{ transform: 'rotate(-8deg)' }} />
                   <div className="absolute left-[38%] top-[-10px] h-[150%] w-[6px] bg-white" style={{ transform: 'rotate(9deg)' }} />
-                  <span className="absolute left-[20%] top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={13} strokeWidth={2.4} /></span>
+                  <span className="absolute left-[20%] top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={13} stroke={2.4} /></span>
                   <span className="absolute right-[16%] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 border-white bg-green shadow-card" />
                   <span className="absolute bottom-1.5 right-2 rounded-md bg-white/90 px-2 py-0.5 text-[9.5px] font-extrabold text-ink shadow-card">{f.eta ? `ETA ${f.eta}` : L('En ruta', 'En route')}</span>
                 </div>
@@ -620,7 +617,7 @@ export function CuentaScreen() {
                   </span>
                   {f.driver_phone && (
                     <a href={`tel:${f.driver_phone.replace(/[^\d+]/g, '')}`} aria-label={L('Llamar al repartidor', 'Call driver')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg text-green-dark">
-                      <Phone size={15} strokeWidth={2.4} />
+                      <Phone size={15} stroke={2.4} />
                     </a>
                   )}
                 </div>
@@ -629,7 +626,7 @@ export function CuentaScreen() {
               {/* entrega */}
               {isDel && (f.address || f.instructions) && (
                 <div className="rounded-field bg-lilac-2 px-3.5 py-3 text-[12px] font-semibold text-ink-2">
-                  {f.address && <div className="flex items-start gap-2"><MapPin size={13} strokeWidth={2.4} className="mt-0.5 flex-none text-primary" /><span>{f.address_label ? `${f.address_label} · ` : ''}{f.address}</span></div>}
+                  {f.address && <div className="flex items-start gap-2"><MapPin size={13} stroke={2.4} className="mt-0.5 flex-none text-primary" /><span>{f.address_label ? `${f.address_label} · ` : ''}{f.address}</span></div>}
                   {f.instructions && <div className="mt-1.5 text-[11.5px] text-muted">“{f.instructions}”</div>}
                 </div>
               )}

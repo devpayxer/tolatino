@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Flag, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { IconFlag as Flag, IconDots as MoreHorizontal, IconPencil as Pencil, IconTrash as Trash2 } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { useLiveData } from '@/lib/live';
@@ -107,7 +107,7 @@ export function PostMenu({ post }: { post: Post }) {
         aria-label={L('Opciones', 'Options')}
         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-lilac-2"
       >
-        <MoreHorizontal size={18} strokeWidth={2.4} />
+        <MoreHorizontal size={18} stroke={2.4} />
       </button>
 
       {open && (
@@ -124,15 +124,15 @@ export function PostMenu({ post }: { post: Post }) {
                   }}
                   className={`${itemCls} text-ink hover:bg-app`}
                 >
-                  <Pencil size={15} strokeWidth={2.2} /> {L('Editar', 'Edit')}
+                  <Pencil size={15} stroke={2.2} /> {L('Editar', 'Edit')}
                 </button>
                 <button onClick={() => { setOpen(false); setAction('delete'); }} className={`${itemCls} text-pink hover:bg-pink-bg`}>
-                  <Trash2 size={15} strokeWidth={2.2} /> {L('Eliminar', 'Delete')}
+                  <Trash2 size={15} stroke={2.2} /> {L('Eliminar', 'Delete')}
                 </button>
               </>
             ) : (
               <button onClick={openReport} className={`${itemCls} text-ink hover:bg-app`}>
-                <Flag size={15} strokeWidth={2.2} /> {L('Reportar', 'Report')}
+                <Flag size={15} stroke={2.2} /> {L('Reportar', 'Report')}
               </button>
             )}
           </div>

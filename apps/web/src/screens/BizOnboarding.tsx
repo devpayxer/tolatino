@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera, Check, ChevronLeft, Eye, ImagePlus, Lock, Pencil, Tag, X } from 'lucide-react';
+import { IconCamera as Camera, IconCheck as Check, IconChevronLeft as ChevronLeft, IconEye as Eye, IconPhotoPlus as ImagePlus, IconLock as Lock, IconPencil as Pencil, IconTag as Tag, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { PrimaryBtn, VerifiedBadge, Wordmark } from '@/components/ui';
@@ -87,7 +87,7 @@ export function BizOnboardingScreen() {
           <div className="mx-auto flex max-w-[560px] items-center gap-2.5 px-4 py-3">
             {step !== 'auth' ? (
               <button onClick={back} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver', 'Back')}>
-                <ChevronLeft size={16} strokeWidth={2.4} className="text-ink" />
+                <ChevronLeft size={16} stroke={2.4} className="text-ink" />
               </button>
             ) : (
               <Wordmark size="sm" />
@@ -98,7 +98,7 @@ export function BizOnboardingScreen() {
             <div className="ml-auto flex items-center gap-2">
               <LangToggle mini />
               <button onClick={() => router.push(VIEW_PATH.comunidad)} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2" aria-label={L('Salir', 'Exit')}>
-                <X size={14} strokeWidth={2.8} />
+                <X size={14} stroke={2.8} />
               </button>
             </div>
           </div>
@@ -131,7 +131,7 @@ export function BizOnboardingScreen() {
                 {L('Continuar con correo', 'Continue with email')}
               </button>
               <div className="mt-5 flex items-center justify-center gap-1.5 text-[11.5px] font-semibold text-muted">
-                <Lock size={12} strokeWidth={2.4} />
+                <Lock size={12} stroke={2.4} />
                 {L('Gratis para empezar. Sin tarjeta para el listado básico.', 'Free to start. No card needed for the basic listing.')}
               </div>
               <div className="mt-2 text-center text-[12px] font-semibold text-muted">
@@ -186,7 +186,7 @@ export function BizOnboardingScreen() {
                     }`}
                   >
                     <span className={`flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] ${sel ? 'bg-primary text-white' : 'border-2 border-[#D9D5E6]'}`}>
-                      {sel && <Check size={13} strokeWidth={3.4} />}
+                      {sel && <Check size={13} stroke={3.4} />}
                     </span>
                     <span className="text-[13.5px] font-extrabold text-ink">{L(pair[0], pair[1])}</span>
                   </button>
@@ -203,7 +203,7 @@ export function BizOnboardingScreen() {
             <p className="mt-1 text-[13px] font-medium text-muted">{L('Así te verán tus clientes.', 'This is what customers will see.')}</p>
             <button className="mt-5 flex w-full cursor-pointer items-center gap-3 rounded-tile border-[1.5px] border-dashed border-[#D8D2EC] bg-white p-3.5 text-left">
               <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn bg-lilac">
-                <Camera size={19} strokeWidth={2.2} className="text-primary-dark" />
+                <Camera size={19} stroke={2.2} className="text-primary-dark" />
               </span>
               <span>
                 <span className="block text-[13px] font-extrabold text-ink">{L('Agregar logo o foto', 'Add logo or photo')}</span>
@@ -245,7 +245,7 @@ export function BizOnboardingScreen() {
                   L('Estadísticas y ofertas', 'Analytics & offers'),
                 ].map((f) => (
                   <span key={f} className="flex items-center gap-2 text-[12.5px] font-bold text-ink-soft">
-                    <Check size={13} strokeWidth={3.2} className="text-green" />
+                    <Check size={13} stroke={3.2} className="text-green" />
                     {f}
                   </span>
                 ))}
@@ -264,7 +264,7 @@ export function BizOnboardingScreen() {
                   [L('Insignia verificada', 'Verified badge'), false],
                 ].map(([f, ok]) => (
                   <span key={f as string} className={`flex items-center gap-2 text-[12.5px] font-bold ${ok ? 'text-ink-soft' : 'text-muted-faint line-through'}`}>
-                    {ok ? <Check size={13} strokeWidth={3.2} className="text-green" /> : <X size={13} strokeWidth={3.2} className="text-muted-faint" />}
+                    {ok ? <Check size={13} stroke={3.2} className="text-green" /> : <X size={13} stroke={3.2} className="text-muted-faint" />}
                     {f}
                   </span>
                 ))}
@@ -298,7 +298,7 @@ export function BizOnboardingScreen() {
               <span className="text-[16px] font-extrabold text-ink">$4.99</span>
             </div>
             <div className="mt-3 flex items-center justify-center gap-1.5 text-[11.5px] font-semibold text-muted">
-              <Lock size={12} strokeWidth={2.4} />
+              <Lock size={12} stroke={2.4} />
               {L('Pago cifrado y seguro', 'Encrypted, secure payment')}
             </div>
           </>
@@ -321,7 +321,7 @@ export function BizOnboardingScreen() {
             </div>
 
             <div className="mt-3 flex items-center gap-2.5 rounded-tile bg-green-bg p-3.5 text-[13px] font-extrabold text-green-dark">
-              <Check size={17} strokeWidth={3} />
+              <Check size={17} stroke={3} />
               {L('¡Tu listado está activo! Ya apareces en ToLatino.', 'Your listing is live! You now appear on ToLatino.')}
             </div>
 

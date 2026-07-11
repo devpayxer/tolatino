@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, Clock, Loader2, Lock, Plus, Store, Trash2, X } from 'lucide-react';
+import { IconCalendar as CalendarDays, IconClock as Clock, IconLoader2 as Loader2, IconLock as Lock, IconPlus as Plus, IconBuildingStore as Store, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { HoursEditor, defaultWeek } from '@/components/HoursEditor';
 import { fmtLong, type HoursException, type WeekHours } from '@/lib/hours';
@@ -69,7 +69,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
     return (
       <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-          <Store size={24} className="text-primary" strokeWidth={2.2} />
+          <Store size={24} className="text-primary" stroke={2.2} />
         </span>
         <h3 className="mt-4 text-[17px] font-extrabold text-ink">{L('Conecta tu negocio', 'Connect your business')}</h3>
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -129,7 +129,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
       <div className="mx-auto max-w-[640px]">
         <div className="rounded-card border border-hair bg-white p-4 shadow-card md:p-5">
           <div className="mb-1 flex items-center gap-2 text-[13px] font-extrabold text-ink">
-            <Clock size={16} strokeWidth={2.2} className="text-primary-dark" />
+            <Clock size={16} stroke={2.2} className="text-primary-dark" />
             {L('Horario de atención', 'Opening hours')}
           </div>
           <p className="mb-3.5 text-[12px] font-medium leading-relaxed text-muted">
@@ -158,7 +158,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
               {L('Horario semanal', 'Weekly schedule')}
             </button>
             <button type="button" onClick={() => setMode('holidays')} className={seg(mode === 'holidays')}>
-              {isFree && <Lock size={11} strokeWidth={2.6} className="-mt-0.5 mr-1 inline-block align-middle" />}
+              {isFree && <Lock size={11} stroke={2.6} className="-mt-0.5 mr-1 inline-block align-middle" />}
               {L('Feriados y más', 'Holidays & more')}
               {!isFree && upcoming.length > 0 && <span className="ml-1.5 rounded-full bg-lilac px-1.5 text-[10px] text-primary-dark">{upcoming.length}</span>}
             </button>
@@ -170,9 +170,9 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
             /* Feriados y más is Pro — show what it unlocks + upgrade CTA */
             <div className="rounded-field border-[1.5px] border-dashed border-lilac-line bg-lilac-3 px-4 py-6 text-center">
               <span className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white">
-                <CalendarDays size={22} strokeWidth={2.2} className="text-primary-dark" />
+                <CalendarDays size={22} stroke={2.2} className="text-primary-dark" />
                 <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-lilac-3 bg-amber">
-                  <Lock size={9} strokeWidth={2.8} className="text-ink" />
+                  <Lock size={9} stroke={2.8} className="text-ink" />
                 </span>
               </span>
               <div className="mt-3 flex items-center justify-center gap-1.5">
@@ -198,7 +198,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
               {/* list of exceptions */}
               {exceptions.length === 0 ? (
                 <div className="rounded-field border-[1.5px] border-dashed border-lilac-line bg-app px-4 py-6 text-center">
-                  <CalendarDays size={22} strokeWidth={2} className="mx-auto text-primary-dark" />
+                  <CalendarDays size={22} stroke={2} className="mx-auto text-primary-dark" />
                   <div className="mt-2 text-[13px] font-extrabold text-ink">{L('Aún no hay días especiales', 'No special days yet')}</div>
                   <div className="mt-0.5 text-[11.5px] font-semibold text-muted">{L('Agrega feriados, vacaciones o cierres.', 'Add holidays, vacations or closures.')}</div>
                 </div>
@@ -207,7 +207,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                   {exceptions.map((e) => (
                     <div key={e.id} className="flex items-center gap-3 rounded-field border border-hair bg-white p-3">
                       <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-btn ${e.closed ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-dark'}`}>
-                        <CalendarDays size={16} strokeWidth={2.2} />
+                        <CalendarDays size={16} stroke={2.2} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-x-2 text-[12.5px] font-extrabold text-ink">
@@ -217,7 +217,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                         <span className={`mt-0.5 block text-[11.5px] font-bold ${e.closed ? 'text-pink-dark' : 'text-green-dark'}`}>{exWhat(e)}</span>
                       </span>
                       <button onClick={() => removeException(e.id)} aria-label={L('Eliminar', 'Delete')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-btn text-pink-dark">
-                        <Trash2 size={14} strokeWidth={2.2} />
+                        <Trash2 size={14} stroke={2.2} />
                       </button>
                     </div>
                   ))}
@@ -229,7 +229,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                 <div className="mt-3 rounded-field border border-hair bg-app p-3.5">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-[12.5px] font-extrabold text-ink">{L('Nuevo día especial', 'New special day')}</span>
-                    <button onClick={() => setAdding(false)} aria-label={L('Cerrar', 'Close')} className="cursor-pointer text-muted-2"><X size={15} strokeWidth={2.4} /></button>
+                    <button onClick={() => setAdding(false)} aria-label={L('Cerrar', 'Close')} className="cursor-pointer text-muted-2"><X size={15} stroke={2.4} /></button>
                   </div>
                   <div className="flex flex-col gap-2.5">
                     <label className="block">
@@ -279,7 +279,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                   onClick={() => { setAdding(true); setFDate(todayISO()); }}
                   className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-field border-[1.5px] border-dashed border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-primary-dark"
                 >
-                  <Plus size={15} strokeWidth={2.6} />
+                  <Plus size={15} stroke={2.6} />
                   {L('Agregar día especial', 'Add a special day')}
                 </button>
               )}
