@@ -59,8 +59,11 @@ const probe = `(() => {
   await page.getByRole('button', { name: /^Menú$/ }).first().click({ timeout: 15000 });
   await page.waitForTimeout(1800);
 
-  // scroll to a MIDDLE category (not first, not last)
-  await page.evaluate(() => window.scrollTo(0, 2400));
+  // scroll to a MIDDLE category (not first, not last) — as a fraction of the
+  // full document height rather than a fixed pixel, so this stays valid
+  // regardless of how tall the "Ordenar de nuevo"/Populares sections are for
+  // whichever test account's order history is signed in.
+  await page.evaluate(() => window.scrollTo(0, Math.round(document.documentElement.scrollHeight * 0.4)));
   await page.waitForTimeout(900);
   const before = await page.evaluate(probe);
   await page.screenshot({ path: `${SHOTS}/rj-1-before.png` });

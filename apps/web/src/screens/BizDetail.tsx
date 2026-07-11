@@ -163,6 +163,29 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const menuCats = realMenu?.cats ?? MENU;
   // Owner-tagged "Popular" dishes across categories → the top section + purple chip.
   const menuPopular = menuCats.flatMap((c) => c.items.filter((it) => it.tag && it.tag[0] === 'Popular').map((item) => ({ catKey: c.key, item }))).slice(0, 8);
+  // "Ordenar de nuevo" — DoorDash/Uber Eats' "Order it again": items THIS
+  // customer has ordered before from THIS business, still on the current menu.
+  // Matched by display name (either language — a past order may have been
+  // placed in ES or EN) against order history, most-recent order first, deduped.
+  const reorderItems: { catKey: string; item: MenuItem }[] = [];
+  if (user) {
+    const allMenuItems = menuCats.flatMap((c) => c.items.map((item) => ({ catKey: c.key, item })));
+    const seen = new Set<string>();
+    outer: for (const o of act.orders) {
+      // Business.id is just the feed's array index, not the real Supabase id —
+      // match by slug (stable + real on both the order's join and this business).
+      // Skip cancelled orders — they never actually reached the customer.
+      if (o.businesses?.slug !== b.slug || o.status === 'cancelled') continue;
+      for (const oi of o.items) {
+        const nm = oi.name.trim().toLowerCase();
+        const match = allMenuItems.find((m) => m.item.n[0].toLowerCase() === nm || m.item.n[1].toLowerCase() === nm);
+        if (!match || seen.has(match.item.n[0])) continue;
+        seen.add(match.item.n[0]);
+        reorderItems.push(match);
+        if (reorderItems.length >= 8) break outer;
+      }
+    }
+  }
   // Display-only menu: real menu with ordering off → showcase (no +/Pedir/cart).
   const menuDisplayOnly = realMenu != null && !realMenu.ordering;
 
@@ -912,7 +935,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (tab === 'menu') {
       spyLock.current = false; // fresh entry — let the spy track from the top immediately
       if (spySettle.current) window.clearTimeout(spySettle.current);
-      setActiveCat(menuPopular.length >= 3 ? '_pop' : (menuCats[0]?.key ?? ''));
+      setActiveCat(reorderItems.length > 0 ? '_reorder' : menuPopular.length >= 3 ? '_pop' : (menuCats[0]?.key ?? ''));
       if (menuChipRailRef.current) menuChipRailRef.current.scrollLeft = 0;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -980,6 +1003,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   useEffect(() => {
     if (tab !== 'menu') return;
     const keys: string[] = [];
+    if (reorderItems.length > 0) keys.push('_reorder');
     if (menuPopular.length >= 3) keys.push('_pop');
     menuCats.forEach((c) => keys.push(c.key));
     if (keys.length < 2) return;
@@ -1025,7 +1049,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => { window.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); if (spySettle.current) window.clearTimeout(spySettle.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, menuCats, menuPopular.length]);
+  }, [tab, menuCats, menuPopular.length, reorderItems.length]);
   // Keep the active chip centered in the horizontal rail.
   useEffect(() => {
     if (tab !== 'menu' || !activeCat) return;
@@ -1611,6 +1635,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {menuCats.length > 1 && (
             <div style={{ top: menuStickyTop }} className="group sticky z-[15] -mx-3.5 mb-4 border-b border-hair bg-app md:-mx-5">
               <div ref={menuChipRailRef} className="no-scrollbar flex gap-1.5 overflow-x-auto px-3.5 py-2.5 md:px-5">
+                {reorderItems.length > 0 && (
+                  <button data-cat="_reorder" onClick={() => scrollToCat('_reorder')} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_reorder' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
+                    🔁 {L('Ordenar de nuevo', 'Order again')}
+                  </button>
+                )}
                 {menuPopular.length >= 3 && (
                   <button data-cat="_pop" onClick={() => scrollToCat('_pop')} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_pop' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
                     ⭐ {L('Populares', 'Popular')}
@@ -1640,6 +1669,19 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   </button>
                 </>
               )}
+            </div>
+          )}
+
+          {/* Ordenar de nuevo — this customer's past orders from THIS business,
+              first (like DoorDash/Uber Eats "Order it again") so a repeat
+              customer can reorder their usual in one tap. */}
+          {reorderItems.length > 0 && (
+            <div id="menu-cat-_reorder" style={{ scrollMarginTop: menuScrollMargin }} className="mb-5">
+              <div className="mb-2.5 flex items-baseline gap-2">
+                <span className="text-[15.5px] font-extrabold text-ink">{L('Ordenar de nuevo', 'Order again')}</span>
+                <span className="text-[11.5px] font-bold text-muted">{reorderItems.length} {L('platillos', 'items')}</span>
+              </div>
+              <div className={menuDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{reorderItems.map(({ catKey, item }) => itemCard(catKey, item, menuDisplayOnly))}</div>
             </div>
           )}
 

@@ -21,7 +21,7 @@ function curlRelay(req) {
     });
   });
 }
-const activeLabel = `(() => { const a = [...document.querySelectorAll('[data-cat]')].find(c => c.className.includes('bg-primary')); return a ? a.innerText.trim().replace(/^⭐\\s*/, '') : null; })()`;
+const activeLabel = `(() => { const a = [...document.querySelectorAll('[data-cat]')].find(c => c.className.includes('bg-primary')); return a ? a.innerText.trim() : null; })()`;
 const railLeft = `(() => { const s = document.querySelector('[data-cat]')?.closest('.overflow-x-auto'); return s ? Math.round(s.scrollLeft) : -1; })()`;
 
 (async () => {
@@ -44,9 +44,14 @@ const railLeft = `(() => { const s = document.querySelector('[data-cat]')?.close
   await page.getByRole('button', { name: /^Menú$/ }).first().click({ timeout: 15000 });
   await page.waitForTimeout(1800);
 
+  // whichever category is genuinely first (Ordenar de nuevo / Populares / the
+  // first real category — depends on this signed-in test account's own order
+  // history), read dynamically rather than hardcoded.
+  const expectedFirst = (await page.locator('[data-cat]').first().innerText()).trim();
+
   // leave Menú on a FAR category (rail scrolled, stale highlight)
   const lastChip = page.locator('[data-cat]').last();
-  const stale = (await lastChip.innerText()).trim().replace(/^⭐\s*/, '');
+  const stale = (await lastChip.innerText()).trim();
   await lastChip.click();
   await page.waitForTimeout(1600);
   const leftBefore = await page.evaluate(railLeft);
@@ -67,7 +72,7 @@ const railLeft = `(() => { const s = document.querySelector('[data-cat]')?.close
   console.log('rail scrollLeft on re-entry:', leftAfter, '| settled active:', first);
 
   if (distinct.includes(stale)) return fail(`stale category "${stale}" flashed on tab re-entry`);
-  if (first !== 'Populares') return fail(`re-entry active should be first category, got "${first}"`);
+  if (first !== expectedFirst) return fail(`re-entry active should be the first category ("${expectedFirst}"), got "${first}"`);
   if (leftAfter > 8) return fail(`rail did not snap to start on re-entry: scrollLeft=${leftAfter}`);
   console.log('OK — entering Menú snaps to the first category with no stale-highlight flash and the rail resets to the start.');
   await browser.close();

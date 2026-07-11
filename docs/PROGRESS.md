@@ -105,6 +105,33 @@ Regression test: `tools/mobile-audit/spy-modal-open.js`. Swept the other spy/
 sticky/scroll-lock scripts for regressions — all still pass (shared primitive,
 ~84 modals depend on it).
 
+### Menú tab: "Ordenar de nuevo" (Order again) — new (2026-07-11)
+DoorDash/Uber Eats-style: the Menú tab's category rail now leads with an
+"Ordenar de nuevo" chip/section for a signed-in customer who has ordered from
+this business before — the items they've ordered, most-recent first, deduped,
+still on the current menu. Built additively onto the existing rail/scroll-spy
+(same `_pop`/category-key pattern, new `_reorder` key first) and reuses
+`itemCard` as-is, so add/customize/cart behaves identically to every other
+occurrence of that item on the page.
+- **Data:** `useMyActivity()`'s already-loaded `orders` (no new fetch/migration).
+  Matched by item display name (either language) against `MyOrder.items`;
+  matched by **`slug`**, not `business_id` — `Business.id` is just the feed's
+  array index, not the real Supabase id, so id-matching would silently match
+  nothing (or worse, the wrong business). Cancelled orders excluded (never
+  reached the customer); capped at 8 like Populares.
+- **Gating:** signed-out visitors, and signed-in customers with no matching
+  order history at this business, never see it — falls back to Populares/first
+  category exactly as before, zero behavior change for new customers.
+- **Verified:** `tools/mobile-audit/reorder-section.js` (signed-in with real
+  order history → chip first, tap "+" → normal add/customize flow, cart state
+  stays in sync with the same item's other occurrences on the page; signed-out
+  → hidden). Swept `spy-*`/`scroll-lock`/`addon-variant-prompts` for
+  regressions from the new first rail entry — all pass (`spy-tabentry.js` and
+  `spy-modal-open.js` needed small fixes: they'd hardcoded "Populares" as the
+  first category / a fixed scroll pixel offset — now read the actual first
+  chip and a document-height fraction instead, so they stay valid regardless
+  of which chip legitimately leads).
+
 ## How this project ships (read first)
 - **Monorepo:** pnpm + Turborepo. App: `apps/web` (Next.js 15 App Router,
   `output: 'export'` static export, Tailwind). Build: `pnpm --filter @tolatino/web build`.
