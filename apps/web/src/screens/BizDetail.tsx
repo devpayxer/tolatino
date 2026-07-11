@@ -1617,7 +1617,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               separate selection to repeat later, and switching here instantly
               updates the time/fee line below. */}
           {!menuDisplayOnly && payOnline && (
-            <div className="mb-4">
+            <div className="mb-4 rounded-card-sm border border-hair bg-white p-2.5 shadow-card">
               <div className="flex gap-1 rounded-full bg-lilac-2 p-1">
                 {deliveryAvailable && (
                   <button onClick={() => setOrderChannel('delivery')} className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full py-2.5 text-center transition-colors ${orderChannel === 'delivery' ? 'bg-white shadow-cta-sm' : ''}`}>
@@ -1630,7 +1630,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   <span className={`text-[13px] font-extrabold ${!isDelivery ? 'text-primary-dark' : 'text-muted'}`}>{L('Recoger', 'Pickup')}</span>
                 </button>
               </div>
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-field bg-lilac-3 px-3.5 py-2.5">
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 py-1">
                 <span className="text-[12.5px] font-extrabold text-ink">
                   {isDelivery
                     ? `${del?.prep ? `${del.prep + 10}–${del.prep + 25}` : '30–45'} min · ${money(del?.fee ?? 0)}`
