@@ -19,7 +19,7 @@ import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
 import { startMarketplaceCheckout } from '@/lib/stripe';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -433,6 +433,25 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const grandTotal = +(cartTotal + serviceFee + deliveryFee + tip).toFixed(2);
   const belowMin = isDelivery && cartTotal < (del?.min ?? 0);
 
+  // Delivery-radius gate: when the owner set a radius (del.radius, miles) and a
+  // delivery address is chosen, ask PostGIS (delivery_range_check, 0076) whether
+  // it's inside. Out of range → warning card + Pagar disabled; switching address
+  // or to Recoger clears it. Fail-open on RPC errors / no radius / no geocode —
+  // "can't verify" must never block a paying customer.
+  const [rangeCheck, setRangeCheck] = useState<{ addrId: string; inRange: boolean; distanceMi: number | null; radiusMi: number | null } | null>(null);
+  useEffect(() => {
+    if (!isDelivery || !chosenAddr || !del?.radius) { setRangeCheck(null); return; }
+    let cancelled = false;
+    const addrId = chosenAddr.id;
+    checkDeliveryRange(b.slug, chosenAddr.lat, chosenAddr.lng).then((r) => {
+      if (cancelled || !r) return;
+      setRangeCheck({ addrId, inRange: r.inRange, distanceMi: r.distanceMi, radiusMi: r.radiusMi });
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDelivery, chosenAddr?.id, b.slug, del?.radius]);
+  const outOfRange = isDelivery && rangeCheck != null && rangeCheck.addrId === chosenAddr?.id && !rangeCheck.inRange;
+
   const money = (n: number) => `$${n.toFixed(2)}`;
 
   // Default to delivery when the business offers it (DoorDash's default).
@@ -445,7 +464,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // the To'Latino fee). The order is created by the webhook once payment lands.
   const payCart = async () => {
     if (!user) { router.push('/entrar'); return; }
-    if (cartCount === 0 || paying || belowMin) return;
+    if (cartCount === 0 || paying || belowMin || outOfRange) return;
     if (isDelivery && !chosenAddr) { setCartView('address'); return; }
     setPaying(true);
     const items = Object.values(cart).map((l) => ({
@@ -2434,6 +2453,22 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       </span>
                       <ChevronRight size={16} className="flex-none text-muted" />
                     </button>
+                    {/* out of the delivery radius → hard stop: explain with the real
+                        numbers and point to the two ways out (address / pickup) */}
+                    {outOfRange && (
+                      <div className="mt-2 rounded-field bg-pink-bg px-3 py-2.5">
+                        <div className="text-[12px] font-extrabold text-pink-dark">{L('Esta dirección está fuera del rango de entrega', 'This address is outside the delivery range')}</div>
+                        <div className="mt-0.5 text-[11px] font-semibold leading-snug text-ink-3">
+                          {rangeCheck?.distanceMi != null && rangeCheck?.radiusMi != null
+                            ? L(
+                                `Está a ${(Math.round(rangeCheck.distanceMi * 10) / 10).toLocaleString()} mi y ${b.name} entrega hasta ${(Math.round(rangeCheck.radiusMi * 10) / 10).toLocaleString()} mi. `,
+                                `It's ${(Math.round(rangeCheck.distanceMi * 10) / 10).toLocaleString()} mi away and ${b.name} delivers up to ${(Math.round(rangeCheck.radiusMi * 10) / 10).toLocaleString()} mi. `,
+                              )
+                            : ''}
+                          {L('Elige otra dirección o cambia a Recoger.', 'Choose another address or switch to Pickup.')}
+                        </div>
+                      </div>
+                    )}
                     <input
                       value={instructions}
                       onChange={(e) => setInstructions(e.target.value)}
@@ -2487,12 +2522,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     {L(`Pedido mínimo para entrega: $${(del?.min ?? 0).toFixed(2)} — agrega ${money((del?.min ?? 0) - cartTotal)} más`, `Delivery minimum is $${(del?.min ?? 0).toFixed(2)} — add ${money((del?.min ?? 0) - cartTotal)} more`)}
                   </div>
                 )}
-                <PrimaryBtn className="mt-4" onClick={payOnline ? payCart : placeCart} disabled={paying || belowMin}>
+                <PrimaryBtn className="mt-4" onClick={payOnline ? payCart : placeCart} disabled={paying || belowMin || outOfRange}>
                   {paying
                     ? L('Procesando…', 'Processing…')
-                    : isDelivery && !chosenAddr
-                      ? L('Elige tu dirección', 'Choose your address')
-                      : <>{payOnline ? L('Pagar · ', 'Pay · ') : L('Realizar pedido · ', 'Place order · ')}{money(grandTotal)}</>}
+                    : outOfRange
+                      ? L('Fuera del rango de entrega', 'Outside the delivery range')
+                      : isDelivery && !chosenAddr
+                        ? L('Elige tu dirección', 'Choose your address')
+                        : <>{payOnline ? L('Pagar · ', 'Pay · ') : L('Realizar pedido · ', 'Place order · ')}{money(grandTotal)}</>}
                 </PrimaryBtn>
               </>
             )}

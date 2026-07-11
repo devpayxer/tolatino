@@ -65,12 +65,35 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     modules: (r.modules as Record<string, boolean> | null) ?? undefined,
     // seller can take online card payments (business_by_slug only)
     acceptsPayments: r.accepts_payments === true,
-    // the business's own delivery offer (fee / minimum / prep time)
+    // the business's own delivery offer (fee / minimum / prep time / radius)
     delivery: (() => {
       const d = r.delivery as Record<string, unknown> | null | undefined;
       if (!d || d.on !== true) return undefined;
-      return { on: true, fee: Number(d.fee ?? 0), min: Number(d.min ?? 0), prep: Number(d.prep ?? 25) };
+      return {
+        on: true, fee: Number(d.fee ?? 0), min: Number(d.min ?? 0), prep: Number(d.prep ?? 25),
+        // delivery radius in miles; undefined = the owner set no limit
+        radius: d.radius != null && Number(d.radius) > 0 ? Number(d.radius) : undefined,
+      };
     })(),
+  };
+}
+
+/** Is a point within the business's delivery radius? PostGIS does the math
+ *  (delivery_range_check, migration 0076) against the business's geocoded
+ *  location. `inRange` is fail-open: businesses with no radius set (or not
+ *  geocoded) never block. Returns null offline / on error — treat as "can't
+ *  verify", not as out-of-range. */
+export async function checkDeliveryRange(
+  slug: string, lat: number, lng: number,
+): Promise<{ inRange: boolean; distanceMi: number | null; radiusMi: number | null } | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('delivery_range_check', { in_slug: slug, in_lat: lat, in_lng: lng });
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const r = data[0] as { distance_m: number | null; radius_m: number | null; in_range: boolean };
+  return {
+    inRange: r.in_range !== false,
+    distanceMi: r.distance_m != null ? r.distance_m / 1609.344 : null,
+    radiusMi: r.radius_m != null ? r.radius_m / 1609.344 : null,
   };
 }
 

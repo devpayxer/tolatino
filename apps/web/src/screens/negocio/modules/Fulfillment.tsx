@@ -121,7 +121,10 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   const [pickState, setPickState] = useState<Record<number, boolean>>(arrToRec(PICK_DEF));
   const [carrierState, setCarrierState] = useState<Record<number, boolean>>(arrToRec(CARRIER_DEF));
   const [extState, setExtState] = useState<Record<number, boolean>>(arrToRec(EXT_DEF));
-  const [delOps, setDelOps] = useState({ minOrder: '15', prepTime: '20', autoAssign: false, liveTracking: true });
+  // radiusMi: delivery radius in miles — '' = no limit. The cart enforces it via
+  // the delivery_range_check RPC (0076), so a value here gates checkout for
+  // addresses beyond it; empty keeps today's behavior (deliver anywhere).
+  const [delOps, setDelOps] = useState({ minOrder: '15', prepTime: '20', radiusMi: '', autoAssign: false, liveTracking: true });
   const [shipOps, setShipOps] = useState({ freeOver: '75', origin: '', pkg: 'Caja S', handling: '0' });
 
   useEffect(() => {
@@ -499,6 +502,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     <div className="mx-auto max-w-[560px]">
       <div className={`${cardCls} px-3.5`}>
         {settingRow(L('Pedido mínimo', 'Minimum order'), L('Monto mínimo para entrega a domicilio.', 'Minimum for home delivery.'), numBox(delOps.minOrder, (v) => setDelOps((o) => ({ ...o, minOrder: v })), '$'))}
+        {settingRow(L('Radio de entrega', 'Delivery radius'), L('Distancia máxima desde tu local. Vacío = sin límite.', 'Max distance from your location. Empty = no limit.'), numBox(delOps.radiusMi, (v) => setDelOps((o) => ({ ...o, radiusMi: v })), undefined, 'mi'))}
         {settingRow(L('Tiempo de preparación', 'Prep time'), L('Minutos antes de que esté listo para el repartidor.', 'Minutes before ready for the driver.'), numBox(delOps.prepTime, (v) => setDelOps((o) => ({ ...o, prepTime: v })), undefined, 'min'))}
         {settingRow(L('Auto-asignar repartidor', 'Auto-assign driver'), L('Asigna el repartidor libre más cercano al marcar listo.', 'Assign the nearest free driver when marked ready.'), <Toggle on={delOps.autoAssign} onClick={() => setDelOps((o) => ({ ...o, autoAssign: !o.autoAssign }))} />)}
         {settingRow(L('Seguimiento en vivo', 'Live tracking'), L('Muestra al cliente el repartidor en el mapa.', 'Show the customer the driver on the map.'), <Toggle on={delOps.liveTracking} onClick={() => setDelOps((o) => ({ ...o, liveTracking: !o.liveTracking }))} />, true)}

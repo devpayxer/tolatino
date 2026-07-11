@@ -951,6 +951,14 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
   could submit a lower unit price. Tickets are already priced server-side from
   `event_tiers` (safe). Before going live, recompute order line prices from
   `business_items`/`menu_config` server-side (match variant/option modifiers).
+- [ ] **Enforce the delivery radius server-side at charge time.** The radius gate
+  (migration 0076, 2026-07-11) is enforced in the cart UI: `delivery_range_check`
+  (PostGIS) marks the chosen address out-of-range → warning + Pagar disabled. A
+  tampered client could still call the checkout function with an out-of-range
+  address. When doing the re-price pass above, have the marketplace-checkout
+  edge function geocode/verify the submitted delivery address against the same
+  RPC and reject out-of-range orders — same "server stays authoritative at
+  charge time" pattern.
 - [ ] **Percent / amount promo codes on PAID ticket checkout.** Access-code
   unlocked tiers work on the paid path (priced from the DB), but `%`/`$` discount
   codes are **ignored** when paying online (the buyer is charged full tier price +

@@ -75,7 +75,8 @@ export type Business = {
   // (online card) instead of pay-on-pickup. Absent/false on demo fixtures.
   acceptsPayments?: boolean;
   // The business's delivery offer (from its own settings; business_by_slug only).
-  delivery?: { on: boolean; fee: number; min: number; prep: number };
+  // radius = max delivery distance in miles; undefined = the owner set no limit.
+  delivery?: { on: boolean; fee: number; min: number; prep: number; radius?: number };
 };
 
 export const BUSINESSES: Business[] = [

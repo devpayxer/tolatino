@@ -5,6 +5,33 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-11.
 
+## Cart: delivery-radius gate (2026-07-11)
+Founder request: the cart must know whether the chosen delivery address is
+inside the business's delivery range — if not, show a message and disable
+Pagar. Built end-to-end, geo math in PostGIS per skill §5 (never app-side):
+- **Migration 0076** (`supabase/migrations/0076_delivery_range.sql`, applied):
+  `delivery_range_check(slug, lat, lng)` → `distance_m / radius_m / in_range`
+  via `st_dwithin` on `businesses.location` (GIST-indexed); radius comes from
+  `settings.delivery_ops.radiusMi` (miles, strict-regex parsed). **Fail-open**:
+  no radius set, not geocoded, or RPC error → never blocks. Also re-created
+  `business_by_slug` to expose `radius` inside the public `delivery` jsonb.
+- **Owner** (Entregas y envíos → Ajustes): new "Radio de entrega" numBox
+  (`delOps.radiusMi`, suffix `mi`, empty = no limit) persisted with the other
+  delivery_ops. The founder must set a radius for the gate to activate.
+- **Cart** (`BizDetail.tsx`): effect re-checks on address/channel change; out of
+  range → pink card under the address row with the REAL numbers ("Está a
+  104.4 mi y El Sabor entrega hasta 8 mi. Elige otra dirección o cambia a
+  Recoger.") and Pagar disabled with label "Fuera del rango de entrega".
+  Switching address or to Recoger clears it. `payCart` guard also blocks it.
+- **Verified 3 sides** (radius temporarily 8 mi on El Sabor, then reverted to
+  baseline): casa Hazleton (1.4 mi) → enabled; tia NYC (104 mi) → warning +
+  disabled; both recovery paths; owner field loads/edits the stored value.
+  Permanent test `tools/mobile-audit/delivery-range.js` (precondition: a radius
+  set on El Sabor). Cart/menu regression suite still passes.
+- **Deferred** (LAUNCH-CHECKLIST → Payments): enforce the radius server-side in
+  the checkout edge function at charge time (client gate is bypassable), same
+  pass as the order re-pricing item.
+
 ## "¿igual o cambiar?" flow extended to the sheet + cart steppers (2026-07-11)
 The addon add-another prompt ("¿Lo deseas igual o quieres cambiar algo?") that
 already lived on the **menu-card** stepper now also drives two more steppers,
