@@ -177,6 +177,14 @@ any UI request is to **add what's missing, never replace what exists.**
   (To'Latino fees/notifications). A process is done only when all three are
   correct — and all test artifacts are reverted (orders/notifications back to
   baseline, e2e users deleted).
+- **A codemod that scans imports won't catch emoji used as icon-substitutes.**
+  When swapping/auditing the icon library, grep for emoji characters too
+  (`[\u{1F300}-\u{1FAFF}]` etc.) — a functional icon (🛵 delivery, ⭐ popular,
+  🔁 reorder) hand-typed straight into JSX text is invisible to any tool that
+  only looks at `import` statements. Fix the standalone functional ones
+  (chip/button/badge icons); leave decorative emoji in natural-language copy,
+  notification/DB text, and demo content alone — that's brand voice, not an
+  icon-pack gap.
 
 ## Pre-flight checklist (run before finishing any UI/feature task)
 - [ ] **Benchmarked vs. the category leader; matches/beats it; feature-complete —

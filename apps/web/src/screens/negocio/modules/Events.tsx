@@ -1547,7 +1547,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="relative">
       {isFree && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-card-sm bg-amber-bg p-4">
-          <span className="text-[20px]">🎟️</span>
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-white text-amber-ink"><Ticket size={17} stroke={2.2} /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-[13px] font-extrabold text-ink">{L('Eventos y boletos es parte del plan Verified.', 'Events & tickets is part of the Verified plan.')}</span>
             <span className="block text-[11.5px] font-semibold text-amber-ink">{L('Estás viendo una vista previa. Verifica tu negocio para vender boletos.', "You're viewing a preview. Verify your business to sell tickets.")}</span>

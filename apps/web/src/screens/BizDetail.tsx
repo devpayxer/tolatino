@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
+import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconMoped as Moped, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconRepeat as Repeat, IconSend as Send, IconShare as Share, IconShoppingBag as ShoppingBag, IconStarFilled as StarFilled, IconBuildingStore as Store, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -1620,12 +1620,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <div className="mb-4">
               <div className="flex gap-1 rounded-full bg-lilac-2 p-1">
                 {deliveryAvailable && (
-                  <button onClick={() => setOrderChannel('delivery')} className={`flex-1 cursor-pointer rounded-full py-2.5 text-center transition-colors ${orderChannel === 'delivery' ? 'bg-white shadow-cta-sm' : ''}`}>
-                    <span className={`text-[13px] font-extrabold ${orderChannel === 'delivery' ? 'text-primary-dark' : 'text-muted'}`}>🛵 {L('Entrega', 'Delivery')}</span>
+                  <button onClick={() => setOrderChannel('delivery')} className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full py-2.5 text-center transition-colors ${orderChannel === 'delivery' ? 'bg-white shadow-cta-sm' : ''}`}>
+                    <Moped size={16} stroke={2.2} className={orderChannel === 'delivery' ? 'text-primary-dark' : 'text-muted'} />
+                    <span className={`text-[13px] font-extrabold ${orderChannel === 'delivery' ? 'text-primary-dark' : 'text-muted'}`}>{L('Entrega', 'Delivery')}</span>
                   </button>
                 )}
-                <button onClick={() => setOrderChannel('pickup')} className={`flex-1 cursor-pointer rounded-full py-2.5 text-center transition-colors ${!isDelivery ? 'bg-white shadow-cta-sm' : ''}`}>
-                  <span className={`text-[13px] font-extrabold ${!isDelivery ? 'text-primary-dark' : 'text-muted'}`}>🥡 {L('Recoger', 'Pickup')}</span>
+                <button onClick={() => setOrderChannel('pickup')} className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full py-2.5 text-center transition-colors ${!isDelivery ? 'bg-white shadow-cta-sm' : ''}`}>
+                  <ShoppingBag size={16} stroke={2.2} className={!isDelivery ? 'text-primary-dark' : 'text-muted'} />
+                  <span className={`text-[13px] font-extrabold ${!isDelivery ? 'text-primary-dark' : 'text-muted'}`}>{L('Recoger', 'Pickup')}</span>
                 </button>
               </div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-field bg-lilac-3 px-3.5 py-2.5">
@@ -1647,13 +1649,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <div style={{ top: menuStickyTop }} className="group sticky z-[15] -mx-3.5 mb-4 border-b border-hair bg-app md:-mx-5">
               <div ref={menuChipRailRef} className="no-scrollbar flex gap-1.5 overflow-x-auto px-3.5 py-2.5 md:px-5">
                 {reorderItems.length > 0 && (
-                  <button data-cat="_reorder" onClick={() => scrollToCat('_reorder')} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_reorder' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
-                    🔁 {L('Ordenar de nuevo', 'Order again')}
+                  <button data-cat="_reorder" onClick={() => scrollToCat('_reorder')} className={`flex flex-none cursor-pointer items-center gap-1 rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_reorder' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
+                    <Repeat size={13} stroke={2.4} />{L('Ordenar de nuevo', 'Order again')}
                   </button>
                 )}
                 {menuPopular.length >= 3 && (
-                  <button data-cat="_pop" onClick={() => scrollToCat('_pop')} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_pop' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
-                    ⭐ {L('Populares', 'Popular')}
+                  <button data-cat="_pop" onClick={() => scrollToCat('_pop')} className={`flex flex-none cursor-pointer items-center gap-1 rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_pop' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>
+                    <StarFilled size={13} className={activeCat === '_pop' ? 'text-white' : 'text-amber'} />{L('Populares', 'Popular')}
                   </button>
                 )}
                 {menuCats.map((c) => (

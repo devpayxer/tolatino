@@ -305,7 +305,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
                     {!isFree && <VerifiedBadge size={13} />}
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                    {p.pinned && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">📌 {L('Fijado', 'Pinned')}</span>}
+                    {p.pinned && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">{L('Fijado', 'Pinned')}</span>}
                     <span className="text-[9.5px] font-semibold text-muted-2">{L(p.when[0], p.when[1])}</span>
                     <span className={`rounded px-1.5 py-px text-[8px] font-extrabold ${KIND_BADGE[p.kind]}`}>{kindLabel(p.kind)}</span>
                   </div>

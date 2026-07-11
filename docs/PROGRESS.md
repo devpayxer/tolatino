@@ -30,6 +30,18 @@ plain `IconMenu` is a different, wrong 2-line glyph) and `LucideIcon` being a
   (`spy-*`, `scroll-lock`, `addon-variant-prompts`, `reorder-section`) still
   passes — zero functional regressions from the swap.
 - `docs/design-system/README.md` updated (was documented as Lucide).
+- **Follow-up (same day):** founder reported still seeing the old look on the
+  Menú tab's Entrega/Recoger/Populares/Ordenar-de-nuevo row — the codemod only
+  scans `import` statements, and that row used literal emoji (🛵🥡⭐🔁)
+  hand-typed into JSX text, not icon components, so it was invisible to it.
+  Swept the whole app for the same blind spot: fixed the 4 in BizDetail.tsx
+  (now `Moped`/`ShoppingBag`/`Repeat`/`StarFilled`), converted the Events.tsx
+  free-tier ticket banner to a real `Ticket` icon, and decluttered 2 tiny
+  incidental spots (tabs.tsx "⚙ Setup" label, Updates.tsx "📌 Fijado" badge —
+  too small/marginal to warrant an icon, so just dropped the emoji to match
+  their plain-text siblings). Left decorative emoji in copy/notifications/demo
+  content alone (brand voice, not an icon-pack gap). Lesson recorded in the
+  skill (§9) so future icon-pack work greps for emoji too, not just imports.
 
 ## Platform polish batch (2026-07-10) — all verified in a real browser
 - **Business single-page restored** (founder correction): the food menu lives ONLY

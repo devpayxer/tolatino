@@ -100,7 +100,7 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
     },
     {
       label: L('Módulos', 'Modules'),
-      add: { label: '⚙ Setup', color: '#6D4DF6', onAdd: () => go('modules') },
+      add: { label: 'Setup', color: '#6D4DF6', onAdd: () => go('modules') },
       items: [
         it('menu', L('Menú de comida', 'Food menu'), Utensils, { count: am.menu ? dc(isFree ? '8' : '68') : null, locked: !am.menu }),
         it('services', L('Servicios', 'Services'), ci.svc, { count: am.services ? dc('14') : null, locked: !am.services }),
