@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, ChevronRight, Globe, Image as ImageIcon, LogOut, Mail, Shield, Store } from 'lucide-react';
+import { IconBell as Bell, IconChevronRight as ChevronRight, IconGlobe as Globe, IconPhoto as ImageIcon, IconLogout as LogOut, IconMail as Mail, IconShield as Shield, IconBuildingStore as Store } from '@tabler/icons-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useAuth } from '@/lib/auth';
 import { LangToggle } from '@/components/AppHeader';
@@ -88,7 +88,7 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
           <div className={sec}>{L('Idioma', 'Language')}</div>
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-blue-bg">
-              <Globe size={16} strokeWidth={2.2} className="text-blue" />
+              <Globe size={16} stroke={2.2} className="text-blue" />
             </span>
             <span className="min-w-0 flex-1 text-[13px] font-extrabold text-ink">{L('Idioma del panel', 'Dashboard language')}</span>
             <LangToggle mini />
@@ -109,7 +109,7 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
           <div className={sec}>{L('Cuenta', 'Account')}</div>
           <div className="flex items-center gap-3 py-2">
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2">
-              <Mail size={16} strokeWidth={2.2} className="text-primary-dark" />
+              <Mail size={16} stroke={2.2} className="text-primary-dark" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-extrabold text-ink">{L('Correo', 'Email')}</span>
@@ -118,7 +118,7 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
           </div>
           <div className="flex items-center gap-3 py-2">
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-green-bg">
-              <Shield size={16} strokeWidth={2.2} className="text-green-dark" />
+              <Shield size={16} stroke={2.2} className="text-green-dark" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-extrabold text-ink">{L('Plan', 'Plan')}</span>
@@ -130,7 +130,7 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
           </div>
           {user && (
             <button onClick={doSignOut} className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-pink-bg bg-white py-2.5 text-[12.5px] font-extrabold text-pink-dark">
-              <LogOut size={14} strokeWidth={2.4} />
+              <LogOut size={14} stroke={2.4} />
               {L('Cerrar sesión', 'Sign out')}
             </button>
           )}

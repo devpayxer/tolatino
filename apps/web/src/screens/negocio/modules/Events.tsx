@@ -10,10 +10,7 @@
 // sticky rail and the manage/wizard panels widen into multi-column layouts.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Check, DollarSign, ImagePlus, MapPin, Megaphone, Navigation, Plus,
-  QrCode, RefreshCw, Search, Share2, Tag, Ticket, Trash2, TrendingUp, Users, X,
-} from 'lucide-react';
+import { IconCheck as Check, IconCurrencyDollar as DollarSign, IconPhotoPlus as ImagePlus, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconNavigation as Navigation, IconPlus as Plus, IconQrcode as QrCode, IconRefresh as RefreshCw, IconSearch as Search, IconShare2 as Share2, IconTag as Tag, IconTicket as Ticket, IconTrash as Trash2, IconTrendingUp as TrendingUp, IconUsers as Users, IconX as X } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -499,7 +496,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="text-[13.5px] font-extrabold text-ink">{L('Aún no tienes eventos próximos', 'No upcoming events yet')}</div>
             <div className="mt-1 text-[11.5px] font-medium text-muted-2">{L('Crea tu primer evento y ponlo en venta en minutos.', 'Create your first event and put it on sale in minutes.')}</div>
             <button onClick={startWizard} className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
-              <Plus size={15} strokeWidth={2.6} />{L('Crear evento', 'Create event')}
+              <Plus size={15} stroke={2.6} />{L('Crear evento', 'Create event')}
             </button>
           </div>
         )}
@@ -532,7 +529,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div className="mt-3 flex gap-2">
                     <button onClick={() => goManage(e.id)} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Gestionar', 'Manage')}</button>
                     <button onClick={() => goManage(e.id, 'checkin')} className="flex cursor-pointer items-center gap-1.5 rounded-btn border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[11.5px] font-extrabold text-ink">
-                      <QrCode size={13} strokeWidth={2} className="text-primary-dark" />{L('Check-in', 'Check-in')}
+                      <QrCode size={13} stroke={2} className="text-primary-dark" />{L('Check-in', 'Check-in')}
                     </button>
                   </div>
                 </div>
@@ -652,7 +649,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           ))}
         </div>
         <button onClick={startWizard} className="hidden flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm sm:flex">
-          <Plus size={15} strokeWidth={2.6} />{L('Crear evento', 'Create event')}
+          <Plus size={15} stroke={2.6} />{L('Crear evento', 'Create event')}
         </button>
       </div>
 
@@ -664,7 +661,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       {/* mobile create button */}
       <button onClick={startWizard} className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta sm:hidden">
-        <Plus size={16} strokeWidth={2.6} />{L('Crear evento', 'Create event')}
+        <Plus size={16} stroke={2.6} />{L('Crear evento', 'Create event')}
       </button>
     </div>
   );
@@ -772,7 +769,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const attendeesView = (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2.5 rounded-btn border border-hair bg-white px-3 py-2.5">
-        <Search size={15} strokeWidth={2.2} className="text-muted-2" />
+        <Search size={15} stroke={2.2} className="text-muted-2" />
         <input value={attendeeQuery} onChange={(e) => setAttendeeQuery(e.target.value)} placeholder={L('Buscar por nombre o código…', 'Search by name or code…')} className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-ink outline-none placeholder:text-muted-2" />
       </div>
       {persistable ? (
@@ -848,7 +845,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="mt-3"><QrScanner onCode={(v) => { setScanOpen(false); void runCheckin(v); }} onClose={() => setScanOpen(false)} L={L} /></div>
           ) : (
             <button onClick={() => setScanOpen(true)} className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn bg-white/10 py-2.5 text-[12px] font-extrabold text-white">
-              <QrCode size={15} strokeWidth={2.2} /> {L('Escanear con cámara', 'Scan with camera')}
+              <QrCode size={15} stroke={2.2} /> {L('Escanear con cámara', 'Scan with camera')}
             </button>
           )
         )}
@@ -911,7 +908,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 </div>
                 {inn ? (
                   <button onClick={() => setCheckedIn((s) => ({ ...s, [a.name]: false }))} className="flex h-6 w-6 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg" aria-label={L('Deshacer', 'Undo')}>
-                    <Check size={13} strokeWidth={3} className="text-green" />
+                    <Check size={13} stroke={3} className="text-green" />
                   </button>
                 ) : (
                   <button onClick={() => { setCheckedIn((s) => ({ ...s, [a.name]: true })); flash(L('Ingreso registrado', 'Checked in')); }} className="flex-none cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-[10px] font-extrabold text-white">{L('Ingresar', 'Check in')}</button>
@@ -941,7 +938,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         </div>
         <button onClick={() => setTierForm((f) => ({ ...f, hidden: !f.hidden }))} className="flex items-center gap-2 text-left">
-          <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-[6px] border-[1.5px] ${tierForm.hidden ? 'border-primary bg-primary' : 'border-lilac-line bg-white'}`}>{tierForm.hidden && <Check size={13} strokeWidth={3} className="text-white" />}</span>
+          <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-[6px] border-[1.5px] ${tierForm.hidden ? 'border-primary bg-primary' : 'border-lilac-line bg-white'}`}>{tierForm.hidden && <Check size={13} stroke={3} className="text-white" />}</span>
           <span className="text-[11.5px] font-bold text-ink-soft">{L('Oculto — solo visible con código de acceso', 'Hidden — only shown with an access code')}</span>
         </button>
       </div>
@@ -959,7 +956,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {ticketRows && ticketRows.length > 0 && (
         <div className={`${cardCls} p-3.5`}>
           <div className="mb-2.5 flex items-center gap-2">
-            <Ticket size={15} strokeWidth={2.2} className="text-primary-dark" />
+            <Ticket size={15} stroke={2.2} className="text-primary-dark" />
             <span className="text-[12.5px] font-extrabold text-ink">{L('Boletos vendidos', 'Tickets sold')}</span>
             <span className="ml-auto text-[11px] font-bold text-muted-2">{ticketsSold} · ${ticketsRevenue.toLocaleString()}</span>
           </div>
@@ -1020,7 +1017,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {realTiers && (
         <div className="mt-4 border-t border-hair pt-4">
           <div className="mb-1.5 flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink">
-            <Tag size={14} strokeWidth={2.2} className="text-primary-dark" /> {L('Códigos promocionales', 'Promo codes')}
+            <Tag size={14} stroke={2.2} className="text-primary-dark" /> {L('Códigos promocionales', 'Promo codes')}
           </div>
           <div className="mb-2.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('“Acceso” desbloquea un nivel oculto (real ya). Los descuentos ajustan el precio apartado; el cobro llega con pagos.', '“Access” unlocks a hidden tier (real now). Discounts adjust the reserved price; charging arrives with payments.')}</div>
           <div className="flex flex-col gap-2">
@@ -1031,7 +1028,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   {p.kind === 'access' ? L('Acceso', 'Access') : p.kind === 'percent' ? `${p.value}% ${L('desc.', 'off')}` : `$${p.value} ${L('desc.', 'off')}`}
                   {' · '}{p.used}{p.max_uses != null ? `/${p.max_uses}` : ''} {L('usos', 'uses')}
                 </div>
-                <button onClick={() => deletePromo(p.id)} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Eliminar', 'Remove')}><Trash2 size={14} strokeWidth={2} /></button>
+                <button onClick={() => deletePromo(p.id)} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Eliminar', 'Remove')}><Trash2 size={14} stroke={2} /></button>
               </div>
             ))}
           </div>
@@ -1258,7 +1255,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button onClick={() => coverInputRef.current?.click()} className="relative flex h-[132px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-card-sm border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={draft.coverUrl ? { backgroundImage: `url(${draft.coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: `repeating-linear-gradient(135deg,${draftTile})` }}>
           {!draft.coverUrl && (
             <span className="flex flex-col items-center gap-1 text-primary-dark">
-              <ImagePlus size={22} strokeWidth={2} />
+              <ImagePlus size={22} stroke={2} />
               <span className="text-[11px] font-extrabold">{coverBusy ? L('Subiendo…', 'Uploading…') : L('Sube una foto', 'Upload a photo')}</span>
             </span>
           )}
@@ -1304,16 +1301,16 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="relative">
         <label className={labelCls}>{L('Dirección', 'Address')}</label>
         <div className="flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
-          <MapPin size={15} strokeWidth={2.2} className={draft.lat != null ? 'text-green' : 'text-muted-2'} />
+          <MapPin size={15} stroke={2.2} className={draft.lat != null ? 'text-green' : 'text-muted-2'} />
           <input value={draft.venue} onChange={(e) => upD({ venue: e.target.value, lat: null, lng: null })} placeholder={L('Escribe la calle y número…', 'Type the street address…')} className="min-w-0 flex-1 bg-transparent py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
           {addrSearching && <RefreshCw size={14} className="animate-spin text-muted-2" />}
-          {draft.lat != null && !addrSearching && <Check size={15} strokeWidth={3} className="text-green" />}
+          {draft.lat != null && !addrSearching && <Check size={15} stroke={3} className="text-green" />}
         </div>
         {addrResults.length > 0 && (
           <div className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
             {addrResults.map((a, i) => (
               <button key={`${a.formatted}-${i}`} onClick={() => chooseAddr(a)} className="flex w-full cursor-pointer items-start gap-2 rounded-field p-2.5 text-left hover:bg-app">
-                <MapPin size={14} className="mt-0.5 flex-none text-primary" strokeWidth={2.4} />
+                <MapPin size={14} className="mt-0.5 flex-none text-primary" stroke={2.4} />
                 <span className="min-w-0 text-[12.5px] font-bold text-ink-soft">
                   {a.formatted}
                   {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
@@ -1334,9 +1331,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {draft.tiers.map((t, i) => (
         <div key={t.id} className="rounded-btn-lg border border-hair bg-white p-3">
           <div className="mb-2 flex items-center gap-2">
-            <span className="flex h-6 w-6 flex-none items-center justify-center rounded-lg bg-lilac"><Ticket size={13} strokeWidth={2} className="text-primary-dark" /></span>
+            <span className="flex h-6 w-6 flex-none items-center justify-center rounded-lg bg-lilac"><Ticket size={13} stroke={2} className="text-primary-dark" /></span>
             <span className="text-[11px] font-extrabold text-muted-2">{L('Nivel', 'Tier')} {i + 1}</span>
-            {draft.tiers.length > 1 && <button onClick={() => removeTier(t.id)} className="ml-auto cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Quitar', 'Remove')}><Trash2 size={15} strokeWidth={2} /></button>}
+            {draft.tiers.length > 1 && <button onClick={() => removeTier(t.id)} className="ml-auto cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Quitar', 'Remove')}><Trash2 size={15} stroke={2} /></button>}
           </div>
           <input value={t.name} onChange={(e) => setTierField(t.id, { name: e.target.value })} placeholder={L('Nombre (General, VIP…)', 'Name (General, VIP…)')} className={`${fieldCls} mb-2`} />
           <div className="flex gap-2">
@@ -1513,7 +1510,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('list'); setListTab('upcoming'); }}>
     <div className="flex flex-col items-center px-2 pb-8 pt-6 text-center">
       <div className="mb-3.5 flex h-16 w-16 items-center justify-center rounded-card bg-green-bg">
-        <Check size={32} strokeWidth={2.6} className="text-green" />
+        <Check size={32} stroke={2.6} className="text-green" />
       </div>
       <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo evento', 'New event'))} {L('está activo', 'is live')}</div>
       <div className="mt-2 max-w-[320px] text-[13px] font-medium leading-relaxed text-muted">{L('Los boletos están a la venta y el evento aparece en tu listado.', 'Tickets are on sale and the event is on your listing.')}</div>
@@ -1531,7 +1528,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       <div className="mt-5 flex w-full max-w-[420px] flex-col gap-2.5">
         <button onClick={() => { const url = typeof window !== 'undefined' ? `${window.location.origin}/eventos` : ''; if (typeof navigator !== 'undefined' && navigator.clipboard && url) void navigator.clipboard.writeText(url); flash(L('Enlace de eventos copiado', 'Events link copied')); }} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
-          <Share2 size={16} strokeWidth={2.4} />{L('Compartir eventos', 'Share events')}
+          <Share2 size={16} stroke={2.4} />{L('Compartir eventos', 'Share events')}
         </button>
         <button onClick={() => { setView('list'); setListTab('upcoming'); }} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a eventos', 'Back to events')}</button>
       </div>

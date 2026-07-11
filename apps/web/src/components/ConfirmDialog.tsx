@@ -5,7 +5,7 @@
 // tap can be undone. Renders above any Overlay/sheet (z-[90]); bottom-sheet on
 // mobile, centered card on desktop. Controlled: the caller owns `open`.
 
-import { AlertTriangle } from 'lucide-react';
+import { IconAlertTriangle as AlertTriangle } from '@tabler/icons-react';
 import { useScrollLock } from '@/lib/scrollLock';
 
 export function ConfirmDialog({
@@ -31,7 +31,7 @@ export function ConfirmDialog({
       <div onClick={(e) => e.stopPropagation()} className="w-full rounded-t-panel bg-white p-5 pb-7 shadow-sheet md:w-[380px] md:max-w-[calc(100%-28px)] md:rounded-card md:pb-5 md:shadow-modal">
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-pink-bg text-pink-dark">
-            <AlertTriangle size={18} strokeWidth={2.4} />
+            <AlertTriangle size={18} stroke={2.4} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-[15px] font-extrabold text-ink">{title}</div>

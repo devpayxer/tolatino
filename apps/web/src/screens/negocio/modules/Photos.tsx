@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ImagePlus, Loader2, Star, Store, Trash2 } from 'lucide-react';
+import { IconPhotoPlus as ImagePlus, IconLoader2 as Loader2, IconStar as Star, IconBuildingStore as Store, IconTrash as Trash2 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -152,7 +152,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
     return (
       <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-          <Store size={24} className="text-primary" strokeWidth={2.2} />
+          <Store size={24} className="text-primary" stroke={2.2} />
         </span>
         <h3 className="mt-4 text-[17px] font-extrabold text-ink">{L('Conecta tu negocio', 'Connect your business')}</h3>
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -181,7 +181,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
             className="flex h-[68px] w-[68px] flex-none cursor-pointer items-center justify-center rounded-tile border-[1.5px] border-dashed border-lilac-line bg-lilac-3"
             aria-label={L('Subir logo', 'Upload logo')}
           >
-            <ImagePlus size={20} strokeWidth={2} className="text-primary-dark" />
+            <ImagePlus size={20} stroke={2} className="text-primary-dark" />
           </button>
         )}
         <div className="min-w-0 flex-1">
@@ -216,7 +216,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
           disabled={uploading || photos.length >= maxPhotos}
           className="flex flex-none cursor-pointer items-center gap-2 rounded-btn bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-50"
         >
-          {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} strokeWidth={2.4} />}
+          {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} stroke={2.4} />}
           {uploading ? L('Subiendo…', 'Uploading…') : L('Subir fotos', 'Upload photos')}
         </button>
       </div>
@@ -244,7 +244,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
           onClick={() => fileInput.current?.click()}
           className="flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-card border-[1.5px] border-dashed border-lilac-line bg-white text-muted"
         >
-          <ImagePlus size={26} strokeWidth={2} className="text-primary-dark" />
+          <ImagePlus size={26} stroke={2} className="text-primary-dark" />
           <span className="text-[13px] font-extrabold text-ink">{L('Sube tus primeras fotos', 'Upload your first photos')}</span>
           <span className="text-[11.5px] font-semibold">{L('La primera será tu portada', 'The first one becomes your cover')}</span>
         </button>
@@ -256,7 +256,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
               <img src={p.url} alt="" className="h-full w-full object-cover" />
               {p.is_cover && (
                 <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-full bg-ink/85 px-2 py-0.5 text-[9.5px] font-extrabold text-white">
-                  <Star size={10} strokeWidth={2.6} className="text-amber" />
+                  <Star size={10} stroke={2.6} className="text-amber" />
                   {L('Portada', 'Cover')}
                 </span>
               )}
@@ -276,7 +276,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
                   aria-label={L('Eliminar', 'Delete')}
                   className="flex h-7 flex-none cursor-pointer items-center justify-center rounded-btn bg-white/90 px-2 text-pink-dark"
                 >
-                  <Trash2 size={13} strokeWidth={2.4} />
+                  <Trash2 size={13} stroke={2.4} />
                 </button>
               </div>
             </div>

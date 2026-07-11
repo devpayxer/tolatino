@@ -37,7 +37,7 @@ Los archivos `.dc.html` de este paquete son **referencias de diseño creadas en 
 - **React + TypeScript** (Vite o Next.js).
 - **react-router** para rutas; **i18n** (react-i18next o similar) con **ES por defecto, EN secundario**.
 - Estado con **Context/Zustand** (o Redux Toolkit si el equipo lo prefiere).
-- Iconos **Lucide** (mismo estilo lineal redondeado que los SVG inline del prototipo).
+- Iconos **Tabler Icons** (`@tabler/icons-react` — decidido 2026-07-11, reemplazó Lucide; mismo estilo lineal redondeado, catálogo mucho más grande y variantes "filled" para estados activos como ♥ guardado).
 - Estilos a elección del equipo (CSS Modules, Tailwind o styled-components) — el prototipo usa estilos inline, muy fáciles de portar.
 
 **No copies el HTML a producción, ni portes `support.js`.** Úsalo como fuente de verdad visual/comportamental y reimpleméntalo con componentes reales, ruteo real y datos de una API.
@@ -133,7 +133,7 @@ Wordmark tipográfico: **`To'`** (tinta `#1E1B2E`) + **`Latino`** (morado `#7B61
 
 ## 6. Assets
 - **Fuente:** Plus Jakarta Sans (Google Fonts).
-- **Iconos:** SVG inline (stroke 2–2.4px, lineal redondeado). Reemplazar por **Lucide/Feather**.
+- **Iconos:** SVG inline (stroke 2–2.4px, lineal redondeado) → implementados con **Tabler Icons** (`@tabler/icons-react`).
 - **Imágenes:** ninguna real; degradados a rayas por categoría como placeholder → reemplazar por fotos del negocio (degradado como skeleton).
 - **Logo:** solo CSS (ver arriba).
 

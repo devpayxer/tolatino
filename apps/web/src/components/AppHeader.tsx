@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Briefcase, Calendar, Car, Home, MapPin, Plus, Search, Store, Truck, Users, X } from 'lucide-react';
+import { IconBell as Bell, IconBriefcase as Briefcase, IconCalendar as Calendar, IconCar as Car, IconHome as Home, IconMapPin as MapPin, IconPlus as Plus, IconSearch as Search, IconBuildingStore as Store, IconTruck as Truck, IconUsers as Users, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useNotifications } from '@/lib/notifications';
@@ -53,7 +53,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
         mobile ? 'py-[10px]' : 'w-full max-w-[520px] py-[9px]'
       }`}
     >
-      <Search size={16} className="flex-none text-primary" strokeWidth={2.2} />
+      <Search size={16} className="flex-none text-primary" stroke={2.2} />
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -67,7 +67,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
           className="flex h-5 w-5 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-line"
           aria-label="clear"
         >
-          <X size={9} strokeWidth={3.4} className="text-ink-2" />
+          <X size={9} stroke={3.4} className="text-ink-2" />
         </button>
       )}
     </div>
@@ -194,7 +194,7 @@ export function AppHeader() {
           onClick={() => app.setCityOpen(true)}
           className="flex flex-none cursor-pointer items-center gap-[5px] rounded-full bg-lilac-2 px-2.5 py-[7px] text-[12px] font-extrabold text-ink md:px-3 md:py-2"
         >
-          <MapPin size={13} className="text-primary" strokeWidth={2.4} />
+          <MapPin size={13} className="text-primary" stroke={2.4} />
           <span className="max-w-[64px] truncate md:max-w-none">{app.city}</span>
         </button>
 
@@ -209,7 +209,7 @@ export function AppHeader() {
             className="relative hidden h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 md:flex"
             aria-label={L('Notificaciones', 'Notifications')}
           >
-            <Bell size={18} strokeWidth={2} className="text-ink" />
+            <Bell size={18} stroke={2} className="text-ink" />
             {unreadCount > 0 && (
               <span className="absolute right-[5px] top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[9px] font-extrabold text-white">
                 {unreadCount}
@@ -220,7 +220,7 @@ export function AppHeader() {
             onClick={() => app.openPub()}
             className="hidden flex-none cursor-pointer items-center gap-[7px] rounded-field bg-ink px-[15px] py-2.5 text-[12.5px] font-extrabold text-white md:flex"
           >
-            <Plus size={14} strokeWidth={2.4} className="text-amber" />
+            <Plus size={14} stroke={2.4} className="text-amber" />
             <span className="hidden lg:inline">{L('Publicar', 'List')}</span>
           </button>
           {auth.profile ? (
@@ -290,7 +290,7 @@ export function SearchChip({ count, className = '' }: { count: number; className
           className="flex h-4 w-4 flex-none cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,.28)]"
           aria-label="clear search"
         >
-          <X size={8} strokeWidth={4} />
+          <X size={8} stroke={4} />
         </button>
       </span>
     </div>

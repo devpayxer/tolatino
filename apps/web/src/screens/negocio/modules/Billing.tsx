@@ -11,11 +11,7 @@
 // ModulePage; Cancel is a small centered confirm dialog (never a bottom sheet).
 
 import { useEffect, useState } from 'react';
-import {
-  AlertTriangle, Calendar, Check, Download, FileText, Image as ImageIcon,
-  Lock, Mail, MapPin, MessageSquare, Pencil, Plus, Shield, ShoppingBag,
-  Star, Users, X, Zap,
-} from 'lucide-react';
+import { IconAlertTriangle as AlertTriangle, IconCalendar as Calendar, IconCheck as Check, IconDownload as Download, IconFileText as FileText, IconPhoto as ImageIcon, IconLock as Lock, IconMail as Mail, IconMapPin as MapPin, IconMessage2 as MessageSquare, IconPencil as Pencil, IconPlus as Plus, IconShield as Shield, IconShoppingBag as ShoppingBag, IconStar as Star, IconUsers as Users, IconX as X, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey, Tier } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -226,7 +222,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       {isFree && (
         <div className="mt-3 flex items-center gap-2.5 rounded-field bg-amber-bg px-3 py-2.5">
-          <AlertTriangle size={16} strokeWidth={2.2} className="flex-none text-amber-ink" />
+          <AlertTriangle size={16} stroke={2.2} className="flex-none text-amber-ink" />
           <span className="text-[10.5px] font-semibold leading-snug text-amber-ink">
             {L('Llegaste al límite de fotos del plan Free. Mejora para subir ilimitadas.', "You've hit the Free photo limit. Upgrade for unlimited.")}
           </span>
@@ -374,7 +370,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div className="flex items-center gap-2.5 rounded-tile bg-lilac-2 px-4 py-3">
         <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px] bg-primary">
-          <Shield size={16} strokeWidth={2.2} className="text-white" />
+          <Shield size={16} stroke={2.2} className="text-white" />
         </span>
         <div>
           <div className="text-[12px] font-extrabold text-ink">{L('Garantía de 14 días', '14-day guarantee')}</div>
@@ -409,7 +405,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{c.exp}</div>
             </div>
             <button onClick={() => flash(L('Editando tarjeta…', 'Editing card…'))} className="flex-none cursor-pointer p-1 text-muted-2" aria-label={L('Editar', 'Edit')}>
-              <Pencil size={14} strokeWidth={2.2} />
+              <Pencil size={14} stroke={2.2} />
             </button>
           </div>
         ))}
@@ -417,7 +413,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           onClick={() => flash(L('Abriendo formulario de tarjeta…', 'Opening card form…'))}
           className="flex cursor-pointer items-center justify-center gap-2 rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-white p-3.5 text-[12.5px] font-extrabold text-primary-dark"
         >
-          <Plus size={15} strokeWidth={2.4} />{L('Agregar método de pago', 'Add payment method')}
+          <Plus size={15} stroke={2.4} />{L('Agregar método de pago', 'Add payment method')}
         </button>
       </div>
 
@@ -437,7 +433,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           ))}
         </div>
         <div className="flex items-center gap-2 px-1">
-          <Lock size={14} strokeWidth={2.2} className="flex-none text-muted-2" />
+          <Lock size={14} stroke={2.2} className="flex-none text-muted-2" />
           <span className="text-[10px] font-medium leading-snug text-muted-2">
             {L('Pagos protegidos y encriptados. To’Latino nunca guarda tu número completo.', 'Payments are secured and encrypted. To’Latino never stores your full number.')}
           </span>
@@ -474,7 +470,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {invoices.map((iv, i) => (
           <div key={iv[0]} className={`flex items-center gap-3 py-3 ${i < invoices.length - 1 ? 'border-b border-hair' : ''}`}>
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-green-bg">
-              <FileText size={16} strokeWidth={2.2} className="text-green-dark" />
+              <FileText size={16} stroke={2.2} className="text-green-dark" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-[12px] font-extrabold text-ink">{iv[0]}</div>
@@ -485,7 +481,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Pagada', 'Paid')}</span>
             </div>
             <button onClick={() => flash(L('Descargando ', 'Downloading ') + iv[0])} className="flex-none cursor-pointer p-1 text-muted-2" aria-label={L('Descargar', 'Download')}>
-              <Download size={16} strokeWidth={2.2} />
+              <Download size={16} stroke={2.2} />
             </button>
           </div>
         ))}
@@ -535,7 +531,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <div className="mt-2.5 flex flex-col gap-1.5">
                 {p.feats.map((f) => (
                   <div key={f} className="flex items-center gap-2 text-[11px] font-semibold text-ink-soft">
-                    <Check size={13} strokeWidth={2.6} className="flex-none text-green" />{f}
+                    <Check size={13} stroke={2.6} className="flex-none text-green" />{f}
                   </div>
                 ))}
               </div>
@@ -592,7 +588,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             className="max-h-[calc(100%-32px)] w-full max-w-[440px] overflow-y-auto rounded-card bg-white p-5 shadow-modal"
           >
             <span className="flex h-12 w-12 items-center justify-center rounded-tile bg-pink-bg">
-              <AlertTriangle size={22} strokeWidth={2.2} className="text-pink-dark" />
+              <AlertTriangle size={22} stroke={2.2} className="text-pink-dark" />
             </span>
             <div className="mt-3 text-[18px] font-extrabold text-ink">{L('¿Cancelar tu plan?', 'Cancel your plan?')}</div>
             <div className="mt-1.5 text-[12px] font-medium leading-relaxed text-muted">
@@ -607,7 +603,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   L('Fotos ilimitadas (vuelve a 1)', 'Unlimited photos (back to 1)'),
                 ].map((l) => (
                   <div key={l} className="flex items-center gap-2 text-[11px] font-semibold text-ink-soft">
-                    <X size={13} strokeWidth={2.6} className="flex-none text-pink-dark" />{l}
+                    <X size={13} stroke={2.6} className="flex-none text-pink-dark" />{l}
                   </div>
                 ))}
               </div>

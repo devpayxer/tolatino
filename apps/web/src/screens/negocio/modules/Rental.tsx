@@ -16,12 +16,8 @@
 // explorable in demo (local sample); a signed-in owner persists to Supabase.
 
 import { useEffect, useRef, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  AlertTriangle, Boxes, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft,
-  ChevronUp, Copy, DollarSign, Loader2, Lock, Minus, Package, Pencil, Plus, Shield,
-  Store, Trash2, Upload, Zap,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconAlertTriangle as AlertTriangle, IconPackages as Boxes, IconCalendar as CalendarDays, IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronUp as ChevronUp, IconCopy as Copy, IconCurrencyDollar as DollarSign, IconLoader2 as Loader2, IconLock as Lock, IconMinus as Minus, IconPackage as Package, IconPencil as Pencil, IconPlus as Plus, IconShield as Shield, IconBuildingStore as Store, IconTrash as Trash2, IconUpload as Upload, IconBolt as Zap } from '@tabler/icons-react';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
@@ -408,7 +404,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <div className="pb-8">
         <div className={`${cardCls} flex flex-col items-center gap-3 p-8 text-center`}>
-          <span className="flex h-12 w-12 items-center justify-center rounded-btn-lg bg-lilac-2"><Lock size={22} strokeWidth={2.2} className="text-primary-dark" /></span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-btn-lg bg-lilac-2"><Lock size={22} stroke={2.2} className="text-primary-dark" /></span>
           <div className="text-[15px] font-extrabold text-ink">{L('La renta es parte del kit verificado', 'Rentals are part of the verified toolkit')}</div>
           <div className="max-w-[420px] text-[12.5px] font-semibold leading-relaxed text-muted">
             {L('Publica artículos para rentar por hora, día o semana — con depósitos, calendario y control de daños. Verifica tu negocio para activarlo.', 'List items to rent by hour, day or week — with deposits, a calendar and damage tracking. Verify your business to turn it on.')}
@@ -426,7 +422,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <>
         <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setMode('items'); setItemSub('catalog'); }}>
           <div className="mx-auto flex max-w-[440px] flex-col items-center pb-4 pt-4 text-center">
-            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} strokeWidth={2.4} /></span>
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-[18px] bg-green-bg text-green"><CheckCircle2 size={34} stroke={2.4} /></span>
             <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo artículo', 'New item')) + ' ' + L('está disponible', 'is live')}</div>
             <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">{L('Ya aparece en la pestaña de Renta de tu listado público.', "It now appears on your public listing's Rentals tab.")}</div>
             <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
@@ -443,7 +439,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               </div>
             </div>
             <div className="mt-5 flex w-full flex-col gap-2.5">
-              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} strokeWidth={2.6} />{L('Agregar otro artículo', 'Add another item')}</button>
+              <button onClick={startAdd} className="flex items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta"><Plus size={16} stroke={2.6} />{L('Agregar otro artículo', 'Add another item')}</button>
               <button onClick={() => { setView('module'); setMode('items'); setItemSub('catalog'); }} className="rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a artículos', 'Back to items')}</button>
             </div>
           </div>
@@ -526,12 +522,12 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
                         <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
-                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} strokeWidth={2.2} /></button>
+                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} stroke={2.2} /></button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0]); }} disabled={photoBusy} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60">
-                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" strokeWidth={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
-                          : (<><Upload size={20} className="text-primary" strokeWidth={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
+                        {photoBusy ? (<><Loader2 size={20} className="animate-spin text-primary" stroke={2.2} /><span className="text-[12px] font-bold text-ink-soft">{L('Comprimiendo y subiendo…', 'Compressing & uploading…')}</span></>)
+                          : (<><Upload size={20} className="text-primary" stroke={2} /><span className="text-[12px] font-bold text-ink-soft">{L('Arrastra o toca para subir', 'Drag or tap to upload')}</span><span className="text-[10px] font-medium text-muted-2">{L('JPG o PNG · se comprime sola', 'JPG or PNG · auto-compressed')}</span></>)}
                       </button>
                     )}
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickPhoto(f); }} />
@@ -574,8 +570,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     const on = draft.addons.includes(a.id);
                     return (
                       <button key={a.id} onClick={() => upD({ addons: on ? draft.addons.filter((x) => x !== a.id) : [...draft.addons, a.id] })} className={`flex w-full items-center gap-3 rounded-btn-lg border-[1.5px] p-3 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" strokeWidth={3.4} />}</span>
-                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Zap size={15} className="text-primary-dark" strokeWidth={2.2} /></span>
+                        <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" stroke={3.4} />}</span>
+                        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-lg bg-lilac"><Zap size={15} className="text-primary-dark" stroke={2.2} /></span>
                         <span className="min-w-0 flex-1 text-left"><span className="block text-[12.5px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span></span>
                         <span className="flex-none text-[12px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
                       </button>
@@ -645,8 +641,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <div>
                         <div className={fieldLabel}>{L('Administrar artículo', 'Manage item')}</div>
                         <div className="flex gap-2.5">
-                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} strokeWidth={2.4} />{L('Duplicar', 'Duplicate')}</button>
-                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} strokeWidth={2.4} />{L('Eliminar', 'Delete')}</button>
+                          <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} stroke={2.4} />{L('Duplicar', 'Duplicate')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
                         </div>
                       </div>
                     )}
@@ -721,7 +717,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       {/* MODE: display-only vs online rentals */}
       <div className={`${cardCls} p-3.5`}>
-        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CalendarDays size={15} strokeWidth={2.2} className="text-primary-dark" />{L('Modo del listado', 'Listing mode')}</div>
+        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CalendarDays size={15} stroke={2.2} className="text-primary-dark" />{L('Modo del listado', 'Listing mode')}</div>
         <div className="flex rounded-full bg-lilac-2 p-0.5">
           <button onClick={() => { if (cfg.renting) { saveCfg({ ...cfg, renting: false }); flash(L('Renta en modo Solo mostrar', 'Rentals set to Display only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.renting ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo mostrar', 'Display only')}</button>
           <button onClick={() => { if (!cfg.renting) { saveCfg({ ...cfg, renting: true }); flash(L('Renta en línea activada', 'Online rentals enabled')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.renting ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Aceptar rentas', 'Accept rentals')}</button>
@@ -756,7 +752,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
-                        <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{L(it.es, it.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                        <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{L(it.es, it.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
                         <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{money(it.day)}/{L('día', 'day')}</span>
                       </span>
                       <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{L(it.availEs, it.availEn)} · {availOf(it)}/{it.stock} {L(it.unitEs, it.unitEn)}</span>
@@ -775,7 +771,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       ))}
 
-      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} strokeWidth={2.6} />{L('Nuevo artículo', 'New item')}</button>
+      <button onClick={startAdd} className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[14px] font-extrabold text-white shadow-cta-sm"><Plus size={16} stroke={2.6} />{L('Nuevo artículo', 'New item')}</button>
     </div>
   );
 
@@ -789,13 +785,13 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           return (
             <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
               <span className="flex flex-none flex-col">
-                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} strokeWidth={2.6} /></button>
-                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} strokeWidth={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
+                <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
               </span>
               <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('artículo', 'item') : L('artículos', 'items')}</div>
                 </div>
               </button>
@@ -812,7 +808,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const addonsTab = (
     <div className="mx-auto max-w-[720px]">
       <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Zap size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Zap size={15} className="text-white" stroke={2.2} /></span>
         <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{L('Extras reutilizables', 'Reusable extras')}</span><span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea un extra una vez (entrega, montaje…), úsalo en cualquier artículo.', 'Build an add-on once (delivery, setup…), use it on any item.')}</span></span>
       </div>
       {cfg.addons.length === 0 ? (
@@ -823,9 +819,9 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             const used = addonUsedBy(a.id);
             return (
               <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
                   <span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{used} {used === 1 ? L('artículo', 'item') : L('artículos', 'items')}</span>
                 </span>
                 <span className="flex-none text-[13px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
@@ -842,7 +838,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const policiesTab = (
     <div className="mx-auto max-w-[720px]">
       <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Shield size={15} className="text-white" strokeWidth={2.2} /></span>
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Shield size={15} className="text-white" stroke={2.2} /></span>
         <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{L('Políticas y exenciones', 'Policies & waivers')}</span><span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('Crea los términos de renta (exención, depósito, cargos…) y elige cuáles aplican a cada artículo.', 'Create rental terms (waiver, deposit, fees…) and choose which apply to each item.')}</span></span>
       </div>
       {cfg.policies.length === 0 ? (
@@ -853,9 +849,9 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             const used = policyUsedBy(p.id);
             return (
               <button key={p.id} onClick={() => setPolicySheet({ open: true, initial: p })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Shield size={16} className="text-primary-dark" strokeWidth={2.2} /></span>
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Shield size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(p.es, p.en)}</span><Pencil size={11} strokeWidth={2.4} className="flex-none text-muted-faint" />{p.default && <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Por defecto', 'Default')}</span>}</span>
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(p.es, p.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{p.default && <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Por defecto', 'Default')}</span>}</span>
                   <span className="mt-0.5 block truncate text-[10px] font-semibold text-muted-2">{(p.subEs || p.subEn) ? L(p.subEs ?? '', p.subEn ?? p.subEs ?? '') : `${used} ${used === 1 ? L('artículo', 'item') : L('artículos', 'items')}`}</span>
                 </span>
               </button>
@@ -1048,8 +1044,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   return (
     <div className="relative pb-8">
       <div className="mb-3 flex gap-2">
-        <button onClick={() => setMode('items')} className={modeBtn(mode === 'items')}><Boxes size={14} strokeWidth={2} />{L('Artículos', 'Items')}</button>
-        <button onClick={() => setMode('ops')} className={modeBtn(mode === 'ops')}><CalendarDays size={14} strokeWidth={2} />{L('Rentas', 'Rentals')}{opsUpcoming > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{opsUpcoming}</span>}</button>
+        <button onClick={() => setMode('items')} className={modeBtn(mode === 'items')}><Boxes size={14} stroke={2} />{L('Artículos', 'Items')}</button>
+        <button onClick={() => setMode('ops')} className={modeBtn(mode === 'ops')}><CalendarDays size={14} stroke={2} />{L('Rentas', 'Rentals')}{opsUpcoming > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{opsUpcoming}</span>}</button>
       </div>
 
       <div className="mb-4">
@@ -1115,7 +1111,7 @@ function ItemDetail({
       action={<span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${s.cls}`}>{s.label}</span>}
       footer={
         <div className="flex gap-2.5">
-          <button onClick={onEdit} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label={L('Editar', 'Edit')}><Pencil size={16} strokeWidth={2} className="text-primary-dark" /></button>
+          <button onClick={onEdit} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label={L('Editar', 'Edit')}><Pencil size={16} stroke={2} className="text-primary-dark" /></button>
           <button onClick={onRentOut} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Rentar', 'Rent out')}</button>
         </div>
       }
@@ -1210,7 +1206,7 @@ function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
       backLabel={step === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
       footer={
         <div className="flex items-center gap-3">
-          <button onClick={back} aria-label={L('Atrás', 'Back')} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2"><ChevronLeft size={18} strokeWidth={2.4} className="text-ink" /></button>
+          <button onClick={back} aria-label={L('Atrás', 'Back')} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2"><ChevronLeft size={18} stroke={2.4} className="text-ink" /></button>
           <span className="flex-1 text-center text-[11px] font-semibold text-muted-2">{`${L('Paso', 'Step')} ${step + 1} ${L('de 3', 'of 3')}`}</span>
           <button onClick={next} disabled={!canNext} className={`flex-1 rounded-btn py-3 text-[13px] font-extrabold text-white ${!canNext ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta-sm'}`}>{step >= 2 ? L('Cobrar y rentar', 'Charge & rent') : L('Continuar', 'Continue')}</button>
         </div>
@@ -1225,7 +1221,7 @@ function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
             <>
               <Field label={`${L('Nombre del cliente', 'Renter name')} *`}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Mariana Vélez', 'e.g. Mariana Velez')} className={fieldCls} /></Field>
               <Field label={L('Teléfono', 'Phone')}><input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(415) 555-0148" className={fieldCls} inputMode="tel" autoComplete="tel" /></Field>
-              <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3"><Shield size={17} strokeWidth={2} className="flex-none text-primary-dark" /><span className="flex-1 text-[11px] font-semibold leading-snug text-ink-soft">{L('Exención de responsabilidad firmada', 'Liability waiver signed')}</span><Toggle on={waiver} onClick={() => setWaiver((v) => !v)} /></div>
+              <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3"><Shield size={17} stroke={2} className="flex-none text-primary-dark" /><span className="flex-1 text-[11px] font-semibold leading-snug text-ink-soft">{L('Exención de responsabilidad firmada', 'Liability waiver signed')}</span><Toggle on={waiver} onClick={() => setWaiver((v) => !v)} /></div>
             </>
           )}
           {step === 1 && (
@@ -1236,9 +1232,9 @@ function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
               <div className="flex gap-3">
                 <Field label={L('Cantidad', 'Quantity')} className="flex-1">
                   <div className="flex items-center overflow-hidden rounded-field border-[1.5px] border-lilac-line">
-                    <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-[42px] w-10 items-center justify-center bg-app text-ink-2"><Minus size={15} strokeWidth={2.6} /></button>
+                    <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-[42px] w-10 items-center justify-center bg-app text-ink-2"><Minus size={15} stroke={2.6} /></button>
                     <span className="flex-1 text-center text-[14px] font-extrabold text-ink">{qty}</span>
-                    <button onClick={() => setQty((q) => Math.min(Math.max(1, item.stock), q + 1))} className="flex h-[42px] w-10 items-center justify-center bg-app text-ink-2"><Plus size={15} strokeWidth={2.6} /></button>
+                    <button onClick={() => setQty((q) => Math.min(Math.max(1, item.stock), q + 1))} className="flex h-[42px] w-10 items-center justify-center bg-app text-ink-2"><Plus size={15} stroke={2.6} /></button>
                   </div>
                 </Field>
                 <Field label={L('Fecha inicio', 'Start date')} className="flex-1"><input value={start} onChange={(e) => setStart(e.target.value)} placeholder="12 Jul" className={fieldCls} /></Field>
@@ -1252,7 +1248,7 @@ function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
           )}
           {step === 2 && (
             <>
-              <div className="flex items-center gap-3 rounded-field border border-green/40 bg-green-bg p-3"><span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-green-dark"><Check size={16} strokeWidth={3} /></span><span className="flex-1"><span className="block text-[12px] font-extrabold text-green-dark">{L('Listo para rentar', 'Ready to rent')}</span><span className="block text-[10.5px] font-semibold leading-snug text-green-dark/80">{L('Se cobra el depósito y se marca como rentado.', 'Deposit is charged and item marked rented.')}</span></span></div>
+              <div className="flex items-center gap-3 rounded-field border border-green/40 bg-green-bg p-3"><span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-green-dark"><Check size={16} stroke={3} /></span><span className="flex-1"><span className="block text-[12px] font-extrabold text-green-dark">{L('Listo para rentar', 'Ready to rent')}</span><span className="block text-[10.5px] font-semibold leading-snug text-green-dark/80">{L('Se cobra el depósito y se marca como rentado.', 'Deposit is charged and item marked rented.')}</span></span></div>
               <div className="overflow-hidden rounded-field border border-hair">
                 {([[L('Cliente', 'Renter'), name || '—'], [L('Artículo', 'Item'), L(item.es, item.en)], [L('Periodo', 'Period'), `${qty} × ${periodLabel}`], [L('Total', 'Total'), money(total)]] as [string, string][]).map(([k, v], i, a) => (
                   <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}><span className="w-[80px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span><span className="min-w-0 flex-1 text-[11.5px] font-extrabold text-ink">{v}</span></div>
@@ -1314,7 +1310,7 @@ function SuccessSheet({ ctx, title, sub, onClose }: { ctx: PanelCtx; title: stri
   return (
     <ModulePage title={title} onBack={onClose} footer={<button onClick={onClose} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Listo', 'Done')}</button>}>
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-bg text-green-dark"><Check size={28} strokeWidth={3} /></span>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-bg text-green-dark"><Check size={28} stroke={3} /></span>
         <div className="text-[16px] font-extrabold text-ink">{title}</div>
         <div className="max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">{sub}</div>
       </div>

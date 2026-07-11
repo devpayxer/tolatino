@@ -4,7 +4,7 @@
 // Mi negocio, Configuración, Ayuda, idioma, Cerrar sesión.
 
 import { useRouter } from 'next/navigation';
-import { HelpCircle, LayoutDashboard, LogIn, LogOut, SlidersHorizontal, Store, User } from 'lucide-react';
+import { IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconAdjustmentsHorizontal as SlidersHorizontal, IconBuildingStore as Store, IconUser as User } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -42,7 +42,7 @@ export function UserMenu() {
           onClick={() => go('/entrar')}
           className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary p-3 text-[13.5px] font-extrabold text-white shadow-cta-sm"
         >
-          <LogIn size={16} strokeWidth={2.4} />
+          <LogIn size={16} stroke={2.4} />
           {L('Crear cuenta o iniciar sesión', 'Create account or sign in')}
         </button>
       )}
@@ -74,7 +74,7 @@ export function UserMenu() {
           className="mt-3 flex w-full cursor-pointer items-center gap-[11px] rounded-btn px-2 py-2.5 text-left hover:bg-pink-bg"
         >
           <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px] bg-pink-bg">
-            <LogOut size={16} strokeWidth={2.2} className="text-pink-dark" />
+            <LogOut size={16} stroke={2.2} className="text-pink-dark" />
           </span>
           <span className="text-[13.5px] font-bold text-pink-dark">{L('Cerrar sesión', 'Log out')}</span>
         </button>

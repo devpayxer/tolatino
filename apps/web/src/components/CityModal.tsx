@@ -7,7 +7,7 @@
 // Bottom sheet on mobile, dialog on desktop.
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, LocateFixed, MapPin, Search } from 'lucide-react';
+import { IconChevronRight as ChevronRight, IconCurrentLocation as LocateFixed, IconMapPin as MapPin, IconSearch as Search } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
@@ -99,7 +99,7 @@ export function CityModal() {
         <OverlayTitle title={L('Confirma tu ciudad', 'Confirm your city')} onClose={close} onBack={() => { setPending(null); setDetected(false); }} />
         <div className="px-2 pb-2 pt-1 text-center">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-            <MapPin size={24} className="text-primary" strokeWidth={2.2} />
+            <MapPin size={24} className="text-primary" stroke={2.2} />
           </span>
           <div className="mt-4 text-[17px] font-extrabold text-ink">
             {detected ? L('¿Es esta tu ciudad?', 'Is this your city?') : L('¿Cambiar a esta ciudad?', 'Switch to this city?')}
@@ -108,7 +108,7 @@ export function CityModal() {
             {detected ? L('Te ubicamos aquí.', 'We located you here.') : L('Verás el contenido de esta zona.', 'You’ll see content from this area.')}
           </p>
           <div className="mx-auto mt-4 flex items-center justify-center gap-2.5 rounded-tile bg-app px-4 py-3.5">
-            <MapPin size={18} className="text-primary" strokeWidth={2.4} />
+            <MapPin size={18} className="text-primary" stroke={2.4} />
             <span className="text-[16px] font-extrabold text-ink">{pending.label}</span>
           </div>
           <PrimaryBtn className="mt-5" onClick={() => confirm(pending)}>
@@ -138,7 +138,7 @@ export function CityModal() {
           {locating ? (
             <span className="h-4 w-4 animate-[spin_.8s_linear_infinite] rounded-full border-2 border-white border-t-transparent" />
           ) : (
-            <LocateFixed size={17} className="text-white" strokeWidth={2.2} />
+            <LocateFixed size={17} className="text-white" stroke={2.2} />
           )}
         </span>
         <span className="min-w-0">
@@ -156,7 +156,7 @@ export function CityModal() {
       )}
 
       <div className="mt-3 flex items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px]">
-        <Search size={15} className="flex-none text-primary" strokeWidth={2.2} />
+        <Search size={15} className="flex-none text-primary" stroke={2.2} />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -184,7 +184,7 @@ export function CityModal() {
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <MapPin size={14} className="text-primary" strokeWidth={2.4} />
+                <MapPin size={14} className="text-primary" stroke={2.4} />
                 {p.label}
               </span>
               {current && (
@@ -211,14 +211,14 @@ export function CityModal() {
         }}
         className="mt-3 flex w-full cursor-pointer items-center gap-2.5 rounded-tile border border-hair bg-app p-3 text-left hover:bg-lilac-2"
       >
-        <MapPin size={16} className="flex-none text-primary" strokeWidth={2.4} />
+        <MapPin size={16} className="flex-none text-primary" stroke={2.4} />
         <span className="min-w-0 flex-1">
           <span className="block text-[13px] font-extrabold text-ink">{L('Dirección exacta (opcional)', 'Exact address (optional)')}</span>
           <span className="block truncate text-[11.5px] font-semibold text-muted">
             {app.address ?? L(`Usando el centro de ${app.cityShort}`, `Using ${app.cityShort} center`)}
           </span>
         </span>
-        <ChevronRight size={16} className="flex-none text-muted" strokeWidth={2.4} />
+        <ChevronRight size={16} className="flex-none text-muted" stroke={2.4} />
       </button>
     </Overlay>
   );

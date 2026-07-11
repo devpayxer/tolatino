@@ -7,11 +7,8 @@
 // persistence (menu_config on the business row).
 
 import { useEffect, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  Beef, Cake, Check, Clock, Coffee, Croissant, CupSoda, Fish, Gift, IceCream, Pizza,
-  Plus, Salad, Sandwich, ShoppingBag, Soup, Tag, Trash2, Utensils, Wine, X,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconMeat as Beef, IconCake as Cake, IconCheck as Check, IconClock as Clock, IconCoffee as Coffee, IconBread as Croissant, IconCup as CupSoda, IconFish as Fish, IconGift as Gift, IconIceCream as IceCream, IconPizza as Pizza, IconPlus as Plus, IconSalad as Salad, IconBurger as Sandwich, IconShoppingBag as ShoppingBag, IconSoup as Soup, IconTag as Tag, IconTrash as Trash2, IconToolsKitchen2 as Utensils, IconGlassCocktail as Wine, IconX as X } from '@tabler/icons-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import {
@@ -135,7 +132,7 @@ export function CategoryEditor({
           {initial && (
             <button onClick={() => { if (itemCount === 0) setConfirming(true); }} disabled={itemCount > 0} className={dangerBtn}
               title={itemCount > 0 ? L('Mueve sus platillos antes de eliminar', 'Move its items before deleting') : undefined}>
-              <Trash2 size={15} strokeWidth={2.2} />
+              <Trash2 size={15} stroke={2.2} />
             </button>
           )}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear categoría', 'Create category')}</button>
@@ -212,7 +209,7 @@ export function ModGroupEditor({
           </div>
         </div>
         <button type="button" onClick={() => setRequired(!required)} className="flex cursor-pointer items-center gap-2.5 rounded-field border border-hair bg-app px-3 py-2.5 text-left">
-          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${required ? 'bg-primary' : 'bg-lilac-line'}`}>{required && <Check size={11} className="text-white" strokeWidth={3.2} />}</span>
+          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${required ? 'bg-primary' : 'bg-lilac-line'}`}>{required && <Check size={11} className="text-white" stroke={3.2} />}</span>
           <span className="min-w-0 flex-1">
             <span className="block text-[12px] font-bold text-ink">{L('Obligatorio', 'Required')}</span>
             <span className="block text-[10px] font-medium text-muted-2">{L('El cliente debe elegir antes de agregar.', 'The customer must choose before adding.')}</span>
@@ -229,13 +226,13 @@ export function ModGroupEditor({
                   <input value={o.price || ''} onChange={(e) => upOpt(i, { price: Number(String(e.target.value).replace(/[^0-9.]/g, '')) || 0 })} placeholder="0" inputMode="decimal" className="min-w-0 flex-1 border-none bg-transparent px-1 py-2.5 text-[12.5px] font-semibold text-ink outline-none" />
                 </div>
                 <button type="button" onClick={() => setOptions((xs) => xs.filter((_, j) => j !== i))} disabled={options.length <= 1} aria-label={L('Quitar opción', 'Remove option')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-btn text-pink-dark disabled:opacity-30">
-                  <X size={14} strokeWidth={2.6} />
+                  <X size={14} stroke={2.6} />
                 </button>
               </div>
             ))}
           </div>
           <button type="button" onClick={() => setOptions((xs) => [...xs, { es: '', price: 0 }])} className="mt-2 flex cursor-pointer items-center gap-1.5 text-[11.5px] font-extrabold text-primary-dark">
-            <Plus size={13} strokeWidth={2.6} />{L('Agregar opción', 'Add option')}
+            <Plus size={13} stroke={2.6} />{L('Agregar opción', 'Add option')}
           </button>
         </div>
         {initial && usedCount > 0 && (
@@ -246,7 +243,7 @@ export function ModGroupEditor({
         <div className="mt-1 flex gap-2.5">
           {initial && (
             <>
-              <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>
+              <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>
               <button onClick={() => { if (ready) { onDuplicate({ ...build(), id: menuId(), es: `${build().es} (copia)`, en: `${build().en} (copy)` }); onClose(); } }} className={ghostBtn}>{L('Duplicar', 'Duplicate')}</button>
             </>
           )}
@@ -336,7 +333,7 @@ export function DaypartEditor({
           {hourLabel(timeToHour(start))} – {hourLabel(timeToHour(end))}
         </div>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!ready} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear franja', 'Create daypart')}</button>
         </div>
         {initial && (
@@ -454,7 +451,7 @@ export function PromoEditor({
           )}
         </div>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!ready} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear promoción', 'Create promotion')}</button>
         </div>
         {initial && (

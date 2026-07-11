@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Globe, Heart, MapPin, Menu, MessageCircle, Minus, MoreHorizontal, Navigation, Phone, Plus, Send, Share, Store, Trash2, X } from 'lucide-react';
+import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -1221,7 +1221,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   onClick={(e) => { e.stopPropagation(); firstAdd(); }}
                   className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-lilac text-primary-dark shadow-card transition-transform active:scale-90"
                 >
-                  <Plus size={16} strokeWidth={2.8} />
+                  <Plus size={16} stroke={2.8} />
                 </span>
               ) : (
                 <span className="flex items-center gap-0.5 rounded-full border border-lilac-line bg-white p-0.5 shadow-card">
@@ -1231,7 +1231,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     onClick={(e) => { e.stopPropagation(); decOne(); }}
                     className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-primary-dark transition-transform active:scale-90"
                   >
-                    {qty === 1 ? <Trash2 size={14} strokeWidth={2.2} /> : <Minus size={16} strokeWidth={2.8} />}
+                    {qty === 1 ? <Trash2 size={14} stroke={2.2} /> : <Minus size={16} stroke={2.8} />}
                   </span>
                   <span className="min-w-[20px] text-center text-[13.5px] font-extrabold tabular-nums text-ink">{qty}</span>
                   <span
@@ -1240,7 +1240,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     onClick={(e) => { e.stopPropagation(); incOne(); }}
                     className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-cta-sm transition-transform active:scale-90"
                   >
-                    <Plus size={16} strokeWidth={2.8} />
+                    <Plus size={16} stroke={2.8} />
                   </span>
                 </span>
               )}
@@ -1300,14 +1300,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         )}
         <div className="absolute left-3 right-3 top-3 flex items-center justify-between">
           <button onClick={onClose} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Volver', 'Back')}>
-            <ChevronLeft size={18} strokeWidth={2.4} className="text-ink" />
+            <ChevronLeft size={18} stroke={2.4} className="text-ink" />
           </button>
           <div className="flex gap-2.5">
             <button onClick={() => setContactOpen(true)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Compartir', 'Share')}>
-              <Share size={16} strokeWidth={2.2} className="text-ink" />
+              <Share size={16} stroke={2.2} className="text-ink" />
             </button>
             <button onClick={() => savedBiz.toggle(b.slug)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Guardar', 'Save')}>
-              <Heart size={16} strokeWidth={2.2} className="text-pink" fill={saved ? 'currentColor' : 'none'} />
+              {saved ? <HeartFilled size={16} className="text-pink" /> : <Heart size={16} stroke={2.2} className="text-pink" />}
             </button>
           </div>
         </div>
@@ -1384,13 +1384,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {!focused && <div className={`absolute inset-0 bg-app ${noFadeRef.current ? '' : 'transition-opacity duration-200'} ${stuck ? 'opacity-100' : 'opacity-0'}`} />}
           <div className={`relative flex h-full items-center gap-2 ${noFadeRef.current ? '' : 'transition-[opacity,transform] duration-200'} ${showTitle ? 'translate-y-0 opacity-100' : 'translate-y-[5px] opacity-0'}`}>
             <button onClick={() => onTab('overview')} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
-              <ChevronLeft size={16} strokeWidth={2.6} className="text-ink" />
+              <ChevronLeft size={16} stroke={2.6} className="text-ink" />
             </button>
             <span className="truncate text-[15.5px] font-extrabold text-ink">{b.name}</span>
             {b.verified && <VerifiedBadge size={16} />}
             <div className="ml-auto flex flex-none items-center gap-1.5">
               <button onClick={() => savedBiz.toggle(b.slug)} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Guardar', 'Save')}>
-                <Heart size={15} strokeWidth={2.2} className="text-pink" fill={saved ? 'currentColor' : 'none'} />
+                {saved ? <HeartFilled size={15} className="text-pink" /> : <Heart size={15} stroke={2.2} className="text-pink" />}
               </button>
               <button onClick={() => setContactOpen(true)} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Contacto y opciones', 'Contact & options')}>
                 <MoreHorizontal size={18} className="text-primary-dark" />
@@ -1461,7 +1461,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           </div>
           <button onClick={() => setWeekOpen(!weekOpen)} className="mt-2 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-extrabold text-primary-dark">
             {L('Ver toda la semana', 'See full week')}
-            <ChevronDown size={13} strokeWidth={2.6} className={`transition-transform ${weekOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={13} stroke={2.6} className={`transition-transform ${weekOpen ? 'rotate-180' : ''}`} />
           </button>
           {weekOpen && (
             <div className="mt-3 flex flex-col gap-2 rounded-[13px] bg-[#F7F6FC] px-3.5 py-3">
@@ -1496,7 +1496,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {divider}
           {secTitle(L('Ubicación', 'Location'))}
           <div className="relative h-[130px] overflow-hidden rounded-[15px]" style={{ background: 'repeating-linear-gradient(135deg,#E7ECF3 0 14px,#DCE3EC 14px 28px)' }}>
-            <MapPin size={30} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full fill-primary text-white" strokeWidth={1.5} />
+            <MapPin size={30} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full fill-primary text-white" stroke={1.5} />
           </div>
           <div className="mt-[11px] flex items-center justify-between">
             <span className="text-[13px] font-semibold text-ink-soft">{address}</span>
@@ -1572,18 +1572,18 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     {p.base + (liked ? 1 : 0)}
                   </button>
                   <button onClick={() => setUpdOpen((m) => ({ ...m, [i]: !m[i] }))} className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-bold text-muted-2">
-                    <MessageCircle size={16} strokeWidth={2} />
+                    <MessageCircle size={16} stroke={2} />
                     {L('Comentar', 'Comment')}
                   </button>
                   <button className="ml-auto cursor-pointer text-muted-2">
-                    <Share size={16} strokeWidth={2} />
+                    <Share size={16} stroke={2} />
                   </button>
                 </div>
                 {updOpen[i] && (
                   <div className="mt-3 flex items-center gap-2 border-t border-hair pt-3">
                     <input placeholder={L('Escribe un comentario…', 'Write a comment…')} className="min-w-0 flex-1 rounded-full bg-app px-4 py-2.5 text-[13px] font-medium outline-none placeholder:text-muted" />
                     <button className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-primary text-white">
-                      <Send size={14} strokeWidth={2.4} />
+                      <Send size={14} stroke={2.4} />
                     </button>
                   </div>
                 )}
@@ -1600,14 +1600,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {menuDisplayOnly && (
             <div className="mb-4 flex items-center gap-3 rounded-card-sm border border-lilac-line bg-lilac-2 p-3">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white text-primary-dark">
-                <Menu size={16} strokeWidth={2.2} />
+                <Menu size={16} stroke={2.2} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[12.5px] font-extrabold text-ink">{L('Menú informativo', 'Menu for viewing')}</span>
                 <span className="block text-[11px] font-semibold leading-snug text-muted">{L('Este negocio muestra su menú y precios. Para ordenar, llámalo o visítalo.', 'This business shows its menu & prices. To order, call or visit.')}</span>
               </span>
               <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
-                <Phone size={13} strokeWidth={2.4} />{L('Llamar', 'Call')}
+                <Phone size={13} stroke={2.4} />{L('Llamar', 'Call')}
               </a>
             </div>
           )}
@@ -1668,7 +1668,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 <>
                   <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 hidden w-14 bg-gradient-to-r from-app to-transparent opacity-0 transition-opacity group-hover:opacity-100 md:block" />
                   <button type="button" aria-label={L('Categorías anteriores', 'Previous categories')} onClick={() => railBy(-240)} className="absolute left-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-hair bg-white text-ink opacity-0 shadow-card transition-opacity hover:bg-lilac-2 group-hover:opacity-100 md:flex">
-                    <ChevronLeft size={17} strokeWidth={2.4} />
+                    <ChevronLeft size={17} stroke={2.4} />
                   </button>
                 </>
               )}
@@ -1676,7 +1676,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 <>
                   <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 hidden w-14 bg-gradient-to-l from-app to-transparent opacity-0 transition-opacity group-hover:opacity-100 md:block" />
                   <button type="button" aria-label={L('Más categorías', 'More categories')} onClick={() => railBy(240)} className="absolute right-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-hair bg-white text-ink opacity-0 shadow-card transition-opacity hover:bg-lilac-2 group-hover:opacity-100 md:flex">
-                    <ChevronRight size={17} strokeWidth={2.4} />
+                    <ChevronRight size={17} stroke={2.4} />
                   </button>
                 </>
               )}
@@ -1725,14 +1725,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {shopDisplayOnly && (
             <div className="mb-4 flex items-center gap-3 rounded-card-sm border border-lilac-line bg-lilac-2 p-3">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white text-primary-dark">
-                <Menu size={16} strokeWidth={2.2} />
+                <Menu size={16} stroke={2.2} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[12.5px] font-extrabold text-ink">{L('Catálogo informativo', 'Catalog for viewing')}</span>
                 <span className="block text-[11px] font-semibold leading-snug text-muted">{L('Este negocio muestra sus productos y precios. Para comprar, llámalo o visítalo.', 'This business shows its products & prices. To buy, call or visit.')}</span>
               </span>
               <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
-                <Phone size={13} strokeWidth={2.4} />{L('Llamar', 'Call')}
+                <Phone size={13} stroke={2.4} />{L('Llamar', 'Call')}
               </a>
             </div>
           )}
@@ -1774,14 +1774,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             {svcDisplayOnly && (
               <div className="mb-4 flex items-center gap-3 rounded-card-sm border border-lilac-line bg-lilac-2 p-3">
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white text-primary-dark">
-                  <Menu size={16} strokeWidth={2.2} />
+                  <Menu size={16} stroke={2.2} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[12.5px] font-extrabold text-ink">{L('Servicios informativos', 'Services for viewing')}</span>
                   <span className="block text-[11px] font-semibold leading-snug text-muted">{L('Este negocio muestra sus servicios y precios. Para reservar, llámalo o visítalo.', 'This business shows its services & prices. To book, call or visit.')}</span>
                 </span>
                 <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
-                  <Phone size={13} strokeWidth={2.4} />{L('Llamar', 'Call')}
+                  <Phone size={13} stroke={2.4} />{L('Llamar', 'Call')}
                 </a>
               </div>
             )}
@@ -1818,7 +1818,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <div className="flex flex-col gap-2.5 pt-4">
           {rentDisplayOnly && (
             <div className="flex items-center gap-2.5 rounded-tile bg-lilac-2 px-3.5 py-2.5">
-              <Store size={16} strokeWidth={2.2} className="flex-none text-primary-dark" />
+              <Store size={16} stroke={2.2} className="flex-none text-primary-dark" />
               <span className="text-[12px] font-semibold leading-snug text-ink-soft">{L('Consulta disponibilidad y tarifas — llama o visita para rentar.', 'Check availability & rates — call or visit to rent.')}</span>
             </div>
           )}
@@ -2073,7 +2073,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <div className="flex h-full items-center justify-center text-[12.5px] font-semibold text-muted">{L('Cargando…', 'Loading…')}</div>
             ) : chatMsgs.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-lilac-2 text-primary-dark"><MessageCircle size={22} strokeWidth={2.2} /></span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-lilac-2 text-primary-dark"><MessageCircle size={22} stroke={2.2} /></span>
                 <div className="text-[13px] font-extrabold text-ink">{L(`Escríbele a ${b.name}`, `Message ${b.name}`)}</div>
                 <div className="text-[11.5px] font-semibold leading-snug text-muted">{L('Pregunta por disponibilidad, precios o tu pedido. Te responden aquí mismo.', 'Ask about availability, pricing or your order. They reply right here.')}</div>
               </div>
@@ -2090,7 +2090,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           </div>
           <div className="flex items-center gap-2 border-t border-hair pt-2.5">
             <input value={chatDraft} onChange={(e) => setChatDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendChat(); }} placeholder={L('Escribe un mensaje…', 'Type a message…')} className="min-w-0 flex-1 rounded-full border-[1.5px] border-lilac-line bg-white px-4 py-2.5 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
-            <button onClick={sendChat} disabled={!chatDraft.trim()} aria-label={L('Enviar', 'Send')} className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-primary text-white shadow-cta-sm disabled:opacity-40"><Send size={16} strokeWidth={2.4} /></button>
+            <button onClick={sendChat} disabled={!chatDraft.trim()} aria-label={L('Enviar', 'Send')} className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-primary text-white shadow-cta-sm disabled:opacity-40"><Send size={16} stroke={2.4} /></button>
           </div>
         </div>
       </Overlay>
@@ -2154,7 +2154,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       >
                         {g.type === 'multi' ? (
                           <span className={`flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] ${sel ? 'bg-primary text-white' : 'border-2 border-[#D9D5E6]'}`}>
-                            {sel && <Check size={13} strokeWidth={3.4} />}
+                            {sel && <Check size={13} stroke={3.4} />}
                           </span>
                         ) : (
                           <span className={`h-[22px] w-[22px] flex-none rounded-full ${sel && !vSoldOut ? 'border-[7px] border-primary' : 'border-2 border-[#D9D5E6]'}`} />
@@ -2256,7 +2256,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       <span className="block text-[12.5px] font-extrabold text-ink">{line.optsLabel || L('Sin personalizar', 'No customization')}</span>
                       {line.note && <span className="block text-[10.5px] font-semibold text-muted-2">“{line.note}”</span>}
                     </span>
-                    <Trash2 size={15} strokeWidth={2.2} className="flex-none text-pink-dark" />
+                    <Trash2 size={15} stroke={2.2} className="flex-none text-pink-dark" />
                   </button>
                 );
               })}
@@ -2270,7 +2270,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {cartDone ? (
           <div className="flex flex-col items-center px-2 py-6 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-              <Check size={28} strokeWidth={3} className="text-green" />
+              <Check size={28} stroke={3} className="text-green" />
             </span>
             <div className="mt-4 text-[19px] font-extrabold text-ink">{L('¡Pedido realizado!', 'Order placed!')}</div>
             <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -2285,7 +2285,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <OverlayTitle title={L('Dirección de entrega', 'Delivery address')} onClose={() => setCartView('cart')} />
             {addressStore.addresses.length === 0 ? (
               <div className="py-6 text-center">
-                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lilac"><MapPin size={20} className="text-primary" strokeWidth={2.2} /></span>
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lilac"><MapPin size={20} className="text-primary" stroke={2.2} /></span>
                 <div className="mt-3 text-[13.5px] font-extrabold text-ink">{L('Aún no tienes direcciones guardadas', 'No saved addresses yet')}</div>
                 <div className="mx-auto mt-1 max-w-[280px] text-[12px] font-semibold text-muted">{L('Agrega tu dirección para recibir tu pedido.', 'Add your address to get your order delivered.')}</div>
               </div>
@@ -2296,13 +2296,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   return (
                     <button key={a.id} onClick={() => { setAddrId(a.id); setCartView('cart'); }} className={`flex items-center gap-3 rounded-field border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
                       <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${on ? 'bg-primary' : 'bg-lilac-2'}`}>
-                        <MapPin size={15} strokeWidth={2.4} className={on ? 'text-white' : 'text-primary'} />
+                        <MapPin size={15} stroke={2.4} className={on ? 'text-white' : 'text-primary'} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13px] font-extrabold text-ink">{a.label || L('Dirección', 'Address')}{a.is_default ? ` · ${L('Principal', 'Default')}` : ''}</span>
                         <span className="block truncate text-[11.5px] font-semibold text-muted">{a.formatted}</span>
                       </span>
-                      {on && <Check size={16} strokeWidth={3} className="flex-none text-primary" />}
+                      {on && <Check size={16} stroke={3} className="flex-none text-primary" />}
                     </button>
                   );
                 })}
@@ -2361,7 +2361,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 {isDelivery && (
                   <>
                     <button onClick={() => setCartView('address')} className="mt-3 flex w-full cursor-pointer items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-3 text-left">
-                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-lilac-2"><MapPin size={15} strokeWidth={2.4} className="text-primary" /></span>
+                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-lilac-2"><MapPin size={15} stroke={2.4} className="text-primary" /></span>
                       <span className="min-w-0 flex-1">
                         {chosenAddr ? (
                           <>
@@ -2523,7 +2523,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       const on = !!svcAddOns[a.id];
                       return (
                         <button key={a.id} onClick={() => setSvcAddOns((m) => ({ ...m, [a.id]: !on }))} className={`flex items-center gap-3 rounded-field border-[1.5px] p-2.5 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={11} className="text-white" strokeWidth={3.2} />}</span>
+                          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={11} className="text-white" stroke={3.2} />}</span>
                           <span className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-ink">{B(a.name)}</span>
                           <span className="flex-none text-[12px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
                         </button>
@@ -2558,7 +2558,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {svcSel !== null && svcDone && (
           <div className="flex flex-col items-center px-2 py-6 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-              <Check size={28} strokeWidth={3} className="text-green" />
+              <Check size={28} stroke={3} className="text-green" />
             </span>
             <div className="mt-4 text-[19px] font-extrabold text-ink">{svcSel.bookable ? L('¡Solicitud enviada!', 'Request sent!') : L('¡Consulta enviada!', 'Inquiry sent!')}</div>
             <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -2610,9 +2610,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   {rule && rule !== 'Siempre' && <div className="mt-0.5 text-[10.5px] font-semibold text-muted-2">{L('Disponible', 'Available')}: {L(rule, AVAIL_EN[rule] ?? rule)}</div>}
                 </div>
                 <div className="flex flex-none items-center gap-1">
-                  <button onClick={() => shiftMonth(-1)} disabled={prevDisabled} aria-label={L('Mes anterior', 'Previous month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={16} strokeWidth={2.4} /></button>
+                  <button onClick={() => shiftMonth(-1)} disabled={prevDisabled} aria-label={L('Mes anterior', 'Previous month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={16} stroke={2.4} /></button>
                   <span className="w-[104px] text-center text-[12px] font-extrabold text-ink">{L(MO_LONG_ES[rentCal.m], MO_LONG_EN[rentCal.m])} {rentCal.y}</span>
-                  <button onClick={() => shiftMonth(1)} aria-label={L('Mes siguiente', 'Next month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"><ChevronRight size={16} strokeWidth={2.4} /></button>
+                  <button onClick={() => shiftMonth(1)} aria-label={L('Mes siguiente', 'Next month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"><ChevronRight size={16} stroke={2.4} /></button>
                 </div>
               </div>
               <div className="mb-1.5 grid grid-cols-7 gap-1">{WD_MON1.map((w, i) => <span key={i} className="text-center text-[10px] font-extrabold text-muted-faint">{L(w[0], w[1])}</span>)}</div>
@@ -2670,7 +2670,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       const on = rentAddons.includes(a.id);
                       return (
                         <button key={a.id} onClick={() => setRentAddons((l) => (on ? l.filter((x) => x !== a.id) : [...l, a.id]))} className={`flex items-center gap-3 rounded-field border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={11} className="text-white" strokeWidth={3.4} />}</span>
+                          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={11} className="text-white" stroke={3.4} />}</span>
                           <span className="min-w-0 flex-1 text-[12.5px] font-extrabold text-ink">{B(a.name)}</span>
                           <span className="flex-none text-[12.5px] font-extrabold text-ink">{a.price ? `+${money(a.price)}` : L('Gratis', 'Free')}</span>
                         </button>
@@ -2716,7 +2716,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {rentIdx !== null && rentDone && (
           <div className="flex flex-col items-center px-2 py-6 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-              <Check size={28} strokeWidth={3} className="text-green" />
+              <Check size={28} stroke={3} className="text-green" />
             </span>
             <div className="mt-4 text-[19px] font-extrabold text-ink">{L('¡Renta solicitada!', 'Rental requested!')}</div>
             <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -2781,7 +2781,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 className="absolute right-0.5 top-0.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-ink/70 text-white"
                 aria-label={L('Quitar foto', 'Remove photo')}
               >
-                <X size={12} strokeWidth={3} />
+                <X size={12} stroke={3} />
               </button>
             </div>
           ))}
@@ -2790,7 +2790,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               onClick={() => reviewFileInput.current?.click()}
               className="flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-field border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 text-primary-dark"
             >
-              <Plus size={16} strokeWidth={2.6} />
+              <Plus size={16} stroke={2.6} />
               <span className="text-[9.5px] font-extrabold">{L('Fotos', 'Photos')}</span>
             </button>
           )}

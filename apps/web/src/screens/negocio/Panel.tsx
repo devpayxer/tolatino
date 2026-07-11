@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BarChart3, Bell, Check, ChevronDown, ExternalLink, Menu, MessageCircle, Plus, Search, ShoppingBag, Star, X } from 'lucide-react';
+import { IconChartBar as BarChart3, IconBell as Bell, IconCheck as Check, IconChevronDown as ChevronDown, IconExternalLink as ExternalLink, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconPlus as Plus, IconSearch as Search, IconShoppingBag as ShoppingBag, IconStar as Star, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { supabase } from '@/lib/supabase';
@@ -225,7 +225,7 @@ export function PanelScreen() {
                             <span className="block truncate text-[12.5px] font-extrabold text-ink">{b.name}</span>
                             <span className="block truncate text-[10.5px] font-semibold text-muted-2">{catLabel(b.category_id)}</span>
                           </span>
-                          {on && <Check size={15} strokeWidth={2.6} className="flex-none text-primary" />}
+                          {on && <Check size={15} stroke={2.6} className="flex-none text-primary" />}
                         </button>
                       );
                     })}
@@ -234,7 +234,7 @@ export function PanelScreen() {
                     onClick={() => { setSwitcherOpen(false); router.push('/negocio/publicar'); }}
                     className="flex w-full cursor-pointer items-center gap-2 border-t border-hair px-3 py-2.5 text-left text-[12px] font-extrabold text-primary-dark hover:bg-app"
                   >
-                    <Plus size={14} strokeWidth={2.6} /> {L('Publicar otro negocio', 'Publish another business')}
+                    <Plus size={14} stroke={2.6} /> {L('Publicar otro negocio', 'Publish another business')}
                   </button>
                 </div>
               </>
@@ -290,7 +290,7 @@ export function PanelScreen() {
                   <span className={`flex-1 text-[13px] ${active ? 'font-extrabold text-primary-press' : n.locked ? 'font-semibold text-muted-faint' : 'font-semibold text-ink-soft'}`}>
                     {n.label}
                   </span>
-                  {n.sub && <Check size={12} strokeWidth={3} className="text-green" />}
+                  {n.sub && <Check size={12} stroke={3} className="text-green" />}
                   {!n.locked && n.count != null && (
                     <span className={`rounded-[7px] px-[7px] py-0.5 text-[10px] font-extrabold ${n.live ? 'bg-green-bg text-green-dark' : n.warn ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted'}`}>
                       {n.count}
@@ -331,7 +331,7 @@ export function PanelScreen() {
             className={`flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full lg:hidden ${isInicio ? 'bg-[rgba(255,255,255,.12)]' : 'bg-lilac-2'}`}
             aria-label={L('Menú', 'Menu')}
           >
-            <Menu size={17} strokeWidth={2.2} className={isInicio ? 'text-white' : 'text-ink'} />
+            <Menu size={17} stroke={2.2} className={isInicio ? 'text-white' : 'text-ink'} />
           </button>
           <button onClick={() => router.push('/comunidad')} className="flex cursor-pointer items-baseline">
             <span className={`text-[18px] font-extrabold tracking-[-.03em] ${isInicio ? 'text-white lg:text-ink' : 'text-ink'}`}>To&rsquo;</span>
@@ -342,12 +342,12 @@ export function PanelScreen() {
             {L('Negocios', 'Business')}
           </span>
           <div className="mx-2 hidden min-w-0 max-w-[380px] flex-1 items-center gap-2 rounded-btn bg-app px-3 py-2 md:flex">
-            <Search size={14} className="flex-none text-muted" strokeWidth={2.2} />
+            <Search size={14} className="flex-none text-muted" stroke={2.2} />
             <input placeholder={L('Ir a pedidos, productos…', 'Jump to orders, items…')} className="min-w-0 flex-1 bg-transparent text-[12.5px] font-medium outline-none placeholder:text-muted" />
           </div>
           <div className="ml-auto flex flex-none items-center gap-2">
             <button onClick={() => router.push('/negocios')} className="hidden cursor-pointer items-center gap-1.5 rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft md:flex">
-              <ExternalLink size={12} strokeWidth={2.4} />
+              <ExternalLink size={12} stroke={2.4} />
               {L('Ver listado', 'View public')}
             </button>
             <LangToggle mini />
@@ -355,7 +355,7 @@ export function PanelScreen() {
               className={`relative flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full ${isInicio ? 'bg-[rgba(255,255,255,.12)] lg:bg-lilac-2' : 'bg-lilac-2'}`}
               aria-label={L('Notificaciones', 'Notifications')}
             >
-              <Bell size={16} strokeWidth={2.2} className={isInicio ? 'text-white lg:text-ink' : 'text-ink'} />
+              <Bell size={16} stroke={2.2} className={isInicio ? 'text-white lg:text-ink' : 'text-ink'} />
               {!real && (
                 <span className="absolute right-0.5 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[8.5px] font-extrabold text-white">
                   {isFree ? '2' : '7'}
@@ -379,7 +379,7 @@ export function PanelScreen() {
             </div>
             <div className="flex-1 bg-[rgba(30,27,46,.45)]" />
             <button onClick={() => setDrawer(false)} className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Cerrar', 'Close')}>
-              <X size={16} strokeWidth={2.6} className="text-ink" />
+              <X size={16} stroke={2.6} className="text-ink" />
             </button>
           </div>
         )}
@@ -509,7 +509,7 @@ export function PanelScreen() {
           );
         })}
         <button onClick={() => setDrawer(true)} className="flex min-h-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5">
-          <Menu size={19} strokeWidth={2.2} className={drawer ? 'text-primary' : 'text-muted-2'} />
+          <Menu size={19} stroke={2.2} className={drawer ? 'text-primary' : 'text-muted-2'} />
           <span className={`text-[9px] font-extrabold ${drawer ? 'text-primary' : 'text-muted-2'}`}>{L('Más', 'More')}</span>
         </button>
       </nav>

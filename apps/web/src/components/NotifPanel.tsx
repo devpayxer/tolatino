@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Calendar, Heart, MessageCircle, Store, Tag, User } from 'lucide-react';
+import { IconBell as Bell, IconCalendar as Calendar, IconHeart as Heart, IconMessageCircle as MessageCircle, IconBuildingStore as Store, IconTag as Tag, IconUser as User } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useNotifications, type NotifItem } from '@/lib/notifications';
@@ -67,7 +67,7 @@ export function NotifPanel() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center py-10 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-bg">
-            <Bell size={20} className="text-green" strokeWidth={2.2} />
+            <Bell size={20} className="text-green" stroke={2.2} />
           </span>
           <div className="mt-3 text-[14px] font-extrabold text-ink">{L('Todo al día', 'All caught up')}</div>
           <div className="mt-1 text-[12px] font-semibold text-muted">

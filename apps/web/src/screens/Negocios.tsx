@@ -6,7 +6,7 @@
 // Card variant A ("Lista") — the prototype default.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Heart, Map as MapIcon, MapPin, Phone, SlidersHorizontal, X } from 'lucide-react';
+import { IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMap as MapIcon, IconMapPin as MapPin, IconPhone as Phone, IconAdjustmentsHorizontal as SlidersHorizontal, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
@@ -270,7 +270,7 @@ export function NegociosScreen() {
               <span className="flex items-center gap-1.5">
                 <span className="text-[11px] font-bold text-muted-faint">{counts[k] ?? 0}</span>
                 {subs.length > 0 && (
-                  <ChevronDown size={13} strokeWidth={2.6} className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={13} stroke={2.6} className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
                 )}
               </span>
             </button>
@@ -335,7 +335,7 @@ export function NegociosScreen() {
           onClick={() => setFiltersOpen(true)}
           className={`relative ${pill(activeCount > 0)} lg:hidden`}
         >
-          <SlidersHorizontal size={13} strokeWidth={2.4} />
+          <SlidersHorizontal size={13} stroke={2.4} />
           {L('Filtros', 'Filters')}
           {activeCount > 0 && (
             <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-extrabold text-primary">
@@ -345,21 +345,21 @@ export function NegociosScreen() {
         </button>
         <button onClick={() => setOpenFilter(openFilter === 'dist' ? null : 'dist')} className={pill(openFilter === 'dist' || f.maxDist !== DIST_DEFAULT)}>
           {f.maxDist !== DIST_DEFAULT ? `≤ ${f.maxDist} mi` : L('Distancia', 'Distance')}
-          <ChevronDown size={13} strokeWidth={2.6} className={`transition-transform ${openFilter === 'dist' ? 'rotate-180' : ''}`} />
+          <ChevronDown size={13} stroke={2.6} className={`transition-transform ${openFilter === 'dist' ? 'rotate-180' : ''}`} />
         </button>
         <button onClick={() => setOpenFilter(openFilter === 'rating' ? null : 'rating')} className={pill(openFilter === 'rating' || !!f.rating)}>
           {f.rating ? `★ ${f.rating}+` : L('Calificación', 'Rating')}
-          <ChevronDown size={13} strokeWidth={2.6} className={`transition-transform ${openFilter === 'rating' ? 'rotate-180' : ''}`} />
+          <ChevronDown size={13} stroke={2.6} className={`transition-transform ${openFilter === 'rating' ? 'rotate-180' : ''}`} />
         </button>
         <button onClick={() => setOpenFilter(openFilter === 'price' ? null : 'price')} className={pill(openFilter === 'price' || !!f.price)}>
           {f.price ?? L('Precio', 'Price')}
-          <ChevronDown size={13} strokeWidth={2.6} className={`transition-transform ${openFilter === 'price' ? 'rotate-180' : ''}`} />
+          <ChevronDown size={13} stroke={2.6} className={`transition-transform ${openFilter === 'price' ? 'rotate-180' : ''}`} />
         </button>
         <button onClick={() => patch({ openNow: !f.openNow })} className={pill(f.openNow)}>
           {L('Abierto ahora', 'Open now')}
         </button>
         <button onClick={() => { setOnlySaved((v) => !v); setPage(1); }} className={pill(onlySaved)}>
-          <Heart size={13} strokeWidth={2.4} fill={onlySaved ? '#fff' : 'none'} />
+          {onlySaved ? <HeartFilled size={13} className="text-white" /> : <Heart size={13} stroke={2.4} />}
           {L('Guardados', 'Saved')}
           {savedBiz.count > 0 && (
             <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-extrabold ${onlySaved ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
@@ -449,7 +449,7 @@ export function NegociosScreen() {
               mapOpen ? 'bg-primary text-white' : 'bg-white text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
             }`}
           >
-            <MapIcon size={13} strokeWidth={2.4} />
+            <MapIcon size={13} stroke={2.4} />
             {L('Mapa', 'Map')}
           </button>
         </div>
@@ -467,7 +467,7 @@ export function NegociosScreen() {
             <span key={c.label} className="flex items-center gap-1.5 rounded-full bg-lilac py-1.5 pl-3 pr-2 text-[11.5px] font-extrabold text-primary-dark">
               {c.label}
               <button onClick={c.onRemove} className="flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-[rgba(109,77,246,.15)]">
-                <X size={9} strokeWidth={3.4} />
+                <X size={9} stroke={3.4} />
               </button>
             </span>
           ))}
@@ -492,7 +492,7 @@ export function NegociosScreen() {
                 { l: '66%', t: '30%' },
                 { l: '81%', t: '62%' },
               ].map((p, i) => (
-                <MapPin key={i} size={26} className="absolute -translate-x-1/2 -translate-y-full fill-primary text-white" style={{ left: p.l, top: p.t }} strokeWidth={1.5} />
+                <MapPin key={i} size={26} className="absolute -translate-x-1/2 -translate-y-full fill-primary text-white" style={{ left: p.l, top: p.t }} stroke={1.5} />
               ))}
               <span className="absolute bottom-2.5 right-3 rounded-lg bg-[rgba(30,27,46,.6)] px-2.5 py-1 text-[10.5px] font-bold text-white">
                 {L('Mapa (demo)', 'Map (demo)')}
@@ -507,7 +507,7 @@ export function NegociosScreen() {
               {onlySaved ? (
                 <>
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-pink-bg">
-                    <Heart size={22} strokeWidth={2.2} className="text-pink" />
+                    <Heart size={22} stroke={2.2} className="text-pink" />
                   </div>
                   <div className="text-[15px] font-extrabold text-ink">
                     {savedBiz.count === 0 ? L('Aún no guardas negocios', 'No saved businesses yet') : L('Ninguno por aquí', 'None in this view')}
@@ -555,7 +555,7 @@ export function NegociosScreen() {
                 onClick={() => setPage(Math.max(1, curPage - 1))}
                 className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage > 1 ? 'cursor-pointer' : 'opacity-40'}`}
               >
-                <ChevronLeft size={15} strokeWidth={2.4} />
+                <ChevronLeft size={15} stroke={2.4} />
               </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
                 <button
@@ -572,7 +572,7 @@ export function NegociosScreen() {
                 onClick={() => setPage(Math.min(totalPages, curPage + 1))}
                 className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage < totalPages ? 'cursor-pointer' : 'opacity-40'}`}
               >
-                <ChevronRight size={15} strokeWidth={2.4} />
+                <ChevronRight size={15} stroke={2.4} />
               </button>
               <span className="ml-2 text-[11.5px] font-bold text-muted">
                 {(curPage - 1) * PAGE_SIZE + 1}–{Math.min(curPage * PAGE_SIZE, results.length)} {L('de', 'of')} {results.length}
@@ -608,7 +608,7 @@ function SaveBtn({ b, size = 17 }: { b: Business; size?: number }) {
       className="ml-auto flex-none cursor-pointer p-1"
       aria-label={savedOn ? L('Quitar de guardados', 'Remove from saved') : L('Guardar', 'Save')}
     >
-      <Heart size={size} strokeWidth={2.2} className={savedOn ? 'text-pink' : 'text-muted-faint'} fill={savedOn ? 'currentColor' : 'none'} />
+      {savedOn ? <HeartFilled size={size} className="text-pink" /> : <Heart size={size} stroke={2.2} className="text-muted-faint" />}
     </button>
   );
 }
@@ -705,7 +705,7 @@ function BizCardVerified({ b, onOpen }: { b: Business; onOpen: () => void }) {
           onClick={(e) => e.stopPropagation()}
           className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-ink"
         >
-          <Phone size={13} strokeWidth={2.4} className="text-green" />
+          <Phone size={13} stroke={2.4} className="text-green" />
           {L('Llamar', 'Call')}
         </button>
         <button

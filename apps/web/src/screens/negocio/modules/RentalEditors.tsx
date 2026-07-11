@@ -7,11 +7,8 @@
 // ServiceEditors.
 
 import { useEffect, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  Armchair, Bike, Boxes, Camera, Car, GraduationCap, Gift, Home, Music, Package,
-  PartyPopper, Shirt, Tent, Trash2, Utensils, Wrench,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconArmchair as Armchair, IconBike as Bike, IconPackages as Boxes, IconCamera as Camera, IconCar as Car, IconSchool as GraduationCap, IconGift as Gift, IconHome as Home, IconMusic as Music, IconPackage as Package, IconConfetti as PartyPopper, IconShirt as Shirt, IconTent as Tent, IconTrash as Trash2, IconToolsKitchen2 as Utensils, IconTool as Wrench } from '@tabler/icons-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { RENTAL_TILES, rentId, type RentalAddon, type RentalCategory, type RentalPolicy } from '@/lib/rentalConfig';
@@ -91,7 +88,7 @@ export function RentalCategoryEditor({
           {initial && (
             <button onClick={() => { if (itemCount === 0) setConfirming(true); }} disabled={itemCount > 0} className={dangerBtn}
               title={itemCount > 0 ? L('Mueve sus artículos antes de eliminar', 'Move its items before deleting') : undefined}>
-              <Trash2 size={15} strokeWidth={2.2} />
+              <Trash2 size={15} stroke={2.2} />
             </button>
           )}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear categoría', 'Create category')}</button>
@@ -165,7 +162,7 @@ export function RentalAddonEditor({
           </div>
         )}
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear extra', 'Create add-on')}</button>
         </div>
         {initial && (
@@ -229,7 +226,7 @@ export function RentalPolicyEditor({
           <span className="min-w-0 flex-1"><span className="block text-[12px] font-bold text-ink">{L('Activa por defecto', 'On by default')}</span><span className="block text-[10px] font-medium text-muted-2">{L('Se pre-selecciona en cada artículo nuevo.', 'Pre-selected on every new item.')}</span></span>
         </button>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear política', 'Create policy')}</button>
         </div>
         {initial && (

@@ -5,10 +5,8 @@
 // (the prototype used SF placeholder names); structure and copy otherwise
 // verbatim. Content varies by plan (free/verified/premium) and rubro.
 
-import type { LucideIcon } from 'lucide-react';
-import {
-  BarChart3, Bell, Bike, Briefcase, Building2, Calendar, Clock, CreditCard, DollarSign, Eye, Globe, HardHat, Heart, Image as ImageIcon, LayoutGrid, Link2, MapPin, Megaphone, MessageCircle, Package, Pencil, Phone, Route, Scissors, Settings, Shield, ShoppingBag, Star, Store, Tag, Ticket, Truck, User, Users, Utensils, Wrench,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconChartBar as BarChart3, IconBell as Bell, IconBike as Bike, IconBriefcase as Briefcase, IconBuilding as Building2, IconCalendar as Calendar, IconClock as Clock, IconCreditCard as CreditCard, IconCurrencyDollar as DollarSign, IconEye as Eye, IconGlobe as Globe, IconHelmet as HardHat, IconHeart as Heart, IconPhoto as ImageIcon, IconLayoutGrid as LayoutGrid, IconLink as Link2, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconPackage as Package, IconPencil as Pencil, IconPhone as Phone, IconRoute as Route, IconScissors as Scissors, IconSettings as Settings, IconShield as Shield, IconShoppingBag as ShoppingBag, IconStar as Star, IconBuildingStore as Store, IconTag as Tag, IconTicket as Ticket, IconTruck as Truck, IconUser as User, IconUsers as Users, IconToolsKitchen2 as Utensils, IconTool as Wrench } from '@tabler/icons-react';
 
 export type Tier = 'free' | 'verified' | 'premium';
 export type Rubro = 'restaurant' | 'beauty' | 'auto' | 'retail' | 'rental';

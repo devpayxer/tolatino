@@ -6,7 +6,7 @@
 // so nothing is ever unreachable with a mouse. Reusable for any chip/filter row.
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight } from '@tabler/icons-react';
 
 export function ChipRow({ children, className = '' }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -44,7 +44,7 @@ export function ChipRow({ children, className = '' }: { children: ReactNode; cla
     <div className="relative min-w-0">
       {canL && (
         <button type="button" onClick={() => nudge(-1)} aria-label="‹" className={`${arrowCls} left-0`}>
-          <ChevronLeft size={15} strokeWidth={2.6} />
+          <ChevronLeft size={15} stroke={2.6} />
         </button>
       )}
       <div ref={ref} onScroll={check} className={`no-scrollbar flex min-w-0 touch-pan-x gap-2 overflow-x-auto ${className}`}>
@@ -52,7 +52,7 @@ export function ChipRow({ children, className = '' }: { children: ReactNode; cla
       </div>
       {canR && (
         <button type="button" onClick={() => nudge(1)} aria-label="›" className={`${arrowCls} right-0`}>
-          <ChevronRight size={15} strokeWidth={2.6} />
+          <ChevronRight size={15} stroke={2.6} />
         </button>
       )}
     </div>

@@ -11,10 +11,7 @@
 // lists spread into multi-column grids. All state is real & local.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Check, ChevronRight, Clock, DollarSign, Download, Flag, Gift, Heart, Mail, Phone,
-  RefreshCw, Search, ShoppingBag, Sparkles, Star, Truck, UserPlus, Users, XCircle, Zap,
-} from 'lucide-react';
+import { IconCheck as Check, IconChevronRight as ChevronRight, IconClock as Clock, IconCurrencyDollar as DollarSign, IconDownload as Download, IconFlag as Flag, IconGift as Gift, IconHeart as Heart, IconMail as Mail, IconPhone as Phone, IconRefresh as RefreshCw, IconSearch as Search, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconStar as Star, IconTruck as Truck, IconUserPlus as UserPlus, IconUsers as Users, IconCircleX as XCircle, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { supabase } from '@/lib/supabase';
@@ -613,7 +610,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2.5">
             <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 focus-within:border-primary">
-              <Search size={16} strokeWidth={2.2} className="flex-none text-muted-2" />
+              <Search size={16} stroke={2.2} className="flex-none text-muted-2" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -622,7 +619,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               />
             </div>
             <button onClick={exportCsv} className="flex flex-none items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12px] font-extrabold text-ink-soft" title={L('Exportar CSV', 'Export CSV')}>
-              <Download size={15} strokeWidth={2.2} className="text-muted-2" /><span className="hidden sm:inline">{L('Exportar', 'Export')}</span>
+              <Download size={15} stroke={2.2} className="text-muted-2" /><span className="hidden sm:inline">{L('Exportar', 'Export')}</span>
             </button>
           </div>
 
@@ -655,7 +652,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className="text-[13px] font-extrabold text-ink">{c.spent}</div>
                     <span className={`mt-1 inline-block rounded px-1.5 py-px text-[8.5px] font-extrabold ${tagStyle(c)}`}>{L(c.tag[0], c.tag[1])}</span>
                   </div>
-                  <ChevronRight size={16} strokeWidth={2.2} className="flex-none text-muted-faint" />
+                  <ChevronRight size={16} stroke={2.2} className="flex-none text-muted-faint" />
                 </button>
               ))
             )}
@@ -698,7 +695,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="mt-3 flex flex-col gap-2" style={{ opacity: loyaltyOn ? 1 : 0.45 }}>
               {rewardDefs.map(([label, sub], i) => (
                 <div key={label} className="flex items-center gap-2.5 rounded-lg bg-app px-3 py-2.5">
-                  <Gift size={14} strokeWidth={2.2} className="flex-none text-primary-dark" />
+                  <Gift size={14} stroke={2.2} className="flex-none text-primary-dark" />
                   <span className="min-w-0 flex-1">
                     <span className="block text-[11.5px] font-extrabold text-ink">{label}</span>
                     <span className="block text-[9.5px] font-semibold text-muted-2">{sub}</span>
@@ -872,7 +869,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       </div>
                       <div className="mb-1 flex items-center gap-2">
                         <span className="text-[13px] font-extrabold text-ink">{L(o.who[0], o.who[1])}</span>
-                        {o.urgent && !done && !cxl && <span className="flex items-center gap-0.5 rounded bg-pink-bg px-1.5 py-px text-[8px] font-extrabold text-pink-dark"><Zap size={9} strokeWidth={2.6} />{L('Urgente', 'Urgent')}</span>}
+                        {o.urgent && !done && !cxl && <span className="flex items-center gap-0.5 rounded bg-pink-bg px-1.5 py-px text-[8px] font-extrabold text-pink-dark"><Zap size={9} stroke={2.6} />{L('Urgente', 'Urgent')}</span>}
                       </div>
                       <div className="line-clamp-2 text-[11px] font-semibold leading-snug text-ink-3">{L(o.items[0], o.items[1])}</div>
                       <div className="mt-2.5 flex items-center justify-between">
@@ -882,20 +879,20 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       {/* NEW: driver line once assigned (was silently absent before) */}
                       {o.fulfillment?.driver && !done && !cxl && (
                         <div className="mt-2 flex items-center gap-1.5 rounded-md bg-green-bg px-2 py-1 text-[10px] font-extrabold text-green-dark">
-                          <Truck size={11} strokeWidth={2.4} />{o.fulfillment.driver}{o.fulfillment.eta ? ` · ${o.fulfillment.eta}` : ''}
+                          <Truck size={11} stroke={2.4} />{o.fulfillment.driver}{o.fulfillment.eta ? ` · ${o.fulfillment.eta}` : ''}
                         </div>
                       )}
                       {done ? (
                         <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-extrabold text-green-dark">
-                          <Check size={12} strokeWidth={3} />{L('Pagado y cerrado', 'Paid & closed')}
+                          <Check size={12} stroke={3} />{L('Pagado y cerrado', 'Paid & closed')}
                         </div>
                       ) : cxl ? (
                         <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-extrabold text-muted-2">
-                          <XCircle size={12} strokeWidth={2.6} />{L('Cancelado', 'Cancelled')}
+                          <XCircle size={12} stroke={2.6} />{L('Cancelado', 'Cancelled')}
                         </div>
                       ) : ca ? (
                         <button onClick={(e) => { e.stopPropagation(); ca.onClick(); }} className="mt-3 flex w-full items-center justify-center gap-1 rounded-field bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">
-                          {ca.label}<ChevronRight size={14} strokeWidth={2.6} />
+                          {ca.label}<ChevronRight size={14} stroke={2.6} />
                         </button>
                       ) : null}
                     </div>
@@ -1008,7 +1005,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const Stars = ({ n }: { n: number }) => (
     <span className="flex gap-0.5">
       {[0, 1, 2, 3, 4].map((i) => (
-        <Star key={i} size={12} strokeWidth={0} className={i < n ? 'fill-amber text-amber' : 'fill-lilac-line text-lilac-line'} />
+        <Star key={i} size={12} stroke={0} className={i < n ? 'fill-amber text-amber' : 'fill-lilac-line text-lilac-line'} />
       ))}
     </span>
   );
@@ -1085,7 +1082,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   ) : (
                     <div className="mt-3 rounded-btn-lg border border-dashed border-lilac-ring p-3">
                       <div className="mb-2 flex items-center gap-1.5 text-[9.5px] font-extrabold text-primary-dark">
-                        <Sparkles size={12} strokeWidth={2.2} />{L('Respuesta sugerida', 'Suggested reply')}
+                        <Sparkles size={12} stroke={2.2} />{L('Respuesta sugerida', 'Suggested reply')}
                       </div>
                       <textarea
                         value={draft}
@@ -1096,10 +1093,10 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       />
                       <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
                         <button onClick={() => toggleFlag(r)} className="flex cursor-pointer items-center gap-1 rounded-field px-2.5 py-2 text-[10px] font-extrabold text-pink-dark">
-                          <Flag size={11} strokeWidth={2.4} />{isFlagged ? L('Quitar reporte', 'Unflag') : L('Reportar', 'Flag')}
+                          <Flag size={11} stroke={2.4} />{isFlagged ? L('Quitar reporte', 'Unflag') : L('Reportar', 'Flag')}
                         </button>
                         <button onClick={() => aiDraft(r)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-primary-dark">
-                          <Sparkles size={11} strokeWidth={2.4} />{L('Sugerir', 'Suggest')}
+                          <Sparkles size={11} stroke={2.4} />{L('Sugerir', 'Suggest')}
                         </button>
                         <button onClick={() => sendReply(r)} className="cursor-pointer rounded-field bg-primary px-3.5 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm">
                           {L('Responder', 'Send reply')}
@@ -1109,9 +1106,9 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   )}
 
                   <div className="mt-2.5 flex items-center gap-3 text-[10px] font-semibold text-muted-2">
-                    <span className="flex items-center gap-1"><Heart size={12} strokeWidth={2.2} className="text-pink" /> {r.helpful} {L('útil', 'helpful')}</span>
+                    <span className="flex items-center gap-1"><Heart size={12} stroke={2.2} className="text-pink" /> {r.helpful} {L('útil', 'helpful')}</span>
                     {!reply && !isFlagged && (
-                      <button onClick={() => toggleFlag(r)} className="flex cursor-pointer items-center gap-1 text-pink-dark xl:hidden"><Flag size={11} strokeWidth={2.2} />{L('Reportar', 'Flag')}</button>
+                      <button onClick={() => toggleFlag(r)} className="flex cursor-pointer items-center gap-1 text-pink-dark xl:hidden"><Flag size={11} stroke={2.2} />{L('Reportar', 'Flag')}</button>
                     )}
                   </div>
                 </div>
@@ -1217,8 +1214,8 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5"><span className="truncate text-[14px] font-extrabold text-ink">{selCust.name}</span>{selCust.vip && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">VIP</span>}</div>
               <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] font-semibold text-muted-2">
-                {selCust.phone && <span className="flex items-center gap-1"><Phone size={11} strokeWidth={2.2} />{selCust.phone}</span>}
-                {selCust.email && <span className="flex items-center gap-1"><Mail size={11} strokeWidth={2.2} />{selCust.email}</span>}
+                {selCust.phone && <span className="flex items-center gap-1"><Phone size={11} stroke={2.2} />{selCust.phone}</span>}
+                {selCust.email && <span className="flex items-center gap-1"><Mail size={11} stroke={2.2} />{selCust.email}</span>}
                 {!selCust.phone && !selCust.email && <span>{L('última', 'last')} {L(selCust.last[0], selCust.last[1])}</span>}
               </div>
             </div>
@@ -1288,7 +1285,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* NEW: assigned-driver card (Cocina) */}
           {selOrder.fulfillment?.driver && (
             <div className="mt-3 flex items-center gap-2.5 rounded-btn-lg bg-green-bg p-3">
-              <Truck size={16} strokeWidth={2.2} className="flex-none text-green-dark" />
+              <Truck size={16} stroke={2.2} className="flex-none text-green-dark" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12px] font-extrabold text-ink">{selOrder.fulfillment.driver}</div>
                 {selOrder.fulfillment.eta && <div className="text-[10.5px] font-semibold text-muted-2">{selOrder.fulfillment.eta}</div>}
@@ -1316,17 +1313,17 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           })()}
           {selOrder.status !== 'completed' && selOrder.status !== 'cancelled' && (
             <div className="mt-4 flex gap-2.5">
-              <button onClick={() => (selOrder.status === 'new' ? setRejectFor(selOrder) : cancelOrder(selOrder))} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} strokeWidth={2.4} />{L('Cancelar', 'Cancel')}</button>
+              <button onClick={() => (selOrder.status === 'new' ? setRejectFor(selOrder) : cancelOrder(selOrder))} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} stroke={2.4} />{L('Cancelar', 'Cancel')}</button>
               {(() => { const ca = cardAction(selOrder); return ca && (
-                <button onClick={ca.onClick} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm">{ca.label}<ChevronRight size={15} strokeWidth={2.6} /></button>
+                <button onClick={ca.onClick} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm">{ca.label}<ChevronRight size={15} stroke={2.6} /></button>
               ); })()}
             </div>
           )}
           {selOrder.status === 'completed' && (
-            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-green-bg py-3 text-[12px] font-extrabold text-green-dark"><Check size={14} strokeWidth={3} />{L('Pagado y cerrado', 'Paid & closed')}</div>
+            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-green-bg py-3 text-[12px] font-extrabold text-green-dark"><Check size={14} stroke={3} />{L('Pagado y cerrado', 'Paid & closed')}</div>
           )}
           {selOrder.status === 'cancelled' && (
-            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-app py-3 text-[12px] font-extrabold text-muted-2"><XCircle size={14} strokeWidth={2.6} />{L('Pedido cancelado', 'Order cancelled')}</div>
+            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-app py-3 text-[12px] font-extrabold text-muted-2"><XCircle size={14} stroke={2.6} />{L('Pedido cancelado', 'Order cancelled')}</div>
           )}
         </Overlay>
       )}
@@ -1345,8 +1342,8 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             ))}
           </div>
           <div className="mt-4 flex gap-2.5">
-            <button onClick={() => { setRejectFor(prepFor); setPrepFor(null); }} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} strokeWidth={2.4} />{L('Rechazar', 'Reject')}</button>
-            <button onClick={() => acceptOrder(prepFor, prepMin)} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm"><Check size={15} strokeWidth={2.8} />{L(`Aceptar · ${prepMin} min`, `Accept · ${prepMin} min`)}</button>
+            <button onClick={() => { setRejectFor(prepFor); setPrepFor(null); }} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} stroke={2.4} />{L('Rechazar', 'Reject')}</button>
+            <button onClick={() => acceptOrder(prepFor, prepMin)} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm"><Check size={15} stroke={2.8} />{L(`Aceptar · ${prepMin} min`, `Accept · ${prepMin} min`)}</button>
           </div>
         </Overlay>
       )}
@@ -1390,7 +1387,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-3 flex flex-col gap-2">
             {REJECT_REASONS.map(([label]) => (
               <button key={label} onClick={() => rejectOrder(rejectFor, label)} className="flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line px-3.5 py-3 text-left text-[12.5px] font-bold text-ink">
-                <XCircle size={14} strokeWidth={2.4} className="flex-none text-pink-dark" />{label}
+                <XCircle size={14} stroke={2.4} className="flex-none text-pink-dark" />{label}
               </button>
             ))}
           </div>
@@ -1399,7 +1396,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} strokeWidth={2.6} className="text-[#7BE0A8]" />
+          <Check size={14} stroke={2.6} className="text-[#7BE0A8]" />
           {toast}
         </div>
       )}

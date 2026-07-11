@@ -10,7 +10,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, HelpCircle, Heart, ImagePlus, LogIn, MessageCircle, Plus, Store, Tag, X, BarChart3, Check } from 'lucide-react';
+import { IconCalendar as Calendar, IconClock as Clock, IconHelpCircle as HelpCircle, IconHeart as Heart, IconPhotoPlus as ImagePlus, IconLogin as LogIn, IconMessageCircle as MessageCircle, IconPlus as Plus, IconBuildingStore as Store, IconTag as Tag, IconX as X, IconChartBar as BarChart3, IconCheck as Check } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp, type PostType } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -391,7 +391,7 @@ export function PublishModal() {
       {type === 'post' && !done && !auth.user && auth.configured && (
         <div className="flex flex-col items-center px-2 py-5 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-            <LogIn size={24} className="text-primary" strokeWidth={2.2} />
+            <LogIn size={24} className="text-primary" stroke={2.2} />
           </span>
           <div className="mt-4 text-[19px] font-extrabold tracking-[-.02em] text-ink">
             {L('Únete para publicar', 'Join to post')}
@@ -480,7 +480,7 @@ export function PublishModal() {
                             onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
                             className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
                           >
-                            <X size={13} strokeWidth={2.6} />
+                            <X size={13} stroke={2.6} />
                           </button>
                         )}
                       </div>
@@ -491,7 +491,7 @@ export function PublishModal() {
                       onClick={() => setPollOptions([...pollOptions, ''])}
                       className="mt-2 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-extrabold text-primary-dark"
                     >
-                      <Plus size={14} strokeWidth={2.6} />
+                      <Plus size={14} stroke={2.6} />
                       {L('Añadir opción', 'Add option')}
                     </button>
                   )}
@@ -512,7 +512,7 @@ export function PublishModal() {
                           className="absolute -right-1.5 -top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-ink text-white"
                           aria-label={L('Quitar foto', 'Remove photo')}
                         >
-                          <X size={10} strokeWidth={3} />
+                          <X size={10} stroke={3} />
                         </button>
                       </span>
                     ))}
@@ -521,7 +521,7 @@ export function PublishModal() {
                         onClick={() => fileInput.current?.click()}
                         className="flex h-[68px] w-[68px] cursor-pointer flex-col items-center justify-center gap-1 rounded-btn border-[1.5px] border-dashed border-lilac-line text-[11px] font-extrabold text-primary-dark"
                       >
-                        <ImagePlus size={16} strokeWidth={2.4} />
+                        <ImagePlus size={16} stroke={2.4} />
                         {L('Añadir', 'Add')}
                       </button>
                     )}
@@ -718,7 +718,7 @@ export function PublishModal() {
                   onClick={() => setBizHours(defaultWeek())}
                   className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark"
                 >
-                  <Clock size={15} strokeWidth={2.4} />
+                  <Clock size={15} stroke={2.4} />
                   {L('Agregar horario de atención', 'Add opening hours')}
                 </button>
                 <div className="mt-1 text-[11px] font-semibold text-muted">
@@ -766,7 +766,7 @@ export function PublishModal() {
       {done && (
         <div className="flex flex-col items-center px-2 py-6 text-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-            <Check size={28} strokeWidth={3} className="text-green" />
+            <Check size={28} stroke={3} className="text-green" />
           </span>
           <div className="mt-4 text-[19px] font-extrabold tracking-[-.02em] text-ink">{success.t}</div>
           <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">{success.s}</div>

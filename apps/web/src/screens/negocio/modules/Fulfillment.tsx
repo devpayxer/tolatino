@@ -17,11 +17,8 @@
 // Setup (zones/drivers/pickup/carriers) persists to businesses.settings.
 
 import { useEffect, useState, type ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import {
-  Bike, Boxes, CheckCircle2, Clock, HardHat, MapPin, Navigation,
-  Package, PackageCheck, Route, Store, Tag, Truck, Utensils, Zap,
-} from 'lucide-react';
+import { Icon as LucideIcon } from '@tabler/icons-react';
+import { IconBike as Bike, IconPackages as Boxes, IconCircleCheck as CheckCircle2, IconClock as Clock, IconHelmet as HardHat, IconMapPin as MapPin, IconNavigation as Navigation, IconPackage as Package, IconPackage as PackageCheck, IconRoute as Route, IconBuildingStore as Store, IconTag as Tag, IconTruck as Truck, IconToolsKitchen2 as Utensils, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { activeMods } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -338,7 +335,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn-lg bg-lilac-2 text-[12px] font-extrabold text-primary-dark">{initials(o.customer_name)}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{o.customer_name || L('Cliente', 'Customer')}</span><span className="flex-none text-[10.5px] font-bold text-muted-2">{o.code}</span></div>
-                    <div className="mt-0.5 flex items-center gap-1 text-[10.5px] font-semibold text-ink-3"><MapPin size={11} strokeWidth={2.4} className="flex-none text-muted-2" /><span className="truncate">{o.fulfillment.address || L('Sin dirección', 'No address')}</span></div>
+                    <div className="mt-0.5 flex items-center gap-1 text-[10.5px] font-semibold text-ink-3"><MapPin size={11} stroke={2.4} className="flex-none text-muted-2" /><span className="truncate">{o.fulfillment.address || L('Sin dirección', 'No address')}</span></div>
                     <div className="mt-0.5 truncate text-[10.5px] font-medium text-muted-2">{itemsLabel(o.items)}</div>
                   </div>
                   <div className="flex flex-none flex-col items-end gap-1">
@@ -355,7 +352,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
 
                 {o.fulfillment.driver && (
                   <div className="mt-2.5 flex items-center gap-2 rounded-field bg-lilac-2 px-2.5 py-1.5">
-                    <HardHat size={13} strokeWidth={2.2} className="flex-none text-primary-dark" />
+                    <HardHat size={13} stroke={2.2} className="flex-none text-primary-dark" />
                     <span className="min-w-0 flex-1 truncate text-[10.5px] font-extrabold text-ink-2">{o.fulfillment.driver}</span>
                     {o.fulfillment.eta && <span className="flex-none text-[10px] font-bold text-green-dark">ETA {o.fulfillment.eta}</span>}
                   </div>
@@ -366,9 +363,9 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                   <div className="relative mt-2.5 h-[68px] overflow-hidden rounded-field border border-hair" style={{ background: '#EAEEF6' }}>
                     <div className="absolute left-[-10px] top-[26px] h-[6px] w-[150%] bg-white" style={{ transform: 'rotate(-8deg)' }} />
                     <div className="absolute left-[38%] top-[-10px] h-[150%] w-[6px] bg-white" style={{ transform: 'rotate(9deg)' }} />
-                    <span className="absolute left-[18%] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={12} strokeWidth={2.4} /></span>
+                    <span className="absolute left-[18%] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={12} stroke={2.4} /></span>
                     <span className="absolute right-[16%] top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-white bg-green shadow-card" />
-                    <span className="absolute bottom-1.5 right-2 rounded-md bg-white/90 px-2 py-0.5 text-[9px] font-extrabold text-ink shadow-card"><Navigation size={9} strokeWidth={2.6} className="mr-0.5 inline" />{o.fulfillment.eta ? `ETA ${o.fulfillment.eta}` : L('En ruta', 'En route')}</span>
+                    <span className="absolute bottom-1.5 right-2 rounded-md bg-white/90 px-2 py-0.5 text-[9px] font-extrabold text-ink shadow-card"><Navigation size={9} stroke={2.6} className="mr-0.5 inline" />{o.fulfillment.eta ? `ETA ${o.fulfillment.eta}` : L('En ruta', 'En route')}</span>
                   </div>
                 )}
 
@@ -411,7 +408,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
           </button>
         ))}
         <div className="flex items-center gap-3 rounded-card-sm bg-lilac-2 p-3">
-          <Truck size={16} strokeWidth={2} className="flex-none text-primary-dark" />
+          <Truck size={16} stroke={2} className="flex-none text-primary-dark" />
           <div>
             <div className="text-[11.5px] font-extrabold text-ink">{L('Fuera de zona → envío', 'Out of zone → shipping')}</div>
             <div className="mt-0.5 text-[10px] font-medium leading-snug text-ink-3">{L('Más allá de la última zona se ofrece envío o recoger.', 'Beyond the last zone we offer shipping or pickup.')}</div>
@@ -553,17 +550,17 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             return (
               <div key={o.id} className={`${cardCls} p-3.5`}>
                 <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn-lg bg-lilac-2 text-primary-dark"><Package size={17} strokeWidth={2} /></span>
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn-lg bg-lilac-2 text-primary-dark"><Package size={17} stroke={2} /></span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{o.customer_name || L('Cliente', 'Customer')}</span><span className="flex-none text-[10.5px] font-bold text-muted-2">{o.code}</span></div>
-                    <div className="mt-0.5 flex items-center gap-1 text-[10.5px] font-semibold text-ink-3"><MapPin size={11} strokeWidth={2.4} className="flex-none text-muted-2" /><span className="truncate">{o.fulfillment.address || L('Sin dirección', 'No address')}</span></div>
+                    <div className="mt-0.5 flex items-center gap-1 text-[10.5px] font-semibold text-ink-3"><MapPin size={11} stroke={2.4} className="flex-none text-muted-2" /><span className="truncate">{o.fulfillment.address || L('Sin dirección', 'No address')}</span></div>
                     <div className="mt-0.5 truncate text-[10.5px] font-medium text-muted-2">{itemsLabel(o.items)}{o.fulfillment.pkg ? ` · ${o.fulfillment.pkg}` : ''}</div>
                   </div>
                   <div className="flex flex-none flex-col items-end gap-1"><span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${bd.cls}`}>{L(bd.es, bd.en)}</span><span className="text-[13px] font-extrabold text-ink">{money(o.total)}</span></div>
                 </div>
                 {o.fulfillment.tracking && (
                   <div className="mt-2.5 flex items-center gap-2 rounded-field bg-lilac-2 px-2.5 py-1.5">
-                    <Truck size={13} strokeWidth={2.2} className="flex-none text-primary-dark" />
+                    <Truck size={13} stroke={2.2} className="flex-none text-primary-dark" />
                     <span className="min-w-0 flex-1 truncate text-[10px] font-bold text-ink-2">{o.fulfillment.carrier} · {o.fulfillment.tracking}</span>
                   </div>
                 )}
@@ -599,7 +596,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
           {pickupLocs.map((p) => (
             <div key={p.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Store size={17} strokeWidth={2} /></span>
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Store size={17} stroke={2} /></span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5"><span className="text-[12.5px] font-extrabold text-ink">{p.name}</span>{p.main && <span className="rounded bg-green-bg px-1.5 py-px text-[8px] font-extrabold text-green-dark">{L('Principal', 'Primary')}</span>}</div>
                 <div className="mt-0.5 text-[10px] font-medium text-muted-2">{p.hours} · {p.window}</div>
@@ -634,12 +631,12 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         <>
           <div className="px-0.5 text-[12px] font-extrabold text-ink">{L('Tus tarifas de envío', 'Your shipping rates')}</div>
           <div className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Package size={17} strokeWidth={2} /></span>
+            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Package size={17} stroke={2} /></span>
             <div className="min-w-0 flex-1"><div className="text-[12.5px] font-extrabold text-ink">{L('Tarifa plana nacional', 'Flat national rate')}</div><div className="mt-0.5 text-[10px] font-medium text-muted-2">{L('Un solo precio a todo EE.UU.', 'One price to all of the US')}</div></div>
             <span className="text-[13px] font-extrabold text-ink">$8.00</span>
           </div>
           <div className="flex items-center gap-3 rounded-card-sm border border-green/20 bg-green-bg p-3">
-            <Package size={16} strokeWidth={2} className="flex-none text-green-dark" />
+            <Package size={16} stroke={2} className="flex-none text-green-dark" />
             <div><div className="text-[11.5px] font-extrabold text-green-dark">{L(`Envío gratis sobre $${shipOps.freeOver}`, `Free shipping over $${shipOps.freeOver}`)}</div><div className="mt-0.5 text-[10px] font-medium text-green-dark/80">{L('Se aplica automáticamente · solo EE.UU.', 'Applied automatically · US only')}</div></div>
           </div>
         </>
@@ -651,7 +648,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               const on = carrierState[i];
               return (
                 <div key={c.name + i} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 ${on ? '' : 'opacity-60'}`}>
-                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-blue-bg text-blue"><Truck size={17} strokeWidth={2} /></span>
+                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-blue-bg text-blue"><Truck size={17} stroke={2} /></span>
                   <div className="min-w-0 flex-1"><div className="text-[12.5px] font-extrabold text-ink">{c.name}</div><div className="mt-0.5 text-[10px] font-medium text-muted-2">{L(c.dEs, c.dEn)}</div></div>
                   <span className="text-[13px] font-extrabold text-ink">{c.rate}</span>
                   <Toggle on={on} onClick={() => { const next = { ...carrierState, [i]: !on }; setCarrierState(next); persistSettings({}, { carrier: next }); }} />
@@ -748,8 +745,8 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
 
       {/* section toggle: Delivery (local) vs Shipping (out of zone) */}
       <div className="mb-3 grid grid-cols-2 gap-2">
-        <button onClick={() => setSec('delivery')} className={secBtn(sec === 'delivery')}><MapPin size={15} strokeWidth={2} />{L('Delivery', 'Delivery')}{enRoute > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{enRoute}</span>}</button>
-        <button onClick={() => setSec('shipping')} className={secBtn(sec === 'shipping')}><Truck size={15} strokeWidth={2} />{L('Shipping', 'Shipping')}{toShip > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{toShip}</span>}</button>
+        <button onClick={() => setSec('delivery')} className={secBtn(sec === 'delivery')}><MapPin size={15} stroke={2} />{L('Delivery', 'Delivery')}{enRoute > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{enRoute}</span>}</button>
+        <button onClick={() => setSec('shipping')} className={secBtn(sec === 'shipping')}><Truck size={15} stroke={2} />{L('Shipping', 'Shipping')}{toShip > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{toShip}</span>}</button>
       </div>
 
       {/* sub-tabs */}
@@ -831,7 +828,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               <div className="flex flex-wrap gap-2">{PKG_SIZES.map((p) => <button key={p} onClick={() => setLabelPkg(p)} className={chip(labelPkg === p)}>{p}</button>)}</div>
             </div>
             <div className="flex items-center gap-2 rounded-field bg-amber-bg px-3 py-2 text-[10px] font-semibold text-amber-ink">
-              <Tag size={13} strokeWidth={2.2} className="flex-none" />{L('El número de rastreo es de demostración. Las etiquetas reales se generan con el API del transportista (se conecta desde Admin).', 'The tracking number is a demo. Real labels come from the carrier API (connected from Admin).')}
+              <Tag size={13} stroke={2.2} className="flex-none" />{L('El número de rastreo es de demostración. Las etiquetas reales se generan con el API del transportista (se conecta desde Admin).', 'The tracking number is a demo. Real labels come from the carrier API (connected from Admin).')}
             </div>
             <button onClick={createLabel} className="w-full cursor-pointer rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Crear etiqueta', 'Create label')}</button>
           </div>

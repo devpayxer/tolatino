@@ -7,7 +7,7 @@
 // close the sheet after a tap.
 
 import { useRouter, usePathname } from 'next/navigation';
-import { Bookmark, ChevronDown, Home, MapPin, Users } from 'lucide-react';
+import { IconBookmark as Bookmark, IconChevronDown as ChevronDown, IconHome as Home, IconMapPin as MapPin, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -67,9 +67,9 @@ export function ProfileNav({ onNavigate, className }: { onNavigate?: () => void;
             }}
             className="mt-1 inline-flex max-w-full cursor-pointer items-center gap-1 rounded-full bg-lilac-2 px-2.5 py-1 text-[11.5px] font-extrabold text-ink"
           >
-            <MapPin size={12} className="flex-none text-primary" strokeWidth={2.4} />
+            <MapPin size={12} className="flex-none text-primary" stroke={2.4} />
             <span className="truncate">{app.city}</span>
-            <ChevronDown size={12} strokeWidth={2.6} className="flex-none text-muted" />
+            <ChevronDown size={12} stroke={2.6} className="flex-none text-muted" />
           </button>
         </div>
       </div>

@@ -4,7 +4,7 @@
 // Desktop: barrios rail / feed / tendencias+vecinos. Mobile: single column.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Send, Store, X } from 'lucide-react';
+import { IconSend as Send, IconBuildingStore as Store, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -497,7 +497,7 @@ export function ComunidadScreen() {
             {(c.es || c.en) && <div className="mt-0.5 text-[12.5px] font-medium leading-[1.45] text-ink-body">{L(c.es, c.en)}</div>}
             {c.biz && (
               <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-[9px] bg-green-bg px-2 py-1 text-[11px] font-extrabold text-green-dark">
-                <Store size={12} strokeWidth={2.4} />
+                <Store size={12} stroke={2.4} />
                 {c.biz.name} · ★ {c.biz.rating}
               </div>
             )}
@@ -723,7 +723,7 @@ export function ComunidadScreen() {
                 onClick={closeThread}
                 className="ml-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
               >
-                <X size={15} strokeWidth={2.8} />
+                <X size={15} stroke={2.8} />
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -745,16 +745,16 @@ export function ComunidadScreen() {
                   {L('Respondiendo a ', 'Replying to ')}
                   {replyTo.name}
                   <button onClick={() => setReplyTo(null)} className="cursor-pointer">
-                    <X size={12} strokeWidth={3} />
+                    <X size={12} stroke={3} />
                   </button>
                 </div>
               )}
               {commentBiz && (
                 <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-green-bg px-3 py-1.5 text-[11.5px] font-extrabold text-green-dark">
-                  <Store size={12} strokeWidth={2.4} />
+                  <Store size={12} stroke={2.4} />
                   {commentBiz}
                   <button onClick={() => setCommentBiz(null)} className="cursor-pointer">
-                    <X size={11} strokeWidth={3} />
+                    <X size={11} stroke={3} />
                   </button>
                 </div>
               )}
@@ -799,7 +799,7 @@ export function ComunidadScreen() {
                   }`}
                   aria-label={L('Recomendar un negocio', 'Recommend a business')}
                 >
-                  <Store size={17} strokeWidth={2.2} />
+                  <Store size={17} stroke={2.2} />
                 </button>
                 <button
                   onClick={sendComment}
@@ -809,7 +809,7 @@ export function ComunidadScreen() {
                   }`}
                   aria-label={L('Enviar', 'Send')}
                 >
-                  <Send size={15} strokeWidth={2.4} />
+                  <Send size={15} stroke={2.4} />
                 </button>
               </div>
             </div>

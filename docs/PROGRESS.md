@@ -3,7 +3,33 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-10.
+> Last updated: 2026-07-11.
+
+## Icon pack swapped: Lucide → Tabler Icons (2026-07-11)
+Founder didn't like Lucide's look; picked **Tabler Icons** after reviewing a
+real side-by-side comparison (Lucide/Tabler/Phosphor/Heroicons, rendered with
+our actual tokens, in-context on the nav bar/business card/chips — not
+library screenshots). Swapped app-wide: `@tabler/icons-react` replaces
+`lucide-react` as a dependency; **127 unique icons** across **54 files** (all
+of `apps/web/src`) migrated via an AST codemod (ts-morph — preserves
+formatting, distinguishes icon-component JSX from raw `<svg>`/`<path>`
+elements so only the right `strokeWidth`→`stroke` renames happened; every
+Tabler name was verified against the real package export list before
+mapping, not guessed — caught real traps like `Menu`→`IconMenu2` (Tabler's
+plain `IconMenu` is a different, wrong 2-line glyph) and `LucideIcon` being a
+*type* import mapped separately to Tabler's `Icon` type).
+- **Active/saved states** (♥ guardado, ⭐ destacado, 🔖 guardado post — 8
+  spots) were NOT done as a naive `fill` prop toggle on the outline icon;
+  each now conditionally renders Tabler's dedicated `...Filled` component
+  (`IconHeartFilled`, `IconStarFilled`, `IconBookmarkFilled`), which is the
+  correct approach both libraries actually design for.
+- **Verified:** `tsc --noEmit` + build clean; real-browser sweep (mobile
+  402px + desktop 1440px, signed-in customer AND business owner) across
+  Negocios list, BizDetail (overview/Menú/saved-heart), Comunidad feed,
+  dashboard (desktop sidebar + mobile). Full existing regression suite
+  (`spy-*`, `scroll-lock`, `addon-variant-prompts`, `reorder-section`) still
+  passes — zero functional regressions from the swap.
+- `docs/design-system/README.md` updated (was documented as Lucide).
 
 ## Platform polish batch (2026-07-10) — all verified in a real browser
 - **Business single-page restored** (founder correction): the food menu lives ONLY

@@ -8,7 +8,7 @@
 // source and are re-imported by Fulfillment.tsx.
 
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { IconTrash as Trash2 } from '@tabler/icons-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
@@ -108,7 +108,7 @@ export function ZoneEditor({
           </div>
         </div>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!es.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Crear zona', 'Create zone')}</button>
         </div>
         {initial && (
@@ -207,7 +207,7 @@ export function DriverEditor({
           </div>
         </div>
         <div className="mt-1 flex gap-2.5">
-          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} strokeWidth={2.2} /></button>}
+          {initial && <button onClick={() => setConfirming(true)} aria-label={L('Eliminar', 'Delete')} className={dangerBtn}><Trash2 size={15} stroke={2.2} /></button>}
           <button onClick={save} disabled={!name.trim()} className={saveBtn}>{initial ? L('Guardar cambios', 'Save changes') : L('Agregar repartidor', 'Add driver')}</button>
         </div>
         {initial && (

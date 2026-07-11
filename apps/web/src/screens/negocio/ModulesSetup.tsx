@@ -3,7 +3,7 @@
 // "Configurar módulos" — toggle only what the business needs. Free tier sees
 // everything locked behind Verified.
 
-import { Bike, Lock, Megaphone, Package, Ticket, Utensils } from 'lucide-react';
+import { IconBike as Bike, IconLock as Lock, IconSpeakerphone as Megaphone, IconPackage as Package, IconTicket as Ticket, IconToolsKitchen2 as Utensils } from '@tabler/icons-react';
 import type { Mods, PanelCtx } from '@/screens/negocio/tabs';
 import { Switch } from '@/components/ui';
 
@@ -30,7 +30,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
               </span>
               {isFree ? (
                 <span className="flex items-center gap-1 rounded-full bg-lilac-2 px-2.5 py-1 text-[10px] font-extrabold text-muted">
-                  <Lock size={10} strokeWidth={2.6} />
+                  <Lock size={10} stroke={2.6} />
                   Verified
                 </span>
               ) : (

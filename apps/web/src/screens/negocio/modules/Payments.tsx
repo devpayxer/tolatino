@@ -7,7 +7,7 @@
 // payments" state rather than fake payout rows. Demo shows a sample summary.
 
 import { useEffect, useState } from 'react';
-import { Check, DollarSign, ExternalLink, Loader2, Receipt, ShoppingBag, Store } from 'lucide-react';
+import { IconCheck as Check, IconCurrencyDollar as DollarSign, IconExternalLink as ExternalLink, IconLoader2 as Loader2, IconReceipt as Receipt, IconShoppingBag as ShoppingBag, IconBuildingStore as Store } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -92,7 +92,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
     return (
       <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
-          <Store size={24} className="text-primary" strokeWidth={2.2} />
+          <Store size={24} className="text-primary" stroke={2.2} />
         </span>
         <h3 className="mt-4 text-[17px] font-extrabold text-ink">{L('Conecta tu negocio', 'Connect your business')}</h3>
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
@@ -137,7 +137,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
           <div className="mt-4 rounded-card border border-hair bg-white p-5 shadow-card">
             <div className="flex items-start gap-3">
               <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-full ${active ? 'bg-green-bg' : 'bg-lilac'}`}>
-                {active ? <Check size={22} className="text-green-dark" strokeWidth={2.6} /> : <DollarSign size={22} className="text-primary" strokeWidth={2.2} />}
+                {active ? <Check size={22} className="text-green-dark" stroke={2.6} /> : <DollarSign size={22} className="text-primary" stroke={2.2} />}
               </span>
               <div className="min-w-0 flex-1">
                 <h3 className="text-[15px] font-extrabold text-ink">{L('Recibir pagos y depósitos', 'Receive payments & payouts')}</h3>
@@ -149,10 +149,10 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
                       : L('Conecta una cuenta con Stripe para cobrar a tus clientes y recibir depósitos a tu banco. Toma unos minutos.', 'Connect a Stripe account to charge customers and get bank deposits. It takes a few minutes.')}
                 </p>
                 {active ? (
-                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-bg px-3 py-1 text-[11px] font-extrabold text-green-dark"><Check size={12} strokeWidth={3} />{L('Recibiendo pagos', 'Receiving payments')}</span>
+                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-bg px-3 py-1 text-[11px] font-extrabold text-green-dark"><Check size={12} stroke={3} />{L('Recibiendo pagos', 'Receiving payments')}</span>
                 ) : (
                   <button onClick={connectOnboard} disabled={connectBusy || connect === null} className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-60">
-                    {connectBusy ? L('Abriendo Stripe…', 'Opening Stripe…') : <>{pending ? L('Continuar verificación', 'Continue verification') : L('Conectar con Stripe', 'Connect with Stripe')}<ExternalLink size={13} strokeWidth={2.4} /></>}
+                    {connectBusy ? L('Abriendo Stripe…', 'Opening Stripe…') : <>{pending ? L('Continuar verificación', 'Continue verification') : L('Conectar con Stripe', 'Connect with Stripe')}<ExternalLink size={13} stroke={2.4} /></>}
                   </button>
                 )}
               </div>

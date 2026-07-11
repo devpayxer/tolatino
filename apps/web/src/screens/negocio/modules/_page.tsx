@@ -10,7 +10,7 @@
 // with the panel chrome underneath.
 
 import type { ReactNode } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { IconChevronLeft as ChevronLeft } from '@tabler/icons-react';
 import { useScrollLock } from '@/lib/scrollLock';
 
 export function ModulePage({
@@ -41,7 +41,7 @@ export function ModulePage({
           aria-label={backLabel}
           className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"
         >
-          <ChevronLeft size={18} strokeWidth={2.4} />
+          <ChevronLeft size={18} stroke={2.4} />
         </button>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[16px] font-extrabold text-ink">{title}</div>
