@@ -5,6 +5,19 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-11.
 
+## Business page: "surface" background for tab content (2026-07-11)
+Founder: the Menú/Overview/etc. content read as one undifferentiated block —
+no visual separation from the header/tabs above it. First attempt (lightening
+the shared `text-muted` token app-wide) missed the ask and was **reverted**
+before shipping — the founder clarified he wanted a background change scoped
+to just the business-page tab content, not a global text-color change. Added
+a new `surface` token (`#F8FAFC`, the founder's exact value) and wrapped all
+5 tab-content blocks (Overview/Menú/Tienda/Relacionados/Reseñas) in one
+full-bleed background container, using the same `-mx/px` cancel-parent-
+padding trick already established in this file. Verified mobile + desktop
+across all 5 tabs; full 10-script regression suite passes (touches the
+shared wrapper around all tab content).
+
 ## Icon pack swapped: Lucide → Tabler Icons (2026-07-11)
 Founder didn't like Lucide's look; picked **Tabler Icons** after reviewing a
 real side-by-side comparison (Lucide/Tabler/Phosphor/Heroicons, rendered with
