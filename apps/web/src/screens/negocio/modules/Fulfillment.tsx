@@ -26,15 +26,22 @@ import { supabase } from '@/lib/supabase';
 import { ChipRow } from '@/components/ChipRow';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { Toast } from '@/screens/negocio/modules/_page';
-import { ZoneEditor, DriverEditor, type Zone, type OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
+import { ZoneEditor, DriverEditor, normalizeZone, type Zone, type OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
 
 // ---- setup persistence model (businesses.settings jsonb; Zone/OwnDriver types
 // live in FulfillmentEditors as the single source) ----
 const ZONE_SEED: Zone[] = [
-  { color: '#7B61FF', es: 'Zona 1 · Centro', en: 'Zone 1 · Core', rad: '0–1.2 mi', time: '30–45 min', feeEs: 'Gratis +$25', feeEn: 'Free +$25' },
-  { color: '#F0466E', es: 'Zona 2 · Ampliada', en: 'Zone 2 · Greater', rad: '1.2–3 mi', time: '45–60 min', feeEs: '$5', feeEn: '$5' },
-  { color: '#F4B740', es: 'Zona 3 · Exterior', en: 'Zone 3 · Outer', rad: '3–8 mi', time: '60–90 min', feeEs: '$12', feeEn: '$12' },
+  { color: '#7B61FF', es: 'Zona 1 · Centro', en: 'Zone 1 · Core', toMi: 1.2, time: '30–45 min', fee: 0 },
+  { color: '#F0466E', es: 'Zona 2 · Ampliada', en: 'Zone 2 · Greater', toMi: 3, time: '45–60 min', fee: 5 },
+  { color: '#F4B740', es: 'Zona 3 · Exterior', en: 'Zone 3 · Outer', toMi: 8, time: '60–90 min', fee: 12 },
 ];
+// The delivery limit the cart enforces = the OUTERMOST zone's radius. Deriving it
+// from the zones (rather than a separate field) means the reach the owner sees in
+// Zonas is exactly what gates checkout — no hidden setting to forget.
+const zonesRadiusMi = (zs: Zone[]): string => {
+  const b = zs.map((z) => z.toMi).filter((n): n is number => typeof n === 'number' && n > 0);
+  return b.length ? String(Math.max(...b)) : '';
+};
 const DRIVER_SEED: OwnDriver[] = [
   { initials: 'MP', color: '#7B61FF', dot: '#1F9D57', name: 'Marco P.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2487 → Z2', orderEn: '#2487 → Z2', km: '1.8 mi', eta: 'ETA 5 min' },
   { initials: 'DR', color: '#2A5C8A', dot: '#1F9D57', name: 'Diego R.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2484 → Z1', orderEn: '#2484 → Z1', km: '0.9 mi', eta: 'ETA 2 min' },
@@ -121,10 +128,10 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   const [pickState, setPickState] = useState<Record<number, boolean>>(arrToRec(PICK_DEF));
   const [carrierState, setCarrierState] = useState<Record<number, boolean>>(arrToRec(CARRIER_DEF));
   const [extState, setExtState] = useState<Record<number, boolean>>(arrToRec(EXT_DEF));
-  // radiusMi: delivery radius in miles — '' = no limit. The cart enforces it via
-  // the delivery_range_check RPC (0076), so a value here gates checkout for
-  // addresses beyond it; empty keeps today's behavior (deliver anywhere).
-  const [delOps, setDelOps] = useState({ minOrder: '15', prepTime: '20', radiusMi: '', autoAssign: false, liveTracking: true });
+  // Delivery limit is DERIVED from the zones (zonesRadiusMi → outermost zone) and
+  // mirrored into settings.delivery_ops.radiusMi on save, so the PostGIS gate
+  // (delivery_range_check, 0076) enforces exactly the reach shown in Zonas.
+  const [delOps, setDelOps] = useState({ minOrder: '15', prepTime: '20', autoAssign: false, liveTracking: true });
   const [shipOps, setShipOps] = useState({ freeOver: '75', origin: '', pkg: 'Caja S', handling: '0' });
 
   useEffect(() => {
@@ -132,7 +139,9 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     const ship = (s.shipping ?? {}) as { delivery?: { zones?: Zone[] }; pickup?: { rules?: boolean[] }; national?: { carriers?: boolean[] }; external?: boolean[] };
     // Real businesses start EMPTY (add their own zones/drivers); only demo mode
     // shows the sample setup — a real panel never renders invented people.
-    setZones(Array.isArray(ship.delivery?.zones) && ship.delivery!.zones!.length ? ship.delivery!.zones! : admin.demo ? ZONE_SEED : []);
+    // normalizeZone coerces any stored shape (incl. the old free-text rad/feeEs)
+    // into the numeric toMi/fee model so pre-existing businesses keep working.
+    setZones(Array.isArray(ship.delivery?.zones) && ship.delivery!.zones!.length ? ship.delivery!.zones!.map(normalizeZone) : admin.demo ? ZONE_SEED : []);
     setDrivers(Array.isArray(s.drivers) && (s.drivers as OwnDriver[]).length ? (s.drivers as OwnDriver[]) : admin.demo ? DRIVER_SEED : []);
     setPickState(arrToRec(Array.isArray(ship.pickup?.rules) ? ship.pickup!.rules! : PICK_DEF));
     setCarrierState(arrToRec(Array.isArray(ship.national?.carriers) ? ship.national!.carriers! : CARRIER_DEF));
@@ -147,7 +156,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   const buildShipping = (o: { zones?: Zone[]; pick?: Record<number, boolean>; carrier?: Record<number, boolean>; ext?: Record<number, boolean> }) => {
     const z = o.zones ?? zones;
     return {
-      delivery: { on: z.length > 0, radius: z.length ? z[z.length - 1].rad : '', fee: z.length > 1 ? z[1].feeEs : (z[0]?.feeEs ?? ''), zones: z },
+      delivery: { on: z.length > 0, radius: zonesRadiusMi(z), fee: z[0] ? String(z[0].fee) : '', zones: z },
       pickup: { on: recToArr(o.pick ?? pickState, 4).some(Boolean), rules: recToArr(o.pick ?? pickState, 4) },
       national: { on: recToArr(o.carrier ?? carrierState, 4).some(Boolean), carriers: recToArr(o.carrier ?? carrierState, 4) },
       external: recToArr(o.ext ?? extState, 3),
@@ -155,7 +164,10 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   };
   const persistSettings = (extra: Record<string, unknown> = {}, o: { zones?: Zone[]; pick?: Record<number, boolean>; carrier?: Record<number, boolean>; ext?: Record<number, boolean>; drivers?: OwnDriver[] } = {}) => {
     if (!persistable || !real) return;
-    admin.update({ settings: { ...(real.settings ?? {}), shipping: buildShipping(o), drivers: o.drivers ?? drivers, delivery_ops: delOps, shipping_ops: shipOps, ...extra } });
+    // radiusMi is the derived mirror of the outermost zone (see zonesRadiusMi) —
+    // written on every save so the checkout gate can't drift from the zones.
+    const radiusMi = zonesRadiusMi(o.zones ?? zones);
+    admin.update({ settings: { ...(real.settings ?? {}), shipping: buildShipping(o), drivers: o.drivers ?? drivers, delivery_ops: { ...delOps, radiusMi }, shipping_ops: shipOps, ...extra } });
   };
   // ── zone + driver editor sheets (full CRUD, persisted to businesses.settings) ─
   const [zoneSheet, setZoneSheet] = useState<{ idx: number; initial: Zone | null } | null>(null);
@@ -399,17 +411,22 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary shadow-card" />
       </div>
       <div className="flex flex-col gap-2.5">
-        {zones.map((z, zi) => (
-          <button key={zi} onClick={() => setZoneSheet({ idx: zi, initial: z })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left hover:border-primary">
-            <span className="h-3 w-3 flex-none rounded-full" style={{ background: z.color }} />
-            <div className="min-w-0 flex-1">
-              <div className="text-[12.5px] font-extrabold text-ink">{L(z.es, z.en)}</div>
-              <div className="mt-0.5 text-[10px] font-medium text-muted-2">{z.rad} · ETA {z.time}</div>
-            </div>
-            <span className="flex-none text-[13px] font-extrabold text-ink">{L(z.feeEs, z.feeEn)}</span>
-            <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
-          </button>
-        ))}
+        {zones.map((z, zi) => {
+          const from = zi > 0 ? zones[zi - 1].toMi : 0;
+          const dist = z.toMi != null ? (from ? `${from}–${z.toMi} mi` : `${L('Hasta', 'Up to')} ${z.toMi} mi`) : L('Sin límite', 'No limit');
+          const feeLbl = z.fee > 0 ? `$${z.fee.toFixed(2)}` : L('Gratis', 'Free');
+          return (
+            <button key={zi} onClick={() => setZoneSheet({ idx: zi, initial: z })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left hover:border-primary">
+              <span className="h-3 w-3 flex-none rounded-full" style={{ background: z.color }} />
+              <div className="min-w-0 flex-1">
+                <div className="text-[12.5px] font-extrabold text-ink">{L(z.es, z.en)}</div>
+                <div className="mt-0.5 text-[10px] font-medium text-muted-2">{dist}{z.time && z.time !== '—' ? ` · ETA ${z.time}` : ''}</div>
+              </div>
+              <span className={`flex-none text-[13px] font-extrabold ${z.fee > 0 ? 'text-ink' : 'text-green-dark'}`}>{feeLbl}</span>
+              <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
+            </button>
+          );
+        })}
         <div className="flex items-center gap-3 rounded-card-sm bg-lilac-2 p-3">
           <Truck size={16} stroke={2} className="flex-none text-primary-dark" />
           <div>
@@ -491,18 +508,27 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
       {right}
     </div>
   );
+  // Money fields ($ prefix) reformat to X.00 on blur so amounts read professionally.
   const numBox = (val: string, onChange: (v: string) => void, prefix?: string, suffix?: string) => (
     <div className="flex w-[110px] flex-none items-center rounded-field border-[1.5px] border-lilac-line bg-white px-2.5 focus-within:border-primary">
       {prefix && <span className="text-[12px] font-bold text-muted-2">{prefix}</span>}
-      <input value={val} onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[13px] font-semibold text-ink outline-none" />
+      <input value={val} onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'))} onBlur={prefix === '$' ? () => onChange(val.trim() === '' ? '' : (Number(val) || 0).toFixed(2)) : undefined} inputMode="decimal" className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[13px] font-semibold text-ink outline-none" />
       {suffix && <span className="text-[11px] font-bold text-muted-2">{suffix}</span>}
     </div>
   );
+  const reachMi = zonesRadiusMi(zones);
   const delSettingsView = (
     <div className="mx-auto max-w-[560px]">
       <div className={`${cardCls} px-3.5`}>
         {settingRow(L('Pedido mínimo', 'Minimum order'), L('Monto mínimo para entrega a domicilio.', 'Minimum for home delivery.'), numBox(delOps.minOrder, (v) => setDelOps((o) => ({ ...o, minOrder: v })), '$'))}
-        {settingRow(L('Radio de entrega', 'Delivery radius'), L('Distancia máxima desde tu local. Vacío = sin límite.', 'Max distance from your location. Empty = no limit.'), numBox(delOps.radiusMi, (v) => setDelOps((o) => ({ ...o, radiusMi: v })), undefined, 'mi'))}
+        {settingRow(
+          L('Alcance de entrega', 'Delivery reach'),
+          L('Lo define tu zona más lejana (pestaña Zonas). Fuera de este radio, el cliente no puede pedir a domicilio.', 'Set by your farthest zone (Zones tab). Beyond this radius, customers can’t order delivery.'),
+          <button onClick={() => setDelTab('zones')} className="flex flex-none items-center gap-1.5 rounded-field bg-lilac-2 px-3 py-2 text-[12.5px] font-extrabold text-primary-dark">
+            {zones.length === 0 ? L('Sin zonas', 'No zones') : reachMi ? `${L('Hasta', 'Up to')} ${reachMi} mi` : L('Sin límite', 'No limit')}
+            <span className="text-[11px] text-muted-2">›</span>
+          </button>,
+        )}
         {settingRow(L('Tiempo de preparación', 'Prep time'), L('Minutos antes de que esté listo para el repartidor.', 'Minutes before ready for the driver.'), numBox(delOps.prepTime, (v) => setDelOps((o) => ({ ...o, prepTime: v })), undefined, 'min'))}
         {settingRow(L('Auto-asignar repartidor', 'Auto-assign driver'), L('Asigna el repartidor libre más cercano al marcar listo.', 'Assign the nearest free driver when marked ready.'), <Toggle on={delOps.autoAssign} onClick={() => setDelOps((o) => ({ ...o, autoAssign: !o.autoAssign }))} />)}
         {settingRow(L('Seguimiento en vivo', 'Live tracking'), L('Muestra al cliente el repartidor en el mapa.', 'Show the customer the driver on the map.'), <Toggle on={delOps.liveTracking} onClick={() => setDelOps((o) => ({ ...o, liveTracking: !o.liveTracking }))} />, true)}
@@ -846,6 +872,12 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         L={L}
         initial={zoneSheet?.initial ?? null}
         index={zoneSheet && zoneSheet.idx >= 0 ? zoneSheet.idx + 1 : zones.length + 1}
+        fromMi={(() => {
+          // inner radius = the previous zone's outer radius (for the editor hint)
+          const idx = zoneSheet ? (zoneSheet.idx >= 0 ? zoneSheet.idx : zones.length) : 0;
+          const prev = idx > 0 ? zones[idx - 1]?.toMi : null;
+          return prev != null && prev > 0 ? prev : undefined;
+        })()}
         onSave={upsertZone}
         onDelete={deleteZone}
       />

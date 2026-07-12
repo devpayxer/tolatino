@@ -119,7 +119,9 @@ async function newPage(browser, session, viewport = { width: 402, height: 852 })
     await page.screenshot({ path: `${SHOTS}/dr-3-pickup-ok.png` });
     await page.close();
 
-    // 4) owner side: Entregas y envíos → Ajustes shows the radius field with 8
+    // 4) owner side: Entregas y envíos → Ajustes shows the DERIVED delivery reach
+    // ("Alcance de entrega") — the radius now comes from the zones, not a manual
+    // field (see delivery-config.js for the full owner-config test).
     const owner = await newPage(browser, sessB, { width: 1440, height: 900 });
     await owner.goto(`${BASE}/negocio/`, { waitUntil: 'domcontentloaded' });
     await owner.waitForTimeout(5000);
@@ -128,10 +130,9 @@ async function newPage(browser, session, viewport = { width: 402, height: 852 })
     // the module's sub-tab chips render AFTER the sidebar in the DOM -> .last()
     await owner.getByRole('button', { name: 'Ajustes', exact: true }).last().click({ timeout: 8000 });
     await owner.waitForTimeout(1000);
-    const radiusRow = await owner.getByText('Radio de entrega', { exact: false }).first().isVisible().catch(() => false);
-    const radiusVal = await owner.locator('input[inputmode="decimal"]').nth(1).inputValue().catch(() => '?'); // minOrder, radius, prep
-    console.log('4) owner Ajustes → "Radio de entrega" row:', radiusRow, '| value:', JSON.stringify(radiusVal));
-    if (!radiusRow) { await owner.screenshot({ path: `${SHOTS}/dr-FAIL-owner.png`, fullPage: true }); console.error('FAIL: owner radius field missing'); await browser.close(); process.exit(1); }
+    const reachRow = await owner.getByText('Alcance de entrega', { exact: false }).first().isVisible().catch(() => false);
+    console.log('4) owner Ajustes → "Alcance de entrega" row:', reachRow);
+    if (!reachRow) { await owner.screenshot({ path: `${SHOTS}/dr-FAIL-owner.png`, fullPage: true }); console.error('FAIL: owner reach row missing'); await browser.close(); process.exit(1); }
     await owner.screenshot({ path: `${SHOTS}/dr-4-owner-settings.png` });
     await owner.close();
 

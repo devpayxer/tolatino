@@ -15,8 +15,38 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 export type Lx = (es: string, en: string) => string;
 
 // ── shared setup model (businesses.settings jsonb) ──────────────────────────────
-export type Zone = { color: string; es: string; en: string; rad: string; time: string; feeEs: string; feeEn: string };
+// A zone is a concentric delivery ring: `toMi` = its OUTER radius in miles (the
+// ring runs from the previous zone's radius out to this one), `fee` = the flat
+// delivery fee in dollars (0 = free). Numeric + structured so the cart's
+// PostGIS gate (delivery_range_check, 0076) can enforce the farthest zone as the
+// delivery limit, and so fees format professionally ($X.00) in the UI.
+export type Zone = { color: string; es: string; en: string; toMi: number | null; time: string; fee: number };
 export type OwnDriver = { initials: string; color: string; dot: string; name: string; sEs: string; sEn: string; orderEs: string; orderEn: string; km: string; eta: string; phone?: string };
+
+// Back-compat: older zones stored free-text `rad` ("0–1.2 mi") + `feeEs`/`feeEn`
+// ("$5", "Gratis +$25"). Coerce ANY stored shape into the structured numeric
+// model so a business saved before this change keeps working (toMi = the ring's
+// outer radius = the LAST number in the range; fee = dollars, 0 = free).
+export function normalizeZone(z: Record<string, unknown>): Zone {
+  const lastNum = (s: unknown): number | null => {
+    const m = String(s ?? '').match(/\d+(?:\.\d+)?/g);
+    return m && m.length ? Number(m[m.length - 1]) : null;
+  };
+  const toMi = typeof z.toMi === 'number' ? z.toMi : lastNum(z.rad);
+  let fee: number;
+  if (typeof z.fee === 'number') fee = z.fee;
+  else if (/^\s*(gratis|free)/i.test(String(z.feeEs ?? ''))) fee = 0; // "Gratis…" → free
+  else { const m = String(z.feeEs ?? '').match(/\d+(?:\.\d+)?/); fee = m ? Number(m[0]) : 0; }
+  const time = z.time && z.time !== '—' ? String(z.time) : '';
+  return {
+    color: (z.color as string) ?? ZONE_COLORS[0],
+    es: (z.es as string) ?? '',
+    en: (z.en as string) ?? (z.es as string) ?? '',
+    toMi: toMi != null && toMi > 0 ? toMi : null,
+    time,
+    fee: fee > 0 ? fee : 0,
+  };
+}
 
 export const ZONE_COLORS = ['#7B61FF', '#F0466E', '#F4B740'];
 export const DRIVER_COLORS = ['#7B61FF', '#2A5C8A', '#E8954A', '#1F9D57', '#D6336C', '#9A96AE'];
@@ -34,23 +64,30 @@ const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
 const inputCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary';
 const saveBtn = 'flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm disabled:cursor-not-allowed disabled:opacity-50';
 const dangerBtn = 'flex-none cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark';
+// professional unit-affixed number field (shows "$" / "mi" so the owner never
+// types the unit; digits-only input, money reformats to X.00 on blur)
+const affixWrap = 'flex items-center rounded-field border-[1.5px] border-lilac-line bg-white px-3 focus-within:border-primary';
+const affixInput = 'min-w-0 flex-1 bg-transparent px-1.5 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted';
+const affixUnit = 'flex-none text-[12px] font-extrabold text-muted-2';
+const hintCls = 'mt-1 text-[10px] font-medium leading-snug text-muted-2';
+const onlyNum = (v: string) => v.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 
 // ── Zone ────────────────────────────────────────────────────────────────────
 export function ZoneEditor({
-  open, onClose, L, initial, index, onSave, onDelete,
+  open, onClose, L, initial, index, fromMi, onSave, onDelete,
 }: {
   open: boolean; onClose: () => void; L: Lx;
   initial: Zone | null;
   index: number; // 1-based position for the default name of a new zone
+  fromMi?: number; // inner radius (previous zone's outer radius) — for the hint
   onSave: (z: Zone) => void;
   onDelete: () => void;
 }) {
   const [es, setEs] = useState('');
   const [en, setEn] = useState('');
-  const [rad, setRad] = useState('');
+  const [toMi, setToMi] = useState(''); // outer radius in miles (string for input)
   const [time, setTime] = useState('');
-  const [feeEs, setFeeEs] = useState('');
-  const [feeEn, setFeeEn] = useState('');
+  const [fee, setFee] = useState(''); // delivery fee in dollars (string; '' = free)
   const [color, setColor] = useState(ZONE_COLORS[0]);
   const [confirming, setConfirming] = useState(false);
 
@@ -58,25 +95,24 @@ export function ZoneEditor({
     if (!open) return;
     setEs(initial?.es ?? '');
     setEn(initial?.en ?? '');
-    setRad(initial?.rad && initial.rad !== '—' ? initial.rad : '');
+    setToMi(initial?.toMi != null ? String(initial.toMi) : '');
     setTime(initial?.time && initial.time !== '—' ? initial.time : '');
-    setFeeEs(initial?.feeEs && initial.feeEs !== '$0' ? initial.feeEs : '');
-    setFeeEn(initial?.feeEn && initial.feeEn !== '$0' ? initial.feeEn : '');
+    setFee(initial?.fee ? initial.fee.toFixed(2) : '');
     setColor(initial?.color ?? ZONE_COLORS[(index - 1) % ZONE_COLORS.length] ?? ZONE_COLORS[0]);
     setConfirming(false);
   }, [open, initial, index]);
 
   const save = () => {
     const name = es.trim(); if (!name) return;
-    const fe = feeEs.trim() || L('Gratis', 'Free');
+    const mi = toMi.trim() === '' ? null : Number(toMi);
+    const f = fee.trim() === '' ? 0 : Number(fee);
     onSave({
       color,
       es: name,
       en: en.trim() || name,
-      rad: rad.trim() || '—',
+      toMi: mi != null && !Number.isNaN(mi) && mi > 0 ? mi : null,
       time: time.trim() || '—',
-      feeEs: fe,
-      feeEn: feeEn.trim() || fe,
+      fee: !Number.isNaN(f) && f > 0 ? f : 0,
     });
     onClose();
   };
@@ -90,12 +126,26 @@ export function ZoneEditor({
           <div className="flex-1"><div className={fieldLabel}>{L('Nombre (inglés)', 'Name (English)')}</div><input value={en} onChange={(e) => setEn(e.target.value)} placeholder={L('Opcional', 'Optional')} className={inputCls} /></div>
         </div>
         <div className="flex gap-3">
-          <div className="flex-1"><div className={fieldLabel}>{L('Radio / distancia', 'Radius / distance')}</div><input value={rad} onChange={(e) => setRad(e.target.value)} placeholder={L('Ej. 0–1.2 mi', 'e.g. 0–1.2 mi')} className={inputCls} /></div>
-          <div className="flex-1"><div className={fieldLabel}>{L('Tiempo (ETA)', 'Time (ETA)')}</div><input value={time} onChange={(e) => setTime(e.target.value)} placeholder={L('Ej. 30–45 min', 'e.g. 30–45 min')} className={inputCls} /></div>
+          <div className="flex-1">
+            <div className={fieldLabel}>{L('Radio de la zona', 'Zone radius')}</div>
+            <div className={affixWrap}>
+              <input value={toMi} onChange={(e) => setToMi(onlyNum(e.target.value))} inputMode="decimal" placeholder="0" className={affixInput} />
+              <span className={affixUnit}>mi</span>
+            </div>
+            <div className={hintCls}>{fromMi ? L(`Desde ${fromMi} mi hasta este radio.`, `From ${fromMi} mi out to this radius.`) : L('Distancia máxima desde tu local.', 'Max distance from your location.')}</div>
+          </div>
+          <div className="flex-1">
+            <div className={fieldLabel}>{L('Tarifa de entrega', 'Delivery fee')}</div>
+            <div className={affixWrap}>
+              <span className={affixUnit}>$</span>
+              <input value={fee} onChange={(e) => setFee(onlyNum(e.target.value))} onBlur={() => setFee((v) => (v.trim() === '' ? '' : (Number(v) || 0).toFixed(2)))} inputMode="decimal" placeholder="0.00" className={affixInput} />
+            </div>
+            <div className={hintCls}>{L('Vacío o 0 = Gratis.', 'Empty or 0 = Free.')}</div>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <div className="flex-1"><div className={fieldLabel}>{L('Tarifa', 'Fee')}</div><input value={feeEs} onChange={(e) => setFeeEs(e.target.value)} placeholder={L('Ej. Gratis, $5', 'e.g. Free, $5')} className={inputCls} /></div>
-          <div className="flex-1"><div className={fieldLabel}>{L('Tarifa (inglés)', 'Fee (English)')}</div><input value={feeEn} onChange={(e) => setFeeEn(e.target.value)} placeholder={L('Opcional', 'Optional')} className={inputCls} /></div>
+        <div>
+          <div className={fieldLabel}>{L('Tiempo (ETA)', 'Time (ETA)')}</div>
+          <input value={time} onChange={(e) => setTime(e.target.value)} placeholder={L('Ej. 30–45 min', 'e.g. 30–45 min')} className={inputCls} />
         </div>
         <div>
           <div className={fieldLabel}>{L('Color en el mapa', 'Map color')}</div>
