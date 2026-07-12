@@ -128,11 +128,11 @@ export function ZoneEditor({
       <OverlayTitle title={initial ? L('Editar zona', 'Edit zone') : L('Nueva zona de entrega', 'New delivery zone')} onClose={onClose} />
       <div className="flex flex-col gap-3.5">
         <div className="flex gap-3">
-          <div className="flex-1"><div className={fieldLabel}>{L('Nombre (español)', 'Name (Spanish)')} *</div><input value={es} onChange={(e) => setEs(e.target.value)} placeholder={L('Ej. Zona Centro', 'e.g. Core zone')} className={inputCls} /></div>
-          <div className="flex-1"><div className={fieldLabel}>{L('Nombre (inglés)', 'Name (English)')}</div><input value={en} onChange={(e) => setEn(e.target.value)} placeholder={L('Opcional', 'Optional')} className={inputCls} /></div>
+          <div className="min-w-0 flex-1"><div className={fieldLabel}>{L('Nombre (español)', 'Name (Spanish)')} *</div><input value={es} onChange={(e) => setEs(e.target.value)} placeholder={L('Ej. Zona Centro', 'e.g. Core zone')} className={inputCls} /></div>
+          <div className="min-w-0 flex-1"><div className={fieldLabel}>{L('Nombre (inglés)', 'Name (English)')}</div><input value={en} onChange={(e) => setEn(e.target.value)} placeholder={L('Opcional', 'Optional')} className={inputCls} /></div>
         </div>
         <div className="flex gap-3">
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className={fieldLabel}>{L('Radio de la zona', 'Zone radius')}</div>
             <div className={affixWrap}>
               <input value={toMi} onChange={(e) => setToMi(onlyNum(e.target.value))} inputMode="decimal" placeholder="0" className={affixInput} />
@@ -140,7 +140,7 @@ export function ZoneEditor({
             </div>
             <div className={hintCls}>{fromMi ? L(`Desde ${fromMi} mi hasta este radio.`, `From ${fromMi} mi out to this radius.`) : L('Distancia máxima desde tu local.', 'Max distance from your location.')}</div>
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className={fieldLabel}>{L('Tarifa de entrega', 'Delivery fee')}</div>
             <div className={affixWrap}>
               <span className={affixUnit}>$</span>
@@ -152,11 +152,11 @@ export function ZoneEditor({
         <div>
           <div className={fieldLabel}>{L('Tiempo de entrega (ETA)', 'Delivery time (ETA)')}</div>
           <div className="flex items-center gap-2">
-            <div className={`${affixWrap} flex-1`}>
+            <div className={`${affixWrap} min-w-0 flex-1`}>
               <input value={etaLo} onChange={(e) => setEtaLo(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="30" className={affixInput} />
             </div>
             <span className="flex-none text-[13px] font-extrabold text-muted-2">–</span>
-            <div className={`${affixWrap} flex-1`}>
+            <div className={`${affixWrap} min-w-0 flex-1`}>
               <input value={etaHi} onChange={(e) => setEtaHi(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="45" className={affixInput} />
               <span className={affixUnit}>min</span>
             </div>
