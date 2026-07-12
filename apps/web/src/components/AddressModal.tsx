@@ -24,6 +24,7 @@ export function AddressModal() {
   const router = useRouter();
 
   const saved = !!auth.user && store.configured; // logged-in → multi-address manager
+  const delivery = app.addressMode === 'delivery'; // cart-only: never move the app city
 
   const [q, setQ] = useState('');
   const [newLabel, setNewLabel] = useState('');
@@ -73,6 +74,25 @@ export function AddressModal() {
   // address's city, then (signed-in) save it and swap in the real id.
   const choose = async (raw: Address) => {
     setAddErr(null);
+    // Delivery mode: attach the address to THIS order only. Persist it to
+    // user_addresses and hand the id back to the cart — never call
+    // setUserAddress, so the platform-wide location stays put.
+    if (delivery) {
+      let a = raw;
+      if (raw.approx) {
+        const exact = await censusGeocode(raw.formatted);
+        if (exact && sameAddress(raw.formatted, exact.formatted)) a = exact;
+      }
+      const row = await store.add(newLabel.trim() || null, a.formatted, a.lat, a.lng, a.city || null);
+      if (row) {
+        app.setDeliveryAddr(row.id);
+        setNewLabel('');
+        close();
+      } else {
+        setAddErr(L('No se pudo guardar la dirección. Inicia sesión e inténtalo de nuevo.', "Couldn't save the address. Sign in and try again."));
+      }
+      return;
+    }
     const seq = ++pickSeq.current;
     abortRef.current?.abort(); // kill any pending suggestion fetch
     // Instant feedback: apply the pick right away (street-level is fine for a
@@ -155,6 +175,12 @@ export function AddressModal() {
   };
 
   const selectSaved = (a: SavedAddress) => {
+    // Delivery mode: pick for this order only, don't move the app origin.
+    if (delivery) {
+      app.setDeliveryAddr(a.id);
+      close();
+      return;
+    }
     const seq = ++pickSeq.current;
     const coords = { lat: a.lat, lng: a.lng };
     app.setUserAddress(a.formatted, coords, a.id, a.city ? { label: a.city, lat: a.lat, lng: a.lng } : undefined); // instant
@@ -180,9 +206,11 @@ export function AddressModal() {
 
   return (
     <Overlay open={app.addressOpen} onClose={close} width={460}>
-      <OverlayTitle title={L('Tus direcciones', 'Your addresses')} onClose={close} />
+      <OverlayTitle title={delivery ? L('Dirección de entrega', 'Delivery address') : L('Tus direcciones', 'Your addresses')} onClose={close} />
       <p className="-mt-1 mb-3 text-[12.5px] font-semibold text-muted">
-        {L('Para distancias exactas y pedir a domicilio.', 'For exact distances and delivery.')}
+        {delivery
+          ? L('Solo para este pedido. No cambia tu ubicación en la plataforma.', 'Just for this order. It won’t change your location on the platform.')
+          : L('Para distancias exactas y pedir a domicilio.', 'For exact distances and delivery.')}
       </p>
 
       {/* add: GPS */}
@@ -256,8 +284,9 @@ export function AddressModal() {
 
       {addErr && <div className="mt-2 rounded-btn bg-pink-bg px-3 py-2 text-[11.5px] font-semibold text-pink-dark">{addErr}</div>}
 
-      {/* saved list (logged in) */}
-      {saved ? (
+      {/* saved list (logged in) — hidden in delivery mode: the cart shows its own
+          saved-address list, and this footer manages the GLOBAL origin. */}
+      {delivery ? null : saved ? (
         <div className="mt-3 border-t border-hair pt-3">
           {store.addresses.length === 0 ? (
             <div className="px-2 py-4 text-center text-[12.5px] font-semibold text-muted">

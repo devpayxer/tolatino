@@ -427,6 +427,16 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     ?? addressStore.addresses.find((a) => a.is_default)
     ?? addressStore.addresses[0];
 
+  // When the delivery-only address modal returns a picked/added address, select
+  // it for THIS cart (local `addrId` only) — it never touched the global city.
+  useEffect(() => {
+    if (!app.deliveryAddrId) return;
+    setAddrId(app.deliveryAddrId);
+    setCartView('cart');
+    app.setDeliveryAddr(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [app.deliveryAddrId]);
+
   const deliveryFee = isDelivery ? (del?.fee ?? 0) : 0;
   const serviceFee = payOnline && cartCount > 0 ? +(cartTotal * 0.05).toFixed(2) : 0;
   const tip = isDelivery ? (customTipOn ? Math.max(0, Math.min(500, parseFloat(tipCustom) || 0)) : +(cartTotal * tipPct).toFixed(2)) : 0;
@@ -2387,7 +2397,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 })}
               </div>
             )}
-            <button onClick={() => app.setAddressOpen(true)} className="mt-3 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-3 text-[12.5px] font-extrabold text-primary-dark">
+            <button onClick={() => app.openDeliveryAddress()} className="mt-3 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-3 text-[12.5px] font-extrabold text-primary-dark">
               {L('+ Nueva dirección', '+ New address')}
             </button>
           </>

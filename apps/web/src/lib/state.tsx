@@ -36,6 +36,13 @@ type AppCtx = {
   clearUserAddress: () => void;
   addressOpen: boolean;
   setAddressOpen: (v: boolean) => void;
+  // Address modal mode. 'global' = the usual "where I am on the platform" picker
+  // (moves the app's city/origin). 'delivery' = the cart opens it JUST to attach
+  // a delivery address to one order — it must NOT change the platform location.
+  addressMode: 'global' | 'delivery';
+  openDeliveryAddress: () => void;
+  deliveryAddrId: string | null;
+  setDeliveryAddr: (id: string | null) => void;
 
   // global search: `query` = live typing, `search` = committed
   query: string;
@@ -109,6 +116,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [addressId, setAddressId] = useState<string | null>(null); // saved-address id when the origin is a saved one
   const [cityOpen, setCityOpen] = useState(false);
   const [addressOpen, setAddressOpen] = useState(false);
+  const [addressMode, setAddressMode] = useState<'global' | 'delivery'>('global');
+  const [deliveryAddrId, setDeliveryAddrId] = useState<string | null>(null);
 
   const coords = addressCoords ?? cityCoords;
 
@@ -199,7 +208,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         persistGeo(city, cityCoords, null, null, null);
       },
       addressOpen,
-      setAddressOpen,
+      // closing the modal always drops back to the default global mode
+      setAddressOpen: (v: boolean) => {
+        setAddressOpen(v);
+        if (!v) setAddressMode('global');
+      },
+      addressMode,
+      openDeliveryAddress: () => {
+        setAddressMode('delivery');
+        setAddressOpen(true);
+      },
+      deliveryAddrId,
+      setDeliveryAddr: (id: string | null) => setDeliveryAddrId(id),
       query,
       setQuery,
       search,
@@ -248,7 +268,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       biz,
       setBiz,
     }),
-    [city, cityCoords, coords, address, addressCoords, addressId, cityOpen, addressOpen, query, search, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
+    [city, cityCoords, coords, address, addressCoords, addressId, cityOpen, addressOpen, addressMode, deliveryAddrId, query, search, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

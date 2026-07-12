@@ -789,11 +789,18 @@ backing them with real Supabase tables/RPCs when each feature goes live.
     (0014, geo ready) + the `businesses.location` point (0001/0002, geo ready),
     compute distance with `ST_Distance`/`ST_DWithin` in an RPC/Edge Function, match
     it to the first zone whose radius covers it → add that zone's fee as a cart
-    line; beyond the last zone → offer shipping/pickup. Prereqs still missing: a
-    **numeric radius per zone** (today `zone.rad` is free text like "0–1.2 mi", not
-    comparable) and the **address-on-order** item above. Model choice (radius bands
-    vs. base + per-mile) to be decided with the founder at that time; current build
-    uses radius bands, matching the map rings.
+    line; beyond the last zone → offer shipping/pickup. **Numeric radius per zone
+    is now DONE (2026-07-12):** `zone.toMi` (outer radius, miles) + `zone.fee`
+    (dollars) are structured/comparable, and the cart already enforces the
+    outermost zone as the delivery limit via `delivery_range_check` (0076). Still
+    missing to price the fee by distance: the **address-on-order** item above
+    (match the customer's point to the covering zone at checkout) and the pricing
+    model choice (radius bands vs. base + per-mile) — current zones use radius
+    bands, matching the map rings.
+  - [ ] **Delivery radius gate is client-side only (still deferred, 2026-07-12).**
+    The zone-derived `radiusMi` now gates the cart UI (Pagar disabled out of
+    range), but it's bypassable — re-check `delivery_range_check` server-side in
+    the checkout edge function at charge time (same pass as order re-pricing).
 - [x] **Entregas y envíos — SHARED fulfillment module (2026-07-06).** Pulled
   delivery/shipping OUT of Products into a standalone module
   (`modules/Fulfillment.tsx`) shared by BOTH the Food menu (local delivery) and

@@ -3,7 +3,49 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-11.
+> Last updated: 2026-07-12.
+
+## Professional delivery config + zone-derived radius + address decouple (2026-07-12)
+Founder request (3 parts, phased): (1) make the seller's delivery inputs
+professional like existing platforms — auto-units on distance, `$`/`.00` on
+money; (2) the delivery distance based on the business address must actually gate
+buyers ("cambié la dirección y todavía está disponible para compras"); (3) **muy
+importante** — the delivery address chosen in the cart must NOT change the user's
+platform-wide location, it's only for that order.
+- **Zones are now the single source of truth for delivery distance + fee.** The
+  `Zone` type went from free-text (`rad:"0–1.2 mi"`, `feeEs`/`feeEn`) to numeric
+  **`toMi`** (the ring's outer radius, miles) + **`fee`** (dollars, 0 = free).
+  `normalizeZone()` (`FulfillmentEditors.tsx`) coerces any pre-existing stored
+  shape → numeric, so older businesses keep working; the new shape is written on
+  the next save.
+- **Professional inputs** (`ZoneEditor`): "Radio de la zona" with a `mi` affix +
+  a from-distance hint, "Tarifa de entrega" with a `$` prefix that reformats to
+  `X.00` on blur (`0` = Gratis). The Ajustes money fields (`numBox`) also `.00`
+  on blur.
+- **Gate now derives from the zones.** `zonesRadiusMi()` = the OUTERMOST zone's
+  `toMi`; it's mirrored into `settings.delivery_ops.radiusMi` on every save, so
+  the existing `delivery_range_check` RPC (0076) enforces exactly the reach the
+  owner sees. This fixes part (2): the founder had a 0–5 mi zone but `radiusMi`
+  was never set → the gate failed open. The manual "Radio de entrega" field in
+  Ajustes was REMOVED and replaced by a read-only derived summary **"Alcance de
+  entrega · Hasta X mi ›"** (taps through to the Zonas tab). No migration — the
+  jsonb reshape happens on save; the RPC is unchanged.
+- **Delivery-address decouple** (part 3): the cart's "+ Nueva dirección" now
+  opens the shared `AddressModal` in a new **delivery mode** (`state.tsx`:
+  `addressMode`, `openDeliveryAddress()`, `deliveryAddrId`/`setDeliveryAddr`). In
+  that mode the modal persists to `user_addresses` and hands the id back to the
+  cart via `deliveryAddrId` — it never calls `app.setUserAddress`, so the global
+  city/origin is untouched. Modal copy: "Solo para este pedido. No cambia tu
+  ubicación en la plataforma." Selecting a saved address in the cart was already
+  local (`setAddrId`); this closes the only path (adding a new one) that used to
+  move the platform location.
+- **Verified 3 sides in a real browser** (owner b@b.com desktop + client a@a.com
+  mobile, `tools/mobile-audit/delivery-config.js`): pro zone editor + `.00`
+  format; Ajustes derived reach; owner save persisted `radiusMi="5"` (DB-checked)
+  and migrated the zone to numeric; tia NYC (104 mi) → warning + Pagar disabled
+  while the header stayed "Hazleton, PA"; casa Hazleton (1.4 mi) → enabled;
+  "+ Nueva dirección" opens the delivery-scoped modal. El Sabor left with the
+  working config (its own 0–5 mi zone now gates at 5 mi).
 
 ## Cart: delivery-radius gate (2026-07-11)
 Founder request: the cart must know whether the chosen delivery address is
@@ -15,9 +57,10 @@ Pagar. Built end-to-end, geo math in PostGIS per skill §5 (never app-side):
   `settings.delivery_ops.radiusMi` (miles, strict-regex parsed). **Fail-open**:
   no radius set, not geocoded, or RPC error → never blocks. Also re-created
   `business_by_slug` to expose `radius` inside the public `delivery` jsonb.
-- **Owner** (Entregas y envíos → Ajustes): new "Radio de entrega" numBox
-  (`delOps.radiusMi`, suffix `mi`, empty = no limit) persisted with the other
-  delivery_ops. The founder must set a radius for the gate to activate.
+- **Owner** (Entregas y envíos): the delivery radius is now DERIVED from the
+  zones' outermost `toMi` and mirrored into `settings.delivery_ops.radiusMi` on
+  save (see the 2026-07-12 section above — this replaced the earlier standalone
+  "Radio de entrega" field).
 - **Cart** (`BizDetail.tsx`): effect re-checks on address/channel change; out of
   range → pink card under the address row with the REAL numbers ("Está a
   104.4 mi y El Sabor entrega hasta 8 mi. Elige otra dirección o cambia a
