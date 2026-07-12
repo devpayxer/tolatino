@@ -81,6 +81,12 @@ const cityLabel = (page) => page.evaluate(() => { try { return JSON.parse(localS
     const hasFreeHint = await page.getByText(/0 = Gratis|0 = Free/).last().isVisible().catch(() => false);
     console.log('A2) editor → Radio label:', hasRadLabel, '| Tarifa label:', hasFeeLabel, '| mi affix:', hasMi, '| free hint:', hasFreeHint);
     if (!hasRadLabel || !hasFeeLabel || !hasFreeHint) return fail('zone editor missing professional labels/affixes');
+    // ETA is structured min–min: El Sabor's "30–45 min" parses into two fields.
+    const etaN = await page.locator('input[inputmode="numeric"]').count();
+    const etaLo = await page.locator('input[inputmode="numeric"]').nth(etaN - 2).inputValue().catch(() => '?');
+    const etaHi = await page.locator('input[inputmode="numeric"]').nth(etaN - 1).inputValue().catch(() => '?');
+    console.log('A2b) ETA structured → lo:', etaLo, '| hi:', etaHi);
+    if (etaLo !== '30' || etaHi !== '45') return fail('ETA not parsed into min–min: ' + etaLo + '/' + etaHi);
     await page.screenshot({ path: `${SHOTS}/dc-A2-editor.png` });
 
     // money .00 auto-format on blur (fee field). Change locally, verify, then

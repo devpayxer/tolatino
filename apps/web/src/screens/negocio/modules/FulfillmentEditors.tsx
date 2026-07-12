@@ -86,7 +86,8 @@ export function ZoneEditor({
   const [es, setEs] = useState('');
   const [en, setEn] = useState('');
   const [toMi, setToMi] = useState(''); // outer radius in miles (string for input)
-  const [time, setTime] = useState('');
+  const [etaLo, setEtaLo] = useState(''); // ETA range in minutes (structured)
+  const [etaHi, setEtaHi] = useState('');
   const [fee, setFee] = useState(''); // delivery fee in dollars (string; '' = free)
   const [color, setColor] = useState(ZONE_COLORS[0]);
   const [confirming, setConfirming] = useState(false);
@@ -96,7 +97,10 @@ export function ZoneEditor({
     setEs(initial?.es ?? '');
     setEn(initial?.en ?? '');
     setToMi(initial?.toMi != null ? String(initial.toMi) : '');
-    setTime(initial?.time && initial.time !== '—' ? initial.time : '');
+    // parse the stored "30–45 min" (or "45 min") into the two numeric fields
+    const nums = String(initial?.time ?? '').match(/\d+/g) ?? [];
+    setEtaLo(nums[0] ?? '');
+    setEtaHi(nums[1] ?? '');
     setFee(initial?.fee ? initial.fee.toFixed(2) : '');
     setColor(initial?.color ?? ZONE_COLORS[(index - 1) % ZONE_COLORS.length] ?? ZONE_COLORS[0]);
     setConfirming(false);
@@ -106,12 +110,14 @@ export function ZoneEditor({
     const name = es.trim(); if (!name) return;
     const mi = toMi.trim() === '' ? null : Number(toMi);
     const f = fee.trim() === '' ? 0 : Number(fee);
+    const lo = etaLo.trim(), hi = etaHi.trim();
+    const time = lo && hi ? `${lo}–${hi} min` : lo || hi ? `${lo || hi} min` : '—';
     onSave({
       color,
       es: name,
       en: en.trim() || name,
       toMi: mi != null && !Number.isNaN(mi) && mi > 0 ? mi : null,
-      time: time.trim() || '—',
+      time,
       fee: !Number.isNaN(f) && f > 0 ? f : 0,
     });
     onClose();
@@ -144,8 +150,18 @@ export function ZoneEditor({
           </div>
         </div>
         <div>
-          <div className={fieldLabel}>{L('Tiempo (ETA)', 'Time (ETA)')}</div>
-          <input value={time} onChange={(e) => setTime(e.target.value)} placeholder={L('Ej. 30–45 min', 'e.g. 30–45 min')} className={inputCls} />
+          <div className={fieldLabel}>{L('Tiempo de entrega (ETA)', 'Delivery time (ETA)')}</div>
+          <div className="flex items-center gap-2">
+            <div className={`${affixWrap} flex-1`}>
+              <input value={etaLo} onChange={(e) => setEtaLo(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="30" className={affixInput} />
+            </div>
+            <span className="flex-none text-[13px] font-extrabold text-muted-2">–</span>
+            <div className={`${affixWrap} flex-1`}>
+              <input value={etaHi} onChange={(e) => setEtaHi(e.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" placeholder="45" className={affixInput} />
+              <span className={affixUnit}>min</span>
+            </div>
+          </div>
+          <div className={hintCls}>{L('Rango estimado que verá el cliente.', 'Estimated range the customer sees.')}</div>
         </div>
         <div>
           <div className={fieldLabel}>{L('Color en el mapa', 'Map color')}</div>
