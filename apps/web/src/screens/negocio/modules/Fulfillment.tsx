@@ -22,7 +22,9 @@ import { IconBike as Bike, IconPackages as Boxes, IconCircleCheck as CheckCircle
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { activeMods } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { uploadImage, AVATAR_MAX_EDGE } from '@/lib/image';
 import { ChipRow } from '@/components/ChipRow';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { Toast } from '@/screens/negocio/modules/_page';
@@ -104,9 +106,23 @@ const genTracking = (): string => {
 export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, isFree, isPremium, ci, go } = ctx;
   const admin = useBizAdmin();
+  const { user } = useAuth();
   const real = admin.active;
   const persistable = !admin.demo && !!real;
   const am = activeMods(ctx);
+
+  // Driver/vehicle photo → Supabase Storage (public 'post-photos' bucket, same
+  // pipeline as the rest of the panel). Demo/no-auth falls back to a local
+  // object URL so the editor still previews.
+  const uploadDriverPhoto = async (file: File): Promise<string | null> => {
+    if (!file.type.startsWith('image/')) return null;
+    try {
+      return !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, AVATAR_MAX_EDGE);
+    } catch {
+      flash(L('No se pudo subir la foto.', "Couldn't upload the photo."));
+      return null;
+    }
+  };
 
   // ── ui state ────────────────────────────────────────────────────────────────
   type Section = 'delivery' | 'shipping';
@@ -458,12 +474,18 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
           {drivers.map((d, di) => (
             <button key={d.name + di} onClick={() => setDriverSheet({ idx: di, initial: d })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left hover:border-primary">
               <span className="relative flex-none">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
+                <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-[12px] font-extrabold text-white" style={{ background: d.photo ? '#EAE7F6' : d.color }}>
+                  {d.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={d.photo} alt="" className="h-full w-full object-cover" />
+                  ) : d.initials}
+                </span>
                 <span className="absolute -bottom-px -right-px h-3 w-3 rounded-full border-2 border-white" style={{ background: d.dot }} />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[12.5px] font-extrabold text-ink">{d.name}</div>
                 <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{L(d.sEs, d.sEn)} · {d.phone ? d.phone : L(d.orderEs, d.orderEn)}</div>
+                {d.vehicle && <div className="mt-0.5 truncate text-[10px] font-semibold text-primary-dark">{d.vehicle}</div>}
               </div>
               {d.km && d.km !== '—' ? (
                 <div className="flex-none text-right"><div className="text-[11.5px] font-extrabold text-ink">{d.km}</div><div className="text-[9.5px] font-semibold text-muted-2">{d.eta}</div></div>
@@ -812,8 +834,13 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               <div className="flex flex-col gap-2">
                 {drivers.map((d) => (
                   <button key={d.name} onClick={() => assignDriver(d.name, d.phone)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-2.5 text-left hover:border-primary">
-                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
-                    <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{d.name}</span><span className="block text-[10px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}</span></span>
+                    <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full text-[11px] font-extrabold text-white" style={{ background: d.photo ? '#EAE7F6' : d.color }}>
+                      {d.photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={d.photo} alt="" className="h-full w-full object-cover" />
+                      ) : d.initials}
+                    </span>
+                    <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{d.name}</span><span className="block text-[10px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}{d.vehicle ? ` · ${d.vehicle}` : ''}</span></span>
                     <span className="flex-none text-[10.5px] font-extrabold text-primary-dark">{L('Asignar', 'Assign')} ›</span>
                   </button>
                 ))}
@@ -890,6 +917,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         initial={driverSheet?.initial ?? null}
         onSave={upsertDriver}
         onDelete={deleteDriver}
+        onUploadPhoto={uploadDriverPhoto}
       />
 
       <Toast msg={toast} />

@@ -47,6 +47,24 @@ platform-wide location, it's only for that order.
   "+ Nueva dirección" opens the delivery-scoped modal. El Sabor left with the
   working config (its own 0–5 mi zone now gates at 5 mi).
 
+### Repartidor editor made professional (2026-07-12)
+`DriverEditor` (Entregas y envíos → Repartidores) upgraded per the founder:
+- **Photo of the driver OR their vehicle** — tap the avatar to upload
+  (`uploadImage`, AVATAR_MAX_EDGE, public `post-photos` bucket via the module's
+  `onUploadPhoto`; demo falls back to an object URL). Shown as the avatar in the
+  editor, the drivers list and the assign-driver sheet; initials remain the
+  fallback. `OwnDriver` gained `photo?` + `vehicle?` (flexible jsonb, no
+  migration).
+- **Proper phone field** using the shared `formatPhone` — digits-only, auto
+  "(XXX) XXX-XXXX" (leading `+` keeps international). It even cleans garbage: the
+  founder's "570566985ghghfhg" now reads "(570) 566-985".
+- **Vehicle field** (optional · "Honda Civic gris · ABC-1234"), shown under the
+  driver in the lists — helps the customer recognize who's arriving (Uber-style).
+- Verified in a real browser at 390px (`tools/mobile-audit/drivers-editor.js`):
+  demo editor uploads + renders a photo, phone formats on type, vehicle saves;
+  owner's garbage phone auto-cleans. No artifacts (demo upload uses an object
+  URL; owner flow doesn't save).
+
 ## Cart: delivery-radius gate (2026-07-11)
 Founder request: the cart must know whether the chosen delivery address is
 inside the business's delivery range — if not, show a message and disable

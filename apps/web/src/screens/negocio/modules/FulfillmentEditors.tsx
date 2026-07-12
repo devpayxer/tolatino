@@ -7,10 +7,11 @@
 // drivers live in businesses.settings jsonb). Types live here as the single
 // source and are re-imported by Fulfillment.tsx.
 
-import { useEffect, useState } from 'react';
-import { IconTrash as Trash2 } from '@tabler/icons-react';
+import { useEffect, useRef, useState } from 'react';
+import { IconCamera as Camera, IconLoader2 as Loader2, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { formatPhone } from '@/lib/phone';
 
 export type Lx = (es: string, en: string) => string;
 
@@ -21,7 +22,7 @@ export type Lx = (es: string, en: string) => string;
 // PostGIS gate (delivery_range_check, 0076) can enforce the farthest zone as the
 // delivery limit, and so fees format professionally ($X.00) in the UI.
 export type Zone = { color: string; es: string; en: string; toMi: number | null; time: string; fee: number };
-export type OwnDriver = { initials: string; color: string; dot: string; name: string; sEs: string; sEn: string; orderEs: string; orderEn: string; km: string; eta: string; phone?: string };
+export type OwnDriver = { initials: string; color: string; dot: string; name: string; sEs: string; sEn: string; orderEs: string; orderEn: string; km: string; eta: string; phone?: string; photo?: string; vehicle?: string };
 
 // Back-compat: older zones stored free-text `rad` ("0–1.2 mi") + `feeEs`/`feeEn`
 // ("$5", "Gratis +$25"). Coerce ANY stored shape into the structured numeric
@@ -195,28 +196,48 @@ export function ZoneEditor({
 
 // ── Driver (repartidor propio) ──────────────────────────────────────────────
 export function DriverEditor({
-  open, onClose, L, initial, onSave, onDelete,
+  open, onClose, L, initial, onSave, onDelete, onUploadPhoto,
 }: {
   open: boolean; onClose: () => void; L: Lx;
   initial: OwnDriver | null;
   onSave: (d: OwnDriver) => void;
   onDelete: () => void;
+  // Uploads the file (Supabase Storage) and returns the public URL; the module
+  // owns storage/auth so the editor stays presentational. Null = upload failed.
+  onUploadPhoto?: (file: File) => Promise<string | null>;
 }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [vehicle, setVehicle] = useState('');
+  const [photo, setPhoto] = useState('');
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [statusKey, setStatusKey] = useState<string>('available');
   const [color, setColor] = useState(DRIVER_COLORS[0]);
   const [confirming, setConfirming] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setName(initial?.name ?? '');
-    setPhone(initial?.phone ?? '');
+    setPhone(formatPhone(initial?.phone ?? ''));
+    setVehicle(initial?.vehicle ?? '');
+    setPhoto(initial?.photo ?? '');
+    setPhotoBusy(false);
     const st = DRIVER_STATUS.find((s) => s.sEs === initial?.sEs);
     setStatusKey(st?.key ?? 'available');
     setColor(initial?.color ?? DRIVER_COLORS[0]);
     setConfirming(false);
   }, [open, initial]);
+
+  const pickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file
+    if (!file || !file.type.startsWith('image/') || photoBusy || !onUploadPhoto) return;
+    setPhotoBusy(true);
+    const url = await onUploadPhoto(file);
+    if (url) setPhoto(url);
+    setPhotoBusy(false);
+  };
 
   const save = () => {
     const nm = name.trim(); if (!nm) return;
@@ -235,6 +256,8 @@ export function DriverEditor({
       km: keepRoute ? initial!.km : '—',
       eta: keepRoute ? initial!.eta : '—',
       phone: phone.trim() || undefined,
+      photo: photo || undefined,
+      vehicle: vehicle.trim() || undefined,
     });
     onClose();
   };
@@ -243,13 +266,40 @@ export function DriverEditor({
     <Overlay open={open} onClose={onClose} width={430}>
       <OverlayTitle title={initial ? L('Editar repartidor', 'Edit driver') : L('Nuevo repartidor', 'New driver')} onClose={onClose} />
       <div className="flex flex-col gap-3.5">
-        <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-[15px] font-extrabold text-white" style={{ background: color }}>{driverInitials(name)}</span>
-          <div className="min-w-0 flex-1"><div className={fieldLabel}>{L('Nombre', 'Name')} *</div><input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Marco P.', 'e.g. Marco P.')} className={inputCls} /></div>
+        {/* photo of the driver or their vehicle — tap the avatar to upload */}
+        <div className="flex items-center gap-3.5">
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickPhoto} />
+          <button type="button" onClick={() => fileRef.current?.click()} aria-label={L('Subir foto', 'Upload photo')} className="relative flex-none cursor-pointer">
+            <span className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full border-[1.5px] border-lilac-line" style={{ background: photo ? '#EAE7F6' : color }}>
+              {photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photo} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-[22px] font-extrabold text-white">{driverInitials(name)}</span>
+              )}
+            </span>
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-cta-sm">
+              {photoBusy ? <Loader2 size={13} stroke={2.6} className="animate-[spin_.8s_linear_infinite]" /> : <Camera size={13} stroke={2.4} />}
+            </span>
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="text-[12.5px] font-extrabold text-ink">{L('Foto', 'Photo')}</div>
+            <div className="mt-0.5 text-[11px] font-medium leading-snug text-muted-2">{L('Del repartidor o su vehículo. Ayuda al cliente a identificarlo.', 'Of the driver or their vehicle. Helps the customer recognize them.')}</div>
+            {photo && <button type="button" onClick={() => setPhoto('')} className="mt-1 inline-flex items-center gap-1 text-[11px] font-extrabold text-pink-dark"><X size={11} stroke={2.6} />{L('Quitar foto', 'Remove photo')}</button>}
+          </div>
+        </div>
+        <div>
+          <div className={fieldLabel}>{L('Nombre', 'Name')} *</div>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Marco P.', 'e.g. Marco P.')} className={inputCls} />
         </div>
         <div>
           <div className={fieldLabel}>{L('Teléfono', 'Phone')}</div>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={L('Opcional · (713) 555-0142', 'Optional · (713) 555-0142')} inputMode="tel" className={inputCls} />
+          <input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(713) 555-0142" inputMode="tel" autoComplete="tel" className={inputCls} />
+          <div className={hintCls}>{L('Para llamar o enviar mensaje al asignar entregas.', 'To call or text when assigning deliveries.')}</div>
+        </div>
+        <div>
+          <div className={fieldLabel}>{L('Vehículo', 'Vehicle')}</div>
+          <input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder={L('Opcional · Honda Civic gris · ABC-1234', 'Optional · Gray Honda Civic · ABC-1234')} className={inputCls} />
         </div>
         <div>
           <div className={fieldLabel}>{L('Estado', 'Status')}</div>
