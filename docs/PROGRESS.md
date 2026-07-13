@@ -32,6 +32,25 @@ es un adherido opcional**. El modelo mental pasó de Shopify a Google Business/Y
   ventas" con el bottom nav de engagement. Sin mutar datos reales (el apagado de
   módulos fue en modo demo, local).
 
+### Fase 1b: header del panel funcional (2026-07-12)
+Arreglados los controles muertos del header (`Panel.tsx`), lo último de "se ve
+profesional":
+- **Buscador = "ir a" real**: filtra los destinos del nav (no bloqueados) y
+  navega al elegir. Antes era decorativo.
+- **Campana = Avisos reales**: dropdown con pedidos nuevos (si vende) + reseñas
+  sin responder (`replied_at is null`) + mensajes sin leer (`unread>0`), badge con
+  el total, cada fila enlaza a su tab. Fetch de conteos en Panel; demo muestra
+  una muestra. Antes: badge falso, sin acción.
+- **"Ver mi página"** (antes "Ver listado"): va a `/negocios?b=<slug>` (tu ficha
+  pública), no al directorio general.
+- **Free bottom-nav "Pedidos"** respeta el candado → lleva a facturación (antes
+  saltaba el bloqueo del sidebar).
+- Verificado en navegador real (`shoot-header.js`): buscar "rese" → Reseñas →
+  navega; campana muestra "2 reseñas sin responder · 1 mensaje sin leer" reales.
+  (Nota harness: los conteos vía header `content-range` no pasan por el relay de
+  pruebas; se verificó reenviándolo — en producción funcionan como el badge de
+  fotos que ya usa el mismo patrón.)
+
 ### Fase 2: Inicio real — cockpit con datos reales (2026-07-12, flag HOME_V2)
 Reemplaza el viejo "Resumen" (100% demo, aun para negocios reales) por un
 **cockpit real** (`DashboardHome.tsx`), gated por **`HOME_V2`** (independiente de

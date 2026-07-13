@@ -226,10 +226,13 @@
     apariciones en búsqueda, "cómo llegar", guardados. Hoy no hay tracking — el
     Inicio muestra un teaser "Pronto" en vez de números falsos. Es el gap #1 vs.
     Google Business/Yelp. Requiere instrumentar eventos + una tabla de métricas.
-  - [ ] **Controles muertos del header del panel (Fase 1b):** el buscador no
-    busca (sin handler), la campana no abre nada, "Ver listado" va al directorio
-    general y no a TU página pública. En Free el bottom-nav "Pedidos" salta el
-    candado que el sidebar sí aplica.
+  - [x] **Controles muertos del header del panel — RESUELTO (Fase 1b,
+    2026-07-12).** El buscador ahora es un "ir a" real (filtra los destinos del
+    nav y navega); la campana abre un dropdown de **Avisos reales** (pedidos
+    nuevos · reseñas sin responder · mensajes sin leer, con badge y links);
+    "Ver listado" → **"Ver mi página"** va a `/negocios?b=<slug>` (tu propia
+    ficha); y en Free el bottom-nav "Pedidos" ahora respeta el candado (lleva a
+    facturación). Verificado en navegador (`shoot-header.js`).
   - [ ] **Default de módulos para listados nuevos:** hoy `DEFAULT_MODS` = todo
     ON, así que un negocio nuevo aparece "vendiendo" por defecto. Para reflejar
     "el listado es el master, vender es opcional", evaluar arrancar con comercio

@@ -64,6 +64,11 @@ export function PanelScreen() {
   const [tab, setTab] = useState<TabKey>('insights');
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [photoCount, setPhotoCount] = useState<number | undefined>(undefined);
+  // header: jump-to search + real notifications (avisos) bell
+  const [jumpQ, setJumpQ] = useState('');
+  const [jumpOpen, setJumpOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [avisos, setAvisos] = useState({ orders: 0, reviews: 0, messages: 0 });
   const admin = useBizAdmin();
   const real = admin.active; // the signed-in owner's active business (null in demo)
 
@@ -81,6 +86,26 @@ export function PanelScreen() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo, tab]);
+  // Real notification counts for the header bell (new orders · unreplied reviews
+  // · unread messages). Refetched on business switch and tab change so it stays
+  // fresh after the owner acts. Demo → zeros (a real avisos bell, never faked).
+  useEffect(() => {
+    if (!real || admin.demo || !supabase) { setAvisos({ orders: 0, reviews: 0, messages: 0 }); return; }
+    let cancelled = false;
+    (async () => {
+      const [o, r, c] = await Promise.all([
+        supabase!.from('business_orders').select('id', { count: 'exact', head: true }).eq('business_id', real.id).eq('status', 'new'),
+        supabase!.from('reviews').select('id', { count: 'exact', head: true }).eq('business_id', real.id).is('replied_at', null),
+        supabase!.from('business_conversations').select('unread').eq('business_id', real.id),
+      ]);
+      if (cancelled) return;
+      const msgs = ((c.data as Record<string, unknown>[]) ?? []).reduce((s, x) => s + (Number(x.unread ?? 0) > 0 ? 1 : 0), 0);
+      setAvisos({ orders: o.count ?? 0, reviews: r.count ?? 0, messages: msgs });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [real?.id, admin.demo, tab]);
+
   const [drawer, setDrawer] = useState(false);
   useScrollLock(drawer);
   const [mods, setMods] = useState<Mods>(DEFAULT_MODS);
@@ -203,6 +228,29 @@ export function PanelScreen() {
   if (tab in am && !(am as Record<string, boolean>)[tab] && !['insights'].includes(tab)) {
     // handled implicitly: nav locks it; keep simple.
   }
+
+  // header "jump to" — flatten the nav into navigable destinations (skip locked)
+  const jumpItems = (() => {
+    const seen = new Set<TabKey>();
+    const out: { id: TabKey; label: string }[] = [];
+    for (const g of nav) for (const n of g.items) { if (n.locked || seen.has(n.id)) continue; seen.add(n.id); out.push({ id: n.id, label: n.label }); }
+    return out;
+  })();
+  const jq = jumpQ.trim().toLowerCase();
+  const jumpMatches = jq ? jumpItems.filter((x) => x.label.toLowerCase().includes(jq)).slice(0, 7) : [];
+
+  // header bell — REAL notifications (demo shows a small sample so it's explorable)
+  const bellRows: { tab: TabKey; label: string }[] = real
+    ? [
+        ...(sells && avisos.orders > 0 ? [{ tab: 'orders' as TabKey, label: L(`${avisos.orders} ${avisos.orders === 1 ? 'pedido nuevo' : 'pedidos nuevos'}`, `${avisos.orders} new order${avisos.orders === 1 ? '' : 's'}`) }] : []),
+        ...(avisos.reviews > 0 ? [{ tab: 'reviews' as TabKey, label: L(`${avisos.reviews} ${avisos.reviews === 1 ? 'reseña sin responder' : 'reseñas sin responder'}`, `${avisos.reviews} review${avisos.reviews === 1 ? '' : 's'} to answer`) }] : []),
+        ...(avisos.messages > 0 ? [{ tab: 'messages' as TabKey, label: L(`${avisos.messages} ${avisos.messages === 1 ? 'mensaje sin leer' : 'mensajes sin leer'}`, `${avisos.messages} unread message${avisos.messages === 1 ? '' : 's'}`) }] : []),
+      ]
+    : admin.demo
+      ? [{ tab: 'reviews' as TabKey, label: L('2 reseñas sin responder', '2 reviews to answer') }, { tab: 'orders' as TabKey, label: L('3 pedidos nuevos', '3 new orders') }]
+      : [];
+  const bellTotal = real ? (sells ? avisos.orders : 0) + avisos.reviews + avisos.messages : admin.demo ? 5 : 0;
+  const ownPage = real?.slug ? `/negocios?b=${real.slug}` : '/negocios';
 
   const sidebar = (
     <div className="flex h-full w-[264px] flex-none flex-col border-r border-hair bg-white">
@@ -374,27 +422,70 @@ export function PanelScreen() {
           <span className="hidden rounded-full bg-lilac px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[.04em] text-primary-dark md:inline">
             {L('Negocios', 'Business')}
           </span>
-          <div className="mx-2 hidden min-w-0 max-w-[380px] flex-1 items-center gap-2 rounded-btn bg-app px-3 py-2 md:flex">
-            <Search size={14} className="flex-none text-muted" stroke={2.2} />
-            <input placeholder={L('Ir a pedidos, productos…', 'Jump to orders, items…')} className="min-w-0 flex-1 bg-transparent text-[12.5px] font-medium outline-none placeholder:text-muted" />
+          <div className="relative mx-2 hidden min-w-0 max-w-[380px] flex-1 md:block">
+            <div className="flex items-center gap-2 rounded-btn bg-app px-3 py-2">
+              <Search size={14} className="flex-none text-muted" stroke={2.2} />
+              <input
+                value={jumpQ}
+                onChange={(e) => { setJumpQ(e.target.value); setJumpOpen(true); }}
+                onFocus={() => setJumpOpen(true)}
+                onBlur={() => window.setTimeout(() => setJumpOpen(false), 160)}
+                placeholder={L('Ir a pedidos, reseñas, menú…', 'Jump to orders, reviews, menu…')}
+                className="min-w-0 flex-1 bg-transparent text-[12.5px] font-medium outline-none placeholder:text-muted"
+              />
+            </div>
+            {jumpOpen && jumpMatches.length > 0 && (
+              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 overflow-hidden rounded-card-sm border border-hair bg-white p-1.5 shadow-modal">
+                {jumpMatches.map((m) => (
+                  <button key={m.id} onMouseDown={(e) => e.preventDefault()} onClick={() => { ctx.go(m.id); setJumpQ(''); setJumpOpen(false); }} className="flex w-full cursor-pointer items-center rounded-btn px-2.5 py-2 text-left hover:bg-app">
+                    <span className="text-[12.5px] font-bold text-ink-soft">{m.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="ml-auto flex flex-none items-center gap-2">
-            <button onClick={() => router.push('/negocios')} className="hidden cursor-pointer items-center gap-1.5 rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft md:flex">
+            <button onClick={() => router.push(ownPage)} className="hidden cursor-pointer items-center gap-1.5 rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft md:flex">
               <ExternalLink size={12} stroke={2.4} />
-              {L('Ver listado', 'View public')}
+              {L('Ver mi página', 'View my page')}
             </button>
             <LangToggle mini />
-            <button
-              className={`relative flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full ${isInicio ? 'bg-[rgba(255,255,255,.12)] lg:bg-lilac-2' : 'bg-lilac-2'}`}
-              aria-label={L('Notificaciones', 'Notifications')}
-            >
-              <Bell size={16} stroke={2.2} className={isInicio ? 'text-white lg:text-ink' : 'text-ink'} />
-              {!real && (
-                <span className="absolute right-0.5 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[8.5px] font-extrabold text-white">
-                  {isFree ? '2' : '7'}
-                </span>
+            <div className="relative flex-none">
+              <button
+                onClick={() => setBellOpen((o) => !o)}
+                className={`relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full ${isInicio ? 'bg-[rgba(255,255,255,.12)] lg:bg-lilac-2' : 'bg-lilac-2'}`}
+                aria-label={L('Notificaciones', 'Notifications')}
+                aria-expanded={bellOpen}
+              >
+                <Bell size={16} stroke={2.2} className={isInicio ? 'text-white lg:text-ink' : 'text-ink'} />
+                {bellTotal > 0 && (
+                  <span className="absolute right-0.5 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-[9px] border-2 border-white bg-pink px-[3px] text-[8.5px] font-extrabold text-white">
+                    {bellTotal}
+                  </span>
+                )}
+              </button>
+              {bellOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
+                  <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-[262px] overflow-hidden rounded-card-sm border border-hair bg-white shadow-modal">
+                    <div className="border-b border-hair px-3.5 py-2.5 text-[12px] font-extrabold text-ink">{L('Avisos', 'Alerts')}</div>
+                    {bellRows.length > 0 ? (
+                      <div className="p-1.5">
+                        {bellRows.map((b, i) => (
+                          <button key={i} onClick={() => { ctx.go(b.tab); setBellOpen(false); }} className="flex w-full cursor-pointer items-center gap-2.5 rounded-btn px-2.5 py-2.5 text-left hover:bg-app">
+                            <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-lilac"><Bell size={13} stroke={2.4} className="text-primary-dark" /></span>
+                            <span className="min-w-0 flex-1 text-[12px] font-bold text-ink-soft">{b.label}</span>
+                            <span className="flex-none text-[11px] font-extrabold text-primary-dark">›</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-3.5 py-5 text-center text-[12px] font-semibold text-muted">{L('Sin avisos nuevos', 'No new alerts')}</div>
+                    )}
+                  </div>
+                </>
               )}
-            </button>
+            </div>
             {bizAvatar('h-9 w-9 rounded-full text-[11px]')}
           </div>
         </div>
@@ -527,7 +618,7 @@ export function PanelScreen() {
         {bottomItems.map(([k, Icon, label, badge]) => {
           const active = tab === k;
           return (
-            <button key={k} onClick={() => ctx.go(k)} className="relative flex min-h-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5">
+            <button key={k} onClick={() => (isFree && k === 'orders' ? ctx.go('billing') : ctx.go(k))} className="relative flex min-h-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5">
               <Icon size={19} strokeWidth={2.2} className={active ? 'text-primary' : 'text-muted-2'} />
               <span className={`text-[9px] font-extrabold ${active ? 'text-primary' : 'text-muted-2'}`}>{label}</span>
               {badge && (
