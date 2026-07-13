@@ -45,6 +45,7 @@ export type BizRow = {
   specialty_es: string | null;
   specialty_en: string | null;
   is_open: boolean;
+  timezone?: string | null; // IANA tz for metric rollups (0079); absent/null → America/Chicago
   rating: number;
   reviews_count: number;
   tile_a: string | null;

@@ -97,15 +97,59 @@ export async function checkDeliveryRange(
   };
 }
 
-/** Record ONE listing discovery event (fire-and-forget). Every event counts — no
- *  per-user dedup ("cada vista cuenta") — rolled up per day in the DB (0077).
- *  Kinds: 'view' (page open) + the Google-Business customer actions 'save' (♥),
- *  'direction' (Cómo llegar) and 'call' (Llamar); 'search' is reserved (soon).
- *  Owner self-actions are excluded server-side (0078). Safe to call on any tap;
- *  errors/offline are ignored (never blocks the UI). */
-export function trackListingView(slug: string, kind: 'view' | 'search' | 'direction' | 'save' | 'call' = 'view'): void {
+/** Anti-inflation guard: VIEWS always count ("cada vista cuenta" — founder rule),
+ *  but the customer ACTIONS (save/direction/call) dedupe per browser session so a
+ *  repeat tap / re-render doesn't inflate. Fail-open if storage is unavailable.
+ *  (Edge-level bot/crawler filtering stays an at-scale infra item.) */
+function actionThrottled(kind: string, slug: string): boolean {
+  if (kind === 'view') return false;
+  try {
+    const k = `tlv:${kind}:${slug}`;
+    const prev = Number(sessionStorage.getItem(k) || 0);
+    if (prev && Date.now() - prev < 6 * 60 * 60 * 1000) return true; // same action, same session → skip
+    sessionStorage.setItem(k, String(Date.now()));
+  } catch { /* no storage (SSR/blocked) → don't block tracking */ }
+  return false;
+}
+
+/** Record ONE listing discovery event (fire-and-forget). Views count every time
+ *  (no dedup); actions dedupe per session (see actionThrottled). Rolled up per
+ *  BUSINESS-LOCAL day in the DB (0077/0079). Kinds: 'view' + the Google-Business
+ *  customer actions 'save' (♥), 'direction' (Cómo llegar), 'call' (Llamar).
+ *  ('search' appearances go through trackSearchAppearance.) Owner self-actions are
+ *  excluded server-side (0078). Errors/offline are ignored (never blocks the UI). */
+export function trackListingView(slug: string, kind: 'view' | 'direction' | 'save' | 'call' = 'view'): void {
   if (!supabase || !slug) return;
+  if (actionThrottled(kind, slug)) return;
   void supabase.rpc('track_listing_view', { in_slug: slug, in_kind: kind }).then(() => {}, () => {});
+}
+
+/** Record a SEARCH APPEARANCE (+1 'search') for every business shown in a search
+ *  or category-browse result set — batched into ONE RPC + one bulk upsert so a
+ *  40-result page is a single round-trip (scalable at 1M+/mo). Owner-owned
+ *  listings are excluded server-side (0079). Fire-and-forget; slugs deduped. */
+export function trackSearchAppearance(slugs: string[]): void {
+  if (!supabase) return;
+  const uniq = Array.from(new Set(slugs.filter(Boolean)));
+  if (uniq.length === 0) return;
+  void supabase.rpc('track_search_appearance', { in_slugs: uniq }).then(() => {}, () => {});
+}
+
+/** The business's local "today" as a YYYY-MM-DD key (metrics roll up in the biz
+ *  timezone, 0079 — so the dashboard windows must anchor to the same day). */
+export function tzTodayKey(tz: string): string {
+  try { return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+  catch { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+}
+
+/** The last `n` day-keys (oldest→newest) ending at the business-local today —
+ *  pure calendar math on the anchor date, so it matches the DB's biz-tz buckets. */
+export function tzDayKeys(tz: string, n: number): string[] {
+  const [y, m, d] = tzTodayKey(tz).split('-').map(Number);
+  return Array.from({ length: n }, (_, i) => {
+    const dt = new Date(Date.UTC(y, m - 1, d)); dt.setUTCDate(dt.getUTCDate() - (n - 1 - i));
+    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+  });
 }
 
 /** The owner's own last-N-days discovery metrics (0077 — RLS: owner only).

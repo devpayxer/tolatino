@@ -233,18 +233,30 @@
       BizDetail, solo al guardar, no al quitar), `direction` (tile "Cómo llegar"
       — ahora abre mapas de verdad, deep-link universal sin API key/cobro) y
       `call` (tile "Llamar" — ahora sí marca `tel:`). Se corrigieron dos tiles
-      que antes no hacían nada (stubs). `search` (apariciones en búsqueda) sigue
-      pendiente (requiere instrumentar el feed de búsqueda).
+      que antes no hacían nada (stubs).
+    - [x] **Apariciones en búsqueda (`search`) — HECHO (2026-07-13, migración
+      0079).** `track_search_appearance(slugs[])` batched (una llamada por
+      búsqueda, un upsert masivo → escalable a 1M+/mo); instrumentado en
+      `Negocios.tsx` (debounce 800ms + dedup por firma) cuando hay query o filtro
+      de categoría; dueños de la ficha excluidos. Surface: fila **Alcance**
+      (Búsquedas · Vistas) en la pestaña Estadísticas. Verificado E2E (RPC:
+      owner-excl + batch + no-owner; y el cliente dispara la RPC al buscar).
     - [x] **Auto-vistas del dueño excluidas (2026-07-13, migración 0078):**
       `track_listing_view` retorna temprano si `auth.uid()` = `owner_id`. Ya no
       infla las estadísticas cuando el owner abre/prueba su propia ficha.
       Verificado E2E (owner no cuenta; comprador anónimo/autenticado sí).
-    - [ ] **Anti-inflación restante:** filtrar bots/crawlers y rate-limit por
-      IP/sesión (aún cuenta cada acción sin límite — "cada vista cuenta").
-    - [ ] **Zona horaria:** el total de 7 días es robusto, pero las mini-barras
-      agrupan por día local del cliente vs `current_date` (UTC) del server — puede
-      correrse un día en el borde (aplica también a las series de la pestaña
-      Estadísticas). Definir tz del negocio al hacer el rollup.
+    - [~] **Anti-inflación:** rate-limit **por sesión** hecho (2026-07-13) — las
+      ACCIONES (save/direction/call) se deduplican por sesión (sessionStorage, 6h)
+      para que un tap repetido no infle; las VISTAS siguen contando siempre
+      ("cada vista cuenta", regla del founder). **Falta (infra a escala):** filtro
+      de bots/crawlers y rate-limit por IP a nivel edge (Cloudflare bot score /
+      rate-limiting) — no fakeable en app; entra cuando haya tráfico real.
+    - [x] **Zona horaria — HECHO (2026-07-13, migración 0079):** se añadió
+      `businesses.timezone` (default `America/Chicago`, editable); `track_listing_view`,
+      `track_search_appearance` y `business_metrics` bucketan/filtran por la zona
+      del negocio (`now() at time zone …`), y el Inicio + Estadísticas construyen
+      las series con `tzDayKeys(tz)`. Server y cliente coinciden exactamente (sin
+      corrimiento en el borde). Verificado (`buckets_match=true`).
     - [x] **Pestaña "Estadísticas" dedicada — HECHA (2026-07-13).**
       `Estadisticas.tsx` bajo "Cómo te encuentran": selector de rango 7/30/90 días,
       Interacciones totales + tendencia vs periodo anterior + gráfica de área,

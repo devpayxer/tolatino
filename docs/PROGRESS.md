@@ -5,6 +5,35 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-13.
 
+## Analítica — pendientes cerrados: búsquedas + anti-inflación + zona horaria (2026-07-13, migración 0079)
+Se cerraron los tres pendientes de descubrimiento que quedaban (LAUNCH-CHECKLIST §3b).
+- **Apariciones en búsqueda (`search`).** Nueva RPC **`track_search_appearance(slugs[])`**
+  (SECURITY DEFINER, anon+auth): +1 'search' para cada negocio mostrado en un set de
+  resultados, en UNA llamada + un upsert masivo (una página de 40 = 1 round-trip →
+  escalable a 1M+/mo). Dueños de la ficha excluidos (`owner_id <> auth.uid()`).
+  Instrumentado en `Negocios.tsx`: efecto con **debounce 800ms** (el tecleo colapsa a
+  un evento) + **dedup por firma** (query+cat+subcat+página) para no recontar en
+  re-render, disparado cuando hay query o filtro de categoría. Surface: fila
+  **Alcance** (Búsquedas · Vistas) en la pestaña Estadísticas + `trackSearchAppearance`
+  en `live.tsx`.
+- **Anti-inflación (rate-limit por sesión).** `trackListingView` ahora deduplica las
+  **acciones** (save/direction/call) por sesión (sessionStorage, ventana 6h) para que
+  un tap repetido no infle; las **vistas** siguen contando siempre ("cada vista
+  cuenta", regla del founder). El filtro de bots/crawlers a nivel edge (Cloudflare)
+  queda como ítem de infra a escala — no fakeable en app.
+- **Zona horaria del negocio.** Se añadió `businesses.timezone` (default
+  `America/Chicago`, editable). `track_listing_view`, `track_search_appearance` y
+  `business_metrics` ahora bucketan/filtran por la zona del negocio
+  (`(now() at time zone tz)::date`), y el Inicio + Estadísticas construyen las series
+  con el helper **`tzDayKeys(tz)`** (+ `dkTz` para pedidos/reseñas). Server y cliente
+  coinciden exactamente → sin corrimiento de un día en el borde de la medianoche.
+- **Verificado E2E** (SQL con claims JWT + navegador real): RPC de búsqueda
+  (owner-excluido, batch de 2 negocios, no-owner cuenta); `buckets_match=true` para la
+  tz; el cliente dispara `track_search_appearance(['hz-sabor-quisqueya'])` al buscar
+  "sabor" (interceptado, sin mutar DB); y la pestaña Estadísticas muestra la fila
+  **Alcance** con Búsquedas reales (`tools/mobile-audit/{stats-tab,search-track}.js`).
+  Artefactos revertidos (El Sabor → view=3; esperanza limpio).
+
 ## Pestaña "Estadísticas" dedicada (2026-07-13) — analítica real estilo Google Business
 Nueva pestaña **Estadísticas** en el panel, bajo el grupo "Cómo te encuentran"
 (arriba de Reseñas). Benchmark: **Google Business Profile Insights / Yelp Business**.

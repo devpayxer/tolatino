@@ -20,7 +20,7 @@ import {
 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { useBizAdmin } from '@/lib/bizAdmin';
-import { fetchBusinessMetrics } from '@/lib/live';
+import { fetchBusinessMetrics, tzDayKeys } from '@/lib/live';
 import { activeMods, type PanelCtx, type TabKey } from '@/screens/negocio/tabs';
 
 const card = 'rounded-card-sm border border-hair bg-white shadow-card';
@@ -116,12 +116,10 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }, [real, photoCount]);
 
-  // page views (0077 — every view counts). Total is timezone-robust (sum of the
-  // 7-day rows the RPC returns); the mini bars key by local day for display.
-  const pad = (n: number) => String(n).padStart(2, '0');
+  // page views (0077 — every view counts). Bars key by the BUSINESS-local day
+  // (0079) so they line up exactly with the DB's biz-tz rollup (no edge drift).
   const viewByDay = new Map(metrics.filter((m) => m.kind === 'view').map((m) => [m.day.slice(0, 10), m.count]));
-  const vbase = new Date();
-  const realSeries = Array.from({ length: 7 }, (_, i) => { const d = new Date(vbase); d.setDate(d.getDate() - (6 - i)); return viewByDay.get(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`) ?? 0; });
+  const realSeries = tzDayKeys(real?.timezone ?? 'America/Chicago', 7).map((k) => viewByDay.get(k) ?? 0);
   const viewsSeries = real ? realSeries : admin.demo ? [18, 24, 20, 31, 27, 42, 38] : realSeries;
   const views7 = real ? metrics.filter((m) => m.kind === 'view').reduce((s, m) => s + m.count, 0) : viewsSeries.reduce((s, n) => s + n, 0);
   const viewsToday = viewsSeries[6];
@@ -270,7 +268,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
             </div>
           ))}
         </div>
-        <div className="mt-2.5 text-[9.5px] font-semibold text-muted-2">{L('Vistas y acciones de 7 días · tus propias visitas no cuentan · búsquedas: pronto.', '7-day views & actions · your own visits don’t count · searches: soon.')}</div>
+        <div className="mt-2.5 text-[9.5px] font-semibold text-muted-2">{L('Vistas y acciones de 7 días · tus propias visitas no cuentan · búsquedas y más en Estadísticas.', '7-day views & actions · your own visits don’t count · searches & more in Insights.')}</div>
       </div>
 
       {/* live queue (seller, real) */}

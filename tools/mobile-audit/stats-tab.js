@@ -42,9 +42,9 @@ async function newPage(browser, session, viewport) {
     await page.waitForTimeout(6500);
     await page.getByText('Estadísticas', { exact: true }).first().click({ timeout: 10000 });
     await page.waitForTimeout(4000);
-    let body = await page.evaluate(() => document.body.innerText);
-    for (const t of ['Interacciones totales', 'Guardados', 'Cómo llegar', 'Llamadas', 'Reputación']) {
-      if (!body.includes(t)) return fail('missing on stats page: ' + t);
+    let body = (await page.evaluate(() => document.body.innerText)).toLowerCase();
+    for (const t of ['Interacciones totales', 'Alcance', 'Búsquedas', 'Vistas', 'Guardados', 'Cómo llegar', 'Llamadas', 'Reputación']) {
+      if (!body.includes(t.toLowerCase())) return fail('missing on stats page: ' + t);
     }
     console.log('desktop 7d: hero + actions + reputación present');
     await page.screenshot({ path: `${SHOTS}/stats-desktop-7d.png` });

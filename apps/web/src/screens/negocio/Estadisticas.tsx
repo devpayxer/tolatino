@@ -19,7 +19,7 @@ import {
 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { useBizAdmin } from '@/lib/bizAdmin';
-import { fetchBusinessMetrics } from '@/lib/live';
+import { fetchBusinessMetrics, tzDayKeys } from '@/lib/live';
 import { activeMods, type PanelCtx } from '@/screens/negocio/tabs';
 
 const card = 'rounded-card-sm border border-hair bg-white shadow-card';
@@ -36,12 +36,12 @@ type ReviewLite = { replied: boolean; created_at: string };
 function demoMetrics(range: number): Metric[] {
   const rows: Metric[] = [];
   const base = new Date(); base.setHours(0, 0, 0, 0);
-  const amp: Record<string, number> = { view: 26, save: 4, direction: 3, call: 2 };
-  const phase: Record<string, number> = { view: 0, save: 1, direction: 2, call: 3 };
+  const amp: Record<string, number> = { search: 58, view: 26, save: 4, direction: 3, call: 2 };
+  const phase: Record<string, number> = { search: 0, view: 1, save: 2, direction: 3, call: 4 };
   for (let i = 0; i < range * 2; i++) {
     const d = new Date(base); d.setDate(d.getDate() - i); const dk = dayKey(d);
     const growth = 1 - i / (range * 4); // recent days slightly higher
-    for (const k of ['view', 'save', 'direction', 'call']) {
+    for (const k of ['search', 'view', 'save', 'direction', 'call']) {
       const c = Math.max(0, Math.round(amp[k] * growth * (0.62 + 0.38 * Math.abs(Math.sin((i + phase[k]) / 2)))));
       if (c > 0) rows.push({ day: dk, kind: k, count: c });
     }
@@ -89,12 +89,15 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, persistable, admin.demo, range, sells]);
 
-  // ── window keys (client-local days): current window + the previous equal window ──
+  // ── window keys in the BUSINESS timezone (0079) so the bars line up exactly
+  //    with the DB's biz-local day buckets — current window + previous equal window ──
+  const tz = real?.timezone ?? 'America/Chicago';
   const { curKeys, cutoff } = useMemo(() => {
-    const base = new Date(); base.setHours(0, 0, 0, 0);
-    const keys = Array.from({ length: range }, (_, i) => { const d = new Date(base); d.setDate(d.getDate() - (range - 1 - i)); return dayKey(d); });
+    const keys = tzDayKeys(tz, range);
     return { curKeys: keys, cutoff: keys[0] };
-  }, [range]);
+  }, [tz, range]);
+  // bucket a timestamp by the business-local day (matches curKeys / the DB rollup)
+  const dkTz = (iso: string) => { try { return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso)); } catch { return dayKey(new Date(iso)); } };
 
   // metrics rolled up by kind → day
   const byKindDay = useMemo(() => {
@@ -116,14 +119,16 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
   // sales over the range (sellers, real)
   const revByDay = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const o of orders) { if (o.status === 'cancelled') continue; const d = new Date(o.created_at); const dk = dayKey(d); m[dk] = (m[dk] ?? 0) + o.total; }
+    for (const o of orders) { if (o.status === 'cancelled') continue; const dk = dkTz(o.created_at); m[dk] = (m[dk] ?? 0) + o.total; }
     return m;
-  }, [orders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, tz]);
   const ordCountByDay = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const o of orders) { if (o.status === 'cancelled') continue; const dk = dayKey(new Date(o.created_at)); m[dk] = (m[dk] ?? 0) + 1; }
+    for (const o of orders) { if (o.status === 'cancelled') continue; const dk = dkTz(o.created_at); m[dk] = (m[dk] ?? 0) + 1; }
     return m;
-  }, [orders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, tz]);
   const revSeries = curKeys.map((dk) => revByDay[dk] ?? 0);
   const revCur = revSeries.reduce((a, b) => a + b, 0);
   const revPrev = (() => { let s = 0; for (const dk in revByDay) if (dk < cutoff) s += revByDay[dk]; return s; })();
@@ -131,7 +136,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
 
   // reputation (real)
   const unreplied = reviews.filter((r) => !r.replied).length;
-  const newReviews = reviews.filter((r) => dayKey(new Date(r.created_at)) >= cutoff).length;
+  const newReviews = reviews.filter((r) => dkTz(r.created_at) >= cutoff).length;
   const rating = real ? ((real.reviews_count ?? 0) > 0 ? Number(real.rating).toFixed(1) : '—') : (admin.demo ? '4.8' : '—');
   const totalReviews = real ? (real.reviews_count ?? 0) : (admin.demo ? 128 : 0);
 
@@ -170,12 +175,32 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
   };
   const Sec = ({ title }: { title: string }) => <h2 className="mt-1 px-0.5 text-[14px] font-extrabold tracking-[-.01em] text-ink">{title}</h2>;
 
-  const actions: { icon: typeof Eye; label: string; kind: string; color: string; bg: string }[] = [
+  type Metp = { icon: typeof Eye; label: string; kind: string; color: string; bg: string };
+  // Alcance (impressions — top of funnel): search appearances + page views.
+  const reach: Metp[] = [
+    { icon: Search, label: L('Búsquedas', 'Searches'), kind: 'search', color: '#5B6BE1', bg: 'bg-blue-bg' },
     { icon: Eye, label: L('Vistas', 'Views'), kind: 'view', color: '#7B61FF', bg: 'bg-lilac' },
+  ];
+  // Acciones del cliente (what they DO after finding you).
+  const acts: Metp[] = [
     { icon: Heart, label: L('Guardados', 'Saves'), kind: 'save', color: '#E14E8A', bg: 'bg-pink-bg' },
     { icon: Navigation, label: L('Cómo llegar', 'Directions'), kind: 'direction', color: '#C77B2B', bg: 'bg-amber-bg' },
     { icon: Phone, label: L('Llamadas', 'Calls'), kind: 'call', color: '#1F9D57', bg: 'bg-green-bg' },
   ];
+  const MetCard = ({ a }: { a: Metp }) => {
+    const cur = curSum(a.kind); const prev = prevSum(a.kind); const s = seriesOf(a.kind);
+    return (
+      <div className={`${card} p-3.5`}>
+        <div className="flex items-center justify-between">
+          <span className={`flex h-8 w-8 items-center justify-center rounded-[10px] ${a.bg}`}><a.icon size={15} stroke={2.3} style={{ color: a.color }} /></span>
+          <Trend d={delta(cur, prev)} />
+        </div>
+        <div className="mt-2 text-[22px] font-extrabold tracking-[-.02em] text-ink">{cur.toLocaleString()}</div>
+        <div className="text-[10.5px] font-bold text-muted-2">{a.label}</div>
+        {cur > 0 && <div className="mt-1.5"><Spark data={s} color={a.color} /></div>}
+      </div>
+    );
+  };
 
   return (
     <div className="mx-auto flex max-w-[880px] flex-col gap-3.5">
@@ -208,27 +233,19 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
         )}
       </div>
 
-      {/* customer actions grid */}
+      {/* how they find you — reach (impressions) then customer actions */}
       <Sec title={L('Cómo te encuentran', 'How they find you')} />
+      <div className="px-0.5 text-[10px] font-bold uppercase tracking-[.05em] text-muted-2">{L('Alcance', 'Reach')}</div>
       <div className="grid grid-cols-2 gap-2.5">
-        {actions.map((a) => {
-          const cur = curSum(a.kind); const prev = prevSum(a.kind); const s = seriesOf(a.kind);
-          return (
-            <div key={a.kind} className={`${card} p-3.5`}>
-              <div className="flex items-center justify-between">
-                <span className={`flex h-8 w-8 items-center justify-center rounded-[10px] ${a.bg}`}><a.icon size={15} stroke={2.3} style={{ color: a.color }} /></span>
-                <Trend d={delta(cur, prev)} />
-              </div>
-              <div className="mt-2 text-[22px] font-extrabold tracking-[-.02em] text-ink">{cur.toLocaleString()}</div>
-              <div className="text-[10.5px] font-bold text-muted-2">{a.label}</div>
-              {cur > 0 && <div className="mt-1.5"><Spark data={s} color={a.color} /></div>}
-            </div>
-          );
-        })}
+        {reach.map((a) => <MetCard key={a.kind} a={a} />)}
+      </div>
+      <div className="px-0.5 text-[10px] font-bold uppercase tracking-[.05em] text-muted-2">{L('Acciones del cliente', 'Customer actions')}</div>
+      <div className="grid grid-cols-3 gap-2.5">
+        {acts.map((a) => <MetCard key={a.kind} a={a} />)}
       </div>
       <div className="flex items-center gap-2 rounded-field bg-app px-3 py-2.5">
         <Search size={14} stroke={2.3} className="flex-none text-muted-2" />
-        <span className="text-[10.5px] font-semibold text-muted">{L('Apariciones en búsqueda: pronto. Las auto-vistas del dueño no cuentan.', 'Search appearances: soon. Your own visits don’t count.')}</span>
+        <span className="text-[10.5px] font-semibold text-muted">{L('Búsquedas = veces que apareciste en resultados. Tus propias visitas no cuentan; acciones repetidas en la misma sesión no se duplican.', 'Searches = times you appeared in results. Your own visits don’t count; repeat actions in one session aren’t double-counted.')}</span>
       </div>
 
       {/* reputation */}

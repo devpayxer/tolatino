@@ -12,7 +12,7 @@ import { useApp } from '@/lib/state';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
-import { useLiveData, fetchBusinessBySlug, searchBusinesses } from '@/lib/live';
+import { useLiveData, fetchBusinessBySlug, searchBusinesses, trackSearchAppearance } from '@/lib/live';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useNow } from '@/lib/useNow';
 import { bizStatus, isOpenNow, statusLabel } from '@/lib/hours';
@@ -154,6 +154,22 @@ export function NegociosScreen() {
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
   const pageResults = results.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
+
+  // Search appearances (Google-Business "Searches"): when the user actually
+  // searches (a query) or browses a category, every business shown gets one
+  // 'search' appearance (batched RPC, 0079). Debounced 800ms so typing collapses
+  // to one event, and deduped by signature so re-renders don't recount.
+  const lastSearchSig = useRef('');
+  useEffect(() => {
+    const hasIntent = sl.length > 0 || f.cat !== 'all';
+    if (!hasIntent || pageResults.length === 0) return;
+    const sig = `${sl}|${f.cat}|${f.subCat ?? ''}|${curPage}`;
+    if (sig === lastSearchSig.current) return;
+    const slugs = pageResults.map((b) => b.slug);
+    const t = window.setTimeout(() => { lastSearchSig.current = sig; trackSearchAppearance(slugs); }, 800);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sl, f.cat, f.subCat, curPage, pageResults]);
 
   const counts = useMemo(() => {
     const m: Partial<Record<CatKey, number>> = {};
