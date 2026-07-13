@@ -59,6 +59,15 @@ export type NavItem = {
 };
 export type NavGroup = { label: string; add?: { label: string; color: string; onAdd?: () => void } | null; items: NavItem[] };
 
+// ── Dashboard v2 (2026-07-12) ────────────────────────────────────────────────
+// Reorganizes the panel around the founder's product truth: the LISTING is the
+// master (every business publishes to be found); SELLING is an optional add-on.
+// Groups by frequency/purpose — Tu página → Cómo te encuentran → Clientes →
+// Vender (opcional) → Cuenta — instead of the old Listado/Módulos/Clientes/Cuenta.
+// Flip to `false` to instantly restore the previous nav + bottom bar + titles
+// (buildNav / legacy bottom nav stay intact as the fallback).
+export const DASH_V2 = true;
+
 export function activeMods(ctx: PanelCtx): Mods {
   const { isFree, mods, rubro } = ctx;
   if (isFree) {
@@ -138,11 +147,88 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
   ];
 }
 
+// v2 nav: listing-first, selling as an optional add-on. See DASH_V2.
+export function buildNavV2(ctx: PanelCtx): NavGroup[] {
+  const { L, isFree, ci, go, photoCount, isReal, reviewsCount } = ctx;
+  const photoBadge = photoCount != null && photoCount > 0 ? String(photoCount) : null;
+  const dc = (v: string | null) => (isReal ? null : v);
+  const reviewsBadge = isReal ? (reviewsCount && reviewsCount > 0 ? String(reviewsCount) : null) : isFree ? '3' : '412';
+  const am = activeMods(ctx);
+  const it = (id: TabKey, label: string, Icon: LucideIcon, opts: Partial<NavItem> & { lockedFree?: boolean } = {}): NavItem => ({
+    id, label, Icon,
+    locked: !!opts.locked || (isFree && !!opts.lockedFree),
+    indent: opts.indent, count: opts.count ?? null, live: opts.live, warn: opts.warn, sub: opts.sub ?? null,
+  });
+
+  // Vender = the "adherido". Only the commerce modules the owner turned on; a
+  // listing that doesn't sell sees a single, friendly "Activar ventas" instead.
+  const sellItems: NavItem[] = [];
+  if (am.menu) sellItems.push(it('menu', L('Menú de comida', 'Food menu'), Utensils, { count: dc(isFree ? '8' : '68') }));
+  if (am.services) {
+    sellItems.push(it('services', L('Servicios', 'Services'), ci.svc, { count: dc('14') }));
+    if (am.bookings) sellItems.push(it('bookings', L('Reservas', 'Bookings'), Calendar, { count: dc('24'), live: true, indent: true }));
+  }
+  if (am.products) sellItems.push(it('products', L('Productos', 'Products'), Package, { count: dc('42') }));
+  if (am.rental) sellItems.push(it('rental', L('Renta', 'Rental'), Bike, { count: dc('12') }));
+  if (am.events) sellItems.push(it('events', L('Eventos y boletos', 'Events & tickets'), Ticket, { count: dc('4') }));
+  const sells = sellItems.length > 0;
+  if (sells) {
+    sellItems.push(it('orders', L('Pedidos', 'Orders'), ShoppingBag, { count: dc(isFree ? null : '12'), live: !isFree, lockedFree: true }));
+    if (am.menu || am.products) sellItems.push(it('fulfillment', L('Entregas y envíos', 'Delivery & shipping'), Truck));
+    sellItems.push(it('payments', L('Pagos', 'Payouts'), DollarSign, { lockedFree: true }));
+  } else {
+    sellItems.push(it('modules', L('Activar ventas', 'Enable selling'), ShoppingBag));
+  }
+
+  return [
+    { label: '', items: [it('insights', L('Inicio', 'Home'), BarChart3)] },
+    {
+      label: L('Tu página', 'Your page'),
+      add: { label: L('así te encuentran', 'how you’re found'), color: '#B7B3C6' },
+      items: [
+        it('listing', L('Información general', 'General info'), Building2, { sub: isFree ? null : 'OK' }),
+        it('photos', L('Fotos y media', 'Photos & media'), ImageIcon, { count: photoBadge }),
+        it('hours', L('Horario', 'Hours & holidays'), Clock),
+        it('related', L('Listados relacionados', 'Related listings'), Link2, { lockedFree: true }),
+      ],
+    },
+    {
+      label: L('Cómo te encuentran', 'How they find you'),
+      items: [
+        it('reviews', L('Reseñas', 'Reviews'), Star, { count: reviewsBadge, warn: !isFree && !isReal }),
+        it('updates', L('Novedades', 'Updates'), Megaphone, { count: am.updates ? dc('18') : null, locked: !am.updates }),
+      ],
+    },
+    {
+      label: L('Clientes', 'Customers'),
+      items: [
+        it('messages', L('Mensajes', 'Messages'), MessageCircle, { count: dc(isFree ? '2' : '7'), live: !isFree, warn: isFree }),
+        it('customers', L('Directorio', 'Directory'), Users, { count: dc(isFree ? '12' : '4.2k') }),
+      ],
+    },
+    {
+      label: L('Vender en To’Latino', 'Sell on To’Latino'),
+      add: { label: L('opcional', 'optional'), color: '#9A96AE', onAdd: sells ? () => go('modules') : undefined },
+      items: sellItems,
+    },
+    {
+      label: L('Cuenta', 'Account'),
+      items: [
+        it('staff', L('Personal', 'Staff'), User, { count: am.staff ? dc('14') : null, locked: !am.staff }),
+        ...(am.staff ? [it('jobs', L('Empleos', 'Jobs'), Briefcase, { count: dc('3'), indent: true })] : []),
+        it('modules', L('Configurar módulos', 'Module setup'), LayoutGrid),
+        it('billing', L('Plan y facturación', 'Billing & plan'), CreditCard),
+        it('settings', L('Ajustes', 'Settings'), Settings),
+      ],
+    },
+  ];
+}
+
 // ---------- page head ----------
 export function pageHead(tab: TabKey, ctx: PanelCtx) {
   const { L, isFree } = ctx;
   const titles: Record<TabKey, [string, string]> = {
-    insights: [L('Resumen', 'Insights'), isFree ? L('Tu listado está activo, pero te falta el kit. Mejora para desbloquear todo.', "Your listing is live, but you're missing the toolkit. Upgrade to unlock everything.") : L('Tu negocio va muy bien esta semana — los ingresos van en aumento.', 'Your business is having a great week — revenue is trending up.')],
+    insights: [DASH_V2 ? L('Inicio', 'Home') : L('Resumen', 'Insights'), isFree ? L('Tu listado está activo, pero te falta el kit. Mejora para desbloquear todo.', "Your listing is live, but you're missing the toolkit. Upgrade to unlock everything.") : L('Tu negocio va muy bien esta semana — los ingresos van en aumento.', 'Your business is having a great week — revenue is trending up.')],
     listing: [L('Información general', 'General info'), L('Así te ven tus clientes en To’Latino.', 'This is what customers see on To’Latino.')],
     photos: [L('Fotos y media', 'Photos & media'), L('Sube fotos de tu negocio, productos y equipo.', 'Upload photos of your business, products and team.')],
     hours: [L('Horario y feriados', 'Hours & holidays'), L('Define cuándo estás abierto.', 'Set when you are open.')],

@@ -7,7 +7,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconChartBar as BarChart3, IconBell as Bell, IconCheck as Check, IconChevronDown as ChevronDown, IconExternalLink as ExternalLink, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconPlus as Plus, IconSearch as Search, IconShoppingBag as ShoppingBag, IconStar as Star, IconX as X } from '@tabler/icons-react';
+import { IconChartBar as BarChart3, IconBell as Bell, IconBike as Bike, IconCheck as Check, IconChevronDown as ChevronDown, IconExternalLink as ExternalLink, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconPackage as Package, IconPlus as Plus, IconSearch as Search, IconShoppingBag as ShoppingBag, IconSpeakerphone as Megaphone, IconStar as Star, IconTicket as Ticket, IconToolsKitchen2 as Utensils, IconX as X } from '@tabler/icons-react';
+import type { Icon as LucideIcon } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { supabase } from '@/lib/supabase';
@@ -16,7 +17,7 @@ import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
-import { CAT_INFO, activeMods, buildGeneric, buildNav, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
+import { CAT_INFO, DASH_V2, activeMods, buildGeneric, buildNav, buildNavV2, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
 import { GenericTab } from '@/screens/negocio/GenericTab';
 import { HoursReminders } from '@/screens/negocio/HoursReminders';
 import { InsightsFree, InsightsPaid } from '@/screens/negocio/Insights';
@@ -162,9 +163,40 @@ export function PanelScreen() {
         s2v: isFree ? '12' : '284', s2l: isFree ? L('Visitas', 'Visits') : L('Seguidores', 'Followers'),
       };
 
-  const nav = buildNav(ctx);
+  const nav = DASH_V2 ? buildNavV2(ctx) : buildNav(ctx);
   const head = pageHead(tab, ctx);
   const am = activeMods(ctx);
+
+  // Bottom nav (mobile) — v2 adapts to whether the business sells: a seller gets
+  // the operational pair (Pedidos + its catalog); a listing-only business gets
+  // the engagement set (Reseñas · Mensajes · Novedades). Legacy stays otherwise.
+  const primaryCommerce: [TabKey, LucideIcon, string] | null =
+    am.menu ? ['menu', Utensils, L('Menú', 'Menu')]
+      : am.products ? ['products', Package, L('Productos', 'Products')]
+        : am.services ? ['services', ci.svc, L('Servicios', 'Services')]
+          : am.rental ? ['rental', Bike, L('Renta', 'Rental')]
+            : am.events ? ['events', Ticket, L('Eventos', 'Events')] : null;
+  const sells = !!primaryCommerce;
+  const bottomItems: readonly (readonly [TabKey, LucideIcon, string, string | null])[] = DASH_V2
+    ? sells
+      ? [
+          ['insights', BarChart3, L('Inicio', 'Home'), null],
+          ['orders', ShoppingBag, L('Pedidos', 'Orders'), real || isFree ? null : '12'],
+          [primaryCommerce![0], primaryCommerce![1], primaryCommerce![2], null],
+          ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
+        ]
+      : [
+          ['insights', BarChart3, L('Inicio', 'Home'), null],
+          ['reviews', Star, L('Reseñas', 'Reviews'), real || isFree ? null : '3'],
+          ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
+          ['updates', Megaphone, L('Novedades', 'Updates'), null],
+        ]
+    : [
+        ['insights', BarChart3, L('Inicio', 'Home'), null],
+        ['orders', ShoppingBag, L('Pedidos', 'Orders'), real || isFree ? null : '12'],
+        ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
+        ['reviews', Star, L('Reseñas', 'Reviews'), real || isFree ? null : '3'],
+      ];
 
   // If the current tab's module got turned off, fall back to insights.
   if (tab in am && !(am as Record<string, boolean>)[tab] && !['insights'].includes(tab)) {
@@ -269,10 +301,10 @@ export function PanelScreen() {
         {nav.map((gp, gi) => (
           <div key={gi} className="mb-2">
             {gp.label && (
-              <div className="flex items-center justify-between px-2 pb-1.5 pt-2.5">
-                <span className="text-[15px] font-extrabold tracking-[-.02em] text-ink">{gp.label}</span>
+              <div className={`flex items-center justify-between px-2 ${DASH_V2 ? 'pb-1 pt-3.5' : 'pb-1.5 pt-2.5'}`}>
+                <span className={DASH_V2 ? 'text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2' : 'text-[15px] font-extrabold tracking-[-.02em] text-ink'}>{gp.label}</span>
                 {gp.add && (
-                  <button onClick={gp.add.onAdd} className="cursor-pointer text-[9.5px] font-extrabold" style={{ color: gp.add.color }}>
+                  <button onClick={gp.add.onAdd} className={`cursor-pointer font-extrabold ${DASH_V2 ? 'text-[9px] uppercase tracking-[.05em]' : 'text-[9.5px]'}`} style={{ color: gp.add.color }}>
                     {gp.add.label}
                   </button>
                 )}
@@ -485,16 +517,9 @@ export function PanelScreen() {
         </main>
       </div>
 
-      {/* mobile bottom tabs (handoff): Inicio · Pedidos · Mensajes · Reseñas · Más */}
+      {/* mobile bottom tabs — adaptive (see bottomItems): seller vs listing-only */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-hair bg-white pb-[max(env(safe-area-inset-bottom),8px)] pt-1.5 lg:hidden">
-        {(
-          [
-            ['insights', BarChart3, L('Inicio', 'Home'), null],
-            ['orders', ShoppingBag, L('Pedidos', 'Orders'), real ? null : isFree ? null : '12'],
-            ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
-            ['reviews', Star, L('Reseñas', 'Reviews'), real ? null : isFree ? null : '3'],
-          ] as const
-        ).map(([k, Icon, label, badge]) => {
+        {bottomItems.map(([k, Icon, label, badge]) => {
           const active = tab === k;
           return (
             <button key={k} onClick={() => ctx.go(k)} className="relative flex min-h-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5">

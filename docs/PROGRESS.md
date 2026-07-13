@@ -5,6 +5,33 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-12.
 
+## Dashboard restructure — Fase 1: navegación (2026-07-12, tras flag DASH_V2)
+Reorganización del panel de negocio alrededor de la verdad del producto (founder):
+**el LISTADO es el master** (todo negocio se publica para ser encontrado); **vender
+es un adherido opcional**. El modelo mental pasó de Shopify a Google Business/Yelp
++ comercio opcional encima.
+- **`DASH_V2` flag** (`tabs.tsx`): `true` = nav nueva; ponlo en `false` para
+  revertir **al instante** a la nav anterior + bottom bar + títulos. `buildNav`
+  (legacy) queda intacto como fallback — revert de una línea, sin perder nada.
+- **`buildNavV2`**: grupos por frecuencia/propósito — **Inicio** (antes "Resumen")
+  · **Tu página** (Información/Fotos/Horario/Relacionados — el master, primero) ·
+  **Cómo te encuentran** (Reseñas/Novedades; Estadísticas entra aquí en Fase 3) ·
+  **Clientes** (Mensajes/Directorio) · **Vender en To'Latino · opcional** · **Cuenta**.
+  Headers en overline mayúscula (más limpio) solo bajo v2.
+- **Vender = adherido**: solo muestra los módulos de comercio ACTIVOS (menú/
+  servicios/productos/renta/eventos + pedidos/entregas/pagos). Si el negocio NO
+  vende, colapsa a un único **"Activar ventas"** → Configurar módulos. Reactivo:
+  activar un módulo puebla el grupo y cambia el bottom nav.
+- **Bottom nav adaptable** (`Panel.tsx`): vende → Inicio·Pedidos·Catálogo(menú/
+  productos/…)·Mensajes·Más; solo-listado → Inicio·Reseñas·Mensajes·Novedades·Más.
+- **NO tocado aún**: el contenido del Inicio (sigue siendo el cockpit demo — Fase 2,
+  con datos reales), Estadísticas reales (Fase 3), y los controles muertos del
+  header (buscador/campana — Fase 1b). Todo en `docs/LAUNCH-CHECKLIST.md §3b`.
+- **Verificado** a 1440 + 390 (`tools/mobile-audit/dashboard-v2.js`): grupos nuevos,
+  Vender poblado para El Sabor, y en demo con comercio apagado colapsa a "Activar
+  ventas" con el bottom nav de engagement. Sin mutar datos reales (el apagado de
+  módulos fue en modo demo, local).
+
 ## Professional delivery config + zone-derived radius + address decouple (2026-07-12)
 Founder request (3 parts, phased): (1) make the seller's delivery inputs
 professional like existing platforms — auto-units on distance, `$`/`.00` on
