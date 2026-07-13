@@ -5,6 +5,15 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-12.
 
+## Dashboard nuevo = OFICIAL (2026-07-12) — flags eliminados, viejo borrado
+El dueño aprobó el rediseño, así que se hizo permanente: se **quitaron los flags**
+`DASH_V2`/`HOME_V2` (ahora `buildNav` = la nav listing-first y `DashboardHome` =
+el Inicio, sin condicionales) y se **borró el dashboard viejo**: el `buildNav`
+anterior, `Insights.tsx` (InsightsFree/InsightsPaid, el Resumen demo), y el
+código muerto `GenericTab.tsx` + `buildGeneric` + sus tipos `G`. Verificado en
+navegador (grupos nuevos + Vistas reales, sin errores). Las secciones de Fase 1–3
+abajo quedan como historial del proceso.
+
 ## Dashboard restructure — Fase 1: navegación (2026-07-12, tras flag DASH_V2)
 Reorganización del panel de negocio alrededor de la verdad del producto (founder):
 **el LISTADO es el master** (todo negocio se publica para ser encontrado); **vender

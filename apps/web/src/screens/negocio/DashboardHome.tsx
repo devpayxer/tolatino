@@ -1,14 +1,13 @@
 'use client';
 
-// Inicio (DashboardHome) — the panel home, Fase 2. A cockpit built on the
-// founder's product truth: the LISTING is the master (be found + reputation),
-// SELLING is an optional add-on. Everything here is REAL for a signed-in
-// business (business_orders / reviews / business_conversations / bookings,
-// listing completeness from the businesses row); demo mode shows a sample
-// cockpit so the panel stays explorable. NO fabricated numbers for a real
-// business (non-negotiable #8). Discovery stats (views/searches) are NOT shown
-// yet — they need tracking (Fase 3) — instead of inventing them we show an
-// honest "próximamente" teaser. Gated by HOME_V2.
+// Inicio (DashboardHome) — the panel home. A cockpit built on the founder's
+// product truth: the LISTING is the master (be found + reputation), SELLING is
+// an optional add-on. Everything here is REAL for a signed-in business
+// (business_orders / reviews / business_conversations / bookings, listing
+// completeness from the businesses row, page views from business_metrics 0077);
+// demo mode shows a sample cockpit so the panel stays explorable. NO fabricated
+// numbers for a real business (non-negotiable #8). Discovery beyond views
+// (searches / directions / saves) is not tracked yet — shown as "soon".
 
 import { useEffect, useMemo, useState } from 'react';
 import {

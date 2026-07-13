@@ -17,11 +17,9 @@ import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
-import { CAT_INFO, DASH_V2, HOME_V2, activeMods, buildGeneric, buildNav, buildNavV2, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
-import { GenericTab } from '@/screens/negocio/GenericTab';
+import { CAT_INFO, activeMods, buildNav, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
 import { HoursReminders } from '@/screens/negocio/HoursReminders';
 import { DashboardHome } from '@/screens/negocio/DashboardHome';
-import { InsightsFree, InsightsPaid } from '@/screens/negocio/Insights';
 import { ModulesSetup } from '@/screens/negocio/ModulesSetup';
 import { UpdatesModule } from '@/screens/negocio/modules/Updates';
 import { BillingModule } from '@/screens/negocio/modules/Billing';
@@ -42,8 +40,8 @@ import { MessagesModule } from '@/screens/negocio/modules/Messages';
 import { PaymentsModule } from '@/screens/negocio/modules/Payments';
 
 // Tabs that render their own rich module screen (mode toggles / sub-tabs /
-// wizards / sheets) instead of the uniform GenericTab — the panel hides its
-// generic "+ CTA" row for these (each module owns its own actions).
+// wizards / sheets) — the panel hides its generic "+ CTA" row for these (each
+// module owns its own actions). Every real tab is here, so the row never shows.
 const RICH_MODULES = new Set<TabKey>([
   'listing', 'hours', 'photos', 'related', 'settings', 'messages', 'payments',
   'updates', 'billing', 'customers', 'orders', 'reviews', 'staff', 'jobs',
@@ -189,7 +187,7 @@ export function PanelScreen() {
         s2v: isFree ? '12' : '284', s2l: isFree ? L('Visitas', 'Visits') : L('Seguidores', 'Followers'),
       };
 
-  const nav = DASH_V2 ? buildNavV2(ctx) : buildNav(ctx);
+  const nav = buildNav(ctx);
   const head = pageHead(tab, ctx);
   const am = activeMods(ctx);
 
@@ -203,25 +201,18 @@ export function PanelScreen() {
           : am.rental ? ['rental', Bike, L('Renta', 'Rental')]
             : am.events ? ['events', Ticket, L('Eventos', 'Events')] : null;
   const sells = !!primaryCommerce;
-  const bottomItems: readonly (readonly [TabKey, LucideIcon, string, string | null])[] = DASH_V2
-    ? sells
-      ? [
-          ['insights', BarChart3, L('Inicio', 'Home'), null],
-          ['orders', ShoppingBag, L('Pedidos', 'Orders'), real || isFree ? null : '12'],
-          [primaryCommerce![0], primaryCommerce![1], primaryCommerce![2], null],
-          ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
-        ]
-      : [
-          ['insights', BarChart3, L('Inicio', 'Home'), null],
-          ['reviews', Star, L('Reseñas', 'Reviews'), real || isFree ? null : '3'],
-          ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
-          ['updates', Megaphone, L('Novedades', 'Updates'), null],
-        ]
-    : [
+  const bottomItems: readonly (readonly [TabKey, LucideIcon, string, string | null])[] = sells
+    ? [
         ['insights', BarChart3, L('Inicio', 'Home'), null],
         ['orders', ShoppingBag, L('Pedidos', 'Orders'), real || isFree ? null : '12'],
+        [primaryCommerce![0], primaryCommerce![1], primaryCommerce![2], null],
         ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
+      ]
+    : [
+        ['insights', BarChart3, L('Inicio', 'Home'), null],
         ['reviews', Star, L('Reseñas', 'Reviews'), real || isFree ? null : '3'],
+        ['messages', MessageCircle, L('Mensajes', 'Messages'), null],
+        ['updates', Megaphone, L('Novedades', 'Updates'), null],
       ];
 
   // If the current tab's module got turned off, fall back to insights.
@@ -350,10 +341,10 @@ export function PanelScreen() {
         {nav.map((gp, gi) => (
           <div key={gi} className="mb-2">
             {gp.label && (
-              <div className={`flex items-center justify-between px-2 ${DASH_V2 ? 'pb-1 pt-3.5' : 'pb-1.5 pt-2.5'}`}>
-                <span className={DASH_V2 ? 'text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2' : 'text-[15px] font-extrabold tracking-[-.02em] text-ink'}>{gp.label}</span>
+              <div className="flex items-center justify-between px-2 pb-1 pt-3.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2">{gp.label}</span>
                 {gp.add && (
-                  <button onClick={gp.add.onAdd} className={`cursor-pointer font-extrabold ${DASH_V2 ? 'text-[9px] uppercase tracking-[.05em]' : 'text-[9.5px]'}`} style={{ color: gp.add.color }}>
+                  <button onClick={gp.add.onAdd} className="cursor-pointer text-[9px] font-extrabold uppercase tracking-[.05em]" style={{ color: gp.add.color }}>
                     {gp.add.label}
                   </button>
                 )}
@@ -521,25 +512,8 @@ export function PanelScreen() {
               onOpenHours={(id) => { admin.setActive(id); ctx.go('hours'); }}
             />
           )}
-          {/* identity card (handoff mobile Inicio) — business avatar + name + plan.
-              Suppressed under HOME_V2: DashboardHome owns its own greeting header. */}
-          {isInicio && !HOME_V2 && (
-            <div className="mb-3.5 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card lg:hidden">
-              {bizAvatar('h-[46px] w-[46px] rounded-[13px] text-[13px]')}
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5">
-                  <span className="truncate text-[15px] font-extrabold text-ink">{bizName}</span>
-                  {!isFree && <VerifiedBadge size={15} />}
-                </span>
-                <span className="block truncate text-[11px] font-semibold text-muted-2">{bizCategory}</span>
-              </span>
-              <span className="flex-none rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold" style={{ background: planPill.bg, color: planPill.c }}>
-                {planPill.text}
-              </span>
-            </div>
-          )}
-          {/* page header row — DashboardHome owns the home header under HOME_V2 */}
-          {!(HOME_V2 && isInicio) && (
+          {/* page header row — the home (Inicio) owns its own header (DashboardHome) */}
+          {!isInicio && (
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
@@ -590,7 +564,7 @@ export function PanelScreen() {
             </div>
           )}
 
-          {tab === 'insights' && (HOME_V2 ? <DashboardHome ctx={ctx} /> : isFree ? <InsightsFree ctx={ctx} /> : <InsightsPaid ctx={ctx} />)}
+          {tab === 'insights' && <DashboardHome ctx={ctx} />}
           {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={toggleMod} />}
           {tab === 'updates' && <UpdatesModule ctx={ctx} />}
           {tab === 'billing' && <BillingModule ctx={ctx} tab={tab} />}
@@ -609,7 +583,6 @@ export function PanelScreen() {
           {tab === 'settings' && <SettingsModule ctx={ctx} />}
           {tab === 'messages' && <MessagesModule ctx={ctx} />}
           {tab === 'payments' && <PaymentsModule ctx={ctx} />}
-          {tab !== 'insights' && tab !== 'modules' && !RICH_MODULES.has(tab) && <GenericTab g={buildGeneric(tab, ctx)} ctx={ctx} />}
         </main>
       </div>
 
