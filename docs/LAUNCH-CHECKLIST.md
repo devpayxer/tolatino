@@ -243,9 +243,20 @@
       IP/sesión (aún cuenta cada acción sin límite — "cada vista cuenta").
     - [ ] **Zona horaria:** el total de 7 días es robusto, pero las mini-barras
       agrupan por día local del cliente vs `current_date` (UTC) del server — puede
-      correrse un día en el borde. Definir tz del negocio al hacer el rollup.
-    - [ ] **Pestaña "Estadísticas" dedicada** (rango de fechas, tendencias,
-      desglose por tipo) — hoy las vistas/acciones viven solo en el Inicio.
+      correrse un día en el borde (aplica también a las series de la pestaña
+      Estadísticas). Definir tz del negocio al hacer el rollup.
+    - [x] **Pestaña "Estadísticas" dedicada — HECHA (2026-07-13).**
+      `Estadisticas.tsx` bajo "Cómo te encuentran": selector de rango 7/30/90 días,
+      Interacciones totales + tendencia vs periodo anterior + gráfica de área,
+      grid de acciones (Vistas/Guardados/Cómo llegar/Llamadas) con delta +
+      sparkline c/u, Reputación, y Ventas (vendedores) desde `business_orders`.
+      Todo real (business_metrics 0077/0078 + orders/reviews); demo muestra
+      muestra; vacíos honestos. Verificado E2E (móvil + escritorio, cambio de
+      rango, datos reales). **Decisión pendiente con el founder:** ¿gate por plan?
+      Hoy está **abierta a todos los planes** (como Google Business Insights, y
+      porque "el listado es el master" — ver quién te encuentra es el gancho). Si
+      se quiere monetizar analítica avanzada (comparativas de mercado, export,
+      rangos largos), definir qué queda en Free vs Premium.
   - [x] **Controles muertos del header del panel — RESUELTO (Fase 1b,
     2026-07-12).** El buscador ahora es un "ir a" real (filtra los destinos del
     nav y navega); la campana abre un dropdown de **Avisos reales** (pedidos

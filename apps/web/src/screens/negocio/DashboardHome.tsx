@@ -244,7 +244,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
 
       {/* discovery — REAL page views (0077). Core value: how they find you.
           Sits high (right after KPIs) — the listing/discovery is the master. */}
-      <Sec title={L('Cómo te encuentran', 'How they find you')} />
+      <Sec title={L('Cómo te encuentran', 'How they find you')} action={L('Ver estadísticas', 'View insights')} onAction={() => go('stats')} />
       <div className={`${card} p-3.5`}>
         <div className="flex items-end justify-between">
           <div>

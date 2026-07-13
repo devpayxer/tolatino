@@ -20,6 +20,7 @@ import { LangToggle } from '@/components/AppHeader';
 import { CAT_INFO, activeMods, buildNav, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
 import { HoursReminders } from '@/screens/negocio/HoursReminders';
 import { DashboardHome } from '@/screens/negocio/DashboardHome';
+import { Estadisticas } from '@/screens/negocio/Estadisticas';
 import { ModulesSetup } from '@/screens/negocio/ModulesSetup';
 import { UpdatesModule } from '@/screens/negocio/modules/Updates';
 import { BillingModule } from '@/screens/negocio/modules/Billing';
@@ -43,6 +44,7 @@ import { PaymentsModule } from '@/screens/negocio/modules/Payments';
 // wizards / sheets) — the panel hides its generic "+ CTA" row for these (each
 // module owns its own actions). Every real tab is here, so the row never shows.
 const RICH_MODULES = new Set<TabKey>([
+  'stats',
   'listing', 'hours', 'photos', 'related', 'settings', 'messages', 'payments',
   'updates', 'billing', 'customers', 'orders', 'reviews', 'staff', 'jobs',
   'rental', 'events', 'products', 'fulfillment', 'shipping', 'drivers', 'services', 'bookings', 'menu',
@@ -565,6 +567,7 @@ export function PanelScreen() {
           )}
 
           {tab === 'insights' && <DashboardHome ctx={ctx} />}
+          {tab === 'stats' && <Estadisticas ctx={ctx} />}
           {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={toggleMod} />}
           {tab === 'updates' && <UpdatesModule ctx={ctx} />}
           {tab === 'billing' && <BillingModule ctx={ctx} tab={tab} />}

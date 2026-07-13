@@ -6,12 +6,12 @@
 // verbatim. Content varies by plan (free/verified/premium) and rubro.
 
 import { Icon as LucideIcon } from '@tabler/icons-react';
-import { IconChartBar as BarChart3, IconBike as Bike, IconBriefcase as Briefcase, IconBuilding as Building2, IconCalendar as Calendar, IconClock as Clock, IconCreditCard as CreditCard, IconCurrencyDollar as DollarSign, IconPhoto as ImageIcon, IconLayoutGrid as LayoutGrid, IconLink as Link2, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconPackage as Package, IconScissors as Scissors, IconSettings as Settings, IconShoppingBag as ShoppingBag, IconStar as Star, IconBuildingStore as Store, IconTicket as Ticket, IconTruck as Truck, IconUser as User, IconUsers as Users, IconToolsKitchen2 as Utensils, IconTool as Wrench } from '@tabler/icons-react';
+import { IconChartBar as BarChart3, IconChartLine as ChartLine, IconBike as Bike, IconBriefcase as Briefcase, IconBuilding as Building2, IconCalendar as Calendar, IconClock as Clock, IconCreditCard as CreditCard, IconCurrencyDollar as DollarSign, IconPhoto as ImageIcon, IconLayoutGrid as LayoutGrid, IconLink as Link2, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconPackage as Package, IconScissors as Scissors, IconSettings as Settings, IconShoppingBag as ShoppingBag, IconStar as Star, IconBuildingStore as Store, IconTicket as Ticket, IconTruck as Truck, IconUser as User, IconUsers as Users, IconToolsKitchen2 as Utensils, IconTool as Wrench } from '@tabler/icons-react';
 
 export type Tier = 'free' | 'verified' | 'premium';
 export type Rubro = 'restaurant' | 'beauty' | 'auto' | 'retail' | 'rental';
 export type TabKey =
-  | 'insights' | 'listing' | 'photos' | 'hours' | 'related'
+  | 'insights' | 'stats' | 'listing' | 'photos' | 'hours' | 'related'
   | 'menu' | 'services' | 'bookings' | 'products' | 'fulfillment' | 'shipping' | 'drivers' | 'rental' | 'events'
   | 'customers' | 'orders' | 'messages' | 'reviews' | 'updates'
   | 'payments' | 'staff' | 'jobs' | 'modules' | 'billing' | 'settings';
@@ -122,6 +122,7 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
     {
       label: L('Cómo te encuentran', 'How they find you'),
       items: [
+        it('stats', L('Estadísticas', 'Insights'), ChartLine),
         it('reviews', L('Reseñas', 'Reviews'), Star, { count: reviewsBadge, warn: !isFree && !isReal }),
         it('updates', L('Novedades', 'Updates'), Megaphone, { count: am.updates ? dc('18') : null, locked: !am.updates }),
       ],
@@ -156,6 +157,7 @@ export function pageHead(tab: TabKey, ctx: PanelCtx) {
   const { L, isFree } = ctx;
   const titles: Record<TabKey, [string, string]> = {
     insights: [L('Inicio', 'Home'), isFree ? L('Tu listado está activo, pero te falta el kit. Mejora para desbloquear todo.', "Your listing is live, but you're missing the toolkit. Upgrade to unlock everything.") : L('Tu negocio va muy bien esta semana — los ingresos van en aumento.', 'Your business is having a great week — revenue is trending up.')],
+    stats: [L('Estadísticas', 'Insights'), L('Cómo te encuentran y qué hacen tus clientes.', 'How people find you and what customers do.')],
     listing: [L('Información general', 'General info'), L('Así te ven tus clientes en To’Latino.', 'This is what customers see on To’Latino.')],
     photos: [L('Fotos y media', 'Photos & media'), L('Sube fotos de tu negocio, productos y equipo.', 'Upload photos of your business, products and team.')],
     hours: [L('Horario y feriados', 'Hours & holidays'), L('Define cuándo estás abierto.', 'Set when you are open.')],

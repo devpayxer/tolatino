@@ -5,6 +5,34 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-13.
 
+## Pestaña "Estadísticas" dedicada (2026-07-13) — analítica real estilo Google Business
+Nueva pestaña **Estadísticas** en el panel, bajo el grupo "Cómo te encuentran"
+(arriba de Reseñas). Benchmark: **Google Business Profile Insights / Yelp Business**.
+- **`Estadisticas.tsx`** (nuevo): renderizado en `Panel.tsx` (`tab === 'stats'`);
+  TabKey `'stats'` + item de nav + `pageHead` en `tabs.tsx`; añadida a `RICH_MODULES`
+  (sin botón "+Nuevo"). Icono `IconChartLine`.
+- **Bloques (todos con datos reales):**
+  - **Selector de rango** 7 / 30 / 90 días (chips) — `business_metrics(slug, range*2)`
+    para poder comparar el periodo actual contra el inmediatamente anterior.
+  - **Interacciones totales** (vistas+guardados+cómo-llegar+llamadas) + **tendencia
+    %** vs periodo anterior + gráfica de área SVG.
+  - **Cómo te encuentran**: grid 2×2 (Vistas · Guardados · Cómo llegar · Llamadas),
+    cada una con su número, delta % y sparkline. Nota honesta: búsquedas pronto,
+    auto-vistas del dueño no cuentan.
+  - **Reputación**: calificación · reseñas totales · reseñas en el periodo · sin
+    responder (link a Reseñas).
+  - **Ventas** (solo vendedores): ingresos + pedidos del rango desde `business_orders`,
+    tendencia + gráfica de área. Link a Pedidos.
+- **Inicio → Estadísticas**: el bloque "Cómo te encuentran" del Inicio ahora tiene
+  un enlace **"Ver estadísticas ›"** que abre la pestaña.
+- **Disponible en todos los planes** (como Google Business; refuerza "el listado es
+  el master"). Gate por plan = decisión pendiente (LAUNCH-CHECKLIST §3b).
+- **Verificado E2E** (`tools/mobile-audit/stats-tab.js`, 390 + 1440): con datos
+  reales sembrados por SQL (spread multi-día → 107 interacciones/7d, 91 vistas,
+  7 guardados, 4 cómo-llegar, 5 llamadas, tendencias +40/+40/+33/+150%), se renderiza
+  el hero, el grid con sparklines, reputación y ventas; el cambio de rango refetchea.
+  Artefactos de prueba revertidos (El Sabor → view=3 hoy, sin datos inventados, #8).
+
 ## Métricas de descubrimiento — endurecidas + acciones del cliente (2026-07-13, migración 0078)
 Continuación de la Fase 3 para que los números sean **confiables** (el dueño los
 usa para decidir si el listado funciona) y **más completos** (el set de Google
