@@ -97,10 +97,13 @@ export async function checkDeliveryRange(
   };
 }
 
-/** Record ONE listing view (fire-and-forget). Every view counts — no per-user
- *  dedup ("cada vista cuenta") — rolled up per day in the DB (0077). Safe to
- *  call on every detail open; errors/offline are ignored (never blocks the UI). */
-export function trackListingView(slug: string, kind: 'view' | 'search' | 'direction' | 'save' = 'view'): void {
+/** Record ONE listing discovery event (fire-and-forget). Every event counts — no
+ *  per-user dedup ("cada vista cuenta") — rolled up per day in the DB (0077).
+ *  Kinds: 'view' (page open) + the Google-Business customer actions 'save' (♥),
+ *  'direction' (Cómo llegar) and 'call' (Llamar); 'search' is reserved (soon).
+ *  Owner self-actions are excluded server-side (0078). Safe to call on any tap;
+ *  errors/offline are ignored (never blocks the UI). */
+export function trackListingView(slug: string, kind: 'view' | 'search' | 'direction' | 'save' | 'call' = 'view'): void {
   if (!supabase || !slug) return;
   void supabase.rpc('track_listing_view', { in_slug: slug, in_kind: kind }).then(() => {}, () => {});
 }

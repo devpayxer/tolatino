@@ -12,8 +12,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   IconBell as Bell, IconCircleCheck as CircleCheck, IconChevronRight as ChevronRight, IconClock as Clock,
-  IconEye as Eye, IconLink as Link2, IconMapPin as MapPin, IconMessageCircle as MessageCircle,
-  IconPackage as Package, IconPhoto as Photo, IconPlayerPause as Pause, IconSpeakerphone as Megaphone,
+  IconEye as Eye, IconHeart as Heart, IconLink as Link2, IconMapPin as MapPin, IconMessageCircle as MessageCircle,
+  IconNavigation as Navigation, IconPackage as Package, IconPhone as Phone, IconPhoto as Photo,
+  IconPlayerPause as Pause, IconSpeakerphone as Megaphone,
   IconSparkles as Sparkles, IconStar as Star, IconShoppingBag as ShoppingBag, IconShoppingCart as Cart,
   IconTicket as Ticket, IconToolsKitchen2 as Utensils,
 } from '@tabler/icons-react';
@@ -125,6 +126,19 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   const views7 = real ? metrics.filter((m) => m.kind === 'view').reduce((s, m) => s + m.count, 0) : viewsSeries.reduce((s, n) => s + n, 0);
   const viewsToday = viewsSeries[6];
   const maxV = Math.max(...viewsSeries, 1);
+
+  // Customer actions (Google-Business style): saves (♥), directions, calls —
+  // real 7-day sums (0078). Demo shows a believable sample; a real biz shows only
+  // what actually happened (0 until a customer acts). 'search' is still deferred.
+  const sumKind = (k: string) => metrics.filter((m) => m.kind === k).reduce((s, m) => s + m.count, 0);
+  const saves7 = real ? sumKind('save') : admin.demo ? 12 : 0;
+  const dirs7 = real ? sumKind('direction') : admin.demo ? 7 : 0;
+  const calls7 = real ? sumKind('call') : admin.demo ? 4 : 0;
+  const actions: { icon: typeof Heart; label: string; n: number; bg: string; c: string }[] = [
+    { icon: Heart, label: L('Guardados', 'Saves'), n: saves7, bg: 'bg-pink-bg', c: 'text-pink-dark' },
+    { icon: Navigation, label: L('Cómo llegar', 'Directions'), n: dirs7, bg: 'bg-amber-bg', c: 'text-amber-ink' },
+    { icon: Phone, label: L('Llamadas', 'Calls'), n: calls7, bg: 'bg-green-bg', c: 'text-green-dark' },
+  ];
 
   const dateStr = mounted ? new Date().toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday: 'long', day: 'numeric', month: 'short' }) : '';
   const name = real?.name ?? (isFree ? 'Lupita’s Tortillería' : 'Taquería La Esperanza');
@@ -246,7 +260,17 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
         ) : (
           <div className="mt-1 text-[11px] font-semibold text-muted">{L('Aún sin vistas esta semana. Comparte tu página para que te descubran.', 'No views yet this week. Share your page so people discover you.')}</div>
         )}
-        <div className="mt-2 text-[9.5px] font-semibold text-muted-2">{L('Cada visita a tu ficha cuenta · pronto: búsquedas, cómo llegar y guardados.', 'Every visit to your page counts · soon: searches, directions and saves.')}</div>
+        {/* customer actions (Google-Business style) — what people DO after finding you */}
+        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-hair pt-3">
+          {actions.map((a) => (
+            <div key={a.label} className="flex flex-col items-center gap-1 text-center">
+              <span className={`flex h-8 w-8 items-center justify-center rounded-[10px] ${a.bg}`}><a.icon size={15} stroke={2.3} className={a.c} /></span>
+              <div className="text-[16px] font-extrabold leading-none tracking-[-.02em] text-ink">{a.n.toLocaleString()}</div>
+              <div className="text-[9.5px] font-bold leading-tight text-muted-2">{a.label}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2.5 text-[9.5px] font-semibold text-muted-2">{L('Vistas y acciones de 7 días · tus propias visitas no cuentan · búsquedas: pronto.', '7-day views & actions · your own visits don’t count · searches: soon.')}</div>
       </div>
 
       {/* live queue (seller, real) */}

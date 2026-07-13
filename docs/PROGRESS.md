@@ -3,7 +3,36 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-12.
+> Last updated: 2026-07-13.
+
+## Métricas de descubrimiento — endurecidas + acciones del cliente (2026-07-13, migración 0078)
+Continuación de la Fase 3 para que los números sean **confiables** (el dueño los
+usa para decidir si el listado funciona) y **más completos** (el set de Google
+Business: no solo vistas, también qué HACE la gente tras encontrarte).
+- **Migración 0078** (`supabase/migrations/0078_metrics_self_view.sql`, aplicada):
+  `track_listing_view` ahora **retorna temprano si `auth.uid()` = `owner_id`** —
+  las auto-vistas/acciones del dueño ya **no inflan** las estadísticas. La tabla
+  0077 no cambió (el `kind` ya era extensible). Idempotente (create or replace).
+- **Acciones del cliente instrumentadas** (`BizDetail.tsx` + `live.tsx`):
+  - `save` — el ♥ ("Guardar") registra un `save` **solo al guardar** (no al
+    quitar). Ambos botones (hero + barra sticky) usan un `toggleSave` común.
+  - `direction` — el tile **"Cómo llegar"** ahora **abre mapas de verdad**
+    (deep-link universal `maps/dir?api=1&destination=…`, sin API key ni cobro —
+    la regla no-Google-Maps es sobre nuestras llamadas de tiles/geocoding, no un
+    link de direcciones gratis) y registra `direction`. Antes el tile no hacía nada.
+  - `call` — el tile **"Llamar"** ahora sí marca (`tel:`) y registra `call`.
+    Antes tampoco hacía nada (dos stubs corregidos → barra competitiva #8).
+- **Cockpit** (`DashboardHome.tsx`): el bloque **"Cómo te encuentran"** suma una
+  fila de acciones del cliente estilo Google Business — **Guardados · Cómo llegar ·
+  Llamadas** (7 días, reales) bajo las mini-barras de vistas. Nota honesta
+  actualizada: "tus propias visitas no cuentan · búsquedas: pronto".
+- **Verificado E2E** (`tools/mobile-audit/discovery-metrics.js`, 390 + 1440):
+  con datos reales sembrados por SQL (view=5, save/direction/call=1), el Inicio del
+  dueño muestra 5 / 1 / 1 / 1. Probado el guard vía claims JWT: **owner NO cuenta**;
+  comprador anónimo y autenticado **sí**. Artefactos de prueba revertidos al estado
+  previo (view=3, sin otros tipos) — sin datos inventados para un negocio real (#8).
+- **Pendiente (LAUNCH-CHECKLIST §3b):** `search` (apariciones en búsqueda);
+  anti-bots/rate-limit; borde de zona horaria en las barras; pestaña "Estadísticas".
 
 ## Dashboard nuevo = OFICIAL (2026-07-12) — flags eliminados, viejo borrado
 El dueño aprobó el rediseño, así que se hizo permanente: se **quitaron los flags**

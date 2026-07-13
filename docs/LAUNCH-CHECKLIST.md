@@ -222,21 +222,30 @@
   hoy") y sin inventar descubrimiento. Demo sigue mostrando muestra. Reversible
   por flag.
   Pendientes relacionados (fases siguientes):
-  - [~] **Estadísticas de descubrimiento — VISTAS listas (Fase 3, 2026-07-12,
-    migración 0077).** `business_metric_daily` + `track_listing_view` +
-    `business_metrics`; cada apertura de ficha cuenta (rollup diario, escalable);
-    el Inicio muestra "Vistas de tu página · 7 días" real. Falta para cerrar el
-    gap vs. Google Business/Yelp:
-    - [ ] **Otros tipos** (`kind`): apariciones en búsqueda, "cómo llegar"
-      (llamadas/rutas), guardados. La tabla ya lo soporta — falta instrumentar el
-      registro en el feed de búsqueda, en el botón de direcciones y en el guardar.
-    - [ ] **Anti-inflación:** filtrar bots/crawlers y rate-limit por IP/sesión, y
-      **excluir las auto-vistas del dueño** (hoy si el owner abre su ficha, cuenta).
+  - [~] **Estadísticas de descubrimiento — VISTAS + ACCIONES listas (Fase 3,
+    2026-07-12/13, migraciones 0077 + 0078).** `business_metric_daily` +
+    `track_listing_view` + `business_metrics`; cada apertura/acción de ficha
+    cuenta (rollup diario, escalable); el Inicio muestra "Vistas de tu página ·
+    7 días" real **+ la fila de acciones del cliente (Guardados · Cómo llegar ·
+    Llamadas)** — el set clásico de Google Business. Cerrado desde la última
+    revisión:
+    - [x] **Acciones del cliente instrumentadas (2026-07-13):** `save` (♥ en
+      BizDetail, solo al guardar, no al quitar), `direction` (tile "Cómo llegar"
+      — ahora abre mapas de verdad, deep-link universal sin API key/cobro) y
+      `call` (tile "Llamar" — ahora sí marca `tel:`). Se corrigieron dos tiles
+      que antes no hacían nada (stubs). `search` (apariciones en búsqueda) sigue
+      pendiente (requiere instrumentar el feed de búsqueda).
+    - [x] **Auto-vistas del dueño excluidas (2026-07-13, migración 0078):**
+      `track_listing_view` retorna temprano si `auth.uid()` = `owner_id`. Ya no
+      infla las estadísticas cuando el owner abre/prueba su propia ficha.
+      Verificado E2E (owner no cuenta; comprador anónimo/autenticado sí).
+    - [ ] **Anti-inflación restante:** filtrar bots/crawlers y rate-limit por
+      IP/sesión (aún cuenta cada acción sin límite — "cada vista cuenta").
     - [ ] **Zona horaria:** el total de 7 días es robusto, pero las mini-barras
       agrupan por día local del cliente vs `current_date` (UTC) del server — puede
       correrse un día en el borde. Definir tz del negocio al hacer el rollup.
     - [ ] **Pestaña "Estadísticas" dedicada** (rango de fechas, tendencias,
-      desglose por tipo) — hoy las vistas viven solo en el Inicio.
+      desglose por tipo) — hoy las vistas/acciones viven solo en el Inicio.
   - [x] **Controles muertos del header del panel — RESUELTO (Fase 1b,
     2026-07-12).** El buscador ahora es un "ir a" real (filtra los destinos del
     nav y navega); la campana abre un dropdown de **Avisos reales** (pedidos

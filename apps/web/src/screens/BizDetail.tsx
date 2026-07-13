@@ -351,6 +351,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   };
 
   const saved = savedBiz.isSaved(b.slug);
+  // Saving is a discovery signal ("Guardados" in the owner's dashboard, 0077/0078)
+  // — record it on SAVE only, never on un-save. Fire-and-forget; never blocks the tap.
+  const toggleSave = () => { if (!saved) trackListingView(b.slug, 'save'); savedBiz.toggle(b.slug); };
   const now = useNow();
   const status = statusLabel(bizStatus(b.hours, now, b.open, b.hoursExceptions), L);
   const statusTone = status.tone === 'open' ? 'text-green' : status.tone === 'soon' ? 'text-amber-ink' : 'text-muted';
@@ -369,6 +372,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // sample values so the prototype stays populated.
   const phone = b.phone || '(832) 555-4521';
   const address = b.address || '5821 Bellaire Blvd, Houston, TX';
+  // "Cómo llegar" deep link: opens the visitor's own maps app (no API key / no
+  // billing — the no-Google-Maps rule is about our tile/geocoding API calls, not
+  // a free universal directions link). Destination = the owner's address + city.
+  const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent([b.address, b.city].filter(Boolean).join(', ') || address)}`;
 
   // Message channel (opt-in from the dashboard). Uses a separate messaging number
   // when the owner set one, else the main phone. Build a functional link: WhatsApp
@@ -1381,7 +1388,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <button onClick={() => setContactOpen(true)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Compartir', 'Share')}>
               <Share size={16} stroke={2.2} className="text-ink" />
             </button>
-            <button onClick={() => savedBiz.toggle(b.slug)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Guardar', 'Save')}>
+            <button onClick={toggleSave} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Guardar', 'Save')}>
               {saved ? <HeartFilled size={16} className="text-pink" /> : <Heart size={16} stroke={2.2} className="text-pink" />}
             </button>
           </div>
@@ -1464,7 +1471,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <span className="truncate text-[15.5px] font-extrabold text-ink">{b.name}</span>
             {b.verified && <VerifiedBadge size={16} />}
             <div className="ml-auto flex flex-none items-center gap-1.5">
-              <button onClick={() => savedBiz.toggle(b.slug)} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Guardar', 'Save')}>
+              <button onClick={toggleSave} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Guardar', 'Save')}>
                 {saved ? <HeartFilled size={15} className="text-pink" /> : <Heart size={15} stroke={2.2} className="text-pink" />}
               </button>
               <button onClick={() => setContactOpen(true)} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Contacto y opciones', 'Contact & options')}>
@@ -2096,12 +2103,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {([
             // In-app chat — always available; the message lands in the owner's inbox.
             { Icon: MessageCircle, label: L('Enviar mensaje', 'Send a message'), sub: L('Chatea en la app', 'Chat in the app'), color: '#7B61FF', bg: '#EFEBFF', onClick: openChat },
-            { Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA' },
+            { Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA', href: `tel:${phone.replace(/[^\d+]/g, '')}`, onClick: () => trackListingView(b.slug, 'call') },
             // WhatsApp/SMS only when the owner opted in.
             ...(msgOn ? [{ Icon: Send, label: msgIsSms ? L('Mensaje de texto', 'Text message') : 'WhatsApp', sub: phone, color: '#1F9D57', bg: '#E3F5EA', href: msgHref }] : []),
             // Sitio web only shows when the owner set one; opens the real site.
             ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#2F6FED', bg: '#E5EFFB', href: `https://${b.website}` }] : []),
-            { Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6' },
+            { Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6', href: mapsHref, onClick: () => trackListingView(b.slug, 'direction') },
             { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#8A86A0', bg: '#F1EFFA' },
           ] as { Icon: typeof Phone; label: string; sub: string; color: string; bg: string; href?: string; onClick?: () => void }[]).map(({ Icon, label, sub, color, bg, href, onClick }) => {
             const inner = (
@@ -2117,7 +2124,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             );
             const cls = 'flex w-full cursor-pointer items-center gap-3 rounded-btn px-2 py-2.5 text-left hover:bg-app';
             return href ? (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer" onClick={() => setContactOpen(false)} className={cls}>{inner}</a>
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" onClick={() => { onClick?.(); setContactOpen(false); }} className={cls}>{inner}</a>
             ) : (
               <button key={label} onClick={() => (onClick ? onClick() : setContactOpen(false))} className={cls}>{inner}</button>
             );
