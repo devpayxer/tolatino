@@ -5,6 +5,36 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-13.
 
+## Pagos: "conecta Stripe o quedas en modo catálogo" (2026-07-13)
+El founder pidió que, al activar cualquier módulo de venta, se le avise al dueño
+que para COBRAR necesita conectar Stripe — y que sin eso sus productos quedan en
+**modo catálogo**. Implementado en dos capas (todo cliente, sin migración):
+- **Regla real (consumidor, `BizDetail.tsx`):** `canCharge = acceptsPayments`
+  (= `businesses.connect_charges_enabled`, 0071). Ahora **cada módulo vendible cae
+  a modo catálogo si el negocio no puede cobrar** — `menu/shop/services/rental
+  DisplayOnly = (!flagVenta || !canCharge)`. Sin Stripe: el cliente ve el catálogo
+  con precios pero NO hay carrito/Pedir/Reservar/Rentar. (Esto reemplaza el pedido
+  "pay-at-pickup" que existía sin pagos — ahora sin Stripe es catálogo puro.)
+- **El proceso/aviso (dueño):**
+  - **`ModulesSetup.tsx`:** en cuanto hay un módulo de venta activo, un banner
+    ámbar **"Estás en modo catálogo · Conecta Stripe para recibir pagos…"** con CTA
+    **"Conectar pagos"** (→ tab Pagos). Si ya está conectado, un banner verde
+    "Cobros activos con Stripe".
+  - **`DashboardHome.tsx`:** ítem en "Requiere tu atención" → **"Conecta pagos
+    para cobrar · Estás en modo catálogo"** (→ Pagos), como el pendiente #1.
+  - El destino es la pantalla **Pagos** que ya tiene el onboarding real de Stripe
+    Connect (`Payments.tsx` → `startConnectOnboarding`).
+- **`bizAdmin.tsx`:** `BizRow` gana `connect_charges_enabled` (viene del `select('*')`).
+- **Verificado E2E** (`tools/mobile-audit/stripe-catalog.js`): con El Sabor puesto
+  temporalmente como NO conectado → Inicio muestra "Conecta pagos", Configurar
+  módulos muestra el banner ámbar + "Conectar pagos", y el menú en el consumidor
+  queda en catálogo (sin carrito). Restaurado a conectado=true después.
+- **Nota / decisión abierta:** conectar Stripe de verdad (desplegar las Edge
+  Functions `connect-onboard`/`connect-status`/`marketplace-checkout` + llaves de
+  Stripe) es setup del founder — la UI y el gate ya están listos. Y ahora sin
+  Stripe NO hay pedidos en efectivo/al recoger (antes sí); si el founder quiere
+  mantener una opción de efectivo, se decide aparte.
+
 ## "Vender en To'Latino" — activador rediseñado + venta OFF por defecto (2026-07-13)
 El founder notó que la sección "Vender" se veía larga y confusa para un negocio
 nuevo. Causa raíz: **todo arrancaba ENCENDIDO** (`DEFAULT_MODS` all-on), así que

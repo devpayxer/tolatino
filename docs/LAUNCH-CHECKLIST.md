@@ -1009,6 +1009,19 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
 **fulfilled by `stripe-webhook`** (creates the order / issues the tickets + records
 `payments`). Everything below is a deliberate follow-up:
 
+- [x] **"Conecta Stripe o modo catálogo" — DONE (2026-07-13).** A business that
+  hasn't connected Stripe (`connect_charges_enabled=false`) now falls to
+  **catalog mode** on every sellable module (BizDetail: `displayOnly = !flag ||
+  !canCharge`) — shoppers see items + prices but there's no cart/Pedir/Reservar/
+  Rentar. The owner is told: an amber **"Estás en modo catálogo · Conectar pagos"**
+  banner in `ModulesSetup` (green "Cobros activos" when connected) + a
+  "Requiere tu atención" item in the Inicio cockpit → both route to the Pagos tab's
+  real Connect onboarding. Verified E2E (`stripe-catalog.js`).
+  - [ ] **Decisión abierta — pedidos en efectivo/al recoger:** este cambio quitó
+    el pedido pay-at-pickup que existía sin Stripe (ahora sin pagos = catálogo
+    puro). Si se quiere ofrecer "pagar al recoger/en efectivo" sin Stripe, hay que
+    reintroducirlo como opción explícita (decisión del founder).
+
 - [ ] **Rotate the exposed `sk_test` key.** The test secret key was pasted in chat
   earlier; it's stored only in the Supabase secret store now, but still rotate it:
   Stripe → Developers → API keys → **Roll** the secret key, then update the

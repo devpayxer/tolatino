@@ -189,8 +189,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       }
     }
   }
-  // Display-only menu: real menu with ordering off → showcase (no +/Pedir/cart).
-  const menuDisplayOnly = realMenu != null && !realMenu.ordering;
+  // Selling needs Stripe. Without a connected account (accepts_payments) a listing
+  // can't charge, so EVERY sellable module falls back to CATALOG MODE (display
+  // only, no cart/Pedir/Reservar/Rentar) even if the owner turned ordering on —
+  // the seller is told this in the panel ("conecta Stripe o quedas en catálogo").
+  const canCharge = !!b.acceptsPayments;
+  // Display-only menu: ordering off OR no payments connected → showcase (no cart).
+  const menuDisplayOnly = realMenu != null && (!realMenu.ordering || !canCharge);
 
   // Real services (business_items kind='service' + service_config, migration 0046).
   // Null → the Servicios tab keeps the sample fixtures so the prototype stays
@@ -203,8 +208,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     return () => { cancelled = true; };
   }, [b.slug]);
   const svcBooking = realServices?.booking ?? false;
-  // Display-only services: real services with booking off → showcase (no Reservar).
-  const svcDisplayOnly = realServices != null && !realServices.booking;
+  // Display-only services: booking off OR no payments connected → showcase (no Reservar).
+  const svcDisplayOnly = realServices != null && (!realServices.booking || !canCharge);
 
   // Real shop (business_items kind='product' + product_config, migration 0048).
   // Null → the Tienda tab keeps the sample fixtures. selling off → display-only
@@ -217,7 +222,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     return () => { cancelled = true; };
   }, [b.slug]);
   const shopCats = realShop?.cats ?? SHOP;
-  const shopDisplayOnly = realShop != null && !realShop.selling;
+  // Display-only shop: selling off OR no payments connected → catalog (no cart).
+  const shopDisplayOnly = realShop != null && (!realShop.selling || !canCharge);
 
   // Real rentals (business_items kind='rental' + rental_config, migration 0050).
   // Null → the Renta tab keeps the sample fixtures. renting off → display-only
@@ -231,7 +237,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   }, [b.slug]);
   const rentalItems: PubRental[] = realRentals?.items
     ?? RENTAL.map((r, i) => ({ id: `fx${i}`, n: r.n, d: r.d, tile: r.tile, hour: r.hour, day: r.day, week: r.week, dep: r.dep, addons: [], avail: '', stock: 1, unit: ['unidad', 'unit'] as Bi, catKey: '_', catName: ['Renta', 'Rentals'] as Bi }));
-  const rentDisplayOnly = realRentals != null && !realRentals.renting;
+  // Display-only rentals: renting off OR no payments connected → catalog (no Rentar).
+  const rentDisplayOnly = realRentals != null && (!realRentals.renting || !canCharge);
 
   // Option groups for an item: per-item groups on a real menu / real shop (`sh:`
   // keys route to the shop); the per-category fixture groups otherwise.

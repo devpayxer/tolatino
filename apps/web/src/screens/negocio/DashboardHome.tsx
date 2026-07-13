@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   IconBell as Bell, IconCircleCheck as CircleCheck, IconChevronRight as ChevronRight, IconClock as Clock,
-  IconEye as Eye, IconHeart as Heart, IconLink as Link2, IconMapPin as MapPin, IconMessageCircle as MessageCircle,
+  IconCreditCard as CreditCard, IconEye as Eye, IconHeart as Heart, IconLink as Link2, IconMapPin as MapPin, IconMessageCircle as MessageCircle,
   IconNavigation as Navigation, IconPackage as Package, IconPhone as Phone, IconPhoto as Photo,
   IconPlayerPause as Pause, IconSpeakerphone as Megaphone,
   IconSparkles as Sparkles, IconStar as Star, IconShoppingBag as ShoppingBag, IconShoppingCart as Cart,
@@ -38,6 +38,8 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   const persistable = !admin.demo && !!real;
   const am = activeMods(ctx);
   const sells = am.menu || am.services || am.products || am.rental || am.events;
+  // Selling needs Stripe; until connected, the listing is catalog-only (0071).
+  const canCharge = !!real?.connect_charges_enabled;
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
@@ -144,6 +146,9 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   // ── attention items (real signals only) ──────────────────────────────────
   type Todo = { icon: typeof Bell; bg: string; c: string; title: string; sub: string; btn: string; tab: TabKey };
   const todos: Todo[] = [];
+  // Selling on but no Stripe → catalog-only. Lead with this: the owner literally
+  // can't get paid until it's fixed.
+  if (sells && real && !canCharge) todos.push({ icon: CreditCard, bg: 'bg-amber-bg', c: 'text-amber-ink', title: L('Conecta pagos para cobrar', 'Connect payments to get paid'), sub: L('Estás en modo catálogo — los clientes no pueden pagar aún', 'You’re in catalog mode — customers can’t pay yet'), btn: L('Conectar', 'Connect'), tab: 'payments' });
   if (sells && newCount > 0) todos.push({ icon: Bell, bg: 'bg-pink-bg', c: 'text-pink-dark', title: L(`${newCount} ${newCount === 1 ? 'pedido' : 'pedidos'} por confirmar`, `${newCount} order${newCount === 1 ? '' : 's'} to confirm`), sub: L('Acéptalos antes de que el cliente espere', 'Accept before the customer waits'), btn: L('Ver', 'View'), tab: 'orders' });
   if (unreplied > 0) todos.push({ icon: Star, bg: 'bg-amber-bg', c: 'text-amber-ink', title: L(`${unreplied} ${unreplied === 1 ? 'reseña' : 'reseñas'} sin responder`, `${unreplied} review${unreplied === 1 ? '' : 's'} to answer`), sub: L('Responder mejora tu posición en el directorio', 'Replying boosts your ranking'), btn: L('Responder', 'Reply'), tab: 'reviews' });
   if (unread > 0) todos.push({ icon: MessageCircle, bg: 'bg-lilac', c: 'text-primary-dark', title: L(`${unread} ${unread === 1 ? 'mensaje' : 'mensajes'} sin leer`, `${unread} unread message${unread === 1 ? '' : 's'}`), sub: L('Un cliente está esperando tu respuesta', 'A customer is waiting for you'), btn: L('Abrir', 'Open'), tab: 'messages' });

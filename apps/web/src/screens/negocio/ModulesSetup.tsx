@@ -8,11 +8,12 @@
 // Verified.
 
 import {
-  IconBike as Bike, IconCircleCheck as Check, IconCreditCard as Card, IconLock as Lock,
+  IconAlertTriangle as Alert, IconBike as Bike, IconCircleCheck as Check, IconCreditCard as Card, IconLock as Lock,
   IconSpeakerphone as Megaphone, IconPackage as Package, IconShoppingBag as Bag, IconStarFilled as StarFilled,
   IconTicket as Ticket, IconToolsKitchen2 as Utensils, IconTruck as Truck,
 } from '@tabler/icons-react';
 import type { Mods, PanelCtx, Rubro } from '@/screens/negocio/tabs';
+import { useBizAdmin } from '@/lib/bizAdmin';
 import { Switch } from '@/components/ui';
 
 // which sellable channel we recommend for each business type
@@ -21,7 +22,13 @@ const RECOMMEND: Record<Rubro, keyof Mods> = {
 };
 
 export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: keyof Mods) => void }) {
-  const { L, ci, isFree, mods, rubro } = ctx;
+  const { L, ci, isFree, mods, rubro, go } = ctx;
+  const admin = useBizAdmin();
+  const real = admin.active;
+  // Selling requires Stripe. Until the account can charge (0071), any active sell
+  // module is CATALOG-ONLY (shoppers see it, can't pay) — surfaced here so the
+  // owner isn't surprised. connect_charges_enabled comes from the businesses row.
+  const canCharge = !!real?.connect_charges_enabled;
   const recKey = RECOMMEND[rubro] ?? 'menu';
 
   // the sellable channels — what the owner OFFERS (pick any).
@@ -56,6 +63,32 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
             : L('Aún no vendes en línea — y está bien: tu página ya te consigue clientes.', 'Not selling online yet — and that’s fine: your page already brings customers.')}
         </div>
       </div>
+
+      {/* payments gate — the moment they turn on selling, tell them Stripe is
+          needed to charge; without it, everything is CATALOG mode. */}
+      {real && anySell && (
+        canCharge ? (
+          <div className="flex items-center gap-2.5 rounded-card-sm border border-green/40 bg-green-bg px-4 py-3">
+            <Check size={17} stroke={2.5} className="flex-none text-green-dark" />
+            <div className="text-[12px] font-bold text-green-dark">{L('Cobros activos con Stripe — recibes los pagos en tu banco.', 'Payments active via Stripe — you get paid to your bank.')}</div>
+          </div>
+        ) : (
+          <div className="rounded-card-sm border border-amber/50 bg-amber-bg p-4">
+            <div className="flex items-start gap-2.5">
+              <Alert size={18} stroke={2.4} className="mt-0.5 flex-none text-amber-ink" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-extrabold text-amber-ink">{L('Estás en modo catálogo', 'You’re in catalog mode')}</div>
+                <div className="mt-0.5 text-[12px] font-semibold leading-snug text-amber-ink">
+                  {L('Activaste ventas, pero aún no puedes cobrar. Conecta Stripe para recibir pagos; mientras, los clientes ven tus productos pero no pueden pagar aquí.', 'Selling is on, but you can’t charge yet. Connect Stripe to receive payments; until then customers can see your items but can’t pay here.')}
+                </div>
+                <button onClick={() => go('payments')} className="mt-2.5 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
+                  <Card size={13} stroke={2.4} />{L('Conectar pagos', 'Connect payments')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      )}
 
       {/* the sellable channels */}
       <div className="px-0.5 text-[11px] font-bold uppercase tracking-[.05em] text-muted-2">{L('¿Qué ofreces?', 'What do you offer?')}</div>

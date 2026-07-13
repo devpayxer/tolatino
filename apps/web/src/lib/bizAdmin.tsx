@@ -46,6 +46,7 @@ export type BizRow = {
   specialty_en: string | null;
   is_open: boolean;
   timezone?: string | null; // IANA tz for metric rollups (0079); absent/null → America/Chicago
+  connect_charges_enabled?: boolean; // Stripe Connect ready → can charge (0071); else catalog mode
   rating: number;
   reviews_count: number;
   tile_a: string | null;
