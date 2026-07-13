@@ -32,6 +32,30 @@ es un adherido opcional**. El modelo mental pasó de Shopify a Google Business/Y
   ventas" con el bottom nav de engagement. Sin mutar datos reales (el apagado de
   módulos fue en modo demo, local).
 
+### Fase 2: Inicio real — cockpit con datos reales (2026-07-12, flag HOME_V2)
+Reemplaza el viejo "Resumen" (100% demo, aun para negocios reales) por un
+**cockpit real** (`DashboardHome.tsx`), gated por **`HOME_V2`** (independiente de
+DASH_V2 — revierte solo el Inicio sin perder el menú nuevo).
+- **Todo real para un negocio firmado** (regla #8): saludo + fecha; estado
+  Abierto/Cerrado + **% de completitud del listado** (logo/fotos/descripción/
+  horario/teléfono/dirección); **Requiere tu atención** solo con señales reales
+  (pedidos nuevos si vende, reseñas sin responder `replied_at`, mensajes
+  `unread`); KPIs de HOY reales (`business_orders` filtrado a hoy → ventas/
+  pedidos, `business_bookings` → reservas, rating real); **cola en vivo** real
+  (orders en new/preparing/ready); **gráfica 7 días** real (suma diaria);
+  **mejora tu visibilidad** con huecos reales; **actividad reciente** real;
+  acciones rápidas → tabs reales. Modo **solo-listado** cambia KPIs a
+  rating/reseñas/fotos/perfil y agrega la invitación "Activar ventas".
+- **Estados vacíos honestos**: "$0.00 · Aún sin ventas hoy" cuando no hay pedidos
+  (no se inventa nada). **Descubrimiento (vistas/búsquedas) NO se muestra** —
+  aún sin tracking (Fase 3) — en su lugar un teaser honesto "Pronto".
+- **Demo** (explorar sin listado) sí muestra un cockpit de muestra rico.
+- Panel oculta su header viejo (título "Inicio" + identity card móvil) bajo
+  HOME_V2; `DashboardHome` trae su propio saludo.
+- **Verificado** navegador real (`shoot-home.js`): El Sabor muestra sus reseñas/
+  mensajes/pedidos activos/gráfica reales sin errores; demo muestra el cockpit
+  de muestra. Falta (Fase 3): estadísticas de descubrimiento reales.
+
 ## Professional delivery config + zone-derived radius + address decouple (2026-07-12)
 Founder request (3 parts, phased): (1) make the seller's delivery inputs
 professional like existing platforms — auto-units on distance, `$`/`.00` on

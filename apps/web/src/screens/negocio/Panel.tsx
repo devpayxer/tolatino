@@ -17,9 +17,10 @@ import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
-import { CAT_INFO, DASH_V2, activeMods, buildGeneric, buildNav, buildNavV2, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
+import { CAT_INFO, DASH_V2, HOME_V2, activeMods, buildGeneric, buildNav, buildNavV2, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
 import { GenericTab } from '@/screens/negocio/GenericTab';
 import { HoursReminders } from '@/screens/negocio/HoursReminders';
+import { DashboardHome } from '@/screens/negocio/DashboardHome';
 import { InsightsFree, InsightsPaid } from '@/screens/negocio/Insights';
 import { ModulesSetup } from '@/screens/negocio/ModulesSetup';
 import { UpdatesModule } from '@/screens/negocio/modules/Updates';
@@ -429,8 +430,9 @@ export function PanelScreen() {
               onOpenHours={(id) => { admin.setActive(id); ctx.go('hours'); }}
             />
           )}
-          {/* identity card (handoff mobile Inicio) — business avatar + name + plan */}
-          {isInicio && (
+          {/* identity card (handoff mobile Inicio) — business avatar + name + plan.
+              Suppressed under HOME_V2: DashboardHome owns its own greeting header. */}
+          {isInicio && !HOME_V2 && (
             <div className="mb-3.5 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card lg:hidden">
               {bizAvatar('h-[46px] w-[46px] rounded-[13px] text-[13px]')}
               <span className="min-w-0 flex-1">
@@ -445,6 +447,8 @@ export function PanelScreen() {
               </span>
             </div>
           )}
+          {/* page header row — DashboardHome owns the home header under HOME_V2 */}
+          {!(HOME_V2 && isInicio) && (
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
@@ -470,6 +474,7 @@ export function PanelScreen() {
               )}
             </div>
           </div>
+          )}
 
           {/* demo plan switcher inside billing — lets you preview each tier when
               exploring without a real listing; a real business shows its own plan */}
@@ -494,7 +499,7 @@ export function PanelScreen() {
             </div>
           )}
 
-          {tab === 'insights' && (isFree ? <InsightsFree ctx={ctx} /> : <InsightsPaid ctx={ctx} />)}
+          {tab === 'insights' && (HOME_V2 ? <DashboardHome ctx={ctx} /> : isFree ? <InsightsFree ctx={ctx} /> : <InsightsPaid ctx={ctx} />)}
           {tab === 'modules' && <ModulesSetup ctx={ctx} onToggle={toggleMod} />}
           {tab === 'updates' && <UpdatesModule ctx={ctx} />}
           {tab === 'billing' && <BillingModule ctx={ctx} tab={tab} />}

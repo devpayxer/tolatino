@@ -67,6 +67,10 @@ export type NavGroup = { label: string; add?: { label: string; color: string; on
 // Flip to `false` to instantly restore the previous nav + bottom bar + titles
 // (buildNav / legacy bottom nav stay intact as the fallback).
 export const DASH_V2 = true;
+// HOME_V2 (Fase 2): the new "Inicio" cockpit (DashboardHome) with REAL data
+// instead of the demo Insights. Independent switch — flip to false to restore
+// the previous Resumen/Insights home while keeping the v2 nav.
+export const HOME_V2 = true;
 
 export function activeMods(ctx: PanelCtx): Mods {
   const { isFree, mods, rubro } = ctx;

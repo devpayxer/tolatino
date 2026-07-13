@@ -215,18 +215,25 @@
 
 ## 3b. Business dashboard modules (new mobile handoff, 2026-07-03)
 
-- [ ] **Resumen (Inicio) del panel es 100% data demo en negocios REALES
-  (detectado 2026-07-12).** `Insights.tsx` no lee Supabase: los $1,847 "en vivo",
-  la cola de pedidos, KPIs, actividad ("pago enviado · Chase ••4421") y el
-  checklist "3/6" son fixtures — un dueño real ve números inventados presentados
-  como reales (viola la regla #8: nada falso enviado como final). Además: el
-  buscador del header no busca (sin handler), la campana no abre nada, "Ver
-  listado" lleva al directorio general y no a TU página, y en Free el bottom-nav
-  "Pedidos" salta el candado que el sidebar sí aplica. FIX en curso: propuesta de
-  reestructura del dashboard (mockups 2026-07-12) — Inicio real (cockpit con
-  pedidos/reservas/reseñas/mensajes reales), nav reagrupada por frecuencia de
-  uso y por rubro, Estadísticas reales como módulo aparte. Pendiente de
-  aprobación del founder; se implementa por fases.
+- [x] **Resumen (Inicio) del panel era 100% data demo en negocios REALES —
+  RESUELTO (2026-07-12, flag HOME_V2).** El nuevo `DashboardHome.tsx` reemplaza
+  `Insights.tsx`: un negocio real ve solo datos reales (pedidos/reservas/reseñas/
+  mensajes/completitud), con estados vacíos honestos ("$0.00 · aún sin ventas
+  hoy") y sin inventar descubrimiento. Demo sigue mostrando muestra. Reversible
+  por flag.
+  Pendientes relacionados (fases siguientes):
+  - [ ] **Estadísticas de descubrimiento reales (Fase 3):** vistas de página,
+    apariciones en búsqueda, "cómo llegar", guardados. Hoy no hay tracking — el
+    Inicio muestra un teaser "Pronto" en vez de números falsos. Es el gap #1 vs.
+    Google Business/Yelp. Requiere instrumentar eventos + una tabla de métricas.
+  - [ ] **Controles muertos del header del panel (Fase 1b):** el buscador no
+    busca (sin handler), la campana no abre nada, "Ver listado" va al directorio
+    general y no a TU página pública. En Free el bottom-nav "Pedidos" salta el
+    candado que el sidebar sí aplica.
+  - [ ] **Default de módulos para listados nuevos:** hoy `DEFAULT_MODS` = todo
+    ON, así que un negocio nuevo aparece "vendiendo" por defecto. Para reflejar
+    "el listado es el master, vender es opcional", evaluar arrancar con comercio
+    OFF y que el owner active ventas (decisión de onboarding con el founder).
 
 The founder delivered a **mobile business-dashboard handoff** (shell + 9 modules,
 `handoff_business_mobile/`). The shell + Inicio/Insights home already exist at
