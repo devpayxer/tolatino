@@ -5,6 +5,34 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-13.
 
+## "Vender en To'Latino" — activador rediseñado + venta OFF por defecto (2026-07-13)
+El founder notó que la sección "Vender" se veía larga y confusa para un negocio
+nuevo. Causa raíz: **todo arrancaba ENCENDIDO** (`DEFAULT_MODS` all-on), así que
+cada negocio aparecía "vendiendo todo" — contra "el listado es el master, vender
+es opcional". Arreglado en dos partes:
+- **Venta OFF por defecto para negocios reales** (`Panel.tsx`): nuevo
+  `LISTING_ONLY_MODS` (comercio apagado; `updates`/`staff` mantienen su default —
+  solo se apaga vender). El demo sigue mostrando todo para explorar. Un negocio
+  nuevo → el sidebar colapsa a **"Activar ventas"**.
+- **`ModulesSetup.tsx` rediseñado como activador guiado** (benchmark: Shopify
+  setup / Square "Add features" / Google Business): enmarca "✓ tu página ya está
+  publicada, vender es opcional"; **recomienda el canal según el rubro** (★ en
+  Menú para restaurante, Servicios para salón, etc.); cada tarjeta explica en
+  cristiano qué es + un chip "→ qué añade a tu panel"; y una tira aclara que
+  **Pedidos/Entregas/Pagos se activan solos**. Estado honesto "Aún no vendes en
+  línea — y está bien".
+- **Migración de datos:** para no ocultar catálogo real, a los negocios con
+  contenido hay que fijarles sus módulos. Hecho para **El Sabor**
+  (`update businesses set modules='{"menu":true}'`) — conserva su menú de 150
+  platillos; su Menú sigue activo y el sidebar muestra solo Menú·Pedidos·Entregas·
+  Pagos (ya no la lista larga). Los demás (fixtures sin catálogo real) pasan a
+  listing-only. **Nota:** El Sabor tenía un producto suelto de prueba ("Carro
+  electrico") — quedó oculto (Productos off); el founder decide si borrarlo.
+- **Verificado E2E** (`tools/mobile-audit/{modules-activator,modules-elsabor}.js`,
+  390 + 1440): el activador nuevo se entiende (primer-día vacío con recomendado
+  resaltado, móvil y escritorio); El Sabor NO perdió su menú (sidebar conserva
+  "Menú de comida", activador con Menú ON y Productos OFF).
+
 ## Analítica — pendientes cerrados: búsquedas + anti-inflación + zona horaria (2026-07-13, migración 0079)
 Se cerraron los tres pendientes de descubrimiento que quedaban (LAUNCH-CHECKLIST §3b).
 - **Apariciones en búsqueda (`search`).** Nueva RPC **`track_search_appearance(slugs[])`**

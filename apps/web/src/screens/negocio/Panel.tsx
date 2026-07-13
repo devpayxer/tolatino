@@ -54,7 +54,13 @@ const RUBRO_FROM_ONB: Record<string, Rubro> = {
   comida: 'restaurant', belleza: 'beauty', auto: 'auto', tiendas: 'retail', abarrotes: 'retail', deportes: 'rental',
 };
 
+// DEMO (no real listing) shows everything so the panel is fully explorable.
 const DEFAULT_MODS: Mods = { menu: true, services: true, bookings: true, products: true, rental: true, events: true, updates: true, staff: true };
+// A REAL business starts LISTING-ONLY: published & visible, but nothing to sell
+// yet ("el listado es el master, vender es opcional"). The owner opts into
+// commerce from "Vender en To'Latino". Non-commerce extras (updates/staff) keep
+// their prior default so only selling is off by default. Stored modules override.
+const LISTING_ONLY_MODS: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, updates: true, staff: true };
 
 export function PanelScreen() {
   const { L } = useLang();
@@ -110,9 +116,10 @@ export function PanelScreen() {
   useScrollLock(drawer);
   const [mods, setMods] = useState<Mods>(DEFAULT_MODS);
 
-  // Load the real business's saved module config (null → tier default).
+  // Load the real business's saved module config. A real business defaults to
+  // LISTING-ONLY (selling off) with stored modules layered on top; demo shows all.
   useEffect(() => {
-    setMods(real?.modules ? { ...DEFAULT_MODS, ...real.modules } : DEFAULT_MODS);
+    setMods(real ? { ...LISTING_ONLY_MODS, ...(real.modules ?? {}) } : DEFAULT_MODS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id]);
 

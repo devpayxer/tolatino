@@ -276,10 +276,22 @@
     "Ver listado" → **"Ver mi página"** va a `/negocios?b=<slug>` (tu propia
     ficha); y en Free el bottom-nav "Pedidos" ahora respeta el candado (lleva a
     facturación). Verificado en navegador (`shoot-header.js`).
-  - [ ] **Default de módulos para listados nuevos:** hoy `DEFAULT_MODS` = todo
-    ON, así que un negocio nuevo aparece "vendiendo" por defecto. Para reflejar
-    "el listado es el master, vender es opcional", evaluar arrancar con comercio
-    OFF y que el owner active ventas (decisión de onboarding con el founder).
+  - [x] **Default de módulos para listados nuevos — HECHO (2026-07-13, decidido
+    con el founder).** Un negocio real ahora arranca **LISTING-ONLY** (venta
+    apagada; `LISTING_ONLY_MODS` en `Panel.tsx`, con `updates`/`staff` en su
+    default previo — solo se apaga el comercio). El demo sigue mostrando todo.
+    El sidebar de un negocio nuevo colapsa a **"Activar ventas"** en vez de la
+    lista larga. La pantalla **"Configurar módulos" se rediseñó** como activador
+    guiado (`ModulesSetup.tsx`): enmarca "tu página ya está publicada ✓, vender es
+    opcional", recomienda el canal según el rubro (★), explica qué añade cada
+    módulo, y aclara que Pedidos/Entregas/Pagos se activan solos. **Migración de
+    datos:** a los negocios existentes con catálogo real hay que fijarles sus
+    módulos para no ocultar contenido — hecho para El Sabor (`modules={menu:true}`).
+    - [ ] **Pendiente menor:** El Sabor tiene un producto suelto de prueba
+      ("Carro electrico", $25, creado 2026-07-09) — su módulo Productos quedó
+      apagado (no se muestra), pero el registro sigue en `business_items`. El
+      founder decide si borrarlo. Y al abrir a más negocios reales, derivar sus
+      módulos de su contenido (business_items/events) en una migración de datos.
 
 The founder delivered a **mobile business-dashboard handoff** (shell + 9 modules,
 `handoff_business_mobile/`). The shell + Inicio/Insights home already exist at
