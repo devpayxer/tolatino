@@ -20,6 +20,7 @@ import {
 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { fetchBusinessMetrics } from '@/lib/live';
 import { activeMods, type PanelCtx, type TabKey } from '@/screens/negocio/tabs';
 
 const card = 'rounded-card-sm border border-hair bg-white shadow-card';
@@ -42,6 +43,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [unread, setUnread] = useState(0);
   const [todayBookings, setTodayBookings] = useState(0);
+  const [metrics, setMetrics] = useState<{ day: string; kind: string; count: number }[]>([]);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -65,13 +67,15 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
     }
     (async () => {
       const since = new Date(); since.setDate(since.getDate() - 8);
-      const [ord, rev, conv, book] = await Promise.all([
+      const [ord, rev, conv, book, mtr] = await Promise.all([
         supabase!.from('business_orders').select('id,code,customer_name,items,total,channel,status,created_at').eq('business_id', real.id).gte('created_at', since.toISOString()).order('created_at', { ascending: false }).limit(200),
         supabase!.from('reviews').select('id,author_name,rating,replied_at,created_at').eq('business_id', real.id).order('created_at', { ascending: false }).limit(50),
         supabase!.from('business_conversations').select('unread').eq('business_id', real.id),
         am.services ? supabase!.from('business_bookings').select('starts_at,status').eq('business_id', real.id).limit(200) : Promise.resolve({ data: [] as unknown[] }),
+        fetchBusinessMetrics(real.slug, 7),
       ]);
       if (cancelled) return;
+      setMetrics(mtr as { day: string; kind: string; count: number }[]);
       setOrders(((ord.data as Record<string, unknown>[]) ?? []).map((r) => ({ id: String(r.id), code: (r.code as string) ?? null, customer: (r.customer_name as string) ?? null, items: Array.isArray(r.items) ? (r.items as { name: string; qty: number }[]) : [], total: Number(r.total ?? 0), channel: String(r.channel ?? ''), status: String(r.status ?? 'new'), created_at: String(r.created_at ?? '') })));
       setReviews(((rev.data as Record<string, unknown>[]) ?? []).map((r) => ({ id: String(r.id), name: String(r.author_name ?? 'Cliente'), rating: Number(r.rating ?? 0), replied: r.replied_at != null, created_at: String(r.created_at ?? '') })));
       setUnread(((conv.data as Record<string, unknown>[]) ?? []).reduce((s, c) => s + (Number(c.unread ?? 0) > 0 ? 1 : 0), 0));
@@ -111,6 +115,17 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
     const checks = [!!real.name, !!real.logo_url, (photoCount ?? 0) > 0, !!real.about_es, Array.isArray(real.hours) && real.hours.some((d) => d && d.length > 0), !!real.phone, !!real.address];
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }, [real, photoCount]);
+
+  // page views (0077 — every view counts). Total is timezone-robust (sum of the
+  // 7-day rows the RPC returns); the mini bars key by local day for display.
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const viewByDay = new Map(metrics.filter((m) => m.kind === 'view').map((m) => [m.day.slice(0, 10), m.count]));
+  const vbase = new Date();
+  const realSeries = Array.from({ length: 7 }, (_, i) => { const d = new Date(vbase); d.setDate(d.getDate() - (6 - i)); return viewByDay.get(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`) ?? 0; });
+  const viewsSeries = real ? realSeries : admin.demo ? [18, 24, 20, 31, 27, 42, 38] : realSeries;
+  const views7 = real ? metrics.filter((m) => m.kind === 'view').reduce((s, m) => s + m.count, 0) : viewsSeries.reduce((s, n) => s + n, 0);
+  const viewsToday = viewsSeries[6];
+  const maxV = Math.max(...viewsSeries, 1);
 
   const dateStr = mounted ? new Date().toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday: 'long', day: 'numeric', month: 'short' }) : '';
   const name = real?.name ?? (isFree ? 'Lupita’s Tortillería' : 'Taquería La Esperanza');
@@ -206,12 +221,33 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
           </>
         ) : (
           <>
-            <Kpi label={L('Calificación', 'Rating')} value={`${rating}★`} />
-            <Kpi label={L('Reseñas', 'Reviews')} value={String(reviewsCount)} sub={unreplied > 0 ? L(`${unreplied} sin responder`, `${unreplied} to answer`) : undefined} subC="text-amber-ink" />
+            <Kpi label={L('Vistas · 7 días', 'Views · 7 days')} value={views7.toLocaleString()} sub={views7 > 0 ? L(`${viewsToday} hoy`, `${viewsToday} today`) : L('comparte tu página', 'share your page')} subC="text-primary-dark" />
+            <Kpi label={L('Calificación', 'Rating')} value={`${rating}★`} sub={L(`${reviewsCount} reseñas`, `${reviewsCount} reviews`)} />
             <Kpi label={L('Fotos', 'Photos')} value={String(photoCount ?? 0)} />
             <Kpi label={L('Perfil', 'Profile')} value={`${completeness}%`} sub={completeness < 100 ? L('completa el resto', 'finish it') : L('completo', 'complete')} subC="text-green-dark" />
           </>
         )}
+      </div>
+
+      {/* discovery — REAL page views (0077). Core value: how they find you.
+          Sits high (right after KPIs) — the listing/discovery is the master. */}
+      <Sec title={L('Cómo te encuentran', 'How they find you')} />
+      <div className={`${card} p-3.5`}>
+        <div className="flex items-end justify-between">
+          <div>
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-2"><Eye size={12} stroke={2.4} className="text-primary-dark" />{L('Vistas de tu página · 7 días', 'Page views · 7 days')}</div>
+            <div className="mt-0.5 text-[24px] font-extrabold tracking-[-.02em] text-ink">{views7.toLocaleString()}</div>
+          </div>
+          {views7 > 0 && <div className="text-[10.5px] font-extrabold text-muted-2">{L(`${viewsToday} hoy`, `${viewsToday} today`)}</div>}
+        </div>
+        {views7 > 0 ? (
+          <div className="mt-2.5 flex h-[40px] items-end gap-1.5">
+            {viewsSeries.map((v, i) => <span key={i} className="flex-1 rounded-t-[3px]" style={{ height: `${Math.max(6, (v / maxV) * 100)}%`, background: i === 6 ? '#7B61FF' : '#E2DEF4' }} />)}
+          </div>
+        ) : (
+          <div className="mt-1 text-[11px] font-semibold text-muted">{L('Aún sin vistas esta semana. Comparte tu página para que te descubran.', 'No views yet this week. Share your page so people discover you.')}</div>
+        )}
+        <div className="mt-2 text-[9.5px] font-semibold text-muted-2">{L('Cada visita a tu ficha cuenta · pronto: búsquedas, cómo llegar y guardados.', 'Every visit to your page counts · soon: searches, directions and saves.')}</div>
       </div>
 
       {/* live queue (seller, real) */}
@@ -257,13 +293,6 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
             <ChevronRight size={15} stroke={2.4} className="flex-none text-faint" />
           </button>
         ))}
-      </div>
-
-      {/* discovery teaser (honest — real stats come in a later phase) */}
-      <div className="flex items-center gap-3 rounded-card-sm border border-dashed border-lilac-line bg-lilac-3 p-3.5">
-        <Eye size={17} stroke={2.2} className="flex-none text-primary-dark" />
-        <div className="min-w-0 flex-1"><div className="text-[12px] font-extrabold text-ink">{L('Estadísticas de descubrimiento', 'Discovery stats')}</div><div className="text-[10.5px] font-semibold text-muted">{L('Pronto: cuánta gente te ve y cómo te encuentran.', 'Soon: how many people see you and how they find you.')}</div></div>
-        <span className="flex-none rounded-full bg-lilac px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[.05em] text-primary-dark">{L('Pronto', 'Soon')}</span>
       </div>
 
       {/* acciones rápidas */}

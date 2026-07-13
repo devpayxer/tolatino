@@ -222,10 +222,21 @@
   hoy") y sin inventar descubrimiento. Demo sigue mostrando muestra. Reversible
   por flag.
   Pendientes relacionados (fases siguientes):
-  - [ ] **Estadísticas de descubrimiento reales (Fase 3):** vistas de página,
-    apariciones en búsqueda, "cómo llegar", guardados. Hoy no hay tracking — el
-    Inicio muestra un teaser "Pronto" en vez de números falsos. Es el gap #1 vs.
-    Google Business/Yelp. Requiere instrumentar eventos + una tabla de métricas.
+  - [~] **Estadísticas de descubrimiento — VISTAS listas (Fase 3, 2026-07-12,
+    migración 0077).** `business_metric_daily` + `track_listing_view` +
+    `business_metrics`; cada apertura de ficha cuenta (rollup diario, escalable);
+    el Inicio muestra "Vistas de tu página · 7 días" real. Falta para cerrar el
+    gap vs. Google Business/Yelp:
+    - [ ] **Otros tipos** (`kind`): apariciones en búsqueda, "cómo llegar"
+      (llamadas/rutas), guardados. La tabla ya lo soporta — falta instrumentar el
+      registro en el feed de búsqueda, en el botón de direcciones y en el guardar.
+    - [ ] **Anti-inflación:** filtrar bots/crawlers y rate-limit por IP/sesión, y
+      **excluir las auto-vistas del dueño** (hoy si el owner abre su ficha, cuenta).
+    - [ ] **Zona horaria:** el total de 7 días es robusto, pero las mini-barras
+      agrupan por día local del cliente vs `current_date` (UTC) del server — puede
+      correrse un día en el borde. Definir tz del negocio al hacer el rollup.
+    - [ ] **Pestaña "Estadísticas" dedicada** (rango de fechas, tendencias,
+      desglose por tipo) — hoy las vistas viven solo en el Inicio.
   - [x] **Controles muertos del header del panel — RESUELTO (Fase 1b,
     2026-07-12).** El buscador ahora es un "ir a" real (filtra los destinos del
     nav y navega); la campana abre un dropdown de **Avisos reales** (pedidos

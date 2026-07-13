@@ -51,6 +51,28 @@ profesional":
   pruebas; se verificó reenviándolo — en producción funcionan como el badge de
   fotos que ya usa el mismo patrón.)
 
+### Fase 3: vistas reales — "cómo te encuentran" (2026-07-12, migración 0077)
+El corazón del producto: que la gente ENCUENTRE los negocios latinos → el dueño
+ve cuánta gente lo ve. **Cada vista cuenta** (sin dedup, decisión del founder).
+- **Migración 0077** (`supabase/migrations/0077_listing_metrics.sql`, aplicada):
+  `business_metric_daily(business_id, day, kind, count)` — **rollup diario** (1 fila
+  por negocio·día·tipo, no una por vista → aguanta 1M+/mo). `track_listing_view(slug,
+  kind)` (SECURITY DEFINER, anon puede llamar) hace +1 con `on conflict … count+1`.
+  `business_metrics(slug, days)` lee el rollup del dueño (RLS: `owner_id=auth.uid()`).
+  `kind` extensible (view/search/direction/save) — hoy solo `view`.
+- **Instrumentado** (`BizDetail.tsx` + `live.tsx trackListingView`): cada apertura de
+  la ficha dispara una vista (fire-and-forget). Verificado: abrir 2× subió el
+  contador 3→5.
+- **Cockpit** (`DashboardHome.tsx` + `fetchBusinessMetrics`): bloque **"Cómo te
+  encuentran · Vistas de tu página · 7 días"** con número real + mini-barras, arriba
+  (justo tras KPIs) porque el listado/descubrimiento es el master; en modo
+  solo-listado, Vistas es el KPI líder. Estado vacío honesto ("aún sin vistas").
+  Reemplazó el teaser "Pronto". Total robusto a zona horaria (suma de las filas de
+  7 días); las barras se agrupan por día local.
+- **Pendiente (LAUNCH-CHECKLIST):** búsquedas/cómo-llegar/guardados; filtrado de
+  bots/rate-limit; excluir auto-vistas del dueño; borde de zona horaria en las
+  barras; pestaña "Estadísticas" dedicada (hoy vive en el Inicio).
+
 ### Fase 2: Inicio real — cockpit con datos reales (2026-07-12, flag HOME_V2)
 Reemplaza el viejo "Resumen" (100% demo, aun para negocios reales) por un
 **cockpit real** (`DashboardHome.tsx`), gated por **`HOME_V2`** (independiente de

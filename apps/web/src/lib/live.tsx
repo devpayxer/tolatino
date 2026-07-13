@@ -97,6 +97,23 @@ export async function checkDeliveryRange(
   };
 }
 
+/** Record ONE listing view (fire-and-forget). Every view counts — no per-user
+ *  dedup ("cada vista cuenta") — rolled up per day in the DB (0077). Safe to
+ *  call on every detail open; errors/offline are ignored (never blocks the UI). */
+export function trackListingView(slug: string, kind: 'view' | 'search' | 'direction' | 'save' = 'view'): void {
+  if (!supabase || !slug) return;
+  void supabase.rpc('track_listing_view', { in_slug: slug, in_kind: kind }).then(() => {}, () => {});
+}
+
+/** The owner's own last-N-days discovery metrics (0077 — RLS: owner only).
+ *  Returns per-day rows; the dashboard sums 'view' for the reach numbers. */
+export async function fetchBusinessMetrics(slug: string, days = 30): Promise<{ day: string; kind: string; count: number }[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('business_metrics', { in_slug: slug, in_days: days });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({ day: String(r.day), kind: String(r.kind), count: Number(r.count ?? 0) }));
+}
+
 /** Fetch a business's gallery photo URLs by public slug (cover first). Empty
  *  when offline / none uploaded — the listing falls back to placeholders. */
 export async function fetchBusinessPhotos(slug: string): Promise<string[]> {

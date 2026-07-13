@@ -19,7 +19,7 @@ import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
 import { startMarketplaceCheckout } from '@/lib/stripe';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -141,6 +141,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [weekOpen, setWeekOpen] = useState(false);
   const [photoTile, setPhotoTile] = useState<string | null>(null);
   useScrollLock(!!photoTile); // full-screen photo viewer is a bespoke overlay (not <Overlay>)
+
+  // Record a page view — every open counts (0077). Fire-and-forget, once per slug.
+  useEffect(() => { trackListingView(b.slug); }, [b.slug]);
 
   // Real gallery photos for this listing (by slug). Empty → placeholder tiles.
   const [photos, setPhotos] = useState<string[]>([]);
