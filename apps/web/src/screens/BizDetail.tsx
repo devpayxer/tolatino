@@ -72,7 +72,10 @@ const reviewWhen = (iso: string): Bi => {
   return [`hace ${w} sem`, `${w}w`];
 };
 
-type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string; note?: string };
+// `id` = business_items.id and `sel` = the structured add-on picks
+// (group id + choice index) so the server can RE-PRICE the order from DB prices
+// (never trust `unit`). Undefined only for offline fixture items (no real checkout).
+type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string; note?: string; id?: string; sel?: { g: string; o: number }[] };
 
 // A normalized booking target for the service sheet (real service or fixture).
 type SvcTarget = {
@@ -499,6 +502,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (isDelivery && !chosenAddr) { setCartView('address'); return; }
     setPaying(true);
     const items = Object.values(cart).map((l) => ({
+      // id + sel let the server RE-PRICE from DB prices; name/price/opts are for
+      // the order record + display only (the server recomputes what's charged).
+      id: l.id, sel: l.sel ?? [],
       name: l.name, qty: l.qty, price: l.unit,
       opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined,
     }));
@@ -593,7 +599,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       if (stk <= 0) { flash(L('Agotado', 'Sold out')); return; }
       if ((cart[key]?.qty ?? 0) >= stk) { flash(L('No hay más unidades', 'No more units available')); return; }
     }
-    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + 1, name: B(item.n), unit: item.price, optsLabel: '', bg: item.bg } }));
+    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + 1, name: B(item.n), unit: item.price, optsLabel: '', bg: item.bg, id: item.id, sel: [] } }));
   };
 
   // `keepOpen`: after adding, don't close the sheet — reset it to fresh defaults
@@ -604,12 +610,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     const groups = groupsFor(itemModal.catKey, itemModal.item);
     let add = 0;
     const chosen: string[] = [];
+    const sel: { g: string; o: number }[] = [];
     groups.forEach((g) =>
       g.choices.forEach((ch, i) => {
-        const sel = g.type === 'single' ? single[g.id] === i : !!multi[`${g.id}:${i}`];
-        if (sel) {
+        const on = g.type === 'single' ? single[g.id] === i : !!multi[`${g.id}:${i}`];
+        if (on) {
           add += ch.price;
           chosen.push(B(ch.label));
+          sel.push({ g: g.id, o: i }); // structured pick → server re-prices from DB
         }
       }),
     );
@@ -625,7 +633,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       const stk = shopStock(itemModal.catKey, itemModal.item);
       if (stk != null && inCart + qty > stk) { flash(L('No hay suficientes unidades', 'Not enough units in stock')); return; }
     }
-    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg, note: note || undefined } }));
+    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg, note: note || undefined, id: itemModal.item.id, sel } }));
     if (keepOpen) {
       // stay in the sheet, reset to defaults for the next (different) variant
       setSingle(freshSingles(itemModal.catKey, itemModal.item));

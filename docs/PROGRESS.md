@@ -37,11 +37,23 @@ panel (Reseñas, ingresos, campana). Aditivo, no rompe nada.
 
 **Seguridad:** la base es sólida (RLS en las 40 tablas, sin políticas de escritura
 `using(true)` ni anon, RPCs de service_role bien `revoke`adas, sin secretos en el
-bundle). La exposición está en **confianza en montos de pago** (webhook fail-open
-C1, total de orden desde el cliente C2, montos de booking/rental H3) y **RLS de
-escritura demasiado amplia** (columnas de `businesses` H1, insert directo de
-`event_tickets` H2). Todo en modo **prueba** de Stripe hoy; drafts listos, cerrar
-antes del lanzamiento con dinero real. Ver `AUDIT-2026-07-14.md` + checklist §2a.
+bundle). **Cerradas y verificadas 2026-07-14 (lote aprobado por el fundador):**
+- **C1** webhook Stripe ahora **falla cerrado** (si falta el secreto → 500; nunca
+  procesa cuerpo sin verificar). Redeploy v8; evento falsificado → 400.
+- **C2** el total de un **pedido se recalcula desde precios de la BD** (id + add-ons
+  estructurados `sel`; el `price` del cliente se ignora). Redeploy v7; probado: un
+  pedido con `price:0.01` de un ítem real de $11.99 + $2 → se cobra **$14.69** real.
+- **H1** (migración 0081) trigger que bloquea que un dueño cambie columnas
+  protegidas (`tier/rating/connect/owner`) por PostgREST directo; escritores
+  legítimos (RPCs SECURITY DEFINER, webhook service_role) pasan. Verificado:
+  auto-ascenso a premium → 400; publicar reseña (sync de rating) sigue OK.
+- **H2** (migración 0081) quitadas las políticas insert+update directas de
+  `event_tickets` (crear boletos gratis / reusar código). Verificado: insert
+  directo → 403.
+
+Migraciones **0080** (índices) + **0081** (RLS) pegadas al fundador para correr en
+Supabase. Pendientes (H3 montos booking/rental, M1–M5, L1–L4) en checklist §2a.
+Ver `AUDIT-2026-07-14.md`.
 
 ## UX: sub-navegación de módulos como TABS (2026-07-14)
 El founder notó que las sub-secciones de cada módulo (Despacho/Zonas/Repartidores ·

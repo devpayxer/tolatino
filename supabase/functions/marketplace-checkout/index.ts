@@ -6,8 +6,10 @@
 // payment succeeds — so we never issue an order/tickets without being paid, and
 // never charge without fulfilling. verify_jwt = true (buyer identified from JWT).
 //
-// Amounts are computed SERVER-SIDE from authoritative DB prices (event tiers) /
-// validated line items — the client cannot dictate what it pays.
+// Amounts are computed SERVER-SIDE from authoritative DB prices — orders are
+// re-priced from business_items + menu/product config (base + add-on options by
+// id), tickets from event_tiers — the client cannot dictate what it pays.
+// (Booking/rental deposits are still client-supplied — see LAUNCH-CHECKLIST H3.)
 //
 // Secrets: STRIPE_SECRET_KEY.  Auto: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 
@@ -26,6 +28,47 @@ async function stripe(path: string, key: string, form: Record<string, string>) {
     body: new URLSearchParams(form).toString(),
   });
   return res.json();
+}
+
+// AUTHORITATIVE order pricing (never trust the client's `price`). Build a map
+// businessItemId → { base, groups }, where `groups` maps a reusable-group id to
+// its option prices by index, mirroring the client's menu/shop mapping
+// (lib/live.tsx). Menu: attrs.mods → config.mods[].options[].price. Shop:
+// attrs.options → config.optionSets[].values[].price. 86'd menu items
+// (attrs.stock === 'out') are excluded, so they can't be ordered.
+type PriceEntry = { base: number; groups: Map<string, number[]> };
+function buildPriceMap(
+  menuRow: { items?: unknown; config?: unknown } | undefined,
+  prodRow: { items?: unknown; config?: unknown } | undefined,
+): Map<string, PriceEntry> {
+  const map = new Map<string, PriceEntry>();
+  const add = (
+    rows: unknown, config: unknown, refKey: string, groupKey: string, valuesKey: string, drop86: boolean,
+  ) => {
+    const items = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [];
+    const cfg = (config ?? {}) as Record<string, unknown>;
+    const groupDefs = Array.isArray(cfg[groupKey]) ? (cfg[groupKey] as Record<string, unknown>[]) : [];
+    const pricesById = new Map<string, number[]>();
+    for (const g of groupDefs) {
+      const gid = g?.id != null ? String(g.id) : '';
+      if (!gid) continue;
+      const vals = Array.isArray(g[valuesKey]) ? (g[valuesKey] as Record<string, unknown>[]) : [];
+      pricesById.set(gid, vals.map((o) => Number(o?.price ?? 0) || 0));
+    }
+    for (const it of items) {
+      const id = it?.id != null ? String(it.id) : '';
+      if (!id) continue;
+      const attrs = (it.attrs ?? {}) as Record<string, unknown>;
+      if (drop86 && attrs.stock === 'out') continue;
+      const refs = Array.isArray(attrs[refKey]) ? (attrs[refKey] as unknown[]).map(String) : [];
+      const groups = new Map<string, number[]>();
+      for (const gid of refs) { const p = pricesById.get(gid); if (p) groups.set(gid, p); }
+      map.set(id, { base: Number(it.price ?? 0) || 0, groups });
+    }
+  };
+  add(menuRow?.items, menuRow?.config, 'mods', 'mods', 'options', true);
+  add(prodRow?.items, prodRow?.config, 'options', 'optionSets', 'values', false);
+  return map;
 }
 
 Deno.serve(async (req) => {
@@ -52,6 +95,8 @@ Deno.serve(async (req) => {
 
     const svc = { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` };
     const get = async (path: string) => (await (await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: svc })).json());
+    const rpcGet = async (fn: string, args: Record<string, unknown>) =>
+      (await (await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { ...svc, 'Content-Type': 'application/json' }, body: JSON.stringify(args) })).json());
 
     let businessId: string | null = null;
     let sellerAccount = '';
@@ -71,12 +116,34 @@ Deno.serve(async (req) => {
       if (!biz) return json({ error: 'business not found' }, 404);
       if (!biz.connect_charges_enabled || !biz.stripe_account_id) return json({ error: 'seller_not_payable' }, 400);
       businessId = biz.id; sellerAccount = biz.stripe_account_id; productName = `${biz.name} · Pedido`;
-      // Validate + total the submitted line items server-side.
-      const lines = items.map((l: Record<string, unknown>) => ({
-        name: String(l.name ?? 'Artículo'), qty: Math.max(1, Math.min(99, Math.floor(Number(l.qty ?? 1)))),
-        price: Number(l.price ?? 0), opts: l.opts != null ? String(l.opts) : undefined,
-      }));
-      if (lines.some((l) => !(l.price >= 0) || l.price > 100000)) return json({ error: 'bad line price' }, 400);
+      // RE-PRICE every line from authoritative DB prices — the client's `price`
+      // is IGNORED. Each line must carry a real business_items id + its structured
+      // add-on picks (sel); we recompute base + option prices from the business's
+      // menu/product config. A tampered price ($50 order for $0.55) can't happen.
+      const [menuRow, prodRow] = await Promise.all([
+        rpcGet('business_menu_by_slug', { in_slug: slug }).then((r) => (Array.isArray(r) ? r[0] : undefined)),
+        rpcGet('business_products_by_slug', { in_slug: slug }).then((r) => (Array.isArray(r) ? r[0] : undefined)),
+      ]);
+      const priceMap = buildPriceMap(menuRow, prodRow);
+      const lines: { name: string; qty: number; price: number; opts?: string }[] = [];
+      for (const l of items as Record<string, unknown>[]) {
+        const id = l?.id != null ? String(l.id) : '';
+        const entry = id ? priceMap.get(id) : undefined;
+        if (!entry) return json({ error: 'item_unavailable' }, 400);
+        const qty = Math.max(1, Math.min(99, Math.floor(Number(l?.qty ?? 1))));
+        let unit = entry.base;
+        const sel = Array.isArray(l?.sel) ? (l.sel as Record<string, unknown>[]) : [];
+        for (const s of sel) {
+          const g = s?.g != null ? String(s.g) : '';
+          const o = Math.floor(Number(s?.o));
+          const prices = entry.groups.get(g);
+          if (!prices || !Number.isFinite(o) || o < 0 || o >= prices.length) return json({ error: 'bad_addon' }, 400);
+          unit += prices[o];
+        }
+        if (!(unit >= 0) || unit > 100000) return json({ error: 'bad line price' }, 400);
+        lines.push({ name: String(l?.name ?? 'Artículo'), qty, price: Math.round(unit * 100) / 100, opts: l?.opts != null ? String(l.opts) : undefined });
+      }
+      if (lines.length === 0) return json({ error: 'bad request' }, 400);
       subtotal = lines.reduce((a, l) => a + l.price * l.qty, 0);
 
       const channel = body?.channel === 'delivery' ? 'delivery' : 'pickup';

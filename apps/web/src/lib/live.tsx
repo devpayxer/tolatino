@@ -198,6 +198,7 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
     const name = String(r.name);
     const dEs = String(r.description ?? '');
     const item: MenuItem = {
+      id: r.id != null ? String(r.id) : undefined,
       n: [name, name],
       d: [dEs, String((a.en_desc ?? a.en) ?? dEs)],
       price: Number(r.price ?? 0),
@@ -353,6 +354,7 @@ export async function fetchBusinessProducts(slug: string): Promise<PublicShop | 
     const badges = Array.isArray(a.badges) ? (a.badges as string[]) : [];
     const tag: Bi | undefined = badges.includes('Popular') ? ['Popular', 'Popular'] : badges.includes('Nuevo') ? ['Nuevo', 'New'] : badges.includes('Oferta') ? ['Oferta', 'Sale'] : badges.includes('Local') ? ['Local', 'Local'] : undefined;
     const item: MenuItem = {
+      id: r.id != null ? String(r.id) : undefined,
       n: [name, name],
       d: [dEs, String(a.en ?? dEs)],
       price,

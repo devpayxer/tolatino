@@ -4,6 +4,7 @@
 export type Bi = [string, string];
 
 export type MenuItem = {
+  id?: string; // real business_items.id (live menu/shop) — used to re-price orders server-side
   n: Bi;
   d: Bi;
   price: number;

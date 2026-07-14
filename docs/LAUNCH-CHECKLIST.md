@@ -141,15 +141,19 @@
   fail closed — `if (!WHSEC) return 500` then always verify. *(2-line change,
   strictly safer; only precondition is that the secret is actually set in the
   function env — confirm before deploy.)*
-- [ ] **C2 — Marketplace ORDER total is trusted from the client.**
-  `supabase/functions/marketplace-checkout/index.ts:74-80`: for `kind:'order'`
-  unit prices come straight from the request body (only a 0–100000 bound). The
-  Stripe charge, seller transfer, and platform fee all derive from this
-  buyer-controlled subtotal → a buyer can check out a $50 order paying $0.55. The
-  authoritative prices exist (`business_items.price`, owner-only write) but are
-  never consulted. **Fix:** load `business_items` by id and compute subtotal from
-  DB prices; reject any line whose price doesn't match. (The ticket branch already
-  does this correctly.)
+- [x] **C2 — Marketplace ORDER total is trusted from the client. ✅ FIXED
+  2026-07-14.** The order branch now **re-prices every line from authoritative DB
+  prices** and ignores the client's `price`: each line carries a real
+  `business_items` id + its structured add-on picks (`sel`), and the server
+  recomputes `base + option prices` from the business's menu/product config
+  (`buildPriceMap` mirrors `lib/live.tsx` for both `menu_config.mods` and
+  `product_config.optionSets`; 86'd items excluded). Unknown id → `item_unavailable`,
+  bad add-on ref → `bad_addon`. Client (`BizDetail`/`live.tsx`/`stripe.ts`) now
+  sends `id`+`sel`; marketplace-checkout redeployed v7. **Verified end-to-end:** a
+  tampered `price:0.01` order for a real $11.99 item + $2 add-on was charged the
+  authoritative **$14.69** (1469¢), honest orders match, rejection cases fire, and
+  a real-browser order sends `id`+`sel` and returns a checkout URL. (Booking/rental
+  deposits — H3 — still client-supplied; separate item below.)
 - [x] **H1 — `businesses` UPDATE policy is row-wide (self-grant tier/verified/
   rating/Connect). ✅ FIXED 2026-07-14 (migration 0081).** A `BEFORE UPDATE` guard
   trigger (`tg_businesses_guard_cols`) raises if a direct end-user write

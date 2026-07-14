@@ -55,7 +55,8 @@ export async function getConnectStatus(businessId: string): Promise<ConnectStatu
 // ---- Marketplace checkout (buyer pays the seller via Connect) ---------------
 
 export type MarketplaceKind = 'order' | 'ticket' | 'booking' | 'rental';
-type OrderLine = { name: string; qty: number; price: number; opts?: string };
+// id + sel let the server re-price the line from DB prices (never trust `price`).
+type OrderLine = { id?: string; sel?: { g: string; o: number }[]; name: string; qty: number; price: number; opts?: string };
 type TicketLine = { tierId: string; qty: number };
 type BookingPayload = { service_name: string; service_id: string | null; starts_at: string; party_size: number | null; deposit: number | null };
 type RentalPayload = { item_name: string; item_id: string | null; start_at: string; end_at: string | null; qty: number; total: number; deposit: number | null };
