@@ -769,6 +769,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (payOnline && svcSel.deposit && total > 0) {
       const { url } = await startMarketplaceCheckout({
         kind: 'booking', slug: b.slug, subtotal: total,
+        // structured inputs → server re-prices from DB (ignores subtotal)
+        party_size: svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : 1,
+        addon_ids: svcChosenAddons().map((a) => a.id),
         payload: { service_name: label, service_id: svcSel.id ?? null, starts_at: svcStartISO(), party_size: persons, deposit: total },
       });
       if (url) { window.location.href = url; return; }
@@ -905,6 +908,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (payOnline && fee > 0) {
       const { url } = await startMarketplaceCheckout({
         kind: 'rental', slug: b.slug, subtotal: fee,
+        // structured inputs → server re-prices the fee from DB rates + span (ignores subtotal)
+        mode: rentMode, hours: rentHours, units: rentUnits,
+        addon_ids: it.addons.filter((a) => rentAddons.includes(a.id)).map((a) => a.id),
         payload: { item_name: B(it.n), item_id: itemId, start_at: rentStartISO(), end_at: rentEndISO(), qty: rentUnits, total: rentGrand(it), deposit: rentDepositTotal(it) },
       });
       if (url) { window.location.href = url; return; }

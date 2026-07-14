@@ -186,12 +186,21 @@
   RPCs — never a direct insert** — so dropping the direct INSERT policy is safe
   and non-breaking. **Fix (ready):** `drop policy "insert event_tickets" on
   public.event_tickets;` (creation stays via the security-definer RPCs).
-- [ ] **H3 — Booking/rental checkout amount trusted from client.**
-  `marketplace-checkout/index.ts:127-130` charges the client-supplied `subtotal`
-  (range check only); `payload` (dates/deposit) passed to `fulfill_booking`/
-  `fulfill_rental` unvalidated. Same class as C2 — **already acknowledged** in the
-  code + Payments section below. **Fix:** re-price server-side from
-  `service_config`/`rental_config`/`business_items` by id.
+- [x] **H3 — Booking/rental checkout amount trusted from client. ✅ FIXED
+  2026-07-14.** Both branches now **re-price from DB** and ignore `subtotal`:
+  - **Booking:** `total = (persona ? price×party_size : price) + Σ allowed add-on
+    prices`, loaded from `business_services_by_slug` (service by id + service_config
+    add-ons). Requires `deposit=true`; unknown service → `item_unavailable`, bad
+    add-on → `bad_addon`. The authoritative deposit overwrites `payload.deposit`.
+  - **Rental:** `fee = unitFee(hour/day/week rates from DB) × units + Σ add-on
+    prices`; the day **span is re-derived from the authoritative start/end dates**
+    (weekly rate auto-applies at 7+ days) so a client can't pay 1 day and block 30.
+    Deposit still collected at pickup.
+  Client (`BizDetail`/`stripe.ts`) sends structured inputs (`party_size`/`mode`+
+  `hours`+`units`+`addon_ids`). marketplace-checkout redeployed. **Verified E2E**
+  against real service/rental config: tampered `subtotal:0.01` booking charged the
+  authoritative **$26.25**, a 3-day×2-unit+add-on rental charged **$36.75**, and
+  bad-add-on / fake-item rejected.
 - [ ] **M1 — Direct COD order/booking/rental insert (client controls total/status/
   target business).** `0032:17-18,32-33,61-62` (used by `lib/myActivity.tsx:138+`)
   — intentional for cash-on-delivery, but a user can spam fake orders into *any*

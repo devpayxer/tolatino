@@ -51,9 +51,16 @@ bundle). **Cerradas y verificadas 2026-07-14 (lote aprobado por el fundador):**
   `event_tickets` (crear boletos gratis / reusar código). Verificado: insert
   directo → 403.
 
+- **H3** el **depósito de reserva y la tarifa de renta se recalculan desde la BD**
+  (ignoran el `subtotal` del cliente): reserva = (persona? precio×party : precio) +
+  add-ons; renta = tarifa hora/día/semana × unidades + add-ons, con el **span de
+  días re-derivado de las fechas** (para que nadie pague 1 día y bloquee 30).
+  Verificado: reserva con `subtotal:0.01` → se cobra **$26.25** real; renta 3d×2 +
+  extra → **$36.75**; add-on/ítem inválido → rechazado.
+
 Migraciones **0080** (índices) + **0081** (RLS) pegadas al fundador para correr en
-Supabase. Pendientes (H3 montos booking/rental, M1–M5, L1–L4) en checklist §2a.
-Ver `AUDIT-2026-07-14.md`.
+Supabase. **Todas las críticas/altas (C1, C2, H1, H2, H3) cerradas.** Pendientes
+(M1–M5, L1–L4 — medios/bajos) en checklist §2a. Ver `AUDIT-2026-07-14.md`.
 
 ## UX: sub-navegación de módulos como TABS (2026-07-14)
 El founder notó que las sub-secciones de cada módulo (Despacho/Zonas/Repartidores ·

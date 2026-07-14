@@ -71,6 +71,26 @@ function buildPriceMap(
   return map;
 }
 
+// Sum the DB prices of the client-selected add-on ids for a booking/rental,
+// accepting ONLY ids the item actually offers (itemAddonIds) AND that exist in
+// the business's add-on catalog (configAddons: [{id, price}]). Returns -1 if any
+// selected id is not allowed/known (caller rejects with bad_addon).
+function pickAddonSum(itemAddonIds: unknown, configAddons: unknown, selected: unknown): number {
+  const sel = Array.isArray(selected) ? selected.map(String) : [];
+  if (sel.length === 0) return 0;
+  const allowed = new Set((Array.isArray(itemAddonIds) ? itemAddonIds : []).map(String));
+  const priceById = new Map<string, number>();
+  for (const c of (Array.isArray(configAddons) ? configAddons as Record<string, unknown>[] : [])) {
+    if (c?.id != null) priceById.set(String(c.id), Number(c.price ?? 0) || 0);
+  }
+  let sum = 0;
+  for (const id of sel) {
+    if (!allowed.has(id) || !priceById.has(id)) return -1;
+    sum += priceById.get(id)!;
+  }
+  return sum;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
@@ -181,20 +201,69 @@ Deno.serve(async (req) => {
           paid_total: Math.round(subtotal * 105 + deliveryFee * 100 + tip * 100) / 100,
         },
       };
-    } else if (kind === 'booking' || kind === 'rental') {
-      // Booking deposit / rental fee — the payable base (P) is computed by the
-      // client from the service/rental config; validated here (re-price server-side
-      // before real-money launch — see LAUNCH-CHECKLIST). Payload carries the row
-      // fields the webhook needs to create the confirmed booking/rental.
+    } else if (kind === 'booking') {
+      // RE-PRICE the booking deposit from DB (never trust body.subtotal). The
+      // service id comes in the payload; party size + add-on ids are structured
+      // inputs. total = (persona ? price×party : price) + Σ allowed add-on prices.
       const biz = (await get(`businesses?slug=eq.${encodeURIComponent(slug)}&select=id,name,stripe_account_id,connect_charges_enabled`))?.[0];
       if (!biz) return json({ error: 'business not found' }, 404);
       if (!biz.connect_charges_enabled || !biz.stripe_account_id) return json({ error: 'seller_not_payable' }, 400);
-      businessId = biz.id; sellerAccount = biz.stripe_account_id;
-      productName = `${biz.name} · ${kind === 'booking' ? 'Reserva' : 'Renta'}`;
-      const sub = Number(body?.subtotal ?? 0);
-      if (!(sub > 0) || sub > 100000) return json({ error: 'bad amount' }, 400);
-      subtotal = sub;
-      payload = (body?.payload && typeof body.payload === 'object') ? body.payload : {};
+      businessId = biz.id; sellerAccount = biz.stripe_account_id; productName = `${biz.name} · Reserva`;
+      const svcRow = await rpcGet('business_services_by_slug', { in_slug: slug }).then((r) => (Array.isArray(r) ? r[0] : undefined));
+      const svcId = (body?.payload as Record<string, unknown> | undefined)?.service_id;
+      const svc = (Array.isArray(svcRow?.items) ? svcRow!.items as Record<string, unknown>[] : []).find((i) => String(i.id) === String(svcId ?? ''));
+      if (!svc) return json({ error: 'item_unavailable' }, 400);
+      const a = (svc.attrs ?? {}) as Record<string, unknown>;
+      if (!a.deposit) return json({ error: 'no_deposit' }, 400);              // only deposit bookings charge online
+      const price0 = svc.price != null ? Number(svc.price) : NaN;
+      if (!(price0 >= 0)) return json({ error: 'not_payable' }, 400);
+      const party = Math.max(1, Math.min(999, Math.floor(Number(body?.party_size ?? 1))));
+      let total = a.priceType === 'persona' ? price0 * party : price0;
+      const bookAddonSum = pickAddonSum(a.addons, (svcRow?.config as Record<string, unknown>)?.addons, body?.addon_ids);
+      if (bookAddonSum < 0) return json({ error: 'bad_addon' }, 400);         // -1 sentinel = invalid add-on ref
+      total += bookAddonSum;
+      if (!(total > 0) || total > 100000) return json({ error: 'bad amount' }, 400);
+      subtotal = total;
+      payload = { ...((body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {}), deposit: total };
+    } else if (kind === 'rental') {
+      // RE-PRICE the rental fee from DB (never trust body.subtotal). Rates
+      // (hour/day/week) + add-on prices come from DB; the DURATION is re-derived
+      // from the authoritative start/end dates (day mode) so a client can't pay
+      // 1 day's rate and block the item for 30. Deposit is collected at pickup.
+      const biz = (await get(`businesses?slug=eq.${encodeURIComponent(slug)}&select=id,name,stripe_account_id,connect_charges_enabled`))?.[0];
+      if (!biz) return json({ error: 'business not found' }, 404);
+      if (!biz.connect_charges_enabled || !biz.stripe_account_id) return json({ error: 'seller_not_payable' }, 400);
+      businessId = biz.id; sellerAccount = biz.stripe_account_id; productName = `${biz.name} · Renta`;
+      const rentRow = await rpcGet('business_rentals_by_slug', { in_slug: slug }).then((r) => (Array.isArray(r) ? r[0] : undefined));
+      const pl = (body?.payload ?? {}) as Record<string, unknown>;
+      const it = (Array.isArray(rentRow?.items) ? rentRow!.items as Record<string, unknown>[] : []).find((i) => String(i.id) === String(pl.item_id ?? ''));
+      if (!it) return json({ error: 'item_unavailable' }, 400);
+      const a = (it.attrs ?? {}) as Record<string, unknown>;
+      const dayRate = it.price != null ? Number(it.price) : Number(a.day ?? 0);
+      const hourRate = a.hour != null ? Number(a.hour) : dayRate;
+      const weekRate = Number(a.week ?? 0);
+      const stock = Number(a.stock ?? 0);
+      const units = Math.max(1, Math.min(stock > 0 ? stock : 99, Math.floor(Number(body?.units ?? 1))));
+      let unitFee: number;
+      if (body?.mode === 'hour') {
+        const hours = Math.max(1, Math.min(24, Math.floor(Number(body?.hours ?? 1))));
+        unitFee = hourRate * hours;
+      } else {
+        // inclusive day span from the dates (matches client spanDaysInc; the fixed
+        // 09:00→18:00 convention rounds away). Weekly rate auto-applies at 7+ days.
+        const s = Date.parse(String(pl.start_at ?? '')); const e = Date.parse(String(pl.end_at ?? ''));
+        let span = 1;
+        if (Number.isFinite(s) && Number.isFinite(e) && e >= s) span = Math.round((e - s) / 86400000) + 1;
+        span = Math.max(1, Math.min(365, span));
+        unitFee = weekRate > 0 && span >= 7 ? Math.floor(span / 7) * weekRate + (span % 7) * dayRate : span * dayRate;
+      }
+      let fee = unitFee * units;
+      const addonSum = pickAddonSum(a.addons, (rentRow?.config as Record<string, unknown>)?.addons, body?.addon_ids);
+      if (addonSum < 0) return json({ error: 'bad_addon' }, 400);
+      fee += addonSum;
+      if (!(fee > 0) || fee > 100000) return json({ error: 'bad amount' }, 400);
+      subtotal = fee;
+      payload = (body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {};
     } else {
       const ev = (await get(`events?slug=eq.${encodeURIComponent(slug)}&select=id,owner_id,title_es,status`))?.[0];
       if (!ev) return json({ error: 'event not found' }, 404);

@@ -71,8 +71,11 @@ export type MarketplaceInput =
       tip?: number;
     }
   | { kind: 'ticket'; slug: string; items: TicketLine[] }
-  | { kind: 'booking'; slug: string; subtotal: number; payload: BookingPayload }
-  | { kind: 'rental'; slug: string; subtotal: number; payload: RentalPayload };
+  // subtotal is display-only; the server RE-PRICES the deposit/fee from DB using
+  // service_id/item_id + these structured inputs (party_size / mode+hours+units)
+  // + addon_ids. The client's subtotal is never trusted.
+  | { kind: 'booking'; slug: string; subtotal: number; payload: BookingPayload; party_size?: number; addon_ids?: string[] }
+  | { kind: 'rental'; slug: string; subtotal: number; payload: RentalPayload; mode?: 'hour' | 'day'; hours?: number; units?: number; addon_ids?: string[] };
 
 /**
  * Start a real marketplace Checkout for a consumer purchase (order / tickets).
