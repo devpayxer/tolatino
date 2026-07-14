@@ -115,6 +115,106 @@
   into a `gis` schema (also needs elevated privileges; not worth it for reference
   data). Revisit if Supabase ships a way to lock it down.
 
+### 2a. Code security audit (2026-07-14) — payments & RLS hardening before real-money launch
+
+> Full audit of all 79 migrations, the 7 edge functions, `lib/stripe.ts`, every
+> client write path, and committed secrets. **The foundation is strong:** every
+> table has RLS enabled, no blanket `using(true)` write policies, no anon writes,
+> service-role RPCs correctly `revoke`d from `public`, every `security definer`
+> sets `search_path`, and the browser bundle + `.env.production` carry **only**
+> public keys (service-role key confined to edge functions). Exposure is
+> concentrated in **payments amount-trust** and a few **over-broad RLS write
+> surfaces**. Most money-path items are in Stripe **test mode** today (no active
+> real-money risk) but are inherent blockers before charging real cards. Fixes
+> are drafted; apply on the founder's go-ahead (RLS ones are pasted migrations,
+> edge-function ones redeploy via `deploy-fn.mjs`).
+
+- [ ] **C1 — Stripe webhook fails OPEN if the secret is unset.**
+  `supabase/functions/stripe-webhook/index.ts:159-162` only verifies the
+  signature `if (WHSEC)`. The function runs `verify_jwt=false` (Stripe has no
+  Supabase JWT), so an unset/typo'd `STRIPE_WEBHOOK_SECRET` skips verification
+  entirely → an attacker can POST a forged `checkout.session.completed` (fulfill
+  without paying) or `customer.subscription.updated` (grant premium free). **Fix:**
+  fail closed — `if (!WHSEC) return 500` then always verify. *(2-line change,
+  strictly safer; only precondition is that the secret is actually set in the
+  function env — confirm before deploy.)*
+- [ ] **C2 — Marketplace ORDER total is trusted from the client.**
+  `supabase/functions/marketplace-checkout/index.ts:74-80`: for `kind:'order'`
+  unit prices come straight from the request body (only a 0–100000 bound). The
+  Stripe charge, seller transfer, and platform fee all derive from this
+  buyer-controlled subtotal → a buyer can check out a $50 order paying $0.55. The
+  authoritative prices exist (`business_items.price`, owner-only write) but are
+  never consulted. **Fix:** load `business_items` by id and compute subtotal from
+  DB prices; reject any line whose price doesn't match. (The ticket branch already
+  does this correctly.)
+- [ ] **H1 — `businesses` UPDATE policy is row-wide (self-grant tier/verified/
+  rating/Connect).** `0013_create_business.sql:13-14` allows an owner to update
+  *any* column via direct PostgREST (bypassing the app's client-only `WRITABLE`
+  whitelist): `{"tier":"premium"}` unlocks the paid tier + "verified" badge for
+  free, `{"rating":5.0}` defeats the review-integrity trigger, or flip
+  `connect_charges_enabled`. **Fix:** enforce at the DB — a `BEFORE UPDATE` trigger
+  that raises if a non-`service_role` caller changes `tier/rating/reviews_count/
+  owner_id/stripe_account_id/connect_charges_enabled/connect_details_submitted`.
+  *(Must be tested against `apply_subscription`/`apply_connect_status` — those run
+  as service_role and must still pass — before shipping; RLS-sensitive.)*
+- [ ] **H2 — `event_tickets` INSERT policy lets any user mint confirmed tickets.**
+  `0032_consumer_transactions.sql:89-90` (`with check (user_id = auth.uid())`) +
+  `status` defaults `'confirmed'` + auto `code` → a user can insert tickets
+  directly (`unit_price=0`, arbitrary `qty`/`tier_id`), bypassing
+  `buy_event_tickets_multi` (the only place capacity/price/oversell is enforced).
+  **Verified 2026-07-14: the app buys tickets ONLY via the `buy_event_tickets*`
+  RPCs — never a direct insert** — so dropping the direct INSERT policy is safe
+  and non-breaking. **Fix (ready):** `drop policy "insert event_tickets" on
+  public.event_tickets;` (creation stays via the security-definer RPCs).
+- [ ] **H3 — Booking/rental checkout amount trusted from client.**
+  `marketplace-checkout/index.ts:127-130` charges the client-supplied `subtotal`
+  (range check only); `payload` (dates/deposit) passed to `fulfill_booking`/
+  `fulfill_rental` unvalidated. Same class as C2 — **already acknowledged** in the
+  code + Payments section below. **Fix:** re-price server-side from
+  `service_config`/`rental_config`/`business_items` by id.
+- [ ] **M1 — Direct COD order/booking/rental insert (client controls total/status/
+  target business).** `0032:17-18,32-33,61-62` (used by `lib/myActivity.tsx:138+`)
+  — intentional for cash-on-delivery, but a user can spam fake orders into *any*
+  business's dashboard with arbitrary `total`/`status`. Griefing + data-integrity
+  (not theft; COD is paid in cash). **Fix:** move COD creation into a
+  security-definer RPC that stamps `status`, validates the business accepts COD,
+  rate-limits per user, and re-prices from `business_items`.
+- [ ] **M2 — Open redirect via client-supplied `origin` in Stripe return URLs.**
+  `marketplace-checkout:171-175` (+ `stripe-checkout:69`, `stripe-portal:39`,
+  `connect-onboard:62`) accept any `origin` starting with `http` as the
+  success/cancel base → phishing redirect off a payment flow. **Fix:** allowlist
+  known hosts (`tolatino.vercel.app`, prod domain, `localhost` dev); else default.
+- [ ] **M3 — `profiles` public read exposes every user's precise coordinates.**
+  `0005_auth_profiles.sql:33` (`using(true)`) makes `lat`/`lng`/`location` of
+  every user readable with the anon key. Intended to expose display fields
+  (name/initials/color) for posts, but leaks home coordinates. **Fix:** move
+  `lat/lng/location` to a self-read-only table, or expose profiles via a
+  security-definer view/RPC returning only display fields.
+- [ ] **M4 — Temporary `admin-diag` edge function has refund/forge power.**
+  `supabase/functions/admin-diag/index.ts` decodes the JWT role **without
+  verifying the signature**; its only real guard is `verify_jwt=true` at the
+  gateway, and `deploy-fn.mjs:26` defaults `verify_jwt=false` → a deploy slip
+  removes the sole protection (can `refund`/`confirm-pi`/forge webhook events).
+  Self-labeled "TEMPORARY … Remove after." **Fix:** delete before launch; if kept,
+  pin `verify_jwt=true` in committed config and verify the JWT in-function.
+- [ ] **M5 — Webhook accepts replays (no timestamp tolerance).**
+  `stripe-webhook/index.ts:21-30` never checks `t` is recent. Fulfillment is
+  idempotent (blunts it) but subscription/`account.updated` re-apply. **Fix:**
+  reject if `|now - t| > 300s`.
+- [ ] **L1 — Anon metric inflation.** `track_listing_view`/`track_search_appearance`
+  are anon-callable with no dedup (`0079:38,64`) — anyone can inflate any
+  business's counters. Already noted (bot/rate filtering deferred). Rate-limit
+  before these numbers drive decisions/billing.
+- [ ] **L2/L3 — Non-column-scoped self-update policies.** Customers can mutate
+  `status`/`total` of their own `business_orders`/`bookings`/`rentals` after
+  creation (`0032:19-21`), and rewrite any column of their own `notifications`
+  (`0054:25`) / customer `business_conversations` (`0053:22-24`) rows. Harmless
+  today; scope each customer UPDATE to the intended columns (`read`,
+  `customer_unread`) before launch.
+- [ ] **L4 — `.env.production` is git-tracked** (public anon + publishable keys
+  only — safe by design, documented). Not a vuln, but tracking env files invites a
+  future secret slip; consider `.gitignore`-ing it and injecting via the host.
+
 ## 3. Incomplete / stubbed features
 
 - [ ] **"Crear evento" form is a stub.** In `PublishModal.tsx` the event branch

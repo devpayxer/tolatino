@@ -3,7 +3,45 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-13.
+> Last updated: 2026-07-14.
+
+## Auditoría de performance + seguridad (2026-07-14) — spinner colgado ARREGLADO
+
+El fundador reportó un **spinner de carga que se quedaba girando** "en todos
+lados" (Mensajes, Menú, configuración de listado, fotos) y pidió una auditoría de
+performance + seguridad antes de seguir. Informe completo en
+**`docs/AUDIT-2026-07-14.md`**; los pendientes de seguridad están en
+`LAUNCH-CHECKLIST.md` §2a.
+
+**Causa raíz del spinner (P0) — ARREGLADO y verificado en navegador real:**
+`lib/supabase.ts` creaba el cliente **sin timeout de red**. supabase-js usa
+`fetch` (sin timeout por defecto) → en una conexión móvil lenta un request que
+nunca responde nunca resuelve → `setLoading(false)` nunca corre → el spinner gira
+para siempre. Parecía "en todos lados" porque `bizAdmin.loading` (una sola
+compuerta) bloquea **seis** módulos a la vez. Fix (solo cliente, reversible):
+1. **Timeout global de 15s** con `AbortController` envolviendo `fetch` en
+   `supabase.ts` — cubre TODAS las queries de una sola vez; el request colgado
+   falla rápido y la pantalla cae a estado vacío/error en vez de girar.
+2. **`finally`-clear** en `bizAdmin.tsx` — `loading` siempre se limpia; ningún
+   return temprano lo deja colgado.
+3. **Key estable** — `bizAdmin` depende de `user?.id` (string), no del objeto
+   `user` que `useAuth()` recrea en cada evento de auth (refresh/focus) que
+   re-flasheaba los spinners a media sesión.
+   Verificado: red normal → conversaciones cargan sin spinner; `business_
+   conversations` simulado como muerto → el spinner aparece y **resuelve** al
+   estado "Sin mensajes todavía" dentro del timeout (antes era infinito).
+
+**Escala (migración 0080) — APLICADA:** índices `reviews (business_id, created_at
+desc)` y `business_orders (business_id, status)` para las lecturas calientes del
+panel (Reseñas, ingresos, campana). Aditivo, no rompe nada.
+
+**Seguridad:** la base es sólida (RLS en las 40 tablas, sin políticas de escritura
+`using(true)` ni anon, RPCs de service_role bien `revoke`adas, sin secretos en el
+bundle). La exposición está en **confianza en montos de pago** (webhook fail-open
+C1, total de orden desde el cliente C2, montos de booking/rental H3) y **RLS de
+escritura demasiado amplia** (columnas de `businesses` H1, insert directo de
+`event_tickets` H2). Todo en modo **prueba** de Stripe hoy; drafts listos, cerrar
+antes del lanzamiento con dinero real. Ver `AUDIT-2026-07-14.md` + checklist §2a.
 
 ## UX: sub-navegación de módulos como TABS (2026-07-14)
 El founder notó que las sub-secciones de cada módulo (Despacho/Zonas/Repartidores ·

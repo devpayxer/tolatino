@@ -215,33 +215,45 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
     setDemo(false);
     setLoading(true);
     (async () => {
-      // select('*') — NOT an explicit column list — so a not-yet-applied
-      // migration or a briefly-stale PostgREST schema cache can never make the
-      // query error and blank the owner's real businesses (that turned the whole
-      // dashboard into the "connect your business" empty state). Unknown/extra
-      // columns are simply ignored by the row mapping.
-      const { data, error } = await supabase!
-        .from('businesses')
-        .select('*')
-        .eq('owner_id', user.id)
-        .order('created_at', { ascending: true });
-      if (cancelled) return;
-      if (error) {
-        // Transient error → keep whatever we already have; never wipe a working
-        // dashboard. A refresh re-tries the load.
-        setLoading(false);
-        return;
+      try {
+        // select('*') — NOT an explicit column list — so a not-yet-applied
+        // migration or a briefly-stale PostgREST schema cache can never make the
+        // query error and blank the owner's real businesses (that turned the whole
+        // dashboard into the "connect your business" empty state). Unknown/extra
+        // columns are simply ignored by the row mapping. The global fetch timeout
+        // (lib/supabase.ts) guarantees this await always settles, so `loading`
+        // can never be stranded true → no infinite spinner.
+        const { data, error } = await supabase!
+          .from('businesses')
+          .select('*')
+          .eq('owner_id', user.id)
+          .order('created_at', { ascending: true });
+        if (cancelled) return;
+        if (error) {
+          // Transient error/timeout → keep whatever we already have; never wipe a
+          // working dashboard. A refresh re-tries the load.
+          return;
+        }
+        const rows = Array.isArray(data) ? (data as unknown as BizRow[]) : [];
+        setBusinesses(rows);
+        // keep the current selection if it still exists, else pick the first
+        setActiveId((prev) => (prev && rows.some((r) => r.id === prev) ? prev : rows[0]?.id ?? null));
+      } finally {
+        // Always clear the gate on the live request — no early return (cancel or
+        // error) can leave the six bizAdmin-gated modules spinning forever.
+        if (!cancelled) setLoading(false);
       }
-      const rows = Array.isArray(data) ? (data as unknown as BizRow[]) : [];
-      setBusinesses(rows);
-      // keep the current selection if it still exists, else pick the first
-      setActiveId((prev) => (prev && rows.some((r) => r.id === prev) ? prev : rows[0]?.id ?? null));
-      setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [user, version]);
+    // Key on user?.id (a stable string), NOT the user object: useAuth() emits a
+    // fresh user object on every auth event (INITIAL_SESSION, TOKEN_REFRESHED,
+    // focus revalidation). Keying on the object re-ran this effect on every
+    // refresh → setLoading(true) re-flashed all six gated modules to a spinner
+    // mid-session. The id only changes on a real sign-in/out, which is when a
+    // reload is actually warranted.
+  }, [user?.id, version]);
 
   const active = useMemo(() => businesses.find((b) => b.id === activeId) ?? null, [businesses, activeId]);
 
