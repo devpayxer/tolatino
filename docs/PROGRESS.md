@@ -65,10 +65,18 @@ bundle). **Cerradas y verificadas 2026-07-14 (lote aprobado por el fundador):**
 propia), M4 función `admin-diag` borrada (deploy + repo), M5 ventana anti-replay
 del webhook (±300s).
 
+**Bajas L2/L3 también cerradas (migración 0084):** el cliente solo puede
+**cancelar** su pedido/reserva (guard trigger; no cambiar status a otra cosa ni
+monto), y las actualizaciones de notificación/conversación quedan **acotadas por
+columna** (`read` / `unread` / `customer_unread`) con grants de columna. Verificado.
+**L1** (inflación de métricas anónimas) queda diferida al anti-spam general (necesita
+rate-limit por IP/edge, no un parche puntual). **L4** (`.env.production` en git) no es
+vulnerabilidad — solo llaves públicas; se deja así (el build necesita esos valores).
+
 Migraciones **0080** (índices) + **0081** (RLS H1/H2) + **0082** (perfiles) +
-**0083** (COD) pegadas al fundador para correr en Supabase. **Todas las
-críticas/altas/medias (C1–C2, H1–H3, M1–M5) cerradas y verificadas.** Solo quedan
-4 bajas (L1–L4) en checklist §2a. Ver `AUDIT-2026-07-14.md`.
+**0083** (COD) + **0084** (update-scope) pegadas al fundador para correr en
+Supabase. **TODO lo accionable del audit cerrado y verificado: C1–C2, H1–H3,
+M1–M5, L2–L3.** Ver `AUDIT-2026-07-14.md`.
 
 ## UX: sub-navegación de módulos como TABS (2026-07-14)
 El founder notó que las sub-secciones de cada módulo (Despacho/Zonas/Repartidores ·

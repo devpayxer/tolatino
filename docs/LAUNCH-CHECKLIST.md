@@ -244,19 +244,33 @@
   `verifySig` now rejects if the signed timestamp is more than 300s from now
   (Stripe's own tolerance) before checking the HMAC. Redeployed; a forged event is
   still rejected `400`.
-- [ ] **L1 — Anon metric inflation.** `track_listing_view`/`track_search_appearance`
-  are anon-callable with no dedup (`0079:38,64`) — anyone can inflate any
-  business's counters. Already noted (bot/rate filtering deferred). Rate-limit
-  before these numbers drive decisions/billing.
-- [ ] **L2/L3 — Non-column-scoped self-update policies.** Customers can mutate
-  `status`/`total` of their own `business_orders`/`bookings`/`rentals` after
-  creation (`0032:19-21`), and rewrite any column of their own `notifications`
-  (`0054:25`) / customer `business_conversations` (`0053:22-24`) rows. Harmless
-  today; scope each customer UPDATE to the intended columns (`read`,
-  `customer_unread`) before launch.
+- [ ] **L1 — Anon metric inflation** (DEFERRED — needs shared anti-spam infra, not
+  a point fix). `track_listing_view`/`track_search_appearance` are anon-callable
+  with no dedup (`0079:38,64`) — anyone can inflate a business's view/search
+  counters. Real mitigation needs **IP/edge-level rate limiting** (the RPC has no
+  session for an anon caller), so it belongs with the broader "Rate limiting /
+  anti-spam" item in §2 rather than a standalone SQL change. Not urgent: these
+  counters are analytics only and drive no billing today. Close before they inform
+  pricing/ranking. (The authenticated action signals — saves/calls/directions —
+  are already session-rate-limited.)
+- [x] **L2/L3 — Non-column-scoped self-update policies. ✅ FIXED 2026-07-14
+  (migration 0084).**
+  - **L2:** a `BEFORE UPDATE` guard (`tg_txn_customer_update_guard`, SECURITY
+    INVOKER) lets a customer update their own `business_orders`/`bookings`/`rentals`
+    only to **cancel** (`status → 'cancelled'`) and blocks changes to
+    `total`/`deposit`/`business_id`/`user_id`. Owner updates are exempt.
+  - **L3:** column-level UPDATE grants — `authenticated` may update only
+    `notifications(read)` and `business_conversations(unread, customer_unread)`;
+    the SECURITY DEFINER `bump_conversation()` is unaffected.
+  Verified: a customer marking their order `completed` or changing `total` → `400`;
+  cancelling → allowed; marking a notification `read` → allowed but changing its
+  `link` → `403`; changing a conversation's `business_id` → `403`.
 - [ ] **L4 — `.env.production` is git-tracked** (public anon + publishable keys
-  only — safe by design, documented). Not a vuln, but tracking env files invites a
-  future secret slip; consider `.gitignore`-ing it and injecting via the host.
+  only — **safe by design, NOT a vulnerability**; verified the file holds no secret
+  keys). Left as-is deliberately: the file's `NEXT_PUBLIC_*` values are needed at
+  build time and `.gitignore`-ing it would require wiring them into the Cloudflare/
+  Vercel build env, a change with deploy risk and no security benefit. Revisit only
+  if a non-public value is ever added — then move it to host-injected env.
 
 ## 3. Incomplete / stubbed features
 
