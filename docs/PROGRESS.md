@@ -29,12 +29,12 @@ Desayunos …), así que se confundían: parecían opciones/filtros, no configur
   configuración) · pills (filtros de datos). Verificado en navegador (Fulfillment,
   Food, Staff; móvil + escritorio). Como es UN componente compartido, cualquier
   ajuste de estilo es un cambio de un solo lugar.
-- **Peso de los tabs subido (2026-07-14):** el founder los quería más "notables como
-  título". Los tabs pasaron de 13.5px a **15px**, con los **inactivos en tinta
-  oscura** (`text-ink-soft`) en vez de gris apagado y tracking −.01em; el activo
-  sigue en primary 800 + subrayado. (Opción A de un mock que comparé — se descartó
-  cambiar la fuente a una "black" tipo Archivo 900 para no tocar el design system;
-  queda como opción si el founder la pide.)
+- **Peso de los tabs — REVERTIDO al original (2026-07-14):** probé subirlos a 15px +
+  inactivos oscuros (Opción A), pero al founder no le convenció; regresé al estilo
+  original (13.5px, activo 800 primary, inactivos 700 muted). **Pendiente acordado:**
+  el founder quiere hacerlo bien con un **cambio de fuente** (una "black"/900 tipo
+  Archivo Black solo para tabs/títulos) más adelante — probar aplicada en la app y
+  decidir. No se hace ahora.
 
 ## Pagos: efectivo contra entrega por defecto · Stripe para tarjeta en línea (2026-07-14)
 Decisión del founder (corrige el enfoque anterior de "modo catálogo"): **Stripe NO
