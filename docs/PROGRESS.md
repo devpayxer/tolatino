@@ -5,6 +5,26 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Rutas en la URL: refrescar ya no pierde dónde estás (2026-07-14)
+
+Abrir un negocio o cambiar de tab del dashboard vivía solo en estado de React, así
+que la URL nunca cambiaba y **refrescar te devolvía a la lista / al Inicio** (y no
+se podía compartir el link directo). Ahora la vista abierta se refleja en la URL:
+- **Detalle de negocio (`Negocios.tsx`)**: abrir un negocio hace `pushState`
+  `?b=<slug>`; refrescar reabre ese negocio (ya no se borra el param en el mount —
+  ese era el bug: `replaceState` lo quitaba); el botón **atrás del navegador cierra
+  el detalle** (popstate → `detailBiz=null`); el link es compartible. `openDetail`/
+  `closeDetail` + listener `popstate`. Los deep-links existentes
+  (`/negocios?b=slug` desde el panel, eventos, listing) siguen funcionando.
+- **Tabs del dashboard (`Panel.tsx`)**: el tab activo se refleja como `?t=<tab>`
+  (`replaceState`, sin ensuciar el historial); refrescar te deja en el mismo tab
+  (Inicio omite el param). `VALID_TABS` valida el param; listener `popstate` para
+  atrás/adelante.
+Verificado en navegador real: abrir negocio → `?b=…` → refrescar mantiene el
+detalle → atrás vuelve a la lista; tab Estadísticas → `?t=stats` → refrescar queda
+en Estadísticas. (Mismo patrón se puede aplicar luego a Eventos/Comunidad si se
+quiere.)
+
 ## Carrito: persiste al salir/volver (24h TTL + revalida stock) (2026-07-14)
 
 Antes el carrito vivía solo en memoria: salir del listing y volver lo borraba.

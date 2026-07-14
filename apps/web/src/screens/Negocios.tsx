@@ -75,23 +75,47 @@ export function NegociosScreen() {
   const [detailBiz, setDetailBiz] = useState<Business | null>(null);
   const [openFilter, setOpenFilter] = useState<null | 'dist' | 'rating' | 'price'>(null);
 
-  // Deep link: /negocios?b=<slug> opens that listing directly (e.g. the business
-  // dashboard's "Ver listado público"). Resolve from the loaded list first; if
-  // it isn't there (out-of-city or brand-new listing) fetch it by slug — the geo
-  // feed is radius-scoped, a slug lookup is not. Runs once; the ?b= param is then
-  // stripped so closing the detail lands back on a clean /negocios.
+  // The open listing lives in the URL as /negocios?b=<slug>, so a refresh reopens
+  // it, the link is shareable, and the browser back button closes it. `detailBiz`
+  // (React) mirrors the URL; open/close push/replace history, and a popstate
+  // listener syncs state when the user navigates back/forward.
+  const resolveBiz = (slug: string) => {
+    const local = BUSINESSES.find((x) => x.slug === slug);
+    if (local) { setDetailBiz(local); return; }
+    // Out-of-city / brand-new listing isn't in the radius feed — fetch by slug.
+    void fetchBusinessBySlug(slug).then((biz) => { if (biz) setDetailBiz(biz); });
+  };
+  const openDetail = (biz: Business) => {
+    setDetailBiz(biz);
+    if (typeof window !== 'undefined') window.history.pushState({ tlBiz: biz.slug }, '', `${window.location.pathname}?b=${encodeURIComponent(biz.slug)}`);
+  };
+  const closeDetail = () => {
+    setDetailBiz(null);
+    if (typeof window === 'undefined') return;
+    // If we pushed this detail entry, pop it so history stays tidy; otherwise
+    // (fresh deep-link load) just strip the param in place.
+    if (window.history.state && window.history.state.tlBiz) window.history.back();
+    else if (new URLSearchParams(window.location.search).get('b')) window.history.replaceState(null, '', window.location.pathname);
+  };
+  // On first mount, open whatever ?b= points to (deep link / refresh). Once.
   const deepLinked = useRef(false);
   useEffect(() => {
     if (deepLinked.current || typeof window === 'undefined') return;
-    const bSlug = new URLSearchParams(window.location.search).get('b');
-    if (!bSlug) return;
     deepLinked.current = true;
-    window.history.replaceState(null, '', window.location.pathname);
-    const local = BUSINESSES.find((x) => x.slug === bSlug);
-    if (local) { setDetailBiz(local); return; }
-    let cancelled = false;
-    void fetchBusinessBySlug(bSlug).then((biz) => { if (!cancelled && biz) setDetailBiz(biz); });
-    return () => { cancelled = true; };
+    const bSlug = new URLSearchParams(window.location.search).get('b');
+    if (bSlug) resolveBiz(bSlug);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [BUSINESSES]);
+  // Back/forward: mirror the URL's ?b= into detailBiz (close when it's gone).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPop = () => {
+      const slug = new URLSearchParams(window.location.search).get('b');
+      if (slug) resolveBiz(slug); else setDetailBiz(null);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [BUSINESSES]);
   const [showAllFeat, setShowAllFeat] = useState(false);
 
@@ -210,7 +234,7 @@ export function NegociosScreen() {
     }`;
 
   if (detailBiz !== null) {
-    return <BizDetail b={detailBiz} all={BUSINESSES} onClose={() => setDetailBiz(null)} onOpenOther={(biz) => setDetailBiz(biz)} />;
+    return <BizDetail b={detailBiz} all={BUSINESSES} onClose={closeDetail} onOpenOther={openDetail} />;
   }
 
   // Feature pill (shared by "Sugeridos" and the per-category "Características").
@@ -558,7 +582,7 @@ export function NegociosScreen() {
                         <span className="h-px flex-1 bg-hair" />
                       </div>
                     )}
-                    {b.verified ? <BizCardVerified b={b} onOpen={() => setDetailBiz(b)} /> : <BizCardBasic b={b} onOpen={() => setDetailBiz(b)} />}
+                    {b.verified ? <BizCardVerified b={b} onOpen={() => openDetail(b)} /> : <BizCardBasic b={b} onOpen={() => openDetail(b)} />}
                   </div>
                 );
               })}

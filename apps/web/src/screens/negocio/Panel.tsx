@@ -5,7 +5,7 @@
 // Premium) and rubro. Tab content: Insights + Module setup + the uniform
 // module pages.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconChartBar as BarChart3, IconBell as Bell, IconBike as Bike, IconCheck as Check, IconChevronDown as ChevronDown, IconExternalLink as ExternalLink, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconPackage as Package, IconPlus as Plus, IconSearch as Search, IconShoppingBag as ShoppingBag, IconSpeakerphone as Megaphone, IconStar as Star, IconTicket as Ticket, IconToolsKitchen2 as Utensils, IconX as X } from '@tabler/icons-react';
 import type { Icon as LucideIcon } from '@tabler/icons-react';
@@ -63,12 +63,45 @@ const DEFAULT_MODS: Mods = { menu: true, services: true, bookings: true, product
 // their prior default so only selling is off by default. Stored modules override.
 const LISTING_ONLY_MODS: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, updates: true, staff: true };
 
+// Valid ?t= values → the dashboard tab restored on refresh (keep in sync with TabKey).
+const VALID_TABS = new Set<string>([
+  'insights', 'stats', 'listing', 'photos', 'hours', 'related',
+  'menu', 'services', 'bookings', 'products', 'fulfillment', 'shipping', 'drivers', 'rental', 'events',
+  'customers', 'orders', 'messages', 'reviews', 'updates',
+  'promos', 'payments', 'staff', 'jobs', 'modules', 'billing', 'settings',
+]);
+
 export function PanelScreen() {
   const { L } = useLang();
   const app = useApp();
   const router = useRouter();
 
   const [tab, setTab] = useState<TabKey>('insights');
+  const tabInit = useRef(false);
+  const reflectReady = useRef(false);
+  // The active dashboard tab lives in the URL (/negocio?t=<tab>) so a refresh keeps
+  // you on the same section instead of bouncing to Inicio. `tab` (React) mirrors it;
+  // we replace (not push) so tab clicks don't spam browser history — refresh-safe
+  // without hijacking the back button. `insights` (home) omits the param.
+  useEffect(() => {
+    if (tabInit.current || typeof window === 'undefined') return;
+    tabInit.current = true;
+    const t = new URLSearchParams(window.location.search).get('t');
+    if (t && VALID_TABS.has(t)) setTab(t as TabKey);
+  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!reflectReady.current) { reflectReady.current = true; return; } // skip mount so we don't strip ?t before restore
+    const url = new URL(window.location.href);
+    if (tab === 'insights') url.searchParams.delete('t'); else url.searchParams.set('t', tab);
+    window.history.replaceState(window.history.state, '', url.toString());
+  }, [tab]);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPop = () => { const t = new URLSearchParams(window.location.search).get('t'); setTab(t && VALID_TABS.has(t) ? (t as TabKey) : 'insights'); };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [photoCount, setPhotoCount] = useState<number | undefined>(undefined);
   // header: jump-to search + real notifications (avisos) bell
