@@ -29,6 +29,12 @@ Desayunos …), así que se confundían: parecían opciones/filtros, no configur
   configuración) · pills (filtros de datos). Verificado en navegador (Fulfillment,
   Food, Staff; móvil + escritorio). Como es UN componente compartido, cualquier
   ajuste de estilo es un cambio de un solo lugar.
+- **Peso de los tabs subido (2026-07-14):** el founder los quería más "notables como
+  título". Los tabs pasaron de 13.5px a **15px**, con los **inactivos en tinta
+  oscura** (`text-ink-soft`) en vez de gris apagado y tracking −.01em; el activo
+  sigue en primary 800 + subrayado. (Opción A de un mock que comparé — se descartó
+  cambiar la fuente a una "black" tipo Archivo 900 para no tocar el design system;
+  queda como opción si el founder la pide.)
 
 ## Pagos: efectivo contra entrega por defecto · Stripe para tarjeta en línea (2026-07-14)
 Decisión del founder (corrige el enfoque anterior de "modo catálogo"): **Stripe NO
