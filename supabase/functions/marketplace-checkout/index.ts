@@ -380,6 +380,38 @@ Deno.serve(async (req) => {
     const pending = (await ins.json())?.[0];
     if (!pending?.id) return json({ error: 'could not stage purchase' }, 500);
 
+    // ── PaymentIntent mode (custom on-site checkout, Stripe Payment Element) ──
+    // When the client asks for `intent`, we return a PaymentIntent client_secret
+    // instead of a hosted Checkout URL, so the buyer pays INSIDE our own branded
+    // page (like DoorDash) — Stripe still renders the secure card fields. Same
+    // destination-charge economics + metadata as the hosted path; the webhook
+    // fulfills on `payment_intent.succeeded`.
+    if (body?.intent === true) {
+      const pi = await stripe('payment_intents', STRIPE, {
+        amount: String(amountCents),
+        currency: 'usd',
+        'automatic_payment_methods[enabled]': 'true', // card + Apple/Google Pay + Link, per eligibility
+        application_fee_amount: String(feeCents),
+        'transfer_data[destination]': sellerAccount,
+        'metadata[pending_id]': pending.id,
+        'metadata[purchase_kind]': kind,
+        'metadata[business_id]': businessId ?? '',
+        description: productName,
+      });
+      if (pi.error || !pi.client_secret) {
+        await fetch(`${SUPABASE_URL}/rest/v1/pending_purchases?id=eq.${pending.id}`, {
+          method: 'PATCH', headers: { ...svc, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'failed', error: pi.error?.message ?? 'no client secret', updated_at: new Date().toISOString() }),
+        });
+        return json({ error: pi.error?.message ?? 'could not start payment' }, 400);
+      }
+      await fetch(`${SUPABASE_URL}/rest/v1/pending_purchases?id=eq.${pending.id}`, {
+        method: 'PATCH', headers: { ...svc, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stripe_payment_intent: pi.id, updated_at: new Date().toISOString() }),
+      });
+      return json({ clientSecret: pi.client_secret, pendingId: pending.id, amount: amountCents, fee: feeCents, productName });
+    }
+
     // Return exactly where the buyer was (sanitized path on OUR origin only).
     const base = safeOrigin(body?.origin);
     let path = String(body?.returnPath ?? '/');

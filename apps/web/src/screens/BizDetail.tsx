@@ -19,7 +19,8 @@ import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart } from '@/lib/cartStore';
-import { startMarketplaceCheckout } from '@/lib/stripe';
+import { startMarketplaceCheckout, startMarketplacePayment } from '@/lib/stripe';
+import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
@@ -483,6 +484,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [promoBusy, setPromoBusy] = useState(false);
   const [promoErr, setPromoErr] = useState('');
   const [paying, setPaying] = useState(false);
+  // On-site checkout (Stripe Payment Element) — set when a PaymentIntent is ready.
+  const [checkout, setCheckout] = useState<{ clientSecret: string; pendingId: string; amount: number; returnPath: string } | null>(null);
   const addressStore = useAddresses();
   const chosenAddr = addressStore.addresses.find((a) => a.id === addrId)
     ?? addressStore.addresses.find((a) => a.is_default)
@@ -588,7 +591,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       name: l.name, qty: l.qty, price: l.unit,
       opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined,
     }));
-    const { url, error } = await startMarketplaceCheckout({
+    // On-site payment: get a PaymentIntent and open our own branded checkout sheet
+    // (Stripe Payment Element) instead of redirecting to Stripe's hosted page.
+    const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({
       kind: 'order', slug: b.slug, items,
       channel: isDelivery ? 'delivery' : 'pickup',
       ...(isDelivery && chosenAddr ? { address: { formatted: chosenAddr.formatted, label: chosenAddr.label ?? undefined } } : {}),
@@ -596,8 +601,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       ...(tip > 0 ? { tip } : {}),
       ...(promo ? { promo: promo.code } : {}),
     });
-    if (url) { window.location.href = url; return; }
     setPaying(false);
+    if (clientSecret && pendingId) {
+      setCartOpen(false);
+      setCheckout({ clientSecret, pendingId, amount: amount ?? Math.round(grandTotal * 100), returnPath: typeof window !== 'undefined' ? window.location.pathname : '/negocios/' });
+      return;
+    }
     flash(error === 'seller_not_payable'
       ? L('Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet')
       : error === 'below_minimum'
@@ -3187,6 +3196,16 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {revBusy ? L('Publicando…', 'Posting…') : L('Publicar reseña', 'Post review')}
         </PrimaryBtn>
       </Overlay>
+
+      {/* On-site payment (Stripe Payment Element) — our branded checkout sheet */}
+      <CheckoutSheet
+        open={!!checkout}
+        clientSecret={checkout?.clientSecret ?? null}
+        amount={checkout?.amount ?? 0}
+        pendingId={checkout?.pendingId ?? ''}
+        returnPath={checkout?.returnPath ?? '/negocios/'}
+        onClose={() => setCheckout(null)}
+      />
 
       {/* confirmation toast — width-capped + centered (never overflows) */}
       {toast && (

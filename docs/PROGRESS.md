@@ -5,6 +5,42 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Checkout propio en la app (Stripe Payment Element, estilo DoorDash) (2026-07-14)
+
+El pago del carrito ya NO redirige a la página hosted de Stripe: ahora se paga
+DENTRO de To'Latino, en una hoja con nuestro diseño (Stripe solo pinta los campos
+seguros de tarjeta en iframes → PCI mínimo, nunca tocamos el número de tarjeta).
+- **Backend** (`marketplace-checkout`): nuevo modo `intent:true` → tras re-preciar
+  y stagear el `pending_purchase`, crea un **PaymentIntent** (mismo destination
+  charge: `application_fee_amount` + `transfer_data[destination]` + metadata) y
+  devuelve `client_secret` en vez de una URL hosted. `automatic_payment_methods`
+  habilita tarjeta + Apple/Google Pay + Link según elegibilidad.
+- **Webhook** (`stripe-webhook`): ahora también fulfila en `payment_intent.
+  succeeded`. Guard anti-doble: si el `pending` tiene `stripe_session` (compra
+  hosted) el evento PI se ignora (lo fulfila `checkout.session.completed`); el
+  path on-site no tiene session → lo fulfila el PI. El guard de estado 'pending'
+  mantiene idempotencia.
+- **Cliente**: `@stripe/stripe-js` + `@stripe/react-stripe-js` (gratis, parte de
+  Stripe). `getStripe()` singleton + `startMarketplacePayment()` en `lib/stripe.ts`.
+  Nuevo `components/CheckoutSheet.tsx` = `<Elements>` + `<PaymentElement>` con la
+  apariencia mapeada a los tokens (primary #7B61FF, Plus Jakarta, radio 12). Al
+  pagar: `confirmPayment` con `return_url = …?pay=success&pid=…` → cae en
+  `PurchaseReturnToast` (misma confirmación de siempre). `BizDetail.payCart` abre
+  la hoja en vez de redirigir.
+- **Verificado**: creación del PaymentIntent E2E (client_secret real, montos
+  correctos: $2.98×1.05=313¢, fee 15%=45¢) y la hoja de pago abre en navegador con
+  el total + candado. El pago con TARJETA real solo se puede probar en el sitio
+  desplegado — este sandbox bloquea los dominios de Stripe (js/api.stripe.com 403).
+- **Alcance**: por ahora solo el carrito (pedidos). Reserva/renta/boletos siguen
+  con el redirect hosted (mismo backend); se migran igual cuando se pida.
+
+### ⚠️ ACCIÓN DEL FUNDADOR (obligatoria para que funcione en producción)
+En el **Dashboard de Stripe → Developers → Webhooks**, en el endpoint de To'Latino,
+**agrega el evento `payment_intent.succeeded`** (además del `checkout.session.
+completed` que ya está). Sin eso, los pedidos pagados con el checkout nuevo NO se
+crean tras el pago. (Opcional, para verte más pro: **Settings → Branding** → sube
+el logo + color To'Latino; se refleja en Link/Apple Pay.)
+
 ## Rutas: sub-tabs de los módulos del dashboard en la URL (2026-07-14)
 
 Segundo pase del arreglo de rutas: el sub-tab primario de cada módulo del panel se

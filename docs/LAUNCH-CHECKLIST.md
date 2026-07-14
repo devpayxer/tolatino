@@ -1330,6 +1330,24 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
 - [ ] **Tips on pickup orders.** Tips are delivery-only today; DoorDash also
   allows pickup tips — add if wanted.
 
+### Checkout on-site (Stripe Payment Element) (2026-07-14)
+- [ ] **Stripe webhook must include `payment_intent.succeeded`.** The on-site
+  checkout fulfills orders on that event; add it to the To'Latino webhook endpoint
+  in the Stripe Dashboard (Developers → Webhooks). Hosted-checkout flows still fire
+  `checkout.session.completed` (already subscribed). Until this is added, orders
+  paid via the new in-app checkout stage as `pending` but never become real orders.
+- [ ] **Full card-payment E2E only tested on the live site.** Backend PaymentIntent
+  creation + the branded sheet opening are verified; the actual card entry +
+  confirmation couldn't run in the build sandbox (Stripe's js/api domains are
+  proxy-blocked, 403). Do one real test-card (4242 4242 4242 4242) order on
+  tolatino.vercel.app and confirm the order appears in Cocina + Mi cuenta.
+- [ ] **Migrate booking / rental / ticket checkouts to the Payment Element too.**
+  Only the food-order cart uses the on-site sheet; those three still redirect to
+  Stripe's hosted page (same `marketplace-checkout` backend — just call
+  `startMarketplacePayment` + open `CheckoutSheet` from their confirm handlers).
+- [ ] **Stripe Branding (optional polish).** Dashboard → Settings → Branding: logo
+  + brand color → shows in Link / Apple Pay / wallet sheets.
+
 ### Routing / deep-links (2026-07-14)
 - [ ] **Shared Comunidad post links to a post outside the viewer's local feed.**
   `useUrlDetail('post')` (`?post=<id>`) reopens a thread on refresh/back correctly

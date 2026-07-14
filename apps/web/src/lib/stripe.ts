@@ -1,3 +1,4 @@
+import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
 
 // Client helpers for the Stripe Edge Functions. Checkout + portal run server-side
@@ -6,6 +7,17 @@ import { supabase } from '@/lib/supabase';
 // supabase.functions.invoke → the function verifies ownership before charging.
 
 const origin = () => (typeof window !== 'undefined' ? window.location.origin : undefined);
+
+// Stripe.js singleton (publishable key is public by design). Used by the on-site
+// Payment Element checkout. Resolves to null if the key isn't configured.
+let stripeJs: Promise<Stripe | null> | null = null;
+export function getStripe(): Promise<Stripe | null> {
+  if (!stripeJs) {
+    const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    stripeJs = pk ? loadStripe(pk) : Promise.resolve(null);
+  }
+  return stripeJs;
+}
 
 /** Start a subscription Checkout for a business plan. Returns the Stripe URL. */
 export async function startCheckout(plan: 'verified' | 'premium', businessId: string): Promise<{ url?: string; error?: string }> {
@@ -92,4 +104,21 @@ export async function startMarketplaceCheckout(input: MarketplaceInput, returnPa
   if (error) return { error: error.message };
   if (data?.url) return { url: data.url as string };
   return { error: (data?.error as string) || 'checkout failed' };
+}
+
+/**
+ * Start an ON-SITE marketplace payment (Stripe Payment Element). Same authoritative
+ * re-pricing + Connect economics as startMarketplaceCheckout, but returns a
+ * PaymentIntent `clientSecret` so the buyer pays INSIDE our own branded checkout
+ * (no redirect to Stripe's hosted page). The order/tickets are still created only
+ * once payment succeeds (webhook → payment_intent.succeeded).
+ */
+export async function startMarketplacePayment(
+  input: MarketplaceInput,
+): Promise<{ clientSecret?: string; pendingId?: string; amount?: number; error?: string }> {
+  if (!supabase) return { error: 'offline' };
+  const { data, error } = await supabase.functions.invoke('marketplace-checkout', { body: { ...input, intent: true, origin: origin() } });
+  if (error) return { error: error.message };
+  if (data?.clientSecret) return { clientSecret: data.clientSecret as string, pendingId: data.pendingId as string, amount: data.amount as number };
+  return { error: (data?.error as string) || 'payment failed' };
 }

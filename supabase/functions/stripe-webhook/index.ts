@@ -84,7 +84,13 @@ async function fulfillMarketplace(url: string, service: string, stripeKey: strin
   if (!pendingId) return;
   const pending = (await (await fetch(`${url}/rest/v1/pending_purchases?id=eq.${pendingId}&select=*`, { headers: svcHeaders(service) })).json())?.[0];
   if (!pending || pending.status !== 'pending') return; // unknown / already handled
-  const intent = (obj.payment_intent as string | undefined) ?? null;
+  // A hosted-Checkout purchase fires BOTH checkout.session.completed AND
+  // payment_intent.succeeded; let the session event fulfill it so we don't race.
+  // The Payment-Element (on-site) path has no session → the PI event fulfills it.
+  if (obj.object === 'payment_intent' && pending.stripe_session) return;
+  // The intent id: for a session event it's obj.payment_intent; for a PI event
+  // it IS obj.id (used for the refund-on-failure path + payment record).
+  const intent = (obj.payment_intent as string | undefined) ?? (obj.object === 'payment_intent' ? (obj.id as string) : null);
   const payload = (pending.payload ?? {}) as Record<string, unknown>;
 
   let ok = false;
@@ -188,6 +194,13 @@ Deno.serve(async (req) => {
           const sub = await stripeGet(`subscriptions/${subId}`, STRIPE);
           await applySub(SUPABASE_URL, SERVICE, businessId, customer ?? '', subId, meta.plan || planFromSub(sub), sub.status, sub.current_period_end);
         }
+      }
+    } else if (event.type === 'payment_intent.succeeded') {
+      // On-site Payment-Element purchase (no hosted Checkout Session). Fulfill the
+      // staged purchase; the guard in fulfillMarketplace skips hosted purchases that
+      // also fire this event, and the 'pending'-only guard makes retries idempotent.
+      if (meta.purchase_kind && meta.pending_id) {
+        await fulfillMarketplace(SUPABASE_URL, SERVICE, STRIPE, obj, meta);
       }
     } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
       const sub = obj as Record<string, unknown>;
