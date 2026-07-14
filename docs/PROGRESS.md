@@ -5,6 +5,29 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Hub de Promociones (Premium) — todas las campañas en un lugar (2026-07-14, migración 0087)
+
+Nueva sección del panel **Promociones** (`tab==='promos'`, en el grupo "Vender",
+**gated a Premium** vía `lockedFree`). Es una **capa unificada** sobre lo que ya
+existe — lee/escribe `menuConfig.promos` (Menú) y `productConfig.discounts`
+(Tienda); nada migra, el carrito (`check_promo`) y el badge del menú siguen igual.
+Benchmarked vs DoorDash Marketing / Shopify Discounts.
+- **KPIs:** Activas · Programadas · Pausadas · **Canjes (7d)**.
+- **Filtros:** Todas / Menú / Tienda / Códigos.
+- **Tarjetas por estado** (Activas/Programadas/Pausadas) con tipo, alcance
+  (Menú/Tienda), **código**, horario/mínimo, **canjes reales**, y acciones rápidas
+  (Activar/Pausar/Reanudar/Editar).
+- **Editor unificado** (`CampaignEditor`): elige alcance → tipo (% · $ · combo · 2x1
+  · happy hour · envío gratis según alcance) → nombre, valor, código, mínimo, estado
+  (activa/pausada/programada+fecha). Mapea a `Promo` (menú) o `Discount` (tienda).
+- **Canjes = reales:** RPC **`owner_promo_stats`** (migración 0087) cuenta los
+  pedidos que usaron cada código (`business_orders.fulfillment->>'promo'`) en N días,
+  owner-scoped. Verificado: pedido con BIENVENIDO10 → la RPC devuelve 1 canje · $25.
+  `lib/live.tsx` gana `fetchPromoStats`.
+- Archivos: `screens/negocio/Promociones.tsx` (nuevo), `tabs.tsx` (TabKey+nav+título),
+  `Panel.tsx` (render+RICH_MODULES). Verificado en navegador real (hub + editor).
+  El Sabor sembrado con 4 promos de ejemplo (el dueño las edita/borra desde el hub).
+
 ## Carrito: tarifa de servicio sin % visible + promos del NEGOCIO (2026-07-14, migración 0086)
 
 **Tarifa de servicio:** se quitó el "(5%)" visible en todos lados (carrito, reserva,

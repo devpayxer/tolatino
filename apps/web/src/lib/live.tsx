@@ -123,6 +123,21 @@ export async function checkPromo(
   return { ok: r.ok === true, percent: Number(r.percent ?? 0), discount: Number(r.discount ?? 0), label: String(r.label ?? '') };
 }
 
+/** Real promo-code redemptions for the owner's business over the last `days`
+ *  (owner_promo_stats, migration 0087). Keyed by UPPERCASE code. Empty offline. */
+export async function fetchPromoStats(
+  businessId: string, days = 7,
+): Promise<Record<string, { redemptions: number; revenue: number }>> {
+  const out: Record<string, { redemptions: number; revenue: number }> = {};
+  if (!supabase) return out;
+  const { data, error } = await supabase.rpc('owner_promo_stats', { in_business: businessId, in_days: days });
+  if (error || !Array.isArray(data)) return out;
+  for (const r of data as Record<string, unknown>[]) {
+    if (r.code) out[String(r.code).toUpperCase()] = { redemptions: Number(r.redemptions ?? 0), revenue: Number(r.revenue ?? 0) };
+  }
+  return out;
+}
+
 /** Anti-inflation guard: VIEWS always count ("cada vista cuenta" — founder rule),
  *  but the customer ACTIONS (save/direction/call) dedupe per browser session so a
  *  repeat tap / re-render doesn't inflate. Fail-open if storage is unavailable.

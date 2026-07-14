@@ -14,7 +14,7 @@ export type TabKey =
   | 'insights' | 'stats' | 'listing' | 'photos' | 'hours' | 'related'
   | 'menu' | 'services' | 'bookings' | 'products' | 'fulfillment' | 'shipping' | 'drivers' | 'rental' | 'events'
   | 'customers' | 'orders' | 'messages' | 'reviews' | 'updates'
-  | 'payments' | 'staff' | 'jobs' | 'modules' | 'billing' | 'settings';
+  | 'promos' | 'payments' | 'staff' | 'jobs' | 'modules' | 'billing' | 'settings';
 
 export type Lx = (es: string, en: string) => string;
 
@@ -102,6 +102,8 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
   if (sells) {
     sellItems.push(it('orders', L('Pedidos', 'Orders'), ShoppingBag, { count: dc(isFree ? null : '12'), live: !isFree, lockedFree: true }));
     if (am.menu || am.products) sellItems.push(it('fulfillment', L('Entregas y envíos', 'Delivery & shipping'), Truck));
+    // Promociones — unified promo/discount hub across Menú + Tienda. Premium benefit.
+    if (am.menu || am.products) sellItems.push(it('promos', L('Promociones', 'Promotions'), Megaphone, { lockedFree: true }));
     sellItems.push(it('payments', L('Pagos', 'Payouts'), DollarSign, { lockedFree: true }));
   } else {
     sellItems.push(it('modules', L('Activar ventas', 'Enable selling'), ShoppingBag));
@@ -177,6 +179,7 @@ export function pageHead(tab: TabKey, ctx: PanelCtx) {
     reviews: [L('Reseñas', 'Reviews'), L('Responde y construye tu reputación.', 'Reply and build your reputation.')],
     updates: [L('Novedades', 'Updates'), L('Publica ofertas, eventos y avisos.', 'Post offers, events and news.')],
     payments: [L('Pagos', 'Payouts'), L('Depósitos, balance y método de pago.', 'Payouts, balance and payment method.')],
+    promos: [L('Promociones', 'Promotions'), L('Todas tus campañas de Menú y Tienda, en un solo lugar.', 'All your Menu & Shop campaigns in one place.')],
     staff: [L('Personal', 'Staff'), L('Equipo, roles y permisos.', 'Team, roles and permissions.')],
     jobs: [L('Empleos', 'Jobs'), L('Publica vacantes para la comunidad.', 'Post openings for the community.')],
     modules: [L('Configurar módulos', 'Module setup'), L('Activa solo lo que tu negocio necesita.', 'Turn on only what your business needs.')],
@@ -184,7 +187,7 @@ export function pageHead(tab: TabKey, ctx: PanelCtx) {
     settings: [L('Ajustes', 'Settings'), L('Perfil, seguridad, notificaciones e idioma.', 'Profile, security, notifications and language.')],
   };
   const ctaMap: Partial<Record<TabKey, string>> = {
-    listing: L('Guardar', 'Save'), photos: L('Subir', 'Upload'), menu: L('Agregar platillo', 'Add item'), services: L('Agregar servicio', 'Add service'), products: L('Agregar producto', 'Add product'), events: L('Crear evento', 'Create event'), rental: L('Agregar artículo', 'Add item'), updates: L('Nueva publicación', 'New post'), staff: L('Invitar', 'Invite'), reviews: L('Exportar', 'Export'), customers: L('Exportar', 'Export'), orders: L('Nuevo pedido', 'New order'), insights: L('Nuevo pedido', 'New order'), modules: L('Guardar', 'Save'), billing: L('Cambiar plan', 'Change plan'), settings: L('Guardar', 'Save'),
+    listing: L('Guardar', 'Save'), photos: L('Subir', 'Upload'), menu: L('Agregar platillo', 'Add item'), services: L('Agregar servicio', 'Add service'), products: L('Agregar producto', 'Add product'), events: L('Crear evento', 'Create event'), rental: L('Agregar artículo', 'Add item'), updates: L('Nueva publicación', 'New post'), staff: L('Invitar', 'Invite'), reviews: L('Exportar', 'Export'), customers: L('Exportar', 'Export'), orders: L('Nuevo pedido', 'New order'), insights: L('Nuevo pedido', 'New order'), modules: L('Guardar', 'Save'), billing: L('Cambiar plan', 'Change plan'), settings: L('Guardar', 'Save'), promos: L('Nueva campaña', 'New campaign'),
   };
   const [title, sub] = titles[tab];
   return { title, sub, cta: ctaMap[tab] ?? L('Nuevo', 'New'), hasGhost: ['insights', 'orders', 'customers'].includes(tab), ghost: L('Exportar', 'Export'), hasAccent: tab === 'insights', accent: L('Últimos 7 días', 'Last 7 days') };
