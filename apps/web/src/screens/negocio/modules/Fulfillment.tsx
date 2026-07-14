@@ -593,7 +593,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               <div className="mt-0.5 text-[10px] font-medium text-muted-2">{tips.mode === 'percent' ? L('Tres porcentajes que verá el cliente.', 'Three percentages the customer sees.') : L('Tres montos en dólares que verá el cliente.', 'Three dollar amounts the customer sees.')}</div>
               <div className="mt-2 flex gap-1.5">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="flex flex-1 items-center rounded-field border-[1.5px] border-lilac-line bg-white px-2.5 focus-within:border-primary">
+                  <div key={i} className="flex min-w-0 flex-1 items-center rounded-field border-[1.5px] border-lilac-line bg-white px-2.5 focus-within:border-primary">
                     {tips.mode === 'amount' && <span className="text-[12px] font-bold text-muted-2">$</span>}
                     <input value={String(tips.presets[i] ?? '')} inputMode="decimal"
                       onChange={(e) => { const v = Number(e.target.value.replace(/[^0-9.]/g, '')) || 0; setTips((t) => { const p = [...t.presets]; p[i] = v; return { ...t, presets: p, def: t.def === (t.presets[i] ?? -1) ? v : t.def }; }); }}
