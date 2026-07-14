@@ -642,7 +642,7 @@ export function CuentaScreen() {
                 <div className="mt-1 flex flex-col gap-1 border-t border-hair pt-2">
                   {f.subtotal != null && <div className="flex justify-between"><span>{L('Subtotal', 'Subtotal')}</span><span>{money(f.subtotal)}</span></div>}
                   {!!f.delivery_fee && <div className="flex justify-between"><span>{L('Entrega', 'Delivery')}</span><span>{money(f.delivery_fee)}</span></div>}
-                  {!!f.service_fee && <div className="flex justify-between"><span>{L('Servicio (5%)', 'Service (5%)')}</span><span>{money(f.service_fee)}</span></div>}
+                  {!!f.service_fee && <div className="flex justify-between"><span>{L('Servicio', 'Service')}</span><span>{money(f.service_fee)}</span></div>}
                   {!!f.tip && <div className="flex justify-between"><span>{L('Propina', 'Tip')}</span><span>{money(f.tip)}</span></div>}
                   <div className="flex justify-between text-[13.5px] font-extrabold text-ink"><span>{L('Total pagado', 'Total paid')}</span><span>{money(f.paid_total ?? o.total)}</span></div>
                 </div>

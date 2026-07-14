@@ -19,7 +19,7 @@ import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
 import { startMarketplaceCheckout } from '@/lib/stripe';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -446,6 +446,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [tipSel, setTipSel] = useState<number>(0);    // 0 = no tip
   const [tipCustom, setTipCustom] = useState('');     // dollars when "Otra"
   const [customTipOn, setCustomTipOn] = useState(false);
+  // Business's own promo code (server-validated via check_promo). We keep the %
+  // and recompute the discount off the live subtotal; the server re-validates.
+  const [promoInput, setPromoInput] = useState('');
+  const [promo, setPromo] = useState<{ code: string; percent: number; label: string } | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoErr, setPromoErr] = useState('');
   const [paying, setPaying] = useState(false);
   const addressStore = useAddresses();
   const chosenAddr = addressStore.addresses.find((a) => a.id === addrId)
@@ -470,7 +476,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const tipsEnabled = isDelivery && payOnline && !!tipCfg?.on && cartTotal >= (tipCfg?.minOrder ?? 0);
   const presetTip = tipCfg?.mode === 'amount' ? tipSel : +(cartTotal * tipSel / 100).toFixed(2);
   const tip = tipsEnabled ? (customTipOn ? Math.max(0, Math.min(500, parseFloat(tipCustom) || 0)) : presetTip) : 0;
-  const grandTotal = +(cartTotal + serviceFee + deliveryFee + tip).toFixed(2);
+  // The business's promo discount (its % off the goods) — recomputed off the live
+  // subtotal; the server re-validates the code at checkout. The business funds it.
+  const discount = promo ? Math.min(cartTotal, +(cartTotal * promo.percent / 100).toFixed(2)) : 0;
+  const grandTotal = +(cartTotal + serviceFee + deliveryFee + tip - discount).toFixed(2);
   const belowMin = isDelivery && cartTotal < (del?.min ?? 0);
 
   // Delivery-radius gate: when the owner set a radius (del.radius, miles) and a
@@ -506,6 +515,19 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     setTipCustom('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [b.slug, tipCfg?.def, tipCfg?.mode]);
+  // Clear any applied promo when switching businesses.
+  useEffect(() => { setPromo(null); setPromoInput(''); setPromoErr(''); }, [b.slug]);
+
+  const applyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code || promoBusy) return;
+    setPromoBusy(true); setPromoErr('');
+    const r = await checkPromo(b.slug, code, cartTotal);
+    setPromoBusy(false);
+    if (r.ok) { setPromo({ code: code.toUpperCase(), percent: r.percent, label: r.label }); setPromoErr(''); }
+    else { setPromo(null); setPromoErr(L('Código no válido para este pedido', 'Code not valid for this order')); }
+  };
+  const clearPromo = () => { setPromo(null); setPromoInput(''); setPromoErr(''); };
 
   // Route the current cart to Stripe (destination charge → seller's account minus
   // the To'Latino fee). The order is created by the webhook once payment lands.
@@ -527,6 +549,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       ...(isDelivery && chosenAddr ? { address: { formatted: chosenAddr.formatted, label: chosenAddr.label ?? undefined } } : {}),
       ...(isDelivery && instructions.trim() ? { instructions: instructions.trim() } : {}),
       ...(tip > 0 ? { tip } : {}),
+      ...(promo ? { promo: promo.code } : {}),
     });
     if (url) { window.location.href = url; return; }
     setPaying(false);
@@ -550,6 +573,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     const fulfillment: Record<string, unknown> = {
       payment: 'cash', subtotal: +cartTotal.toFixed(2), service_fee: 0, tip: 0,
       delivery_fee: isDelivery ? deliveryFee : 0, collect_total: grandTotal,
+      ...(discount > 0 && promo ? { promo: promo.code, discount: +discount.toFixed(2) } : {}),
       ...(isDelivery && chosenAddr
         ? { address: chosenAddr.formatted, address_label: chosenAddr.label ?? undefined, dispatch: 'unassigned', eta_range: del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min' }
         : {}),
@@ -2584,12 +2608,39 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   </>
                 )}
 
+                {/* código de promoción — del NEGOCIO (check_promo). El negocio lo
+                    crea en su panel; aquí el cliente lo canjea. */}
+                <div className="mt-3">
+                  {promo ? (
+                    <div className="flex items-center justify-between gap-2 rounded-field bg-green-bg px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="text-[12px] font-extrabold text-green-dark">{L('Código', 'Code')} {promo.code} · −{money(discount)}</div>
+                        {promo.label && <div className="truncate text-[10.5px] font-semibold text-green-dark/80">{promo.label}</div>}
+                      </div>
+                      <button onClick={clearPromo} className="flex-none cursor-pointer text-[11px] font-extrabold text-green-dark underline">{L('Quitar', 'Remove')}</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <input value={promoInput} onChange={(e) => { setPromoInput(e.target.value.toUpperCase().replace(/\s+/g, '')); setPromoErr(''); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') applyPromo(); }}
+                          placeholder={L('Código de promoción', 'Promo code')} maxLength={24}
+                          className="min-w-0 flex-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-extrabold uppercase text-ink outline-none placeholder:font-semibold placeholder:normal-case placeholder:text-muted focus:border-primary" />
+                        <button onClick={applyPromo} disabled={!promoInput.trim() || promoBusy}
+                          className="flex-none cursor-pointer rounded-field bg-lilac-2 px-4 py-2.5 text-[12.5px] font-extrabold text-primary-dark disabled:opacity-50">{promoBusy ? '…' : L('Aplicar', 'Apply')}</button>
+                      </div>
+                      {promoErr && <div className="mt-1 text-[11px] font-semibold text-pink-dark">{promoErr}</div>}
+                    </>
+                  )}
+                </div>
+
                 {/* desglose — coincide EXACTO con el cobro de Stripe (o efectivo) */}
                 <div className="mt-4 flex flex-col gap-1.5 border-t border-hair pt-3 text-[12.5px] font-semibold text-ink-2">
                   <div className="flex justify-between"><span>{L('Subtotal', 'Subtotal')}</span><span>{money(cartTotal)}</span></div>
                   {isDelivery && <div className="flex justify-between"><span>{L('Tarifa de entrega', 'Delivery fee')}</span><span>{money(deliveryFee)}</span></div>}
-                  {payOnline && <div className="flex justify-between"><span>{L('Tarifa de servicio (5%)', 'Service fee (5%)')}</span><span>{money(serviceFee)}</span></div>}
+                  {payOnline && <div className="flex justify-between"><span>{L('Tarifa de servicio', 'Service fee')}</span><span>{money(serviceFee)}</span></div>}
                   {tip > 0 && <div className="flex justify-between"><span>{L('Propina', 'Tip')}</span><span>{money(tip)}</span></div>}
+                  {discount > 0 && <div className="flex justify-between text-green-dark"><span>{L('Descuento', 'Discount')}{promo ? ` · ${promo.code}` : ''}</span><span>−{money(discount)}</span></div>}
                   <div className="flex justify-between text-[14px] font-extrabold text-ink"><span>{L('Total', 'Total')}</span><span>{money(grandTotal)}</span></div>
                   <div className="mt-1 text-[11px] font-semibold text-muted">
                     {payOnline
@@ -2719,7 +2770,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   {svcSel.deposit && payOnline && total > 0
                     ? <>
                         <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-ink">{money(total)}</span></div>
-                        <div className="mt-0.5 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio (5%)', 'Service fee (5%)')}</span><span className="font-extrabold text-ink">{money(+(total * 0.05).toFixed(2))}</span></div>
+                        <div className="mt-0.5 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span className="font-extrabold text-ink">{money(+(total * 0.05).toFixed(2))}</span></div>
                         <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas hoy', 'You pay today')}</span><span className="font-extrabold text-primary-dark">{money(+(total * 1.05).toFixed(2))}</span></div>
                       </>
                     : svcSel.deposit && <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-primary-dark">{money(total)}</span></div>}
@@ -2873,7 +2924,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable', 'Refundable deposit')}{payOnline && rentSubtotal(it) > 0 ? L(' · al recoger', ' · at pickup') : ''}{rentUnits > 1 ? ` · ${rentUnits}×` : ''}</span><span>{money(it.dep * rentUnits)}</span></div>
                 {payOnline && rentSubtotal(it) > 0 && (
                   <>
-                    <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio (5%)', 'Service fee (5%)')}</span><span>{money(+(rentSubtotal(it) * 0.05).toFixed(2))}</span></div>
+                    <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span>{money(+(rentSubtotal(it) * 0.05).toFixed(2))}</span></div>
                     <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
                       <span>{L('Pagas hoy', 'You pay today')}</span><span className="text-primary-dark">{money(+(rentSubtotal(it) * 1.05).toFixed(2))}</span>
                     </div>

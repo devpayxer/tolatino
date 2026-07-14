@@ -5,6 +5,30 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Carrito: tarifa de servicio sin % visible + promos del NEGOCIO (2026-07-14, migración 0086)
+
+**Tarifa de servicio:** se quitó el "(5%)" visible en todos lados (carrito, reserva,
+renta, historial en Mi cuenta) — el cliente no ve el porcentaje. La comisión sigue
+igual; solo se ocultó el número.
+
+**Promos = del negocio (ya no hay AMIGO10 de plataforma):** se eliminó el código
+hardcodeado de plataforma. Ahora **cada negocio crea sus propios códigos** en el
+panel (Menú → Promociones → promo de tipo "% descuento"), donde se agregó **Código
+(opcional)** + **Pedido mínimo**. Una promo `percent` **con código** se vuelve
+canjeable en el carrito; sin código, sigue siendo solo distintivo (badge).
+- **Carrito:** input "Código de promoción" + "Aplicar" → valida server-side con la
+  RPC **`check_promo`** (migración 0086) y muestra el descuento en el desglose. El
+  código se guarda en el pedido (`fulfillment.promo`).
+- **Server (marketplace-checkout):** valida el código contra `menu_config.promos`
+  del negocio (activa + código + mínimo) y **el NEGOCIO absorbe el descuento** — la
+  comisión de plataforma (15%) NO se reduce; baja el monto que paga el cliente y por
+  ende el transfer al vendedor. Nunca confía en un monto del cliente.
+- Verificado E2E contra la función: BIENVENIDO10 (10%, mín $15) en 2× ítems → cobra
+  −$2.80, comisión intacta ($4.20); código falso / bajo el mínimo → ignorado.
+  `data/fixtures.ts` + `lib/menuConfig.ts` (tipo `Promo` gana `code`+`minOrder`),
+  `lib/live.tsx` (`checkPromo`). (El Sabor quedó sin promo sembrada — el dueño las
+  crea desde su panel.)
+
 ## Propina del repartidor = política PROPIA de cada negocio (2026-07-14, migración 0085)
 
 El carrito de comida ya no trae propinas fijas: **cada dueño configura su propia

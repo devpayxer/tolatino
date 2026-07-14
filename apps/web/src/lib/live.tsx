@@ -109,6 +109,20 @@ export async function checkDeliveryRange(
   };
 }
 
+/** Validate a business's own promo CODE at the cart (check_promo, migration 0086).
+ *  Returns the % + preview discount for a subtotal, or a not-ok result. The server
+ *  re-validates the same way at checkout, so this is only for the live preview. */
+export async function checkPromo(
+  slug: string, code: string, subtotal: number,
+): Promise<{ ok: boolean; percent: number; discount: number; label: string }> {
+  const miss = { ok: false, percent: 0, discount: 0, label: '' };
+  if (!supabase || !code.trim()) return miss;
+  const { data, error } = await supabase.rpc('check_promo', { in_slug: slug, in_code: code.trim(), in_subtotal: subtotal });
+  if (error || !Array.isArray(data) || !data[0]) return miss;
+  const r = data[0] as Record<string, unknown>;
+  return { ok: r.ok === true, percent: Number(r.percent ?? 0), discount: Number(r.discount ?? 0), label: String(r.label ?? '') };
+}
+
 /** Anti-inflation guard: VIEWS always count ("cada vista cuenta" — founder rule),
  *  but the customer ACTIONS (save/direction/call) dedupe per browser session so a
  *  repeat tap / re-render doesn't inflate. Fail-open if storage is unavailable.

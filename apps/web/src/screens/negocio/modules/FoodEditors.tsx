@@ -367,6 +367,8 @@ export function PromoEditor({
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [value, setValue] = useState('');
+  const [code, setCode] = useState('');        // redeemable checkout code (percent promos)
+  const [minOrder, setMinOrder] = useState(''); // subtotal required to use the code
   const [tStart, setTStart] = useState('16:00');
   const [tEnd, setTEnd] = useState('18:00');
   const [days, setDays] = useState<number[]>([1, 1, 1, 1, 1, 1, 1]);
@@ -379,6 +381,7 @@ export function PromoEditor({
     setConfirming(false);
     setName(initial?.es ?? ''); setDesc(initial?.descEs ?? '');
     setValue(initial?.value != null ? String(initial.value) : '');
+    setCode(initial?.code ?? ''); setMinOrder(initial?.minOrder != null ? String(initial.minOrder) : '');
     setTStart(initial?.timeStart != null ? hourToTime(initial.timeStart) : '16:00');
     setTEnd(initial?.timeEnd != null ? hourToTime(initial.timeEnd) : '18:00');
     setDays(initial?.days ? [...initial.days] : [1, 1, 1, 1, 1, 1, 1]);
@@ -395,6 +398,8 @@ export function PromoEditor({
       es: name.trim(), en: initial?.en && initial.es === name.trim() ? initial.en : name.trim(),
       descEs: desc.trim(), descEn: initial?.descEn && initial.descEs === desc.trim() ? initial.descEn : desc.trim(),
       value: needsValue ? Number(value) || undefined : undefined,
+      code: type === 'percent' && code.trim() ? code.trim().toUpperCase().replace(/\s+/g, '') : undefined,
+      minOrder: type === 'percent' && Number(minOrder) > 0 ? Number(minOrder) : undefined,
       timeStart: type === 'happy' ? timeToHour(tStart) : undefined,
       timeEnd: type === 'happy' ? timeToHour(tEnd) : undefined,
       days: days.every(Boolean) ? undefined : days,
@@ -414,12 +419,35 @@ export function PromoEditor({
         <div><div className={fieldLabel}>{L('Nombre', 'Name')} *</div><input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Martes 2x1', 'e.g. Taco Tuesday')} className={inputCls} /></div>
         <div><div className={fieldLabel}>{L('Descripción corta', 'Short description')}</div><input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={L('Lo que ve el cliente', 'What the customer sees')} className={inputCls} /></div>
         {type === 'percent' && (
+          <>
           <div><div className={fieldLabel}>{L('Descuento (%)', 'Discount (%)')} *</div>
             <div className="flex w-[130px] items-center rounded-field border-[1.5px] border-lilac-line bg-white px-3 focus-within:border-primary">
               <input value={value} onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ''))} placeholder="20" inputMode="numeric" className="min-w-0 flex-1 border-none bg-transparent py-2.5 text-[13px] font-semibold text-ink outline-none" />
               <span className="text-[13px] font-bold text-muted-2">%</span>
             </div>
           </div>
+          {/* Redeemable code: with a code, the customer types it in the cart to get
+              this % off (the business absorbs it). Without a code it stays a
+              display-only badge. */}
+          <div className="flex gap-3">
+            <div className="flex-1"><div className={fieldLabel}>{L('Código (opcional)', 'Code (optional)')}</div>
+              <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s+/g, ''))} placeholder={L('Ej. BIENVENIDO10', 'e.g. WELCOME10')} maxLength={24} className={`${inputCls} uppercase`} />
+            </div>
+            <div className="w-[120px] flex-none"><div className={fieldLabel}>{L('Pedido mínimo', 'Minimum')}</div>
+              <div className="flex items-center rounded-field border-[1.5px] border-lilac-line bg-white px-3 focus-within:border-primary">
+                <span className="text-[13px] font-bold text-muted-2">$</span>
+                <input value={minOrder} onChange={(e) => setMinOrder(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" inputMode="decimal" className="min-w-0 flex-1 border-none bg-transparent px-1.5 py-2.5 text-[13px] font-semibold text-ink outline-none" />
+              </div>
+            </div>
+          </div>
+          <div className="-mt-1 text-[10.5px] font-medium leading-snug text-muted-2">
+            {code.trim()
+              ? L('El cliente escribe este código en el carrito para recibir el descuento. Tú absorbes la promoción; To’Latino no cobra nada de ella.',
+                  'The customer types this code in the cart to get the discount. You fund the promo; To’Latino takes nothing from it.')
+              : L('Sin código = solo se muestra como distintivo (no se canjea en el carrito).',
+                  'No code = it only shows as a badge (not redeemable at checkout).')}
+          </div>
+          </>
         )}
         {type === 'combo' && (
           <div><div className={fieldLabel}>{L('Precio del combo', 'Combo price')} *</div>

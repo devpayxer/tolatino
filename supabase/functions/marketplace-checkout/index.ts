@@ -200,8 +200,20 @@ Deno.serve(async (req) => {
       const tCfg = (settings as Record<string, unknown>).tips as Record<string, unknown> | undefined;
       const tipsOn = tCfg?.on === true && subtotal >= (Number(tCfg?.minOrder ?? 0) || 0);
       tip = tipsOn ? Math.max(0, Math.min(500, Number(body?.tip ?? 0) || 0)) : 0;
-      // AMIGO10 promo: 10% off the goods, capped at $5 (absorbed by the platform).
-      if (String(body?.promo ?? '').toUpperCase() === 'AMIGO10') discount = Math.min(5, Math.round(subtotal * 0.1 * 100) / 100);
+      // The BUSINESS's own promo code (menu_config.promos, already loaded above):
+      // an active `percent` promo whose code matches and whose minOrder the order
+      // meets. The business funds it (see the fee math — the platform fee is NOT
+      // reduced). Never trust a client-supplied amount; recompute from the config.
+      const code = String(body?.promo ?? '').trim().toUpperCase();
+      if (code) {
+        const promos = Array.isArray((menuRow?.config as Record<string, unknown>)?.promos)
+          ? ((menuRow!.config as Record<string, unknown>).promos as Record<string, unknown>[]) : [];
+        const hit = promos.find((p) => p?.status === 'active' && p?.type === 'percent'
+          && String(p?.code ?? '').trim().toUpperCase() === code
+          && Number(p?.value ?? 0) > 0
+          && subtotal >= (Number(p?.minOrder ?? 0) || 0));
+        if (hit) discount = Math.min(subtotal, Math.round(Number(hit.value) * subtotal) / 100);
+      }
 
       const addr = (body?.address ?? null) as Record<string, unknown> | null;
       const prep = Number(((settings as Record<string, Record<string, unknown>>)?.delivery_ops?.prepTime as string) ?? '20') || 20;
@@ -310,7 +322,10 @@ Deno.serve(async (req) => {
     const extrasCents = Math.round(deliveryFee * 100) + Math.round(tip * 100);
     const discountCents = Math.round(discount * 100);
     const amountCents = Math.round(subtotalCents * 1.05) + extrasCents - discountCents;
-    const feeCents = Math.max(0, Math.round(subtotalCents * 0.15) - discountCents); // platform absorbs the promo
+    // The platform keeps its full 15%; the BUSINESS funds its own promo (the
+    // discount lowers what the buyer pays → lowers the seller's transfer). Clamp
+    // the fee to the charge so the seller's transfer can never go negative.
+    const feeCents = Math.min(Math.round(subtotalCents * 0.15), Math.max(0, amountCents));
     if (amountCents < 50) return json({ error: 'amount too low' }, 400); // Stripe USD minimum
 
     // Stage the purchase (service role → bypasses RLS).

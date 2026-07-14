@@ -56,6 +56,11 @@ export type Promo = {
   days?: number[]; // 7 flags Monday-first; undefined = every day
   status: PromoStatus;
   startDate?: string; // 'YYYY-MM-DD' when scheduled
+  // A `percent` promo with a `code` is REDEEMABLE at checkout: the customer types
+  // the code in the cart and the business gives that % off (the business absorbs
+  // it — To'Latino never funds a promo). `minOrder` gates it by subtotal.
+  code?: string;
+  minOrder?: number;
 };
 
 export type MenuAutomation = { auto86: boolean; notifyLow: boolean; resetDaily: boolean; backorders: boolean };
