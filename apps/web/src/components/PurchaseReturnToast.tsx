@@ -13,6 +13,7 @@ import { IconCheck as Check, IconChevronRight as ChevronRight, IconClock as Cloc
 import { useLang } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useMyActivity } from '@/lib/myActivity';
+import { clearCart } from '@/lib/cartStore';
 import { Overlay, PrimaryBtn } from '@/components/ui';
 
 type PendingRow = {
@@ -74,6 +75,10 @@ export function PurchaseReturnToast() {
         setConfirming(false);
         setRow(r);
         act.refresh();
+        // A paid+fulfilled online order is done → drop that business's saved cart
+        // so the (now-ordered) items don't reappear on the next visit. Refunded /
+        // failed keeps the cart so the buyer can retry.
+        if (r.kind === 'order' && r.status === 'fulfilled' && r.ref) clearCart(r.ref);
         return;
       }
       if (tries >= 25) {

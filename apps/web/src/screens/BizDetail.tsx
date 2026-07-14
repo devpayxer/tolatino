@@ -18,6 +18,7 @@ import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge }
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
+import { loadCart, saveCart } from '@/lib/cartStore';
 import { startMarketplaceCheckout } from '@/lib/stripe';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
@@ -175,10 +176,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Real menu (business_items + menu_config, migration 0045). Null → the Menú
   // tab keeps the sample fixtures so the prototype stays populated.
   const [realMenu, setRealMenu] = useState<PublicMenu | null>(null);
+  const [menuFetched, setMenuFetched] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    setRealMenu(null);
-    fetchBusinessMenu(b.slug).then((m) => { if (!cancelled) setRealMenu(m); });
+    setRealMenu(null); setMenuFetched(false);
+    fetchBusinessMenu(b.slug).then((m) => { if (!cancelled) { setRealMenu(m); setMenuFetched(true); } });
     return () => { cancelled = true; };
   }, [b.slug]);
   const menuCats = realMenu?.cats ?? MENU;
@@ -232,10 +234,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Null → the Tienda tab keeps the sample fixtures. selling off → display-only
   // (products + prices, no cart). Cat keys are prefixed `sh:` (from the RPC).
   const [realShop, setRealShop] = useState<PublicShop | null>(null);
+  const [shopFetched, setShopFetched] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    setRealShop(null);
-    fetchBusinessProducts(b.slug).then((s) => { if (!cancelled) setRealShop(s); });
+    setRealShop(null); setShopFetched(false);
+    fetchBusinessProducts(b.slug).then((s) => { if (!cancelled) { setRealShop(s); setShopFetched(true); } });
     return () => { cancelled = true; };
   }, [b.slug]);
   const shopCats = realShop?.cats ?? SHOP;
@@ -624,6 +627,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     const { error } = await act.placeOrder(b.slug, items, grandTotal, isDelivery ? 'delivery' : 'pickup', fulfillment);
     setPaying(false);
     if (error) { flash(L('No se pudo enviar el pedido', 'Could not place order')); return; }
+    setCart({}); // order placed → empty the cart (clears its saved copy too)
     setCartDone(true);
   };
 
@@ -758,6 +762,57 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     }
     incLine(k);
   };
+
+  // --- Cart persistence (localStorage, 24h TTL) ---------------------------
+  // Keep the in-progress cart across leaving/returning to the listing (like
+  // DoorDash/Uber Eats). On return we REVALIDATE against the live menu/shop so a
+  // sold-out or removed item can't linger: an item that's gone from the menu is
+  // dropped, an out-of-stock product is dropped, and a qty above what's left is
+  // capped. Expires 24h after the last edit.
+  const restoredRef = useRef<string | null>(null);
+  const revalidateCart = (saved: Record<string, CartLine>): { cart: Record<string, CartLine>; changed: boolean } => {
+    const out: Record<string, CartLine> = {};
+    let changed = false;
+    for (const [k, line] of Object.entries(saved)) {
+      const owner = lineOwner(k);
+      if (!owner) { changed = true; continue; }                       // item no longer on the menu → drop
+      const groups = groupsFor(owner.catKey, owner.item);
+      // Per-variant (SKU) stock if tracked, else product-level stock; menu items
+      // that don't track stock return null → always available (86'd items are
+      // already excluded from the fetched menu, so lineOwner drops them above).
+      let avail: number | null = null;
+      if (owner.item.variantStock) {
+        const singleSel: Record<string, number> = {};
+        for (const s of line.sel ?? []) { const g = groups.find((gg) => gg.id === s.g); if (g?.type === 'single') singleSel[s.g] = s.o; }
+        avail = variantStockAt(owner.item, groups, singleSel);
+      }
+      if (avail == null) avail = shopStock(owner.catKey, owner.item);
+      if (avail != null) {
+        if (avail <= 0) { changed = true; continue; }                 // sold out → drop
+        if (line.qty > avail) { out[k] = { ...line, qty: avail }; changed = true; continue; } // cap to what's left
+      }
+      out[k] = line;
+    }
+    return { cart: out, changed };
+  };
+  // Restore ONCE per business, after the menu + shop fetches settle (so we
+  // revalidate against real data, not the fixture fallback).
+  useEffect(() => {
+    if (!menuFetched || !shopFetched || restoredRef.current === b.slug) return;
+    restoredRef.current = b.slug;
+    const saved = loadCart<CartLine>(b.slug);
+    if (!saved) return;
+    const { cart: fresh, changed } = revalidateCart(saved);
+    if (Object.keys(fresh).length > 0) setCart(fresh);
+    if (changed) flash(L('Actualizamos tu carrito: algunos artículos ya no están disponibles', 'We updated your cart: some items are no longer available'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [b.slug, menuFetched, shopFetched]);
+  // Persist on every change (re-stamps the 24h TTL). Guarded so we never clobber a
+  // saved cart with the empty initial state before the restore above has run.
+  useEffect(() => {
+    if (restoredRef.current !== b.slug) return;
+    saveCart(b.slug, cart);
+  }, [cart, b.slug]);
 
   // --- Real customer create-actions (myActivity) -------------------------
   // Every create inserts as the signed-in customer; guests are routed to

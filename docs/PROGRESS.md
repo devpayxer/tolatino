@@ -5,6 +5,26 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Carrito: persiste al salir/volver (24h TTL + revalida stock) (2026-07-14)
+
+Antes el carrito vivía solo en memoria: salir del listing y volver lo borraba.
+Ahora persiste por negocio (`localStorage`, `lib/cartStore.ts`) igual que DoorDash/
+Uber Eats:
+- **Guarda** el carrito en cada cambio bajo `tl:cart:<slug>` con `savedAt`; **TTL
+  24h** desde la última edición → después desaparece solo.
+- **Restaura una vez** por negocio, y solo **después** de que carguen menú+tienda
+  (`menuFetched`/`shopFetched`), para revalidar contra datos reales, no fixtures.
+- **Revalida stock al restaurar** (`revalidateCart`): platillo que ya no está en
+  el menú → se quita; producto agotado → se quita; cantidad mayor a lo que queda →
+  se ajusta. Si algo cambió, avisa "Actualizamos tu carrito…".
+- **Se limpia al completar**: pedido en efectivo (`setCart({})`) y pedido pagado en
+  línea (`PurchaseReturnToast` borra `tl:cart:<ref>` cuando la compra queda
+  `fulfilled`), para que lo ya ordenado no reaparezca. Un pago cancelado/reembolsado
+  conserva el carrito para reintentar.
+Local (sirve a invitados y usuarios); nada toca la DB hasta el checkout. Verificado
+en navegador real: restaura tras salir a otra sección y volver, expira a las 25h, y
+descarta una línea de un producto inexistente.
+
 ## Carrito: instrucciones de entrega estilo DoorDash (2026-07-14)
 
 El campo libre "Instrucciones: timbre, apto…" del carrito se reemplazó por un
