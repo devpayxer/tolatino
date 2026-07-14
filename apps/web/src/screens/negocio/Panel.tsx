@@ -179,7 +179,17 @@ export function PanelScreen() {
     () => ({
       L, es: L('x', 'y') === 'x', tier, rubro, ci, isFree, isPremium, mods, photoCount,
       isReal: !!real, reviewsCount: real ? (real.reviews_count ?? 0) : null,
-      go: (t) => { setTab(t); setDrawer(false); },
+      // A nav click clears the module sub-tab param (?sub=) synchronously — BEFORE
+      // the target module mounts and reads it — so a sub-tab from the previous module
+      // never leaks in (and re-clicking a module returns to its default sub-tab).
+      // Refresh/back keep ?sub (they don't go through here → deep-link stays intact).
+      go: (t) => {
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          if (url.searchParams.has('sub')) { url.searchParams.delete('sub'); window.history.replaceState(window.history.state, '', url.toString()); }
+        }
+        setTab(t); setDrawer(false);
+      },
     }),
     [L, tier, rubro, ci, isFree, isPremium, mods, photoCount, real],
   );

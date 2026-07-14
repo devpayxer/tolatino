@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconCheck as Check, IconChevronRight as ChevronRight, IconClock as Clock, IconCurrencyDollar as DollarSign, IconDownload as Download, IconFlag as Flag, IconGift as Gift, IconHeart as Heart, IconMail as Mail, IconPhone as Phone, IconRefresh as RefreshCw, IconSearch as Search, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconStar as Star, IconTruck as Truck, IconUserPlus as UserPlus, IconUsers as Users, IconCircleX as XCircle, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useUrlTab } from '@/lib/urlView';
 import { supabase } from '@/lib/supabase';
 import { Overlay, OverlayTitle, Switch } from '@/components/ui';
 import type { OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
@@ -282,7 +283,8 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---- state ----------------------------------------------------------------
   const [mode, setMode] = useState<Mode>(initialMode);
   const [query, setQuery] = useState('');
-  const [seg, setSeg] = useState<Seg>('all');
+  // Customer segment mirrored to ?sub= (refresh-safe; Panel clears it on switch).
+  const [seg, setSeg] = useUrlTab<Seg>('sub', 'all', (v) => ['all', 'new', 'regulars', 'vip', 'risk'].includes(v));
   // Loyalty config persists in businesses.settings.loyalty (real). Synced from the
   // active business on load (effect below); toggling persists via admin.update.
   const savedLoyalty = (((real?.settings as Record<string, unknown> | null)?.loyalty) ?? null) as { enabled?: boolean; rate?: number; rewards?: Record<string, boolean> } | null;

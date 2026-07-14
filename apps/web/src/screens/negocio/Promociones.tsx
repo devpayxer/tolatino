@@ -14,6 +14,7 @@ import {
   IconDiscount2, IconSpeakerphone as Megaphone, IconPlus, IconTrash, IconCheck,
 } from '@tabler/icons-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useUrlTab } from '@/lib/urlView';
 import { fetchPromoStats } from '@/lib/live';
 import { type PanelCtx } from '@/screens/negocio/tabs';
 import {
@@ -54,7 +55,8 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
   const [cfgR, setCfgR] = useState<RentalConfig>(defaultRentalConfig());
   const [cfgP, setCfgP] = useState<ProductConfig>(defaultProductConfig());
   const [stats, setStats] = useState<Record<string, { redemptions: number; revenue: number }>>({});
-  const [filter, setFilter] = useState<'all' | Scope | 'codes'>('all');
+  // Filter mirrored to ?sub= (refresh-safe; Panel clears it on module switch).
+  const [filter, setFilter] = useUrlTab<'all' | Scope | 'codes'>('sub', 'all', (v) => ['all', 'menu', 'service', 'rental', 'shop', 'codes'].includes(v));
   const [toast, setToast] = useState('');
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 2200); };
   const [sheet, setSheet] = useState<{ open: boolean; scope: Scope; edit: Camp | null }>({ open: false, scope: 'menu', edit: null });

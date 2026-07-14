@@ -25,6 +25,7 @@ import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useUrlTab } from '@/lib/urlView';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { formatPhone } from '@/lib/phone';
@@ -227,7 +228,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   };
 
   // ── ui state ────────────────────────────────────────────────────────────────
-  const [mode, setMode] = useState<'items' | 'ops'>('items');
+  // Primary split (Artículos / Operación) mirrored to ?sub= (refresh-safe).
+  const [mode, setMode] = useUrlTab<'items' | 'ops'>('sub', 'items', (v) => ['items', 'ops'].includes(v));
   const [itemSub, setItemSub] = useState<'catalog' | 'cats' | 'addons' | 'policies' | 'pricing'>('catalog');
   const [opSub, setOpSub] = useState<'requests' | 'calendar' | 'deposits' | 'damage'>('requests');
   const [openId, setOpenId] = useState<number | null>(null);

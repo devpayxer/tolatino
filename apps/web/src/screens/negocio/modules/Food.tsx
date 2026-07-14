@@ -27,6 +27,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useUrlTab } from '@/lib/urlView';
 import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 import {
@@ -228,7 +229,9 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setItems((xs) => { const next = xs.map((i) => (i.id === id ? { ...i, ...p } : i)); persistPatch(next.find((i) => i.id === id)); return next; });
 
   // ── ui state ────────────────────────────────────────────────────────────────
-  const [subtab, setSubtab] = useState<'items' | 'categories' | 'mods' | 'schedules' | 'promos' | 'allergens' | 'stock'>('items');
+  // Sub-tab mirrored to ?sub= so a refresh keeps you on the same section (Panel
+  // clears ?sub when you switch modules; default 'items' omits the param).
+  const [subtab, setSubtab] = useUrlTab<'items' | 'categories' | 'mods' | 'schedules' | 'promos' | 'allergens' | 'stock'>('sub', 'items', (v) => ['items', 'categories', 'mods', 'schedules', 'promos', 'allergens', 'stock'].includes(v));
   const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
   const [cat, setCat] = useState<string>('all');
   const [query, setQuery] = useState('');

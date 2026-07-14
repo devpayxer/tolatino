@@ -27,6 +27,7 @@ import { Switch } from '@/components/ui';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useUrlTab } from '@/lib/urlView';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
@@ -164,7 +165,8 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   const optUsedBy = (optId: string) => products.filter((p) => p.options.includes(optId)).length;
 
   // ── ui state ────────────────────────────────────────────────────────────────
-  const [sub, setSub] = useState<'catalog' | 'cats' | 'variants' | 'collections' | 'discounts' | 'inventory'>('catalog');
+  // Sub-tab mirrored to ?sub= (refresh-safe; Panel clears it on module switch).
+  const [sub, setSub] = useUrlTab<'catalog' | 'cats' | 'variants' | 'collections' | 'discounts' | 'inventory'>('sub', 'catalog', (v) => ['catalog', 'cats', 'variants', 'collections', 'discounts', 'inventory'].includes(v));
   const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [wizStep, setWizStep] = useState(0);

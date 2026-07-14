@@ -24,6 +24,7 @@ import { Switch } from '@/components/ui';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useUrlTab } from '@/lib/urlView';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
@@ -188,7 +189,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ── ui state ────────────────────────────────────────────────────────────────
   const [mode, setMode] = useState<'services' | 'bookings'>(tab === 'bookings' ? 'bookings' : 'services');
-  const [svcSub, setSvcSub] = useState<'catalog' | 'cats' | 'addons'>('catalog');
+  // Services sub-tab mirrored to ?sub= (refresh-safe; Panel clears it on switch).
+  const [svcSub, setSvcSub] = useUrlTab<'catalog' | 'cats' | 'addons'>('sub', 'catalog', (v) => ['catalog', 'cats', 'addons'].includes(v));
   const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [wizStep, setWizStep] = useState(0);

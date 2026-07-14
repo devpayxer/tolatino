@@ -1339,12 +1339,16 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
   to a slug fetch; posts need an equivalent `post_by_id` RPC (mirror `posts_near`'s
   projection for one id) + a `fetchPostById` fallback in Comunidad's resolve. Low
   priority (posts are hyperlocal by design).
-- [ ] **Deep dashboard module sub-tabs not in the URL.** Panel's top-level tab is in
-  `?t=`, but the sub-navigation INSIDE modules (Food items/categories/mods…,
-  Products, Services, Rental, Events manage/wizard, Customers detail, Messages
-  selected conversation) is still React-only, so a refresh drops you to each
-  module's default sub-tab. Owner-only + deeply nested; add `?t=menu&sub=items`-style
-  sub-params if owners ask.
+- [x] **Dashboard module sub-tabs in the URL (2026-07-14).** Each main module's
+  primary sub-tab now mirrors to `?t=<module>&sub=<subtab>` (refresh-safe; Panel's
+  `go` clears `?sub` on module switch so it never leaks): Food `subtab`, Products
+  `sub`, Services `svcSub`, Rental `mode`, Events `listTab`, Customers `seg`, Hours
+  `mode`, Promociones `filter`. Still React-only (deliberately, deeper/ephemeral):
+  the create/edit **wizards** (`wizStep`, `view:'wizard'`), the per-record **editor
+  sheets** (`editingId`, `selCust`/`selOrder`, `manageId`, Rental `openId`),
+  Messages' selected conversation (`activeId`), and the secondary filters below the
+  primary sub-tab (Services `bookFilter`, Rental `itemSub`/`opSub`). Add these
+  case-by-case only if owners ask.
 - Intentionally NOT URL-backed: the publish (`BizOnboarding`) and auth
   (`Onboarding`) **wizards** — steps depend on prior-step data, so deep-linking mid-
   flow would render a broken/empty step. Leave ephemeral.

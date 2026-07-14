@@ -5,6 +5,22 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Rutas: sub-tabs de los módulos del dashboard en la URL (2026-07-14)
+
+Segundo pase del arreglo de rutas: el sub-tab primario de cada módulo del panel se
+refleja en `?t=<módulo>&sub=<subtab>` con el mismo `useUrlTab`, así refrescar te
+deja en el mismo sub-tab (antes caías al sub-tab por defecto). Panel `go()` **borra
+`?sub` de forma síncrona** al cambiar de módulo (antes de que monte el nuevo), para
+que un sub-tab no se filtre entre módulos; refrescar/atrás conservan `?sub`.
+Aplicado a: **Menú** (`subtab`), **Tienda** (`sub`), **Servicios** (`svcSub`),
+**Renta** (`mode` Artículos/Operación), **Eventos** (`listTab`), **Directorio**
+(`seg`), **Horario** (`mode` semanal/festivos), **Promociones** (`filter`).
+Verificado en navegador real: Menú → Categorías → `?t=menu&sub=categories` →
+refrescar queda en Categorías → cambiar de módulo limpia `?sub` → volver a Menú
+abre en el sub-tab por defecto. Quedan fuera (efímeros/anidados): wizards de crear/
+editar, hojas de edición por registro, conversación activa de Mensajes, y los
+filtros secundarios — ver LAUNCH-CHECKLIST.
+
 ## Rutas en la URL — ahora en TODA la plataforma (hook `useUrlView`) (2026-07-14)
 
 Se generalizó el arreglo de rutas a todas las pantallas con un hook reutilizable

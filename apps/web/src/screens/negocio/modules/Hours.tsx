@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconCalendar as CalendarDays, IconClock as Clock, IconLoader2 as Loader2, IconLock as Lock, IconPlus as Plus, IconBuildingStore as Store, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useUrlTab } from '@/lib/urlView';
 import { HoursEditor, defaultWeek } from '@/components/HoursEditor';
 import { fmtLong, type HoursException, type WeekHours } from '@/lib/hours';
 import type { PanelCtx } from '@/screens/negocio/tabs';
@@ -31,7 +32,8 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
   const router = useRouter();
   const real = admin.active;
 
-  const [mode, setMode] = useState<'weekly' | 'holidays'>('weekly');
+  // Weekly / holidays toggle mirrored to ?sub= (refresh-safe).
+  const [mode, setMode] = useUrlTab<'weekly' | 'holidays'>('sub', 'weekly', (v) => ['weekly', 'holidays'].includes(v));
   const [week, setWeek] = useState<WeekHours>(defaultWeek());
   const [exceptions, setExceptions] = useState<HoursException[]>([]);
   const [saving, setSaving] = useState(false);

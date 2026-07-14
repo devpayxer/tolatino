@@ -14,6 +14,7 @@ import { IconCheck as Check, IconCurrencyDollar as DollarSign, IconPhotoPlus as 
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { useUrlTab } from '@/lib/urlView';
 import { useAuth } from '@/lib/auth';
 import { useApp } from '@/lib/state';
 import { supabase } from '@/lib/supabase';
@@ -90,7 +91,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- state ----------
   const [view, setView] = useState<View>('list');
-  const [listTab, setListTab] = useState<ListTab>('upcoming');
+  // Events list sub-tab mirrored to ?sub= (refresh-safe; Panel clears on switch).
+  const [listTab, setListTab] = useUrlTab<ListTab>('sub', 'upcoming', (v) => ['upcoming', 'drafts', 'past', 'recurring', 'promoters'].includes(v));
   const [manageTab, setManageTab] = useState<ManageTab>('overview');
   const [manageId, setManageId] = useState(1);
   const [checkedIn, setCheckedIn] = useState<Record<string, boolean>>({});
