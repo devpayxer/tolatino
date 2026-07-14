@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
+import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -34,6 +34,21 @@ import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
 type RentMode = 'day' | 'hour';
+
+// Delivery-instruction presets (DoorDash-style): one dropoff preference + common
+// detail toggles. Keys are stable; labels bilingual. The cart composes the
+// selection + a free-text note into ONE `fulfillment.instructions` string.
+const DROPOFF_OPTS = [
+  { key: 'door', es: 'En la puerta', en: 'At the door', Icon: Home },
+  { key: 'hand', es: 'En mano', en: 'Hand it to me', Icon: HandStop },
+  { key: 'desk', es: 'En recepción', en: 'Front desk', Icon: Building },
+] as const;
+const INS_DETAILS = [
+  { key: 'ring', es: 'Toca el timbre', en: 'Ring the bell' },
+  { key: 'noring', es: 'No toques el timbre', en: "Don't ring the bell" },
+  { key: 'call', es: 'Llámame al llegar', en: 'Call on arrival' },
+  { key: 'dog', es: 'Cuidado con el perro', en: 'Beware of dog' },
+] as const;
 // Rental-calendar date helpers (local-day math on yyyy-mm-dd strings).
 const isoDay = (y: number, m: number, d: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 const parseISO = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -444,7 +459,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const isDelivery = deliveryAvailable && orderChannel === 'delivery';
   const [cartView, setCartView] = useState<'cart' | 'address'>('cart');
   const [addrId, setAddrId] = useState<string | null>(null);
+  // Delivery instructions — DoorDash-style: a dropoff preference (single) + common
+  // detail chips (multi) + a free-text note. All three compose into ONE readable
+  // string sent as `fulfillment.instructions` (no backend change). `instructions`
+  // holds only the custom note.
+  const [dropoff, setDropoff] = useState<'door' | 'hand' | 'desk'>('door');
+  const [insDetails, setInsDetails] = useState<string[]>([]);
   const [instructions, setInstructions] = useState('');
+  const toggleDetail = (k: string) => setInsDetails((l) => (l.includes(k) ? l.filter((x) => x !== k) : [...l, k]));
   // Driver-tip policy is the BUSINESS's own (del.tips) — opt-in, presets + mode set
   // by the owner. tipSel holds the selected preset VALUE (a % or a $ per the mode).
   const tipCfg = del?.tips;
@@ -537,6 +559,18 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   };
   const clearPromo = () => { setPromo(null); setPromoInput(''); setPromoErr(''); };
 
+  // Compose the delivery-instruction picks into ONE readable string for the driver
+  // (dropoff preference · detail chips · free note), in the customer's language.
+  // Always carries the dropoff preference (default "En la puerta"), like DoorDash.
+  const composeInstructions = () => {
+    const d = DROPOFF_OPTS.find((o) => o.key === dropoff);
+    return [
+      d ? L(d.es, d.en) : '',
+      ...INS_DETAILS.filter((x) => insDetails.includes(x.key)).map((x) => L(x.es, x.en)),
+      instructions.trim(),
+    ].filter(Boolean).join(' · ').slice(0, 300);
+  };
+
   // Route the current cart to Stripe (destination charge → seller's account minus
   // the To'Latino fee). The order is created by the webhook once payment lands.
   const payCart = async () => {
@@ -555,7 +589,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       kind: 'order', slug: b.slug, items,
       channel: isDelivery ? 'delivery' : 'pickup',
       ...(isDelivery && chosenAddr ? { address: { formatted: chosenAddr.formatted, label: chosenAddr.label ?? undefined } } : {}),
-      ...(isDelivery && instructions.trim() ? { instructions: instructions.trim() } : {}),
+      ...(isDelivery ? { instructions: composeInstructions() } : {}),
       ...(tip > 0 ? { tip } : {}),
       ...(promo ? { promo: promo.code } : {}),
     });
@@ -585,7 +619,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       ...(isDelivery && chosenAddr
         ? { address: chosenAddr.formatted, address_label: chosenAddr.label ?? undefined, dispatch: 'unassigned', eta_range: del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min' }
         : {}),
-      ...(isDelivery && instructions.trim() ? { instructions: instructions.trim() } : {}),
+      ...(isDelivery ? { instructions: composeInstructions() } : {}),
     };
     const { error } = await act.placeOrder(b.slug, items, grandTotal, isDelivery ? 'delivery' : 'pickup', fulfillment);
     setPaying(false);
@@ -2573,13 +2607,44 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                         </div>
                       </div>
                     )}
-                    <input
-                      value={instructions}
-                      onChange={(e) => setInstructions(e.target.value)}
-                      maxLength={300}
-                      placeholder={L('Instrucciones: timbre, apto, dejar en puerta…', 'Instructions: buzzer, apt, leave at door…')}
-                      className="mt-2 w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
-                    />
+                    {/* Instrucciones de entrega — estilo DoorDash: preferencia de
+                        entrega (predeterminada) + detalles rápidos + nota libre. */}
+                    <div className="mt-3">
+                      <div className="text-[12px] font-extrabold text-ink">{L('Instrucciones de entrega', 'Delivery instructions')}</div>
+                      {/* preferencia (una sola) */}
+                      <div className="mt-2 grid grid-cols-3 gap-1.5">
+                        {DROPOFF_OPTS.map((o) => {
+                          const on = dropoff === o.key;
+                          return (
+                            <button key={o.key} onClick={() => setDropoff(o.key)} aria-pressed={on}
+                              className={`flex min-h-[56px] cursor-pointer flex-col items-center justify-center gap-1 rounded-field border-[1.5px] px-1 py-2 text-center ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                              <o.Icon size={17} stroke={2.2} className={on ? 'text-primary' : 'text-muted-2'} />
+                              <span className={`text-[11px] font-extrabold leading-tight ${on ? 'text-primary-dark' : 'text-ink-soft'}`}>{L(o.es, o.en)}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* detalles rápidos (varios) */}
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {INS_DETAILS.map((x) => {
+                          const on = insDetails.includes(x.key);
+                          return (
+                            <button key={x.key} onClick={() => toggleDetail(x.key)} aria-pressed={on}
+                              className={`flex cursor-pointer items-center gap-1 rounded-chip border-[1.5px] px-2.5 py-1.5 text-[11px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
+                              {on && <Check size={12} stroke={3} className="text-primary" />}{L(x.es, x.en)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* nota libre */}
+                      <input
+                        value={instructions}
+                        onChange={(e) => setInstructions(e.target.value)}
+                        maxLength={300}
+                        placeholder={L('Otra nota: apto, código de puerta, referencia…', 'Other note: apt, gate code, landmark…')}
+                        className="mt-2 w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
+                      />
+                    </div>
                     {/* propina para el repartidor — política PROPIA del negocio: solo
                         aparece si el dueño la activó (del.tips) y en pago con tarjeta
                         (en efectivo el cliente le da la propina al repartidor directo) */}

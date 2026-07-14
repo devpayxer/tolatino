@@ -5,6 +5,22 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Carrito: instrucciones de entrega estilo DoorDash (2026-07-14)
+
+El campo libre "Instrucciones: timbre, apto…" del carrito se reemplazó por un
+selector profesional (benchmark DoorDash):
+- **Preferencia de entrega** (una sola, predeterminada en "En la puerta"): En la
+  puerta / En mano / En recepción, con ícono cada una (tarjetas ≥56px, tokens).
+- **Detalles rápidos** (varios): Toca el timbre · No toques el timbre · Llámame al
+  llegar · Cuidado con el perro.
+- **Nota libre**: apto, código de puerta, referencia.
+Las tres partes se **componen en UN string** `fulfillment.instructions`
+(`composeInstructions()`, idioma del cliente) — sin cambio de backend; Cocina/
+repartidor lo leen igual. Siempre viaja la preferencia (default "En la puerta"),
+como DoorDash. Constantes `DROPOFF_OPTS`/`INS_DETAILS` + estado `dropoff`/
+`insDetails` en `BizDetail.tsx`; se usa en pago con tarjeta y en efectivo.
+Verificado en navegador real (390px, sin desborde; interacción selección+chips+nota).
+
 ## Hub de Promociones — Fase 2: Servicios + Renta (2026-07-14, migración 0088)
 
 El hub ahora cubre **los 4 módulos de venta**, no solo Menú y Tienda. Servicios y
