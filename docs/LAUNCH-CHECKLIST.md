@@ -129,7 +129,10 @@
 > are drafted; apply on the founder's go-ahead (RLS ones are pasted migrations,
 > edge-function ones redeploy via `deploy-fn.mjs`).
 
-- [ ] **C1 — Stripe webhook fails OPEN if the secret is unset.**
+- [x] **C1 — Stripe webhook fails OPEN if the secret is unset. ✅ FIXED 2026-07-14.**
+  Now fails **closed**: `if (!WHSEC) return 500` then always verify (stripe-webhook
+  redeployed v8, `verify_jwt=false`). Verified: a forged event with an invalid
+  signature is rejected `400`. Original finding:
   `supabase/functions/stripe-webhook/index.ts:159-162` only verifies the
   signature `if (WHSEC)`. The function runs `verify_jwt=false` (Stripe has no
   Supabase JWT), so an unset/typo'd `STRIPE_WEBHOOK_SECRET` skips verification
@@ -147,8 +150,16 @@
   never consulted. **Fix:** load `business_items` by id and compute subtotal from
   DB prices; reject any line whose price doesn't match. (The ticket branch already
   does this correctly.)
-- [ ] **H1 — `businesses` UPDATE policy is row-wide (self-grant tier/verified/
-  rating/Connect).** `0013_create_business.sql:13-14` allows an owner to update
+- [x] **H1 — `businesses` UPDATE policy is row-wide (self-grant tier/verified/
+  rating/Connect). ✅ FIXED 2026-07-14 (migration 0081).** A `BEFORE UPDATE` guard
+  trigger (`tg_businesses_guard_cols`) raises if a direct end-user write
+  (`current_user in ('authenticated','anon')`) changes `tier/rating/reviews_count/
+  owner_id/stripe_account_id/connect_charges_enabled/connect_details_submitted`.
+  Every legitimate writer runs privileged (SECURITY DEFINER `apply_subscription`/
+  `apply_connect_status`/rating-sync as `postgres`; webhook as `service_role`) so
+  it passes. Verified via real PostgREST as the owner: `tier=premium` **blocked**
+  (400), `connect_charges_enabled` flip **blocked** (value unchanged), a safe-column
+  update **allowed**, and **review posting (rating sync) still works**. Original:
   *any* column via direct PostgREST (bypassing the app's client-only `WRITABLE`
   whitelist): `{"tier":"premium"}` unlocks the paid tier + "verified" badge for
   free, `{"rating":5.0}` defeats the review-integrity trigger, or flip
@@ -157,7 +168,12 @@
   owner_id/stripe_account_id/connect_charges_enabled/connect_details_submitted`.
   *(Must be tested against `apply_subscription`/`apply_connect_status` — those run
   as service_role and must still pass — before shipping; RLS-sensitive.)*
-- [ ] **H2 — `event_tickets` INSERT policy lets any user mint confirmed tickets.**
+- [x] **H2 — `event_tickets` INSERT policy lets any user mint confirmed tickets.
+  ✅ FIXED 2026-07-14 (migration 0081).** Dropped both the direct `insert` **and**
+  `update` policies (the update policy likewise let a holder reset `used_at` to
+  re-use a scanned code). Creation/mutation stay via the SECURITY DEFINER RPCs;
+  the `read` policy stays. Verified: a direct authenticated insert is now rejected
+  `403`. Original finding:
   `0032_consumer_transactions.sql:89-90` (`with check (user_id = auth.uid())`) +
   `status` defaults `'confirmed'` + auto `code` → a user can insert tickets
   directly (`unit_price=0`, arbitrary `qty`/`tier_id`), bypassing

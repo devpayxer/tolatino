@@ -156,10 +156,13 @@ Deno.serve(async (req) => {
   const sig = req.headers.get('Stripe-Signature') ?? '';
   const raw = await req.text();
 
-  if (WHSEC) {
-    const ok = await verifySig(raw, sig, WHSEC);
-    if (!ok) return new Response('invalid signature', { status: 400 });
-  }
+  // FAIL CLOSED. verify_jwt is off for this function (Stripe has no Supabase JWT),
+  // so the Stripe signature is the ONLY thing standing between the public internet
+  // and service-role fulfillment/subscription writes. If the secret is missing we
+  // must refuse — never process an UNVERIFIED body (that would let anyone forge a
+  // paid order or grant a business a premium tier for free).
+  if (!WHSEC) return new Response('server misconfigured: webhook secret unset', { status: 500 });
+  if (!(await verifySig(raw, sig, WHSEC))) return new Response('invalid signature', { status: 400 });
 
   let event: { type?: string; data?: { object?: Record<string, unknown> } };
   try { event = JSON.parse(raw); } catch { return new Response('bad json', { status: 400 }); }
