@@ -76,7 +76,24 @@ export type Business = {
   acceptsPayments?: boolean;
   // The business's delivery offer (from its own settings; business_by_slug only).
   // radius = max delivery distance in miles; undefined = the owner set no limit.
-  delivery?: { on: boolean; fee: number; min: number; prep: number; radius?: number };
+  // tips = the OWNER's own driver-tip policy (opt-in, 100% to their driver — the
+  // platform takes nothing). Absent/`{on:false}` → the cart shows no tip option.
+  delivery?: {
+    on: boolean; fee: number; min: number; prep: number; radius?: number;
+    tips?: TipPolicy;
+  };
+};
+
+// Driver-tip policy each business owner configures. `mode:'percent'` → presets are
+// % of the order; `'amount'` → fixed $ presets. `def` = preselected preset value
+// (0 = "Sin propina"). `minOrder` = only offer tips at/above this subtotal.
+export type TipPolicy = {
+  on: boolean;
+  mode: 'percent' | 'amount';
+  presets: number[];   // up to 3
+  def: number;         // preselected value (must be in presets, or 0 for none)
+  minOrder: number;
+  custom: boolean;     // allow an "Otra" free amount
 };
 
 export const BUSINESSES: Business[] = [

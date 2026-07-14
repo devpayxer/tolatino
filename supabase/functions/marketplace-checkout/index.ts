@@ -195,7 +195,11 @@ Deno.serve(async (req) => {
         const addr = (body?.address ?? {}) as Record<string, unknown>;
         if (!addr.formatted || String(addr.formatted).trim().length < 5) return json({ error: 'address_required' }, 400);
       }
-      tip = Math.max(0, Math.min(500, Number(body?.tip ?? 0) || 0));
+      // A driver tip is accepted ONLY when the OWNER enabled tips and the order
+      // meets their minimum (mirrors the cart) — the platform never adds it.
+      const tCfg = (settings as Record<string, unknown>).tips as Record<string, unknown> | undefined;
+      const tipsOn = tCfg?.on === true && subtotal >= (Number(tCfg?.minOrder ?? 0) || 0);
+      tip = tipsOn ? Math.max(0, Math.min(500, Number(body?.tip ?? 0) || 0)) : 0;
       // AMIGO10 promo: 10% off the goods, capped at $5 (absorbed by the platform).
       if (String(body?.promo ?? '').toUpperCase() === 'AMIGO10') discount = Math.min(5, Math.round(subtotal * 0.1 * 100) / 100);
 

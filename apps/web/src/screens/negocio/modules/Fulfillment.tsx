@@ -30,6 +30,7 @@ import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { Toast } from '@/screens/negocio/modules/_page';
 import { ZoneEditor, DriverEditor, normalizeZone, type Zone, type OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
+import type { TipPolicy } from '@/data/fixtures';
 
 // ---- setup persistence model (businesses.settings jsonb; Zone/OwnDriver types
 // live in FulfillmentEditors as the single source) ----
@@ -150,6 +151,8 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   // (delivery_range_check, 0076) enforces exactly the reach shown in Zonas.
   const [delOps, setDelOps] = useState({ minOrder: '15', prepTime: '20', autoAssign: false, liveTracking: true });
   const [shipOps, setShipOps] = useState({ freeOver: '75', origin: '', pkg: 'Caja S', handling: '0' });
+  // Driver-tip policy — the owner's own, opt-in. Default OFF (each owner approves it).
+  const [tips, setTips] = useState<TipPolicy>({ on: false, mode: 'percent', presets: [10, 15, 20], def: 15, minOrder: 0, custom: true });
 
   useEffect(() => {
     const s = (real?.settings ?? {}) as Record<string, unknown>;
@@ -167,6 +170,8 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     const sOps = s.shipping_ops as typeof shipOps | undefined;
     if (dOps) setDelOps((o) => ({ ...o, ...dOps }));
     setShipOps((o) => ({ ...o, origin: real?.address ?? o.origin, ...(sOps ?? {}) }));
+    const tCfg = s.tips as Partial<TipPolicy> | undefined;
+    if (tCfg) setTips((t) => ({ ...t, ...tCfg, presets: Array.isArray(tCfg.presets) && tCfg.presets.length ? tCfg.presets.slice(0, 3) : t.presets }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
 
@@ -184,7 +189,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     // radiusMi is the derived mirror of the outermost zone (see zonesRadiusMi) —
     // written on every save so the checkout gate can't drift from the zones.
     const radiusMi = zonesRadiusMi(o.zones ?? zones);
-    admin.update({ settings: { ...(real.settings ?? {}), shipping: buildShipping(o), drivers: o.drivers ?? drivers, delivery_ops: { ...delOps, radiusMi }, shipping_ops: shipOps, ...extra } });
+    admin.update({ settings: { ...(real.settings ?? {}), shipping: buildShipping(o), drivers: o.drivers ?? drivers, delivery_ops: { ...delOps, radiusMi }, shipping_ops: shipOps, tips, ...extra } });
   };
   // ── zone + driver editor sheets (full CRUD, persisted to businesses.settings) ─
   const [zoneSheet, setZoneSheet] = useState<{ idx: number; initial: Zone | null } | null>(null);
@@ -556,6 +561,69 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         {settingRow(L('Auto-asignar repartidor', 'Auto-assign driver'), L('Asigna el repartidor libre más cercano al marcar listo.', 'Assign the nearest free driver when marked ready.'), <Toggle on={delOps.autoAssign} onClick={() => setDelOps((o) => ({ ...o, autoAssign: !o.autoAssign }))} />)}
         {settingRow(L('Seguimiento en vivo', 'Live tracking'), L('Muestra al cliente el repartidor en el mapa.', 'Show the customer the driver on the map.'), <Toggle on={delOps.liveTracking} onClick={() => setDelOps((o) => ({ ...o, liveTracking: !o.liveTracking }))} />, true)}
       </div>
+
+      {/* Propinas para el repartidor — política PROPIA del negocio (opt-in). 100%
+          para el repartidor; To'Latino no toca ese dinero. Solo aplica en pago con
+          tarjeta (en efectivo el cliente le da la propina al repartidor directo). */}
+      <div className={`${cardCls} mt-3.5 px-3.5`}>
+        {settingRow(
+          L('Ofrecer propina al repartidor', 'Offer a driver tip'),
+          L('Opcional — tú decides. La propina es 100% para tu repartidor; To’Latino no cobra nada de ella. Se cobra con la tarjeta del cliente y te llega junto al pedido para que la manejes con tu repartidor.',
+            'Optional — your call. The tip is 100% your driver’s; To’Latino takes nothing from it. It’s charged to the customer’s card and arrives with the order for you to settle with your driver.'),
+          <Toggle on={tips.on} onClick={() => setTips((t) => ({ ...t, on: !t.on }))} />, !tips.on,
+        )}
+        {tips.on && (
+          <div>
+            <div className="border-b border-hair py-3">
+              <div className="text-[12px] font-bold text-ink">{L('Tipo de propina', 'Tip type')}</div>
+              <div className="mt-2 flex gap-1.5">
+                {(['percent', 'amount'] as const).map((m) => {
+                  const on = tips.mode === m;
+                  return (
+                    <button key={m} onClick={() => setTips((t) => ({ ...t, mode: m, presets: m === 'percent' ? [10, 15, 20] : [2, 3, 5], def: 0 }))}
+                      className={`flex-1 cursor-pointer rounded-field border-[1.5px] py-2 text-[12px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
+                      {m === 'percent' ? L('Porcentaje (%)', 'Percent (%)') : L('Monto fijo ($)', 'Fixed amount ($)')}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="border-b border-hair py-3">
+              <div className="text-[12px] font-bold text-ink">{L('Opciones sugeridas', 'Suggested options')}</div>
+              <div className="mt-0.5 text-[10px] font-medium text-muted-2">{tips.mode === 'percent' ? L('Tres porcentajes que verá el cliente.', 'Three percentages the customer sees.') : L('Tres montos en dólares que verá el cliente.', 'Three dollar amounts the customer sees.')}</div>
+              <div className="mt-2 flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex flex-1 items-center rounded-field border-[1.5px] border-lilac-line bg-white px-2.5 focus-within:border-primary">
+                    {tips.mode === 'amount' && <span className="text-[12px] font-bold text-muted-2">$</span>}
+                    <input value={String(tips.presets[i] ?? '')} inputMode="decimal"
+                      onChange={(e) => { const v = Number(e.target.value.replace(/[^0-9.]/g, '')) || 0; setTips((t) => { const p = [...t.presets]; p[i] = v; return { ...t, presets: p, def: t.def === (t.presets[i] ?? -1) ? v : t.def }; }); }}
+                      className="min-w-0 flex-1 bg-transparent px-1 py-2 text-center text-[13px] font-extrabold text-ink outline-none" />
+                    {tips.mode === 'percent' && <span className="text-[11px] font-bold text-muted-2">%</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border-b border-hair py-3">
+              <div className="text-[12px] font-bold text-ink">{L('Preseleccionada', 'Pre-selected')}</div>
+              <div className="mt-0.5 text-[10px] font-medium text-muted-2">{L('La que aparece marcada por defecto (el cliente puede cambiarla).', 'Shown selected by default (the customer can change it).')}</div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {[0, ...tips.presets.filter((p) => p > 0)].map((v, i) => {
+                  const on = tips.def === v;
+                  return (
+                    <button key={i} onClick={() => setTips((t) => ({ ...t, def: v }))}
+                      className={`cursor-pointer rounded-field border-[1.5px] px-3 py-1.5 text-[11.5px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
+                      {v === 0 ? L('Sin propina', 'No tip') : tips.mode === 'percent' ? `${v}%` : `$${v}`}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {settingRow(L('Pedido mínimo para propina', 'Minimum order for tips'), L('Solo se ofrece propina cuando el pedido llega a este monto. 0 = siempre.', 'Only offer a tip once the order reaches this amount. 0 = always.'), numBox(String(tips.minOrder ?? 0), (v) => setTips((t) => ({ ...t, minOrder: Number(v) || 0 })), '$'))}
+            {settingRow(L('Permitir “Otra” cantidad', 'Allow a custom amount'), L('El cliente puede escribir su propia propina.', 'Let the customer type in their own tip.'), <Toggle on={tips.custom} onClick={() => setTips((t) => ({ ...t, custom: !t.custom }))} />, true)}
+          </div>
+        )}
+      </div>
+
       <button onClick={() => { persistSettings(); flash(L('Ajustes guardados', 'Settings saved')); }} className="mt-3.5 w-full cursor-pointer rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Guardar ajustes', 'Save settings')}</button>
     </div>
   );

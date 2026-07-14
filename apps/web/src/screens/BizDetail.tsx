@@ -440,7 +440,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [cartView, setCartView] = useState<'cart' | 'address'>('cart');
   const [addrId, setAddrId] = useState<string | null>(null);
   const [instructions, setInstructions] = useState('');
-  const [tipPct, setTipPct] = useState<number>(0.15); // 0 = no tip
+  // Driver-tip policy is the BUSINESS's own (del.tips) — opt-in, presets + mode set
+  // by the owner. tipSel holds the selected preset VALUE (a % or a $ per the mode).
+  const tipCfg = del?.tips;
+  const [tipSel, setTipSel] = useState<number>(0);    // 0 = no tip
   const [tipCustom, setTipCustom] = useState('');     // dollars when "Otra"
   const [customTipOn, setCustomTipOn] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -461,9 +464,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
 
   const deliveryFee = isDelivery ? (del?.fee ?? 0) : 0;
   const serviceFee = payOnline && cartCount > 0 ? +(cartTotal * 0.05).toFixed(2) : 0;
-  // Online tip only applies to card checkout; for cash delivery the customer tips
-  // the driver in cash directly, so no online tip is collected.
-  const tip = isDelivery && payOnline ? (customTipOn ? Math.max(0, Math.min(500, parseFloat(tipCustom) || 0)) : +(cartTotal * tipPct).toFixed(2)) : 0;
+  // The tip option shows only when: paying by card (cash tips go to the driver in
+  // hand), it's a delivery order, the OWNER enabled tips, and the order meets the
+  // owner's minimum. Preset value → dollars depends on the owner's mode (%/fixed).
+  const tipsEnabled = isDelivery && payOnline && !!tipCfg?.on && cartTotal >= (tipCfg?.minOrder ?? 0);
+  const presetTip = tipCfg?.mode === 'amount' ? tipSel : +(cartTotal * tipSel / 100).toFixed(2);
+  const tip = tipsEnabled ? (customTipOn ? Math.max(0, Math.min(500, parseFloat(tipCustom) || 0)) : presetTip) : 0;
   const grandTotal = +(cartTotal + serviceFee + deliveryFee + tip).toFixed(2);
   const belowMin = isDelivery && cartTotal < (del?.min ?? 0);
 
@@ -493,6 +499,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (deliveryAvailable) setOrderChannel('delivery');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliveryAvailable, b.slug]);
+  // Preselect the owner's suggested tip when the business (its tip policy) loads.
+  useEffect(() => {
+    setTipSel(tipCfg?.def ?? 0);
+    setCustomTipOn(false);
+    setTipCustom('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [b.slug, tipCfg?.def, tipCfg?.mode]);
 
   // Route the current cart to Stripe (destination charge → seller's account minus
   // the To'Latino fee). The order is created by the webhook once payment lands.
@@ -2533,24 +2546,31 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       placeholder={L('Instrucciones: timbre, apto, dejar en puerta…', 'Instructions: buzzer, apt, leave at door…')}
                       className="mt-2 w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
                     />
-                    {/* propina para el repartidor — solo en pago con tarjeta; en
-                        efectivo el cliente le da la propina al repartidor directo */}
-                    {payOnline && (<>
+                    {/* propina para el repartidor — política PROPIA del negocio: solo
+                        aparece si el dueño la activó (del.tips) y en pago con tarjeta
+                        (en efectivo el cliente le da la propina al repartidor directo) */}
+                    {tipsEnabled && (<>
                     <div className="mt-3 text-[12px] font-extrabold text-ink">{L('Propina para el repartidor', 'Tip for your driver')} <span className="font-semibold text-muted">· {L('100% para él/ella', '100% goes to them')}</span></div>
                     <div className="mt-1.5 flex gap-1.5">
-                      {[0, 0.1, 0.15, 0.2].map((p) => {
-                        const on = !customTipOn && tipPct === p;
+                      <button onClick={() => { setCustomTipOn(false); setTipSel(0); }} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-1.5 text-center ${!customTipOn && tipSel === 0 ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                        <span className={`block text-[11.5px] font-extrabold ${!customTipOn && tipSel === 0 ? 'text-primary-dark' : 'text-ink-soft'}`}>{L('Sin', 'None')}</span>
+                      </button>
+                      {(tipCfg?.presets ?? []).filter((p) => p > 0).map((p) => {
+                        const on = !customTipOn && tipSel === p;
+                        const isPct = tipCfg?.mode !== 'amount';
                         return (
-                          <button key={p} onClick={() => { setCustomTipOn(false); setTipPct(p); }} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-1.5 text-center ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
-                            <span className={`block text-[11.5px] font-extrabold ${on ? 'text-primary-dark' : 'text-ink-soft'}`}>{p === 0 ? L('Sin', 'None') : `${p * 100}%`}</span>
-                            {p > 0 && <span className="block text-[9.5px] font-bold text-muted">{money(+(cartTotal * p).toFixed(2))}</span>}
+                          <button key={p} onClick={() => { setCustomTipOn(false); setTipSel(p); }} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-1.5 text-center ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                            <span className={`block text-[11.5px] font-extrabold ${on ? 'text-primary-dark' : 'text-ink-soft'}`}>{isPct ? `${p}%` : money(p)}</span>
+                            {isPct && <span className="block text-[9.5px] font-bold text-muted">{money(+(cartTotal * p / 100).toFixed(2))}</span>}
                           </button>
                         );
                       })}
+                      {tipCfg?.custom && (
                       <button onClick={() => setCustomTipOn(true)} className={`flex-1 cursor-pointer rounded-btn border-[1.5px] py-1.5 text-center ${customTipOn ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
                         <span className={`block text-[11.5px] font-extrabold ${customTipOn ? 'text-primary-dark' : 'text-ink-soft'}`}>{L('Otra', 'Other')}</span>
                         <span className="block text-[9.5px] font-bold text-muted">$</span>
                       </button>
+                      )}
                     </div>
                     {customTipOn && (
                       <input

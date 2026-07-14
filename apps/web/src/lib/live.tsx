@@ -69,10 +69,22 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     delivery: (() => {
       const d = r.delivery as Record<string, unknown> | null | undefined;
       if (!d || d.on !== true) return undefined;
+      // Owner's driver-tip policy (opt-in). Only surfaced when explicitly on; any
+      // missing field falls back to a sane default so old configs keep working.
+      const t = d.tips as Record<string, unknown> | null | undefined;
+      const tips = t && t.on === true ? {
+        on: true,
+        mode: t.mode === 'amount' ? 'amount' as const : 'percent' as const,
+        presets: (Array.isArray(t.presets) ? t.presets : []).map(Number).filter((n) => n > 0).slice(0, 3),
+        def: Number(t.def ?? 0) || 0,
+        minOrder: Number(t.minOrder ?? 0) || 0,
+        custom: t.custom !== false,
+      } : undefined;
       return {
         on: true, fee: Number(d.fee ?? 0), min: Number(d.min ?? 0), prep: Number(d.prep ?? 25),
         // delivery radius in miles; undefined = the owner set no limit
         radius: d.radius != null && Number(d.radius) > 0 ? Number(d.radius) : undefined,
+        ...(tips && tips.presets.length ? { tips } : {}),
       };
     })(),
   };

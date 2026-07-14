@@ -5,6 +5,29 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Propina del repartidor = política PROPIA de cada negocio (2026-07-14, migración 0085)
+
+El carrito de comida ya no trae propinas fijas: **cada dueño configura su propia
+propina** desde el panel (Entregas y envíos → Ajustes → "Ofrecer propina al
+repartidor"). Es **opt-in** (default OFF — cada dueño la aprueba). La propina es
+**100% para el repartidor; To'Latino no cobra nada** de ella y se cobra con la
+tarjeta del cliente.
+
+**El dueño configura:** activar/desactivar · tipo (Porcentaje % o Monto fijo $) ·
+3 opciones sugeridas (ej. 10/15/20% o $2/$3/$5) · cuál viene preseleccionada ·
+**pedido mínimo** para ofrecerla (0 = siempre) · permitir "Otra" cantidad. Se
+guarda en `businesses.settings.tips`.
+
+**El carrito** (BizDetail) lee esa config vía `business_by_slug` (migración 0085
+expone `delivery.tips`): muestra la sección de propina **solo** si el dueño la
+activó, es pago con tarjeta, es entrega y el pedido llega al mínimo; usa los
+presets y modo del dueño, con la preseleccionada marcada. El servidor
+(marketplace-checkout) solo acepta propina si el dueño la tiene activa (mirror del
+carrito). Data plumbing: `data/fixtures.ts` (tipo `TipPolicy`) + `lib/live.tsx`
+(parseo). Verificado en navegador real (panel del dueño + carrito de El Sabor:
+10/15/20%, default 15% → Propina $1.50). El Sabor quedó sembrado con tips activas
+para la demo; los negocios nuevos empiezan sin propina hasta que el dueño la active.
+
 ## Auditoría de performance + seguridad (2026-07-14) — spinner colgado ARREGLADO
 
 El fundador reportó un **spinner de carga que se quedaba girando** "en todos
