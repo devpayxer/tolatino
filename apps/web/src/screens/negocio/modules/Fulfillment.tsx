@@ -26,6 +26,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage, AVATAR_MAX_EDGE } from '@/lib/image';
 import { ChipRow } from '@/components/ChipRow';
+import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { Toast } from '@/screens/negocio/modules/_page';
 import { ZoneEditor, DriverEditor, normalizeZone, type Zone, type OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
@@ -801,14 +802,13 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         <button onClick={() => setSec('shipping')} className={secBtn(sec === 'shipping')}><Truck size={15} stroke={2} />{L('Shipping', 'Shipping')}{toShip > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{toShip}</span>}</button>
       </div>
 
-      {/* sub-tabs */}
-      <div className="mb-4">
-        <ChipRow className="-mx-1 px-1">
-          {(sec === 'delivery' ? delSub : shipSub).map(([k, label]) => (
-            <button key={k} onClick={() => (sec === 'delivery' ? setDelTab(k as DelTab) : setShipTab(k as ShipTab))} className={chip(sec === 'delivery' ? delTab === k : shipTab === k)}>{label}</button>
-          ))}
-        </ChipRow>
-      </div>
+      {/* section tabs — configuration sections (distinct from the pill filters below) */}
+      <SectionTabs
+        className="mb-4"
+        tabs={(sec === 'delivery' ? delSub : shipSub) as SectionTab<string>[]}
+        value={sec === 'delivery' ? delTab : shipTab}
+        onChange={(k) => (sec === 'delivery' ? setDelTab(k as DelTab) : setShipTab(k as ShipTab))}
+      />
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
         <div className="min-w-0">{content}</div>

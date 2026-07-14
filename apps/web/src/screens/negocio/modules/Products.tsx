@@ -21,6 +21,7 @@ import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronUp as ChevronUp, IconCopy as Copy, IconCreditCard as CreditCard, IconHelmet as HardHat, IconLayersIntersect as Layers, IconLoader2 as Loader2, IconPencil as Pencil, IconPlus as Plus, IconSearch as Search, IconBuildingStore as Store, IconTrash as Trash2, IconTruck as Truck, IconUpload as Upload } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
+import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Switch } from '@/components/ui';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
@@ -900,13 +901,12 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
         <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
       </button>
 
-      <div className="mb-4">
-        <ChipRow className="-mx-1 px-1">
-          {subDefs.map(([k, label, badge]) => (
-            <button key={k} onClick={() => setSub(k)} className={chip(sub === k)}>{label}{badge != null && <span className={`ml-1.5 font-extrabold ${sub === k ? 'text-white/80' : 'text-muted-2'}`}>{badge}</span>}</button>
-          ))}
-        </ChipRow>
-      </div>
+      <SectionTabs
+        className="mb-4"
+        tabs={subDefs as SectionTab<typeof sub>[]}
+        value={sub}
+        onChange={setSub}
+      />
 
       {sub === 'catalog' ? catalog : sub === 'cats' ? categoriesTab : sub === 'variants' ? variantsTab : sub === 'collections' ? collectionsTab : sub === 'discounts' ? discountsTab : inventoryTab}
 

@@ -21,6 +21,7 @@ import { uploadImage } from '@/lib/image';
 import { searchAddress, censusGeocode, sameAddress, type Address } from '@/lib/geo';
 import { EVENT_CATS, EVENT_CAT_BY_ID } from '@/data/fixtures';
 import { Qr } from '@/components/Qr';
+import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { QrScanner, useBarcodeSupport } from '@/components/QrScanner';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
@@ -639,16 +640,14 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const listBody = (
     <div className="pb-8">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
-          {listTabs.map(([k, label, n]) => (
-            <button key={k} onClick={() => setListTab(k)} className={chip(listTab === k)}>
-              {label}
-              {n != null && <span className={`ml-1.5 font-extrabold ${listTab === k ? 'text-white/80' : 'text-muted-2'}`}>{n}</span>}
-            </button>
-          ))}
-        </div>
-        <button onClick={startWizard} className="hidden flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm sm:flex">
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <SectionTabs
+          className="min-w-0 flex-1"
+          tabs={listTabs as SectionTab<typeof listTab>[]}
+          value={listTab}
+          onChange={setListTab}
+        />
+        <button onClick={startWizard} className="mb-1.5 hidden flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm sm:flex">
           <Plus size={15} stroke={2.6} />{L('Crear evento', 'Create event')}
         </button>
       </div>
@@ -1165,14 +1164,12 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       onBack={() => setView('list')}
       maxW={940}
     >
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
-        {manageTabs.map(([k, label, n]) => (
-          <button key={k} onClick={() => setManageTab(k)} className={chip(manageTab === k)}>
-            {label}
-            {n != null && <span className={`ml-1.5 font-extrabold ${manageTab === k ? 'text-white/80' : 'text-muted-2'}`}>{n}</span>}
-          </button>
-        ))}
-      </div>
+      <SectionTabs
+        className="mb-4"
+        tabs={manageTabs as SectionTab<typeof manageTab>[]}
+        value={manageTab}
+        onChange={setManageTab}
+      />
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[320px_1fr]">
         <div className="xl:sticky xl:top-0">{heroCard}</div>

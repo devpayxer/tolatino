@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { IconAlertTriangle as AlertTriangle, IconCalendar as Calendar, IconCheck as Check, IconDownload as Download, IconFileText as FileText, IconPhoto as ImageIcon, IconLock as Lock, IconMail as Mail, IconMapPin as MapPin, IconMessage2 as MessageSquare, IconPencil as Pencil, IconPlus as Plus, IconShield as Shield, IconShoppingBag as ShoppingBag, IconStar as Star, IconUsers as Users, IconX as X, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey, Tier } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { startCheckout, openBillingPortal } from '@/lib/stripe';
 import { useScrollLock } from '@/lib/scrollLock';
@@ -110,8 +111,6 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     ['methods', L('Pagos', 'Methods')],
     ['invoices', L('Facturas', 'Invoices')],
   ];
-  const chip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-ink font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-2'}`;
 
   // ---------- plan card config (tier-styled) ----------
   const dark = isPaid;
@@ -548,11 +547,12 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   return (
     <div className="relative pb-8">
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
-        {subtabs.map(([k, label]) => (
-          <button key={k} onClick={() => setSub(k)} className={chip(sub === k)}>{label}</button>
-        ))}
-      </div>
+      <SectionTabs
+        className="mb-4"
+        tabs={subtabs as SectionTab<Sub>[]}
+        value={sub}
+        onChange={setSub}
+      />
 
       {sub === 'plan' && (
         <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_360px]">

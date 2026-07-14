@@ -5,6 +5,31 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-13.
 
+## UX: sub-navegación de módulos como TABS (2026-07-14)
+El founder notó que las sub-secciones de cada módulo (Despacho/Zonas/Repartidores ·
+Platillos/Categorías/Modificadores · Equipo/Horario/Nómina …) usaban el MISMO estilo
+de "pill" que los filtros de datos justo debajo (Todos/Nuevos/Preparando · Todos/
+Desayunos …), así que se confundían: parecían opciones/filtros, no configuraciones.
+- **Nuevo componente `components/SectionTabs.tsx`:** barra de **tabs con subrayado**
+  (tab activo en primary + underline; inactivos en muted), scrollable en móvil con
+  flechas ‹ › en desktop (reusa `ChipRow`), badges opcionales, tokens only, touch
+  ≥42px. Deliberadamente distinto de los `chip()` (pills) → el dueño lee las
+  secciones como "configuraciones a las que navego", no como filtros.
+- **Convertidos** (solo la navegación de SECCIONES; los filtros de datos siguen
+  como pills): `Fulfillment` (Despacho/Zonas/Repartidores/Ajustes + Envíos/…),
+  `Food` (Platillos/…/Stock&86), `Staff` (Equipo/…/Roles + Vacantes/…, con badge
+  PRO), `Products` (Catálogo/…/Inventario), `Services` (Catálogo/Categorías/Add-ons),
+  `Rental` (Artículos y Rentas), `Events` (lista + detalle de evento), `Billing`
+  (Plan/Comparar/Pagos/Facturas).
+- **Sin tocar:** los toggles de MODO tipo segmented dark (Delivery/Shipping,
+  Personal/Empleos, Servicios/Reservas, Directorio/Pedidos/Reseñas, Solo mostrar/
+  Pedidos en línea) — ya se leen distinto; y los FILTROS de datos (incl. Novedades,
+  que filtra por estado) siguen como pills a propósito.
+- Resultado: jerarquía clara de 3 niveles → segmented (modo) · tabs (secciones/
+  configuración) · pills (filtros de datos). Verificado en navegador (Fulfillment,
+  Food, Staff; móvil + escritorio). Como es UN componente compartido, cualquier
+  ajuste de estilo es un cambio de un solo lugar.
+
 ## Pagos: efectivo contra entrega por defecto · Stripe para tarjeta en línea (2026-07-14)
 Decisión del founder (corrige el enfoque anterior de "modo catálogo"): **Stripe NO
 es obligatorio para vender.** Activar un módulo = ya puedes cobrar en **efectivo

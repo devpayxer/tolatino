@@ -21,6 +21,7 @@ import { IconAlertTriangle as AlertTriangle, IconPackages as Boxes, IconCalendar
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
+import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -1048,26 +1049,32 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button onClick={() => setMode('ops')} className={modeBtn(mode === 'ops')}><CalendarDays size={14} stroke={2} />{L('Rentas', 'Rentals')}{opsUpcoming > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{opsUpcoming}</span>}</button>
       </div>
 
-      <div className="mb-4">
-        <ChipRow className="-mx-1 px-1">
-          {mode === 'items' ? (
-            <>
-              <button onClick={() => setItemSub('catalog')} className={chip(itemSub === 'catalog')}>{L('Catálogo', 'Catalog')}</button>
-              <button onClick={() => setItemSub('cats')} className={chip(itemSub === 'cats')}>{L('Categorías', 'Categories')}<span className={`ml-1.5 font-extrabold ${itemSub === 'cats' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.categories.length}</span></button>
-              <button onClick={() => setItemSub('addons')} className={chip(itemSub === 'addons')}>{L('Extras', 'Add-ons')}<span className={`ml-1.5 font-extrabold ${itemSub === 'addons' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.addons.length}</span></button>
-              <button onClick={() => setItemSub('policies')} className={chip(itemSub === 'policies')}>{L('Políticas', 'Policies')}<span className={`ml-1.5 font-extrabold ${itemSub === 'policies' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.policies.length}</span></button>
-              <button onClick={() => setItemSub('pricing')} className={chip(itemSub === 'pricing')}>{L('Precios', 'Pricing')}</button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => setOpSub('requests')} className={chip(opSub === 'requests')}>{L('Solicitudes', 'Requests')}{opsUpcoming > 0 && <span className={`ml-1.5 font-extrabold ${opSub === 'requests' ? 'text-white/80' : 'text-muted-2'}`}>{opsUpcoming}</span>}</button>
-              <button onClick={() => setOpSub('calendar')} className={chip(opSub === 'calendar')}>{L('Calendario', 'Calendar')}</button>
-              <button onClick={() => setOpSub('deposits')} className={chip(opSub === 'deposits')}>{L('Depósitos', 'Deposits')}</button>
-              <button onClick={() => setOpSub('damage')} className={chip(opSub === 'damage')}>{L('Daños', 'Damage')}</button>
-            </>
-          )}
-        </ChipRow>
-      </div>
+      {mode === 'items' ? (
+        <SectionTabs
+          className="mb-4"
+          tabs={[
+            ['catalog', L('Catálogo', 'Catalog')],
+            ['cats', L('Categorías', 'Categories'), cfg.categories.length],
+            ['addons', L('Extras', 'Add-ons'), cfg.addons.length],
+            ['policies', L('Políticas', 'Policies'), cfg.policies.length],
+            ['pricing', L('Precios', 'Pricing')],
+          ] as SectionTab<typeof itemSub>[]}
+          value={itemSub}
+          onChange={setItemSub}
+        />
+      ) : (
+        <SectionTabs
+          className="mb-4"
+          tabs={[
+            ['requests', L('Solicitudes', 'Requests'), opsUpcoming > 0 ? opsUpcoming : undefined],
+            ['calendar', L('Calendario', 'Calendar')],
+            ['deposits', L('Depósitos', 'Deposits')],
+            ['damage', L('Daños', 'Damage')],
+          ] as SectionTab<typeof opSub>[]}
+          value={opSub}
+          onChange={setOpSub}
+        />
+      )}
 
       {mode === 'items'
         ? (itemSub === 'catalog' ? catalog : itemSub === 'cats' ? categoriesTab : itemSub === 'addons' ? addonsTab : itemSub === 'policies' ? policiesTab : pricingPane)

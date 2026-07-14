@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { IconAward as Award, IconBriefcase as Briefcase, IconCalendar as Calendar, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconCurrencyDollar as DollarSign, IconEye as Eye, IconInbox as Inbox, IconLock as Lock, IconMail as Mail, IconMapPin as MapPin, IconMessageCircle as MessageCircle, IconPencil as Pencil, IconPhone as Phone, IconPlus as Plus, IconShield as Shield, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { supabase } from '@/lib/supabase';
 
@@ -259,8 +260,6 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---------- shared chip helpers ----------
   const modeBtn = (on: boolean) =>
     `relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn px-2 py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
-  const subChip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-ink font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-2'}`;
   const filterChip = (on: boolean) =>
     `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'border border-lilac-line bg-white font-bold text-ink-soft'}`;
 
@@ -994,23 +993,18 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         })}
       </div>
 
-      {/* sub-tabs */}
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
-        {(mode === 'staff' ? staffTabs : jobTabs).map(([k, label]) => {
-          const active = mode === 'staff' ? stabStaff === k : stabJobs === k;
+      {/* section tabs — configuration sections (distinct from the pill filters below) */}
+      <SectionTabs
+        className="mb-4"
+        tabs={(mode === 'staff' ? staffTabs : jobTabs).map(([k, label]) => {
           const showPro = isFree && mode === 'staff' && proTabs[k];
-          return (
-            <button
-              key={k}
-              onClick={() => (mode === 'staff' ? setStabStaff(k as StaffTab) : setStabJobs(k as JobTab))}
-              className={subChip(active)}
-            >
-              {label}
-              {showPro && <span className={`ml-1.5 rounded px-1 py-px text-[8px] font-extrabold ${active ? 'bg-white/20 text-white' : 'bg-amber-bg text-amber-ink'}`}>PRO</span>}
-            </button>
-          );
+          return [k, (
+            <span className="inline-flex items-center gap-1.5">{label}{showPro && <span className="rounded px-1 py-px text-[8px] font-extrabold bg-amber-bg text-amber-ink">PRO</span>}</span>
+          )] as SectionTab<string>;
         })}
-      </div>
+        value={mode === 'staff' ? stabStaff : stabJobs}
+        onChange={(k) => (mode === 'staff' ? setStabStaff(k as StaffTab) : setStabJobs(k as JobTab))}
+      />
 
       {/* content */}
       {mode === 'staff' && (

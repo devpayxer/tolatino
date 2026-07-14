@@ -18,6 +18,7 @@ import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconChevronUp as ChevronUp, IconCopy as Copy, IconCurrencyDollar as DollarSign, IconLoader2 as Loader2, IconLock as Lock, IconMessage2 as MessageSquare, IconPencil as Pencil, IconPlus as Plus, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconBuildingStore as Store, IconTrash as Trash2, IconUpload as Upload, IconUsers as Users, IconTool as Wrench, IconCircleX as XCircle, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
+import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Switch } from '@/components/ui';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
@@ -811,13 +812,16 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       {mode === 'services' && (
-        <div className="mb-4">
-          <ChipRow className="-mx-1 px-1">
-            <button onClick={() => setSvcSub('catalog')} className={chip(svcSub === 'catalog')}>{L('Catálogo', 'Catalog')}</button>
-            <button onClick={() => setSvcSub('cats')} className={chip(svcSub === 'cats')}>{L('Categorías', 'Categories')}<span className={`ml-1.5 font-extrabold ${svcSub === 'cats' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.categories.length}</span></button>
-            <button onClick={() => setSvcSub('addons')} className={chip(svcSub === 'addons')}>{L('Add-ons', 'Add-ons')}<span className={`ml-1.5 font-extrabold ${svcSub === 'addons' ? 'text-white/80' : 'text-muted-2'}`}>{cfg.addons.length}</span></button>
-          </ChipRow>
-        </div>
+        <SectionTabs
+          className="mb-4"
+          tabs={[
+            ['catalog', L('Catálogo', 'Catalog')],
+            ['cats', L('Categorías', 'Categories'), cfg.categories.length],
+            ['addons', L('Add-ons', 'Add-ons'), cfg.addons.length],
+          ] as SectionTab<typeof svcSub>[]}
+          value={svcSub}
+          onChange={setSvcSub}
+        />
       )}
 
       {mode === 'services' ? (svcSub === 'catalog' ? catalog : svcSub === 'cats' ? categoriesTab : addonsTab) : bookings}

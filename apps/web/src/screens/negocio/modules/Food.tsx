@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
+import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
@@ -1565,13 +1566,12 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </span>
         <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
       </button>
-      <div className="mb-4">
-        <ChipRow className="-mx-1 px-1">
-          {subtabDefs.map(([k, label]) => (
-            <button key={k} onClick={() => setSubtab(k)} className={chip(subtab === k)}>{label}</button>
-          ))}
-        </ChipRow>
-      </div>
+      <SectionTabs
+        className="mb-4"
+        tabs={subtabDefs as SectionTab<typeof subtab>[]}
+        value={subtab}
+        onChange={setSubtab}
+      />
       {subtab === 'items' && renderItems()}
       {subtab === 'categories' && renderCategories()}
       {subtab === 'mods' && renderMods()}
