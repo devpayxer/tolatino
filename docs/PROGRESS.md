@@ -58,9 +58,17 @@ bundle). **Cerradas y verificadas 2026-07-14 (lote aprobado por el fundador):**
   Verificado: reserva con `subtotal:0.01` → se cobra **$26.25** real; renta 3d×2 +
   extra → **$36.75**; add-on/ítem inválido → rechazado.
 
-Migraciones **0080** (índices) + **0081** (RLS) pegadas al fundador para correr en
-Supabase. **Todas las críticas/altas (C1, C2, H1, H2, H3) cerradas.** Pendientes
-(M1–M5, L1–L4 — medios/bajos) en checklist §2a. Ver `AUDIT-2026-07-14.md`.
+**Medios (2026-07-14) también cerrados y verificados:** M1 pedidos COD directos
+(migración 0083: `with check` fuerza status + tope de monto; trigger de límite
+30/hora por usuario), M2 open-redirect en URLs de Stripe (`safeOrigin` allowlist en
+4 funciones), M3 coords de perfil públicas (migración 0082: perfiles solo lectura
+propia), M4 función `admin-diag` borrada (deploy + repo), M5 ventana anti-replay
+del webhook (±300s).
+
+Migraciones **0080** (índices) + **0081** (RLS H1/H2) + **0082** (perfiles) +
+**0083** (COD) pegadas al fundador para correr en Supabase. **Todas las
+críticas/altas/medias (C1–C2, H1–H3, M1–M5) cerradas y verificadas.** Solo quedan
+4 bajas (L1–L4) en checklist §2a. Ver `AUDIT-2026-07-14.md`.
 
 ## UX: sub-navegación de módulos como TABS (2026-07-14)
 El founder notó que las sub-secciones de cada módulo (Despacho/Zonas/Repartidores ·

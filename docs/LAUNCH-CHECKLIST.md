@@ -201,13 +201,22 @@
   against real service/rental config: tampered `subtotal:0.01` booking charged the
   authoritative **$26.25**, a 3-day×2-unit+add-on rental charged **$36.75**, and
   bad-add-on / fake-item rejected.
-- [ ] **M1 — Direct COD order/booking/rental insert (client controls total/status/
-  target business).** `0032:17-18,32-33,61-62` (used by `lib/myActivity.tsx:138+`)
-  — intentional for cash-on-delivery, but a user can spam fake orders into *any*
-  business's dashboard with arbitrary `total`/`status`. Griefing + data-integrity
-  (not theft; COD is paid in cash). **Fix:** move COD creation into a
-  security-definer RPC that stamps `status`, validates the business accepts COD,
-  rate-limits per user, and re-prices from `business_items`.
+- [x] **M1 — Direct COD order/booking/rental insert (client controls total/status/
+  target business). ✅ FIXED 2026-07-14 (migration 0083).** COD is paid in cash in
+  person (the owner is the amount backstop), so the fix targets the real harms —
+  status tampering + spam — without disturbing the working direct-insert flow:
+  - The three customer INSERT policies now `with check` **force the initial status**
+    (`new`/`pending`) and **bound the money columns** to `[0, 100000]`; the owner
+    (manual-entry) branch is unchanged.
+  - A per-user **hourly rate-limit trigger** (`tg_cod_ratelimit`, SECURITY INVOKER
+    so `current_user` reflects the caller) caps a customer at **30 orders/hour** per
+    table; owner/service-role inserts are exempt.
+  - Added `(user_id, created_at)` indexes on all three tables.
+  **Verified against live PostgREST:** a valid order inserts; `status=completed` and
+  an over-cap total are both rejected `403`; the 31st order in an hour is blocked
+  `400`. Full re-pricing of COD lines was deemed unnecessary (cash backstop);
+  per-user *volume* limiting for posts/likes/uploads still rolls up under §2 "Rate
+  limiting / anti-spam".
 - [x] **M2 — Open redirect via client-supplied `origin` in Stripe return URLs.
   ✅ FIXED 2026-07-14.** All four functions (marketplace-checkout, stripe-checkout,
   stripe-portal, connect-onboard) now route `origin` through a shared `safeOrigin()`
@@ -217,12 +226,15 @@
   to the default. Redeployed. Verified: unit-tested the allowlist + an `evil.com`
   order still returns a valid checkout URL with the redirect neutralized. Add a
   custom prod domain later via the `SITE_ORIGIN` function env var.
-- [ ] **M3 — `profiles` public read exposes every user's precise coordinates.**
-  `0005_auth_profiles.sql:33` (`using(true)`) makes `lat`/`lng`/`location` of
-  every user readable with the anon key. Intended to expose display fields
-  (name/initials/color) for posts, but leaks home coordinates. **Fix:** move
-  `lat/lng/location` to a self-read-only table, or expose profiles via a
-  security-definer view/RPC returning only display fields.
+- [x] **M3 — `profiles` public read exposes every user's precise coordinates.
+  ✅ FIXED 2026-07-14 (migration 0082).** Replaced the `using(true)` SELECT policy
+  with **self-read-only** (`using (id = auth.uid())`). Nothing needs other users'
+  profiles — post author display is denormalized on posts, and every
+  profile-reading function is SECURITY DEFINER. Verified: the owner still reads
+  their own profile (incl. coords); another user's profile and an anon table read
+  both return empty; the community feed (posts) is unaffected. If a "view a
+  neighbor's public profile" feature is added later, expose only display fields via
+  a SECURITY DEFINER RPC — never re-open the table.
 - [x] **M4 — Temporary `admin-diag` edge function has refund/forge power. ✅ FIXED
   2026-07-14 — DELETED.** The function (deployed + `supabase/functions/admin-diag/`)
   was removed entirely; it was an unused sandbox debug tool. If Stripe diagnostics
