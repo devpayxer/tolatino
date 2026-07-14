@@ -5,6 +5,45 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Hub de Promociones — Fase 2: Servicios + Renta (2026-07-14, migración 0088)
+
+El hub ahora cubre **los 4 módulos de venta**, no solo Menú y Tienda. Servicios y
+Renta ganaron promos con código, canjeables en su checkout, con conteo real de
+canjes — el mismo modelo **absorbido por el negocio** (la plataforma nunca pone el
+descuento; su comisión del 15% no baja).
+- **Config:** `serviceConfig`/`rentalConfig` ganan `promos: Promo[]` (reusa el
+  `Promo` del menú). El `CampaignEditor` recibe `scopes` (solo los módulos activos
+  del negocio) y muestra selector de alcance de hasta 4 (Menú/Servicios/Renta/
+  Tienda). Servicios y Renta son **solo `% descuento`** (booking/renta se cobran
+  por depósito/tarifa); Menú mantiene %/combo/2x1/happy y Tienda %/$/envío/2x1.
+- **Validación server-authoritative:** `check_promo` gana un arg **`in_scope`**
+  (`menu`|`service`|`rental`, default `menu`) → lee la tienda correcta
+  (`service_config.promos` / `rental_config.promos`). Sin fuga entre alcances
+  (un código de Servicios no aplica en Renta). Se dropeó el overload de 3 args.
+- **Canje en el checkout:** las hojas de **Reservar** y **Rentar** (BizDetail)
+  ganan un `<PromoField>` (espejo del carrito) que solo aparece al pagar en línea
+  (booking con depósito / renta con tarifa). `marketplace-checkout` re-valida el
+  código contra la config del negocio en las ramas booking/rental y aplica el
+  descuento (absorbido por el negocio), guardando el código en `payload.promo`.
+- **Canjes reales de Servicios/Renta:** `owner_promo_stats` ahora hace **UNION** de
+  `business_orders.fulfillment->>'promo'` (Menú/Tienda) **+**
+  `pending_purchases.payload->>'promo'` de booking/rental **fulfilled** (esas
+  compras no tienen columna de código propia; el staged purchase es la fuente).
+- **Fix de conteo (Menú tarjeta):** el pedido pagado con tarjeta ahora sí guarda
+  `fulfillment.promo` (+ resta el descuento de `paid_total`) — antes solo el pago
+  en efectivo lo guardaba, así que los canjes con tarjeta no se contaban.
+- Verificado E2E: `check_promo` por alcance (con corte por `minOrder` y anti-fuga),
+  `owner_promo_stats` UNION (2 canjes booking/rental contados, el `pending`
+  excluido, gate por dueño), y el editor del hub en navegador real (los 4 alcances +
+  filtro de tipos por alcance). Artefactos de prueba revertidos. El `PromoField` del
+  consumidor es espejo fiel del carrito ya en producción (El Sabor no tiene servicio/
+  renta con depósito sembrado para una captura viva; verificado por build+tsc+lógica).
+- Archivos: `serviceConfig.ts`, `rentalConfig.ts`, `Promociones.tsx` (scopes en el
+  editor + save de service/rental), `BizDetail.tsx` (`PromoField` + estado/wiring en
+  Reservar/Rentar), `lib/live.tsx` (`checkPromo` gana `scope`), `tabs.tsx` (subtítulo),
+  `marketplace-checkout` (ramas booking/rental + fix de fulfillment.promo del menú),
+  migración `0088_promo_scopes.sql`.
+
 ## Hub de Promociones (Premium) — todas las campañas en un lugar (2026-07-14, migración 0087)
 
 Nueva sección del panel **Promociones** (`tab==='promos'`, en el grupo "Vender",

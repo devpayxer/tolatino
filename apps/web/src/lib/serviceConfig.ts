@@ -1,4 +1,5 @@
 'use client';
+import type { Promo } from '@/lib/menuConfig';
 
 // Service structure for the Servicios module (business dashboard): categories +
 // reusable add-ons + booking mode. Stored as ONE jsonb blob in
@@ -33,6 +34,9 @@ export type ServiceConfig = {
   // business that just wants to showcase); true = accept online bookings (the
   // Reservar flow + deposits).
   booking: boolean;
+  // Promotions the owner manages from the Promociones hub. A `percent` promo with a
+  // `code` is redeemable at booking checkout (business-absorbed). Reuses menu Promo.
+  promos: Promo[];
 };
 
 export const svcId = () =>
@@ -62,6 +66,7 @@ export const defaultServiceConfig = (): ServiceConfig => ({
   addons: [],
   tags: [],
   booking: false,
+  promos: [],
 });
 
 /** Rich sample config for DEMO mode — restaurant-style bookable services. */
@@ -80,6 +85,7 @@ export const demoServiceConfig = (): ServiceConfig => ({
   ],
   tags: ['A domicilio', 'Bilingüe'],
   booking: true,
+  promos: [],
 });
 
 /** Coerce whatever is stored in the jsonb column into a usable config. */
@@ -92,5 +98,6 @@ export function normalizeServiceConfig(raw: unknown): ServiceConfig {
     addons: Array.isArray(r.addons) ? r.addons : [],
     tags: Array.isArray(r.tags) ? r.tags : [],
     booking: r.booking === true, // default display-only
+    promos: Array.isArray(r.promos) ? r.promos : [],
   };
 }

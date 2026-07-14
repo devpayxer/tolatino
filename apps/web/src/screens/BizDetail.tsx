@@ -299,6 +299,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [svcTime, setSvcTime] = useState(-1); // selected slot: minute-of-day (-1 = none yet)
   const [svcPersons, setSvcPersons] = useState(1);
   const [svcAddOns, setSvcAddOns] = useState<Record<string, boolean>>({});
+  // Booking promo code — the business's own service_config promo, redeemed here
+  // (server re-validates at checkout). Reset when the selected service changes.
+  const [svcPromo, setSvcPromo] = useState<{ code: string; percent: number; label: string } | null>(null);
   const [svcDone, setSvcDone] = useState(false);
   const [rentIdx, setRentIdx] = useState<number | null>(null);
   const [rentMode, setRentMode] = useState<RentMode>('day');
@@ -307,6 +310,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [rentHours, setRentHours] = useState(2);
   const [rentUnits, setRentUnits] = useState(1); // how many units to rent (≤ stock)
   const [rentAddons, setRentAddons] = useState<string[]>([]); // selected add-on ids
+  // Rental promo code — the business's own rental_config promo (server re-validates).
+  const [rentPromo, setRentPromo] = useState<{ code: string; percent: number; label: string } | null>(null);
   const [rentBusy, setRentBusy] = useState<Record<string, number>>({}); // yyyy-mm-dd → units already booked
   const [rentCal, setRentCal] = useState<{ y: number; m: number }>(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [rentDone, setRentDone] = useState(false);
@@ -517,6 +522,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   }, [b.slug, tipCfg?.def, tipCfg?.mode]);
   // Clear any applied promo when switching businesses.
   useEffect(() => { setPromo(null); setPromoInput(''); setPromoErr(''); }, [b.slug]);
+  // Reset the booking/rental promo when the selected service/rental item changes.
+  useEffect(() => { setSvcPromo(null); }, [svcSel?.id, svcSel?.name]);
+  useEffect(() => { setRentPromo(null); }, [rentIdx]);
 
   const applyPromo = async () => {
     const code = promoInput.trim();
@@ -809,6 +817,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         // structured inputs → server re-prices from DB (ignores subtotal)
         party_size: svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : 1,
         addon_ids: svcChosenAddons().map((a) => a.id),
+        ...(svcPromo ? { promo: svcPromo.code } : {}),
         payload: { service_name: label, service_id: svcSel.id ?? null, starts_at: svcStartISO(), party_size: persons, deposit: total },
       });
       if (url) { window.location.href = url; return; }
@@ -948,6 +957,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         // structured inputs → server re-prices the fee from DB rates + span (ignores subtotal)
         mode: rentMode, hours: rentHours, units: rentUnits,
         addon_ids: it.addons.filter((a) => rentAddons.includes(a.id)).map((a) => a.id),
+        ...(rentPromo ? { promo: rentPromo.code } : {}),
         payload: { item_name: B(it.n), item_id: itemId, start_at: rentStartISO(), end_at: rentEndISO(), qty: rentUnits, total: rentGrand(it), deposit: rentDepositTotal(it) },
       });
       if (url) { window.location.href = url; return; }
@@ -2675,6 +2685,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {svcSel !== null && !svcDone && (() => {
           const total = svcTotal();
           const showTotal = svcSel.price != null && total > 0;
+          // Online deposit path is the only one a promo code affects (cash bookings
+          // settle in person). Business-absorbed % off; server re-validates at pay.
+          const svcOnlineDep = payOnline && !!svcSel.deposit && total > 0;
+          const svcDiscount = svcPromo ? Math.min(total, +(total * svcPromo.percent / 100).toFixed(2)) : 0;
+          const svcPayToday = +(total * 1.05 - svcDiscount).toFixed(2);
           return (
             <>
               <OverlayTitle title={svcSel.name} onClose={() => setSvcSel(null)} />
@@ -2763,23 +2778,31 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 </>
               )}
 
+              {/* promo code — only when paying a deposit online (a code has no effect
+                  on a cash/inquiry booking). The business creates it in Promociones. */}
+              {svcOnlineDep && (
+                <PromoField slug={b.slug} scope="service" subtotal={total} applied={svcPromo}
+                  onApply={setSvcPromo} onClear={() => setSvcPromo(null)} L={L} money={money} />
+              )}
+
               {/* total + deposit summary (numeric-priced services) */}
               {showTotal && (
                 <div className="mt-4 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
                   <div className="flex justify-between"><span>{L('Total estimado', 'Estimated total')}</span><span className="text-[14px] font-extrabold text-ink">{money(total)}</span></div>
-                  {svcSel.deposit && payOnline && total > 0
+                  {svcOnlineDep
                     ? <>
                         <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-ink">{money(total)}</span></div>
                         <div className="mt-0.5 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span className="font-extrabold text-ink">{money(+(total * 0.05).toFixed(2))}</span></div>
-                        <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas hoy', 'You pay today')}</span><span className="font-extrabold text-primary-dark">{money(+(total * 1.05).toFixed(2))}</span></div>
+                        {svcDiscount > 0 && <div className="mt-0.5 flex justify-between text-[11.5px] text-green-dark"><span>{L('Descuento', 'Discount')}{svcPromo ? ` · ${svcPromo.code}` : ''}</span><span className="font-extrabold">−{money(svcDiscount)}</span></div>}
+                        <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas hoy', 'You pay today')}</span><span className="font-extrabold text-primary-dark">{money(svcPayToday)}</span></div>
                       </>
                     : svcSel.deposit && <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-primary-dark">{money(total)}</span></div>}
                 </div>
               )}
 
               <PrimaryBtn className="mt-5" onClick={confirmBooking}>
-                {payOnline && svcSel.deposit && total > 0
-                  ? `${L('Pagar reserva · ', 'Pay booking · ')}${money(+(total * 1.05).toFixed(2))}`
+                {svcOnlineDep
+                  ? `${L('Pagar reserva · ', 'Pay booking · ')}${money(svcPayToday)}`
                   : svcSel.bookable ? L('Solicitar reserva', 'Request booking') : L('Solicitar información', 'Request info')}
               </PrimaryBtn>
             </>
@@ -2816,6 +2839,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           const unitFee = rentUnitFee(it);
           const maxUnits = Math.max(1, it.stock || 1);
           const selectedAddons = it.addons.filter((a) => rentAddons.includes(a.id));
+          // Online rental fee path is the only one a promo code affects (deposit is
+          // collected at pickup). Business-absorbed % off; server re-validates at pay.
+          const rentFee = rentSubtotal(it);
+          const rentOnline = payOnline && rentFee > 0;
+          const rentDiscount = rentPromo ? Math.min(rentFee, +(rentFee * rentPromo.percent / 100).toFixed(2)) : 0;
+          const rentPayToday = +(rentFee * 1.05 - rentDiscount).toFixed(2);
           const shortD = (isoStr: string) => { const dt = parseISO(isoStr); return L(`${MO_SH_ES[dt.getMonth()]} ${dt.getDate()}`, `${MO_SH_EN[dt.getMonth()]} ${dt.getDate()}`); };
           const shiftMonth = (dir: number) => setRentCal((c) => { const d = new Date(c.y, c.m + dir, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
           const dayLbl = rentMode === 'hour' ? `${rentHours} ${rentHours === 1 ? L('hora', 'hour') : L('horas', 'hours')}` : `${span} ${span === 1 ? L('día', 'day') : L('días', 'days')}`;
@@ -2916,21 +2945,29 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   : <span className="font-semibold text-muted">{L('Toca un día para empezar', 'Tap a day to start')}</span>}
               </div>
 
+              {/* promo code — only when paying the rental fee online (deposit is at
+                  pickup, so a code has no effect on a request/cash rental). */}
+              {rentOnline && (
+                <PromoField slug={b.slug} scope="rental" subtotal={rentFee} applied={rentPromo}
+                  onApply={setRentPromo} onClear={() => setRentPromo(null)} L={L} money={money} />
+              )}
+
               <div className="mt-3 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
                 <div className="flex justify-between"><span>{L('Renta', 'Rental')}{rentStart ? ` · ${rentUnits > 1 ? `${rentUnits}× ` : ''}${dayLbl}` : ''}</span><span>{money(unitFee * rentUnits)}</span></div>
                 {selectedAddons.map((a) => (
                   <div key={a.id} className="mt-1 flex justify-between text-[11.5px]"><span>{B(a.name)}</span><span>{a.price ? money(a.price) : L('Gratis', 'Free')}</span></div>
                 ))}
-                <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable', 'Refundable deposit')}{payOnline && rentSubtotal(it) > 0 ? L(' · al recoger', ' · at pickup') : ''}{rentUnits > 1 ? ` · ${rentUnits}×` : ''}</span><span>{money(it.dep * rentUnits)}</span></div>
-                {payOnline && rentSubtotal(it) > 0 && (
+                <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable', 'Refundable deposit')}{rentOnline ? L(' · al recoger', ' · at pickup') : ''}{rentUnits > 1 ? ` · ${rentUnits}×` : ''}</span><span>{money(it.dep * rentUnits)}</span></div>
+                {rentOnline && (
                   <>
-                    <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span>{money(+(rentSubtotal(it) * 0.05).toFixed(2))}</span></div>
+                    <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span>{money(+(rentFee * 0.05).toFixed(2))}</span></div>
+                    {rentDiscount > 0 && <div className="mt-1 flex justify-between text-[11.5px] text-green-dark"><span>{L('Descuento', 'Discount')}{rentPromo ? ` · ${rentPromo.code}` : ''}</span><span className="font-extrabold">−{money(rentDiscount)}</span></div>}
                     <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
-                      <span>{L('Pagas hoy', 'You pay today')}</span><span className="text-primary-dark">{money(+(rentSubtotal(it) * 1.05).toFixed(2))}</span>
+                      <span>{L('Pagas hoy', 'You pay today')}</span><span className="text-primary-dark">{money(rentPayToday)}</span>
                     </div>
                   </>
                 )}
-                {!(payOnline && rentSubtotal(it) > 0) && (
+                {!rentOnline && (
                   <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
                     <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(rentGrand(it))}</span>
                   </div>
@@ -2938,7 +2975,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </div>
 
               <PrimaryBtn className="mt-4" onClick={confirmRental}>
-                {!rentStart ? L('Elige la fecha', 'Pick a date') : payOnline && rentSubtotal(it) > 0 ? `${L('Pagar renta · ', 'Pay rental · ')}${money(+(rentSubtotal(it) * 1.05).toFixed(2))}` : L('Solicitar renta', 'Request rental')}
+                {!rentStart ? L('Elige la fecha', 'Pick a date') : rentOnline ? `${L('Pagar renta · ', 'Pay rental · ')}${money(rentPayToday)}` : L('Solicitar renta', 'Request rental')}
               </PrimaryBtn>
             </>
           );
@@ -3036,6 +3073,61 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <div className="fixed bottom-24 left-1/2 z-[90] w-[calc(100%-28px)] max-w-[360px] -translate-x-1/2 rounded-xl bg-ink px-4 py-3 text-center text-[12.5px] font-bold text-white shadow-modal">
           {toast}
         </div>
+      )}
+    </div>
+  );
+}
+
+// Promo-code field for the booking/rental sheets — mirrors the food cart's promo
+// input. Manages its own input/loading/error; reports the validated result up via
+// onApply (the parent recomputes the discount off the live subtotal + passes the
+// code to checkout, where the server re-validates). `scope` picks the store the
+// code lives in (service_config vs rental_config).
+function PromoField({ slug, scope, subtotal, applied, onApply, onClear, L, money }: {
+  slug: string;
+  scope: 'service' | 'rental';
+  subtotal: number;
+  applied: { code: string; percent: number; label: string } | null;
+  onApply: (r: { code: string; percent: number; label: string }) => void;
+  onClear: () => void;
+  L: (es: string, en: string) => string;
+  money: (n: number) => string;
+}) {
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const discount = applied ? Math.min(subtotal, +(subtotal * applied.percent / 100).toFixed(2)) : 0;
+  const apply = async () => {
+    const code = input.trim();
+    if (!code || busy) return;
+    setBusy(true); setErr('');
+    const r = await checkPromo(slug, code, subtotal, scope);
+    setBusy(false);
+    if (r.ok) { onApply({ code: code.toUpperCase(), percent: r.percent, label: r.label }); setInput(''); setErr(''); }
+    else { onClear(); setErr(L('Código no válido para esto', 'Code not valid for this')); }
+  };
+  return (
+    <div className="mt-4">
+      {applied ? (
+        <div className="flex items-center justify-between gap-2 rounded-field bg-green-bg px-3 py-2">
+          <div className="min-w-0">
+            <div className="text-[12px] font-extrabold text-green-dark">{L('Código', 'Code')} {applied.code} · −{money(discount)}</div>
+            {applied.label && <div className="truncate text-[10.5px] font-semibold text-green-dark/80">{applied.label}</div>}
+          </div>
+          <button onClick={() => { onClear(); setInput(''); setErr(''); }} className="flex-none cursor-pointer text-[11px] font-extrabold text-green-dark underline">{L('Quitar', 'Remove')}</button>
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-2">
+            <input value={input} onChange={(e) => { setInput(e.target.value.toUpperCase().replace(/\s+/g, '')); setErr(''); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') apply(); }}
+              placeholder={L('Código de promoción', 'Promo code')} maxLength={24}
+              className="min-w-0 flex-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-extrabold uppercase text-ink outline-none placeholder:font-semibold placeholder:normal-case placeholder:text-muted focus:border-primary" />
+            <button onClick={apply} disabled={!input.trim() || busy}
+              className="flex-none cursor-pointer rounded-field bg-lilac-2 px-4 py-2.5 text-[12.5px] font-extrabold text-primary-dark disabled:opacity-50">{busy ? '…' : L('Aplicar', 'Apply')}</button>
+          </div>
+          {err && <div className="mt-1 text-[11px] font-semibold text-pink-dark">{err}</div>}
+        </>
       )}
     </div>
   );

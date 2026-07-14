@@ -8,8 +8,11 @@
 //
 // Amounts are computed SERVER-SIDE from authoritative DB prices — orders are
 // re-priced from business_items + menu/product config (base + add-on options by
-// id), tickets from event_tiers — the client cannot dictate what it pays.
-// (Booking/rental deposits are still client-supplied — see LAUNCH-CHECKLIST H3.)
+// id), booking deposits from the service price × party + add-ons, rental fees from
+// the rate × re-derived span + add-ons, tickets from event_tiers — the client
+// cannot dictate what it pays. A business's own `percent` promo code (menu/service/
+// rental config) is applied business-absorbed: it lowers what the buyer pays and
+// the seller's transfer, but the platform keeps its full 15% fee.
 //
 // Secrets: STRIPE_SECRET_KEY.  Auto: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 
@@ -231,7 +234,10 @@ Deno.serve(async (req) => {
             : { eta_range: `${prep} min` }),
           subtotal, delivery_fee: deliveryFee, tip,
           service_fee: Math.round(subtotal * 5) / 100,
-          paid_total: Math.round(subtotal * 105 + deliveryFee * 100 + tip * 100) / 100,
+          // Record the redeemed promo so the owner's Promociones stats count it
+          // (owner_promo_stats reads fulfillment->>'promo') and paid_total nets it out.
+          ...(discount > 0 && code ? { promo: code, discount: Math.round(discount * 100) / 100 } : {}),
+          paid_total: Math.round(subtotal * 105 + deliveryFee * 100 + tip * 100 - discount * 100) / 100,
         },
       };
     } else if (kind === 'booking') {
@@ -257,7 +263,26 @@ Deno.serve(async (req) => {
       total += bookAddonSum;
       if (!(total > 0) || total > 100000) return json({ error: 'bad amount' }, 400);
       subtotal = total;
-      payload = { ...((body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {}), deposit: total };
+      // The BUSINESS's own service promo (service_config.promos): an active `percent`
+      // code that matches and whose minOrder the deposit meets. Business-absorbed
+      // (the platform fee is NOT reduced). Recompute from config — never trust a
+      // client amount. The code is stashed on the payload so owner_promo_stats
+      // (0088) counts the redemption once the booking is fulfilled.
+      const bCode = String(body?.promo ?? '').trim().toUpperCase();
+      if (bCode) {
+        const promos = Array.isArray((svcRow?.config as Record<string, unknown>)?.promos)
+          ? ((svcRow!.config as Record<string, unknown>).promos as Record<string, unknown>[]) : [];
+        const hit = promos.find((p) => p?.status === 'active' && p?.type === 'percent'
+          && String(p?.code ?? '').trim().toUpperCase() === bCode
+          && Number(p?.value ?? 0) > 0
+          && subtotal >= (Number(p?.minOrder ?? 0) || 0));
+        if (hit) discount = Math.min(subtotal, Math.round(Number(hit.value) * subtotal) / 100);
+      }
+      payload = {
+        ...((body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {}),
+        deposit: total,
+        ...(discount > 0 && bCode ? { promo: bCode, discount: Math.round(discount * 100) / 100 } : {}),
+      };
     } else if (kind === 'rental') {
       // RE-PRICE the rental fee from DB (never trust body.subtotal). Rates
       // (hour/day/week) + add-on prices come from DB; the DURATION is re-derived
@@ -296,7 +321,23 @@ Deno.serve(async (req) => {
       fee += addonSum;
       if (!(fee > 0) || fee > 100000) return json({ error: 'bad amount' }, 400);
       subtotal = fee;
-      payload = (body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {};
+      // The BUSINESS's own rental promo (rental_config.promos): active `percent`
+      // code, minOrder met. Business-absorbed; recompute from config. Stashed on the
+      // payload so owner_promo_stats (0088) counts it once the rental is fulfilled.
+      const rCode = String(body?.promo ?? '').trim().toUpperCase();
+      if (rCode) {
+        const promos = Array.isArray((rentRow?.config as Record<string, unknown>)?.promos)
+          ? ((rentRow!.config as Record<string, unknown>).promos as Record<string, unknown>[]) : [];
+        const hit = promos.find((p) => p?.status === 'active' && p?.type === 'percent'
+          && String(p?.code ?? '').trim().toUpperCase() === rCode
+          && Number(p?.value ?? 0) > 0
+          && subtotal >= (Number(p?.minOrder ?? 0) || 0));
+        if (hit) discount = Math.min(subtotal, Math.round(Number(hit.value) * subtotal) / 100);
+      }
+      payload = {
+        ...((body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {}),
+        ...(discount > 0 && rCode ? { promo: rCode, discount: Math.round(discount * 100) / 100 } : {}),
+      };
     } else {
       const ev = (await get(`events?slug=eq.${encodeURIComponent(slug)}&select=id,owner_id,title_es,status`))?.[0];
       if (!ev) return json({ error: 'event not found' }, 404);

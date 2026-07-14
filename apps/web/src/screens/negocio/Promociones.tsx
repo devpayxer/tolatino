@@ -24,10 +24,12 @@ import {
   defaultProductConfig, demoProductConfig, normalizeProductConfig,
   type ProductConfig, type Discount, type DiscountType,
 } from '@/lib/productConfig';
+import { defaultServiceConfig, demoServiceConfig, normalizeServiceConfig, type ServiceConfig } from '@/lib/serviceConfig';
+import { defaultRentalConfig, demoRentalConfig, normalizeRentalConfig, type RentalConfig } from '@/lib/rentalConfig';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { Toast } from '@/screens/negocio/modules/_page';
 
-type Scope = 'menu' | 'shop';
+type Scope = 'menu' | 'service' | 'rental' | 'shop';
 type Status = 'active' | 'paused' | 'scheduled';
 type Camp = {
   scope: Scope; id: string; name: string; typeKey: string;
@@ -38,22 +40,29 @@ type Camp = {
 const cardCls = 'rounded-card border border-hair bg-white shadow-card';
 
 export function Promociones({ ctx }: { ctx: PanelCtx }) {
-  const { L, es } = ctx;
+  const { L, es, mods } = ctx;
   const admin = useBizAdmin();
   const real = admin.active;
   const demo = admin.demo;
   const persistable = !demo && !!real;
+  // Which scopes the business can create promos for (its active selling modules).
+  const activeHas = (s: Scope) => s === 'menu' ? !!mods.menu : s === 'service' ? !!mods.services : s === 'rental' ? !!mods.rental : !!mods.products;
+  const scopes: Scope[] = (['menu', 'service', 'rental', 'shop'] as Scope[]).filter((s) => demo || activeHas(s));
 
   const [cfgM, setCfgM] = useState<MenuConfig>(defaultMenuConfig());
+  const [cfgS, setCfgS] = useState<ServiceConfig>(defaultServiceConfig());
+  const [cfgR, setCfgR] = useState<RentalConfig>(defaultRentalConfig());
   const [cfgP, setCfgP] = useState<ProductConfig>(defaultProductConfig());
   const [stats, setStats] = useState<Record<string, { redemptions: number; revenue: number }>>({});
-  const [filter, setFilter] = useState<'all' | 'menu' | 'shop' | 'codes'>('all');
+  const [filter, setFilter] = useState<'all' | Scope | 'codes'>('all');
   const [toast, setToast] = useState('');
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 2200); };
   const [sheet, setSheet] = useState<{ open: boolean; scope: Scope; edit: Camp | null }>({ open: false, scope: 'menu', edit: null });
 
   useEffect(() => {
     setCfgM(demo ? demoMenuConfig() : real?.menu_config ? normalizeMenuConfig(real.menu_config) : defaultMenuConfig());
+    setCfgS(demo ? demoServiceConfig() : real?.service_config ? normalizeServiceConfig(real.service_config) : defaultServiceConfig());
+    setCfgR(demo ? demoRentalConfig() : real?.rental_config ? normalizeRentalConfig(real.rental_config) : defaultRentalConfig());
     setCfgP(demo ? demoProductConfig() : real?.product_config ? normalizeProductConfig(real.product_config) : defaultProductConfig());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, demo]);
@@ -67,25 +76,32 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
   }, [real?.id, persistable, demo]);
 
   const saveMenu = (next: MenuConfig) => { setCfgM(next); if (persistable) admin.update({ menu_config: next }); };
+  const saveService = (next: ServiceConfig) => { setCfgS(next); if (persistable) admin.update({ service_config: next }); };
+  const saveRental = (next: RentalConfig) => { setCfgR(next); if (persistable) admin.update({ rental_config: next }); };
   const saveShop = (next: ProductConfig) => { setCfgP(next); if (persistable) admin.update({ product_config: next }); };
 
   const dayFmt = (d?: string) => (d ? new Date(d + 'T00:00').toLocaleDateString(es ? 'es-US' : 'en-US', { month: 'short', day: 'numeric' }) : '');
 
-  // ── unify both stores into one campaign list ──────────────────────────────
+  // ── unify all stores into one campaign list ───────────────────────────────
   const camps: Camp[] = useMemo(() => {
     const out: Camp[] = [];
-    for (const p of cfgM.promos) {
-      const code = p.code?.toUpperCase();
-      const st = stats[code ?? ''];
-      out.push({
-        scope: 'menu', id: p.id, name: es ? p.es : (p.en || p.es), typeKey: p.type, value: p.value,
-        code, minOrder: p.minOrder, status: p.status,
-        schedule: p.status === 'scheduled' ? `${L('Empieza', 'Starts')} ${dayFmt(p.startDate)}`
-          : p.type === 'happy' && p.timeStart != null ? `${String(p.timeStart).padStart(2, '0')}:00–${String(p.timeEnd ?? 0).padStart(2, '0')}:00`
-          : p.minOrder ? `${L('Siempre', 'Always')} · ${L('mín.', 'min.')} $${p.minOrder}` : L('Siempre', 'Always'),
-        redemptions: st?.redemptions ?? 0, revenue: st?.revenue ?? 0,
-      });
-    }
+    const fromPromos = (scope: Scope, promos: Promo[]) => {
+      for (const p of promos) {
+        const code = p.code?.toUpperCase();
+        const st = stats[code ?? ''];
+        out.push({
+          scope, id: p.id, name: es ? p.es : (p.en || p.es), typeKey: p.type, value: p.value,
+          code, minOrder: p.minOrder, status: p.status,
+          schedule: p.status === 'scheduled' ? `${L('Empieza', 'Starts')} ${dayFmt(p.startDate)}`
+            : p.type === 'happy' && p.timeStart != null ? `${String(p.timeStart).padStart(2, '0')}:00–${String(p.timeEnd ?? 0).padStart(2, '0')}:00`
+            : p.minOrder ? `${L('Siempre', 'Always')} · ${L('mín.', 'min.')} $${p.minOrder}` : L('Siempre', 'Always'),
+          redemptions: st?.redemptions ?? 0, revenue: st?.revenue ?? 0,
+        });
+      }
+    };
+    fromPromos('menu', cfgM.promos);
+    fromPromos('service', cfgS.promos);
+    fromPromos('rental', cfgR.promos);
     for (const d of cfgP.discounts) {
       const code = d.code?.toUpperCase();
       const st = stats[code ?? ''];
@@ -98,7 +114,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
       });
     }
     return out;
-  }, [cfgM, cfgP, stats, es, L]);
+  }, [cfgM, cfgS, cfgR, cfgP, stats, es, L]);
 
   const shown = camps.filter((c) => filter === 'all' || (filter === 'codes' ? !!c.code : c.scope === filter));
   const kpi = {
@@ -108,23 +124,29 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
     redemptions: Object.values(stats).reduce((n, s) => n + s.redemptions, 0),
   };
 
+  // Rewrite a scope's promo list. Menu/Service/Rental share the Promo[] shape.
+  const writePromos = (scope: Scope, fn: (list: Promo[]) => Promo[]) => {
+    if (scope === 'menu') saveMenu({ ...cfgM, promos: fn(cfgM.promos) });
+    else if (scope === 'service') saveService({ ...cfgS, promos: fn(cfgS.promos) });
+    else if (scope === 'rental') saveRental({ ...cfgR, promos: fn(cfgR.promos) });
+  };
   const setStatus = (c: Camp, status: Status) => {
-    if (c.scope === 'menu') saveMenu({ ...cfgM, promos: cfgM.promos.map((p) => (p.id === c.id ? { ...p, status } : p)) });
-    else saveShop({ ...cfgP, discounts: cfgP.discounts.map((d) => (d.id === c.id ? { ...d, status } : d)) });
+    if (c.scope === 'shop') saveShop({ ...cfgP, discounts: cfgP.discounts.map((d) => (d.id === c.id ? { ...d, status } : d)) });
+    else writePromos(c.scope, (l) => l.map((p) => (p.id === c.id ? { ...p, status } : p)));
     flash(status === 'active' ? L('Campaña activada', 'Campaign activated') : status === 'paused' ? L('Campaña pausada', 'Campaign paused') : L('Guardado', 'Saved'));
   };
   const removeCamp = (c: Camp) => {
-    if (c.scope === 'menu') saveMenu({ ...cfgM, promos: cfgM.promos.filter((p) => p.id !== c.id) });
-    else saveShop({ ...cfgP, discounts: cfgP.discounts.filter((d) => d.id !== c.id) });
+    if (c.scope === 'shop') saveShop({ ...cfgP, discounts: cfgP.discounts.filter((d) => d.id !== c.id) });
+    else writePromos(c.scope, (l) => l.filter((p) => p.id !== c.id));
     flash(L('Campaña eliminada', 'Campaign deleted'));
   };
   const upsert = (scope: Scope, obj: Promo | Discount) => {
-    if (scope === 'menu') {
-      const p = obj as Promo; const exists = cfgM.promos.some((x) => x.id === p.id);
-      saveMenu({ ...cfgM, promos: exists ? cfgM.promos.map((x) => (x.id === p.id ? p : x)) : [...cfgM.promos, p] });
-    } else {
+    if (scope === 'shop') {
       const d = obj as Discount; const exists = cfgP.discounts.some((x) => x.id === d.id);
       saveShop({ ...cfgP, discounts: exists ? cfgP.discounts.map((x) => (x.id === d.id ? d : x)) : [...cfgP.discounts, d] });
+    } else {
+      const p = obj as Promo;
+      writePromos(scope, (l) => (l.some((x) => x.id === p.id) ? l.map((x) => (x.id === p.id ? p : x)) : [...l, p]));
     }
     flash(sheet.edit ? L('Campaña guardada', 'Campaign saved') : L('Campaña creada', 'Campaign created'));
   };
@@ -137,6 +159,13 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
     happy: { es: 'Happy hour', en: 'Happy hour', Icon: IconClock, c: '#9A6A12', bg: '#FCEFD6' },
     shipping: { es: 'Envío gratis', en: 'Free shipping', Icon: IconTruck, c: '#1F8A4C', bg: '#E3F5EA' },
   }[k] ?? { es: 'Promo', en: 'Promo', Icon: IconPercentage, c: '#4338CA', bg: '#EFEBFF' });
+
+  const scopeMeta = (s: Scope) => ({
+    menu: { es: 'Menú', en: 'Menu', cls: 'bg-[#F2FBF5] text-green-dark' },
+    service: { es: 'Servicios', en: 'Services', cls: 'bg-lilac-2 text-primary-dark' },
+    rental: { es: 'Renta', en: 'Rental', cls: 'bg-pink-bg text-pink-dark' },
+    shop: { es: 'Tienda', en: 'Shop', cls: 'bg-[#FFF6EC] text-amber-ink' },
+  }[s]);
 
   const statusPill = (s: Status) => s === 'active'
     ? <span className="flex-none rounded-full bg-green-bg px-2.5 py-1 text-[10px] font-extrabold text-green-dark">{L('Activa', 'Active')}</span>
@@ -161,7 +190,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
           </div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <span className="rounded-chip bg-lilac-2 px-2 py-0.5 text-[10.5px] font-bold text-ink-2">{valLabel}</span>
-            <span className={`rounded-chip px-2 py-0.5 text-[10.5px] font-bold ${c.scope === 'menu' ? 'bg-[#F2FBF5] text-green-dark' : 'bg-[#FFF6EC] text-amber-ink'}`}>{c.scope === 'menu' ? L('Menú', 'Menu') : L('Tienda', 'Shop')}</span>
+            {(() => { const sm = scopeMeta(c.scope); return <span className={`rounded-chip px-2 py-0.5 text-[10.5px] font-bold ${sm.cls}`}>{es ? sm.es : sm.en}</span>; })()}
             {c.code && <span className="rounded-chip bg-[#F1F5FF] px-2 py-0.5 font-mono text-[10.5px] font-extrabold tracking-wider text-[#4338CA]">{c.code}</span>}
           </div>
           <div className="mt-2.5 flex items-center justify-between border-t border-hair pt-2.5">
@@ -196,7 +225,15 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
     </div>
   );
 
-  const FT: [typeof filter, string][] = [['all', L('Todas', 'All')], ['menu', L('Menú', 'Menu')], ['shop', L('Tienda', 'Shop')], ['codes', L('Códigos', 'Codes')]];
+  // Only show a scope's filter tab when the business actually has that module on.
+  const FT: [typeof filter, string][] = [
+    ['all', L('Todas', 'All')],
+    ...(cfgM.promos.length || activeHas('menu') ? [['menu', L('Menú', 'Menu')] as [typeof filter, string]] : []),
+    ...(cfgS.promos.length || activeHas('service') ? [['service', L('Servicios', 'Services')] as [typeof filter, string]] : []),
+    ...(cfgR.promos.length || activeHas('rental') ? [['rental', L('Renta', 'Rental')] as [typeof filter, string]] : []),
+    ...(cfgP.discounts.length || activeHas('shop') ? [['shop', L('Tienda', 'Shop')] as [typeof filter, string]] : []),
+    ['codes', L('Códigos', 'Codes')],
+  ];
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -218,7 +255,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
       </div>
 
       {/* CTA */}
-      <button onClick={() => setSheet({ open: true, scope: 'menu', edit: null })} className="mt-3.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
+      <button onClick={() => setSheet({ open: true, scope: scopes[0] ?? 'menu', edit: null })} className="mt-3.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20"><IconPlus size={15} stroke={2.6} /></span>
         {L('Nueva campaña', 'New campaign')}
       </button>
@@ -244,7 +281,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
 
       {sheet.open && (
         <CampaignEditor
-          L={L} es={es} scope={sheet.scope} edit={sheet.edit}
+          L={L} es={es} scope={sheet.scope} scopes={scopes} edit={sheet.edit}
           onClose={() => setSheet({ ...sheet, open: false })}
           onScope={(s) => setSheet({ ...sheet, scope: s })}
           onSave={(scope, obj) => { upsert(scope, obj); setSheet({ ...sheet, open: false }); }}
@@ -258,14 +295,17 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
 
 // ── unified create/edit editor — maps to the right store by scope ────────────
 function CampaignEditor({
-  L, es, scope, edit, onClose, onScope, onSave, onDelete,
+  L, es, scope, scopes, edit, onClose, onScope, onSave, onDelete,
 }: {
-  L: PanelCtx['L']; es: boolean; scope: Scope; edit: Camp | null;
+  L: PanelCtx['L']; es: boolean; scope: Scope; scopes: Scope[]; edit: Camp | null;
   onClose: () => void; onScope: (s: Scope) => void;
   onSave: (scope: Scope, obj: Promo | Discount) => void; onDelete: (c: Camp) => void;
 }) {
   const menuTypes: PromoType[] = ['percent', 'combo', 'bogo', 'happy'];
   const shopTypes: DiscountType[] = ['percent', 'amount', 'shipping', 'bogo'];
+  // Services & rentals only support a coded % discount at checkout (business-absorbed).
+  const bookTypes: PromoType[] = ['percent'];
+  const typesFor = (s: Scope): string[] => s === 'menu' ? menuTypes : s === 'shop' ? shopTypes : bookTypes;
   const [type, setType] = useState<string>(edit?.typeKey ?? 'percent');
   const [name, setName] = useState(edit?.name ?? '');
   const [value, setValue] = useState(edit?.value != null ? String(edit.value) : '');
@@ -274,8 +314,8 @@ function CampaignEditor({
   const [status, setStatus] = useState<Status>(edit?.status ?? 'active');
   const [startDate, setStartDate] = useState('');
   const [confirm, setConfirm] = useState(false);
-  const types = scope === 'menu' ? menuTypes : shopTypes;
-  useEffect(() => { if (!types.includes(type as never)) setType(types[0]); }, [scope]); // eslint-disable-line react-hooks/exhaustive-deps
+  const types = typesFor(scope);
+  useEffect(() => { if (!types.includes(type)) setType(types[0]); }, [scope]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const needsValue = type === 'percent' || type === 'amount' || type === 'combo';
   const canCode = type === 'percent' || type === 'amount'; // codes only make sense for a monetary discount
@@ -289,18 +329,19 @@ function CampaignEditor({
     const nm = name.trim();
     const codeUp = canCode && code.trim() ? code.trim().toUpperCase().replace(/\s+/g, '') : undefined;
     const min = Number(minOrder) > 0 ? Number(minOrder) : undefined;
-    if (scope === 'menu') {
-      onSave('menu', {
-        id, type: type as PromoType, es: nm, en: nm, descEs: '', descEn: '',
-        value: needsValue ? Number(value) || undefined : undefined,
-        code: type === 'percent' ? codeUp : undefined, minOrder: type === 'percent' ? min : undefined,
-        status, startDate: status === 'scheduled' ? startDate : undefined,
-      });
-    } else {
+    if (scope === 'shop') {
       onSave('shop', {
         id, code: codeUp ?? '', type: type as DiscountType,
         value: needsValue ? Number(value) || undefined : undefined,
         descEs: nm, descEn: nm, auto: !codeUp, minOrder: min,
+        status, startDate: status === 'scheduled' ? startDate : undefined,
+      });
+    } else {
+      // menu / service / rental all use the Promo shape.
+      onSave(scope, {
+        id, type: type as PromoType, es: nm, en: nm, descEs: '', descEn: '',
+        value: needsValue ? Number(value) || undefined : undefined,
+        code: type === 'percent' ? codeUp : undefined, minOrder: type === 'percent' ? min : undefined,
         status, startDate: status === 'scheduled' ? startDate : undefined,
       });
     }
@@ -310,14 +351,15 @@ function CampaignEditor({
     <Overlay open onClose={onClose} width={460} fullHeightSheet>
       <OverlayTitle title={edit ? L('Editar campaña', 'Edit campaign') : L('Nueva campaña', 'New campaign')} onClose={onClose} />
       <div className="flex flex-col gap-3.5">
-        {/* scope (create only) */}
-        {!edit && (
+        {/* scope (create only) — only the business's active selling modules */}
+        {!edit && scopes.length > 1 && (
           <div>
             <div className={lbl}>{L('¿Dónde aplica?', 'Where does it apply?')}</div>
-            <div className="flex gap-2">
-              {(['menu', 'shop'] as Scope[]).map((s) => (
-                <button key={s} onClick={() => onScope(s)} className={`flex-1 cursor-pointer rounded-field border-[1.5px] py-2.5 text-[12.5px] font-extrabold ${scope === s ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>{s === 'menu' ? L('Menú de comida', 'Food menu') : L('Tienda', 'Shop')}</button>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {scopes.map((s) => {
+                const scopeLabel: Record<Scope, string> = { menu: L('Menú de comida', 'Food menu'), service: L('Servicios', 'Services'), rental: L('Renta', 'Rental'), shop: L('Tienda', 'Shop') };
+                return <button key={s} onClick={() => onScope(s)} className={`min-w-[calc(50%-4px)] flex-1 cursor-pointer rounded-field border-[1.5px] py-2.5 text-[12.5px] font-extrabold ${scope === s ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>{scopeLabel[s]}</button>;
+              })}
             </div>
           </div>
         )}

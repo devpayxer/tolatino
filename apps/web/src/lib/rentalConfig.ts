@@ -1,4 +1,5 @@
 'use client';
+import type { Promo } from '@/lib/menuConfig';
 
 // Rental structure for the Renta module (business dashboard): categories +
 // reusable priced add-ons (delivery, setup, insurance…) + rental mode. Stored as
@@ -46,6 +47,9 @@ export type RentalConfig = {
   // business that just wants to showcase); true = accept online rentals (the
   // Rentar flow + deposits on the public listing).
   renting: boolean;
+  // Promotions the owner manages from the Promociones hub. A `percent` promo with a
+  // `code` is redeemable at rental checkout (business-absorbed). Reuses menu Promo.
+  promos: Promo[];
 };
 
 export const rentId = () =>
@@ -85,6 +89,7 @@ export const defaultRentalConfig = (): RentalConfig => ({
   policies: DEFAULT_RENTAL_POLICIES.map((p) => ({ ...p })),
   tags: [],
   renting: false,
+  promos: [],
 });
 
 /** Rich sample config for DEMO mode — event/party-rental-style. */
@@ -104,6 +109,7 @@ export const demoRentalConfig = (): RentalConfig => ({
   policies: DEFAULT_RENTAL_POLICIES.map((p) => ({ ...p })),
   tags: ['Más rentado', 'Para eventos'],
   renting: true,
+  promos: [],
 });
 
 /** Coerce whatever is stored in the jsonb column into a usable config. */
@@ -117,5 +123,6 @@ export function normalizeRentalConfig(raw: unknown): RentalConfig {
     policies: Array.isArray(r.policies) ? r.policies : base.policies,
     tags: Array.isArray(r.tags) ? r.tags : [],
     renting: r.renting === true, // default display-only
+    promos: Array.isArray(r.promos) ? r.promos : [],
   };
 }

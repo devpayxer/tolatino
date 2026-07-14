@@ -179,7 +179,7 @@ export function pageHead(tab: TabKey, ctx: PanelCtx) {
     reviews: [L('Reseñas', 'Reviews'), L('Responde y construye tu reputación.', 'Reply and build your reputation.')],
     updates: [L('Novedades', 'Updates'), L('Publica ofertas, eventos y avisos.', 'Post offers, events and news.')],
     payments: [L('Pagos', 'Payouts'), L('Depósitos, balance y método de pago.', 'Payouts, balance and payment method.')],
-    promos: [L('Promociones', 'Promotions'), L('Todas tus campañas de Menú y Tienda, en un solo lugar.', 'All your Menu & Shop campaigns in one place.')],
+    promos: [L('Promociones', 'Promotions'), L('Todas tus campañas — Menú, Servicios, Renta y Tienda — en un solo lugar.', 'All your campaigns — Menu, Services, Rental and Shop — in one place.')],
     staff: [L('Personal', 'Staff'), L('Equipo, roles y permisos.', 'Team, roles and permissions.')],
     jobs: [L('Empleos', 'Jobs'), L('Publica vacantes para la comunidad.', 'Post openings for the community.')],
     modules: [L('Configurar módulos', 'Module setup'), L('Activa solo lo que tu negocio necesita.', 'Turn on only what your business needs.')],
