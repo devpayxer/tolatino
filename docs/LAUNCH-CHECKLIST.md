@@ -480,9 +480,20 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   (migration 0045). The public listing's **Menú tab renders the real menu**
   (grouped by the owner's categories, per-item option pickers from their
   modifier groups, active promo on the hero). Deferred:
-  - [ ] **Promo redemption analytics** (canjes/ingresos per promo) — display &
-    management only; wire real counts when the transaction phase lands, and
-    APPLY promos to cart pricing at checkout.
+  - [x] **Promo redemption analytics + checkout (2026-07-14)** — the Promociones
+    hub (Premium) manages promos across Menú/Servicios/Renta/Tienda with REAL
+    redemption counts (`owner_promo_stats`), and coded `%` promos apply at the
+    cart/booking/rental checkout, server-validated business-absorbed
+    (`check_promo` + `marketplace-checkout`, migrations 0086–0088).
+  - [ ] **Shop (Tienda) coded discounts don't redeem at the order cart yet.**
+    The hub can create Tienda `%`/`$`/envío codes (`product_config.discounts`),
+    but the order cart's promo field + `marketplace-checkout` order branch only
+    validate `menu_config.promos` (scope=menu). For a products-only business, a
+    Tienda CODE therefore won't discount at checkout (auto discounts unaffected).
+    Pre-existing (predates the hub). Close by giving the shop cart a
+    `scope='shop'` promo path (`check_promo` already routes menu/service/rental;
+    add `shop`→`product_config.discounts`) + apply it in the order branch when the
+    cart is products-only. Until then the hub's Tienda codes are management-only.
   - [x] **Item photos (2026-07-06)** — real uploads via the shared image
     pipeline (client WebP + EXIF strip, 1200px edge) → `business_items.
     image_url`; wizard uploader with drag&drop/change/remove, edit-page
@@ -1321,4 +1332,4 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
 
 ---
 
-_Last updated: 2026-07-09. Add to this file as new deferrals appear._
+_Last updated: 2026-07-14. Add to this file as new deferrals appear._
