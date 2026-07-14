@@ -37,6 +37,9 @@ type Fulfil = {
   dispatch?: 'unassigned' | 'assigned' | 'picked_up' | 'on_the_way' | 'delivered';
   driver?: string; driver_phone?: string; eta?: string; prep?: number;
   subtotal?: number; delivery_fee?: number; service_fee?: number; paid_total?: number;
+  // 'cash' orders are paid on delivery/pickup (no Stripe) — the seller collects
+  // `collect_total` in cash; 'online'/absent means already charged by card.
+  payment?: 'cash' | 'online'; collect_total?: number;
 };
 type Order = {
   id: string; dbId?: string; who: [string, string]; placed: [string, string]; urgent: boolean;
@@ -873,9 +876,15 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       </div>
                       <div className="line-clamp-2 text-[11px] font-semibold leading-snug text-ink-3">{L(o.items[0], o.items[1])}</div>
                       <div className="mt-2.5 flex items-center justify-between">
-                        <span className={`rounded px-2 py-0.5 text-[9px] font-extrabold ${CH_TILE[o.channel]}`}>{chLabel(o.channel)}</span>
+                        <span className="flex items-center gap-1.5">
+                          <span className={`rounded px-2 py-0.5 text-[9px] font-extrabold ${CH_TILE[o.channel]}`}>{chLabel(o.channel)}</span>
+                          {o.fulfillment?.payment === 'cash' && <span className="rounded bg-green-bg px-2 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Efectivo', 'Cash')}</span>}
+                        </span>
                         <span className="text-[14px] font-extrabold text-ink">{o.total}</span>
                       </div>
+                      {o.fulfillment?.payment === 'cash' && !done && !cxl && (
+                        <div className="mt-2 rounded-md bg-amber-bg px-2 py-1 text-[10px] font-extrabold text-amber-ink">{L(`Cobra ${o.total} en efectivo al ${o.channel === 'delivery' ? 'entregar' : 'recoger'}`, `Collect ${o.total} cash at ${o.channel === 'delivery' ? 'delivery' : 'pickup'}`)}</div>
+                      )}
                       {/* NEW: driver line once assigned (was silently absent before) */}
                       {o.fulfillment?.driver && !done && !cxl && (
                         <div className="mt-2 flex items-center gap-1.5 rounded-md bg-green-bg px-2 py-1 text-[10px] font-extrabold text-green-dark">

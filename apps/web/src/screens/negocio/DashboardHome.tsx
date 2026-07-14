@@ -146,9 +146,6 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   // ── attention items (real signals only) ──────────────────────────────────
   type Todo = { icon: typeof Bell; bg: string; c: string; title: string; sub: string; btn: string; tab: TabKey };
   const todos: Todo[] = [];
-  // Selling on but no Stripe → catalog-only. Lead with this: the owner literally
-  // can't get paid until it's fixed.
-  if (sells && real && !canCharge) todos.push({ icon: CreditCard, bg: 'bg-amber-bg', c: 'text-amber-ink', title: L('Conecta pagos para cobrar', 'Connect payments to get paid'), sub: L('Estás en modo catálogo — los clientes no pueden pagar aún', 'You’re in catalog mode — customers can’t pay yet'), btn: L('Conectar', 'Connect'), tab: 'payments' });
   if (sells && newCount > 0) todos.push({ icon: Bell, bg: 'bg-pink-bg', c: 'text-pink-dark', title: L(`${newCount} ${newCount === 1 ? 'pedido' : 'pedidos'} por confirmar`, `${newCount} order${newCount === 1 ? '' : 's'} to confirm`), sub: L('Acéptalos antes de que el cliente espere', 'Accept before the customer waits'), btn: L('Ver', 'View'), tab: 'orders' });
   if (unreplied > 0) todos.push({ icon: Star, bg: 'bg-amber-bg', c: 'text-amber-ink', title: L(`${unreplied} ${unreplied === 1 ? 'reseña' : 'reseñas'} sin responder`, `${unreplied} review${unreplied === 1 ? '' : 's'} to answer`), sub: L('Responder mejora tu posición en el directorio', 'Replying boosts your ranking'), btn: L('Responder', 'Reply'), tab: 'reviews' });
   if (unread > 0) todos.push({ icon: MessageCircle, bg: 'bg-lilac', c: 'text-primary-dark', title: L(`${unread} ${unread === 1 ? 'mensaje' : 'mensajes'} sin leer`, `${unread} unread message${unread === 1 ? '' : 's'}`), sub: L('Un cliente está esperando tu respuesta', 'A customer is waiting for you'), btn: L('Abrir', 'Open'), tab: 'messages' });
@@ -156,6 +153,8 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   // ── visibility prompts (real gaps) ───────────────────────────────────────
   type Grow = { icon: typeof Photo; bg: string; c: string; title: string; sub: string; tab: TabKey };
   const grows: Grow[] = [];
+  // Sells but only cash → nudge (not alarm) to accept card payments online.
+  if (sells && real && !canCharge) grows.push({ icon: CreditCard, bg: 'bg-blue-bg', c: 'text-blue', title: L('Acepta pagos con tarjeta', 'Accept card payments'), sub: L('Hoy cobras en efectivo · conecta Stripe para vender en línea', 'You take cash today · connect Stripe to sell online'), tab: 'payments' });
   if ((photoCount ?? 0) < 5) grows.push({ icon: Photo, bg: 'bg-blue-bg', c: 'text-blue', title: L('Agrega más fotos', 'Add more photos'), sub: L('Los negocios con 5+ fotos reciben 2× visitas', 'Listings with 5+ photos get 2× visits'), tab: 'photos' });
   if (real && !real.about_es) grows.push({ icon: Sparkles, bg: 'bg-lilac', c: 'text-primary-dark', title: L('Escribe tu descripción', 'Write your description'), sub: L('Cuenta tu historia a la comunidad', 'Tell the community your story'), tab: 'listing' });
   if (real && !(Array.isArray(real.hours) && real.hours.some((d) => d && d.length > 0))) grows.push({ icon: Clock, bg: 'bg-green-bg', c: 'text-green-dark', title: L('Configura tu horario', 'Set your hours'), sub: L('Que no lleguen cuando estás cerrado', 'So no one arrives when you’re closed'), tab: 'hours' });

@@ -189,13 +189,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       }
     }
   }
-  // Selling needs Stripe. Without a connected account (accepts_payments) a listing
-  // can't charge, so EVERY sellable module falls back to CATALOG MODE (display
-  // only, no cart/Pedir/Reservar/Rentar) even if the owner turned ordering on —
-  // the seller is told this in the panel ("conecta Stripe o quedas en catálogo").
-  const canCharge = !!b.acceptsPayments;
-  // Display-only menu: ordering off OR no payments connected → showcase (no cart).
-  const menuDisplayOnly = realMenu != null && (!realMenu.ordering || !canCharge);
+  // Online card payment needs a connected Stripe account (`payOnline`, defined below).
+  // WITHOUT it the seller still sells — orders are placed and paid CASH on delivery /
+  // at pickup (no online charge, no fees). WITH it the buyer pays by card online. The
+  // owner's own toggle (`ordering`/`selling`/…) is what makes a module catalog-only.
+  // Display-only menu: ordering off → showcase (no cart). Cash orders still work.
+  const menuDisplayOnly = realMenu != null && !realMenu.ordering;
 
   // Real services (business_items kind='service' + service_config, migration 0046).
   // Null → the Servicios tab keeps the sample fixtures so the prototype stays
@@ -208,8 +207,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     return () => { cancelled = true; };
   }, [b.slug]);
   const svcBooking = realServices?.booking ?? false;
-  // Display-only services: booking off OR no payments connected → showcase (no Reservar).
-  const svcDisplayOnly = realServices != null && (!realServices.booking || !canCharge);
+  // Display-only services: booking off → showcase (no Reservar). Cash bookings still work.
+  const svcDisplayOnly = realServices != null && !realServices.booking;
 
   // Real shop (business_items kind='product' + product_config, migration 0048).
   // Null → the Tienda tab keeps the sample fixtures. selling off → display-only
@@ -222,8 +221,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     return () => { cancelled = true; };
   }, [b.slug]);
   const shopCats = realShop?.cats ?? SHOP;
-  // Display-only shop: selling off OR no payments connected → catalog (no cart).
-  const shopDisplayOnly = realShop != null && (!realShop.selling || !canCharge);
+  // Display-only shop: selling off → catalog (no cart). Cash orders still work.
+  const shopDisplayOnly = realShop != null && !realShop.selling;
 
   // Real rentals (business_items kind='rental' + rental_config, migration 0050).
   // Null → the Renta tab keeps the sample fixtures. renting off → display-only
@@ -237,8 +236,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   }, [b.slug]);
   const rentalItems: PubRental[] = realRentals?.items
     ?? RENTAL.map((r, i) => ({ id: `fx${i}`, n: r.n, d: r.d, tile: r.tile, hour: r.hour, day: r.day, week: r.week, dep: r.dep, addons: [], avail: '', stock: 1, unit: ['unidad', 'unit'] as Bi, catKey: '_', catName: ['Renta', 'Rentals'] as Bi }));
-  // Display-only rentals: renting off OR no payments connected → catalog (no Rentar).
-  const rentDisplayOnly = realRentals != null && (!realRentals.renting || !canCharge);
+  // Display-only rentals: renting off → catalog (no Rentar). Cash rentals still work.
+  const rentDisplayOnly = realRentals != null && !realRentals.renting;
 
   // Option groups for an item: per-item groups on a real menu / real shop (`sh:`
   // keys route to the shop); the per-category fixture groups otherwise.
@@ -423,13 +422,16 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const cartCount = Object.values(cart).reduce((n, l) => n + l.qty, 0);
   const cartTotal = Object.values(cart).reduce((n, l) => n + l.qty * l.unit, 0);
   // ---- DoorDash-grade checkout ------------------------------------------------
-  // When the seller has connected Stripe (acceptsPayments) the buyer pays online
-  // and the displayed Total EXACTLY matches the Stripe charge: subtotal + 5%
+  // When the seller has connected Stripe (acceptsPayments) the buyer pays online by
+  // card and the displayed Total EXACTLY matches the Stripe charge: subtotal + 5%
   // service fee (+ the business's own delivery fee + tip on delivery orders).
-  // Sellers without payments keep the pay-at-pickup order (no fees).
+  // WITHOUT Stripe the seller still sells — the buyer pays CASH on delivery or at
+  // pickup (subtotal + the delivery fee, no service fee, no online tip).
   const payOnline = !!b.acceptsPayments;
   const del = b.delivery; // the business's real delivery offer (fee / min / prep)
-  const deliveryAvailable = payOnline && !!del?.on;
+  // Delivery is offered whenever the business turned it on — cash-on-delivery works
+  // without Stripe (the customer pays the driver in cash).
+  const deliveryAvailable = !!del?.on;
   const [orderChannel, setOrderChannel] = useState<'pickup' | 'delivery'>('pickup');
   const isDelivery = deliveryAvailable && orderChannel === 'delivery';
   const [cartView, setCartView] = useState<'cart' | 'address'>('cart');
@@ -456,7 +458,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
 
   const deliveryFee = isDelivery ? (del?.fee ?? 0) : 0;
   const serviceFee = payOnline && cartCount > 0 ? +(cartTotal * 0.05).toFixed(2) : 0;
-  const tip = isDelivery ? (customTipOn ? Math.max(0, Math.min(500, parseFloat(tipCustom) || 0)) : +(cartTotal * tipPct).toFixed(2)) : 0;
+  // Online tip only applies to card checkout; for cash delivery the customer tips
+  // the driver in cash directly, so no online tip is collected.
+  const tip = isDelivery && payOnline ? (customTipOn ? Math.max(0, Math.min(500, parseFloat(tipCustom) || 0)) : +(cartTotal * tipPct).toFixed(2)) : 0;
   const grandTotal = +(cartTotal + serviceFee + deliveryFee + tip).toFixed(2);
   const belowMin = isDelivery && cartTotal < (del?.min ?? 0);
 
@@ -517,10 +521,22 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Pay-on-pickup order (seller without online payments): persist a real order.
   const placeCart = async () => {
     if (!user) { router.push('/entrar'); return; }
-    if (cartCount === 0 || paying) return;
+    if (cartCount === 0 || paying || belowMin || outOfRange) return;
+    if (isDelivery && !chosenAddr) { setCartView('address'); return; }
     setPaying(true);
     const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit, opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined }));
-    const { error } = await act.placeOrder(b.slug, items, +cartTotal.toFixed(2), 'pickup');
+    // Cash order — same fulfillment shape a paid delivery order gets, so the seller's
+    // Cocina shows the address + amount-to-collect. `payment:'cash'` flags it so the
+    // seller knows to collect on delivery/pickup (not prepaid). No online fees/tip.
+    const fulfillment: Record<string, unknown> = {
+      payment: 'cash', subtotal: +cartTotal.toFixed(2), service_fee: 0, tip: 0,
+      delivery_fee: isDelivery ? deliveryFee : 0, collect_total: grandTotal,
+      ...(isDelivery && chosenAddr
+        ? { address: chosenAddr.formatted, address_label: chosenAddr.label ?? undefined, dispatch: 'unassigned', eta_range: del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min' }
+        : {}),
+      ...(isDelivery && instructions.trim() ? { instructions: instructions.trim() } : {}),
+    };
+    const { error } = await act.placeOrder(b.slug, items, grandTotal, isDelivery ? 'delivery' : 'pickup', fulfillment);
     setPaying(false);
     if (error) { flash(L('No se pudo enviar el pedido', 'Could not place order')); return; }
     setCartDone(true);
@@ -2448,7 +2464,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 </div>
 
                 {/* Entrega / Recoger */}
-                {payOnline && (
+                {deliveryAvailable && (
                   <div className="mt-3.5 flex gap-1 rounded-full bg-lilac-2 p-1">
                     {deliveryAvailable && (
                       <button onClick={() => setOrderChannel('delivery')} className={`flex-1 cursor-pointer rounded-full py-2 text-center ${orderChannel === 'delivery' ? 'bg-white shadow-cta-sm' : ''}`}>
@@ -2503,7 +2519,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       placeholder={L('Instrucciones: timbre, apto, dejar en puerta…', 'Instructions: buzzer, apt, leave at door…')}
                       className="mt-2 w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
                     />
-                    {/* propina para el repartidor */}
+                    {/* propina para el repartidor — solo en pago con tarjeta; en
+                        efectivo el cliente le da la propina al repartidor directo */}
+                    {payOnline && (<>
                     <div className="mt-3 text-[12px] font-extrabold text-ink">{L('Propina para el repartidor', 'Tip for your driver')} <span className="font-semibold text-muted">· {L('100% para él/ella', '100% goes to them')}</span></div>
                     <div className="mt-1.5 flex gap-1.5">
                       {[0, 0.1, 0.15, 0.2].map((p) => {
@@ -2528,10 +2546,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                         className="mt-2 w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
                       />
                     )}
+                    </>)}
                   </>
                 )}
 
-                {/* desglose — coincide EXACTO con el cobro de Stripe */}
+                {/* desglose — coincide EXACTO con el cobro de Stripe (o efectivo) */}
                 <div className="mt-4 flex flex-col gap-1.5 border-t border-hair pt-3 text-[12.5px] font-semibold text-ink-2">
                   <div className="flex justify-between"><span>{L('Subtotal', 'Subtotal')}</span><span>{money(cartTotal)}</span></div>
                   {isDelivery && <div className="flex justify-between"><span>{L('Tarifa de entrega', 'Delivery fee')}</span><span>{money(deliveryFee)}</span></div>}
@@ -2541,7 +2560,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   <div className="mt-1 text-[11px] font-semibold text-muted">
                     {payOnline
                       ? L('Pago seguro con tarjeta. Recibirás confirmación al instante.', 'Secure card payment. You’ll get instant confirmation.')
-                      : L('Pagas al recoger. Sin cargos en línea.', 'Pay at pickup. No online charge.')}
+                      : isDelivery
+                        ? L('Pagas en efectivo al recibir tu pedido. Sin cargos en línea.', 'Pay cash on delivery. No online charge.')
+                        : L('Pagas en efectivo al recoger. Sin cargos en línea.', 'Pay cash at pickup. No online charge.')}
                   </div>
                 </div>
                 {belowMin && (

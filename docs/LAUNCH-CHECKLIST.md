@@ -1009,18 +1009,21 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
 **fulfilled by `stripe-webhook`** (creates the order / issues the tickets + records
 `payments`). Everything below is a deliberate follow-up:
 
-- [x] **"Conecta Stripe o modo catálogo" — DONE (2026-07-13).** A business that
-  hasn't connected Stripe (`connect_charges_enabled=false`) now falls to
-  **catalog mode** on every sellable module (BizDetail: `displayOnly = !flag ||
-  !canCharge`) — shoppers see items + prices but there's no cart/Pedir/Reservar/
-  Rentar. The owner is told: an amber **"Estás en modo catálogo · Conectar pagos"**
-  banner in `ModulesSetup` (green "Cobros activos" when connected) + a
-  "Requiere tu atención" item in the Inicio cockpit → both route to the Pagos tab's
-  real Connect onboarding. Verified E2E (`stripe-catalog.js`).
-  - [ ] **Decisión abierta — pedidos en efectivo/al recoger:** este cambio quitó
-    el pedido pay-at-pickup que existía sin Stripe (ahora sin pagos = catálogo
-    puro). Si se quiere ofrecer "pagar al recoger/en efectivo" sin Stripe, hay que
-    reintroducirlo como opción explícita (decisión del founder).
+- [x] **Efectivo contra entrega por defecto · Stripe = tarjeta en línea — DONE
+  (2026-07-14, decisión del founder).** Stripe NO es obligatorio para vender.
+  Activar un módulo → cobras en **efectivo contra entrega o al recoger**; conectar
+  Stripe habilita **tarjeta en línea + depósito a tu banco**. (Reemplaza el enfoque
+  breve de "modo catálogo sin Stripe" del 2026-07-13.) Consumidor: `deliveryAvailable
+  = del.on` (entrega también en efectivo), `*DisplayOnly` dependen solo del toggle
+  del dueño; sin Stripe total = subtotal+entrega (sin 5% ni propina online),
+  `placeCart` guarda `fulfillment.payment:'cash'` + dirección, y Cocina muestra un
+  chip **"Efectivo · cobra $X"**. Dueño: `ModulesSetup` muestra un diálogo
+  profesional (efectivo activo + "Aceptar pagos con tarjeta"), y el Inicio lo pone
+  como empujón suave (no "atención"). Verificado E2E (`cash-sales.js`, `cash-cart.js`).
+  - [ ] **Cobro del 15% de comisión en pedidos en efectivo:** en efectivo To'Latino
+    no puede retener su comisión automáticamente (no pasa por Stripe). Definir cómo
+    se cobra/concilia la comisión de los pedidos en efectivo (o si se cobra) cuando
+    haya volumen real — hoy el pedido en efectivo no genera application_fee.
 
 - [ ] **Rotate the exposed `sk_test` key.** The test secret key was pasted in chat
   earlier; it's stored only in the Supabase secret store now, but still rotate it:

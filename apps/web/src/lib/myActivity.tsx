@@ -42,7 +42,7 @@ type Ctx = {
   refresh: () => void;
   // Consumer objects carry the public `slug`, not the DB uuid — creators resolve
   // slug → id, then insert with user_id = the customer.
-  placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string) => Promise<{ error: string | null }>;
+  placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string, fulfillment?: Record<string, unknown>) => Promise<{ error: string | null }>;
   book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
   rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
   buyTickets: (eventSlug: string, tierId: string, qty: number) => Promise<{ error: string | null; code?: string }>;
@@ -131,11 +131,11 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     return (data as { id: string } | null)?.id ?? null;
   }, []);
 
-  const placeOrder = useCallback<Ctx['placeOrder']>(async (businessSlug, items, total, channel) => {
+  const placeOrder = useCallback<Ctx['placeOrder']>(async (businessSlug, items, total, channel, fulfillment) => {
     if (!supabase || !user) return { error: 'auth' };
     const bizId = await idOf('businesses', businessSlug);
     if (!bizId) return { error: 'business-not-found' };
-    const { error } = await supabase.from('business_orders').insert({ business_id: bizId, user_id: user.id, customer_name: custName, items, total, channel, status: 'new' });
+    const { error } = await supabase.from('business_orders').insert({ business_id: bizId, user_id: user.id, customer_name: custName, items, total, channel, status: 'new', ...(fulfillment ? { fulfillment } : {}) });
     if (!error) refresh();
     return { error: error ? error.message : null };
   }, [user, custName, refresh, idOf]);

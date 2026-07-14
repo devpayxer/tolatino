@@ -5,35 +5,45 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-13.
 
-## Pagos: "conecta Stripe o quedas en modo catálogo" (2026-07-13)
-El founder pidió que, al activar cualquier módulo de venta, se le avise al dueño
-que para COBRAR necesita conectar Stripe — y que sin eso sus productos quedan en
-**modo catálogo**. Implementado en dos capas (todo cliente, sin migración):
-- **Regla real (consumidor, `BizDetail.tsx`):** `canCharge = acceptsPayments`
-  (= `businesses.connect_charges_enabled`, 0071). Ahora **cada módulo vendible cae
-  a modo catálogo si el negocio no puede cobrar** — `menu/shop/services/rental
-  DisplayOnly = (!flagVenta || !canCharge)`. Sin Stripe: el cliente ve el catálogo
-  con precios pero NO hay carrito/Pedir/Reservar/Rentar. (Esto reemplaza el pedido
-  "pay-at-pickup" que existía sin pagos — ahora sin Stripe es catálogo puro.)
-- **El proceso/aviso (dueño):**
-  - **`ModulesSetup.tsx`:** en cuanto hay un módulo de venta activo, un banner
-    ámbar **"Estás en modo catálogo · Conecta Stripe para recibir pagos…"** con CTA
-    **"Conectar pagos"** (→ tab Pagos). Si ya está conectado, un banner verde
-    "Cobros activos con Stripe".
-  - **`DashboardHome.tsx`:** ítem en "Requiere tu atención" → **"Conecta pagos
-    para cobrar · Estás en modo catálogo"** (→ Pagos), como el pendiente #1.
-  - El destino es la pantalla **Pagos** que ya tiene el onboarding real de Stripe
-    Connect (`Payments.tsx` → `startConnectOnboarding`).
-- **`bizAdmin.tsx`:** `BizRow` gana `connect_charges_enabled` (viene del `select('*')`).
-- **Verificado E2E** (`tools/mobile-audit/stripe-catalog.js`): con El Sabor puesto
-  temporalmente como NO conectado → Inicio muestra "Conecta pagos", Configurar
-  módulos muestra el banner ámbar + "Conectar pagos", y el menú en el consumidor
-  queda en catálogo (sin carrito). Restaurado a conectado=true después.
-- **Nota / decisión abierta:** conectar Stripe de verdad (desplegar las Edge
-  Functions `connect-onboard`/`connect-status`/`marketplace-checkout` + llaves de
-  Stripe) es setup del founder — la UI y el gate ya están listos. Y ahora sin
-  Stripe NO hay pedidos en efectivo/al recoger (antes sí); si el founder quiere
-  mantener una opción de efectivo, se decide aparte.
+## Pagos: efectivo contra entrega por defecto · Stripe para tarjeta en línea (2026-07-14)
+Decisión del founder (corrige el enfoque anterior de "modo catálogo"): **Stripe NO
+es obligatorio para vender.** Activar un módulo = ya puedes cobrar en **efectivo
+contra entrega o al recoger**; **Stripe** habilita **vender en línea y aceptar
+tarjeta** (depósito a tu banco). Todo cliente, sin migración.
+- **Consumidor (`BizDetail.tsx`) — cash-on-delivery real:**
+  - `deliveryAvailable = !!del?.on` (antes exigía Stripe) → la entrega se ofrece con
+    o sin Stripe; en efectivo el cliente paga al repartidor.
+  - Los `*DisplayOnly` vuelven a depender **solo** del toggle del dueño
+    (`ordering`/`selling`/…), no de Stripe → sin Stripe el menú/tienda es
+    **ordenable en efectivo** (no catálogo).
+  - Sin Stripe: total = subtotal + tarifa de entrega (sin tarifa de servicio 5%,
+    sin propina en línea — el cliente le da propina al repartidor en efectivo). El
+    desglose y la nota se adaptan: **"Pagas en efectivo al recibir tu pedido"**
+    (entrega) / **"…al recoger"** (pickup).
+  - `placeCart` ahora manda `channel` + un `fulfillment` con `payment:'cash'`,
+    dirección, `delivery_fee` y `collect_total` (mismo shape que un pedido pagado
+    → la Cocina muestra la dirección). `myActivity.placeOrder` acepta `fulfillment`.
+  - **Cocina/Pedidos (`Customers.tsx`):** chip **"Efectivo"** + aviso **"Cobra $X en
+    efectivo al entregar/recoger"** en pedidos `payment:'cash'`, para que el dueño
+    sepa que NO está prepagado.
+- **El diálogo profesional (dueño):**
+  - **`ModulesSetup.tsx`:** al activar venta sin Stripe → tarjeta informativa (no
+    alarma): **"✓ Ventas activas — ya puedes cobrar en efectivo · Cobras en efectivo
+    contra entrega o al recoger · … conecta Stripe. Es opcional"** con CTA **"Aceptar
+    pagos con tarjeta"**. Conectado → verde "Aceptas tarjeta (Stripe) y efectivo".
+  - **`DashboardHome.tsx`:** ya NO es "Requiere tu atención" (no es un error) — es un
+    empujón suave en "Mejora tu visibilidad": **"Acepta pagos con tarjeta · hoy
+    cobras en efectivo"** (→ Pagos).
+- **Verificado E2E** (`tools/mobile-audit/{cash-sales,cash-cart}.js`): con El Sabor
+  NO conectado → el diálogo del dueño es correcto (efectivo contra entrega + aceptar
+  tarjeta, sin "modo catálogo"); el menú es ordenable; el carrito muestra
+  Entrega/Recoger + tarifa de entrega + **"Pagas en efectivo al recibir tu pedido"**
+  con total = subtotal+entrega. Restaurado a conectado después.
+- **`bizAdmin.tsx`:** `BizRow.connect_charges_enabled` (viene del `select('*')`).
+- **Pendiente (setup del founder):** conectar Stripe de verdad (Edge Functions
+  `connect-onboard`/`connect-status`/`marketplace-checkout` + llaves) — la UI + el
+  onboarding ya están; sin eso, el pago con tarjeta en línea no completa, pero el
+  efectivo contra entrega funciona.
 
 ## "Vender en To'Latino" — activador rediseñado + venta OFF por defecto (2026-07-13)
 El founder notó que la sección "Vender" se veía larga y confusa para un negocio
