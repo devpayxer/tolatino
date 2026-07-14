@@ -5,6 +5,38 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-14.
 
+## Rutas en la URL — ahora en TODA la plataforma (hook `useUrlView`) (2026-07-14)
+
+Se generalizó el arreglo de rutas a todas las pantallas con un hook reutilizable
+**`lib/urlView.ts`** (History API, sin navegación de ruta → conserva scroll/filtros/
+datos; SSR/hidratación-safe: lee la URL en un effect tras montar):
+- **`useUrlTab(key, def, isValid)`** — tab/sección → `?key=`. `replaceState` (no
+  ensucia el historial), refrescar mantiene el tab, atrás sale de la pantalla.
+- **`useUrlDetail(key, isValid?)`** — detalle abierto (id/slug) → `?key=`.
+  `pushState` (atrás cierra el detalle); refrescar/link compartido reabre. El
+  llamador resuelve el id → objeto.
+
+Aplicado a:
+- **Negocios** `?b=` · **Panel (dashboard)** `?t=` (ya estaban; mismo comportamiento).
+- **Eventos** `?e=<slug>` — detalle del evento (antes borraba el param al montar).
+  Resuelve de la lista o hace fetch por slug; `applyDetail` vs `openDetail` evita
+  doble push.
+- **Comunidad** `?post=<id>` — hilo del post (antes no tocaba la URL).
+- **Cuenta** `?sec=<sección>` (Mis pedidos/reservas/… ; Inicio omite el param) +
+  `?order=<id>` (tracking del pedido). El redirect de pago
+  `/cuenta?sec=pedidos&order=<id>` sigue funcionando (ahora sin borrar el param).
+
+Verificado en navegador real: en cada pantalla, abrir sub-vista → aparece el param →
+**refrescar mantiene la sub-vista** → atrás cierra/regresa. (Negocios/Panel ya
+verificados antes.)
+
+Alcance deliberado: NO se metieron a la URL los **wizards** de publicar/onboarding
+(sus pasos dependen de datos del paso anterior; deep-link a mitad los rompería) ni
+los sub-tabs profundos DENTRO de los módulos del dashboard (owner-only, muy
+anidados) — se pueden hacer después si se quiere. Edge conocido: un link COMPARTIDO
+a un post de Comunidad fuera de la zona local del que lo abre no auto-abre (los posts
+son hiperlocales; falta un RPC `post_by_id`) — ver LAUNCH-CHECKLIST.
+
 ## Rutas en la URL: refrescar ya no pierde dónde estás (2026-07-14)
 
 Abrir un negocio o cambiar de tab del dashboard vivía solo en estado de React, así

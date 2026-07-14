@@ -1330,6 +1330,25 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
 - [ ] **Tips on pickup orders.** Tips are delivery-only today; DoorDash also
   allows pickup tips — add if wanted.
 
+### Routing / deep-links (2026-07-14)
+- [ ] **Shared Comunidad post links to a post outside the viewer's local feed.**
+  `useUrlDetail('post')` (`?post=<id>`) reopens a thread on refresh/back correctly
+  (the post is in your feed), but a link SHARED to someone whose hyperlocal feed
+  (`posts_near`, ~30 mi) doesn't include that post won't auto-open it — there's no
+  public post-fetch-by-id. Businesses (`?b=`) and events (`?e=`) already fall back
+  to a slug fetch; posts need an equivalent `post_by_id` RPC (mirror `posts_near`'s
+  projection for one id) + a `fetchPostById` fallback in Comunidad's resolve. Low
+  priority (posts are hyperlocal by design).
+- [ ] **Deep dashboard module sub-tabs not in the URL.** Panel's top-level tab is in
+  `?t=`, but the sub-navigation INSIDE modules (Food items/categories/mods…,
+  Products, Services, Rental, Events manage/wizard, Customers detail, Messages
+  selected conversation) is still React-only, so a refresh drops you to each
+  module's default sub-tab. Owner-only + deeply nested; add `?t=menu&sub=items`-style
+  sub-params if owners ask.
+- Intentionally NOT URL-backed: the publish (`BizOnboarding`) and auth
+  (`Onboarding`) **wizards** — steps depend on prior-step data, so deep-linking mid-
+  flow would render a broken/empty step. Leave ephemeral.
+
 ---
 
 _Last updated: 2026-07-14. Add to this file as new deferrals appear._

@@ -3,13 +3,14 @@
 // Eventos (`/eventos`) — Handoff v2: featured banner (purple band), filter
 // chips + date chips, event grid with real "Voy" state, detail + tickets.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconCalendarPlus as CalendarPlus, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconMapPin as MapPin, IconNavigation as Navigation, IconShare2 as Share2, IconBuildingStore as Store, IconTag as Tag, IconTicket as Ticket } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useMyActivity } from '@/lib/myActivity';
+import { useUrlDetail } from '@/lib/urlView';
 import { startMarketplaceCheckout } from '@/lib/stripe';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
@@ -124,8 +125,30 @@ export function EventosScreen() {
     window.setTimeout(() => setToast(''), 2200);
   };
   const resetPromo = () => { setPromoInput(''); setPromoMsg(null); setPromoApplied(''); setUnlockedTiers([]); setDiscount(null); };
-  const openDetail = (e: EventItem) => { setDetailEv(e); setTierQty({}); setBuying(false); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); resetPromo(); };
-  const closeDetail = () => { setDetailEv(null); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); resetPromo(); };
+  // The open event lives in the URL (?e=<slug>) so a refresh reopens it, the link is
+  // shareable, and the browser Back button closes it. `detailEv` mirrors the URL.
+  const { value: evSlug, open: openEv, close: closeEv } = useUrlDetail('e');
+  // Set the detail + reset its sub-state, WITHOUT touching the URL (used by both the
+  // click path and the URL-driven resolve below, so history isn't pushed twice).
+  const applyDetail = (e: EventItem) => { setDetailEv(e); setTierQty({}); setBuying(false); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); resetPromo(); };
+  const openDetail = (e: EventItem) => { applyDetail(e); if (e.slug) openEv(e.slug); };  // click → push ?e= (real events only)
+  const closeDetail = () => { setDetailEv(null); setOrderDone(false); setBoughtCode(null); setBoughtTickets([]); resetPromo(); closeEv(); };
+  // Sync detailEv when the URL changes WITHOUT a click — deep link, refresh, or
+  // Back/Forward. Resolve the slug from the loaded lists first, else fetch it.
+  useEffect(() => {
+    if (evSlug == null) { setDetailEv(null); return; }
+    if (detailEv && detailEv.slug === evSlug) return; // already open via a card click
+    const local = [...EVENTS, ...(serverEvents ?? [])].find((x) => x.slug === evSlug);
+    if (local) { applyDetail(local); return; }
+    let cancelled = false;
+    void fetchEventBySlug(evSlug).then((pv) => {
+      if (cancelled) return;
+      if (pv) applyDetail(eventItemFromPub(pv));
+      else { flash(L('Este evento ya no está disponible', 'This event is no longer available')); closeEv(); }
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evSlug]);
 
   const catLabel = (id: string): string => { const c = EVENT_CAT_BY_ID[id]; return c ? L(c.es, c.en) : id; };
   const B = (t: [string, string]) => L(t[0], t[1]); // render a Bi tuple in the active language
@@ -154,28 +177,9 @@ export function EventosScreen() {
     return () => { cancelled = true; window.clearTimeout(t); };
   }, [rawQ, cat, app.coords?.lat, app.coords?.lng]);
 
-  // Deep link: /eventos?e=<slug> opens that event directly (shared links). Resolve
-  // from the loaded list first; else fetch by slug (geo-independent). Runs once; the
-  // ?e= param is stripped so closing lands on a clean /eventos. A slug that no longer
-  // resolves (draft/deleted/offline) flashes a message instead of failing silently.
-  const deepLinked = useRef(false);
-  useEffect(() => {
-    if (deepLinked.current || typeof window === 'undefined') return;
-    const eSlug = new URLSearchParams(window.location.search).get('e');
-    if (!eSlug) return;
-    deepLinked.current = true;
-    window.history.replaceState(null, '', window.location.pathname);
-    const local = EVENTS.find((x) => x.slug === eSlug);
-    if (local) { openDetail(local); return; }
-    let cancelled = false;
-    void fetchEventBySlug(eSlug).then((p) => {
-      if (cancelled) return;
-      if (!p) { flash(L('Este evento ya no está disponible', 'This event is no longer available')); return; }
-      openDetail(eventItemFromPub(p));
-    });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [EVENTS]);
+  // (Deep link /eventos?e=<slug> is now handled by useUrlDetail('e') + the resolve
+  // effect above — it keeps the URL in sync while the detail is open, so refresh
+  // reopens it and Back closes it, instead of stripping the param on mount.)
 
   // While searching, the server already applied q + cat/free; the client only layers
   // the date chip on top. Empty query → the client filters the geo EVENTS list.

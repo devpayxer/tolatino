@@ -18,6 +18,7 @@ import { useFollows } from '@/lib/follows';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useLiveData } from '@/lib/live';
 import { useMyActivity, type MyOrder } from '@/lib/myActivity';
+import { useUrlTab, useUrlDetail } from '@/lib/urlView';
 import { startConversation, sendChatMessage } from '@/lib/chat';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Qr } from '@/components/Qr';
@@ -26,6 +27,8 @@ import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 
 type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config' | 'pedidos' | 'reservas' | 'rentas' | 'boletos' | 'voy';
+// Valid ?sec= values restored on refresh (keep in sync with Sec).
+const SEC_VALUES = new Set<string>(['home', 'perfil', 'direcciones', 'posts', 'config', 'pedidos', 'reservas', 'rentas', 'boletos', 'voy']);
 
 // Status → bilingual label + pill colors, shared across the activity lists.
 const STATUS: Record<string, { es: string; en: string; bg: string; c: string }> = {
@@ -72,7 +75,10 @@ export function CuentaScreen() {
   const act = useMyActivity();
   const router = useRouter();
 
-  const [sec, setSec] = useState<Sec>('home');
+  // Section + order-detail live in the URL (?sec= / ?order=) so a refresh keeps you
+  // where you are and links are shareable (the payment-confirmation redirect deep-
+  // links straight to ?sec=pedidos&order=<id>). Home omits ?sec.
+  const [sec, setSec] = useUrlTab<Sec>('sec', 'home', (v) => SEC_VALUES.has(v));
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -83,29 +89,16 @@ export function CuentaScreen() {
     window.setTimeout(() => setToast(''), 1800);
   };
 
-  // Order detail sheet (DoorDash-style tracking): selection + live row refresh,
-  // and the "report a problem" mini-form (sends a real chat to the business).
-  const [orderSelId, setOrderSelId] = useState<string | null>(null);
+  // Order detail sheet (DoorDash-style tracking): selection (mirrored to ?order=)
+  // + live row refresh, and the "report a problem" mini-form (real chat to biz).
+  const { value: orderSelId, open: openOrder, close: closeOrder } = useUrlDetail('order');
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
 
-  // Deep link from the payment confirmation: /cuenta/?sec=pedidos&order=<id>
-  // jumps straight to that section (and opens the order's live tracking).
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const q = new URLSearchParams(window.location.search);
-    const s = q.get('sec');
-    const ord = q.get('order');
-    if (s && ['perfil', 'direcciones', 'posts', 'config', 'pedidos', 'reservas', 'rentas', 'boletos', 'voy'].includes(s)) setSec(s as Sec);
-    if (ord) setOrderSelId(ord);
-    if (s || ord) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('sec');
-      url.searchParams.delete('order');
-      window.history.replaceState({}, '', url.pathname + url.search);
-    }
-  }, []);
+  // (Deep links ?sec= / ?order= — including the payment-confirmation redirect
+  // /cuenta/?sec=pedidos&order=<id> — are now restored by the useUrlTab/useUrlDetail
+  // hooks above, which also keep the URL in sync as you navigate.)
 
   const guest = auth.configured && !auth.user;
   const p = auth.profile;
@@ -405,7 +398,7 @@ export function CuentaScreen() {
           {act.orders.length === 0 ? txEmpty(L('Aún no tienes pedidos.', 'No orders yet.')) : (
             <div className="flex flex-col gap-2.5">
               {act.orders.map((o) => (
-                <button key={o.id} onClick={() => { setOrderSelId(o.id); setReportOpen(false); setReportText(''); }} className={`${cardCls} flex cursor-pointer items-center gap-3 p-3.5 text-left`}>
+                <button key={o.id} onClick={() => { openOrder(o.id); setReportOpen(false); setReportText(''); }} className={`${cardCls} flex cursor-pointer items-center gap-3 p-3.5 text-left`}>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-extrabold text-ink">{o.businesses?.name ?? L('Negocio', 'Business')}{o.code ? <span className="font-bold text-muted"> · {o.code}</span> : null}</span>
                     <span className="block truncate text-[11.5px] font-semibold text-muted">{`${(o.items ?? []).map((i) => `${i.qty}× ${i.name}`).join(', ') || '—'} · ${dt(o.created_at)}`}</span>
@@ -532,7 +525,7 @@ export function CuentaScreen() {
       />
 
       {/* ── order detail / tracking (DoorDash-style) ── */}
-      <Overlay open={orderSelId !== null} onClose={() => setOrderSelId(null)} width={460}>
+      <Overlay open={orderSelId !== null} onClose={() => closeOrder()} width={460}>
         {(() => {
           const o = act.orders.find((x) => x.id === orderSelId); // live row → the timeline advances in real time
           if (!o) return null;
@@ -556,7 +549,7 @@ export function CuentaScreen() {
           const idx = stage === 'cancelled' ? -1 : Math.max(0, steps.findIndex((s) => s.key === stage));
           return (
             <>
-              <OverlayTitle title={o.businesses?.name ?? L('Pedido', 'Order')} onClose={() => setOrderSelId(null)} />
+              <OverlayTitle title={o.businesses?.name ?? L('Pedido', 'Order')} onClose={() => closeOrder()} />
               <div className="flex items-center justify-between">
                 <span className="text-[11.5px] font-bold text-muted">{o.code ?? ''} · {dt(o.created_at)}</span>
                 {pill(stage)}
@@ -651,7 +644,7 @@ export function CuentaScreen() {
               {/* acciones */}
               <div className="mt-4 flex flex-col gap-2">
                 {o.status === 'new' && (
-                  <button onClick={() => { setOrderSelId(null); setCancelTarget({ kind: 'order', id: o.id }); }} className="w-full cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white py-2.5 text-[12.5px] font-extrabold text-pink-dark">
+                  <button onClick={() => { closeOrder(); setCancelTarget({ kind: 'order', id: o.id }); }} className="w-full cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white py-2.5 text-[12.5px] font-extrabold text-pink-dark">
                     {L('Cancelar pedido', 'Cancel order')}
                   </button>
                 )}

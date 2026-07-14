@@ -10,6 +10,7 @@ import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useInteractions } from '@/lib/interactions';
 import { useFollows } from '@/lib/follows';
+import { useUrlDetail } from '@/lib/urlView';
 import { supabase } from '@/lib/supabase';
 import { Avatar, Card, EmptyState, Overlay, SkeletonList, YouAvatar } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
@@ -133,8 +134,9 @@ export function ComunidadScreen() {
   const { posts: POSTS, businesses: BUSINESSES, loading: liveLoading } = useLiveData();
   const [hood, setHood] = useState('all');
 
-  // thread state
-  const [threadPostId, setThreadPostId] = useState<string | null>(null);
+  // thread state — the open post thread lives in the URL (?post=<id>) so a refresh
+  // reopens it, the link is shareable, and Back closes it.
+  const { value: threadPostId, open: openThreadUrl, close: closeThreadUrl } = useUrlDetail('post');
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ cid: string; name: string } | null>(null);
   const [userComments, setUserComments] = useState<Record<string, Comment[]>>({});
@@ -390,7 +392,7 @@ export function ComunidadScreen() {
   const canComment = commentText.trim().length > 0 || !!commentBiz;
 
   const closeThread = () => {
-    setThreadPostId(null);
+    closeThreadUrl();
     setReplyTo(null);
     setCommentText('');
     setCommentBiz(null);
@@ -661,7 +663,7 @@ export function ComunidadScreen() {
         ) : (
           <div className="flex flex-col gap-3.5">
             {posts.map((p) => (
-              <PostCard key={p.id} post={p} commentCount={commentCount(p.id)} onOpenThread={() => setThreadPostId(p.id)} />
+              <PostCard key={p.id} post={p} commentCount={commentCount(p.id)} onOpenThread={() => openThreadUrl(p.id)} />
             ))}
           </div>
         )}
