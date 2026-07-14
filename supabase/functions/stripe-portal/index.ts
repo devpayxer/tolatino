@@ -10,6 +10,20 @@ const cors = {
 function json(o: unknown, status = 200) {
   return new Response(JSON.stringify(o), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 }
+// Open-redirect guard: only OUR origins are echoed into Stripe return URLs.
+function safeOrigin(raw: unknown): string {
+  const DEFAULT = 'https://tolatino.vercel.app';
+  if (typeof raw !== 'string' || !raw) return DEFAULT;
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return DEFAULT;
+    const site = Deno.env.get('SITE_ORIGIN');
+    const ok = u.hostname === 'tolatino.vercel.app' || u.hostname === 'localhost' || u.hostname === '127.0.0.1'
+      || (site ? (() => { try { return new URL(site).hostname === u.hostname; } catch { return false; } })() : false);
+    if (ok) return u.origin;
+  } catch { /* fall through */ }
+  return DEFAULT;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -36,7 +50,7 @@ Deno.serve(async (req) => {
     const customer = (await subRes.json())?.[0]?.stripe_customer_id;
     if (!customer) return json({ error: 'no subscription' }, 400);
 
-    const base = (typeof origin === 'string' && origin.startsWith('http')) ? origin : 'https://tolatino.vercel.app';
+    const base = safeOrigin(origin);
     const res = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${STRIPE}`, 'Content-Type': 'application/x-www-form-urlencoded' },

@@ -21,6 +21,10 @@ async function verifySig(payload: string, header: string, secret: string): Promi
   const t = parts['t'];
   const v1 = parts['v1'];
   if (!t || !v1) return false;
+  // Reject replays: the signed timestamp must be within 5 min (Stripe's tolerance).
+  // A captured valid webhook body can otherwise be re-POSTed indefinitely.
+  const ts = Number(t);
+  if (!Number.isFinite(ts) || Math.abs(Math.floor(Date.now() / 1000) - ts) > 300) return false;
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${t}.${payload}`));
   const expected = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, '0')).join('');

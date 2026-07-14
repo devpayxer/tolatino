@@ -208,28 +208,30 @@
   (not theft; COD is paid in cash). **Fix:** move COD creation into a
   security-definer RPC that stamps `status`, validates the business accepts COD,
   rate-limits per user, and re-prices from `business_items`.
-- [ ] **M2 — Open redirect via client-supplied `origin` in Stripe return URLs.**
-  `marketplace-checkout:171-175` (+ `stripe-checkout:69`, `stripe-portal:39`,
-  `connect-onboard:62`) accept any `origin` starting with `http` as the
-  success/cancel base → phishing redirect off a payment flow. **Fix:** allowlist
-  known hosts (`tolatino.vercel.app`, prod domain, `localhost` dev); else default.
+- [x] **M2 — Open redirect via client-supplied `origin` in Stripe return URLs.
+  ✅ FIXED 2026-07-14.** All four functions (marketplace-checkout, stripe-checkout,
+  stripe-portal, connect-onboard) now route `origin` through a shared `safeOrigin()`
+  allowlist — only `tolatino.vercel.app`, `localhost`/`127.0.0.1` (dev), or an
+  optional `SITE_ORIGIN` env host are echoed; anything else (incl. `evil.com`,
+  `*.vercel.app` previews, `tolatino.vercel.app.evil.com`, `javascript:`) falls back
+  to the default. Redeployed. Verified: unit-tested the allowlist + an `evil.com`
+  order still returns a valid checkout URL with the redirect neutralized. Add a
+  custom prod domain later via the `SITE_ORIGIN` function env var.
 - [ ] **M3 — `profiles` public read exposes every user's precise coordinates.**
   `0005_auth_profiles.sql:33` (`using(true)`) makes `lat`/`lng`/`location` of
   every user readable with the anon key. Intended to expose display fields
   (name/initials/color) for posts, but leaks home coordinates. **Fix:** move
   `lat/lng/location` to a self-read-only table, or expose profiles via a
   security-definer view/RPC returning only display fields.
-- [ ] **M4 — Temporary `admin-diag` edge function has refund/forge power.**
-  `supabase/functions/admin-diag/index.ts` decodes the JWT role **without
-  verifying the signature**; its only real guard is `verify_jwt=true` at the
-  gateway, and `deploy-fn.mjs:26` defaults `verify_jwt=false` → a deploy slip
-  removes the sole protection (can `refund`/`confirm-pi`/forge webhook events).
-  Self-labeled "TEMPORARY … Remove after." **Fix:** delete before launch; if kept,
-  pin `verify_jwt=true` in committed config and verify the JWT in-function.
-- [ ] **M5 — Webhook accepts replays (no timestamp tolerance).**
-  `stripe-webhook/index.ts:21-30` never checks `t` is recent. Fulfillment is
-  idempotent (blunts it) but subscription/`account.updated` re-apply. **Fix:**
-  reject if `|now - t| > 300s`.
+- [x] **M4 — Temporary `admin-diag` edge function has refund/forge power. ✅ FIXED
+  2026-07-14 — DELETED.** The function (deployed + `supabase/functions/admin-diag/`)
+  was removed entirely; it was an unused sandbox debug tool. If Stripe diagnostics
+  are ever needed again, restore from git history and pin `verify_jwt=true` +
+  verify the JWT signature in-function.
+- [x] **M5 — Webhook accepts replays (no timestamp tolerance). ✅ FIXED 2026-07-14.**
+  `verifySig` now rejects if the signed timestamp is more than 300s from now
+  (Stripe's own tolerance) before checking the HMAC. Redeployed; a forged event is
+  still rejected `400`.
 - [ ] **L1 — Anon metric inflation.** `track_listing_view`/`track_search_appearance`
   are anon-callable with no dedup (`0079:38,64`) — anyone can inflate any
   business's counters. Already noted (bot/rate filtering deferred). Rate-limit

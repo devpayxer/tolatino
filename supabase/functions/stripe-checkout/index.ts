@@ -30,6 +30,20 @@ async function stripe(path: string, key: string, form: Record<string, string>) {
   });
   return res.json();
 }
+// Open-redirect guard: only OUR origins are echoed into Stripe return URLs.
+function safeOrigin(raw: unknown): string {
+  const DEFAULT = 'https://tolatino.vercel.app';
+  if (typeof raw !== 'string' || !raw) return DEFAULT;
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return DEFAULT;
+    const site = Deno.env.get('SITE_ORIGIN');
+    const ok = u.hostname === 'tolatino.vercel.app' || u.hostname === 'localhost' || u.hostname === '127.0.0.1'
+      || (site ? (() => { try { return new URL(site).hostname === u.hostname; } catch { return false; } })() : false);
+    if (ok) return u.origin;
+  } catch { /* fall through */ }
+  return DEFAULT;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -66,7 +80,7 @@ Deno.serve(async (req) => {
       customer = c.id;
     }
 
-    const base = (typeof origin === 'string' && origin.startsWith('http')) ? origin : 'https://tolatino.vercel.app';
+    const base = safeOrigin(origin);
     const session = await stripe('checkout/sessions', STRIPE, {
       mode: 'subscription',
       customer: customer!,

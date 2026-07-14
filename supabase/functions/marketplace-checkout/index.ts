@@ -91,6 +91,23 @@ function pickAddonSum(itemAddonIds: unknown, configAddons: unknown, selected: un
   return sum;
 }
 
+// Only return the caller's origin if it's one of OURS — else the default. Stops an
+// attacker from crafting a legit-looking Stripe Checkout that redirects the victim
+// to evil.com on completion (open redirect). Add a custom prod domain via SITE_ORIGIN.
+function safeOrigin(raw: unknown): string {
+  const DEFAULT = 'https://tolatino.vercel.app';
+  if (typeof raw !== 'string' || !raw) return DEFAULT;
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return DEFAULT;
+    const site = Deno.env.get('SITE_ORIGIN');
+    const ok = u.hostname === 'tolatino.vercel.app' || u.hostname === 'localhost' || u.hostname === '127.0.0.1'
+      || (site ? (() => { try { return new URL(site).hostname === u.hostname; } catch { return false; } })() : false);
+    if (ok) return u.origin;
+  } catch { /* fall through */ }
+  return DEFAULT;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
@@ -303,9 +320,8 @@ Deno.serve(async (req) => {
     const pending = (await ins.json())?.[0];
     if (!pending?.id) return json({ error: 'could not stage purchase' }, 500);
 
-    // Return exactly where the buyer was (sanitized path on our origin).
-    const rawOrigin = String(body?.origin ?? '');
-    const base = rawOrigin.startsWith('http') ? rawOrigin.replace(/\/$/, '') : 'https://tolatino.vercel.app';
+    // Return exactly where the buyer was (sanitized path on OUR origin only).
+    const base = safeOrigin(body?.origin);
     let path = String(body?.returnPath ?? '/');
     if (!path.startsWith('/')) path = '/' + path;
     path = path.split('?')[0].split('#')[0];
