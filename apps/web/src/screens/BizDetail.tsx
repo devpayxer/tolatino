@@ -17,13 +17,13 @@ import { useMyActivity, useOrderPoll } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
 import { useUrlTab } from '@/lib/urlView';
-import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
+import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business, type EventItem } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
 import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -34,10 +34,10 @@ import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 const FEAT_EN: Record<string, string> = {};
 for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
-import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, STAFF, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
+import { DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
 
-type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
-const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'staff', 'related', 'reviews']);
+type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'related' | 'reviews';
+const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'related', 'reviews']);
 type RentMode = 'day' | 'hour';
 
 // Delivery-instruction presets (DoorDash-style): one dropoff preference + common
@@ -408,10 +408,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [rentBusy, setRentBusy] = useState<Record<string, number>>({}); // yyyy-mm-dd → units already booked
   const [rentCal, setRentCal] = useState<{ y: number; m: number }>(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [rentDone, setRentDone] = useState(false);
-  const [evIdx, setEvIdx] = useState<number | null>(null);
-  const [evGoing, setEvGoing] = useState<Record<number, boolean>>({});
-  const [updLikes, setUpdLikes] = useState<Record<number, boolean>>({});
-  const [updOpen, setUpdOpen] = useState<Record<number, boolean>>({});
+  // Real events (events_by_owner, migration 0062): this listing's own upcoming
+  // events. null until fetched; [] = module on but no events → the tab stays
+  // hidden (active-but-empty modules never surface). Tapping a card opens the
+  // real event detail (/eventos?e=<slug>) where RSVP/tickets live.
+  const [realEvents, setRealEvents] = useState<EventItem[] | null>(null);
+  const [evFetched, setEvFetched] = useState(false);
   // Real Novedades (business_updates, migration 0094): live rows for this listing,
   // the signed-in user's like set, and a once-per-open view bump. null = none →
   // sample fixtures render only on DEMO listings (a real listing hides the tab).
@@ -431,6 +433,20 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [b.slug, user?.id]);
+  useEffect(() => {
+    let cancelled = false;
+    setRealEvents(null); setEvFetched(false);
+    // Only businesses that turned on the Events module can host events — skip the
+    // fetch otherwise so a listing never surfaces an empty Eventos tab.
+    if (b.modules?.events !== true) { setEvFetched(true); return; }
+    fetchEventsByOwner(b.slug).then((rows) => {
+      if (cancelled) return;
+      setRealEvents(rows);
+      setEvFetched(true);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [b.slug]);
   const [reviewHelpful, setReviewHelpful] = useState<Record<string, boolean>>({});
   const [reviewFilter, setReviewFilter] = useState<'all' | '5' | '4' | '3'>('all');
   const [writeOpen, setWriteOpen] = useState(false);
@@ -1356,21 +1372,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (!error) flash(L('Renta solicitada · míralo en Mi cuenta', 'Rental requested · see it in My account'));
   };
 
-  // Events: real RSVP when the fixture has a public slug; otherwise fall back to
-  // the existing optimistic local toggle (the detail fixtures carry no slug yet).
-  const evSlug = (i: number) => (DETAIL_EVENTS[i] as { slug?: string }).slug;
-  const evOn = (i: number) => {
-    const s = evSlug(i);
-    return s ? act.goingSlugs.has(s) : !!evGoing[i];
-  };
-  const toggleEv = (i: number) => {
-    const s = evSlug(i);
-    if (s) {
-      if (!user) { router.push('/entrar'); return; }
-      act.rsvp(s, !act.goingSlugs.has(s));
-      return;
-    }
-    setEvGoing((m) => ({ ...m, [i]: !m[i] }));
+  // Events: real RSVP against the live event row. The card's slug drives both the
+  // "Voy" state (act.goingSlugs) and the deep link to the full event detail.
+  const evOn = (e: EventItem) => (e.slug ? act.goingSlugs.has(e.slug) : false);
+  const toggleEv = (e: EventItem) => {
+    if (!e.slug) return;
+    if (!user) { router.push('/entrar'); return; }
+    act.rsvp(e.slug, !act.goingSlugs.has(e.slug));
   };
 
   const modalUnit = useMemo(() => {
@@ -1395,35 +1403,33 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [single, itemModal]);
 
-  // Which surfaces this listing actually offers, so a real business never shows a
-  // tab full of fixtures it never configured (e.g. a remittance shop rendering a
-  // taco menu). Catalog tabs appear only when the owner published REAL data;
-  // fixture-only tabs (updates/events/staff) appear only when the owner explicitly
-  // enabled that module (businesses.modules). Overview/related/reviews are always on.
+  // GLOBAL RULE (founder, 2026-07-15): a consumer content tab appears ONLY when
+  // the owner turned that module ON *and* it holds real content. Active-but-empty
+  // modules stay hidden; content without its module on (leftover rows) stays
+  // hidden too. This mirrors the owner's "Configurar módulos" toggles exactly —
+  // menú · productos · servicios · renta · eventos · novedades. `bookings` lives
+  // inside Servicios and `staff` is internal, so neither is ever its own consumer
+  // tab. Overview/related/reviews are always on.
   const modOn = (k: string) => b.modules?.[k] === true;
   const tabShown: Record<TabKey, boolean> = {
     overview: true,
     related: true,
     reviews: true,
-    menu: realMenu != null,
-    shop: realShop != null,
-    services: realServices != null,
-    rentals: realRentals != null,
-    // Real Novedades exist → show them; fixture posts only on DEMO listings (no
-    // live row = hydrated stays null) so a real business never shows fake posts.
-    updates: realUpdates != null || (updFetched && hydrated == null && modOn('updates')),
-    events: modOn('events'),
-    staff: modOn('staff'),
+    menu: modOn('menu') && realMenu != null,
+    shop: modOn('products') && realShop != null,
+    services: modOn('services') && realServices != null,
+    rentals: modOn('rental') && realRentals != null,
+    updates: modOn('updates') && realUpdates != null,
+    events: modOn('events') && (realEvents?.length ?? 0) > 0,
   };
   const allTabs: [TabKey, string][] = [
-    ['overview', 'Overview'],
-    ['updates', 'Updates'],
+    ['overview', L('Resumen', 'Overview')],
+    ['updates', L('Novedades', 'Updates')],
     ['menu', L('Menú', 'Menu')],
     ['shop', L('Tienda', 'Shop')],
     ['services', L('Servicios', 'Services')],
     ['rentals', L('Renta', 'Rentals')],
     ['events', L('Eventos', 'Events')],
-    ['staff', L('Equipo', 'Staff')],
     ['related', L('Relacionados', 'Related')],
     ['reviews', L('Reseñas', 'Reviews')],
   ];
@@ -1434,12 +1440,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const tabResolved: Record<TabKey, boolean> = {
     overview: true, related: true, reviews: true,
     menu: menuFetched, shop: shopFetched, services: svcFetched, rentals: rentFetched,
-    updates: updFetched, events: hydrated != null, staff: hydrated != null,
+    updates: updFetched, events: evFetched,
   };
   useEffect(() => {
     if (tabResolved[tab] && !tabShown[tab]) setTab('overview');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, updFetched, realMenu, realShop, realServices, realRentals, realUpdates, b.slug]);
+  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, updFetched, evFetched, realMenu, realShop, realServices, realRentals, realUpdates, realEvents, b.slug]);
 
   // Overview = the full, browse-y view (hero + meta). Any other tab switches to a
   // focused mode: the hero collapses into a compact pinned header (title + tabs
@@ -2215,52 +2221,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           })}
         </div>
       )}
-      {tab === 'updates' && realUpdates == null && (
-        <div className="flex flex-col gap-3.5 pt-4">
-          {UPDATE_POSTS.map((p, i) => {
-            const liked = !!updLikes[i];
-            return (
-              <Card key={i} className="p-[15px]">
-                <div className="flex items-center gap-2.5">
-                  <Avatar initials={initials(b.name)} color="#7B61FF" size={38} />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13.5px] font-extrabold text-ink">{b.name}</div>
-                    <div className="text-[11.5px] font-semibold text-muted-2">{B(p.when)}</div>
-                  </div>
-                  {p.tag && (
-                    <span className="rounded-lg px-2 py-1 text-[10px] font-extrabold uppercase tracking-[.04em]" style={{ background: p.tagBg, color: p.tagC }}>
-                      {B(p.tag)}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-[11px] text-[14px] font-medium leading-normal text-ink-body">{L(p.textEs(b.name), p.textEn(b.name))}</div>
-                {p.tile && <div className="mt-[11px] h-[150px] rounded-[13px]" style={{ background: p.tile }} />}
-                <div className="mt-3 flex items-center gap-5 border-t border-hair pt-[11px]">
-                  <button onClick={() => setUpdLikes((m) => ({ ...m, [i]: !m[i] }))} className={`flex cursor-pointer items-center gap-1.5 text-[12.5px] font-bold ${liked ? 'text-pink' : 'text-muted-2'}`}>
-                    <span className="text-[16px] leading-none">{liked ? '♥' : '♡'}</span>
-                    {p.base + (liked ? 1 : 0)}
-                  </button>
-                  <button onClick={() => setUpdOpen((m) => ({ ...m, [i]: !m[i] }))} className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-bold text-muted-2">
-                    <MessageCircle size={16} stroke={2} />
-                    {L('Comentar', 'Comment')}
-                  </button>
-                  <button className="ml-auto cursor-pointer text-muted-2">
-                    <Share size={16} stroke={2} />
-                  </button>
-                </div>
-                {updOpen[i] && (
-                  <div className="mt-3 flex items-center gap-2 border-t border-hair pt-3">
-                    <input placeholder={L('Escribe un comentario…', 'Write a comment…')} className="min-w-0 flex-1 rounded-full bg-app px-4 py-2.5 text-[13px] font-medium outline-none placeholder:text-muted" />
-                    <button className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-primary text-white">
-                      <Send size={14} stroke={2.4} />
-                    </button>
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      {/* No fixture-updates fallback: the Novedades tab only renders when
+          realUpdates has content (active + content rule), so there's nothing to
+          fake here. */}
 
       {/* ============ MENU / SHOP ============ */}
       {tab === 'menu' && (
@@ -2599,25 +2562,27 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       )}
 
       {/* ============ EVENTS ============ */}
+      {/* This listing's own live events (events_by_owner). Tap → full event detail
+          (/eventos?e=<slug>) where tickets/RSVP live. Real rows only — no fixtures. */}
       {tab === 'events' && (
         <div className="flex flex-col gap-2.5 pt-4">
-          {DETAIL_EVENTS.map((e, i) => {
-            const on = evOn(i);
+          {(realEvents ?? []).map((e) => {
+            const on = evOn(e);
             return (
-              <Card key={e.title[0]} className="flex items-center gap-3.5 p-4" onClick={() => setEvIdx(i)}>
+              <Card key={e.slug ?? e.id} className="flex items-center gap-3.5 p-4" onClick={() => e.slug && router.push(`/eventos?e=${e.slug}`)}>
                 <span className="flex h-[54px] w-[54px] flex-none flex-col items-center justify-center rounded-tile bg-lilac">
-                  <span className="text-[10px] font-extrabold uppercase text-primary-dark">{B(e.d)}</span>
+                  <span className="text-[10px] font-extrabold uppercase text-primary-dark">{e.dEs}</span>
                   <span className="text-[19px] font-extrabold leading-none text-ink">{e.day}</span>
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-extrabold text-ink">{B(e.title)}</span>
-                  <span className="mt-0.5 block text-[12px] font-semibold text-muted">{B(e.loc)}</span>
-                  <span className="mt-0.5 block text-[11.5px] font-bold text-muted-2">{e.base + (on ? 1 : 0)} {L('asisten', 'going')}</span>
+                  <span className="block text-[14px] font-extrabold text-ink">{L(e.tEs, e.tEn)}</span>
+                  <span className="mt-0.5 block text-[12px] font-semibold text-muted">{L(e.timeEs, e.timeEn)} · {L(e.lEs, e.lEn)}</span>
+                  <span className="mt-0.5 block text-[11.5px] font-bold text-muted-2">{e.free ? L('Gratis', 'Free') : e.price} · {e.going} {L('asisten', 'going')}</span>
                 </span>
                 <button
                   onClick={(ev) => {
                     ev.stopPropagation();
-                    toggleEv(i);
+                    toggleEv(e);
                   }}
                   className={`flex-none cursor-pointer rounded-field px-4 py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'}`}
                 >
@@ -2626,19 +2591,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </Card>
             );
           })}
-        </div>
-      )}
-
-      {/* ============ STAFF ============ */}
-      {tab === 'staff' && (
-        <div className="grid grid-cols-2 gap-2.5 pt-4 md:grid-cols-4">
-          {STAFF.map((m, i) => (
-            <Card key={m.name} className="flex flex-col items-center p-4 text-center">
-              <Avatar initials={initials(m.name)} color={AVATAR_PALETTE[i % AVATAR_PALETTE.length]} size={52} />
-              <div className="mt-2.5 text-[13.5px] font-extrabold text-ink">{m.name}</div>
-              <div className="mt-0.5 text-[11.5px] font-semibold text-muted">{B(m.role)}</div>
-            </Card>
-          ))}
         </div>
       )}
 
@@ -4052,28 +4004,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               {L('Listo', 'Done')}
             </PrimaryBtn>
           </div>
-        )}
-      </Overlay>
-
-      {/* detail event modal */}
-      <Overlay open={evIdx !== null} onClose={() => setEvIdx(null)} width={440}>
-        {evIdx !== null && (
-          <>
-            <OverlayTitle title={B(DETAIL_EVENTS[evIdx].title)} onClose={() => setEvIdx(null)} />
-            <div className="text-[12.5px] font-bold text-muted">
-              {B(DETAIL_EVENTS[evIdx].d)} {DETAIL_EVENTS[evIdx].day} · {B(DETAIL_EVENTS[evIdx].loc)}
-            </div>
-            <div className="mt-3 text-[13.5px] font-medium leading-[1.55] text-ink-soft">{B(DETAIL_EVENTS[evIdx].desc)}</div>
-            <div className="mt-2 text-[12px] font-bold text-muted-2">
-              {DETAIL_EVENTS[evIdx].base + (evOn(evIdx) ? 1 : 0)} {L('asisten', 'going')}
-            </div>
-            <PrimaryBtn
-              className={`mt-4 ${evOn(evIdx) ? '!bg-green-bg !text-green-dark !shadow-none' : ''}`}
-              onClick={() => toggleEv(evIdx)}
-            >
-              {evOn(evIdx) ? L('Voy ✓', 'Going ✓') : L('Asistir', 'Attend')}
-            </PrimaryBtn>
-          </>
         )}
       </Overlay>
 

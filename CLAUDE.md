@@ -305,6 +305,29 @@ One responsive app, three surfaces:
      hay "depósito parcial" por servicio. (La **renta** sí tiene un depósito
      reembolsable de garantía — es OTRA cosa: dinero que se retiene y devuelve,
      se cobra al recoger, no un flag de pago.)
+- **Visibilidad de módulos en el listado del cliente — REGLA GLOBAL (founder,
+  2026-07-15).** En el detalle del negocio (`BizDetail`) un tab de contenido
+  aparece **SOLO si el módulo está ACTIVO _y_ tiene contenido real** — las dos
+  cosas, siempre. Aplica idéntico a **Menú, Tienda, Servicios, Renta, Eventos,
+  Novedades** y cualquier superficie futura:
+  1. **Activo** = el dueño lo prendió (`businesses.modules[k] === true`; el toggle
+     escribe el objeto completo con true/false explícitos). Módulo apagado
+     (`false`) o sin prender → el tab **NO aparece**, aunque queden filas sueltas
+     de contenido. (Ese fue el bug de la barbería: filas `menu`/`product` viejas
+     con `menu:false`/`products:false` mostraban Menú/Tienda.)
+  2. **Con contenido** = hay filas reales (RPC devuelve algo): `realMenu`,
+     `realShop`, `realServices`, `realRentals`, `realUpdates`, `realEvents`.
+     Módulo **activo pero VACÍO → NO aparece** (p. ej. `updates:true` con 0 posts).
+  3. Mapeo tab→módulo: menú→`menu`, tienda→`products`, servicios→`services`,
+     renta→`rental`, eventos→`events`, novedades→`updates`. `bookings` vive
+     DENTRO de Servicios (nunca es su propio tab) y **no existe tab "Equipo"**
+     (staff es interno del panel, no una superficie de cliente).
+  4. Nunca reintroducir el gating "solo por contenido" (`realX != null` sin
+     chequear `modOn`) ni "solo por módulo" (`modOn` sin chequear contenido):
+     ambos rompen la regla. Los tabs Resumen/Relacionados/Reseñas siempre salen.
+  5. Datos sembrados directo (sin pasar por el toggle) pueden tener el flag sin
+     poner → **backfill** el flag a `true` donde el contenido sea legítimo, en vez
+     de debilitar la regla.
 
 ## Database & migrations (Supabase)
 

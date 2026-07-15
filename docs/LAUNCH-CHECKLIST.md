@@ -303,6 +303,15 @@
 
 ## 3. Incomplete / stubbed features
 
+- [ ] **Business-listing events are owner-scoped, not per-business (2026-07-15).**
+  The `events` table keys on `owner_id` only (no `business_id`), so the consumer
+  listing's Eventos tab (`fetchEventsByOwner(slug)` → `events_by_owner`) resolves
+  the slug to its owner and returns **all that owner's events** — an owner with
+  several businesses shows the same events on each of their listings. No business
+  has the `events` module on today so nothing surfaces yet, but before enabling
+  Eventos for a multi-business owner, add a `business_id` (or listing link) to
+  `events` and filter the RPC by it. The tab is already gated on
+  `modules.events === true && realEvents.length > 0` (active + content rule).
 - [ ] **"Crear evento" form is a stub.** In `PublishModal.tsx` the event branch
   still just calls `setDone(true)` — it does **not** insert into `events`. Build
   real event creation (insert, geo, tickets, images). (Business publish is now

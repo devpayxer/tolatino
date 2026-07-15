@@ -55,6 +55,23 @@ it** rather than breaking the rule silently.
      Servicios: `deposit` por-servicio, eliminado). El cobro en línea es el
      **precio completo** del ítem. (La renta sí tiene depósito reembolsable de
      garantía — cosa distinta: se retiene y devuelve.)
+- **Visibilidad de tabs en el listado del cliente — REGLA GLOBAL (founder,
+  2026-07-15).** En `BizDetail` un tab de contenido sale **SOLO si el módulo está
+  ACTIVO _y_ tiene contenido real** (las dos). Aplica a Menú, Tienda, Servicios,
+  Renta, Eventos, Novedades y todo lo futuro:
+  1. **Activo** = `businesses.modules[k] === true` (el toggle guarda el objeto
+     completo). Apagado (`false`) o sin prender → tab **oculto**, aunque queden
+     filas viejas de contenido.
+  2. **Con contenido** = el RPC devuelve filas (`realMenu`/`realShop`/
+     `realServices`/`realRentals`/`realUpdates`/`realEvents`). Activo pero
+     **vacío → oculto** (p. ej. `updates:true` con 0 posts).
+  3. Mapeo tab→módulo: menú→`menu`, tienda→`products`, servicios→`services`,
+     renta→`rental`, eventos→`events`, novedades→`updates`. `bookings` va DENTRO
+     de Servicios; **no hay tab "Equipo"** (staff es interno del panel).
+  4. Prohibido volver al gating "solo por contenido" (`realX != null` sin
+     `modOn`) o "solo por módulo" (`modOn` sin contenido) — ambos rompen la regla.
+     Resumen/Relacionados/Reseñas siempre salen. Datos sembrados sin flag →
+     **backfill** el flag, no debilites la regla.
 
 ## 3. Spanish-first
 - Default language **es-US**; English **en-US** is secondary.
