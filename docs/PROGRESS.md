@@ -5,6 +5,32 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Checkout propio para reservas y rentas — regla permanente (2026-07-15)
+
+El fundador pidió que el pago de Servicios use NUESTRO diseño de checkout, no la
+página alojada de Stripe — y que quede como regla permanente:
+
+- **Regla guardada** en `CLAUDE.md` (Design hard-rules) y en el skill
+  `tolatino-standards` (§2): todo cobro paga dentro de la hoja propia
+  (`CheckoutSheet` + Stripe Payment Element vía `startMarketplacePayment` →
+  PaymentIntent). **Prohibido** `startMarketplaceCheckout` +
+  `window.location.href` (redirect al Checkout alojado).
+- **Reservas (citas)** y **Rentas** en `BizDetail` migradas al patrón del
+  carrito: mismo `checkout` state + `CheckoutSheet` ya montada; al pagar,
+  Stripe regresa a `?pay=success&pid=` y `PurchaseReturnToast` confirma.
+- Confirmación de reserva post-pago enriquecida: "¡Cita confirmada!" + tarjeta
+  con servicio · variante · con {profesional} · fecha (el payload 0092 ya
+  llevaba todo).
+- Errores reales compartidos: `PAY_ERR` se movió a nivel módulo (carrito +
+  reserva + renta) y aprendió `no_deposit` / `bad_staff`.
+- **Pendiente honesto**: Eventos (boletos) todavía redirige — anotado en
+  LAUNCH-CHECKLIST para migrar la próxima vez que se trabaje esa sección.
+
+Verificado en navegador real (Aqua Shine, "Lavado Completo" SUV): al tocar
+"Pagar reserva · $28.35" abre NUESTRA hoja ("Pagar · Total a pagar $28.35 ·
+Pago seguro cifrado, procesado por Stripe") sin salir de la app, y el
+PaymentIntent staged lleva service/variant/starts_at. `tsc` + `build` limpios.
+
 ## Pedidos de Tienda — post-orden y tracking estilo Amazon (2026-07-15)
 
 El fundador reportó que tras comprar en la Tienda, el proceso del usuario seguía

@@ -35,6 +35,14 @@ it** rather than breaking the rule silently.
   founder** before creating anything. Propose, get the design, then build.
 - Match the established look exactly; generate responsive desktop variants that
   preserve the mobile design concept.
+- **Checkout propio SIEMPRE (founder rule, 2026-07-15):** every online charge —
+  orders, bookings, rentals, tickets, anything future — pays inside To'Latino's
+  OWN branded sheet (`CheckoutSheet` + Stripe Payment Element via
+  `startMarketplacePayment` → PaymentIntent `clientSecret`). **NEVER redirect
+  the buyer to Stripe's hosted Checkout page** (`startMarketplaceCheckout` +
+  `window.location.href = url` is the forbidden pattern). Stripe still renders
+  the secure card iframes inside our sheet (PCI stays minimal), but the look,
+  copy and flow are To'Latino's.
 
 ## 3. Spanish-first
 - Default language **es-US**; English **en-US** is secondary.

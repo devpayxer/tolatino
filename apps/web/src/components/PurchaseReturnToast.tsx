@@ -26,6 +26,10 @@ type PendingRow = {
     items?: { name: string; qty: number; price?: number; opts?: string; img?: string }[];
     business?: string; channel?: string;
     fulfillment?: { eta_range?: string; address?: string; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number; kind?: string };
+    // booking (kind='booking') appointment detail — shown on the confirmation card
+    service_name?: string; starts_at?: string; staff_name?: string; variant?: string;
+    // rental (kind='rental') detail
+    item_name?: string; start_at?: string; end_at?: string | null;
   } | null;
   result: { id?: string; code?: string; tickets?: string[] } | null;
 };
@@ -143,7 +147,7 @@ export function PurchaseReturnToast() {
               <div className="mt-3.5 text-[20px] font-extrabold text-ink">
                 {row.kind === 'order' ? (isStore ? L('¡Gracias por tu compra!', 'Thanks for your purchase!') : L('¡Pedido recibido!', 'Order placed!'))
                   : row.kind === 'ticket' ? L('¡Boletos confirmados!', 'Tickets confirmed!')
-                  : row.kind === 'booking' ? L('¡Reserva pagada!', 'Booking paid!')
+                  : row.kind === 'booking' ? L('¡Cita confirmada!', 'Appointment confirmed!')
                   : L('¡Renta pagada!', 'Rental paid!')}
               </div>
               <div className="mt-1 max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">
@@ -157,8 +161,25 @@ export function PurchaseReturnToast() {
                       : L(`Enviamos tu pedido a ${bizName}. Te avisamos apenas lo confirme.`, `We sent your order to ${bizName}. We'll let you know as soon as they confirm it.`)
                   : row.kind === 'ticket'
                     ? L('Tu pago fue procesado y tus boletos ya están en Mi cuenta.', 'Your payment went through and your tickets are in My account.')
-                    : L('Tu pago fue procesado y la confirmación está en Mi cuenta.', 'Your payment went through and the confirmation is in My account.')}
+                    : row.kind === 'booking'
+                      ? L(`Tu pago aseguró tu cita en ${bizName} — te esperamos.`, `Your payment secured your appointment at ${bizName} — see you there.`)
+                      : L('Tu pago fue procesado y la confirmación está en Mi cuenta.', 'Your payment went through and the confirmation is in My account.')}
               </div>
+
+              {/* appointment / rental summary card (paid via OUR checkout sheet) */}
+              {(row.kind === 'booking' || row.kind === 'rental') && (
+                <div className="mt-3 w-full max-w-[300px] rounded-card-sm border border-hair bg-white p-4 text-left shadow-card">
+                  <div className="text-[14px] font-extrabold text-ink">{row.payload?.service_name ?? row.payload?.item_name ?? ''}</div>
+                  {row.kind === 'booking' && row.payload?.staff_name && (
+                    <div className="mt-1 text-[12px] font-bold text-ink-soft">{L('con', 'with')} {row.payload.staff_name}{row.payload?.variant ? ` · ${row.payload.variant}` : ''}</div>
+                  )}
+                  {(row.payload?.starts_at || row.payload?.start_at) && (
+                    <div className="mt-2 border-t border-hair pt-2 text-[12.5px] font-bold text-ink-soft">
+                      {new Date((row.payload?.starts_at ?? row.payload?.start_at)!).toLocaleString(L('es-US', 'en-US'), { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                    </div>
+                  )}
+                </div>
+              )}
               {row.kind === 'order' && row.result?.code && (
                 <span className="mt-2 rounded-full bg-lilac-2 px-3 py-1 text-[11px] font-extrabold text-primary-dark">{L('Pedido', 'Order')} {row.result.code}</span>
               )}

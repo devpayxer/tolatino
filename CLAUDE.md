@@ -272,6 +272,14 @@ One responsive app, three surfaces:
   photos exist. Logo = CSS wordmark `To'`(ink)+`Latino`(purple)+amber diamond.
 - **Business card variant:** the handoff offers A·Lista / B·Galería / C·Detalle;
   prototype default is **A (Lista)** — build A unless the founder picks another.
+- **Checkout propio SIEMPRE (founder rule, 2026-07-15):** every online charge —
+  orders, bookings/citas, rentals, tickets, anything future — pays inside
+  To'Latino's OWN branded sheet (`CheckoutSheet` + Stripe Payment Element via
+  `startMarketplacePayment`, which returns a PaymentIntent `clientSecret`).
+  **NEVER redirect the buyer to Stripe's hosted Checkout page**
+  (`startMarketplaceCheckout` → `window.location.href = url` is the forbidden
+  pattern). Stripe still renders the secure card iframes inside our sheet, so
+  PCI stays minimal — but the look, copy and flow are ours.
 
 ## Database & migrations (Supabase)
 

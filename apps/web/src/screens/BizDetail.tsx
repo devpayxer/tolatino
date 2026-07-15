@@ -21,7 +21,7 @@ import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
-import { startMarketplaceCheckout, startMarketplacePayment } from '@/lib/stripe';
+import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
@@ -119,6 +119,20 @@ type SvcTarget = {
 
 const initials = (name: string) =>
   name.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+
+// Real payment-start failure reasons → honest bilingual copy (shared by the
+// cart, booking and rental payment starters).
+const PAY_ERR: Record<string, [string, string]> = {
+  seller_not_payable: ['Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet'],
+  below_minimum: ['No llegas al mínimo para entrega', "You haven't reached the delivery minimum"],
+  address_required: ['Agrega tu dirección de entrega', 'Add your delivery address'],
+  no_delivery: ['Este negocio no está haciendo entregas ahora', 'This business is not delivering right now'],
+  item_unavailable: ['Un artículo ya no está disponible', 'An item is no longer available'],
+  no_deposit: ['Este servicio no requiere pago en línea', 'This service does not take online payment'],
+  bad_staff: ['Ese profesional ya no está disponible — elige otro', 'That professional is no longer available — pick another'],
+  auth: ['Tu sesión expiró — inicia sesión de nuevo', 'Your session expired — sign in again'],
+  network: ['Sin conexión. Revisa tu internet e intenta de nuevo', 'No connection. Check your internet and try again'],
+};
 
 export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business; all: Business[]; onClose: () => void; onOpenOther: (b: Business) => void }) {
   // The feed RPCs (businesses_near / search_businesses) don't carry the detail-
@@ -676,15 +690,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     }
     // The caller now surfaces the function's REAL reason (invoke() used to hide
     // 4xx bodies, so every rejection looked like the same generic failure).
-    const PAY_ERR: Record<string, [string, string]> = {
-      seller_not_payable: ['Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet'],
-      below_minimum: ['No llegas al mínimo para entrega', "You haven't reached the delivery minimum"],
-      address_required: ['Agrega tu dirección de entrega', 'Add your delivery address'],
-      no_delivery: ['Este negocio no está haciendo entregas ahora', 'This business is not delivering right now'],
-      item_unavailable: ['Un artículo de tu carrito ya no está disponible', 'An item in your cart is no longer available'],
-      auth: ['Tu sesión expiró — inicia sesión de nuevo', 'Your session expired — sign in again'],
-      network: ['Sin conexión. Revisa tu internet e intenta de nuevo', 'No connection. Check your internet and try again'],
-    };
     const msg = PAY_ERR[error ?? ''];
     flash(msg ? L(msg[0], msg[1]) : L('No se pudo iniciar el pago — intenta de nuevo', 'Could not start payment — try again'));
   };
@@ -1096,10 +1101,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       setSvcDone(true);
       return;
     }
-    // Booking with a deposit/price + seller takes cards → charge the deposit online
-    // via Stripe; the confirmed booking is created by the webhook once paid.
+    // Booking with a deposit/price + seller takes cards → charge inside OUR OWN
+    // branded checkout sheet (Payment Element) — never Stripe's hosted page. The
+    // confirmed booking is still created by the webhook once payment lands.
     if (payOnline && svcSel.deposit && total > 0) {
-      const { url } = await startMarketplaceCheckout({
+      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({
         kind: 'booking', slug: b.slug, subtotal: total,
         // structured inputs → server re-prices from DB (ignores subtotal)
         party_size: svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : 1,
@@ -1110,8 +1116,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         ...(svcPromo ? { promo: svcPromo.code } : {}),
         payload: { service_name: svcSel.name, service_id: svcSel.id ?? null, starts_at: svcStartISO(), party_size: persons, deposit: total },
       });
-      if (url) { window.location.href = url; return; }
-      flash(L('No se pudo iniciar el pago', 'Could not start payment'));
+      if (clientSecret && pendingId) {
+        setSvcSel(null);
+        setCheckout({ clientSecret, pendingId, amount: amount ?? Math.round(total * 105), returnPath: typeof window !== 'undefined' ? window.location.pathname : '/negocios/' });
+        return;
+      }
+      const msg = PAY_ERR[error ?? ''];
+      flash(msg ? L(msg[0], msg[1]) : L('No se pudo iniciar el pago', 'Could not start payment'));
       return;
     }
     // Cash / pay-at-venue / inquiry path — insert with the full appointment shape.
@@ -1266,10 +1277,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (!user) { router.push('/entrar'); return; }
     const itemId = it.id.startsWith('fx') ? null : it.id;
     const fee = rentSubtotal(it);
-    // Payable rental (seller takes cards + a real fee) → charge the rental fee online
-    // via Stripe; the refundable security deposit is collected at pickup.
+    // Payable rental (seller takes cards + a real fee) → charge the rental fee
+    // inside OUR OWN branded checkout sheet (Payment Element) — never Stripe's
+    // hosted page. The refundable security deposit is collected at pickup.
     if (payOnline && fee > 0) {
-      const { url } = await startMarketplaceCheckout({
+      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({
         kind: 'rental', slug: b.slug, subtotal: fee,
         // structured inputs → server re-prices the fee from DB rates + span (ignores subtotal)
         mode: rentMode, hours: rentHours, units: rentUnits,
@@ -1277,8 +1289,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         ...(rentPromo ? { promo: rentPromo.code } : {}),
         payload: { item_name: B(it.n), item_id: itemId, start_at: rentStartISO(), end_at: rentEndISO(), qty: rentUnits, total: rentGrand(it), deposit: rentDepositTotal(it) },
       });
-      if (url) { window.location.href = url; return; }
-      flash(L('No se pudo iniciar el pago', 'Could not start payment'));
+      if (clientSecret && pendingId) {
+        setRentIdx(null);
+        setCheckout({ clientSecret, pendingId, amount: amount ?? Math.round(fee * 105), returnPath: typeof window !== 'undefined' ? window.location.pathname : '/negocios/' });
+        return;
+      }
+      const msg = PAY_ERR[error ?? ''];
+      flash(msg ? L(msg[0], msg[1]) : L('No se pudo iniciar el pago', 'Could not start payment'));
       return;
     }
     setRentDone(true); // optimistic success screen (pay-later / inquiry)

@@ -1405,6 +1405,14 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
   (`Onboarding`) **wizards** — steps depend on prior-step data, so deep-linking mid-
   flow would render a broken/empty step. Leave ephemeral.
 
+### Checkout propio en todos los cobros (2026-07-15)
+- [ ] **Eventos (boletos) todavía redirige al Checkout alojado de Stripe.**
+  Pedidos, reservas y rentas ya pagan dentro de la hoja propia (`CheckoutSheet`
+  + Payment Element — regla del fundador en CLAUDE.md/skill). Migrar
+  `Eventos.tsx` (`startMarketplaceCheckout` → `startMarketplacePayment` +
+  montar `CheckoutSheet` en esa pantalla) la próxima vez que se trabaje la
+  sección Eventos; verificar el flujo de boletos completo al hacerlo.
+
 ### Servicios / Reservas nivel Booksy (2026-07-15)
 - [ ] **Recordatorio de cita (push "1 hora antes").** The booking lifecycle pushes
   (nueva / confirmada / cancelada / reagendada / no-show) are live, but a
