@@ -45,6 +45,9 @@ type Fulfil = {
   // 'cash' orders are paid on delivery/pickup (no Stripe) — the seller collects
   // `collect_total` in cash; 'online'/absent means already charged by card.
   payment?: 'cash' | 'online'; collect_total?: number;
+  // 'store' = Tienda order (every line a product) → the client sees Amazon-style
+  // copy and a DAY-based delivery window, never kitchen minutes.
+  kind?: string;
 };
 type Order = {
   id: string; dbId?: string; who: [string, string]; placed: [string, string]; urgent: boolean;
@@ -798,7 +801,20 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // Accept with a prep time (10/15/20/30 min) — advances new → preparing and
   // refreshes the CUSTOMER's ETA banner (eta_range) from the real prep time,
   // so what the client sees matches what the kitchen committed to.
+  // STORE orders (fulfillment.kind='store') never promise kitchen minutes:
+  // delivery keeps/sets the store's day-based window (shipping zone `time`,
+  // e.g. "2–5 días"); pickup waits for the "Listo para recoger" push.
   const acceptOrder = (o: Order, prep: number) => {
+    if (o.fulfillment?.kind === 'store') {
+      const zones = (real?.settings as Record<string, Record<string, Record<string, unknown>>> | null)?.shipping?.delivery?.zones;
+      const zt = Array.isArray(zones) ? (zones[0] as Record<string, unknown> | undefined)?.time : undefined;
+      const dayEta = typeof zt === 'string' && zt.trim() ? zt.trim() : undefined;
+      if (o.channel === 'delivery' && dayEta && !o.fulfillment?.eta_range) writeFulfil(o, { eta_range: dayEta });
+      void advance(o);
+      setPrepFor(null);
+      flash(L('Pedido aceptado — empácalo cuando puedas', 'Order accepted — pack it when ready'));
+      return;
+    }
     writeFulfil(o, { prep, eta_range: o.channel === 'delivery' ? `${prep + 10}–${prep + 25} min` : `${prep} min` });
     void advance(o);
     setPrepFor(null);
@@ -1386,15 +1402,23 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <OverlayTitle title={L('Aceptar pedido', 'Accept order')} onClose={() => setPrepFor(null)} />
           <div className="text-[13px] font-extrabold text-ink">{prepFor.id} · {L(prepFor.who[0], prepFor.who[1])}</div>
           <div className="mt-0.5 text-[11px] font-semibold text-muted-2">{L(prepFor.items[0], prepFor.items[1])}</div>
-          <div className="mt-4 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Tiempo de preparación', 'Prep time')}</div>
-          <div className="mt-2 grid grid-cols-4 gap-2">
-            {[10, 15, 20, 30].map((m) => (
-              <button key={m} onClick={() => setPrepMin(m)} className={`rounded-field py-2.5 text-[12.5px] font-extrabold ${prepMin === m ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>{m} min</button>
-            ))}
-          </div>
+          {prepFor.fulfillment?.kind === 'store' ? (
+            <div className="mt-4 rounded-field bg-lilac-2 px-3.5 py-3 text-[12px] font-semibold leading-snug text-ink-2">
+              {L('Pedido de tienda: el cliente verá "Empacando tu pedido" al aceptar — sin tiempos de cocina. Márcalo Listo cuando esté empacado.', 'Store order: the customer sees "Packing your order" once you accept — no kitchen timers. Mark it Ready when packed.')}
+            </div>
+          ) : (
+            <>
+              <div className="mt-4 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Tiempo de preparación', 'Prep time')}</div>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {[10, 15, 20, 30].map((m) => (
+                  <button key={m} onClick={() => setPrepMin(m)} className={`rounded-field py-2.5 text-[12.5px] font-extrabold ${prepMin === m ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>{m} min</button>
+                ))}
+              </div>
+            </>
+          )}
           <div className="mt-4 flex gap-2.5">
             <button onClick={() => { setRejectFor(prepFor); setPrepFor(null); }} className="flex flex-none items-center gap-1 rounded-field border-[1.5px] border-lilac-line px-4 py-3 text-[12px] font-extrabold text-pink-dark"><XCircle size={14} stroke={2.4} />{L('Rechazar', 'Reject')}</button>
-            <button onClick={() => acceptOrder(prepFor, prepMin)} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm"><Check size={15} stroke={2.8} />{L(`Aceptar · ${prepMin} min`, `Accept · ${prepMin} min`)}</button>
+            <button onClick={() => acceptOrder(prepFor, prepMin)} className="flex flex-1 items-center justify-center gap-1 rounded-field bg-primary py-3 text-[12.5px] font-extrabold text-white shadow-cta-sm"><Check size={15} stroke={2.8} />{prepFor.fulfillment?.kind === 'store' ? L('Aceptar pedido', 'Accept order') : L(`Aceptar · ${prepMin} min`, `Accept · ${prepMin} min`)}</button>
           </div>
         </Overlay>
       )}

@@ -9,10 +9,13 @@
 import { IconCheck as Check } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 
-// 0 Esperando confirmación · 1 Preparando · 2 En camino/Listo · 3 Entregado/Recogido.
-// THE stage mapping — client tracker AND business surfaces derive from here so
-// both sides always describe the order identically.
-type StageOrder = { status: string; channel?: string | null; fulfillment?: { dispatch?: string } | null };
+// 0 Esperando confirmación · 1 Preparando/Empacando · 2 En camino/Listo ·
+// 3 Entregado/Recogido. THE stage mapping — client tracker AND business surfaces
+// derive from here so both sides always describe the order identically.
+// A STORE order (fulfillment.kind === 'store' — every line is a product) speaks
+// Amazon/Walmart ("Empacando tu pedido", "Listo para recoger en tienda"), not
+// kitchen wording; the stage MACHINE is identical, only the voice changes.
+type StageOrder = { status: string; channel?: string | null; fulfillment?: { dispatch?: string; kind?: string } | null };
 export function orderStageIdx(o: StageOrder | undefined | null): number {
   if (!o) return 0;
   const d = o.fulfillment?.dispatch;
@@ -24,20 +27,26 @@ export function orderStageIdx(o: StageOrder | undefined | null): number {
   return 0;
 }
 
+/** Is this a Tienda (retail) order? Stamped at checkout — every line a product. */
+export const isStoreOrder = (o: StageOrder | undefined | null): boolean => o?.fulfillment?.kind === 'store';
+
 // The stage label the CUSTOMER is seeing right now — shown in the business
 // dashboard ("Tu cliente ve: …") so owner and client are always on the same page.
 export function orderStageLabel(o: StageOrder | undefined | null): [string, string] {
   if (o?.status === 'cancelled') return ['Cancelado', 'Cancelled'];
-  const del: [string, string][] = [['Esperando confirmación', 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['En camino', 'On the way'], ['Entregado', 'Delivered']];
-  const pick: [string, string][] = [['Esperando confirmación', 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['Listo para recoger', 'Ready for pickup'], ['Recogido', 'Picked up']];
+  const store = isStoreOrder(o);
+  const prep: [string, string] = store ? ['Empacando', 'Packing'] : ['Preparando', 'Preparing'];
+  const del: [string, string][] = [['Esperando confirmación', 'Awaiting confirmation'], prep, ['En camino', 'On the way'], ['Entregado', 'Delivered']];
+  const pick: [string, string][] = [['Esperando confirmación', 'Awaiting confirmation'], prep, ['Listo para recoger', 'Ready for pickup'], ['Recogido', 'Picked up']];
   return (o?.channel === 'delivery' ? del : pick)[orderStageIdx(o)];
 }
 
-export function OrderStepsVertical({ stageIdx, isDelivery }: { stageIdx: number; isDelivery: boolean }) {
+export function OrderStepsVertical({ stageIdx, isDelivery, store = false }: { stageIdx: number; isDelivery: boolean; store?: boolean }) {
   const { L } = useLang();
+  const prep = store ? L('Empacando tu pedido', 'Packing your order') : L('Preparando', 'Preparing');
   const labels = isDelivery
-    ? [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), L('Preparando', 'Preparing'), L('En camino', 'On the way'), L('Entregado', 'Delivered')]
-    : [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), L('Preparando', 'Preparing'), L('Listo para recoger', 'Ready for pickup')];
+    ? [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), prep, L('En camino', 'On the way'), L('Entregado', 'Delivered')]
+    : [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), prep, store ? L('Listo para recoger en tienda', 'Ready for store pickup') : L('Listo para recoger', 'Ready for pickup')];
   return (
     <div className="flex flex-col gap-0 rounded-card border border-hair bg-white p-4 shadow-card">
       {labels.map((label, i, arr) => {

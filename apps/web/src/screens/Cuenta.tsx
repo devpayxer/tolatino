@@ -9,7 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconFlag as Flag, IconPhone as Phone, IconPlus as Plus, IconReceipt as Receipt, IconRepeat as Repeat, IconShoppingBag as ShoppingBag, IconStar as Star, IconStarFilled as StarFilled, IconTicket as Ticket, IconTrash as Trash2, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
+import { IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconFlag as Flag, IconPhone as Phone, IconPlus as Plus, IconReceipt as Receipt, IconRepeat as Repeat, IconShoppingBag as ShoppingBag, IconStar as Star, IconStarFilled as StarFilled, IconTicket as Ticket, IconTrash as Trash2, IconTruck as Truck, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -145,6 +145,15 @@ export function CuentaScreen() {
   const pill = (status: string) => {
     const s = STATUS[status] ?? { es: status, en: status, bg: '#F1EFFA', c: '#8A86A0' };
     return <span className="flex-none rounded-full px-2 py-0.5 text-[10px] font-extrabold" style={{ background: s.bg, color: s.c }}>{L(s.es, s.en)}</span>;
+  };
+  // Order pill with the STORE voice: a Tienda order "empaca", it doesn't cook.
+  const orderPill = (o: MyOrder) => {
+    const stage = orderStageKey(o);
+    if (o.fulfillment?.kind === 'store' && stage === 'preparing') {
+      const s = STATUS.preparing;
+      return <span className="flex-none rounded-full px-2 py-0.5 text-[10px] font-extrabold" style={{ background: s.bg, color: s.c }}>{L('Empacando', 'Packing')}</span>;
+    }
+    return pill(stage);
   };
   const txEmpty = (msg: string) => <div className={`${cardCls} p-6 text-center text-[13px] font-semibold text-muted`}>{msg}</div>;
   const txItem = (key: string, title: string, sub: string, right: ReactNode) => (
@@ -464,7 +473,7 @@ export function CuentaScreen() {
                   </span>
                   <span className="flex flex-none flex-col items-end gap-1">
                     {o.total != null && <span className="text-[13px] font-extrabold text-ink">{money(o.fulfillment?.paid_total ?? o.total)}</span>}
-                    {pill(orderStageKey(o))}
+                    {orderPill(o)}
                   </span>
                   <ChevronRight size={16} className="flex-none text-muted" />
                 </button>
@@ -680,21 +689,32 @@ export function CuentaScreen() {
           if (!o) return null;
           const f = o.fulfillment ?? {};
           const isDel = o.channel === 'delivery';
+          // STORE order (Tienda — all lines are products) → Amazon voice: packing,
+          // day-based delivery, "ready for store pickup". Food keeps DoorDash.
+          const isStore = f.kind === 'store';
           const stage = orderStageKey(o); // new|preparing|ready|on_the_way|delivered|completed|cancelled
           const delivered = stage === 'delivered' || stage === 'completed';
           const bizName = o.businesses?.name ?? L('el negocio', 'the business');
           const driverIni = f.driver ? (f.driver.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'R') : '';
-          // 4-step flow: 1 waiting/confirmed · 2 preparing · 3 on the way · 4 delivered.
+          // 4-step flow: 1 waiting/confirmed · 2 preparing/packing · 3 on the way/ready · 4 done.
           const s4 = orderStageIdx(o); // shared mapping — same one Cocina shows the owner
+          const prepLab: [string, string] = isStore ? ['Empacando', 'Packing'] : ['Preparando', 'Preparing'];
           const stepLabels: [string, string][] = isDel
-            ? [[s4 > 0 ? 'Confirmado' : 'Esperando confirmación', s4 > 0 ? 'Confirmed' : 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['En camino', 'On the way'], ['Entregado', 'Delivered']]
-            : [[s4 > 0 ? 'Confirmado' : 'Esperando confirmación', s4 > 0 ? 'Confirmed' : 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['Listo', 'Ready'], ['Recogido', 'Picked up']];
+            ? [[s4 > 0 ? 'Confirmado' : 'Esperando confirmación', s4 > 0 ? 'Confirmed' : 'Awaiting confirmation'], prepLab, ['En camino', 'On the way'], ['Entregado', 'Delivered']]
+            : [[s4 > 0 ? 'Confirmado' : 'Esperando confirmación', s4 > 0 ? 'Confirmed' : 'Awaiting confirmation'], prepLab, ['Listo', 'Ready'], ['Recogido', 'Picked up']];
 
-          // Receipt (shared by tracking + the delivered screen).
+          // Receipt (shared by tracking + the delivered screen). Store orders get
+          // Amazon-style item thumbnails.
           const receipt = (
             <div className="rounded-card border border-hair bg-white p-3.5 shadow-card">
               {(o.items ?? []).map((it, i) => (
-                <div key={i} className="flex justify-between gap-3 text-[12.5px] font-semibold text-ink-2">
+                <div key={i} className="flex items-center justify-between gap-3 py-0.5 text-[12.5px] font-semibold text-ink-2">
+                  {isStore && (
+                    <span className="relative h-9 w-9 flex-none overflow-hidden rounded-lg bg-lilac-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}{it.opts ? <span className="text-muted"> · {it.opts}</span> : null}</span>
                   {it.price != null && <span className="flex-none">{money(it.price * it.qty)}</span>}
                 </div>
@@ -786,9 +806,9 @@ export function CuentaScreen() {
 
                 <div className="mt-4 text-[11px] font-extrabold uppercase tracking-wider text-muted-2">{L('¿Qué deseas hacer?', 'What would you like to do?')}</div>
                 <div className="mt-2 flex flex-col gap-2">
-                  <button onClick={() => { closeOrder(); router.push(`/negocios/?b=${o.businesses?.slug ?? ''}&bt=menu`); }} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+                  <button onClick={() => { closeOrder(); router.push(`/negocios/?b=${o.businesses?.slug ?? ''}&bt=${isStore ? 'shop' : 'menu'}`); }} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Repeat size={17} stroke={2.2} className="text-green-dark" /></span>
-                    <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L('Volver a pedir', 'Order again')}</span><span className="block text-[11px] font-semibold text-muted">{L('Repite este pedido en un toque', 'Reorder in one tap')}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{isStore ? L('Volver a comprar', 'Buy again') : L('Volver a pedir', 'Order again')}</span><span className="block text-[11px] font-semibold text-muted">{isStore ? L('Vuelve a la tienda en un toque', 'Back to the store in one tap') : L('Repite este pedido en un toque', 'Reorder in one tap')}</span></span>
                     <ChevronRight size={16} className="flex-none text-muted-2" />
                   </button>
                   <button onClick={() => setShowReceipt((v) => !v)} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
@@ -818,10 +838,10 @@ export function CuentaScreen() {
           // ══ LIVE TRACKING (screen 2) ═══════════════════════════════════════
           return (
             <>
-              <OverlayTitle title={L('Sigue tu pedido', 'Track your order')} onClose={() => closeOrder()} />
+              <OverlayTitle title={isStore ? L('Sigue tu compra', 'Track your purchase') : L('Sigue tu pedido', 'Track your order')} onClose={() => closeOrder()} />
               <div className="flex items-center justify-between">
                 <span className="text-[11.5px] font-bold text-muted">{o.code ?? ''} · {bizName}</span>
-                {pill(stage)}
+                {orderPill(o)}
               </div>
 
               {/* map (illustrative) once a driver is on the way */}
@@ -829,16 +849,29 @@ export function CuentaScreen() {
                 <div className="relative mt-3 h-[128px] overflow-hidden rounded-card border border-hair" style={{ background: '#EAEEF6' }}>
                   <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 128" preserveAspectRatio="none"><path d="M40 96 C 110 96, 120 40, 210 34" fill="none" stroke="#7B61FF" strokeWidth="3" strokeDasharray="6 6" strokeLinecap="round" /></svg>
                   <span className="absolute left-[34px] top-[86px] h-3.5 w-3.5 rounded-full border-2 border-white bg-green shadow-card" />
-                  <span className="absolute right-[26px] top-[22px] flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={15} stroke={2.4} /></span>
+                  <span className="absolute right-[26px] top-[22px] flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card">{isStore ? <Truck size={15} stroke={2.4} /> : <Bike size={15} stroke={2.4} />}</span>
                   <span className="absolute right-2 top-2 rounded-md bg-ink/85 px-2 py-1 text-[10px] font-extrabold text-white">{f.eta ? `${f.eta} · ${L('a ti', 'to you')}` : L('En ruta', 'En route')}</span>
                 </div>
               )}
 
-              {/* ETA banner */}
-              {f.eta_range && (
+              {/* ETA banner — store: day-based delivery window / "we'll notify you" */}
+              {f.eta_range ? (
                 <div className="mt-3 rounded-field bg-lilac-3 px-3.5 py-3 text-primary-dark">
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-70">{isDel ? L('Llega en aprox.', 'Arriving in approx.') : L('Listo en aprox.', 'Ready in approx.')}</div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-70">
+                    {isStore
+                      ? isDel ? L('Entrega estimada', 'Estimated delivery') : L('Listo para recoger', 'Ready for pickup')
+                      : isDel ? L('Llega en aprox.', 'Arriving in approx.') : L('Listo en aprox.', 'Ready in approx.')}
+                  </div>
                   <div className="text-[18px] font-extrabold">{f.eta_range}</div>
+                </div>
+              ) : isStore && !isDel && s4 < 2 ? (
+                <div className="mt-3 rounded-field bg-lilac-3 px-3.5 py-3 text-[12px] font-bold leading-snug text-primary-dark">
+                  {L('Te avisaremos cuando tu pedido esté listo para recoger en tienda.', "We'll let you know when your order is ready for store pickup.")}
+                </div>
+              ) : null}
+              {isStore && !isDel && s4 === 2 && (
+                <div className="mt-3 rounded-field bg-green-bg px-3.5 py-3 text-[12.5px] font-extrabold text-green-dark">
+                  {L('🛍️ Tu pedido está listo — pasa a recogerlo en tienda.', '🛍️ Your order is ready — come pick it up in store.')}
                 </div>
               )}
 

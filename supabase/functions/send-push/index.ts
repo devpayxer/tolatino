@@ -33,13 +33,23 @@ function render(kind: string, d: Record<string, unknown>, l: L): { title: string
   switch (kind) {
     case 'order_status': {
       const disp = s('dispatch');
+      // STORE orders (Tienda) speak Amazon: packing 📦, truck 🚚, store pickup 🛍️.
+      const store = s('kind') === 'store';
       if (disp === 'assigned') return { title: pick(l, 'Repartidor asignado a tu pedido', 'A driver was assigned to your order'), body: biz };
       if (disp === 'picked_up') return { title: pick(l, `${s('driver') || 'El repartidor'} recogió tu pedido`, `${s('driver') || 'Your driver'} picked up your order`), body: biz };
-      if (disp === 'on_the_way') return { title: pick(l, '¡Tu pedido va en camino! 🛵', 'Your order is on the way! 🛵'), body: biz };
+      if (disp === 'on_the_way') return { title: pick(l, `¡Tu pedido va en camino! ${store ? '🚚' : '🛵'}`, `Your order is on the way! ${store ? '🚚' : '🛵'}`), body: biz };
       if (disp === 'delivered') return { title: pick(l, 'Tu pedido fue entregado ✅', 'Your order was delivered ✅'), body: biz };
       const status = s('status');
-      if (status === 'preparing') return { title: pick(l, 'El negocio aceptó tu pedido y lo está preparando', 'The business accepted your order and is preparing it'), body: biz };
-      if (status === 'ready') return { title: pick(l, 'Tu pedido está listo 🎉', 'Your order is ready 🎉'), body: biz };
+      if (status === 'preparing') {
+        return store
+          ? { title: pick(l, 'El negocio confirmó tu compra y está empacando tu pedido 📦', 'The business confirmed your purchase and is packing your order 📦'), body: biz }
+          : { title: pick(l, 'El negocio aceptó tu pedido y lo está preparando', 'The business accepted your order and is preparing it'), body: biz };
+      }
+      if (status === 'ready') {
+        return store && s('channel') !== 'delivery'
+          ? { title: pick(l, 'Tu pedido está listo para recoger en tienda 🛍️', 'Your order is ready for store pickup 🛍️'), body: biz }
+          : { title: pick(l, 'Tu pedido está listo 🎉', 'Your order is ready 🎉'), body: biz };
+      }
       const [a, b] = st(status);
       return { title: pick(l, `Tu pedido está ${a}`, `Your order is ${b}`), body: biz };
     }

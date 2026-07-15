@@ -62,14 +62,22 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
     case 'order_new': return { title: ['Nuevo pedido', 'New order'], sub: [`${s('code')} · ${money(d.total)}`.trim(), `${s('code')} · ${money(d.total)}`.trim()] };
     case 'order_status': {
       const from = [s('business') || s('code'), s('business') || s('code')] as [string, string];
-      // Dispatch transitions (delivery lifecycle) read like DoorDash's pushes.
+      // STORE orders (Tienda — fulfillment.kind='store') speak Amazon: packing,
+      // truck, "ready for store pickup". Food keeps the DoorDash voice.
+      const store = d.kind === 'store';
       if (d.dispatch === 'assigned') return { title: ['Repartidor asignado a tu pedido', 'A driver was assigned to your order'], sub: from };
       if (d.dispatch === 'picked_up') return { title: [`${s('driver') || 'El repartidor'} recogió tu pedido`, `${s('driver') || 'Your driver'} picked up your order`], sub: from };
-      if (d.dispatch === 'on_the_way') return { title: ['¡Tu pedido va en camino! 🛵', 'Your order is on the way! 🛵'], sub: from };
+      if (d.dispatch === 'on_the_way') return store
+        ? { title: ['¡Tu pedido va en camino! 🚚', 'Your order is on the way! 🚚'], sub: from }
+        : { title: ['¡Tu pedido va en camino! 🛵', 'Your order is on the way! 🛵'], sub: from };
       if (d.dispatch === 'delivered') return { title: ['Tu pedido fue entregado ✅', 'Your order was delivered ✅'], sub: from };
       const [a, b] = st(d.status);
-      if (d.status === 'preparing') return { title: ['El negocio aceptó tu pedido y lo está preparando', 'The business accepted your order and is preparing it'], sub: from };
-      if (d.status === 'ready') return { title: ['Tu pedido está listo 🎉', 'Your order is ready 🎉'], sub: from };
+      if (d.status === 'preparing') return store
+        ? { title: ['El negocio confirmó tu compra y está empacando tu pedido 📦', 'The business confirmed your purchase and is packing your order 📦'], sub: from }
+        : { title: ['El negocio aceptó tu pedido y lo está preparando', 'The business accepted your order and is preparing it'], sub: from };
+      if (d.status === 'ready') return store && d.channel !== 'delivery'
+        ? { title: ['Tu pedido está listo para recoger en tienda 🛍️', 'Your order is ready for store pickup 🛍️'], sub: from }
+        : { title: ['Tu pedido está listo 🎉', 'Your order is ready 🎉'], sub: from };
       return { title: [`Tu pedido está ${a}`, `Your order is ${b}`], sub: from };
     }
     case 'booking_new': {

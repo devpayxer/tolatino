@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth';
 type BizRef = { name: string; slug: string } | null;
 type EvRef = { slug: string; title_es: string; title_en: string; starts_at: string; venue_es: string | null; venue_en: string | null; time_label_es: string | null; time_label_en: string | null } | null;
 
-export type OrderItem = { name: string; qty: number; price?: number; opts?: string };
+export type OrderItem = { name: string; qty: number; price?: number; opts?: string; img?: string };
 /** Receipt + delivery state stored by the paid checkout (fulfillment jsonb). */
 export type OrderFulfil = {
   address?: string; address_label?: string; instructions?: string;
@@ -24,6 +24,7 @@ export type OrderFulfil = {
   promo?: string; discount?: number; payment?: string;
   subtotal?: number; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number;
   collect_total?: number; // cash orders: amount the seller collects on delivery/pickup
+  kind?: string; // 'store' = Tienda order (all lines are products) → Amazon-style copy
 };
 export type MyOrder = { id: string; business_id: string; code: string | null; items: OrderItem[]; total: number | null; channel: string | null; status: string; created_at: string; fulfillment: OrderFulfil | null; businesses: BizRef };
 export type MyBooking = {

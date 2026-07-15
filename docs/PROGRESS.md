@@ -5,6 +5,40 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Pedidos de Tienda — post-orden y tracking estilo Amazon (2026-07-15)
+
+El fundador reportó que tras comprar en la Tienda, el proceso del usuario seguía
+hablando como comida (Preparando, ETA en minutos, 🛵). Ahora un pedido cuyo
+carrito es 100% productos es un **pedido de tienda** y todo el pipeline lo sabe:
+
+- **Detección segura**: `marketplace-checkout` re-precia cada línea contra el
+  catálogo y si TODAS las líneas son productos estampa
+  `fulfillment.kind='store'` (server-side, no confiable al cliente). El pedido
+  cash lo estampa desde `storeCart`. Migración **0093**: el trigger de
+  notificaciones incluye `kind` + `channel` en el payload.
+- **ETA en días, no minutos**: entrega → el plazo real de la tienda
+  (`shipping.delivery.zones[0].time`, ej. "2–5 días") como "Entrega estimada";
+  recogida → sin promesa de minutos: "Te avisaremos cuando esté listo para
+  recoger en tienda" y, al marcarse listo, banner verde "🛍️ pasa a recogerlo".
+- **Voz Amazon en todas las superficies** (una sola fuente: `orderStageIdx` /
+  `orderStageLabel` / `OrderStepsVertical` con `kind` en el fulfillment):
+  confirmaciones ("¡Gracias por tu compra!", "está empacando tu pedido"),
+  tracker de Mi cuenta ("Sigue tu compra", paso **Empacando**, pill Empacando,
+  camión 🚚 en el mini-mapa, "Volver a comprar" → tab Tienda), y push/in-app
+  ("empacando tu pedido 📦", "listo para recoger en tienda 🛍️", "en camino 🚚").
+- **Miniaturas de producto** en el recibo/confirmaciones (los items ahora llevan
+  `img`, validado http en el server) — como el resumen de pedido de Amazon.
+- **Cocina**: aceptar un pedido de tienda no pide minutos de cocina — hoja de
+  aceptar con aviso "márcalo Listo cuando esté empacado", ETA del cliente queda
+  en días; comida conserva su flujo de minutos intacto (regresión verificada:
+  pedido de El Sabor sigue `20 min`, sin kind).
+
+Verificado E2E en navegador real (Muebles El Encanto): tracker con "Entrega
+estimada 2–5 días" + Empacando en vivo tras aceptar el dueño (hoja sin minutos),
+pickup en "🛍️ listo para recoger", payload del checkout con kind/eta/img, y
+notificaciones con `kind:'store'`. Artefactos de prueba borrados. `tsc` +
+`build` limpios.
+
 ## Servicios nivel Booksy/Fresha — reservas con profesionales, variantes y agenda (2026-07-15)
 
 El menú **Servicios** pasó de una lista con hoja básica a la experiencia completa

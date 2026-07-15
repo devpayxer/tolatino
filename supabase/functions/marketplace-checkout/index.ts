@@ -39,12 +39,13 @@ async function stripe(path: string, key: string, form: Record<string, string>) {
 // (lib/live.tsx). Menu: attrs.mods → config.mods[].options[].price. Shop:
 // attrs.options → config.optionSets[].values[].price. 86'd menu items
 // (attrs.stock === 'out') are excluded, so they can't be ordered.
-type PriceEntry = { base: number; groups: Map<string, number[]> };
+type PriceEntry = { base: number; groups: Map<string, number[]>; product: boolean };
 function buildPriceMap(
   menuRow: { items?: unknown; config?: unknown } | undefined,
   prodRow: { items?: unknown; config?: unknown } | undefined,
 ): Map<string, PriceEntry> {
   const map = new Map<string, PriceEntry>();
+  let product = false; // second add() call = the shop catalog
   const add = (
     rows: unknown, config: unknown, refKey: string, groupKey: string, valuesKey: string, drop86: boolean,
   ) => {
@@ -66,10 +67,11 @@ function buildPriceMap(
       const refs = Array.isArray(attrs[refKey]) ? (attrs[refKey] as unknown[]).map(String) : [];
       const groups = new Map<string, number[]>();
       for (const gid of refs) { const p = pricesById.get(gid); if (p) groups.set(gid, p); }
-      map.set(id, { base: Number(it.price ?? 0) || 0, groups });
+      map.set(id, { base: Number(it.price ?? 0) || 0, groups, product });
     }
   };
   add(menuRow?.items, menuRow?.config, 'mods', 'mods', 'options', true);
+  product = true;
   add(prodRow?.items, prodRow?.config, 'options', 'optionSets', 'values', false);
   return map;
 }
@@ -165,11 +167,13 @@ Deno.serve(async (req) => {
         rpcGet('business_products_by_slug', { in_slug: slug }).then((r) => (Array.isArray(r) ? r[0] : undefined)),
       ]);
       const priceMap = buildPriceMap(menuRow, prodRow);
-      const lines: { name: string; qty: number; price: number; opts?: string }[] = [];
+      const lines: { name: string; qty: number; price: number; opts?: string; img?: string }[] = [];
+      let allProducts = true; // every line a shop product → a STORE order (Amazon voice)
       for (const l of items as Record<string, unknown>[]) {
         const id = l?.id != null ? String(l.id) : '';
         const entry = id ? priceMap.get(id) : undefined;
         if (!entry) return json({ error: 'item_unavailable' }, 400);
+        if (!entry.product) allProducts = false;
         const qty = Math.max(1, Math.min(99, Math.floor(Number(l?.qty ?? 1))));
         let unit = entry.base;
         const sel = Array.isArray(l?.sel) ? (l.sel as Record<string, unknown>[]) : [];
@@ -181,9 +185,12 @@ Deno.serve(async (req) => {
           unit += prices[o];
         }
         if (!(unit >= 0) || unit > 100000) return json({ error: 'bad line price' }, 400);
-        lines.push({ name: String(l?.name ?? 'Artículo'), qty, price: Math.round(unit * 100) / 100, opts: l?.opts != null ? String(l.opts) : undefined });
+        // img is display-only (receipt thumbnails) — accept only http(s) URLs.
+        const img = typeof l?.img === 'string' && /^https?:\/\//.test(l.img) ? l.img.slice(0, 500) : undefined;
+        lines.push({ name: String(l?.name ?? 'Artículo'), qty, price: Math.round(unit * 100) / 100, opts: l?.opts != null ? String(l.opts) : undefined, ...(img ? { img } : {}) });
       }
       if (lines.length === 0) return json({ error: 'bad request' }, 400);
+      const isStore = allProducts;
       subtotal = lines.reduce((a, l) => a + l.price * l.qty, 0);
 
       const channel = body?.channel === 'delivery' ? 'delivery' : 'pickup';
@@ -220,18 +227,29 @@ Deno.serve(async (req) => {
 
       const addr = (body?.address ?? null) as Record<string, unknown> | null;
       const prep = Number(((settings as Record<string, Record<string, unknown>>)?.delivery_ops?.prepTime as string) ?? '20') || 20;
+      // STORE orders don't promise kitchen minutes: delivery shows the store's own
+      // lead-time label (shipping.delivery.zones[0].time, e.g. "2–5 días") or no
+      // ETA; pickup waits for the "ready" push. Food keeps the prep-based ETAs.
+      const storeTime = (() => {
+        const z = (settings as Record<string, Record<string, Record<string, unknown>>>)?.shipping?.delivery?.zones;
+        const t = Array.isArray(z) ? (z[0] as Record<string, unknown> | undefined)?.time : undefined;
+        return typeof t === 'string' && t.trim() ? t.trim() : undefined;
+      })();
       payload = {
         items: lines, total: subtotal, channel, business: biz.name, business_slug: slug,
         fulfillment: {
+          ...(isStore ? { kind: 'store' } : {}),
           ...(channel === 'delivery'
             ? {
                 address: String(addr?.formatted ?? ''),
                 ...(addr?.label ? { address_label: String(addr.label) } : {}),
                 ...(body?.instructions ? { instructions: String(body.instructions).slice(0, 300) } : {}),
                 dispatch: 'unassigned',
-                eta_range: `${prep + 10}–${prep + 25} min`,
+                ...(isStore
+                  ? (storeTime ? { eta_range: storeTime } : {})
+                  : { eta_range: `${prep + 10}–${prep + 25} min` }),
               }
-            : { eta_range: `${prep} min` }),
+            : isStore ? {} : { eta_range: `${prep} min` }),
           subtotal, delivery_fee: deliveryFee, tip,
           service_fee: Math.round(subtotal * 5) / 100,
           // Record the redeemed promo so the owner's Promociones stats count it

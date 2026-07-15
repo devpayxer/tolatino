@@ -23,9 +23,9 @@ type PendingRow = {
   id: string; kind: string; ref: string; status: string;
   amount: number; subtotal: number;
   payload: {
-    items?: { name: string; qty: number; price?: number; opts?: string }[];
+    items?: { name: string; qty: number; price?: number; opts?: string; img?: string }[];
     business?: string; channel?: string;
-    fulfillment?: { eta_range?: string; address?: string; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number };
+    fulfillment?: { eta_range?: string; address?: string; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number; kind?: string };
   } | null;
   result: { id?: string; code?: string; tickets?: string[] } | null;
 };
@@ -107,6 +107,9 @@ export function PurchaseReturnToast() {
   const money = (n: number | undefined | null) => (n == null ? '' : `$${Number(n).toFixed(2)}`);
   const f = row?.payload?.fulfillment;
   const isDelivery = row?.payload?.channel === 'delivery';
+  // STORE order (all lines are products) → Amazon voice: packing, day-based
+  // delivery window, "we'll tell you when it's ready for store pickup".
+  const isStore = f?.kind === 'store';
   // Reflect the REAL order stage (live from Mi actividad). Just after payment it's
   // 'new' → "Esperando confirmación"; if the owner accepts while this is open, it
   // advances on its own. Falls back to 0 until the order row loads.
@@ -138,7 +141,7 @@ export function PurchaseReturnToast() {
                 <Check size={30} stroke={3.2} className="text-green" />
               </span>
               <div className="mt-3.5 text-[20px] font-extrabold text-ink">
-                {row.kind === 'order' ? L('¡Pedido recibido!', 'Order placed!')
+                {row.kind === 'order' ? (isStore ? L('¡Gracias por tu compra!', 'Thanks for your purchase!') : L('¡Pedido recibido!', 'Order placed!'))
                   : row.kind === 'ticket' ? L('¡Boletos confirmados!', 'Tickets confirmed!')
                   : row.kind === 'booking' ? L('¡Reserva pagada!', 'Booking paid!')
                   : L('¡Renta pagada!', 'Rental paid!')}
@@ -146,8 +149,12 @@ export function PurchaseReturnToast() {
               <div className="mt-1 max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">
                 {row.kind === 'order'
                   ? stageIdx > 0
-                    ? L(`${bizName} confirmó tu pedido y lo está preparando.`, `${bizName} confirmed your order and is preparing it.`)
-                    : L(`Enviamos tu pedido a ${bizName}. Te avisamos apenas lo confirme.`, `We sent your order to ${bizName}. We'll let you know as soon as they confirm it.`)
+                    ? isStore
+                      ? L(`${bizName} confirmó tu compra y está empacando tu pedido.`, `${bizName} confirmed your purchase and is packing your order.`)
+                      : L(`${bizName} confirmó tu pedido y lo está preparando.`, `${bizName} confirmed your order and is preparing it.`)
+                    : isStore
+                      ? L(`Tu pago fue procesado. ${bizName} confirmará tu compra en breve.`, `Your payment went through. ${bizName} will confirm your purchase shortly.`)
+                      : L(`Enviamos tu pedido a ${bizName}. Te avisamos apenas lo confirme.`, `We sent your order to ${bizName}. We'll let you know as soon as they confirm it.`)
                   : row.kind === 'ticket'
                     ? L('Tu pago fue procesado y tus boletos ya están en Mi cuenta.', 'Your payment went through and your tickets are in My account.')
                     : L('Tu pago fue procesado y la confirmación está en Mi cuenta.', 'Your payment went through and the confirmation is in My account.')}
@@ -157,27 +164,43 @@ export function PurchaseReturnToast() {
               )}
             </div>
 
-            {/* ETA banner */}
-            {row.kind === 'order' && f?.eta_range && (
+            {/* ETA banner — store orders show the store's day-based window
+                ("2–5 días") or, for pickup, a "we'll tell you when it's ready" note */}
+            {row.kind === 'order' && (f?.eta_range ? (
               <div className="mt-4 flex items-center gap-3 rounded-card bg-primary px-4 py-3.5 text-white">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20"><Clock size={19} stroke={2.4} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[10.5px] font-bold uppercase tracking-[.04em] text-white/80">{isDelivery ? L('Llega en aprox.', 'Estimated arrival') : L('Listo para recoger en', 'Ready for pickup in')}</span>
+                  <span className="block text-[10.5px] font-bold uppercase tracking-[.04em] text-white/80">
+                    {isStore
+                      ? isDelivery ? L('Entrega estimada', 'Estimated delivery') : L('Listo para recoger', 'Ready for pickup')
+                      : isDelivery ? L('Llega en aprox.', 'Estimated arrival') : L('Listo para recoger en', 'Ready for pickup in')}
+                  </span>
                   <span className="block text-[17px] font-extrabold">{f.eta_range}</span>
                 </span>
               </div>
-            )}
+            ) : isStore && !isDelivery ? (
+              <div className="mt-4 flex items-center gap-3 rounded-card bg-lilac-2 px-4 py-3.5">
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white"><Clock size={18} stroke={2.2} className="text-primary-dark" /></span>
+                <span className="min-w-0 flex-1 text-[12.5px] font-bold leading-snug text-ink-soft">{L('Te avisaremos cuando tu pedido esté listo para recoger en tienda.', "We'll let you know when your order is ready for store pickup.")}</span>
+              </div>
+            ) : null)}
 
             {/* estado en vivo — arranca en "Esperando confirmación" (paso 1 activo,
                 sin palomita) y avanza solo cuando el negocio acepta. */}
             {row.kind === 'order' && (
-              <div className="mt-4"><OrderStepsVertical stageIdx={stageIdx} isDelivery={isDelivery} /></div>
+              <div className="mt-4"><OrderStepsVertical stageIdx={stageIdx} isDelivery={isDelivery} store={isStore} /></div>
             )}
 
-            {/* resumen */}
+            {/* resumen (los pedidos de tienda llevan miniaturas, como Amazon) */}
             <div className="mt-3 rounded-card border border-hair bg-white p-4 text-[12.5px] font-semibold text-ink-2 shadow-card">
               {(row.payload?.items ?? []).slice(0, 6).map((it, i) => (
-                <div key={i} className="flex justify-between gap-3 py-0.5">
+                <div key={i} className="flex items-center justify-between gap-3 py-0.5">
+                  {isStore && (
+                    <span className="relative h-9 w-9 flex-none overflow-hidden rounded-lg bg-lilac-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}</span>
                   {it.price != null && <span className="flex-none">{money(it.price * it.qty)}</span>}
                 </div>

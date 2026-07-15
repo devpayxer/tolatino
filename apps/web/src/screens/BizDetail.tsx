@@ -329,6 +329,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Cash order placed → the confirmation sheet tracks THIS order live (id from
   // placeOrder). '' = placed but id unknown (still shows the waiting state).
   const [doneOrderId, setDoneOrderId] = useState<string | null>(null);
+  // Was the just-placed cash order a STORE order? (The cart is already cleared by
+  // the time the sheet renders, so `storeCart` can't answer it anymore.)
+  const [doneStore, setDoneStore] = useState(false);
 
   // ── Storefront (Tienda) browse state — Instacart/Walmart-grade shopping over
   // the real catalog: in-store search, category rail, Ofertas, sort, pagination.
@@ -648,11 +651,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (isDelivery && !chosenAddr) { setCartView('address'); return; }
     setPaying(true);
     const items = Object.values(cart).map((l) => ({
-      // id + sel let the server RE-PRICE from DB prices; name/price/opts are for
-      // the order record + display only (the server recomputes what's charged).
+      // id + sel let the server RE-PRICE from DB prices; name/price/opts/img are
+      // for the order record + display only (the server recomputes what's charged).
       id: l.id, sel: l.sel ?? [],
       name: l.name, qty: l.qty, price: l.unit,
       opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined,
+      ...(l.img ? { img: l.img } : {}),
     }));
     // On-site payment: get a PaymentIntent and open our own branded checkout sheet
     // (Stripe Payment Element) instead of redirecting to Stripe's hosted page.
@@ -691,22 +695,31 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (cartCount === 0 || paying || belowMin || outOfRange) return;
     if (isDelivery && !chosenAddr) { setCartView('address'); return; }
     setPaying(true);
-    const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit, opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined }));
+    const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit, opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined, ...(l.img ? { img: l.img } : {}) }));
     // Cash order — same fulfillment shape a paid delivery order gets, so the seller's
     // Cocina shows the address + amount-to-collect. `payment:'cash'` flags it so the
     // seller knows to collect on delivery/pickup (not prepaid). No online fees/tip.
+    // A STORE cart (all lines from Tienda) stamps kind:'store' → Amazon-style copy
+    // + a day-based delivery window instead of kitchen minutes.
     const fulfillment: Record<string, unknown> = {
       payment: 'cash', subtotal: +cartTotal.toFixed(2), service_fee: 0, tip: 0,
       delivery_fee: isDelivery ? deliveryFee : 0, collect_total: grandTotal,
+      ...(storeCart ? { kind: 'store' } : {}),
       ...(discount > 0 && promo ? { promo: promo.code, discount: +discount.toFixed(2) } : {}),
       ...(isDelivery && chosenAddr
-        ? { address: chosenAddr.formatted, address_label: chosenAddr.label ?? undefined, dispatch: 'unassigned', eta_range: del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min' }
+        ? {
+            address: chosenAddr.formatted, address_label: chosenAddr.label ?? undefined, dispatch: 'unassigned',
+            ...(storeCart
+              ? (del?.time ? { eta_range: del.time } : {})
+              : { eta_range: del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min' }),
+          }
         : {}),
       ...(isDelivery ? { instructions: composeInstructions() } : {}),
     };
     const { error, id } = await act.placeOrder(b.slug, items, grandTotal, isDelivery ? 'delivery' : 'pickup', fulfillment);
     setPaying(false);
     if (error) { flash(L('No se pudo enviar el pedido', 'Could not place order')); return; }
+    setDoneStore(storeCart);
     setCart({}); // order placed → empty the cart (clears its saved copy too)
     setDoneOrderId(id ?? '');
   };
@@ -2973,42 +2986,64 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           // Cash confirmation — SAME live experience as the paid one: starts at
           // "Esperando confirmación" and advances when the business accepts
           // (the order row is live via useMyActivity's realtime channel).
+          // STORE orders speak Amazon (packing, day-based delivery window, "we'll
+          // tell you when it's ready for pickup"), not kitchen minutes.
           const o = act.orders.find((x) => x.id === doneOrderId);
           const stageIdx = orderStageIdx(o);
           const oDelivery = (o?.channel ?? (isDelivery ? 'delivery' : 'pickup')) === 'delivery';
           const of = o?.fulfillment ?? null;
+          const oStore = doneStore || of?.kind === 'store';
           const collect = of?.collect_total ?? o?.total ?? null;
-          const closeDone = () => { setCartOpen(false); setDoneOrderId(null); setCartView('cart'); };
+          const closeDone = () => { setCartOpen(false); setDoneOrderId(null); setDoneStore(false); setCartView('cart'); };
           return (
             <div className="flex flex-col">
               <div className="flex flex-col items-center pt-2 text-center">
                 <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
                   <Check size={30} stroke={3.2} className="text-green" />
                 </span>
-                <div className="mt-3.5 text-[20px] font-extrabold text-ink">{L('¡Pedido recibido!', 'Order placed!')}</div>
+                <div className="mt-3.5 text-[20px] font-extrabold text-ink">{oStore ? L('¡Gracias por tu compra!', 'Thanks for your purchase!') : L('¡Pedido recibido!', 'Order placed!')}</div>
                 <div className="mt-1 max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">
                   {stageIdx > 0
-                    ? L(`${b.name} confirmó tu pedido y lo está preparando.`, `${b.name} confirmed your order and is preparing it.`)
-                    : L(`Enviamos tu pedido a ${b.name}. Te avisamos apenas lo confirme.`, `We sent your order to ${b.name}. We'll let you know as soon as they confirm it.`)}
+                    ? oStore
+                      ? L(`${b.name} confirmó tu compra y está empacando tu pedido.`, `${b.name} confirmed your purchase and is packing your order.`)
+                      : L(`${b.name} confirmó tu pedido y lo está preparando.`, `${b.name} confirmed your order and is preparing it.`)
+                    : oStore
+                      ? L(`Enviamos tu compra a ${b.name}. Te avisamos apenas la confirme.`, `We sent your purchase to ${b.name}. We'll let you know as soon as they confirm it.`)
+                      : L(`Enviamos tu pedido a ${b.name}. Te avisamos apenas lo confirme.`, `We sent your order to ${b.name}. We'll let you know as soon as they confirm it.`)}
                 </div>
                 {o?.code && <span className="mt-2 rounded-full bg-lilac-2 px-3 py-1 text-[11px] font-extrabold text-primary-dark">{L('Pedido', 'Order')} {o.code}</span>}
               </div>
 
-              {of?.eta_range && (
+              {of?.eta_range ? (
                 <div className="mt-4 flex items-center gap-3 rounded-card bg-primary px-4 py-3.5 text-white">
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20"><Clock size={19} stroke={2.4} /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[10.5px] font-bold uppercase tracking-[.04em] text-white/80">{oDelivery ? L('Llega en aprox.', 'Estimated arrival') : L('Listo para recoger en', 'Ready for pickup in')}</span>
+                    <span className="block text-[10.5px] font-bold uppercase tracking-[.04em] text-white/80">
+                      {oStore
+                        ? oDelivery ? L('Entrega estimada', 'Estimated delivery') : L('Listo para recoger', 'Ready for pickup')
+                        : oDelivery ? L('Llega en aprox.', 'Estimated arrival') : L('Listo para recoger en', 'Ready for pickup in')}
+                    </span>
                     <span className="block text-[17px] font-extrabold">{of.eta_range}</span>
                   </span>
                 </div>
-              )}
+              ) : oStore && !oDelivery ? (
+                <div className="mt-4 flex items-center gap-3 rounded-card bg-lilac-2 px-4 py-3.5">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white"><Store size={18} stroke={2.2} className="text-primary-dark" /></span>
+                  <span className="min-w-0 flex-1 text-[12.5px] font-bold leading-snug text-ink-soft">{L('Te avisaremos cuando tu pedido esté listo para recoger en tienda.', "We'll let you know when your order is ready for store pickup.")}</span>
+                </div>
+              ) : null}
 
-              <div className="mt-4"><OrderStepsVertical stageIdx={stageIdx} isDelivery={oDelivery} /></div>
+              <div className="mt-4"><OrderStepsVertical stageIdx={stageIdx} isDelivery={oDelivery} store={oStore} /></div>
 
               <div className="mt-3 rounded-card border border-hair bg-white p-4 text-[12.5px] font-semibold text-ink-2 shadow-card">
                 {(o?.items ?? []).slice(0, 6).map((it, i) => (
-                  <div key={i} className="flex justify-between gap-3 py-0.5">
+                  <div key={i} className="flex items-center justify-between gap-3 py-0.5">
+                    {oStore && (
+                      <span className="relative h-9 w-9 flex-none overflow-hidden rounded-lg bg-lilac-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                      </span>
+                    )}
                     <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}</span>
                     {it.price != null && <span className="flex-none">{money(it.price * it.qty)}</span>}
                   </div>
