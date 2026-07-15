@@ -1321,7 +1321,12 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
   the owner can upload a real photo per dish from the Food module (imageUrl is
   wired) — content task, not code.
 - [ ] **Driver GPS / live map.** The "En camino" mini-map is illustrative; real
-  courier GPS tracking needs a driver app (post-launch phase).
+  courier GPS tracking needs a driver app (post-launch phase). Applies to both the
+  owner Cocina/Fulfillment map and the **client "Sigue tu pedido" tracking map**
+  (redesigned 2026-07-15) — same styled placeholder + static ETA on both sides.
+- [ ] **Delivery proof photo.** The client "Entregado" confirmation screen shows a
+  striped placeholder where a real drop-off photo would go; capturing/uploading it
+  also needs the driver app (post-launch phase).
 - [ ] **Owner-set ETA.** Advancing to "En camino" stamps a fixed 10-min ETA;
   let the owner pick the ETA when dispatching (small UI).
 - [ ] **Double notification at delivery.** Marking delivered fires dispatch

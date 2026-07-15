@@ -3,7 +3,46 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-14.
+> Last updated: 2026-07-15.
+
+## Seguimiento del pedido estilo DoorDash — 4 pasos + pantalla "entregado" (2026-07-15)
+
+Rediseño completo del detalle de pedido en **Mi cuenta → Mis pedidos** (`?sec=pedidos&order=<id>`,
+`screens/Cuenta.tsx`). Antes era un timeline vertical simple; ahora es una experiencia de
+**seguimiento en vivo** que avanza en tiempo real (la fila del pedido es la fila viva de
+`useMyActivity`, así que cuando la cocina/repartidor cambia el estado, el cliente lo ve sin
+recargar). Benchmarks: DoorDash / Uber Eats.
+
+**Tres pantallas según el estado (`orderStageKey`):**
+1. **En curso → "Sigue tu pedido"** — 4 pasos horizontales con conectores:
+   **1 Esperando confirmación → (al confirmar) Confirmado · 2 Preparando · 3 En camino ·
+   4 Entregado** (pickup: *Listo · Recogido*). El paso 1 cambia su etiqueta de "Esperando
+   confirmación" a "Confirmado" en cuanto el negocio acepta (status ≠ new), y el activo
+   avanza solo. Banner ETA ("Llega en aprox. 30–45 min"), **mapa ilustrativo** con ruta
+   punteada + marcador del repartidor y badge de minutos cuando va `on_the_way`, **tarjeta
+   del repartidor** (inicial, vehículo, llamar `tel:` + chat que abre el reporte al negocio),
+   tarjeta **Desde → Hasta** (negocio → dirección del cliente + instrucciones), recibo
+   desglosado (subtotal, entrega, servicio, propina, descuento con nombre del promo, total),
+   y **Cancelar pedido** (solo si sigue en `new`) + **Reportar un problema**.
+2. **Entregado → pantalla de confirmación** (la 3ª pantalla que pidió el fundador):
+   cabecera con degradado verde "¡Pedido entregado!", placeholder de **foto de entrega**
+   (rayado, con la instrucción de dropoff), línea del pedido con quién lo entregó,
+   **calificación de 1–5 estrellas** que publica una reseña real (`postReview`, cuerpo vacío),
+   y acciones **Volver a pedir · Ver recibo** (desplegable) **· Reportar un problema**.
+3. **Cancelado** — aviso + recibo.
+
+Datos: `OrderFulfil` (`lib/myActivity.tsx`) ahora lleva `driver_vehicle`, `promo`, `discount`,
+`payment`. En el panel, **Fulfillment** pasa el vehículo del repartidor al asignar
+(`assignDriver(name, phone, vehicle)`) para que el cliente lo vea en el seguimiento.
+
+Verificado en navegador real (móvil 390px, sesión `a@a.com`, 4 pedidos sembrados en El Sabor,
+uno por estado): las 4 vistas renderizan bien, el toggle "Ver recibo" expande, y calificar
+muestra "¡Gracias por tu reseña!". Artefactos de prueba (pedidos + reseña) borrados. `tsc` +
+`next build` limpios.
+
+Pendiente (LAUNCH-CHECKLIST): el mapa y la ETA/foto de entrega son ilustrativos —
+tracking GPS real del repartidor y subida de foto de entrega quedan para cuando exista
+la app del repartidor.
 
 ## Checkout propio en la app (Stripe Payment Element, estilo DoorDash) (2026-07-14)
 

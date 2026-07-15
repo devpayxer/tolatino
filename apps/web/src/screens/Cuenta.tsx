@@ -9,7 +9,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconPhone as Phone, IconPlus as Plus, IconShoppingBag as ShoppingBag, IconStar as Star, IconTicket as Ticket, IconTrash as Trash2, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
+import { IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconFlag as Flag, IconPhone as Phone, IconPlus as Plus, IconReceipt as Receipt, IconRepeat as Repeat, IconShoppingBag as ShoppingBag, IconStar as Star, IconStarFilled as StarFilled, IconTicket as Ticket, IconTrash as Trash2, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -18,6 +18,7 @@ import { useFollows } from '@/lib/follows';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useLiveData } from '@/lib/live';
 import { useMyActivity, type MyOrder } from '@/lib/myActivity';
+import { postReview } from '@/lib/live';
 import { useUrlTab, useUrlDetail } from '@/lib/urlView';
 import { startConversation, sendChatMessage } from '@/lib/chat';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -95,6 +96,12 @@ export function CuentaScreen() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
+  // Delivered-screen extras: quick star rating + expandable receipt.
+  const [rateStars, setRateStars] = useState(0);
+  const [rated, setRated] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  // Reset the per-order UI when the open order changes.
+  useEffect(() => { setReportOpen(false); setReportText(''); setRateStars(0); setRated(false); setShowReceipt(false); }, [orderSelId]);
 
   // (Deep links ?sec= / ?order= — including the payment-confirmation redirect
   // /cuenta/?sec=pedidos&order=<id> — are now restored by the useUrlTab/useUrlDetail
@@ -525,162 +532,237 @@ export function CuentaScreen() {
       />
 
       {/* ── order detail / tracking (DoorDash-style) ── */}
-      <Overlay open={orderSelId !== null} onClose={() => closeOrder()} width={460}>
+      <Overlay open={orderSelId !== null} onClose={() => closeOrder()} width={460} fullHeightSheet>
         {(() => {
-          const o = act.orders.find((x) => x.id === orderSelId); // live row → the timeline advances in real time
+          const o = act.orders.find((x) => x.id === orderSelId); // live row → advances in real time
           if (!o) return null;
           const f = o.fulfillment ?? {};
           const isDel = o.channel === 'delivery';
-          const stage = orderStageKey(o);
-          const steps: { key: string; es: string; en: string }[] = isDel
-            ? [
-                { key: 'new', es: 'Ordenado', en: 'Ordered' },
-                { key: 'preparing', es: 'Aceptado · preparando', en: 'Accepted · preparing' },
-                { key: 'ready', es: 'Listo', en: 'Ready' },
-                { key: 'on_the_way', es: 'En camino', en: 'On the way' },
-                { key: 'delivered', es: 'Entregado', en: 'Delivered' },
-              ]
-            : [
-                { key: 'new', es: 'Ordenado', en: 'Ordered' },
-                { key: 'preparing', es: 'Preparando', en: 'Preparing' },
-                { key: 'ready', es: 'Listo para recoger', en: 'Ready for pickup' },
-                { key: 'completed', es: 'Completado', en: 'Completed' },
-              ];
-          const idx = stage === 'cancelled' ? -1 : Math.max(0, steps.findIndex((s) => s.key === stage));
+          const stage = orderStageKey(o); // new|preparing|ready|on_the_way|delivered|completed|cancelled
+          const delivered = stage === 'delivered' || stage === 'completed';
+          const bizName = o.businesses?.name ?? L('el negocio', 'the business');
+          const driverIni = f.driver ? (f.driver.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'R') : '';
+          // 4-step flow: 1 waiting/confirmed · 2 preparing · 3 on the way · 4 delivered.
+          const s4 = stage === 'new' ? 0 : stage === 'preparing' || stage === 'ready' ? 1 : stage === 'on_the_way' ? 2 : 3;
+          const stepLabels: [string, string][] = isDel
+            ? [[s4 > 0 ? 'Confirmado' : 'Esperando confirmación', s4 > 0 ? 'Confirmed' : 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['En camino', 'On the way'], ['Entregado', 'Delivered']]
+            : [[s4 > 0 ? 'Confirmado' : 'Esperando confirmación', s4 > 0 ? 'Confirmed' : 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['Listo', 'Ready'], ['Recogido', 'Picked up']];
+
+          // Receipt (shared by tracking + the delivered screen).
+          const receipt = (
+            <div className="rounded-card border border-hair bg-white p-3.5 shadow-card">
+              {(o.items ?? []).map((it, i) => (
+                <div key={i} className="flex justify-between gap-3 text-[12.5px] font-semibold text-ink-2">
+                  <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}{it.opts ? <span className="text-muted"> · {it.opts}</span> : null}</span>
+                  {it.price != null && <span className="flex-none">{money(it.price * it.qty)}</span>}
+                </div>
+              ))}
+              <div className="mt-2 flex flex-col gap-1 border-t border-hair pt-2 text-[12px] font-semibold text-ink-2">
+                {f.subtotal != null && <div className="flex justify-between"><span>{L('Subtotal', 'Subtotal')}</span><span>{money(f.subtotal)}</span></div>}
+                {!!f.delivery_fee && <div className="flex justify-between"><span>{L('Entrega', 'Delivery')}</span><span>{money(f.delivery_fee)}</span></div>}
+                {!!f.service_fee && <div className="flex justify-between"><span>{L('Servicio', 'Service')}</span><span>{money(f.service_fee)}</span></div>}
+                {!!f.tip && <div className="flex justify-between"><span>{L('Propina', 'Tip')}</span><span>{money(f.tip)}</span></div>}
+                {!!f.discount && <div className="flex justify-between text-green-dark"><span>{L('Descuento', 'Discount')}{f.promo ? ` · ${f.promo}` : ''}</span><span>−{money(f.discount)}</span></div>}
+                <div className="flex justify-between text-[13.5px] font-extrabold text-ink"><span>{L('Total pagado', 'Total paid')}</span><span>{money(f.paid_total ?? o.total)}</span></div>
+              </div>
+            </div>
+          );
+
+          // Report / message the business (shared).
+          const reportBlock = !reportOpen ? (
+            <button onClick={() => setReportOpen(true)} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-pink-bg"><Flag size={17} stroke={2.2} className="text-pink-dark" /></span>
+              <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L('Reportar un problema', 'Report a problem')}</span><span className="block text-[11px] font-semibold text-muted">{L('¿Algo salió mal? Te ayudamos', 'Something wrong? We can help')}</span></span>
+              <ChevronRight size={16} className="flex-none text-muted-2" />
+            </button>
+          ) : (
+            <div className="rounded-card border-[1.5px] border-lilac-line bg-white p-3">
+              <div className="text-[12px] font-extrabold text-ink">{L('Escríbele al negocio sobre tu pedido', 'Message the business about your order')}</div>
+              <textarea value={reportText} onChange={(e) => setReportText(e.target.value)} maxLength={500} rows={3}
+                placeholder={L('Ej. faltó un platillo, llegó frío, dirección equivocada…', 'E.g. missing item, arrived cold, wrong address…')}
+                className="mt-2 w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-app px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary" />
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => { setReportOpen(false); setReportText(''); }} className="flex-none cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Cerrar', 'Close')}</button>
+                <PrimaryBtn disabled={!reportText.trim() || reportBusy} onClick={async () => {
+                  if (!o.businesses?.slug || reportBusy) return;
+                  setReportBusy(true);
+                  const nm = p?.display_name?.trim() || 'Cliente';
+                  const ini = (nm.split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || 'CL').toUpperCase();
+                  const convId = await startConversation(o.businesses.slug, nm, ini, '#7B61FF');
+                  const ok = convId ? await sendChatMessage(convId, false, `⚠️ ${L('Sobre mi pedido', 'About my order')} ${o.code ?? ''}: ${reportText.trim()}`) : null;
+                  setReportBusy(false);
+                  if (ok) { setReportOpen(false); setReportText(''); flash(L('Mensaje enviado — el negocio te responderá', 'Message sent — the business will reply')); }
+                  else flash(L('No se pudo enviar', "Couldn't send"));
+                }}>{reportBusy ? L('Enviando…', 'Sending…') : L('Enviar al negocio', 'Send to business')}</PrimaryBtn>
+              </div>
+            </div>
+          );
+
+          // ══ DELIVERED (screen 3) ═══════════════════════════════════════════
+          if (delivered) {
+            return (
+              <>
+                <OverlayTitle title={bizName} onClose={() => closeOrder()} />
+                <div className="rounded-card px-5 py-6 text-center text-white shadow-cta" style={{ background: 'linear-gradient(155deg,#22A55C,#137A44)' }}>
+                  <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/20"><Check size={28} stroke={3} /></span>
+                  <div className="mt-3 text-[19px] font-extrabold">{L('¡Pedido entregado!', 'Order delivered!')}</div>
+                  <div className="mt-1 text-[12.5px] font-semibold text-white/85">{L(`Tu pedido de ${bizName} ya llegó.`, `Your order from ${bizName} has arrived.`)}</div>
+                </div>
+
+                {isDel && (
+                  <div className="relative mt-3 h-[118px] overflow-hidden rounded-card border border-hair" style={{ background: 'repeating-linear-gradient(135deg,#EAE2F8 0 11px,#DCCEF2 11px 22px)' }}>
+                    <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-muted-2">{L('[ foto de entrega ]', '[ delivery photo ]')}</span>
+                    {(f.instructions || f.address_label) && <span className="absolute bottom-2 left-2 max-w-[85%] truncate rounded-md bg-ink/80 px-2 py-1 text-[10px] font-bold text-white">{f.instructions || f.address_label}</span>}
+                  </div>
+                )}
+
+                <div className="mt-3 flex items-center justify-between rounded-card border border-hair bg-white p-3.5 shadow-card">
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-extrabold text-ink">{o.code ?? L('Pedido', 'Order')}</div>
+                    <div className="truncate text-[11px] font-semibold text-muted">{(o.items?.length ?? 0)} {L('artículo(s)', 'item(s)')}{f.driver ? ` · ${L('Entregado por', 'Delivered by')} ${f.driver}` : ''}</div>
+                  </div>
+                  <div className="flex-none text-[15px] font-extrabold text-ink">{money(f.paid_total ?? o.total)}</div>
+                </div>
+
+                {/* quick rating → posts a real review for the business */}
+                <div className="mt-3 rounded-card border border-hair bg-white p-3.5 text-center shadow-card">
+                  {rated ? (
+                    <div className="text-[12.5px] font-extrabold text-green-dark">{L('¡Gracias por tu reseña!', 'Thanks for your review!')}</div>
+                  ) : (
+                    <>
+                      <div className="text-[12.5px] font-extrabold text-ink">{L('¿Cómo estuvo tu pedido?', 'How was your order?')}</div>
+                      <div className="mt-2 flex justify-center gap-1.5">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <button key={n} aria-label={`${n}`} onClick={async () => { setRateStars(n); if (!o.businesses?.slug) return; setRated(true); await postReview(o.businesses.slug, n, ''); flash(L('¡Gracias por calificar!', 'Thanks for rating!')); }} className="cursor-pointer">
+                            {n <= rateStars ? <StarFilled size={30} className="text-amber" /> : <Star size={30} stroke={2} className="text-muted-faint" />}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-4 text-[11px] font-extrabold uppercase tracking-wider text-muted-2">{L('¿Qué deseas hacer?', 'What would you like to do?')}</div>
+                <div className="mt-2 flex flex-col gap-2">
+                  <button onClick={() => { closeOrder(); router.push(`/negocios/?b=${o.businesses?.slug ?? ''}`); }} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Repeat size={17} stroke={2.2} className="text-green-dark" /></span>
+                    <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L('Volver a pedir', 'Order again')}</span><span className="block text-[11px] font-semibold text-muted">{L('Repite este pedido en un toque', 'Reorder in one tap')}</span></span>
+                    <ChevronRight size={16} className="flex-none text-muted-2" />
+                  </button>
+                  <button onClick={() => setShowReceipt((v) => !v)} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-lilac-2"><Receipt size={17} stroke={2.2} className="text-primary-dark" /></span>
+                    <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L('Ver recibo', 'View receipt')}</span><span className="block text-[11px] font-semibold text-muted">{o.code ?? ''} · {money(f.paid_total ?? o.total)}</span></span>
+                    <ChevronRight size={16} className={`flex-none text-muted-2 transition-transform ${showReceipt ? 'rotate-90' : ''}`} />
+                  </button>
+                  {showReceipt && receipt}
+                  {reportBlock}
+                </div>
+              </>
+            );
+          }
+
+          // ══ CANCELLED ══════════════════════════════════════════════════════
+          if (stage === 'cancelled') {
+            return (
+              <>
+                <OverlayTitle title={bizName} onClose={() => closeOrder()} />
+                <div className="flex items-center justify-between"><span className="text-[11.5px] font-bold text-muted">{o.code ?? ''} · {dt(o.created_at)}</span>{pill(stage)}</div>
+                <div className="mt-3 rounded-field bg-pink-bg px-3.5 py-3 text-[12.5px] font-bold text-pink-dark">{L('Este pedido fue cancelado.', 'This order was cancelled.')}</div>
+                <div className="mt-3">{receipt}</div>
+              </>
+            );
+          }
+
+          // ══ LIVE TRACKING (screen 2) ═══════════════════════════════════════
           return (
             <>
-              <OverlayTitle title={o.businesses?.name ?? L('Pedido', 'Order')} onClose={() => closeOrder()} />
+              <OverlayTitle title={L('Sigue tu pedido', 'Track your order')} onClose={() => closeOrder()} />
               <div className="flex items-center justify-between">
-                <span className="text-[11.5px] font-bold text-muted">{o.code ?? ''} · {dt(o.created_at)}</span>
+                <span className="text-[11.5px] font-bold text-muted">{o.code ?? ''} · {bizName}</span>
                 {pill(stage)}
               </div>
 
-              {/* ETA banner while the order is live */}
-              {!['cancelled', 'delivered', 'completed'].includes(stage) && f.eta_range && (
-                <div className="mt-3 flex items-center gap-2 rounded-field bg-lilac-2 px-3.5 py-2.5 text-[12.5px] font-extrabold text-primary-dark">
-                  ⏱ {isDel ? L(`Llega en aprox. ${f.eta_range}`, `Arriving in about ${f.eta_range}`) : L(`Listo en aprox. ${f.eta_range}`, `Ready in about ${f.eta_range}`)}
-                </div>
-              )}
-
-              {/* timeline */}
-              {stage === 'cancelled' ? (
-                <div className="mt-3 rounded-field bg-pink-bg px-3.5 py-3 text-[12.5px] font-bold text-pink-dark">
-                  {L('Este pedido fue cancelado.', 'This order was cancelled.')}
-                </div>
-              ) : (
-                <div className="mt-4 flex flex-col">
-                  {steps.map((s, i) => {
-                    const done = i < idx; const now = i === idx;
-                    return (
-                      <div key={s.key} className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-full ${done ? 'bg-green' : now ? 'bg-primary' : 'bg-lilac-line'}`}>
-                            {done ? <Check size={13} stroke={3.4} className="text-white" /> : <span className={`h-2 w-2 rounded-full ${now ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
-                          </span>
-                          {i < steps.length - 1 && <span className={`w-[2.5px] flex-1 ${done ? 'bg-green' : 'bg-lilac-line'}`} style={{ minHeight: 18 }} />}
-                        </div>
-                        <div className={`pb-3 pt-0.5 text-[12.5px] ${now ? 'font-extrabold text-ink' : done ? 'font-bold text-ink-soft' : 'font-semibold text-muted'}`}>
-                          {L(s.es, s.en)}
-                          {now && s.key === 'on_the_way' && f.driver && (
-                            <span className="block text-[11px] font-semibold text-muted">{L(`${f.driver} lleva tu pedido`, `${f.driver} has your order`)}{f.eta ? ` · ETA ${f.eta}` : ''}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* en camino → mini-mapa ilustrativo + tarjeta del repartidor (design: Order Tracking) */}
+              {/* map (illustrative) once a driver is on the way */}
               {stage === 'on_the_way' && (
-                <div className="relative mb-3 h-[86px] overflow-hidden rounded-field border border-hair" style={{ background: '#EAEEF6' }}>
-                  <div className="absolute left-[-10px] top-[32px] h-[6px] w-[150%] bg-white" style={{ transform: 'rotate(-8deg)' }} />
-                  <div className="absolute left-[38%] top-[-10px] h-[150%] w-[6px] bg-white" style={{ transform: 'rotate(9deg)' }} />
-                  <span className="absolute left-[20%] top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={13} stroke={2.4} /></span>
-                  <span className="absolute right-[16%] top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 border-white bg-green shadow-card" />
-                  <span className="absolute bottom-1.5 right-2 rounded-md bg-white/90 px-2 py-0.5 text-[9.5px] font-extrabold text-ink shadow-card">{f.eta ? `ETA ${f.eta}` : L('En ruta', 'En route')}</span>
-                </div>
-              )}
-              {f.driver && (stage === 'on_the_way' || stage === 'delivered' || f.dispatch === 'assigned' || f.dispatch === 'picked_up') && (
-                <div className="mb-3 flex items-center gap-3 rounded-field border border-hair bg-white p-3 shadow-card">
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-lilac-2 text-[12px] font-extrabold text-primary-dark">{(f.driver.split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || 'R').toUpperCase()}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-extrabold text-ink">{f.driver}</span>
-                    <span className="block text-[11px] font-semibold text-muted">{L('Tu repartidor', 'Your driver')}</span>
-                  </span>
-                  {f.driver_phone && (
-                    <a href={`tel:${f.driver_phone.replace(/[^\d+]/g, '')}`} aria-label={L('Llamar al repartidor', 'Call driver')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg text-green-dark">
-                      <Phone size={15} stroke={2.4} />
-                    </a>
-                  )}
+                <div className="relative mt-3 h-[128px] overflow-hidden rounded-card border border-hair" style={{ background: '#EAEEF6' }}>
+                  <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 128" preserveAspectRatio="none"><path d="M40 96 C 110 96, 120 40, 210 34" fill="none" stroke="#7B61FF" strokeWidth="3" strokeDasharray="6 6" strokeLinecap="round" /></svg>
+                  <span className="absolute left-[34px] top-[86px] h-3.5 w-3.5 rounded-full border-2 border-white bg-green shadow-card" />
+                  <span className="absolute right-[26px] top-[22px] flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={15} stroke={2.4} /></span>
+                  <span className="absolute right-2 top-2 rounded-md bg-ink/85 px-2 py-1 text-[10px] font-extrabold text-white">{f.eta ? `${f.eta} · ${L('a ti', 'to you')}` : L('En ruta', 'En route')}</span>
                 </div>
               )}
 
-              {/* entrega */}
-              {isDel && (f.address || f.instructions) && (
-                <div className="rounded-field bg-lilac-2 px-3.5 py-3 text-[12px] font-semibold text-ink-2">
-                  {f.address && <div className="flex items-start gap-2"><MapPin size={13} stroke={2.4} className="mt-0.5 flex-none text-primary" /><span>{f.address_label ? `${f.address_label} · ` : ''}{f.address}</span></div>}
-                  {f.instructions && <div className="mt-1.5 text-[11.5px] text-muted">“{f.instructions}”</div>}
+              {/* ETA banner */}
+              {f.eta_range && (
+                <div className="mt-3 rounded-field bg-lilac-3 px-3.5 py-3 text-primary-dark">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider opacity-70">{isDel ? L('Llega en aprox.', 'Arriving in approx.') : L('Listo en aprox.', 'Ready in approx.')}</div>
+                  <div className="text-[18px] font-extrabold">{f.eta_range}</div>
                 </div>
               )}
 
-              {/* artículos + recibo */}
-              <div className="mt-3 flex flex-col gap-1.5 text-[12.5px] font-semibold text-ink-2">
-                {(o.items ?? []).map((it, i) => (
-                  <div key={i} className="flex justify-between gap-3">
-                    <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}{it.opts ? <span className="text-muted"> · {it.opts}</span> : null}</span>
-                    {it.price != null && <span className="flex-none">{money(it.price * it.qty)}</span>}
-                  </div>
-                ))}
-                <div className="mt-1 flex flex-col gap-1 border-t border-hair pt-2">
-                  {f.subtotal != null && <div className="flex justify-between"><span>{L('Subtotal', 'Subtotal')}</span><span>{money(f.subtotal)}</span></div>}
-                  {!!f.delivery_fee && <div className="flex justify-between"><span>{L('Entrega', 'Delivery')}</span><span>{money(f.delivery_fee)}</span></div>}
-                  {!!f.service_fee && <div className="flex justify-between"><span>{L('Servicio', 'Service')}</span><span>{money(f.service_fee)}</span></div>}
-                  {!!f.tip && <div className="flex justify-between"><span>{L('Propina', 'Tip')}</span><span>{money(f.tip)}</span></div>}
-                  <div className="flex justify-between text-[13.5px] font-extrabold text-ink"><span>{L('Total pagado', 'Total paid')}</span><span>{money(f.paid_total ?? o.total)}</span></div>
-                </div>
+              {/* 4-step horizontal progress */}
+              <div className="mt-4 flex items-start">
+                {stepLabels.map((lab, i) => {
+                  const isDone = i < s4; const isNow = i === s4;
+                  return (
+                    <div key={i} className="flex flex-1 flex-col items-center">
+                      <div className="flex w-full items-center">
+                        <span className={`h-[3px] flex-1 rounded-full ${i === 0 ? 'opacity-0' : isDone || isNow ? 'bg-primary' : 'bg-lilac-line'}`} />
+                        <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-full ${isDone ? 'bg-green' : isNow ? 'bg-primary' : 'bg-lilac-line'}`}>
+                          {isDone ? <Check size={14} stroke={3.4} className="text-white" /> : <span className={`h-2 w-2 rounded-full ${isNow ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
+                        </span>
+                        <span className={`h-[3px] flex-1 rounded-full ${i === stepLabels.length - 1 ? 'opacity-0' : isDone ? 'bg-primary' : 'bg-lilac-line'}`} />
+                      </div>
+                      <span className={`mt-1.5 px-0.5 text-center text-[9.5px] leading-tight ${isNow ? 'font-extrabold text-ink' : isDone ? 'font-bold text-ink-soft' : 'font-semibold text-muted-2'}`}>{L(lab[0], lab[1])}</span>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* acciones */}
-              <div className="mt-4 flex flex-col gap-2">
+              {/* driver card */}
+              {f.driver && (stage === 'on_the_way' || f.dispatch === 'assigned' || f.dispatch === 'picked_up') && (
+                <div className="mt-4 rounded-card border border-hair bg-white p-3 shadow-card">
+                  <div className="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-muted-2">{L('Tu repartidor', 'Your driver')}</div>
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-lilac-2 text-[13px] font-extrabold text-primary-dark">{driverIni}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[14px] font-extrabold text-ink">{f.driver}</div>
+                      <div className="truncate text-[11.5px] font-semibold text-muted">{f.driver_vehicle || L('En camino a ti', 'On the way to you')}</div>
+                    </div>
+                    {f.driver_phone && (
+                      <a href={`tel:${f.driver_phone.replace(/[^\d+]/g, '')}`} aria-label={L('Llamar', 'Call')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg text-green-dark"><Phone size={15} stroke={2.4} /></a>
+                    )}
+                    <button onClick={() => setReportOpen(true)} aria-label={L('Mensaje', 'Message')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-primary-dark"><MessageCircle size={15} stroke={2.4} /></button>
+                  </div>
+                </div>
+              )}
+
+              {/* from / to (delivery) */}
+              {isDel && f.address && (
+                <div className="mt-3 rounded-card border border-hair bg-white p-3.5 text-[12.5px] font-semibold shadow-card">
+                  <div className="flex items-start gap-2.5">
+                    <span className="mt-1 block h-2.5 w-2.5 flex-none rounded-full border-[2.5px] border-primary" />
+                    <div className="min-w-0"><div className="text-[9.5px] font-extrabold uppercase tracking-wider text-muted-2">{L('Desde', 'From')}</div><div className="truncate text-ink">{bizName}</div></div>
+                  </div>
+                  <div className="my-1 ml-[4px] h-4 w-[2px] bg-lilac-line" />
+                  <div className="flex items-start gap-2.5">
+                    <MapPin size={15} stroke={2.4} className="mt-0.5 flex-none text-green-dark" />
+                    <div className="min-w-0"><div className="text-[9.5px] font-extrabold uppercase tracking-wider text-muted-2">{L('Hasta', 'To')}</div><div className="text-ink">{f.address_label ? `${f.address_label} · ` : ''}{f.address}</div>{f.instructions && <div className="mt-0.5 text-[11px] font-medium text-muted">{f.instructions}</div>}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* order summary */}
+              <div className="mt-3">{receipt}</div>
+
+              {/* actions */}
+              <div className="mt-3 flex flex-col gap-2">
                 {o.status === 'new' && (
                   <button onClick={() => { closeOrder(); setCancelTarget({ kind: 'order', id: o.id }); }} className="w-full cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white py-2.5 text-[12.5px] font-extrabold text-pink-dark">
                     {L('Cancelar pedido', 'Cancel order')}
                   </button>
                 )}
-                {!reportOpen ? (
-                  <button onClick={() => setReportOpen(true)} className="w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-ink">
-                    {L('Reportar un problema', 'Report a problem')}
-                  </button>
-                ) : (
-                  <div className="rounded-field border-[1.5px] border-lilac-line bg-white p-3">
-                    <div className="text-[12px] font-extrabold text-ink">{L('¿Qué pasó con tu pedido?', 'What went wrong with your order?')}</div>
-                    <textarea
-                      value={reportText} onChange={(e) => setReportText(e.target.value)} maxLength={500} rows={3}
-                      placeholder={L('Ej. faltó un platillo, llegó frío, dirección equivocada…', 'E.g. missing item, arrived cold, wrong address…')}
-                      className="mt-2 w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-app px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
-                    />
-                    <div className="mt-2 flex gap-2">
-                      <button onClick={() => { setReportOpen(false); setReportText(''); }} className="flex-none cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Cerrar', 'Close')}</button>
-                      <PrimaryBtn
-                        disabled={!reportText.trim() || reportBusy}
-                        onClick={async () => {
-                          if (!o.businesses?.slug || reportBusy) return;
-                          setReportBusy(true);
-                          const nm = p?.display_name?.trim() || 'Cliente';
-                          const ini = (nm.split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || 'CL').toUpperCase();
-                          const convId = await startConversation(o.businesses.slug, nm, ini, '#7B61FF');
-                          const ok = convId ? await sendChatMessage(convId, false, `⚠️ ${L('Problema con mi pedido', 'Problem with my order')} ${o.code ?? ''}: ${reportText.trim()}`) : null;
-                          setReportBusy(false);
-                          if (ok) { setReportOpen(false); setReportText(''); flash(L('Reporte enviado — el negocio te responderá', 'Report sent — the business will reply')); }
-                          else flash(L('No se pudo enviar', "Couldn't send"));
-                        }}
-                      >
-                        {reportBusy ? L('Enviando…', 'Sending…') : L('Enviar al negocio', 'Send to business')}
-                      </PrimaryBtn>
-                    </div>
-                  </div>
-                )}
+                {reportBlock}
               </div>
             </>
           );

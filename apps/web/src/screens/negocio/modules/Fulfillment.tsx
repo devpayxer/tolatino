@@ -273,10 +273,10 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     const d = o.fulfillment.dispatch ?? 'unassigned';
     return d === 'unassigned' ? L('Asignar repartidor', 'Assign driver') : d === 'assigned' ? L('Marcar recogido', 'Picked up') : d === 'picked_up' ? L('En camino', 'On the way') : L('Entregado', 'Delivered');
   };
-  const assignDriver = (name: string, phone?: string) => {
+  const assignDriver = (name: string, phone?: string, vehicle?: string) => {
     if (assignFor) {
-      // the driver's phone rides along so the CLIENT can call them from tracking
-      setFulfil(assignFor, { dispatch: 'assigned', driver: name, ...(phone ? { driver_phone: phone } : {}) });
+      // the driver's phone + vehicle ride along so the CLIENT sees them in tracking
+      setFulfil(assignFor, { dispatch: 'assigned', driver: name, ...(phone ? { driver_phone: phone } : {}), ...(vehicle ? { driver_vehicle: vehicle } : {}) });
       flash(L(`Asignado a ${name}`, `Assigned to ${name}`));
     }
     setAssignFor(null);
@@ -901,7 +901,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             ) : (
               <div className="flex flex-col gap-2">
                 {drivers.map((d) => (
-                  <button key={d.name} onClick={() => assignDriver(d.name, d.phone)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-2.5 text-left hover:border-primary">
+                  <button key={d.name} onClick={() => assignDriver(d.name, d.phone, d.vehicle)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-2.5 text-left hover:border-primary">
                     <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full text-[11px] font-extrabold text-white" style={{ background: d.photo ? '#EAE7F6' : d.color }}>
                       {d.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
