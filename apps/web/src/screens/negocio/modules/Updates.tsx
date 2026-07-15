@@ -153,7 +153,8 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
   // Remove a post locally; also delete the DB row when it's a real persisted update.
   const remove = (p: Post) => {
     setPosts((xs) => xs.filter((x) => x.id !== p.id));
-    if (persistable && p.dbId && supabase) void supabase.from('business_updates').delete().eq('id', p.dbId);
+    // .then() is required — the supabase builder is lazy and a bare `void` never fires
+    if (persistable && p.dbId && supabase) supabase.from('business_updates').delete().eq('id', p.dbId).then(() => {});
     flash(L('Publicación eliminada', 'Post deleted'));
   };
 

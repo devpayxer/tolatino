@@ -10,14 +10,27 @@ import { IconCheck as Check } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 
 // 0 Esperando confirmación · 1 Preparando · 2 En camino/Listo · 3 Entregado/Recogido.
-// Mirrors orderStageKey (Cuenta.tsx).
-export function orderStageIdx(o: { status: string; channel?: string | null; fulfillment?: { dispatch?: string } | null } | undefined | null): number {
+// THE stage mapping — client tracker AND business surfaces derive from here so
+// both sides always describe the order identically.
+type StageOrder = { status: string; channel?: string | null; fulfillment?: { dispatch?: string } | null };
+export function orderStageIdx(o: StageOrder | undefined | null): number {
   if (!o) return 0;
   const d = o.fulfillment?.dispatch;
   if (o.status === 'completed' || d === 'delivered') return 3;
-  if (o.channel === 'delivery' && (d === 'picked_up' || d === 'on_the_way')) return 2;
+  const delivery = o.channel === 'delivery';
+  if (delivery && (d === 'picked_up' || d === 'on_the_way')) return 2;
+  if (!delivery && o.status === 'ready') return 2; // pickup: Listo para recoger
   if (o.status === 'preparing' || o.status === 'ready') return 1;
   return 0;
+}
+
+// The stage label the CUSTOMER is seeing right now — shown in the business
+// dashboard ("Tu cliente ve: …") so owner and client are always on the same page.
+export function orderStageLabel(o: StageOrder | undefined | null): [string, string] {
+  if (o?.status === 'cancelled') return ['Cancelado', 'Cancelled'];
+  const del: [string, string][] = [['Esperando confirmación', 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['En camino', 'On the way'], ['Entregado', 'Delivered']];
+  const pick: [string, string][] = [['Esperando confirmación', 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['Listo para recoger', 'Ready for pickup'], ['Recogido', 'Picked up']];
+  return (o?.channel === 'delivery' ? del : pick)[orderStageIdx(o)];
 }
 
 export function OrderStepsVertical({ stageIdx, isDelivery }: { stageIdx: number; isDelivery: boolean }) {

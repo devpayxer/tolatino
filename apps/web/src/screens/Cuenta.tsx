@@ -27,6 +27,7 @@ import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Switch, YouAvatar } fr
 import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { enablePush, disablePush, pushState, type PushState } from '@/lib/push';
+import { orderStageIdx } from '@/components/OrderSteps';
 
 type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config' | 'pedidos' | 'reservas' | 'rentas' | 'boletos' | 'voy';
 // Valid ?sec= values restored on refresh (keep in sync with Sec).
@@ -591,7 +592,7 @@ export function CuentaScreen() {
           const bizName = o.businesses?.name ?? L('el negocio', 'the business');
           const driverIni = f.driver ? (f.driver.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'R') : '';
           // 4-step flow: 1 waiting/confirmed · 2 preparing · 3 on the way · 4 delivered.
-          const s4 = stage === 'new' ? 0 : stage === 'preparing' || stage === 'ready' ? 1 : stage === 'on_the_way' ? 2 : 3;
+          const s4 = orderStageIdx(o); // shared mapping — same one Cocina shows the owner
           const stepLabels: [string, string][] = isDel
             ? [[s4 > 0 ? 'Confirmado' : 'Esperando confirmación', s4 > 0 ? 'Confirmed' : 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['En camino', 'On the way'], ['Entregado', 'Delivered']]
             : [[s4 > 0 ? 'Confirmado' : 'Esperando confirmación', s4 > 0 ? 'Confirmed' : 'Awaiting confirmation'], ['Preparando', 'Preparing'], ['Listo', 'Ready'], ['Recogido', 'Picked up']];
@@ -653,8 +654,8 @@ export function CuentaScreen() {
                 <OverlayTitle title={bizName} onClose={() => closeOrder()} />
                 <div className="rounded-card px-5 py-6 text-center text-white shadow-cta" style={{ background: 'linear-gradient(155deg,#22A55C,#137A44)' }}>
                   <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/20"><Check size={28} stroke={3} /></span>
-                  <div className="mt-3 text-[19px] font-extrabold">{L('¡Pedido entregado!', 'Order delivered!')}</div>
-                  <div className="mt-1 text-[12.5px] font-semibold text-white/85">{L(`Tu pedido de ${bizName} ya llegó.`, `Your order from ${bizName} has arrived.`)}</div>
+                  <div className="mt-3 text-[19px] font-extrabold">{isDel ? L('¡Pedido entregado!', 'Order delivered!') : L('¡Pedido completado!', 'Order completed!')}</div>
+                  <div className="mt-1 text-[12.5px] font-semibold text-white/85">{isDel ? L(`Tu pedido de ${bizName} ya llegó.`, `Your order from ${bizName} has arrived.`) : L(`Recogiste tu pedido de ${bizName}.`, `You picked up your order from ${bizName}.`)}</div>
                 </div>
 
                 {isDel && (
@@ -692,7 +693,7 @@ export function CuentaScreen() {
 
                 <div className="mt-4 text-[11px] font-extrabold uppercase tracking-wider text-muted-2">{L('¿Qué deseas hacer?', 'What would you like to do?')}</div>
                 <div className="mt-2 flex flex-col gap-2">
-                  <button onClick={() => { closeOrder(); router.push(`/negocios/?b=${o.businesses?.slug ?? ''}`); }} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+                  <button onClick={() => { closeOrder(); router.push(`/negocios/?b=${o.businesses?.slug ?? ''}&bt=menu`); }} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Repeat size={17} stroke={2.2} className="text-green-dark" /></span>
                     <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L('Volver a pedir', 'Order again')}</span><span className="block text-[11px] font-semibold text-muted">{L('Repite este pedido en un toque', 'Reorder in one tap')}</span></span>
                     <ChevronRight size={16} className="flex-none text-muted-2" />

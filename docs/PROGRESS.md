@@ -5,6 +5,46 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Pedido negocio↔cliente: UN solo proceso, cableado de punta a punta (2026-07-15)
+
+El fundador reportó que la Cocina del negocio y el tracker del cliente contaban
+historias distintas. Dos causas y un rediseño de alineación:
+
+**BUG CRÍTICO (la causa #1): las escrituras de `fulfillment` de Cocina NUNCA
+llegaban a la BD.** `writeFulfil` (Customers.tsx) hacía `void supabase…update(…)`
+sin `.then()` — el query builder de supabase-js es *lazy* y solo ejecuta al hacer
+await/`.then()`. Resultado: asignar repartidor, ETA, prep… se veían localmente en
+el panel pero jamás se guardaban (solo los cambios de `status`, que sí usaban
+await). Mismo bug latente en Updates.tsx (borrar publicación no persistía).
+**Regla para siempre: nunca `void supabase…` — siempre `.then()`/await.**
+
+**Alineación (una sola fuente de verdad — `components/OrderSteps.tsx`):**
+- `orderStageIdx` + `orderStageLabel` son EL mapeo. Cliente (Cuenta s4, hojas de
+  confirmación) y negocio derivan de ahí. Arreglado: pickup marcado "Listo" ahora
+  avanza al cliente a "Listo para recoger" (antes se quedaba en "Preparando").
+- **Cocina → cliente:** Aceptar·Xmin ahora escribe `eta_range` real (el banner del
+  cliente muestra lo que la cocina prometió); Asignar repartidor tiene **selector
+  de ETA** (5/10/15/20/30 — sin números inventados) y manda nombre+vehículo del
+  roster al tracking del cliente; "Marcar entregado" también estampa
+  `dispatch:'delivered'`; pickup dice "Marcar recogido" (el mismo paso 4 del
+  cliente); si Despacho dejó el pedido en assigned/picked_up, Cocina ofrece
+  "Marcar en camino".
+- **Tablero Cocina habla el idioma del cliente:** chips/cola ahora incluyen **"En
+  camino"** (delivery con repartidor fuera sale de "Listos"), y el detalle del
+  pedido muestra **"Tu cliente ve: <etapa>"** (mismo `orderStageLabel`) + su ETA.
+- **Post-pedido 100%:** "Volver a pedir" abre directo el Menú del negocio
+  (`?b=<slug>&bt=menu`) — el tab de BizDetail ahora vive en la URL (`?bt=`), así
+  que refrescar un negocio ya no te regresa a Información. Pantalla final de
+  pickup con copy propio ("¡Pedido completado! Recogiste tu pedido…").
+
+**Verificado con las DOS UIs reales lado a lado** (dueño b@b.com en Cocina +
+cliente a@a.com en su tracker, navegador real): Aceptar·15min → cliente avanzó a
+"Confirmado+Preparando" en 3s con ETA 25–40; Marcar listo → Asignar (ETA 10, "El
+rubio") → chip "En camino" en el tablero y tarjeta del repartidor con vehículo en
+el cliente en 5s; Marcar entregado → pantalla final en 6s. BD final consistente
+(status completed + dispatch delivered + driver/vehicle/eta/prep). Artefactos
+borrados; `tsc` + `build` limpios.
+
 ## Notificaciones push reales (Web Push / VAPID) en todo el proceso (2026-07-15, migración 0089)
 
 El cliente ahora recibe un **push real en el teléfono/navegador aunque la app esté

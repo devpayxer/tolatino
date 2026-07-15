@@ -16,6 +16,7 @@ import { startConversation, fetchChatMessages, sendChatMessage, markConversation
 import { useMyActivity, useOrderPoll } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
+import { useUrlTab } from '@/lib/urlView';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
@@ -36,6 +37,7 @@ for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FE
 import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
+const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'staff', 'related', 'reviews']);
 type RentMode = 'day' | 'hour';
 
 // Delivery-instruction presets (DoorDash-style): one dropoff preference + common
@@ -151,7 +153,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     window.setTimeout(() => setToast(''), 1800);
   };
 
-  const [tab, setTab] = useState<TabKey>('overview');
+  // The active tab lives in the URL (?bt=) — refresh keeps you on the tab and
+  // deep links work (Volver a pedir → ?b=<slug>&bt=menu).
+  const [tab, setTab] = useUrlTab<TabKey>('bt', 'overview', (v) => TAB_KEYS.has(v));
   const [contactOpen, setContactOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatConvId, setChatConvId] = useState<string | null>(null);

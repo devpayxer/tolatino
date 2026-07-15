@@ -11,17 +11,21 @@
 // lists spread into multi-column grids. All state is real & local.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { IconCheck as Check, IconChevronRight as ChevronRight, IconClock as Clock, IconCurrencyDollar as DollarSign, IconDownload as Download, IconFlag as Flag, IconGift as Gift, IconHeart as Heart, IconMail as Mail, IconPhone as Phone, IconRefresh as RefreshCw, IconSearch as Search, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconStar as Star, IconTruck as Truck, IconUserPlus as UserPlus, IconUsers as Users, IconCircleX as XCircle, IconBolt as Zap } from '@tabler/icons-react';
+import { IconCheck as Check, IconChevronRight as ChevronRight, IconEye as Eye, IconClock as Clock, IconCurrencyDollar as DollarSign, IconDownload as Download, IconFlag as Flag, IconGift as Gift, IconHeart as Heart, IconMail as Mail, IconPhone as Phone, IconRefresh as RefreshCw, IconSearch as Search, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconStar as Star, IconTruck as Truck, IconUserPlus as UserPlus, IconUsers as Users, IconCircleX as XCircle, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useUrlTab } from '@/lib/urlView';
 import { supabase } from '@/lib/supabase';
 import { Overlay, OverlayTitle, Switch } from '@/components/ui';
 import type { OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
+import { orderStageLabel } from '@/components/OrderSteps';
 
 type Mode = 'customers' | 'orders' | 'reviews';
 type Seg = 'all' | 'new' | 'regulars' | 'vip' | 'risk';
 type OStatus = 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+// Board view filters: DB statuses + the client-facing "En camino" bucket
+// (delivery orders out with a driver — status stays 'ready' in the DB).
+type OView = OStatus | 'on_the_way';
 type Channel = 'delivery' | 'dinein' | 'pickup';
 type RvFilter = 'all' | 'need' | 'top' | 'low' | 'flagged';
 
@@ -36,7 +40,7 @@ type Customer = {
 type Fulfil = {
   address?: string; address_label?: string; instructions?: string; tip?: number;
   dispatch?: 'unassigned' | 'assigned' | 'picked_up' | 'on_the_way' | 'delivered';
-  driver?: string; driver_phone?: string; eta?: string; prep?: number;
+  driver?: string; driver_phone?: string; driver_vehicle?: string; eta?: string; eta_range?: string; prep?: number;
   subtotal?: number; delivery_fee?: number; service_fee?: number; paid_total?: number;
   // 'cash' orders are paid on delivery/pickup (no Stripe) — the seller collects
   // `collect_total` in cash; 'online'/absent means already charged by card.
@@ -297,7 +301,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   const [orders, setOrders] = useState<Order[]>(seedOrders);
-  const [oStatus, setOStatus] = useState<OStatus>('new');
+  const [oStatus, setOStatus] = useState<OView>('new');
 
   const [rvFilter, setRvFilter] = useState<RvFilter>('all');
   const [replyText, setReplyText] = useState<Record<number, string>>({});
@@ -734,7 +738,13 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const statusMeta: Record<OStatus, [string, string]> = {
     new: [L('Nuevos', 'New'), 'new'], preparing: [L('Preparando', 'Preparing'), 'preparing'], ready: [L('Listos', 'Ready'), 'ready'], completed: [L('Completados', 'Completed'), 'completed'], cancelled: [L('Cancelados', 'Cancelled'), 'cancelled'],
   };
-  const statusKeys: OStatus[] = ['new', 'preparing', 'ready', 'completed', 'cancelled'];
+  // Board filters mirror the CLIENT's steps: a delivery order out with a driver
+  // moves from "Listos" to "En camino" — the same word the customer is seeing.
+  const onTheWay = (o: Order) => o.channel === 'delivery' && o.status !== 'completed' && o.status !== 'cancelled' && (o.fulfillment?.dispatch === 'on_the_way' || o.fulfillment?.dispatch === 'picked_up');
+  const viewMatch = (o: Order, k: OView) => (k === 'on_the_way' ? onTheWay(o) : o.status === k && !(k === 'ready' && onTheWay(o)));
+  const viewMeta = (k: OView): string => (k === 'on_the_way' ? L('En camino', 'On the way') : statusMeta[k][0]);
+  const viewDot = (k: OView): string => (k === 'on_the_way' ? '#2F6FED' : STATUS_DOT[k]);
+  const statusKeys: OView[] = ['new', 'preparing', 'ready', 'on_the_way', 'completed', 'cancelled'];
   const chLabel = (ch: Channel) => ch === 'delivery' ? L('Entrega', 'Delivery') : ch === 'dinein' ? L('Mostrador', 'Dine-in') : L('Recoger', 'Pickup');
 
   const advance = async (o: Order) => {
@@ -759,6 +769,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [prepFor, setPrepFor] = useState<Order | null>(null);
   const [prepMin, setPrepMin] = useState(15);
   const [assignFor, setAssignFor] = useState<Order | null>(null);
+  const [assignEta, setAssignEta] = useState(10); // driver arrival ETA the owner picks
   const [rejectFor, setRejectFor] = useState<Order | null>(null);
   const ownDrivers: OwnDriver[] = (real?.settings as Record<string, unknown> | null)?.drivers as OwnDriver[] | undefined ?? [];
   const EXTERNAL_DRIVERS: { name: string; rate: string }[] = [
@@ -776,23 +787,35 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const merged: Fulfil = { ...o.fulfillment, ...patch };
     setOrders((list) => list.map((x) => ((o.dbId ? x.dbId === o.dbId : x.id === o.id) ? { ...x, fulfillment: merged } : x)));
     setSelOrder((s) => (s && (o.dbId ? s.dbId === o.dbId : s.id === o.id) ? { ...s, fulfillment: merged } : s));
-    if (persistable && o.dbId && supabase) void supabase.from('business_orders').update({ fulfillment: merged }).eq('id', o.dbId);
+    // NOTE: the supabase query builder is LAZY — it only executes on await/.then().
+    // A bare `void builder` silently never fired, so driver/ETA/prep writes from
+    // Cocina never reached the DB (or the client's tracker). Always .then() it.
+    if (persistable && o.dbId && supabase) {
+      supabase.from('business_orders').update({ fulfillment: merged }).eq('id', o.dbId)
+        .then(({ error }) => { if (error) flash(L('No se pudo actualizar el pedido', 'Could not update the order')); });
+    }
   };
-  // Accept with a prep time (10/15/20/30 min) — the incoming-order step Cocina
-  // added; advances new → preparing same as before, plus records `prep`.
+  // Accept with a prep time (10/15/20/30 min) — advances new → preparing and
+  // refreshes the CUSTOMER's ETA banner (eta_range) from the real prep time,
+  // so what the client sees matches what the kitchen committed to.
   const acceptOrder = (o: Order, prep: number) => {
-    writeFulfil(o, { prep });
+    writeFulfil(o, { prep, eta_range: o.channel === 'delivery' ? `${prep + 10}–${prep + 25} min` : `${prep} min` });
     void advance(o);
     setPrepFor(null);
     flash(L(`Pedido aceptado · ${prep} min`, `Order accepted · ${prep} min`));
   };
   // Assign a real driver (own roster or an external gig service) before a
-  // delivery order goes out — previously "Dar al repartidor" advanced the
-  // order with no record of who actually delivered it.
-  const assignDriver = (o: Order, name: string, phone?: string) => {
-    writeFulfil(o, { dispatch: 'on_the_way', driver: name, ...(phone ? { driver_phone: phone } : {}), eta: `Llega ~${5 + Math.floor(Math.random() * 6)} min` });
+  // delivery order goes out. The OWNER picks the arrival ETA (no invented
+  // numbers) — it feeds the client's map badge + ETA banner; the driver's
+  // vehicle rides along so the client sees it in tracking.
+  const assignDriver = (o: Order, name: string, phone?: string, vehicle?: string) => {
+    writeFulfil(o, {
+      dispatch: 'on_the_way', driver: name,
+      ...(phone ? { driver_phone: phone } : {}), ...(vehicle ? { driver_vehicle: vehicle } : {}),
+      eta: `${assignEta} min`, eta_range: `${assignEta}–${assignEta + 5} min`,
+    });
     setAssignFor(null);
-    flash(L(`${name} asignado`, `${name} assigned`));
+    flash(L(`${name} asignado · llega en ~${assignEta} min`, `${name} assigned · ~${assignEta} min away`));
   };
   // Reject a new order with a reason (customer is notified, not charged) —
   // same DB effect as `cancelOrder`, distinct toast copy.
@@ -809,15 +832,20 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     if (o.status === 'preparing') return { label: L('Marcar listo', 'Mark ready'), onClick: () => void advance(o) };
     if (o.status === 'ready') {
       if (o.channel === 'delivery') {
-        if (o.fulfillment?.dispatch === 'on_the_way') return { label: L('Marcar entregado', 'Mark delivered'), onClick: () => void advance(o) };
-        return { label: L('Asignar repartidor', 'Assign driver'), onClick: () => setAssignFor(o) };
+        const d = o.fulfillment?.dispatch;
+        // delivered also stamps dispatch, so client + Despacho land on the same state
+        if (d === 'on_the_way') return { label: L('Marcar entregado', 'Mark delivered'), onClick: () => { writeFulfil(o, { dispatch: 'delivered' }); void advance(o); } };
+        // driver staged from Despacho (assigned/picked_up) → one tap sends it out
+        if (d === 'assigned' || d === 'picked_up') return { label: L('Marcar en camino', 'Mark on the way'), onClick: () => { writeFulfil(o, { dispatch: 'on_the_way', ...(o.fulfillment?.eta ? {} : { eta: '10 min' }) }); flash(L('Pedido en camino', 'Order on the way')); } };
+        return { label: L('Asignar repartidor', 'Assign driver'), onClick: () => { setAssignEta(10); setAssignFor(o); } };
       }
-      return { label: L('Completar', 'Complete'), onClick: () => void advance(o) };
+      // pickup mirrors the client's final step ("Recogido"); dine-in stays generic
+      return { label: o.channel === 'pickup' ? L('Marcar recogido', 'Mark picked up') : L('Completar', 'Complete'), onClick: () => void advance(o) };
     }
     return null;
   };
 
-  const orderList = orders.filter((o) => o.status === oStatus);
+  const orderList = orders.filter((o) => viewMatch(o, oStatus));
   const chToday = orderStats?.channel_today ?? {};
   const chTotal = Object.values(chToday).reduce((s, n) => s + Number(n || 0), 0);
   const chPct = (ch: Channel) => (chTotal > 0 ? `${Math.round((Number(chToday[ch] ?? 0) / chTotal) * 100)}%` : '0%');
@@ -844,11 +872,11 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
             {statusKeys.map((k) => {
               const on = oStatus === k;
-              const n = orders.filter((o) => o.status === k).length;
+              const n = orders.filter((o) => viewMatch(o, k)).length;
               return (
                 <button key={k} onClick={() => setOStatus(k)} className={`flex flex-none cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`}>
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS_DOT[k] }} />
-                  {statusMeta[k][0]}
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: viewDot(k) }} />
+                  {viewMeta(k)}
                   <span className={`font-extrabold ${on ? 'text-white/80' : 'text-muted-2'}`}>{n}</span>
                 </button>
               );
@@ -937,9 +965,9 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               {statusKeys.map((k) => (
                 <button key={k} onClick={() => setOStatus(k)} className={`rounded-btn-lg p-2.5 text-left ${oStatus === k ? 'bg-lilac-2' : 'bg-app'}`}>
                   <div className="flex items-center gap-1.5 text-[9.5px] font-extrabold uppercase tracking-wide text-muted">
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS_DOT[k] }} />{statusMeta[k][0]}
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: viewDot(k) }} />{viewMeta(k)}
                   </div>
-                  <div className="mt-1 text-[17px] font-extrabold text-ink">{orders.filter((o) => o.status === k).length}</div>
+                  <div className="mt-1 text-[17px] font-extrabold text-ink">{orders.filter((o) => viewMatch(o, k)).length}</div>
                 </button>
               ))}
             </div>
@@ -1280,6 +1308,18 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-1 flex items-center gap-1.5 text-[10.5px] font-semibold text-muted-2">
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS_DOT[selOrder.status] }} />{statusMeta[selOrder.status][0]} · {L(selOrder.placed[0], selOrder.placed[1])}
           </div>
+          {/* the exact stage the CUSTOMER's tracker is showing right now — same
+              mapping (orderStageLabel), so both sides speak the same language */}
+          {selOrder.channel !== 'dinein' && (
+            <div className="mt-2 flex items-center gap-2 rounded-field bg-lilac-3 px-3 py-2">
+              <Eye size={13} stroke={2.4} className="flex-none text-primary-dark" />
+              <span className="text-[11px] font-bold text-ink-soft">{L('Tu cliente ve:', 'Your customer sees:')}</span>
+              <span className="text-[11px] font-extrabold text-primary-dark">{L(...orderStageLabel(selOrder))}</span>
+              {selOrder.fulfillment?.eta_range && selOrder.status !== 'completed' && selOrder.status !== 'cancelled' && (
+                <span className="ml-auto text-[10.5px] font-bold text-muted-2">ETA {selOrder.fulfillment.eta_range}</span>
+              )}
+            </div>
+          )}
           <div className="mt-4 flex flex-col gap-1.5">
             {(selOrder.lines && selOrder.lines.length > 0) ? selOrder.lines.map((it, i) => (
               <div key={i} className="flex items-center gap-2 text-[12.5px]">
@@ -1359,21 +1399,28 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </Overlay>
       )}
 
-      {/* NEW (Cocina handoff): assign a real driver before "en camino" */}
+      {/* NEW (Cocina handoff): assign a real driver before "en camino" — the owner
+          picks the arrival ETA the client will see (no invented numbers) */}
       {assignFor && (
         <Overlay open onClose={() => setAssignFor(null)} width={400}>
           <OverlayTitle title={L('Asignar repartidor', 'Assign driver')} onClose={() => setAssignFor(null)} />
-          <div className="text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Tus repartidores', 'Your drivers')}</div>
+          <div className="text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Llega al cliente en aprox.', 'Arrives at the customer in approx.')}</div>
+          <div className="mt-2 grid grid-cols-5 gap-2">
+            {[5, 10, 15, 20, 30].map((m) => (
+              <button key={m} onClick={() => setAssignEta(m)} className={`cursor-pointer rounded-field py-2.5 text-[12px] font-extrabold ${assignEta === m ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>{m} min</button>
+            ))}
+          </div>
+          <div className="mt-4 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Tus repartidores', 'Your drivers')}</div>
           {ownDrivers.length === 0 && (
             <div className="mt-1.5 text-[11.5px] font-semibold text-muted-2">{L('Aún no tienes repartidores. Agrégalos en Entregas.', 'No drivers yet. Add them in Delivery.')}</div>
           )}
           <div className="mt-2 flex flex-col gap-2">
             {ownDrivers.map((d, i) => (
-              <button key={i} onClick={() => assignDriver(assignFor, d.name, d.phone)} className="flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-left">
+              <button key={i} onClick={() => assignDriver(assignFor, d.name, d.phone, d.vehicle)} className="flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-left">
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[12.5px] font-extrabold text-ink">{d.name}</span>
-                  <span className="block text-[10.5px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}</span>
+                  <span className="block truncate text-[10.5px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}{d.vehicle ? ` · ${d.vehicle}` : ''}</span>
                 </span>
               </button>
             ))}
