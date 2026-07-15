@@ -50,6 +50,7 @@ const STATUS: Record<string, { es: string; en: string; bg: string; c: string }> 
   refunded: { es: 'Reembolsado', en: 'Refunded', bg: '#F1EFFA', c: '#8A86A0' },
   on_the_way: { es: 'En camino', en: 'On the way', bg: '#E5EFFB', c: '#2F6FED' },
   delivered: { es: 'Entregado', en: 'Delivered', bg: '#E3F5EA', c: '#1F8A4C' },
+  no_show: { es: 'No asistió', en: 'No-show', bg: '#FDE7EF', c: '#D6336C' },
 };
 
 // DoorDash-style client stage: fold order status + dispatch into ONE stage key.
@@ -117,6 +118,8 @@ export function CuentaScreen() {
   // + live row refresh, and the "report a problem" mini-form (real chat to biz).
   const { value: orderSelId, open: openOrder, close: closeOrder } = useUrlDetail('order');
   useOrderPoll(orderSelId); // the tracking overlay advances even without the websocket
+  // Open appointment detail (Mis reservas) — ics download, reschedule, cancel.
+  const [bkSelId, setBkSelId] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
@@ -471,17 +474,39 @@ export function CuentaScreen() {
         </div>
       )}
 
-      {/* ── MIS RESERVAS ── */}
+      {/* ── MIS RESERVAS (citas — Booksy-style: upcoming first, tap for detail) ── */}
       {sec === 'reservas' && (
         <div>
           {backBar(L('Mis reservas', 'My bookings'))}
-          {act.bookings.length === 0 ? txEmpty(L('Aún no tienes reservas.', 'No bookings yet.')) : (
-            <div className="flex flex-col gap-2.5">
-              {act.bookings.map((b) => txItem(b.id, b.businesses?.name ?? L('Negocio', 'Business'),
-                `${b.service_name ?? L('Servicio', 'Service')}${b.party_size ? ` · ${b.party_size} ${L('personas', 'people')}` : ''} · ${dt(b.starts_at)}`,
-                <>{pill(b.status)}{cancelBtn('booking', b.id, b.status)}</>))}
-            </div>
-          )}
+          {act.bookings.length === 0 ? txEmpty(L('Aún no tienes reservas.', 'No bookings yet.')) : (() => {
+            const nowMs = Date.now();
+            const isUpcoming = (b: (typeof act.bookings)[number]) => new Date(b.starts_at).getTime() >= nowMs && !['cancelled', 'done', 'no_show'].includes(b.status);
+            const upcoming = act.bookings.filter(isUpcoming).sort((a, x) => +new Date(a.starts_at) - +new Date(x.starts_at));
+            const past = act.bookings.filter((b) => !isUpcoming(b));
+            const bkCard = (b: (typeof act.bookings)[number]) => (
+              <Card key={b.id} className="cursor-pointer p-3.5" onClick={() => setBkSelId(b.id)}>
+                <div className="flex items-center gap-3">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13.5px] font-extrabold text-ink">{b.service_name ?? L('Servicio', 'Service')}</span>
+                    <span className="block truncate text-[11.5px] font-semibold text-muted">{b.businesses?.name ?? L('Negocio', 'Business')}{b.staff_name ? ` · ${L('con', 'with')} ${b.staff_name}` : ''}</span>
+                    <span className="mt-0.5 block text-[11.5px] font-bold text-primary-dark">{dt(b.starts_at)}{b.duration_min ? ` · ${b.duration_min} min` : ''}</span>
+                  </span>
+                  <span className="flex flex-none flex-col items-end gap-1">
+                    {b.total != null && b.total > 0 && <span className="text-[13px] font-extrabold text-ink">{money(b.total)}</span>}
+                    {pill(b.status)}
+                  </span>
+                </div>
+              </Card>
+            );
+            return (
+              <div className="flex flex-col gap-2.5">
+                {upcoming.length > 0 && <div className="text-[11.5px] font-extrabold uppercase tracking-wide text-muted">{L('Próximas', 'Upcoming')}</div>}
+                {upcoming.map(bkCard)}
+                {past.length > 0 && <div className="mt-1 text-[11.5px] font-extrabold uppercase tracking-wide text-muted">{L('Anteriores', 'Past')}</div>}
+                {past.map(bkCard)}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -579,6 +604,74 @@ export function CuentaScreen() {
         confirmLabel={L('Sí, cancelar', 'Yes, cancel')}
         cancelLabel={L('No', 'No')}
       />
+
+      {/* ── appointment detail (Mis reservas) — Booksy-style card + actions ── */}
+      <Overlay open={bkSelId !== null} onClose={() => setBkSelId(null)} width={440}>
+        {(() => {
+          const bk = act.bookings.find((x) => x.id === bkSelId); // live row → status advances
+          if (!bk) return null;
+          const future = new Date(bk.starts_at).getTime() > Date.now();
+          const active = bk.status === 'pending' || bk.status === 'confirmed';
+          const slug = bk.businesses?.slug;
+          const row = (label: string, val: ReactNode) => (
+            <div className="flex items-start justify-between gap-3 border-t border-hair py-2.5 first:border-t-0">
+              <span className="flex-none text-[12px] font-bold text-muted">{label}</span>
+              <span className="min-w-0 text-right text-[12.5px] font-extrabold text-ink">{val}</span>
+            </div>
+          );
+          const addToCal = () => {
+            const start = new Date(bk.starts_at);
+            const end = new Date(start.getTime() + (bk.duration_min ?? 60) * 60000);
+            const esc = (s: string) => s.replace(/([\\;,])/g, '\\$1');
+            const p2 = (n: number) => String(n).padStart(2, '0');
+            const stamp = (d: Date) => `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}T${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}00Z`;
+            const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ToLatino//Citas//ES', 'BEGIN:VEVENT',
+              `UID:${bk.id}@tolatino`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
+              `SUMMARY:${esc(`${bk.service_name ?? 'Cita'} · ${bk.businesses?.name ?? ''}`)}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+            const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+            const a = document.createElement('a');
+            a.href = url; a.download = 'cita.ics'; a.click();
+            URL.revokeObjectURL(url);
+          };
+          return (
+            <>
+              <OverlayTitle title={bk.service_name ?? L('Reserva', 'Booking')} onClose={() => setBkSelId(null)} />
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate text-[13px] font-bold text-ink-soft">{bk.businesses?.name ?? L('Negocio', 'Business')}</span>
+                {pill(bk.status)}
+              </div>
+              <Card className="px-4 py-1.5">
+                {row(L('Fecha y hora', 'Date & time'), `${dt(bk.starts_at)}${bk.duration_min ? ` · ${bk.duration_min} min` : ''}`)}
+                {bk.staff_name && row(L('Profesional', 'Professional'), bk.staff_name)}
+                {bk.variant && row(L('Opción', 'Option'), bk.variant)}
+                {bk.party_size != null && bk.party_size > 1 && row(L('Personas', 'People'), String(bk.party_size))}
+                {Array.isArray(bk.addons) && bk.addons.length > 0 && row('Extras', bk.addons.map((a) => `${a.n}${a.p ? ` (+$${a.p})` : ''}`).join(', '))}
+                {bk.notes && row(L('Notas', 'Notes'), bk.notes)}
+                {bk.deposit != null && bk.deposit > 0 && row(L('Pagado al reservar', 'Paid at booking'), money(bk.deposit))}
+                {bk.total != null && bk.total > 0 && row('Total', <span className="text-primary-dark">{money(bk.total)}</span>)}
+              </Card>
+              {active && (
+                <button onClick={addToCal} className="mt-3 w-full cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-3 text-[13px] font-extrabold text-primary-dark">
+                  {L('Agregar al calendario', 'Add to calendar')}
+                </button>
+              )}
+              {active && future && slug && (
+                <PrimaryBtn className="mt-2.5" onClick={() => { setBkSelId(null); router.push(`/negocios/?b=${encodeURIComponent(slug)}&bt=services&resched=${bk.id}`); }}>
+                  {L('Reagendar cita', 'Reschedule appointment')}
+                </PrimaryBtn>
+              )}
+              {active && (
+                <button
+                  onClick={() => { setBkSelId(null); setCancelTarget({ kind: 'booking', id: bk.id }); }}
+                  className="mt-2.5 w-full cursor-pointer rounded-field border-[1.5px] border-pink-bg bg-white py-3 text-[13px] font-extrabold text-pink-dark"
+                >
+                  {L('Cancelar cita', 'Cancel appointment')}
+                </button>
+              )}
+            </>
+          );
+        })()}
+      </Overlay>
 
       {/* ── order detail / tracking (DoorDash-style) ── */}
       <Overlay open={orderSelId !== null} onClose={() => closeOrder()} width={460} fullHeightSheet>

@@ -26,7 +26,19 @@ export type OrderFulfil = {
   collect_total?: number; // cash orders: amount the seller collects on delivery/pickup
 };
 export type MyOrder = { id: string; business_id: string; code: string | null; items: OrderItem[]; total: number | null; channel: string | null; status: string; created_at: string; fulfillment: OrderFulfil | null; businesses: BizRef };
-export type MyBooking = { id: string; business_id: string; service_name: string | null; party_size: number | null; starts_at: string; status: string; deposit: number | null; created_at: string; businesses: BizRef };
+export type MyBooking = {
+  id: string; business_id: string; service_name: string | null; service_id: string | null; party_size: number | null;
+  starts_at: string; status: string; deposit: number | null; created_at: string;
+  // Booking-pro fields (migration 0092) — appointment shape à la Booksy.
+  duration_min: number | null; staff_id: string | null; staff_name: string | null;
+  addons: { n: string; p: number }[] | null; variant: string | null; total: number | null; notes: string | null;
+  businesses: BizRef;
+};
+/** Optional appointment detail passed by the booking sheet (migration 0092). */
+export type BookingExtra = {
+  duration_min?: number; staff_id?: string; staff_name?: string;
+  addons?: { n: string; p: number }[]; variant?: string; total?: number; notes?: string;
+};
 export type MyRental = { id: string; business_id: string; item_name: string; start_at: string; end_at: string | null; qty: number; total: number | null; status: string; created_at: string; businesses: BizRef };
 export type MyTicket = { id: string; event_id: string; qty: number; admitted: number; total: number | null; unit_price: number | null; code: string; status: string; used_at: string | null; created_at: string; events: EvRef; event_tiers: { name_es: string; name_en: string } | null };
 export type MyWaitlist = { event_id: string; tier_id: string | null; status: string };
@@ -45,7 +57,7 @@ type Ctx = {
   // Consumer objects carry the public `slug`, not the DB uuid — creators resolve
   // slug → id, then insert with user_id = the customer.
   placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string, fulfillment?: Record<string, unknown>) => Promise<{ error: string | null; id?: string; code?: string }>;
-  book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
+  book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null, extra?: BookingExtra) => Promise<{ error: string | null }>;
   rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
   buyTickets: (eventSlug: string, tierId: string, qty: number) => Promise<{ error: string | null; code?: string }>;
   buyTicketsMulti: (eventSlug: string, items: { tierId: string; qty: number }[], promo?: string) => Promise<{ error: string | null; codes?: string[]; tickets?: { code: string; tierId: string }[] }>;
@@ -56,6 +68,10 @@ type Ctx = {
   rsvp: (eventSlug: string, on: boolean) => Promise<{ error: string | null }>;
   // Customer self-service: cancel one's own order/booking/rental (RLS: own rows).
   cancel: (kind: 'order' | 'booking' | 'rental', id: string) => Promise<{ error: string | null }>;
+  /** Move a pending/confirmed booking to a new slot (status resets to 'pending' so
+   *  the business re-confirms — guard in migration 0092 §7). Optionally reassigns
+   *  the professional. Errors surface the overlap guard ('staff_slot_taken'). */
+  rescheduleBooking: (id: string, startsAt: string, staff?: { id: string; name: string } | null) => Promise<{ error: string | null }>;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -86,7 +102,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
       const uid = user.id;
       const [o, b, r, t, g, w] = await Promise.all([
         supabase!.from('business_orders').select(`id,business_id,code,items,total,channel,status,created_at,fulfillment,${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }),
-        supabase!.from('business_bookings').select(`id,business_id,service_name,party_size,starts_at,status,deposit,created_at,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }),
+        supabase!.from('business_bookings').select(`id,business_id,service_name,service_id,party_size,starts_at,status,deposit,created_at,duration_min,staff_id,staff_name,addons,variant,total,notes,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }),
         supabase!.from('business_rentals').select(`id,business_id,item_name,start_at,end_at,qty,total,status,created_at,${BIZ}`).eq('user_id', uid).order('start_at', { ascending: false }),
         supabase!.from('event_tickets').select(`id,event_id,qty,admitted,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('event_attendance').select(`event_id,created_at,${EV}`).eq('user_id', uid).order('created_at', { ascending: false }),
@@ -144,11 +160,20 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     return { error: error ? error.message : null, id: row?.id, code: row?.code ?? undefined };
   }, [user, custName, refresh, idOf]);
 
-  const book = useCallback<Ctx['book']>(async (businessSlug, serviceName, serviceId, startsAt, partySize, deposit) => {
+  const book = useCallback<Ctx['book']>(async (businessSlug, serviceName, serviceId, startsAt, partySize, deposit, extra) => {
     if (!supabase || !user) return { error: 'auth' };
     const bizId = await idOf('businesses', businessSlug);
     if (!bizId) return { error: 'business-not-found' };
-    const { error } = await supabase.from('business_bookings').insert({ business_id: bizId, user_id: user.id, customer_name: custName, service_name: serviceName, service_id: serviceId, starts_at: startsAt, party_size: partySize, deposit, status: 'pending' });
+    const { error } = await supabase.from('business_bookings').insert({
+      business_id: bizId, user_id: user.id, customer_name: custName, service_name: serviceName,
+      service_id: serviceId, starts_at: startsAt, party_size: partySize, deposit, status: 'pending',
+      ...(extra?.duration_min ? { duration_min: extra.duration_min } : {}),
+      ...(extra?.staff_id ? { staff_id: extra.staff_id, staff_name: extra.staff_name ?? null } : {}),
+      ...(extra?.addons?.length ? { addons: extra.addons } : {}),
+      ...(extra?.variant ? { variant: extra.variant } : {}),
+      ...(extra?.total != null ? { total: extra.total } : {}),
+      ...(extra?.notes ? { notes: extra.notes.slice(0, 300) } : {}),
+    });
     if (!error) refresh();
     return { error: error ? error.message : null };
   }, [user, custName, refresh, idOf]);
@@ -227,12 +252,21 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     return { error: error ? error.message : null };
   }, [user, refresh]);
 
+  const rescheduleBooking = useCallback<Ctx['rescheduleBooking']>(async (id, startsAt, staff) => {
+    if (!supabase || !user) return { error: 'auth' };
+    const { error } = await supabase.from('business_bookings')
+      .update({ starts_at: startsAt, status: 'pending', ...(staff !== undefined ? { staff_id: staff?.id ?? null, staff_name: staff?.name ?? null } : {}) })
+      .eq('id', id).eq('user_id', user.id);
+    if (!error) refresh();
+    return { error: error ? error.message : null };
+  }, [user, refresh]);
+
   const goingIds = useMemo(() => new Set(going.map((g) => g.event_id)), [going]);
   const goingSlugs = useMemo(() => new Set(going.map((g) => g.events?.slug).filter(Boolean) as string[]), [going]);
   // tiers the user is actively waiting on (for the "En espera ✓" toggle on sold-out tiers).
   const waitlistTierIds = useMemo(() => new Set(waitlist.filter((w) => w.tier_id && w.status !== 'converted').map((w) => w.tier_id!)), [waitlist]);
 
-  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, buyTicketsMulti, waitlist, waitlistTierIds, joinWaitlist, leaveWaitlist, rsvp, cancel };
+  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, buyTicketsMulti, waitlist, waitlistTierIds, joinWaitlist, leaveWaitlist, rsvp, cancel, rescheduleBooking };
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 

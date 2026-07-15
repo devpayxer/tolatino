@@ -86,7 +86,15 @@ export type MarketplaceInput =
   // subtotal is display-only; the server RE-PRICES the deposit/fee from DB using
   // service_id/item_id + these structured inputs (party_size / mode+hours+units)
   // + addon_ids. The client's subtotal is never trusted.
-  | { kind: 'booking'; slug: string; subtotal: number; payload: BookingPayload; party_size?: number; addon_ids?: string[] }
+  | {
+      kind: 'booking'; slug: string; subtotal: number; payload: BookingPayload; party_size?: number; addon_ids?: string[];
+      /** Index into the service's own attrs.variants.options — the server re-prices the delta from DB. */
+      variant_i?: number;
+      /** Provider id from the business's service_config.providers (omit / 'any' = no assignment). */
+      staff_id?: string;
+      /** Free-text note to the professional (clipped server-side). */
+      note?: string;
+    }
   | { kind: 'rental'; slug: string; subtotal: number; payload: RentalPayload; mode?: 'hour' | 'day'; hours?: number; units?: number; addon_ids?: string[] };
 
 /**

@@ -258,9 +258,35 @@ Deno.serve(async (req) => {
       if (!(price0 >= 0)) return json({ error: 'not_payable' }, 400);
       const party = Math.max(1, Math.min(999, Math.floor(Number(body?.party_size ?? 1))));
       let total = a.priceType === 'persona' ? price0 * party : price0;
+      // Price VARIANT (e.g. vehicle type): the client sends the option index; the
+      // delta + label come from the service's own attrs — never a client amount.
+      let variantLabel = '';
+      const vGroup = (a.variants ?? null) as { options?: { es?: unknown; delta?: unknown }[] } | null;
+      if (body?.variant_i != null && String(body.variant_i) !== '') {
+        const vi = Math.floor(Number(body.variant_i));
+        const opt = Array.isArray(vGroup?.options) ? vGroup!.options![vi] : undefined;
+        if (!opt) return json({ error: 'bad_variant' }, 400);
+        total += Math.max(0, Number(opt.delta ?? 0) || 0);
+        variantLabel = String(opt.es ?? '');
+      }
       const bookAddonSum = pickAddonSum(a.addons, (svcRow?.config as Record<string, unknown>)?.addons, body?.addon_ids);
       if (bookAddonSum < 0) return json({ error: 'bad_addon' }, 400);         // -1 sentinel = invalid add-on ref
       total += bookAddonSum;
+      // Assigned professional: must exist in the business's own provider roster.
+      let staffId = '', staffName = '';
+      if (body?.staff_id != null && String(body.staff_id) !== '' && String(body.staff_id) !== 'any') {
+        const provs = (svcRow?.config as Record<string, unknown>)?.providers;
+        const p = (Array.isArray(provs) ? provs as Record<string, unknown>[] : []).find((x) => String(x?.id ?? '') === String(body.staff_id));
+        if (!p) return json({ error: 'bad_staff' }, 400);
+        staffId = String(p.id); staffName = String(p.name ?? '');
+      }
+      // Duration + chosen add-on detail snapshot (names/prices at booking time).
+      const durMin = (() => { const m = /(\d+(?:\.\d+)?)\s*h/i.exec(String(a.dur ?? '')); if (m) return Math.round(Number(m[1]) * 60); const n = parseInt(String(a.dur ?? ''), 10); return Number.isFinite(n) && n > 0 ? n : 30; })();
+      const cfgAddons = Array.isArray((svcRow?.config as Record<string, unknown>)?.addons) ? ((svcRow!.config as Record<string, unknown>).addons as Record<string, unknown>[]) : [];
+      const addonDetail = (Array.isArray(body?.addon_ids) ? (body.addon_ids as unknown[]).map(String) : [])
+        .map((id) => cfgAddons.find((c) => String(c?.id ?? '') === id))
+        .filter(Boolean)
+        .map((c) => ({ n: String(c!.es ?? ''), p: Number(c!.price ?? 0) || 0 }));
       if (!(total > 0) || total > 100000) return json({ error: 'bad amount' }, 400);
       subtotal = total;
       // The BUSINESS's own service promo (service_config.promos): an active `percent`
@@ -281,6 +307,12 @@ Deno.serve(async (req) => {
       payload = {
         ...((body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {}),
         deposit: total,
+        total,
+        duration_min: durMin,
+        ...(staffId ? { staff_id: staffId, staff_name: staffName } : {}),
+        ...(variantLabel ? { variant: variantLabel } : {}),
+        ...(addonDetail.length ? { addons: addonDetail } : {}),
+        ...(body?.note ? { notes: String(body.note).slice(0, 300) } : {}),
         ...(discount > 0 && bCode ? { promo: bCode, discount: Math.round(discount * 100) / 100 } : {}),
       };
     } else if (kind === 'rental') {

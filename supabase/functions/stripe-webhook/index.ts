@@ -117,6 +117,10 @@ async function fulfillMarketplace(url: string, service: string, stripeKey: strin
         in_service_name: payload.service_name ?? null, in_service_id: payload.service_id ?? null,
         in_starts_at: payload.starts_at ?? null, in_party_size: payload.party_size ?? null,
         in_deposit: payload.deposit ?? (pending.subtotal / 100),
+        in_duration_min: payload.duration_min ?? null, in_staff_id: payload.staff_id ?? null,
+        in_staff_name: payload.staff_name ?? null, in_addons: payload.addons ?? null,
+        in_variant: payload.variant ?? null, in_total: payload.total ?? payload.deposit ?? null,
+        in_notes: payload.notes ?? null,
       });
       if (r.ok && Array.isArray(r.data) && r.data.length) { result = r.data[0]; ok = true; }
       else { errMsg = (r.data as { message?: string })?.message || 'booking fulfillment failed'; }

@@ -23,7 +23,7 @@ import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
 import { startMarketplaceCheckout, startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -111,6 +111,10 @@ type SvcTarget = {
   addons: PubSvc['addons'];
   id: string | null; // real service item id (null → fixture; no capacity gating)
   capMax: number; // seats per session (0 = untracked)
+  tile: string; // striped tile for the detail-sheet header
+  img?: string; // real photo (overrides the tile)
+  days: string[]; // weekdays offered ('Lun'…'Dom'; empty = every open day)
+  variant: PubSvc['variant']; // optional single-choice price variant (vehicle type…)
 };
 
 const initials = (name: string) =>
@@ -236,6 +240,29 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const svcBooking = realServices?.booking ?? false;
   // Display-only services: booking off → showcase (no Reservar). Cash bookings still work.
   const svcDisplayOnly = realServices != null && !realServices.booking;
+  // "Reagendar" deep link from Mi cuenta (?resched=<bookingId>): once services +
+  // the user's bookings are in, open the booking sheet in reschedule mode for that
+  // appointment's service, with its professional pre-selected. Consumed once —
+  // the param is stripped so closing the sheet doesn't re-open it.
+  const reschedDone = useRef(false);
+  useEffect(() => {
+    if (reschedDone.current || !realServices || act.loading) return;
+    let id: string | null = null;
+    try { id = new URLSearchParams(window.location.search).get('resched'); } catch { /* SSR */ }
+    if (!id) return;
+    reschedDone.current = true;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('resched');
+      window.history.replaceState(window.history.state, '', url.toString());
+    } catch { /* ignore */ }
+    const bk = act.bookings.find((x) => x.id === id);
+    if (!bk || !['pending', 'confirmed'].includes(bk.status)) return;
+    const svc = realServices.cats.flatMap((c) => c.items).find((s) => s.id === bk.service_id);
+    if (!svc || !svc.bookable) { flash(L('Este servicio ya no está disponible', 'This service is no longer available')); return; }
+    openSvc(pubToTarget(svc), { staff: bk.staff_id ?? 'any', resched: bk.id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realServices, act.loading, act.bookings]);
 
   // Real shop (business_items kind='product' + product_config, migration 0048).
   // Null → the Tienda tab keeps the sample fixtures. selling off → display-only
@@ -341,6 +368,18 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // (server re-validates at checkout). Reset when the selected service changes.
   const [svcPromo, setSvcPromo] = useState<{ code: string; percent: number; label: string } | null>(null);
   const [svcDone, setSvcDone] = useState(false);
+  // Booksy-grade booking state: the pre-booking service DETAIL sheet, the chosen
+  // professional ('any' = first available), the price-variant index, a note to the
+  // pro, the 14-day occupancy feed (per-staff, duration-aware), and — when arriving
+  // via "Reagendar" from Mi cuenta — the booking id being MOVED instead of created.
+  const [svcInfo, setSvcInfo] = useState<PubSvc | null>(null);
+  const [svcStaff, setSvcStaff] = useState<string>('any');
+  const [svcVar, setSvcVar] = useState(0);
+  const [svcNote, setSvcNote] = useState('');
+  const [svcBusy, setSvcBusy] = useState<BookingBusy[]>([]);
+  const [svcResched, setSvcResched] = useState<string | null>(null);
+  // Snapshot for the "¡Cita agendada!" confirmation card (survives sheet reset).
+  const [svcDoneInfo, setSvcDoneInfo] = useState<{ name: string; when: string; staff: string; total: number; startISO: string; durMin: number; resched: boolean } | null>(null);
   const [rentIdx, setRentIdx] = useState<number | null>(null);
   const [rentMode, setRentMode] = useState<RentMode>('day');
   const [rentStart, setRentStart] = useState<string | null>(null); // yyyy-mm-dd
@@ -922,13 +961,47 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   };
 
   // Open the booking sheet for any target (real service or fixture), fresh.
-  const openSvc = (t: SvcTarget) => {
+  // `keepExtras` carries the add-ons the user already picked in the detail sheet.
+  const openSvc = (t: SvcTarget, opts?: { keepExtras?: boolean; staff?: string; resched?: string }) => {
     setSvcSel(t);
     setSvcDate(0);
     setSvcTime(-1); // resolved to the first real slot by the effect below
     setSvcPersons(1);
-    setSvcAddOns({});
+    if (!opts?.keepExtras) setSvcAddOns({});
+    setSvcVar(0);
+    setSvcNote('');
+    setSvcStaff(opts?.staff ?? 'any');
+    setSvcResched(opts?.resched ?? null);
     setSvcDone(false);
+    setSvcInfo(null);
+  };
+  // The professionals able to perform the selected service (empty serviceIds = all).
+  // No eligible pros → the service books by capacity (car wash bays, venues).
+  const svcProviders = useMemo<PubProvider[]>(() => {
+    if (!svcSel?.id || !realServices) return [];
+    return realServices.providers.filter((p) => p.serviceIds.length === 0 || p.serviceIds.includes(svcSel.id!));
+  }, [svcSel?.id, realServices]);
+  // 14-day occupancy feed (migration 0092) — duration-aware, per professional.
+  useEffect(() => {
+    if (!svcSel || !svcSel.id || !svcSel.bookable) { setSvcBusy([]); return; }
+    let cancelled = false;
+    setSvcBusy([]);
+    const from = new Date(); from.setHours(0, 0, 0, 0);
+    const to = new Date(from.getTime() + 15 * 86400000);
+    fetchBookingBusy(b.slug, from.toISOString(), to.toISOString()).then((rows) => { if (!cancelled) setSvcBusy(rows); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [svcSel?.id, svcSel?.bookable, svcDone]);
+  // Does [start, start+durMin) collide with an active appointment of professional
+  // `staffId`? With 'any', a slot only closes when EVERY eligible pro is busy.
+  const staffBusyAt = (staffId: string, start: number, durMin: number) =>
+    svcBusy.some((x) => x.staffId === staffId && x.start < start + durMin * 60000 && start < x.start + x.durMin * 60000);
+  const slotStaffFull = (dayISO: string, minute: number): boolean => {
+    if (svcProviders.length === 0) return false;
+    const start = slotEpoch(dayISO, minute);
+    const durMin = parseDurMin(svcSel?.dur);
+    if (svcStaff !== 'any') return staffBusyAt(svcStaff, start, durMin);
+    return svcProviders.every((p) => staffBusyAt(p.id, start, durMin));
   };
   // When a real bookable service opens, load its per-SLOT seat load (migration
   // 0059) so a specific time can't be over-booked. Keyed by the slot's epoch(ms)
@@ -954,23 +1027,29 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const pubToTarget = (s: PubSvc): SvcTarget => ({
     name: s.name, descEs: s.desc[0], descEn: s.desc[1], price: s.price, priceType: s.priceType,
     priceLabel: null, dur: s.dur, bookable: s.bookable, deposit: s.deposit, addons: s.addons,
-    id: s.id, capMax: capMaxOf(s.capacity),
+    id: s.id, capMax: capMaxOf(s.capacity), tile: s.tile, img: s.img, days: s.days, variant: s.variant,
   });
   const fixtureToTarget = (f: (typeof SERVICES)[number]): SvcTarget => ({
     name: B(f.n), descEs: f.d[0], descEn: f.d[1], price: null, priceType: 'cotiza',
     priceLabel: f.price, dur: '', bookable: true, deposit: false, addons: [], id: null, capMax: 0,
+    tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', days: [], variant: null,
   });
   // Consumer price label for a real service card.
   const svcPriceLabel = (s: PubSvc): string =>
     s.priceType === 'cotiza' ? L('Cotización', 'Quote') : s.price ? `$${s.price}${s.priceType === 'persona' ? L('/persona', '/person') : ''}` : L('Gratis', 'Free');
 
-  // Booking sheet math: selected add-ons, base (× persons when per-person), total.
+  // Booking sheet math: selected add-ons, base (× persons when per-person) + the
+  // chosen price-variant delta (vehicle type…), total.
   const svcChosenAddons = () => (svcSel ? svcSel.addons.filter((a) => svcAddOns[a.id]) : []);
+  const svcVarDelta = () => (svcSel?.variant ? Math.max(0, svcSel.variant.options[svcVar]?.delta ?? 0) : 0);
   const svcTotal = () => {
     if (!svcSel || svcSel.price == null) return 0;
     const base = svcSel.priceType === 'persona' ? svcSel.price * Math.max(1, svcPersons) : svcSel.price;
-    return base + svcChosenAddons().reduce((n, a) => n + a.price, 0);
+    return base + svcVarDelta() + svcChosenAddons().reduce((n, a) => n + a.price, 0);
   };
+  // The chosen professional (null = "Cualquiera"/none) + the chosen variant label.
+  const svcStaffSel = (): PubProvider | null => (svcStaff === 'any' ? null : svcProviders.find((p) => p.id === svcStaff) ?? null);
+  const svcVarLabel = (): string => (svcSel?.variant ? B(svcSel.variant.options[svcVar]?.name ?? ['', '']) : '');
 
   const confirmBooking = async () => {
     if (!svcSel) return;
@@ -979,17 +1058,31 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       if (svcSlots.length === 0) { flash(L('Cerrado ese día — elige otra fecha', 'Closed that day — pick another date')); return; }
       if (svcTime < 0) { flash(L('Elige una hora', 'Pick a time')); return; }
     }
-    // block a full slot (per-session capacity truth, migration 0059)
-    if (svcSel.bookable && svcSel.capMax > 0) {
-      const iso = dateChips[svcDate]?.iso;
-      if (iso && svcTime >= 0 && slotFull(iso, svcTime)) { flash(L('Ese horario está lleno — elige otro', 'That time is full — pick another')); return; }
+    const iso = dateChips[svcDate]?.iso;
+    // block a full slot: per-session capacity (0059) OR every eligible pro busy (0092)
+    if (svcSel.bookable && iso && svcTime >= 0) {
+      if (svcSel.capMax > 0 && svcProviders.length === 0 && slotFull(iso, svcTime)) { flash(L('Ese horario está lleno — elige otro', 'That time is full — pick another')); return; }
+      if (slotStaffFull(iso, svcTime)) { flash(L('Ese horario ya está ocupado — elige otro', 'That time is already taken — pick another')); return; }
     }
     if (!user) { router.push('/entrar'); return; }
-    const chosen = svcChosenAddons().map((a) => B(a.name));
-    const label = chosen.length ? `${svcSel.name} · ${chosen.join(', ')}` : svcSel.name;
     const total = svcTotal();
     const dep = svcSel.deposit && total > 0 ? total : null;
     const persons = svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : null;
+    const staff = svcStaffSel();
+    const durMin = parseDurMin(svcSel.dur);
+    const whenLabel = `${B(dateChips[svcDate]?.lab ?? ['', ''])} ${B(dateChips[svcDate]?.sub ?? ['', ''])}${svcTime >= 0 ? ` · ${fmtShort(svcTime)}` : ''}`;
+    // ── Reschedule mode (arrived via "Reagendar" in Mi cuenta): MOVE the booking —
+    // status resets to 'pending' so the business re-confirms. No new charge.
+    if (svcResched) {
+      const { error } = await act.rescheduleBooking(svcResched, svcStartISO(), staff ? { id: staff.id, name: staff.name } : null);
+      if (error) {
+        flash(/staff_slot_taken/.test(error) ? L('Ese horario se acaba de ocupar — elige otro', 'That time was just taken — pick another') : L('No se pudo reagendar', 'Could not reschedule'));
+        return;
+      }
+      setSvcDoneInfo({ name: svcSel.name, when: whenLabel, staff: staff?.name ?? '', total, startISO: svcStartISO(), durMin, resched: true });
+      setSvcDone(true);
+      return;
+    }
     // Booking with a deposit/price + seller takes cards → charge the deposit online
     // via Stripe; the confirmed booking is created by the webhook once paid.
     if (payOnline && svcSel.deposit && total > 0) {
@@ -998,16 +1091,31 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         // structured inputs → server re-prices from DB (ignores subtotal)
         party_size: svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : 1,
         addon_ids: svcChosenAddons().map((a) => a.id),
+        ...(svcSel.variant ? { variant_i: svcVar } : {}),
+        ...(staff ? { staff_id: staff.id } : {}),
+        ...(svcNote.trim() ? { note: svcNote.trim() } : {}),
         ...(svcPromo ? { promo: svcPromo.code } : {}),
-        payload: { service_name: label, service_id: svcSel.id ?? null, starts_at: svcStartISO(), party_size: persons, deposit: total },
+        payload: { service_name: svcSel.name, service_id: svcSel.id ?? null, starts_at: svcStartISO(), party_size: persons, deposit: total },
       });
       if (url) { window.location.href = url; return; }
       flash(L('No se pudo iniciar el pago', 'Could not start payment'));
       return;
     }
-    setSvcDone(true); // keep the existing success screen (optimistic pay-later / inquiry)
-    const { error } = await act.book(b.slug, label, svcSel.id, svcStartISO(), persons, dep);
-    if (!error) flash(svcSel.bookable ? L('Reserva enviada · míralo en Mi cuenta', 'Booking sent · see it in My account') : L('Solicitud enviada · míralo en Mi cuenta', 'Request sent · see it in My account'));
+    // Cash / pay-at-venue / inquiry path — insert with the full appointment shape.
+    const { error } = await act.book(b.slug, svcSel.name, svcSel.id, svcStartISO(), persons, dep, {
+      duration_min: durMin,
+      ...(staff ? { staff_id: staff.id, staff_name: staff.name } : {}),
+      ...(svcChosenAddons().length ? { addons: svcChosenAddons().map((a) => ({ n: B(a.name), p: a.price })) } : {}),
+      ...(svcSel.variant ? { variant: svcVarLabel() } : {}),
+      ...(total > 0 ? { total } : {}),
+      ...(svcNote.trim() ? { notes: svcNote.trim() } : {}),
+    });
+    if (error) {
+      flash(/staff_slot_taken/.test(error) ? L('Ese horario se acaba de ocupar — elige otro', 'That time was just taken — pick another') : L('No se pudo enviar la reserva', 'Could not send the booking'));
+      return;
+    }
+    setSvcDoneInfo({ name: svcSel.name, when: whenLabel, staff: staff?.name ?? '', total, startISO: svcStartISO(), durMin, resched: false });
+    setSvcDone(true);
   };
 
   // Rental: the customer picks a start day (or a start→end range) on a real
@@ -1077,20 +1185,24 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Real start-date chips (today + next 4 days). Replaces the stale SVC_DATES
   // fixture so "Hoy" is actually today; rentDate/svcDate index into this. Computed
   // in the browser, so it reflects the user's real current date.
-  const dateChips = useMemo<{ lab: Bi; sub: Bi; iso: string }[]>(() => {
+  // 14 days out (Booksy-style horizon). `dow` carries the Spanish weekday key so a
+  // service offered only on certain days (attrs.days) can grey the rest out.
+  const dateChips = useMemo<{ lab: Bi; sub: Bi; iso: string; dow: string }[]>(() => {
     const wdEs = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const wdEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const moEs = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const moEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const base = new Date();
-    return Array.from({ length: 5 }, (_, i) => {
+    return Array.from({ length: 14 }, (_, i) => {
       const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
       const dow = d.getDay(), day = d.getDate();
       const lab: Bi = i === 0 ? ['Hoy', 'Today'] : i === 1 ? ['Mañana', 'Tomorrow'] : [wdEs[dow], wdEn[dow]];
       const sub: Bi = [`${moEs[d.getMonth()]} ${day}`, `${moEn[d.getMonth()]} ${day}`];
-      return { lab, sub, iso: isoDay(d.getFullYear(), d.getMonth(), day) };
+      return { lab, sub, iso: isoDay(d.getFullYear(), d.getMonth(), day), dow: wdEs[dow] };
     });
   }, []);
+  // A service offered only on some weekdays (attrs.days) greys out the others.
+  const svcDayOff = (i: number): boolean => !!svcSel && svcSel.days.length > 0 && !svcSel.days.includes(dateChips[i]?.dow ?? '');
   // Real bookable time slots for the selected service + date: derived from the
   // business's open hours × the service duration (migration-free, all client-side).
   // No weekly hours configured → keep the old fixed offering so booking still works.
@@ -1103,25 +1215,36 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     return bookingSlots(b.hours, b.hoursExceptions, parseISO(iso), parseDurMin(svcSel.dur), now);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [svcSel?.bookable, svcSel?.dur, svcHasHours, svcDate, dateChips, b.hours, b.hoursExceptions, now]);
-  // Keep the selected slot valid: when the day/slot set (or its load) changes, snap
-  // to the first slot that isn't full — or clear it if the day is closed/fully booked.
+  // Snap the selected DAY off a weekday the service doesn't offer (first eligible).
+  useEffect(() => {
+    if (!svcSel || svcSel.days.length === 0) return;
+    if (svcDayOff(svcDate)) {
+      const first = dateChips.findIndex((_, i) => !svcDayOff(i));
+      if (first >= 0) setSvcDate(first);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [svcSel?.id, svcSel?.days?.length]);
+  // Keep the selected slot valid: when the day/slot set (or its load / the chosen
+  // professional) changes, snap to the first slot that isn't full — or clear it.
   useEffect(() => {
     if (!svcSel?.bookable) return;
     const iso = dateChips[svcDate]?.iso;
-    const open = iso ? svcSlots.filter((t) => !slotFull(iso, t)) : svcSlots;
+    const open = iso ? svcSlots.filter((t) => !(svcProviders.length === 0 && slotFull(iso, t)) && !slotStaffFull(iso, t)) : svcSlots;
     if (svcTime < 0 || !open.includes(svcTime)) setSvcTime(open[0] ?? -1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [svcSlots, svcSlotBusy]);
-  // Per date chip: is EVERY slot that day already full? (grey the day out). Only
-  // meaningful when hours + capacity are tracked; otherwise never "full".
+  }, [svcSlots, svcSlotBusy, svcBusy, svcStaff]);
+  // Per date chip: is EVERY slot that day already full? (grey the day out). Full =
+  // capacity-full (0059) for capacity businesses, or every eligible professional
+  // busy (0092) when a team exists.
   const svcDayFull = useMemo<boolean[]>(() => {
-    if (!svcSel?.bookable || !svcHasHours || svcSel.capMax <= 0) return dateChips.map(() => false);
+    if (!svcSel?.bookable || !svcHasHours || (svcSel.capMax <= 0 && svcProviders.length === 0)) return dateChips.map(() => false);
     return dateChips.map((c) => {
       const slots = bookingSlots(b.hours, b.hoursExceptions, parseISO(c.iso), parseDurMin(svcSel!.dur), now);
-      return slots.length > 0 && slots.every((t) => slotFull(c.iso, t));
+      return slots.length > 0 && slots.every((t) =>
+        (svcProviders.length === 0 ? slotFull(c.iso, t) : slotStaffFull(c.iso, t)));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [svcSel?.bookable, svcSel?.dur, svcSel?.capMax, svcHasHours, dateChips, b.hours, b.hoursExceptions, now, svcSlotBusy]);
+  }, [svcSel?.bookable, svcSel?.dur, svcSel?.capMax, svcHasHours, dateChips, b.hours, b.hoursExceptions, now, svcSlotBusy, svcBusy, svcStaff, svcProviders]);
 
   const confirmRental = async () => {
     if (rentIdx === null) return;
@@ -1662,16 +1785,23 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     );
   };
 
-  // Real service card (Servicios tab). booking on + bookable → Reservar; booking
-  // on + inquiry-only → Consultar; booking off (display-only) → no action button.
+  // Real service card (Servicios tab). Tapping the card opens the DETAIL sheet
+  // (description + extras — Booksy pattern); the button is the fast path straight
+  // to booking. booking on + bookable → Reservar; inquiry-only → Consultar;
+  // booking off (display-only) → no action button, detail still opens.
   const svcCard = (s: PubSvc) => {
     const canBook = svcBooking && s.bookable;
     const canInquire = svcBooking && !s.bookable;
     return (
-      <div key={s.id} className="flex items-start gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card">
+      <div key={s.id} onClick={() => { setSvcAddOns({}); setSvcInfo(s); }} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card">
         <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${s.tile})` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {s.img && <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          {s.badge && (
+            <span className={`absolute left-1 top-1 rounded-md px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wide ${s.badge === 'popular' ? 'bg-amber-bg text-amber-ink' : 'bg-lilac text-primary-dark'}`}>
+              {s.badge === 'popular' ? 'Popular' : L('Nuevo', 'New')}
+            </span>
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
@@ -1680,12 +1810,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           </div>
           <div className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-muted">{B(s.desc)}</div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-[10.5px] font-bold text-muted-2">{s.dur}</span>
+            <span className="flex items-center gap-1 text-[10.5px] font-bold text-muted-2"><Clock size={11} stroke={2.4} />{s.dur}</span>
             {s.deposit && <span className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')}</span>}
-            {s.addons.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{s.addons.length} {L('add-ons', 'add-ons')}</span>}
+            {s.addons.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{s.addons.length} extras</span>}
           </div>
           {(canBook || canInquire) && (
-            <button onClick={() => openSvc(pubToTarget(s))} className="mt-2.5 w-full cursor-pointer rounded-field bg-primary py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm sm:w-auto sm:px-5">
+            <button onClick={(e) => { e.stopPropagation(); openSvc(pubToTarget(s)); }} className="mt-2.5 w-full cursor-pointer rounded-field bg-primary py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm sm:w-auto sm:px-5">
               {canBook ? L('Reservar', 'Book') : L('Consultar', 'Ask')}
             </button>
           )}
@@ -3258,6 +3388,76 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         )}
       </Overlay>
 
+      {/* service DETAIL sheet — description + extras before scheduling (Booksy
+          pattern; layout from the Barbershop/Carwash prototypes). */}
+      <Overlay open={svcInfo !== null && svcSel === null} onClose={() => setSvcInfo(null)} width={440}>
+        {svcInfo !== null && svcSel === null && (() => {
+          const s = svcInfo;
+          const canBook = svcBooking && s.bookable;
+          const canInquire = svcBooking && !s.bookable;
+          const extras = s.addons.filter((a) => svcAddOns[a.id]);
+          const infoTotal = (s.price ?? 0) + extras.reduce((n, a) => n + a.price, 0);
+          return (
+            <>
+              <div className="relative -mx-4 -mt-4 h-[130px] overflow-hidden rounded-t-panel md:-mx-5 md:-mt-5 md:rounded-t-card" style={{ background: `repeating-linear-gradient(135deg,${s.tile})` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {s.img && <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                <button onClick={() => setSvcInfo(null)} className="absolute left-3 top-3 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card">
+                  <X size={15} stroke={2.6} className="text-ink" />
+                </button>
+                {s.badge && (
+                  <span className={`absolute right-3 top-3 rounded-md px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide ${s.badge === 'popular' ? 'bg-amber-bg text-amber-ink' : 'bg-lilac text-primary-dark'}`}>
+                    {s.badge === 'popular' ? 'Popular' : L('Nuevo', 'New')}
+                  </span>
+                )}
+              </div>
+              <div className="mt-4 text-[19px] font-extrabold leading-tight text-ink">{s.name}</div>
+              <div className="mt-1.5 flex items-center gap-3">
+                <span className="flex items-center gap-1 text-[12px] font-bold text-muted"><Clock size={13} stroke={2.4} />{s.dur}</span>
+                <span className="text-[14px] font-extrabold text-primary-dark">{svcPriceLabel(s)}</span>
+                {s.deposit && <span className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')}</span>}
+              </div>
+              <div className="mt-3 text-[13px] font-semibold leading-relaxed text-ink-2">{B(s.desc)}</div>
+              {s.addons.length > 0 && (
+                <>
+                  <div className="mb-2 mt-4 text-[13.5px] font-extrabold text-ink">{L('Agregar extras', 'Add extras')}</div>
+                  <div className="flex flex-col gap-2">
+                    {s.addons.map((a) => {
+                      const on = !!svcAddOns[a.id];
+                      return (
+                        <button key={a.id} onClick={() => setSvcAddOns((m) => ({ ...m, [a.id]: !on }))} className={`flex cursor-pointer items-center gap-3 rounded-field border-[1.5px] p-2.5 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                          <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={11} className="text-white" stroke={3.2} />}</span>
+                          <span className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-ink">{B(a.name)}</span>
+                          <span className="flex-none text-[12px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              {(canBook || canInquire) ? (
+                <div className="mt-5 flex items-center gap-3">
+                  {s.price != null && infoTotal > 0 && (
+                    <span className="flex-none">
+                      <span className="block text-[10.5px] font-semibold text-muted">Total</span>
+                      <span className="block text-[18px] font-extrabold text-ink">{money(infoTotal)}</span>
+                    </span>
+                  )}
+                  <PrimaryBtn className="min-w-0 flex-1" onClick={() => openSvc(pubToTarget(s), { keepExtras: true })}>
+                    {canBook ? L('Reservar cita', 'Book appointment') : L('Solicitar información', 'Request info')}
+                  </PrimaryBtn>
+                </div>
+              ) : (
+                <div className="mt-5 flex items-center gap-2.5 rounded-tile bg-lilac-2 px-3.5 py-2.5">
+                  <Phone size={15} stroke={2.2} className="flex-none text-primary-dark" />
+                  <span className="text-[12px] font-semibold leading-snug text-ink-soft">{L('Para reservar, llama o visita el negocio.', 'To book, call or visit the business.')}</span>
+                </div>
+              )}
+            </>
+          );
+        })()}
+      </Overlay>
+
       {/* service booking modal */}
       <Overlay open={svcSel !== null} onClose={() => setSvcSel(null)} width={440}>
         {svcSel !== null && !svcDone && (() => {
@@ -3270,11 +3470,60 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           const svcPayToday = +(total * 1.05 - svcDiscount).toFixed(2);
           return (
             <>
-              <OverlayTitle title={svcSel.name} onClose={() => setSvcSel(null)} />
+              <OverlayTitle title={svcResched ? L('Reagendar cita', 'Reschedule appointment') : svcSel.name} onClose={() => setSvcSel(null)} />
               <div className="flex items-center gap-2 text-[12.5px] font-semibold text-muted">
-                <span className="min-w-0 flex-1">{L(svcSel.descEs, svcSel.descEn)}</span>
+                <span className="min-w-0 flex-1">{svcResched ? `${svcSel.name} · ${svcSel.dur}` : L(svcSel.descEs, svcSel.descEn)}</span>
                 {svcSel.priceLabel && <span className="flex-none font-extrabold text-primary-dark">{B(svcSel.priceLabel)}</span>}
               </div>
+
+              {/* professional picker — the Booksy signature step. "Cualquiera" =
+                  first available; a specific pro narrows the open slots to theirs. */}
+              {svcSel.bookable && svcProviders.length > 0 && (
+                <>
+                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Elige tu profesional', 'Pick your professional')}</div>
+                  <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+                    {[{ id: 'any', name: L('Cualquiera', 'Anyone'), tag: L('Primer disponible', 'First available'), color: '#9A8FB0', photo: undefined as string | undefined },
+                      ...svcProviders.map((p) => ({ id: p.id, name: p.name, tag: B(p.tag), color: p.color, photo: p.photo }))].map((p) => {
+                      const on = svcStaff === p.id;
+                      return (
+                        <button key={p.id} onClick={() => setSvcStaff(p.id)} className="w-[72px] flex-none cursor-pointer text-center">
+                          <span className={`relative mx-auto flex h-[58px] w-[58px] items-center justify-center overflow-hidden rounded-full text-[17px] font-extrabold text-white ${on ? 'ring-[3px] ring-ink ring-offset-2' : ''}`} style={{ background: p.color }}>
+                            {p.photo
+                              // eslint-disable-next-line @next/next/no-img-element
+                              ? <img src={p.photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                              : p.id === 'any' ? '★' : initials(p.name)}
+                            {on && (
+                              <span className="absolute bottom-0 right-0 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-ink">
+                                <Check size={9} stroke={4} className="text-white" />
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-1.5 block truncate text-[11px] font-extrabold text-ink">{p.name}</span>
+                          <span className="block truncate text-[9px] font-semibold text-muted">{p.tag}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* price variant (vehicle type, home size…) — delta re-priced server-side */}
+              {svcSel.variant && !svcResched && (
+                <>
+                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{B(svcSel.variant.label)}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {svcSel.variant.options.map((o, i) => {
+                      const on = svcVar === i;
+                      return (
+                        <button key={i} onClick={() => setSvcVar(i)} className={`cursor-pointer rounded-field border-[1.5px] px-3 py-2.5 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                          <span className="block truncate text-[12.5px] font-extrabold text-ink">{B(o.name)}</span>
+                          <span className={`block text-[10.5px] font-bold ${on ? 'text-primary-dark' : 'text-muted'}`}>{o.delta > 0 ? `+${money(o.delta)}` : L('Incluido', 'Included')}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
 
               {/* per-person services → party size */}
               {svcSel.priceType === 'persona' && (
@@ -3291,13 +3540,15 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{svcSel.bookable ? L('Elige fecha', 'Pick a date') : L('Fecha preferida', 'Preferred date')}</div>
               <div className="no-scrollbar flex gap-2 overflow-x-auto">
                 {dateChips.map((d, i) => {
-                  const full = svcSel.bookable && (svcDayFull[i] ?? false);
-                  const on = svcDate === i && !full;
+                  const off = svcDayOff(i); // weekday the service doesn't offer
+                  const full = !off && svcSel.bookable && (svcDayFull[i] ?? false);
+                  const on = svcDate === i && !full && !off;
                   return (
-                    <button key={i} disabled={full} onClick={() => setSvcDate(i)} className={`flex-none rounded-btn px-3.5 py-2 text-center ${on ? 'bg-primary text-white' : full ? 'cursor-not-allowed bg-lilac-2 opacity-50' : 'cursor-pointer bg-lilac-2 text-ink-soft'}`}>
+                    <button key={i} disabled={full || off} onClick={() => setSvcDate(i)} className={`flex-none rounded-btn px-3.5 py-2 text-center ${on ? 'bg-primary text-white' : full || off ? 'cursor-not-allowed bg-lilac-2 opacity-50' : 'cursor-pointer bg-lilac-2 text-ink-soft'}`}>
                       <span className="block text-[12.5px] font-extrabold">{B(d.lab)}</span>
                       <span className={`block text-[10.5px] font-bold ${on ? 'text-white/80' : 'text-muted'}`}>{B(d.sub)}</span>
-                      {full ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-pink-dark">{L('Lleno', 'Full')}</span> : null}
+                      {full ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-pink-dark">{L('Lleno', 'Full')}</span>
+                        : off ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-muted">{L('No abre', 'Closed')}</span> : null}
                     </button>
                   );
                 })}
@@ -3313,11 +3564,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                       {L('Cerrado ese día — elige otra fecha', 'Closed that day — pick another date')}
                     </div>
                   ) : (
-                    <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                    <div className="flex flex-wrap gap-2">
                       {svcSlots.map((t) => {
                         const iso = dateChips[svcDate]?.iso;
-                        const full = !!iso && slotFull(iso, t);
-                        const left = iso && svcSel!.capMax > 0 && svcSel!.capMax < 9999 ? svcSel!.capMax - slotSeats(iso, t) : null;
+                        // full = capacity-full (no team) OR the chosen pro / every pro busy
+                        const full = !!iso && ((svcProviders.length === 0 && slotFull(iso, t)) || slotStaffFull(iso, t));
+                        const left = iso && svcProviders.length === 0 && svcSel!.capMax > 0 && svcSel!.capMax < 9999 ? svcSel!.capMax - slotSeats(iso, t) : null;
                         const sel = svcTime === t && !full;
                         return (
                           <button
@@ -3327,7 +3579,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                             className={`flex-none rounded-btn px-3.5 py-2 text-center ${sel ? 'bg-primary text-white' : full ? 'cursor-not-allowed bg-lilac-2 opacity-50' : 'cursor-pointer bg-lilac-2 text-ink-soft'}`}
                           >
                             <span className="block text-[12.5px] font-extrabold">{fmtShort(t)}</span>
-                            {full ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-pink-dark">{L('Lleno', 'Full')}</span>
+                            {full ? <span className="mt-0.5 block text-[8.5px] font-extrabold text-pink-dark">{L('Ocupado', 'Taken')}</span>
                               : left != null && left <= 3 ? <span className={`mt-0.5 block text-[8.5px] font-extrabold ${sel ? 'text-white/80' : 'text-amber-ink'}`}>{left} {L('libres', 'left')}</span> : null}
                           </button>
                         );
@@ -3356,46 +3608,125 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 </>
               )}
 
+              {/* note to the professional ("fade medio, barba perfilada…") */}
+              {svcSel.bookable && !svcResched && (
+                <>
+                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Notas para el profesional', 'Notes for the professional')} <span className="font-bold text-muted">· {L('opcional', 'optional')}</span></div>
+                  <input
+                    value={svcNote}
+                    onChange={(e) => setSvcNote(e.target.value)}
+                    maxLength={300}
+                    placeholder={L('Ej. fade medio, barba perfilada…', 'E.g. mid fade, beard lineup…')}
+                    className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2 focus:border-primary"
+                  />
+                </>
+              )}
+
               {/* promo code — only when paying a deposit online (a code has no effect
                   on a cash/inquiry booking). The business creates it in Promociones. */}
-              {svcOnlineDep && (
+              {svcOnlineDep && !svcResched && (
                 <PromoField slug={b.slug} scope="service" subtotal={total} applied={svcPromo}
                   onApply={setSvcPromo} onClear={() => setSvcPromo(null)} L={L} money={money} />
               )}
 
-              {/* total + deposit summary (numeric-priced services) */}
-              {showTotal && (
+              {/* summary card: lines → total → how you pay (Booksy/Fresha pattern) */}
+              {showTotal && !svcResched && (
                 <div className="mt-4 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
-                  <div className="flex justify-between"><span>{L('Total estimado', 'Estimated total')}</span><span className="text-[14px] font-extrabold text-ink">{money(total)}</span></div>
+                  <div className="flex justify-between">
+                    <span className="min-w-0 truncate pr-2">{svcSel.name}{svcSel.variant ? ` (${svcVarLabel()})` : ''}{svcSel.priceType === 'persona' ? ` × ${Math.max(1, svcPersons)}` : ''}</span>
+                    <span className="flex-none font-extrabold text-ink">{money(total - svcChosenAddons().reduce((n, a) => n + a.price, 0))}</span>
+                  </div>
+                  {svcChosenAddons().map((a) => (
+                    <div key={a.id} className="mt-0.5 flex justify-between text-[11.5px]">
+                      <span className="min-w-0 truncate pr-2">{B(a.name)}</span>
+                      <span className="flex-none font-extrabold text-ink">+{money(a.price)}</span>
+                    </div>
+                  ))}
+                  <div className="mt-1.5 flex justify-between border-t border-lilac-line pt-1.5"><span>{L('Total', 'Total')}</span><span className="text-[14px] font-extrabold text-ink">{money(total)}</span></div>
                   {svcOnlineDep
                     ? <>
-                        <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-ink">{money(total)}</span></div>
                         <div className="mt-0.5 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span className="font-extrabold text-ink">{money(+(total * 0.05).toFixed(2))}</span></div>
                         {svcDiscount > 0 && <div className="mt-0.5 flex justify-between text-[11.5px] text-green-dark"><span>{L('Descuento', 'Discount')}{svcPromo ? ` · ${svcPromo.code}` : ''}</span><span className="font-extrabold">−{money(svcDiscount)}</span></div>}
-                        <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas hoy', 'You pay today')}</span><span className="font-extrabold text-primary-dark">{money(svcPayToday)}</span></div>
+                        <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas hoy (asegura tu cita)', 'You pay today (secures your spot)')}</span><span className="font-extrabold text-primary-dark">{money(svcPayToday)}</span></div>
                       </>
-                    : svcSel.deposit && <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Depósito al reservar', 'Deposit at booking')}</span><span className="font-extrabold text-primary-dark">{money(total)}</span></div>}
+                    : (
+                      <div className="mt-2 flex items-center gap-2 rounded-btn bg-amber-bg px-2.5 py-2">
+                        <HandStop size={14} stroke={2.2} className="flex-none text-amber-ink" />
+                        <span className="text-[11px] font-bold text-amber-ink">{L('Pagas en el local al terminar', 'Pay at the venue when done')}</span>
+                      </div>
+                    )}
                 </div>
               )}
 
               <PrimaryBtn className="mt-5" onClick={confirmBooking}>
-                {svcOnlineDep
-                  ? `${L('Pagar reserva · ', 'Pay booking · ')}${money(svcPayToday)}`
-                  : svcSel.bookable ? L('Solicitar reserva', 'Request booking') : L('Solicitar información', 'Request info')}
+                {svcResched
+                  ? L('Confirmar nuevo horario', 'Confirm new time')
+                  : svcOnlineDep
+                    ? `${L('Pagar reserva · ', 'Pay booking · ')}${money(svcPayToday)}`
+                    : svcSel.bookable
+                      ? showTotal ? `${L('Confirmar cita · ', 'Confirm appointment · ')}${money(total)}` : L('Solicitar reserva', 'Request booking')
+                      : L('Solicitar información', 'Request info')}
               </PrimaryBtn>
             </>
           );
         })()}
         {svcSel !== null && svcDone && (
           <div className="flex flex-col items-center px-2 py-6 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-              <Check size={28} stroke={3} className="text-green" />
+            <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary shadow-cta">
+              <Check size={32} stroke={3} className="text-white" />
             </span>
-            <div className="mt-4 text-[19px] font-extrabold text-ink">{svcSel.bookable ? L('¡Solicitud enviada!', 'Request sent!') : L('¡Consulta enviada!', 'Inquiry sent!')}</div>
-            <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
-              {L('Te contactaremos pronto para confirmar los detalles.', "We'll contact you soon to confirm the details.")}
+            <div className="mt-4 text-[21px] font-extrabold text-ink">
+              {svcDoneInfo?.resched ? L('¡Cita reagendada!', 'Appointment moved!') : svcSel.bookable ? L('¡Cita agendada!', 'Appointment booked!') : L('¡Consulta enviada!', 'Inquiry sent!')}
             </div>
-            <PrimaryBtn className="mt-5" onClick={() => { setSvcSel(null); setSvcDone(false); }}>
+            <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
+              {svcSel.bookable
+                ? L('El negocio confirmará tu cita — te avisamos al instante.', 'The business will confirm your appointment — we’ll notify you right away.')
+                : L('Te contactaremos pronto para confirmar los detalles.', "We'll contact you soon to confirm the details.")}
+            </div>
+            {/* appointment summary card (service · pro · when · total) */}
+            {svcDoneInfo && svcSel.bookable && (
+              <div className="mt-4 w-full max-w-[300px] rounded-card-sm border border-hair bg-white p-4 text-left shadow-card">
+                <div className="text-[14px] font-extrabold text-ink">{svcDoneInfo.name}</div>
+                {svcDoneInfo.staff && (
+                  <div className="mt-2.5 flex items-center gap-2">
+                    <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-primary text-[11px] font-extrabold text-white">{initials(svcDoneInfo.staff)}</span>
+                    <span className="text-[12.5px] font-bold text-ink-soft">{L('con', 'with')} {svcDoneInfo.staff}</span>
+                  </div>
+                )}
+                <div className="mt-2.5 flex items-center gap-2 border-t border-hair pt-2.5">
+                  <Clock size={14} stroke={2.2} className="flex-none text-primary-dark" />
+                  <span className="text-[12.5px] font-bold text-ink-soft">{svcDoneInfo.when}</span>
+                </div>
+                {svcDoneInfo.total > 0 && (
+                  <div className="mt-2.5 flex items-center justify-between border-t border-hair pt-2.5">
+                    <span className="text-[12px] font-bold text-muted">{L('Total a pagar en el local', 'Total to pay at the venue')}</span>
+                    <span className="text-[13px] font-extrabold text-primary-dark">{money(svcDoneInfo.total)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {svcDoneInfo && svcSel.bookable && (
+              <button
+                onClick={() => {
+                  const start = new Date(svcDoneInfo.startISO);
+                  const end = new Date(start.getTime() + svcDoneInfo.durMin * 60000);
+                  const esc = (s: string) => s.replace(/([\\;,])/g, '\\$1');
+                  const p2 = (n: number) => String(n).padStart(2, '0');
+                  const stamp = (d: Date) => `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}T${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}00Z`;
+                  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ToLatino//Citas//ES', 'BEGIN:VEVENT',
+                    `UID:${start.getTime()}@tolatino`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
+                    `SUMMARY:${esc(`${svcDoneInfo.name} · ${b.name}`)}`, `LOCATION:${esc(b.address ?? b.name)}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+                  const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+                  const a = document.createElement('a');
+                  a.href = url; a.download = 'cita.ics'; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="mt-3 w-full max-w-[300px] cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-3 text-[13px] font-extrabold text-primary-dark"
+              >
+                {L('Agregar al calendario', 'Add to calendar')}
+              </button>
+            )}
+            <PrimaryBtn className="mt-3 w-full max-w-[300px]" onClick={() => { setSvcSel(null); setSvcDone(false); setSvcDoneInfo(null); }}>
               {L('Listo', 'Done')}
             </PrimaryBtn>
           </div>

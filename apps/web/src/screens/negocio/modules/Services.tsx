@@ -20,7 +20,7 @@ import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { Switch } from '@/components/ui';
+import { Overlay, OverlayTitle, Switch } from '@/components/ui';
 import { QuickTagSheet } from '@/components/QuickTagSheet';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -32,25 +32,30 @@ import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
 import { deleteBizItem, insertBizItem, listBizItems, updateBizItem, type BizItemRow, type NewBizItem } from '@/lib/bizItems';
 import {
   defaultServiceConfig, demoServiceConfig, normalizeServiceConfig,
-  type ServiceAddon, type ServiceCategory, type ServiceConfig,
+  type ServiceAddon, type ServiceCategory, type ServiceConfig, type SvcProvider,
 } from '@/lib/serviceConfig';
-import { ServiceAddonEditor, ServiceCategoryEditor, svcCatIcon } from '@/screens/negocio/modules/ServiceEditors';
+import { ServiceAddonEditor, ServiceCategoryEditor, ServiceProviderEditor, svcCatIcon } from '@/screens/negocio/modules/ServiceEditors';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
 const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 
 type PriceType = 'fijo' | 'persona' | 'cotiza';
+// Optional single-choice price variant (car-wash vehicle type, home size…): each
+// option ADDS `delta` to the base price. Lives in attrs.variants; the consumer
+// booking sheet renders it and the checkout re-prices the delta server-side.
+type SvcVariant = { es: string; en?: string; options: { es: string; en?: string; delta: number }[] };
 type Svc = {
   id: number; dbId?: string; name: string; es: string; en: string; cat: string;
   price: string; priceType: PriceType; dur: string; bookable: boolean; deposit: boolean;
   addons: string[]; tags: string[]; days: string[]; capacity: string; imageUrl?: string;
+  variants?: SvcVariant | null;
   extra?: Record<string, unknown>;
 };
 
 const FALLBACK_CAT: ServiceCategory = { id: '_', es: 'Servicios', en: 'Services', icon: 'sparkles', tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', visible: true };
 const DAY_KEYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
-const KNOWN_ATTRS = new Set(['en', 'priceType', 'dur', 'bookable', 'deposit', 'addons', 'tags', 'days', 'capacity']);
+const KNOWN_ATTRS = new Set(['en', 'priceType', 'dur', 'bookable', 'deposit', 'addons', 'tags', 'days', 'capacity', 'variants']);
 function rowToSvc(r: BizItemRow, idx: number): Svc {
   const a = (r.attrs ?? {}) as Record<string, unknown>;
   const extra: Record<string, unknown> = {};
@@ -73,6 +78,7 @@ function rowToSvc(r: BizItemRow, idx: number): Svc {
     days: (a.days as string[]) ?? ['Vie', 'Sáb', 'Dom'],
     capacity: String(a.capacity ?? '1'),
     imageUrl: r.image_url ?? undefined,
+    variants: (a.variants as SvcVariant | undefined) ?? null,
     extra,
   };
 }
@@ -80,6 +86,7 @@ const svcAttrs = (s: Svc): Record<string, unknown> => ({
   ...(s.extra ?? {}),
   en: s.en, priceType: s.priceType, dur: s.dur, bookable: s.bookable, deposit: s.deposit,
   addons: s.addons, tags: s.tags, days: s.days, capacity: s.capacity,
+  variants: s.variants && s.variants.options.length > 0 ? s.variants : null,
 });
 function svcToRow(s: Svc, businessId: string, sort: number): NewBizItem {
   return {
@@ -89,11 +96,14 @@ function svcToRow(s: Svc, businessId: string, sort: number): NewBizItem {
   };
 }
 
-// ---------- bookings (Reservas) model — real business_bookings (0027) ----------
-type BkStatus = 'pending' | 'confirmed' | 'seated' | 'done' | 'cancelled';
+// ---------- bookings (Reservas) model — real business_bookings (0027 + 0092) ----------
+type BkStatus = 'pending' | 'confirmed' | 'seated' | 'done' | 'cancelled' | 'no_show';
 type BookingRow = {
   id: string; service_name: string | null; customer_name: string; party_size: number | null;
   starts_at: string; status: BkStatus; deposit: number | null; notes: string | null; created_at: string;
+  // booking-pro fields (0092)
+  duration_min: number | null; staff_id: string | null; staff_name: string | null;
+  addons: { n: string; p: number }[] | null; variant: string | null; total: number | null; customer_phone: string | null;
 };
 const BK_STATUS: Record<BkStatus, { es: string; en: string; cls: string }> = {
   pending: { es: 'Por confirmar', en: 'Pending', cls: 'bg-pink-bg text-pink-dark' },
@@ -101,12 +111,22 @@ const BK_STATUS: Record<BkStatus, { es: string; en: string; cls: string }> = {
   seated: { es: 'En curso', en: 'In progress', cls: 'bg-lilac-2 text-primary-dark' },
   done: { es: 'Completada', en: 'Done', cls: 'bg-lilac-2 text-ink-2' },
   cancelled: { es: 'Cancelada', en: 'Cancelled', cls: 'bg-lilac-2 text-muted-2' },
+  no_show: { es: 'No vino', en: 'No-show', cls: 'bg-pink-bg text-pink-dark' },
 };
 const bookingWhen = (iso: string, es: boolean): string => {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString(es ? 'es-US' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' +
     d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+const bookingHour = (iso: string): string => {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+// Local yyyy-mm-dd of a timestamp — keys the agenda's day strip.
+const bookingDayKey = (iso: string): string => {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
 const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
@@ -176,7 +196,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const reloadBookings = () => {
     if (!persistable || !real || !supabase) { setBookingRows(null); return; }
     supabase.from('business_bookings')
-      .select('id,service_name,customer_name,party_size,starts_at,status,deposit,notes,created_at')
+      .select('id,service_name,customer_name,party_size,starts_at,status,deposit,notes,created_at,duration_min,staff_id,staff_name,addons,variant,total,customer_phone')
       .eq('business_id', real.id).order('starts_at', { ascending: true })
       .then(({ data, error }) => setBookingRows(error || !Array.isArray(data) ? [] : (data as unknown as BookingRow[])));
   };
@@ -186,11 +206,42 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     if (persistable && supabase) await supabase.from('business_bookings').update({ status }).eq('id', id);
     flash(L('Reserva actualizada', 'Booking updated'));
   };
+  // Walk-in / phone booking: the owner creates it directly as CONFIRMED. The
+  // per-professional overlap guard (0092) still applies — a conflicting slot errors.
+  const submitWalkIn = async () => {
+    if (!persistable || !real || !supabase || walkBusy) return;
+    const svc = services.find((s) => s.id === walk.svcId);
+    if (!svc || !walk.name.trim() || !walk.day) { flash(L('Completa servicio, cliente y fecha', 'Fill in service, customer & date')); return; }
+    setWalkBusy(true);
+    const provider = cfg.providers.find((p) => p.id === walk.staff);
+    const h = /(\d+)\s*h/i.exec(svc.dur); const m = /(\d+)\s*m/i.exec(svc.dur);
+    const durMin = Math.max(15, (h ? Number(h[1]) * 60 : 0) + (m ? Number(m[1]) : 0) || parseInt(svc.dur, 10) || 60);
+    const total = svc.priceType === 'cotiza' ? null : Number(svc.price) || null;
+    const { error } = await supabase.from('business_bookings').insert({
+      business_id: real.id, service_name: svc.name, service_id: svc.dbId ?? null,
+      customer_name: walk.name.trim(), customer_phone: walk.phone.trim() || null,
+      starts_at: new Date(`${walk.day}T${walk.time}:00`).toISOString(), status: 'confirmed',
+      duration_min: durMin, staff_id: provider?.id ?? null, staff_name: provider?.name ?? null,
+      total, notes: walk.note.trim() || null,
+    });
+    setWalkBusy(false);
+    if (error) {
+      flash(/staff_slot_taken/.test(error.message) ? L('Ese profesional ya tiene una cita a esa hora', 'That professional already has an appointment then') : L('No se pudo crear la cita', "Couldn't create the appointment"));
+      return;
+    }
+    setWalkOpen(false);
+    reloadBookings();
+    flash(L('Cita creada', 'Appointment created'));
+  };
 
   // ── ui state ────────────────────────────────────────────────────────────────
   const [mode, setMode] = useState<'services' | 'bookings'>(tab === 'bookings' ? 'bookings' : 'services');
+  // The sidebar has BOTH "Servicios" and "Reservas" nav items routing into this
+  // one module — follow the nav (tab prop) whenever it changes, or the module
+  // stays stuck on whichever mode it mounted with.
+  useEffect(() => { setMode(tab === 'bookings' ? 'bookings' : 'services'); }, [tab]);
   // Services sub-tab mirrored to ?sub= (refresh-safe; Panel clears it on switch).
-  const [svcSub, setSvcSub] = useUrlTab<'catalog' | 'cats' | 'addons'>('sub', 'catalog', (v) => ['catalog', 'cats', 'addons'].includes(v));
+  const [svcSub, setSvcSub] = useUrlTab<'catalog' | 'cats' | 'addons' | 'pros'>('sub', 'catalog', (v) => ['catalog', 'cats', 'addons', 'pros'].includes(v));
   const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [wizStep, setWizStep] = useState(0);
@@ -200,7 +251,16 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [toast, setToast] = useState('');
   const [catSheet, setCatSheet] = useState<{ open: boolean; initial: ServiceCategory | null }>({ open: false, initial: null });
   const [addonSheet, setAddonSheet] = useState<{ open: boolean; initial: ServiceAddon | null }>({ open: false, initial: null });
+  const [proSheet, setProSheet] = useState<{ open: boolean; initial: SvcProvider | null }>({ open: false, initial: null });
   const [bookFilter, setBookFilter] = useState<'all' | BkStatus>('all');
+  // Agenda (Reservas): selected day ('all' = every date) + professional filter.
+  const [bkDay, setBkDay] = useState<string>('all');
+  const [bkStaff, setBkStaff] = useState<string>('all');
+  // Walk-in ("+ Agendar cita"): the owner books a customer by hand — phone
+  // bookings, someone at the counter. Inserts directly as CONFIRMED.
+  const [walkOpen, setWalkOpen] = useState(false);
+  const [walk, setWalk] = useState({ svcId: 0, name: '', phone: '', day: '', time: '12:00', staff: '', note: '' });
+  const [walkBusy, setWalkBusy] = useState(false);
   const [catFromWiz, setCatFromWiz] = useState(false); // category sheet opened from the wizard → auto-select on create
   const [tagSheet, setTagSheet] = useState(false); // quick "new tag" popup
 
@@ -247,6 +307,31 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const next = [...cfg.categories]; [next[i], next[j]] = [next[j], next[i]]; saveCfg({ ...cfg, categories: next });
   };
   const toggleCategory = (id: string) => saveCfg({ ...cfg, categories: cfg.categories.map((x) => (x.id === id ? { ...x, visible: !x.visible } : x)) });
+  // Professionals (the public bookable team — service_config.providers). Declared
+  // BEFORE the wizard/success early returns: editorSheets() renders there too.
+  const upsertProvider = (p: SvcProvider) => {
+    const exists = cfg.providers.some((x) => x.id === p.id);
+    saveCfg({ ...cfg, providers: exists ? cfg.providers.map((x) => (x.id === p.id ? p : x)) : [...cfg.providers, p] });
+    flash(exists ? L('Profesional guardado', 'Professional saved') : L('Profesional agregado', 'Professional added'));
+  };
+  const deleteProvider = (id: string) => {
+    saveCfg({ ...cfg, providers: cfg.providers.filter((x) => x.id !== id) });
+    flash(L('Profesional eliminado', 'Professional removed'));
+  };
+  // 14-day agenda strip (today first) — a hook, so it must run on EVERY render
+  // (the wizard view early-returns below). Used by the agenda + walk-in sheet.
+  const agendaDays = useMemo(() => {
+    const wd = es ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const base = new Date();
+    return Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return { key, lab: i === 0 ? L('Hoy', 'Today') : i === 1 ? L('Mañana', 'Tmrw') : wd[d.getDay()], day: d.getDate() };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [es]);
+  const walkServices = services.filter((s) => s.bookable);
+  const providerColor = (id: string | null) => cfg.providers.find((p) => p.id === id)?.color ?? '#7B61FF';
   const upsertAddon = (a: ServiceAddon) => {
     const exists = cfg.addons.some((x) => x.id === a.id);
     saveCfg({ ...cfg, addons: exists ? cfg.addons.map((x) => (x.id === a.id ? a : x)) : [...cfg.addons, a] });
@@ -287,6 +372,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       name: s.name, descEs: s.es, descEn: s.en, cat: s.cat, price: s.price, priceType: s.priceType,
       dur: s.dur, bookable: s.bookable, deposit: s.deposit, addons: [...s.addons], tags: [...s.tags],
       days: [...s.days], capacity: s.capacity, photoUrl: s.imageUrl ?? '',
+      varLabel: s.variants?.es ?? '', varOpts: (s.variants?.options ?? []).map((o) => ({ es: o.es, delta: o.delta ? String(o.delta) : '' })),
     });
     setWizStep(0); setWizMax(wizSteps.length - 1); setView('wizard');
   };
@@ -295,6 +381,10 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     cat: draft.cat, price: draft.price, priceType: draft.priceType, dur: draft.dur, bookable: draft.bookable,
     deposit: draft.deposit, addons: draft.addons, tags: draft.tags, days: draft.days, capacity: draft.capacity,
     imageUrl: draft.photoUrl || undefined,
+    variants: (() => {
+      const opts = draft.varOpts.filter((o) => o.es.trim()).map((o) => ({ es: o.es.trim(), delta: Math.max(0, Number(o.delta) || 0) }));
+      return opts.length > 0 ? { es: draft.varLabel.trim() || L('Opción', 'Option'), options: opts } : null;
+    })(),
   });
   const addFromDraft = () => { const s: Svc = { id: nextId(), ...draftFields() }; setServices((l) => [s, ...l]); persistNew(s); clearDraft(draftKey); };
   const saveFromDraft = () => {
@@ -494,6 +584,35 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     </div>
                     <Switch big on={draft.deposit} onClick={() => upD({ deposit: !draft.deposit })} />
                   </div>
+
+                  {/* Price variants — optional single-choice group that ADDS to the
+                      base price (car wash: vehicle type; cleaning: home size…). */}
+                  <div className="rounded-btn-lg border border-hair bg-app p-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[12.5px] font-bold text-ink">{L('Variantes de precio', 'Price variants')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
+                        <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('El cliente elige UNA opción que suma al precio (ej. tipo de vehículo).', 'The customer picks ONE option that adds to the price (e.g. vehicle type).')}</div>
+                      </div>
+                      <Switch big on={draft.varOpts.length > 0} onClick={() => upD(draft.varOpts.length > 0 ? { varOpts: [], varLabel: '' } : { varOpts: [{ es: '', delta: '' }, { es: '', delta: '' }], varLabel: draft.varLabel })} />
+                    </div>
+                    {draft.varOpts.length > 0 && (
+                      <div className="mt-3 flex flex-col gap-2">
+                        <input value={draft.varLabel} onChange={(e) => upD({ varLabel: e.target.value })} placeholder={L('Nombre del grupo — ej. Tipo de vehículo', 'Group name — e.g. Vehicle type')} className={inputCls} />
+                        {draft.varOpts.map((o, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <input value={o.es} onChange={(e) => upD({ varOpts: draft.varOpts.map((x, j) => (j === i ? { ...x, es: e.target.value } : x)) })} placeholder={L(`Opción ${i + 1} — ej. SUV / Crossover`, `Option ${i + 1} — e.g. SUV / Crossover`)} className={inputCls} />
+                            <div className="flex w-[110px] flex-none items-center rounded-field border-[1.5px] border-lilac-line bg-white px-2.5 focus-within:border-primary">
+                              <span className="text-[12px] font-bold text-muted-2">+$</span>
+                              <input value={o.delta} onChange={(e) => upD({ varOpts: draft.varOpts.map((x, j) => (j === i ? { ...x, delta: e.target.value.replace(/[^0-9.]/g, '') } : x)) })} placeholder="0" inputMode="decimal" className="min-w-0 flex-1 bg-transparent px-1 py-3 text-[13px] font-semibold text-ink outline-none" />
+                            </div>
+                            <button onClick={() => upD({ varOpts: draft.varOpts.filter((_, j) => j !== i) })} aria-label={L('Quitar', 'Remove')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-btn border-[1.5px] border-lilac-line bg-white text-muted"><Trash2 size={14} stroke={2.2} /></button>
+                          </div>
+                        ))}
+                        <button onClick={() => upD({ varOpts: [...draft.varOpts, { es: '', delta: '' }] })} className="cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-white py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar opción', 'Add option')}</button>
+                        <div className="text-[10px] font-medium text-muted-2">{L('La primera opción suele ser la base (+$0 = Incluido).', 'The first option is usually the base (+$0 = Included).')}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -612,7 +731,96 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <>
         <ServiceCategoryEditor open={catSheet.open} onClose={() => { setCatSheet((s) => ({ ...s, open: false })); setCatFromWiz(false); }} L={L} initial={catSheet.initial} itemCount={catSheet.initial ? countIn(catSheet.initial.id) : 0} onSave={upsertCategory} onDelete={deleteCategory} />
         <ServiceAddonEditor open={addonSheet.open} onClose={() => setAddonSheet((s) => ({ ...s, open: false }))} L={L} initial={addonSheet.initial} usedCount={addonSheet.initial ? addonUsedBy(addonSheet.initial.id) : 0} onSave={upsertAddon} onDelete={deleteAddon} />
+        <ServiceProviderEditor
+          open={proSheet.open}
+          onClose={() => setProSheet((s) => ({ ...s, open: false }))}
+          L={L}
+          initial={proSheet.initial}
+          services={services.filter((s) => s.dbId && s.bookable).map((s) => ({ id: s.dbId!, name: s.name }))}
+          onSave={upsertProvider}
+          onDelete={deleteProvider}
+          onPickPhoto={async (file) => {
+            try { return !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 800); }
+            catch { flash(L('No se pudo subir la foto.', "Couldn't upload the photo.")); return null; }
+          }}
+        />
+        {walkInSheet()}
       </>
+    );
+  }
+
+  // Walk-in / phone booking sheet ("+ Agendar cita").
+  function walkInSheet() {
+    const svc = services.find((s) => s.id === walk.svcId);
+    const times = Array.from({ length: 25 }, (_, i) => {
+      const min = 8 * 60 + i * 30; // 8:00 → 20:00 every 30 min
+      return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+    });
+    const activePros = cfg.providers.filter((p) => p.active !== false);
+    return (
+      <Overlay open={walkOpen} onClose={() => setWalkOpen(false)} width={440}>
+        <OverlayTitle title={L('Agendar cita', 'Add appointment')} onClose={() => setWalkOpen(false)} />
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <div className={fieldLabel}>{L('Servicio', 'Service')} *</div>
+            <div className="flex flex-wrap gap-1.5">
+              {walkServices.map((s) => (
+                <button key={s.id} onClick={() => setWalk((w) => ({ ...w, svcId: s.id }))} className={`cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.svcId === s.id ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1"><div className={fieldLabel}>{L('Cliente', 'Customer')} *</div><input value={walk.name} onChange={(e) => setWalk((w) => ({ ...w, name: e.target.value }))} placeholder={L('Nombre', 'Name')} className={inputCls} /></div>
+            <div className="flex-1"><div className={fieldLabel}>{L('Teléfono', 'Phone')}</div><input value={walk.phone} onChange={(e) => setWalk((w) => ({ ...w, phone: e.target.value }))} placeholder={L('Opcional', 'Optional')} inputMode="tel" className={inputCls} /></div>
+          </div>
+          <div>
+            <div className={fieldLabel}>{L('Fecha', 'Date')} *</div>
+            <ChipRow className="-mx-1 px-1">
+              {agendaDays.map((d) => (
+                <button key={d.key} onClick={() => setWalk((w) => ({ ...w, day: d.key }))} className={`flex-none cursor-pointer rounded-btn px-2.5 py-1.5 text-center ${walk.day === d.key ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                  <span className={`block text-[9.5px] font-bold ${walk.day === d.key ? 'text-white/80' : 'text-muted'}`}>{d.lab}</span>
+                  <span className="block text-[13px] font-extrabold leading-tight">{d.day}</span>
+                </button>
+              ))}
+            </ChipRow>
+          </div>
+          <div>
+            <div className={fieldLabel}>{L('Hora', 'Time')} *</div>
+            <ChipRow className="-mx-1 px-1">
+              {times.map((t) => (
+                <button key={t} onClick={() => setWalk((w) => ({ ...w, time: t }))} className={`flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[11px] font-extrabold ${walk.time === t ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>{t}</button>
+              ))}
+            </ChipRow>
+          </div>
+          {activePros.length > 0 && (
+            <div>
+              <div className={fieldLabel}>{L('Profesional', 'Professional')}</div>
+              <div className="flex flex-wrap gap-1.5">
+                <button onClick={() => setWalk((w) => ({ ...w, staff: '' }))} className={`cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.staff === '' ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>{L('Sin asignar', 'Unassigned')}</button>
+                {activePros.map((p) => (
+                  <button key={p.id} onClick={() => setWalk((w) => ({ ...w, staff: p.id }))} className={`flex cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.staff === p.id ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
+                    <span className="h-3 w-3 rounded-full" style={{ background: p.color }} />{p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div>
+            <div className={fieldLabel}>{L('Nota', 'Note')}</div>
+            <input value={walk.note} onChange={(e) => setWalk((w) => ({ ...w, note: e.target.value }))} placeholder={L('Opcional', 'Optional')} className={inputCls} />
+          </div>
+          {svc && svc.priceType !== 'cotiza' && Number(svc.price) > 0 && (
+            <div className="rounded-field bg-lilac-2 px-3.5 py-2.5 text-[12px] font-semibold text-ink-2">
+              {L('Cobras en sitio', 'You collect on site')}: <span className="font-extrabold text-ink">${Number(svc.price) || 0}</span> · {svc.dur}
+            </div>
+          )}
+          <button onClick={() => void submitWalkIn()} disabled={walkBusy || !walk.name.trim() || !walk.day} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm disabled:cursor-not-allowed disabled:opacity-50">
+            {walkBusy ? L('Creando…', 'Creating…') : L('Crear cita confirmada', 'Create confirmed appointment')}
+          </button>
+        </div>
+      </Overlay>
     );
   }
 
@@ -738,16 +946,63 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ---- bookings (Reservas) ----
-  const bkList = (bookingRows ?? DEMO_BOOKINGS).filter((b) => bookFilter === 'all' || b.status === bookFilter);
-  const upcoming = (bookingRows ?? DEMO_BOOKINGS).filter((b) => b.status === 'pending' || b.status === 'confirmed').length;
-  const pending = (bookingRows ?? DEMO_BOOKINGS).filter((b) => b.status === 'pending').length;
-  const depositsHeld = (bookingRows ?? DEMO_BOOKINGS).filter((b) => b.status !== 'cancelled').reduce((n, b) => n + (b.deposit ?? 0), 0);
+  // ---- services · professionals (the public bookable team — service_config.providers) ----
+  const prosTab = (
+    <div className="mx-auto max-w-[720px]">
+      <div className="mb-3.5 flex items-center gap-3 rounded-tile bg-lilac-2 p-3">
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-primary"><Users size={15} className="text-white" stroke={2.2} /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[12px] font-extrabold text-ink">{L('Tu equipo reservable', 'Your bookable team')}</span>
+          <span className="block text-[10.5px] font-medium leading-snug text-ink-3">{L('El cliente elige a su profesional al reservar — y el sistema evita dobles citas por persona.', 'Customers pick their professional when booking — the system blocks double-booking per person.')}</span>
+        </span>
+      </div>
+      {cfg.providers.length === 0 ? (
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no hay profesionales — agrega a tu equipo (ej. Marco · Fades, Tony · Barbas).', 'No professionals yet — add your team (e.g. Marco · Fades, Tony · Beards).')}</div>
+      ) : (
+        <div className="grid gap-2.5 md:grid-cols-2">
+          {cfg.providers.map((p) => {
+            const nSvc = !p.serviceIds || p.serviceIds.length === 0 ? null : p.serviceIds.length;
+            return (
+              <div key={p.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${p.active === false ? 'opacity-60' : ''}`}>
+                <button onClick={() => setProSheet({ open: true, initial: p })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
+                  <span className="relative flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full text-[14px] font-extrabold text-white" style={{ background: p.color }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {p.photo ? <img src={p.photo} alt="" className="absolute inset-0 h-full w-full object-cover" /> : p.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{p.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{p.active === false && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</span>
+                    <span className="mt-0.5 block truncate text-[10px] font-semibold text-muted-2">{L(p.tagEs, p.tagEn ?? p.tagEs)}{nSvc != null ? ` · ${nSvc} ${nSvc === 1 ? L('servicio', 'service') : L('servicios', 'services')}` : ` · ${L('todos los servicios', 'all services')}`}</span>
+                  </span>
+                </button>
+                <Switch big on={p.active !== false} onClick={() => upsertProvider({ ...p, active: p.active === false })} />
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <button onClick={() => setProSheet({ open: true, initial: null })} className={addBtn}>+ {L('Nuevo profesional', 'New professional')}</button>
+    </div>
+  );
+
+  // ---- bookings (Reservas) — Booksy-style day agenda ----
+  const allBk = bookingRows ?? DEMO_BOOKINGS;
+  const nowMs = Date.now();
+  const activeSt = (s: BkStatus) => s === 'pending' || s === 'confirmed' || s === 'seated';
+  const countOn = (key: string) => allBk.filter((b) => activeSt(b.status) && bookingDayKey(b.starts_at) === key).length;
+  const bkList = allBk
+    .filter((b) => bookFilter === 'all' || b.status === bookFilter)
+    .filter((b) => bkDay === 'all' || bookingDayKey(b.starts_at) === bkDay)
+    .filter((b) => bkStaff === 'all' || b.staff_id === bkStaff);
+  const todayKey = agendaDays[0]?.key ?? '';
+  const todayCount = countOn(todayKey);
+  const upcoming = allBk.filter((b) => b.status === 'pending' || b.status === 'confirmed').length;
+  const pending = allBk.filter((b) => b.status === 'pending').length;
+  const depositsHeld = allBk.filter((b) => b.status !== 'cancelled').reduce((n, b) => n + (b.deposit ?? 0), 0);
 
   const kpis: { Icon: LucideIcon; c: string; bg: string; label: string; value: string }[] = [
-    { Icon: CalendarDays, c: '#6D4DF6', bg: '#EFEBFF', label: L('Próximas', 'Upcoming'), value: String(upcoming) },
+    { Icon: CalendarCheck, c: '#1F8A4C', bg: '#E3F5EA', label: L('Hoy', 'Today'), value: String(todayCount) },
     { Icon: MessageSquare, c: '#9A6A12', bg: '#FCEFD6', label: L('Por confirmar', 'Pending'), value: String(pending) },
-    { Icon: Users, c: '#2A5C8A', bg: '#E4ECFB', label: L('Total', 'Total'), value: String((bookingRows ?? DEMO_BOOKINGS).length) },
+    { Icon: CalendarDays, c: '#6D4DF6', bg: '#EFEBFF', label: L('Próximas', 'Upcoming'), value: String(upcoming) },
     { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Depósitos', 'Deposits'), value: `$${depositsHeld}` },
   ];
   const bkFilterChip = (on: boolean) => `flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
@@ -764,28 +1019,82 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         ))}
       </div>
 
+      {/* agenda day strip: Todas + next 14 days with live counts */}
       <ChipRow className="-mx-1 px-1">
-        {([['all', L('Todas', 'All')], ['pending', L('Por confirmar', 'Pending')], ['confirmed', L('Confirmadas', 'Confirmed')], ['seated', L('En curso', 'In progress')], ['done', L('Completadas', 'Done')], ['cancelled', L('Canceladas', 'Cancelled')]] as [typeof bookFilter, string][]).map(([k, lbl]) => (
-          <button key={k} onClick={() => setBookFilter(k)} className={bkFilterChip(bookFilter === k)}>{lbl}</button>
-        ))}
+        <button onClick={() => setBkDay('all')} className={`flex-none cursor-pointer rounded-btn px-3 py-2 text-center ${bkDay === 'all' ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+          <span className="block text-[11.5px] font-extrabold">{L('Todas', 'All')}</span>
+        </button>
+        {agendaDays.map((d) => {
+          const on = bkDay === d.key;
+          const n = countOn(d.key);
+          return (
+            <button key={d.key} onClick={() => setBkDay(d.key)} className={`flex-none cursor-pointer rounded-btn px-2.5 py-1.5 text-center ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+              <span className={`block text-[9.5px] font-bold ${on ? 'text-white/80' : 'text-muted'}`}>{d.lab}</span>
+              <span className="block text-[13.5px] font-extrabold leading-tight">{d.day}</span>
+              <span className={`block text-[8.5px] font-extrabold ${n > 0 ? (on ? 'text-white' : 'text-primary-dark') : 'opacity-0'}`}>{n} {n === 1 ? L('cita', 'appt') : L('citas', 'appts')}</span>
+            </button>
+          );
+        })}
       </ChipRow>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <ChipRow className="-mx-1 min-w-0 flex-1 px-1">
+          {([['all', L('Todas', 'All')], ['pending', L('Por confirmar', 'Pending')], ['confirmed', L('Confirmadas', 'Confirmed')], ['seated', L('En curso', 'In progress')], ['done', L('Completadas', 'Done')], ['no_show', L('No vino', 'No-show')], ['cancelled', L('Canceladas', 'Cancelled')]] as [typeof bookFilter, string][]).map(([k, lbl]) => (
+            <button key={k} onClick={() => setBookFilter(k)} className={bkFilterChip(bookFilter === k)}>{lbl}</button>
+          ))}
+        </ChipRow>
+        {persistable && walkServices.length > 0 && (
+          <button onClick={() => { setWalk({ svcId: walkServices[0].id, name: '', phone: '', day: todayKey, time: '12:00', staff: '', note: '' }); setWalkOpen(true); }} className="flex-none cursor-pointer rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+            + {L('Agendar cita', 'Add appointment')}
+          </button>
+        )}
+      </div>
+
+      {/* professional filter (only when a bookable team exists) */}
+      {cfg.providers.filter((p) => p.active !== false).length > 0 && (
+        <ChipRow className="-mx-1 px-1">
+          <button onClick={() => setBkStaff('all')} className={bkFilterChip(bkStaff === 'all')}>{L('Todo el equipo', 'Whole team')}</button>
+          {cfg.providers.filter((p) => p.active !== false).map((p) => (
+            <button key={p.id} onClick={() => setBkStaff(p.id)} className={`flex-none flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${bkStaff === p.id ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>
+              <span className="h-3.5 w-3.5 rounded-full" style={{ background: p.color }} />{p.name}
+            </button>
+          ))}
+        </ChipRow>
+      )}
+
       {bkList.length === 0 ? (
-        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{bookingRows == null ? L('Reservas de ejemplo — las reales de tus clientes aparecerán aquí.', 'Sample bookings — your real customer bookings appear here.') : L('Sin reservas en este filtro.', 'No bookings in this filter.')}</div>
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{bookingRows == null ? L('Reservas de ejemplo — las reales de tus clientes aparecerán aquí.', 'Sample bookings — your real customer bookings appear here.') : L('Sin citas en este día/filtro.', 'No appointments for this day/filter.')}</div>
       ) : (
         <div className="grid gap-2.5 md:grid-cols-2">
           {bkList.map((b) => {
             const bd = BK_STATUS[b.status];
-            const canAct = !!b.id && b.status !== 'done' && b.status !== 'cancelled' && bookingRows != null;
+            const canAct = !!b.id && b.status !== 'done' && b.status !== 'cancelled' && b.status !== 'no_show' && bookingRows != null;
+            const started = new Date(b.starts_at).getTime() <= nowMs;
             return (
               <div key={b.id} className={`${cardCls} p-3`}>
                 <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn-lg bg-lilac-2 text-[13px] font-extrabold text-primary-dark">{(b.customer_name || '?').slice(0, 1).toUpperCase()}</span>
+                  <span className="flex h-12 w-12 flex-none flex-col items-center justify-center rounded-btn-lg bg-lilac-2">
+                    <span className="text-[11px] font-extrabold leading-tight text-primary-dark">{bookingHour(b.starts_at)}</span>
+                    {b.duration_min ? <span className="text-[8.5px] font-bold text-muted">{b.duration_min} min</span> : null}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5"><span className="truncate text-[12.5px] font-extrabold text-ink">{b.customer_name}</span></div>
-                    <div className="mt-0.5 text-[10.5px] font-semibold text-ink-3">{b.service_name || L('Reserva', 'Booking')}{b.party_size ? ` · ${b.party_size} ${L('pers', 'ppl')}` : ''}</div>
+                    <div className="flex items-center gap-1.5"><span className="truncate text-[12.5px] font-extrabold text-ink">{b.customer_name}</span>{b.customer_phone && <span className="flex-none text-[9.5px] font-bold text-muted">{b.customer_phone}</span>}</div>
+                    <div className="mt-0.5 text-[10.5px] font-semibold text-ink-3">
+                      {b.service_name || L('Reserva', 'Booking')}
+                      {b.variant ? ` · ${b.variant}` : ''}
+                      {b.party_size && b.party_size > 1 ? ` · ${b.party_size} ${L('pers', 'ppl')}` : ''}
+                    </div>
                     <div className="mt-0.5 text-[10px] font-medium text-muted-2">{bookingWhen(b.starts_at, es)}</div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{b.deposit ? <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')} ${b.deposit}</span> : null}</div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      {b.staff_name && (
+                        <span className="flex items-center gap-1 rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-extrabold text-ink-2">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ background: providerColor(b.staff_id) }} />{b.staff_name}
+                        </span>
+                      )}
+                      {Array.isArray(b.addons) && b.addons.length > 0 && <span className="rounded bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{b.addons.map((a) => a.n).join(' · ')}</span>}
+                      {b.deposit ? <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Pagado', 'Paid')} ${b.deposit}</span>
+                        : b.total ? <span className="rounded bg-amber-bg px-1.5 py-0.5 text-[9px] font-extrabold text-amber-ink">{L('Cobra en sitio', 'Collect on site')} ${b.total}</span> : null}
+                    </div>
                     {b.notes && <div className="mt-1.5 rounded-r-md border-l-2 border-lilac-line bg-app px-2 py-1.5 text-[10px] font-medium italic leading-snug text-muted-2">&ldquo;{b.notes}&rdquo;</div>}
                   </div>
                   <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${bd.cls}`}>{L(bd.es, bd.en)}</span>
@@ -795,7 +1104,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     {b.status === 'pending' && <button onClick={() => setBookingStatus(b.id, 'confirmed')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Confirmar', 'Confirm')}</button>}
                     {b.status === 'confirmed' && <button onClick={() => setBookingStatus(b.id, 'seated')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Iniciar', 'Start')}</button>}
                     {b.status === 'seated' && <button onClick={() => setBookingStatus(b.id, 'done')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Completar', 'Complete')}</button>}
-                    {(b.status === 'pending' || b.status === 'confirmed') && <button onClick={() => setBookingStatus(b.id, 'cancelled')} className="rounded-lg border-[1.5px] border-pink-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-pink-dark">{L('Cancelar', 'Cancel')}</button>}
+                    {b.status === 'confirmed' && started && <button onClick={() => setBookingStatus(b.id, 'no_show')} className="rounded-lg border-[1.5px] border-amber-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-amber-ink">{L('No vino', 'No-show')}</button>}
+                    {(b.status === 'pending' || b.status === 'confirmed') && <button onClick={() => setBookingStatus(b.id, 'cancelled')} className="rounded-lg border-[1.5px] border-pink-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-pink-dark">{b.status === 'pending' ? L('Rechazar', 'Decline') : L('Cancelar', 'Cancel')}</button>}
                   </div>
                 )}
               </div>
@@ -820,13 +1130,14 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             ['catalog', L('Catálogo', 'Catalog')],
             ['cats', L('Categorías', 'Categories'), cfg.categories.length],
             ['addons', L('Add-ons', 'Add-ons'), cfg.addons.length],
+            ['pros', L('Profesionales', 'Team'), cfg.providers.length],
           ] as SectionTab<typeof svcSub>[]}
           value={svcSub}
           onChange={setSvcSub}
         />
       )}
 
-      {mode === 'services' ? (svcSub === 'catalog' ? catalog : svcSub === 'cats' ? categoriesTab : addonsTab) : bookings}
+      {mode === 'services' ? (svcSub === 'catalog' ? catalog : svcSub === 'cats' ? categoriesTab : svcSub === 'addons' ? addonsTab : prosTab) : bookings}
 
       {!isPremium && (
         <div className="mt-4 flex flex-wrap items-center gap-3.5 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
@@ -849,15 +1160,18 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 type Draft = {
   name: string; descEs: string; descEn: string; cat: string; price: string; priceType: 'fijo' | 'persona' | 'cotiza';
   dur: string; bookable: boolean; deposit: boolean; addons: string[]; tags: string[]; days: string[]; capacity: string; photoUrl: string;
+  // Optional price-variant group (delta as string while typing).
+  varLabel: string; varOpts: { es: string; delta: string }[];
 };
-const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', priceType: 'fijo', dur: '60 min', bookable: true, deposit: false, addons: [], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '1', photoUrl: '' });
+const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', priceType: 'fijo', dur: '60 min', bookable: true, deposit: false, addons: [], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '1', photoUrl: '', varLabel: '', varOpts: [] });
 const SVC_TAGS = ['Más reservado', 'Familiar', 'Premium', 'Nuevo'];
 const tagLabel = (t: string, L: (es: string, en: string) => string) => ({ 'Más reservado': L('Más reservado', 'Most booked'), Familiar: L('Familiar', 'Family'), Premium: 'Premium', Nuevo: L('Nuevo', 'New') } as Record<string, string>)[t] ?? t;
 
 // Sample bookings for demo (no dbId → no persistence, no status actions).
+const DEMO_BK_EXTRA = { duration_min: null, staff_id: null, staff_name: null, addons: null, variant: null, total: null, customer_phone: null };
 const DEMO_BOOKINGS: BookingRow[] = [
-  { id: 'd1', service_name: 'Sourdough 101', customer_name: 'Sofía R.', party_size: 2, starts_at: '2026-07-11T18:00:00Z', status: 'pending', deposit: 85, notes: 'Primera vez, alergia a nueces.', created_at: '' },
-  { id: 'd2', service_name: 'Menú degustación', customer_name: 'Anna F.', party_size: 2, starts_at: '2026-07-12T19:30:00Z', status: 'confirmed', deposit: 140, notes: 'Maridaje de vino. Aniversario.', created_at: '' },
-  { id: 'd3', service_name: 'Cata de vinos', customer_name: 'Daniel K.', party_size: 4, starts_at: '2026-07-13T15:00:00Z', status: 'confirmed', deposit: 0, notes: '', created_at: '' },
-  { id: 'd4', service_name: 'Comedor privado', customer_name: 'Mission Tech', party_size: 18, starts_at: '2026-07-20T18:00:00Z', status: 'done', deposit: 500, notes: '2 vegetarianos, 1 sin gluten.', created_at: '' },
+  { id: 'd1', service_name: 'Sourdough 101', customer_name: 'Sofía R.', party_size: 2, starts_at: '2026-07-11T18:00:00Z', status: 'pending', deposit: 85, notes: 'Primera vez, alergia a nueces.', created_at: '', ...DEMO_BK_EXTRA, duration_min: 120, staff_name: 'Miguel' },
+  { id: 'd2', service_name: 'Menú degustación', customer_name: 'Anna F.', party_size: 2, starts_at: '2026-07-12T19:30:00Z', status: 'confirmed', deposit: 140, notes: 'Maridaje de vino. Aniversario.', created_at: '', ...DEMO_BK_EXTRA, duration_min: 150, staff_name: 'Chef Rosa', total: 140 },
+  { id: 'd3', service_name: 'Cata de vinos', customer_name: 'Daniel K.', party_size: 4, starts_at: '2026-07-13T15:00:00Z', status: 'confirmed', deposit: 0, notes: '', created_at: '', ...DEMO_BK_EXTRA, duration_min: 90 },
+  { id: 'd4', service_name: 'Comedor privado', customer_name: 'Mission Tech', party_size: 18, starts_at: '2026-07-20T18:00:00Z', status: 'done', deposit: 500, notes: '2 vegetarianos, 1 sin gluten.', created_at: '', ...DEMO_BK_EXTRA, duration_min: 180, total: 500 },
 ];

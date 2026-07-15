@@ -35,6 +35,8 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   order_status: { icon: 'store', color: '#1F8A4C', bg: '#E3F5EA' },
   booking_new: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
   booking_status: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
+  booking_cancelled: { icon: 'calendar', color: '#D6336C', bg: '#FDE7EF' },
+  booking_resched: { icon: 'calendar', color: '#B8860B', bg: '#FCF1C7' },
   rental_new: { icon: 'tag', color: '#6D4DF6', bg: '#EFEBFF' },
   rental_status: { icon: 'tag', color: '#1F8A4C', bg: '#E3F5EA' },
   ticket_new: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
@@ -49,7 +51,7 @@ const STATUS: Record<string, [string, string]> = {
   completed: ['completado', 'completed'], cancelled: ['cancelado', 'cancelled'],
   pending: ['pendiente', 'pending'], confirmed: ['confirmado', 'confirmed'], seated: ['en curso', 'in progress'],
   done: ['completado', 'done'], out: ['entregado', 'handed out'], returned: ['devuelto', 'returned'],
-  used: ['usado', 'used'], refunded: ['reembolsado', 'refunded'],
+  used: ['usado', 'used'], refunded: ['reembolsado', 'refunded'], no_show: ['no asistió', 'no-show'],
 };
 const money = (v: unknown) => (v == null ? '' : `$${Number(v).toFixed(2)}`);
 const st = (v: unknown): [string, string] => STATUS[String(v)] ?? [String(v ?? ''), String(v ?? '')];
@@ -70,8 +72,28 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
       if (d.status === 'ready') return { title: ['Tu pedido está listo 🎉', 'Your order is ready 🎉'], sub: from };
       return { title: [`Tu pedido está ${a}`, `Your order is ${b}`], sub: from };
     }
-    case 'booking_new': return { title: ['Nueva reserva', 'New booking'], sub: [s('service') || s('name'), s('service') || s('name')] };
-    case 'booking_status': { const [a, b] = st(d.status); return { title: [`Tu reserva está ${a}`, `Your booking is ${b}`], sub: [s('service'), s('service')] }; }
+    case 'booking_new': {
+      const who = [s('service'), s('name')].filter(Boolean).join(' · ');
+      return { title: ['Nueva reserva 📅', 'New booking 📅'], sub: [who, who] };
+    }
+    case 'booking_status': {
+      const svc = [s('service'), s('service')] as [string, string];
+      if (d.status === 'confirmed') return { title: ['¡Tu cita está confirmada! 📅', 'Your appointment is confirmed! 📅'], sub: svc };
+      if (d.status === 'cancelled') return { title: ['Tu cita fue cancelada', 'Your appointment was cancelled'], sub: svc };
+      if (d.status === 'no_show') return { title: ['Se marcó que no asististe a tu cita', 'You were marked as a no-show'], sub: svc };
+      if (d.status === 'seated') return { title: ['Tu cita está en curso', 'Your appointment is in progress'], sub: svc };
+      if (d.status === 'done') return { title: ['¡Gracias por tu visita! ⭐', 'Thanks for coming in! ⭐'], sub: svc };
+      const [a, b] = st(d.status);
+      return { title: [`Tu reserva está ${a}`, `Your booking is ${b}`], sub: svc };
+    }
+    case 'booking_cancelled': {
+      const who = [s('service'), s('name')].filter(Boolean).join(' · ');
+      return { title: ['Reserva cancelada por el cliente', 'Booking cancelled by the client'], sub: [who, who] };
+    }
+    case 'booking_resched': {
+      const who = [s('service'), s('name')].filter(Boolean).join(' · ');
+      return { title: ['El cliente reagendó su cita', 'The client rescheduled their appointment'], sub: [who, who] };
+    }
     case 'rental_new': return { title: ['Nueva renta', 'New rental'], sub: [s('item') || s('name'), s('item') || s('name')] };
     case 'rental_status': { const [a, b] = st(d.status); return { title: [`Tu renta está ${a}`, `Your rental is ${b}`], sub: [s('item'), s('item')] }; }
     case 'ticket_new': return { title: ['Boletos vendidos', 'Tickets sold'], sub: [`${s('event')} · ${s('qty')} · ${s('name')}`, `${s('event')} · ${s('qty')} · ${s('name')}`] };

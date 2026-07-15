@@ -5,6 +5,78 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Servicios nivel Booksy/Fresha — reservas con profesionales, variantes y agenda (2026-07-15)
+
+El menú **Servicios** pasó de una lista con hoja básica a la experiencia completa
+de reservas (benchmark: **Booksy / Fresha / StyleSeat**), para barberías, belleza,
+car wash, home repair, etc. Migración **0092** (abajo, ya aplicada).
+
+**Consumidor** (`BizDetail`):
+- **Hoja de detalle del servicio** (tap en la tarjeta): foto/tile, duración,
+  precio, descripción, extras pre-seleccionables → "Reservar cita". El botón
+  Reservar de la tarjeta salta directo a la agenda. Badges Popular/Nuevo.
+- **"Elige tu profesional"** — avatares circulares (foto o iniciales + color),
+  especialidad, y "Cualquiera · Primer disponible" (patrón Booksy). Los
+  profesionales viven en `service_config.providers` (públicos, sin datos
+  privados del equipo).
+- **Disponibilidad real por profesional y duración**: RPC pública
+  `booking_busy_by_slug` (sin datos de clientes) → un slot se marca "Ocupado"
+  solo si ESE profesional tiene una cita que se solape (con "Cualquiera": solo
+  si todos están ocupados). Verificado: 6pm ocupado con Marco, libre con Tony.
+  El servidor lo garantiza con un **trigger anti doble-reserva** por profesional
+  (`staff_slot_taken`) — la disponibilidad del cliente es asesoría, el lock es
+  del servidor.
+- **Variantes de precio** (car wash): grupo de opción única por servicio
+  (`attrs.variants`, ej. "Tipo de vehículo: Sedán +0 · SUV +$5…") que suma al
+  precio — re-preciado server-side en el checkout.
+- Tira de **14 días** que respeta los días del servicio ("No abre"), horas del
+  negocio y excepciones; "Lleno" cuando todo el día está tomado.
+- **Notas para el profesional**, resumen con líneas + total y el modo de pago
+  claro: "Pagas en el local al terminar" (efectivo) o "Pagas hoy — asegura tu
+  cita" (depósito Stripe, P+5%).
+- Confirmación **"¡Cita agendada!"** con tarjeta (servicio · con {profesional} ·
+  fecha · total) + **"Agregar al calendario"** (.ics).
+- **Mi cuenta → Mis reservas**: Próximas/Anteriores, tarjeta con profesional y
+  total, detalle completo, **Reagendar** (deep link `?resched=` → misma agenda,
+  vuelve a "Por confirmar" y avisa al negocio), cancelar y .ics.
+
+**Panel del negocio** (módulo Servicios):
+- **Reservas = agenda por día**: KPIs (Hoy/Por confirmar/Próximas/Depósitos),
+  tira de 14 días con conteo de citas, filtros por estado y **por profesional**,
+  tarjetas con hora+duración, variante, extras, "Pagado $X"/"Cobra en sitio $X",
+  teléfono y nota del cliente. Acciones: Confirmar/Rechazar → Iniciar →
+  Completar, y **"No vino"** (no_show) tras la hora de inicio.
+- **“+ Agendar cita” (walk-in)**: el dueño crea citas por teléfono/mostrador
+  (cliente, teléfono, fecha, hora, profesional, nota) — entra CONFIRMADA y el
+  guard anti-solape también la protege.
+- **Sub-tab "Profesionales"**: CRUD del equipo reservable (nombre, especialidad
+  ES/EN, color, foto opcional, servicios que realiza, activo/oculto).
+- Wizard del servicio: sección **"Variantes de precio · opcional"** en el paso
+  Precio (grupo + opciones con +$delta).
+- Fix: navegar Servicios→Reservas por el sidebar ahora sí cambia el modo del
+  módulo (antes quedaba pegado en el modo con el que montó).
+
+**Notificaciones** (in-app + push, sin auto-notificarse): nueva reserva → dueño;
+confirmada/cancelada/en curso/completada/no-show → cliente (textos propios de
+cita); cancelación del cliente → dueño (`booking_cancelled`); reagendado del
+cliente → dueño (`booking_resched`). Fix: se eliminó el trigger duplicado de
+0054 (`trg_notify_booking`) que duplicaba cada notificación.
+
+**Negocios de prueba** (owner b@b.com):
+- `scripts/seed-barberia.mjs` — **Barbería D' Primera** (`hz-barberia-primera`):
+  3 categorías × 8 servicios, 6 add-ons, 4 profesionales (Marco/Tony/Luis/
+  Junior), paga-en-sitio, Dom cerrado, excepciones viejas limpiadas.
+- `scripts/seed-carwash.mjs` — **Aqua Shine Auto Spa** (`hz-aqua-shine`): 6
+  servicios con variantes de vehículo, 5 extras, capacidad 2 bahías, depósito
+  prepagado por Stripe en Completo/Premium/Encerado.
+
+Verificado E2E en navegador real: reserva completa con extras+nota+Marco,
+doble-reserva bloqueada por profesional, car wash "(SUV / Crossover)" + "Pagar
+reserva · $28.35", reagendar ida-y-vuelta desde Mi cuenta, agenda del dueño con
+Confirmar→Confirmada y walk-in "Doña Carmen". Citas de prueba borradas.
+`tsc` + `build` limpios. Deferrals (recordatorio 1h, horario por profesional,
+auto-confirmación, SMS) en LAUNCH-CHECKLIST.
+
 ## Carrito de tienda (nivel Amazon) — modo tienda vs. modo comida (2026-07-15)
 
 El carrito ahora tiene **dos personalidades** según lo que contenga. Si TODAS

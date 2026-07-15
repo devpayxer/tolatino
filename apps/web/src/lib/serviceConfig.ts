@@ -26,6 +26,21 @@ export type ServiceAddon = {
   price: number; // extra charge; 0 = free add-on
 };
 
+// A bookable professional (barber, stylist, technician…) the customer can pick in
+// the booking sheet — Booksy/Fresha's core interaction. Public data only (name +
+// specialty + look); the private team roster (emails, roles) stays in the Staff
+// module (business_staff). serviceIds empty/absent = performs ALL services.
+export type SvcProvider = {
+  id: string;
+  name: string;
+  tagEs: string; // specialty line, e.g. "Fades y degradados"
+  tagEn?: string;
+  color: string; // avatar circle color (from PROVIDER_COLORS)
+  photo?: string; // optional storage URL — overrides the initials avatar
+  serviceIds?: string[]; // business_items ids this pro performs (empty = all)
+  active: boolean; // inactive = hidden from the public picker, kept in history
+};
+
 export type ServiceConfig = {
   categories: ServiceCategory[];
   addons: ServiceAddon[];
@@ -37,6 +52,9 @@ export type ServiceConfig = {
   // Promotions the owner manages from the Promociones hub. A `percent` promo with a
   // `code` is redeemable at booking checkout (business-absorbed). Reuses menu Promo.
   promos: Promo[];
+  // The bookable team ("Elige tu profesional"). Empty = the business books by
+  // capacity only (car washes, venues) — no staff step in the consumer sheet.
+  providers: SvcProvider[];
 };
 
 export const svcId = () =>
@@ -54,6 +72,9 @@ export const SERVICE_TILES: string[] = [
   '#EDE0D4 0 8px,#DFCBB6 8px 16px', // coffee
 ];
 
+// Avatar palette for professionals without a photo (initials on a colored circle).
+export const PROVIDER_COLORS: string[] = ['#7B61FF', '#E0568F', '#2F6FED', '#1F9D57', '#D6A22A', '#6D4DF6', '#E8954A', '#26252B'];
+
 // Generic default categories (services vary by trade; the owner renames/adds).
 export const DEFAULT_SERVICE_CATEGORIES: ServiceCategory[] = [
   { id: 'general', es: 'Servicios', en: 'Services', icon: 'sparkles', tile: SERVICE_TILES[0], visible: true },
@@ -67,6 +88,7 @@ export const defaultServiceConfig = (): ServiceConfig => ({
   tags: [],
   booking: false,
   promos: [],
+  providers: [],
 });
 
 /** Rich sample config for DEMO mode — restaurant-style bookable services. */
@@ -86,6 +108,10 @@ export const demoServiceConfig = (): ServiceConfig => ({
   tags: ['A domicilio', 'Bilingüe'],
   booking: true,
   promos: [],
+  providers: [
+    { id: 'chef-r', name: 'Chef Rosa', tagEs: 'Cocina dominicana', tagEn: 'Dominican cuisine', color: PROVIDER_COLORS[1], active: true },
+    { id: 'chef-m', name: 'Miguel', tagEs: 'Panadería y masa madre', tagEn: 'Bakery & sourdough', color: PROVIDER_COLORS[2], active: true },
+  ],
 });
 
 /** Coerce whatever is stored in the jsonb column into a usable config. */
@@ -99,5 +125,6 @@ export function normalizeServiceConfig(raw: unknown): ServiceConfig {
     tags: Array.isArray(r.tags) ? r.tags : [],
     booking: r.booking === true, // default display-only
     promos: Array.isArray(r.promos) ? r.promos : [],
+    providers: Array.isArray(r.providers) ? r.providers.filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string') : [],
   };
 }

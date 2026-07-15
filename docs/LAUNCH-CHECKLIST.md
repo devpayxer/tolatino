@@ -1405,6 +1405,26 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
   (`Onboarding`) **wizards** — steps depend on prior-step data, so deep-linking mid-
   flow would render a broken/empty step. Leave ephemeral.
 
+### Servicios / Reservas nivel Booksy (2026-07-15)
+- [ ] **Recordatorio de cita (push "1 hora antes").** The booking lifecycle pushes
+  (nueva / confirmada / cancelada / reagendada / no-show) are live, but a
+  time-based reminder needs a scheduler (pg_cron or an external cron hitting an
+  edge function that scans `business_bookings` for upcoming confirmed citas).
+  Booksy staple — add before public launch of the services vertical.
+- [ ] **Horario propio por profesional.** Providers (service_config.providers)
+  share the business's weekly hours; a pro who only works Vie–Sáb needs per-pro
+  working hours + vacations. The double-booking guard already keys on staff_id,
+  so this is additive (filter slots by the pro's hours client-side + validate).
+- [ ] **Auto-confirmación opcional.** Today every cash booking lands "Por
+  confirmar" (the founder-approved accept flow). Booksy also offers instant
+  booking; would need an RLS-safe path (trigger reading service_config) to
+  insert as 'confirmed'.
+- [ ] **Campos de reserva personalizados por rubro** (the Handoff's "Campos de
+  reserva · Restaurante"): the generic note + price-variant group cover most
+  cases; a full custom-field builder is deferred until a rubro needs it.
+- [ ] **Recordatorios SMS** (Premium banner in the module): needs the SMS/WhatsApp
+  OTP decision (see Allowed external costs) — same gateway would serve both.
+
 ---
 
-_Last updated: 2026-07-14. Add to this file as new deferrals appear._
+_Last updated: 2026-07-15. Add to this file as new deferrals appear._

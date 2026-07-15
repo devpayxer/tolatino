@@ -27,7 +27,7 @@ function render(kind: string, d: Record<string, unknown>, l: L): { title: string
     completed: ['completado', 'completed'], cancelled: ['cancelado', 'cancelled'],
     pending: ['pendiente', 'pending'], confirmed: ['confirmado', 'confirmed'], seated: ['en curso', 'in progress'],
     done: ['completado', 'done'], out: ['entregado', 'handed out'], returned: ['devuelto', 'returned'],
-    used: ['usado', 'used'], refunded: ['reembolsado', 'refunded'],
+    used: ['usado', 'used'], refunded: ['reembolsado', 'refunded'], no_show: ['no asistió', 'no-show'],
   };
   const st = (v: unknown): [string, string] => STATUS[String(v)] ?? [String(v ?? ''), String(v ?? '')];
   switch (kind) {
@@ -44,8 +44,19 @@ function render(kind: string, d: Record<string, unknown>, l: L): { title: string
       return { title: pick(l, `Tu pedido está ${a}`, `Your order is ${b}`), body: biz };
     }
     case 'order_new': return { title: pick(l, 'Nuevo pedido', 'New order'), body: `${s('code')} · ${money(d.total)}`.trim() };
-    case 'booking_status': { const [a, b] = st(s('status')); return { title: pick(l, `Tu reserva está ${a}`, `Your booking is ${b}`), body: s('service') }; }
-    case 'booking_new': return { title: pick(l, 'Nueva reserva', 'New booking'), body: s('service') || s('name') };
+    case 'booking_status': {
+      const status = s('status');
+      if (status === 'confirmed') return { title: pick(l, '¡Tu cita está confirmada! 📅', 'Your appointment is confirmed! 📅'), body: s('service') };
+      if (status === 'cancelled') return { title: pick(l, 'Tu cita fue cancelada', 'Your appointment was cancelled'), body: s('service') };
+      if (status === 'no_show') return { title: pick(l, 'Se marcó que no asististe a tu cita', 'You were marked as a no-show'), body: s('service') };
+      if (status === 'seated') return { title: pick(l, 'Tu cita está en curso', 'Your appointment is in progress'), body: s('service') };
+      if (status === 'done') return { title: pick(l, '¡Gracias por tu visita! ⭐', 'Thanks for coming in! ⭐'), body: s('service') };
+      const [a, b] = st(status);
+      return { title: pick(l, `Tu reserva está ${a}`, `Your booking is ${b}`), body: s('service') };
+    }
+    case 'booking_new': return { title: pick(l, 'Nueva reserva 📅', 'New booking 📅'), body: [s('service'), s('name')].filter(Boolean).join(' · ') };
+    case 'booking_cancelled': return { title: pick(l, 'Reserva cancelada por el cliente', 'Booking cancelled by the client'), body: [s('service'), s('name')].filter(Boolean).join(' · ') };
+    case 'booking_resched': return { title: pick(l, 'El cliente reagendó su cita', 'The client rescheduled their appointment'), body: [s('service'), s('name')].filter(Boolean).join(' · ') };
     case 'rental_status': { const [a, b] = st(s('status')); return { title: pick(l, `Tu renta está ${a}`, `Your rental is ${b}`), body: s('item') }; }
     case 'rental_new': return { title: pick(l, 'Nueva renta', 'New rental'), body: s('item') || s('name') };
     case 'ticket_status': { const [a, b] = st(s('status')); return { title: pick(l, `Tu boleto: ${a}`, `Your ticket: ${b}`), body: s('event') }; }

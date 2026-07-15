@@ -295,6 +295,11 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
 
 /** A public, consumer-facing add-on (resolved from service_config). */
 export type PubSvcAddon = { id: string; name: Bi; price: number };
+/** A single-choice price variant on a service (e.g. car-wash vehicle type:
+ *  "Sedán +$0 · SUV +$5 · Camioneta +$10"). `delta` adds to the base price. */
+export type PubSvcVariant = { label: Bi; options: { name: Bi; delta: number }[] };
+/** A bookable professional shown in the "Elige tu profesional" step. */
+export type PubProvider = { id: string; name: string; tag: Bi; color: string; photo?: string; serviceIds: string[] };
 /** One public service (a `business_items` kind='service' row, consumer-shaped). */
 export type PubSvc = {
   id: string;
@@ -309,12 +314,15 @@ export type PubSvc = {
   tile: string; // category striped tile (placeholder imagery)
   img?: string; // real photo URL (live); tile stays as the fallback
   capacity: string; // seats-per-session range ('1' | '2–6' | '8–16' | '20+')
+  days: string[]; // weekdays offered ('Lun'…'Dom'; empty = every open day)
+  variant: PubSvcVariant | null; // optional price variant group
+  badge: '' | 'popular' | 'nuevo'; // card ribbon (owner-tagged)
 };
 export type PubSvcCat = { key: string; name: Bi; items: PubSvc[] };
 /** The real public services for a listing: items grouped by the owner's service
- *  categories, the full add-on catalog (for the booking sheet), and the booking
- *  mode (false = display-only → no online Reservar). */
-export type PublicServices = { cats: PubSvcCat[]; addons: PubSvcAddon[]; booking: boolean };
+ *  categories, the full add-on catalog (for the booking sheet), the booking
+ *  mode (false = display-only → no online Reservar) and the bookable team. */
+export type PublicServices = { cats: PubSvcCat[]; addons: PubSvcAddon[]; booking: boolean; providers: PubProvider[] };
 
 /** Fetch + map a business's real services by slug (migration 0046). Returns null
  *  when offline / no published services — BizDetail falls back to the fixtures. */
@@ -337,6 +345,16 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
     const price = r.price != null ? Number(r.price) : null;
     const priceType = (a.priceType as PubSvc['priceType']) ?? (price != null ? 'fijo' : 'cotiza');
     const ids = Array.isArray(a.addons) ? (a.addons as string[]) : [];
+    // Optional price-variant group (attrs.variants): {es, en, options:[{es, en, delta}]}
+    let variant: PubSvcVariant | null = null;
+    const vRaw = a.variants as { es?: unknown; en?: unknown; options?: unknown } | undefined;
+    if (vRaw && Array.isArray(vRaw.options) && vRaw.options.length > 0) {
+      const opts = (vRaw.options as Record<string, unknown>[])
+        .filter((o) => o && String(o.es ?? '').trim())
+        .map((o) => ({ name: [String(o.es), String(o.en ?? o.es)] as Bi, delta: Math.max(0, Number(o.delta ?? 0) || 0) }));
+      if (opts.length > 0) variant = { label: [String(vRaw.es ?? 'Opción'), String(vRaw.en ?? vRaw.es ?? 'Option')], options: opts };
+    }
+    const tags = Array.isArray(a.tags) ? (a.tags as unknown[]).map((t) => String(t).toLowerCase()) : [];
     return {
       id: String(r.id),
       name,
@@ -350,6 +368,9 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
       tile,
       img: r.image_url != null ? String(r.image_url) : undefined,
       capacity: String(a.capacity ?? ''),
+      days: Array.isArray(a.days) ? (a.days as unknown[]).map(String) : [],
+      variant,
+      badge: tags.includes('popular') ? 'popular' : tags.includes('nuevo') || tags.includes('new') ? 'nuevo' : '',
     };
   };
 
@@ -364,7 +385,18 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
   if (rest.length) cats.push({ key: '_rest', name: ['Servicios', 'Services'], items: rest.map((r) => toSvc(r, '#EFE3D0 0 8px,#E2CFB2 8px 16px')) });
   if (cats.length === 0) return null;
 
-  return { cats, addons, booking: cfg.booking };
+  const providers: PubProvider[] = cfg.providers
+    .filter((p) => p.active !== false)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      tag: [p.tagEs ?? '', p.tagEn ?? p.tagEs ?? ''],
+      color: p.color || '#7B61FF',
+      photo: p.photo || undefined,
+      serviceIds: Array.isArray(p.serviceIds) ? p.serviceIds.map(String) : [],
+    }));
+
+  return { cats, addons, booking: cfg.booking, providers };
 }
 
 /** The real public shop for a listing: products grouped by the owner's product
@@ -382,6 +414,26 @@ export async function fetchBookingLoad(serviceId: string): Promise<{ slot: strin
   const { data, error } = await supabase.rpc('booking_load_by_service', { in_service_id: serviceId });
   if (error || !Array.isArray(data)) return [];
   return (data as Record<string, unknown>[]).map((r) => ({ slot: String(r.slot), seats: Number(r.seats ?? 0) }));
+}
+
+/** One active-booking interval, privacy-safe (no customer data — migration 0092).
+ *  The consumer slot picker greys out times that overlap a chosen professional's
+ *  existing appointments (or ALL professionals for "Cualquiera"). */
+export type BookingBusy = { start: number; durMin: number; staffId: string | null; serviceId: string | null; seats: number };
+
+/** Duration-aware occupancy for a business over a date window (booking_busy_by_slug,
+ *  migration 0092). Returns [] offline / pre-migration / on error. */
+export async function fetchBookingBusy(slug: string, fromISO: string, toISO: string): Promise<BookingBusy[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('booking_busy_by_slug', { in_slug: slug, in_from: fromISO, in_to: toISO });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({
+    start: new Date(String(r.starts_at)).getTime(),
+    durMin: Math.max(5, Number(r.duration_min ?? 30) || 30),
+    staffId: r.staff_id != null ? String(r.staff_id) : null,
+    serviceId: r.service_id != null ? String(r.service_id) : null,
+    seats: Math.max(1, Number(r.seats ?? 1) || 1),
+  }));
 }
 
 /** Fetch + map a business's real products by slug (migration 0048). Returns null
