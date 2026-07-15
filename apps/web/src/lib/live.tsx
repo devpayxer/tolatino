@@ -309,7 +309,6 @@ export type PubSvc = {
   priceType: 'fijo' | 'persona' | 'cotiza';
   dur: string;
   bookable: boolean; // false → inquiry only (no fixed slot, collects a lead)
-  deposit: boolean; // requires an upfront at booking
   addons: PubSvcAddon[]; // resolved add-ons offered on this service
   tile: string; // category striped tile (placeholder imagery)
   img?: string; // real photo URL (live); tile stays as the fallback
@@ -363,7 +362,6 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
       priceType,
       dur: String(a.dur ?? '60 min'),
       bookable: a.bookable !== false,
-      deposit: !!a.deposit,
       addons: ids.map((id) => addonById.get(id)).filter((x): x is PubSvcAddon => !!x),
       tile,
       img: r.image_url != null ? String(r.image_url) : undefined,

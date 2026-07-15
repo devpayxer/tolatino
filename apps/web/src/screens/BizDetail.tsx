@@ -107,7 +107,6 @@ type SvcTarget = {
   priceLabel: Bi | null; // fixture's non-numeric price ("Desde $180")
   dur: string;
   bookable: boolean; // false → inquiry (no time slot, collects a lead)
-  deposit: boolean;
   addons: PubSvc['addons'];
   id: string | null; // real service item id (null → fixture; no capacity gating)
   capMax: number; // seats per session (0 = untracked)
@@ -1094,12 +1093,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const slotFull = (dayISO: string, minute: number) => svcSel != null && svcSel.capMax > 0 && slotSeats(dayISO, minute) >= svcSel.capMax;
   const pubToTarget = (s: PubSvc): SvcTarget => ({
     name: s.name, descEs: s.desc[0], descEn: s.desc[1], price: s.price, priceType: s.priceType,
-    priceLabel: null, dur: s.dur, bookable: s.bookable, deposit: s.deposit, addons: s.addons,
+    priceLabel: null, dur: s.dur, bookable: s.bookable, addons: s.addons,
     id: s.id, capMax: capMaxOf(s.capacity), tile: s.tile, img: s.img, days: s.days, variant: s.variant,
   });
   const fixtureToTarget = (f: (typeof SERVICES)[number]): SvcTarget => ({
     name: B(f.n), descEs: f.d[0], descEn: f.d[1], price: null, priceType: 'cotiza',
-    priceLabel: f.price, dur: '', bookable: true, deposit: false, addons: [], id: null, capMax: 0,
+    priceLabel: f.price, dur: '', bookable: true, addons: [], id: null, capMax: 0,
     tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', days: [], variant: null,
   });
   // Consumer price label for a real service card.
@@ -1134,7 +1133,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     }
     if (!user) { router.push('/entrar'); return; }
     const total = svcTotal();
-    const dep = svcSel.deposit && total > 0 ? total : null;
+    // Payment is a BUSINESS-level decision (like the menu): if the seller takes
+    // cards (Stripe connected → payOnline), a priced bookable service is paid
+    // ONLINE; otherwise it's paid at the establishment. Never a per-service flag.
+    const online = payOnline && svcSel.bookable && total > 0;
     const persons = svcSel.priceType === 'persona' ? Math.max(1, svcPersons) : null;
     const staff = svcStaffSel();
     const durMin = parseDurMin(svcSel.dur);
@@ -1151,10 +1153,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       setSvcDone(true);
       return;
     }
-    // Booking with a deposit/price + seller takes cards → charge inside OUR OWN
-    // branded checkout sheet (Payment Element) — never Stripe's hosted page. The
-    // confirmed booking is still created by the webhook once payment lands.
-    if (payOnline && svcSel.deposit && total > 0) {
+    // Seller takes cards → charge the full service price inside OUR OWN branded
+    // checkout sheet (Payment Element) — never Stripe's hosted page. The confirmed
+    // booking is created by the webhook once payment lands.
+    if (online) {
       const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({
         kind: 'booking', slug: b.slug, subtotal: total,
         // structured inputs → server re-prices from DB (ignores subtotal)
@@ -1175,8 +1177,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       flash(msg ? L(msg[0], msg[1]) : L('No se pudo iniciar el pago', 'Could not start payment'));
       return;
     }
-    // Cash / pay-at-venue / inquiry path — insert with the full appointment shape.
-    const { error } = await act.book(b.slug, svcSel.name, svcSel.id, svcStartISO(), persons, dep, {
+    // Pay-at-venue / inquiry path — book without a charge (deposit stays null; the
+    // full total rides in `extra` so the owner sees "Cobra en sitio $X").
+    const { error } = await act.book(b.slug, svcSel.name, svcSel.id, svcStartISO(), persons, null, {
       duration_min: durMin,
       ...(staff ? { staff_id: staff.id, staff_name: staff.name } : {}),
       ...(svcChosenAddons().length ? { addons: svcChosenAddons().map((a) => ({ n: B(a.name), p: a.price })) } : {}),
@@ -1893,7 +1896,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           <div className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-muted">{B(s.desc)}</div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <span className="flex items-center gap-1 text-[10.5px] font-bold text-muted-2"><Clock size={11} stroke={2.4} />{s.dur}</span>
-            {s.deposit && <span className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')}</span>}
             {s.addons.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{s.addons.length} extras</span>}
           </div>
           {(canBook || canInquire) && (
@@ -3563,7 +3565,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <div className="mt-1.5 flex items-center gap-3">
                 <span className="flex items-center gap-1 text-[12px] font-bold text-muted"><Clock size={13} stroke={2.4} />{s.dur}</span>
                 <span className="text-[14px] font-extrabold text-primary-dark">{svcPriceLabel(s)}</span>
-                {s.deposit && <span className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')}</span>}
               </div>
               <div className="mt-3 text-[13px] font-semibold leading-relaxed text-ink-2">{B(s.desc)}</div>
               {s.addons.length > 0 && (
@@ -3611,9 +3612,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {svcSel !== null && !svcDone && (() => {
           const total = svcTotal();
           const showTotal = svcSel.price != null && total > 0;
-          // Online deposit path is the only one a promo code affects (cash bookings
-          // settle in person). Business-absorbed % off; server re-validates at pay.
-          const svcOnlineDep = payOnline && !!svcSel.deposit && total > 0;
+          // Business-level: seller takes cards (Stripe) → pay ONLINE (full price);
+          // otherwise pay at the establishment. Same rule as the menu — never a
+          // per-service flag. A promo code only applies to the online path.
+          const svcOnlinePay = payOnline && svcSel.bookable && total > 0;
           const svcDiscount = svcPromo ? Math.min(total, +(total * svcPromo.percent / 100).toFixed(2)) : 0;
           const svcPayToday = +(total * 1.05 - svcDiscount).toFixed(2);
           return (
@@ -3770,9 +3772,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 </>
               )}
 
-              {/* promo code — only when paying a deposit online (a code has no effect
-                  on a cash/inquiry booking). The business creates it in Promociones. */}
-              {svcOnlineDep && !svcResched && (
+              {/* promo code — only when paying online (a code has no effect on a
+                  pay-at-venue / inquiry booking). The business creates it in Promociones. */}
+              {svcOnlinePay && !svcResched && (
                 <PromoField slug={b.slug} scope="service" subtotal={total} applied={svcPromo}
                   onApply={setSvcPromo} onClear={() => setSvcPromo(null)} L={L} money={money} />
               )}
@@ -3791,11 +3793,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     </div>
                   ))}
                   <div className="mt-1.5 flex justify-between border-t border-lilac-line pt-1.5"><span>{L('Total', 'Total')}</span><span className="text-[14px] font-extrabold text-ink">{money(total)}</span></div>
-                  {svcOnlineDep
+                  {svcOnlinePay
                     ? <>
                         <div className="mt-0.5 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span className="font-extrabold text-ink">{money(+(total * 0.05).toFixed(2))}</span></div>
                         {svcDiscount > 0 && <div className="mt-0.5 flex justify-between text-[11.5px] text-green-dark"><span>{L('Descuento', 'Discount')}{svcPromo ? ` · ${svcPromo.code}` : ''}</span><span className="font-extrabold">−{money(svcDiscount)}</span></div>}
-                        <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas hoy (asegura tu cita)', 'You pay today (secures your spot)')}</span><span className="font-extrabold text-primary-dark">{money(svcPayToday)}</span></div>
+                        <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas ahora con tarjeta', 'You pay now by card')}</span><span className="font-extrabold text-primary-dark">{money(svcPayToday)}</span></div>
                       </>
                     : (
                       <div className="mt-2 flex items-center gap-2 rounded-btn bg-amber-bg px-2.5 py-2">
@@ -3809,8 +3811,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <PrimaryBtn className="mt-5" onClick={confirmBooking}>
                 {svcResched
                   ? L('Confirmar nuevo horario', 'Confirm new time')
-                  : svcOnlineDep
-                    ? `${L('Pagar reserva · ', 'Pay booking · ')}${money(svcPayToday)}`
+                  : svcOnlinePay
+                    ? `${L('Pagar · ', 'Pay · ')}${money(svcPayToday)}`
                     : svcSel.bookable
                       ? showTotal ? `${L('Confirmar cita · ', 'Confirm appointment · ')}${money(total)}` : L('Solicitar reserva', 'Request booking')
                       : L('Solicitar información', 'Request info')}

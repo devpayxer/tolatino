@@ -46,7 +46,7 @@ type PriceType = 'fijo' | 'persona' | 'cotiza';
 type SvcVariant = { es: string; en?: string; options: { es: string; en?: string; delta: number }[] };
 type Svc = {
   id: number; dbId?: string; name: string; es: string; en: string; cat: string;
-  price: string; priceType: PriceType; dur: string; bookable: boolean; deposit: boolean;
+  price: string; priceType: PriceType; dur: string; bookable: boolean;
   addons: string[]; tags: string[]; days: string[]; capacity: string; imageUrl?: string;
   variants?: SvcVariant | null;
   extra?: Record<string, unknown>;
@@ -72,7 +72,6 @@ function rowToSvc(r: BizItemRow, idx: number): Svc {
     priceType: pt,
     dur: String(a.dur ?? '60 min'),
     bookable: a.bookable !== false,
-    deposit: !!a.deposit,
     addons: (a.addons as string[]) ?? [],
     tags: (a.tags as string[]) ?? [],
     days: (a.days as string[]) ?? ['Vie', 'Sáb', 'Dom'],
@@ -84,7 +83,7 @@ function rowToSvc(r: BizItemRow, idx: number): Svc {
 }
 const svcAttrs = (s: Svc): Record<string, unknown> => ({
   ...(s.extra ?? {}),
-  en: s.en, priceType: s.priceType, dur: s.dur, bookable: s.bookable, deposit: s.deposit,
+  en: s.en, priceType: s.priceType, dur: s.dur, bookable: s.bookable,
   addons: s.addons, tags: s.tags, days: s.days, capacity: s.capacity,
   variants: s.variants && s.variants.options.length > 0 ? s.variants : null,
 });
@@ -136,12 +135,12 @@ const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border
 
 // Demo services (sample so the module is explorable without signing in).
 const DEMO_SVCS: Svc[] = [
-  { id: 1, name: 'Sourdough 101', es: 'Aprende a hornear masa madre desde el fermento inicial. Incluye masa madre para llevar.', en: 'Learn to bake sourdough from the starter. Includes a starter to take home.', cat: 'classes', price: '85', priceType: 'fijo', dur: '2h', bookable: true, deposit: true, addons: ['starter'], tags: ['Más reservado'], days: ['Sáb', 'Dom'], capacity: '8–16', imageUrl: undefined },
-  { id: 2, name: 'Pizza para familias', es: 'Taller práctico de pizza al horno de leña para toda la familia.', en: 'Hands-on wood-fired pizza workshop for the whole family.', cat: 'classes', price: '60', priceType: 'fijo', dur: '90 min', bookable: true, deposit: true, addons: [], tags: ['Familiar'], days: ['Vie', 'Sáb', 'Dom'], capacity: '2–6' },
-  { id: 3, name: 'Menú degustación', es: '5 tiempos con maridaje de vino opcional. Mar–Dom, solo cena.', en: '5 courses with optional wine pairing. Tue–Sun, dinner only.', cat: 'tastings', price: '140', priceType: 'persona', dur: '2h', bookable: true, deposit: true, addons: ['wine'], tags: ['Premium'], days: ['Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'], capacity: '2–6' },
-  { id: 4, name: 'Cata de vinos', es: 'Cata guiada de vinos de California e Italia con quesos artesanales.', en: 'Guided tasting of California & Italy wines with artisan cheese.', cat: 'tastings', price: '45', priceType: 'persona', dur: '75 min', bookable: true, deposit: false, addons: [], tags: [], days: ['Vie', 'Sáb'], capacity: '8–16' },
-  { id: 5, name: 'Comedor privado', es: 'Reserva nuestra sala trasera para cenas privadas y eventos corporativos.', en: 'Book our back room for private dinners and corporate events.', cat: 'private', price: '', priceType: 'cotiza', dur: '3h+', bookable: false, deposit: false, addons: ['photos', 'setup'], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '20+' },
-  { id: 6, name: 'Catering · entrega', es: 'Catering para oficinas y eventos. Entrega o montaje en sitio.', en: 'Office & event catering. Drop-off or on-site setup.', cat: 'catering', price: '12', priceType: 'persona', dur: '3h+', bookable: false, deposit: false, addons: ['setup'], tags: [], days: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'], capacity: '20+' },
+  { id: 1, name: 'Sourdough 101', es: 'Aprende a hornear masa madre desde el fermento inicial. Incluye masa madre para llevar.', en: 'Learn to bake sourdough from the starter. Includes a starter to take home.', cat: 'classes', price: '85', priceType: 'fijo', dur: '2h', bookable: true, addons: ['starter'], tags: ['Más reservado'], days: ['Sáb', 'Dom'], capacity: '8–16', imageUrl: undefined },
+  { id: 2, name: 'Pizza para familias', es: 'Taller práctico de pizza al horno de leña para toda la familia.', en: 'Hands-on wood-fired pizza workshop for the whole family.', cat: 'classes', price: '60', priceType: 'fijo', dur: '90 min', bookable: true, addons: [], tags: ['Familiar'], days: ['Vie', 'Sáb', 'Dom'], capacity: '2–6' },
+  { id: 3, name: 'Menú degustación', es: '5 tiempos con maridaje de vino opcional. Mar–Dom, solo cena.', en: '5 courses with optional wine pairing. Tue–Sun, dinner only.', cat: 'tastings', price: '140', priceType: 'persona', dur: '2h', bookable: true, addons: ['wine'], tags: ['Premium'], days: ['Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'], capacity: '2–6' },
+  { id: 4, name: 'Cata de vinos', es: 'Cata guiada de vinos de California e Italia con quesos artesanales.', en: 'Guided tasting of California & Italy wines with artisan cheese.', cat: 'tastings', price: '45', priceType: 'persona', dur: '75 min', bookable: true, addons: [], tags: [], days: ['Vie', 'Sáb'], capacity: '8–16' },
+  { id: 5, name: 'Comedor privado', es: 'Reserva nuestra sala trasera para cenas privadas y eventos corporativos.', en: 'Book our back room for private dinners and corporate events.', cat: 'private', price: '', priceType: 'cotiza', dur: '3h+', bookable: false, addons: ['photos', 'setup'], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '20+' },
+  { id: 6, name: 'Catering · entrega', es: 'Catering para oficinas y eventos. Entrega o montaje en sitio.', en: 'Office & event catering. Drop-off or on-site setup.', cat: 'catering', price: '12', priceType: 'persona', dur: '3h+', bookable: false, addons: ['setup'], tags: [], days: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'], capacity: '20+' },
 ];
 
 // =====================================================================
@@ -370,7 +369,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setEditingId(s.id);
     setDraft({
       name: s.name, descEs: s.es, descEn: s.en, cat: s.cat, price: s.price, priceType: s.priceType,
-      dur: s.dur, bookable: s.bookable, deposit: s.deposit, addons: [...s.addons], tags: [...s.tags],
+      dur: s.dur, bookable: s.bookable, addons: [...s.addons], tags: [...s.tags],
       days: [...s.days], capacity: s.capacity, photoUrl: s.imageUrl ?? '',
       varLabel: s.variants?.es ?? '', varOpts: (s.variants?.options ?? []).map((o) => ({ es: o.es, delta: o.delta ? String(o.delta) : '' })),
     });
@@ -379,7 +378,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const draftFields = () => ({
     name: draft.name.trim() || L('Nuevo servicio', 'New service'), es: draft.descEs || draft.descEn, en: draft.descEn || draft.descEs,
     cat: draft.cat, price: draft.price, priceType: draft.priceType, dur: draft.dur, bookable: draft.bookable,
-    deposit: draft.deposit, addons: draft.addons, tags: draft.tags, days: draft.days, capacity: draft.capacity,
+    addons: draft.addons, tags: draft.tags, days: draft.days, capacity: draft.capacity,
     imageUrl: draft.photoUrl || undefined,
     variants: (() => {
       const opts = draft.varOpts.filter((o) => o.es.trim()).map((o) => ({ es: o.es.trim(), delta: Math.max(0, Number(o.delta) || 0) }));
@@ -421,7 +420,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[16px] bg-lilac-2 text-primary-dark"><Lock size={26} stroke={2.2} /></span>
           <div className="text-[17px] font-extrabold text-ink">{L('Servicios y reservas', 'Services & bookings')}</div>
           <div className="mt-2 max-w-[380px] text-[12.5px] font-medium leading-relaxed text-muted">
-            {L(`Publica servicios reservables para ${ci.name}, cobra depósitos y gestiona tu calendario. Disponible en el plan Verified.`, `Publish bookable services for ${ci.name}, take deposits and manage your calendar. Available on the Verified plan.`)}
+            {L(`Publica servicios reservables para ${ci.name}, cobra en línea y gestiona tu calendario. Disponible en el plan Verified.`, `Publish bookable services for ${ci.name}, get paid online and manage your calendar. Available on the Verified plan.`)}
           </div>
           <button onClick={() => ctx.go('billing')} className="mt-4 rounded-btn-lg bg-primary px-6 py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Iniciar verificación', 'Start verification')}</button>
         </div>
@@ -577,12 +576,14 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       {['30 min', '45 min', '60 min', '90 min', '2h', '3h+'].map((d) => <button key={d} onClick={() => upD({ dur: d })} className={chip(draft.dur === d)}>{d}</button>)}
                     </ChipRow>
                   </div>
-                  <div className="flex items-center gap-3 rounded-btn-lg border border-hair bg-app p-3.5">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[12.5px] font-bold text-ink">{L('Requiere depósito', 'Require deposit')}</div>
-                      <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('Cobra un anticipo al reservar.', 'Charge upfront at booking.')}</div>
-                    </div>
-                    <Switch big on={draft.deposit} onClick={() => upD({ deposit: !draft.deposit })} />
+                  {/* How the customer pays is a BUSINESS-level decision (Modo del
+                      listado + whether Stripe is connected), NEVER per service —
+                      same rule as the menu. No per-service "deposit" toggle. */}
+                  <div className="flex items-start gap-2.5 rounded-btn-lg bg-lilac-2 p-3">
+                    <span className="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-[8px] bg-white text-primary-dark"><CalendarCheck size={14} stroke={2.2} /></span>
+                    <span className="text-[10.5px] font-medium leading-snug text-ink-3">
+                      {L('El cobro se define a nivel del negocio: si conectas Stripe, tus clientes pagan en línea; si no, pagan en el local. No se configura por servicio.', 'How you get paid is set at the business level: with Stripe connected, customers pay online; otherwise they pay at your place. Not per service.')}
+                    </span>
                   </div>
 
                   {/* Price variants — optional single-choice group that ADDS to the
@@ -642,7 +643,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div>
                     <div className={fieldLabel}>{L('¿Cómo se vende?', 'How is it sold?')}</div>
                     <div className="flex flex-col gap-2.5">
-                      {([['bookable', L('Reservable', 'Bookable'), L('Acepta citas y depósitos', 'Accepts appointments & deposits'), CalendarCheck], ['inquiry', L('Solo consulta', 'Inquiry only'), L('Recolecta leads para cotizar', 'Collects leads to quote'), MessageSquare]] as const).map(([k, lbl, sub, Icon]) => {
+                      {([['bookable', L('Reservable', 'Bookable'), L('Acepta citas con horario', 'Accepts scheduled appointments'), CalendarCheck], ['inquiry', L('Solo consulta', 'Inquiry only'), L('Recolecta leads para cotizar', 'Collects leads to quote'), MessageSquare]] as const).map(([k, lbl, sub, Icon]) => {
                         const on = (k === 'bookable') === draft.bookable;
                         return (
                           <button key={k} onClick={() => upD({ bookable: k === 'bookable' })} className={`flex items-center gap-3 rounded-btn-lg border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
@@ -871,7 +872,6 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     </span>
                     <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{s.dur} · {s.bookable ? L('reservable', 'bookable') : L('solo consulta', 'inquiry only')}</span>
                     <span className="mt-1 flex flex-wrap items-center gap-1.5">
-                      {s.deposit && <span className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Depósito', 'Deposit')}</span>}
                       {s.addons.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{s.addons.length} {L('add-ons', 'add-ons')}</span>}
                       {s.tags.map((t) => <span key={t} className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[9px] font-extrabold text-amber-ink">{tagLabel(t, L)}</span>)}
                     </span>
@@ -1003,7 +1003,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     { Icon: CalendarCheck, c: '#1F8A4C', bg: '#E3F5EA', label: L('Hoy', 'Today'), value: String(todayCount) },
     { Icon: MessageSquare, c: '#9A6A12', bg: '#FCEFD6', label: L('Por confirmar', 'Pending'), value: String(pending) },
     { Icon: CalendarDays, c: '#6D4DF6', bg: '#EFEBFF', label: L('Próximas', 'Upcoming'), value: String(upcoming) },
-    { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Depósitos', 'Deposits'), value: `$${depositsHeld}` },
+    { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Cobrado en línea', 'Paid online'), value: `$${depositsHeld}` },
   ];
   const bkFilterChip = (on: boolean) => `flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
 
@@ -1143,8 +1143,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mt-4 flex flex-wrap items-center gap-3.5 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-amber"><Sparkles size={18} stroke={2.2} /></span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[13.5px] font-extrabold">{L('Recordatorios SMS y depósitos automáticos', 'SMS reminders & auto-deposits')}</span>
-            <span className="mt-0.5 block max-w-[520px] text-[11.5px] font-medium leading-snug text-[rgba(255,255,255,.7)]">{L('Reduce no-shows con recordatorios y cobra anticipos sin esfuerzo. Incluido en Premium.', 'Cut no-shows with reminders and collect deposits hands-free. Included with Premium.')}</span>
+            <span className="block text-[13.5px] font-extrabold">{L('Recordatorios SMS automáticos', 'Automatic SMS reminders')}</span>
+            <span className="mt-0.5 block max-w-[520px] text-[11.5px] font-medium leading-snug text-[rgba(255,255,255,.7)]">{L('Reduce no-shows con recordatorios automáticos a tus clientes. Incluido en Premium.', 'Cut no-shows with automatic reminders to your customers. Included with Premium.')}</span>
           </span>
           <button onClick={() => ctx.go('billing')} className="flex-none rounded-btn bg-amber px-3.5 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar a Premium', 'Upgrade to Premium')}</button>
         </div>
@@ -1159,11 +1159,11 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 // ---------- draft ----------
 type Draft = {
   name: string; descEs: string; descEn: string; cat: string; price: string; priceType: 'fijo' | 'persona' | 'cotiza';
-  dur: string; bookable: boolean; deposit: boolean; addons: string[]; tags: string[]; days: string[]; capacity: string; photoUrl: string;
+  dur: string; bookable: boolean; addons: string[]; tags: string[]; days: string[]; capacity: string; photoUrl: string;
   // Optional price-variant group (delta as string while typing).
   varLabel: string; varOpts: { es: string; delta: string }[];
 };
-const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', priceType: 'fijo', dur: '60 min', bookable: true, deposit: false, addons: [], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '1', photoUrl: '', varLabel: '', varOpts: [] });
+const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', priceType: 'fijo', dur: '60 min', bookable: true, addons: [], tags: [], days: ['Vie', 'Sáb', 'Dom'], capacity: '1', photoUrl: '', varLabel: '', varOpts: [] });
 const SVC_TAGS = ['Más reservado', 'Familiar', 'Premium', 'Nuevo'];
 const tagLabel = (t: string, L: (es: string, en: string) => string) => ({ 'Más reservado': L('Más reservado', 'Most booked'), Familiar: L('Familiar', 'Family'), Premium: 'Premium', Nuevo: L('Nuevo', 'New') } as Record<string, string>)[t] ?? t;
 

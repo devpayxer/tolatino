@@ -280,6 +280,31 @@ One responsive app, three surfaces:
   (`startMarketplaceCheckout` → `window.location.href = url` is the forbidden
   pattern). Stripe still renders the secure card iframes inside our sheet, so
   PCI stays minimal — but the look, copy and flow are ours.
+- **Vender vs Catálogo, y cómo se cobra — MODELO CANÓNICO (founder rule,
+  2026-07-15).** Aplica idéntico a TODA superficie transaccional: **Menú,
+  Tienda, Servicios, Renta, Eventos** y cualquiera futura. Se decidió con el
+  Menú y NO se re-inventa por sección:
+  1. El dueño decide a **NIVEL NEGOCIO** (por módulo, nunca por ítem):
+     **Solo mostrar** (catálogo — muestra ítems + precios, sin comprar/reservar;
+     el cliente llama o visita) **o Vender** (Pedidos / Comprar / Reservas /
+     Renta en línea). Un toggle, dos estados. (`menu_config.ordering`,
+     `product_config.selling`, `service_config.booking`, rental `renting`.)
+  2. Si **vende**, CÓMO se cobra se deriva de **UN solo hecho a nivel negocio**:
+     ¿tiene Stripe Connect? (`businesses.connect_charges_enabled` →
+     `acceptsPayments` → `payOnline`):
+     - **Con Stripe → paga EN LÍNEA** con tarjeta dentro de nuestra hoja
+       (`CheckoutSheet`, ver regla anterior).
+     - **Sin Stripe → paga EN EL ESTABLECIMIENTO** (efectivo al recibir /
+       recoger / terminar la cita).
+  3. **NUNCA por ítem.** Todos los ítems/servicios de una superficie que vende
+     cobran IGUAL. Prohibido un flag por-producto/servicio que decida
+     online-vs-presencial. (Ese fue el bug de Servicios: el flag `deposit`
+     por-servicio — eliminado 2026-07-15.)
+  4. El precio en línea es el **precio COMPLETO** del ítem/servicio (el menú
+     cobra el precio del platillo; la reserva cobra el precio del servicio). No
+     hay "depósito parcial" por servicio. (La **renta** sí tiene un depósito
+     reembolsable de garantía — es OTRA cosa: dinero que se retiene y devuelve,
+     se cobra al recoger, no un flag de pago.)
 
 ## Database & migrations (Supabase)
 

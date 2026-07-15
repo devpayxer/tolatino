@@ -43,6 +43,18 @@ it** rather than breaking the rule silently.
   `window.location.href = url` is the forbidden pattern). Stripe still renders
   the secure card iframes inside our sheet (PCI stays minimal), but the look,
   copy and flow are To'Latino's.
+- **Vender vs Catálogo — MODELO CANÓNICO (founder rule, 2026-07-15).** Idéntico
+  en TODA superficie transaccional (Menú, Tienda, Servicios, Renta, Eventos).
+  No re-inventar por sección — se decidió con el Menú:
+  1. El dueño elige a **nivel negocio** (por módulo, NUNCA por ítem): **Solo
+     mostrar** (catálogo, sin comprar) **o Vender**.
+  2. Si vende, cómo se cobra sale de **un solo hecho**: ¿tiene Stripe Connect
+     (`acceptsPayments`/`payOnline`)? **Sí → paga en línea** en nuestra hoja;
+     **No → paga en el establecimiento** (efectivo).
+  3. **Nunca un flag por-ítem** que decida online-vs-presencial (fue el bug de
+     Servicios: `deposit` por-servicio, eliminado). El cobro en línea es el
+     **precio completo** del ítem. (La renta sí tiene depósito reembolsable de
+     garantía — cosa distinta: se retiene y devuelve.)
 
 ## 3. Spanish-first
 - Default language **es-US**; English **en-US** is secondary.

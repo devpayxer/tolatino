@@ -259,9 +259,10 @@ Deno.serve(async (req) => {
         },
       };
     } else if (kind === 'booking') {
-      // RE-PRICE the booking deposit from DB (never trust body.subtotal). The
-      // service id comes in the payload; party size + add-on ids are structured
-      // inputs. total = (persona ? price×party : price) + Σ allowed add-on prices.
+      // RE-PRICE the booking from DB (never trust body.subtotal). Payment is a
+      // BUSINESS-level decision (the seller took cards → we're here); ANY priced
+      // bookable service charges the FULL service price online — no per-service
+      // deposit flag. total = (persona ? price×party : price) + variant + add-ons.
       const biz = (await get(`businesses?slug=eq.${encodeURIComponent(slug)}&select=id,name,stripe_account_id,connect_charges_enabled`))?.[0];
       if (!biz) return json({ error: 'business not found' }, 404);
       if (!biz.connect_charges_enabled || !biz.stripe_account_id) return json({ error: 'seller_not_payable' }, 400);
@@ -271,9 +272,9 @@ Deno.serve(async (req) => {
       const svc = (Array.isArray(svcRow?.items) ? svcRow!.items as Record<string, unknown>[] : []).find((i) => String(i.id) === String(svcId ?? ''));
       if (!svc) return json({ error: 'item_unavailable' }, 400);
       const a = (svc.attrs ?? {}) as Record<string, unknown>;
-      if (!a.deposit) return json({ error: 'no_deposit' }, 400);              // only deposit bookings charge online
+      if (a.bookable === false) return json({ error: 'not_payable' }, 400); // inquiry-only services never charge
       const price0 = svc.price != null ? Number(svc.price) : NaN;
-      if (!(price0 >= 0)) return json({ error: 'not_payable' }, 400);
+      if (!(price0 > 0)) return json({ error: 'not_payable' }, 400);        // free / quote services book without a charge
       const party = Math.max(1, Math.min(999, Math.floor(Number(body?.party_size ?? 1))));
       let total = a.priceType === 'persona' ? price0 * party : price0;
       // Price VARIANT (e.g. vehicle type): the client sends the option index; the

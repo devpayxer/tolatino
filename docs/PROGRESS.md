@@ -5,6 +5,44 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Servicios: cobro consistente a nivel negocio (bug de `deposit` por-servicio) (2026-07-15)
+
+El fundador detectó una incoherencia: en Servicios, unos servicios pagaban en
+línea y otros en el local **dentro del mismo negocio** — porque yo había puesto
+un flag `deposit` POR SERVICIO. Eso no tiene lógica: "o acepta pagos o no".
+
+**Regla canónica guardada en memoria** (`CLAUDE.md` + skill `tolatino-standards`
+§2), tal como se hizo con el Menú, para no re-inventarla por sección (Menú,
+Tienda, Servicios, Renta, Eventos):
+1. El dueño decide a **nivel negocio** (por módulo, nunca por ítem): **Solo
+   mostrar** (catálogo) **o Vender**.
+2. Si vende, cómo se cobra sale de **un solo hecho**: ¿tiene Stripe Connect
+   (`acceptsPayments`/`payOnline`)? **Sí → paga en línea** (precio completo, en
+   nuestra hoja); **No → paga en el establecimiento**.
+3. **Nunca un flag por-ítem.** El de Servicios (`deposit`) se eliminó.
+
+**Cambios:**
+- **Consumidor** (`BizDetail`): el pago de reserva se deriva de
+  `payOnline && bookable && total>0` (antes `&& svcSel.deposit`). Copy: "Pagas
+  ahora con tarjeta" / "Pagas en el local al terminar". Se quitó el badge
+  "Depósito" de las tarjetas y hoja de detalle. `SvcTarget.deposit` y
+  `PubSvc.deposit` eliminados.
+- **Panel** (`Services.tsx`): se quitó el toggle "Requiere depósito" del wizard
+  (paso Precio) y todo rastro del campo `deposit` en el modelo `Svc`/draft; en
+  su lugar una nota: "El cobro se define a nivel del negocio (Stripe → en línea;
+  si no, en el local). No se configura por servicio." KPI "Depósitos" → "Cobrado
+  en línea"; copys de upsell/Premium/paso-Reserva sin la palabra depósito.
+- **Edge fn** (`marketplace-checkout`): se quitó el guard `no_deposit`; ahora
+  cualquier servicio reservable con precio > 0 cobra el precio COMPLETO en línea
+  cuando el negocio es pagable (inquiry/gratis → sin cargo).
+- La **renta** ya lo hacía bien (`rentOnline = payOnline && fee>0`, no por-ítem)
+  y su depósito reembolsable de garantía es OTRA cosa — intacto.
+
+Verificado en navegador real (Aqua Shine, el negocio del bug): TODOS los
+servicios ahora muestran "Pagar · $X" en línea consistente (Express, Completo,
+Aspirado — antes mezclados), sin badge Depósito, y "Pagar" abre NUESTRA hoja
+(Lavado Completo $23.10). Artefactos borrados. `tsc` + `build` limpios.
+
 ## Novedades (Updates) completo — nivel Google Business posts (2026-07-15)
 
 El menú **Novedades** pasó de semi-maqueta a flujo completo y real en ambos
