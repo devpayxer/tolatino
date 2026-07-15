@@ -37,6 +37,9 @@ Thumbs.db
 .tmp/
 coverage/
 
+# Generated seed SQL (scripts/seed-*.mjs write these before running them)
+.seed-*.sql
+
 # mobile-audit: standalone tool, Playwright installed locally via npm (not pnpm)
 tools/mobile-audit/package-lock.json
 tools/mobile-audit/img/
