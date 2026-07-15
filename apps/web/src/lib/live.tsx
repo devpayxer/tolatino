@@ -321,7 +321,7 @@ export type PubSvcCat = { key: string; name: Bi; items: PubSvc[] };
 /** The real public services for a listing: items grouped by the owner's service
  *  categories, the full add-on catalog (for the booking sheet), the booking
  *  mode (false = display-only → no online Reservar) and the bookable team. */
-export type PublicServices = { cats: PubSvcCat[]; addons: PubSvcAddon[]; booking: boolean; providers: PubProvider[] };
+export type PublicServices = { cats: PubSvcCat[]; addons: PubSvcAddon[]; booking: boolean; autoConfirm: boolean; providers: PubProvider[] };
 
 /** Fetch + map a business's real services by slug (migration 0046). Returns null
  *  when offline / no published services — BizDetail falls back to the fixtures. */
@@ -394,7 +394,7 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
       serviceIds: Array.isArray(p.serviceIds) ? p.serviceIds.map(String) : [],
     }));
 
-  return { cats, addons, booking: cfg.booking, providers };
+  return { cats, addons, booking: cfg.booking, autoConfirm: cfg.autoConfirm, providers };
 }
 
 /** The real public shop for a listing: products grouped by the owner's product

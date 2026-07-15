@@ -82,7 +82,10 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
     }
     case 'booking_new': {
       const who = [s('service'), s('name')].filter(Boolean).join(' · ');
-      return { title: ['Nueva reserva 📅', 'New booking 📅'], sub: [who, who] };
+      // pending → needs the owner's approval; confirmed → auto-confirmed booking
+      return d.status === 'pending'
+        ? { title: ['Nueva solicitud de cita 📅', 'New booking request 📅'], sub: [who, who] }
+        : { title: ['Nueva reserva 📅', 'New booking 📅'], sub: [who, who] };
     }
     case 'booking_status': {
       const svc = [s('service'), s('service')] as [string, string];

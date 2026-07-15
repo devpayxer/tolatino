@@ -49,6 +49,12 @@ export type ServiceConfig = {
   // business that just wants to showcase); true = accept online bookings (the
   // Reservar flow + deposits).
   booking: boolean;
+  // Approval mode (Booksy "Instant book" vs "Request to book"). true = a new
+  // customer booking is CONFIRMED immediately; false = it arrives 'pending' and
+  // the owner approves/declines in the agenda. Default false (manual). Enforced
+  // server-side (migration 0095) — the client can never self-confirm. Applies to
+  // pay-at-establishment bookings; paid-online bookings are always confirmed.
+  autoConfirm: boolean;
   // Promotions the owner manages from the Promociones hub. A `percent` promo with a
   // `code` is redeemable at booking checkout (business-absorbed). Reuses menu Promo.
   promos: Promo[];
@@ -87,6 +93,7 @@ export const defaultServiceConfig = (): ServiceConfig => ({
   addons: [],
   tags: [],
   booking: false,
+  autoConfirm: false,
   promos: [],
   providers: [],
 });
@@ -107,6 +114,7 @@ export const demoServiceConfig = (): ServiceConfig => ({
   ],
   tags: ['A domicilio', 'Bilingüe'],
   booking: true,
+  autoConfirm: false,
   promos: [],
   providers: [
     { id: 'chef-r', name: 'Chef Rosa', tagEs: 'Cocina dominicana', tagEn: 'Dominican cuisine', color: PROVIDER_COLORS[1], active: true },
@@ -124,6 +132,7 @@ export function normalizeServiceConfig(raw: unknown): ServiceConfig {
     addons: Array.isArray(r.addons) ? r.addons : [],
     tags: Array.isArray(r.tags) ? r.tags : [],
     booking: r.booking === true, // default display-only
+    autoConfirm: r.autoConfirm === true, // default manual approval
     promos: Array.isArray(r.promos) ? r.promos : [],
     providers: Array.isArray(r.providers) ? r.providers.filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string') : [],
   };

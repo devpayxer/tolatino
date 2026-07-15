@@ -846,6 +846,26 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </p>
       </div>
 
+      {/* APPROVAL MODE: auto-confirm vs manual approval (Booksy "Instant book" vs
+          "Request to book"). Only meaningful when accepting bookings. */}
+      {cfg.booking && (
+        <div className={`${cardCls} p-3.5`}>
+          <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CheckCircle2 size={15} stroke={2.2} className="text-primary-dark" />{L('Confirmación de citas', 'Booking confirmation')}</div>
+          <div className="flex rounded-full bg-lilac-2 p-0.5">
+            <button onClick={() => { if (cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: false }); flash(L('Las citas requieren tu aprobación', 'Bookings now need your approval')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Requiere aprobación', 'Needs approval')}</button>
+            <button onClick={() => { if (!cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: true }); flash(L('Las citas se confirman automáticamente', 'Bookings now confirm automatically')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Automática', 'Automatic')}</button>
+          </div>
+          <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
+            {cfg.autoConfirm
+              ? L('La cita queda confirmada al instante cuando el cliente reserva. No tienes que hacer nada.', 'The appointment is confirmed instantly when the customer books. You don’t have to do anything.')
+              : L('Cada cita llega como «Por confirmar» a tu agenda. Tú la confirmas o rechazas — el cliente recibe aviso.', 'Each booking arrives as “Pending” in your agenda. You confirm or decline — the customer is notified.')}
+          </p>
+          <p className="mt-1.5 text-[10.5px] font-semibold leading-relaxed text-muted-2">
+            {L('Las citas que se pagan en línea siempre quedan confirmadas al pagar.', 'Bookings paid online are always confirmed on payment.')}
+          </p>
+        </div>
+      )}
+
       {groups.length === 0 ? (
         <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no tienes servicios — agrega el primero.', 'No services yet — add your first one.')}</div>
       ) : groups.map((g) => (

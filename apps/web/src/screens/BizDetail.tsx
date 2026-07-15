@@ -251,6 +251,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     return () => { cancelled = true; };
   }, [b.slug]);
   const svcBooking = realServices?.booking ?? false;
+  // Approval mode (0095): true = a new pay-at-venue booking is confirmed instantly;
+  // false = it arrives 'pending' and the owner approves it. The server enforces the
+  // real status; this only drives the confirmation copy the client sees.
+  const svcAutoConfirm = realServices?.autoConfirm ?? false;
   // Display-only services: booking off → showcase (no Reservar). Cash bookings still work.
   const svcDisplayOnly = realServices != null && !realServices.booking;
   // "Reagendar" deep link from Mi cuenta (?resched=<bookingId>): once services +
@@ -395,7 +399,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [svcBusy, setSvcBusy] = useState<BookingBusy[]>([]);
   const [svcResched, setSvcResched] = useState<string | null>(null);
   // Snapshot for the "¡Cita agendada!" confirmation card (survives sheet reset).
-  const [svcDoneInfo, setSvcDoneInfo] = useState<{ name: string; when: string; staff: string; total: number; startISO: string; durMin: number; resched: boolean } | null>(null);
+  const [svcDoneInfo, setSvcDoneInfo] = useState<{ name: string; when: string; staff: string; total: number; startISO: string; durMin: number; resched: boolean; confirmedNow: boolean } | null>(null);
   const [rentIdx, setRentIdx] = useState<number | null>(null);
   const [rentMode, setRentMode] = useState<RentMode>('day');
   const [rentStart, setRentStart] = useState<string | null>(null); // yyyy-mm-dd
@@ -1165,7 +1169,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         flash(/staff_slot_taken/.test(error) ? L('Ese horario se acaba de ocupar — elige otro', 'That time was just taken — pick another') : L('No se pudo reagendar', 'Could not reschedule'));
         return;
       }
-      setSvcDoneInfo({ name: svcSel.name, when: whenLabel, staff: staff?.name ?? '', total, startISO: svcStartISO(), durMin, resched: true });
+      setSvcDoneInfo({ name: svcSel.name, when: whenLabel, staff: staff?.name ?? '', total, startISO: svcStartISO(), durMin, resched: true, confirmedNow: false });
       setSvcDone(true);
       return;
     }
@@ -1207,7 +1211,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       flash(/staff_slot_taken/.test(error) ? L('Ese horario se acaba de ocupar — elige otro', 'That time was just taken — pick another') : L('No se pudo enviar la reserva', 'Could not send the booking'));
       return;
     }
-    setSvcDoneInfo({ name: svcSel.name, when: whenLabel, staff: staff?.name ?? '', total, startISO: svcStartISO(), durMin, resched: false });
+    setSvcDoneInfo({ name: svcSel.name, when: whenLabel, staff: staff?.name ?? '', total, startISO: svcStartISO(), durMin, resched: false, confirmedNow: svcAutoConfirm });
     setSvcDone(true);
   };
 
@@ -3778,13 +3782,30 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <Check size={32} stroke={3} className="text-white" />
             </span>
             <div className="mt-4 text-[21px] font-extrabold text-ink">
-              {svcDoneInfo?.resched ? L('¡Cita reagendada!', 'Appointment moved!') : svcSel.bookable ? L('¡Cita agendada!', 'Appointment booked!') : L('¡Consulta enviada!', 'Inquiry sent!')}
+              {svcDoneInfo?.resched
+                ? L('¡Cita reagendada!', 'Appointment moved!')
+                : !svcSel.bookable
+                  ? L('¡Consulta enviada!', 'Inquiry sent!')
+                  : svcDoneInfo?.confirmedNow
+                    ? L('¡Cita confirmada!', 'Appointment confirmed!')
+                    : L('¡Cita solicitada!', 'Appointment requested!')}
             </div>
             <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
-              {svcSel.bookable
-                ? L('El negocio confirmará tu cita — te avisamos al instante.', 'The business will confirm your appointment — we’ll notify you right away.')
-                : L('Te contactaremos pronto para confirmar los detalles.', "We'll contact you soon to confirm the details.")}
+              {!svcSel.bookable
+                ? L('Te contactaremos pronto para confirmar los detalles.', "We'll contact you soon to confirm the details.")
+                : svcDoneInfo?.resched
+                  ? L('El negocio confirmará el nuevo horario — te avisamos.', 'The business will confirm the new time — we’ll notify you.')
+                  : svcDoneInfo?.confirmedNow
+                    ? L('Tu cita quedó confirmada. ¡Te esperamos!', 'Your appointment is confirmed. See you there!')
+                    : L('El negocio confirmará tu cita — te avisamos al instante.', 'The business will confirm your appointment — we’ll notify you right away.')}
             </div>
+            {/* status chip mirrors the real booking state (server-enforced) */}
+            {svcSel.bookable && (
+              <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-extrabold ${svcDoneInfo?.confirmedNow && !svcDoneInfo?.resched ? 'bg-green-bg text-green-dark' : 'bg-amber-bg text-amber-ink'}`}>
+                <Clock size={12} stroke={2.4} />
+                {svcDoneInfo?.confirmedNow && !svcDoneInfo?.resched ? L('Confirmada', 'Confirmed') : L('Por confirmar', 'Pending')}
+              </span>
+            )}
             {/* appointment summary card (service · pro · when · total) */}
             {svcDoneInfo && svcSel.bookable && (
               <div className="mt-4 w-full max-w-[300px] rounded-card-sm border border-hair bg-white p-4 text-left shadow-card">
