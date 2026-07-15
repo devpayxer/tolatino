@@ -3,9 +3,11 @@
 // Post-payment return (DoorDash's "Order Processing" screen). When the buyer
 // comes back from Stripe with ?pay=success&pid=<pending_purchase id>, we poll the
 // staged purchase (RLS: buyer reads own) until the webhook fulfills it, then show
-// a full "¡Pedido confirmado!" sheet — order code, ETA banner, status timeline,
-// receipt and a CTA to live tracking (Mi cuenta → order detail). Tickets/bookings/
-// rentals get their kind-specific confirmation. ?pay=cancel keeps the light toast.
+// a "¡Pedido recibido!" sheet — order code, ETA banner, a LIVE status tracker that
+// starts at "Esperando confirmación" (the business hasn't accepted yet) and only
+// advances once it does, receipt, and a CTA to full tracking (Mi cuenta → order
+// detail). Tickets/bookings/rentals get their kind-specific confirmation.
+// ?pay=cancel keeps the light toast.
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,6 +28,19 @@ type PendingRow = {
   } | null;
   result: { id?: string; code?: string; tickets?: string[] } | null;
 };
+
+// Tracker stage for THIS screen: 0 Esperando confirmación · 1 Preparando ·
+// 2 En camino · 3 Entregado. A just-paid order is always 'new' → 0 until the
+// business accepts it — never pre-mark it confirmed. Mirrors orderStageKey
+// (Cuenta.tsx) so the post-payment screen and the live tracker agree.
+function orderStageIdx(o: { status: string; channel: string | null; fulfillment: { dispatch?: string } | null } | undefined): number {
+  if (!o) return 0;
+  const d = o.fulfillment?.dispatch;
+  if (o.status === 'completed' || d === 'delivered') return 3;
+  if (o.channel === 'delivery' && (d === 'picked_up' || d === 'on_the_way')) return 2;
+  if (o.status === 'preparing' || o.status === 'ready') return 1;
+  return 0;
+}
 
 export function PurchaseReturnToast() {
   const { L } = useLang();
@@ -104,6 +119,13 @@ export function PurchaseReturnToast() {
   const money = (n: number | undefined | null) => (n == null ? '' : `$${Number(n).toFixed(2)}`);
   const f = row?.payload?.fulfillment;
   const isDelivery = row?.payload?.channel === 'delivery';
+  // Reflect the REAL order stage (live from Mi actividad). Just after payment it's
+  // 'new' → "Esperando confirmación"; if the owner accepts while this is open, it
+  // advances on its own. Falls back to 0 until the order row loads.
+  const orderId = row?.result?.id;
+  const liveOrder = orderId ? act.orders.find((o) => o.id === orderId) : undefined;
+  const stageIdx = orderStageIdx(liveOrder);
+  const bizName = row?.payload?.business ?? (L('El negocio', 'The business'));
 
   return (
     <>
@@ -126,14 +148,16 @@ export function PurchaseReturnToast() {
                 <Check size={30} stroke={3.2} className="text-green" />
               </span>
               <div className="mt-3.5 text-[20px] font-extrabold text-ink">
-                {row.kind === 'order' ? L('¡Pedido confirmado!', 'Order placed!')
+                {row.kind === 'order' ? L('¡Pedido recibido!', 'Order placed!')
                   : row.kind === 'ticket' ? L('¡Boletos confirmados!', 'Tickets confirmed!')
                   : row.kind === 'booking' ? L('¡Reserva pagada!', 'Booking paid!')
                   : L('¡Renta pagada!', 'Rental paid!')}
               </div>
               <div className="mt-1 max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">
                 {row.kind === 'order'
-                  ? L(`${row.payload?.business ?? 'El negocio'} recibió tu pedido y lo está preparando.`, `${row.payload?.business ?? 'The business'} received your order and is preparing it.`)
+                  ? stageIdx > 0
+                    ? L(`${bizName} confirmó tu pedido y lo está preparando.`, `${bizName} confirmed your order and is preparing it.`)
+                    : L(`Enviamos tu pedido a ${bizName}. Te avisamos apenas lo confirme.`, `We sent your order to ${bizName}. We'll let you know as soon as they confirm it.`)
                   : row.kind === 'ticket'
                     ? L('Tu pago fue procesado y tus boletos ya están en Mi cuenta.', 'Your payment went through and your tickets are in My account.')
                     : L('Tu pago fue procesado y la confirmación está en Mi cuenta.', 'Your payment went through and the confirmation is in My account.')}
@@ -154,23 +178,28 @@ export function PurchaseReturnToast() {
               </div>
             )}
 
-            {/* estado inicial */}
+            {/* estado en vivo — arranca en "Esperando confirmación" (paso 1 activo,
+                sin palomita) y avanza solo cuando el negocio acepta. */}
             {row.kind === 'order' && (
               <div className="mt-4 flex flex-col gap-0 rounded-card border border-hair bg-white p-4 shadow-card">
                 {(isDelivery
-                  ? [[L('Pedido confirmado', 'Order confirmed'), true], [L('Preparando tu pedido', 'Preparing your order'), false], [L('En camino', 'On the way'), false], [L('Entregado', 'Delivered'), false]]
-                  : [[L('Pedido confirmado', 'Order confirmed'), true], [L('Preparando', 'Preparing'), false], [L('Listo para recoger', 'Ready for pickup'), false]]
-                ).map(([label, done], i, arr) => (
-                  <div key={String(label)} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-full ${done ? 'bg-green' : i === 1 ? 'bg-primary' : 'bg-lilac-line'}`}>
-                        {done ? <Check size={11} stroke={3.6} className="text-white" /> : <span className={`h-1.5 w-1.5 rounded-full ${i === 1 ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
-                      </span>
-                      {i < arr.length - 1 && <span className={`w-[2px] flex-1 ${done ? 'bg-green' : 'bg-lilac-line'}`} style={{ minHeight: 14 }} />}
+                  ? [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), L('Preparando', 'Preparing'), L('En camino', 'On the way'), L('Entregado', 'Delivered')]
+                  : [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), L('Preparando', 'Preparing'), L('Listo para recoger', 'Ready for pickup')]
+                ).map((label, i, arr) => {
+                  const done = i < stageIdx;
+                  const active = i === stageIdx;
+                  return (
+                    <div key={label} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-full ${done ? 'bg-green' : active ? 'bg-primary' : 'bg-lilac-line'}`}>
+                          {done ? <Check size={11} stroke={3.6} className="text-white" /> : <span className={`h-1.5 w-1.5 rounded-full ${active ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
+                        </span>
+                        {i < arr.length - 1 && <span className={`w-[2px] flex-1 ${done ? 'bg-green' : 'bg-lilac-line'}`} style={{ minHeight: 14 }} />}
+                      </div>
+                      <div className={`pb-2.5 text-[12px] ${done ? 'font-extrabold text-ink' : active ? 'font-extrabold text-ink' : 'font-semibold text-muted'}`}>{label}</div>
                     </div>
-                    <div className={`pb-2.5 text-[12px] ${done ? 'font-extrabold text-ink' : i === 1 ? 'font-bold text-ink-soft' : 'font-semibold text-muted'}`}>{label}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
