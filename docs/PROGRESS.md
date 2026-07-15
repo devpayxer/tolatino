@@ -87,6 +87,16 @@ Pendiente (LAUNCH-CHECKLIST): el mapa y la ETA/foto de entrega son ilustrativos 
 tracking GPS real del repartidor y subida de foto de entrega quedan para cuando exista
 la app del repartidor.
 
+**Fix (2026-07-15): la pantalla de confirmación post-pago** (`PurchaseReturnToast`,
+al volver de pagar con `?pay=success`) también arrancaba mal — decía "¡Pedido
+confirmado!" y saltaba el tracker a "Preparando" apenas pagabas, antes de que el
+negocio aceptara. Ahora deriva el estado del pedido REAL (en vivo vía
+`useMyActivity`, misma lógica `orderStageKey`): un pedido recién pagado es `new` →
+paso 1 **"Esperando confirmación"** activo sin palomita, y avanza solo (paso 1 →
+"Confirmado" ✓, paso 2 "Preparando") cuando el dueño acepta. Título "¡Pedido
+recibido!" y subtítulo "Te avisamos apenas lo confirme" hasta que confirme. Queda
+consistente con el tracker de Mi cuenta. Verificado en navegador (ambos estados).
+
 ## Checkout propio en la app (Stripe Payment Element, estilo DoorDash) (2026-07-14)
 
 El pago del carrito ya NO redirige a la página hosted de Stripe: ahora se paga
