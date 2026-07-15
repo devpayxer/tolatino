@@ -5,6 +5,35 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Ficha detallada del producto (PDP nivel Wayfair/Amazon) — OPCIONAL (2026-07-15)
+
+Para tiendas de artículos grandes (muebles, electrónica…) el detalle del producto
+ahora puede ser una página rica — y es **100% opcional por producto**, manejada
+desde el dashboard:
+- **Consumer** (`BizDetail`, hoja de detalle): cuando el producto trae ficha, la
+  hoja se enriquece — **galería deslizable** (hasta 6 fotos, contador 1/N, badge
+  −%), **marca**, precio grande + tachado + chip "Ahorras $X", variantes (option
+  sets, ya existían), **Descripción** larga y **tabla de Especificaciones**
+  (filas cebra). Sin ficha → la hoja compacta de siempre (comida intacta).
+  Copy de tienda: título "Detalle del producto", nota "Nota para el vendedor".
+- **Dashboard** (módulo Productos, paso Detalles): sección colapsable **"Ficha
+  detallada · opcional"** — Marca, Descripción larga (ES/EN), Especificaciones
+  repetibles (etiqueta + valor, con sugerencias Dimensiones/Material/Garantía…),
+  y **Galería de fotos** (hasta 6, mismo pipeline de subida comprimida).
+- **Datos**: todo vive en `business_items.attrs` (`brand`, `longEs/longEn`,
+  `specs[]`, `photos[]`) — sin migración; el RPC público ya lo sirve y el
+  mapeo (`toItem`) lo expone en `MenuItem` (`brand/longD/specs/photos`).
+- **Tienda de prueba**: `scripts/seed-muebles.mjs` siembra **Muebles El Encanto**
+  (`hz-muebles-encanto`): 8 categorías × 6 = 48 muebles con ficha completa
+  (dimensiones, material, garantía, armado), 26 en oferta, variantes de color/
+  tela con delta de precio, entrega $49, y 3 fotos reales subidas a Storage en
+  el Sofá seccional Aurora para probar la galería E2E.
+
+Verificado en navegador real: PDP del sofá (galería 1/3 + −18% + Nova Living +
+$899 tachado $1,099 + "Ahorras $200" + Color/Tela + Descripción + tabla de 6
+especificaciones) y el editor del panel con la Ficha detallada abierta y
+poblada. `tsc` + `build` limpios.
+
 ## Tienda nivel Instacart/Walmart — frente de tienda completo + bodega de prueba (2026-07-15)
 
 El tab **Tienda** del listado público pasó de una lista plana a un **frente de

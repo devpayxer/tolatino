@@ -53,9 +53,14 @@ type Prod = {
   options: string[]; fulfill: string[]; tax: string;
   badges: string[]; sales: string; imageUrl?: string; extra?: Record<string, unknown>;
   variantStock?: Record<string, number>; // per-variant units, keyed `setId:idx|…`
+  // Ficha detallada (OPTIONAL) — Wayfair/Amazon-grade PDP fields the public
+  // listing renders when present: brand, long description, spec rows, gallery.
+  brand: string; longEs: string; longEn: string;
+  specs: { es: string; en?: string; valEs: string; valEn?: string }[];
+  photos: string[];
 };
 
-const KNOWN_ATTRS = new Set(['en', 'sku', 'stock', 'reorder', 'compareAt', 'options', 'fulfill', 'tax', 'badges', 'sales', 'variantStock']);
+const KNOWN_ATTRS = new Set(['en', 'sku', 'stock', 'reorder', 'compareAt', 'options', 'fulfill', 'tax', 'badges', 'sales', 'variantStock', 'brand', 'longEs', 'longEn', 'specs', 'photos']);
 function rowToProd(r: BizItemRow, idx: number): Prod {
   const a = (r.attrs ?? {}) as Record<string, unknown>;
   const extra: Record<string, unknown> = {};
@@ -81,6 +86,14 @@ function rowToProd(r: BizItemRow, idx: number): Prod {
     variantStock: a.variantStock && typeof a.variantStock === 'object' && !Array.isArray(a.variantStock)
       ? Object.fromEntries(Object.entries(a.variantStock as Record<string, unknown>).map(([k, v]) => [k, Number(v)]))
       : undefined,
+    brand: String(a.brand ?? ''),
+    longEs: String(a.longEs ?? ''),
+    longEn: String(a.longEn ?? ''),
+    specs: Array.isArray(a.specs)
+      ? (a.specs as Record<string, unknown>[]).filter((x) => x && x.es != null && x.valEs != null)
+          .map((x) => ({ es: String(x.es), en: x.en != null ? String(x.en) : undefined, valEs: String(x.valEs), valEn: x.valEn != null ? String(x.valEn) : undefined }))
+      : [],
+    photos: Array.isArray(a.photos) ? (a.photos as unknown[]).map(String) : [],
     extra,
   };
 }
@@ -90,6 +103,9 @@ const prodAttrs = (p: Prod): Record<string, unknown> => ({
   compareAt: p.compareAt ?? null, options: p.options, fulfill: p.fulfill, tax: p.tax,
   badges: p.badges, sales: p.sales,
   variantStock: p.variantStock && Object.keys(p.variantStock).length ? p.variantStock : null,
+  brand: p.brand.trim() || null, longEs: p.longEs.trim() || null, longEn: p.longEn.trim() || null,
+  specs: p.specs.filter((x) => x.es.trim() && x.valEs.trim()).length ? p.specs.filter((x) => x.es.trim() && x.valEs.trim()) : null,
+  photos: p.photos.length ? p.photos : null,
 });
 function prodToRow(p: Prod, businessId: string, sort: number): NewBizItem {
   return {
@@ -110,14 +126,15 @@ const tagLabel = (t: string, L: (es: string, en: string) => string) =>
   ({ Nuevo: L('Nuevo', 'New'), Oferta: L('Oferta', 'Sale'), Popular: L('Popular', 'Popular'), Local: L('Local', 'Local') } as Record<string, string>)[t] ?? t;
 
 // Demo products (sample so the module is explorable without signing in).
-const DEMO_PRODS: Prod[] = [
+const RICH_DEFAULTS = { brand: '', longEs: '', longEn: '', specs: [] as Prod['specs'], photos: [] as string[] };
+const DEMO_PRODS: Prod[] = ([
   { id: 1, name: 'Mermelada fresa-ruibarbo · 6oz', cat: 'pantry', price: 14, compareAt: 18, descEs: 'Hecha en lotes pequeños con fruta local.', descEn: 'Small-batch with local fruit.', sku: 'JAM-001', stock: 42, reorder: 20, options: ['gift'], fulfill: ['ship', 'pickup'], tax: 'goods', badges: ['Oferta'], sales: '$1,820' },
   { id: 2, name: 'Libro de recetas Country Loaf', cat: 'books', price: 42, descEs: 'Guía completa de masa madre.', descEn: 'Complete sourdough guide.', sku: 'BOOK-001', stock: 12, reorder: 8, options: [], fulfill: ['ship'], tax: 'goods', badges: ['Popular'], sales: '$924' },
   { id: 3, name: 'Tote de lona To’Latino', cat: 'merch', price: 28, descEs: 'Lona resistente, serigrafía a mano.', descEn: 'Heavy canvas, hand-screened.', sku: 'MRC-001', stock: 84, reorder: 30, options: ['tee'], fulfill: ['ship'], tax: 'goods', badges: [], sales: '$2,128' },
   { id: 4, name: 'Masa madre · 100g', cat: 'baking', price: 18, descEs: 'Fermento activo listo para hornear.', descEn: 'Active starter ready to bake.', sku: 'STR-001', stock: 5, reorder: 15, options: [], fulfill: ['local', 'pickup'], tax: 'goods', badges: ['Local'], sales: '$486' },
   { id: 5, name: 'Café en grano · 12oz', cat: 'coffee', price: 19, descEs: 'Tueste medio, notas de chocolate.', descEn: 'Medium roast, chocolate notes.', sku: 'COF-001', stock: 62, reorder: 25, options: ['size', 'grind'], fulfill: ['ship', 'pickup'], tax: 'goods', badges: ['Nuevo'], sales: '$1,178' },
   { id: 6, name: 'Aceite de oliva · 500ml', cat: 'pantry', price: 24, descEs: 'Prensado en frío, primera cosecha.', descEn: 'Cold-pressed, first harvest.', sku: 'OIL-001', stock: 0, reorder: 12, options: [], fulfill: ['pickup'], tax: 'goods', badges: [], sales: '$2,400' },
-];
+] as Omit<Prod, keyof typeof RICH_DEFAULTS>[]).map((p) => ({ ...p, ...RICH_DEFAULTS }));
 
 // =====================================================================
 export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
@@ -197,12 +214,26 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   // ── photo upload (same pipeline as Comunidad/Food) ─────────────────────────
   const [photoBusy, setPhotoBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const [fichaOpen, setFichaOpen] = useState(false); // 'Ficha detallada' collapsible (step 0)
   const pickPhoto = async (file: File | null | undefined) => {
     if (!file || !file.type.startsWith('image/') || photoBusy) return;
     setPhotoBusy(true);
     try {
       const url = !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 1200);
       upD({ photoUrl: url });
+    } catch { flash(L('No se pudo subir la foto.', "Couldn't upload the photo.")); }
+    setPhotoBusy(false);
+  };
+  // Gallery photos for the Ficha detallada (optional PDP) — same upload pipeline,
+  // appended to draft.photos (max 6 keeps the sheet swipeable, not endless).
+  const pickGalleryPhoto = async (file: File | null | undefined) => {
+    if (!file || !file.type.startsWith('image/') || photoBusy) return;
+    if (draft.photos.length >= 6) { flash(L('Máximo 6 fotos', 'Max 6 photos')); return; }
+    setPhotoBusy(true);
+    try {
+      const url = !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 1200);
+      upD({ photos: [...draft.photos, url] });
     } catch { flash(L('No se pudo subir la foto.', "Couldn't upload the photo.")); }
     setPhotoBusy(false);
   };
@@ -274,7 +305,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       setDraft({ ...fresh, ...saved });
       flash(L('Borrador recuperado', 'Draft restored'));
     } else setDraft(fresh);
-    setWizStep(0); setWizMax(0); setView('wizard');
+    setWizStep(0); setWizMax(0); setView('wizard'); setFichaOpen(false);
   };
   const startEdit = (p: Prod) => {
     setEditingId(p.id);
@@ -283,7 +314,9 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       compareAt: p.compareAt != null ? String(p.compareAt) : '', sku: p.sku, stock: String(p.stock),
       reorder: String(p.reorder), options: [...p.options], fulfill: [...p.fulfill], tax: p.tax,
       badges: [...p.badges], photoUrl: p.imageUrl ?? '', variantStock: p.variantStock ? { ...p.variantStock } : {},
+      brand: p.brand, longEs: p.longEs, longEn: p.longEn, specs: p.specs.map((x) => ({ ...x })), photos: [...p.photos],
     });
+    setFichaOpen(!!(p.brand || p.longEs || p.specs.length || p.photos.length));
     setWizStep(0); setWizMax(wizSteps.length - 1); setView('wizard');
   };
   const draftFields = () => {
@@ -304,6 +337,8 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       sku: draft.sku, stock, reorder: Number(draft.reorder) || 0,
       options: draft.options, fulfill: draft.fulfill, tax: draft.tax, badges: draft.badges,
       imageUrl: draft.photoUrl || undefined, variantStock,
+      brand: draft.brand, longEs: draft.longEs, longEn: draft.longEn,
+      specs: draft.specs.filter((x) => x.es.trim() && x.valEs.trim()), photos: draft.photos,
     };
   };
   const addFromDraft = () => { const p: Prod = { id: nextId(), sales: '$0', ...draftFields() }; setProducts((l) => [p, ...l]); persistNew(p); clearDraft(draftKey); };
@@ -453,6 +488,61 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                       {[...BADGES, ...cfg.tags].map((t) => { const on = draft.badges.includes(t); return <button key={t} onClick={() => upD({ badges: on ? draft.badges.filter((x) => x !== t) : [...draft.badges, t] })} className={chip(on)}>{BADGES.includes(t) ? tagLabel(t, L) : t}</button>; })}
                       <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </div>
+                  </div>
+
+                  {/* ── Ficha detallada (OPTIONAL) — Wayfair/Amazon-grade product page:
+                      brand, long description, spec table, photo gallery. Ideal for
+                      muebles, electrodomésticos, autopartes… Skippable for groceries. */}
+                  <div className="overflow-hidden rounded-card-sm border-[1.5px] border-lilac-line">
+                    <button type="button" onClick={() => setFichaOpen((v) => !v)} className="flex w-full cursor-pointer items-center justify-between bg-lilac-2 px-3.5 py-3 text-left">
+                      <span>
+                        <span className="block text-[12.5px] font-extrabold text-ink">{L('Ficha detallada', 'Detailed product page')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></span>
+                        <span className="block text-[10.5px] font-semibold text-muted">{L('Marca, descripción larga, especificaciones y galería — ideal para muebles, electrónica…', 'Brand, long description, specs & gallery — great for furniture, electronics…')}</span>
+                      </span>
+                      <span className={`flex-none text-[16px] font-extrabold text-primary-dark transition-transform ${fichaOpen ? 'rotate-90' : ''}`}>›</span>
+                    </button>
+                    {fichaOpen && (
+                      <div className="flex flex-col gap-4 bg-white p-3.5">
+                        <div><div className={fieldLabel}>{L('Marca', 'Brand')}</div><input value={draft.brand} onChange={(e) => upD({ brand: e.target.value })} placeholder={L('Ej. Ashley, Muebles del Sur…', 'e.g. Ashley…')} className={inputCls} /></div>
+                        <div>
+                          <div className={fieldLabel}>{L('Descripción larga', 'Long description')} <span className="font-semibold text-muted">· {es ? 'ES' : 'EN'}</span></div>
+                          <textarea value={es ? draft.longEs : draft.longEn} onChange={(e) => upD(es ? { longEs: e.target.value } : { longEn: e.target.value })} rows={4} maxLength={2000} placeholder={L('Cuenta la historia del producto: materiales, acabado, para qué espacio, cuidados…', 'Tell the product story: materials, finish, room fit, care…')} className={`${inputCls} resize-none leading-relaxed`} />
+                        </div>
+                        <div>
+                          <div className={fieldLabel}>{L('Especificaciones', 'Specifications')}</div>
+                          <div className="flex flex-col gap-2">
+                            {draft.specs.map((sp, i) => (
+                              <div key={i} className="flex items-center gap-2">
+                                <input value={sp.es} onChange={(e) => upD({ specs: draft.specs.map((x, j) => (j === i ? { ...x, es: e.target.value } : x)) })} placeholder={L('Ej. Dimensiones', 'e.g. Dimensions')} className={`${inputCls} flex-1`} />
+                                <input value={sp.valEs} onChange={(e) => upD({ specs: draft.specs.map((x, j) => (j === i ? { ...x, valEs: e.target.value } : x)) })} placeholder={L('Ej. 200 × 90 × 85 cm', 'e.g. 200 × 90 × 85 cm')} className={`${inputCls} flex-1`} />
+                                <button type="button" onClick={() => upD({ specs: draft.specs.filter((_, j) => j !== i) })} aria-label={L('Quitar', 'Remove')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-btn text-pink-dark"><Trash2 size={14} stroke={2.2} /></button>
+                              </div>
+                            ))}
+                          </div>
+                          <button type="button" onClick={() => upD({ specs: [...draft.specs, { es: '', valEs: '' }] })} className="mt-2 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar especificación', 'Add specification')}</button>
+                          <div className="mt-1.5 text-[10px] font-medium text-muted-2">{L('Sugerencias: Dimensiones · Material · Color · Peso · Garantía · Requiere armado', 'Suggestions: Dimensions · Material · Color · Weight · Warranty · Assembly required')}</div>
+                        </div>
+                        <div>
+                          <div className={fieldLabel}>{L('Galería de fotos', 'Photo gallery')} <span className="font-semibold text-muted">· {L('hasta 6', 'up to 6')}</span></div>
+                          <div className="flex flex-wrap gap-2">
+                            {draft.photos.map((u, i) => (
+                              <div key={i} className="relative h-[72px] w-[72px] overflow-hidden rounded-tile border border-hair">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={u} alt="" className="h-full w-full object-cover" />
+                                <button type="button" onClick={() => upD({ photos: draft.photos.filter((_, j) => j !== i) })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-0.5 top-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={11} stroke={2.4} /></button>
+                              </div>
+                            ))}
+                            {draft.photos.length < 6 && (
+                              <button type="button" onClick={() => galleryRef.current?.click()} disabled={photoBusy} className="flex h-[72px] w-[72px] cursor-pointer flex-col items-center justify-center gap-1 rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app text-primary-dark disabled:opacity-60">
+                                {photoBusy ? <Loader2 size={16} className="animate-spin" stroke={2.2} /> : <Upload size={16} stroke={2.2} />}
+                                <span className="text-[9px] font-extrabold">{L('Subir', 'Upload')}</span>
+                              </button>
+                            )}
+                          </div>
+                          <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; pickGalleryPhoto(f); }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -923,5 +1013,7 @@ type Draft = {
   name: string; descEs: string; descEn: string; cat: string; price: string; compareAt: string;
   sku: string; stock: string; reorder: string; options: string[]; fulfill: string[]; tax: string;
   badges: string[]; photoUrl: string; variantStock: Record<string, number>;
+  brand: string; longEs: string; longEn: string;
+  specs: { es: string; en?: string; valEs: string; valEn?: string }[]; photos: string[];
 };
-const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', compareAt: '', sku: '', stock: '', reorder: '', options: [], fulfill: ['ship'], tax: 'goods', badges: [], photoUrl: '', variantStock: {} });
+const newDraft = (cat: string): Draft => ({ name: '', descEs: '', descEn: '', cat, price: '', compareAt: '', sku: '', stock: '', reorder: '', options: [], fulfill: ['ship'], tax: 'goods', badges: [], photoUrl: '', variantStock: {}, brand: '', longEs: '', longEn: '', specs: [], photos: [] });

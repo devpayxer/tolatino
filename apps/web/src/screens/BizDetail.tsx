@@ -2550,20 +2550,53 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           const mProdStock = shopStock(itemModal.catKey, itemModal.item);
           const mMax = mVarStock != null ? mVarStock : mProdStock != null ? mProdStock : Infinity;
           const mSoldOut = mMax <= 0;
+          // Rich PDP (Wayfair/Amazon-style) when the owner filled the OPTIONAL
+          // "Detalles del producto": gallery + brand + long description + specs.
+          // Food/simple products keep the compact header untouched.
+          const mIt = itemModal.item;
+          const isProduct = itemModal.catKey.startsWith('sh:');
+          const rich = !!(mIt.brand || mIt.longD || (mIt.specs && mIt.specs.length) || (mIt.photos && mIt.photos.length));
+          const gallery = mIt.photos && mIt.photos.length ? mIt.photos : mIt.img ? [mIt.img] : [];
+          const mOff = mIt.orig && mIt.orig > mIt.price ? Math.round((1 - mIt.price / mIt.orig) * 100) : 0;
           return (
           <>
-            <OverlayTitle title={L('Personaliza tu platillo', 'Customize your item')} onClose={() => setItemModal(null)} />
-            <div className="flex items-center gap-3">
-              <span className="relative h-14 w-14 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${itemModal.item.bg})` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {itemModal.item.img && <img src={itemModal.item.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-              </span>
-              <div className="min-w-0">
-                <div className="text-[15px] font-extrabold text-ink">{B(itemModal.item.n)}</div>
-                <div className="text-[12px] font-semibold text-muted">{B(itemModal.item.d)}</div>
+            <OverlayTitle title={isProduct ? L('Detalle del producto', 'Product details') : L('Personaliza tu platillo', 'Customize your item')} onClose={() => setItemModal(null)} />
+            {rich ? (
+              <>
+                {/* photo gallery — swipeable when there are 2+ photos */}
+                <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1">
+                  {(gallery.length ? gallery : ['']).map((u, i) => (
+                    <div key={i} className={`relative aspect-[4/3] flex-none snap-center overflow-hidden rounded-card ${gallery.length > 1 ? 'w-[86%]' : 'w-full'}`} style={{ background: `repeating-linear-gradient(135deg,${mIt.bg})` }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {u && <img src={u} alt={`${B(mIt.n)} ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />}
+                      {mOff > 0 && i === 0 && <span className="absolute left-2.5 top-2.5 rounded-md bg-pink px-2 py-0.5 text-[11px] font-extrabold text-white shadow-card">−{mOff}%</span>}
+                      {gallery.length > 1 && <span className="absolute bottom-2 right-2 rounded-full bg-ink/70 px-2 py-0.5 text-[10px] font-extrabold text-white">{i + 1}/{gallery.length}</span>}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3">
+                  {mIt.brand && <div className="text-[10.5px] font-extrabold uppercase tracking-[.06em] text-primary-dark">{mIt.brand}</div>}
+                  <div className="mt-0.5 text-[17px] font-extrabold leading-snug text-ink">{B(mIt.n)}</div>
+                  <div className="mt-1.5 flex flex-wrap items-baseline gap-2">
+                    <span className="text-[20px] font-extrabold text-ink">{money(mIt.price)}</span>
+                    {mOff > 0 && <span className="text-[13px] font-bold text-muted line-through">{money(mIt.orig!)}</span>}
+                    {mOff > 0 && <span className="rounded-md bg-pink-bg px-1.5 py-0.5 text-[10.5px] font-extrabold text-pink-dark">{L('Ahorras', 'You save')} {money(mIt.orig! - mIt.price)}</span>}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="relative h-14 w-14 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${mIt.bg})` }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {mIt.img && <img src={mIt.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[15px] font-extrabold text-ink">{B(mIt.n)}</div>
+                  <div className="text-[12px] font-semibold text-muted">{B(mIt.d)}</div>
+                </div>
+                <span className="ml-auto text-[14px] font-extrabold text-ink">{money(mIt.price)}</span>
               </div>
-              <span className="ml-auto text-[14px] font-extrabold text-ink">{money(itemModal.item.price)}</span>
-            </div>
+            )}
             {mGroups.map((g) => (
               <div key={g.id} className="mt-4">
                 <div className="mb-2 flex items-center justify-between">
@@ -2607,13 +2640,33 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             {mVarStock != null && mVarStock > 0 && mVarStock <= 5 && (
               <div className="mt-3 text-[11.5px] font-bold text-amber-ink">{L(`Solo ${mVarStock} disponibles`, `Only ${mVarStock} left`)}</div>
             )}
+            {/* rich PDP: long description + spec table (Wayfair/Amazon style) */}
+            {rich && mIt.longD && (
+              <div className="mt-4">
+                <div className="mb-1.5 text-[13px] font-extrabold text-ink">{L('Descripción', 'Description')}</div>
+                <p className="whitespace-pre-line text-[12.5px] font-medium leading-relaxed text-ink-body">{B(mIt.longD)}</p>
+              </div>
+            )}
+            {rich && mIt.specs && mIt.specs.length > 0 && (
+              <div className="mt-4">
+                <div className="mb-1.5 text-[13px] font-extrabold text-ink">{L('Especificaciones', 'Specifications')}</div>
+                <div className="overflow-hidden rounded-card-sm border border-hair">
+                  {mIt.specs.map((s, i) => (
+                    <div key={i} className={`flex gap-3 px-3.5 py-2.5 text-[12px] ${i % 2 === 0 ? 'bg-app' : 'bg-white'}`}>
+                      <span className="w-[38%] flex-none font-extrabold text-ink-soft">{B(s.k)}</span>
+                      <span className="min-w-0 flex-1 font-semibold text-ink-3">{B(s.v)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* special instructions (design: Item Detail) — travels with the order line */}
-            <div className="mb-1.5 mt-4 text-[13px] font-extrabold text-ink">{L('Instrucciones especiales', 'Special instructions')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
+            <div className="mb-1.5 mt-4 text-[13px] font-extrabold text-ink">{isProduct ? L('Nota para el vendedor', 'Note for the seller') : L('Instrucciones especiales', 'Special instructions')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
             <input
               value={modalNote}
               onChange={(e) => setModalNote(e.target.value)}
               maxLength={200}
-              placeholder={L('Ej. sin cebolla, salsa aparte…', 'E.g. no onions, sauce on the side…')}
+              placeholder={isProduct ? L('Ej. color preferido, referencia de entrega…', 'E.g. preferred color, delivery reference…') : L('Ej. sin cebolla, salsa aparte…', 'E.g. no onions, sauce on the side…')}
               className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
             />
             <div className="mt-5 flex items-center gap-3">

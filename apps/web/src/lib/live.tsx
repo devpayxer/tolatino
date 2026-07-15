@@ -411,6 +411,15 @@ export async function fetchBusinessProducts(slug: string): Promise<PublicShop | 
       variantStock: a.variantStock && typeof a.variantStock === 'object' && !Array.isArray(a.variantStock)
         ? Object.fromEntries(Object.entries(a.variantStock as Record<string, unknown>).map(([k, v]) => [k, Number(v)]))
         : undefined,
+      // rich PDP fields (optional, from the dashboard's Detalles section)
+      brand: a.brand != null && String(a.brand).trim() ? String(a.brand) : undefined,
+      longD: a.longEs != null && String(a.longEs).trim() ? [String(a.longEs), String(a.longEn ?? a.longEs)] : undefined,
+      specs: Array.isArray(a.specs)
+        ? (a.specs as Record<string, unknown>[])
+            .filter((s) => s && s.es != null && s.valEs != null)
+            .map((s) => ({ k: [String(s.es), String(s.en ?? s.es)] as Bi, v: [String(s.valEs), String(s.valEn ?? s.valEs)] as Bi }))
+        : undefined,
+      photos: Array.isArray(a.photos) ? (a.photos as unknown[]).map(String).filter((u) => u.startsWith('http')) : undefined,
     };
     // per-item option groups from the business's reusable option sets
     const optIds = Array.isArray(a.options) ? (a.options as string[]) : [];

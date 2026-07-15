@@ -18,6 +18,12 @@ export type MenuItem = {
   desc2?: Bi; // longer bilingual description (falls back to d)
   stock?: number; // shop products only: units left (0 = sold out); undefined = untracked
   variantStock?: Record<string, number>; // per-variant units, keyed `setId:idx|…` (undefined = not tracked per variant)
+  // Rich product detail (OPTIONAL — set per product in the dashboard's Detalles
+  // section; furniture/appliance-grade PDP à la Wayfair/Amazon). All display-only.
+  brand?: string; // manufacturer / brand line above the name
+  longD?: Bi; // long-form description paragraphs
+  specs?: { k: Bi; v: Bi }[]; // spec table rows (Dimensiones / Material / Color / Garantía…)
+  photos?: string[]; // photo gallery URLs (img stays the primary/fallback)
 };
 
 export type MenuCat = { key: string; name: Bi; items: MenuItem[] };
