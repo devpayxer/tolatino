@@ -20,7 +20,7 @@ import { useUrlTab } from '@/lib/urlView';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
-import { loadCart, saveCart } from '@/lib/cartStore';
+import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
 import { startMarketplaceCheckout, startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBusinessReviews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
@@ -95,7 +95,7 @@ const reviewWhen = (iso: string): Bi => {
 // `id` = business_items.id and `sel` = the structured add-on picks
 // (group id + choice index) so the server can RE-PRICE the order from DB prices
 // (never trust `unit`). Undefined only for offline fixture items (no real checkout).
-type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string; note?: string; id?: string; sel?: { g: string; o: number }[] };
+type CartLine = { qty: number; name: string; unit: number; optsLabel: string; bg: string; note?: string; id?: string; sel?: { g: string; o: number }[]; img?: string; orig?: number };
 
 // A normalized booking target for the service sheet (real service or fixture).
 type SvcTarget = {
@@ -467,6 +467,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
 
   const cartCount = Object.values(cart).reduce((n, l) => n + l.qty, 0);
   const cartTotal = Object.values(cart).reduce((n, l) => n + l.qty * l.unit, 0);
+  // Store cart (Amazon-style) when every line comes from the Tienda tab; a food
+  // (or mixed) cart keeps the DoorDash layout that already works great for it.
+  const storeCart = cartCount > 0 && Object.keys(cart).every((k) => k.startsWith('sh:'));
+  // Total sale savings across lines bought at a compare-at discount.
+  const cartSavings = +Object.values(cart).reduce((n, l) => n + (l.orig && l.orig > l.unit ? (l.orig - l.unit) * l.qty : 0), 0).toFixed(2);
   // ---- DoorDash-grade checkout ------------------------------------------------
   // When the seller has connected Stripe (acceptsPayments) the buyer pays online by
   // card and the displayed Total EXACTLY matches the Stripe charge: subtotal + 5%
@@ -718,7 +723,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       if (stk <= 0) { flash(L('Agotado', 'Sold out')); return; }
       if ((cart[key]?.qty ?? 0) >= stk) { flash(L('No hay más unidades', 'No more units available')); return; }
     }
-    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + 1, name: B(item.n), unit: item.price, optsLabel: '', bg: item.bg, id: item.id, sel: [] } }));
+    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + 1, name: B(item.n), unit: item.price, optsLabel: '', bg: item.bg, id: item.id, sel: [], img: item.img, orig: item.orig && item.orig > item.price ? item.orig : undefined } }));
   };
 
   // `keepOpen`: after adding, don't close the sheet — reset it to fresh defaults
@@ -752,7 +757,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       const stk = shopStock(itemModal.catKey, itemModal.item);
       if (stk != null && inCart + qty > stk) { flash(L('No hay suficientes unidades', 'Not enough units in stock')); return; }
     }
-    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg, note: note || undefined, id: itemModal.item.id, sel } }));
+    setCart((c) => ({ ...c, [key]: { qty: (c[key]?.qty ?? 0) + qty, name: B(itemModal.item.n), unit, optsLabel: chosen.join(', '), bg: itemModal.item.bg, note: note || undefined, id: itemModal.item.id, sel, img: itemModal.item.img, orig: itemModal.item.orig && itemModal.item.orig > unit ? itemModal.item.orig : undefined } }));
     if (keepOpen) {
       // stay in the sheet, reset to defaults for the next (different) variant
       setSingle(freshSingles(itemModal.catKey, itemModal.item));
@@ -849,6 +854,57 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (restoredRef.current !== b.slug) return;
     saveCart(b.slug, cart);
   }, [cart, b.slug]);
+
+  // ── "Guardado para después" (Amazon-style save-for-later, store cart) ──
+  // Longer-lived than the cart (30 days): parked items the buyer is still
+  // deciding on. Moving back to the cart re-checks stock.
+  const [savedLines, setSavedLines] = useState<{ key: string; line: CartLine }[]>([]);
+  const savedLoadedRef = useRef<string | null>(null);
+  useEffect(() => {
+    savedLoadedRef.current = b.slug;
+    setSavedLines(loadSaved<CartLine>(b.slug));
+  }, [b.slug]);
+  useEffect(() => {
+    if (savedLoadedRef.current !== b.slug) return;
+    saveSaved(b.slug, savedLines);
+  }, [savedLines, b.slug]);
+  const removeLine = (k: string) => setCart((c) => { const n = { ...c }; delete n[k]; return n; });
+  const saveForLater = (k: string) => {
+    const line = cart[k];
+    if (!line) return;
+    setSavedLines((s) => [{ key: k, line }, ...s.filter((x) => x.key !== k)]);
+    removeLine(k);
+  };
+  // Resolve a cart key back to its live shop item (stock lives there).
+  const shopItemForKey = (k: string): { catKey: string; item: MenuItem } | null => {
+    for (const c of shopCats) {
+      if (!k.startsWith(`${c.key}:`)) continue;
+      const rest = k.slice(c.key.length + 1);
+      const nm = rest.split('|')[0];
+      const item = c.items.find((it) => B(it.n) === nm);
+      if (item) return { catKey: c.key, item };
+    }
+    return null;
+  };
+  const moveSavedToCart = (i: number) => {
+    const entry = savedLines[i];
+    if (!entry) return;
+    const found = shopItemForKey(entry.key);
+    const stk = found ? shopStock(found.catKey, found.item) : null;
+    if (stk != null && stk <= 0) { flash(L('Ese producto está agotado ahora', 'That item is sold out right now')); return; }
+    const inCart = cart[entry.key]?.qty ?? 0;
+    const qty = stk != null ? Math.max(1, Math.min(entry.line.qty, stk - inCart)) : entry.line.qty;
+    if (stk != null && stk - inCart <= 0) { flash(L('Ya tienes todas las unidades disponibles en el carrito', 'All available units are already in your cart')); return; }
+    // Refresh display price/photo from the live item (simple lines only — addon
+    // lines keep their stored unit; the SERVER re-prices every line at checkout
+    // regardless, so a stale display price can never change what's charged).
+    const refresh = found
+      ? { img: found.item.img, orig: found.item.orig && found.item.orig > found.item.price ? found.item.orig : undefined, ...(!entry.line.sel?.length ? { unit: found.item.price } : {}) }
+      : {};
+    setCart((c) => ({ ...c, [entry.key]: { ...entry.line, ...refresh, qty: inCart + qty } }));
+    setSavedLines((s) => s.filter((_, j) => j !== i));
+  };
+  const removeSaved = (i: number) => setSavedLines((s) => s.filter((_, j) => j !== i));
 
   // --- Real customer create-actions (myActivity) -------------------------
   // Every create inserts as the signed-in customer; guests are routed to
@@ -2880,31 +2936,79 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           </>
         ) : (
           <>
-            <OverlayTitle title={L('Tu pedido', 'Your order')} onClose={() => setCartOpen(false)} />
-            {cartCount === 0 ? (
+            <OverlayTitle title={storeCart ? L('Tu carrito', 'Your cart') : L('Tu pedido', 'Your order')} onClose={() => setCartOpen(false)} />
+            {cartCount === 0 && savedLines.length === 0 ? (
               <div className="py-8 text-center">
                 <div className="text-[14px] font-extrabold text-ink">{L('Tu carrito está vacío', 'Your cart is empty')}</div>
-                <div className="mt-1 text-[12px] font-semibold text-muted">{L('Agrega platillos del menú para empezar.', 'Add items from the menu to start.')}</div>
+                <div className="mt-1 text-[12px] font-semibold text-muted">{realShop ? L('Agrega productos de la tienda para empezar.', 'Add products from the store to start.') : L('Agrega platillos del menú para empezar.', 'Add items from the menu to start.')}</div>
               </div>
+            ) : cartCount === 0 ? (
+              // only saved-for-later items remain — surface them so nothing is "lost"
+              <div className="py-2 text-center text-[12.5px] font-semibold text-muted">{L('Tu carrito está vacío — tienes artículos guardados para después.', 'Your cart is empty — you have items saved for later.')}</div>
             ) : (
               <>
-                <div className="flex max-h-[240px] flex-col gap-2.5 overflow-y-auto">
-                  {Object.entries(cart).map(([k, l]) => (
-                    <div key={k} className="flex items-center gap-3">
-                      <span className="h-11 w-11 flex-none rounded-[10px]" style={{ background: `repeating-linear-gradient(135deg,${l.bg})` }} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-extrabold text-ink">{l.name}</span>
-                        {l.optsLabel && <span className="block truncate text-[11px] font-semibold text-muted">{l.optsLabel}</span>}
-                        {l.note && <span className="block truncate text-[10.5px] font-semibold italic text-muted-2">“{l.note}”</span>}
-                      </span>
-                      <span className="flex flex-none items-center gap-2 rounded-full bg-lilac-2 px-1.5 py-1">
-                        <button onClick={() => decLine(k)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-extrabold">−</button>
-                        <span className="w-3 text-center text-[12.5px] font-extrabold">{l.qty}</span>
-                        <button onClick={() => incCartLine(k)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-extrabold">+</button>
-                      </span>
-                      <span className="w-14 flex-none text-right text-[13px] font-extrabold text-ink">{money(l.unit * l.qty)}</span>
-                    </div>
-                  ))}
+                {storeCart && cartSavings > 0 && (
+                  <div className="mb-2.5 flex items-center gap-2 rounded-field bg-green-bg px-3 py-2 text-[11.5px] font-extrabold text-green-dark">
+                    <Check size={13} stroke={3} />{L(`Estás ahorrando ${money(cartSavings)} en ofertas`, `You're saving ${money(cartSavings)} on deals`)}
+                  </div>
+                )}
+                <div className={`flex flex-col overflow-y-auto ${storeCart ? 'max-h-[300px] gap-3' : 'max-h-[240px] gap-2.5'}`}>
+                  {Object.entries(cart).map(([k, l]) => {
+                    if (!storeCart) return (
+                      <div key={k} className="flex items-center gap-3">
+                        <span className="h-11 w-11 flex-none rounded-[10px]" style={{ background: `repeating-linear-gradient(135deg,${l.bg})` }} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13px] font-extrabold text-ink">{l.name}</span>
+                          {l.optsLabel && <span className="block truncate text-[11px] font-semibold text-muted">{l.optsLabel}</span>}
+                          {l.note && <span className="block truncate text-[10.5px] font-semibold italic text-muted-2">“{l.note}”</span>}
+                        </span>
+                        <span className="flex flex-none items-center gap-2 rounded-full bg-lilac-2 px-1.5 py-1">
+                          <button onClick={() => decLine(k)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-extrabold">−</button>
+                          <span className="w-3 text-center text-[12.5px] font-extrabold">{l.qty}</span>
+                          <button onClick={() => incCartLine(k)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-extrabold">+</button>
+                        </span>
+                        <span className="w-14 flex-none text-right text-[13px] font-extrabold text-ink">{money(l.unit * l.qty)}</span>
+                      </div>
+                    );
+                    // Amazon-style store line: photo, variant, sale strikethrough,
+                    // stock warning, qty stepper + Guardar para después / Eliminar.
+                    const found = shopItemForKey(k);
+                    const stk = found ? shopStock(found.catKey, found.item) : null;
+                    const lowStk = stk != null && stk > 0 && stk <= 5;
+                    return (
+                      <div key={k} className="rounded-card-sm border border-hair bg-white p-3 shadow-card">
+                        <div className="flex gap-3">
+                          <span className="relative h-16 w-16 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${l.bg})` }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            {l.img && <img src={l.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="line-clamp-2 text-[13px] font-extrabold leading-snug text-ink">{l.name}</div>
+                            {l.optsLabel && <div className="mt-0.5 truncate text-[11px] font-semibold text-muted">{l.optsLabel}</div>}
+                            {l.note && <div className="truncate text-[10.5px] font-semibold italic text-muted-2">“{l.note}”</div>}
+                            <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
+                              <span className="text-[13.5px] font-extrabold text-ink">{money(l.unit)}</span>
+                              {l.orig && l.orig > l.unit && <span className="text-[11px] font-bold text-muted line-through">{money(l.orig)}</span>}
+                              {lowStk && <span className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[8.5px] font-extrabold text-amber-ink">{L('Quedan', 'Left')} {stk}</span>}
+                            </div>
+                          </div>
+                          <span className="w-16 flex-none text-right text-[13.5px] font-extrabold text-ink">{money(l.unit * l.qty)}</span>
+                        </div>
+                        <div className="mt-2.5 flex items-center justify-between border-t border-hair pt-2">
+                          <span className="flex items-center gap-2 rounded-full bg-lilac-2 px-1.5 py-1">
+                            <button onClick={() => decLine(k)} aria-label={l.qty === 1 ? L('Eliminar', 'Remove') : L('Quitar uno', 'Remove one')} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-primary-dark">{l.qty === 1 ? <Trash2 size={12} stroke={2.2} /> : <Minus size={13} stroke={2.8} />}</button>
+                            <span className="w-4 text-center text-[12.5px] font-extrabold tabular-nums">{l.qty}</span>
+                            <button onClick={() => incCartLine(k)} aria-label={L('Agregar uno', 'Add one')} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-primary-dark"><Plus size={13} stroke={2.8} /></button>
+                          </span>
+                          <span className="flex items-center gap-3 text-[11px] font-extrabold">
+                            <button onClick={() => saveForLater(k)} className="cursor-pointer text-primary-dark">{L('Guardar para después', 'Save for later')}</button>
+                            <span className="text-lilac-line">|</span>
+                            <button onClick={() => removeLine(k)} className="cursor-pointer text-pink-dark">{L('Eliminar', 'Remove')}</button>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Entrega / Recoger */}
@@ -2913,12 +3017,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     {deliveryAvailable && (
                       <button onClick={() => setOrderChannel('delivery')} className={`flex-1 cursor-pointer rounded-full py-2 text-center ${orderChannel === 'delivery' ? 'bg-white shadow-cta-sm' : ''}`}>
                         <span className={`block text-[11.5px] font-extrabold ${orderChannel === 'delivery' ? 'text-primary-dark' : 'text-muted'}`}>{L('Entrega', 'Delivery')}</span>
-                        <span className="block text-[9.5px] font-bold text-muted">{del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min'}</span>
+                        {/* the OWNER's own time label ("2–5 días" muebles, "30–45 min" comida) */}
+                        <span className="block text-[9.5px] font-bold text-muted">{del?.time ?? (del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min')}</span>
                       </button>
                     )}
                     <button onClick={() => setOrderChannel('pickup')} className={`flex-1 cursor-pointer rounded-full py-2 text-center ${!isDelivery ? 'bg-white shadow-cta-sm' : ''}`}>
                       <span className={`block text-[11.5px] font-extrabold ${!isDelivery ? 'text-primary-dark' : 'text-muted'}`}>{L('Recoger', 'Pickup')}</span>
-                      <span className="block text-[9.5px] font-bold text-muted">{del?.prep ? `${del.prep} min` : '15–25 min'}</span>
+                      <span className="block text-[9.5px] font-bold text-muted">{storeCart ? L('En tienda', 'In store') : del?.prep ? `${del.prep} min` : '15–25 min'}</span>
                     </button>
                   </div>
                 )}
@@ -3075,8 +3180,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   </div>
                 </div>
                 {belowMin && (
-                  <div className="mt-2 rounded-field bg-amber-bg px-3 py-2 text-[11.5px] font-bold text-amber-ink">
-                    {L(`Pedido mínimo para entrega: $${(del?.min ?? 0).toFixed(2)} — agrega ${money((del?.min ?? 0) - cartTotal)} más`, `Delivery minimum is $${(del?.min ?? 0).toFixed(2)} — add ${money((del?.min ?? 0) - cartTotal)} more`)}
+                  <div className="mt-2 rounded-field bg-amber-bg px-3 py-2.5">
+                    <div className="text-[11.5px] font-bold text-amber-ink">
+                      {L(`Te faltan ${money((del?.min ?? 0) - cartTotal)} para el mínimo de entrega (${money(del?.min ?? 0)})`, `Add ${money((del?.min ?? 0) - cartTotal)} more to reach the delivery minimum (${money(del?.min ?? 0)})`)}
+                    </div>
+                    {/* progress toward the minimum — positive framing, Instacart-style */}
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/70">
+                      <div className="h-full rounded-full bg-amber transition-all" style={{ width: `${Math.min(100, Math.round((cartTotal / Math.max(0.01, del?.min ?? 0)) * 100))}%` }} />
+                    </div>
                   </div>
                 )}
                 <PrimaryBtn className="mt-4" onClick={payOnline ? payCart : placeCart} disabled={paying || belowMin || outOfRange}>
@@ -3090,6 +3201,59 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 </PrimaryBtn>
               </>
             )}
+
+            {/* ── Guardado para después (Amazon-style) — parked items, 30 days ── */}
+            {savedLines.length > 0 && (
+              <div className="mt-5">
+                <div className="mb-2 text-[13px] font-extrabold text-ink">{L('Guardado para después', 'Saved for later')} <span className="font-semibold text-muted">· {savedLines.length}</span></div>
+                <div className="flex flex-col gap-2">
+                  {savedLines.map((sv, i) => (
+                    <div key={sv.key} className="flex items-center gap-3 rounded-card-sm border border-dashed border-lilac-line bg-app p-2.5">
+                      <span className="relative h-12 w-12 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${sv.line.bg})` }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {sv.line.img && <img src={sv.line.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12.5px] font-extrabold text-ink">{sv.line.name}</span>
+                        <span className="block text-[11.5px] font-bold text-ink-soft">{money(sv.line.unit)}{sv.line.qty > 1 ? ` × ${sv.line.qty}` : ''}{sv.line.optsLabel ? ` · ${sv.line.optsLabel}` : ''}</span>
+                      </span>
+                      <span className="flex flex-none flex-col items-end gap-1.5">
+                        <button onClick={() => moveSavedToCart(i)} className="cursor-pointer rounded-full bg-primary px-3 py-1.5 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Mover al carrito', 'Move to cart')}</button>
+                        <button onClick={() => removeSaved(i)} className="cursor-pointer text-[10.5px] font-extrabold text-pink-dark">{L('Quitar', 'Remove')}</button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Completa tu compra — cross-sell from the same aisles (store cart) ── */}
+            {storeCart && (() => {
+              const inCartNames = new Set(Object.values(cart).map((l) => l.name));
+              const savedNames = new Set(savedLines.map((s) => s.line.name));
+              const cartCatKeys = new Set(Object.keys(cart).map((k) => k.split(':').slice(0, 2).join(':')));
+              const candidates = shopCats
+                .flatMap((c) => c.items.map((it) => ({ catKey: c.key, it })))
+                .filter((x) => !inCartNames.has(B(x.it.n)) && !savedNames.has(B(x.it.n)) && shopStock(x.catKey, x.it) !== 0)
+                .sort((a, b2) => {
+                  const sameA = cartCatKeys.has(a.catKey) ? 1 : 0, sameB = cartCatKeys.has(b2.catKey) ? 1 : 0;
+                  if (sameA !== sameB) return sameB - sameA;           // same aisle first…
+                  const saleA = a.it.orig ? 1 : 0, saleB = b2.it.orig ? 1 : 0;
+                  return saleB - saleA;                                 // …then deals
+                })
+                .slice(0, 8);
+              if (!candidates.length) return null;
+              return (
+                <div className="mt-5">
+                  <div className="mb-2 text-[13px] font-extrabold text-ink">{L('Completa tu compra', 'Complete your purchase')}</div>
+                  <div className="no-scrollbar -mx-4 flex gap-2.5 overflow-x-auto px-4">
+                    {candidates.map((x) => (
+                      <div key={`${x.catKey}:${B(x.it.n)}`} className="w-[130px] flex-none">{gridCard(x.catKey, x.it, shopDisplayOnly)}</div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </>
         )}
       </Overlay>

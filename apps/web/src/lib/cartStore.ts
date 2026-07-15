@@ -47,3 +47,40 @@ export function clearCart(slug: string): void {
   if (typeof window === 'undefined' || !slug) return;
   try { window.localStorage.removeItem(PREFIX + slug); } catch { /* ignore */ }
 }
+
+// ── "Guardado para después" (save for later) — Amazon-style parking spot for
+// store items the buyer isn't ready to purchase. Longer-lived than the cart
+// (30 days vs 24h): a sofa decision takes longer than lunch. Same per-business
+// keying and best-effort semantics; the caller re-checks stock when moving an
+// item back to the cart.
+
+const SAVED_PREFIX = 'tl:saved:';
+const SAVED_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+type StoredSaved<T> = { v: 1; savedAt: number; items: { key: string; line: T }[] };
+
+/** Load a business's saved-for-later list ([] if none / expired / unreadable). */
+export function loadSaved<T>(slug: string): { key: string; line: T }[] {
+  if (typeof window === 'undefined' || !slug) return [];
+  try {
+    const raw = window.localStorage.getItem(SAVED_PREFIX + slug);
+    if (!raw) return [];
+    const s = JSON.parse(raw) as StoredSaved<T>;
+    if (!s || !Array.isArray(s.items) || Date.now() - (s.savedAt ?? 0) > SAVED_TTL_MS) {
+      window.localStorage.removeItem(SAVED_PREFIX + slug);
+      return [];
+    }
+    return s.items.filter((x) => x && typeof x.key === 'string' && x.line);
+  } catch {
+    return [];
+  }
+}
+
+/** Persist the saved-for-later list, re-stamping its 30-day TTL. */
+export function saveSaved<T>(slug: string, items: { key: string; line: T }[]): void {
+  if (typeof window === 'undefined' || !slug) return;
+  try {
+    if (!items || items.length === 0) { window.localStorage.removeItem(SAVED_PREFIX + slug); return; }
+    window.localStorage.setItem(SAVED_PREFIX + slug, JSON.stringify({ v: 1, savedAt: Date.now(), items } as StoredSaved<T>));
+  } catch { /* best-effort */ }
+}

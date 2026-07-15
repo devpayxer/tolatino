@@ -80,6 +80,7 @@ export type Business = {
   // platform takes nothing). Absent/`{on:false}` → the cart shows no tip option.
   delivery?: {
     on: boolean; fee: number; min: number; prep: number; radius?: number;
+    time?: string; // the owner's delivery-time label from their first zone ("2–5 días", "30–45 min")
     tips?: TipPolicy;
   };
 };

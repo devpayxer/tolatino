@@ -5,6 +5,39 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Carrito de tienda (nivel Amazon) — modo tienda vs. modo comida (2026-07-15)
+
+El carrito ahora tiene **dos personalidades** según lo que contenga. Si TODAS
+las líneas vienen del tab Tienda (`sh:` keys) es un **carrito de tienda**
+(benchmark: Amazon/Walmart); si hay comida, sigue siendo el carrito DoorDash de
+siempre — **cero cambios al flujo de comida**, verificado.
+
+Modo tienda (`storeCart` en `BizDetail.tsx`):
+- Título **"Tu carrito"** (comida conserva "Tu pedido").
+- **Banner verde de ahorro**: "Estás ahorrando $X en ofertas" (suma de
+  `compareAt − precio` por línea; `orig` viaja en `CartLine`).
+- **Tarjetas de línea tipo Amazon**: miniatura 64px (foto real si existe),
+  nombre 2 líneas, variantes, precio + tachado, "Quedan N" ámbar, total de
+  línea, stepper (basura/−/qty/+), y acciones **"Guardar para después" |
+  "Eliminar"**.
+- **Guardado para después** (30 días, `tl:saved:` en `cartStore.ts` — el
+  carrito sigue 24h): sección propia con "Mover al carrito" (re-chequea stock
+  y refresca precio/foto) y "Quitar".
+- **"Completa tu compra"** — cross-sell de 8 productos (misma categoría
+  primero, luego ofertas; excluye lo que ya está en carrito/guardado y
+  agotados) con la misma tarjeta del grid.
+- **Toggle Entrega/Recoger**: Entrega muestra el **plazo real de la tienda**
+  ("2–5 días" — nuevo campo `time` en la zona de entrega, migración **0091**
+  lo expone plano en `business_by_slug` → `live.tsx` lo mapea con fallback a
+  `zones[0].time`); Recoger dice "En tienda". Si falta para el mínimo:
+  "Te faltan $X" + barra de progreso ámbar.
+- Estados vacíos diferenciados (carrito vacío / solo guardados / nada).
+
+Verificado en navegador real (Muebles El Encanto): título + ahorro $230 +
+tachados + "2–5 días" + guardar-para-después ida y vuelta + cross-sell; y el
+carrito de comida de El Sabor intacto (Tu pedido, propina, 30–45 min, sin
+"Guardar para después"). `tsc` + `build` limpios.
+
 ## Ficha detallada del producto (PDP nivel Wayfair/Amazon) — OPCIONAL (2026-07-15)
 
 Para tiendas de artículos grandes (muebles, electrónica…) el detalle del producto
