@@ -226,10 +226,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Null → the Servicios tab keeps the sample fixtures so the prototype stays
   // populated. booking off → display-only (services + prices, no online Reservar).
   const [realServices, setRealServices] = useState<PublicServices | null>(null);
+  const [svcFetched, setSvcFetched] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    setRealServices(null);
-    fetchBusinessServices(b.slug).then((s) => { if (!cancelled) setRealServices(s); });
+    setRealServices(null); setSvcFetched(false);
+    fetchBusinessServices(b.slug).then((s) => { if (!cancelled) { setRealServices(s); setSvcFetched(true); } });
     return () => { cancelled = true; };
   }, [b.slug]);
   const svcBooking = realServices?.booking ?? false;
@@ -255,10 +256,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Null → the Renta tab keeps the sample fixtures. renting off → display-only
   // (items + rates, no online Rentar).
   const [realRentals, setRealRentals] = useState<PublicRentals | null>(null);
+  const [rentFetched, setRentFetched] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    setRealRentals(null);
-    fetchBusinessRentals(b.slug).then((s) => { if (!cancelled) setRealRentals(s); });
+    setRealRentals(null); setRentFetched(false);
+    fetchBusinessRentals(b.slug).then((s) => { if (!cancelled) { setRealRentals(s); setRentFetched(true); } });
     return () => { cancelled = true; };
   }, [b.slug]);
   const rentalItems: PubRental[] = realRentals?.items
@@ -615,11 +617,19 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       setCheckout({ clientSecret, pendingId, amount: amount ?? Math.round(grandTotal * 100), returnPath: typeof window !== 'undefined' ? window.location.pathname : '/negocios/' });
       return;
     }
-    flash(error === 'seller_not_payable'
-      ? L('Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet')
-      : error === 'below_minimum'
-        ? L('No llegas al mínimo para entrega', "You haven't reached the delivery minimum")
-        : L('No se pudo iniciar el pago', 'Could not start payment'));
+    // The caller now surfaces the function's REAL reason (invoke() used to hide
+    // 4xx bodies, so every rejection looked like the same generic failure).
+    const PAY_ERR: Record<string, [string, string]> = {
+      seller_not_payable: ['Este negocio aún no acepta pagos en línea', 'This business does not accept online payments yet'],
+      below_minimum: ['No llegas al mínimo para entrega', "You haven't reached the delivery minimum"],
+      address_required: ['Agrega tu dirección de entrega', 'Add your delivery address'],
+      no_delivery: ['Este negocio no está haciendo entregas ahora', 'This business is not delivering right now'],
+      item_unavailable: ['Un artículo de tu carrito ya no está disponible', 'An item in your cart is no longer available'],
+      auth: ['Tu sesión expiró — inicia sesión de nuevo', 'Your session expired — sign in again'],
+      network: ['Sin conexión. Revisa tu internet e intenta de nuevo', 'No connection. Check your internet and try again'],
+    };
+    const msg = PAY_ERR[error ?? ''];
+    flash(msg ? L(msg[0], msg[1]) : L('No se pudo iniciar el pago — intenta de nuevo', 'Could not start payment — try again'));
   };
 
   // Pay-on-pickup order (seller without online payments): persist a real order.
@@ -1145,11 +1155,18 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     ['reviews', L('Reseñas', 'Reviews')],
   ];
   const tabs = allTabs.filter(([k]) => tabShown[k]);
-  // If the active tab becomes hidden (e.g. real data resolved to none), fall back.
+  // If the active tab becomes hidden (real data RESOLVED to none), fall back.
+  // Each tab waits for ITS data source to finish loading first — demoting while a
+  // fetch is still in flight clobbered ?bt= deep links (Volver a pedir → menu).
+  const tabResolved: Record<TabKey, boolean> = {
+    overview: true, related: true, reviews: true,
+    menu: menuFetched, shop: shopFetched, services: svcFetched, rentals: rentFetched,
+    updates: hydrated != null, events: hydrated != null, staff: hydrated != null,
+  };
   useEffect(() => {
-    if (!tabShown[tab]) setTab('overview');
+    if (tabResolved[tab] && !tabShown[tab]) setTab('overview');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, realMenu, realShop, realServices, realRentals, b.slug]);
+  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, realMenu, realShop, realServices, realRentals, b.slug]);
 
   // Overview = the full, browse-y view (hero + meta). Any other tab switches to a
   // focused mode: the hero collapses into a compact pinned header (title + tabs

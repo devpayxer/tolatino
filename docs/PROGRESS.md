@@ -5,6 +5,37 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Pago que "a veces no inicia" — endurecido + errores reales (2026-07-15)
+
+El fundador reportó "No se pudo iniciar el pago" intermitente al pagar el carrito
+(iPhone, red móvil). Tres causas apiladas en `startMarketplacePayment`:
+1. **`functions.invoke()` escondía la razón real** — cualquier 4xx de la función
+   (below_minimum, address_required, item_unavailable…) llegaba sin cuerpo → todo
+   caía al toast genérico.
+2. **Token vencido**: tras tener la pestaña dormida (móvil), invoke usaba el
+   access token viejo → 401 → falla "a veces"; al reintentar ya funcionaba.
+3. **Timeout global de 15s** (`timeoutFetch`): arranque frío de la Edge Function
+   + red lenta lo excedían ocasionalmente → aborto.
+
+**Arreglo (`lib/stripe.ts` → `callMarketplace`)**: llamada directa a la función
+con (a) `supabase.auth.getSession()` antes (refresca si venció), (b) timeout
+propio de 30s fuera del fetch global, (c) **1 reintento automático** solo en
+fallas transitorias (red / timeout / 5xx — nunca en un veredicto 4xx), y (d) el
+`error` real del cuerpo. `startMarketplaceCheckout` (boletos/reservas/rentas
+hosted) usa el mismo caller. `payCart` (BizDetail) ahora mapea cada razón a su
+mensaje: mínimo de entrega, dirección requerida, artículo agotado, sesión
+expirada, sin conexión…
+
+También: el deep link `?bt=` de BizDetail se comía el tab (el fallback a
+overview corría mientras el menú aún cargaba) — ahora cada tab espera a que SU
+fetch resuelva (`menuFetched`/`shopFetched`/`svcFetched`/`rentFetched`) antes de
+poder degradar. "Volver a pedir" → Menú funciona.
+
+Verificado en navegador real: primera llamada a marketplace-checkout forzada a
+500 → el reintento la rescató y la hoja de pago abrió igual (el caso exacto del
+fundador); deep link `?bt=menu` aterriza en el Menú (328 platillos visibles).
+Fila staged de prueba borrada. `tsc` + `build` limpios.
+
 ## Pedido negocio↔cliente: UN solo proceso, cableado de punta a punta (2026-07-15)
 
 El fundador reportó que la Cocina del negocio y el tracker del cliente contaban

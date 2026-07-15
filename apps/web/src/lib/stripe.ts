@@ -90,6 +90,51 @@ export type MarketplaceInput =
   | { kind: 'rental'; slug: string; subtotal: number; payload: RentalPayload; mode?: 'hour' | 'day'; hours?: number; units?: number; addon_ids?: string[] };
 
 /**
+ * Payment-grade caller for the marketplace-checkout function. functions.invoke()
+ * was the wrong tool here — it hid the function's 4xx reason (everything looked
+ * like a generic failure), rode the app's global 15s fetch timeout (aborted on
+ * slow mobile networks / cold starts), and reused a possibly-EXPIRED access
+ * token after the phone had the tab asleep — the "sometimes payment won't start"
+ * bug. This: refreshes the session first, uses its own 30s timeout, retries ONCE
+ * on transient failures (network / timeout / 5xx — never on a 4xx verdict), and
+ * surfaces the function's real `error` key so the UI can say what happened.
+ */
+async function callMarketplace(body: Record<string, unknown>): Promise<{ data: Record<string, unknown> | null; error?: string }> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabase || !url || !anon) return { data: null, error: 'offline' };
+  const { data: sess } = await supabase.auth.getSession(); // refreshes if expired
+  const token = sess.session?.access_token;
+  if (!token) return { data: null, error: 'auth' };
+  const attempt = async (): Promise<{ ok: boolean; status: number; data: Record<string, unknown> | null }> => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 30000);
+    try {
+      const res = await fetch(`${url}/functions/v1/marketplace-checkout`, {
+        method: 'POST',
+        headers: { apikey: anon, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: ctrl.signal,
+      });
+      let j: Record<string, unknown> | null = null;
+      try { j = (await res.json()) as Record<string, unknown>; } catch { j = null; }
+      return { ok: res.ok, status: res.status, data: j };
+    } catch {
+      return { ok: false, status: 0, data: null }; // network error / timeout
+    } finally {
+      clearTimeout(t);
+    }
+  };
+  let r = await attempt();
+  if (!r.ok && (r.status === 0 || r.status >= 500)) {
+    await new Promise((res) => setTimeout(res, 1200));
+    r = await attempt();
+  }
+  if (r.ok) return { data: r.data };
+  return { data: r.data, error: (r.data?.error as string) || (r.status === 0 ? 'network' : `http_${r.status}`) };
+}
+
+/**
  * Start a real marketplace Checkout for a consumer purchase (order / tickets).
  * The buyer is charged P + 5%, the seller's connected account receives ≈P − 10%,
  * and To'Latino keeps 15% of P — all computed server-side from authoritative
@@ -98,12 +143,10 @@ export type MarketplaceInput =
  * sends the buyer back (defaults to the current page).
  */
 export async function startMarketplaceCheckout(input: MarketplaceInput, returnPath?: string): Promise<{ url?: string; error?: string }> {
-  if (!supabase) return { error: 'offline' };
   const path = returnPath ?? (typeof window !== 'undefined' ? window.location.pathname : '/');
-  const { data, error } = await supabase.functions.invoke('marketplace-checkout', { body: { ...input, origin: origin(), returnPath: path } });
-  if (error) return { error: error.message };
+  const { data, error } = await callMarketplace({ ...input, origin: origin(), returnPath: path });
   if (data?.url) return { url: data.url as string };
-  return { error: (data?.error as string) || 'checkout failed' };
+  return { error: error || 'checkout failed' };
 }
 
 /**
@@ -116,9 +159,7 @@ export async function startMarketplaceCheckout(input: MarketplaceInput, returnPa
 export async function startMarketplacePayment(
   input: MarketplaceInput,
 ): Promise<{ clientSecret?: string; pendingId?: string; amount?: number; error?: string }> {
-  if (!supabase) return { error: 'offline' };
-  const { data, error } = await supabase.functions.invoke('marketplace-checkout', { body: { ...input, intent: true, origin: origin() } });
-  if (error) return { error: error.message };
+  const { data, error } = await callMarketplace({ ...input, intent: true, origin: origin() });
   if (data?.clientSecret) return { clientSecret: data.clientSecret as string, pendingId: data.pendingId as string, amount: data.amount as number };
-  return { error: (data?.error as string) || 'payment failed' };
+  return { error: error || 'payment failed' };
 }
