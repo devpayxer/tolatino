@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building } from '@tabler/icons-react';
+import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconFlame as Flame, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSearch as Search, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -34,7 +34,7 @@ import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 const FEAT_EN: Record<string, string> = {};
 for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
-import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, SHOP_PROMOS, STAFF, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
+import { DETAIL_EVENTS, DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, STAFF, UPDATE_POSTS, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'staff' | 'related' | 'reviews';
 const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'staff', 'related', 'reviews']);
@@ -302,6 +302,15 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Cash order placed → the confirmation sheet tracks THIS order live (id from
   // placeOrder). '' = placed but id unknown (still shows the waiting state).
   const [doneOrderId, setDoneOrderId] = useState<string | null>(null);
+
+  // ── Storefront (Tienda) browse state — Instacart/Walmart-grade shopping over
+  // the real catalog: in-store search, category rail, Ofertas, sort, pagination.
+  const [shopQ, setShopQ] = useState('');
+  const [shopCat, setShopCat] = useState<string>('all'); // 'all' | 'sale' | sh:<catId>
+  const [shopSort, setShopSort] = useState<'featured' | 'price_asc' | 'price_desc' | 'discount'>('featured');
+  const [shopShown, setShopShown] = useState(24);
+  useEffect(() => { setShopShown(24); }, [shopQ, shopCat, shopSort]);
+  useEffect(() => { setShopQ(''); setShopCat('all'); setShopSort('featured'); setShopShown(24); }, [b.slug]);
   useOrderPoll(doneOrderId || null); // sheet advances even without the websocket
   const [itemModal, setItemModal] = useState<{ catKey: string; item: MenuItem } | null>(null);
   // Add-to-cart on a customizable item that's already in the cart is ambiguous —
@@ -1459,37 +1468,36 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     </div>
   );
 
-  const itemCard = (catKey: string, it: MenuItem, displayOnly = false) => {
-    if (displayOnly) return catalogCard(it);
+  // Add-to-cart controls shared by the list card (menu) and the shop grid card:
+  // qty = this item summed across its cart lines (simple + customized variants).
+  // Items with option groups open the sheet on first add; the stepper then
+  // inc/decs the most recent line; ambiguous +/− asks instead of guessing.
+  const cartControls = (catKey: string, it: MenuItem) => {
     const stk = shopStock(catKey, it);
     const soldOut = stk === 0;
     const low = stk != null && stk > 0 && stk <= 5;
-    // Add-to-cart stepper: qty = this item summed across its cart lines (the simple
-    // line + any customized variants). Items with option groups open the sheet on
-    // first add / when the card is tapped (to customize); the stepper then inc/decs
-    // the most recent line. At qty 1 the left control is a trash (removes the item);
-    // at qty ≥ 2 it becomes a minus (one less).
     const groups = groupsFor(catKey, it);
     const hasOpts = groups.length > 0;
     const simpleKey = `${catKey}:${B(it.n)}`;
     const lineKeys = Object.keys(cart).filter((k) => k === simpleKey || k.startsWith(`${simpleKey}|`));
     const qty = lineKeys.reduce((n, k) => n + cart[k].qty, 0);
     const firstAdd = () => { if (hasOpts) openItem(catKey, it); else addSimple(catKey, it); };
-    // Customizable item + at least one existing line → "+" is ambiguous (repeat
-    // the last customization, or build a different one?), so ask instead of
-    // guessing. Simple items (no addons) and the very first add stay one-tap.
     const incOne = () => {
       if (stk != null && qty >= stk) { flash(L('No hay más unidades', 'No more units available')); return; }
       if (!hasOpts) { addSimple(catKey, it); return; }
       if (lineKeys.length === 0) { openItem(catKey, it); return; }
       setAddPrompt({ catKey, item: it });
     };
-    // Trash/− is only ambiguous once there are 2+ DIFFERENT customized lines for
-    // this item — a single line (however many units) has nothing to choose between.
     const decOne = () => {
       if (qty <= 1 || lineKeys.length <= 1) { const k = lineKeys[lineKeys.length - 1]; if (k) decLine(k); return; }
       setRemovePrompt({ catKey, item: it });
     };
+    return { stk, soldOut, low, qty, firstAdd, incOne, decOne };
+  };
+
+  const itemCard = (catKey: string, it: MenuItem, displayOnly = false) => {
+    if (displayOnly) return catalogCard(it);
+    const { stk, soldOut, low, qty, firstAdd, incOne, decOne } = cartControls(catKey, it);
     return (
       <button
         key={B(it.n)}
@@ -1537,6 +1545,64 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           )}
         </span>
       </button>
+    );
+  };
+
+  // Instacart-style grid product card (Tienda): tile with %-off badge + floating
+  // add/stepper, then price (sale strikethrough), 2-line name, stock chips.
+  // displayOnly (catalog mode) renders the same card without purchase controls.
+  const gridCard = (catKey: string, it: MenuItem, displayOnly = false) => {
+    const { stk, soldOut, low, qty, firstAdd, incOne, decOne } = cartControls(catKey, it);
+    const off = it.orig && it.orig > it.price ? Math.round((1 - it.price / it.orig) * 100) : 0;
+    return (
+      <div
+        key={`${catKey}:${B(it.n)}`}
+        onClick={() => { if (!soldOut) openItem(catKey, it); }}
+        className={`flex flex-col overflow-hidden rounded-card-sm border border-hair bg-white shadow-card transition-shadow hover:shadow-card-lg ${soldOut ? 'opacity-75' : 'cursor-pointer'}`}
+      >
+        <div className="relative aspect-[4/3] w-full" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
+          {it.img && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={it.img} alt={B(it.n)} className="absolute inset-0 h-full w-full object-cover" />
+          )}
+          {off > 0 && !soldOut && (
+            <span className="absolute left-2 top-2 rounded-md bg-pink px-1.5 py-0.5 text-[10px] font-extrabold text-white shadow-card">−{off}%</span>
+          )}
+          {!displayOnly && (soldOut ? (
+            <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-2.5 py-1.5 text-[9.5px] font-extrabold text-muted-2 shadow-card">{L('Agotado', 'Sold out')}</span>
+          ) : qty === 0 ? (
+            <span
+              role="button"
+              aria-label={L('Agregar', 'Add')}
+              onClick={(e) => { e.stopPropagation(); firstAdd(); }}
+              className="absolute bottom-2 right-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-lilac-line bg-white text-primary-dark shadow-pop transition-transform active:scale-90"
+            >
+              <Plus size={16} stroke={2.8} />
+            </span>
+          ) : (
+            <span onClick={(e) => e.stopPropagation()} className="absolute bottom-2 right-2 flex items-center gap-0.5 rounded-full border border-lilac-line bg-white p-0.5 shadow-pop">
+              <span role="button" aria-label={qty === 1 ? L('Eliminar', 'Remove') : L('Quitar uno', 'Remove one')} onClick={(e) => { e.stopPropagation(); decOne(); }} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-primary-dark transition-transform active:scale-90">
+                {qty === 1 ? <Trash2 size={14} stroke={2.2} /> : <Minus size={15} stroke={2.8} />}
+              </span>
+              <span className="min-w-[18px] text-center text-[13px] font-extrabold tabular-nums text-ink">{qty}</span>
+              <span role="button" aria-label={L('Agregar uno', 'Add one')} onClick={(e) => { e.stopPropagation(); incOne(); }} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-cta-sm transition-transform active:scale-90">
+                <Plus size={15} stroke={2.8} />
+              </span>
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-1 flex-col p-2.5 pb-3">
+          <div className="flex flex-wrap items-baseline gap-x-1.5">
+            <span className="text-[14.5px] font-extrabold text-ink">{money(it.price)}</span>
+            {off > 0 && <span className="text-[11px] font-bold text-muted line-through">{money(it.orig!)}</span>}
+          </div>
+          <div className="mt-0.5 line-clamp-2 text-[12px] font-semibold leading-snug text-ink-3">{B(it.n)}</div>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {low && <span className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[8.5px] font-extrabold text-amber-ink">{L('Quedan', 'Left')} {stk}</span>}
+            {it.tag && off === 0 && <span className="rounded-md px-1.5 py-0.5 text-[8.5px] font-extrabold" style={{ background: it.tagBg, color: it.tagC }}>{B(it.tag)}</span>}
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -1997,52 +2063,143 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         </div>
       )}
 
-      {tab === 'shop' && (
-        <div className="pt-4">
-          {/* display-only shop → a clear "this is a catalog; call to buy" note */}
-          {shopDisplayOnly && (
-            <div className="mb-4 flex items-center gap-3 rounded-card-sm border border-lilac-line bg-lilac-2 p-3">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white text-primary-dark">
-                <Menu size={16} stroke={2.2} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[12.5px] font-extrabold text-ink">{L('Catálogo informativo', 'Catalog for viewing')}</span>
-                <span className="block text-[11px] font-semibold leading-snug text-muted">{L('Este negocio muestra sus productos y precios. Para comprar, llámalo o visítalo.', 'This business shows its products & prices. To buy, call or visit.')}</span>
-              </span>
-              <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
-                <Phone size={13} stroke={2.4} />{L('Llamar', 'Call')}
-              </a>
-            </div>
-          )}
-          {/* featured collections (real) or the fixture promo strip */}
-          {(realShop ? realShop.collections.length > 0 : true) && (
-            <div className="no-scrollbar mb-4 flex gap-3 overflow-x-auto">
-              {realShop
-                ? realShop.collections.map((c) => (
-                    <div key={c.es} className="w-[200px] flex-none rounded-card-sm p-3.5" style={{ background: `repeating-linear-gradient(135deg,${c.tile})` }}>
-                      <div className="text-[9.5px] font-extrabold uppercase tracking-[.06em] text-ink-3">{L('Colección', 'Collection')}</div>
-                      <div className="mt-0.5 text-[14px] font-extrabold text-ink">{L(c.es, c.en)}</div>
-                    </div>
-                  ))
-                : SHOP_PROMOS.map((p) => (
-                    <div key={p.t[0]} className="w-[200px] flex-none rounded-card-sm p-3.5" style={{ background: `repeating-linear-gradient(135deg,${p.bg})` }}>
-                      <div className="text-[14px] font-extrabold" style={{ color: p.c }}>{B(p.t)}</div>
-                      <div className="mt-0.5 text-[11.5px] font-bold text-ink-3">{B(p.sub)}</div>
-                    </div>
-                  ))}
-            </div>
-          )}
-          {shopCats.map((c) => (
-            <div key={c.key} className="mb-5">
-              <div className="mb-2.5 flex items-baseline gap-2">
-                <span className="text-[15.5px] font-extrabold text-ink">{B(c.name)}</span>
-                <span className="text-[11.5px] font-bold text-muted">{c.items.length} {L('productos', 'products')}</span>
+      {tab === 'shop' && (() => {
+        // ── Storefront: Instacart/Walmart-grade browse over the real catalog ──
+        const all = shopCats.flatMap((c) => c.items.map((it) => ({ catKey: c.key, cat: c, it })));
+        const nrm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const q = nrm(shopQ.trim());
+        const saleItems = all.filter((x) => x.it.orig && x.it.orig > x.it.price);
+        let list = all;
+        if (q) list = list.filter((x) => nrm(B(x.it.n)).includes(q) || nrm(B(x.cat.name)).includes(q));
+        if (shopCat === 'sale') list = list.filter((x) => x.it.orig && x.it.orig > x.it.price);
+        else if (shopCat !== 'all') list = list.filter((x) => x.catKey === shopCat);
+        const offOf = (x: { it: MenuItem }) => (x.it.orig && x.it.orig > x.it.price ? 1 - x.it.price / x.it.orig : 0);
+        if (shopSort === 'price_asc') list = [...list].sort((a, b) => a.it.price - b.it.price);
+        else if (shopSort === 'price_desc') list = [...list].sort((a, b) => b.it.price - a.it.price);
+        else if (shopSort === 'discount') list = [...list].sort((a, b) => offOf(b) - offOf(a));
+        const visible = list.slice(0, shopShown);
+        const gridCls = 'grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4';
+        const sorts: [typeof shopSort, string][] = [
+          ['featured', L('Relevancia', 'Featured')],
+          ['price_asc', L('Menor precio', 'Price: low to high')],
+          ['price_desc', L('Mayor precio', 'Price: high to low')],
+          ['discount', L('% descuento', '% off')],
+        ];
+        return (
+          <div className="pt-4">
+            {/* display-only shop → a clear "this is a catalog; call to buy" note */}
+            {shopDisplayOnly && (
+              <div className="mb-4 flex items-center gap-3 rounded-card-sm border border-lilac-line bg-lilac-2 p-3">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-white text-primary-dark">
+                  <Menu size={16} stroke={2.2} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[12.5px] font-extrabold text-ink">{L('Catálogo informativo', 'Catalog for viewing')}</span>
+                  <span className="block text-[11px] font-semibold leading-snug text-muted">{L('Este negocio muestra sus productos y precios. Para comprar, llámalo o visítalo.', 'This business shows its products & prices. To buy, call or visit.')}</span>
+                </span>
+                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="flex flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                  <Phone size={13} stroke={2.4} />{L('Llamar', 'Call')}
+                </a>
               </div>
-              <div className={shopDisplayOnly ? 'grid grid-cols-1 gap-2.5 sm:grid-cols-2' : 'flex flex-col gap-2.5'}>{c.items.map((it) => itemCard(c.key, it, shopDisplayOnly))}</div>
+            )}
+
+            {/* in-store search */}
+            <div className="relative mb-3">
+              <Search size={15} stroke={2.4} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                value={shopQ}
+                onChange={(e) => setShopQ(e.target.value)}
+                placeholder={L(`Buscar entre ${all.length} productos…`, `Search ${all.length} products…`)}
+                className="w-full rounded-field border-[1.5px] border-lilac-line bg-white py-3 pl-10 pr-9 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary"
+              />
+              {shopQ && (
+                <button onClick={() => setShopQ('')} aria-label={L('Limpiar', 'Clear')} className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-soft">
+                  <X size={12} stroke={2.8} />
+                </button>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+
+            {/* category rail — Todo · Ofertas · each aisle with its count */}
+            <div className="no-scrollbar -mx-1 mb-3 flex gap-2 overflow-x-auto px-1">
+              <button onClick={() => setShopCat('all')} className={`flex flex-none cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] ${shopCat === 'all' ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`}>
+                {L('Todo', 'All')}<span className={`font-extrabold ${shopCat === 'all' ? 'text-white/80' : 'text-muted-2'}`}>{all.length}</span>
+              </button>
+              {saleItems.length > 0 && (
+                <button onClick={() => setShopCat('sale')} className={`flex flex-none cursor-pointer items-center gap-1 rounded-full px-3.5 py-2 text-[12px] ${shopCat === 'sale' ? 'bg-pink font-extrabold text-white shadow-cta-sm' : 'bg-pink-bg font-bold text-pink-dark'}`}>
+                  <Flame size={13} stroke={2.6} />{L('Ofertas', 'Deals')}<span className="font-extrabold opacity-80">{saleItems.length}</span>
+                </button>
+              )}
+              {shopCats.map((c) => (
+                <button key={c.key} onClick={() => setShopCat(c.key)} className={`flex flex-none cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] ${shopCat === c.key ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`}>
+                  {B(c.name)}<span className={`font-extrabold ${shopCat === c.key ? 'text-white/80' : 'text-muted-2'}`}>{c.items.length}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* sort row */}
+            <div className="no-scrollbar -mx-1 mb-4 flex items-center gap-2 overflow-x-auto px-1">
+              <span className="flex-none text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Ordenar', 'Sort')}</span>
+              {sorts.map(([k, label]) => (
+                <button key={k} onClick={() => setShopSort(k)} className={`flex-none cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11.5px] font-bold ${shopSort === k ? 'border-primary bg-lilac text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* collections + Ofertas carousel — only on the unfiltered home view */}
+            {shopCat === 'all' && !q && (
+              <>
+                {realShop && realShop.collections.length > 0 && (
+                  <div className="no-scrollbar mb-4 flex gap-3 overflow-x-auto">
+                    {realShop.collections.map((c) => (
+                      <div key={c.es} className="w-[200px] flex-none rounded-card-sm p-3.5" style={{ background: `repeating-linear-gradient(135deg,${c.tile})` }}>
+                        <div className="text-[9.5px] font-extrabold uppercase tracking-[.06em] text-ink-3">{L('Colección', 'Collection')}</div>
+                        <div className="mt-0.5 text-[14px] font-extrabold text-ink">{L(c.es, c.en)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {saleItems.length > 0 && (
+                  <div className="mb-5">
+                    <div className="mb-2.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-[15.5px] font-extrabold text-ink"><Flame size={17} stroke={2.4} className="text-pink" />{L('Ofertas de la semana', 'Deals of the week')}</span>
+                      <button onClick={() => setShopCat('sale')} className="cursor-pointer text-[12px] font-extrabold text-primary-dark">{L('Ver todas', 'See all')} ›</button>
+                    </div>
+                    <div className="no-scrollbar -mx-4 flex gap-2.5 overflow-x-auto px-4">
+                      {saleItems.slice(0, 10).map((x) => (
+                        <div key={`${x.catKey}:${B(x.it.n)}`} className="w-[150px] flex-none">{gridCard(x.catKey, x.it, shopDisplayOnly)}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* results header + grid */}
+            <div className="mb-2.5 flex items-baseline justify-between">
+              <span className="text-[15.5px] font-extrabold text-ink">
+                {shopCat === 'sale' ? L('Ofertas', 'Deals') : shopCat === 'all' ? (q ? L('Resultados', 'Results') : L('Todos los productos', 'All products')) : B((shopCats.find((c) => c.key === shopCat)?.name ?? ['Productos', 'Products']) as Bi)}
+              </span>
+              <span className="text-[11.5px] font-bold text-muted">{list.length} {L('productos', 'products')}</span>
+            </div>
+            {list.length === 0 ? (
+              <div className="rounded-card border border-hair bg-white p-8 text-center shadow-card">
+                <div className="text-[13.5px] font-extrabold text-ink">{L('Sin resultados', 'No results')}</div>
+                <div className="mx-auto mt-1 max-w-[280px] text-[12px] font-semibold text-muted">{L(`No encontramos "${shopQ}" en esta tienda. Prueba otra palabra o categoría.`, `We couldn't find "${shopQ}" in this store. Try another word or category.`)}</div>
+              </div>
+            ) : (
+              <>
+                <div className={gridCls}>{visible.map((x) => gridCard(x.catKey, x.it, shopDisplayOnly))}</div>
+                {list.length > visible.length && (
+                  <button onClick={() => setShopShown((n) => n + 24)} className="mt-4 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-3 text-[13px] font-extrabold text-primary-dark">
+                    {L(`Ver más productos (${list.length - visible.length} restantes)`, `Show more products (${list.length - visible.length} left)`)}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ============ SERVICES ============ */}
       {tab === 'services' && (

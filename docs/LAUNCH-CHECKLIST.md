@@ -71,6 +71,12 @@
   move object storage to **Cloudflare R2** (free egress) at scale. Client-side
   compression stays identical; only the upload destination changes
   (`apps/web/src/lib/image.ts`).
+- [ ] **Storefront catalog pagination (server-side).** The Tienda storefront
+  (2026-07-15) fetches a store's whole catalog in one RPC
+  (`business_products_by_slug`) and paginates client-side (24/page). Fine at
+  hundreds of products (~300 verified); when real stores carry thousands, add
+  keyset pagination + server-side search/filter to the RPC. The UI (search,
+  category rail, sort, Ver más) won't need to change shape.
 - [ ] **Feed thumbnails.** We currently generate **one ~1600px WebP** per photo
   and use it everywhere. Add a **~400px thumbnail** (also client-side) for the
   feed so lists load lighter; keep the 1600px for the detail view.

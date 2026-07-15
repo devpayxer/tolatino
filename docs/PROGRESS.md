@@ -5,6 +5,41 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Tienda nivel Instacart/Walmart — frente de tienda completo + bodega de prueba (2026-07-15)
+
+El tab **Tienda** del listado público pasó de una lista plana a un **frente de
+tienda profesional** (benchmark: Instacart / Walmart), derivado 100% de los
+tokens del design system:
+- **Búsqueda en la tienda** ("Buscar entre 300 productos…", sin acentos).
+- **Rail de categorías** con conteos: Todo · 🔥 Ofertas · las 30 categorías.
+- **Orden**: Relevancia · Menor precio · Mayor precio · % descuento.
+- **Ofertas**: carrusel "Ofertas de la semana" + filtro dedicado; tarjetas con
+  badge **−XX%** y precio anterior tachado (de `attrs.compareAt`, que el editor
+  del panel ya soportaba — "Se mostrará como oferta").
+- **Grid 2 col móvil / 3 tablet / 4 desktop** con tarjeta tipo Instacart:
+  tile, stepper flotante (+ / − / cantidad), "Quedan X", "Agotado", badges.
+- **Paginación**: 24 por página + "Ver más productos (N restantes)".
+- Carrito/checkout: los mismos de siempre (stepper comparte `cartControls` con
+  el menú; el servidor re-precia por id — el precio de oferta ES `price`, así
+  que el cobro es correcto por construcción).
+- Modo catálogo (sin venta) conserva su aviso y muestra el grid sin steppers.
+
+**Negocio de prueba**: `scripts/seed-bodega.mjs` (committeado, idempotente)
+siembra **Bodega La Bendición** (`hz-bodega-bendicion`, Hazleton, owner
+b@b.com, misma cuenta Stripe test que El Sabor → tarjeta funciona): **30
+categorías × 10 productos = 300** productos latinos reales, **38 en oferta**,
+8 agotados, stock bajo, 3 colecciones destacadas, entrega $3.99 mínimo $10.
+
+Verificado en navegador real (móvil): home del frente (chips + colecciones +
+carrusel ofertas), filtro Ofertas (38), búsqueda "arroz", filtro por categoría,
+"Ver más" pagina, agregar 2 productos → carrito → **hoja de pago abre** (PI real
+contra el backend); y en desktop el **panel del dueño** cambia a la bodega con el
+switcher y el módulo Productos muestra las 30 categorías / 300 productos /
+ofertas con tachado. Artefactos de prueba borrados. `tsc` + `build` limpios.
+
+Escala (nota): el catálogo llega en un solo RPC (~300 filas, liviano); con miles
+de productos tocará paginación server-side — anotado en LAUNCH-CHECKLIST.
+
 ## Pago que "a veces no inicia" — endurecido + errores reales (2026-07-15)
 
 El fundador reportó "No se pudo iniciar el pago" intermitente al pagar el carrito
