@@ -5,6 +5,51 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Novedades (Updates) completo — nivel Google Business posts (2026-07-15)
+
+El menú **Novedades** pasó de semi-maqueta a flujo completo y real en ambos
+lados (benchmark: publicaciones de Google Business / páginas de Facebook).
+Migración **0094** (abajo, ya aplicada).
+
+**Panel del negocio** (`Updates.tsx`, reescrito):
+- **Composer real**: foto con subida real (pipeline comprimido de la app, con
+  preview y quitar), tipos Aviso/Oferta/Evento, y los TRES destinos persisten
+  ahora — Publicar, **Borrador** y **Programar** (selector de fecha/hora
+  propio). Antes borradores/programadas vivían solo en memoria y se perdían al
+  refrescar. El botón "Video" (decorativo) se quitó — nada falso.
+- **Ciclo de vida completo por tarjeta**: menú ⋯ con **Fijar arriba** (solo una
+  fijada a la vez, estilo Google Business), **Editar** (el composer entra en
+  modo edición), **Archivar** y **Eliminar con confirmación**; Programadas →
+  Reprogramar / Publicar ahora; Borradores → Editar/Publicar/Eliminar;
+  Archivadas → Reusar (copia al composer).
+- **Auto-publicación lazy**: al abrir el módulo, las programadas cuya hora ya
+  pasó se publican solas (cron de servidor anotado en LAUNCH-CHECKLIST).
+- **Stats reales**: la tarjeta Rendimiento calcula En vivo/Vistas/Me gusta/
+  Interacción de las filas reales; "Seguidores recientes" (nombres inventados)
+  se reemplazó por **Top publicaciones** (reales, por vistas). Cero números
+  fabricados.
+
+**Lado del cliente** (`BizDetail` tab Updates):
+- Renderiza las novedades **reales** (`business_updates_by_slug`, fijada
+  primero): badge de tipo con tokens, 📌 Fijado, foto real, tiempo relativo.
+- **♥ Me gusta real y persistente** (tabla `business_update_likes`, 1 por
+  usuario, trigger mantiene el contador; optimista con revert).
+- **"Preguntar"** abre el chat in-app real con el negocio; **compartir** usa
+  navigator.share / portapapeles.
+- **Vistas reales**: al abrir el tab se cuenta 1 vista por publicación
+  (`bump_update_views`, tope 50) — alimenta las stats del dueño.
+- Un negocio real sin novedades ya NO muestra posts de muestra (los fixtures
+  quedan solo para listados demo); el tab aparece cuando hay contenido real.
+
+**Seeds** (`scripts/seed-updates.mjs`): novedades realistas para Barbería D'
+Primera (3), Muebles El Encanto (3, una con foto) y Aqua Shine (2); El Sabor
+conserva la publicación del fundador.
+
+Verificado E2E en navegador real: consumidor (fijada+chips+foto, like ♡0→♥1
+persistente tras reload, chat abre, vistas suben), panel (publicar, borrador
+persistido, programar con fecha visible, fijar única, programada→Publicar
+ahora). Artefactos E2E borrados y pin restaurado. `tsc` + `build` limpios.
+
 ## Checkout propio para reservas y rentas — regla permanente (2026-07-15)
 
 El fundador pidió que el pago de Servicios use NUESTRO diseño de checkout, no la

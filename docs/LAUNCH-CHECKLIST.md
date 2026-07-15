@@ -1405,6 +1405,17 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
   (`Onboarding`) **wizards** — steps depend on prior-step data, so deep-linking mid-
   flow would render a broken/empty step. Leave ephemeral.
 
+### Novedades (Updates) — pendientes de servidor (2026-07-15)
+- [ ] **Auto-publicación de programadas por cron.** Hoy una publicación
+  programada se publica "lazy": cuando el dueño abre su panel después de la
+  hora. Para publicarse sola sin abrir el panel hace falta pg_cron (o un cron
+  externo → edge function) que corra
+  `update business_updates set status='live' where status='scheduled' and scheduled_at <= now()`.
+- [ ] **Avisar a los clientes que guardaron el negocio cuando publica una
+  novedad** (push/in-app). Es fanout (un insert de notificación por cada
+  usuario que guardó el negocio) — decidir límites/batching antes de activarlo
+  a escala.
+
 ### Checkout propio en todos los cobros (2026-07-15)
 - [ ] **Eventos (boletos) todavía redirige al Checkout alojado de Stripe.**
   Pedidos, reservas y rentas ya pagan dentro de la hoja propia (`CheckoutSheet`

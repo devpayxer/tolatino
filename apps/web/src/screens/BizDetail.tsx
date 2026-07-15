@@ -23,7 +23,7 @@ import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
 import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -413,6 +413,25 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [evGoing, setEvGoing] = useState<Record<number, boolean>>({});
   const [updLikes, setUpdLikes] = useState<Record<number, boolean>>({});
   const [updOpen, setUpdOpen] = useState<Record<number, boolean>>({});
+  // Real Novedades (business_updates, migration 0094): live rows for this listing,
+  // the signed-in user's like set, and a once-per-open view bump. null = none →
+  // sample fixtures render only on DEMO listings (a real listing hides the tab).
+  const [realUpdates, setRealUpdates] = useState<PubUpdate[] | null>(null);
+  const [updFetched, setUpdFetched] = useState(false);
+  const [myUpdLikes, setMyUpdLikes] = useState<Set<string>>(new Set());
+  const updViewed = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    setRealUpdates(null); setUpdFetched(false); setMyUpdLikes(new Set()); updViewed.current = false;
+    fetchBusinessUpdates(b.slug).then(async (rows) => {
+      if (cancelled) return;
+      setRealUpdates(rows.length ? rows : null);
+      setUpdFetched(true);
+      if (rows.length && user) setMyUpdLikes(await fetchMyUpdateLikes(rows.map((r) => r.id)));
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [b.slug, user?.id]);
   const [reviewHelpful, setReviewHelpful] = useState<Record<string, boolean>>({});
   const [reviewFilter, setReviewFilter] = useState<'all' | '5' | '4' | '3'>('all');
   const [writeOpen, setWriteOpen] = useState(false);
@@ -515,6 +534,37 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (m) setChatMsgs((l) => (l.some((x) => x.id === m.id) ? l : [...l, m]));
     else { setChatDraft(body); flash(L('No se pudo enviar', "Couldn't send")); }
   };
+
+  // ── Novedades interactions: real like, share, view counter ────────────────
+  const toggleUpd = async (u: PubUpdate) => {
+    if (!user) { router.push('/entrar'); return; }
+    const on = !myUpdLikes.has(u.id);
+    // optimistic — the trigger keeps the true counter; revert on failure
+    setMyUpdLikes((s) => { const n = new Set(s); if (on) n.add(u.id); else n.delete(u.id); return n; });
+    setRealUpdates((list) => list?.map((x) => (x.id === u.id ? { ...x, likes: Math.max(0, x.likes + (on ? 1 : -1)) } : x)) ?? list);
+    const ok = await toggleUpdateLike(u.id, on);
+    if (!ok) {
+      setMyUpdLikes((s) => { const n = new Set(s); if (on) n.delete(u.id); else n.add(u.id); return n; });
+      setRealUpdates((list) => list?.map((x) => (x.id === u.id ? { ...x, likes: Math.max(0, x.likes + (on ? -1 : 1)) } : x)) ?? list);
+      flash(L('No se pudo guardar tu me gusta', "Couldn't save your like"));
+    }
+  };
+  const shareUpdate = async (u: PubUpdate) => {
+    const url = `${window.location.origin}/negocios/?b=${encodeURIComponent(b.slug)}&bt=updates`;
+    const text = `${b.name}: ${B(u.body)}`;
+    try {
+      if (navigator.share) { await navigator.share({ title: b.name, text, url }); return; }
+    } catch { return; /* user dismissed the share sheet */ }
+    try { await navigator.clipboard.writeText(`${text} ${url}`); flash(L('Enlace copiado', 'Link copied')); }
+    catch { flash(L('No se pudo compartir', "Couldn't share")); }
+  };
+  // Count ONE view per open of the Novedades tab (owner-facing metric).
+  useEffect(() => {
+    if (tab !== 'updates' || !realUpdates?.length || updViewed.current) return;
+    updViewed.current = true;
+    bumpUpdateViews(realUpdates.map((u) => u.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, realUpdates]);
   useEffect(() => {
     if (!chatOpen || !chatConvId) return;
     return subscribeChat(chatConvId, (m) => setChatMsgs((l) => (l.some((x) => x.id === m.id) ? l : [...l, m])));
@@ -1356,7 +1406,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     shop: realShop != null,
     services: realServices != null,
     rentals: realRentals != null,
-    updates: modOn('updates'),
+    // Real Novedades exist → show them; fixture posts only on DEMO listings (no
+    // live row = hydrated stays null) so a real business never shows fake posts.
+    updates: realUpdates != null || (updFetched && hydrated == null && modOn('updates')),
     events: modOn('events'),
     staff: modOn('staff'),
   };
@@ -1379,12 +1431,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const tabResolved: Record<TabKey, boolean> = {
     overview: true, related: true, reviews: true,
     menu: menuFetched, shop: shopFetched, services: svcFetched, rentals: rentFetched,
-    updates: hydrated != null, events: hydrated != null, staff: hydrated != null,
+    updates: updFetched, events: hydrated != null, staff: hydrated != null,
   };
   useEffect(() => {
     if (tabResolved[tab] && !tabShown[tab]) setTab('overview');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, realMenu, realShop, realServices, realRentals, b.slug]);
+  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, updFetched, realMenu, realShop, realServices, realRentals, realUpdates, b.slug]);
 
   // Overview = the full, browse-y view (hero + meta). Any other tab switches to a
   // focused mode: the hero collapses into a compact pinned header (title + tabs
@@ -2117,7 +2169,51 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       )}
 
       {/* ============ UPDATES ============ */}
-      {tab === 'updates' && (
+      {tab === 'updates' && realUpdates != null && (
+        <div className="flex flex-col gap-3.5 pt-4">
+          {realUpdates.map((u) => {
+            const liked = myUpdLikes.has(u.id);
+            const kindChip: Record<PubUpdate['kind'], [string, string, string]> = {
+              offer: ['Oferta', 'Offer', 'bg-pink-bg text-pink-dark'],
+              event: ['Evento', 'Event', 'bg-lilac-2 text-primary-dark'],
+              news: ['Aviso', 'News', 'bg-green-bg text-green-dark'],
+            };
+            const [chipEs, chipEn, chipCls] = kindChip[u.kind];
+            return (
+              <Card key={u.id} className="p-[15px]">
+                <div className="flex items-center gap-2.5">
+                  <Avatar initials={initials(b.name)} color="#7B61FF" size={38} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13.5px] font-extrabold text-ink">{b.name}</div>
+                    <div className="text-[11.5px] font-semibold text-muted-2">{B(reviewWhen(u.createdAt))}</div>
+                  </div>
+                  {u.pinned && <span className="rounded-lg bg-amber-bg px-2 py-1 text-[10px] font-extrabold text-amber-ink">📌 {L('Fijado', 'Pinned')}</span>}
+                  <span className={`rounded-lg px-2 py-1 text-[10px] font-extrabold uppercase tracking-[.04em] ${chipCls}`}>{L(chipEs, chipEn)}</span>
+                </div>
+                <div className="mt-[11px] whitespace-pre-line text-[14px] font-medium leading-normal text-ink-body">{B(u.body)}</div>
+                {u.img && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={u.img} alt="" className="mt-[11px] max-h-[260px] w-full rounded-[13px] object-cover" />
+                )}
+                <div className="mt-3 flex items-center gap-5 border-t border-hair pt-[11px]">
+                  <button onClick={() => void toggleUpd(u)} className={`flex cursor-pointer items-center gap-1.5 text-[12.5px] font-bold ${liked ? 'text-pink' : 'text-muted-2'}`}>
+                    <span className="text-[16px] leading-none">{liked ? '♥' : '♡'}</span>
+                    {u.likes}
+                  </button>
+                  <button onClick={() => void openChat()} className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-bold text-muted-2">
+                    <MessageCircle size={16} stroke={2} />
+                    {L('Preguntar', 'Ask')}
+                  </button>
+                  <button onClick={() => void shareUpdate(u)} aria-label={L('Compartir', 'Share')} className="ml-auto cursor-pointer text-muted-2">
+                    <Share size={16} stroke={2} />
+                  </button>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+      {tab === 'updates' && realUpdates == null && (
         <div className="flex flex-col gap-3.5 pt-4">
           {UPDATE_POSTS.map((p, i) => {
             const liked = !!updLikes[i];

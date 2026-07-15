@@ -416,6 +416,63 @@ export async function fetchBookingLoad(serviceId: string): Promise<{ slot: strin
   return (data as Record<string, unknown>[]).map((r) => ({ slot: String(r.slot), seats: Number(r.seats ?? 0) }));
 }
 
+// ── Business updates (Novedades — migration 0024/0094) ───────────────────────
+
+/** One LIVE business update, consumer-shaped (kind badge + bilingual body). */
+export type PubUpdate = {
+  id: string;
+  kind: 'offer' | 'news' | 'event';
+  body: Bi;
+  img?: string;
+  likes: number;
+  createdAt: string;
+  pinned: boolean;
+};
+
+/** Live updates for a listing (pinned first, newest first, capped at 50).
+ *  Returns [] offline / none — BizDetail falls back to its sample fixtures. */
+export async function fetchBusinessUpdates(slug: string): Promise<PubUpdate[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('business_updates_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({
+    id: String(r.id),
+    kind: r.kind === 'offer' || r.kind === 'event' ? (r.kind as 'offer' | 'event') : 'news',
+    body: [String(r.body_es ?? ''), String(r.body_en ?? r.body_es ?? '')],
+    img: r.image_url != null ? String(r.image_url) : undefined,
+    likes: Number(r.likes ?? 0),
+    createdAt: String(r.created_at ?? ''),
+    pinned: r.pinned === true,
+  }));
+}
+
+/** Which of these updates the signed-in user already liked (RLS: own rows). */
+export async function fetchMyUpdateLikes(ids: string[]): Promise<Set<string>> {
+  if (!supabase || ids.length === 0) return new Set();
+  const { data, error } = await supabase.from('business_update_likes').select('update_id').in('update_id', ids);
+  if (error || !Array.isArray(data)) return new Set();
+  return new Set((data as { update_id: string }[]).map((r) => r.update_id));
+}
+
+/** Like / unlike an update (one per user — the trigger keeps the counter true). */
+export async function toggleUpdateLike(updateId: string, on: boolean): Promise<boolean> {
+  if (!supabase) return false;
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u?.user?.id;
+  if (!uid) return false;
+  const { error } = on
+    ? await supabase.from('business_update_likes').insert({ update_id: updateId, user_id: uid })
+    : await supabase.from('business_update_likes').delete().eq('update_id', updateId).eq('user_id', uid);
+  // A duplicate like (23505) means it's already in the desired state — treat as ok.
+  return !error || error.code === '23505';
+}
+
+/** Count a consumer view of the Novedades tab (batched, owner-facing metric). */
+export function bumpUpdateViews(ids: string[]): void {
+  if (!supabase || ids.length === 0) return;
+  void supabase.rpc('bump_update_views', { in_ids: ids.slice(0, 50) }).then(() => {});
+}
+
 /** One active-booking interval, privacy-safe (no customer data — migration 0092).
  *  The consumer slot picker greys out times that overlap a chosen professional's
  *  existing appointments (or ALL professionals for "Cualquiera"). */
