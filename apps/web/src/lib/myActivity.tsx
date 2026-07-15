@@ -23,6 +23,7 @@ export type OrderFulfil = {
   driver?: string; driver_phone?: string; driver_vehicle?: string; eta?: string; eta_range?: string;
   promo?: string; discount?: number; payment?: string;
   subtotal?: number; delivery_fee?: number; tip?: number; service_fee?: number; paid_total?: number;
+  collect_total?: number; // cash orders: amount the seller collects on delivery/pickup
 };
 export type MyOrder = { id: string; business_id: string; code: string | null; items: OrderItem[]; total: number | null; channel: string | null; status: string; created_at: string; fulfillment: OrderFulfil | null; businesses: BizRef };
 export type MyBooking = { id: string; business_id: string; service_name: string | null; party_size: number | null; starts_at: string; status: string; deposit: number | null; created_at: string; businesses: BizRef };
@@ -43,7 +44,7 @@ type Ctx = {
   refresh: () => void;
   // Consumer objects carry the public `slug`, not the DB uuid — creators resolve
   // slug → id, then insert with user_id = the customer.
-  placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string, fulfillment?: Record<string, unknown>) => Promise<{ error: string | null }>;
+  placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string, fulfillment?: Record<string, unknown>) => Promise<{ error: string | null; id?: string; code?: string }>;
   book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null) => Promise<{ error: string | null }>;
   rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
   buyTickets: (eventSlug: string, tierId: string, qty: number) => Promise<{ error: string | null; code?: string }>;
@@ -136,9 +137,11 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     if (!supabase || !user) return { error: 'auth' };
     const bizId = await idOf('businesses', businessSlug);
     if (!bizId) return { error: 'business-not-found' };
-    const { error } = await supabase.from('business_orders').insert({ business_id: bizId, user_id: user.id, customer_name: custName, items, total, channel, status: 'new', ...(fulfillment ? { fulfillment } : {}) });
+    // returning id+code lets the cash confirmation sheet track THIS order live
+    const { data, error } = await supabase.from('business_orders').insert({ business_id: bizId, user_id: user.id, customer_name: custName, items, total, channel, status: 'new', ...(fulfillment ? { fulfillment } : {}) }).select('id,code').single();
     if (!error) refresh();
-    return { error: error ? error.message : null };
+    const row = data as { id: string; code: string | null } | null;
+    return { error: error ? error.message : null, id: row?.id, code: row?.code ?? undefined };
   }, [user, custName, refresh, idOf]);
 
   const book = useCallback<Ctx['book']>(async (businessSlug, serviceName, serviceId, startsAt, partySize, deposit) => {

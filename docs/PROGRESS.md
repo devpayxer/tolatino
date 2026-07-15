@@ -97,6 +97,32 @@ paso 1 **"Esperando confirmación"** activo sin palomita, y avanza solo (paso 1 
 recibido!" y subtítulo "Te avisamos apenas lo confirme" hasta que confirme. Queda
 consistente con el tracker de Mi cuenta. Verificado en navegador (ambos estados).
 
+**Fix 2 (2026-07-15): la hoja de EFECTIVO + códigos de pedido + el deploy que
+faltaba.** El fundador reportó que "no cambió nada" — la causa raíz era que los
+commits del día estaban en la rama de la sesión pero **nunca se hicieron
+fast-forward a `claude/tolatino-repo-setup-1efdil`** (la rama que Vercel
+despliega). Lección: el trabajo NO está terminado hasta correr la secuencia de
+deploy de "How this project ships". Además:
+- La confirmación de pedidos en **efectivo** (`BizDetail`, negocios sin Stripe)
+  decía "¡Pedido realizado! Tu comida está en preparación" apenas ordenabas.
+  Ahora usa el MISMO diseño/experiencia que la de pago en línea: "¡Pedido
+  recibido!" + píldora con código + banner ETA + tracker en vivo que arranca en
+  "Esperando confirmación" + recibo con "Pagas en efectivo al recibir/recoger" +
+  CTA "Seguir mi pedido". Tracker compartido en **`components/OrderSteps.tsx`**
+  (`orderStageIdx` + `OrderStepsVertical`) — una sola fuente para ambas hojas.
+- **Migración 0090**: `business_orders.code` ahora tiene default `TL-XXXXXX` a
+  nivel BD (los pedidos en efectivo quedaban sin código; los pagados ya lo
+  recibían de `fulfill_order`). Backfill de los existentes.
+- `placeOrder` (myActivity) devuelve `{error, id, code}` para que la hoja de
+  efectivo siga SU pedido en vivo.
+- Verificado con un pedido REAL en navegador (barbería sin Stripe, pickup):
+  hoja "Esperando confirmación" + código TL- + nota de efectivo → SQL simula al
+  dueño aceptando → tracker muestra "Confirmado ✓ + Preparando". La notificación
+  `order_new` al dueño confirmada contra El Sabor (los negocios demo sin
+  `owner_id` no notifican a nadie — por diseño). El avance EN VIVO en producción
+  lo da el canal Realtime que ya existía en `myActivity` (websockets no corren en
+  el sandbox; en prod sí).
+
 ## Checkout propio en la app (Stripe Payment Element, estilo DoorDash) (2026-07-14)
 
 El pago del carrito ya NO redirige a la página hosted de Stripe: ahora se paga

@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building } from '@tabler/icons-react';
+import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -15,6 +15,7 @@ import { uploadPostImages } from '@/lib/image';
 import { startConversation, fetchChatMessages, sendChatMessage, markConversationRead, subscribeChat, type ChatMsg } from '@/lib/chat';
 import { useMyActivity } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
+import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useAddresses } from '@/lib/addresses';
@@ -292,7 +293,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // cart
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [cartOpen, setCartOpen] = useState(false);
-  const [cartDone, setCartDone] = useState(false);
+  // Cash order placed → the confirmation sheet tracks THIS order live (id from
+  // placeOrder). '' = placed but id unknown (still shows the waiting state).
+  const [doneOrderId, setDoneOrderId] = useState<string | null>(null);
   const [itemModal, setItemModal] = useState<{ catKey: string; item: MenuItem } | null>(null);
   // Add-to-cart on a customizable item that's already in the cart is ambiguous —
   // ask instead of silently repeating/dropping a customization. addPrompt =
@@ -633,11 +636,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         : {}),
       ...(isDelivery ? { instructions: composeInstructions() } : {}),
     };
-    const { error } = await act.placeOrder(b.slug, items, grandTotal, isDelivery ? 'delivery' : 'pickup', fulfillment);
+    const { error, id } = await act.placeOrder(b.slug, items, grandTotal, isDelivery ? 'delivery' : 'pickup', fulfillment);
     setPaying(false);
     if (error) { flash(L('No se pudo enviar el pedido', 'Could not place order')); return; }
     setCart({}); // order placed → empty the cart (clears its saved copy too)
-    setCartDone(true);
+    setDoneOrderId(id ?? '');
   };
 
   // Default single-option selections for a customize sheet: first in-stock value
@@ -2268,7 +2271,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       {/* cart bar */}
       {cartCount > 0 && !(tab === 'menu' && menuDisplayOnly) && !(tab === 'shop' && shopDisplayOnly) && (
         <button
-          onClick={() => { setCartOpen(true); setCartDone(false); }}
+          onClick={() => { setCartOpen(true); setDoneOrderId(null); }}
           className="fixed bottom-[86px] left-1/2 z-40 flex w-[calc(100%-28px)] max-w-[640px] -translate-x-1/2 cursor-pointer items-center justify-between rounded-2xl bg-ink px-5 py-3.5 text-white shadow-modal md:bottom-6"
         >
           <span className="text-[13px] font-extrabold">
@@ -2547,21 +2550,71 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       })()}
 
       {/* cart sheet / checkout (DoorDash-grade: canal, dirección, propina, desglose) */}
-      <Overlay open={cartOpen} onClose={() => { setCartOpen(false); setCartView('cart'); }} width={440}>
-        {cartDone ? (
-          <div className="flex flex-col items-center px-2 py-6 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-              <Check size={28} stroke={3} className="text-green" />
-            </span>
-            <div className="mt-4 text-[19px] font-extrabold text-ink">{L('¡Pedido realizado!', 'Order placed!')}</div>
-            <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
-              {L('Tu comida está en preparación. Te avisaremos cuando salga.', "Your food is being prepared. We'll notify you when it's on the way.")}
+      <Overlay open={cartOpen} onClose={() => { setCartOpen(false); setCartView('cart'); setDoneOrderId(null); }} width={440}>
+        {doneOrderId !== null ? (() => {
+          // Cash confirmation — SAME live experience as the paid one: starts at
+          // "Esperando confirmación" and advances when the business accepts
+          // (the order row is live via useMyActivity's realtime channel).
+          const o = act.orders.find((x) => x.id === doneOrderId);
+          const stageIdx = orderStageIdx(o);
+          const oDelivery = (o?.channel ?? (isDelivery ? 'delivery' : 'pickup')) === 'delivery';
+          const of = o?.fulfillment ?? null;
+          const collect = of?.collect_total ?? o?.total ?? null;
+          const closeDone = () => { setCartOpen(false); setDoneOrderId(null); setCartView('cart'); };
+          return (
+            <div className="flex flex-col">
+              <div className="flex flex-col items-center pt-2 text-center">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
+                  <Check size={30} stroke={3.2} className="text-green" />
+                </span>
+                <div className="mt-3.5 text-[20px] font-extrabold text-ink">{L('¡Pedido recibido!', 'Order placed!')}</div>
+                <div className="mt-1 max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">
+                  {stageIdx > 0
+                    ? L(`${b.name} confirmó tu pedido y lo está preparando.`, `${b.name} confirmed your order and is preparing it.`)
+                    : L(`Enviamos tu pedido a ${b.name}. Te avisamos apenas lo confirme.`, `We sent your order to ${b.name}. We'll let you know as soon as they confirm it.`)}
+                </div>
+                {o?.code && <span className="mt-2 rounded-full bg-lilac-2 px-3 py-1 text-[11px] font-extrabold text-primary-dark">{L('Pedido', 'Order')} {o.code}</span>}
+              </div>
+
+              {of?.eta_range && (
+                <div className="mt-4 flex items-center gap-3 rounded-card bg-primary px-4 py-3.5 text-white">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20"><Clock size={19} stroke={2.4} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10.5px] font-bold uppercase tracking-[.04em] text-white/80">{oDelivery ? L('Llega en aprox.', 'Estimated arrival') : L('Listo para recoger en', 'Ready for pickup in')}</span>
+                    <span className="block text-[17px] font-extrabold">{of.eta_range}</span>
+                  </span>
+                </div>
+              )}
+
+              <div className="mt-4"><OrderStepsVertical stageIdx={stageIdx} isDelivery={oDelivery} /></div>
+
+              <div className="mt-3 rounded-card border border-hair bg-white p-4 text-[12.5px] font-semibold text-ink-2 shadow-card">
+                {(o?.items ?? []).slice(0, 6).map((it, i) => (
+                  <div key={i} className="flex justify-between gap-3 py-0.5">
+                    <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}</span>
+                    {it.price != null && <span className="flex-none">{money(it.price * it.qty)}</span>}
+                  </div>
+                ))}
+                {collect != null && (
+                  <div className="mt-1.5 flex justify-between border-t border-hair pt-2 text-[13.5px] font-extrabold text-ink">
+                    <span>{L('Total a pagar', 'Total due')}</span><span>{money(Number(collect))}</span>
+                  </div>
+                )}
+                <div className="mt-1 text-[11px] font-bold text-amber-ink">
+                  {oDelivery ? L('Pagas en efectivo al recibir tu pedido.', 'Pay cash when your order arrives.') : L('Pagas en efectivo al recoger tu pedido.', 'Pay cash when you pick up your order.')}
+                </div>
+              </div>
+
+              <PrimaryBtn className="mt-4" onClick={() => { const target = `/cuenta/?sec=pedidos${o ? `&order=${o.id}` : ''}`; closeDone(); router.push(target); }}>
+                {L('Seguir mi pedido', 'Track my order')}
+                <ChevronRight size={15} stroke={2.8} className="ml-0.5 inline" />
+              </PrimaryBtn>
+              <button onClick={closeDone} className="mt-2 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-ink">
+                {L('Seguir explorando', 'Keep browsing')}
+              </button>
             </div>
-            <PrimaryBtn className="mt-5" onClick={() => { setCart({}); setCartOpen(false); setCartDone(false); }}>
-              {L('Seguir explorando', 'Keep browsing')}
-            </PrimaryBtn>
-          </div>
-        ) : cartView === 'address' ? (
+          );
+        })() : cartView === 'address' ? (
           <>
             <OverlayTitle title={L('Dirección de entrega', 'Delivery address')} onClose={() => setCartView('cart')} />
             {addressStore.addresses.length === 0 ? (

@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { useMyActivity } from '@/lib/myActivity';
 import { clearCart } from '@/lib/cartStore';
 import { Overlay, PrimaryBtn } from '@/components/ui';
+import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
 
 type PendingRow = {
   id: string; kind: string; ref: string; status: string;
@@ -28,19 +29,6 @@ type PendingRow = {
   } | null;
   result: { id?: string; code?: string; tickets?: string[] } | null;
 };
-
-// Tracker stage for THIS screen: 0 Esperando confirmación · 1 Preparando ·
-// 2 En camino · 3 Entregado. A just-paid order is always 'new' → 0 until the
-// business accepts it — never pre-mark it confirmed. Mirrors orderStageKey
-// (Cuenta.tsx) so the post-payment screen and the live tracker agree.
-function orderStageIdx(o: { status: string; channel: string | null; fulfillment: { dispatch?: string } | null } | undefined): number {
-  if (!o) return 0;
-  const d = o.fulfillment?.dispatch;
-  if (o.status === 'completed' || d === 'delivered') return 3;
-  if (o.channel === 'delivery' && (d === 'picked_up' || d === 'on_the_way')) return 2;
-  if (o.status === 'preparing' || o.status === 'ready') return 1;
-  return 0;
-}
 
 export function PurchaseReturnToast() {
   const { L } = useLang();
@@ -181,26 +169,7 @@ export function PurchaseReturnToast() {
             {/* estado en vivo — arranca en "Esperando confirmación" (paso 1 activo,
                 sin palomita) y avanza solo cuando el negocio acepta. */}
             {row.kind === 'order' && (
-              <div className="mt-4 flex flex-col gap-0 rounded-card border border-hair bg-white p-4 shadow-card">
-                {(isDelivery
-                  ? [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), L('Preparando', 'Preparing'), L('En camino', 'On the way'), L('Entregado', 'Delivered')]
-                  : [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), L('Preparando', 'Preparing'), L('Listo para recoger', 'Ready for pickup')]
-                ).map((label, i, arr) => {
-                  const done = i < stageIdx;
-                  const active = i === stageIdx;
-                  return (
-                    <div key={label} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-full ${done ? 'bg-green' : active ? 'bg-primary' : 'bg-lilac-line'}`}>
-                          {done ? <Check size={11} stroke={3.6} className="text-white" /> : <span className={`h-1.5 w-1.5 rounded-full ${active ? 'animate-pulse bg-white' : 'bg-white/70'}`} />}
-                        </span>
-                        {i < arr.length - 1 && <span className={`w-[2px] flex-1 ${done ? 'bg-green' : 'bg-lilac-line'}`} style={{ minHeight: 14 }} />}
-                      </div>
-                      <div className={`pb-2.5 text-[12px] ${done ? 'font-extrabold text-ink' : active ? 'font-extrabold text-ink' : 'font-semibold text-muted'}`}>{label}</div>
-                    </div>
-                  );
-                })}
-              </div>
+              <div className="mt-4"><OrderStepsVertical stageIdx={stageIdx} isDelivery={isDelivery} /></div>
             )}
 
             {/* resumen */}
