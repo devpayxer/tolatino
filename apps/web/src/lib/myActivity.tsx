@@ -241,3 +241,22 @@ export function useMyActivity(): Ctx {
   if (!ctx) throw new Error('useMyActivity must be used inside <MyActivityProvider>');
   return ctx;
 }
+
+/**
+ * Poll Mi actividad while a tracking surface is open on a LIVE order (pass null
+ * when closed). Realtime advances the tracker instantly when the websocket is
+ * up; this guarantees it still advances (≤8s) when it isn't — flaky mobile
+ * networks, blocked websockets. Stops on terminal states, so it only costs one
+ * refetch cycle every 8s while the customer is actually watching an active order.
+ */
+export function useOrderPoll(orderId: string | null | undefined) {
+  const { orders, refresh } = useMyActivity();
+  const o = orderId ? orders.find((x) => x.id === orderId) : undefined;
+  const terminal = !!o && (o.status === 'completed' || o.status === 'cancelled' || o.fulfillment?.dispatch === 'delivered');
+  const active = !!orderId && !terminal;
+  useEffect(() => {
+    if (!active) return;
+    const t = window.setInterval(() => refresh(), 8000);
+    return () => window.clearInterval(t);
+  }, [active, refresh]);
+}

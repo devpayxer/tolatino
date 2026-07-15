@@ -17,7 +17,7 @@ import { useAddresses } from '@/lib/addresses';
 import { useFollows } from '@/lib/follows';
 import { useSavedBiz } from '@/lib/savedBiz';
 import { useLiveData } from '@/lib/live';
-import { useMyActivity, type MyOrder } from '@/lib/myActivity';
+import { useMyActivity, useOrderPoll, type MyOrder } from '@/lib/myActivity';
 import { postReview } from '@/lib/live';
 import { useUrlTab, useUrlDetail } from '@/lib/urlView';
 import { startConversation, sendChatMessage } from '@/lib/chat';
@@ -115,6 +115,7 @@ export function CuentaScreen() {
   // Order detail sheet (DoorDash-style tracking): selection (mirrored to ?order=)
   // + live row refresh, and the "report a problem" mini-form (real chat to biz).
   const { value: orderSelId, open: openOrder, close: closeOrder } = useUrlDetail('order');
+  useOrderPoll(orderSelId); // the tracking overlay advances even without the websocket
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState('');
   const [reportBusy, setReportBusy] = useState(false);

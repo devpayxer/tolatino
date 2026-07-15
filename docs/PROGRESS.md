@@ -119,9 +119,22 @@ deploy de "How this project ships". Además:
   hoja "Esperando confirmación" + código TL- + nota de efectivo → SQL simula al
   dueño aceptando → tracker muestra "Confirmado ✓ + Preparando". La notificación
   `order_new` al dueño confirmada contra El Sabor (los negocios demo sin
-  `owner_id` no notifican a nadie — por diseño). El avance EN VIVO en producción
-  lo da el canal Realtime que ya existía en `myActivity` (websockets no corren en
-  el sandbox; en prod sí).
+  `owner_id` no notifican a nadie — por diseño).
+
+**Fix 3 (2026-07-15): el tracker ahora avanza SOLO, con o sin websocket.** El
+fundador probó en computadora y móvil y la pantalla se quedaba clavada en
+"Esperando confirmación" aunque el negocio aceptara: el canal Realtime de
+`myActivity` existe y `business_orders` está en la publicación, pero los
+websockets de Supabase **no estaban entregando eventos en su entorno** (nunca se
+habían verificado en prod — está en LAUNCH-CHECKLIST §0). Solución robusta:
+**`useOrderPoll(orderId)`** (`lib/myActivity.tsx`) — refetch cada 8s SOLO mientras
+una superficie de seguimiento está abierta sobre un pedido no-terminal; Realtime
+sigue siendo la vía instantánea cuando el websocket sí conecta. Conectado en las
+3 superficies: `PurchaseReturnToast` (post-pago), hoja de efectivo (`BizDetail`)
+y el tracking de Mi cuenta (`?order=`). Verificado reproduciendo el escenario
+exacto (sandbox = sin websockets): pedido → "Esperando confirmación" → SQL acepta
+→ **la hoja abierta avanzó sola a los 6s** a "Confirmado ✓ + Preparando", y la
+segunda transición (listo) también. Desplegado a Vercel (ff-merge).
 
 ## Checkout propio en la app (Stripe Payment Element, estilo DoorDash) (2026-07-14)
 

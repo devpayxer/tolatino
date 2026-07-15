@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 import { IconCheck as Check, IconChevronRight as ChevronRight, IconClock as Clock, IconLoader2 as Loader2, IconReceipt as Receipt, IconTicket as Ticket, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
-import { useMyActivity } from '@/lib/myActivity';
+import { useMyActivity, useOrderPoll } from '@/lib/myActivity';
 import { clearCart } from '@/lib/cartStore';
 import { Overlay, PrimaryBtn } from '@/components/ui';
 import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
@@ -114,6 +114,8 @@ export function PurchaseReturnToast() {
   const liveOrder = orderId ? act.orders.find((o) => o.id === orderId) : undefined;
   const stageIdx = orderStageIdx(liveOrder);
   const bizName = row?.payload?.business ?? (L('El negocio', 'The business'));
+  // Keep the open sheet advancing even if the Realtime websocket isn't delivering.
+  useOrderPoll(row?.kind === 'order' && row.status === 'fulfilled' ? orderId ?? null : null);
 
   return (
     <>

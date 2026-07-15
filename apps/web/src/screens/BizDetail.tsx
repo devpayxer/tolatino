@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/auth';
 import { useScrollLock } from '@/lib/scrollLock';
 import { uploadPostImages } from '@/lib/image';
 import { startConversation, fetchChatMessages, sendChatMessage, markConversationRead, subscribeChat, type ChatMsg } from '@/lib/chat';
-import { useMyActivity } from '@/lib/myActivity';
+import { useMyActivity, useOrderPoll } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business } from '@/data/fixtures';
@@ -296,6 +296,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Cash order placed → the confirmation sheet tracks THIS order live (id from
   // placeOrder). '' = placed but id unknown (still shows the waiting state).
   const [doneOrderId, setDoneOrderId] = useState<string | null>(null);
+  useOrderPoll(doneOrderId || null); // sheet advances even without the websocket
   const [itemModal, setItemModal] = useState<{ catKey: string; item: MenuItem } | null>(null);
   // Add-to-cart on a customizable item that's already in the cart is ambiguous —
   // ask instead of silently repeating/dropping a customization. addPrompt =
