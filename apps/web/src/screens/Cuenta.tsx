@@ -26,6 +26,7 @@ import { Qr } from '@/components/Qr';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Switch, YouAvatar } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
+import { enablePush, disablePush, pushState, type PushState } from '@/lib/push';
 
 type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config' | 'pedidos' | 'reservas' | 'rentas' | 'boletos' | 'voy';
 // Valid ?sec= values restored on refresh (keep in sync with Sec).
@@ -66,7 +67,7 @@ const inputCls =
   'w-full rounded-field border-[1.5px] border-lilac-line bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary';
 
 export function CuentaScreen() {
-  const { L } = useLang();
+  const { L, lang } = useLang();
   const app = useApp();
   const auth = useAuth();
   const addr = useAddresses();
@@ -88,6 +89,27 @@ export function CuentaScreen() {
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 1800);
+  };
+
+  // Web Push (this device): read the OS permission after mount (SSR-safe) so the
+  // Settings card can offer "turn on notifications" or reflect granted/blocked.
+  const [push, setPush] = useState<PushState>('unsupported');
+  const [pushBusy, setPushBusy] = useState(false);
+  useEffect(() => { setPush(pushState()); }, []);
+  const turnOnPush = async () => {
+    setPushBusy(true);
+    const next = await enablePush(lang);
+    setPush(next);
+    setPushBusy(false);
+    if (next === 'granted') flash(L('Notificaciones activadas en este dispositivo', 'Notifications on for this device'));
+    else if (next === 'denied') flash(L('Bloqueadas — actívalas en tu navegador', 'Blocked — enable them in your browser'));
+  };
+  const turnOffPush = async () => {
+    setPushBusy(true);
+    await disablePush();
+    setPush('default');
+    setPushBusy(false);
+    flash(L('Notificaciones desactivadas en este dispositivo', 'Notifications off for this device'));
   };
 
   // Order detail sheet (DoorDash-style tracking): selection (mirrored to ?order=)
@@ -367,6 +389,31 @@ export function CuentaScreen() {
                 <LangToggle />
               </div>
             </div>
+
+            {push !== 'unsupported' && (
+              <div className={`${cardCls} p-4`}>
+                <div className="mb-2.5 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('En este dispositivo', 'On this device')}</div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-amber-bg"><Bell size={18} className="text-amber-ink" stroke={2.2} /></span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-extrabold text-ink">{L('Notificaciones push', 'Push notifications')}</div>
+                    <div className="mt-0.5 text-[11.5px] font-semibold leading-snug text-muted">
+                      {push === 'granted'
+                        ? L('Recibes avisos de tus pedidos aunque la app esté cerrada.', 'You get order updates even when the app is closed.')
+                        : push === 'denied'
+                        ? L('Bloqueadas. Actívalas en los ajustes de tu navegador para este sitio.', 'Blocked. Enable them in your browser settings for this site.')
+                        : L('Activa los avisos de cada paso de tu pedido: confirmado, en camino y entregado.', 'Turn on updates for each step of your order: confirmed, on the way and delivered.')}
+                    </div>
+                    {push === 'granted' ? (
+                      <button onClick={turnOffPush} disabled={pushBusy} className="mt-2.5 cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink disabled:opacity-50">{L('Desactivar', 'Turn off')}</button>
+                    ) : push === 'denied' ? null : (
+                      <button onClick={turnOnPush} disabled={pushBusy} className="mt-2.5 cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">{pushBusy ? L('Activando…', 'Turning on…') : L('Activar notificaciones', 'Turn on notifications')}</button>
+                    )}
+                  </div>
+                  {push === 'granted' && <span className="flex-none rounded-full bg-green-bg px-2.5 py-1 text-[10px] font-extrabold text-green-dark">{L('Activadas', 'On')}</span>}
+                </div>
+              </div>
+            )}
 
             <div className={`${cardCls} p-4`}>
               <div className="mb-1 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Notificaciones', 'Notifications')}</div>

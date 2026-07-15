@@ -10,6 +10,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
+import { useLang } from '@/lib/i18n';
+import { syncPush } from '@/lib/push';
 import { NOTIFS, VIEW_PATH } from '@/data/fixtures';
 
 export type NotifIcon = 'heart' | 'message' | 'calendar' | 'store' | 'user' | 'tag';
@@ -106,8 +108,13 @@ const NotifCtx = createContext<Ctx | null>(null);
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { lang } = useLang();
   const [rows, setRows] = useState<RawRow[] | null>(null); // null → demo (logged out)
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
+
+  // If this device already granted push, refresh its stored subscription on login
+  // (endpoints rotate) so send-push keeps reaching it. Silent no-op otherwise.
+  useEffect(() => { if (user) void syncPush(lang); }, [user?.id, lang]);
 
   // load + realtime for the signed-in user
   useEffect(() => {

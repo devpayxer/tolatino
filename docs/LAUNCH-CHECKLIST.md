@@ -20,6 +20,29 @@
 
 ## 0. Sandbox → real environment (the big one)
 
+- [ ] **Verify Web Push on a real phone (2026-07-15, migration 0089).** The full
+  server pipeline is built, deployed, and verified end-to-end *except delivery*:
+  notification insert → `tg_push_fanout` (pg_net) → `send-push` Edge Function
+  returned HTTP 200, the service worker registers, and the Settings card works.
+  What the sandbox CANNOT do (same wall as Stripe): create a real browser push
+  subscription and reach the push service (FCM/Mozilla). **Founder test:** open
+  the site over HTTPS on your phone → Mi cuenta → Configuración → "Activar
+  notificaciones" (grant permission) → place an order → advance it from Cocina
+  (Confirmar → En camino → Entregado) → each step should pop a phone notification.
+  Secrets already set on the project: `VAPID_PUBLIC_KEY/PRIVATE_KEY`,
+  `VAPID_SUBJECT`, `PUSH_HOOK_SECRET`; `private.push_config` row inserted;
+  `NEXT_PUBLIC_VAPID_PUBLIC_KEY` committed in `.env.production` (confirm it also
+  reaches the Cloudflare build — it's a `NEXT_PUBLIC_*` read at build time).
+  - **iOS caveat:** Safari only delivers Web Push to a PWA the user **added to the
+    Home Screen** (iOS 16.4+). Android/desktop Chrome/Firefox work from the browser
+    tab. A native FCM path (stack roadmap) can cover iOS-in-browser later.
+  - **Portability (self-host):** the fan-out uses **pg_net** (Supabase extension).
+    On self-hosted Postgres, drop `tg_push_fanout` and run a NestJS worker that
+    LISTENs on `notifications` and calls web-push — table/RLS/subscriptions stay
+    identical. Noted in `0089_web_push.sql`.
+  - **Polish (deferred):** push `link` is generic `/cuenta`; deep-linking the tap
+    straight to `?sec=pedidos&order=<id>` needs the order id in the notification
+    `data` (today it carries `code`). Small trigger tweak later.
 - [ ] **Real end-to-end testing.** Nothing here has been exercised against a
   live backend or real devices. Before launch, test on real phones:
   geolocation/GPS, iOS input auto-zoom, Supabase Realtime websockets (live

@@ -5,6 +5,49 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-15.
 
+## Notificaciones push reales (Web Push / VAPID) en todo el proceso (2026-07-15, migración 0089)
+
+El cliente ahora recibe un **push real en el teléfono/navegador aunque la app esté
+cerrada** en cada cambio de su pedido — confirmado (aceptado→preparando), en camino
+y entregado, y también si se cancela — igual que DoorDash. Gratis: VAPID, sin
+proveedor de pago. Antes las notificaciones existían pero solo dentro de la app
+(feed "Alertas" vía Supabase Realtime, requería la app abierta).
+
+**Arquitectura (todo portable menos pg_net, documentado):**
+- **migración 0089** — `push_subscriptions` (una fila por dispositivo, RLS: cada quien
+  gestiona las suyas) + `private.push_config` (URL de la función + secreto + anon key,
+  solo servidor) + trigger `tg_push_fanout` en `public.notifications` que, con **pg_net**,
+  hace `POST` a la Edge Function por cada notificación nueva. El feed in-app (0054) ya
+  era "la cola natural para Web Push" — esto la consume.
+- **Edge Function `send-push`** (`verify_jwt=false`, autenticada por el header
+  `x-hook-secret`) — usa `npm:web-push`, arma la copia localizada (misma que
+  `notifications.tsx`, por idioma de la suscripción), envía a cada dispositivo del
+  usuario y **purga** suscripciones muertas (404/410). Secretos en el proyecto:
+  `VAPID_PUBLIC_KEY/PRIVATE_KEY`, `VAPID_SUBJECT`, `PUSH_HOOK_SECRET`.
+- **Cliente** — `public/sw.js` (service worker: `push`→`showNotification`,
+  `notificationclick`→enfoca/abre la vista) + `public/icon-192.png` (marca) +
+  `lib/push.ts` (`enablePush`/`syncPush`/`disablePush`: registra el SW, pide permiso,
+  se suscribe con la VAPID pública y hace upsert a `push_subscriptions`). Botón
+  **"Activar notificaciones"** en Mi cuenta → Configuración → "En este dispositivo"
+  (con estados default/activadas/bloqueadas), y **re-suscripción silenciosa al iniciar
+  sesión** si el permiso ya está dado (en `NotificationsProvider`).
+  `NEXT_PUBLIC_VAPID_PUBLIC_KEY` en `.env.production` (pública, va al build).
+
+**Verificado (lo que se puede desde aquí):** migración aplicada (tabla+RLS+trigger+
+pg_net), función desplegada + auth (403 sin secreto / 200 `{sent:0}` con él → web-push
+carga bien), **pipeline completo end-to-end**: insertar una notificación → el trigger
+disparó pg_net → `send-push` respondió **HTTP 200** (visible en `net._http_response`);
+el service worker **registra y activa** (scope `/`) en navegador real; la tarjeta de
+Configuración renderiza en sus dos estados (Activar / Activadas). `tsc` + `build`
+limpios. Artefactos de prueba borrados.
+
+**Lo único que NO se puede probar desde el sandbox** (igual que Stripe): la **entrega
+real** del push a un dispositivo, porque necesita una suscripción de navegador real +
+alcanzar el servicio de push (FCM/Mozilla), que el proxy del sandbox bloquea. El
+fundador lo confirma en su teléfono: abrir la web en HTTPS → Configuración → Activar
+notificaciones → hacer un pedido y avanzarlo desde Cocina → llega el push. Ver
+LAUNCH-CHECKLIST.
+
 ## Seguimiento del pedido estilo DoorDash — 4 pasos + pantalla "entregado" (2026-07-15)
 
 Rediseño completo del detalle de pedido en **Mi cuenta → Mis pedidos** (`?sec=pedidos&order=<id>`,
