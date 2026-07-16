@@ -7,13 +7,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconBell as Bell, IconCalendar as Calendar, IconHeart as Heart, IconMessageCircle as MessageCircle, IconBuildingStore as Store, IconTag as Tag, IconUser as User } from '@tabler/icons-react';
+import { IconBell as Bell, IconCalendar as Calendar, IconHeart as Heart, IconMessageCircle as MessageCircle, IconStarFilled as Star, IconBuildingStore as Store, IconTag as Tag, IconUser as User } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useNotifications, type NotifItem } from '@/lib/notifications';
 import { Overlay, OverlayTitle } from '@/components/ui';
 
-const ICONS = { heart: Heart, message: MessageCircle, calendar: Calendar, store: Store, user: User, tag: Tag };
+const ICONS = { heart: Heart, message: MessageCircle, calendar: Calendar, store: Store, user: User, tag: Tag, star: Star };
 
 export function NotifPanel() {
   const { L } = useLang();

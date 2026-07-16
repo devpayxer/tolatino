@@ -14,7 +14,7 @@ import { useLang } from '@/lib/i18n';
 import { syncPush } from '@/lib/push';
 import { NOTIFS, VIEW_PATH } from '@/data/fixtures';
 
-export type NotifIcon = 'heart' | 'message' | 'calendar' | 'store' | 'user' | 'tag';
+export type NotifIcon = 'heart' | 'message' | 'calendar' | 'store' | 'user' | 'tag' | 'star';
 export type NotifItem = {
   id: string;
   icon: NotifIcon;
@@ -41,6 +41,8 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   rental_status: { icon: 'tag', color: '#1F8A4C', bg: '#E3F5EA' },
   ticket_new: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
   ticket_status: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
+  review_new: { icon: 'star', color: '#B8860B', bg: '#FCF1C7' },
+  review_reply: { icon: 'message', color: '#1F8A4C', bg: '#E3F5EA' },
   rsvp_new: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
   event_cancelled: { icon: 'calendar', color: '#D6336C', bg: '#FDE7EF' },
   waitlist_open: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
@@ -96,6 +98,17 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
       if (d.status === 'done') return { title: ['¡Gracias por tu visita! ⭐', 'Thanks for coming in! ⭐'], sub: svc };
       const [a, b] = st(d.status);
       return { title: [`Tu reserva está ${a}`, `Your booking is ${b}`], sub: svc };
+    }
+    case 'review_new': {
+      // owner-facing: a customer left a review. sub = "N★ · Name"
+      const stars = '★'.repeat(Math.max(1, Math.min(5, Number(d.rating) || 5)));
+      const who = [`${stars} · ${s('name')}`, `${stars} · ${s('name')}`] as [string, string];
+      return { title: ['Nueva reseña ⭐', 'New review ⭐'], sub: who };
+    }
+    case 'review_reply': {
+      // customer-facing: the business responded to their review
+      const biz = [s('business'), s('business')] as [string, string];
+      return { title: ['Respondieron tu reseña 💬', 'Your review got a reply 💬'], sub: biz };
     }
     case 'booking_cancelled': {
       const who = [s('service'), s('name')].filter(Boolean).join(' · ');
