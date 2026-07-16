@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconFlame as Flame, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSearch as Search, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building } from '@tabler/icons-react';
+import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconFlame as Flame, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSearch as Search, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building, IconCalendarEvent as CalendarIcon } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -405,6 +405,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // event-rental unit); the shared range + order-level extras live below.
   const [rentCart, setRentCart] = useState<Record<string, number>>({});
   const [rentCartOpen, setRentCartOpen] = useState(false);
+  const [rentDatesOpen, setRentDatesOpen] = useState(false); // top-of-flow date picker sheet
   const [rentExtras, setRentExtras] = useState<string[]>([]); // selected order-level extra ids
   const [rentStart, setRentStart] = useState<string | null>(null); // yyyy-mm-dd
   const [rentEnd, setRentEnd] = useState<string | null>(null);
@@ -1330,6 +1331,50 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const rangeLabel = () => {
     const shortD = (isoStr: string) => { const dt = parseISO(isoStr); return L(`${MO_SH_ES[dt.getMonth()]} ${dt.getDate()}`, `${MO_SH_EN[dt.getMonth()]} ${dt.getDate()}`); };
     return rentStart ? `${shortD(rentStart)}${rentEnd && rentEnd !== rentStart ? ` – ${shortD(rentEnd)}` : ''}` : '';
+  };
+  const rentSpanLbl = () => { const n = rentSpan(); return `${n} ${n === 1 ? L('día', 'day') : L('días', 'days')}`; };
+  // Shared rental date-range calendar (Turo/Airbnb-style). Rendered in the
+  // top-of-flow "Fechas" sheet AND in the cart review, so both edit one range.
+  const renderRentCalendar = () => {
+    const first = new Date(rentCal.y, rentCal.m, 1);
+    const lead = (first.getDay() + 6) % 7; // Monday-first
+    const dim = new Date(rentCal.y, rentCal.m + 1, 0).getDate();
+    const totalCells = Math.ceil((lead + dim) / 7) * 7;
+    const nowD = new Date();
+    const prevDisabled = rentCal.y < nowD.getFullYear() || (rentCal.y === nowD.getFullYear() && rentCal.m <= nowD.getMonth());
+    const shiftMonth = (dir: number) => setRentCal((c) => { const d = new Date(c.y, c.m + dir, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
+    return (
+      <>
+        <div className="mb-2 mt-1 flex items-center justify-between gap-2">
+          <div className="text-[13px] font-extrabold text-ink">{L('Fechas del evento', 'Event dates')}</div>
+          <div className="flex flex-none items-center gap-1">
+            <button onClick={() => shiftMonth(-1)} disabled={prevDisabled} aria-label={L('Mes anterior', 'Previous month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={16} stroke={2.4} /></button>
+            <span className="w-[104px] text-center text-[12px] font-extrabold text-ink">{L(MO_LONG_ES[rentCal.m], MO_LONG_EN[rentCal.m])} {rentCal.y}</span>
+            <button onClick={() => shiftMonth(1)} aria-label={L('Mes siguiente', 'Next month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"><ChevronRight size={16} stroke={2.4} /></button>
+          </div>
+        </div>
+        <div className="mb-1.5 grid grid-cols-7 gap-1">{WD_MON1.map((w, i) => <span key={i} className="text-center text-[10px] font-extrabold text-muted-faint">{L(w[0], w[1])}</span>)}</div>
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: totalCells }, (_, i) => {
+            const dnum = i - lead + 1;
+            if (dnum < 1 || dnum > dim) return <span key={i} />;
+            const dISO = isoDay(rentCal.y, rentCal.m, dnum);
+            const enabled = rentDayEnabled('', new Date(rentCal.y, rentCal.m, dnum));
+            const isEnd = dISO === rentStart || dISO === rentEnd;
+            const inRange = !!rentStart && !!rentEnd && dISO > rentStart && dISO < rentEnd;
+            return (
+              <button key={i} disabled={!enabled} onClick={() => rentPick(dISO)}
+                className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-faint'}`}>{dnum}</button>
+            );
+          })}
+        </div>
+        <div className="mt-2 rounded-field bg-app px-3.5 py-2.5 text-[12px] font-bold text-ink-2">
+          {rentStart
+            ? <>{rangeLabel()} · <span className="text-primary-dark">{rentSpanLbl()}</span>{rentStart && !rentEnd && <span className="ml-1 font-semibold text-muted">· {L('toca el día final para un rango', 'tap an end day for a range')}</span>}</>
+            : <span className="font-semibold text-muted">{L('Toca un día para empezar', 'Tap a day to start')}</span>}
+        </div>
+      </>
+    );
   };
   const confirmRentalCart = async () => {
     if (rentCartLines.length === 0) { flash(L('Agrega artículos primero', 'Add items first')); return; }
@@ -2506,11 +2551,33 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       {/* ============ RENTALS ============ */}
       {tab === 'rentals' && (
         <div className="flex flex-col gap-2.5 pt-4">
-          {rentDisplayOnly && (
+          {rentDisplayOnly ? (
             <div className="flex items-center gap-2.5 rounded-tile bg-lilac-2 px-3.5 py-2.5">
               <Store size={16} stroke={2.2} className="flex-none text-primary-dark" />
               <span className="text-[12px] font-semibold leading-snug text-ink-soft">{L('Consulta disponibilidad y tarifas — llama o visita para rentar.', 'Check availability & rates — call or visit to rent.')}</span>
             </div>
+          ) : (
+            <>
+              {/* Turo/Airbnb-style: dates lead the whole rental flow. */}
+              <Card className="cursor-pointer p-3.5" onClick={() => setRentDatesOpen(true)}>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-tile bg-lilac-2"><CalendarIcon size={21} stroke={1.9} className="text-primary-dark" /></span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-extrabold text-ink">{rentStart ? rangeLabel() : L('¿Para qué fechas?', 'What dates?')}</div>
+                    <div className="mt-0.5 text-[12px] font-semibold text-muted">{rentStart ? `${rentSpanLbl()} · ${L('toca para cambiar', 'tap to change')}` : L('Elige las fechas de tu evento primero', 'Pick your event dates first')}</div>
+                  </div>
+                  <span className="flex-none rounded-field bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">{rentStart ? L('Cambiar', 'Change') : L('Elegir', 'Choose')}</span>
+                </div>
+              </Card>
+              {/* 3-step guide so the process is obvious. */}
+              <div className="flex items-center gap-1 px-0.5 text-[10.5px] font-bold text-muted">
+                <span className={rentStart ? 'text-primary-dark' : 'text-ink'}>1 {L('Fechas', 'Dates')}</span>
+                <ChevronRight size={12} stroke={2.4} className="text-muted-faint" />
+                <span className={rentCartCount > 0 ? 'text-primary-dark' : ''}>2 {L('Artículos', 'Items')}</span>
+                <ChevronRight size={12} stroke={2.4} className="text-muted-faint" />
+                <span>3 {L('Extras y solicitar', 'Extras & request')}</span>
+              </div>
+            </>
           )}
           {rentalItems.map((it) => {
             const inCart = rentCart[it.id] ?? 0;
@@ -2526,6 +2593,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   <div className="mt-0.5 text-[12px] font-semibold text-muted">{B(it.d)}</div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[12.5px] font-extrabold text-primary-dark">
                     <span>{money(it.day)}/{L('día', 'day')}</span>
+                    {rentStart && <span className="text-[11.5px] font-extrabold text-ink">= {money(rentUnitFee(it))} · {rentSpanLbl()}</span>}
                     {it.dep > 0 && <span className="text-[11px] font-bold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>}
                   </div>
                 </div>
@@ -2548,11 +2616,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </Card>
             );
           })}
-          {/* sticky cart bar — opens the rental cart (dates + review + checkout) */}
+          {/* sticky cart bar — opens the rental cart (extras + review + request) */}
           {!rentDisplayOnly && rentCartCount > 0 && (
             <button onClick={() => setRentCartOpen(true)} className="sticky bottom-3 z-10 mt-1 flex w-full cursor-pointer items-center justify-between rounded-field bg-primary px-4 py-3.5 text-white shadow-cta">
-              <span className="text-[13px] font-extrabold">{rentCartCount} {rentCartCount === 1 ? L('artículo', 'item') : L('artículos', 'items')}</span>
-              <span className="flex items-center gap-2 text-[13.5px] font-extrabold">{L('Ver carrito de renta', 'View rental cart')} <span className="rounded-full bg-white/20 px-2 py-0.5">›</span></span>
+              <span className="flex flex-col items-start leading-tight">
+                <span className="text-[13px] font-extrabold">{rentCartCount} {rentCartCount === 1 ? L('artículo', 'item') : L('artículos', 'items')}{rentStart ? ` · ${rentSpanLbl()}` : ''}</span>
+                <span className="text-[10.5px] font-bold text-white/75">{money(rentCartTotal)} · {L('extras y solicitar', 'extras & request')}</span>
+              </span>
+              <span className="flex items-center gap-2 text-[13.5px] font-extrabold">{L('Continuar', 'Continue')} <span className="rounded-full bg-white/20 px-2 py-0.5">›</span></span>
             </button>
           )}
         </div>
@@ -3849,51 +3920,33 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         )}
       </Overlay>
 
+      {/* rental DATES sheet — top-of-flow date picker (Turo/Airbnb: dates lead) */}
+      <Overlay open={rentDatesOpen} onClose={() => setRentDatesOpen(false)} width={440}>
+        {rentDatesOpen && (
+          <>
+            <OverlayTitle title={L('Fechas del evento', 'Event dates')} onClose={() => setRentDatesOpen(false)} />
+            <div className="mb-3 flex items-center gap-2.5 rounded-field bg-lilac-2 px-3.5 py-2.5">
+              <CalendarIcon size={16} stroke={2} className="flex-none text-primary-dark" />
+              <span className="text-[11.5px] font-semibold leading-snug text-ink-soft">{L('Elige uno o dos días (rango). Las tarifas se calculan por los días que rentes.', 'Pick one or two days (range). Rates are calculated for the days you rent.')}</span>
+            </div>
+            {renderRentCalendar()}
+            <PrimaryBtn className="mt-4" disabled={!rentStart} onClick={() => setRentDatesOpen(false)}>
+              {rentStart ? `${L('Listo', 'Done')} · ${rentSpanLbl()}` : L('Elige un día', 'Pick a day')}
+            </PrimaryBtn>
+          </>
+        )}
+      </Overlay>
+
       {/* rental CART sheet — several items for ONE event date range → one order */}
       <Overlay open={rentCartOpen} onClose={() => { setRentCartOpen(false); setRentDone(false); }} width={440}>
         {rentCartOpen && !rentDone && (() => {
-          const first = new Date(rentCal.y, rentCal.m, 1);
-          const lead = (first.getDay() + 6) % 7; // Monday-first
-          const dim = new Date(rentCal.y, rentCal.m + 1, 0).getDate();
-          const totalCells = Math.ceil((lead + dim) / 7) * 7;
-          const now = new Date();
-          const prevDisabled = rentCal.y < now.getFullYear() || (rentCal.y === now.getFullYear() && rentCal.m <= now.getMonth());
-          const span = rentSpan();
-          const shiftMonth = (dir: number) => setRentCal((c) => { const d = new Date(c.y, c.m + dir, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
-          const spanLbl = `${span} ${span === 1 ? L('día', 'day') : L('días', 'days')}`;
+          const spanLbl = rentSpanLbl();
           return (
             <>
               <OverlayTitle title={L('Tu carrito de renta', 'Your rental cart')} onClose={() => setRentCartOpen(false)} />
 
-              {/* event date range */}
-              <div className="mb-2 mt-1 flex items-center justify-between gap-2">
-                <div className="text-[13px] font-extrabold text-ink">{L('Fechas del evento', 'Event dates')}</div>
-                <div className="flex flex-none items-center gap-1">
-                  <button onClick={() => shiftMonth(-1)} disabled={prevDisabled} aria-label={L('Mes anterior', 'Previous month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={16} stroke={2.4} /></button>
-                  <span className="w-[104px] text-center text-[12px] font-extrabold text-ink">{L(MO_LONG_ES[rentCal.m], MO_LONG_EN[rentCal.m])} {rentCal.y}</span>
-                  <button onClick={() => shiftMonth(1)} aria-label={L('Mes siguiente', 'Next month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"><ChevronRight size={16} stroke={2.4} /></button>
-                </div>
-              </div>
-              <div className="mb-1.5 grid grid-cols-7 gap-1">{WD_MON1.map((w, i) => <span key={i} className="text-center text-[10px] font-extrabold text-muted-faint">{L(w[0], w[1])}</span>)}</div>
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: totalCells }, (_, i) => {
-                  const dnum = i - lead + 1;
-                  if (dnum < 1 || dnum > dim) return <span key={i} />;
-                  const dISO = isoDay(rentCal.y, rentCal.m, dnum);
-                  const enabled = rentDayEnabled('', new Date(rentCal.y, rentCal.m, dnum));
-                  const isEnd = dISO === rentStart || dISO === rentEnd;
-                  const inRange = !!rentStart && !!rentEnd && dISO > rentStart && dISO < rentEnd;
-                  return (
-                    <button key={i} disabled={!enabled} onClick={() => rentPick(dISO)}
-                      className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-faint'}`}>{dnum}</button>
-                  );
-                })}
-              </div>
-              <div className="mt-2 rounded-field bg-app px-3.5 py-2.5 text-[12px] font-bold text-ink-2">
-                {rentStart
-                  ? <>{rangeLabel()} · <span className="text-primary-dark">{spanLbl}</span>{rentStart && !rentEnd && <span className="ml-1 font-semibold text-muted">· {L('toca el día final para un rango', 'tap an end day for a range')}</span>}</>
-                  : <span className="font-semibold text-muted">{L('Toca un día para empezar', 'Tap a day to start')}</span>}
-              </div>
+              {/* event date range (Turo-style shared calendar) */}
+              {renderRentCalendar()}
 
               {/* line items */}
               <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Artículos', 'Items')}</div>
