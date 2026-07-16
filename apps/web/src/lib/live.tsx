@@ -646,14 +646,22 @@ export type RentalOrderLine = { item_id: string | null; item_name: string; qty: 
 export async function createRentalOrder(opts: {
   slug: string; startISO: string; endISO: string | null;
   lines: RentalOrderLine[]; extras?: { name: string; price: number }[]; notes?: string;
-}): Promise<{ id: string | null; error: string | null }> {
-  if (!supabase) return { id: null, error: 'offline' };
+}): Promise<{ id: string | null; status: string | null; error: string | null }> {
+  if (!supabase) return { id: null, status: null, error: 'offline' };
   const { data, error } = await supabase.rpc('create_rental_order', {
     in_slug: opts.slug, in_start_at: opts.startISO, in_end_at: opts.endISO,
     in_lines: opts.lines, in_extras: opts.extras ?? [], in_notes: opts.notes ?? null,
   });
-  if (error) return { id: null, error: error.message };
-  return { id: (data as string) ?? null, error: null };
+  if (error) return { id: null, status: null, error: error.message };
+  const id = (data as string) ?? null;
+  // Read the order back so the confirmation shows the status the SERVER decided
+  // (approval mode, 0097/0098) — never a guess from the page-load-time config.
+  let status: string | null = null;
+  if (id) {
+    const { data: ord } = await supabase.from('business_rental_orders').select('status').eq('id', id).single();
+    status = (ord as { status: string } | null)?.status ?? null;
+  }
+  return { id, status, error: null };
 }
 
 /** Busy date-ranges for a rental item (migration 0051) — the calendar greys out

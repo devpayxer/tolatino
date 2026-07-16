@@ -59,8 +59,9 @@ type Ctx = {
   // Consumer objects carry the public `slug`, not the DB uuid — creators resolve
   // slug → id, then insert with user_id = the customer.
   placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string, fulfillment?: Record<string, unknown>) => Promise<{ error: string | null; id?: string; code?: string }>;
-  book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null, extra?: BookingExtra) => Promise<{ error: string | null }>;
-  rent: (businessSlug: string, itemName: string, itemId: string | null, startAt: string, endAt: string | null, qty: number, total: number, deposit: number | null) => Promise<{ error: string | null }>;
+  // `status` is the row's FINAL status as decided by the server (the approval-mode
+  // trigger, 0095) — the confirmation UI must show this, never a config guess.
+  book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null, extra?: BookingExtra) => Promise<{ error: string | null; status?: string | null }>;
   buyTickets: (eventSlug: string, tierId: string, qty: number) => Promise<{ error: string | null; code?: string }>;
   buyTicketsMulti: (eventSlug: string, items: { tierId: string; qty: number }[], promo?: string) => Promise<{ error: string | null; codes?: string[]; tickets?: { code: string; tierId: string }[] }>;
   waitlist: MyWaitlist[];
@@ -170,7 +171,9 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     if (!supabase || !user) return { error: 'auth' };
     const bizId = await idOf('businesses', businessSlug);
     if (!bizId) return { error: 'business-not-found' };
-    const { error } = await supabase.from('business_bookings').insert({
+    // .select('status') reads the row back AFTER the approval-mode trigger (0095)
+    // ran, so the caller learns whether the server confirmed it or left it pending.
+    const { data, error } = await supabase.from('business_bookings').insert({
       business_id: bizId, user_id: user.id, customer_name: custName, service_name: serviceName,
       service_id: serviceId, starts_at: startsAt, party_size: partySize, deposit, status: 'pending',
       ...(extra?.duration_min ? { duration_min: extra.duration_min } : {}),
@@ -179,18 +182,9 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
       ...(extra?.variant ? { variant: extra.variant } : {}),
       ...(extra?.total != null ? { total: extra.total } : {}),
       ...(extra?.notes ? { notes: extra.notes.slice(0, 300) } : {}),
-    });
+    }).select('status').single();
     if (!error) refresh();
-    return { error: error ? error.message : null };
-  }, [user, custName, refresh, idOf]);
-
-  const rent = useCallback<Ctx['rent']>(async (businessSlug, itemName, itemId, startAt, endAt, qty, total, deposit) => {
-    if (!supabase || !user) return { error: 'auth' };
-    const bizId = await idOf('businesses', businessSlug);
-    if (!bizId) return { error: 'business-not-found' };
-    const { error } = await supabase.from('business_rentals').insert({ business_id: bizId, user_id: user.id, customer_name: custName, item_name: itemName, item_id: itemId, start_at: startAt, end_at: endAt, qty, total, deposit, status: 'pending' });
-    if (!error) refresh();
-    return { error: error ? error.message : null };
+    return { error: error ? error.message : null, status: (data as { status: string } | null)?.status ?? null };
   }, [user, custName, refresh, idOf]);
 
   // Capacity-checked purchase via buy_event_tickets (migration 0061): the RPC locks
@@ -272,7 +266,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
   // tiers the user is actively waiting on (for the "En espera ✓" toggle on sold-out tiers).
   const waitlistTierIds = useMemo(() => new Set(waitlist.filter((w) => w.tier_id && w.status !== 'converted').map((w) => w.tier_id!)), [waitlist]);
 
-  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, rent, buyTickets, buyTicketsMulti, waitlist, waitlistTierIds, joinWaitlist, leaveWaitlist, rsvp, cancel, rescheduleBooking };
+  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, buyTickets, buyTicketsMulti, waitlist, waitlistTierIds, joinWaitlist, leaveWaitlist, rsvp, cancel, rescheduleBooking };
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 

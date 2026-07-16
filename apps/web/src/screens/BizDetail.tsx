@@ -1201,7 +1201,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     }
     // Pay-at-venue / inquiry path — book without a charge (deposit stays null; the
     // full total rides in `extra` so the owner sees "Cobra en sitio $X").
-    const { error } = await act.book(b.slug, svcSel.name, svcSel.id, svcStartISO(), persons, null, {
+    const { error, status } = await act.book(b.slug, svcSel.name, svcSel.id, svcStartISO(), persons, null, {
       duration_min: durMin,
       ...(staff ? { staff_id: staff.id, staff_name: staff.name } : {}),
       ...(svcChosenAddons().length ? { addons: svcChosenAddons().map((a) => ({ n: B(a.name), p: a.price })) } : {}),
@@ -1213,7 +1213,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       flash(/staff_slot_taken/.test(error) ? L('Ese horario se acaba de ocupar — elige otro', 'That time was just taken — pick another') : L('No se pudo enviar la reserva', 'Could not send the booking'));
       return;
     }
-    setSvcDoneInfo({ name: svcSel.name, when: whenLabel, staff: staff?.name ?? '', total, startISO: svcStartISO(), durMin, resched: false, confirmedNow: svcAutoConfirm });
+    // confirmedNow = the status the SERVER applied (0095 trigger) — config only as fallback.
+    setSvcDoneInfo({ name: svcSel.name, when: whenLabel, staff: staff?.name ?? '', total, startISO: svcStartISO(), durMin, resched: false, confirmedNow: status ? status === 'confirmed' : svcAutoConfirm });
     setSvcDone(true);
   };
 
@@ -1386,9 +1387,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       fee: rentLineFee(l.it, l.units), deposit: rentLineDeposit(l.it, l.units),
     }));
     const extras = rentExtrasChosen.map((a) => ({ name: B(a.name), price: a.price }));
-    const info = { count: rentCartCount, total: rentCartTotal, deposit: rentCartDeposit, range: rangeLabel(), confirmedNow: rentAutoConfirm };
-    const { error } = await createRentalOrder({ slug: b.slug, startISO: rentStartISO(), endISO: rentEndISO(), lines, extras });
+    const { status, error } = await createRentalOrder({ slug: b.slug, startISO: rentStartISO(), endISO: rentEndISO(), lines, extras });
     if (error) { flash(L('No se pudo crear la renta', 'Could not create the rental')); return; }
+    // confirmedNow = what the SERVER decided (0098) — config only as fallback.
+    const info = { count: rentCartCount, total: rentCartTotal, deposit: rentCartDeposit, range: rangeLabel(), confirmedNow: status ? status === 'confirmed' : rentAutoConfirm };
     setRentDoneInfo(info);
     setRentDone(true);
     setRentCart({}); setRentExtras([]); setRentStart(null); setRentEnd(null);
