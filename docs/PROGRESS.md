@@ -1395,8 +1395,23 @@ occurrence of that item on the page.
     git push -u origin claude/tolatino-repo-setup-1efdil
     git checkout <dev>
     ```
+  - **⚠️ The ff-merge to the deploy branch is PART OF EVERY FIX, same turn — not a
+    separate later step.** Forgetting it has burned the founder TWICE (2026-07-15
+    cash sheet, 2026-07-16 rental flow): the fix was verified and "done" on the dev
+    branch while the live site kept serving the old build, and the founder re-reported
+    the same bug in growing frustration. A change isn't "shipped" until it's pushed to
+    `claude/tolatino-repo-setup-1efdil`.
   - Git identity for commits: `user.email noreply@anthropic.com`, `user.name Claude`.
 - **Live site:** `tolatino.vercel.app` (Vercel; Cloudflare Pages is the eventual target per `CLAUDE.md`).
+- **Verifying what production actually serves (sandbox can't reach vercel.app):** run
+  the check through Postgres — the DB fetches the live site from Supabase's network:
+  ```
+  node scripts/sbsql.mjs "create extension if not exists http with schema extensions;
+  select status, position('<distinctive new string>' in content) > 0 as live
+  from extensions.http_get('https://tolatino.vercel.app/<page>/');"
+  ```
+  (Fetch the page HTML first to get the current `page-*.js` chunk name, then grep the
+  chunk the same way. Used 2026-07-16 to prove the rental-flow deploy was live.)
 - **Non-negotiables that bite every task:** design tokens only (no raw hex in
   `className`); Spanish-first `L('es','en')`; mobile-first; **#6 paste anything
   runnable (SQL/env/commands) in FULL in chat** (founder is copy-paste, no CLI);
