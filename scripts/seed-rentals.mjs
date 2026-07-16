@@ -79,7 +79,10 @@ from public.businesses b where b.slug='hz-barberia-primera'
 on conflict (slug) do update set
   owner_id = excluded.owner_id, category_id = excluded.category_id, tier = excluded.tier,
   tile_a = excluded.tile_a, tile_b = excluded.tile_b,
-  connect_charges_enabled = false, is_open = true,
+  -- do NOT touch connect_charges_enabled on re-runs: the founder connected
+  -- Stripe on this business (2026-07-16) — a reseed must not silently turn
+  -- online payment off.
+  is_open = true,
   modules = coalesce(public.businesses.modules, '{}'::jsonb) || '{"rental": true, "updates": true}'::jsonb,
   rental_config = excluded.rental_config;
 
