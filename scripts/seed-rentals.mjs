@@ -61,11 +61,13 @@ const ITEMS = [
 // copy location + city from an existing Hazleton business so it appears on the map
 let sql = `-- seed-rentals generated ${new Date().toISOString()}
 insert into public.businesses (slug, name, category_id, owner_id, tier, city, location, address,
+  tile_a, tile_b,
   tagline_es, tagline_en, about_es, about_en, phone, is_open, connect_charges_enabled,
   price_level, timezone, hours_es, hours_en, specialty_es, specialty_en, modules, rental_config)
 select '${SLUG}', 'Alquiler Fiesta Quisqueya', 'Party',
   (select owner_id from public.businesses where slug='hz-sabor-quisqueya'),
   'verified', b.city, b.location, '742 W Broad St',
+  '#F7E6F4', '#EAD3E4',
   'Todo para tu fiesta — mesas, sillas, carpas y más', 'Everything for your party — tables, chairs, tents & more',
   'Renta de mobiliario y equipo para quinceañeras, bodas y eventos. Entrega y montaje disponibles. Depósito reembolsable al devolver.',
   'Furniture & equipment rentals for quinceañeras, weddings and events. Delivery & setup available. Refundable deposit on return.',
@@ -76,6 +78,7 @@ select '${SLUG}', 'Alquiler Fiesta Quisqueya', 'Party',
 from public.businesses b where b.slug='hz-barberia-primera'
 on conflict (slug) do update set
   owner_id = excluded.owner_id, category_id = excluded.category_id, tier = excluded.tier,
+  tile_a = excluded.tile_a, tile_b = excluded.tile_b,
   connect_charges_enabled = false, is_open = true,
   modules = coalesce(public.businesses.modules, '{}'::jsonb) || '{"rental": true, "updates": true}'::jsonb,
   rental_config = excluded.rental_config;
