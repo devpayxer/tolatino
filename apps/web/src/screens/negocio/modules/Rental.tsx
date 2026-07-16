@@ -43,11 +43,11 @@ type Condition = 'perfect' | 'minor' | 'major';
 
 const FALLBACK_CAT: RentalCategory = { id: '_', es: 'Artículos', en: 'Items', icon: 'boxes', tile: '#EAE2F8 0 8px,#DCCEF2 8px 16px', visible: true };
 
-// An incoming customer rental (business_rentals) — the other side of the
-// consumer's "Rentar" action on a listing. customer_name is stored on insert.
+// An incoming customer rental ORDER (business_rental_orders, 0097) — the other
+// side of the consumer's rental cart. Carries its line items for the expand.
 type RentalReq = {
-  id: string; customer_name: string | null; item_name: string; start_at: string;
-  end_at: string | null; qty: number; total: number | null; deposit: number | null; status: string;
+  id: string; customer_name: string | null; item_name: string; items: { name: string; qty: number }[];
+  start_at: string; end_at: string | null; total: number | null; deposit: number | null; status: string;
 };
 const REQ_STATUS: Record<string, { es: string; en: string; cls: string }> = {
   pending:   { es: 'Pendiente',  en: 'Pending',   cls: 'bg-amber-bg text-amber-ink' },
@@ -204,26 +204,40 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const countIn = (catId: string) => items.filter((s) => s.cat === catId).length;
   const addonUsedBy = (addonId: string) => items.filter((s) => s.addons.includes(addonId)).length;
 
-  // ── incoming customer rental requests (business_rentals) ───────────────────
+  // ── incoming customer rental ORDERS (business_rental_orders, 0097) ─────────
   const [reqRows, setReqRows] = useState<RentalReq[] | null>(null);
   useEffect(() => {
     if (!persistable || !real || !supabase) { setReqRows(null); return; }
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       const { data, error } = await supabase!
-        .from('business_rentals')
-        .select('id,customer_name,item_name,start_at,end_at,qty,total,deposit,status')
+        .from('business_rental_orders')
+        .select('id,customer_name,start_at,end_at,fee_total,deposit_total,status,created_at,business_rentals(item_name,qty)')
         .eq('business_id', real.id)
-        .order('start_at', { ascending: false });
+        .order('created_at', { ascending: false });
       if (cancelled) return;
-      setReqRows(error || !Array.isArray(data) ? [] : (data as unknown as RentalReq[]));
-    })();
-    return () => { cancelled = true; };
+      const rows: RentalReq[] = error || !Array.isArray(data) ? [] : (data as Record<string, unknown>[]).map((o) => {
+        const lines = Array.isArray(o.business_rentals) ? (o.business_rentals as { item_name: string; qty: number }[]) : [];
+        return {
+          id: String(o.id), customer_name: (o.customer_name as string) ?? null,
+          item_name: lines[0]?.item_name ?? 'Renta', items: lines.map((l) => ({ name: l.item_name, qty: l.qty })),
+          start_at: String(o.start_at), end_at: (o.end_at as string) ?? null,
+          total: (o.fee_total as number) ?? null, deposit: (o.deposit_total as number) ?? null, status: String(o.status),
+        };
+      });
+      setReqRows(rows);
+    };
+    void load();
+    // live: new orders + status changes land immediately
+    const ch = supabase!.channel(`rentops-${real.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'business_rental_orders', filter: `business_id=eq.${real.id}` }, () => void load())
+      .subscribe();
+    return () => { cancelled = true; supabase!.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
   const setReqStatus = async (id: string, status: string) => {
     setReqRows((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, status } : r)) : rows));
-    if (persistable && supabase) await supabase.from('business_rentals').update({ status }).eq('id', id);
+    if (persistable && supabase) await supabase.from('business_rental_orders').update({ status }).eq('id', id);
     flash(L('Renta actualizada', 'Rental updated'));
   };
 
@@ -732,6 +746,25 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </p>
       </div>
 
+      {/* APPROVAL MODE — auto-confirm vs manual approval (like Servicios) */}
+      {cfg.renting && (
+        <div className={`${cardCls} p-3.5`}>
+          <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CheckCircle2 size={15} stroke={2.2} className="text-primary-dark" />{L('Confirmación de rentas', 'Rental confirmation')}</div>
+          <div className="flex rounded-full bg-lilac-2 p-0.5">
+            <button onClick={() => { if (cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: false }); flash(L('Las rentas requieren tu aprobación', 'Rentals now need your approval')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Requiere aprobación', 'Needs approval')}</button>
+            <button onClick={() => { if (!cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: true }); flash(L('Las rentas se confirman automáticamente', 'Rentals now confirm automatically')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Automática', 'Automatic')}</button>
+          </div>
+          <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
+            {cfg.autoConfirm
+              ? L('La renta queda confirmada al instante cuando el cliente la pide.', 'The rental is confirmed instantly when the customer requests it.')
+              : L('Cada renta llega como «Pendiente». Tú la confirmas o rechazas — el cliente recibe aviso.', 'Each rental arrives as “Pending”. You confirm or decline — the customer is notified.')}
+          </p>
+          <p className="mt-1.5 text-[10.5px] font-semibold leading-relaxed text-muted-2">
+            {L('El pago y el depósito reembolsable se cobran al recoger.', 'Payment and the refundable deposit are collected at pickup.')}
+          </p>
+        </div>
+      )}
+
       {groups.length === 0 ? (
         <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{L('Aún no tienes artículos — agrega el primero.', 'No items yet — add your first one.')}</div>
       ) : groups.map((g) => (
@@ -900,8 +933,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---- ops · requests ----
   const reqSeed: RentalReq[] = [
-    { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', qty: 1, total: 320, deposit: 200, status: 'pending' },
-    { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', qty: 1, total: 170, deposit: 80, status: 'confirmed' },
+    { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), items: [{ name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), qty: 1 }, { name: L('Mesa larga', 'Long table'), qty: 4 }], start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', total: 320, deposit: 200, status: 'pending' },
+    { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), items: [{ name: L('Bocina y micrófono', 'Speaker & microphone'), qty: 1 }], start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', total: 170, deposit: 80, status: 'confirmed' },
   ];
   const reqList = reqRows ?? reqSeed;
   const fmtReqDate = (iso: string) => new Date(iso).toLocaleDateString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short' });
@@ -919,12 +952,14 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <div className="flex items-start gap-2.5">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[12.5px] font-extrabold text-ink">{r.customer_name || L('Cliente', 'Customer')}</span>
-                    <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted-2">{r.item_name}</span>
+                    <span className="mt-0.5 block text-[11px] font-semibold text-muted-2">
+                      {r.items.length > 0 ? r.items.map((it) => `${it.qty}× ${it.name}`).join(' · ') : r.item_name}
+                    </span>
                   </span>
                   <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
                 </div>
                 <div className="mt-2.5 flex items-center gap-2 border-t border-hair pt-2.5 text-[10.5px] font-semibold text-muted-2">
-                  <span className="min-w-0 truncate">{r.qty}× · {fmtReqDate(r.start_at)}{r.end_at ? ` – ${fmtReqDate(r.end_at)}` : ''}</span>
+                  <span className="min-w-0 truncate">{r.items.length || 1} {(r.items.length || 1) === 1 ? L('artículo', 'item') : L('artículos', 'items')} · {fmtReqDate(r.start_at)}{r.end_at ? ` – ${fmtReqDate(r.end_at)}` : ''}</span>
                   <span className="ml-auto flex-none text-[12px] font-extrabold text-ink">{r.total != null ? money(Number(r.total)) : '—'}</span>
                 </div>
                 {r.deposit != null && Number(r.deposit) > 0 && (<div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}</div>)}

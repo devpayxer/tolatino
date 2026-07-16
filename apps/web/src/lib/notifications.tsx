@@ -118,7 +118,13 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
       const who = [s('service'), s('name')].filter(Boolean).join(' · ');
       return { title: ['El cliente reagendó su cita', 'The client rescheduled their appointment'], sub: [who, who] };
     }
-    case 'rental_new': return { title: ['Nueva renta', 'New rental'], sub: [s('item') || s('name'), s('item') || s('name')] };
+    case 'rental_new': {
+      const n = Number(d.count) || 1;
+      const what = n > 1 ? `${s('item')} +${n - 1} · ${s('name')}` : `${s('item') || s('name')}`;
+      return d.status === 'pending'
+        ? { title: ['Nueva solicitud de renta 📦', 'New rental request 📦'], sub: [what, what] }
+        : { title: ['Nueva renta 📦', 'New rental 📦'], sub: [what, what] };
+    }
     case 'rental_status': { const [a, b] = st(d.status); return { title: [`Tu renta está ${a}`, `Your rental is ${b}`], sub: [s('item'), s('item')] }; }
     case 'ticket_new': return { title: ['Boletos vendidos', 'Tickets sold'], sub: [`${s('event')} · ${s('qty')} · ${s('name')}`, `${s('event')} · ${s('qty')} · ${s('name')}`] };
     case 'ticket_status': { const [a, b] = st(d.status); return { title: [`Tu boleto: ${a}`, `Your ticket: ${b}`], sub: [s('event'), s('event')] }; }

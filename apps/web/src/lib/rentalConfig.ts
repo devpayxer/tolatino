@@ -47,6 +47,10 @@ export type RentalConfig = {
   // business that just wants to showcase); true = accept online rentals (the
   // Rentar flow + deposits on the public listing).
   renting: boolean;
+  // Approval mode (like Servicios 0095): true = a new rental order is CONFIRMED
+  // instantly; false = it arrives 'pending' and the owner approves it in the ops
+  // view. Default false (manual). Enforced server-side in create_rental_order.
+  autoConfirm: boolean;
   // Promotions the owner manages from the Promociones hub. A `percent` promo with a
   // `code` is redeemable at rental checkout (business-absorbed). Reuses menu Promo.
   promos: Promo[];
@@ -89,6 +93,7 @@ export const defaultRentalConfig = (): RentalConfig => ({
   policies: DEFAULT_RENTAL_POLICIES.map((p) => ({ ...p })),
   tags: [],
   renting: false,
+  autoConfirm: false,
   promos: [],
 });
 
@@ -109,6 +114,7 @@ export const demoRentalConfig = (): RentalConfig => ({
   policies: DEFAULT_RENTAL_POLICIES.map((p) => ({ ...p })),
   tags: ['Más rentado', 'Para eventos'],
   renting: true,
+  autoConfirm: false,
   promos: [],
 });
 
@@ -123,6 +129,7 @@ export function normalizeRentalConfig(raw: unknown): RentalConfig {
     policies: Array.isArray(r.policies) ? r.policies : base.policies,
     tags: Array.isArray(r.tags) ? r.tags : [],
     renting: r.renting === true, // default display-only
+    autoConfirm: r.autoConfirm === true, // default manual approval
     promos: Array.isArray(r.promos) ? r.promos : [],
   };
 }

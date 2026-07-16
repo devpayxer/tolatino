@@ -23,7 +23,7 @@ import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
 import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchRentalBusy, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, createRentalOrder, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -400,18 +400,19 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [svcResched, setSvcResched] = useState<string | null>(null);
   // Snapshot for the "¡Cita agendada!" confirmation card (survives sheet reset).
   const [svcDoneInfo, setSvcDoneInfo] = useState<{ name: string; when: string; staff: string; total: number; startISO: string; durMin: number; resched: boolean; confirmedNow: boolean } | null>(null);
-  const [rentIdx, setRentIdx] = useState<number | null>(null);
-  const [rentMode, setRentMode] = useState<RentMode>('day');
+  // Rental CART (party-rental model, 0097): pick several items for ONE event
+  // date range → one order. rentCart maps item id → units. Day-based (the common
+  // event-rental unit); the shared range + order-level extras live below.
+  const [rentCart, setRentCart] = useState<Record<string, number>>({});
+  const [rentCartOpen, setRentCartOpen] = useState(false);
+  const [rentExtras, setRentExtras] = useState<string[]>([]); // selected order-level extra ids
   const [rentStart, setRentStart] = useState<string | null>(null); // yyyy-mm-dd
   const [rentEnd, setRentEnd] = useState<string | null>(null);
-  const [rentHours, setRentHours] = useState(2);
-  const [rentUnits, setRentUnits] = useState(1); // how many units to rent (≤ stock)
-  const [rentAddons, setRentAddons] = useState<string[]>([]); // selected add-on ids
   // Rental promo code — the business's own rental_config promo (server re-validates).
   const [rentPromo, setRentPromo] = useState<{ code: string; percent: number; label: string } | null>(null);
-  const [rentBusy, setRentBusy] = useState<Record<string, number>>({}); // yyyy-mm-dd → units already booked
   const [rentCal, setRentCal] = useState<{ y: number; m: number }>(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [rentDone, setRentDone] = useState(false);
+  const [rentDoneInfo, setRentDoneInfo] = useState<{ count: number; total: number; deposit: number; range: string; confirmedNow: boolean } | null>(null);
   // Real events (events_by_owner, migration 0062): this listing's own upcoming
   // events. null until fetched; [] = module on but no events → the tab stays
   // hidden (active-but-empty modules never surface). Tapping a card opens the
@@ -701,7 +702,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   useEffect(() => { setPromo(null); setPromoInput(''); setPromoErr(''); }, [b.slug]);
   // Reset the booking/rental promo when the selected service/rental item changes.
   useEffect(() => { setSvcPromo(null); }, [svcSel?.id, svcSel?.name]);
-  useEffect(() => { setRentPromo(null); }, [rentIdx]);
+  useEffect(() => { if (!rentCartOpen) setRentPromo(null); }, [rentCartOpen]);
 
   const applyPromo = async () => {
     const code = promoInput.trim();
@@ -1216,69 +1217,48 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   };
 
   // Rental: the customer picks a start day (or a start→end range) on a real
-  // calendar, gated by the item's availability config. Fee = day-rate × days
-  // (weekly rate auto-applied for 7+ day spans) or hour-rate × hours, plus a
-  // refundable deposit.
-  const rentSpan = () => (rentStart ? (rentMode === 'hour' ? 1 : rentEnd ? spanDaysInc(rentStart, rentEnd) : 1) : 0);
-  // fee for ONE unit over the chosen duration (weekly rate auto-applied for 7+ days).
+  // calendar for the whole cart. Fee = day-rate × days (weekly rate auto-applied
+  // for 7+ day spans), plus a refundable deposit collected at pickup.
+  const rentSpan = () => (rentStart ? (rentEnd ? spanDaysInc(rentStart, rentEnd) : 1) : 0);
+  // fee for ONE unit over the chosen span (weekly rate auto-applied for 7+ days).
   const rentUnitFee = (it: PubRental) => {
-    if (rentMode === 'hour') return (it.hour ?? it.day) * rentHours;
     const n = rentSpan();
     if (it.week > 0 && n >= 7) { const w = Math.floor(n / 7), r = n % 7; return w * it.week + r * it.day; }
     return n * it.day;
   };
-  const rentAddonsTotal = (it: PubRental) => it.addons.filter((a) => rentAddons.includes(a.id)).reduce((s, a) => s + a.price, 0);
-  const rentDepositTotal = (it: PubRental) => it.dep * rentUnits;
-  const rentSubtotal = (it: PubRental) => rentUnitFee(it) * rentUnits + rentAddonsTotal(it);
-  const rentGrand = (it: PubRental) => rentSubtotal(it) + rentDepositTotal(it);
+  // Cart lines resolved from the live item list (item + chosen units). Fee is the
+  // per-unit fee over the shared date range × units; deposit is per-unit × units.
+  const rentAutoConfirm = realRentals?.autoConfirm ?? false;
+  const rentCartLines = rentalItems.map((it) => ({ it, units: rentCart[it.id] ?? 0 })).filter((l) => l.units > 0);
+  const rentCartCount = rentCartLines.reduce((s, l) => s + l.units, 0);
+  const rentLineFee = (it: PubRental, units: number) => rentUnitFee(it) * units;
+  const rentLineDeposit = (it: PubRental, units: number) => it.dep * units;
+  const rentExtrasChosen = (realRentals?.addons ?? []).filter((a) => rentExtras.includes(a.id));
+  const rentExtrasFee = rentExtrasChosen.reduce((s, a) => s + a.price, 0);
+  const rentCartFee = rentCartLines.reduce((s, l) => s + rentLineFee(l.it, l.units), 0) + rentExtrasFee;
+  const rentCartDeposit = rentCartLines.reduce((s, l) => s + rentLineDeposit(l.it, l.units), 0);
+  const rentCartTotal = rentCartFee + rentCartDeposit;
+  const rentCartStock = (it: PubRental) => Math.max(1, it.stock || 99);
+  const addToCart = (id: string, delta: number, cap: number) =>
+    setRentCart((c) => { const n = Math.max(0, Math.min(cap, (c[id] ?? 0) + delta)); const next = { ...c }; if (n === 0) delete next[id]; else next[id] = n; return next; });
   const rentStartISO = () => { const d = rentStart ? parseISO(rentStart) : new Date(); d.setHours(9, 0, 0, 0); return d.toISOString(); };
   const rentEndISO = () => {
-    if (rentMode === 'hour') { const d = rentStart ? parseISO(rentStart) : new Date(); d.setHours(9 + rentHours, 0, 0, 0); return d.toISOString(); }
     const base = rentEnd ?? rentStart;
     const d = base ? parseISO(base) : new Date(); d.setHours(18, 0, 0, 0); return d.toISOString();
   };
-  // Is a calendar day selectable, per the item's availability rule + not past?
+  // Is a calendar day selectable (not in the past)?
   const rentDayEnabled = (rule: string, dt: Date) => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     if (dt < today) return false;
     if (rule === '48h aviso') { const min = new Date(today); min.setDate(min.getDate() + 2); if (dt < min) return false; }
-    const dow = dt.getDay();
-    if (rule === 'Entre semana' && (dow === 0 || dow === 6)) return false;
-    if (rule === 'Fines de semana' && dow !== 0 && dow !== 6) return false;
     return true;
   };
-  // Tap a day: single-select (hour) or start→end range (day).
+  // Tap a day → start→end range.
   const rentPick = (dISO: string) => {
-    if (rentMode === 'hour') { setRentStart(dISO); setRentEnd(null); return; }
     if (!rentStart || rentEnd || dISO < rentStart) { setRentStart(dISO); setRentEnd(null); return; }
     if (dISO === rentStart) { setRentEnd(null); return; }
     setRentEnd(dISO);
   };
-  // When the Rentar sheet opens for a real item, load its busy dates (migration
-  // 0051) so the calendar can grey out days already booked to capacity.
-  useEffect(() => {
-    if (rentIdx === null) return;
-    const it = rentalItems[rentIdx];
-    if (!it || it.id.startsWith('fx')) { setRentBusy({}); return; }
-    let cancelled = false;
-    setRentBusy({});
-    fetchRentalBusy(it.id).then((ranges) => {
-      if (cancelled) return;
-      const map: Record<string, number> = {};
-      for (const r of ranges) {
-        let d = parseISO(r.start);
-        const end = parseISO(r.end);
-        for (let guard = 0; d <= end && guard < 400; guard++) {
-          const k = isoDay(d.getFullYear(), d.getMonth(), d.getDate());
-          map[k] = (map[k] || 0) + r.qty;
-          d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
-        }
-      }
-      setRentBusy(map);
-    });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rentIdx]);
   // Real start-date chips (today + next 4 days). Replaces the stale SVC_DATES
   // fixture so "Hoy" is actually today; rentDate/svcDate index into this. Computed
   // in the browser, so it reflects the user's real current date.
@@ -1343,37 +1323,31 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [svcSel?.bookable, svcSel?.dur, svcSel?.capMax, svcHasHours, dateChips, b.hours, b.hoursExceptions, now, svcSlotBusy, svcBusy, svcStaff, svcProviders]);
 
-  const confirmRental = async () => {
-    if (rentIdx === null) return;
-    const it = rentalItems[rentIdx];
-    if (!rentStart) { flash(L('Elige la fecha de renta', 'Pick a rental date')); return; }
+  // Cart checkout — one rental ORDER (create_rental_order, 0097). Pay-at-pickup:
+  // the whole order (all items for the chosen event dates) is settled at pickup,
+  // where the refundable deposit is also collected. The server sets the order
+  // status from the business's approval mode (auto → confirmed, manual → pending).
+  const rangeLabel = () => {
+    const shortD = (isoStr: string) => { const dt = parseISO(isoStr); return L(`${MO_SH_ES[dt.getMonth()]} ${dt.getDate()}`, `${MO_SH_EN[dt.getMonth()]} ${dt.getDate()}`); };
+    return rentStart ? `${shortD(rentStart)}${rentEnd && rentEnd !== rentStart ? ` – ${shortD(rentEnd)}` : ''}` : '';
+  };
+  const confirmRentalCart = async () => {
+    if (rentCartLines.length === 0) { flash(L('Agrega artículos primero', 'Add items first')); return; }
+    if (!rentStart) { flash(L('Elige la fecha del evento', 'Pick your event date')); return; }
     if (!user) { router.push('/entrar'); return; }
-    const itemId = it.id.startsWith('fx') ? null : it.id;
-    const fee = rentSubtotal(it);
-    // Payable rental (seller takes cards + a real fee) → charge the rental fee
-    // inside OUR OWN branded checkout sheet (Payment Element) — never Stripe's
-    // hosted page. The refundable security deposit is collected at pickup.
-    if (payOnline && fee > 0) {
-      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({
-        kind: 'rental', slug: b.slug, subtotal: fee,
-        // structured inputs → server re-prices the fee from DB rates + span (ignores subtotal)
-        mode: rentMode, hours: rentHours, units: rentUnits,
-        addon_ids: it.addons.filter((a) => rentAddons.includes(a.id)).map((a) => a.id),
-        ...(rentPromo ? { promo: rentPromo.code } : {}),
-        payload: { item_name: B(it.n), item_id: itemId, start_at: rentStartISO(), end_at: rentEndISO(), qty: rentUnits, total: rentGrand(it), deposit: rentDepositTotal(it) },
-      });
-      if (clientSecret && pendingId) {
-        setRentIdx(null);
-        setCheckout({ clientSecret, pendingId, amount: amount ?? Math.round(fee * 105), returnPath: typeof window !== 'undefined' ? window.location.pathname : '/negocios/' });
-        return;
-      }
-      const msg = PAY_ERR[error ?? ''];
-      flash(msg ? L(msg[0], msg[1]) : L('No se pudo iniciar el pago', 'Could not start payment'));
-      return;
-    }
-    setRentDone(true); // optimistic success screen (pay-later / inquiry)
-    const { error } = await act.rent(b.slug, B(it.n), itemId, rentStartISO(), rentEndISO(), rentUnits, rentGrand(it), rentDepositTotal(it));
-    if (!error) flash(L('Renta solicitada · míralo en Mi cuenta', 'Rental requested · see it in My account'));
+    const lines = rentCartLines.map((l) => ({
+      item_id: l.it.id.startsWith('fx') ? null : l.it.id,
+      item_name: B(l.it.n), qty: l.units,
+      fee: rentLineFee(l.it, l.units), deposit: rentLineDeposit(l.it, l.units),
+    }));
+    const extras = rentExtrasChosen.map((a) => ({ name: B(a.name), price: a.price }));
+    const info = { count: rentCartCount, total: rentCartTotal, deposit: rentCartDeposit, range: rangeLabel(), confirmedNow: rentAutoConfirm };
+    const { error } = await createRentalOrder({ slug: b.slug, startISO: rentStartISO(), endISO: rentEndISO(), lines, extras });
+    if (error) { flash(L('No se pudo crear la renta', 'Could not create the rental')); return; }
+    setRentDoneInfo(info);
+    setRentDone(true);
+    setRentCart({}); setRentExtras([]); setRentStart(null); setRentEnd(null);
+    act.refresh();
   };
 
   // Events: real RSVP against the live event row. The card's slug drives both the
@@ -2538,30 +2512,49 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <span className="text-[12px] font-semibold leading-snug text-ink-soft">{L('Consulta disponibilidad y tarifas — llama o visita para rentar.', 'Check availability & rates — call or visit to rent.')}</span>
             </div>
           )}
-          {rentalItems.map((it, i) => (
-            <Card key={it.id} className="flex items-center gap-3 p-3.5">
-              <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-extrabold text-ink">{B(it.n)}</div>
-                <div className="mt-0.5 text-[12px] font-semibold text-muted">{B(it.d)}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[12.5px] font-extrabold text-primary-dark">
-                  <span>{money(it.day)}/{L('día', 'day')}</span>
-                  {it.dep > 0 && <span className="text-[11px] font-bold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>}
+          {rentalItems.map((it) => {
+            const inCart = rentCart[it.id] ?? 0;
+            const cap = rentCartStock(it);
+            return (
+              <Card key={it.id} className="flex items-center gap-3 p-3.5">
+                <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-extrabold text-ink">{B(it.n)}</div>
+                  <div className="mt-0.5 text-[12px] font-semibold text-muted">{B(it.d)}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 text-[12.5px] font-extrabold text-primary-dark">
+                    <span>{money(it.day)}/{L('día', 'day')}</span>
+                    {it.dep > 0 && <span className="text-[11px] font-bold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>}
+                  </div>
                 </div>
-              </div>
-              {!rentDisplayOnly && (
-                <button
-                  onClick={() => { setRentIdx(i); setRentMode('day'); setRentStart(null); setRentEnd(null); setRentHours(2); setRentUnits(1); setRentAddons([]); const d = new Date(); setRentCal({ y: d.getFullYear(), m: d.getMonth() }); setRentDone(false); }}
-                  className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
-                >
-                  {L('Rentar', 'Rent')}
-                </button>
-              )}
-            </Card>
-          ))}
+                {!rentDisplayOnly && (
+                  inCart > 0 ? (
+                    <span className="flex flex-none items-center gap-2.5 rounded-full bg-lilac-2 px-2 py-1.5">
+                      <button onClick={() => addToCart(it.id, -1, cap)} aria-label={L('Quitar uno', 'Remove one')} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
+                      <span className="w-5 text-center text-[14px] font-extrabold text-ink">{inCart}</span>
+                      <button onClick={() => addToCart(it.id, 1, cap)} disabled={inCart >= cap} aria-label={L('Agregar uno', 'Add one')} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink disabled:opacity-40">+</button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => addToCart(it.id, 1, cap)}
+                      className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
+                    >
+                      {L('Agregar', 'Add')}
+                    </button>
+                  )
+                )}
+              </Card>
+            );
+          })}
+          {/* sticky cart bar — opens the rental cart (dates + review + checkout) */}
+          {!rentDisplayOnly && rentCartCount > 0 && (
+            <button onClick={() => setRentCartOpen(true)} className="sticky bottom-3 z-10 mt-1 flex w-full cursor-pointer items-center justify-between rounded-field bg-primary px-4 py-3.5 text-white shadow-cta">
+              <span className="text-[13px] font-extrabold">{rentCartCount} {rentCartCount === 1 ? L('artículo', 'item') : L('artículos', 'items')}</span>
+              <span className="flex items-center gap-2 text-[13.5px] font-extrabold">{L('Ver carrito de renta', 'View rental cart')} <span className="rounded-full bg-white/20 px-2 py-0.5">›</span></span>
+            </button>
+          )}
         </div>
       )}
 
@@ -3856,11 +3849,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         )}
       </Overlay>
 
-      {/* rental booking modal */}
-      <Overlay open={rentIdx !== null} onClose={() => setRentIdx(null)} width={440}>
-        {rentIdx !== null && rentalItems[rentIdx] && !rentDone && (() => {
-          const it = rentalItems[rentIdx];
-          const rule = it.avail;
+      {/* rental CART sheet — several items for ONE event date range → one order */}
+      <Overlay open={rentCartOpen} onClose={() => { setRentCartOpen(false); setRentDone(false); }} width={440}>
+        {rentCartOpen && !rentDone && (() => {
           const first = new Date(rentCal.y, rentCal.m, 1);
           const lead = (first.getDay() + 6) % 7; // Monday-first
           const dim = new Date(rentCal.y, rentCal.m + 1, 0).getDate();
@@ -3868,38 +3859,15 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           const now = new Date();
           const prevDisabled = rentCal.y < now.getFullYear() || (rentCal.y === now.getFullYear() && rentCal.m <= now.getMonth());
           const span = rentSpan();
-          const unitFee = rentUnitFee(it);
-          const maxUnits = Math.max(1, it.stock || 1);
-          const selectedAddons = it.addons.filter((a) => rentAddons.includes(a.id));
-          // Online rental fee path is the only one a promo code affects (deposit is
-          // collected at pickup). Business-absorbed % off; server re-validates at pay.
-          const rentFee = rentSubtotal(it);
-          const rentOnline = payOnline && rentFee > 0;
-          const rentDiscount = rentPromo ? Math.min(rentFee, +(rentFee * rentPromo.percent / 100).toFixed(2)) : 0;
-          const rentPayToday = +(rentFee * 1.05 - rentDiscount).toFixed(2);
-          const shortD = (isoStr: string) => { const dt = parseISO(isoStr); return L(`${MO_SH_ES[dt.getMonth()]} ${dt.getDate()}`, `${MO_SH_EN[dt.getMonth()]} ${dt.getDate()}`); };
           const shiftMonth = (dir: number) => setRentCal((c) => { const d = new Date(c.y, c.m + dir, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
-          const dayLbl = rentMode === 'hour' ? `${rentHours} ${rentHours === 1 ? L('hora', 'hour') : L('horas', 'hours')}` : `${span} ${span === 1 ? L('día', 'day') : L('días', 'days')}`;
+          const spanLbl = `${span} ${span === 1 ? L('día', 'day') : L('días', 'days')}`;
           return (
             <>
-              <OverlayTitle title={B(it.n)} onClose={() => setRentIdx(null)} />
-              <div className="text-[12.5px] font-semibold text-muted">{B(it.d)}</div>
+              <OverlayTitle title={L('Tu carrito de renta', 'Your rental cart')} onClose={() => setRentCartOpen(false)} />
 
-              {/* by-day vs by-hour (only when the item has an hourly rate) */}
-              {it.hour != null && (
-                <div className="mt-4 flex gap-1.5">
-                  {([['day', L('Por día', 'By day')], ['hour', L('Por hora', 'By hour')]] as [RentMode, string][]).map(([m, lab]) => (
-                    <button key={m} onClick={() => { setRentMode(m); setRentEnd(null); }} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[12.5px] font-extrabold ${rentMode === m ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>{lab}</button>
-                  ))}
-                </div>
-              )}
-
-              {/* calendar */}
-              <div className="mb-2 mt-4 flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="text-[13px] font-extrabold text-ink">{rentMode === 'hour' ? L('Elige el día', 'Pick the day') : L('Elige las fechas', 'Pick the dates')}</div>
-                  {rule && rule !== 'Siempre' && <div className="mt-0.5 text-[10.5px] font-semibold text-muted-2">{L('Disponible', 'Available')}: {L(rule, AVAIL_EN[rule] ?? rule)}</div>}
-                </div>
+              {/* event date range */}
+              <div className="mb-2 mt-1 flex items-center justify-between gap-2">
+                <div className="text-[13px] font-extrabold text-ink">{L('Fechas del evento', 'Event dates')}</div>
                 <div className="flex flex-none items-center gap-1">
                   <button onClick={() => shiftMonth(-1)} disabled={prevDisabled} aria-label={L('Mes anterior', 'Previous month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={16} stroke={2.4} /></button>
                   <span className="w-[104px] text-center text-[12px] font-extrabold text-ink">{L(MO_LONG_ES[rentCal.m], MO_LONG_EN[rentCal.m])} {rentCal.y}</span>
@@ -3912,55 +3880,52 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   const dnum = i - lead + 1;
                   if (dnum < 1 || dnum > dim) return <span key={i} />;
                   const dISO = isoDay(rentCal.y, rentCal.m, dnum);
-                  const booked = (rentBusy[dISO] ?? 0) >= maxUnits; // fully booked that day
-                  const enabled = rentDayEnabled(rule, new Date(rentCal.y, rentCal.m, dnum)) && !booked;
+                  const enabled = rentDayEnabled('', new Date(rentCal.y, rentCal.m, dnum));
                   const isEnd = dISO === rentStart || dISO === rentEnd;
                   const inRange = !!rentStart && !!rentEnd && dISO > rentStart && dISO < rentEnd;
                   return (
                     <button key={i} disabled={!enabled} onClick={() => rentPick(dISO)}
-                      className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : booked ? 'cursor-not-allowed text-muted-faint line-through' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-faint'}`}>{dnum}</button>
+                      className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-faint'}`}>{dnum}</button>
                   );
                 })}
               </div>
-              {Object.keys(rentBusy).length > 0 && (
-                <div className="mt-1.5 text-[10.5px] font-semibold text-muted-2"><span className="line-through">00</span> = {L('días ya rentados', 'days already booked')}</div>
-              )}
+              <div className="mt-2 rounded-field bg-app px-3.5 py-2.5 text-[12px] font-bold text-ink-2">
+                {rentStart
+                  ? <>{rangeLabel()} · <span className="text-primary-dark">{spanLbl}</span>{rentStart && !rentEnd && <span className="ml-1 font-semibold text-muted">· {L('toca el día final para un rango', 'tap an end day for a range')}</span>}</>
+                  : <span className="font-semibold text-muted">{L('Toca un día para empezar', 'Tap a day to start')}</span>}
+              </div>
 
-              {rentMode === 'hour' && (
-                <>
-                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Horas', 'Hours')}</div>
-                  <div className="flex w-fit items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
-                    <button onClick={() => setRentHours((q) => Math.max(1, q - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
-                    <span className="w-6 text-center text-[14px] font-extrabold">{rentHours}</span>
-                    <button onClick={() => setRentHours((q) => q + 1)} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">+</button>
+              {/* line items */}
+              <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Artículos', 'Items')}</div>
+              <div className="flex flex-col gap-2">
+                {rentCartLines.map((l) => (
+                  <div key={l.it.id} className="flex items-center gap-3 rounded-field border border-hair p-2.5">
+                    <span className="h-11 w-11 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${l.it.tile})` }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {l.it.img && <img src={l.it.img} alt="" className="h-full w-full object-cover" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-extrabold text-ink">{B(l.it.n)}</div>
+                      <div className="text-[11px] font-bold text-muted">{money(l.it.day)}/{L('día', 'day')} · {L('dep.', 'dep.')} {money(l.it.dep)}</div>
+                    </div>
+                    <span className="flex flex-none items-center gap-2 rounded-full bg-lilac-2 px-1.5 py-1">
+                      <button onClick={() => addToCart(l.it.id, -1, rentCartStock(l.it))} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[15px] font-extrabold text-ink">−</button>
+                      <span className="w-4 text-center text-[13px] font-extrabold text-ink">{l.units}</span>
+                      <button onClick={() => addToCart(l.it.id, 1, rentCartStock(l.it))} disabled={l.units >= rentCartStock(l.it)} className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-[15px] font-extrabold text-ink disabled:opacity-40">+</button>
+                    </span>
                   </div>
-                </>
-              )}
+                ))}
+              </div>
 
-              {/* quantity (only when more than one unit exists) */}
-              {maxUnits > 1 && (
+              {/* order-level extras (delivery, setup…) */}
+              {(realRentals?.addons.length ?? 0) > 0 && (
                 <>
-                  <div className="mb-2 mt-4 flex items-center justify-between">
-                    <span className="text-[13px] font-extrabold text-ink">{L('Cantidad', 'Quantity')}</span>
-                    <span className="text-[10.5px] font-semibold text-muted-2">{maxUnits} {B(it.unit)}{maxUnits === 1 ? '' : 's'} {L('disponibles', 'available')}</span>
-                  </div>
-                  <div className="flex w-fit items-center gap-3 rounded-full bg-lilac-2 px-2 py-1.5">
-                    <button onClick={() => setRentUnits((q) => Math.max(1, q - 1))} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
-                    <span className="w-6 text-center text-[14px] font-extrabold">{rentUnits}</span>
-                    <button onClick={() => setRentUnits((q) => Math.min(maxUnits, q + 1))} disabled={rentUnits >= maxUnits} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink disabled:opacity-40">+</button>
-                  </div>
-                </>
-              )}
-
-              {/* add-ons / extras */}
-              {it.addons.length > 0 && (
-                <>
-                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Extras', 'Add-ons')}</div>
+                  <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Extras del pedido', 'Order extras')}</div>
                   <div className="flex flex-col gap-2">
-                    {it.addons.map((a) => {
-                      const on = rentAddons.includes(a.id);
+                    {(realRentals?.addons ?? []).map((a) => {
+                      const on = rentExtras.includes(a.id);
                       return (
-                        <button key={a.id} onClick={() => setRentAddons((l) => (on ? l.filter((x) => x !== a.id) : [...l, a.id]))} className={`flex items-center gap-3 rounded-field border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                        <button key={a.id} onClick={() => setRentExtras((l) => (on ? l.filter((x) => x !== a.id) : [...l, a.id]))} className={`flex items-center gap-3 rounded-field border-[1.5px] p-3 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
                           <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={11} className="text-white" stroke={3.4} />}</span>
                           <span className="min-w-0 flex-1 text-[12.5px] font-extrabold text-ink">{B(a.name)}</span>
                           <span className="flex-none text-[12.5px] font-extrabold text-ink">{a.price ? `+${money(a.price)}` : L('Gratis', 'Free')}</span>
@@ -3971,57 +3936,57 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 </>
               )}
 
-              <div className="mt-3 rounded-field bg-app px-3.5 py-2.5 text-[12px] font-bold text-ink-2">
-                {rentStart
-                  ? <>{shortD(rentStart)}{rentMode === 'day' && rentEnd ? ` – ${shortD(rentEnd)}` : ''} · <span className="text-primary-dark">{dayLbl}</span>{rentMode === 'day' && rentStart && !rentEnd && <span className="ml-1 font-semibold text-muted">· {L('toca el día final para un rango', 'tap an end day for a range')}</span>}</>
-                  : <span className="font-semibold text-muted">{L('Toca un día para empezar', 'Tap a day to start')}</span>}
-              </div>
-
-              {/* promo code — only when paying the rental fee online (deposit is at
-                  pickup, so a code has no effect on a request/cash rental). */}
-              {rentOnline && (
-                <PromoField slug={b.slug} scope="rental" subtotal={rentFee} applied={rentPromo}
-                  onApply={setRentPromo} onClear={() => setRentPromo(null)} L={L} money={money} />
-              )}
-
-              <div className="mt-3 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
-                <div className="flex justify-between"><span>{L('Renta', 'Rental')}{rentStart ? ` · ${rentUnits > 1 ? `${rentUnits}× ` : ''}${dayLbl}` : ''}</span><span>{money(unitFee * rentUnits)}</span></div>
-                {selectedAddons.map((a) => (
+              {/* totals — pay-at-pickup (fee + refundable deposit collected at pickup) */}
+              <div className="mt-4 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
+                <div className="flex justify-between"><span>{L('Renta', 'Rental')}{rentStart ? ` · ${spanLbl}` : ''}</span><span>{money(rentCartLines.reduce((s, l) => s + rentLineFee(l.it, l.units), 0))}</span></div>
+                {rentExtrasChosen.map((a) => (
                   <div key={a.id} className="mt-1 flex justify-between text-[11.5px]"><span>{B(a.name)}</span><span>{a.price ? money(a.price) : L('Gratis', 'Free')}</span></div>
                 ))}
-                <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable', 'Refundable deposit')}{rentOnline ? L(' · al recoger', ' · at pickup') : ''}{rentUnits > 1 ? ` · ${rentUnits}×` : ''}</span><span>{money(it.dep * rentUnits)}</span></div>
-                {rentOnline && (
-                  <>
-                    <div className="mt-1 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span>{money(+(rentFee * 0.05).toFixed(2))}</span></div>
-                    {rentDiscount > 0 && <div className="mt-1 flex justify-between text-[11.5px] text-green-dark"><span>{L('Descuento', 'Discount')}{rentPromo ? ` · ${rentPromo.code}` : ''}</span><span className="font-extrabold">−{money(rentDiscount)}</span></div>}
-                    <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
-                      <span>{L('Pagas hoy', 'You pay today')}</span><span className="text-primary-dark">{money(rentPayToday)}</span>
-                    </div>
-                  </>
-                )}
-                {!rentOnline && (
-                  <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
-                    <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(rentGrand(it))}</span>
-                  </div>
-                )}
+                <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable · al recoger', 'Refundable deposit · at pickup')}</span><span>{money(rentCartDeposit)}</span></div>
+                <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
+                  <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(rentCartTotal)}</span>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center gap-2 rounded-btn bg-amber-bg px-2.5 py-2">
+                <HandStop size={14} stroke={2.2} className="flex-none text-amber-ink" />
+                <span className="text-[11px] font-bold text-amber-ink">{L('Pagas y dejas el depósito al recoger', 'You pay and leave the deposit at pickup')}</span>
               </div>
 
-              <PrimaryBtn className="mt-4" onClick={confirmRental}>
-                {!rentStart ? L('Elige la fecha', 'Pick a date') : rentOnline ? `${L('Pagar renta · ', 'Pay rental · ')}${money(rentPayToday)}` : L('Solicitar renta', 'Request rental')}
+              <PrimaryBtn className="mt-4" onClick={confirmRentalCart}>
+                {!rentStart ? L('Elige la fecha', 'Pick a date') : `${rentAutoConfirm ? L('Confirmar renta · ', 'Confirm rental · ') : L('Solicitar renta · ', 'Request rental · ')}${money(rentCartTotal)}`}
               </PrimaryBtn>
             </>
           );
         })()}
-        {rentIdx !== null && rentDone && (
+        {rentCartOpen && rentDone && rentDoneInfo && (
           <div className="flex flex-col items-center px-2 py-6 text-center">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-bg">
-              <Check size={28} stroke={3} className="text-green" />
+            <span className={`flex h-[72px] w-[72px] items-center justify-center rounded-full ${rentDoneInfo.confirmedNow ? 'bg-primary shadow-cta' : 'bg-green-bg'}`}>
+              <Check size={30} stroke={3} className={rentDoneInfo.confirmedNow ? 'text-white' : 'text-green'} />
             </span>
-            <div className="mt-4 text-[19px] font-extrabold text-ink">{L('¡Renta solicitada!', 'Rental requested!')}</div>
+            <div className="mt-4 text-[21px] font-extrabold text-ink">{rentDoneInfo.confirmedNow ? L('¡Renta confirmada!', 'Rental confirmed!') : L('¡Renta solicitada!', 'Rental requested!')}</div>
             <div className="mt-1.5 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
-              {L('El negocio confirmará disponibilidad y el depósito. Míralo en Mi cuenta.', 'The business will confirm availability and the deposit. See it in My account.')}
+              {rentDoneInfo.confirmedNow
+                ? L('Tu renta está confirmada. Paga y deja el depósito al recoger.', 'Your rental is confirmed. Pay and leave the deposit at pickup.')
+                : L('El negocio confirmará disponibilidad — te avisamos. Míralo en Mi cuenta.', 'The business will confirm availability — we’ll notify you. See it in My account.')}
             </div>
-            <PrimaryBtn className="mt-5" onClick={() => { setRentIdx(null); setRentDone(false); }}>
+            <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-extrabold ${rentDoneInfo.confirmedNow ? 'bg-green-bg text-green-dark' : 'bg-amber-bg text-amber-ink'}`}>
+              <Clock size={12} stroke={2.4} />{rentDoneInfo.confirmedNow ? L('Confirmada', 'Confirmed') : L('Por confirmar', 'Pending')}
+            </span>
+            <div className="mt-4 w-full max-w-[300px] rounded-card-sm border border-hair bg-white p-4 text-left shadow-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[12.5px] font-bold text-muted">{L('Fechas', 'Dates')}</span>
+                <span className="text-[12.5px] font-extrabold text-ink">{rentDoneInfo.range}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t border-hair pt-2">
+                <span className="text-[12.5px] font-bold text-muted">{rentDoneInfo.count} {rentDoneInfo.count === 1 ? L('artículo', 'item') : L('artículos', 'items')}</span>
+                <span className="text-[13px] font-extrabold text-primary-dark">{money(rentDoneInfo.total)}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t border-hair pt-2">
+                <span className="text-[12px] font-bold text-muted">{L('Depósito reembolsable', 'Refundable deposit')}</span>
+                <span className="text-[12.5px] font-extrabold text-ink">{money(rentDoneInfo.deposit)}</span>
+              </div>
+            </div>
+            <PrimaryBtn className="mt-5" onClick={() => { setRentCartOpen(false); setRentDone(false); }}>
               {L('Listo', 'Done')}
             </PrimaryBtn>
           </div>

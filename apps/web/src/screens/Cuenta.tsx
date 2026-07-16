@@ -526,7 +526,7 @@ export function CuentaScreen() {
           {act.rentals.length === 0 ? txEmpty(L('Aún no tienes rentas.', 'No rentals yet.')) : (
             <div className="flex flex-col gap-2.5">
               {act.rentals.map((r) => txItem(r.id, r.businesses?.name ?? L('Negocio', 'Business'),
-                `${r.qty}× ${r.item_name} · ${dt(r.start_at)}`,
+                `${r.item_count > 1 ? `${r.item_count} ${L('artículos', 'items')} · ` : ''}${r.item_name} · ${dt(r.start_at)}${r.deposit ? ` · ${L('dep.', 'dep.')} ${money(r.deposit)}` : ''}`,
                 <>{r.total != null && <span className="text-[13px] font-extrabold text-ink">{money(r.total)}</span>}{pill(r.status)}{cancelBtn('rental', r.id, r.status)}</>))}
             </div>
           )}

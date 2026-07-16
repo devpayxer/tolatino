@@ -40,7 +40,8 @@ export type BookingExtra = {
   duration_min?: number; staff_id?: string; staff_name?: string;
   addons?: { n: string; p: number }[]; variant?: string; total?: number; notes?: string;
 };
-export type MyRental = { id: string; business_id: string; item_name: string; start_at: string; end_at: string | null; qty: number; total: number | null; status: string; created_at: string; businesses: BizRef };
+// A rental ORDER (0097): a header with N line items, one date range, one status.
+export type MyRental = { id: string; business_id: string; item_name: string; item_count: number; start_at: string; end_at: string | null; total: number | null; deposit: number | null; status: string; created_at: string; businesses: BizRef };
 export type MyTicket = { id: string; event_id: string; qty: number; admitted: number; total: number | null; unit_price: number | null; code: string; status: string; used_at: string | null; created_at: string; events: EvRef; event_tiers: { name_es: string; name_en: string } | null };
 export type MyWaitlist = { event_id: string; tier_id: string | null; status: string };
 export type MyGoing = { event_id: string; created_at: string; events: EvRef };
@@ -104,7 +105,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
       const [o, b, r, t, g, w] = await Promise.all([
         supabase!.from('business_orders').select(`id,business_id,code,items,total,channel,status,created_at,fulfillment,${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('business_bookings').select(`id,business_id,service_name,service_id,party_size,starts_at,status,deposit,created_at,duration_min,staff_id,staff_name,addons,variant,total,notes,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }),
-        supabase!.from('business_rentals').select(`id,business_id,item_name,start_at,end_at,qty,total,status,created_at,${BIZ}`).eq('user_id', uid).order('start_at', { ascending: false }),
+        supabase!.from('business_rental_orders').select(`id,business_id,start_at,end_at,fee_total,deposit_total,status,created_at,business_rentals(item_name,qty),${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('event_tickets').select(`id,event_id,qty,admitted,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('event_attendance').select(`event_id,created_at,${EV}`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('event_waitlist').select('event_id,tier_id,status').eq('user_id', uid),
@@ -112,7 +113,11 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
       if (cancelled) return;
       if (!o.error && o.data) setOrders(o.data as unknown as MyOrder[]);
       if (!b.error && b.data) setBookings(b.data as unknown as MyBooking[]);
-      if (!r.error && r.data) setRentals(r.data as unknown as MyRental[]);
+      if (!r.error && r.data) setRentals((r.data as unknown as (Omit<MyRental, 'item_name' | 'item_count' | 'total' | 'deposit'> & { fee_total: number | null; deposit_total: number | null; business_rentals: { item_name: string; qty: number }[] })[]).map((o) => {
+        const lines = Array.isArray(o.business_rentals) ? o.business_rentals : [];
+        const first = lines[0]?.item_name ?? 'Renta';
+        return { id: o.id, business_id: o.business_id, item_name: lines.length > 1 ? `${first} +${lines.length - 1}` : first, item_count: lines.length, start_at: o.start_at, end_at: o.end_at, total: o.fee_total, deposit: o.deposit_total, status: o.status, created_at: o.created_at, businesses: o.businesses };
+      }));
       if (!t.error && t.data) setTickets(t.data as unknown as MyTicket[]);
       if (!g.error && g.data) setGoing(g.data as unknown as MyGoing[]);
       if (!w.error && w.data) setWaitlist(w.data as unknown as MyWaitlist[]);
@@ -133,7 +138,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
       .channel(`myactivity-${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'business_orders', filter: filt }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'business_bookings', filter: filt }, () => refresh())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'business_rentals', filter: filt }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'business_rental_orders', filter: filt }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_tickets', filter: filt }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_attendance', filter: filt }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_waitlist', filter: filt }, () => refresh())
@@ -247,7 +252,7 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
 
   const cancel = useCallback<Ctx['cancel']>(async (kind, id) => {
     if (!supabase || !user) return { error: 'auth' };
-    const table = kind === 'order' ? 'business_orders' : kind === 'booking' ? 'business_bookings' : 'business_rentals';
+    const table = kind === 'order' ? 'business_orders' : kind === 'booking' ? 'business_bookings' : 'business_rental_orders';
     const { error } = await supabase.from(table).update({ status: 'cancelled' }).eq('id', id).eq('user_id', user.id);
     if (!error) refresh();
     return { error: error ? error.message : null };

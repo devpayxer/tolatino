@@ -589,7 +589,7 @@ export type PubRental = {
 /** The real public rentals for a listing: items with hour/day/week rates +
  *  deposit, resolved add-ons (for the Rentar sheet), and the rental mode
  *  (false = display-only → no online Rentar). */
-export type PublicRentals = { items: PubRental[]; addons: PubRentalAddon[]; renting: boolean };
+export type PublicRentals = { items: PubRental[]; addons: PubRentalAddon[]; renting: boolean; autoConfirm: boolean };
 
 /** Fetch + map a business's real rental items by slug (migration 0050). Returns
  *  null when offline / no published rentals — BizDetail falls back to fixtures. */
@@ -634,7 +634,26 @@ export async function fetchBusinessRentals(slug: string): Promise<PublicRentals 
 
   const items = rows.map(toRental);
   if (items.length === 0) return null;
-  return { items, addons, renting: cfg.renting };
+  return { items, addons, renting: cfg.renting, autoConfirm: cfg.autoConfirm };
+}
+
+/** A rental line item inside an order (as the customer built it in the cart). */
+export type RentalOrderLine = { item_id: string | null; item_name: string; qty: number; fee: number; deposit: number };
+
+/** Create a rental ORDER (cart checkout, pay-at-pickup) via create_rental_order
+ *  (migration 0097). Server sets the status from the business's approval mode and
+ *  bounds the totals. Returns the new order id, or null on error. */
+export async function createRentalOrder(opts: {
+  slug: string; startISO: string; endISO: string | null;
+  lines: RentalOrderLine[]; extras?: { name: string; price: number }[]; notes?: string;
+}): Promise<{ id: string | null; error: string | null }> {
+  if (!supabase) return { id: null, error: 'offline' };
+  const { data, error } = await supabase.rpc('create_rental_order', {
+    in_slug: opts.slug, in_start_at: opts.startISO, in_end_at: opts.endISO,
+    in_lines: opts.lines, in_extras: opts.extras ?? [], in_notes: opts.notes ?? null,
+  });
+  if (error) return { id: null, error: error.message };
+  return { id: (data as string) ?? null, error: null };
 }
 
 /** Busy date-ranges for a rental item (migration 0051) — the calendar greys out

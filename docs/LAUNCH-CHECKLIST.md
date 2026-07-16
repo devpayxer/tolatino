@@ -303,6 +303,19 @@
 
 ## 3. Incomplete / stubbed features
 
+- [ ] **Rental cart — online payment + finer availability (2026-07-16).** The rental
+  CART (migration 0097: `business_rental_orders` header + `business_rentals` lines,
+  `create_rental_order` RPC, approval mode) ships **pay-at-pickup** end-to-end (the
+  canonical path for a non-Stripe business — fee + refundable deposit settled at
+  pickup). Three follow-ups: (a) **online multi-item payment** — the DB fulfiller
+  `fulfill_rental_order(...)` exists, but `marketplace-checkout` (kind=rental) +
+  `stripe-webhook` still take a SINGLE item; wire the items-array + one PaymentIntent
+  for the summed fee so a Stripe-connected rental business can charge the cart online.
+  (b) **Per-item availability in the cart calendar** — the single-item modal greyed
+  out fully-booked days via `rental_busy_by_item`; the cart calendar doesn't (owner
+  confirms availability in manual mode). Compute a union-busy across cart items.
+  (c) **Hour-mode rentals** — the cart is day-based; hourly rentals (e.g. a 4-hour DJ
+  rig) need an hour toggle at cart level.
 - [ ] **Business-listing events are owner-scoped, not per-business (2026-07-15).**
   The `events` table keys on `owner_id` only (no `business_id`), so the consumer
   listing's Eventos tab (`fetchEventsByOwner(slug)` → `events_by_owner`) resolves
