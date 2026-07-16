@@ -345,7 +345,63 @@ Deno.serve(async (req) => {
       businessId = biz.id; sellerAccount = biz.stripe_account_id; productName = `${biz.name} · Renta`;
       const rentRow = await rpcGet('business_rentals_by_slug', { in_slug: slug }).then((r) => (Array.isArray(r) ? r[0] : undefined));
       const pl = (body?.payload ?? {}) as Record<string, unknown>;
-      const it = (Array.isArray(rentRow?.items) ? rentRow!.items as Record<string, unknown>[] : []).find((i) => String(i.id) === String(pl.item_id ?? ''));
+      const rentItems = Array.isArray(rentRow?.items) ? rentRow!.items as Record<string, unknown>[] : [];
+      // inclusive day span from the dates (matches client spanDaysInc; the fixed
+      // 09:00→18:00 convention rounds away). Weekly rate auto-applies at 7+ days.
+      const spanOf = () => {
+        const s = Date.parse(String(pl.start_at ?? '')); const e = Date.parse(String(pl.end_at ?? ''));
+        let span = 1;
+        if (Number.isFinite(s) && Number.isFinite(e) && e >= s) span = Math.round((e - s) / 86400000) + 1;
+        return Math.max(1, Math.min(365, span));
+      };
+      const dayFee = (dayRate: number, weekRate: number, span: number) =>
+        weekRate > 0 && span >= 7 ? Math.floor(span / 7) * weekRate + (span % 7) * dayRate : span * dayRate;
+      const cartLines = Array.isArray(body?.lines) ? (body.lines as Record<string, unknown>[]) : [];
+
+      if (cartLines.length > 0) {
+        // ── CART (rental ORDER, 0097): several items over ONE shared date range →
+        // one order. Every line is re-priced from the business's own items (day/
+        // week rate × re-derived span × qty); ORDER-level extras come from the
+        // rental_config add-on catalog by id. The buyer pays the FEE online; the
+        // refundable DEPOSIT is still collected at pickup (canonical rule).
+        const span = spanOf();
+        const linesOut: { item_id: string; item_name: string; qty: number; fee: number; deposit: number }[] = [];
+        let fee = 0; let depositTotal = 0;
+        for (const l of cartLines) {
+          const it = rentItems.find((i) => String(i.id) === String(l?.item_id ?? ''));
+          if (!it) return json({ error: 'item_unavailable' }, 400);
+          const a = (it.attrs ?? {}) as Record<string, unknown>;
+          const dayRate = it.price != null ? Number(it.price) : Number(a.day ?? 0);
+          const weekRate = Number(a.week ?? 0);
+          const stock = Number(a.stock ?? 0);
+          const qty = Math.max(1, Math.min(stock > 0 ? stock : 99, Math.floor(Number(l?.qty ?? 1))));
+          const lineFee = Math.round(dayFee(dayRate, weekRate, span) * qty * 100) / 100;
+          const lineDep = Math.round(Math.max(0, Number(a.dep ?? 0)) * qty * 100) / 100;
+          if (!(lineFee >= 0) || lineFee > 100000) return json({ error: 'bad line price' }, 400);
+          fee += lineFee; depositTotal += lineDep;
+          linesOut.push({ item_id: String(it.id), item_name: String(it.name ?? 'Artículo'), qty, fee: lineFee, deposit: lineDep });
+        }
+        // Order-level extras (delivery / setup / pickup): ids must exist in the
+        // business's own rental_config.addons — snapshot name+price at pay time.
+        const cfgAddons = Array.isArray((rentRow?.config as Record<string, unknown>)?.addons)
+          ? ((rentRow!.config as Record<string, unknown>).addons as Record<string, unknown>[]) : [];
+        const extrasOut: { name: string; price: number }[] = [];
+        for (const id of (Array.isArray(body?.addon_ids) ? (body.addon_ids as unknown[]).map(String) : [])) {
+          const c = cfgAddons.find((x) => String(x?.id ?? '') === id);
+          if (!c) return json({ error: 'bad_addon' }, 400);
+          extrasOut.push({ name: String(c.es ?? ''), price: Number(c.price ?? 0) || 0 });
+        }
+        fee += extrasOut.reduce((acc, x) => acc + x.price, 0);
+        if (!(fee > 0) || fee > 100000) return json({ error: 'bad amount' }, 400);
+        subtotal = fee;
+        payload = {
+          order: true,
+          start_at: pl.start_at ?? null, end_at: pl.end_at ?? null,
+          lines: linesOut, extras: extrasOut,
+          deposit_total: Math.round(depositTotal * 100) / 100,
+        };
+      } else {
+      const it = rentItems.find((i) => String(i.id) === String(pl.item_id ?? ''));
       if (!it) return json({ error: 'item_unavailable' }, 400);
       const a = (it.attrs ?? {}) as Record<string, unknown>;
       const dayRate = it.price != null ? Number(it.price) : Number(a.day ?? 0);
@@ -358,13 +414,7 @@ Deno.serve(async (req) => {
         const hours = Math.max(1, Math.min(24, Math.floor(Number(body?.hours ?? 1))));
         unitFee = hourRate * hours;
       } else {
-        // inclusive day span from the dates (matches client spanDaysInc; the fixed
-        // 09:00→18:00 convention rounds away). Weekly rate auto-applies at 7+ days.
-        const s = Date.parse(String(pl.start_at ?? '')); const e = Date.parse(String(pl.end_at ?? ''));
-        let span = 1;
-        if (Number.isFinite(s) && Number.isFinite(e) && e >= s) span = Math.round((e - s) / 86400000) + 1;
-        span = Math.max(1, Math.min(365, span));
-        unitFee = weekRate > 0 && span >= 7 ? Math.floor(span / 7) * weekRate + (span % 7) * dayRate : span * dayRate;
+        unitFee = dayFee(dayRate, weekRate, spanOf());
       }
       let fee = unitFee * units;
       const addonSum = pickAddonSum(a.addons, (rentRow?.config as Record<string, unknown>)?.addons, body?.addon_ids);
@@ -372,6 +422,7 @@ Deno.serve(async (req) => {
       fee += addonSum;
       if (!(fee > 0) || fee > 100000) return json({ error: 'bad amount' }, 400);
       subtotal = fee;
+      }
       // The BUSINESS's own rental promo (rental_config.promos): active `percent`
       // code, minOrder met. Business-absorbed; recompute from config. Stashed on the
       // payload so owner_promo_stats (0088) counts it once the rental is fulfilled.
@@ -385,10 +436,20 @@ Deno.serve(async (req) => {
           && subtotal >= (Number(p?.minOrder ?? 0) || 0));
         if (hit) discount = Math.min(subtotal, Math.round(Number(hit.value) * subtotal) / 100);
       }
-      payload = {
-        ...((body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {}),
-        ...(discount > 0 && rCode ? { promo: rCode, discount: Math.round(discount * 100) / 100 } : {}),
-      };
+      if (cartLines.length > 0) {
+        // Cart payload was built above — attach the promo + record the fee the
+        // buyer actually pays for the goods (post-discount) on the order.
+        payload = {
+          ...payload,
+          fee_total: Math.round((subtotal - discount) * 100) / 100,
+          ...(discount > 0 && rCode ? { promo: rCode, discount: Math.round(discount * 100) / 100 } : {}),
+        };
+      } else {
+        payload = {
+          ...((body?.payload && typeof body.payload === 'object') ? body.payload as Record<string, unknown> : {}),
+          ...(discount > 0 && rCode ? { promo: rCode, discount: Math.round(discount * 100) / 100 } : {}),
+        };
+      }
     } else {
       const ev = (await get(`events?slug=eq.${encodeURIComponent(slug)}&select=id,owner_id,title_es,status`))?.[0];
       if (!ev) return json({ error: 'event not found' }, 404);

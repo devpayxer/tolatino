@@ -1381,6 +1381,28 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (rentCartLines.length === 0) { flash(L('Agrega artículos primero', 'Add items first')); return; }
     if (!rentStart) { flash(L('Elige la fecha del evento', 'Pick your event date')); return; }
     if (!user) { router.push('/entrar'); return; }
+    // Seller takes cards (BUSINESS-level Stripe decision, like menu/services): the
+    // rental FEE is paid inside OUR OWN checkout sheet (Payment Element) — never
+    // Stripe's hosted page. The refundable deposit is still left at pickup. The
+    // confirmed+paid order is created by the webhook once payment lands.
+    if (payOnline) {
+      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({
+        kind: 'rental', slug: b.slug, subtotal: rentCartFee,
+        // structured inputs → the server re-prices every line + extra from DB
+        lines: rentCartLines.map((l) => ({ item_id: l.it.id, qty: l.units })),
+        addon_ids: rentExtras,
+        ...(rentPromo ? { promo: rentPromo.code } : {}),
+        payload: { start_at: rentStartISO(), end_at: rentEndISO() },
+      });
+      if (clientSecret && pendingId) {
+        setRentCartOpen(false);
+        setCheckout({ clientSecret, pendingId, amount: amount ?? Math.round(rentCartFee * 105), returnPath: typeof window !== 'undefined' ? window.location.pathname : '/negocios/' });
+        return;
+      }
+      const msg = PAY_ERR[error ?? ''];
+      flash(msg ? L(msg[0], msg[1]) : L('No se pudo iniciar el pago', 'Could not start payment'));
+      return;
+    }
     const lines = rentCartLines.map((l) => ({
       item_id: l.it.id.startsWith('fx') ? null : l.it.id,
       item_name: B(l.it.n), qty: l.units,
@@ -3992,24 +4014,44 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 </>
               )}
 
-              {/* totals — pay-at-pickup (fee + refundable deposit collected at pickup) */}
+              {/* totals — fee paid online (Stripe connected) or at pickup; the
+                  refundable deposit is ALWAYS left at pickup (canonical rule). */}
               <div className="mt-4 rounded-field bg-lilac-2 p-3.5 text-[12.5px] font-semibold text-ink-2">
                 <div className="flex justify-between"><span>{L('Renta', 'Rental')}{rentStart ? ` · ${spanLbl}` : ''}</span><span>{money(rentCartLines.reduce((s, l) => s + rentLineFee(l.it, l.units), 0))}</span></div>
                 {rentExtrasChosen.map((a) => (
                   <div key={a.id} className="mt-1 flex justify-between text-[11.5px]"><span>{B(a.name)}</span><span>{a.price ? money(a.price) : L('Gratis', 'Free')}</span></div>
                 ))}
                 <div className="mt-1 flex justify-between"><span>{L('Depósito reembolsable · al recoger', 'Refundable deposit · at pickup')}</span><span>{money(rentCartDeposit)}</span></div>
-                <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
-                  <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(rentCartTotal)}</span>
-                </div>
+                {payOnline ? (
+                  <>
+                    <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
+                      <span>{L('Pagas ahora con tarjeta', 'You pay now by card')}</span><span className="text-primary-dark">{money(rentCartFee)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-[12px] font-bold text-muted">
+                      <span>{L('Al recoger · depósito', 'At pickup · deposit')}</span><span>{money(rentCartDeposit)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-2 flex items-center justify-between border-t border-lilac-line pt-2 text-[14px] font-extrabold text-ink">
+                    <span>{L('Total', 'Total')}</span><span className="text-primary-dark">{money(rentCartTotal)}</span>
+                  </div>
+                )}
               </div>
               <div className="mt-2 flex items-center gap-2 rounded-btn bg-amber-bg px-2.5 py-2">
                 <HandStop size={14} stroke={2.2} className="flex-none text-amber-ink" />
-                <span className="text-[11px] font-bold text-amber-ink">{L('Pagas y dejas el depósito al recoger', 'You pay and leave the deposit at pickup')}</span>
+                <span className="text-[11px] font-bold text-amber-ink">
+                  {payOnline
+                    ? L('Pagas la renta con tarjeta ahora · el depósito se deja al recoger', 'You pay the rental by card now · the deposit is left at pickup')
+                    : L('Pagas y dejas el depósito al recoger', 'You pay and leave the deposit at pickup')}
+                </span>
               </div>
 
               <PrimaryBtn className="mt-4" onClick={confirmRentalCart}>
-                {!rentStart ? L('Elige la fecha', 'Pick a date') : `${rentAutoConfirm ? L('Confirmar renta · ', 'Confirm rental · ') : L('Solicitar renta · ', 'Request rental · ')}${money(rentCartTotal)}`}
+                {!rentStart
+                  ? L('Elige la fecha', 'Pick a date')
+                  : payOnline
+                    ? `${L('Pagar renta · ', 'Pay rental · ')}${money(rentCartFee)}`
+                    : `${rentAutoConfirm ? L('Confirmar renta · ', 'Confirm rental · ') : L('Solicitar renta · ', 'Request rental · ')}${money(rentCartTotal)}`}
               </PrimaryBtn>
             </>
           );

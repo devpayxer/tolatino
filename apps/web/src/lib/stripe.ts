@@ -95,7 +95,18 @@ export type MarketplaceInput =
       /** Free-text note to the professional (clipped server-side). */
       note?: string;
     }
-  | { kind: 'rental'; slug: string; subtotal: number; payload: RentalPayload; mode?: 'hour' | 'day'; hours?: number; units?: number; addon_ids?: string[] };
+  | { kind: 'rental'; slug: string; subtotal: number; payload: RentalPayload; mode?: 'hour' | 'day'; hours?: number; units?: number; addon_ids?: string[] }
+  // Rental CART (order, 0097/0099): several items over ONE shared date range.
+  // The server re-prices every line (day/week rate × re-derived span × qty) and
+  // the order-level extras by id; the client's subtotal is display-only. The fee
+  // is paid online; the refundable deposit is still collected at pickup.
+  | {
+      kind: 'rental'; slug: string; subtotal: number;
+      lines: { item_id: string; qty: number }[];
+      payload: { start_at: string; end_at: string | null };
+      addon_ids?: string[];
+      promo?: string;
+    };
 
 /**
  * Payment-grade caller for the marketplace-checkout function. functions.invoke()

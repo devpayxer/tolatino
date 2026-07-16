@@ -48,6 +48,7 @@ const FALLBACK_CAT: RentalCategory = { id: '_', es: 'Artículos', en: 'Items', i
 type RentalReq = {
   id: string; customer_name: string | null; item_name: string; items: { name: string; qty: number }[];
   start_at: string; end_at: string | null; total: number | null; deposit: number | null; status: string;
+  paid: boolean; // fee already charged online (0099) — only the deposit is due at pickup
 };
 const REQ_STATUS: Record<string, { es: string; en: string; cls: string }> = {
   pending:   { es: 'Pendiente',  en: 'Pending',   cls: 'bg-amber-bg text-amber-ink' },
@@ -212,7 +213,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const load = async () => {
       const { data, error } = await supabase!
         .from('business_rental_orders')
-        .select('id,customer_name,start_at,end_at,fee_total,deposit_total,status,created_at,business_rentals(item_name,qty)')
+        .select('id,customer_name,start_at,end_at,fee_total,deposit_total,status,paid,created_at,business_rentals(item_name,qty)')
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
@@ -223,6 +224,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           item_name: lines[0]?.item_name ?? 'Renta', items: lines.map((l) => ({ name: l.item_name, qty: l.qty })),
           start_at: String(o.start_at), end_at: (o.end_at as string) ?? null,
           total: (o.fee_total as number) ?? null, deposit: (o.deposit_total as number) ?? null, status: String(o.status),
+          paid: o.paid === true,
         };
       });
       setReqRows(rows);
@@ -759,8 +761,12 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               ? L('La renta queda confirmada al instante cuando el cliente la pide.', 'The rental is confirmed instantly when the customer requests it.')
               : L('Cada renta llega como «Pendiente». Tú la confirmas o rechazas — el cliente recibe aviso.', 'Each rental arrives as “Pending”. You confirm or decline — the customer is notified.')}
           </p>
+          {/* Payment is a BUSINESS-level fact derived from Stripe Connect (canonical
+              rule) — never a per-item flag. The refundable deposit is ALWAYS at pickup. */}
           <p className="mt-1.5 text-[10.5px] font-semibold leading-relaxed text-muted-2">
-            {L('El pago y el depósito reembolsable se cobran al recoger.', 'Payment and the refundable deposit are collected at pickup.')}
+            {real?.connect_charges_enabled
+              ? L('Tienes Stripe conectado: tus clientes pagan la renta en línea al solicitarla. El depósito reembolsable se cobra al entregar.', 'Stripe is connected: customers pay the rental online when they request it. The refundable deposit is collected at handout.')
+              : L('El pago y el depósito reembolsable se cobran al recoger. Conecta Stripe (Ajustes → Pagos) para cobrar la renta en línea.', 'Payment and the refundable deposit are collected at pickup. Connect Stripe (Settings → Payments) to charge rentals online.')}
           </p>
         </div>
       )}
@@ -933,8 +939,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---- ops · requests ----
   const reqSeed: RentalReq[] = [
-    { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), items: [{ name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), qty: 1 }, { name: L('Mesa larga', 'Long table'), qty: 4 }], start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', total: 320, deposit: 200, status: 'pending' },
-    { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), items: [{ name: L('Bocina y micrófono', 'Speaker & microphone'), qty: 1 }], start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', total: 170, deposit: 80, status: 'confirmed' },
+    { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), items: [{ name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), qty: 1 }, { name: L('Mesa larga', 'Long table'), qty: 4 }], start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', total: 320, deposit: 200, status: 'pending', paid: false },
+    { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), items: [{ name: L('Bocina y micrófono', 'Speaker & microphone'), qty: 1 }], start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', total: 170, deposit: 80, status: 'confirmed', paid: true },
   ];
   const reqList = reqRows ?? reqSeed;
   const fmtReqDate = (iso: string) => new Date(iso).toLocaleDateString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short' });
@@ -956,13 +962,16 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       {r.items.length > 0 ? r.items.map((it) => `${it.qty}× ${it.name}`).join(' · ') : r.item_name}
                     </span>
                   </span>
-                  <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
+                  <span className="flex flex-none flex-col items-end gap-1">
+                    <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
+                    {r.paid && <span className="rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Pagada', 'Paid')}</span>}
+                  </span>
                 </div>
                 <div className="mt-2.5 flex items-center gap-2 border-t border-hair pt-2.5 text-[10.5px] font-semibold text-muted-2">
                   <span className="min-w-0 truncate">{r.items.length || 1} {(r.items.length || 1) === 1 ? L('artículo', 'item') : L('artículos', 'items')} · {fmtReqDate(r.start_at)}{r.end_at ? ` – ${fmtReqDate(r.end_at)}` : ''}</span>
                   <span className="ml-auto flex-none text-[12px] font-extrabold text-ink">{r.total != null ? money(Number(r.total)) : '—'}</span>
                 </div>
-                {r.deposit != null && Number(r.deposit) > 0 && (<div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}</div>)}
+                {r.deposit != null && Number(r.deposit) > 0 && (<div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}{r.paid ? ` · ${L('renta pagada en línea — solo cobra el depósito al entregar', 'rental paid online — only collect the deposit at handout')}` : ''}</div>)}
                 {(r.status === 'pending' || r.status === 'confirmed' || r.status === 'out') && (
                   <div className="mt-2.5 flex gap-2">
                     {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'confirmed')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>)}

@@ -124,6 +124,20 @@ async function fulfillMarketplace(url: string, service: string, stripeKey: strin
       });
       if (r.ok && Array.isArray(r.data) && r.data.length) { result = r.data[0]; ok = true; }
       else { errMsg = (r.data as { message?: string })?.message || 'booking fulfillment failed'; }
+    } else if (pending.kind === 'rental' && payload.order === true) {
+      // Rental CART (0097/0099): one paid ORDER with N line items over one date
+      // range. The fee was re-priced server-side at checkout; deposit is collected
+      // at pickup. fulfill_rental_order creates the confirmed+paid order + lines
+      // and notifies the owner.
+      const r = await rpc(url, service, 'fulfill_rental_order', {
+        in_buyer: pending.buyer_id, in_business: pending.business_id,
+        in_start_at: payload.start_at ?? null, in_end_at: payload.end_at ?? null,
+        in_lines: payload.lines ?? [], in_extras: payload.extras ?? [],
+        in_fee: payload.fee_total ?? (pending.subtotal / 100),
+        in_deposit: payload.deposit_total ?? 0,
+      });
+      if (r.ok && r.data != null) { result = Array.isArray(r.data) ? r.data[0] : r.data; ok = true; }
+      else { errMsg = (r.data as { message?: string })?.message || 'rental order fulfillment failed'; }
     } else if (pending.kind === 'rental') {
       const r = await rpc(url, service, 'fulfill_rental', {
         in_buyer: pending.buyer_id, in_business: pending.business_id,

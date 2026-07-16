@@ -303,14 +303,14 @@
 
 ## 3. Incomplete / stubbed features
 
-- [ ] **Rental cart — online payment + finer availability (2026-07-16).** The rental
-  CART (migration 0097: `business_rental_orders` header + `business_rentals` lines,
-  `create_rental_order` RPC, approval mode) ships **pay-at-pickup** end-to-end (the
-  canonical path for a non-Stripe business — fee + refundable deposit settled at
-  pickup). Three follow-ups: (a) **online multi-item payment** — the DB fulfiller
-  `fulfill_rental_order(...)` exists, but `marketplace-checkout` (kind=rental) +
-  `stripe-webhook` still take a SINGLE item; wire the items-array + one PaymentIntent
-  for the summed fee so a Stripe-connected rental business can charge the cart online.
+- [ ] **Rental cart — finer availability + hour mode (2026-07-16).** ~~(a) online
+  multi-item payment~~ — **DONE 2026-07-16 (0099)**: `marketplace-checkout`
+  (kind=rental + `lines[]`) re-prices every cart line server-side (day/week rate ×
+  re-derived span × qty) + order-level extras by id, one PaymentIntent for the
+  summed fee inside our CheckoutSheet; `stripe-webhook` routes `payload.order` to
+  `fulfill_rental_order` → confirmed+**paid** order (paid flag surfaced in Mi
+  cuenta + panel: "renta pagada en línea — solo cobra el depósito al entregar").
+  Deposit stays at pickup (canonical rule #4). Still pending:
   (b) **Per-item availability in the cart calendar** — the single-item modal greyed
   out fully-booked days via `rental_busy_by_item`; the cart calendar doesn't (owner
   confirms availability in manual mode). Compute a union-busy across cart items.
