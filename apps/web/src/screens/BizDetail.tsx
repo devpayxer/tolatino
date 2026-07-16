@@ -2550,7 +2550,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
 
       {/* ============ RENTALS ============ */}
       {tab === 'rentals' && (
-        <div className="flex flex-col gap-2.5 pt-4">
+        <div className={`flex flex-col gap-2.5 pt-4 ${!rentDisplayOnly && rentCartCount > 0 ? 'pb-24' : ''}`}>
           {rentDisplayOnly ? (
             <div className="flex items-center gap-2.5 rounded-tile bg-lilac-2 px-3.5 py-2.5">
               <Store size={16} stroke={2.2} className="flex-none text-primary-dark" />
@@ -2616,9 +2616,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </Card>
             );
           })}
-          {/* sticky cart bar — opens the rental cart (extras + review + request) */}
+          {/* floating cart bar — same fixed pattern as the shop/menu cart bar so it
+              clears the mobile bottom nav (86px) instead of hiding behind it */}
           {!rentDisplayOnly && rentCartCount > 0 && (
-            <button onClick={() => setRentCartOpen(true)} className="sticky bottom-3 z-10 mt-1 flex w-full cursor-pointer items-center justify-between rounded-field bg-primary px-4 py-3.5 text-white shadow-cta">
+            <button onClick={() => setRentCartOpen(true)} className="fixed bottom-[86px] left-1/2 z-40 flex w-[calc(100%-28px)] max-w-[640px] -translate-x-1/2 cursor-pointer items-center justify-between rounded-2xl bg-primary px-4 py-3.5 text-white shadow-modal md:bottom-6">
               <span className="flex flex-col items-start leading-tight">
                 <span className="text-[13px] font-extrabold">{rentCartCount} {rentCartCount === 1 ? L('artículo', 'item') : L('artículos', 'items')}{rentStart ? ` · ${rentSpanLbl()}` : ''}</span>
                 <span className="text-[10.5px] font-bold text-white/75">{money(rentCartTotal)} · {L('extras y solicitar', 'extras & request')}</span>
