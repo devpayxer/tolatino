@@ -305,6 +305,14 @@ One responsive app, three surfaces:
      hay "depósito parcial" por servicio. (La **renta** sí tiene un depósito
      reembolsable de garantía — es OTRA cosa: dinero que se retiene y devuelve,
      se cobra al recoger, no un flag de pago.)
+  5. **Confirmación (automática vs requiere aprobación) es config a nivel
+     negocio** (`*_config.autoConfirm`, toggle en el panel) y **el SERVIDOR la
+     aplica a TODA orden/reserva creada desde la superficie de CLIENTE — sin
+     excepciones por rol**. El dueño probando su propio negocio pasa por el
+     MISMO camino que un cliente (bug de Renta 2026-07-16: el RPC confirmaba
+     directo las órdenes del dueño "como walk-in" — eliminado en 0098). Los
+     walk-ins reales del PANEL (p. ej. la agenda de Servicios) son otra
+     superficie: esos sí insertan ya confirmados y el trigger no los toca.
 - **Visibilidad de módulos en el listado del cliente — REGLA GLOBAL (founder,
   2026-07-15).** En el detalle del negocio (`BizDetail`) un tab de contenido
   aparece **SOLO si el módulo está ACTIVO _y_ tiene contenido real** — las dos
