@@ -310,12 +310,18 @@
   summed fee inside our CheckoutSheet; `stripe-webhook` routes `payload.order` to
   `fulfill_rental_order` → confirmed+**paid** order (paid flag surfaced in Mi
   cuenta + panel: "renta pagada en línea — solo cobra el depósito al entregar").
-  Deposit stays at pickup (canonical rule #4). Still pending:
-  (b) **Per-item availability in the cart calendar** — the single-item modal greyed
-  out fully-booked days via `rental_busy_by_item`; the cart calendar doesn't (owner
-  confirms availability in manual mode). Compute a union-busy across cart items.
+  Deposit stays at pickup (canonical rule #4).
+  ~~(b) Per-item availability in the cart~~ — **DONE 2026-07-16 (0100)**:
+  `rental_busy_by_slug` feeds real availability; each item shows "Agotado para esas
+  fechas" / "Solo N disponibles" for the chosen range, steppers cap at what's free,
+  the calendar greys days that would over-book a cart item, and BOTH write paths
+  guard server-side (`create_rental_order` raises `overbooked`; `marketplace-checkout`
+  returns `unavailable` before charging) via `rental_peak_booked`. Still pending:
   (c) **Hour-mode rentals** — the cart is day-based; hourly rentals (e.g. a 4-hour DJ
   rig) need an hour toggle at cart level.
+  Residual: a true simultaneous online-pay race for the last unit is still possible
+  (checked pre-charge, not locked); rare, and the webhook's refund-on-fulfillment-
+  failure path covers it. Add a row lock if it ever bites.
 - [ ] **Business-listing events are owner-scoped, not per-business (2026-07-15).**
   The `events` table keys on `owner_id` only (no `business_id`), so the consumer
   listing's Eventos tab (`fetchEventsByOwner(slug)` → `events_by_owner`) resolves

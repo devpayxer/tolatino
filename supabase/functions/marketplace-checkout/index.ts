@@ -375,6 +375,13 @@ Deno.serve(async (req) => {
           const weekRate = Number(a.week ?? 0);
           const stock = Number(a.stock ?? 0);
           const qty = Math.max(1, Math.min(stock > 0 ? stock : 99, Math.floor(Number(l?.qty ?? 1))));
+          // Availability guard (0100): never CHARGE for an item that's already
+          // fully booked for these dates. Peak concurrent booked units from the DB.
+          if (stock > 0) {
+            const peak = await rpcGet('rental_peak_booked', { in_item: String(it.id), in_start: String(pl.start_at ?? ''), in_end: String(pl.end_at ?? pl.start_at ?? ''), in_exclude_order: null });
+            const peakN = Array.isArray(peak) ? Number(peak[0]) || 0 : Number(peak) || 0;
+            if (peakN + qty > stock) return json({ error: 'unavailable', item: String(it.name ?? '') }, 409);
+          }
           const lineFee = Math.round(dayFee(dayRate, weekRate, span) * qty * 100) / 100;
           const lineDep = Math.round(Math.max(0, Number(a.dep ?? 0)) * qty * 100) / 100;
           if (!(lineFee >= 0) || lineFee > 100000) return json({ error: 'bad line price' }, 400);

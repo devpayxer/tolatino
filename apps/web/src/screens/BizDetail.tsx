@@ -23,7 +23,7 @@ import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
 import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, createRentalOrder, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, createRentalOrder, fetchRentalBusy, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate, type RentalBusy } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -127,6 +127,7 @@ const PAY_ERR: Record<string, [string, string]> = {
   address_required: ['Agrega tu dirección de entrega', 'Add your delivery address'],
   no_delivery: ['Este negocio no está haciendo entregas ahora', 'This business is not delivering right now'],
   item_unavailable: ['Un artículo ya no está disponible', 'An item is no longer available'],
+  unavailable: ['Ya no hay disponibilidad para esas fechas — ajusta cantidad o fechas', 'No longer available for those dates — adjust qty or dates'],
   no_deposit: ['Este servicio no requiere pago en línea', 'This service does not take online payment'],
   bad_staff: ['Ese profesional ya no está disponible — elige otro', 'That professional is no longer available — pick another'],
   auth: ['Tu sesión expiró — inicia sesión de nuevo', 'Your session expired — sign in again'],
@@ -301,10 +302,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // (items + rates, no online Rentar).
   const [realRentals, setRealRentals] = useState<PublicRentals | null>(null);
   const [rentFetched, setRentFetched] = useState(false);
+  // Busy spans across active orders → real availability so the cart never
+  // over-books an item (0100). Re-fetched after each order so it stays fresh.
+  const [rentBusy, setRentBusy] = useState<RentalBusy[]>([]);
   useEffect(() => {
     let cancelled = false;
-    setRealRentals(null); setRentFetched(false);
+    setRealRentals(null); setRentFetched(false); setRentBusy([]);
     fetchBusinessRentals(b.slug).then((s) => { if (!cancelled) { setRealRentals(s); setRentFetched(true); } });
+    fetchRentalBusy(b.slug).then((rows) => { if (!cancelled) setRentBusy(rows); });
     return () => { cancelled = true; };
   }, [b.slug]);
   const rentalItems: PubRental[] = realRentals?.items
@@ -1240,7 +1245,25 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const rentCartFee = rentCartLines.reduce((s, l) => s + rentLineFee(l.it, l.units), 0) + rentExtrasFee;
   const rentCartDeposit = rentCartLines.reduce((s, l) => s + rentLineDeposit(l.it, l.units), 0);
   const rentCartTotal = rentCartFee + rentCartDeposit;
-  const rentCartStock = (it: PubRental) => Math.max(1, it.stock || 99);
+  // ── Real availability (0100): units already taken by active orders, so the
+  // cart can't over-book. Days compared as yyyy-mm-dd strings (lexicographic ok).
+  const nextISODay = (iso: string) => { const d = parseISO(iso); d.setDate(d.getDate() + 1); return isoDay(d.getFullYear(), d.getMonth(), d.getDate()); };
+  const rentBookedOn = (itemId: string, dayISO: string) =>
+    rentBusy.reduce((s, b) => (b.item_id === itemId && b.starts <= dayISO && dayISO <= b.ends ? s + b.qty : s), 0);
+  // Peak concurrent booked units for an item over [start,end] (matches the server).
+  const rentPeakBooked = (itemId: string, startISO: string, endISO: string) => {
+    let peak = 0;
+    for (let d = startISO, i = 0; d <= endISO && i < 366; d = nextISODay(d), i++) peak = Math.max(peak, rentBookedOn(itemId, d));
+    return peak;
+  };
+  // How many of an item are still rentable for the chosen dates. stock 0 = unknown
+  // → don't cap (treat as available). No dates yet → show full stock.
+  const rentAvail = (it: PubRental): number => {
+    if (!(it.stock > 0)) return 99;
+    if (!rentStart) return it.stock;
+    return Math.max(0, it.stock - rentPeakBooked(it.id, rentStart, rentEnd ?? rentStart));
+  };
+  const rentCartStock = (it: PubRental) => rentAvail(it);
   const addToCart = (id: string, delta: number, cap: number) =>
     setRentCart((c) => { const n = Math.max(0, Math.min(cap, (c[id] ?? 0) + delta)); const next = { ...c }; if (n === 0) delete next[id]; else next[id] = n; return next; });
   const rentStartISO = () => { const d = rentStart ? parseISO(rentStart) : new Date(); d.setHours(9, 0, 0, 0); return d.toISOString(); };
@@ -1248,11 +1271,16 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     const base = rentEnd ?? rentStart;
     const d = base ? parseISO(base) : new Date(); d.setHours(18, 0, 0, 0); return d.toISOString();
   };
-  // Is a calendar day selectable (not in the past)?
+  // Is a calendar day selectable? No past days; 48h-notice items need +2 days; and
+  // a day is blocked if it would over-book any item ALREADY in the cart.
   const rentDayEnabled = (rule: string, dt: Date) => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     if (dt < today) return false;
     if (rule === '48h aviso') { const min = new Date(today); min.setDate(min.getDate() + 2); if (dt < min) return false; }
+    const dISO = isoDay(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    for (const l of rentCartLines) {
+      if (l.it.stock > 0 && rentBookedOn(l.it.id, dISO) + l.units > l.it.stock) return false;
+    }
     return true;
   };
   // Tap a day → start→end range.
@@ -1410,12 +1438,18 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     }));
     const extras = rentExtrasChosen.map((a) => ({ name: B(a.name), price: a.price }));
     const { status, error } = await createRentalOrder({ slug: b.slug, startISO: rentStartISO(), endISO: rentEndISO(), lines, extras });
-    if (error) { flash(L('No se pudo crear la renta', 'Could not create the rental')); return; }
+    if (error) {
+      // The server's availability guard (0100) fired — someone took the last unit
+      // between load and submit. Refresh busy so the UI greys it out immediately.
+      if (/overbooked/.test(error)) { fetchRentalBusy(b.slug).then(setRentBusy); flash(L('Ya no hay disponibilidad para esas fechas — ajusta cantidad o fechas', 'No longer available for those dates — adjust qty or dates')); return; }
+      flash(L('No se pudo crear la renta', 'Could not create the rental')); return;
+    }
     // confirmedNow = what the SERVER decided (0098) — config only as fallback.
     const info = { count: rentCartCount, total: rentCartTotal, deposit: rentCartDeposit, range: rangeLabel(), confirmedNow: status ? status === 'confirmed' : rentAutoConfirm };
     setRentDoneInfo(info);
     setRentDone(true);
     setRentCart({}); setRentExtras([]); setRentStart(null); setRentEnd(null);
+    fetchRentalBusy(b.slug).then(setRentBusy); // reflect the just-booked units
     act.refresh();
   };
 
@@ -2606,6 +2640,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {rentalItems.map((it) => {
             const inCart = rentCart[it.id] ?? 0;
             const cap = rentCartStock(it);
+            // Sold out for the chosen dates (real availability). Only once dates
+            // are picked and the item tracks stock; unlimited items never sell out.
+            const soldOut = rentStart != null && it.stock > 0 && cap <= 0;
+            // A low-availability hint ("N disponibles") once dates are set.
+            const lowLeft = rentStart != null && it.stock > 0 && cap > 0 && cap <= 5;
             return (
               <Card key={it.id} className="flex items-center gap-3 p-3.5">
                 <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }}>
@@ -2620,9 +2659,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     {rentStart && <span className="text-[11.5px] font-extrabold text-ink">= {money(rentUnitFee(it))} · {rentSpanLbl()}</span>}
                     {it.dep > 0 && <span className="text-[11px] font-bold text-muted-2">{L('Depósito', 'Deposit')} {money(it.dep)}</span>}
                   </div>
+                  {soldOut && <div className="mt-1 text-[11px] font-extrabold text-pink-dark">{L('Agotado para esas fechas', 'Sold out for those dates')}</div>}
+                  {lowLeft && <div className="mt-1 text-[11px] font-bold text-amber-ink">{L(`Solo ${cap} disponibles`, `Only ${cap} left`)}</div>}
                 </div>
                 {!rentDisplayOnly && (
-                  inCart > 0 ? (
+                  soldOut ? (
+                    <span className="flex-none rounded-field bg-lilac-2 px-3.5 py-2.5 text-[11.5px] font-extrabold text-muted-2">{L('Agotado', 'Sold out')}</span>
+                  ) : inCart > 0 ? (
                     <span className="flex flex-none items-center gap-2.5 rounded-full bg-lilac-2 px-2 py-1.5">
                       <button onClick={() => addToCart(it.id, -1, cap)} aria-label={L('Quitar uno', 'Remove one')} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] font-extrabold text-ink">−</button>
                       <span className="w-5 text-center text-[14px] font-extrabold text-ink">{inCart}</span>

@@ -637,6 +637,22 @@ export async function fetchBusinessRentals(slug: string): Promise<PublicRentals 
   return { items, addons, renting: cfg.renting, autoConfirm: cfg.autoConfirm };
 }
 
+/** One busy span (privacy-safe) from an active rental order: which item, the
+ *  yyyy-mm-dd day range it occupies, and how many units. Used to compute real
+ *  availability so the cart never over-books an item (migration 0100). */
+export type RentalBusy = { item_id: string; starts: string; ends: string; qty: number };
+
+/** Fetch the busy spans for ALL of a business's rental items in one call
+ *  (rental_busy_by_slug, 0100). Active orders only; returns [] if none. */
+export async function fetchRentalBusy(slug: string): Promise<RentalBusy[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('rental_busy_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({
+    item_id: String(r.item_id), starts: String(r.starts), ends: String(r.ends), qty: Number(r.qty) || 0,
+  }));
+}
+
 /** A rental line item inside an order (as the customer built it in the cart). */
 export type RentalOrderLine = { item_id: string | null; item_name: string; qty: number; fee: number; deposit: number };
 
@@ -662,18 +678,6 @@ export async function createRentalOrder(opts: {
     status = (ord as { status: string } | null)?.status ?? null;
   }
   return { id, status, error: null };
-}
-
-/** Busy date-ranges for a rental item (migration 0051) — the calendar greys out
- *  days already booked to capacity. Exposes only dates + qty (SECURITY DEFINER
- *  RPC, no customer data). Returns [] offline / pre-migration / on error. */
-export async function fetchRentalBusy(itemId: string): Promise<{ start: string; end: string; qty: number }[]> {
-  if (!supabase) return [];
-  const { data, error } = await supabase.rpc('rental_busy_by_item', { in_item_id: itemId });
-  if (error || !Array.isArray(data)) return [];
-  return (data as Record<string, unknown>[]).map((r) => ({
-    start: String(r.starts), end: String(r.ends ?? r.starts), qty: Number(r.qty ?? 1),
-  }));
 }
 
 // ── real reviews (migration 0056) ──
