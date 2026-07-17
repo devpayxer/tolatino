@@ -247,7 +247,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // Primary split (Artículos / Operación) mirrored to ?sub= (refresh-safe).
   const [mode, setMode] = useUrlTab<'items' | 'ops'>('sub', 'items', (v) => ['items', 'ops'].includes(v));
   const [itemSub, setItemSub] = useState<'catalog' | 'cats' | 'addons' | 'policies' | 'pricing'>('catalog');
-  const [opSub, setOpSub] = useState<'requests' | 'calendar' | 'deposits' | 'damage'>('requests');
+  const [histOpen, setHistOpen] = useState(false); // ops · show returned/cancelled history
   const [openId, setOpenId] = useState<number | null>(null);
   const [flow, setFlow] = useState<null | 'rentout' | 'return'>(null);
   const [view, setView] = useState<'module' | 'wizard' | 'success'>('module');
@@ -937,152 +937,115 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     </div>
   );
 
-  // ---- ops · requests ----
+  // ---- ops · one clear operations screen (below) ----
   const reqSeed: RentalReq[] = [
     { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), items: [{ name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), qty: 1 }, { name: L('Mesa larga', 'Long table'), qty: 4 }], start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', total: 320, deposit: 200, status: 'pending', paid: false },
     { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), items: [{ name: L('Bocina y micrófono', 'Speaker & microphone'), qty: 1 }], start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', total: 170, deposit: 80, status: 'confirmed', paid: true },
+    { id: 's3', customer_name: 'Park Studios', item_name: L('Carpa 10×20', 'Tent 10×20'), items: [{ name: L('Carpa 10×20', 'Tent 10×20'), qty: 1 }, { name: L('Silla plegable', 'Folding chair'), qty: 40 }], start_at: '2026-07-05T14:00:00Z', end_at: '2026-07-06T14:00:00Z', total: 260, deposit: 200, status: 'out', paid: false },
+    { id: 's4', customer_name: 'Luis R.', item_name: L('Mesa redonda', 'Round table'), items: [{ name: L('Mesa redonda', 'Round table'), qty: 8 }], start_at: '2026-06-28T14:00:00Z', end_at: '2026-06-29T14:00:00Z', total: 72, deposit: 40, status: 'returned', paid: true },
   ];
   const reqList = reqRows ?? reqSeed;
   const fmtReqDate = (iso: string) => new Date(iso).toLocaleDateString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short' });
-  const requestsPane = (
-    <div className="flex flex-col gap-3">
-      <div className="text-[11.5px] font-medium leading-relaxed text-muted">{L('Solicitudes de renta de tus clientes. Confirma para reservar el artículo y retener el depósito.', 'Rental requests from your customers. Confirm to reserve the item and hold the deposit.')}</div>
-      {reqList.length === 0 ? (
-        <div className={`${cardCls} p-6 text-center text-[12.5px] font-semibold text-muted`}>{L('Sin solicitudes por ahora.', 'No requests yet.')}</div>
-      ) : (
-        <div className="grid gap-2.5 md:grid-cols-2">
-          {reqList.map((r) => {
-            const st = REQ_STATUS[r.status] ?? REQ_STATUS.pending;
-            return (
-              <div key={r.id} className={`${cardCls} p-3.5`}>
-                <div className="flex items-start gap-2.5">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[12.5px] font-extrabold text-ink">{r.customer_name || L('Cliente', 'Customer')}</span>
-                    <span className="mt-0.5 block text-[11px] font-semibold text-muted-2">
-                      {r.items.length > 0 ? r.items.map((it) => `${it.qty}× ${it.name}`).join(' · ') : r.item_name}
-                    </span>
-                  </span>
-                  <span className="flex flex-none flex-col items-end gap-1">
-                    <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
-                    {r.paid && <span className="rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Pagada', 'Paid')}</span>}
-                  </span>
-                </div>
-                <div className="mt-2.5 flex items-center gap-2 border-t border-hair pt-2.5 text-[10.5px] font-semibold text-muted-2">
-                  <span className="min-w-0 truncate">{r.items.length || 1} {(r.items.length || 1) === 1 ? L('artículo', 'item') : L('artículos', 'items')} · {fmtReqDate(r.start_at)}{r.end_at ? ` – ${fmtReqDate(r.end_at)}` : ''}</span>
-                  <span className="ml-auto flex-none text-[12px] font-extrabold text-ink">{r.total != null ? money(Number(r.total)) : '—'}</span>
-                </div>
-                {r.deposit != null && Number(r.deposit) > 0 && (<div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}{r.paid ? ` · ${L('renta pagada en línea — solo cobra el depósito al entregar', 'rental paid online — only collect the deposit at handout')}` : ''}</div>)}
-                {(r.status === 'pending' || r.status === 'confirmed' || r.status === 'out') && (
-                  <div className="mt-2.5 flex gap-2">
-                    {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'confirmed')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>)}
-                    {r.status === 'confirmed' && (<button onClick={() => setReqStatus(r.id, 'out')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Entregar', 'Hand out')}</button>)}
-                    {r.status === 'out' && (<button onClick={() => setReqStatus(r.id, 'returned')} className="flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink">{L('Marcar devuelto', 'Mark returned')}</button>)}
-                    {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'cancelled')} className="flex-none cursor-pointer rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-ink-2">{L('Rechazar', 'Decline')}</button>)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+  // ── OPERACIÓN · one real screen: how-it-works + pipeline grouped by what YOU
+  // need to do next. (Replaced the old Calendario/Depósitos/Daños sub-tabs, which
+  // showed FAKE data — a fake calendar, fabricated "$430 held" deposits and made-up
+  // damage reports — that made the flow impossible to understand. Real deposit +
+  // damage tooling returns for real with the Stripe deposit hold, Fase 3.)
+  const orderCard = (r: RentalReq) => {
+    const st = REQ_STATUS[r.status] ?? REQ_STATUS.pending;
+    return (
+      <div key={r.id} className={`${cardCls} p-3.5`}>
+        <div className="flex items-start gap-2.5">
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[12.5px] font-extrabold text-ink">{r.customer_name || L('Cliente', 'Customer')}</span>
+            <span className="mt-0.5 block text-[11px] font-semibold text-muted-2">
+              {r.items.length > 0 ? r.items.map((it) => `${it.qty}× ${it.name}`).join(' · ') : r.item_name}
+            </span>
+          </span>
+          <span className="flex flex-none flex-col items-end gap-1">
+            <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
+            {r.paid && <span className="rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Pagada', 'Paid')}</span>}
+          </span>
         </div>
-      )}
+        <div className="mt-2.5 flex items-center gap-2 border-t border-hair pt-2.5 text-[10.5px] font-semibold text-muted-2">
+          <span className="min-w-0 truncate">{r.items.length || 1} {(r.items.length || 1) === 1 ? L('artículo', 'item') : L('artículos', 'items')} · {fmtReqDate(r.start_at)}{r.end_at ? ` – ${fmtReqDate(r.end_at)}` : ''}</span>
+          <span className="ml-auto flex-none text-[12px] font-extrabold text-ink">{r.total != null ? money(Number(r.total)) : '—'}</span>
+        </div>
+        {r.deposit != null && Number(r.deposit) > 0 && (<div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}{r.paid ? ` · ${L('renta pagada en línea — solo cobra el depósito al entregar', 'rental paid online — only collect the deposit at handout')}` : ''}</div>)}
+        {(r.status === 'pending' || r.status === 'confirmed' || r.status === 'out') && (
+          <div className="mt-2.5 flex gap-2">
+            {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'confirmed')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>)}
+            {r.status === 'confirmed' && (<button onClick={() => setReqStatus(r.id, 'out')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Entregar · toma el depósito', 'Hand out · take deposit')}</button>)}
+            {r.status === 'out' && (<button onClick={() => setReqStatus(r.id, 'returned')} className="flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink">{L('Devuelto · regresa el depósito', 'Returned · refund deposit')}</button>)}
+            {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'cancelled')} className="flex-none cursor-pointer rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-ink-2">{L('Rechazar', 'Decline')}</button>)}
+          </div>
+        )}
+      </div>
+    );
+  };
+  const opsSteps: { n: string; es: string; en: string; subEs: string; subEn: string }[] = [
+    { n: '1', es: 'Llega la solicitud', en: 'Request arrives', subEs: 'Pendiente (o pagada en línea)', subEn: 'Pending (or paid online)' },
+    { n: '2', es: 'Confirmas', en: 'You confirm', subEs: 'Reservas el equipo', subEn: 'You reserve the gear' },
+    { n: '3', es: 'Entregas', en: 'You hand out', subEs: 'Tomas el depósito', subEn: 'Take the deposit' },
+    { n: '4', es: 'Te lo devuelven', en: 'They return it', subEs: 'Regresas el depósito', subEn: 'Refund the deposit' },
+  ];
+  const opsPending = reqList.filter((r) => r.status === 'pending');
+  const opsConfirmed = reqList.filter((r) => r.status === 'confirmed');
+  const opsInUse = reqList.filter((r) => r.status === 'out');
+  const opsHistory = reqList.filter((r) => r.status === 'returned' || r.status === 'cancelled');
+  const opsGroup = (title: string, sub: string, rows: RentalReq[], dot: string) => rows.length === 0 ? null : (
+    <div>
+      <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className={`h-2 w-2 flex-none rounded-full ${dot}`} />
+        <span className="text-[12.5px] font-extrabold text-ink">{title}</span>
+        <span className="rounded-md bg-lilac-2 px-1.5 py-0.5 text-[10px] font-extrabold text-ink-2">{rows.length}</span>
+        <span className="text-[10.5px] font-semibold text-muted-2">{sub}</span>
+      </div>
+      <div className="grid gap-2.5 md:grid-cols-2">{rows.map(orderCard)}</div>
     </div>
   );
-
-  // ---- ops · calendar ----
-  const dows = es ? ['L', 'M', 'X', 'J', 'V', 'S', 'D'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const evDays: Record<number, string[]> = { 8: ['#7B61FF'], 15: ['#7B61FF'], 17: ['#1F9D57'], 19: ['#D6336C'], 22: ['#1F9D57'], 27: ['#F4B740', '#D6336C'] };
-  const upcoming = [
-    { mon: 'JUL', day: '12', name: 'Mariana V.', es: 'Vajilla de fiesta · 100 · sáb', en: 'Party tableware · 100 · Sat', tag: 'warn' as const },
-    { mon: 'JUL', day: '17', name: 'Coffee Mfg.', es: 'Bocina y micrófono · 1 día', en: 'Speaker & mic · 1 day', tag: 'success' as const },
-    { mon: 'JUL', day: '19', name: 'Park Studios', es: 'Salón de eventos · 6–11 PM', en: 'Event hall · 6–11 PM', tag: 'coral' as const },
-  ];
-  const dtCls: Record<'warn' | 'success' | 'coral', string> = { warn: 'bg-amber-bg text-amber-ink', success: 'bg-green-bg text-green-dark', coral: 'bg-pink-bg text-pink-dark' };
-  const calendarPane = (
-    <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1.3fr_1fr]">
-      <div className={`${cardCls} p-4`}>
-        <div className="mb-3 flex items-center justify-between"><span className="text-[13px] font-extrabold text-ink">{L('Julio', 'July')} 2026</span><span className="text-[11px] font-bold text-muted-2">{L('Hoy · 6', 'Today · 6')}</span></div>
-        <div className="mb-1.5 grid grid-cols-7 gap-1">{dows.map((d, i) => <span key={i} className="text-center text-[9px] font-extrabold text-muted-faint">{d}</span>)}</div>
-        <div className="grid grid-cols-7 gap-1">
-          {Array.from({ length: 35 }, (_, i) => {
-            const dn = i - 1, visible = dn >= 0 && dn < 31, day = dn + 1, isToday = day === 6;
-            const dots = visible ? evDays[day] ?? [] : [];
-            return (
-              <div key={i} className={`flex aspect-square flex-col items-center justify-center rounded-lg text-[11px] font-extrabold ${isToday ? 'bg-lilac text-primary-dark' : visible ? 'bg-app text-ink' : 'text-transparent'}`}>
-                <span>{visible ? day : ''}</span>
-                <span className="mt-0.5 flex h-1 gap-0.5">{dots.map((c, j) => <span key={j} className="h-1 w-1 rounded-full" style={{ background: c }} />)}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      <div>
-        <div className="mb-2 px-0.5 text-[12px] font-extrabold text-ink">{L('Rentas próximas', 'Upcoming rentals')}</div>
-        <div className="flex flex-col gap-2.5">
-          {upcoming.map((u, i) => (
-            <div key={i} className={`${cardCls} flex items-center gap-3 p-3`}>
-              <span className={`flex-none rounded-[10px] px-2 py-1.5 text-center ${dtCls[u.tag]}`}><span className="block text-[8px] font-bold leading-none">{u.mon}</span><span className="block text-[14px] font-extrabold leading-tight">{u.day}</span></span>
-              <span className="min-w-0 flex-1"><span className="text-[12px] font-extrabold text-ink">{u.name}</span><span className="mt-0.5 block truncate text-[10px] font-medium text-muted-2">{L(u.es, u.en)}</span></span>
-              <span className={`flex-none self-center rounded-md px-2 py-1 text-[9px] font-extrabold ${u.tag === 'warn' ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{u.tag === 'warn' ? L('Confirmar', 'Confirm') : L('$ retenido', '$ held')}</span>
+  const opsPane = (
+    <div className="flex flex-col gap-5">
+      {/* how a rental works — the flow, obvious at a glance */}
+      <div className={`${cardCls} p-3.5`}>
+        <div className="mb-2.5 text-[12px] font-extrabold text-ink">{L('Cómo funciona una renta', 'How a rental works')}</div>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {opsSteps.map((s) => (
+            <div key={s.n} className="flex items-start gap-2 rounded-field bg-app p-2.5">
+              <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary text-[10px] font-extrabold text-white">{s.n}</span>
+              <span className="min-w-0">
+                <span className="block text-[11px] font-extrabold leading-tight text-ink">{L(s.es, s.en)}</span>
+                <span className="mt-0.5 block text-[9.5px] font-semibold leading-tight text-muted-2">{L(s.subEs, s.subEn)}</span>
+              </span>
             </div>
           ))}
         </div>
       </div>
-    </div>
-  );
-
-  // ---- ops · deposits ----
-  const deposits = [
-    { initials: 'MV', color: '#7B61FF', name: 'Mariana V.', es: 'Vajilla de fiesta · 100', en: 'Party tableware · 100', amount: '$200', held: true },
-    { initials: 'CM', color: '#1F9D57', name: 'Coffee Mfg.', es: 'Bocina y micrófono', en: 'Speaker & microphone', amount: '$80', held: true },
-    { initials: 'PS', color: '#E8954A', name: 'Park Studios', es: 'Salón de eventos', en: 'Event hall', amount: '$150', held: true },
-    { initials: 'JT', color: '#2A5C8A', name: 'James T.', es: 'Mesa larga · devuelto', en: 'Long table · returned', amount: '$40', held: false },
-  ];
-  const depositsPane = (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3 md:max-w-md">
-        <div className={`${cardCls} p-3.5`}><div className="text-[10px] font-bold text-muted">{L('Retenido', 'Held now')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">$430</div><div className="text-[9.5px] font-extrabold text-muted-2">3 {L('activos', 'active')}</div></div>
-        <div className={`${cardCls} p-3.5`}><div className="text-[10px] font-bold text-muted">{L('Devuelto 30d', 'Refunded 30d')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">$1,240</div><div className="text-[9.5px] font-extrabold text-green">9 {L('devoluciones', 'returns')}</div></div>
+      {/* real counts */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className={`${cardCls} p-3`}><div className="text-[10px] font-bold text-muted">{L('Por confirmar', 'To confirm')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">{opsPending.length}</div></div>
+        <div className={`${cardCls} p-3`}><div className="text-[10px] font-bold text-muted">{L('Por entregar', 'To hand out')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">{opsConfirmed.length}</div></div>
+        <div className={`${cardCls} p-3`}><div className="text-[10px] font-bold text-muted">{L('En uso', 'Out now')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">{opsInUse.length}</div></div>
       </div>
-      <div className="grid gap-2.5 md:grid-cols-2">
-        {deposits.map((d) => (
-          <div key={d.name + d.amount} className={`${cardCls} flex items-center gap-3 p-3`}>
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
-            <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold text-ink">{d.name}</span><span className="block truncate text-[10px] font-medium text-muted-2">{L(d.es, d.en)}</span></span>
-            <span className="flex-none text-right"><span className="block text-[13px] font-extrabold text-ink">{d.amount}</span><span className={`mt-0.5 inline-block rounded px-1.5 py-px text-[8.5px] font-extrabold ${d.held ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{d.held ? L('Retenido', 'Held') : L('Devuelto', 'Refunded')}</span></span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // ---- ops · damage ----
-  const damage = [
-    { es: 'Bocina y micrófono', en: 'Speaker & microphone', renter: 'Mission Tech', date: '5 Jul', sev: 'minor' as const, noteEs: 'Rayón en la carcasa. Funcional, estético menor.', noteEn: 'Scratch on the casing. Functional, minor cosmetic.', charge: '$25', tile: '#FCE3DC 0 8px,#F6CEC2 8px 16px' },
-    { es: 'Vajilla de fiesta · 100', en: 'Party tableware · 100', renter: 'Mariana V.', date: '1 Jul', sev: 'major' as const, noteEs: '3 platos rotos de 100. Reemplazo necesario.', noteEn: '3 plates broken of 100. Replacement needed.', charge: '$90', tile: '#FBEFD3 0 8px,#F5E1B0 8px 16px' },
-  ];
-  const sevMeta: Record<'minor' | 'major', { cls: string; border: string; label: string }> = {
-    minor: { cls: 'bg-amber-bg text-amber-ink', border: 'border-amber/40', label: L('Menor', 'Minor') },
-    major: { cls: 'bg-pink-bg text-pink-dark', border: 'border-pink/40', label: L('Mayor', 'Major') },
-  };
-  const damagePane = (
-    <div className="flex flex-col gap-3">
-      <div className="text-[11.5px] font-medium leading-relaxed text-muted">{L('Reporta daños al devolver. Deduce del depósito si aplica.', 'Report damage on return. Deduct from deposit if needed.')}</div>
-      <div className="grid gap-3 md:grid-cols-2">
-        {damage.map((r) => {
-          const m = sevMeta[r.sev];
-          return (
-            <div key={r.es} className={`rounded-card-sm border ${m.border} bg-white p-3 shadow-card`}>
-              <div className="flex items-center gap-3">
-                <span className="h-11 w-11 flex-none rounded-[11px]" style={{ background: stripe(r.tile) }} />
-                <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{L(r.es, r.en)}</span><span className="block text-[10px] font-medium text-muted-2">{r.renter} · {r.date}</span></span>
-                <span className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${m.cls}`}>{m.label}</span>
-              </div>
-              <div className="mt-2.5 border-t border-hair pt-2.5 text-[11px] font-medium leading-relaxed text-ink-3">{L(r.noteEs, r.noteEn)}</div>
-              <div className="mt-2 flex items-center justify-between"><span className="text-[10.5px] font-bold text-muted-2">{L('Deducir del depósito', 'Deduct from deposit')}</span><span className="text-[12px] font-extrabold text-pink-dark">−{r.charge}</span></div>
+      {/* the pipeline, grouped by what YOU need to do next */}
+      {opsPending.length + opsConfirmed.length + opsInUse.length + opsHistory.length === 0 ? (
+        <div className={`${cardCls} p-8 text-center text-[12.5px] font-semibold text-muted`}>{L('Sin rentas por ahora. Cuando un cliente rente, aparece aquí para manejarla paso a paso.', 'No rentals yet. When a customer rents, it shows here to manage step by step.')}</div>
+      ) : (
+        <div className="flex flex-col gap-5">
+          {opsGroup(L('Acción necesaria', 'Needs action'), L('Confírmala o recházala', 'Confirm or decline'), opsPending, 'bg-amber')}
+          {opsGroup(L('Por entregar', 'To hand out'), L('Confirmadas — entrégalas y toma el depósito', 'Confirmed — hand out & take the deposit'), opsConfirmed, 'bg-primary')}
+          {opsGroup(L('En uso', 'Out now'), L('Con el cliente — márcalas devueltas al regresar', 'With the customer — mark returned on return'), opsInUse, 'bg-green')}
+          {opsHistory.length > 0 && (
+            <div>
+              <button onClick={() => setHistOpen((v) => !v)} className="flex cursor-pointer items-center gap-2 text-[12px] font-extrabold text-muted-2">
+                {histOpen ? <ChevronUp size={14} stroke={2.4} /> : <ChevronDown size={14} stroke={2.4} />}
+                {L('Historial', 'History')} <span className="rounded-md bg-lilac-2 px-1.5 py-0.5 text-[10px] font-extrabold text-ink-2">{opsHistory.length}</span>
+              </button>
+              {histOpen && <div className="mt-2.5 grid gap-2.5 md:grid-cols-2">{opsHistory.map(orderCard)}</div>}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -1095,7 +1058,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button onClick={() => setMode('ops')} className={modeBtn(mode === 'ops')}><CalendarDays size={14} stroke={2} />{L('Rentas', 'Rentals')}{opsUpcoming > 0 && <span className="rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-extrabold text-white">{opsUpcoming}</span>}</button>
       </div>
 
-      {mode === 'items' ? (
+      {mode === 'items' && (
         <SectionTabs
           className="mb-4"
           tabs={[
@@ -1108,23 +1071,11 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           value={itemSub}
           onChange={setItemSub}
         />
-      ) : (
-        <SectionTabs
-          className="mb-4"
-          tabs={[
-            ['requests', L('Solicitudes', 'Requests'), opsUpcoming > 0 ? opsUpcoming : undefined],
-            ['calendar', L('Calendario', 'Calendar')],
-            ['deposits', L('Depósitos', 'Deposits')],
-            ['damage', L('Daños', 'Damage')],
-          ] as SectionTab<typeof opSub>[]}
-          value={opSub}
-          onChange={setOpSub}
-        />
       )}
 
       {mode === 'items'
         ? (itemSub === 'catalog' ? catalog : itemSub === 'cats' ? categoriesTab : itemSub === 'addons' ? addonsTab : itemSub === 'policies' ? policiesTab : pricingPane)
-        : (opSub === 'requests' ? requestsPane : opSub === 'calendar' ? calendarPane : opSub === 'deposits' ? depositsPane : damagePane)}
+        : opsPane}
 
       {!isPremium && mode === 'items' && itemSub === 'catalog' && (
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
