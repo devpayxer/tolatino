@@ -28,6 +28,7 @@ import { useBizAdmin } from '@/lib/bizAdmin';
 import { useUrlTab } from '@/lib/urlView';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { rentalDeposit } from '@/lib/stripe';
 import { formatPhone } from '@/lib/phone';
 import { uploadImage } from '@/lib/image';
 import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
@@ -49,6 +50,8 @@ type RentalReq = {
   id: string; customer_name: string | null; item_name: string; items: { name: string; qty: number }[];
   start_at: string; end_at: string | null; total: number | null; deposit: number | null; status: string;
   paid: boolean; // fee already charged online (0099) — only the deposit is due at pickup
+  depositStatus: string; // none|held|released|captured|failed (0101)
+  depositCaptured: number;
 };
 const REQ_STATUS: Record<string, { es: string; en: string; cls: string }> = {
   pending:   { es: 'Pendiente',  en: 'Pending',   cls: 'bg-amber-bg text-amber-ink' },
@@ -213,7 +216,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const load = async () => {
       const { data, error } = await supabase!
         .from('business_rental_orders')
-        .select('id,customer_name,start_at,end_at,fee_total,deposit_total,status,paid,created_at,business_rentals(item_name,qty)')
+        .select('id,customer_name,start_at,end_at,fee_total,deposit_total,status,paid,deposit_status,deposit_captured,created_at,business_rentals(item_name,qty)')
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
@@ -225,6 +228,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           start_at: String(o.start_at), end_at: (o.end_at as string) ?? null,
           total: (o.fee_total as number) ?? null, deposit: (o.deposit_total as number) ?? null, status: String(o.status),
           paid: o.paid === true,
+          depositStatus: String(o.deposit_status ?? 'none'), depositCaptured: Number(o.deposit_captured ?? 0),
         };
       });
       setReqRows(rows);
@@ -241,6 +245,43 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setReqRows((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, status } : r)) : rows));
     if (persistable && supabase) await supabase.from('business_rental_orders').update({ status }).eq('id', id);
     flash(L('Renta actualizada', 'Rental updated'));
+  };
+  // Deposit hold (0101): release on return, or capture part of it for damage.
+  const [damageFor, setDamageFor] = useState<RentalReq | null>(null);
+  const [damageAmt, setDamageAmt] = useState('');
+  const [depBusy, setDepBusy] = useState(false);
+  const patchDeposit = (id: string, depositStatus: string, depositCaptured: number) =>
+    setReqRows((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, depositStatus, depositCaptured } : r)) : rows));
+  // Return the item and, if a real hold is on the card, release it (Turo-style).
+  const returnAndRelease = async (r: RentalReq) => {
+    if (r.depositStatus === 'held') {
+      if (admin.demo) { patchDeposit(r.id, 'released', 0); }
+      else {
+        setDepBusy(true);
+        const { error } = await rentalDeposit(r.id, 'release');
+        setDepBusy(false);
+        if (error) { flash(L('No se pudo liberar el depósito', 'Could not release the deposit')); return; }
+        patchDeposit(r.id, 'released', 0);
+      }
+      flash(L('Depósito liberado', 'Deposit released'));
+    }
+    await setReqStatus(r.id, 'returned');
+  };
+  const submitDamage = async () => {
+    if (!damageFor) return;
+    const amt = Math.max(0, Math.min(Number(damageFor.deposit ?? 0), Number(damageAmt) || 0));
+    if (amt <= 0) { flash(L('Escribe un monto válido', 'Enter a valid amount')); return; }
+    if (admin.demo) { patchDeposit(damageFor.id, 'captured', amt); }
+    else {
+      setDepBusy(true);
+      const { error } = await rentalDeposit(damageFor.id, 'capture', amt);
+      setDepBusy(false);
+      if (error) { flash(L('No se pudo cobrar el daño', 'Could not charge for damage')); return; }
+      patchDeposit(damageFor.id, 'captured', amt);
+    }
+    await setReqStatus(damageFor.id, 'returned');
+    setDamageFor(null); setDamageAmt('');
+    flash(L('Daño cobrado del depósito', 'Damage charged to the deposit'));
   };
 
   // ── ui state ────────────────────────────────────────────────────────────────
@@ -939,10 +980,10 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---- ops · one clear operations screen (below) ----
   const reqSeed: RentalReq[] = [
-    { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), items: [{ name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), qty: 1 }, { name: L('Mesa larga', 'Long table'), qty: 4 }], start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', total: 320, deposit: 200, status: 'pending', paid: false },
-    { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), items: [{ name: L('Bocina y micrófono', 'Speaker & microphone'), qty: 1 }], start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', total: 170, deposit: 80, status: 'confirmed', paid: true },
-    { id: 's3', customer_name: 'Park Studios', item_name: L('Carpa 10×20', 'Tent 10×20'), items: [{ name: L('Carpa 10×20', 'Tent 10×20'), qty: 1 }, { name: L('Silla plegable', 'Folding chair'), qty: 40 }], start_at: '2026-07-05T14:00:00Z', end_at: '2026-07-06T14:00:00Z', total: 260, deposit: 200, status: 'out', paid: false },
-    { id: 's4', customer_name: 'Luis R.', item_name: L('Mesa redonda', 'Round table'), items: [{ name: L('Mesa redonda', 'Round table'), qty: 8 }], start_at: '2026-06-28T14:00:00Z', end_at: '2026-06-29T14:00:00Z', total: 72, deposit: 40, status: 'returned', paid: true },
+    { id: 's1', customer_name: 'Mariana Vélez', item_name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), items: [{ name: L('Vajilla de fiesta · 100', 'Party tableware · 100'), qty: 1 }, { name: L('Mesa larga', 'Long table'), qty: 4 }], start_at: '2026-07-12T15:00:00Z', end_at: '2026-07-13T15:00:00Z', total: 320, deposit: 200, status: 'pending', paid: false, depositStatus: 'none', depositCaptured: 0 },
+    { id: 's2', customer_name: 'Coffee Mfg.', item_name: L('Bocina y micrófono', 'Speaker & microphone'), items: [{ name: L('Bocina y micrófono', 'Speaker & microphone'), qty: 1 }], start_at: '2026-07-17T18:00:00Z', end_at: '2026-07-17T23:00:00Z', total: 170, deposit: 80, status: 'confirmed', paid: true, depositStatus: 'held', depositCaptured: 0 },
+    { id: 's3', customer_name: 'Park Studios', item_name: L('Carpa 10×20', 'Tent 10×20'), items: [{ name: L('Carpa 10×20', 'Tent 10×20'), qty: 1 }, { name: L('Silla plegable', 'Folding chair'), qty: 40 }], start_at: '2026-07-05T14:00:00Z', end_at: '2026-07-06T14:00:00Z', total: 260, deposit: 200, status: 'out', paid: true, depositStatus: 'held', depositCaptured: 0 },
+    { id: 's4', customer_name: 'Luis R.', item_name: L('Mesa redonda', 'Round table'), items: [{ name: L('Mesa redonda', 'Round table'), qty: 8 }], start_at: '2026-06-28T14:00:00Z', end_at: '2026-06-29T14:00:00Z', total: 72, deposit: 40, status: 'returned', paid: true, depositStatus: 'released', depositCaptured: 0 },
   ];
   const reqList = reqRows ?? reqSeed;
   const fmtReqDate = (iso: string) => new Date(iso).toLocaleDateString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short' });
@@ -971,12 +1012,27 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className="min-w-0 truncate">{r.items.length || 1} {(r.items.length || 1) === 1 ? L('artículo', 'item') : L('artículos', 'items')} · {fmtReqDate(r.start_at)}{r.end_at ? ` – ${fmtReqDate(r.end_at)}` : ''}</span>
           <span className="ml-auto flex-none text-[12px] font-extrabold text-ink">{r.total != null ? money(Number(r.total)) : '—'}</span>
         </div>
-        {r.deposit != null && Number(r.deposit) > 0 && (<div className="mt-1 text-[10px] font-semibold text-muted-2">{L('Depósito', 'Deposit')} {money(Number(r.deposit))}{r.paid ? ` · ${L('renta pagada en línea — solo cobra el depósito al entregar', 'rental paid online — only collect the deposit at handout')}` : ''}</div>)}
+        {r.deposit != null && Number(r.deposit) > 0 && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] font-semibold text-muted-2">
+            <span>{L('Depósito', 'Deposit')} {money(Number(r.deposit))}</span>
+            {/* Real hold state (0101) vs cash-at-pickup */}
+            {r.depositStatus === 'held' && <span className="rounded bg-amber-bg px-1.5 py-0.5 font-extrabold text-amber-ink">{L('Retenido en tarjeta', 'Held on card')}</span>}
+            {r.depositStatus === 'released' && <span className="rounded bg-green-bg px-1.5 py-0.5 font-extrabold text-green-dark">{L('Liberado', 'Released')}</span>}
+            {r.depositStatus === 'captured' && <span className="rounded bg-pink-bg px-1.5 py-0.5 font-extrabold text-pink-dark">{L(`Cobrado ${money(r.depositCaptured)}`, `Charged ${money(r.depositCaptured)}`)}</span>}
+            {r.depositStatus === 'failed' && <span className="rounded bg-lilac-2 px-1.5 py-0.5 font-extrabold text-ink-2">{L('Cobra en efectivo al recoger', 'Collect cash at pickup')}</span>}
+            {r.depositStatus === 'none' && r.paid && <span>· {L('cóbralo al entregar', 'collect at handout')}</span>}
+          </div>
+        )}
         {(r.status === 'pending' || r.status === 'confirmed' || r.status === 'out') && (
-          <div className="mt-2.5 flex gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'confirmed')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>)}
-            {r.status === 'confirmed' && (<button onClick={() => setReqStatus(r.id, 'out')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Entregar · toma el depósito', 'Hand out · take deposit')}</button>)}
-            {r.status === 'out' && (<button onClick={() => setReqStatus(r.id, 'returned')} className="flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink">{L('Devuelto · regresa el depósito', 'Returned · refund deposit')}</button>)}
+            {r.status === 'confirmed' && (<button onClick={() => setReqStatus(r.id, 'out')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{r.depositStatus === 'held' ? L('Entregar', 'Hand out') : L('Entregar · toma el depósito', 'Hand out · take deposit')}</button>)}
+            {r.status === 'out' && (
+              <>
+                <button disabled={depBusy} onClick={() => returnAndRelease(r)} className="flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink disabled:opacity-50">{r.depositStatus === 'held' ? L('Devuelto · liberar depósito', 'Returned · release deposit') : L('Devuelto · regresa el depósito', 'Returned · refund deposit')}</button>
+                {r.depositStatus === 'held' && (<button disabled={depBusy} onClick={() => { setDamageFor(r); setDamageAmt(''); }} className="flex-none cursor-pointer rounded-field bg-pink-bg px-3 py-2 text-[11px] font-extrabold text-pink-dark disabled:opacity-50">{L('Daño', 'Damage')}</button>)}
+              </>
+            )}
             {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'cancelled')} className="flex-none cursor-pointer rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-ink-2">{L('Rechazar', 'Decline')}</button>)}
           </div>
         )}
@@ -1089,6 +1145,25 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       )}
 
       {editorSheets()}
+
+      {/* Damage claim: capture part (or all) of the real deposit hold (0101). */}
+      {damageFor && (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={() => { if (!depBusy) setDamageFor(null); }}>
+          <div className="w-full max-w-[400px] rounded-t-card-lg bg-white p-5 shadow-modal sm:rounded-card-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="text-[15px] font-extrabold text-ink">{L('Cobrar daño del depósito', 'Charge damage to the deposit')}</div>
+            <div className="mt-1 text-[12px] font-medium leading-relaxed text-muted">{L(`Se cobra de la garantía retenida (${money(Number(damageFor.deposit ?? 0))}). El resto se libera solo.`, `Charged from the held deposit (${money(Number(damageFor.deposit ?? 0))}). The rest is released automatically.`)}</div>
+            <div className="mt-3 flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line px-3 py-2.5">
+              <DollarSign size={16} className="flex-none text-muted-2" />
+              <input autoFocus inputMode="decimal" value={damageAmt} onChange={(e) => setDamageAmt(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.00" className="w-full bg-transparent text-[15px] font-extrabold text-ink outline-none" />
+              <button onClick={() => setDamageAmt(String(Number(damageFor.deposit ?? 0)))} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{L('Todo', 'All')}</button>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button disabled={depBusy} onClick={() => setDamageFor(null)} className="flex-1 cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[13px] font-extrabold text-ink disabled:opacity-50">{L('Cancelar', 'Cancel')}</button>
+              <button disabled={depBusy} onClick={submitDamage} className="flex-1 cursor-pointer rounded-btn-lg bg-pink py-3 text-[13px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">{depBusy ? L('Cobrando…', 'Charging…') : L('Cobrar daño', 'Charge damage')}</button>
+            </div>
+          </div>
+        </div>
+      )}
       <Toast msg={toast} />
     </div>
   );

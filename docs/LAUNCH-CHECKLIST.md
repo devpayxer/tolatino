@@ -1261,11 +1261,24 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
   `startMarketplaceCheckout`. Booking charges the **deposit** (when the service has
   a deposit + price); rental charges the **rental fee** (`rentSubtotal`). Residual
   deferrals below.
-- [ ] **Rental security-deposit hold at pickup.** Paid rentals charge only the
-  rental FEE online; the refundable security deposit is shown as "collected at
-  pickup" (not charged/held). For a Turo-grade flow, add a real deposit
-  authorization hold (PaymentIntent `capture_method=manual` on the deposit,
-  captured on damage / released on return).
+- [~] **Rental security-deposit hold — BUILT 2026-07-16 (0101), needs one live
+  test-mode payment to confirm end-to-end.** Online rentals now place a REAL
+  authorization hold for the refundable deposit: the fee PI saves the card
+  (`setup_future_usage=off_session` + a Stripe Customer), the webhook then creates
+  a manual-capture PI (`capture_method=manual`, off_session, destination charge to
+  the seller) for the deposit and records `deposit_status='held'`. The owner panel
+  releases it on return (`rental-deposit` edge fn → cancel) or captures part/all for
+  damage (→ partial capture, rest auto-released); Mi cuenta shows the renter
+  "retenido / liberado / cobrado". If the off-session auth fails (SCA/decline) →
+  `deposit_status='failed'` and the owner collects cash at pickup.
+  **Verified:** migration + RPCs (set_rental_deposit, rental_deposit_ctx), the
+  edge-fn auth gate (non-owner→403, owner→reaches Stripe), and the panel/consumer
+  UI (held/released/captured chips + release/damage controls). **NOT yet verified
+  in this env:** the actual card hold create→release→capture, because it needs a
+  real Stripe.js payment (blocked in the sandbox). Before relying on it: do ONE
+  test-mode rental with card 4242 on a Stripe-connected business, then release +
+  capture from the panel and confirm on the Stripe dashboard. Residual: a true
+  simultaneous online-pay race (see availability item) — unrelated to the hold.
 - [ ] **Re-price bookings/rentals server-side.** Like orders, the booking deposit /
   rental fee is computed client-side and validated (`> 0`, `< 100000`) server-side,
   not re-derived from the service/rental config. Recompute from

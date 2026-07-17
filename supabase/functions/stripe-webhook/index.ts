@@ -158,6 +158,38 @@ async function fulfillMarketplace(url: string, service: string, stripeKey: strin
       in_session: pending.stripe_session, in_intent: intent, in_amount: pending.amount, in_fee: pending.application_fee, in_status: 'paid',
     });
     await patchPending(url, service, pendingId, { status: 'fulfilled', stripe_payment_intent: intent, result });
+    // ── Rental deposit HOLD (0101): place a REAL off-session authorization on the
+    // saved card for the refundable deposit — money is held, not captured. The
+    // owner releases it on return or captures part of it for damage (rental-deposit
+    // edge fn). Destination charge → a damage capture pays the seller directly; a
+    // release just cancels the auth. If the off-session auth fails (SCA/decline)
+    // the deposit falls back to "collect at pickup".
+    if (pending.kind === 'rental' && payload.order === true) {
+      const orderId = String(result ?? '');
+      const depCents = Math.round(Number(payload.deposit_total ?? 0) * 100);
+      const customer = obj.customer as string | undefined;
+      const pm = obj.payment_method as string | undefined;
+      if (orderId && depCents > 0 && customer && pm) {
+        try {
+          const biz = (await (await fetch(`${url}/rest/v1/businesses?id=eq.${pending.business_id}&select=stripe_account_id`, { headers: svcHeaders(service) })).json())?.[0];
+          const seller = biz?.stripe_account_id as string | undefined;
+          const hold = await stripePost('payment_intents', stripeKey, {
+            amount: String(depCents), currency: 'usd',
+            customer, payment_method: pm,
+            confirm: 'true', off_session: 'true', capture_method: 'manual',
+            description: 'Depósito de renta (garantía reembolsable)',
+            ...(seller ? { 'transfer_data[destination]': seller } : {}),
+            'metadata[rental_order]': orderId, 'metadata[purchase_kind]': 'rental_deposit',
+          });
+          const held = hold?.id && !hold.error && (hold.status === 'requires_capture' || hold.status === 'succeeded');
+          await rpc(url, service, 'set_rental_deposit', {
+            in_order: orderId, in_intent: hold?.id ?? null, in_status: held ? 'held' : 'failed', in_captured: 0,
+          });
+        } catch (_e) {
+          await rpc(url, service, 'set_rental_deposit', { in_order: orderId, in_intent: null, in_status: 'failed', in_captured: 0 });
+        }
+      }
+    }
   } else {
     // Paid but could not fulfill → make the buyer whole (reverse the transfer + our fee).
     if (intent) {

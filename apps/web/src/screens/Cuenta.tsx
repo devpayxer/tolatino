@@ -525,9 +525,15 @@ export function CuentaScreen() {
           {backBar(L('Mis rentas', 'My rentals'))}
           {act.rentals.length === 0 ? txEmpty(L('Aún no tienes rentas.', 'No rentals yet.')) : (
             <div className="flex flex-col gap-2.5">
-              {act.rentals.map((r) => txItem(r.id, r.businesses?.name ?? L('Negocio', 'Business'),
-                `${r.item_count > 1 ? `${r.item_count} ${L('artículos', 'items')} · ` : ''}${r.item_name} · ${dt(r.start_at)}${r.deposit ? ` · ${L('dep.', 'dep.')} ${money(r.deposit)}` : ''}${r.paid ? ` · ${L('pagada', 'paid')}` : ''}`,
-                <>{r.total != null && <span className="text-[13px] font-extrabold text-ink">{money(r.total)}</span>}{pill(r.status)}{cancelBtn('rental', r.id, r.status)}</>))}
+              {act.rentals.map((r) => {
+                const dep = r.depositStatus === 'held' ? L('depósito retenido — se libera al devolver', 'deposit held — released on return')
+                  : r.depositStatus === 'released' ? L('depósito liberado', 'deposit released')
+                  : r.depositStatus === 'captured' ? L(`se cobró ${money(r.depositCaptured)} por daño`, `${money(r.depositCaptured)} charged for damage`)
+                  : '';
+                return txItem(r.id, r.businesses?.name ?? L('Negocio', 'Business'),
+                  `${r.item_count > 1 ? `${r.item_count} ${L('artículos', 'items')} · ` : ''}${r.item_name} · ${dt(r.start_at)}${r.deposit ? ` · ${L('dep.', 'dep.')} ${money(r.deposit)}` : ''}${r.paid ? ` · ${L('pagada', 'paid')}` : ''}${dep ? ` · ${dep}` : ''}`,
+                  <>{r.total != null && <span className="text-[13px] font-extrabold text-ink">{money(r.total)}</span>}{pill(r.status)}{cancelBtn('rental', r.id, r.status)}</>);
+              })}
             </div>
           )}
         </div>

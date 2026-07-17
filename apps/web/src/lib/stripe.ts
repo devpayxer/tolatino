@@ -28,6 +28,18 @@ export async function startCheckout(plan: 'verified' | 'premium', businessId: st
   return { error: (data?.error as string) || 'checkout failed' };
 }
 
+/** Owner releases (return) or captures (damage) a rental's real deposit hold
+ *  (0101). amount is dollars, only for 'capture'. Returns the new deposit_status. */
+export async function rentalDeposit(
+  order: string, action: 'release' | 'capture', amount?: number,
+): Promise<{ ok?: boolean; deposit_status?: string; captured?: number; error?: string }> {
+  if (!supabase) return { error: 'offline' };
+  const { data, error } = await supabase.functions.invoke('rental-deposit', { body: { order, action, ...(amount != null ? { amount } : {}) } });
+  if (error) return { error: error.message };
+  if (data?.ok) return { ok: true, deposit_status: data.deposit_status as string, captured: data.captured as number };
+  return { error: (data?.error as string) || 'deposit action failed' };
+}
+
 /** Open the Stripe Billing Portal (update card / invoices / cancel). Returns the URL. */
 export async function openBillingPortal(businessId: string): Promise<{ url?: string; error?: string }> {
   if (!supabase) return { error: 'offline' };

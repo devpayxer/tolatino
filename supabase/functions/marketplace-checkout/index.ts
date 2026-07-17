@@ -506,6 +506,27 @@ Deno.serve(async (req) => {
     // destination-charge economics + metadata as the hosted path; the webhook
     // fulfills on `payment_intent.succeeded`.
     if (body?.intent === true) {
+      // Rental deposit hold (0101): if this online rental carries a refundable
+      // deposit, SAVE the card so the webhook can place a real off-session
+      // authorization hold for the deposit after the fee is paid. Needs a Stripe
+      // Customer (get-or-create, one per user).
+      const rentalDepositCents = kind === 'rental' && (payload as Record<string, unknown>).order === true
+        ? Math.round(Number((payload as Record<string, unknown>).deposit_total ?? 0) * 100) : 0;
+      let customerId = '';
+      if (rentalDepositCents > 0) {
+        const prof = (await get(`profiles?id=eq.${buyer}&select=stripe_customer_id`))?.[0];
+        customerId = (prof?.stripe_customer_id as string) ?? '';
+        if (!customerId) {
+          const cust = await stripe('customers', STRIPE, { 'metadata[user_id]': buyer });
+          if (cust.id) {
+            customerId = cust.id;
+            await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${buyer}`, {
+              method: 'PATCH', headers: { ...svc, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ stripe_customer_id: customerId }),
+            });
+          }
+        }
+      }
       const pi = await stripe('payment_intents', STRIPE, {
         amount: String(amountCents),
         currency: 'usd',
@@ -515,6 +536,8 @@ Deno.serve(async (req) => {
         'metadata[pending_id]': pending.id,
         'metadata[purchase_kind]': kind,
         'metadata[business_id]': businessId ?? '',
+        // Save the card to the customer so the deposit hold can be placed off-session.
+        ...(customerId ? { customer: customerId, setup_future_usage: 'off_session' } : {}),
         description: productName,
       });
       if (pi.error || !pi.client_secret) {
