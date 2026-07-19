@@ -5,7 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconFlame as Flame, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSearch as Search, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building, IconCalendarEvent as CalendarIcon } from '@tabler/icons-react';
+import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconFlame as Flame, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSearch as Search, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building, IconCalendarEvent as CalendarIcon, IconThumbUp as ThumbUp, IconThumbUpFilled as ThumbUpFilled } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
@@ -23,7 +23,7 @@ import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
 import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, createRentalOrder, fetchRentalBusy, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate, type RentalBusy } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, createRentalOrder, fetchRentalBusy, fetchEndorsement, toggleEndorsement, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate, type RentalBusy, type Endorsement } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -312,6 +312,29 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     fetchRentalBusy(b.slug).then((rows) => { if (!cancelled) setRentBusy(rows); });
     return () => { cancelled = true; };
   }, [b.slug]);
+  // Neighbor recommendations (0102) — real count/avatars/quote + the Recomendar toggle.
+  const [endo, setEndo] = useState<Endorsement>({ count: b.endorse ?? 0, mine: false, avatars: [], note: null });
+  const [endoReason, setEndoReason] = useState<string | null>(null); // reason sheet draft, or null (closed)
+  const [endoBusy, setEndoBusy] = useState(false);
+  useEffect(() => { let off = false; fetchEndorsement(b.slug).then((e) => { if (!off) setEndo(e); }); return () => { off = true; }; }, [b.slug, user?.id]);
+  const doEndorse = async (note?: string) => {
+    if (!user) { router.push('/entrar'); return; }
+    setEndoBusy(true);
+    const r = await toggleEndorsement(b.slug, note);
+    setEndoBusy(false);
+    if (r.error) {
+      flash(/own business/.test(r.error) ? L('No puedes recomendar tu propio negocio', "You can't recommend your own business") : L('No se pudo recomendar', 'Could not recommend'));
+      return;
+    }
+    setEndo((e) => ({ ...e, mine: r.endorsed, count: r.count }));
+    fetchEndorsement(b.slug).then(setEndo); // refresh avatars + featured quote
+    flash(r.endorsed ? L('¡Gracias por recomendar!', 'Thanks for recommending!') : L('Recomendación quitada', 'Recommendation removed'));
+  };
+  const onRecommendTap = () => {
+    if (!user) { router.push('/entrar'); return; }
+    if (endo.mine) { doEndorse(); return; }   // already mine → un-recommend
+    setEndoReason('');                         // new → open the optional-reason sheet
+  };
   const rentalItems: PubRental[] = realRentals?.items
     ?? RENTAL.map((r, i) => ({ id: `fx${i}`, n: r.n, d: r.d, tile: r.tile, hour: r.hour, day: r.day, week: r.week, dep: r.dep, addons: [], avail: '', stock: 1, unit: ['unidad', 'unit'] as Bi, catKey: '_', catName: ['Renta', 'Rentals'] as Bi }));
   // Display-only rentals: renting off → catalog (no Rentar). Cash rentals still work.
@@ -2060,17 +2083,30 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <span className="text-[15px] font-extrabold text-ink">{b.rating}</span>
         <span className="text-[13px] font-semibold text-muted-2">({b.reviews})</span>
       </div>
-      {b.verified && (
-        <div className="mt-4 flex items-center gap-2.5 rounded-btn-lg bg-lilac-2 px-[13px] py-[11px]">
+      {/* Neighbor recommendations (Nextdoor-style) — real count + faces + the
+          Recomendar toggle. Shown for every business; a tap vouches for it. */}
+      <div className="mt-4 flex items-center gap-2.5 rounded-btn-lg bg-lilac-2 px-[13px] py-[11px]">
+        {endo.avatars.length > 0 && (
           <span className="flex flex-none">
-            {['CR', 'DL', 'JP'].map((ini, i) => (
-              <Avatar key={ini} initials={ini} color={AVATAR_PALETTE[i]} size={24} className={`border-2 border-lilac-2 text-[8.5px] ${i > 0 ? '-ml-2' : ''}`} />
+            {endo.avatars.slice(0, 3).map((a, i) => (
+              <Avatar key={i} initials={a.ini} color={a.color} size={24} className={`border-2 border-lilac-2 text-[8.5px] ${i > 0 ? '-ml-2' : ''}`} />
             ))}
           </span>
-          <span className="text-[12px] font-bold text-ink-3">
-            {L('Recomendado por', 'Recommended by')} <span className="text-primary-dark">{b.endorse} {L('vecinos de tu zona', 'neighbors nearby')}</span>
-          </span>
-        </div>
+        )}
+        <span className="min-w-0 flex-1 text-[12px] font-bold text-ink-3">
+          {endo.count > 0
+            ? <>{L('Recomendado por', 'Recommended by')} <span className="text-primary-dark">{endo.count} {endo.count === 1 ? L('vecino', 'neighbor') : L('vecinos de tu zona', 'neighbors nearby')}</span></>
+            : L('Sé el primero en recomendarlo', 'Be the first to recommend it')}
+        </span>
+        <button onClick={onRecommendTap} disabled={endoBusy} aria-pressed={endo.mine}
+          className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-extrabold transition-colors disabled:opacity-50 ${endo.mine ? 'bg-primary text-white shadow-cta-sm' : 'border-[1.5px] border-primary/40 bg-white text-primary-dark'}`}>
+          {endo.mine ? <ThumbUpFilled size={15} /> : <ThumbUp size={15} stroke={2.2} />}
+          {endo.mine ? L('Recomendado', 'Recommended') : L('Recomendar', 'Recommend')}
+        </button>
+      </div>
+      {/* featured reason (the latest neighbor's short note) */}
+      {endo.note && (
+        <div className="mt-2 text-[12.5px] font-medium italic leading-snug text-ink-3">“{endo.note}”</div>
       )}
       </div>
 
@@ -2861,6 +2897,27 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           <span className="text-[13px] font-extrabold text-amber">{L('Ver carrito →', 'View cart →')}</span>
         </button>
       )}
+
+      {/* Recomendar — optional short reason (Nextdoor-style) */}
+      <Overlay open={endoReason !== null} onClose={() => setEndoReason(null)} width={420}>
+        {endoReason !== null && (
+          <>
+            <OverlayTitle title={L('Recomendar este negocio', 'Recommend this business')} onClose={() => setEndoReason(null)} />
+            <div className="mb-3 flex items-center gap-2.5 rounded-field bg-lilac-2 px-3.5 py-2.5">
+              <ThumbUpFilled size={18} className="flex-none text-primary-dark" />
+              <span className="text-[12px] font-semibold leading-snug text-ink-soft">{L('Le dices a tus vecinos que respondes por este negocio. Una recomendación por persona.', 'You tell your neighbors you vouch for this business. One recommendation per person.')}</span>
+            </div>
+            <div className="mb-1.5 text-[13px] font-extrabold text-ink">{L('¿Por qué lo recomiendas?', 'Why do you recommend it?')} <span className="font-semibold text-muted">({L('opcional', 'optional')})</span></div>
+            <textarea autoFocus value={endoReason} onChange={(e) => setEndoReason(e.target.value.slice(0, 140))} rows={3}
+              placeholder={L('Ej. El mejor fade de Hazleton, siempre atentos.', 'e.g. Best fade in town, always on point.')}
+              className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white p-3 text-[13.5px] font-medium text-ink outline-none focus:border-primary" />
+            <div className="mt-1 text-right text-[10.5px] font-bold text-muted-2">{endoReason.length}/140</div>
+            <PrimaryBtn className="mt-3" disabled={endoBusy} onClick={() => { const n = endoReason.trim(); setEndoReason(null); doEndorse(n || undefined); }}>
+              {endoBusy ? L('Recomendando…', 'Recommending…') : L('👍 Recomendar', '👍 Recommend')}
+            </PrimaryBtn>
+          </>
+        )}
+      </Overlay>
 
       {/* contact sheet */}
       <Overlay open={contactOpen} onClose={() => setContactOpen(false)} width={400}>

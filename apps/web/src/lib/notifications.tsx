@@ -43,6 +43,7 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   ticket_status: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
   review_new: { icon: 'star', color: '#B8860B', bg: '#FCF1C7' },
   review_reply: { icon: 'message', color: '#1F8A4C', bg: '#E3F5EA' },
+  endorse_new: { icon: 'heart', color: '#7B61FF', bg: '#EFEBFF' },
   rsvp_new: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
   event_cancelled: { icon: 'calendar', color: '#D6336C', bg: '#FDE7EF' },
   waitlist_open: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
@@ -126,6 +127,7 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
         : { title: ['Nueva renta 📦', 'New rental 📦'], sub: [what, what] };
     }
     case 'rental_status': { const [a, b] = st(d.status); return { title: [`Tu renta está ${a}`, `Your rental is ${b}`], sub: [s('item'), s('item')] }; }
+    case 'endorse_new': return { title: ['Nueva recomendación 👍', 'New recommendation 👍'], sub: [`${s('name')} te recomendó`, `${s('name')} recommended you`] };
     case 'ticket_new': return { title: ['Boletos vendidos', 'Tickets sold'], sub: [`${s('event')} · ${s('qty')} · ${s('name')}`, `${s('event')} · ${s('qty')} · ${s('name')}`] };
     case 'ticket_status': { const [a, b] = st(d.status); return { title: [`Tu boleto: ${a}`, `Your ticket: ${b}`], sub: [s('event'), s('event')] }; }
     case 'rsvp_new': return { title: ['Nuevo asistente', 'New attendee'], sub: [s('event'), s('event')] };

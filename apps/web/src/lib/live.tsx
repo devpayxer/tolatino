@@ -221,6 +221,30 @@ export async function fetchBusinessPhotos(slug: string): Promise<string[]> {
   return (data as { url: string }[]).map((r) => String(r.url)).filter(Boolean);
 }
 
+// ── Neighbor recommendations ("Recomendado por vecinos", 0102) ──
+export type Endorsement = { count: number; mine: boolean; avatars: { ini: string; color: string }[]; note: string | null };
+
+/** Real endorsement state for a listing: count, whether the caller recommended it,
+ *  up to 4 recent recommender avatars, and the latest reason (featured quote). */
+export async function fetchEndorsement(slug: string): Promise<Endorsement> {
+  const empty: Endorsement = { count: 0, mine: false, avatars: [], note: null };
+  if (!supabase) return empty;
+  const { data, error } = await supabase.rpc('endorsements_by_slug', { in_slug: slug });
+  if (error || !data) return empty;
+  const d = data as { count?: number; mine?: boolean; avatars?: { ini: string; color: string }[]; note?: string | null };
+  return { count: Number(d.count ?? 0), mine: d.mine === true, avatars: Array.isArray(d.avatars) ? d.avatars : [], note: d.note ?? null };
+}
+
+/** Recommend / un-recommend a business (Nextdoor-style, one per person). `note`
+ *  is an optional short reason saved on a NEW recommendation. Returns the new state. */
+export async function toggleEndorsement(slug: string, note?: string): Promise<{ endorsed: boolean; count: number; error?: string }> {
+  if (!supabase) return { endorsed: false, count: 0, error: 'offline' };
+  const { data, error } = await supabase.rpc('toggle_endorsement', { in_slug: slug, in_note: note ?? null });
+  if (error) return { endorsed: false, count: 0, error: error.message };
+  const d = (data ?? {}) as { endorsed?: boolean; count?: number };
+  return { endorsed: d.endorsed === true, count: Number(d.count ?? 0) };
+}
+
 /** The real public menu for a listing: items grouped by the owner's menu
  *  categories, per-item option groups (modifier groups from menu_config) keyed
  *  by `catKey::itemNameEs`, and the first ACTIVE promo (for the hero badge). */
