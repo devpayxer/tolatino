@@ -19,11 +19,12 @@ import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
 import { useUrlTab } from '@/lib/urlView';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business, type EventItem } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
+import { useEndorsed } from '@/lib/endorsed';
 import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
 import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
-import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, createRentalOrder, fetchRentalBusy, fetchEndorsement, toggleEndorsement, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate, type RentalBusy, type Endorsement } from '@/lib/live';
+import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, createRentalOrder, fetchRentalBusy, fetchEndorsement, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate, type RentalBusy, type Endorsement } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
@@ -158,6 +159,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const B = (pair: Bi) => L(pair[0], pair[1]);
   const app = useApp();
   const savedBiz = useSavedBiz();
+  const endorsedSet = useEndorsed();
   const act = useMyActivity();
   const { user, profile } = useAuth();
   const router = useRouter();
@@ -320,7 +322,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const doEndorse = async (note?: string) => {
     if (!user) { router.push('/entrar'); return; }
     setEndoBusy(true);
-    const r = await toggleEndorsement(b.slug, note);
+    const r = await endorsedSet.toggle(b.slug, note); // shared source of truth → keeps the listing card in sync
     setEndoBusy(false);
     if (r.error) {
       flash(/own business/.test(r.error) ? L('No puedes recomendar tu propio negocio', "You can't recommend your own business") : L('No se pudo recomendar', 'Could not recommend'));

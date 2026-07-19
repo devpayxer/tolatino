@@ -6,17 +6,20 @@
 // Card variant A ("Lista") — the prototype default.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMap as MapIcon, IconMapPin as MapPin, IconPhone as Phone, IconAdjustmentsHorizontal as SlidersHorizontal, IconX as X } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMap as MapIcon, IconMapPin as MapPin, IconPhone as Phone, IconAdjustmentsHorizontal as SlidersHorizontal, IconThumbUp as ThumbUp, IconThumbUpFilled as ThumbUpFilled, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
+import { Card, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData, fetchBusinessBySlug, searchBusinesses, trackSearchAppearance } from '@/lib/live';
 import { useSavedBiz } from '@/lib/savedBiz';
+import { useEndorsed } from '@/lib/endorsed';
+import { useAuth } from '@/lib/auth';
 import { useNow } from '@/lib/useNow';
 import { bizStatus, isOpenNow, statusLabel } from '@/lib/hours';
-import { AVATAR_PALETTE, CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
+import { CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
 
 const DIST_MIN = 5;
@@ -541,7 +544,7 @@ export function NegociosScreen() {
           )}
 
           {liveLoading ? (
-            <SkeletonList count={6} className="grid gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" />
+            <SkeletonList count={6} className="grid grid-cols-1 gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" />
           ) : results.length === 0 ? (
             <div className="rounded-card border border-hair bg-white p-10 text-center shadow-card">
               {onlySaved ? (
@@ -569,7 +572,7 @@ export function NegociosScreen() {
               )}
             </div>
           ) : (
-            <div className="grid gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               {pageResults.map((b, i) => {
                 // Full-width label at the verified → sin-verificar boundary so the
                 // two tiers read as distinct groups (verified always on top).
@@ -653,6 +656,66 @@ function SaveBtn({ b, size = 17 }: { b: Business; size?: number }) {
   );
 }
 
+/**
+ * Neighbor-recommendation bar on a listing card (Nextdoor-style). One-tap 👍
+ * "Recomendar" vouches for the business (no reason — the reason prompt lives on
+ * the detail page); tapping again removes it. Guests are routed to sign in. The
+ * count comes from the businesses table (`b.endorse`) and is overridden by the
+ * server's authoritative count after a toggle.
+ */
+function EndorseBar({ b }: { b: Business }) {
+  const { L } = useLang();
+  const router = useRouter();
+  const { user } = useAuth();
+  const endorsed = useEndorsed();
+  const mine = endorsed.isEndorsed(b.slug);
+  const [override, setOverride] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const count = override ?? b.endorse;
+
+  const onTap = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      router.push('/entrar');
+      return;
+    }
+    if (busy) return;
+    setBusy(true);
+    const r = await endorsed.toggle(b.slug);
+    if (!r.error) setOverride(r.count);
+    setBusy(false);
+  };
+
+  return (
+    <div className="mt-3 flex items-center gap-2.5 rounded-btn bg-lilac-2 px-3 py-2">
+      <ThumbUp size={16} stroke={2.2} className="flex-none text-primary" />
+      <span className="min-w-0 flex-1 truncate text-[11.5px] font-bold text-ink-3">
+        {count > 0 ? (
+          <>
+            {L('Recomendado por', 'Recommended by')}{' '}
+            <span className="text-primary-dark">
+              {count} {L(count === 1 ? 'vecino' : 'vecinos', count === 1 ? 'neighbor' : 'neighbors')}
+            </span>
+          </>
+        ) : (
+          L('Sé el primero en recomendar', 'Be the first to recommend')
+        )}
+      </span>
+      <button
+        onClick={onTap}
+        disabled={busy}
+        aria-pressed={mine}
+        className={`flex flex-none cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold transition-colors ${
+          mine ? 'bg-primary text-white' : 'border-[1.5px] border-lilac-line bg-white text-primary-dark'
+        }`}
+      >
+        {mine ? <ThumbUpFilled size={12} /> : <ThumbUp size={12} stroke={2.4} />}
+        {mine ? L('Recomiendas', 'Recommended') : L('Recomendar', 'Recommend')}
+      </button>
+    </div>
+  );
+}
+
 const TONE_CLASS = { open: 'text-green', soon: 'text-amber-ink', closed: 'text-muted' } as const;
 
 /** Rating · reviews · price · live open/closed status — shared meta row. */
@@ -721,19 +784,8 @@ function BizCardVerified({ b, onOpen }: { b: Business; onOpen: () => void }) {
         </div>
       )}
 
-      {/* neighbor endorsement */}
-      {b.endorse > 0 && (
-        <div className="mt-3 flex items-center gap-2.5 rounded-btn bg-lilac-2 px-3 py-2">
-          <span className="flex flex-none">
-            {['CR', 'DL', 'JP'].map((ini, i) => (
-              <Avatar key={ini} initials={ini} color={AVATAR_PALETTE[i]} size={22} className={`border-2 border-lilac-2 text-[8px] ${i > 0 ? '-ml-2' : ''}`} />
-            ))}
-          </span>
-          <span className="text-[11.5px] font-bold text-ink-3">
-            {L('Recomendado por', 'Recommended by')} <span className="text-primary-dark">{b.endorse} {L('vecinos', 'neighbors')}</span>
-          </span>
-        </div>
-      )}
+      {/* neighbor endorsement — one-tap 👍 Recomendar (real, per-person) */}
+      <EndorseBar b={b} />
 
       {/* featured review */}
       {review && (
