@@ -3,7 +3,59 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-15.
+> Last updated: 2026-07-19.
+
+## Recomendaciones de vecinos (endorsements) — botón 👍 + auto-post (2026-07-19)
+
+Sistema de "Recomendar" estilo Nextdoor: un vecino da **un toque** al 👍 y
+recomienda el negocio (una vez por persona, no tu propio negocio). Construido en
+esta sesión sobre la base ya existente (migración 0102: tabla
+`business_endorsements`, `businesses.endorse_count`, `toggle_endorsement`,
+`endorsements_by_slug`, notificación `endorse_new`).
+
+**Lo nuevo (commit `870c81b`, ya en ambas ramas + Vercel building):**
+- **Migración 0103** (`0103_endorse_card_and_post.sql`) — YA APLICADA a la DB vía
+  Management API. Añade:
+  - `posts.endorsement_id uuid → business_endorsements(id) on delete cascade`
+    (al quitar la recomendación, su post de Comunidad se borra solo).
+  - `my_endorsements()` → slugs que YO recomendé (alimenta el estado del botón
+    en la tarjeta, una sola llamada).
+  - `toggle_endorsement` **v3**: además de recomendar, publica un post `rec` en
+    Comunidad **"[vecino] recomienda [negocio]"** (corre la voz). **Bug corregido:**
+    el INSERT incluía la columna GENERADA `location` → error 428C9; se quitó,
+    ahora solo `lat`/`lng`.
+- **Cliente:**
+  - `lib/endorsed.tsx` (`useEndorsed` + `EndorsedProvider`, montado en
+    `app/(cliente)/layout.tsx`) — fuente única de verdad de "qué recomendé";
+    tarjeta y detalle en sync (recomiendas desde la tarjeta → el perfil lo refleja).
+  - **Negocios** (`Negocios.tsx`): `EndorseBar` real en la tarjeta verificada
+    (👍 Recomendar de un toque, sin razón; invitado → `/entrar`; conteo del
+    servidor). Se eliminaron los avatares FALSOS hardcodeados (`CR/DL/JP`).
+  - **BizDetail**: `doEndorse` pasa por el hook (sync tarjeta↔detalle); la razón
+    opcional sigue solo en el detalle.
+- **Fix móvil (mismo commit):** el grid de resultados de Negocios no tenía
+  `grid-cols-1` en el breakpoint base → caía a una columna implícita `auto` que
+  se salía del viewport (~409px de ancho en 362px disponibles: se cortaban
+  "Ver perfil", "Recomendar", etc. en móvil). Añadido `grid-cols-1` al base
+  (grid + SkeletonList). **Nota:** era un bug PRE-EXISTENTE del header de la
+  tarjeta, no del botón nuevo.
+
+**Verificado:** `tsc` + `build` limpios. DB E2E: b@b.com recomienda colmado →
+post `rec` creado + enlazado (lat/lng ok, sin `location`); un-recomienda → post
+borrado en cascada; datos reales del fundador intactos (a@a.com recomienda
+`hz-barberia-primera` + `hz-colmado-esquina`). Navegador (390px): la `EndorseBar`
+sale en las 6 tarjetas verificadas; tap → "Recomiendas", un-tap → "Recomendar";
+sin errores de página; limpio después.
+
+**PENDIENTE (única cosa sin cerrar):** el **screenshot final de verificación del
+fix de overflow** en navegador quedó bloqueado por errores del entorno (exit 144
+en Playwright/serve al final de la sesión). El fix es la corrección CSS estándar
+y correcta (grid-cols-1 usa `minmax(0,1fr)` que sí acota el track), `tsc`+`build`
+pasan. **Al retomar:** servir `apps/web/out` en :4173 y correr
+`SESSION=/tmp/sessB.json node tools/mobile-audit/measure*.js` (o un screenshot a
+390px de `/negocios/`) para confirmar que la tarjeta ya mide ≤362px y nada se
+corta. Sesión de prueba: `node /tmp/mint-sess.mjs b@b.com 123456 /tmp/sessB.json`
+(desde la raíz del repo).
 
 ## Servicios: cobro consistente a nivel negocio (bug de `deposit` por-servicio) (2026-07-15)
 
