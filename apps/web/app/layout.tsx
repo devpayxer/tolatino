@@ -1,11 +1,41 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from '@/lib/providers';
+import { SITE_URL } from '@/lib/site';
+
+const TITLE = "To'Latino — Tu gente, tu barrio, tu idioma";
+const DESC =
+  'Descubre negocios, eventos y vecinos de confianza cerca de ti — todo en español. De latinos para latinos.';
 
 export const metadata: Metadata = {
-  title: "To'Latino — Tu gente, tu barrio, tu idioma",
-  description:
-    'Descubre negocios, eventos y vecinos de confianza cerca de ti — todo en español. De latinos para latinos.',
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: "%s · To'Latino" },
+  description: DESC,
+  applicationName: "To'Latino",
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: "To'Latino" },
+  openGraph: {
+    type: 'website',
+    locale: 'es_US',
+    siteName: "To'Latino",
+    title: TITLE,
+    description: DESC,
+    url: SITE_URL,
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: "To'Latino" }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESC,
+    images: ['/og.png'],
+  },
 };
 
 export const viewport: Viewport = {
