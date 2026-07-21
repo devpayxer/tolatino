@@ -2049,17 +2049,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             </button>
           </div>
         </div>
-        {/* hero promo badge: the first ACTIVE real promo; the fixture only when
-            no real menu is loaded (a real business never shows a fake promo). */}
-        {realMenu ? (
-          realMenu.promo && (
-            <span className="absolute bottom-3 left-3.5 max-w-[70%] truncate rounded-[10px] bg-[#F6E05E] px-[11px] py-[5px] text-[11.5px] font-extrabold text-ink">
-              {L(realMenu.promo[0], realMenu.promo[1])}
-            </span>
-          )
-        ) : b.cat === 'FoodDrinks' && (
-          <span className="absolute bottom-3 left-3.5 rounded-[10px] bg-[#F6E05E] px-[11px] py-[5px] text-[11.5px] font-extrabold text-ink">
-            {L('Martes 2x1', 'Taco Tue 2x1')}
+        {/* hero promo badge: only a REAL active promo from the owner's menu — never
+            a fabricated one (a fake 'Martes 2x1' on a real listing breaks rule #8). */}
+        {realMenu?.promo && (
+          <span className="absolute bottom-3 left-3.5 max-w-[70%] truncate rounded-[10px] bg-[#F6E05E] px-[11px] py-[5px] text-[11.5px] font-extrabold text-ink">
+            {L(realMenu.promo[0], realMenu.promo[1])}
           </span>
         )}
         {photos.length > 0 && (

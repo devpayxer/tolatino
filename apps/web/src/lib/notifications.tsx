@@ -12,7 +12,6 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useLang } from '@/lib/i18n';
 import { syncPush } from '@/lib/push';
-import { NOTIFS, VIEW_PATH } from '@/data/fixtures';
 
 export type NotifIcon = 'heart' | 'message' | 'calendar' | 'store' | 'user' | 'tag' | 'star';
 export type NotifItem = {
@@ -185,13 +184,10 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [user?.id]);
 
   const items = useMemo<NotifItem[]>(() => {
+    // Real notifications only. Guests / not-yet-loaded state = empty (never the
+    // NOTIFS demo fixtures presented as real, with a fake unread badge — rule #8).
     if (rows) return rows.map((r) => rowToItem(r, r.read || readSet.has(r.id)));
-    // demo fixtures
-    return NOTIFS.map((n) => ({
-      id: n.id, icon: n.ic, color: n.color, bg: n.bg,
-      title: [n.titleEs, n.titleEn], sub: [n.subEs, n.subEn], group: n.g, time: [n.timeEs, n.timeEn],
-      read: !n.unread || readSet.has(n.id), link: VIEW_PATH[n.view],
-    }));
+    return [];
   }, [rows, readSet]);
 
   const unreadCount = items.filter((i) => !i.read).length;

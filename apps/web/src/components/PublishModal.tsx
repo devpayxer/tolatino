@@ -57,7 +57,6 @@ export function PublishModal() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [taggedBiz, setTaggedBiz] = useState<string | null>(null);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
-  const [evFree, setEvFree] = useState(true);
   const [posting, setPosting] = useState(false);
   const [postErr, setPostErr] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -745,20 +744,26 @@ export function PublishModal() {
         </div>
       )}
 
-      {/* event form */}
+      {/* event creation routes to the REAL panel flow — no fake-success stub.
+          Events are created by a business (panel → Eventos: tiers, tickets,
+          QR check-in). A consumer publishes a business first. */}
       {type === 'evento' && !done && (
-        <div className="flex flex-col gap-3.5">
-          {field(L('Nombre del evento', 'Event name'), <input className={inputCls} placeholder={L('Ej. Noche de Lotería', 'e.g. Lotería Night')} />)}
-          {field(L('Fecha y hora', 'Date & time'), <input className={inputCls} placeholder={L('Sáb 27 Jul · 7:00 pm', 'Sat Jul 27 · 7:00 pm')} />)}
-          {field(L('Lugar', 'Venue'), <input className={inputCls} placeholder={L('Salón, dirección o barrio', 'Venue, address or neighborhood')} />)}
-          <div>
-            <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Precio', 'Price')}</div>
-            <div className="flex gap-2">
-              <button onClick={() => setEvFree(true)} className={chip(evFree)}>{L('Gratis', 'Free')}</button>
-              <button onClick={() => setEvFree(false)} className={chip(!evFree)}>{L('De pago', 'Paid')}</button>
-            </div>
+        <div className="flex flex-col items-center px-2 py-5 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#E5EFFB]">
+            <Calendar size={24} className="text-[#2F6FED]" stroke={2.2} />
+          </span>
+          <div className="mt-4 text-[18px] font-extrabold tracking-[-.02em] text-ink">
+            {L('Los eventos se crean desde tu Panel', 'Events are created from your Panel')}
           </div>
-          <PrimaryBtn onClick={() => setDone(true)}>{L('Publicar', 'Post')}</PrimaryBtn>
+          <p className="mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
+            {L('Desde tu Panel de negocio creas el evento, defines boletos y precios, y validas la entrada en la puerta con QR.', 'From your Business panel you create the event, set ticket tiers and prices, and check people in at the door with QR.')}
+          </p>
+          <PrimaryBtn className="mt-5 w-full" onClick={() => { close(); router.push('/negocio'); }}>
+            {L('Ir a mi Panel de negocio', 'Go to my Business panel')}
+          </PrimaryBtn>
+          <button onClick={() => app.setPubType('negocio')} className="mt-3 cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
+            {L('Aún no tengo negocio · Publicar negocio →', "I don't have a business yet · List one →")}
+          </button>
         </div>
       )}
 
