@@ -120,6 +120,19 @@ export function NegociosScreen() {
     return () => window.removeEventListener('popstate', onPop);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [BUSINESSES]);
+  // Tapping the "Negocios" tab (header or bottom nav) while a listing is open must
+  // return to the list. That nav is a `router.push('/negocios')` — same route, so
+  // it doesn't fire popstate and the detail would otherwise stay open. The nav
+  // bars emit `tl:navtab` with the target path; close the detail when it's ours.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onNavTab = (e: Event) => {
+      const target = String((e as CustomEvent).detail || '');
+      if (target === '/negocios' || target.startsWith('/negocios/')) setDetailBiz(null);
+    };
+    window.addEventListener('tl:navtab', onNavTab as EventListener);
+    return () => window.removeEventListener('tl:navtab', onNavTab as EventListener);
+  }, []);
   const [showAllFeat, setShowAllFeat] = useState(false);
 
   const patch = (p: Partial<Filters>) => {

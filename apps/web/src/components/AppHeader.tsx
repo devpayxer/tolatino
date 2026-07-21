@@ -253,7 +253,7 @@ export function AppHeader() {
             return (
               <button
                 key={c.k}
-                onClick={() => router.push(VIEW_PATH[c.k])}
+                onClick={() => { window.dispatchEvent(new CustomEvent('tl:navtab', { detail: VIEW_PATH[c.k] })); router.push(VIEW_PATH[c.k]); }}
                 className={`relative flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap px-[11px] pb-3 pt-[13px] text-[13px] md:px-[13px] md:pb-[13px] md:pt-[15px] md:text-[13.5px] ${
                   active ? 'font-extrabold text-ink' : c.soon ? 'font-bold text-muted-faint2' : 'font-bold text-muted'
                 }`}

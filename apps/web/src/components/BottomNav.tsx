@@ -21,7 +21,7 @@ export function BottomNav() {
     const active = pathname?.startsWith(path);
     return (
       <button
-        onClick={() => router.push(path)}
+        onClick={() => { window.dispatchEvent(new CustomEvent('tl:navtab', { detail: path })); router.push(path); }}
         className="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2"
       >
         <Icon size={22} strokeWidth={2} className={active ? 'text-primary' : 'text-muted-2'} />
