@@ -425,7 +425,7 @@ export function ComunidadScreen() {
         author_color: auth.profile.avatar_color,
         body: txt,
         biz_name: commentBiz ?? null,
-        biz_rating: commentBiz ? '4.9' : null,
+        biz_rating: null, // never fabricate a rating for a tagged business (rule #8)
       };
       const { data, error } = await supabase.from('post_comments').insert(row).select().single();
       setSending(false);
@@ -450,7 +450,7 @@ export function ComunidadScreen() {
       likes: 0,
       es: txt,
       en: txt,
-      biz: commentBiz ? { name: commentBiz, rating: '4.9' } : undefined,
+      biz: commentBiz ? { name: commentBiz } : undefined,
     };
     setCommentSeq((n) => n + 1);
     if (replyTo) {
@@ -500,7 +500,7 @@ export function ComunidadScreen() {
             {c.biz && (
               <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-[9px] bg-green-bg px-2 py-1 text-[11px] font-extrabold text-green-dark">
                 <Store size={12} stroke={2.4} />
-                {c.biz.name} · ★ {c.biz.rating}
+                {c.biz.name}{c.biz.rating ? ` · ★ ${c.biz.rating}` : ''}
               </div>
             )}
           </div>

@@ -205,7 +205,7 @@ export function PostCard({
           <span className="min-w-0">
             <span className="block text-[12.5px] font-extrabold text-ink">{post.business}</span>
             <span className="mt-px block text-[10.5px] font-bold text-green-dark">
-              ★ {post.bizRating} · {L('Negocio etiquetado', 'Tagged business')}
+              {post.bizRating ? `★ ${post.bizRating} · ` : ''}{L('Negocio etiquetado', 'Tagged business')}
             </span>
           </span>
         </div>

@@ -97,12 +97,6 @@ const DEMO_ORDERS: OrderRow[] = [
 ];
 
 const PKG_SIZES = ['Sobre', 'Caja S', 'Caja M', 'Caja L'];
-// A believable USPS-style tracking number for the label stub (real labels come
-// from the carrier API, wired later from the Admin dashboard).
-const genTracking = (): string => {
-  const g = () => String(Math.floor(1000 + Math.random() * 9000));
-  return `9400 1000 0000 ${g()} ${g()} ${String(Math.floor(10 + Math.random() * 89))}`;
-};
 
 // =====================================================================
 export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
@@ -295,6 +289,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   const [labelFor, setLabelFor] = useState<OrderRow | null>(null);
   const [labelCarrier, setLabelCarrier] = useState(CARRIERS[0].name);
   const [labelPkg, setLabelPkg] = useState('Caja S');
+  const [labelTracking, setLabelTracking] = useState(''); // owner's REAL tracking # (never fabricated)
   const shipAdvance = (o: OrderRow) => {
     const s = o.fulfillment.ship ?? 'to_pack';
     if (s === 'to_pack') { setFulfil(o, { ship: 'packed' }); setStatus(o, 'preparing'); return; }
@@ -308,7 +303,10 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     return s === 'to_pack' ? L('Empacar', 'Pack') : s === 'packed' ? L('Crear etiqueta', 'Create label') : s === 'labeled' ? L('Marcar enviado', 'Mark shipped') : s === 'shipped' ? L('En tránsito', 'In transit') : L('Entregado', 'Delivered');
   };
   const createLabel = () => {
-    if (labelFor) { setFulfil(labelFor, { ship: 'labeled', carrier: labelCarrier, pkg: labelPkg, tracking: genTracking() }); setStatus(labelFor, 'ready'); flash(L('Etiqueta creada', 'Label created')); }
+    // Never fabricate a tracking number the customer can't track. Use the owner's
+    // real number (bought from the carrier) — or none — and only mark as shipped.
+    if (labelFor) { setFulfil(labelFor, { ship: 'labeled', carrier: labelCarrier, pkg: labelPkg, tracking: labelTracking.trim() || undefined }); setStatus(labelFor, 'ready'); flash(labelTracking.trim() ? L('Envío registrado', 'Shipment saved') : L('Marcado como listo', 'Marked ready')); }
+    setLabelTracking('');
     setLabelFor(null);
   };
 
@@ -952,10 +950,14 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Paquete', 'Package')}</div>
               <div className="flex flex-wrap gap-2">{PKG_SIZES.map((p) => <button key={p} onClick={() => setLabelPkg(p)} className={chip(labelPkg === p)}>{p}</button>)}</div>
             </div>
-            <div className="flex items-center gap-2 rounded-field bg-amber-bg px-3 py-2 text-[10px] font-semibold text-amber-ink">
-              <Tag size={13} stroke={2.2} className="flex-none" />{L('El número de rastreo es de demostración. Las etiquetas reales se generan con el API del transportista (se conecta desde Admin).', 'The tracking number is a demo. Real labels come from the carrier API (connected from Admin).')}
+            <div>
+              <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Número de rastreo', 'Tracking number')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
+              <input value={labelTracking} onChange={(e) => setLabelTracking(e.target.value)} placeholder={L('Pega el número real del transportista', 'Paste the real number from the carrier')} className="w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none focus:border-primary" />
             </div>
-            <button onClick={createLabel} className="w-full cursor-pointer rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Crear etiqueta', 'Create label')}</button>
+            <div className="flex items-center gap-2 rounded-field bg-amber-bg px-3 py-2 text-[10px] font-semibold text-amber-ink">
+              <Tag size={13} stroke={2.2} className="flex-none" />{L('Compra la etiqueta con tu transportista y pega aquí el número real. El cliente verá exactamente ese número para rastrear.', 'Buy the label with your carrier and paste the real number here. The customer sees exactly that number to track.')}
+            </div>
+            <button onClick={createLabel} className="w-full cursor-pointer rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm">{labelTracking.trim() ? L('Guardar envío', 'Save shipment') : L('Marcar como listo', 'Mark as ready')}</button>
           </div>
         )}
       </Overlay>

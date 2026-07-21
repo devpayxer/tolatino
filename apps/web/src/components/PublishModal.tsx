@@ -220,7 +220,7 @@ export function PublishModal() {
       timeEn: 'now',
       recommends: 0,
       business: taggedBiz ?? undefined,
-      bizRating: taggedBiz ? '4.9' : undefined,
+      bizRating: undefined, // never fabricate a rating for a tagged business
       poll: isPoll ? opts : undefined,
       pollBase: isPoll ? opts.map(() => 0) : undefined,
       images: photos.length ? photos.map((p) => p.url) : undefined,
@@ -268,7 +268,7 @@ export function PublishModal() {
         body_es: txt,
         body_en: txt,
         business_name: taggedBiz,
-        business_rating: taggedBiz ? 4.9 : null,
+        business_rating: null, // never fabricate a rating (rule #8)
         poll_options: isPoll ? opts : null,
         poll_votes: isPoll ? opts.map(() => 0) : null,
         images: images.length ? images : null,
@@ -339,7 +339,7 @@ export function PublishModal() {
     timeEn: 'now',
     recommends: 0,
     business: taggedBiz ?? undefined,
-    bizRating: taggedBiz ? '4.9' : undefined,
+    bizRating: undefined, // never fabricate a rating for a tagged business
     poll: isPoll ? pollOptions.map((o) => o.trim()).filter(Boolean) : undefined,
     pollBase: isPoll ? pollOptions.map(() => 0) : undefined,
     images: photos.length ? photos.map((p) => p.url) : undefined,

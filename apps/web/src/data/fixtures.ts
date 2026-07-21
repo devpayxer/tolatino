@@ -403,7 +403,7 @@ export type Comment = {
   timeEs: string;
   timeEn: string;
   likes: number;
-  biz?: { name: string; rating: string };
+  biz?: { name: string; rating?: string };
   es: string;
   en: string;
 };
