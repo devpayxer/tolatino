@@ -47,7 +47,9 @@ export function BizOnboardingScreen() {
     if (step === 'category' && cat) return setStep('subcategory');
     if (step === 'subcategory' && subs.length) return setStep('info');
     if (step === 'info' && form.name.trim()) return setStep('plan');
-    if (step === 'plan') return plan === 'pro' ? setStep('checkout') : finish();
+    // Never collect card data here. Both plans create the listing; a Pro upgrade
+    // happens later via real Stripe in the panel (Facturación), never a fake form.
+    if (step === 'plan') return finish();
     if (step === 'checkout') return finish();
   };
   const back = () => {
@@ -58,10 +60,10 @@ export function BizOnboardingScreen() {
   const nextLabel =
     step === 'plan'
       ? isPro
-        ? L('Continuar al pago', 'Continue to payment')
+        ? L('Crear listado', 'Create listing')
         : L('Crear listado gratis', 'Create free listing')
       : step === 'checkout'
-        ? L('Pagar $4.99', 'Pay $4.99')
+        ? L('Continuar', 'Continue')
         : L('Continuar', 'Continue');
 
   const inputCls =
@@ -383,13 +385,10 @@ export function BizOnboardingScreen() {
                   {L('Insignia verificada, fotos ilimitadas y el doble de vistas por $4.99/mes.', 'Verified badge, unlimited photos and 2× views for $4.99/mo.')}
                 </div>
                 <button
-                  onClick={() => {
-                    setPlan('pro');
-                    setStep('checkout');
-                  }}
+                  onClick={() => router.push('/negocio?t=billing')}
                   className="mt-3 cursor-pointer rounded-btn bg-white px-4 py-2.5 text-[12.5px] font-extrabold text-primary-press"
                 >
-                  {L('Mejorar por $4.99/mes', 'Upgrade for $4.99/mo')}
+                  {L('Ver planes en mi panel', 'See plans in my panel')}
                 </button>
               </div>
             ) : (

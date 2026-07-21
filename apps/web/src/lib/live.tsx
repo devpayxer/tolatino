@@ -1008,14 +1008,16 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
       ]);
       if (cancelled) return;
 
-      // Base = fixtures so that if a query ERRORS (migrations not applied, etc.)
-      // we degrade to the demo rather than a blank screen; loading is done either
-      // way. Successful queries overwrite with real rows below.
-      const next: Omit<LiveData, 'refresh'> = { businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false, loading: false };
+      // Base = EMPTY (never demo fixtures presented as real). If a query errors in
+      // production — a Supabase outage/rate-limit — we degrade to an honest empty
+      // state, NOT fabricated neighbors/businesses (rule #8). Successful queries
+      // fill in real rows below. (When Supabase isn't configured at all we never
+      // reach here — the initial state above keeps fixtures for a backend-less
+      // preview build only.)
+      const next: Omit<LiveData, 'refresh'> = { businesses: [], events: [], posts: [], live: false, loading: false };
 
-      // When a query SUCCEEDS we trust its result — even if empty (a city with
-      // no listings genuinely shows none). Fixtures remain only if the query
-      // errored (e.g. Supabase not configured, or migrations not applied yet).
+      // A SUCCESSFUL query is trusted even when empty (a city with no listings
+      // genuinely shows none); an ERRORED query leaves that section empty.
       if (!biz.error && Array.isArray(biz.data)) {
         const rows = (biz.data as Record<string, unknown>[]).filter((r) => isCatKey(String(r.category_id)));
         next.businesses = rows.map((r, i) => mapBusinessRow(r, i, (r.distance_m as number | null) ?? null));
