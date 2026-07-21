@@ -10,6 +10,30 @@
 
 ---
 
+## ✅ Sprint 1 en progreso (2026-07-21) — arreglos desplegados
+
+Código desplegado y verificado (build + browser) esta sesión:
+- **Datos falsos eliminados (rule #8):** stats inventados del landing (#19),
+  reseñas/histograma/estrellas falsas + contacto de muestra en BizDetail (#7,#8,#10),
+  "Martes 2x1" falso, notificaciones demo a invitados (#18), stub "Crear evento"
+  (#12), rating ★4.9 hardcodeado en tags (#9), tracking USPS falso → entrada manual
+  (#14), fallback a posts/negocios demo ante error de Supabase → vacío honesto (#11),
+  formulario de tarjeta falso en /negocio/publicar (#15).
+- **Ruta del dinero:** boletos de evento migrados a checkout propio (#2, ya no el
+  redirect prohibido); **migración 0104** (pegar en Supabase) cierra el hueco de
+  boletos gratis server-side (#1) + añade el **ledger de migraciones**.
+- **Plataforma:** PWA instalable (manifest + íconos de marca), SEO (robots +
+  sitemap + OG + favicon + títulos por ruta), persistencia de idioma ES/EN (#29),
+  404/500 en español con marca.
+
+**Pendiente (documentado abajo, requiere SQL con prueba en vivo o acción tuya):**
+blindaje RLS de `businesses` (#20), fuzzear coordenadas (#21), rate-limiting (#22),
+guard de edición de pedido pagado (#4), promo de boleto server-side (#5), reembolsos
+(#3), y los módulos owner-facing con datos demo (Billing #16, Staff #17, renta
+walk-in #13) que necesitan cableado real. Más la lista **"Lo que te toca a TI".**
+
+---
+
 ## Veredicto en una línea
 
 **El motor es real y sorprendentemente sólido** — casi todas las superficies están
