@@ -39,10 +39,11 @@ export function LandingScreen() {
     { Icon: Shield, color: '#E0568F', bg: '#FBE9F0', t: L('De confianza', 'Trusted'), d: L('Recomendado por vecinos', 'Neighbor-recommended') },
   ];
 
+  // Honest value props (not fabricated traction numbers — the app is pre-launch).
   const stats = [
-    { v: '+9k', l: L('vecinos', 'neighbors') },
-    { v: '1,200', l: L('negocios', 'businesses') },
-    { v: '340', l: L('eventos', 'events') },
+    { v: L('Gratis', 'Free'), l: L('para empezar', 'to start') },
+    { v: L('Español', 'Spanish'), l: L('primero', 'first') },
+    { v: L('Local', 'Local'), l: L('cerca de ti', 'near you') },
   ];
 
   return (
@@ -135,7 +136,7 @@ export function LandingScreen() {
                 ))}
               </span>
               <span className="text-[12px] font-bold text-ink-3">
-                {L('+9,000 vecinos ya están dentro en', '+9,000 neighbors already inside in')} <span className="font-extrabold text-ink">{app.cityShort}</span>
+                {L('Tu comunidad latina en', 'Your Latino community in')} <span className="font-extrabold text-ink">{app.cityShort}</span>
               </span>
             </div>
 

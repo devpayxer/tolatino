@@ -225,8 +225,19 @@ export function Card({ children, className = '', onClick }: { children: ReactNod
   );
 }
 
-export function Stars({ className = '' }: { className?: string }) {
-  return <span className={`font-bold tracking-[1px] text-amber ${className}`}>★★★★★</span>;
+export function Stars({ className = '', rating }: { className?: string; rating?: number }) {
+  // With a rating, render proportional stars (filled vs muted) — never a flat
+  // ★★★★★ over a real 3.2. Without one (decorative/marketing use), keep 5.
+  if (rating == null || !Number.isFinite(rating)) {
+    return <span className={`font-bold tracking-[1px] text-amber ${className}`}>★★★★★</span>;
+  }
+  const full = Math.max(0, Math.min(5, Math.round(rating)));
+  return (
+    <span className={`font-bold tracking-[1px] ${className}`}>
+      <span className="text-amber">{'★'.repeat(full)}</span>
+      <span className="text-lilac-line">{'★'.repeat(5 - full)}</span>
+    </span>
+  );
 }
 
 export function EmptyState({ title, sub }: { title: string; sub?: string }) {

@@ -35,7 +35,7 @@ import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 const FEAT_EN: Record<string, string> = {};
 for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
-import { DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SEED_REVIEWS, SERVICES, SHOP, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
+import { DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SERVICES, SHOP, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
 
 type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'related' | 'reviews';
 const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'related', 'reviews']);
@@ -544,12 +544,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       : `${fmtLong(todayEx.open)} – ${fmtLong(todayEx.close)}`
     : null;
   const catLabel = L(CAT[b.cat].es, CAT[b.cat].en);
-  const revRaw = L(b.revEs, b.revEn);
-  const [quote, rvName] = revRaw.includes('—') ? [revRaw.split('—')[0].trim(), revRaw.split('—').slice(1).join('—').trim()] : [revRaw, ''];
-  // Real owner-entered contact (from the dashboard); demo fixtures fall back to
-  // sample values so the prototype stays populated.
-  const phone = b.phone || '(832) 555-4521';
-  const address = b.address || '5821 Bellaire Blvd, Houston, TX';
+  // Real owner-entered contact only — NEVER a sample fallback (a fabricated phone
+  // the customer would dial / address they'd navigate to breaks trust, rule #8).
+  // Affordances that need these hide when the owner hasn't set them.
+  const phone = b.phone || '';
+  const address = b.address || '';
+  const hasPhone = phone.trim().length > 0;
+  const hasAddress = address.trim().length > 0;
   // "Cómo llegar" deep link: opens the visitor's own maps app (no API key / no
   // billing — the no-Google-Maps rule is about our tile/geocoding API calls, not
   // a free universal directions link). Destination = the owner's address + city.
@@ -2081,8 +2082,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <span className={`font-extrabold ${statusTone}`}>· {status.text}</span>
       </div>
       <div className="mt-3 flex items-center gap-2">
-        <Stars className="text-[14px]" />
-        <span className="text-[15px] font-extrabold text-ink">{b.rating}</span>
+        <Stars className="text-[14px]" rating={b.reviews ? Number(b.rating) : undefined} />
+        <span className="text-[15px] font-extrabold text-ink">{b.reviews ? b.rating : L('Nuevo', 'New')}</span>
         <span className="text-[13px] font-semibold text-muted-2">({b.reviews})</span>
       </div>
       {/* Neighbor recommendations (Nextdoor-style) — real count + faces + the
@@ -2243,52 +2244,77 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   <button key={t} onClick={() => setPhotoTile(t)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px]" style={{ background: t }} />
                 ))}
           </div>
-          {divider}
-          {secTitle(L('Ubicación', 'Location'))}
-          <div className="relative h-[130px] overflow-hidden rounded-[15px]" style={{ background: 'repeating-linear-gradient(135deg,#E7ECF3 0 14px,#DCE3EC 14px 28px)' }}>
-            <MapPin size={30} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full fill-primary text-white" stroke={1.5} />
-          </div>
-          <div className="mt-[11px] flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-ink-soft">{address}</span>
-            <button onClick={() => setContactOpen(true)} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
-              {L('Cómo llegar →', 'Directions →')}
-            </button>
-          </div>
+          {hasAddress && (
+            <>
+              {divider}
+              {secTitle(L('Ubicación', 'Location'))}
+              <div className="relative h-[130px] overflow-hidden rounded-[15px]" style={{ background: 'repeating-linear-gradient(135deg,#E7ECF3 0 14px,#DCE3EC 14px 28px)' }}>
+                <MapPin size={30} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full fill-primary text-white" stroke={1.5} />
+              </div>
+              <div className="mt-[11px] flex items-center justify-between">
+                <span className="text-[13px] font-semibold text-ink-soft">{address}</span>
+                <button onClick={() => setContactOpen(true)} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
+                  {L('Cómo llegar →', 'Directions →')}
+                </button>
+              </div>
+            </>
+          )}
           {divider}
           {secTitle(L('Reseñas', 'Reviews'))}
-          <div className="flex items-center gap-4">
-            <div className="flex-none text-center">
-              <div className="text-[34px] font-extrabold leading-none text-ink">{b.rating}</div>
-              <Stars className="mt-1 block text-[11px]" />
-              <div className="mt-1 text-[11px] font-semibold text-muted-2">{b.reviews}</div>
-            </div>
-            <div className="flex flex-1 flex-col gap-[5px]">
-              {[
-                [5, 90],
-                [4, 7],
-                [3, 2],
-              ].map(([n, pct]) => (
-                <div key={n} className="flex items-center gap-2">
-                  <span className="w-2 text-[10px] font-bold text-muted-2">{n}</span>
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-lilac-line">
-                    <div className="h-full bg-amber" style={{ width: `${pct}%` }} />
+          {(() => {
+            // Honest, real-only review summary: average, proportional stars, a
+            // computed histogram and the latest review — or an empty state. Never
+            // the old hardcoded 90/7/2 bars, always-5 stars or seed reviews.
+            const rows = [
+              ...myReviews.map((r) => ({ stars: r.stars, name: L('Tú', 'You'), ini: 'TÚ', color: '#7B61FF', text: [r.text, r.text] as Bi })),
+              ...realReviews.map((r) => ({ stars: r.rating, name: r.mine ? L('Tú', 'You') : r.name, ini: r.initials, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], text: r.body })),
+            ];
+            if (rows.length === 0) {
+              return (
+                <div className="rounded-[13px] border border-dashed border-lilac-line bg-lilac-2 p-6 text-center">
+                  <div className="text-[13.5px] font-extrabold text-ink">{L('Aún no hay reseñas', 'No reviews yet')}</div>
+                  <div className="mt-1 text-[12px] font-semibold text-muted">{L('Sé el primero en compartir tu experiencia.', 'Be the first to share your experience.')}</div>
+                  <button onClick={() => onTab('reviews')} className="mt-3 inline-flex cursor-pointer rounded-btn bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white">{L('Escribir reseña', 'Write a review')}</button>
+                </div>
+              );
+            }
+            const avg = rows.reduce((s, r) => s + r.stars, 0) / rows.length;
+            const featured = rows[0];
+            return (
+              <>
+                <div className="flex items-center gap-4">
+                  <div className="flex-none text-center">
+                    <div className="text-[34px] font-extrabold leading-none text-ink">{avg.toFixed(1)}</div>
+                    <Stars className="mt-1 block text-[11px]" rating={avg} />
+                    <div className="mt-1 text-[11px] font-semibold text-muted-2">{rows.length}</div>
+                  </div>
+                  <div className="flex flex-1 flex-col gap-[5px]">
+                    {[5, 4, 3, 2, 1].map((n) => {
+                      const pct = Math.round((rows.filter((r) => Math.round(r.stars) === n).length / rows.length) * 100);
+                      return (
+                        <div key={n} className="flex items-center gap-2">
+                          <span className="w-2 text-[10px] font-bold text-muted-2">{n}</span>
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-lilac-line">
+                            <div className="h-full bg-amber" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-          {revRaw && (
-            <div className="mt-4">
-              <div className="flex items-center gap-2">
-                <Avatar initials={initials(rvName || 'V')} color={AVATAR_PALETTE[id % AVATAR_PALETTE.length]} size={32} />
-                <div>
-                  <div className="text-[13px] font-extrabold text-ink">{rvName || L('Vecino', 'Neighbor')}</div>
-                  <Stars className="text-[10px]" />
+                <div className="mt-4">
+                  <div className="flex items-center gap-2">
+                    <Avatar initials={featured.ini} color={featured.color} size={32} />
+                    <div>
+                      <div className="text-[13px] font-extrabold text-ink">{featured.name}</div>
+                      <Stars className="text-[10px]" rating={featured.stars} />
+                    </div>
+                  </div>
+                  <div className="mt-2 text-[13px] font-medium leading-[1.55] text-ink-soft">{B(featured.text)}</div>
                 </div>
-              </div>
-              <div className="mt-2 text-[13px] font-medium leading-[1.55] text-ink-soft">{quote}</div>
-            </div>
-          )}
+              </>
+            );
+          })()}
           <button onClick={() => onTab('reviews')} className="mt-4 w-full cursor-pointer rounded-[13px] border-[1.5px] border-lilac-line bg-white p-[13px] text-[13.5px] font-extrabold text-primary-dark">
             {L('Ver todas las reseñas', 'See all reviews')}
           </button>
@@ -2828,17 +2854,20 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             </button>
           </div>
           <div className="flex flex-col gap-3">
-            {[
-              ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#7B61FF', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0, reply: null as Bi | null, repliedAt: null as string | null, photos: r.photos })),
-              ...(realReviews.length > 0
-                ? realReviews.map((r) => ({ id: r.id, ini: r.initials, name: r.mine ? L('Tú', 'You') : r.name, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], stars: r.rating, when: reviewWhen(r.createdAt), text: r.body, base: 0, reply: r.reply, repliedAt: r.repliedAt, photos: r.photos }))
-                : [
-                    ...(revRaw ? [{ id: 'r0', ini: initials(rvName || 'V'), name: rvName || L('Vecino', 'Neighbor'), color: AVATAR_PALETTE[id % AVATAR_PALETTE.length], stars: 5, when: ['hace 2 días', '2d'] as Bi, text: [quote, quote] as Bi, base: 12, reply: null as Bi | null, repliedAt: null as string | null, photos: [] as string[] }] : []),
-                    ...SEED_REVIEWS.map((r) => ({ ...r, reply: null as Bi | null, repliedAt: null as string | null, photos: [] as string[] })),
-                  ]),
-            ]
-              .filter((r) => reviewFilter === 'all' || r.stars === +reviewFilter)
-              .map((r) => {
+            {(() => {
+              const rows = [
+                ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#7B61FF', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0, reply: null as Bi | null, repliedAt: null as string | null, photos: r.photos })),
+                ...realReviews.map((r) => ({ id: r.id, ini: r.initials, name: r.mine ? L('Tú', 'You') : r.name, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], stars: r.rating, when: reviewWhen(r.createdAt), text: r.body, base: 0, reply: r.reply, repliedAt: r.repliedAt, photos: r.photos })),
+              ].filter((r) => reviewFilter === 'all' || r.stars === +reviewFilter);
+              if (rows.length === 0) {
+                return (
+                  <div className="rounded-[13px] border border-dashed border-lilac-line bg-lilac-2 p-6 text-center">
+                    <div className="text-[13.5px] font-extrabold text-ink">{reviewFilter === 'all' ? L('Aún no hay reseñas', 'No reviews yet') : L('Sin reseñas con esta calificación', 'No reviews with this rating')}</div>
+                    <div className="mt-1 text-[12px] font-semibold text-muted">{L('Sé el primero en compartir tu experiencia.', 'Be the first to share your experience.')}</div>
+                  </div>
+                );
+              }
+              return rows.map((r) => {
                 const on = !!reviewHelpful[r.id];
                 return (
                   <Card key={r.id} className="p-4">
@@ -2882,7 +2911,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     </button>
                   </Card>
                 );
-              })}
+              });
+            })()}
           </div>
         </div>
       )}
@@ -2928,12 +2958,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {([
             // In-app chat — always available; the message lands in the owner's inbox.
             { Icon: MessageCircle, label: L('Enviar mensaje', 'Send a message'), sub: L('Chatea en la app', 'Chat in the app'), color: '#7B61FF', bg: '#EFEBFF', onClick: openChat },
-            { Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA', href: `tel:${phone.replace(/[^\d+]/g, '')}`, onClick: () => trackListingView(b.slug, 'call') },
+            // Llamar only when the owner set a real phone (never a sample number).
+            ...(hasPhone ? [{ Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA', href: `tel:${phone.replace(/[^\d+]/g, '')}`, onClick: () => trackListingView(b.slug, 'call') }] : []),
             // WhatsApp/SMS only when the owner opted in.
             ...(msgOn ? [{ Icon: Send, label: msgIsSms ? L('Mensaje de texto', 'Text message') : 'WhatsApp', sub: phone, color: '#1F9D57', bg: '#E3F5EA', href: msgHref }] : []),
             // Sitio web only shows when the owner set one; opens the real site.
             ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#2F6FED', bg: '#E5EFFB', href: `https://${b.website}` }] : []),
-            { Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6', href: mapsHref, onClick: () => trackListingView(b.slug, 'direction') },
+            // Cómo llegar only when the owner set a real address.
+            ...(hasAddress ? [{ Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6', href: mapsHref, onClick: () => trackListingView(b.slug, 'direction') }] : []),
             { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#8A86A0', bg: '#F1EFFA' },
           ] as { Icon: typeof Phone; label: string; sub: string; color: string; bg: string; href?: string; onClick?: () => void }[]).map(({ Icon, label, sub, color, bg, href, onClick }) => {
             const inner = (
