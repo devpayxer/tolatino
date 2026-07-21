@@ -11,7 +11,8 @@ import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useMyActivity } from '@/lib/myActivity';
 import { useUrlDetail } from '@/lib/urlView';
-import { startMarketplaceCheckout } from '@/lib/stripe';
+import { startMarketplacePayment } from '@/lib/stripe';
+import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
@@ -115,6 +116,7 @@ export function EventosScreen() {
   const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [promoApplied, setPromoApplied] = useState('');
   const [unlockedTiers, setUnlockedTiers] = useState<PubTier[]>([]);
+  const [checkout, setCheckout] = useState<{ clientSecret: string; pendingId: string; amount: number; returnPath: string } | null>(null);
   const [discount, setDiscount] = useState<{ kind: 'percent' | 'amount'; value: number; tierId: string | null } | null>(null);
   // organizer profile sheet
   const [orgOpen, setOrgOpen] = useState(false);
@@ -309,15 +311,19 @@ export function EventosScreen() {
     if (selectedTiers.length === 0) { flash(L('Elige al menos un boleto', 'Pick at least one ticket')); return; }
     const items = selectedTiers.map((t) => ({ tierId: t.id, qty: tierQty[t.id] ?? 0 }));
 
-    // Paid tickets → charge the buyer's card via Stripe (destination charge to the
-    // organizer's connected account, minus the To'Latino fee). Tickets are issued
-    // by the webhook once payment succeeds. Free tiers keep the instant-issue path.
+    // Paid tickets → charge the buyer's card inside OUR own branded sheet (checkout
+    // propio SIEMPRE — never Stripe's hosted page). Destination charge to the
+    // organizer's connected account minus the To'Latino fee; tickets are issued by
+    // the webhook once payment succeeds. Free tiers keep the instant-issue path.
     if (payOnline) {
       setBuying(true);
-      const { url } = await startMarketplaceCheckout({ kind: 'ticket', slug: pub.slug, items });
-      if (url) { window.location.href = url; return; }
+      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({ kind: 'ticket', slug: pub.slug, items });
       setBuying(false);
-      flash(L('No se pudo iniciar el pago', 'Could not start payment'));
+      if (clientSecret && pendingId) {
+        setCheckout({ clientSecret, pendingId, amount: amount ?? 0, returnPath: typeof window !== 'undefined' ? window.location.pathname : '/eventos/' });
+        return;
+      }
+      flash(error ? buyErr(error, L) : L('No se pudo iniciar el pago', 'Could not start payment'));
       return;
     }
     // Paid ticket but the organizer hasn't connected payouts → can't sell online.
@@ -837,6 +843,17 @@ export function EventosScreen() {
           {toast}
         </div>
       )}
+
+      {/* checkout propio: pay for tickets inside our branded sheet (Stripe Payment
+          Element), never a hosted-Checkout redirect. */}
+      <CheckoutSheet
+        open={checkout !== null}
+        clientSecret={checkout?.clientSecret ?? null}
+        amount={checkout?.amount ?? 0}
+        returnPath={checkout?.returnPath ?? '/eventos/'}
+        pendingId={checkout?.pendingId ?? ''}
+        onClose={() => setCheckout(null)}
+      />
     </div>
   );
 }
