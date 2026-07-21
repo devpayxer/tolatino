@@ -3,7 +3,25 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-19.
+> Last updated: 2026-07-21.
+
+## ⛔ READ FIRST — this doc is NOT enough; verify the LIVE git state (2026-07-21)
+
+**The deploy branch is the source of truth, not this file and not your working
+branch.** A session resumed on the stale branch `claude/new-prompt-xkubrd` (which
+had fallen ~90 commits behind the Vercel deploy branch
+`claude/tolatino-repo-setup-1efdil`) and trusted this doc's older copy. That copy
+still described the project at migration ~0018 with a "blocking migration gap" —
+long obsolete (the deploy branch is at **migration 0103** with dozens more
+features). Acting on the stale picture, it pasted the old `0013–0018` migrations +
+a "consolidated fix" into the founder's already-current Supabase, which
+**regressed `businesses_v2`** back to the 21-column 0018 shape (the live version is
+0043's 33-column shape). Restored via `create or replace` of 0043's definition.
+
+**Rules to prevent a repeat — do these BEFORE touching code or the DB:**
+1. `git fetch origin claude/tolatino-repo-setup-1efdil` and compare: `git log --oneline claude/new-prompt-xkubrd..origin/claude/tolatino-repo-setup-1efdil`. If the deploy branch is ahead, **reset onto it** (`git reset --hard origin/claude/tolatino-repo-setup-1efdil`) — don't build on the stale branch.
+2. **Never hand the founder migration SQL without first confirming the DB's real state** (run a diagnostic query for the specific objects). The founder's Supabase is kept current through the deploy branch's migrations; assume it is AHEAD of any single working branch.
+3. Migrations that redefine a function (`businesses_v2`, `create_business`, `toggle_endorsement`) are re-defined by MANY later files. Recreating an "old" version silently regresses it. Only ever apply the LATEST definition (highest-numbered migration that `create`s it).
 
 ## Recomendaciones de vecinos (endorsements) — botón 👍 + auto-post (2026-07-19)
 
