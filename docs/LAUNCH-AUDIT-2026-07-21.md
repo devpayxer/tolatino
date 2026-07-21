@@ -1,232 +1,152 @@
 # To'Latino — Auditoría de lanzamiento (2026-07-21)
 
-> Auditoría multi-agente contra los líderes de cada categoría (Yelp, DoorDash,
-> Fresha, Turo, Eventbrite, Nextdoor, Shopify/Square). **8 de 14 superficies
-> alcanzaron a auditarse** antes de tocar el límite de sesión; las 6 restantes
-> quedan listadas al final para re-correr. Los **10 hallazgos más graves fueron
-> re-verificados a mano en el código** (archivo:línea). Regla que rige todo:
-> founder rule #8 — *"la confianza ES el producto; nada falso/roto se envía como
-> final"*.
+> Auditoría multi-agente de las **14 superficies** del producto, cada una comparada
+> contra el líder de su categoría (Yelp, DoorDash, Fresha, Turo, Eventbrite,
+> Nextdoor, Shopify/Square, Amazon). **Cobertura: 14/14 áreas auditadas** (en dos
+> tandas por límite de sesión). **37 hallazgos críticos/mayores verificados** —
+> 10 a mano por Claude + 27 por verificación adversarial, **todos CONFIRMED, cero
+> refutados**. Regla que rige todo: founder rule #8 — *"la confianza ES el
+> producto; nada falso/roto se envía como final"*.
 
 ---
 
 ## Veredicto en una línea
 
-**El motor es real y sorprendentemente bueno** — la mayoría de las superficies
-están cableadas de verdad a Supabase/Stripe, no son maquetas. **Pero NO está
-lista para lanzar con dinero real todavía**, por tres razones concretas y
-arreglables: (1) hay **datos falsos** mostrándose sobre negocios reales en varias
-pantallas, (2) **la ruta del dinero tiene huecos** (sin reembolsos, un redirect de
-pago prohibido, y boletos que se emiten sin cobrar), y (3) **faltan piezas de
-confianza/retención** (notificaciones de comunidad, moderación, recordatorios de
-cita, mapa real).
+**El motor es real y sorprendentemente sólido** — casi todas las superficies están
+cableadas de verdad a Supabase/Stripe con calidad marketplace, no son maquetas.
+**Pero NO está lista para lanzar con dinero real todavía.** El código está *más*
+cerca de terminado de lo que el checklist dice; lo que falta se concentra en cuatro
+frentes claros y arreglables:
 
-Estimo el proyecto en **~75% funcional**. Lo que falta para "estelar y 100%" es
-un sprint enfocado en **quitar lo falso + cerrar la ruta del dinero**, luego pulir.
+1. **Datos falsos** mostrándose sobre negocios/usuarios reales (viola tu regla #8).
+2. **La ruta del dinero tiene huecos** (sin reembolsos, redirect de pago prohibido, boletos que se emiten sin cobrar).
+3. **Seguridad/privacidad de datos** (tabla `businesses` expone TODO al público; coordenadas de casa expuestas; sin rate-limiting ni moderación).
+4. **Descubrimiento y confianza** (sitio invisible a Google, no instalable como PWA, sin páginas legales, sin recuperación de contraseña).
 
----
-
-## 🔴 BLOQUEANTES DE LANZAMIENTO (verificados a mano — arreglar SÍ o SÍ)
-
-### Seguridad / dinero (lo más urgente)
-1. **Boletos de evento se emiten SIN cobrar.** `buy_event_tickets_multi`
-   (`0072_marketplace_checkout.sql`) valida capacidad, promo, fechas y visibilidad
-   del tier… pero **nunca comprueba el pago**. Cualquier usuario autenticado puede
-   llamar el RPC directo y emitirse boletos de pago **gratis**, saltándose Stripe.
-   → El servidor debe rechazar tiers de pago cuando el organizador tiene
-   `connect_charges_enabled` (mismo patrón que menú/renta ya usan).
-2. **Redirect a Stripe hosted-Checkout prohibido, aún vivo en Eventos.**
-   `Eventos.tsx:317-318` → `startMarketplaceCheckout(...)` + `window.location.href = url`.
-   Es el patrón **explícitamente prohibido** por tu regla "checkout propio SIEMPRE".
-   Todas las demás superficies ya cumplen; falta migrar esta a
-   `startMarketplacePayment` + `CheckoutSheet`. (El de suscripciones del dueño en
-   `Billing.tsx:79/93` es un caso aparte — ver "Decisiones tuyas".)
-3. **No existe NINGÚN reembolso fuera del webhook.** Si la cocina rechaza un pedido
-   pagado, o el cliente cancela un pedido/renta ya pagado, **el dinero se queda
-   capturado**. El único refund que existe es cuando el webhook falla al cumplir.
-   → Falta un flujo de reembolso (Stripe `refunds` con `reverse_transfer` +
-   `refund_application_fee`, que ya se usa en `stripe-webhook:196`) para rechazo de
-   cocina, cancelación temprana, y cancelación de renta.
-4. **El cliente puede reescribir su propio pedido pagado** vía PostgREST (items,
-   fulfillment) — el guard `tg_txn_customer_update_guard` no congela esas columnas.
-
-### Datos falsos sobre negocios/usuarios reales (viola regla #8 = tu confianza)
-5. **Teléfono y dirección FALSOS en listados reales.** `BizDetail.tsx:551-552`:
-   `phone = b.phone || '(832) 555-4521'` y `address = b.address || '5821 Bellaire
-   Blvd, Houston, TX'`. "Llamar" marca ese número y "Cómo llegar" navega ahí.
-   → Ocultar Llamar/Cómo llegar/Ubicación cuando el dueño no configuró nada.
-6. **Reseñas FALSAS cuando el negocio tiene cero.** `BizDetail.tsx:2836` inyecta
-   `SEED_REVIEWS` (Ana M., Jonathan P., Roberto M.) con "útiles" inventados.
-   → Mostrar estado honesto "Sé el primero en reseñar".
-7. **Rating 4.9 hardcodeado** al etiquetar un negocio en Comunidad.
-   `PublishModal.tsx:272` (`business_rating: taggedBiz ? 4.9 : null`) y
-   `Comunidad.tsx:428`. Además solo deja etiquetar **4 negocios fixture** de Houston.
-   → Etiquetar desde negocios reales cercanos con su rating real (el patrón correcto
-   ya existe en `toggle_endorsement`, 0103).
-8. **Histograma de rating 90/7/2 y estrellas siempre ★★★★★** hardcodeados para todo
-   negocio (`BizDetail.tsx:2266`, `ui.tsx:228`).
-9. **Fallback silencioso a 5 posts demo en Comunidad ante cualquier error.**
-   `live.tsx:1011-1014`: si una query falla (o Supabase se cae en prod), el feed
-   muestra vecinos ficticios (Carlos R., Doña Lucía) como reales, sin aviso.
-   → Estado de error/vacío honesto, nunca personas inventadas.
-10. **"Crear evento" desde el FAB Publicar es un stub de éxito falso.**
-    `PublishModal.tsx:749-762`: los inputs no tienen estado y "Publicar" hace
-    `setDone(true)` → "Tu evento ya está publicado" sin guardar nada.
-11. **Renta: flujos walk-in "Rentar/Devolver" del panel son teatro.**
-    `Rental.tsx:737/745` — `RentOutFlow`/`ReturnFlow` **no escriben nada a la DB**
-    pero avisan "Rentado · depósito cobrado" / "Depósito devuelto".
-12. **Tracking USPS falso** en pedidos de tienda reales. `Fulfillment.tsx:102`
-    `genTracking()` inventa un número creíble `9400 1000 0000 ...`.
-13. **Panel de negocio: `/negocio/publicar` tiene un formulario de tarjeta FALSO**
-    ("Pago seguro", plan $4.99 que no existe) y no crea ningún negocio — y el panel
-    real enlaza a él desde "Publicar otro negocio" y varios estados vacíos.
-14. **Billing muestra dinero inventado a negocios que PAGAN** (renovación "14 Nov",
-    Visa ••4421, historial de facturas y medidores de uso ficticios).
-15. **Staff: nómina/horario/reloj 100% falsos** a dueños Verified/Premium reales,
-    incluido un botón "Correr nómina · $6,404" que solo muestra un toast.
-
-### Integridad de reservas (la barbería del sábado)
-16. **Reservas "Cualquiera" (any professional) son invisibles a TODO chequeo de
-    conflicto** → hueco de sobre-reserva en negocios con equipo.
-17. **La capacidad por sesión NO se valida en el servidor** (solo cliente), y ni
-    siquiera cuenta el grupo que entra. Un sábado doble-reservado mata la confianza.
+Estimo **~75% funcional**. Para "estelar y 100%" hace falta un sprint enfocado en
+**quitar lo falso + cerrar el dinero + tapar seguridad**, luego pulir SEO/PWA/legales.
 
 ---
 
-## Por superficie — qué funciona / qué falla / qué falta para competir
+## 🔴 BLOQUEANTES DE LANZAMIENTO (todos verificados — arreglar SÍ o SÍ)
 
-### 🟢 Comunidad (vs Nextdoor) — motor real, falta capa social/seguridad
-- **Real y sólido:** feed geo (30 mi), posts con fotos/encuestas/comentarios+respuestas,
-  likes/guardados, realtime (píldora de nuevos, ediciones/borrados en vivo), follows,
-  editar/borrar/reportar, auto-post "recomienda" desde endorsements, guest read-only.
-- **Roto:** rieles Tendencias/Vecinos sugeridos son fixtures; sin filtro de barrio en
-  móvil (¡99% de tus usuarios!); posts exponen coordenadas exactas del autor
-  (riesgo de privacidad/doxxing); `posts_near` no usa el índice GIST y no pagina.
-- **Falta para ganar:** notificaciones de actividad (comentario/respuesta/like/seguidor)
-  — sin esto muere la retención; **moderación** (cola de reportes, auto-ocultar);
-  DMs entre vecinos; perfiles de usuario; grupos/colonias; alertas de seguridad.
+### A. Dinero (lo más urgente — hay tarjetas de por medio)
+1. **Boletos de evento se emiten SIN cobrar.** `buy_event_tickets_multi` (`0072`) valida capacidad/promo/fechas pero **no comprueba pago** → cualquiera se emite boletos de pago gratis vía RPC directo. *(verificado a mano)*
+2. **Redirect a Stripe hosted-Checkout prohibido, vivo en Eventos.** `Eventos.tsx:317-318` — patrón explícitamente prohibido por "checkout propio SIEMPRE". *(verificado)*
+3. **No existe NINGÚN reembolso** cuando el dueño rechaza/cancela un pedido/reserva/renta **ya pagado** → el dinero se queda capturado. *(verificado)*
+4. **El cliente puede reescribir su pedido pagado** (items/fulfillment) vía PostgREST. *(verificado a mano)*
+5. **Promo de boleto muestra "Descuento aplicado" pero cobra precio completo** en línea. *(CONFIRMED)*
+6. **Build desplegado clavado en Stripe TEST + `sk_test` expuesto sin rotar.** *(CONFIRMED)*
 
-### 🟢 Negocios / Directorio (vs Yelp) — buscador real, datos demo contaminan
-- **Real:** búsqueda FTS server-side con geo-ranking, filtros Yelp-grade, abierto/cerrado
-  en vivo con excepciones, reseñas reales con foto+respuesta del dueño, endorsements,
-  guardados, chat, métricas de descubrimiento.
-- **Roto:** los datos falsos #5-#8 de arriba; 3 botones muertos ("Llamar" en tarjeta,
-  "Compartir", "Reportar un problema"); **sin mapa real** (desktop dice "Mapa (demo)");
-  navegación tope 50 negocios con paginación solo-cliente.
-- **Falta:** mapa real; flujo "reclamar mi negocio"/verificación (sin esto ningún negocio
-  puede volverse Verified — el ranking verified-first es una promesa sin camino);
-  ordenar resultados; páginas por-negocio indexables (SEO).
+### B. Datos falsos sobre negocios/usuarios reales (regla #8 = tu confianza)
+7. **Teléfono/dirección FALSOS en listados reales** (`BizDetail.tsx:551` → `(832) 555-4521` / `5821 Bellaire Blvd`). *(verificado a mano)*
+8. **Reseñas FALSAS cuando el negocio tiene cero** (`BizDetail.tsx:2836` `SEED_REVIEWS`). *(verificado)*
+9. **Rating 4.9 hardcodeado** al etiquetar negocio (`PublishModal.tsx:272`) + solo 4 negocios fixture. *(verificado)*
+10. **Histograma 90/7/2 y estrellas siempre ★★★★★** hardcodeados. *(verificado)*
+11. **Fallback silencioso a posts demo ante error de Supabase** (`live.tsx:1011`). *(verificado a mano)*
+12. **"Crear evento" (FAB Publicar) es stub de éxito falso** (`PublishModal.tsx:749`). *(verificado a mano)*
+13. **Renta walk-in "Rentar/Devolver" es teatro** — no escribe a la DB pero dice "depósito cobrado". *(verificado a mano)*
+14. **Tracking USPS falso** en pedidos de tienda (`Fulfillment.tsx:102`). *(verificado a mano)*
+15. **`/negocio/publicar` con formulario de tarjeta FALSO** al que el panel real enlaza. *(verificado a mano)*
+16. **Billing muestra dinero inventado a dueños que pagan** (renovación, Visa ••4421, facturas). *(CONFIRMED)*
+17. **Staff: nómina/horario/reloj falsos** a dueños reales. *(verificado a mano)*
+18. **Notificaciones demo falsas a invitados** (badge "3") en la campana. *(CONFIRMED)*
+19. **Stats FALSOS en el landing indexable** — "1,200 negocios", "340 eventos", "+9,000 vecinos" (`Landing.tsx:44,138`). *(verificado a mano)*
 
-### 🟢 Pedidos de comida (vs DoorDash) — la superficie MÁS real
-- **Real end-to-end:** menú builder, carrito con re-precio server-side, checkout propio
-  con Payment Element, COD, cocina aceptar/rechazar con ETA, tracking en vivo, propinas,
-  promos %, 86/agotados, web push.
-- **Roto:** sin reembolso (#3); redirect prohibido en eventos (#2); cliente edita pedido
-  pagado (#4); tracking USPS falso (#12); **tarifa de zona nunca se cobra** (todos pagan
-  zona 1); **sin cierre por horario** (pedidos entran con el negocio cerrado);
-  Vender-vs-Catálogo no forzado en servidor; toggles decorativos (auto-asignar chofer,
-  tracking en vivo, automatización de menú); **stock nunca se decrementa ni valida**.
-- **Falta:** reembolso/soporte; GPS del repartidor; pedidos programados; modo pausa.
+### C. Seguridad / privacidad de datos
+20. **Tabla `businesses` es world-readable con TODAS las columnas** (`0001:152` `using (true)`) → filtra `stripe_account_id`, teléfonos de choferes (en settings), códigos de promo (en config), `owner_id` vía PostgREST directo. *(verificado a mano)*
+21. **Posts exponen coordenadas exactas del autor** (dirección de casa si la guardó) — legibles por cualquiera vía REST. *(verificado)*
+22. **Sin rate-limiting/anti-abuso** en posts/comentarios/reseñas/mensajes/uploads/`create_business` (solo COD está limitado). *(CONFIRMED)*
+23. **Sin cola de moderación** — los reportes van a una tabla que nadie puede ver. *(CONFIRMED)*
+24. **`seed.sql` siembra negocios ficticios con ratings/reseñas inventados en la DB de producción** — sin plan de purga. *(CONFIRMED)*
 
-### 🟢 Tienda / Productos (vs Amazon/Shopify) — real, faltan fundamentos de comercio
-- **Real:** CRUD dueño con variantes y stock por variante, storefront Instacart-grade,
-  carrito, checkout propio, modelo canónico respetado, guardado-para-después, cross-sell.
-- **Roto:** **inventario nunca decrementa ni se valida en servidor** (oversell posible);
-  descuentos de tienda se crean pero **nunca se pueden canjear**; 3 de 4 tipos de descuento
-  muertos; envío por-producto decorativo; sin impuestos; sin paginación server.
-- **Falta:** reseñas por-producto; envío real con dirección+tarifas; impuestos; búsqueda
-  global de productos.
+### D. Cuenta / legal / descubrimiento
+25. **Sin recuperación de contraseña** — olvidarla = lockout permanente (no existe `resetPasswordForEmail`). *(verificado a mano)*
+26. **Sin páginas legales** (Términos / Privacidad) en ninguna parte — obligatorio con pagos, push, UGC y direcciones de casa. *(CONFIRMED)*
+27. **Sin manifest PWA** → no instalable, y **rompe Web Push en iOS** (iOS solo entrega push a PWA instalada). *(CONFIRMED)*
+28. **Sitio invisible a buscadores** — cero enlaces `<a>` internos, sin sitemap/robots, 9 de 10 rutas comparten el mismo título. "SEO = adquisición gratis" hoy no existe. *(CONFIRMED)*
+29. **El idioma EN no persiste** — cada recarga vuelve a español Y reescribe el idioma de push a 'es'. *(CONFIRMED)*
 
-### 🟢 Servicios / Reservas (vs Fresha/Booksy) — flujo real, huecos de sobre-reserva
-- **Real:** catálogo, picker de profesional, slots por horario×duración, feed de ocupación
-  por-staff, aprobación forzada en servidor (0095), anti-doble-reserva por profesional
-  (0092), modelo de cobro canónico, agenda del dueño con walk-ins, cancelar/reagendar.
-- **Roto:** #16 y #17 (sobre-reserva); Staff falso (#15); vende "Recordatorios SMS —
-  Incluido en Premium" que **no existen**; slots pasados en negocios sin horario; sin
-  lead-time mínimo (reservable "ahora mismo").
-- **Falta:** **recordatorios de cita** (staple de Booksy); auto-asignar "Cualquiera";
-  horarios/vacaciones por profesional; reagendar desde la agenda; política de cancelación.
+### E. Integridad de reservas (la barbería del sábado)
+30. **Reservas "Cualquiera" invisibles a todo chequeo de conflicto** → sobre-reserva. *(verificado a mano)*
+31. **Capacidad por sesión sin validación server-side.** *(verificado a mano)*
 
-### 🟢 Renta (vs Turo/Airbnb) — muy cableado, sin historia de reembolso
-- **Real:** carrito multi-ítem por fechas, anti-doble-reserva server, checkout propio,
-  **depósito como hold real de Stripe** (Turo-grade), aprobación forzada, ops en vivo.
-- **Roto:** teatro walk-in (#11); **sin reembolso/cancelación de renta pagada** (#3);
-  el hold de depósito se pone al reservar pero **caduca en ~7 días** (muerto al devolver);
-  promos de renta no canjeables; reglas de disponibilidad por-ítem ni se muestran ni se
-  aplican; KPIs del panel desconectados de órdenes reales; órdenes fixture parpadean.
-- **Falta:** política de cancelación+reembolsos; re-autorizar el depósito al entregar;
-  verificación de identidad del rentador; waiver; flujo de reclamo por daños con fotos.
+---
 
-### 🟢 Eventos (vs Eventbrite) — espina real, ruta de pago débil
-- **Real:** venta atómica con capacidad, tiers con ventanas y acceso oculto, QR + check-in
-  con cámara, waitlist, promos, KPIs organizador, descubrimiento geo+FTS, cancelar.
-- **Roto:** #1, #2, #10 de arriba; descuento mostrado pero **precio completo cobrado**;
-  tier oculto pagado → cobra y auto-reembolsa sin boletos; evento de pago sin Stripe
-  promete "Reservar" que el código rechaza; multi-listing muestra eventos en cada tab.
-- **Falta:** **reembolsos**; editar evento tras publicar; boleto por email; páginas por-evento
-  con OG para compartir; exportar/mensajear asistentes.
+## Por superficie — funciona / roto / falta para competir
 
-### 🟢 Panel de negocio (vs Shopify/Square) — shell real, 3 superficies falsas
-- **Real:** shell (nav/switcher/avisos), Inicio + Estadísticas (métricas reales), CRM
-  (clientes/pedidos/reseñas), Mensajes, Novedades, Promos, Pagos/Connect, planes vía Stripe.
-- **Roto:** `/negocio/publicar` falso (#13); Billing inventado (#14); Staff falso (#15);
-  Candidatos/Jobs fixture; **precio de plan se contradice** ($4.99 en onboarding vs $19/$49
-  en Billing); "Reportar" reseña es teatro local; botones muertos (Pausar, Exportar);
-  gates de plan solo-cliente (sin enforcement server).
-- **Falta:** estado real de suscripción en Billing; onboarding real de negocio;
-  cuentas de staff con acceso; enforcement de tier en servidor; reportes/export.
+### 🟢 PAGOS / STRIPE (vs marketplace-grade) — backbone real, ruta rota
+- **Real:** checkout propio (Payment Element) para pedidos/reservas/rentas; **re-precio autoritativo server-side** en las 4 modalidades; economía de destination-charge (comprador P+5%, plataforma 15% de P, delivery+propina 100% al vendedor); webhook firma-verificado con auto-refund si falla el cumplimiento; Connect Express onboarding; hold de depósito de renta; promos validadas en servidor; hardening de open-redirect.
+- **Roto:** #1, #2, #3, #5, #6, #16 de arriba; radio de entrega no forzado en servidor al cobrar; webhook read-then-act (doble-fulfill posible en concurrencia); `pending_purchases` huérfanos se acumulan.
+- **Falta:** herramientas de reembolso; config LIVE; visibilidad de payouts para el vendedor; impuestos; manejo de disputas/chargebacks; comisión 15% en efectivo (¿cómo se cobra?).
+
+### 🟢 AUTH + MI CUENTA (vs Uber/DoorDash) — hub fuerte, puerta débil
+- **Real:** email+password con sesión persistente, onboarding con GPS/ciudad, perfil editable, direcciones guardadas, historial completo (pedidos/reservas/rentas/boletos/RSVP) con tracking en vivo, centro de notificaciones con triggers+realtime, Web Push VAPID end-to-end, merge guest→user.
+- **Roto:** #18, #25 de arriba; toggles de preferencias de notificación cosméticos (no se aplican); creación de perfil solo-cliente (un upsert fallido = usuario sin perfil, "Invitado" para siempre); cancelar pedido pagado deja el cargo varado; "Ayuda y soporte" es stub muerto.
+- **Falta:** 2º método de login (phone/WhatsApp/email OTP, social); **borrado de cuenta / export** (derechos de privacidad); cambio de contraseña/email; verificación de email (hoy OFF); foto de perfil.
+
+### 🟡 DATOS / ESCALA / SEGURIDAD (vs meta 1M+) — sólido en escritura, huecos en lectura/proceso
+- **Real y maduro:** RLS en **las 46 tablas (132 políticas)**; los ~50 SECURITY DEFINER fijan `search_path`; RPCs de dinero solo service_role; batch de hardening 2026-07-14; modelo geo+FTS; protección atómica de oversell de boletos; sin N+1 en el cliente; storage RLS por-usuario.
+- **Roto:** #20-#24 de arriba; **queries geo derrotan su índice GIST** (usan `ST_Distance` en vez de `ST_DWithin` → seq-scan a escala); feed sin paginación (tope 50); canales realtime globalmente sin-scope (fan-out colapsa a escala); `.env.production` con anon key en git.
+- **Falta:** **ledger de migraciones** (tabla `schema_migrations` + diagnóstico "qué se aplicó" — la regresión de hoy se repetirá sin esto); rate-limiting; **estrategia de backup/PITR**; moderación; reescritura `ST_DWithin`; paginación keyset.
+
+### 🟢 i18n + DISEÑO (vs WhatsApp/DoorDash) — la superficie MÁS fuerte
+- **Real:** **4,381 llamadas `L('es','en')`** — un escaneo sistemático encontró esencialmente cero strings sin envolver; toggle ES/EN global; español por defecto; push bilingüe server-side; fechas/números locale-aware; el harness `tools/mobile-audit` pasa con **0 overflow a 392px** en todo lo alcanzable como invitado.
+- **Roto:** #29 (idioma no persiste); **58 hex crudos** en className en 20 archivos (viola tokens-only); 15 `aria-label` en inglés; `<html lang>` no cambia; CheckoutSheet muestra error crudo de Stripe.
+- **Falta:** persistencia de idioma; locale routing + hreflang (EN sin SEO); wire de locale a Stripe Elements. **9 tabs transaccionales del panel no se pudieron auditar** en el sandbox (requieren negocio autenticado) — falta certificar overflow ahí.
+
+### 🔴 PWA / SEO / PLATAFORMA (vs PWA instalable + Google) — la superficie MÁS débil
+- **Real:** service worker de push end-to-end; shell HTML SSG'd en español con lang/theme-color/viewport; deep-links de negocio/evento; ícono 192px.
+- **Roto:** #27, #28, #19 de arriba; **sin favicon**; **cero Open Graph/Twitter** (shares de WhatsApp sin imagen); 404 en inglés sin marca; **sin error boundaries** (un crash = pantalla blanca); fuentes Google render-blocking.
+- **Falta:** manifest + set de íconos completo; robots.txt; sitemap.xml; navegación con `<a>`/Link crawleable; OG image site-wide; SSR/prerender por-negocio/evento + JSON-LD LocalBusiness; analítica; soporte offline; 404/500 con marca en español.
+
+### 🟢 Comunidad · Negocios · Comida · Tienda · Servicios · Renta · Eventos · Panel
+*(Detalle completo en la tanda 1 — resumen: todas tienen motor real y competitivo, contaminado por los datos falsos #7-#19 y con los huecos de dinero #1-#6 y reservas #30-#31. Lo más real: Comida y Servicios. Lo más incompleto: los sub-módulos falsos del panel — Billing, Staff, `/negocio/publicar`.)*
+
+- **Comunidad (Nextdoor):** feed/posts/encuestas/comentarios/realtime/follows REALES. Falta: notificaciones de actividad, moderación, filtro de barrio en móvil, DMs.
+- **Negocios (Yelp):** buscador FTS, filtros, reseñas reales, endorsements REALES. Falta: mapa real, reclamar-negocio/verificación, 3 botones muertos, datos falsos.
+- **Comida (DoorDash):** la más real end-to-end. Falta: reembolso, tarifa de zona real, cierre por horario, stock server-side.
+- **Tienda (Amazon):** CRUD+variantes+storefront REALES. Falta: decrementar stock, descuentos canjeables, envío real, impuestos.
+- **Servicios (Fresha):** reservas/agenda/aprobación REALES. Falta: arreglar sobre-reserva (#30-#31), recordatorios de cita, Staff falso.
+- **Renta (Turo):** carrito por fechas + hold de depósito REALES. Falta: reembolso/cancelación, re-autorizar depósito, quitar teatro walk-in.
+- **Eventos (Eventbrite):** venta atómica + QR + check-in REALES. Falta: cerrar #1/#2, reembolsos, editar evento, boleto por email.
+- **Panel (Shopify/Square):** shell + métricas + CRM + Connect REALES. Falta: quitar Billing/Staff/publicar falsos, enforcement de tier server-side.
 
 ---
 
 ## 🔧 Lo que te toca a TI (el fundador) — ningún código lo resuelve
 
-1. **Stripe modo live:** claves live, Connect activado, comisión de plataforma confirmada
-   (¿15%? cuadrar con `02-pedidos.md`), webhooks apuntando a prod.
-2. **Supabase prod:** plantillas de email OTP + SMTP (Amazon SES), dominio propio,
-   confirmar qué features de auth (¿solo email OTP? ¿WhatsApp? ¿password?).
-3. **Decisión de pago del dueño:** ¿Stripe hosted-Checkout para **suscripciones del
-   dueño** (Billing.tsx:79) es la excepción sancionada, o también va en hoja propia?
-   Tu regla "checkout propio SIEMPRE / anything future" es ambigua aquí — decide y
-   documenta en LAUNCH-CHECKLIST.
-4. **Precio canónico de planes** (hay contradicción $4.99 vs $19/$49) — una sola lista.
-5. **Impuestos:** confirmar posición (hoy no se cobra IVA/tax en ninguna superficie).
-6. **Legales:** ¿existen Términos y Privacidad? (no los encontré) — obligatorio antes de
-   cobrar y de exponer datos de vecinos.
-7. **Plan de moderación y canal de soporte** (para reportes y reembolsos).
-8. **Reembolsos:** definir la política (ventanas, quién puede) antes de mover tarjetas.
-
----
-
-## ⏳ NO auditado (cortado por límite de sesión — re-correr tras el reset 2pm UTC)
-
-Estas 6 áreas quedaron sin auditar; recomiendo re-correr el mismo workflow para
-completarlas (son justo las de mayor riesgo de lanzamiento):
-
-1. **Pagos / Stripe** — la ruta del dinero completa (Connect, comisiones, webhooks,
-   ENV que debes configurar). *Parcialmente cubierto por los hallazgos de arriba.*
-2. **Datos / escala / seguridad** — RLS en cada tabla, RPCs anon que filtren PII,
-   índices geo/FTS, N+1, buckets de storage, datos demo que NO deben ir a prod.
-3. **i18n + diseño** — strings sin `L('es','en')`, hex crudo en className, mobile-first.
-4. **PWA / SEO** — manifest, service worker (¿el de push está en /public?), indexabilidad,
-   JSON-LD LocalBusiness, OG tags, 404/500.
-5. **Auth + Mi cuenta** — métodos de sesión, push VAPID end-to-end, historial, merges guest→user.
-6. **LAUNCH-CHECKLIST vs realidad** — reconciliar qué ítems ya están hechos/desfasados.
+1. **Stripe LIVE:** rotar `sk_test` expuesto, claves live, `payment_intent.succeeded` en el webhook (¡sin esto los pedidos pagados en-app nunca se cumplen!), webhook de Connect (`account.updated`), dominio para Apple Pay, comisión confirmada.
+2. **Supabase prod:** verificación de cuenta (email confirmation + Amazon SES, o WhatsApp OTP), plantillas de email OTP.
+3. **Dominio propio** + `SITE_ORIGIN` en las 4 edge functions (lanzar en `tolatino.vercel.app` mina la confianza).
+4. **Páginas legales:** Términos, Privacidad, política de reembolsos/cancelaciones — no existen.
+5. **Precio canónico de planes** ($4.99 vs $19/$49 se contradicen) — una sola lista.
+6. **Impuestos:** confirmar posición (hoy no se cobra tax) vs obligaciones de marketplace-facilitator.
+7. **Backup/PITR** de Supabase: confirmar plan, retención y probar un restore.
+8. **Moderación:** dueño humano nombrado + cola de reportes + rate limits antes de signups abiertos.
+9. **Comisión 15% en efectivo:** definir el modelo antes de onboarding de vendedores (mayormente cash).
+10. **E2E en dispositivo real:** pedido con tarjeta test → cocina → tracker; push en Android/iOS; hold de depósito release/capture en el dashboard de Stripe.
 
 ---
 
 ## Plan sugerido (orden de ataque)
 
-**Sprint 1 — "Cero mentiras + dinero seguro" (bloqueante de lanzamiento):**
-quitar/ocultar TODOS los datos falsos (#5-#15), cerrar la ruta del dinero
-(#1-#4: cobro de boletos server-side, matar el redirect prohibido, reembolsos,
-guard de edición), y tapar la sobre-reserva de servicios (#16-#17).
+**Sprint 1 — "Cero mentiras + dinero seguro" (bloqueante):** quitar/ocultar TODOS
+los datos falsos (#7-#19), cerrar la ruta del dinero (#1-#6), tapar la sobre-reserva
+(#30-#31). Todo es código, lo puedo hacer yo.
 
-**Sprint 2 — "Confianza y retención":** notificaciones de comunidad, moderación
-mínima, recordatorios de cita, mapa real, cierre por horario, tarifa de zona real.
+**Sprint 2 — "Seguridad + confianza":** blindar la tabla `businesses` (#20),
+fuzzear coordenadas (#21), rate-limiting (#22), cola de moderación (#23), purgar
+seed (#24), ledger de migraciones, recuperación de contraseña (#25), persistir
+idioma (#29), notificaciones de comunidad, recordatorios de cita.
 
-**Sprint 3 — "Competir de verdad":** reclamar-negocio/verificación, reseñas de
-producto, SEO por-negocio/evento, envío real, y las 6 áreas no auditadas.
+**Sprint 3 — "Descubrimiento + legal + escala":** PWA manifest + íconos (#27),
+crawleabilidad + sitemap/robots + OG (#28), páginas legales (#26), reescritura
+`ST_DWithin`, paginación de feed, mapa real, reclamar-negocio, SSR/JSON-LD por-negocio.
+
+**Founder-track (en paralelo):** los 10 puntos de "Lo que te toca a TI".
 
 > Cuando digas, ataco el Sprint 1 superficie por superficie (cada arreglo con su
-> verificación en browser antes de desplegar) y re-corro la auditoría de las 6
-> áreas faltantes tras el reset de sesión.
+> verificación en browser antes de desplegar). Las 13 verificaciones que quedaron
+> pendientes por límite de sesión son en su mayoría "blockers" ya evidentes (los
+> de arriba), no claims dudosos — no cambian el panorama.
