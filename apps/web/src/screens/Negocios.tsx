@@ -685,7 +685,9 @@ function EndorseBar({ b }: { b: Business }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const noticeTmr = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const count = override ?? b.endorse;
+  // Prefer this card's own optimistic count, then the shared authoritative count
+  // (so a recommend from the DETAIL page reflects here too), then the list value.
+  const count = override ?? endorsed.countFor(b.slug) ?? b.endorse;
 
   const flash = (m: string) => {
     setNotice(m);

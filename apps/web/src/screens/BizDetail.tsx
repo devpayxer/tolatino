@@ -318,7 +318,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [endo, setEndo] = useState<Endorsement>({ count: b.endorse ?? 0, mine: false, avatars: [], note: null });
   const [endoReason, setEndoReason] = useState<string | null>(null); // reason sheet draft, or null (closed)
   const [endoBusy, setEndoBusy] = useState(false);
-  useEffect(() => { let off = false; fetchEndorsement(b.slug).then((e) => { if (!off) setEndo(e); }); return () => { off = true; }; }, [b.slug, user?.id]);
+  useEffect(() => { let off = false; fetchEndorsement(b.slug).then((e) => { if (off) return; setEndo(e); endorsedSet.seed(b.slug, e.mine, e.count); }); return () => { off = true; }; }, [b.slug, user?.id]);
   const doEndorse = async (note?: string) => {
     if (!user) { router.push('/entrar'); return; }
     setEndoBusy(true);

@@ -21,6 +21,13 @@ type ToggleResult = { endorsed: boolean; count: number; error?: string };
 type Ctx = {
   endorsed: Record<string, boolean>; // keyed by business slug
   isEndorsed: (slug: string) => boolean;
+  /** The authoritative endorsement count for a slug once we've seen it (from a
+   *  toggle reply or a `seed`), or undefined — so the card can fall back to the
+   *  count baked into its list row. Keeps the count in sync across surfaces. */
+  countFor: (slug: string) => number | undefined;
+  /** Prime mine + count for a slug from an authoritative read (the detail page
+   *  fetches the real endorsement on open) so the listing card reflects it too. */
+  seed: (slug: string, mine: boolean, count: number) => void;
   /** Recommend / un-recommend. `note` (optional) is saved on a NEW recommendation
    *  and only offered on the detail page — the card toggle passes none. */
   toggle: (slug: string, note?: string) => Promise<ToggleResult>;
@@ -32,6 +39,7 @@ const C = createContext<Ctx | null>(null);
 export function EndorsedProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [endorsed, setEndorsed] = useState<Record<string, boolean>>({});
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [ready, setReady] = useState(false);
 
   // Hydrate the signed-in user's recommended slugs (one round-trip). Guests get
@@ -58,26 +66,39 @@ export function EndorsedProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
+  const seed = useCallback((slug: string, mine: boolean, count: number) => {
+    if (!slug) return;
+    setEndorsed((m) => (m[slug] === mine ? m : { ...m, [slug]: mine }));
+    setCounts((m) => (m[slug] === count ? m : { ...m, [slug]: count }));
+  }, []);
+
   const toggle = useCallback(
     async (slug: string, note?: string): Promise<ToggleResult> => {
       if (!slug) return { endorsed: false, count: 0, error: 'no-slug' };
       // Optimistic flip so the button responds instantly; reconcile on the reply.
       const prev = !!endorsed[slug];
+      const prevCount = counts[slug];
       setEndorsed((m) => ({ ...m, [slug]: !prev }));
+      if (prevCount !== undefined) {
+        setCounts((m) => ({ ...m, [slug]: Math.max(0, prevCount + (prev ? -1 : 1)) }));
+      }
       const r = await toggleEndorsement(slug, note);
       if (r.error) {
         setEndorsed((m) => ({ ...m, [slug]: prev })); // revert on failure
+        if (prevCount !== undefined) setCounts((m) => ({ ...m, [slug]: prevCount }));
         return r;
       }
       setEndorsed((m) => ({ ...m, [slug]: r.endorsed }));
+      setCounts((m) => ({ ...m, [slug]: r.count })); // server is authoritative
       return r;
     },
-    [endorsed],
+    [endorsed, counts],
   );
 
   const isEndorsed = useCallback((slug: string) => !!endorsed[slug], [endorsed]);
+  const countFor = useCallback((slug: string) => counts[slug], [counts]);
 
-  return <C.Provider value={{ endorsed, isEndorsed, toggle, ready }}>{children}</C.Provider>;
+  return <C.Provider value={{ endorsed, isEndorsed, countFor, seed, toggle, ready }}>{children}</C.Provider>;
 }
 
 export function useEndorsed(): Ctx {
