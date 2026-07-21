@@ -663,6 +663,18 @@ function SaveBtn({ b, size = 17 }: { b: Business; size?: number }) {
  * count comes from the businesses table (`b.endorse`) and is overridden by the
  * server's authoritative count after a toggle.
  */
+// Map the server's raw endorsement error to a clear, bilingual notice — so the
+// button explains WHY it can't proceed instead of silently doing nothing (the
+// most common case: you own this business, or you can't reach the server).
+function endorseNotice(err: string, L: (es: string, en: string) => string): string {
+  const e = (err || '').toLowerCase();
+  if (e.includes('own business')) return L('No puedes recomendar tu propio negocio.', "You can't recommend your own business.");
+  if (e.includes('auth')) return L('Inicia sesión para recomendar.', 'Sign in to recommend.');
+  if (e.includes('offline') || e.includes('network') || e.includes('fetch')) return L('Sin conexión. Intenta de nuevo.', 'No connection. Try again.');
+  if (e.includes('not found')) return L('Este negocio ya no está disponible.', 'This business is no longer available.');
+  return L('No se pudo recomendar. Intenta de nuevo.', "Couldn't recommend. Try again.");
+}
+
 function EndorseBar({ b }: { b: Business }) {
   const { L } = useLang();
   const router = useRouter();
@@ -671,48 +683,70 @@ function EndorseBar({ b }: { b: Business }) {
   const mine = endorsed.isEndorsed(b.slug);
   const [override, setOverride] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
+  const noticeTmr = useRef<ReturnType<typeof setTimeout> | null>(null);
   const count = override ?? b.endorse;
+
+  const flash = (m: string) => {
+    setNotice(m);
+    if (noticeTmr.current) clearTimeout(noticeTmr.current);
+    noticeTmr.current = setTimeout(() => setNotice(''), 3200);
+  };
+  useEffect(() => () => { if (noticeTmr.current) clearTimeout(noticeTmr.current); }, []);
 
   const onTap = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
+      flash(L('Inicia sesión para recomendar.', 'Sign in to recommend.'));
       router.push('/entrar');
       return;
     }
     if (busy) return;
     setBusy(true);
     const r = await endorsed.toggle(b.slug);
-    if (!r.error) setOverride(r.count);
+    if (r.error) flash(endorseNotice(r.error, L));
+    else setOverride(r.count);
     setBusy(false);
   };
 
   return (
-    <div className="mt-3 flex items-center gap-2.5 rounded-btn bg-lilac-2 px-3 py-2">
-      <ThumbUp size={16} stroke={2.2} className="flex-none text-primary" />
-      <span className="min-w-0 flex-1 truncate text-[11.5px] font-bold text-ink-3">
-        {count > 0 ? (
-          <>
-            {L('Recomendado por', 'Recommended by')}{' '}
-            <span className="text-primary-dark">
-              {count} {L(count === 1 ? 'vecino' : 'vecinos', count === 1 ? 'neighbor' : 'neighbors')}
-            </span>
-          </>
-        ) : (
-          L('Sé el primero en recomendar', 'Be the first to recommend')
-        )}
-      </span>
-      <button
-        onClick={onTap}
-        disabled={busy}
-        aria-pressed={mine}
-        className={`flex flex-none cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold transition-colors ${
-          mine ? 'bg-primary text-white' : 'border-[1.5px] border-lilac-line bg-white text-primary-dark'
-        }`}
-      >
-        {mine ? <ThumbUpFilled size={12} /> : <ThumbUp size={12} stroke={2.4} />}
-        {mine ? L('Recomiendas', 'Recommended') : L('Recomendar', 'Recommend')}
-      </button>
-    </div>
+    <>
+      <div className="mt-3 flex items-center gap-2.5 rounded-btn bg-lilac-2 px-3 py-2">
+        <ThumbUp size={16} stroke={2.2} className="flex-none text-primary" />
+        <span className="min-w-0 flex-1 truncate text-[11.5px] font-bold text-ink-3">
+          {count > 0 ? (
+            <>
+              {L('Recomendado por', 'Recommended by')}{' '}
+              <span className="text-primary-dark">
+                {count} {L(count === 1 ? 'vecino' : 'vecinos', count === 1 ? 'neighbor' : 'neighbors')}
+              </span>
+            </>
+          ) : (
+            L('Sé el primero en recomendar', 'Be the first to recommend')
+          )}
+        </span>
+        <button
+          onClick={onTap}
+          disabled={busy}
+          aria-pressed={mine}
+          className={`flex flex-none cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold transition-colors ${
+            mine ? 'bg-primary text-white' : 'border-[1.5px] border-lilac-line bg-white text-primary-dark'
+          }`}
+        >
+          {mine ? <ThumbUpFilled size={12} /> : <ThumbUp size={12} stroke={2.4} />}
+          {mine ? L('Recomiendas', 'Recommended') : L('Recomendar', 'Recommend')}
+        </button>
+      </div>
+      {notice && (
+        <div
+          role="status"
+          onClick={(e) => e.stopPropagation()}
+          className="fixed bottom-[86px] left-1/2 z-[80] max-w-[calc(100vw-32px)] -translate-x-1/2 rounded-xl bg-ink px-4 py-3 text-center text-[12.5px] font-bold text-white shadow-modal md:bottom-6"
+        >
+          {notice}
+        </div>
+      )}
+    </>
   );
 }
 
