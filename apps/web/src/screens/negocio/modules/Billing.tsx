@@ -17,6 +17,7 @@ import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { startCheckout, openBillingPortal } from '@/lib/stripe';
+import { supabase } from '@/lib/supabase';
 import { useScrollLock } from '@/lib/scrollLock';
 
 const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
@@ -64,7 +65,44 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   }, []);
 
   const meta = { free: { name: 'Free', price: '$0/mes' }, verified: { name: 'Verified', price: '$19/mes' }, premium: { name: 'Premium', price: '$49/mes' } }[tier];
-  const renewDate = L('14 Nov', 'Nov 14');
+
+  // A REAL signed-in business shows its REAL subscription (business_subscriptions)
+  // and manages its card/invoices in the Stripe portal — never invented data.
+  // The fabricated cards/invoices/renewal are shown ONLY in demo/showcase mode.
+  const isReal = !!real && !admin.demo;
+  const [subInfo, setSubInfo] = useState<{ current_period_end: string | null; status: string | null } | null>(null);
+  useEffect(() => {
+    if (!isReal || !real || !supabase) { setSubInfo(null); return; }
+    let off = false;
+    void supabase.from('business_subscriptions').select('current_period_end,status').eq('business_id', real.id).maybeSingle()
+      .then(({ data }) => { if (!off) setSubInfo((data as { current_period_end: string | null; status: string | null } | null) ?? null); });
+    return () => { off = true; };
+  }, [isReal, real?.id]);
+  const realRenew = subInfo?.current_period_end
+    ? new Date(subInfo.current_period_end).toLocaleDateString(ctx.es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short' })
+    : null;
+  const renewDate = isReal ? (realRenew ?? L('—', '—')) : L('14 Nov', 'Nov 14');
+
+  const openPortal = async () => {
+    if (!real) return;
+    setBusy(true);
+    const { url, error } = await openBillingPortal(real.id);
+    setBusy(false);
+    if (url) { window.location.href = url; return; }
+    flash(error === 'no subscription' ? L('No tienes una suscripción activa', 'No active subscription') : L('No se pudo abrir el portal', 'Could not open the portal'));
+  };
+  const portalCta = (
+    <div className="mx-auto max-w-md rounded-card border border-hair bg-white p-6 text-center shadow-card">
+      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lilac"><Lock size={22} className="text-primary" stroke={2.2} /></span>
+      <div className="mt-3 text-[14px] font-extrabold text-ink">{L('Administra tus pagos en Stripe', 'Manage payments in Stripe')}</div>
+      <p className="mt-1.5 text-[12px] font-semibold leading-relaxed text-muted">
+        {L('Tu método de pago y tus facturas se administran en el portal seguro de Stripe.', 'Your card and invoices live in Stripe’s secure portal.')}
+      </p>
+      <button onClick={openPortal} disabled={busy} className="mt-4 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white disabled:opacity-60">
+        {L('Abrir portal de pagos', 'Open billing portal')}
+      </button>
+    </div>
+  );
 
   const openUpgrade = (p?: 'verified' | 'premium') => {
     setPick(p ?? (isFree ? 'verified' : 'premium'));
@@ -261,7 +299,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <span className="text-[13px] font-extrabold text-ink">{L('Total a pagar', 'Total due')}</span>
         <span className="text-[16px] font-extrabold text-ink">{nextTotal}</span>
       </div>
-      <div className="mt-1.5 text-[10px] font-semibold text-muted-2">{L('Se cobra el', 'Charges on')} {renewDate} · Visa ••4421</div>
+      <div className="mt-1.5 text-[10px] font-semibold text-muted-2">{L('Se cobra el', 'Charges on')} {renewDate}{!isReal ? ' · Visa ••4421' : ''}</div>
     </div>
   );
 
@@ -558,11 +596,15 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_360px]">
           <div className="flex flex-col gap-4">
             {planCardEl}
-            {usageEl}
+            {/* Usage meters carry fabricated activity counts — showcase only until
+                real per-business metering is wired. A real dashboard never invents stats. */}
+            {!isReal && usageEl}
           </div>
           <div className="flex flex-col gap-4 xl:sticky xl:top-[74px]">
             {isPaid && nextInvoiceEl}
-            {addonsEl}
+            {/* Add-ons aren't billable products yet (toggles are local-only), so a real
+                business must not see a non-functional purchase surface. */}
+            {!isReal && addonsEl}
             {isPaid && (
               <button onClick={() => setCancelOpen(true)} className="cursor-pointer py-2 text-center text-[11.5px] font-bold text-muted-2 underline">
                 {L('Cancelar suscripción', 'Cancel subscription')}
@@ -573,8 +615,8 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       )}
 
       {sub === 'compare' && compareEl}
-      {sub === 'methods' && methodsEl}
-      {sub === 'invoices' && invoicesEl}
+      {sub === 'methods' && (isReal ? portalCta : methodsEl)}
+      {sub === 'invoices' && (isReal ? portalCta : invoicesEl)}
 
       {/* ---------- Cancel confirm (small centered dialog) ---------- */}
       {cancelOpen && (
@@ -592,7 +634,9 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             </span>
             <div className="mt-3 text-[18px] font-extrabold text-ink">{L('¿Cancelar tu plan?', 'Cancel your plan?')}</div>
             <div className="mt-1.5 text-[12px] font-medium leading-relaxed text-muted">
-              {L('Tu plan sigue activo hasta el 14 de noviembre. Después tu listado pasa a Free.', 'Your plan stays active until Nov 14. After that your listing reverts to Free.')}
+              {isReal
+                ? L(`Tu plan sigue activo hasta el final del periodo (${renewDate}). Después tu listado pasa a Free.`, `Your plan stays active until the end of the period (${renewDate}). After that your listing reverts to Free.`)
+                : L('Tu plan sigue activo hasta el 14 de noviembre. Después tu listado pasa a Free.', 'Your plan stays active until Nov 14. After that your listing reverts to Free.')}
             </div>
             <div className="mt-3.5 rounded-tile border border-hair bg-white p-3">
               <div className="mb-2 text-[11px] font-extrabold text-amber-ink">{L('PERDERÁS:', "YOU'LL LOSE:")}</div>
