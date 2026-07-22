@@ -1,0 +1,19 @@
+email,password,nombre,ciudad,rol
+1@1.com,123,"Marisol Vega","Hazleton, PA",cliente/comunidad
+2@1.com,123,"José Ramírez","Hazleton, PA",cliente/comunidad
+3@1.com,123,"Lucía Fernández","Hazleton, PA",cliente/comunidad
+4@1.com,123,"Carlos Mendoza","Hazleton, PA",cliente/comunidad
+5@1.com,123,"Ana Torres","Hazleton, PA",cliente/comunidad
+6@1.com,123,"Diego Herrera","Hazleton, PA",cliente/comunidad
+7@1.com,123,"Gabriela Ruiz","Hazleton, PA",cliente/comunidad
+8@1.com,123,"Miguel Santos","Hazleton, PA",cliente/comunidad
+9@1.com,123,"Rosa Delgado","Hazleton, PA",cliente/comunidad
+1@2.com,123,"Yesenia Peña","The Bronx, NY",cliente/comunidad
+2@2.com,123,"Rafael Núñez","The Bronx, NY",cliente/comunidad
+3@2.com,123,"Carmen Ortiz","The Bronx, NY",cliente/comunidad
+4@2.com,123,"Luis Castillo","The Bronx, NY",cliente/comunidad
+5@2.com,123,"Daniela Rosario","The Bronx, NY",cliente/comunidad
+6@2.com,123,"Héctor Guzmán","The Bronx, NY",cliente/comunidad
+7@2.com,123,"Patricia Jiménez","The Bronx, NY",cliente/comunidad
+8@2.com,123,"Óscar Reyes","The Bronx, NY",cliente/comunidad
+9@2.com,123,"Ingrid Morales","The Bronx, NY",cliente/comunidad
