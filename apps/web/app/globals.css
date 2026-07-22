@@ -6,6 +6,20 @@
   box-sizing: border-box;
 }
 
+/*
+ * Never let the PAGE scroll sideways. Horizontal scroll rails (the category bar,
+ * the filter chips) are wider than the viewport on mobile; on iOS Safari their
+ * momentum bleeds into the whole page, so it rubber-bands left↔right. Clipping
+ * horizontal overflow at the root stops that. `clip` (not `hidden`) is used on
+ * purpose: it doesn't create a scroll container, so `position: sticky` on the
+ * header/category bar keeps working. Vertical scrolling is unaffected.
+ */
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
