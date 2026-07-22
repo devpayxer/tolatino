@@ -35,15 +35,15 @@ o@beauty1.com,123,"Color Bar Latina Express Hazleton",BeautyHealth,"Manicure y p
 p@beauty1.com,123,"Barbershop El Rey Express Hazleton",BeautyHealth,"Barbería","Hazleton, PA",free,establecimiento,Servicios
 q@beauty1.com,123,"Spa Serenidad Express Hazleton",BeautyHealth,"Salón de belleza","Hazleton, PA",free,establecimiento,Servicios
 r@beauty1.com,123,"Salón Caribeña Express Hazleton",BeautyHealth,"Uñas","Hazleton, PA",free,establecimiento,Servicios
-b@kids1.com,123,"Preescolar Arcoíris Hazleton",Children,"Preescolar","Hazleton, PA",verified,establecimiento,Servicios+Tienda+Eventos
-c@kids1.com,123,"Niñera de Confianza Hazleton",Children,"Niñera","Hazleton, PA",verified,establecimiento,Servicios+Tienda+Eventos
-e@kids1.com,123,"Fútbol Infantil Hazleton",Children,"Deportes para niños","Hazleton, PA",verified,establecimiento,Servicios+Tienda+Eventos
-f@kids1.com,123,"Música para Niños Hazleton",Children,"Música para niños","Hazleton, PA",verified,establecimiento,Servicios+Tienda+Eventos
-h@kids1.com,123,"Terapia Infantil Hazleton",Children,"Terapia infantil","Hazleton, PA",verified,establecimiento,Servicios+Tienda+Eventos
-i@kids1.com,123,"Campamento de Verano Hazleton",Children,"Campamentos","Hazleton, PA",verified,establecimiento,Servicios+Tienda+Eventos
-a@kids1.com,123,"Guardería Los Angelitos Hazleton",Children,"Guardería","Hazleton, PA",premium,establecimiento,Servicios+Tienda+Eventos
-d@kids1.com,123,"Clases de Baile Kids Hazleton",Children,"Clases para niños","Hazleton, PA",premium,establecimiento,Servicios+Tienda+Eventos
-g@kids1.com,123,"Fotografía Infantil Hazleton",Children,"Fotografía infantil","Hazleton, PA",premium,establecimiento,Servicios+Tienda+Eventos
+b@kids1.com,123,"Preescolar Arcoíris Hazleton",Children,"Preescolar","Hazleton, PA",verified,online,Servicios+Tienda+Eventos
+c@kids1.com,123,"Niñera de Confianza Hazleton",Children,"Niñera","Hazleton, PA",verified,online,Servicios+Tienda+Eventos
+e@kids1.com,123,"Fútbol Infantil Hazleton",Children,"Deportes para niños","Hazleton, PA",verified,online,Servicios+Tienda+Eventos
+f@kids1.com,123,"Música para Niños Hazleton",Children,"Música para niños","Hazleton, PA",verified,online,Servicios+Tienda+Eventos
+h@kids1.com,123,"Terapia Infantil Hazleton",Children,"Terapia infantil","Hazleton, PA",verified,online,Servicios+Tienda+Eventos
+i@kids1.com,123,"Campamento de Verano Hazleton",Children,"Campamentos","Hazleton, PA",verified,online,Servicios+Tienda+Eventos
+a@kids1.com,123,"Guardería Los Angelitos Hazleton",Children,"Guardería","Hazleton, PA",premium,online,Servicios+Tienda+Eventos
+d@kids1.com,123,"Clases de Baile Kids Hazleton",Children,"Clases para niños","Hazleton, PA",premium,online,Servicios+Tienda+Eventos
+g@kids1.com,123,"Fotografía Infantil Hazleton",Children,"Fotografía infantil","Hazleton, PA",premium,online,Servicios+Tienda+Eventos
 j@kids1.com,123,"Guardería Los Angelitos Express Hazleton",Children,"Fiestas infantiles","Hazleton, PA",free,establecimiento,Servicios
 k@kids1.com,123,"Preescolar Arcoíris Express Hazleton",Children,"Ropa infantil","Hazleton, PA",free,establecimiento,Servicios
 l@kids1.com,123,"Niñera de Confianza Express Hazleton",Children,"Juguetes","Hazleton, PA",free,establecimiento,Servicios
@@ -71,15 +71,15 @@ o@church1.com,123,"Casa de Oración Express Hazleton",Churches,"Bautizos","Hazle
 p@church1.com,123,"Iglesia Evangélica Luz Express Hazleton",Churches,"Iglesia católica","Hazleton, PA",free,establecimiento,Eventos
 q@church1.com,123,"Comunidad de Fe Express Hazleton",Churches,"Iglesia cristiana","Hazleton, PA",free,establecimiento,Eventos
 r@church1.com,123,"Parroquia Guadalupe Express Hazleton",Churches,"Ministerios","Hazleton, PA",free,establecimiento,Eventos
-b@edu1.com,123,"Academia de Español Hazleton",Education,"Clases de español","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-c@edu1.com,123,"Tutoría Matemáticas Hazleton",Education,"Tutoría","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-e@edu1.com,123,"CDL Truck School Hazleton",Education,"Manejo comercial (CDL)","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-f@edu1.com,123,"Ciudadanía USA Hazleton",Education,"Ciudadanía","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-h@edu1.com,123,"Computación Básica Hazleton",Education,"Música","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-i@edu1.com,123,"GED en Español Hazleton",Education,"Computación","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-a@edu1.com,123,"Clases de Inglés ESL Hazleton",Education,"Clases de inglés (ESL)","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-d@edu1.com,123,"Escuela de Manejo Hazleton",Education,"Escuela de manejo","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-g@edu1.com,123,"Clases de Música Hazleton",Education,"Preparación GED","Hazleton, PA",premium,establecimiento,Servicios+Eventos
+b@edu1.com,123,"Academia de Español Hazleton",Education,"Clases de español","Hazleton, PA",verified,online,Servicios+Eventos
+c@edu1.com,123,"Tutoría Matemáticas Hazleton",Education,"Tutoría","Hazleton, PA",verified,online,Servicios+Eventos
+e@edu1.com,123,"CDL Truck School Hazleton",Education,"Manejo comercial (CDL)","Hazleton, PA",verified,online,Servicios+Eventos
+f@edu1.com,123,"Ciudadanía USA Hazleton",Education,"Ciudadanía","Hazleton, PA",verified,online,Servicios+Eventos
+h@edu1.com,123,"Computación Básica Hazleton",Education,"Música","Hazleton, PA",verified,online,Servicios+Eventos
+i@edu1.com,123,"GED en Español Hazleton",Education,"Computación","Hazleton, PA",verified,online,Servicios+Eventos
+a@edu1.com,123,"Clases de Inglés ESL Hazleton",Education,"Clases de inglés (ESL)","Hazleton, PA",premium,online,Servicios+Eventos
+d@edu1.com,123,"Escuela de Manejo Hazleton",Education,"Escuela de manejo","Hazleton, PA",premium,online,Servicios+Eventos
+g@edu1.com,123,"Clases de Música Hazleton",Education,"Preparación GED","Hazleton, PA",premium,online,Servicios+Eventos
 j@edu1.com,123,"Clases de Inglés ESL Express Hazleton",Education,"Matemáticas","Hazleton, PA",free,establecimiento,Servicios
 k@edu1.com,123,"Academia de Español Express Hazleton",Education,"Cosmetología","Hazleton, PA",free,establecimiento,Servicios
 l@edu1.com,123,"Tutoría Matemáticas Express Hazleton",Education,"Baile","Hazleton, PA",free,establecimiento,Servicios
@@ -107,15 +107,15 @@ o@food1.com,123,"Pollo Rico Express Hazleton",FoodDrinks,"Desayunos","Hazleton, 
 p@food1.com,123,"Panadería La Espiga Express Hazleton",FoodDrinks,"Heladería","Hazleton, PA",free,establecimiento,Menú
 q@food1.com,123,"Pizzería Napoli Express Hazleton",FoodDrinks,"Jugos y licuados","Hazleton, PA",free,establecimiento,Menú
 r@food1.com,123,"Sabor Colombiano Express Hazleton",FoodDrinks,"Comida saludable","Hazleton, PA",free,establecimiento,Menú
-b@groc1.com,123,"Carnicería El Buen Corte Hazleton",Grocery,"Carnicería","Hazleton, PA",verified,establecimiento,Tienda+Eventos
-c@groc1.com,123,"Tortillería La Fresca Hazleton",Grocery,"Tortillería","Hazleton, PA",verified,establecimiento,Tienda+Eventos
-e@groc1.com,123,"Abarrotes Mi Tierra Hazleton",Grocery,"Abarrotes","Hazleton, PA",verified,establecimiento,Tienda+Eventos
-f@groc1.com,123,"Cremería Doña Rosa Hazleton",Grocery,"Cremería","Hazleton, PA",verified,establecimiento,Tienda+Eventos
-h@groc1.com,123,"Hierbería Natural Hazleton",Grocery,"Hierbería","Hazleton, PA",verified,establecimiento,Tienda+Eventos
-i@groc1.com,123,"Licorería El Barril Hazleton",Grocery,"Licorería","Hazleton, PA",verified,establecimiento,Tienda+Eventos
-a@groc1.com,123,"Supermercado La Latina Hazleton",Grocery,"Supermercado","Hazleton, PA",premium,establecimiento,Tienda+Eventos
-d@groc1.com,123,"Frutería del Valle Hazleton",Grocery,"Frutería","Hazleton, PA",premium,establecimiento,Tienda+Eventos
-g@groc1.com,123,"Panadería La Espiga Hazleton",Grocery,"Panadería","Hazleton, PA",premium,establecimiento,Tienda+Eventos
+b@groc1.com,123,"Carnicería El Buen Corte Hazleton",Grocery,"Carnicería","Hazleton, PA",verified,online,Tienda+Eventos
+c@groc1.com,123,"Tortillería La Fresca Hazleton",Grocery,"Tortillería","Hazleton, PA",verified,online,Tienda+Eventos
+e@groc1.com,123,"Abarrotes Mi Tierra Hazleton",Grocery,"Abarrotes","Hazleton, PA",verified,online,Tienda+Eventos
+f@groc1.com,123,"Cremería Doña Rosa Hazleton",Grocery,"Cremería","Hazleton, PA",verified,online,Tienda+Eventos
+h@groc1.com,123,"Hierbería Natural Hazleton",Grocery,"Hierbería","Hazleton, PA",verified,online,Tienda+Eventos
+i@groc1.com,123,"Licorería El Barril Hazleton",Grocery,"Licorería","Hazleton, PA",verified,online,Tienda+Eventos
+a@groc1.com,123,"Supermercado La Latina Hazleton",Grocery,"Supermercado","Hazleton, PA",premium,online,Tienda+Eventos
+d@groc1.com,123,"Frutería del Valle Hazleton",Grocery,"Frutería","Hazleton, PA",premium,online,Tienda+Eventos
+g@groc1.com,123,"Panadería La Espiga Hazleton",Grocery,"Panadería","Hazleton, PA",premium,online,Tienda+Eventos
 j@groc1.com,123,"Supermercado La Latina Express Hazleton",Grocery,"Pollería","Hazleton, PA",free,establecimiento,Tienda
 k@groc1.com,123,"Carnicería El Buen Corte Express Hazleton",Grocery,"Pescadería","Hazleton, PA",free,establecimiento,Tienda
 l@groc1.com,123,"Tortillería La Fresca Express Hazleton",Grocery,"Tienda latina","Hazleton, PA",free,establecimiento,Tienda
@@ -125,15 +125,15 @@ o@groc1.com,123,"Cremería Doña Rosa Express Hazleton",Grocery,"Especias","Hazl
 p@groc1.com,123,"Panadería La Espiga Express Hazleton",Grocery,"Supermercado","Hazleton, PA",free,establecimiento,Tienda
 q@groc1.com,123,"Hierbería Natural Express Hazleton",Grocery,"Carnicería","Hazleton, PA",free,establecimiento,Tienda
 r@groc1.com,123,"Licorería El Barril Express Hazleton",Grocery,"Tortillería","Hazleton, PA",free,establecimiento,Tienda
-b@health1.com,123,"Dental Sonrisa Hazleton",HealthMedicine,"Médico general","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-c@health1.com,123,"Óptica Visión Hazleton",HealthMedicine,"Dentista","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-e@health1.com,123,"Clínica de la Mujer Hazleton",HealthMedicine,"Óptica","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-f@health1.com,123,"Pediatría Feliz Hazleton",HealthMedicine,"Pediatra","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-h@health1.com,123,"Farmacia y Consultas Hazleton",HealthMedicine,"Quiropráctico","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-i@health1.com,123,"Salud Total Hazleton",HealthMedicine,"Fisioterapia","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-a@health1.com,123,"Clínica Familiar Sana Hazleton",HealthMedicine,"Clínica","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-d@health1.com,123,"Consultorio Dr. Ramos Hazleton",HealthMedicine,"Farmacia","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-g@health1.com,123,"Fisioterapia Activa Hazleton",HealthMedicine,"Ginecólogo","Hazleton, PA",premium,establecimiento,Servicios+Eventos
+b@health1.com,123,"Dental Sonrisa Hazleton",HealthMedicine,"Médico general","Hazleton, PA",verified,online,Servicios+Eventos
+c@health1.com,123,"Óptica Visión Hazleton",HealthMedicine,"Dentista","Hazleton, PA",verified,online,Servicios+Eventos
+e@health1.com,123,"Clínica de la Mujer Hazleton",HealthMedicine,"Óptica","Hazleton, PA",verified,online,Servicios+Eventos
+f@health1.com,123,"Pediatría Feliz Hazleton",HealthMedicine,"Pediatra","Hazleton, PA",verified,online,Servicios+Eventos
+h@health1.com,123,"Farmacia y Consultas Hazleton",HealthMedicine,"Quiropráctico","Hazleton, PA",verified,online,Servicios+Eventos
+i@health1.com,123,"Salud Total Hazleton",HealthMedicine,"Fisioterapia","Hazleton, PA",verified,online,Servicios+Eventos
+a@health1.com,123,"Clínica Familiar Sana Hazleton",HealthMedicine,"Clínica","Hazleton, PA",premium,online,Servicios+Eventos
+d@health1.com,123,"Consultorio Dr. Ramos Hazleton",HealthMedicine,"Farmacia","Hazleton, PA",premium,online,Servicios+Eventos
+g@health1.com,123,"Fisioterapia Activa Hazleton",HealthMedicine,"Ginecólogo","Hazleton, PA",premium,online,Servicios+Eventos
 j@health1.com,123,"Clínica Familiar Sana Express Hazleton",HealthMedicine,"Psicólogo","Hazleton, PA",free,establecimiento,Servicios
 k@health1.com,123,"Dental Sonrisa Express Hazleton",HealthMedicine,"Nutriólogo","Hazleton, PA",free,establecimiento,Servicios
 l@health1.com,123,"Óptica Visión Express Hazleton",HealthMedicine,"Laboratorio","Hazleton, PA",free,establecimiento,Servicios
@@ -143,15 +143,15 @@ o@health1.com,123,"Pediatría Feliz Express Hazleton",HealthMedicine,"Terapia / 
 p@health1.com,123,"Fisioterapia Activa Express Hazleton",HealthMedicine,"Clínica","Hazleton, PA",free,establecimiento,Servicios
 q@health1.com,123,"Farmacia y Consultas Express Hazleton",HealthMedicine,"Dentista","Hazleton, PA",free,establecimiento,Servicios
 r@health1.com,123,"Salud Total Express Hazleton",HealthMedicine,"Óptica","Hazleton, PA",free,establecimiento,Servicios
-b@home1.com,123,"Electricidad Segura Hazleton",HomeServices,"Electricidad","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-c@home1.com,123,"Limpieza Brillante Hazleton",HomeServices,"Limpieza de casa","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-e@home1.com,123,"Pintura Pro Hazleton",HomeServices,"Pintura","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-f@home1.com,123,"Control de Plagas Max Hazleton",HomeServices,"Control de plagas","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-h@home1.com,123,"Techos y Más Hazleton",HomeServices,"Techos","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-i@home1.com,123,"Mudanzas El Fuerte Hazleton",HomeServices,"Mudanzas","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-a@home1.com,123,"Plomería El Águila Hazleton",HomeServices,"Plomería","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-d@home1.com,123,"Jardinería Verde Hazleton",HomeServices,"Jardinería","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-g@home1.com,123,"Handyman Rápido Hazleton",HomeServices,"Handyman","Hazleton, PA",premium,establecimiento,Servicios+Eventos
+b@home1.com,123,"Electricidad Segura Hazleton",HomeServices,"Electricidad","Hazleton, PA",verified,online,Servicios+Eventos
+c@home1.com,123,"Limpieza Brillante Hazleton",HomeServices,"Limpieza de casa","Hazleton, PA",verified,online,Servicios+Eventos
+e@home1.com,123,"Pintura Pro Hazleton",HomeServices,"Pintura","Hazleton, PA",verified,online,Servicios+Eventos
+f@home1.com,123,"Control de Plagas Max Hazleton",HomeServices,"Control de plagas","Hazleton, PA",verified,online,Servicios+Eventos
+h@home1.com,123,"Techos y Más Hazleton",HomeServices,"Techos","Hazleton, PA",verified,online,Servicios+Eventos
+i@home1.com,123,"Mudanzas El Fuerte Hazleton",HomeServices,"Mudanzas","Hazleton, PA",verified,online,Servicios+Eventos
+a@home1.com,123,"Plomería El Águila Hazleton",HomeServices,"Plomería","Hazleton, PA",premium,online,Servicios+Eventos
+d@home1.com,123,"Jardinería Verde Hazleton",HomeServices,"Jardinería","Hazleton, PA",premium,online,Servicios+Eventos
+g@home1.com,123,"Handyman Rápido Hazleton",HomeServices,"Handyman","Hazleton, PA",premium,online,Servicios+Eventos
 j@home1.com,123,"Plomería El Águila Express Hazleton",HomeServices,"Remodelación","Hazleton, PA",free,establecimiento,Servicios
 k@home1.com,123,"Electricidad Segura Express Hazleton",HomeServices,"Aire y calefacción","Hazleton, PA",free,establecimiento,Servicios
 l@home1.com,123,"Limpieza Brillante Express Hazleton",HomeServices,"Carpintería","Hazleton, PA",free,establecimiento,Servicios
@@ -161,15 +161,15 @@ o@home1.com,123,"Control de Plagas Max Express Hazleton",HomeServices,"Cercas","
 p@home1.com,123,"Handyman Rápido Express Hazleton",HomeServices,"Plomería","Hazleton, PA",free,establecimiento,Servicios
 q@home1.com,123,"Techos y Más Express Hazleton",HomeServices,"Limpieza de casa","Hazleton, PA",free,establecimiento,Servicios
 r@home1.com,123,"Mudanzas El Fuerte Express Hazleton",HomeServices,"Jardinería","Hazleton, PA",free,establecimiento,Servicios
-b@night1.com,123,"Cervecería El Barrio Hazleton",NightLife,"Cantina","Hazleton, PA",verified,establecimiento,Menú
-c@night1.com,123,"Club Tropikal Hazleton",NightLife,"Bar deportivo","Hazleton, PA",verified,establecimiento,Menú
-e@night1.com,123,"Karaoke Estrella Hazleton",NightLife,"Discoteca","Hazleton, PA",verified,establecimiento,Menú
-f@night1.com,123,"Billar El As Hazleton",NightLife,"Antro","Hazleton, PA",verified,establecimiento,Menú
-h@night1.com,123,"Mezcalería Oaxaca Hazleton",NightLife,"Karaoke","Hazleton, PA",verified,establecimiento,Menú
-i@night1.com,123,"Bar Deportivo Gol Hazleton",NightLife,"Billar","Hazleton, PA",verified,establecimiento,Menú
-a@night1.com,123,"Bar La Cantina Hazleton",NightLife,"Bar","Hazleton, PA",premium,establecimiento,Menú
-d@night1.com,123,"Lounge Azul Hazleton",NightLife,"Cervecería","Hazleton, PA",premium,establecimiento,Menú
-g@night1.com,123,"Terraza Sunset Hazleton",NightLife,"Salón de baile","Hazleton, PA",premium,establecimiento,Menú
+b@night1.com,123,"Cervecería El Barrio Hazleton",NightLife,"Cantina","Hazleton, PA",verified,online,Menú
+c@night1.com,123,"Club Tropikal Hazleton",NightLife,"Bar deportivo","Hazleton, PA",verified,online,Menú
+e@night1.com,123,"Karaoke Estrella Hazleton",NightLife,"Discoteca","Hazleton, PA",verified,online,Menú
+f@night1.com,123,"Billar El As Hazleton",NightLife,"Antro","Hazleton, PA",verified,online,Menú
+h@night1.com,123,"Mezcalería Oaxaca Hazleton",NightLife,"Karaoke","Hazleton, PA",verified,online,Menú
+i@night1.com,123,"Bar Deportivo Gol Hazleton",NightLife,"Billar","Hazleton, PA",verified,online,Menú
+a@night1.com,123,"Bar La Cantina Hazleton",NightLife,"Bar","Hazleton, PA",premium,online,Menú
+d@night1.com,123,"Lounge Azul Hazleton",NightLife,"Cervecería","Hazleton, PA",premium,online,Menú
+g@night1.com,123,"Terraza Sunset Hazleton",NightLife,"Salón de baile","Hazleton, PA",premium,online,Menú
 j@night1.com,123,"Bar La Cantina Express Hazleton",NightLife,"Lounge","Hazleton, PA",free,establecimiento,Menú
 k@night1.com,123,"Cervecería El Barrio Express Hazleton",NightLife,"Terraza","Hazleton, PA",free,establecimiento,Menú
 l@night1.com,123,"Club Tropikal Express Hazleton",NightLife,"Música en vivo","Hazleton, PA",free,establecimiento,Menú
@@ -197,15 +197,15 @@ o@party1.com,123,"Mesas y Sillas Pro Express Hazleton",Party,"Fotografía","Hazl
 p@party1.com,123,"Vajilla Elegante Express Hazleton",Party,"Salón de fiestas","Hazleton, PA",free,establecimiento,Renta
 q@party1.com,123,"Brincolines Fiesta Express Hazleton",Party,"Brincolines","Hazleton, PA",free,establecimiento,Renta
 r@party1.com,123,"Decoración Encanto Express Hazleton",Party,"DJ","Hazleton, PA",free,establecimiento,Renta
-b@pro1.com,123,"Inmigración Vargas Hazleton",ProServices,"Abogado de inmigración","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-c@pro1.com,123,"Contador Pérez Hazleton",ProServices,"Contador","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-e@pro1.com,123,"Seguros La Confianza Hazleton",ProServices,"Seguros","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-f@pro1.com,123,"Envíos de Dinero Hazleton",ProServices,"Envío de dinero","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-h@pro1.com,123,"Notario Público Hazleton",ProServices,"Notario","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-i@pro1.com,123,"Reparación de Crédito Hazleton",ProServices,"Reparación de crédito","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-a@pro1.com,123,"Abogada Ramírez Hazleton",ProServices,"Abogado","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-d@pro1.com,123,"Taxes Rápidos Hazleton",ProServices,"Preparación de taxes","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-g@pro1.com,123,"Traducciones Global Hazleton",ProServices,"Traducción","Hazleton, PA",premium,establecimiento,Servicios+Eventos
+b@pro1.com,123,"Inmigración Vargas Hazleton",ProServices,"Abogado de inmigración","Hazleton, PA",verified,online,Servicios+Eventos
+c@pro1.com,123,"Contador Pérez Hazleton",ProServices,"Contador","Hazleton, PA",verified,online,Servicios+Eventos
+e@pro1.com,123,"Seguros La Confianza Hazleton",ProServices,"Seguros","Hazleton, PA",verified,online,Servicios+Eventos
+f@pro1.com,123,"Envíos de Dinero Hazleton",ProServices,"Envío de dinero","Hazleton, PA",verified,online,Servicios+Eventos
+h@pro1.com,123,"Notario Público Hazleton",ProServices,"Notario","Hazleton, PA",verified,online,Servicios+Eventos
+i@pro1.com,123,"Reparación de Crédito Hazleton",ProServices,"Reparación de crédito","Hazleton, PA",verified,online,Servicios+Eventos
+a@pro1.com,123,"Abogada Ramírez Hazleton",ProServices,"Abogado","Hazleton, PA",premium,online,Servicios+Eventos
+d@pro1.com,123,"Taxes Rápidos Hazleton",ProServices,"Preparación de taxes","Hazleton, PA",premium,online,Servicios+Eventos
+g@pro1.com,123,"Traducciones Global Hazleton",ProServices,"Traducción","Hazleton, PA",premium,online,Servicios+Eventos
 j@pro1.com,123,"Abogada Ramírez Express Hazleton",ProServices,"Bienes raíces","Hazleton, PA",free,establecimiento,Servicios
 k@pro1.com,123,"Inmigración Vargas Express Hazleton",ProServices,"Fianzas","Hazleton, PA",free,establecimiento,Servicios
 l@pro1.com,123,"Contador Pérez Express Hazleton",ProServices,"Reparación de celulares","Hazleton, PA",free,establecimiento,Servicios
@@ -233,15 +233,15 @@ o@shop1.com,123,"Muebles del Hogar Express Hazleton",Shops,"Cosméticos","Hazlet
 p@shop1.com,123,"Regalos y Detalles Express Hazleton",Shops,"Ropa","Hazleton, PA",free,establecimiento,Tienda
 q@shop1.com,123,"Botas Charras Express Hazleton",Shops,"Zapatería","Hazleton, PA",free,establecimiento,Tienda
 r@shop1.com,123,"Perfumería Aroma Express Hazleton",Shops,"Joyería","Hazleton, PA",free,establecimiento,Tienda
-b@sport1.com,123,"CrossFit Latino Hazleton",Sports,"Entrenador personal","Hazleton, PA",verified,establecimiento,Servicios+Renta+Eventos
-c@sport1.com,123,"Estudio de Yoga Hazleton",Sports,"CrossFit","Hazleton, PA",verified,establecimiento,Servicios+Renta+Eventos
-e@sport1.com,123,"Academia de Boxeo Hazleton",Sports,"Zumba","Hazleton, PA",verified,establecimiento,Servicios+Renta+Eventos
-f@sport1.com,123,"Artes Marciales Dragón Hazleton",Sports,"Spinning","Hazleton, PA",verified,establecimiento,Servicios+Renta+Eventos
-h@sport1.com,123,"Entrenador Personal Hazleton",Sports,"Artes marciales","Hazleton, PA",verified,establecimiento,Servicios+Renta+Eventos
-i@sport1.com,123,"Spinning Studio Hazleton",Sports,"Fútbol","Hazleton, PA",verified,establecimiento,Servicios+Renta+Eventos
-a@sport1.com,123,"Gimnasio Fuerza Hazleton",Sports,"Gimnasio","Hazleton, PA",premium,establecimiento,Servicios+Renta+Eventos
-d@sport1.com,123,"Zumba con Ritmo Hazleton",Sports,"Yoga","Hazleton, PA",premium,establecimiento,Servicios+Renta+Eventos
-g@sport1.com,123,"Liga de Fútbol Hazleton",Sports,"Boxeo","Hazleton, PA",premium,establecimiento,Servicios+Renta+Eventos
+b@sport1.com,123,"CrossFit Latino Hazleton",Sports,"Entrenador personal","Hazleton, PA",verified,online,Servicios+Renta+Eventos
+c@sport1.com,123,"Estudio de Yoga Hazleton",Sports,"CrossFit","Hazleton, PA",verified,online,Servicios+Renta+Eventos
+e@sport1.com,123,"Academia de Boxeo Hazleton",Sports,"Zumba","Hazleton, PA",verified,online,Servicios+Renta+Eventos
+f@sport1.com,123,"Artes Marciales Dragón Hazleton",Sports,"Spinning","Hazleton, PA",verified,online,Servicios+Renta+Eventos
+h@sport1.com,123,"Entrenador Personal Hazleton",Sports,"Artes marciales","Hazleton, PA",verified,online,Servicios+Renta+Eventos
+i@sport1.com,123,"Spinning Studio Hazleton",Sports,"Fútbol","Hazleton, PA",verified,online,Servicios+Renta+Eventos
+a@sport1.com,123,"Gimnasio Fuerza Hazleton",Sports,"Gimnasio","Hazleton, PA",premium,online,Servicios+Renta+Eventos
+d@sport1.com,123,"Zumba con Ritmo Hazleton",Sports,"Yoga","Hazleton, PA",premium,online,Servicios+Renta+Eventos
+g@sport1.com,123,"Liga de Fútbol Hazleton",Sports,"Boxeo","Hazleton, PA",premium,online,Servicios+Renta+Eventos
 j@sport1.com,123,"Gimnasio Fuerza Express Hazleton",Sports,"Natación","Hazleton, PA",free,establecimiento,Servicios
 k@sport1.com,123,"CrossFit Latino Express Hazleton",Sports,"Pilates","Hazleton, PA",free,establecimiento,Servicios
 l@sport1.com,123,"Estudio de Yoga Express Hazleton",Sports,"Baile fitness","Hazleton, PA",free,establecimiento,Servicios
@@ -251,15 +251,15 @@ o@sport1.com,123,"Artes Marciales Dragón Express Hazleton",Sports,"Ciclismo","H
 p@sport1.com,123,"Liga de Fútbol Express Hazleton",Sports,"Gimnasio","Hazleton, PA",free,establecimiento,Servicios
 q@sport1.com,123,"Entrenador Personal Express Hazleton",Sports,"Yoga","Hazleton, PA",free,establecimiento,Servicios
 r@sport1.com,123,"Spinning Studio Express Hazleton",Sports,"Fútbol","Hazleton, PA",free,establecimiento,Servicios
-b@trans1.com,123,"Transporte El Rápido Hazleton",Transportation,"Transporte privado","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-c@trans1.com,123,"Chofer Privado Hazleton",Transportation,"Chofer","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-e@trans1.com,123,"Fletes Hernández Hazleton",Transportation,"Mudanzas","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-f@trans1.com,123,"Envíos a Latinoamérica Hazleton",Transportation,"Fletes","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-h@trans1.com,123,"Transporte al Aeropuerto Hazleton",Transportation,"Envíos a Latinoamérica","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-i@trans1.com,123,"Paquetería Express Hazleton",Transportation,"Renta de autos","Hazleton, PA",verified,establecimiento,Servicios+Eventos
-a@trans1.com,123,"Taxi Latino Hazleton",Transportation,"Taxi","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-d@trans1.com,123,"Mudanzas El Fuerte Hazleton",Transportation,"Aeropuerto","Hazleton, PA",premium,establecimiento,Servicios+Eventos
-g@trans1.com,123,"Charter Bus Tours Hazleton",Transportation,"Mensajería","Hazleton, PA",premium,establecimiento,Servicios+Eventos
+b@trans1.com,123,"Transporte El Rápido Hazleton",Transportation,"Transporte privado","Hazleton, PA",verified,online,Servicios+Eventos
+c@trans1.com,123,"Chofer Privado Hazleton",Transportation,"Chofer","Hazleton, PA",verified,online,Servicios+Eventos
+e@trans1.com,123,"Fletes Hernández Hazleton",Transportation,"Mudanzas","Hazleton, PA",verified,online,Servicios+Eventos
+f@trans1.com,123,"Envíos a Latinoamérica Hazleton",Transportation,"Fletes","Hazleton, PA",verified,online,Servicios+Eventos
+h@trans1.com,123,"Transporte al Aeropuerto Hazleton",Transportation,"Envíos a Latinoamérica","Hazleton, PA",verified,online,Servicios+Eventos
+i@trans1.com,123,"Paquetería Express Hazleton",Transportation,"Renta de autos","Hazleton, PA",verified,online,Servicios+Eventos
+a@trans1.com,123,"Taxi Latino Hazleton",Transportation,"Taxi","Hazleton, PA",premium,online,Servicios+Eventos
+d@trans1.com,123,"Mudanzas El Fuerte Hazleton",Transportation,"Aeropuerto","Hazleton, PA",premium,online,Servicios+Eventos
+g@trans1.com,123,"Charter Bus Tours Hazleton",Transportation,"Mensajería","Hazleton, PA",premium,online,Servicios+Eventos
 j@trans1.com,123,"Taxi Latino Express Hazleton",Transportation,"Renta de camionetas","Hazleton, PA",free,establecimiento,Servicios
 k@trans1.com,123,"Transporte El Rápido Express Hazleton",Transportation,"Autobuses / charter","Hazleton, PA",free,establecimiento,Servicios
 l@trans1.com,123,"Chofer Privado Express Hazleton",Transportation,"Grúas","Hazleton, PA",free,establecimiento,Servicios
@@ -305,15 +305,15 @@ o@beauty2.com,123,"Color Bar Latina Express Bronx",BeautyHealth,"Manicure y pedi
 p@beauty2.com,123,"Barbershop El Rey Express Bronx",BeautyHealth,"Barbería","The Bronx, NY",free,establecimiento,Servicios
 q@beauty2.com,123,"Spa Serenidad Express Bronx",BeautyHealth,"Salón de belleza","The Bronx, NY",free,establecimiento,Servicios
 r@beauty2.com,123,"Salón Caribeña Express Bronx",BeautyHealth,"Uñas","The Bronx, NY",free,establecimiento,Servicios
-b@kids2.com,123,"Preescolar Arcoíris Bronx",Children,"Preescolar","The Bronx, NY",verified,establecimiento,Servicios+Tienda+Eventos
-c@kids2.com,123,"Niñera de Confianza Bronx",Children,"Niñera","The Bronx, NY",verified,establecimiento,Servicios+Tienda+Eventos
-e@kids2.com,123,"Fútbol Infantil Bronx",Children,"Deportes para niños","The Bronx, NY",verified,establecimiento,Servicios+Tienda+Eventos
-f@kids2.com,123,"Música para Niños Bronx",Children,"Música para niños","The Bronx, NY",verified,establecimiento,Servicios+Tienda+Eventos
-h@kids2.com,123,"Terapia Infantil Bronx",Children,"Terapia infantil","The Bronx, NY",verified,establecimiento,Servicios+Tienda+Eventos
-i@kids2.com,123,"Campamento de Verano Bronx",Children,"Campamentos","The Bronx, NY",verified,establecimiento,Servicios+Tienda+Eventos
-a@kids2.com,123,"Guardería Los Angelitos Bronx",Children,"Guardería","The Bronx, NY",premium,establecimiento,Servicios+Tienda+Eventos
-d@kids2.com,123,"Clases de Baile Kids Bronx",Children,"Clases para niños","The Bronx, NY",premium,establecimiento,Servicios+Tienda+Eventos
-g@kids2.com,123,"Fotografía Infantil Bronx",Children,"Fotografía infantil","The Bronx, NY",premium,establecimiento,Servicios+Tienda+Eventos
+b@kids2.com,123,"Preescolar Arcoíris Bronx",Children,"Preescolar","The Bronx, NY",verified,online,Servicios+Tienda+Eventos
+c@kids2.com,123,"Niñera de Confianza Bronx",Children,"Niñera","The Bronx, NY",verified,online,Servicios+Tienda+Eventos
+e@kids2.com,123,"Fútbol Infantil Bronx",Children,"Deportes para niños","The Bronx, NY",verified,online,Servicios+Tienda+Eventos
+f@kids2.com,123,"Música para Niños Bronx",Children,"Música para niños","The Bronx, NY",verified,online,Servicios+Tienda+Eventos
+h@kids2.com,123,"Terapia Infantil Bronx",Children,"Terapia infantil","The Bronx, NY",verified,online,Servicios+Tienda+Eventos
+i@kids2.com,123,"Campamento de Verano Bronx",Children,"Campamentos","The Bronx, NY",verified,online,Servicios+Tienda+Eventos
+a@kids2.com,123,"Guardería Los Angelitos Bronx",Children,"Guardería","The Bronx, NY",premium,online,Servicios+Tienda+Eventos
+d@kids2.com,123,"Clases de Baile Kids Bronx",Children,"Clases para niños","The Bronx, NY",premium,online,Servicios+Tienda+Eventos
+g@kids2.com,123,"Fotografía Infantil Bronx",Children,"Fotografía infantil","The Bronx, NY",premium,online,Servicios+Tienda+Eventos
 j@kids2.com,123,"Guardería Los Angelitos Express Bronx",Children,"Fiestas infantiles","The Bronx, NY",free,establecimiento,Servicios
 k@kids2.com,123,"Preescolar Arcoíris Express Bronx",Children,"Ropa infantil","The Bronx, NY",free,establecimiento,Servicios
 l@kids2.com,123,"Niñera de Confianza Express Bronx",Children,"Juguetes","The Bronx, NY",free,establecimiento,Servicios
@@ -341,15 +341,15 @@ o@church2.com,123,"Casa de Oración Express Bronx",Churches,"Bautizos","The Bron
 p@church2.com,123,"Iglesia Evangélica Luz Express Bronx",Churches,"Iglesia católica","The Bronx, NY",free,establecimiento,Eventos
 q@church2.com,123,"Comunidad de Fe Express Bronx",Churches,"Iglesia cristiana","The Bronx, NY",free,establecimiento,Eventos
 r@church2.com,123,"Parroquia Guadalupe Express Bronx",Churches,"Ministerios","The Bronx, NY",free,establecimiento,Eventos
-b@edu2.com,123,"Academia de Español Bronx",Education,"Clases de español","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-c@edu2.com,123,"Tutoría Matemáticas Bronx",Education,"Tutoría","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-e@edu2.com,123,"CDL Truck School Bronx",Education,"Manejo comercial (CDL)","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-f@edu2.com,123,"Ciudadanía USA Bronx",Education,"Ciudadanía","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-h@edu2.com,123,"Computación Básica Bronx",Education,"Música","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-i@edu2.com,123,"GED en Español Bronx",Education,"Computación","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-a@edu2.com,123,"Clases de Inglés ESL Bronx",Education,"Clases de inglés (ESL)","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-d@edu2.com,123,"Escuela de Manejo Bronx",Education,"Escuela de manejo","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-g@edu2.com,123,"Clases de Música Bronx",Education,"Preparación GED","The Bronx, NY",premium,establecimiento,Servicios+Eventos
+b@edu2.com,123,"Academia de Español Bronx",Education,"Clases de español","The Bronx, NY",verified,online,Servicios+Eventos
+c@edu2.com,123,"Tutoría Matemáticas Bronx",Education,"Tutoría","The Bronx, NY",verified,online,Servicios+Eventos
+e@edu2.com,123,"CDL Truck School Bronx",Education,"Manejo comercial (CDL)","The Bronx, NY",verified,online,Servicios+Eventos
+f@edu2.com,123,"Ciudadanía USA Bronx",Education,"Ciudadanía","The Bronx, NY",verified,online,Servicios+Eventos
+h@edu2.com,123,"Computación Básica Bronx",Education,"Música","The Bronx, NY",verified,online,Servicios+Eventos
+i@edu2.com,123,"GED en Español Bronx",Education,"Computación","The Bronx, NY",verified,online,Servicios+Eventos
+a@edu2.com,123,"Clases de Inglés ESL Bronx",Education,"Clases de inglés (ESL)","The Bronx, NY",premium,online,Servicios+Eventos
+d@edu2.com,123,"Escuela de Manejo Bronx",Education,"Escuela de manejo","The Bronx, NY",premium,online,Servicios+Eventos
+g@edu2.com,123,"Clases de Música Bronx",Education,"Preparación GED","The Bronx, NY",premium,online,Servicios+Eventos
 j@edu2.com,123,"Clases de Inglés ESL Express Bronx",Education,"Matemáticas","The Bronx, NY",free,establecimiento,Servicios
 k@edu2.com,123,"Academia de Español Express Bronx",Education,"Cosmetología","The Bronx, NY",free,establecimiento,Servicios
 l@edu2.com,123,"Tutoría Matemáticas Express Bronx",Education,"Baile","The Bronx, NY",free,establecimiento,Servicios
@@ -377,15 +377,15 @@ o@food2.com,123,"Pollo Rico Express Bronx",FoodDrinks,"Desayunos","The Bronx, NY
 p@food2.com,123,"Panadería La Espiga Express Bronx",FoodDrinks,"Heladería","The Bronx, NY",free,establecimiento,Menú
 q@food2.com,123,"Pizzería Napoli Express Bronx",FoodDrinks,"Jugos y licuados","The Bronx, NY",free,establecimiento,Menú
 r@food2.com,123,"Sabor Colombiano Express Bronx",FoodDrinks,"Comida saludable","The Bronx, NY",free,establecimiento,Menú
-b@groc2.com,123,"Carnicería El Buen Corte Bronx",Grocery,"Carnicería","The Bronx, NY",verified,establecimiento,Tienda+Eventos
-c@groc2.com,123,"Tortillería La Fresca Bronx",Grocery,"Tortillería","The Bronx, NY",verified,establecimiento,Tienda+Eventos
-e@groc2.com,123,"Abarrotes Mi Tierra Bronx",Grocery,"Abarrotes","The Bronx, NY",verified,establecimiento,Tienda+Eventos
-f@groc2.com,123,"Cremería Doña Rosa Bronx",Grocery,"Cremería","The Bronx, NY",verified,establecimiento,Tienda+Eventos
-h@groc2.com,123,"Hierbería Natural Bronx",Grocery,"Hierbería","The Bronx, NY",verified,establecimiento,Tienda+Eventos
-i@groc2.com,123,"Licorería El Barril Bronx",Grocery,"Licorería","The Bronx, NY",verified,establecimiento,Tienda+Eventos
-a@groc2.com,123,"Supermercado La Latina Bronx",Grocery,"Supermercado","The Bronx, NY",premium,establecimiento,Tienda+Eventos
-d@groc2.com,123,"Frutería del Valle Bronx",Grocery,"Frutería","The Bronx, NY",premium,establecimiento,Tienda+Eventos
-g@groc2.com,123,"Panadería La Espiga Bronx",Grocery,"Panadería","The Bronx, NY",premium,establecimiento,Tienda+Eventos
+b@groc2.com,123,"Carnicería El Buen Corte Bronx",Grocery,"Carnicería","The Bronx, NY",verified,online,Tienda+Eventos
+c@groc2.com,123,"Tortillería La Fresca Bronx",Grocery,"Tortillería","The Bronx, NY",verified,online,Tienda+Eventos
+e@groc2.com,123,"Abarrotes Mi Tierra Bronx",Grocery,"Abarrotes","The Bronx, NY",verified,online,Tienda+Eventos
+f@groc2.com,123,"Cremería Doña Rosa Bronx",Grocery,"Cremería","The Bronx, NY",verified,online,Tienda+Eventos
+h@groc2.com,123,"Hierbería Natural Bronx",Grocery,"Hierbería","The Bronx, NY",verified,online,Tienda+Eventos
+i@groc2.com,123,"Licorería El Barril Bronx",Grocery,"Licorería","The Bronx, NY",verified,online,Tienda+Eventos
+a@groc2.com,123,"Supermercado La Latina Bronx",Grocery,"Supermercado","The Bronx, NY",premium,online,Tienda+Eventos
+d@groc2.com,123,"Frutería del Valle Bronx",Grocery,"Frutería","The Bronx, NY",premium,online,Tienda+Eventos
+g@groc2.com,123,"Panadería La Espiga Bronx",Grocery,"Panadería","The Bronx, NY",premium,online,Tienda+Eventos
 j@groc2.com,123,"Supermercado La Latina Express Bronx",Grocery,"Pollería","The Bronx, NY",free,establecimiento,Tienda
 k@groc2.com,123,"Carnicería El Buen Corte Express Bronx",Grocery,"Pescadería","The Bronx, NY",free,establecimiento,Tienda
 l@groc2.com,123,"Tortillería La Fresca Express Bronx",Grocery,"Tienda latina","The Bronx, NY",free,establecimiento,Tienda
@@ -395,15 +395,15 @@ o@groc2.com,123,"Cremería Doña Rosa Express Bronx",Grocery,"Especias","The Bro
 p@groc2.com,123,"Panadería La Espiga Express Bronx",Grocery,"Supermercado","The Bronx, NY",free,establecimiento,Tienda
 q@groc2.com,123,"Hierbería Natural Express Bronx",Grocery,"Carnicería","The Bronx, NY",free,establecimiento,Tienda
 r@groc2.com,123,"Licorería El Barril Express Bronx",Grocery,"Tortillería","The Bronx, NY",free,establecimiento,Tienda
-b@health2.com,123,"Dental Sonrisa Bronx",HealthMedicine,"Médico general","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-c@health2.com,123,"Óptica Visión Bronx",HealthMedicine,"Dentista","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-e@health2.com,123,"Clínica de la Mujer Bronx",HealthMedicine,"Óptica","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-f@health2.com,123,"Pediatría Feliz Bronx",HealthMedicine,"Pediatra","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-h@health2.com,123,"Farmacia y Consultas Bronx",HealthMedicine,"Quiropráctico","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-i@health2.com,123,"Salud Total Bronx",HealthMedicine,"Fisioterapia","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-a@health2.com,123,"Clínica Familiar Sana Bronx",HealthMedicine,"Clínica","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-d@health2.com,123,"Consultorio Dr. Ramos Bronx",HealthMedicine,"Farmacia","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-g@health2.com,123,"Fisioterapia Activa Bronx",HealthMedicine,"Ginecólogo","The Bronx, NY",premium,establecimiento,Servicios+Eventos
+b@health2.com,123,"Dental Sonrisa Bronx",HealthMedicine,"Médico general","The Bronx, NY",verified,online,Servicios+Eventos
+c@health2.com,123,"Óptica Visión Bronx",HealthMedicine,"Dentista","The Bronx, NY",verified,online,Servicios+Eventos
+e@health2.com,123,"Clínica de la Mujer Bronx",HealthMedicine,"Óptica","The Bronx, NY",verified,online,Servicios+Eventos
+f@health2.com,123,"Pediatría Feliz Bronx",HealthMedicine,"Pediatra","The Bronx, NY",verified,online,Servicios+Eventos
+h@health2.com,123,"Farmacia y Consultas Bronx",HealthMedicine,"Quiropráctico","The Bronx, NY",verified,online,Servicios+Eventos
+i@health2.com,123,"Salud Total Bronx",HealthMedicine,"Fisioterapia","The Bronx, NY",verified,online,Servicios+Eventos
+a@health2.com,123,"Clínica Familiar Sana Bronx",HealthMedicine,"Clínica","The Bronx, NY",premium,online,Servicios+Eventos
+d@health2.com,123,"Consultorio Dr. Ramos Bronx",HealthMedicine,"Farmacia","The Bronx, NY",premium,online,Servicios+Eventos
+g@health2.com,123,"Fisioterapia Activa Bronx",HealthMedicine,"Ginecólogo","The Bronx, NY",premium,online,Servicios+Eventos
 j@health2.com,123,"Clínica Familiar Sana Express Bronx",HealthMedicine,"Psicólogo","The Bronx, NY",free,establecimiento,Servicios
 k@health2.com,123,"Dental Sonrisa Express Bronx",HealthMedicine,"Nutriólogo","The Bronx, NY",free,establecimiento,Servicios
 l@health2.com,123,"Óptica Visión Express Bronx",HealthMedicine,"Laboratorio","The Bronx, NY",free,establecimiento,Servicios
@@ -413,15 +413,15 @@ o@health2.com,123,"Pediatría Feliz Express Bronx",HealthMedicine,"Terapia / con
 p@health2.com,123,"Fisioterapia Activa Express Bronx",HealthMedicine,"Clínica","The Bronx, NY",free,establecimiento,Servicios
 q@health2.com,123,"Farmacia y Consultas Express Bronx",HealthMedicine,"Dentista","The Bronx, NY",free,establecimiento,Servicios
 r@health2.com,123,"Salud Total Express Bronx",HealthMedicine,"Óptica","The Bronx, NY",free,establecimiento,Servicios
-b@home2.com,123,"Electricidad Segura Bronx",HomeServices,"Electricidad","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-c@home2.com,123,"Limpieza Brillante Bronx",HomeServices,"Limpieza de casa","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-e@home2.com,123,"Pintura Pro Bronx",HomeServices,"Pintura","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-f@home2.com,123,"Control de Plagas Max Bronx",HomeServices,"Control de plagas","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-h@home2.com,123,"Techos y Más Bronx",HomeServices,"Techos","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-i@home2.com,123,"Mudanzas El Fuerte Bronx",HomeServices,"Mudanzas","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-a@home2.com,123,"Plomería El Águila Bronx",HomeServices,"Plomería","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-d@home2.com,123,"Jardinería Verde Bronx",HomeServices,"Jardinería","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-g@home2.com,123,"Handyman Rápido Bronx",HomeServices,"Handyman","The Bronx, NY",premium,establecimiento,Servicios+Eventos
+b@home2.com,123,"Electricidad Segura Bronx",HomeServices,"Electricidad","The Bronx, NY",verified,online,Servicios+Eventos
+c@home2.com,123,"Limpieza Brillante Bronx",HomeServices,"Limpieza de casa","The Bronx, NY",verified,online,Servicios+Eventos
+e@home2.com,123,"Pintura Pro Bronx",HomeServices,"Pintura","The Bronx, NY",verified,online,Servicios+Eventos
+f@home2.com,123,"Control de Plagas Max Bronx",HomeServices,"Control de plagas","The Bronx, NY",verified,online,Servicios+Eventos
+h@home2.com,123,"Techos y Más Bronx",HomeServices,"Techos","The Bronx, NY",verified,online,Servicios+Eventos
+i@home2.com,123,"Mudanzas El Fuerte Bronx",HomeServices,"Mudanzas","The Bronx, NY",verified,online,Servicios+Eventos
+a@home2.com,123,"Plomería El Águila Bronx",HomeServices,"Plomería","The Bronx, NY",premium,online,Servicios+Eventos
+d@home2.com,123,"Jardinería Verde Bronx",HomeServices,"Jardinería","The Bronx, NY",premium,online,Servicios+Eventos
+g@home2.com,123,"Handyman Rápido Bronx",HomeServices,"Handyman","The Bronx, NY",premium,online,Servicios+Eventos
 j@home2.com,123,"Plomería El Águila Express Bronx",HomeServices,"Remodelación","The Bronx, NY",free,establecimiento,Servicios
 k@home2.com,123,"Electricidad Segura Express Bronx",HomeServices,"Aire y calefacción","The Bronx, NY",free,establecimiento,Servicios
 l@home2.com,123,"Limpieza Brillante Express Bronx",HomeServices,"Carpintería","The Bronx, NY",free,establecimiento,Servicios
@@ -431,15 +431,15 @@ o@home2.com,123,"Control de Plagas Max Express Bronx",HomeServices,"Cercas","The
 p@home2.com,123,"Handyman Rápido Express Bronx",HomeServices,"Plomería","The Bronx, NY",free,establecimiento,Servicios
 q@home2.com,123,"Techos y Más Express Bronx",HomeServices,"Limpieza de casa","The Bronx, NY",free,establecimiento,Servicios
 r@home2.com,123,"Mudanzas El Fuerte Express Bronx",HomeServices,"Jardinería","The Bronx, NY",free,establecimiento,Servicios
-b@night2.com,123,"Cervecería El Barrio Bronx",NightLife,"Cantina","The Bronx, NY",verified,establecimiento,Menú
-c@night2.com,123,"Club Tropikal Bronx",NightLife,"Bar deportivo","The Bronx, NY",verified,establecimiento,Menú
-e@night2.com,123,"Karaoke Estrella Bronx",NightLife,"Discoteca","The Bronx, NY",verified,establecimiento,Menú
-f@night2.com,123,"Billar El As Bronx",NightLife,"Antro","The Bronx, NY",verified,establecimiento,Menú
-h@night2.com,123,"Mezcalería Oaxaca Bronx",NightLife,"Karaoke","The Bronx, NY",verified,establecimiento,Menú
-i@night2.com,123,"Bar Deportivo Gol Bronx",NightLife,"Billar","The Bronx, NY",verified,establecimiento,Menú
-a@night2.com,123,"Bar La Cantina Bronx",NightLife,"Bar","The Bronx, NY",premium,establecimiento,Menú
-d@night2.com,123,"Lounge Azul Bronx",NightLife,"Cervecería","The Bronx, NY",premium,establecimiento,Menú
-g@night2.com,123,"Terraza Sunset Bronx",NightLife,"Salón de baile","The Bronx, NY",premium,establecimiento,Menú
+b@night2.com,123,"Cervecería El Barrio Bronx",NightLife,"Cantina","The Bronx, NY",verified,online,Menú
+c@night2.com,123,"Club Tropikal Bronx",NightLife,"Bar deportivo","The Bronx, NY",verified,online,Menú
+e@night2.com,123,"Karaoke Estrella Bronx",NightLife,"Discoteca","The Bronx, NY",verified,online,Menú
+f@night2.com,123,"Billar El As Bronx",NightLife,"Antro","The Bronx, NY",verified,online,Menú
+h@night2.com,123,"Mezcalería Oaxaca Bronx",NightLife,"Karaoke","The Bronx, NY",verified,online,Menú
+i@night2.com,123,"Bar Deportivo Gol Bronx",NightLife,"Billar","The Bronx, NY",verified,online,Menú
+a@night2.com,123,"Bar La Cantina Bronx",NightLife,"Bar","The Bronx, NY",premium,online,Menú
+d@night2.com,123,"Lounge Azul Bronx",NightLife,"Cervecería","The Bronx, NY",premium,online,Menú
+g@night2.com,123,"Terraza Sunset Bronx",NightLife,"Salón de baile","The Bronx, NY",premium,online,Menú
 j@night2.com,123,"Bar La Cantina Express Bronx",NightLife,"Lounge","The Bronx, NY",free,establecimiento,Menú
 k@night2.com,123,"Cervecería El Barrio Express Bronx",NightLife,"Terraza","The Bronx, NY",free,establecimiento,Menú
 l@night2.com,123,"Club Tropikal Express Bronx",NightLife,"Música en vivo","The Bronx, NY",free,establecimiento,Menú
@@ -467,15 +467,15 @@ o@party2.com,123,"Mesas y Sillas Pro Express Bronx",Party,"Fotografía","The Bro
 p@party2.com,123,"Vajilla Elegante Express Bronx",Party,"Salón de fiestas","The Bronx, NY",free,establecimiento,Renta
 q@party2.com,123,"Brincolines Fiesta Express Bronx",Party,"Brincolines","The Bronx, NY",free,establecimiento,Renta
 r@party2.com,123,"Decoración Encanto Express Bronx",Party,"DJ","The Bronx, NY",free,establecimiento,Renta
-b@pro2.com,123,"Inmigración Vargas Bronx",ProServices,"Abogado de inmigración","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-c@pro2.com,123,"Contador Pérez Bronx",ProServices,"Contador","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-e@pro2.com,123,"Seguros La Confianza Bronx",ProServices,"Seguros","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-f@pro2.com,123,"Envíos de Dinero Bronx",ProServices,"Envío de dinero","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-h@pro2.com,123,"Notario Público Bronx",ProServices,"Notario","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-i@pro2.com,123,"Reparación de Crédito Bronx",ProServices,"Reparación de crédito","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-a@pro2.com,123,"Abogada Ramírez Bronx",ProServices,"Abogado","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-d@pro2.com,123,"Taxes Rápidos Bronx",ProServices,"Preparación de taxes","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-g@pro2.com,123,"Traducciones Global Bronx",ProServices,"Traducción","The Bronx, NY",premium,establecimiento,Servicios+Eventos
+b@pro2.com,123,"Inmigración Vargas Bronx",ProServices,"Abogado de inmigración","The Bronx, NY",verified,online,Servicios+Eventos
+c@pro2.com,123,"Contador Pérez Bronx",ProServices,"Contador","The Bronx, NY",verified,online,Servicios+Eventos
+e@pro2.com,123,"Seguros La Confianza Bronx",ProServices,"Seguros","The Bronx, NY",verified,online,Servicios+Eventos
+f@pro2.com,123,"Envíos de Dinero Bronx",ProServices,"Envío de dinero","The Bronx, NY",verified,online,Servicios+Eventos
+h@pro2.com,123,"Notario Público Bronx",ProServices,"Notario","The Bronx, NY",verified,online,Servicios+Eventos
+i@pro2.com,123,"Reparación de Crédito Bronx",ProServices,"Reparación de crédito","The Bronx, NY",verified,online,Servicios+Eventos
+a@pro2.com,123,"Abogada Ramírez Bronx",ProServices,"Abogado","The Bronx, NY",premium,online,Servicios+Eventos
+d@pro2.com,123,"Taxes Rápidos Bronx",ProServices,"Preparación de taxes","The Bronx, NY",premium,online,Servicios+Eventos
+g@pro2.com,123,"Traducciones Global Bronx",ProServices,"Traducción","The Bronx, NY",premium,online,Servicios+Eventos
 j@pro2.com,123,"Abogada Ramírez Express Bronx",ProServices,"Bienes raíces","The Bronx, NY",free,establecimiento,Servicios
 k@pro2.com,123,"Inmigración Vargas Express Bronx",ProServices,"Fianzas","The Bronx, NY",free,establecimiento,Servicios
 l@pro2.com,123,"Contador Pérez Express Bronx",ProServices,"Reparación de celulares","The Bronx, NY",free,establecimiento,Servicios
@@ -503,15 +503,15 @@ o@shop2.com,123,"Muebles del Hogar Express Bronx",Shops,"Cosméticos","The Bronx
 p@shop2.com,123,"Regalos y Detalles Express Bronx",Shops,"Ropa","The Bronx, NY",free,establecimiento,Tienda
 q@shop2.com,123,"Botas Charras Express Bronx",Shops,"Zapatería","The Bronx, NY",free,establecimiento,Tienda
 r@shop2.com,123,"Perfumería Aroma Express Bronx",Shops,"Joyería","The Bronx, NY",free,establecimiento,Tienda
-b@sport2.com,123,"CrossFit Latino Bronx",Sports,"Entrenador personal","The Bronx, NY",verified,establecimiento,Servicios+Renta+Eventos
-c@sport2.com,123,"Estudio de Yoga Bronx",Sports,"CrossFit","The Bronx, NY",verified,establecimiento,Servicios+Renta+Eventos
-e@sport2.com,123,"Academia de Boxeo Bronx",Sports,"Zumba","The Bronx, NY",verified,establecimiento,Servicios+Renta+Eventos
-f@sport2.com,123,"Artes Marciales Dragón Bronx",Sports,"Spinning","The Bronx, NY",verified,establecimiento,Servicios+Renta+Eventos
-h@sport2.com,123,"Entrenador Personal Bronx",Sports,"Artes marciales","The Bronx, NY",verified,establecimiento,Servicios+Renta+Eventos
-i@sport2.com,123,"Spinning Studio Bronx",Sports,"Fútbol","The Bronx, NY",verified,establecimiento,Servicios+Renta+Eventos
-a@sport2.com,123,"Gimnasio Fuerza Bronx",Sports,"Gimnasio","The Bronx, NY",premium,establecimiento,Servicios+Renta+Eventos
-d@sport2.com,123,"Zumba con Ritmo Bronx",Sports,"Yoga","The Bronx, NY",premium,establecimiento,Servicios+Renta+Eventos
-g@sport2.com,123,"Liga de Fútbol Bronx",Sports,"Boxeo","The Bronx, NY",premium,establecimiento,Servicios+Renta+Eventos
+b@sport2.com,123,"CrossFit Latino Bronx",Sports,"Entrenador personal","The Bronx, NY",verified,online,Servicios+Renta+Eventos
+c@sport2.com,123,"Estudio de Yoga Bronx",Sports,"CrossFit","The Bronx, NY",verified,online,Servicios+Renta+Eventos
+e@sport2.com,123,"Academia de Boxeo Bronx",Sports,"Zumba","The Bronx, NY",verified,online,Servicios+Renta+Eventos
+f@sport2.com,123,"Artes Marciales Dragón Bronx",Sports,"Spinning","The Bronx, NY",verified,online,Servicios+Renta+Eventos
+h@sport2.com,123,"Entrenador Personal Bronx",Sports,"Artes marciales","The Bronx, NY",verified,online,Servicios+Renta+Eventos
+i@sport2.com,123,"Spinning Studio Bronx",Sports,"Fútbol","The Bronx, NY",verified,online,Servicios+Renta+Eventos
+a@sport2.com,123,"Gimnasio Fuerza Bronx",Sports,"Gimnasio","The Bronx, NY",premium,online,Servicios+Renta+Eventos
+d@sport2.com,123,"Zumba con Ritmo Bronx",Sports,"Yoga","The Bronx, NY",premium,online,Servicios+Renta+Eventos
+g@sport2.com,123,"Liga de Fútbol Bronx",Sports,"Boxeo","The Bronx, NY",premium,online,Servicios+Renta+Eventos
 j@sport2.com,123,"Gimnasio Fuerza Express Bronx",Sports,"Natación","The Bronx, NY",free,establecimiento,Servicios
 k@sport2.com,123,"CrossFit Latino Express Bronx",Sports,"Pilates","The Bronx, NY",free,establecimiento,Servicios
 l@sport2.com,123,"Estudio de Yoga Express Bronx",Sports,"Baile fitness","The Bronx, NY",free,establecimiento,Servicios
@@ -521,15 +521,15 @@ o@sport2.com,123,"Artes Marciales Dragón Express Bronx",Sports,"Ciclismo","The 
 p@sport2.com,123,"Liga de Fútbol Express Bronx",Sports,"Gimnasio","The Bronx, NY",free,establecimiento,Servicios
 q@sport2.com,123,"Entrenador Personal Express Bronx",Sports,"Yoga","The Bronx, NY",free,establecimiento,Servicios
 r@sport2.com,123,"Spinning Studio Express Bronx",Sports,"Fútbol","The Bronx, NY",free,establecimiento,Servicios
-b@trans2.com,123,"Transporte El Rápido Bronx",Transportation,"Transporte privado","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-c@trans2.com,123,"Chofer Privado Bronx",Transportation,"Chofer","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-e@trans2.com,123,"Fletes Hernández Bronx",Transportation,"Mudanzas","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-f@trans2.com,123,"Envíos a Latinoamérica Bronx",Transportation,"Fletes","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-h@trans2.com,123,"Transporte al Aeropuerto Bronx",Transportation,"Envíos a Latinoamérica","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-i@trans2.com,123,"Paquetería Express Bronx",Transportation,"Renta de autos","The Bronx, NY",verified,establecimiento,Servicios+Eventos
-a@trans2.com,123,"Taxi Latino Bronx",Transportation,"Taxi","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-d@trans2.com,123,"Mudanzas El Fuerte Bronx",Transportation,"Aeropuerto","The Bronx, NY",premium,establecimiento,Servicios+Eventos
-g@trans2.com,123,"Charter Bus Tours Bronx",Transportation,"Mensajería","The Bronx, NY",premium,establecimiento,Servicios+Eventos
+b@trans2.com,123,"Transporte El Rápido Bronx",Transportation,"Transporte privado","The Bronx, NY",verified,online,Servicios+Eventos
+c@trans2.com,123,"Chofer Privado Bronx",Transportation,"Chofer","The Bronx, NY",verified,online,Servicios+Eventos
+e@trans2.com,123,"Fletes Hernández Bronx",Transportation,"Mudanzas","The Bronx, NY",verified,online,Servicios+Eventos
+f@trans2.com,123,"Envíos a Latinoamérica Bronx",Transportation,"Fletes","The Bronx, NY",verified,online,Servicios+Eventos
+h@trans2.com,123,"Transporte al Aeropuerto Bronx",Transportation,"Envíos a Latinoamérica","The Bronx, NY",verified,online,Servicios+Eventos
+i@trans2.com,123,"Paquetería Express Bronx",Transportation,"Renta de autos","The Bronx, NY",verified,online,Servicios+Eventos
+a@trans2.com,123,"Taxi Latino Bronx",Transportation,"Taxi","The Bronx, NY",premium,online,Servicios+Eventos
+d@trans2.com,123,"Mudanzas El Fuerte Bronx",Transportation,"Aeropuerto","The Bronx, NY",premium,online,Servicios+Eventos
+g@trans2.com,123,"Charter Bus Tours Bronx",Transportation,"Mensajería","The Bronx, NY",premium,online,Servicios+Eventos
 j@trans2.com,123,"Taxi Latino Express Bronx",Transportation,"Renta de camionetas","The Bronx, NY",free,establecimiento,Servicios
 k@trans2.com,123,"Transporte El Rápido Express Bronx",Transportation,"Autobuses / charter","The Bronx, NY",free,establecimiento,Servicios
 l@trans2.com,123,"Chofer Privado Express Bronx",Transportation,"Grúas","The Bronx, NY",free,establecimiento,Servicios
