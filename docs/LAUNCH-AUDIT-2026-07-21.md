@@ -26,11 +26,27 @@ Código desplegado y verificado (build + browser) esta sesión:
   sitemap + OG + favicon + títulos por ruta), persistencia de idioma ES/EN (#29),
   404/500 en español con marca.
 
-**Pendiente (documentado abajo, requiere SQL con prueba en vivo o acción tuya):**
-blindaje RLS de `businesses` (#20), fuzzear coordenadas (#21), rate-limiting (#22),
-guard de edición de pedido pagado (#4), promo de boleto server-side (#5), reembolsos
-(#3), y los módulos owner-facing con datos demo (Billing #16, Staff #17, renta
-walk-in #13) que necesitan cableado real. Más la lista **"Lo que te toca a TI".**
+**Actualización 2026-07-22 — cerrado esta sesión (aplicado en vivo + build/deploy):**
+- **Seguridad/privacidad (SQL aplicado a prod + verificado):** blindaje RLS de
+  `businesses` (#20, mig. 0105), fuzzear coordenadas de posts (#21, mig. 0106),
+  rate-limiting de UGC/mensajes (#22, mig. 0111), guard de edición de pedido pagado
+  (#4, mig. 0107 + fix de contexto 0108), boletos gratis server-side (#1, mig. 0104).
+- **Dinero:** reembolsos completos (#3) — `refund_ctx` (mig. 0109/0110) +
+  edge function `refund-purchase` (dueño y comprador), cableado en el panel
+  (cancelar pedido) y en Mi Cuenta (cancelar compra). Probado end-to-end en Stripe
+  test mode (destination charge → refund con reverse_transfer + refund_application_fee).
+- **Datos falsos owner-facing (regla #8):** Billing #16 (uso/tarjeta/renovación
+  inventados ocultos; plan + portal reales), Staff #17 (horario/reloj/nómina/
+  pipeline → "Próximamente"; roster/vacantes/KPIs reales), Renta walk-in #13
+  (teatro "depósito cobrado" quitado). Detalle en LAUNCH-CHECKLIST.
+- **Legal (#26):** páginas `/terminos` y `/privacidad` (ES-first) publicadas,
+  linkeadas en footer + sitemap. Pendiente: revisión de abogado + entidad/correo
+  reales (checklist).
+
+**Pendiente (requiere acción del fundador o decisión):** promo de boleto server-side
+(#5), purga de seed de prod (#24, requiere confirmar para no borrar tus negocios de
+prueba), y la lista **"Lo que te toca a TI"** (llaves Stripe live + webhook, dominio
+propio, SES para OTP/recuperación, moderación, precio canónico del plan).
 
 ---
 

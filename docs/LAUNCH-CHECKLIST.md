@@ -1485,6 +1485,43 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
 - [ ] **Recordatorios SMS** (Premium banner in the module): needs the SMS/WhatsApp
   OTP decision (see Allowed external costs) — same gateway would serve both.
 
+### Páginas legales — revisión + datos reales antes del lanzamiento (2026-07-22)
+Las páginas `/terminos` y `/privacidad` ya existen (ES-first, EN secundario,
+linkeadas en el footer y en el sitemap). Son **borradores profesionales**, no
+consejo legal. Antes de lanzar con dinero real:
+- [ ] **Revisión por un abogado** (marketplace + pagos + UGC + datos de ubicación
+  + posible CCPA/California). Ajustar cláusulas de responsabilidad, arbitraje y
+  reembolsos a lo que aplique al negocio.
+- [ ] **Rellenar la entidad legal** (razón social / LLC, dirección) — hoy el texto
+  no nombra una entidad.
+- [ ] **Correo de contacto legal real.** Placeholder actual: `hola@tolatino.com`
+  (constante `LEGAL_EMAIL` en `apps/web/src/screens/Legal.tsx`). Crear/enrutar ese
+  buzón o reemplazarlo antes de publicar.
+- [ ] **Política de reembolsos/cancelaciones dedicada** si se quiere separada de
+  los Términos (hoy está resumida dentro de Términos §5).
+
+### Módulos owner-facing — datos demo ocultados, features por cablear (2026-07-22)
+Sprint 1: se ocultó todo dato fabricado que un negocio REAL veía como si fuera
+suyo (regla #8). Lo que se ocultó tras "demo/showcase" o "Próximamente" y falta
+cablear de verdad:
+- [ ] **Billing — uso real por negocio.** Se ocultaron los medidores de uso
+  inventados (284 pedidos, 428 hrs…), la tarjeta Visa ••4421 falsa, los toggles
+  de complementos no-funcionales y la fecha de renovación fija. Un negocio real
+  ve su plan real + fecha real de `business_subscriptions` y administra tarjeta/
+  facturas en el portal de Stripe. **Falta:** agregación real de uso (pedidos/
+  reservas/fotos/asientos del mes) y complementos como productos de Stripe reales.
+- [ ] **Staff — horario / reloj / nómina / pipeline reales.** Roster y vacantes
+  ya son reales (Supabase). Horario, Asistencia, Nómina y Candidatos muestran
+  "Próximamente" para negocios reales (antes: 7 empleados, $22.8k nómina, todo
+  inventado). **Falta:** scheduler de turnos, reloj de asistencia, integración de
+  nómina y tabla de postulaciones para el pipeline.
+- [ ] **Renta — walk-in "Rentar/Devolver" real.** Se quitó el teatro (botones que
+  decían "depósito cobrado" sin escribir a la DB) para negocios reales; el ciclo
+  real corre por solicitudes de cliente en el panel de operaciones. **Falta (si
+  se quiere walk-in desde el panel):** insertar una `business_rental_orders`
+  confirmada como walk-in con el manejo de depósito, respetando el modelo canónico
+  (confirmación a nivel negocio aplicada por el servidor).
+
 ---
 
-_Last updated: 2026-07-15. Add to this file as new deferrals appear._
+_Last updated: 2026-07-22. Add to this file as new deferrals appear._
