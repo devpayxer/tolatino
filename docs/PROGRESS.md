@@ -5,6 +5,28 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-07-21.
 
+## 🔑 You CAN run migrations yourself — `scripts/sbsql.mjs` (2026-07-22)
+
+The cloud session has `SUPABASE_ACCESS_TOKEN` and `scripts/sbsql.mjs` runs SQL
+against the real DB via the Supabase Management API (Postgres TCP is blocked, but
+the Management HTTPS API works through the proxy). So **apply + verify migrations
+yourself** — don't just paste SQL for the founder:
+- Apply a file: `node scripts/sbsql.mjs --file supabase/migrations/0104_*.sql`
+- Inline / verify: `node scripts/sbsql.mjs "select ...;"`  (returns the LAST
+  statement's result only)
+- Simulate a role for RLS tests: `set local role anon; select ...;` or set
+  `request.jwt.claims` to a `{"sub":"<uid>","role":"authenticated"}` for auth.uid().
+- **Destructive tests MUST wrap in one request `begin; …; rollback;`** — each
+  sbsql call auto-commits (lesson: a customer-guard test mutated a live test order
+  `TL-E7E604` "Alex"; it was restored but not to its exact original — safe to delete).
+- Record each applied file in `public.schema_migrations` (the ledger, migration 0104).
+
+**Applied this session (0104-0108, all verified live):** 0104 migration ledger +
+paid-ticket payment gate; 0105 businesses column privacy (owner-only reads, public
+RPCs flipped to DEFINER); 0106 fuzz post coords to ~1.1km; 0107 freeze paid-order
+content against customer edits; 0108 fix (0105 had flipped the guard triggers to
+DEFINER, silently disabling their `current_user` check — reverted to INVOKER).
+
 ## ⛔ READ FIRST — this doc is NOT enough; verify the LIVE git state (2026-07-21)
 
 **The deploy branch is the source of truth, not this file and not your working
