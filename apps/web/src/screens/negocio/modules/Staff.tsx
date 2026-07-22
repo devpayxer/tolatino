@@ -27,7 +27,7 @@ type Role = 'owner' | 'manager' | 'staff' | 'driver';
 type Member = {
   id: number; dbId?: string; nm: string; c: string; role: Role; titleEs: string; titleEn: string;
   hours: string; dot: string; stEs: string; stEn: string; permsEs: string; permsEn: string;
-  since: string; invited?: boolean;
+  since: string; invited?: boolean; email?: string | null;
 };
 type Job = {
   id: number; dbId?: string; titleEs: string; titleEn: string; pay: string; typeEs: string; typeEn: string;
@@ -101,6 +101,7 @@ function rowToMember(r: StaffRow, idx: number): Member {
     permsEn: invited ? '—' : pEn,
     since: r.created_at ? String(new Date(r.created_at).getFullYear()) : '2025',
     invited,
+    email: r.email,
   };
 }
 
@@ -222,6 +223,25 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const roster = members; // roster renders straight from state now
 
+  // A real signed-in business shows ONLY real per-business data. Roster + jobs are
+  // wired to Supabase; scheduling, time-clock, payroll and the applicant pipeline
+  // are NOT yet — so for a real business those surfaces show an honest "próximamente"
+  // state instead of fabricated numbers (rule #8). Demo/showcase keeps the rich fixtures.
+  const isReal = persistable;
+  const activeCount = roster.filter((m) => !m.invited).length;
+  const roleCount = (r: Role) => roster.filter((m) => m.role === r).length;
+
+  const soonCard = (titleEs: string, titleEn: string, subEs: string, subEn: string) => (
+    <div className={`${cardCls} px-6 py-8 text-center`}>
+      <span className="inline-flex h-14 w-14 items-center justify-center rounded-tile bg-lilac">
+        <Clock size={24} stroke={2.2} className="text-primary" />
+      </span>
+      <div className="mt-3.5 text-[16px] font-extrabold text-ink">{L(titleEs, titleEn)}</div>
+      <div className="mx-auto mt-2 max-w-[360px] text-[12.5px] font-medium leading-relaxed text-muted">{L(subEs, subEn)}</div>
+      <div className="mx-auto mt-3 w-fit rounded-full bg-amber-bg px-3 py-1 text-[10px] font-extrabold text-amber-ink">{L('Próximamente', 'Coming soon')}</div>
+    </div>
+  );
+
   // ---- persistence (only when real; demo = local optimistic only) ----
   const persistNewMember = async (m: Member, email: string | null) => {
     if (!persistable || !real || !supabase) return;
@@ -255,7 +275,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   };
 
   const applicantTotal = jobs.reduce((a, j) => a + j.applied, 0);
-  const onShiftCount = 5;
+  const onShiftCount = isReal ? activeCount : 5;
 
   // ---------- shared chip helpers ----------
   const modeBtn = (on: boolean) =>
@@ -266,7 +286,14 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const dotColor = (dot: string) => (dot === '#1F9D57' ? 'text-green-dark' : dot === '#F4B740' ? 'text-amber-ink' : 'text-muted-2');
 
   // ============================ PERSONAL ============================
-  const staffKpis = isFree
+  const staffKpis = isReal
+    ? [
+        { Icon: Users, c: '#6D4DF6', bg: '#F1EFFA', label: L('Equipo', 'Team'), value: String(roster.length), delta: L(`${roleCount('manager')} gerentes · ${roleCount('staff')} staff`, `${roleCount('manager')} mgrs · ${roleCount('staff')} staff`), dCls: 'text-muted-2' },
+        { Icon: User, c: '#1F8A4C', bg: '#E3F5EA', label: L('Activos', 'Active'), value: String(activeCount), delta: L(`${roster.length - activeCount} invitados`, `${roster.length - activeCount} invited`), dCls: 'text-muted-2' },
+        { Icon: Clock, c: '#B5791A', bg: '#FCEFD6', label: L('Reloj', 'Time clock'), value: '—', delta: L('Pronto', 'Soon'), dCls: 'text-amber-ink' },
+        { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Nómina', 'Payroll'), value: '—', delta: L('Pronto', 'Soon'), dCls: 'text-amber-ink' },
+      ]
+    : isFree
     ? [
         { Icon: Users, c: '#6D4DF6', bg: '#F1EFFA', label: L('Equipo', 'Team'), value: '2', delta: L('límite Free', 'Free limit'), dCls: 'text-amber-ink' },
         { Icon: User, c: '#1F8A4C', bg: '#E3F5EA', label: L('Activos', 'Active'), value: '2', delta: '—', dCls: 'text-muted-2' },
@@ -335,10 +362,10 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   });
 
   const rolesPreview: { role: Role; n: number; es: string; en: string }[] = [
-    { role: 'owner', n: 1, es: 'Todo · pagos · banca · transferir', en: 'Everything · billing · banking · transfer' },
-    { role: 'manager', n: 3, es: 'Todos los módulos · sin banca', en: 'All modules · no banking' },
-    { role: 'staff', n: 5, es: 'Pedidos, reservas, clientes', en: 'Orders, bookings, customers' },
-    { role: 'driver', n: 5, es: 'Solo entregas y ruta', en: 'Deliveries & route only' },
+    { role: 'owner', n: isReal ? roleCount('owner') : 1, es: 'Todo · pagos · banca · transferir', en: 'Everything · billing · banking · transfer' },
+    { role: 'manager', n: isReal ? roleCount('manager') : 3, es: 'Todos los módulos · sin banca', en: 'All modules · no banking' },
+    { role: 'staff', n: isReal ? roleCount('staff') : 5, es: 'Pedidos, reservas, clientes', en: 'Orders, bookings, customers' },
+    { role: 'driver', n: isReal ? roleCount('driver') : 5, es: 'Solo entregas y ruta', en: 'Deliveries & route only' },
   ];
   const peopleN = (n: number) => `${n} ${n === 1 ? L('persona', 'person') : L('personas', 'people')}`;
 
@@ -623,10 +650,10 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---- roles + permission matrix ----
   const roleDefs: { role: Role; n: number; es: string[]; en: string[] }[] = [
-    { role: 'owner', n: 1, es: ['Todo · todas las acciones', 'Pagos y banca', 'Transferir negocio'], en: ['All actions', 'Billing & banking', 'Transfer business'] },
-    { role: 'manager', n: 3, es: ['Ver y editar todo', 'Sin banca', 'Invita staff'], en: ['View & edit all', 'No banking', 'Invite staff'] },
-    { role: 'staff', n: 5, es: ['Pedidos y reservas', 'Notas de cliente', 'Sin precios'], en: ['Orders & bookings', 'Customer notes', 'No pricing'] },
-    { role: 'driver', n: 5, es: ['Ver sus entregas', 'Actualizar ruta', 'Solo mensajes'], en: ['Own deliveries', 'Update route', 'Messaging only'] },
+    { role: 'owner', n: isReal ? roleCount('owner') : 1, es: ['Todo · todas las acciones', 'Pagos y banca', 'Transferir negocio'], en: ['All actions', 'Billing & banking', 'Transfer business'] },
+    { role: 'manager', n: isReal ? roleCount('manager') : 3, es: ['Ver y editar todo', 'Sin banca', 'Invita staff'], en: ['View & edit all', 'No banking', 'Invite staff'] },
+    { role: 'staff', n: isReal ? roleCount('staff') : 5, es: ['Pedidos y reservas', 'Notas de cliente', 'Sin precios'], en: ['Orders & bookings', 'Customer notes', 'No pricing'] },
+    { role: 'driver', n: isReal ? roleCount('driver') : 5, es: ['Ver sus entregas', 'Actualizar ruta', 'Solo mensajes'], en: ['Own deliveries', 'Update route', 'Messaging only'] },
   ];
   const permModules = [L('Anuncio e info', 'Listing & info'), L('Menú y precios', 'Menu & pricing'), L('Pedidos', 'Orders'), L('Reservas', 'Bookings'), L('Clientes', 'Customers'), L('Pagos', 'Payouts'), L('Personal', 'Staff'), L('Facturación', 'Billing')];
   const permData = [[2, 2, 1, 0], [2, 2, 0, 0], [2, 2, 2, 1], [2, 2, 2, 0], [2, 2, 1, 0], [2, 1, 0, 0], [2, 2, 0, 0], [2, 0, 0, 0]];
@@ -691,7 +718,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const jobStats = [
     [L('Vacantes', 'Open'), String(jobs.length)],
     [L('Candidatos', 'Applicants'), String(applicantTotal)],
-    [L('Vistas', 'Views'), '484'],
+    [L('Vistas', 'Views'), isReal ? String(jobs.reduce((a, j) => a + j.viewed, 0)) : '484'],
   ];
   const postJob = () => {
     const id = (jobs.length ? Math.max(...jobs.map((x) => x.id)) : 0) + 1;
@@ -878,12 +905,16 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
 
         <div className={`${cardCls} px-3.5 py-1.5`}>
-          {[
+          {([
             { Icon: Briefcase, c: '#6D4DF6', bg: '#F1EFFA', label: L('Empleo', 'Employment'), value: vm.hours },
             { Icon: Shield, c: '#1F8A4C', bg: '#E3F5EA', label: L('Permisos', 'Permissions'), value: L(vm.permsEs, vm.permsEn) },
-            { Icon: Phone, c: '#B5791A', bg: '#FCEFD6', label: L('Contacto', 'Contact'), value: `(415) 555-0${vm.id}24` },
-            { Icon: Mail, c: '#D6336C', bg: '#FDE7EF', label: 'Email', value: `${vm.nm.split(' ')[0].toLowerCase()}@mail.com` },
-          ].map((r, i, arr) => (
+            // Phone isn't stored — show it only in showcase/demo, never invent one for a real member.
+            ...(isReal ? [] : [{ Icon: Phone, c: '#B5791A', bg: '#FCEFD6', label: L('Contacto', 'Contact'), value: `(415) 555-0${vm.id}24` }]),
+            // Real members show their real invite email (if any); demo shows the fixture.
+            ...(isReal
+              ? (vm.email ? [{ Icon: Mail, c: '#D6336C', bg: '#FDE7EF', label: 'Email', value: vm.email }] : [])
+              : [{ Icon: Mail, c: '#D6336C', bg: '#FDE7EF', label: 'Email', value: `${vm.nm.split(' ')[0].toLowerCase()}@mail.com` }]),
+          ]).map((r, i, arr) => (
             <div key={r.label} className={`flex items-center gap-3 py-2.5 ${i < arr.length - 1 ? 'border-b border-hair' : ''}`}>
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg" style={{ background: r.bg }}>
                 <r.Icon size={14} strokeWidth={2.2} style={{ color: r.c }} />
@@ -896,6 +927,8 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           ))}
         </div>
 
+        {/* Weekly shifts come from scheduling, which isn't wired yet — showcase only. */}
+        {!isReal && (
         <div className={`${cardCls} p-3.5`}>
           <div className="mb-2.5 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted">{L('Turnos de la semana', "This week's shifts")}</div>
           <div className="flex flex-col gap-2">
@@ -909,6 +942,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             ))}
           </div>
         </div>
+        )}
       </div>
     </ModulePage>
   );
@@ -924,7 +958,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           onClick={() => {
             const nm = { manager: L('Nuevo Gerente', 'New Manager'), staff: L('Nuevo Staff', 'New Staff'), driver: L('Nuevo Repartidor', 'New Driver') }[inviteRole];
             const id = (members.length ? Math.max(...members.map((m) => m.id)) : 0) + 1;
-            const member: Member = { id, nm, c: '#7B61FF', role: inviteRole, titleEs: roleLabel(inviteRole), titleEn: roleLabel(inviteRole), hours: 'Part-time', dot: '#C0BBD0', stEs: 'Invitado', stEn: 'Invited', permsEs: '—', permsEn: '—', since: '2025', invited: true };
+            const member: Member = { id, nm, c: '#7B61FF', role: inviteRole, titleEs: roleLabel(inviteRole), titleEn: roleLabel(inviteRole), hours: 'Part-time', dot: '#C0BBD0', stEs: 'Invitado', stEn: 'Invited', permsEs: '—', permsEn: '—', since: '2025', invited: true, email: inviteEmail.trim() || null };
             setMembers((e) => [member, ...e]);
             persistNewMember(member, inviteEmail.trim() || null);
             setInviteOpen(false);
@@ -1013,9 +1047,15 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {staffLocked ? lockCard : (
             <>
               {stabStaff === 'roster' && rosterView}
-              {stabStaff === 'schedule' && scheduleView}
-              {stabStaff === 'time' && timeView}
-              {stabStaff === 'payroll' && payrollView}
+              {stabStaff === 'schedule' && (isReal
+                ? soonCard('Horarios de equipo', 'Team scheduling', 'Arma horarios semanales, copia turnos y avisa a tu equipo. Lo estamos terminando — muy pronto disponible.', 'Build weekly schedules, copy shifts and notify your team. We’re finishing it — available very soon.')
+                : scheduleView)}
+              {stabStaff === 'time' && (isReal
+                ? soonCard('Reloj de asistencia', 'Time clock', 'Registra entradas, descansos y horas extra automáticamente. En camino.', 'Track clock-ins, breaks and overtime automatically. On the way.')
+                : timeView)}
+              {stabStaff === 'payroll' && (isReal
+                ? soonCard('Nómina', 'Payroll', 'Corre la nómina con depósito directo e impuestos automáticos. Lo estamos integrando.', 'Run payroll with direct deposit and auto-filed taxes. We’re integrating it.')
+                : payrollView)}
               {stabStaff === 'roles' && rolesView}
             </>
           )}
@@ -1025,7 +1065,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {mode === 'jobs' && (
         <div className="flex flex-col gap-4">
           {stabJobs === 'jobs' && jobsView}
-          {stabJobs === 'pipeline' && pipelineView}
+          {stabJobs === 'pipeline' && (isReal
+            ? soonCard('Candidatos', 'Applicant pipeline', 'Aquí verás y moverás a quienes apliquen a tus vacantes por etapas. Se activa junto con las postulaciones.', 'See and move applicants through stages here. It activates alongside job applications.')
+            : pipelineView)}
           {stabJobs === 'visibility' && visibilityView}
         </div>
       )}
