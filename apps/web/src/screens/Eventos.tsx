@@ -317,7 +317,7 @@ export function EventosScreen() {
     // the webhook once payment succeeds. Free tiers keep the instant-issue path.
     if (payOnline) {
       setBuying(true);
-      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({ kind: 'ticket', slug: pub.slug, items });
+      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({ kind: 'ticket', slug: pub.slug, items, promo: promoApplied || undefined });
       setBuying(false);
       if (clientSecret && pendingId) {
         setCheckout({ clientSecret, pendingId, amount: amount ?? 0, returnPath: typeof window !== 'undefined' ? window.location.pathname : '/eventos/' });

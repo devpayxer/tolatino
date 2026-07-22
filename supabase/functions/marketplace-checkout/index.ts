@@ -473,6 +473,35 @@ Deno.serve(async (req) => {
       if (want.some((w) => !priceOf.has(w.tierId))) return json({ error: 'tier not found' }, 400);
       subtotal = want.reduce((a, w) => a + (priceOf.get(w.tierId) ?? 0) * w.qty, 0);
       payload = { items: want.map((w) => ({ tier_id: w.tierId, qty: w.qty })) };
+
+      // The EVENT's own promo code (event_promo_codes): a `percent`/`amount` discount
+      // that must lower what the buyer is actually charged — before this, the online
+      // charge ignored the promo and billed full price while the UI said "Descuento
+      // aplicado". We recompute the discount from the DB here (never trust the client)
+      // using the SAME scope/factor rules as _issue_tickets_multi, and stash the code
+      // on the payload so the webhook issues the tickets with the matching discount.
+      // `access` codes only unlock a hidden tier → no discount.
+      const evCode = String(body?.promo ?? '').trim().toUpperCase();
+      if (evCode) {
+        // Codes are matched case-insensitively (the unique index is on upper(code)),
+        // so fetch the event's active codes and match in JS — a case-sensitive
+        // PostgREST `code=eq.` would miss a code stored as "Test20".
+        const promos = (await get(`event_promo_codes?event_id=eq.${ev.id}&active=eq.true&select=code,kind,value,tier_id,max_uses,used`)) as
+          { code: string; kind: string; value: number; tier_id: string | null; max_uses: number | null; used: number }[];
+        const promo = Array.isArray(promos) ? promos.find((p) => String(p.code).trim().toUpperCase() === evCode) : undefined;
+        const usable = promo && (promo.max_uses == null || Number(promo.used) < Number(promo.max_uses));
+        if (usable && (promo!.kind === 'percent' || promo!.kind === 'amount')) {
+          const scope = promo!.tier_id; // null = whole order; else a single tier
+          const gross = want.reduce((a, w) => (scope == null || scope === w.tierId ? a + (priceOf.get(w.tierId) ?? 0) * w.qty : a), 0);
+          const val = Number(promo!.value) || 0;
+          discount = promo!.kind === 'percent'
+            ? Math.round(gross * val) / 100         // gross * value% (2-decimal)
+            : Math.min(gross, val);                 // fixed amount, capped at the scoped gross
+          discount = Math.max(0, Math.min(subtotal, Math.round(discount * 100) / 100));
+          // Forward the ORIGINAL-cased code so _issue_tickets_multi re-resolves it.
+          if (discount > 0) payload = { ...payload, promo: promo!.code };
+        }
+      }
     }
 
     const subtotalCents = Math.round(subtotal * 100);

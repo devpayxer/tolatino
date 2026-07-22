@@ -108,7 +108,9 @@ export type MarketplaceInput =
       /** Tip in dollars — passes through 100% to the seller. */
       tip?: number;
     }
-  | { kind: 'ticket'; slug: string; items: TicketLine[] }
+  // `promo` is the event promo code; the server re-validates it and re-computes
+  // the discount from event_promo_codes (the client value is never trusted).
+  | { kind: 'ticket'; slug: string; items: TicketLine[]; promo?: string }
   // subtotal is display-only; the server RE-PRICES the deposit/fee from DB using
   // service_id/item_id + these structured inputs (party_size / mode+hours+units)
   // + addon_ids. The client's subtotal is never trusted.
