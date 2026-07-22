@@ -1,5 +1,16 @@
 -- To'Latino v2 seed — the Handoff v2 fixture world (Houston), idempotent.
 -- Paste into the Supabase SQL Editor after 0002_v2_multicanal.sql.
+--
+-- ⚠️ DEV/DEMO ONLY — DO NOT RUN AGAINST PRODUCTION. These fixtures insert
+-- OWNERLESS businesses/events/posts/reviews with fabricated ratings. Prod was
+-- purged of this seed on 2026-07-22 (#24) precisely because showing invented
+-- data over a real launch violates founder rule #8 (confianza). Re-running this
+-- on prod re-introduces the fake data. Use only on a local/dev database.
+-- The purge that cleans it (safe — keeps every owner-owned row):
+--   delete from reviews    where user_id  is null;
+--   delete from posts      where author_id is null;
+--   delete from events     where owner_id is null;
+--   delete from businesses where owner_id is null;  -- cascades child rows
 
 -- ── Categories (v2 card categories) ─────────────────────────────────────────
 insert into public.categories (id, name_es, name_en, sort) values

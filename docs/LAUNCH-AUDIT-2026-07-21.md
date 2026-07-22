@@ -47,10 +47,17 @@ Código desplegado y verificado (build + browser) esta sesión:
   linkeadas en footer + sitemap. Pendiente: revisión de abogado + entidad/correo
   reales (checklist).
 
-**Pendiente (requiere acción del fundador o decisión):** purga de seed de prod
-(#24, requiere confirmar para no borrar tus negocios de prueba), cola de moderación
-(#23), y la lista **"Lo que te toca a TI"** (llaves Stripe live + webhook, dominio
-propio, SES para OTP/recuperación, precio canónico del plan).
+**Actualización 2026-07-22b — purga de seed (#24) HECHA + verificada en prod.**
+Borrado seguro (solo filas SIN dueño): −18 negocios, −6 eventos, −6 posts, −15
+reseñas fixture (+ cascada: 3 endorsements, 3 órdenes, 1 reserva de prueba sobre
+esos negocios falsos; 0 pagos afectados). Se conservó TODO lo del fundador:
+6 negocios + 4 eventos + 12 posts + 3 reseñas de `b@b.com`, y las 2 cuentas de
+prueba (`a@a.com`, `b@b.com`) intactas — puede seguir probando igual.
+`supabase/seed.sql` lleva ahora un aviso "DEV ONLY — no correr en prod".
+
+**Pendiente (requiere acción del fundador o decisión):** cola de moderación (#23),
+y la lista **"Lo que te toca a TI"** (llaves Stripe live + webhook, dominio propio,
+SES para OTP/recuperación, precio canónico del plan).
 
 ---
 
