@@ -31,6 +31,10 @@ Código desplegado y verificado (build + browser) esta sesión:
   `businesses` (#20, mig. 0105), fuzzear coordenadas de posts (#21, mig. 0106),
   rate-limiting de UGC/mensajes (#22, mig. 0111), guard de edición de pedido pagado
   (#4, mig. 0107 + fix de contexto 0108), boletos gratis server-side (#1, mig. 0104).
+- **Dinero:** promo de boleto server-side (#5) — el cobro en línea ahora aplica el
+  descuento del código (edge `marketplace-checkout` re-valida contra
+  `event_promo_codes` + el webhook reenvía el código a `_issue_tickets_multi`).
+  Verificado en vivo (1 VIP $100 → $105.00 sin código, $55.00 con el 50%).
 - **Dinero:** reembolsos completos (#3) — `refund_ctx` (mig. 0109/0110) +
   edge function `refund-purchase` (dueño y comprador), cableado en el panel
   (cancelar pedido) y en Mi Cuenta (cancelar compra). Probado end-to-end en Stripe
@@ -43,10 +47,10 @@ Código desplegado y verificado (build + browser) esta sesión:
   linkeadas en footer + sitemap. Pendiente: revisión de abogado + entidad/correo
   reales (checklist).
 
-**Pendiente (requiere acción del fundador o decisión):** promo de boleto server-side
-(#5), purga de seed de prod (#24, requiere confirmar para no borrar tus negocios de
-prueba), y la lista **"Lo que te toca a TI"** (llaves Stripe live + webhook, dominio
-propio, SES para OTP/recuperación, moderación, precio canónico del plan).
+**Pendiente (requiere acción del fundador o decisión):** purga de seed de prod
+(#24, requiere confirmar para no borrar tus negocios de prueba), cola de moderación
+(#23), y la lista **"Lo que te toca a TI"** (llaves Stripe live + webhook, dominio
+propio, SES para OTP/recuperación, precio canónico del plan).
 
 ---
 
