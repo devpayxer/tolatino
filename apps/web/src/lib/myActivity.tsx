@@ -10,6 +10,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { buyEventTickets, buyEventTicketsMulti } from '@/lib/live';
+import { refundPurchase } from '@/lib/stripe';
 import { useAuth } from '@/lib/auth';
 
 type BizRef = { name: string; slug: string } | null;
@@ -247,6 +248,10 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
   const cancel = useCallback<Ctx['cancel']>(async (kind, id) => {
     if (!supabase || !user) return { error: 'auth' };
     const table = kind === 'order' ? 'business_orders' : kind === 'booking' ? 'business_bookings' : 'business_rental_orders';
+    // Refund BEFORE cancelling, while the purchase is still in a self-refundable
+    // early status — the server enforces the eligibility (only a not-yet-accepted
+    // order) and no-ops for cash/late purchases, so this is safe to always call.
+    await refundPurchase(kind, id).catch(() => {});
     const { error } = await supabase.from(table).update({ status: 'cancelled' }).eq('id', id).eq('user_id', user.id);
     if (!error) refresh();
     return { error: error ? error.message : null };

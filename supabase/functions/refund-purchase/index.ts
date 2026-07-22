@@ -55,6 +55,16 @@ Deno.serve(async (req) => {
     if (!ctx) return json({ error: 'purchase not found' }, 404);
     if (ctx.is_owner !== true && ctx.is_buyer !== true) return json({ error: 'not authorized' }, 403);
 
+    // A BUYER may self-refund only while the business hasn't accepted the purchase
+    // yet (order still 'new', booking/rental still 'pending') — otherwise they'd
+    // "order → pay → receive → self-refund". The OWNER can refund at any status.
+    if (ctx.is_owner !== true && ctx.is_buyer === true) {
+      const early = (kind === 'order' && ctx.entity_status === 'new')
+        || (kind === 'booking' && ctx.entity_status === 'pending')
+        || (kind === 'rental' && ctx.entity_status === 'pending');
+      if (!early) return json({ ok: true, refunded: false, reason: 'contact_business' });
+    }
+
     // Already refunded → idempotent no-op.
     if (ctx.status === 'refunded') return json({ ok: true, refunded: true, already: true });
     // Not an online-paid purchase (cash / no intent) → nothing to refund.
