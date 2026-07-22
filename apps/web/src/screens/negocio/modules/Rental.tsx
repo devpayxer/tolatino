@@ -725,7 +725,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <>
         <ItemDetail item={selected} ctx={ctx} catName={catLabelOf(selected.cat)} tile={tileOf(selected)} statusOf={statusOf} availOf={availOf}
-          policyList={cfg.policies.filter((p) => selected.policies.includes(p.id))}
+          policyList={cfg.policies.filter((p) => selected.policies.includes(p.id))} walkIn={!persistable}
           onClose={() => setOpenId(null)} onEdit={() => startEdit(selected)} onRentOut={() => setFlow('rentout')} onReturn={() => setFlow('return')} />
         <Toast msg={toast} />
       </>
@@ -1171,12 +1171,15 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
 // ---------- Item detail page ----------
 function ItemDetail({
-  item, ctx, catName, tile, statusOf, availOf, policyList, onClose, onEdit, onRentOut, onReturn,
+  item, ctx, catName, tile, statusOf, availOf, policyList, walkIn, onClose, onEdit, onRentOut, onReturn,
 }: {
   item: Item; ctx: PanelCtx; catName: string; tile: string;
   statusOf: (it: Item) => { cls: string; dot: string; label: string };
   availOf: (it: Item) => number;
   policyList: RentalPolicy[];
+  // walkIn: showcase/demo only. A real business rents through customer requests
+  // (ops panel), so we never show a theatrical "Rentar/Devolver" that charges nothing.
+  walkIn: boolean;
   onClose: () => void; onEdit: () => void; onRentOut: () => void; onReturn: () => void;
 }) {
   const { L } = ctx;
@@ -1189,10 +1192,14 @@ function ItemDetail({
       onBack={onClose}
       action={<span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${s.cls}`}>{s.label}</span>}
       footer={
-        <div className="flex gap-2.5">
-          <button onClick={onEdit} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label={L('Editar', 'Edit')}><Pencil size={16} stroke={2} className="text-primary-dark" /></button>
-          <button onClick={onRentOut} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Rentar', 'Rent out')}</button>
-        </div>
+        walkIn ? (
+          <div className="flex gap-2.5">
+            <button onClick={onEdit} className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-btn bg-lilac-2" aria-label={L('Editar', 'Edit')}><Pencil size={16} stroke={2} className="text-primary-dark" /></button>
+            <button onClick={onRentOut} className="flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Rentar', 'Rent out')}</button>
+          </div>
+        ) : (
+          <button onClick={onEdit} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm"><Pencil size={15} stroke={2.2} />{L('Editar artículo', 'Edit item')}</button>
+        )
       }
     >
       <div className="flex flex-col gap-4">
@@ -1225,7 +1232,11 @@ function ItemDetail({
                 <div key={i} className={`${cardCls} flex items-center gap-3 p-2.5`}>
                   <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-[11px] font-extrabold ${out ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-dark'}`}>#{i + 1}</span>
                   <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold capitalize text-ink">{unit} {i + 1}</span><span className="block text-[10px] font-medium text-muted-2">{out ? L('Rentado', 'Rented') : L('Disponible ahora', 'Available now')}</span></span>
-                  {out ? (<button onClick={onReturn} className="flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-ink">{L('Devolver', 'Return')}</button>) : (<span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Libre', 'Free')}</span>)}
+                  {out
+                    ? (walkIn
+                        ? (<button onClick={onReturn} className="flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-ink">{L('Devolver', 'Return')}</button>)
+                        : (<span className="flex-none rounded-md bg-pink-bg px-2 py-1 text-[9px] font-extrabold text-pink-dark">{L('Rentado', 'Rented')}</span>))
+                    : (<span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Libre', 'Free')}</span>)}
                 </div>
               );
             })}
