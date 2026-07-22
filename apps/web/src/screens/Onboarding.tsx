@@ -46,7 +46,10 @@ export function OnboardingScreen() {
 
   const doLogin = async () => {
     setErr(null);
-    if (!email.includes('@') || password.length < 6) return setErr(L('Correo o contraseña incorrectos.', 'Wrong email or password.'));
+    // Login only needs a valid email + a non-empty password — the min-length rule
+    // belongs to sign-up (doRegister), not here. Enforcing it on login wrongly
+    // blocks accounts whose password is shorter than the current policy.
+    if (!email.includes('@') || !password) return setErr(L('Correo o contraseña incorrectos.', 'Wrong email or password.'));
     setBusy(true);
     const { error } = await auth.signIn(email, password);
     setBusy(false);
