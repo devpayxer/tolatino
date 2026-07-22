@@ -287,7 +287,11 @@ export function LandingScreen() {
       <div className="mx-auto flex max-w-[1180px] flex-col items-start gap-4 border-t border-hair px-4 py-7 md:flex-row md:items-center md:px-10 md:py-9">
         <Wordmark />
         <span className="text-[12.5px] font-semibold text-muted">{L('De latinos para latinos.', 'By Latinos, for Latinos.')}</span>
-        <span className="text-[12px] font-semibold text-muted-2 md:ml-auto">{L('Disponible en español e inglés', 'Available in Spanish & English')}</span>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 md:ml-auto">
+          <a href="/terminos" className="text-[12px] font-extrabold text-muted-2 hover:text-primary-dark">{L('Términos', 'Terms')}</a>
+          <a href="/privacidad" className="text-[12px] font-extrabold text-muted-2 hover:text-primary-dark">{L('Privacidad', 'Privacy')}</a>
+          <span className="text-[12px] font-semibold text-muted-2">{L('Español e inglés', 'Spanish & English')}</span>
+        </div>
       </div>
 
       <CityModal />

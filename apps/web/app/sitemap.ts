@@ -17,6 +17,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/bienes-raices', priority: 0.3, changeFrequency: 'monthly' as const },
     { path: '/autos', priority: 0.3, changeFrequency: 'monthly' as const },
     { path: '/trabajos', priority: 0.3, changeFrequency: 'monthly' as const },
+    { path: '/terminos', priority: 0.3, changeFrequency: 'yearly' as const },
+    { path: '/privacidad', priority: 0.3, changeFrequency: 'yearly' as const },
   ];
   return routes.map((r) => ({ url: `${SITE_URL}${r.path}`, changeFrequency: r.changeFrequency, priority: r.priority }));
 }
