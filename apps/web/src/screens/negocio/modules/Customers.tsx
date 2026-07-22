@@ -16,6 +16,7 @@ import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useUrlTab } from '@/lib/urlView';
 import { supabase } from '@/lib/supabase';
+import { refundPurchase } from '@/lib/stripe';
 import { Overlay, OverlayTitle, Switch } from '@/components/ui';
 import type { OwnDriver } from '@/screens/negocio/modules/FulfillmentEditors';
 import { orderStageLabel } from '@/components/OrderSteps';
@@ -534,7 +535,12 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     flash(L(`${o.id} cancelado`, `${o.id} cancelled`));
     if (persistable && o.dbId && supabase) {
       const { error } = await supabase.from('business_orders').update({ status: 'cancelled' }).eq('id', o.dbId);
-      if (error) flash(L('No se pudo cancelar', 'Could not cancel')); else setStatsV((v) => v + 1);
+      if (error) { flash(L('No se pudo cancelar', 'Could not cancel')); return; }
+      setStatsV((v) => v + 1);
+      // Refund a prepaid order (no-op for cash) so the owner's cancel never leaves
+      // the buyer's money captured.
+      const r = await refundPurchase('order', o.dbId);
+      if (r.refunded) flash(L('Pedido cancelado y reembolsado', 'Order cancelled and refunded'));
     }
   };
 

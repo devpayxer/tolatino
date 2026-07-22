@@ -40,6 +40,20 @@ export async function rentalDeposit(
   return { error: (data?.error as string) || 'deposit action failed' };
 }
 
+/** Refund a PAID order/booking/rental when it's cancelled or rejected (0109 +
+ *  refund-purchase fn). The server checks the caller is the owner or the buyer and
+ *  finds the payment; a cash/unpaid purchase returns refunded:false with no error,
+ *  so it's safe to call on every cancel. */
+export async function refundPurchase(
+  kind: 'order' | 'booking' | 'rental', id: string,
+): Promise<{ ok?: boolean; refunded?: boolean; amount?: number; error?: string }> {
+  if (!supabase) return { error: 'offline' };
+  const { data, error } = await supabase.functions.invoke('refund-purchase', { body: { kind, id } });
+  if (error) return { error: error.message };
+  if (data?.ok) return { ok: true, refunded: !!data.refunded, amount: data.amount as number };
+  return { error: (data?.error as string) || 'refund failed' };
+}
+
 /** Open the Stripe Billing Portal (update card / invoices / cancel). Returns the URL. */
 export async function openBillingPortal(businessId: string): Promise<{ url?: string; error?: string }> {
   if (!supabase) return { error: 'offline' };
