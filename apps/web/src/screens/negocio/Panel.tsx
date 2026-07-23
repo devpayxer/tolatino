@@ -67,7 +67,7 @@ const LISTING_ONLY_MODS: Mods = { menu: false, services: false, bookings: false,
 // Valid ?t= values → the dashboard tab restored on refresh (keep in sync with TabKey).
 const VALID_TABS = new Set<string>([
   'insights', 'stats', 'listing', 'photos', 'hours', 'related',
-  'menu', 'services', 'bookings', 'products', 'fulfillment', 'shipping', 'drivers', 'rental', 'events',
+  'menu', 'services', 'bookings', 'products', 'fulfillment', 'shipping', 'drivers', 'rental', 'events', 'inmuebles',
   'customers', 'orders', 'messages', 'reviews', 'updates',
   'promos', 'payments', 'staff', 'jobs', 'modules', 'billing', 'settings',
 ]);

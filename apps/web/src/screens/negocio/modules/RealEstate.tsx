@@ -25,6 +25,7 @@ import { useBizAdmin } from '@/lib/bizAdmin';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
+import { searchAddress, type Address } from '@/lib/geo';
 import {
   upsertProperty, fetchMyProperties, fetchMyLeads, setLeadStage, fetchMyTours, setTourStatus,
   RE_DEALS, RE_TYPES, RE_TILE, fmtPrice, fmtPriceFull,
@@ -55,6 +56,7 @@ type PropDraft = {
   openHouse: string;           // datetime-local value
   feats: string[];
   photos: string[];
+  lat: number | null; lng: number | null; // set by the address autocomplete (geo pipeline)
 };
 
 // Property types offered per deal (handoff: Tipo step chips).
@@ -163,7 +165,7 @@ function newPropDraft(city: string): PropDraft {
     price: '', beds: 3, baths: 2, sqft: '', lotSqft: '', year: '', hoa: '',
     deposit: '', available: '', lease: '',
     desc: '', pets: false, noCredit: false, cosigner: false,
-    openHouse: '', feats: [], photos: [],
+    openHouse: '', feats: [], photos: [], lat: null, lng: null,
   };
 }
 
@@ -394,6 +396,24 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [featInput, setFeatInput] = useState('');
   const photoInputRef = useRef<HTMLInputElement>(null);
   const upD = (patch: Partial<PropDraft>) => setDraft((d) => ({ ...d, ...patch }));
+  // Address autocomplete → real coords, so the listing shows on the consumer map
+  // (same free Nominatim/Photon pipeline as the Events wizard).
+  const [addrResults, setAddrResults] = useState<Address[]>([]);
+  const [addrSearching, setAddrSearching] = useState(false);
+  useEffect(() => {
+    const q = draft.address.trim();
+    if (draft.lat != null || q.length < 6) { setAddrResults([]); return; }
+    const ctrl = new AbortController();
+    const t = window.setTimeout(async () => {
+      setAddrSearching(true);
+      try { setAddrResults(await searchAddress(q + (draft.city.trim() && !q.toLowerCase().includes(draft.city.split(',')[0].toLowerCase()) ? `, ${draft.city}` : ''), null, ctrl.signal)); }
+      catch { /* aborted/offline */ }
+      setAddrSearching(false);
+    }, 450);
+    return () => { ctrl.abort(); window.clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.address, draft.lat]);
+  const chooseAddr = (a: Address) => { setAddrResults([]); upD({ address: a.formatted, lat: a.lat, lng: a.lng, ...(a.city && !draft.city.trim() ? { city: a.city } : {}) }); };
 
   const startWizard = () => {
     setDraft(newPropDraft(real?.city ?? 'Houston, TX'));
@@ -489,7 +509,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         }
       : {},
     open_house: draft.openHouse ? new Date(draft.openHouse).toISOString() : '',
-    // lat/lng intentionally omitted — geocoding lands with the integrator.
+    ...(draft.lat != null && draft.lng != null ? { lat: draft.lat, lng: draft.lng } : {}),
     ...(persistable && real ? { business_id: real.id } : {}),
   });
 
@@ -1228,7 +1248,24 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Dirección', 'Address')} *</label>
-        <input value={draft.address} onChange={(e) => upD({ address: e.target.value })} placeholder={L('Calle, número, ciudad', 'Street, number, city')} className={fieldCls} />
+        <div className="relative">
+          <input value={draft.address} onChange={(e) => upD({ address: e.target.value, lat: null, lng: null })} placeholder={L('Calle, número, ciudad', 'Street, number, city')} className={fieldCls} />
+          {addrResults.length > 0 && (
+            <div className="absolute z-20 mt-1 max-h-[200px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
+              {addrResults.map((a, i) => (
+                <button key={`${a.formatted}-${i}`} type="button" onClick={() => chooseAddr(a)} className="w-full cursor-pointer rounded-field p-2.5 text-left text-[12.5px] font-bold text-ink-soft hover:bg-app">
+                  {a.formatted}
+                  {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="mt-1 text-[10px] font-semibold text-muted-2">
+            {addrSearching ? L('Buscando dirección…', 'Searching address…')
+              : draft.lat != null ? L('📍 Ubicación fijada — saldrá en el mapa del cliente.', '📍 Location set — it will show on the buyer map.')
+              : L('Elige una sugerencia para fijar el mapa.', 'Pick a suggestion to pin the map.')}
+          </div>
+        </div>
       </div>
       <div className="flex gap-2.5">
         <div className="flex-1">

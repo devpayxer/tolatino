@@ -209,7 +209,7 @@ create or replace function public.properties_search(
     where p.status = 'published'
       and (in_deal is null or p.deal = in_deal)
       and (in_type is null or p.ptype = in_type)
-      and (in_city is null or p.city ilike in_city)
+      and (in_city is null or p.city ilike in_city || '%')
       and (in_hood is null or p.hood ilike in_hood)
       and (in_beds is null or coalesce(p.beds, 0) >= in_beds)
       and (in_baths is null or coalesce(p.baths, 0) >= in_baths)
@@ -407,7 +407,7 @@ create or replace function public.re_directory(
          count(*) over ()
   from public.businesses b
   where b.category_id = 'RealEstate'
-    and (in_city is null or b.city ilike in_city)
+    and (in_city is null or b.city ilike in_city || '%')
     and (in_q is null or in_q = '' or b.name ilike '%' || in_q || '%')
   order by (b.tier = 'premium') desc, (b.tier = 'verified') desc, b.rating desc nulls last, b.reviews_count desc
   limit greatest(1, least(max_results, 100)) offset greatest(0, in_offset)
