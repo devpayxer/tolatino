@@ -1530,17 +1530,24 @@ _Last updated: 2026-07-22. Add to this file as new deferrals appear._
 Consumidor: HECHO (detalle rico con tags/qué esperar/programa/organizador/reseñas,
 selección de asientos y mesas con anti-doble-venta real, reseñas de evento,
 responsive desktop, pago propio 5%). Migraciones 0113/0114 aplicadas + verificadas.
-Falta (panel del organizador — otra superficie, `ToLatino Events Module`):
-- [ ] **Editor de mapa de asientos en el panel** — hoy `events.seating` y
-  `event_tiers.seat` se definen por SQL (evento demo `hz-salsa-vivo`). El dueño
-  necesita un editor en su panel de Eventos para: elegir "Admisión general /
-  Asientos numerados (filas×cols) / Mesas (lista con capacidad)" y marcar qué
-  tier requiere asiento. Hasta entonces, solo eventos sembrados tienen asientos.
-- [ ] **Editor de `events.attrs`** (edad, incluye, horario, tags, programa/lineup)
-  en el panel — hoy también por SQL. El consumidor ya los muestra si existen.
-- [ ] **QR real en la confirmación** (el diseño lo pide). Hoy mostramos el código
-  alfanumérico (TL-XXX) — funciona para entrada; el QR es visual. Generar un QR
-  del código (lib QR liviana o CSS grid) cuando se pula la confirmación.
-- [ ] **Vista "Explorar/Categorías"** dedicada del diseño — el buscador + chips de
-  categoría actuales ya cubren el descubrimiento; la grilla de categorías es un
-  extra opcional.
+Panel del organizador + extras (2026-07-23b) — HECHO:
+- [x] **Editor de mapa de asientos en el panel** (mig. 0115) — el asistente de
+  crear evento (paso Boletos) elige General / Asientos numerados (filas×cols) /
+  Mesas (con capacidad + FOTO), marca qué tier requiere asiento, y crea
+  PAQUETES/addons (opcionales u obligatorios, solo-mesas o todos) + edad/incluye.
+  `create_event_full` extendido con p_seating/p_attrs/p_addons.
+- [x] **Paquetes de mesa** (addons obligatorios/opcionales) — re-precio 100%
+  server-side (`resolve_event_addons`), usado por la ruta libre y por
+  marketplace-checkout; el obligatorio se cobra aunque el cliente lo omita.
+  Verificado: cobro $204.75 (VIP $45 + paquete $150, +5%).
+- [x] **Fotos de mesa** — subida en el panel (WebP), se muestran en el selector.
+- [x] **QR real en la confirmación** — stub de boleto con QR escaneable (reusa
+  `<Qr>` de Mis Boletos).
+- [x] **Explora por categoría** — grilla de categorías en la vista de Eventos
+  (solo categorías con eventos cercanos + conteo).
+Pendiente menor (opcional):
+- [ ] **Editar seating/attrs/addons de un evento YA creado** desde el panel
+  (hoy se define al crear; para cambiarlo después falta el flujo de edición
+  directa `events.update` — RLS ya lo permite, falta la UI).
+- [ ] Editor de **programa/lineup + tags** en el panel (el consumidor ya los
+  muestra; hoy se siembran por SQL). Edad/incluye ya están en el panel.
