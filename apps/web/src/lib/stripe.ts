@@ -110,7 +110,9 @@ export type MarketplaceInput =
     }
   // `promo` is the event promo code; the server re-validates it and re-computes
   // the discount from event_promo_codes (the client value is never trusted).
-  | { kind: 'ticket'; slug: string; items: TicketLine[]; promo?: string }
+  // `seats` are the picked seat/table ids (e.g. ['A1','A2'] or ['T3']); the server
+  // fail-fasts on already-claimed seats and the webhook claims them at issuance.
+  | { kind: 'ticket'; slug: string; items: TicketLine[]; promo?: string; seats?: string[] }
   // subtotal is display-only; the server RE-PRICES the deposit/fee from DB using
   // service_id/item_id + these structured inputs (party_size / mode+hours+units)
   // + addon_ids. The client's subtotal is never trusted.

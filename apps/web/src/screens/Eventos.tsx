@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconCalendarPlus as CalendarPlus, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconMapPin as MapPin, IconNavigation as Navigation, IconShare2 as Share2, IconBuildingStore as Store, IconTag as Tag, IconTicket as Ticket } from '@tabler/icons-react';
+import { IconCalendarPlus as CalendarPlus, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconMapPin as MapPin, IconNavigation as Navigation, IconShare2 as Share2, IconBuildingStore as Store, IconTag as Tag, IconTicket as Ticket, IconArmchair as Armchair, IconStar as Star, IconStarFilled as StarFilled, IconClock as Clock, IconInfoCircle as InfoCircle, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -16,7 +16,7 @@ import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
-import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, fetchEventsByOwner, validatePromo, type PubEvent, type PubTier } from '@/lib/live';
+import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, fetchEventsByOwner, validatePromo, fetchSeatClaims, fetchEventReviews, type PubEvent, type PubTier, type EventReview } from '@/lib/live';
 
 const PAGE_SIZE = 9;
 // Base tab title for the list state — MUST match the static metadata in
@@ -68,6 +68,8 @@ const mapEmbedUrl = (lat: number, lng: number) => {
 const buyErr = (msg: string, L: (a: string, b: string) => string): string => {
   const tier = (msg.split(':')[1] ?? '').trim();
   const s = tier ? ` (${tier})` : '';
+  if (/seat taken/i.test(msg)) return L(`Ese asiento ya se ocupó${s} — elige otro`, `That seat was taken${s} — pick another`);
+  if (/seats required|seat count mismatch|pick one table|table too small|bad seat|bad table/i.test(msg)) return L('Revisa tu selección de asientos', 'Check your seat selection');
   if (/sold out/i.test(msg)) return L(`Agotado${s} — elige otro nivel`, `Sold out${s} — pick another tier`);
   if (/sales closed/i.test(msg)) return L(`La venta ya cerró${s}`, `Sales are closed${s}`);
   if (/not on sale/i.test(msg)) return L(`Aún no está en venta${s}`, `Not on sale yet${s}`);
@@ -88,8 +90,90 @@ function setMetaDesc(content: string) {
   m.setAttribute('content', content);
 }
 
+// Seat/table picker (0113). Numbered seats: STAGE bar + rows A.. × cols 1.. with
+// free/picked/taken states. Tables: BAR bar + capacity-aware grid, single-select.
+// The DB's unique(event_id,seat) is the true arbiter; this is the friendly UI.
+function SeatPicker({
+  seating, taken, selected, needed, onToggle, onDone, onClose, L,
+}: {
+  seating: NonNullable<PubEvent['seating']>; taken: string[]; selected: string[]; needed: number;
+  onToggle: (id: string) => void; onDone: () => void; onClose: () => void;
+  L: (es: string, en: string) => string;
+}) {
+  const isTables = seating.type === 'tables';
+  const ok = isTables ? selected.length === 1 : selected.length === needed;
+  return (
+    <>
+      <OverlayTitle title={isTables ? L('Elige tu mesa', 'Pick your table') : L('Elige tus asientos', 'Pick your seats')} onClose={onClose} />
+      {!isTables && seating.type === 'seats' && (
+        <>
+          <div className="mb-3 rounded-btn bg-ink py-2 text-center text-[10px] font-extrabold uppercase tracking-[.22em] text-white/85">{L('Escenario', 'Stage')}</div>
+          <div className="mx-auto flex max-w-[300px] flex-col gap-1.5">
+            {Array.from({ length: seating.rows }, (_, r) => {
+              const letter = String.fromCharCode(65 + r);
+              return (
+                <div key={letter} className="flex items-center gap-1.5">
+                  <span className="w-3 flex-none text-[10px] font-extrabold text-muted-2">{letter}</span>
+                  <div className="flex flex-1 justify-center gap-1.5">
+                    {Array.from({ length: seating.cols }, (_, c) => {
+                      const id = `${letter}${c + 1}`;
+                      const isTaken = taken.includes(id); const isSel = selected.includes(id);
+                      return (
+                        <button
+                          key={id} onClick={() => onToggle(id)} disabled={isTaken} aria-label={id}
+                          className={`h-7 w-7 flex-none rounded-[7px] text-[9px] font-extrabold transition-colors ${
+                            isTaken ? 'cursor-not-allowed bg-lilac-2 text-muted-faint'
+                            : isSel ? 'bg-primary text-white shadow-cta-sm'
+                            : 'cursor-pointer border-[1.5px] border-lilac-line bg-white text-ink-soft hover:border-primary'}`}
+                        >{c + 1}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-4 text-[10.5px] font-bold text-muted-2">
+            <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-[4px] border-[1.5px] border-lilac-line bg-white" />{L('Libre', 'Free')}</span>
+            <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-[4px] bg-primary" />{L('Elegido', 'Picked')}</span>
+            <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-[4px] bg-lilac-2" />{L('Ocupado', 'Taken')}</span>
+          </div>
+        </>
+      )}
+      {isTables && seating.type === 'tables' && (
+        <>
+          <div className="mb-3 rounded-btn bg-ink py-2 text-center text-[10px] font-extrabold uppercase tracking-[.22em] text-white/85">{L('Barra', 'Bar')}</div>
+          <div className="grid grid-cols-2 gap-2.5">
+            {seating.tables.map((t) => {
+              const id = `T${t.n}`; const isTaken = taken.includes(id) || t.cap < needed; const isSel = selected.includes(id);
+              return (
+                <button
+                  key={id} onClick={() => onToggle(id)} disabled={isTaken}
+                  className={`flex items-center gap-2.5 rounded-field border-[1.5px] px-3 py-3 text-left ${
+                    isTaken ? 'cursor-not-allowed border-hair bg-lilac-2/60 opacity-55'
+                    : isSel ? 'border-primary bg-lilac-3 shadow-cta-sm'
+                    : 'cursor-pointer border-lilac-line bg-white hover:border-primary'}`}
+                >
+                  <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[13px] font-extrabold ${isSel ? 'bg-primary text-white' : 'bg-lilac-2 text-primary-dark'}`}>{t.n}</span>
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-extrabold text-ink">{L('Mesa', 'Table')} {t.n}</span>
+                    <span className="block text-[10.5px] font-bold text-muted-2">{t.cap} {L('personas', 'people')}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+      <PrimaryBtn className="mt-5" disabled={!ok} onClick={onDone}>
+        {ok ? L('Confirmar', 'Confirm') : isTables ? L('Elige una mesa', 'Pick a table') : L(`Elige ${needed} ${needed === 1 ? 'asiento' : 'asientos'}`, `Pick ${needed} ${needed === 1 ? 'seat' : 'seats'}`)}
+      </PrimaryBtn>
+    </>
+  );
+}
+
 export function EventosScreen() {
-  const { L } = useLang();
+  const { L, lang } = useLang();
   const app = useApp();
   const { events: EVENTS, refresh: refreshLive, loading: liveLoading } = useLiveData();
   const { user } = useAuth();
@@ -122,6 +206,11 @@ export function EventosScreen() {
   const [orgOpen, setOrgOpen] = useState(false);
   const [orgEvents, setOrgEvents] = useState<EventItem[] | null>(null);
   const [toast, setToast] = useState('');
+  // Seat/table selection (0113). `seatSel` holds seat ids ('A1') or one table ('T3').
+  const [seatSel, setSeatSel] = useState<string[]>([]);
+  const [seatTaken, setSeatTaken] = useState<string[]>([]);
+  const [seatOpen, setSeatOpen] = useState(false);
+  const [evReviews, setEvReviews] = useState<EventReview[] | null>(null);
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 2200);
@@ -234,9 +323,13 @@ export function EventosScreen() {
     let cancelled = false;
     setPub(null); setPubLoading(true);
     fetchEventBySlug(detailSlug).then((p) => { if (!cancelled) { setPub(p); setPubLoading(false); } });
+    setSeatSel([]); setSeatTaken([]); setEvReviews(null);
+    void fetchSeatClaims(detailSlug).then((s) => { if (!cancelled) setSeatTaken(s); });
+    void fetchEventReviews(detailSlug).then((r) => { if (!cancelled) setEvReviews(r); });
     return () => { cancelled = true; };
   }, [detailSlug]);
   const reloadPub = () => { if (detailSlug) void fetchEventBySlug(detailSlug).then(setPub); };
+  const reloadSeats = () => { if (detailSlug) void fetchSeatClaims(detailSlug).then(setSeatTaken); };
 
   // While an event is open, reflect it in the tab title + meta description (browser
   // history + Googlebot's JS render — NOT social unfurls, which need SSR). Restores
@@ -276,6 +369,13 @@ export function EventosScreen() {
     return discount.kind === 'percent' ? gross * (discount.value / 100) : Math.min(gross, discount.value);
   })();
   const netTotal = Math.max(0, orderTotal - discountAmount);
+  // Seats (0113): how many of the selected tickets require a seat/table, and
+  // whether the current pick satisfies the event's seat map.
+  const seatedQty = selectedTiers.reduce((s, t) => s + (t.seat ? (tierQty[t.id] ?? 0) : 0), 0);
+  const seatingType = pub?.seating?.type ?? null;
+  const needsSeats = seatedQty > 0 && !!pub?.seating;
+  const seatsOk = !needsSeats
+    || (seatingType === 'tables' ? seatSel.length === 1 : seatSel.length === seatedQty);
   // Paid tickets whose organizer has connected Stripe → charge online (card).
   // The buyer pays orderTotal + a 5% service fee (matches what Stripe charges).
   const payOnline = anyPaid && !!pub?.acceptsPayments;
@@ -298,7 +398,20 @@ export function EventosScreen() {
     app.toggleGoing(e.id);
   };
 
-  const setQ = (id: string, n: number, max: number) => setTierQty((m) => ({ ...m, [id]: Math.max(0, Math.min(max, n)) }));
+  const setQ = (id: string, n: number, max: number) => {
+    setTierQty((m) => ({ ...m, [id]: Math.max(0, Math.min(max, n)) }));
+    setSeatSel([]); // any qty change invalidates the seat pick (design behavior)
+  };
+  // Toggle a numbered seat: cap at seatedQty, dropping the oldest when exceeded.
+  const toggleSeat = (id: string) => {
+    if (seatTaken.includes(id)) return;
+    setSeatSel((cur) => {
+      if (cur.includes(id)) return cur.filter((s) => s !== id);
+      if (seatingType === 'tables') return [id]; // single-select
+      const next = [...cur, id];
+      return next.length > seatedQty ? next.slice(next.length - seatedQty) : next;
+    });
+  };
 
   // Buy the selected tiers in ONE atomic order (buy_event_tickets_multi, migration
   // 0064): every tier is locked + capacity-checked before any ticket is issued, so a
@@ -309,7 +422,9 @@ export function EventosScreen() {
     if (pub.status === 'cancelled') { flash(L('Evento cancelado', 'Event cancelled')); return; }
     if (!user) { router.push('/entrar'); return; }
     if (selectedTiers.length === 0) { flash(L('Elige al menos un boleto', 'Pick at least one ticket')); return; }
+    if (needsSeats && !seatsOk) { setSeatOpen(true); return; }
     const items = selectedTiers.map((t) => ({ tierId: t.id, qty: tierQty[t.id] ?? 0 }));
+    const seats = needsSeats ? seatSel : undefined;
 
     // Paid tickets → charge the buyer's card inside OUR own branded sheet (checkout
     // propio SIEMPRE — never Stripe's hosted page). Destination charge to the
@@ -317,12 +432,14 @@ export function EventosScreen() {
     // the webhook once payment succeeds. Free tiers keep the instant-issue path.
     if (payOnline) {
       setBuying(true);
-      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({ kind: 'ticket', slug: pub.slug, items, promo: promoApplied || undefined });
+      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({ kind: 'ticket', slug: pub.slug, items, promo: promoApplied || undefined, seats });
       setBuying(false);
       if (clientSecret && pendingId) {
         setCheckout({ clientSecret, pendingId, amount: amount ?? 0, returnPath: typeof window !== 'undefined' ? window.location.pathname : '/eventos/' });
         return;
       }
+      // A seat someone else just took → refresh the map and send them back to pick again.
+      if (error === 'seat_taken') { reloadSeats(); setSeatSel([]); setSeatOpen(true); flash(L('Un asiento se acaba de ocupar. Elige otro.', 'A seat was just taken. Pick another.')); return; }
       flash(error ? buyErr(error, L) : L('No se pudo iniciar el pago', 'Could not start payment'));
       return;
     }
@@ -333,9 +450,12 @@ export function EventosScreen() {
     }
 
     setBuying(true);
-    const { error, codes, tickets } = await act.buyTicketsMulti(pub.slug, items, promoApplied || undefined);
+    const { error, codes, tickets } = await act.buyTicketsMulti(pub.slug, items, promoApplied || undefined, seats);
     setBuying(false);
-    if (error) { reloadPub(); flash(buyErr(error, L)); return; }
+    if (error) {
+      if (/seat taken/i.test(error)) { reloadSeats(); setSeatSel([]); setSeatOpen(true); flash(L('Un asiento se acaba de ocupar. Elige otro.', 'A seat was just taken. Pick another.')); return; }
+      reloadPub(); flash(buyErr(error, L)); return;
+    }
     // label each issued code with its tier for the success screen
     const named = (tickets ?? []).map((tk) => {
       const t = tiers.find((x) => x.id === tk.tierId);
@@ -655,7 +775,115 @@ export function EventosScreen() {
             <div className="mt-3 border-t border-hair pt-3">
               <div className="mb-1.5 text-[13.5px] font-extrabold text-ink">{L('Acerca del evento', 'About the event')}</div>
               <div className="text-[13.5px] font-medium leading-[1.55] text-ink-soft">{L(detail.descEs, detail.descEn)}</div>
+              {/* topic tags (events.attrs) */}
+              {(() => {
+                const tags = pub ? (lang === 'es' ? pub.attrs.tagsEs : pub.attrs.tagsEn) ?? pub.attrs.tagsEs ?? [] : [];
+                return tags.length > 0 ? (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {tags.map((tg) => (
+                      <span key={tg} className="rounded-full bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{tg}</span>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
             </div>
+
+            {/* "Lo que puedes esperar" — age / includes / schedule from attrs */}
+            {pub && (() => {
+              const rows = [
+                { Icon: Clock, t: L('Horario', 'Schedule'), v: L(pub.attrs.scheduleEs ?? '', pub.attrs.scheduleEn ?? pub.attrs.scheduleEs ?? '') },
+                { Icon: Users, t: L('Edad', 'Age'), v: L(pub.attrs.ageEs ?? '', pub.attrs.ageEn ?? pub.attrs.ageEs ?? '') },
+                { Icon: InfoCircle, t: L('Incluye', 'Includes'), v: L(pub.attrs.includesEs ?? '', pub.attrs.includesEn ?? pub.attrs.includesEs ?? '') },
+              ].filter((r) => r.v.trim());
+              return rows.length > 0 ? (
+                <div className="mt-3 border-t border-hair pt-3">
+                  <div className="mb-2 text-[13.5px] font-extrabold text-ink">{L('Lo que puedes esperar', 'What to expect')}</div>
+                  <div className="flex flex-col gap-2.5">
+                    {rows.map((r) => (
+                      <div key={r.t} className="flex items-start gap-2.5">
+                        <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px] bg-lilac-2"><r.Icon size={16} stroke={2.2} className="text-primary-dark" /></span>
+                        <span className="min-w-0"><span className="block text-[12.5px] font-extrabold text-ink">{r.t}</span><span className="block text-[12px] font-medium leading-snug text-ink-soft">{r.v}</span></span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
+            {/* "Programa" — run-of-show timeline (attrs.lineup) */}
+            {pub && Array.isArray(pub.attrs.lineup) && pub.attrs.lineup.length > 0 && (
+              <div className="mt-3 border-t border-hair pt-3">
+                <div className="mb-2 text-[13.5px] font-extrabold text-ink">{L('Programa', 'Run of show')}</div>
+                <div className="flex flex-col">
+                  {pub.attrs.lineup.map((it, i) => (
+                    <div key={i} className="flex gap-3">
+                      <span className="w-[52px] flex-none pt-0.5 text-right text-[11px] font-extrabold text-primary-dark">{it.t}</span>
+                      <span className="relative flex flex-none flex-col items-center">
+                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" />
+                        {i < pub.attrs.lineup!.length - 1 && <span className="w-[1.5px] flex-1 bg-lilac-line" />}
+                      </span>
+                      <span className="min-w-0 flex-1 pb-3.5">
+                        <span className="block text-[12.5px] font-extrabold text-ink">{L(it.es, it.en)}</span>
+                        {(it.desEs || it.desEn) && <span className="block text-[11.5px] font-medium leading-snug text-muted">{L(it.desEs ?? '', it.desEn ?? it.desEs ?? '')}</span>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* "Organizado por" — host card with rating + events + follow-through */}
+            {pub && (
+              <div className="mt-3 flex items-center gap-3 rounded-card border border-hair bg-white p-3">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-lilac-2 text-[14px] font-extrabold text-primary-dark">
+                  {pub.organizer.split(' ').map((w) => w[0]).slice(0, 2).join('')}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1 text-[13px] font-extrabold text-ink">
+                    <span className="truncate">{pub.organizer}</span>
+                    {pub.organizerVerified && <Check size={13} stroke={3} className="flex-none text-primary" />}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-2">
+                    {pub.organizerRating != null && <span className="flex items-center gap-0.5"><StarFilled size={11} className="text-amber" />{pub.organizerRating.toFixed(1)}</span>}
+                    <span>· {pub.organizerEvents} {L('eventos', 'events')}</span>
+                  </div>
+                </div>
+                <button onClick={openOrganizer} className="flex-none cursor-pointer rounded-full border-[1.5px] border-lilac-line bg-white px-3.5 py-1.5 text-[11.5px] font-extrabold text-primary-dark">
+                  {L('Ver', 'View')}
+                </button>
+              </div>
+            )}
+
+            {/* "Reseñas" — event reviews (post-attendance) */}
+            {pub && evReviews && evReviews.length > 0 && (
+              <div className="mt-3 border-t border-hair pt-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[13.5px] font-extrabold text-ink">{L('Reseñas', 'Reviews')}</span>
+                  {pub.reviewAvg != null && (
+                    <span className="flex items-center gap-1 text-[12px] font-extrabold text-ink">
+                      <StarFilled size={13} className="text-amber" />{pub.reviewAvg.toFixed(1)}
+                      <span className="font-bold text-muted-2">({pub.reviewCount})</span>
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  {evReviews.slice(0, 4).map((rv, i) => (
+                    <div key={i} className="rounded-card-sm border border-hair bg-white p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-lilac-2 text-[10px] font-extrabold text-primary-dark">{rv.initials}</span>
+                        <span className="min-w-0 flex-1 truncate text-[12px] font-extrabold text-ink">{rv.name}</span>
+                        <span className="flex flex-none gap-0.5">
+                          {Array.from({ length: 5 }, (_, s) => s < rv.rating
+                            ? <StarFilled key={s} size={11} className="text-amber" />
+                            : <Star key={s} size={11} stroke={2} className="text-muted-faint" />)}
+                        </span>
+                      </div>
+                      {L(rv.body[0], rv.body[1]).trim() && <div className="mt-1.5 text-[12px] font-medium leading-snug text-ink-soft">{L(rv.body[0], rv.body[1])}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* tickets (tiers) vs free RSVP */}
             {detail.slug && hasTiers ? (
@@ -743,8 +971,30 @@ export function EventosScreen() {
                     {discountAmount > 0 && <div className="text-[10.5px] font-bold text-green-dark">{L('Descuento aplicado', 'Discount applied')} · −${discountAmount.toFixed(2)}</div>}
                   </div>
                 )}
+
+                {/* Seat / table selection — only when a picked tier is seated (0113). */}
+                {needsSeats && (
+                  <button
+                    onClick={() => setSeatOpen(true)}
+                    className={`mt-2.5 flex w-full items-center gap-2.5 rounded-field border-[1.5px] px-3.5 py-2.5 text-left ${seatsOk ? 'border-green bg-green-bg' : 'border-lilac-ring bg-lilac-3'}`}
+                  >
+                    <Armchair size={17} stroke={2.2} className={`flex-none ${seatsOk ? 'text-green-dark' : 'text-primary'}`} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12.5px] font-extrabold text-ink">
+                        {seatingType === 'tables' ? L('Elige tu mesa', 'Pick your table') : L('Elige tus asientos', 'Pick your seats')}
+                      </span>
+                      <span className="block truncate text-[11px] font-bold text-muted-2">
+                        {seatsOk
+                          ? (seatingType === 'tables' ? `${L('Mesa', 'Table')} ${seatSel[0]?.slice(1)}` : seatSel.join(' · '))
+                          : (seatingType === 'tables' ? L('Toca para elegir', 'Tap to choose') : L(`Faltan ${seatedQty - seatSel.length} de ${seatedQty}`, `${seatedQty - seatSel.length} of ${seatedQty} left`))}
+                      </span>
+                    </span>
+                    {seatsOk ? <Check size={16} stroke={3} className="flex-none text-green-dark" /> : <ChevronRight size={16} stroke={2.4} className="flex-none text-primary" />}
+                  </button>
+                )}
+
                 <PrimaryBtn className="mt-3" disabled={buying || orderQty === 0 || cancelled || eventPast} onClick={buyNow}>
-                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : payOnline ? `${L('Pagar', 'Pay')} ${orderQty} · $${onlineCharge.toFixed(2)}` : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${netTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
+                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : (needsSeats && !seatsOk) ? (seatingType === 'tables' ? L('Elige tu mesa', 'Pick your table') : L('Elige tus asientos', 'Pick your seats')) : payOnline ? `${L('Pagar', 'Pay')} ${orderQty} · $${onlineCharge.toFixed(2)}` : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${netTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
                 </PrimaryBtn>
                 {anyPaid && (
                   <div className="mt-1.5 text-center text-[10.5px] font-semibold text-muted-2">
@@ -793,6 +1043,12 @@ export function EventosScreen() {
                 <div className="mt-0.5 font-mono text-[22px] font-extrabold tracking-[.12em] text-primary-dark">{boughtCode}</div>
               </div>
             ) : null}
+            {seatSel.length > 0 && (
+              <div className="mt-3 flex items-center gap-2 rounded-field bg-lilac-2 px-3.5 py-2 text-[12.5px] font-extrabold text-primary-dark">
+                <Armchair size={15} stroke={2.2} />
+                {seatingType === 'tables' ? `${L('Mesa', 'Table')} ${seatSel[0]?.slice(1)}` : `${L('Asientos', 'Seats')}: ${seatSel.join(' · ')}`}
+              </div>
+            )}
             <div className="mt-3 max-w-[300px] text-[13px] font-semibold leading-relaxed text-muted">
               {L('Encuéntralos en Mi cuenta → Mis boletos, con su código para la entrada.', 'Find them in My account → My tickets, with the code for entry.')}
             </div>
@@ -800,6 +1056,16 @@ export function EventosScreen() {
               {L('Listo', 'Done')}
             </PrimaryBtn>
           </div>
+        )}
+      </Overlay>
+
+      {/* seat / table picker (0113) */}
+      <Overlay open={seatOpen} onClose={() => setSeatOpen(false)} width={440}>
+        {pub?.seating && (
+          <SeatPicker
+            seating={pub.seating} taken={seatTaken} selected={seatSel} needed={seatedQty}
+            onToggle={toggleSeat} onDone={() => setSeatOpen(false)} onClose={() => setSeatOpen(false)} L={L}
+          />
         )}
       </Overlay>
 

@@ -748,6 +748,23 @@ export type PubTier = {
   id: string; name: [string, string]; price: number;
   capacity: number | null; sold: number; remaining: number | null;
   salesStart: string | null; salesEnd: string | null;
+  // Tier requires a seat/table pick (design's "Asiento" badge; migration 0113).
+  seat: boolean;
+};
+// Seat map: null = general admission (no seat step). 0113.
+export type EventSeating =
+  | null
+  | { type: 'seats'; rows: number; cols: number }
+  | { type: 'tables'; tables: { n: number; cap: number }[] };
+// Organizer-authored detail extras (events.attrs, edited in the panel).
+export type EventAttrs = {
+  addr?: string;
+  ageEs?: string; ageEn?: string;
+  includesEs?: string; includesEn?: string;
+  scheduleEs?: string; scheduleEn?: string;
+  tagsEs?: string[]; tagsEn?: string[];
+  lineup?: { t: string; es: string; en: string; desEs?: string; desEn?: string }[];
+  urgency?: boolean;
 };
 export type PubEvent = {
   slug: string; title: [string, string]; venue: [string, string];
@@ -758,7 +775,33 @@ export type PubEvent = {
   organizer: string; organizerSlug: string | null; tiers: PubTier[];
   // The organizer has a connected Stripe account → paid tickets are sold online.
   acceptsPayments: boolean;
+  attrs: EventAttrs; seating: EventSeating;
+  organizerVerified: boolean; organizerRating: number | null; organizerEvents: number;
+  reviewAvg: number | null; reviewCount: number;
 };
+
+// events.attrs is stored SQL-friendly (snake_case); the client uses camelCase.
+// Normalize once here so the DB and the panel editor can keep snake_case keys.
+function normalizeAttrs(raw: unknown): EventAttrs {
+  const a = (raw ?? {}) as Record<string, unknown>;
+  const s = (k: string) => (a[k] != null ? String(a[k]) : undefined);
+  const arr = (k: string) => (Array.isArray(a[k]) ? (a[k] as unknown[]).map(String) : undefined);
+  const lineup = Array.isArray(a.lineup)
+    ? (a.lineup as Record<string, unknown>[]).map((l) => ({
+        t: String(l.t ?? ''), es: String(l.es ?? ''), en: String(l.en ?? l.es ?? ''),
+        desEs: l.des_es != null ? String(l.des_es) : (l.desEs != null ? String(l.desEs) : undefined),
+        desEn: l.des_en != null ? String(l.des_en) : (l.desEn != null ? String(l.desEn) : undefined),
+      }))
+    : undefined;
+  return {
+    addr: s('addr'),
+    ageEs: s('age_es') ?? s('ageEs'), ageEn: s('age_en') ?? s('ageEn'),
+    includesEs: s('includes_es') ?? s('includesEs'), includesEn: s('includes_en') ?? s('includesEn'),
+    scheduleEs: s('schedule_es') ?? s('scheduleEs'), scheduleEn: s('schedule_en') ?? s('scheduleEn'),
+    tagsEs: arr('tags_es') ?? arr('tagsEs'), tagsEn: arr('tags_en') ?? arr('tagsEn'),
+    lineup, urgency: a.urgency === true,
+  };
+}
 
 /** A single event + its live ticket tiers by slug (migration 0061). null offline / not found. */
 export async function fetchEventBySlug(slug: string): Promise<PubEvent | null> {
@@ -790,9 +833,45 @@ export async function fetchEventBySlug(slug: string): Promise<PubEvent | null> {
       remaining: t.remaining != null ? Number(t.remaining) : null,
       salesStart: t.sales_start != null ? String(t.sales_start) : null,
       salesEnd: t.sales_end != null ? String(t.sales_end) : null,
+      seat: t.seat === true,
     })),
     acceptsPayments: r.accepts_payments === true,
+    attrs: normalizeAttrs(r.attrs),
+    seating: (r.seating ?? null) as EventSeating,
+    organizerVerified: r.organizer_verified === true,
+    organizerRating: r.organizer_rating != null ? Number(r.organizer_rating) : null,
+    organizerEvents: Number(r.organizer_events ?? 0),
+    reviewAvg: r.review_avg != null ? Number(r.review_avg) : null,
+    reviewCount: Number(r.review_count ?? 0),
   };
+}
+
+/** Taken seats for the live seat map (0113/0114). [] offline/none. */
+export async function fetchSeatClaims(slug: string): Promise<string[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('seat_claims_by_slug', { in_slug: slug });
+  if (error || !Array.isArray(data)) return [];
+  return (data as { seat: string }[]).map((r) => String(r.seat));
+}
+
+export type EventReview = { name: string; initials: string; rating: number; body: [string, string]; when: string };
+/** Public event reviews, newest first (0114). [] offline/none. */
+export async function fetchEventReviews(slug: string, max = 20): Promise<EventReview[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('event_reviews_by_slug', { in_slug: slug, max_results: max });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Record<string, unknown>[]).map((r) => ({
+    name: String(r.author_name ?? 'Cliente'), initials: String(r.author_initials ?? 'TL'),
+    rating: Number(r.rating ?? 5), body: [String(r.body_es ?? ''), String(r.body_en ?? r.body_es ?? '')],
+    when: String(r.created_at ?? ''),
+  }));
+}
+
+/** Post/update the caller's own review for an event they hold a ticket to (0114). */
+export async function postEventReview(slug: string, rating: number, body: string): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'offline' };
+  const { error } = await supabase.rpc('post_event_review', { in_slug: slug, in_rating: rating, in_body: body });
+  return error ? { error: error.message } : {};
 }
 
 /** Buy tickets for one tier — capacity-checked, atomic (migration 0061). Returns the
@@ -853,10 +932,11 @@ export type BoughtTicket = { ticketId: string; code: string; tierId: string };
 /** Buy an ATOMIC multi-tier order (migration 0064): locks every requested tier,
  *  validates all capacities/windows, issues all tickets or none. Throws with a
  *  reason naming the sold-out/closed tier (e.g. "sold out: VIP"). */
-export async function buyEventTicketsMulti(slug: string, items: { tierId: string; qty: number }[], promo?: string): Promise<BoughtTicket[]> {
+export async function buyEventTicketsMulti(slug: string, items: { tierId: string; qty: number }[], promo?: string, seats?: string[]): Promise<BoughtTicket[]> {
   if (!supabase) throw new Error('offline');
   const { data, error } = await supabase.rpc('buy_event_tickets_multi', {
     in_slug: slug, in_items: items.map((i) => ({ tier_id: i.tierId, qty: i.qty })), in_promo: promo ?? null,
+    in_seats: seats && seats.length ? seats : null,
   });
   if (error) throw new Error(error.message || 'error');
   if (!Array.isArray(data)) throw new Error('error');
@@ -887,6 +967,7 @@ export async function validatePromo(slug: string, code: string): Promise<PromoRe
       capacity: t.capacity != null ? Number(t.capacity) : null, sold: Number(t.sold ?? 0),
       remaining: t.remaining != null ? Number(t.remaining) : null,
       salesStart: t.sales_start != null ? String(t.sales_start) : null, salesEnd: t.sales_end != null ? String(t.sales_end) : null,
+      seat: t.seat === true,
     };
     return { ok: true, kind: 'access', tierId: String(r.tier_id), tier, msg: String(r.msg ?? '') };
   }

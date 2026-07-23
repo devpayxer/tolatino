@@ -1525,3 +1525,22 @@ cablear de verdad:
 ---
 
 _Last updated: 2026-07-22. Add to this file as new deferrals appear._
+
+### Eventos — handoff "Events Consumer Flow" (2026-07-23)
+Consumidor: HECHO (detalle rico con tags/qué esperar/programa/organizador/reseñas,
+selección de asientos y mesas con anti-doble-venta real, reseñas de evento,
+responsive desktop, pago propio 5%). Migraciones 0113/0114 aplicadas + verificadas.
+Falta (panel del organizador — otra superficie, `ToLatino Events Module`):
+- [ ] **Editor de mapa de asientos en el panel** — hoy `events.seating` y
+  `event_tiers.seat` se definen por SQL (evento demo `hz-salsa-vivo`). El dueño
+  necesita un editor en su panel de Eventos para: elegir "Admisión general /
+  Asientos numerados (filas×cols) / Mesas (lista con capacidad)" y marcar qué
+  tier requiere asiento. Hasta entonces, solo eventos sembrados tienen asientos.
+- [ ] **Editor de `events.attrs`** (edad, incluye, horario, tags, programa/lineup)
+  en el panel — hoy también por SQL. El consumidor ya los muestra si existen.
+- [ ] **QR real en la confirmación** (el diseño lo pide). Hoy mostramos el código
+  alfanumérico (TL-XXX) — funciona para entrada; el QR es visual. Generar un QR
+  del código (lib QR liviana o CSS grid) cuando se pula la confirmación.
+- [ ] **Vista "Explorar/Categorías"** dedicada del diseño — el buscador + chips de
+  categoría actuales ya cubren el descubrimiento; la grilla de categorías es un
+  extra opcional.
