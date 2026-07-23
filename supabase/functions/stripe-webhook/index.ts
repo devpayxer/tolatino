@@ -69,6 +69,20 @@ async function patchPending(url: string, service: string, id: string, patch: Rec
     body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
   });
 }
+// Atomically claim a still-'pending' staged purchase (pending → fulfilling) via a
+// conditional UPDATE. Postgres serializes the two writers, so exactly ONE of N
+// concurrent Stripe redeliveries flips the row and gets it back; the losers get
+// an empty array and bail. This is the compare-and-swap that makes fulfillment
+// idempotent — a plain read-then-act let two redeliveries both issue tickets.
+async function claimPending(url: string, service: string, id: string): Promise<Record<string, unknown> | null> {
+  const res = await fetch(`${url}/rest/v1/pending_purchases?id=eq.${id}&status=eq.pending`, {
+    method: 'PATCH',
+    headers: { ...svcHeaders(service), Prefer: 'return=representation' },
+    body: JSON.stringify({ status: 'fulfilling', updated_at: new Date().toISOString() }),
+  });
+  const rows = await res.json().catch(() => null);
+  return Array.isArray(rows) && rows.length ? (rows[0] as Record<string, unknown>) : null;
+}
 
 async function applySub(url: string, service: string, businessId: string, customer: string, subId: string, plan: string, status: string, periodEnd: number) {
   await rpc(url, service, 'apply_subscription', {
@@ -82,12 +96,16 @@ async function applySub(url: string, service: string, businessId: string, custom
 async function fulfillMarketplace(url: string, service: string, stripeKey: string, obj: Record<string, unknown>, meta: Record<string, string>) {
   const pendingId = meta.pending_id;
   if (!pendingId) return;
-  const pending = (await (await fetch(`${url}/rest/v1/pending_purchases?id=eq.${pendingId}&select=*`, { headers: svcHeaders(service) })).json())?.[0];
-  if (!pending || pending.status !== 'pending') return; // unknown / already handled
+  const pre = (await (await fetch(`${url}/rest/v1/pending_purchases?id=eq.${pendingId}&select=status,stripe_session`, { headers: svcHeaders(service) })).json())?.[0];
+  if (!pre || pre.status !== 'pending') return; // unknown / already handled / in-flight
   // A hosted-Checkout purchase fires BOTH checkout.session.completed AND
   // payment_intent.succeeded; let the session event fulfill it so we don't race.
   // The Payment-Element (on-site) path has no session → the PI event fulfills it.
-  if (obj.object === 'payment_intent' && pending.stripe_session) return;
+  if (obj.object === 'payment_intent' && pre.stripe_session) return;
+  // Atomically claim the row before doing ANY fulfillment work. If a concurrent
+  // redelivery already flipped it (claim returns null), bail — no double-issue.
+  const pending = await claimPending(url, service, pendingId);
+  if (!pending) return;
   // The intent id: for a session event it's obj.payment_intent; for a PI event
   // it IS obj.id (used for the refund-on-failure path + payment record).
   const intent = (obj.payment_intent as string | undefined) ?? (obj.object === 'payment_intent' ? (obj.id as string) : null);

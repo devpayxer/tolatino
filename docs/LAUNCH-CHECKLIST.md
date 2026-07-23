@@ -1545,9 +1545,56 @@ Panel del organizador + extras (2026-07-23b) — HECHO:
   `<Qr>` de Mis Boletos).
 - [x] **Explora por categoría** — grilla de categorías en la vista de Eventos
   (solo categorías con eventos cercanos + conteo).
-Pendiente menor (opcional):
-- [ ] **Editar seating/attrs/addons de un evento YA creado** desde el panel
-  (hoy se define al crear; para cambiarlo después falta el flujo de edición
-  directa `events.update` — RLS ya lo permite, falta la UI).
-- [ ] Editor de **programa/lineup + tags** en el panel (el consumidor ya los
-  muestra; hoy se siembran por SQL). Edad/incluye ya están en el panel.
+Pendiente menor (opcional) — HECHO (2026-07-23c):
+- [x] **Editar seating/attrs/addons de un evento YA creado** desde el panel —
+  editor "Mesas y extras" en la pestaña Ajustes (`events.update`), carga
+  round-trip fiel.
+- [x] Editor de **programa/lineup + tags** en el panel (mismo editor). Edad/
+  incluye también editables.
+
+### Eventos — AUDITORÍA COMPLETA (2026-07-23d)
+Auditoría de 3 frentes (backend/seguridad · UI cliente · panel organizador) vs
+Eventbrite. Motor de ticketing verificado como sólido (re-precio 100% server,
+anti-sobreventa atómico, check-in con lock, demo-vs-real honesto). **Defectos
+cerrados** (mig. 0116 + webhook v18 + checkout v26 + Events.tsx/Eventos.tsx):
+- [x] **Webhook idempotente atómico** — compare-and-swap `pending→fulfilling`;
+  reentregas concurrentes de Stripe ya no emiten boletos 2× / redimen promo 2×.
+- [x] **Publicación fallida ya no es invisible** — `create_event_full` se
+  `await`, con rollback del row optimista + toast de error; nunca muestra
+  "¡Publicado!" si falló. Evento fantasma eliminado.
+- [x] **Checkout hospedado eliminado del backend** — `marketplace-checkout`
+  exige `intent:true` (400 si no); checkout propio SIEMPRE a nivel servidor.
+- [x] **Gate de pago incluye addons obligatorios** — tier $0 + paquete requerido
+  ya no emite boleto gratis; cualquier dinero en negocio con Stripe → online.
+- [x] **`event_reviews` sin INSERT directo** — solo vía RPC `post_event_review`
+  (exige boleto); no más reseñas falsas por PostgREST.
+- [x] **Liberar asiento al reembolsar** — trigger borra `event_seat_claims`
+  cuando un boleto pasa a `refunded`.
+- [x] **RLS endurecida** — `event_seat_claims` sin lectura pública (expone
+  `user_id`), `events` sin exponer drafts (`status<>'draft' OR owner`).
+- [x] **Crear evento activa el módulo `events`** — la pestaña Eventos aparece
+  en la página del negocio (regla de gating), escribiendo el objeto completo.
+- [x] **Evento "En línea"** — toggle en el asistente (antes cableado pero muerto).
+- [x] **`saveLayout` ya no borra otras llaves de `attrs`** (merge, no clobber).
+- [x] **Preview de pago aplica el promo** (usaba total bruto → mostraba 2 totales).
+- [x] **Escribir reseña** — CTA + formulario (estrellas + texto) para quien tiene
+  boleto, con estado vacío "sé el primero". Upsert vía RPC.
+- [x] **Mapa de asientos con scroll horizontal** (no desborda en móvil) + asientos
+  a 36px (mejor tap).
+
+Pendiente menor de Eventos (no bloquea; polish/parity):
+- [ ] **Export CSV de asistentes** y **refund/resend por asistente** en el panel
+  (refunds/transfers ya listados como "Muy pronto"; el export es estándar).
+- [ ] **Hold de asiento durante el checkout online** — hoy dos compradores pueden
+  pagar el mismo asiento y uno se reembolsa (sin sobreventa; el `unique` arbitra).
+  Opcional: claim efímero atado al pending, liberado por expiración.
+- [ ] **Confirmar borrado de tier con ventas** + clamp de capacidad ≥ vendido
+  (hoy borra en un tap; FK `set null` deja el boleto huérfano del tier).
+- [ ] **Compartir enlace directo del evento** (usa `/eventos` genérico; el slug
+  real ya existe, falta cablearlo).
+- [ ] Polish: quitar hex crudos restantes (badge de precio, hero) → tokens;
+  steppers/paginación a ≥44px; no unirse a waitlist en evento pasado.
+- [ ] **Riesgo residual (monitorear):** un webhook que muere DESPUÉS del claim
+  `fulfilling` y ANTES de `fulfilled`/`refunded` deja el row atascado en
+  `fulfilling` (no se re-cumple). Ventana estrecha (1 RPC). Alertar sobre rows
+  en `fulfilling` > N min.

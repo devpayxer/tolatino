@@ -17,7 +17,7 @@ import { Qr } from '@/components/Qr';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
-import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, fetchEventsByOwner, validatePromo, fetchSeatClaims, fetchEventReviews, type PubEvent, type PubTier, type EventReview } from '@/lib/live';
+import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, fetchEventsByOwner, validatePromo, fetchSeatClaims, fetchEventReviews, postEventReview, type PubEvent, type PubTier, type EventReview } from '@/lib/live';
 
 const PAGE_SIZE = 9;
 // Base tab title for the list state — MUST match the static metadata in
@@ -109,30 +109,35 @@ function SeatPicker({
       {!isTables && seating.type === 'seats' && (
         <>
           <div className="mb-3 rounded-btn bg-ink py-2 text-center text-[10px] font-extrabold uppercase tracking-[.22em] text-white/85">{L('Escenario', 'Stage')}</div>
-          <div className="mx-auto flex max-w-[300px] flex-col gap-1.5">
-            {Array.from({ length: seating.rows }, (_, r) => {
-              const letter = String.fromCharCode(65 + r);
-              return (
-                <div key={letter} className="flex items-center gap-1.5">
-                  <span className="w-3 flex-none text-[10px] font-extrabold text-muted-2">{letter}</span>
-                  <div className="flex flex-1 justify-center gap-1.5">
-                    {Array.from({ length: seating.cols }, (_, c) => {
-                      const id = `${letter}${c + 1}`;
-                      const isTaken = taken.includes(id); const isSel = selected.includes(id);
-                      return (
-                        <button
-                          key={id} onClick={() => onToggle(id)} disabled={isTaken} aria-label={id}
-                          className={`h-7 w-7 flex-none rounded-[7px] text-[9px] font-extrabold transition-colors ${
-                            isTaken ? 'cursor-not-allowed bg-lilac-2 text-muted-faint'
-                            : isSel ? 'bg-primary text-white shadow-cta-sm'
-                            : 'cursor-pointer border-[1.5px] border-lilac-line bg-white text-ink-soft hover:border-primary'}`}
-                        >{c + 1}</button>
-                      );
-                    })}
+          {/* Scrolls horizontally on wide maps instead of clipping/overflowing the
+              page (mobile non-negotiable). w-max keeps natural width; mx-auto centers
+              it when it fits. Seats are 36px for a comfortable tap. */}
+          <div className="-mx-1 overflow-x-auto px-1 pb-1">
+            <div className="mx-auto flex w-max flex-col gap-1.5">
+              {Array.from({ length: seating.rows }, (_, r) => {
+                const letter = String.fromCharCode(65 + r);
+                return (
+                  <div key={letter} className="flex items-center gap-1.5">
+                    <span className="w-3 flex-none text-[10px] font-extrabold text-muted-2">{letter}</span>
+                    <div className="flex gap-1.5">
+                      {Array.from({ length: seating.cols }, (_, c) => {
+                        const id = `${letter}${c + 1}`;
+                        const isTaken = taken.includes(id); const isSel = selected.includes(id);
+                        return (
+                          <button
+                            key={id} onClick={() => onToggle(id)} disabled={isTaken} aria-label={id}
+                            className={`h-9 w-9 flex-none rounded-[7px] text-[10px] font-extrabold transition-colors ${
+                              isTaken ? 'cursor-not-allowed bg-lilac-2 text-muted-faint'
+                              : isSel ? 'bg-primary text-white shadow-cta-sm'
+                              : 'cursor-pointer border-[1.5px] border-lilac-line bg-white text-ink-soft hover:border-primary'}`}
+                          >{c + 1}</button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
           <div className="mt-4 flex items-center justify-center gap-4 text-[10.5px] font-bold text-muted-2">
             <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-[4px] border-[1.5px] border-lilac-line bg-white" />{L('Libre', 'Free')}</span>
@@ -219,6 +224,10 @@ export function EventosScreen() {
   const [seatOpen, setSeatOpen] = useState(false);
   const [evReviews, setEvReviews] = useState<EventReview[] | null>(null);
   const [addonSel, setAddonSel] = useState<string[]>([]); // chosen OPTIONAL package ids
+  const [revOpen, setRevOpen] = useState(false); // write-review form open
+  const [revRating, setRevRating] = useState(5);
+  const [revBody, setRevBody] = useState('');
+  const [revBusy, setRevBusy] = useState(false);
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 2200);
@@ -391,12 +400,30 @@ export function EventosScreen() {
   const addonTotal = chosenAddons.reduce((s, a) => s + a.price, 0);
   const toggleAddon = (id: string) => setAddonSel((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
   // Paid tickets whose organizer has connected Stripe → charge online (card).
-  // The buyer pays orderTotal + a 5% service fee (matches what Stripe charges).
+  // The buyer pays the DISCOUNTED subtotal + a 5% service fee (matches what the
+  // server re-prices and Stripe charges — the promo IS applied online too, so the
+  // preview must use netTotal, not the gross orderTotal, or it over-states the charge).
   // Add-ons make an otherwise-free order paid; charge online when the organizer takes cards.
   const orderHasCost = anyPaid || addonTotal > 0;
   const payOnline = orderHasCost && !!pub?.acceptsPayments;
-  const onlineCharge = +(((orderTotal + addonTotal) * 1.05)).toFixed(2);
+  const onlineCharge = +(((netTotal + addonTotal) * 1.05)).toFixed(2);
   const cashTotal = +((netTotal + addonTotal)).toFixed(2);
+
+  // Write-a-review eligibility: the buyer must hold a ticket to THIS event (the
+  // server post_event_review RPC enforces the same rule). Upsert-based, so this
+  // doubles as editing an existing review. Eventbrite/Yelp attendee-verified bar.
+  const hasTicketForEvent = !!detailSlug && act.tickets.some((t) => t.events?.slug === detailSlug);
+  const submitReview = async () => {
+    if (!detailSlug || revBusy) return;
+    if (!user) { flash(L('Inicia sesión para reseñar', 'Sign in to review')); return; }
+    setRevBusy(true);
+    const { error } = await postEventReview(detailSlug, revRating, revBody.trim());
+    setRevBusy(false);
+    if (error) { flash(L('No se pudo publicar tu reseña', 'Could not post your review')); return; }
+    setRevOpen(false); setRevBody('');
+    const r = await fetchEventReviews(detailSlug); setEvReviews(r);
+    flash(L('¡Gracias por tu reseña!', 'Thanks for your review!'));
+  };
 
   // "Voy" toggle. Live events (with a slug) write attendance via the API — never
   // as a guest (route to /entrar). Fixture events (no slug) keep the local demo
@@ -901,34 +928,60 @@ export function EventosScreen() {
               </div>
             )}
 
-            {/* "Reseñas" — event reviews (post-attendance) */}
-            {pub && evReviews && evReviews.length > 0 && (
+            {/* "Reseñas" — event reviews (attendee-verified). Shows when there are
+                reviews OR the buyer holds a ticket (so they can leave the first one). */}
+            {pub && (( evReviews && evReviews.length > 0) || hasTicketForEvent) && (
               <div className="mt-3 border-t border-hair pt-3">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-[13.5px] font-extrabold text-ink">{L('Reseñas', 'Reviews')}</span>
-                  {pub.reviewAvg != null && (
+                  {pub.reviewAvg != null && pub.reviewCount ? (
                     <span className="flex items-center gap-1 text-[12px] font-extrabold text-ink">
                       <StarFilled size={13} className="text-amber" />{pub.reviewAvg.toFixed(1)}
                       <span className="font-bold text-muted-2">({pub.reviewCount})</span>
                     </span>
-                  )}
+                  ) : null}
                 </div>
-                <div className="flex flex-col gap-2.5">
-                  {evReviews.slice(0, 4).map((rv, i) => (
-                    <div key={i} className="rounded-card-sm border border-hair bg-white p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-lilac-2 text-[10px] font-extrabold text-primary-dark">{rv.initials}</span>
-                        <span className="min-w-0 flex-1 truncate text-[12px] font-extrabold text-ink">{rv.name}</span>
-                        <span className="flex flex-none gap-0.5">
-                          {Array.from({ length: 5 }, (_, s) => s < rv.rating
-                            ? <StarFilled key={s} size={11} className="text-amber" />
-                            : <Star key={s} size={11} stroke={2} className="text-muted-faint" />)}
-                        </span>
-                      </div>
-                      {L(rv.body[0], rv.body[1]).trim() && <div className="mt-1.5 text-[12px] font-medium leading-snug text-ink-soft">{L(rv.body[0], rv.body[1])}</div>}
+                {/* Attendee CTA / inline form */}
+                {hasTicketForEvent && (revOpen ? (
+                  <div className="mb-3 rounded-card-sm border border-lilac-line bg-lilac-3 p-3">
+                    <div className="mb-2 flex items-center gap-1.5">
+                      {Array.from({ length: 5 }, (_, s) => (
+                        <button key={s} type="button" aria-label={`${s + 1}`} onClick={() => setRevRating(s + 1)} className="cursor-pointer p-0.5">
+                          {s < revRating ? <StarFilled size={24} className="text-amber" /> : <Star size={24} stroke={2} className="text-muted-faint" />}
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                    <textarea value={revBody} onChange={(e) => setRevBody(e.target.value)} rows={3} maxLength={600} placeholder={L('Cuenta cómo estuvo el evento (opcional)', 'Tell others how the event was (optional)')} className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[13px] font-medium text-ink outline-none focus:border-primary" />
+                    <div className="mt-2 flex gap-2">
+                      <button type="button" onClick={() => setRevOpen(false)} className="flex-none cursor-pointer rounded-btn border border-lilac-line bg-white px-4 py-2 text-[12px] font-extrabold text-ink-2">{L('Cancelar', 'Cancel')}</button>
+                      <button type="button" onClick={submitReview} disabled={revBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[12.5px] font-extrabold text-white disabled:opacity-50">{revBusy ? L('Publicando…', 'Posting…') : L('Publicar reseña', 'Post review')}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setRevOpen(true)} className="mb-3 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-btn border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">
+                    <Star size={14} stroke={2.4} /> {L('Escribir una reseña', 'Write a review')}
+                  </button>
+                ))}
+                {evReviews && evReviews.length > 0 ? (
+                  <div className="flex flex-col gap-2.5">
+                    {evReviews.slice(0, 4).map((rv, i) => (
+                      <div key={i} className="rounded-card-sm border border-hair bg-white p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-lilac-2 text-[10px] font-extrabold text-primary-dark">{rv.initials}</span>
+                          <span className="min-w-0 flex-1 truncate text-[12px] font-extrabold text-ink">{rv.name}</span>
+                          <span className="flex flex-none gap-0.5">
+                            {Array.from({ length: 5 }, (_, s) => s < rv.rating
+                              ? <StarFilled key={s} size={11} className="text-amber" />
+                              : <Star key={s} size={11} stroke={2} className="text-muted-faint" />)}
+                          </span>
+                        </div>
+                        {L(rv.body[0], rv.body[1]).trim() && <div className="mt-1.5 text-[12px] font-medium leading-snug text-ink-soft">{L(rv.body[0], rv.body[1])}</div>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-card-sm border border-dashed border-hair bg-app/50 py-4 text-center text-[12px] font-semibold text-muted-2">{L('Sé el primero en reseñar este evento.', 'Be the first to review this event.')}</div>
+                )}
               </div>
             )}
 

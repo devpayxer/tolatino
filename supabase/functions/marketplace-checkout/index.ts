@@ -617,41 +617,16 @@ Deno.serve(async (req) => {
       return json({ clientSecret: pi.client_secret, pendingId: pending.id, amount: amountCents, fee: feeCents, productName });
     }
 
-    // Return exactly where the buyer was (sanitized path on OUR origin only).
-    const base = safeOrigin(body?.origin);
-    let path = String(body?.returnPath ?? '/');
-    if (!path.startsWith('/')) path = '/' + path;
-    path = path.split('?')[0].split('#')[0];
-
-    const session = await stripe('checkout/sessions', STRIPE, {
-      mode: 'payment',
-      'line_items[0][quantity]': '1',
-      'line_items[0][price_data][currency]': 'usd',
-      'line_items[0][price_data][unit_amount]': String(amountCents),
-      'line_items[0][price_data][product_data][name]': productName,
-      'payment_intent_data[application_fee_amount]': String(feeCents),
-      'payment_intent_data[transfer_data][destination]': sellerAccount,
-      'payment_intent_data[metadata][pending_id]': pending.id,
-      'payment_intent_data[metadata][purchase_kind]': kind,
-      'metadata[pending_id]': pending.id,
-      'metadata[purchase_kind]': kind,
-      'metadata[business_id]': businessId ?? '',
-      success_url: `${base}${path}?pay=success&pid=${pending.id}`,
-      cancel_url: `${base}${path}?pay=cancel`,
-    });
-    if (session.error) {
-      await fetch(`${SUPABASE_URL}/rest/v1/pending_purchases?id=eq.${pending.id}`, {
-        method: 'PATCH', headers: { ...svc, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'failed', error: session.error.message, updated_at: new Date().toISOString() }),
-      });
-      return json({ error: session.error.message }, 400);
-    }
-
+    // Checkout propio SIEMPRE (founder non-negotiable): the ONLY payment path is
+    // the on-site PaymentIntent above (`intent: true`). Stripe's hosted Checkout
+    // page is forbidden — we never redirect the buyer off To'Latino. A request
+    // that omits `intent:true` is a bug/stale client, so refuse it instead of
+    // silently bouncing the buyer to a hosted page. The staged row is voided.
     await fetch(`${SUPABASE_URL}/rest/v1/pending_purchases?id=eq.${pending.id}`, {
       method: 'PATCH', headers: { ...svc, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stripe_session: session.id, updated_at: new Date().toISOString() }),
+      body: JSON.stringify({ status: 'failed', error: 'intent required (checkout propio)', updated_at: new Date().toISOString() }),
     });
-    return json({ url: session.url, pendingId: pending.id, amount: amountCents, fee: feeCents });
+    return json({ error: 'on-site payment required' }, 400);
   } catch (e) {
     return json({ error: String(e) }, 500);
   }

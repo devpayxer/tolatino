@@ -94,6 +94,11 @@ const nextTid = () => 't' + (++tierSeq);
 let subSeq = 0;
 const nextSub = () => 's' + (++subSeq);
 
+// Mirror of Panel.tsx's LISTING_ONLY default so publishing an event can flip the
+// `events` module on while writing the FULL explicit module object (founder
+// gating rule: never leave sibling modules absent, which reads as "off").
+const LISTING_ONLY_MODS = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, updates: true, staff: true };
+
 export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
   void tab;
@@ -111,6 +116,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [ticketRows, setTicketRows] = useState<TicketRow[] | null>(null);
   const [wizStep, setWizStep] = useState(0);
   const [wizMax, setWizMax] = useState(0);
+  const [wizBusy, setWizBusy] = useState(false); // publishing in flight (blocks double-submit)
   const [draft, setDraft] = useState<EventDraft>(newDraft);
   const [toast, setToast] = useState('');
 
@@ -288,6 +294,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [lay, setLay] = useState<LayoutState | null>(null);
   const [layBusy, setLayBusy] = useState(false);
   const layPhotoRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  // Raw attrs as loaded, so saveLayout can MERGE (not clobber) keys the editor
+  // doesn't expose — addr, scheduleEs/En, urgency, etc. would be lost otherwise.
+  const layAttrsRaw = useRef<Record<string, unknown>>({});
   useEffect(() => {
     setLay(null);
     if (!persistable || !mgEv.dbId || !supabase) return;
@@ -296,6 +305,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       if (off || !data) return;
       const s = (data.seating ?? null) as { type?: string; rows?: number; cols?: number; tables?: { cap?: number; photo?: string }[] } | null;
       const a = (data.attrs ?? {}) as Record<string, unknown>;
+      layAttrsRaw.current = a; // keep the full object to merge back on save
       const ad = Array.isArray(data.addons) ? (data.addons as Record<string, unknown>[]) : [];
       const lineup = Array.isArray(a.lineup) ? (a.lineup as Record<string, unknown>[]) : [];
       setLay({
@@ -327,7 +337,12 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         : null;
     const tagArr = lay.tags.split(',').map((s) => s.trim()).filter(Boolean);
     const lineup = lay.program.filter((p) => p.t.trim() && p.es.trim()).map((p) => ({ t: p.t.trim(), es: p.es.trim(), en: p.es.trim() }));
+    // MERGE onto the loaded attrs: strip the keys this editor owns, then re-add
+    // them, so untouched keys (addr, scheduleEs/En, urgency…) survive the save.
+    const base: Record<string, unknown> = { ...layAttrsRaw.current };
+    for (const k of ['age_es', 'age_en', 'includes_es', 'includes_en', 'tags_es', 'tags_en', 'lineup']) delete base[k];
     const attrs = {
+      ...base,
       ...(lay.age.trim() ? { age_es: lay.age.trim(), age_en: lay.age.trim() } : {}),
       ...(lay.includes.trim() ? { includes_es: lay.includes.trim(), includes_en: lay.includes.trim() } : {}),
       ...(tagArr.length ? { tags_es: tagArr, tags_en: tagArr } : {}),
@@ -1434,6 +1449,13 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const wizStep1 = (
     <div className="flex flex-col gap-3.5">
       <div>
+        <label className={labelCls}>{L('Tipo de evento', 'Event type')}</label>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => upD({ online: false })} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[12px] font-extrabold ${!draft.online ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{L('📍 Presencial', '📍 In person')}</button>
+          <button type="button" onClick={() => upD({ online: true })} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[12px] font-extrabold ${draft.online ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{L('💻 En línea', '💻 Online')}</button>
+        </div>
+      </div>
+      <div>
         <label className={labelCls}>{L('Fecha', 'Date')} *</label>
         <input type="date" value={draft.date} onChange={(e) => upD({ date: e.target.value })} className={fieldCls} />
       </div>
@@ -1447,29 +1469,35 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <input type="time" value={draft.endTime} onChange={(e) => upD({ endTime: e.target.value })} className={fieldCls} />
         </div>
       </div>
-      <div className="relative">
-        <label className={labelCls}>{L('Dirección', 'Address')}</label>
-        <div className="flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
-          <MapPin size={15} stroke={2.2} className={draft.lat != null ? 'text-green' : 'text-muted-2'} />
-          <input value={draft.venue} onChange={(e) => upD({ venue: e.target.value, lat: null, lng: null })} placeholder={L('Escribe la calle y número…', 'Type the street address…')} className="min-w-0 flex-1 bg-transparent py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
-          {addrSearching && <RefreshCw size={14} className="animate-spin text-muted-2" />}
-          {draft.lat != null && !addrSearching && <Check size={15} stroke={3} className="text-green" />}
+      {draft.online ? (
+        <div className="rounded-field border-[1.5px] border-lilac-line bg-lilac-3 px-3.5 py-3 text-[11.5px] font-semibold text-ink-2">
+          {L('💻 Evento en línea — no se pide dirección. Comparte el enlace de acceso con los asistentes por mensaje después de la compra.', '💻 Online event — no address needed. Share the access link with attendees by message after purchase.')}
         </div>
-        {addrResults.length > 0 && (
-          <div className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
-            {addrResults.map((a, i) => (
-              <button key={`${a.formatted}-${i}`} onClick={() => chooseAddr(a)} className="flex w-full cursor-pointer items-start gap-2 rounded-field p-2.5 text-left hover:bg-app">
-                <MapPin size={14} className="mt-0.5 flex-none text-primary" stroke={2.4} />
-                <span className="min-w-0 text-[12.5px] font-bold text-ink-soft">
-                  {a.formatted}
-                  {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
-                </span>
-              </button>
-            ))}
+      ) : (
+        <div className="relative">
+          <label className={labelCls}>{L('Dirección', 'Address')}</label>
+          <div className="flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
+            <MapPin size={15} stroke={2.2} className={draft.lat != null ? 'text-green' : 'text-muted-2'} />
+            <input value={draft.venue} onChange={(e) => upD({ venue: e.target.value, lat: null, lng: null })} placeholder={L('Escribe la calle y número…', 'Type the street address…')} className="min-w-0 flex-1 bg-transparent py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
+            {addrSearching && <RefreshCw size={14} className="animate-spin text-muted-2" />}
+            {draft.lat != null && !addrSearching && <Check size={15} stroke={3} className="text-green" />}
           </div>
-        )}
-        <div className="mt-1 text-[10px] font-semibold text-muted-2">{draft.lat != null ? L('📍 Ubicación fijada — se mostrará el mapa y "cómo llegar".', '📍 Location set — the map + directions will show.') : L('Elige una sugerencia para fijar el mapa.', 'Pick a suggestion to set the map.')}</div>
-      </div>
+          {addrResults.length > 0 && (
+            <div className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
+              {addrResults.map((a, i) => (
+                <button key={`${a.formatted}-${i}`} onClick={() => chooseAddr(a)} className="flex w-full cursor-pointer items-start gap-2 rounded-field p-2.5 text-left hover:bg-app">
+                  <MapPin size={14} className="mt-0.5 flex-none text-primary" stroke={2.4} />
+                  <span className="min-w-0 text-[12.5px] font-bold text-ink-soft">
+                    {a.formatted}
+                    {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="mt-1 text-[10px] font-semibold text-muted-2">{draft.lat != null ? L('📍 Ubicación fijada — se mostrará el mapa y "cómo llegar".', '📍 Location set — the map + directions will show.') : L('Elige una sugerencia para fijar el mapa.', 'Pick a suggestion to set the map.')}</div>
+        </div>
+      )}
     </div>
   );
 
@@ -1615,7 +1643,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const endsAtISO = () => { if (!draft.endTime || !draft.date) return null; const d = new Date(`${draft.date}T${draft.endTime}`); return isNaN(d.getTime()) ? null : d.toISOString(); };
 
   // Publish: one atomic create_event_full RPC (event + ALL tiers + cover + geo).
-  const addFromDraft = () => {
+  // Async + returns success so the wizard only shows "published" when it truly is.
+  const addFromDraft = async (): Promise<boolean> => {
     const startsAt = startsAtISO();
     const sd = new Date(startsAt);
     const tiers = draft.tiers
@@ -1653,37 +1682,48 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       statusBg: '#E3F5EA',
       statusC: '#1F8A4C',
     };
+    // Demo mode: local only, always "succeeds".
+    if (!(persistable && real && user && supabase)) { setEvents((xs) => [local, ...xs]); return true; }
+    // Real owner: optimistic insert, then persist. On failure roll the phantom
+    // row back and report it — NEVER show "published" for an event that isn't.
     setEvents((xs) => [local, ...xs]);
-    if (persistable && real && user && supabase) {
-      (async () => {
-        const { error } = await supabase!.rpc('create_event_full', {
-          p_title: draft.name.trim(),
-          p_desc: draft.desc || '',
-          p_cat: draft.cat,
-          p_starts_at: startsAt,
-          p_ends_at: endsAtISO(),
-          p_time_label_es: wizTimeLabel,
-          p_time_label_en: wizTimeLabel,
-          p_venue: draft.online ? L('Evento en línea', 'Online event') : draft.venue,
-          p_city: real.city || '',
-          p_lat: draft.online ? null : draft.lat,
-          p_lng: draft.online ? null : draft.lng,
-          p_cover_url: draft.coverUrl || null,
-          p_tile_a: wizCat.tile[0],
-          p_tile_b: wizCat.tile[1],
-          p_tiers: tiers,
-          p_seating: seatingJson,
-          p_attrs: attrsJson,
-          p_addons: addonsJson,
-        });
-        // Reconcile with the DB truth (real slug/id/going_count; backfills dbId).
-        if (!error) { const rows = await fetchEvents(user.id); setEvents(rows); }
-      })();
+    const { error } = await supabase.rpc('create_event_full', {
+      p_title: draft.name.trim(),
+      p_desc: draft.desc || '',
+      p_cat: draft.cat,
+      p_starts_at: startsAt,
+      p_ends_at: endsAtISO(),
+      p_time_label_es: wizTimeLabel,
+      p_time_label_en: wizTimeLabel,
+      p_venue: draft.online ? L('Evento en línea', 'Online event') : draft.venue,
+      p_city: real.city || '',
+      p_lat: draft.online ? null : draft.lat,
+      p_lng: draft.online ? null : draft.lng,
+      p_cover_url: draft.coverUrl || null,
+      p_tile_a: wizCat.tile[0],
+      p_tile_b: wizCat.tile[1],
+      p_tiers: tiers,
+      p_seating: seatingJson,
+      p_attrs: attrsJson,
+      p_addons: addonsJson,
+    });
+    if (error) {
+      setEvents((xs) => xs.filter((x) => x.id !== local.id)); // undo the optimistic row
+      flash(L('No se pudo publicar el evento. Revisa los datos e intenta de nuevo.', 'Could not publish the event. Check the details and try again.'));
+      return false;
     }
+    // Turn ON the events module so the client BizDetail "Eventos" tab appears
+    // (founder gating rule: tab shows only if module active AND has content — now
+    // both are true). Write the full explicit object, preserving other modules.
+    const mods = { ...LISTING_ONLY_MODS, ...(real.modules ?? {}), events: true };
+    if (!(real.modules && real.modules.events)) { void admin.update({ modules: mods }); }
+    // Reconcile with the DB truth (real slug/id/going_count; backfills dbId).
+    const rows = await fetchEvents(user.id); setEvents(rows);
+    return true;
   };
 
-  const wizNext = () => {
-    if (wizStep >= wizStepDefs.length - 1) { if (!eReady) return; addFromDraft(); setView('success'); return; }
+  const wizNext = async () => {
+    if (wizStep >= wizStepDefs.length - 1) { if (!eReady || wizBusy) return; setWizBusy(true); const ok = await addFromDraft(); setWizBusy(false); if (ok) setView('success'); return; }
     if (!stepValid) return;
     const n = wizStep + 1; setWizStep(n); setWizMax((m) => Math.max(m, n));
   };
@@ -1702,8 +1742,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <button onClick={wizBack} className="flex-none cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white px-4 py-3.5 text-[12.5px] font-extrabold text-ink">
             {wizStep === 0 ? L('Cancelar', 'Cancel') : L('Atrás', 'Back')}
           </button>
-          <button onClick={wizNext} disabled={!canAdvance} className="flex-1 cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta disabled:cursor-not-allowed disabled:opacity-40">
-            {wizStep >= wizStepDefs.length - 1 ? L('Publicar evento', 'Publish event') : L('Continuar', 'Continue')}
+          <button onClick={wizNext} disabled={!canAdvance || wizBusy} className="flex-1 cursor-pointer rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta disabled:cursor-not-allowed disabled:opacity-40">
+            {wizStep >= wizStepDefs.length - 1 ? (wizBusy ? L('Publicando…', 'Publishing…') : L('Publicar evento', 'Publish event')) : L('Continuar', 'Continue')}
           </button>
         </div>
       }
