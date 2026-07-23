@@ -53,7 +53,7 @@ type TicketRow = {
   id: string; customer_name: string | null; qty: number; admitted: number; total: number | null; code: string; status: string; created_at: string;
 };
 type EventTier = {
-  id: string; name_es: string; name_en: string; price: number; capacity: number | null; sold: number; sort: number; visible: boolean;
+  id: string; name_es: string; name_en: string; price: number; capacity: number | null; sold: number; sort: number; visible: boolean; seat?: boolean;
 };
 const TICKET_STATUS: Record<string, { es: string; en: string; cls: string }> = {
   confirmed: { es: 'Confirmado', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
@@ -281,18 +281,74 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // via RLS. Demo / no-uuid → null, and the Boletos tab shows the sample tier design.
   const [tierList, setTierList] = useState<EventTier[] | null>(null);
   const [tierEdit, setTierEdit] = useState<string | 'new' | null>(null); // which tier is open in the inline editor
-  const [tierForm, setTierForm] = useState<{ name: string; price: string; capacity: string; hidden: boolean }>({ name: '', price: '', capacity: '', hidden: false });
+  const [tierForm, setTierForm] = useState<{ name: string; price: string; capacity: string; hidden: boolean; seat: boolean }>({ name: '', price: '', capacity: '', hidden: false, seat: false });
+  // Layout editor for an ALREADY-created event (seating / tables+photos / packages
+  // / program / tags). null until loaded from the DB. Saved via events.update (0115).
+  type LayoutState = { seating: 'none' | 'seats' | 'tables'; rows: string; cols: string; tables: TableDraft[]; addons: AddonDraft[]; tags: string; program: { id: string; t: string; es: string }[]; age: string; includes: string };
+  const [lay, setLay] = useState<LayoutState | null>(null);
+  const [layBusy, setLayBusy] = useState(false);
+  const layPhotoRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  useEffect(() => {
+    setLay(null);
+    if (!persistable || !mgEv.dbId || !supabase) return;
+    let off = false;
+    void supabase.from('events').select('seating,attrs,addons').eq('id', mgEv.dbId).maybeSingle().then(({ data }) => {
+      if (off || !data) return;
+      const s = (data.seating ?? null) as { type?: string; rows?: number; cols?: number; tables?: { cap?: number; photo?: string }[] } | null;
+      const a = (data.attrs ?? {}) as Record<string, unknown>;
+      const ad = Array.isArray(data.addons) ? (data.addons as Record<string, unknown>[]) : [];
+      const lineup = Array.isArray(a.lineup) ? (a.lineup as Record<string, unknown>[]) : [];
+      setLay({
+        seating: s?.type === 'seats' ? 'seats' : s?.type === 'tables' ? 'tables' : 'none',
+        rows: String(s?.rows ?? 6), cols: String(s?.cols ?? 9),
+        tables: (s?.tables ?? []).map((t) => ({ id: nextSub(), cap: String(t.cap ?? 4), photo: String(t.photo ?? '') })),
+        addons: ad.map((x) => ({ id: String(x.id ?? nextSub()), es: String(x.es ?? ''), price: String(x.price ?? ''), required: x.required === true, seatedOnly: x.applyTo === 'seated' })),
+        tags: (Array.isArray(a.tags_es) ? (a.tags_es as string[]) : []).join(', '),
+        program: lineup.map((l) => ({ id: nextSub(), t: String(l.t ?? ''), es: String(l.es ?? '') })),
+        age: String(a.age_es ?? ''), includes: String(a.includes_es ?? ''),
+      });
+    });
+    return () => { off = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mgEv.dbId, admin.demo]);
+  const setLayF = (patch: Partial<LayoutState>) => setLay((l) => (l ? { ...l, ...patch } : l));
+  const uploadLayPhoto = async (id: string, file: File | undefined) => {
+    if (!file || !lay) return;
+    try { const url = !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 900); setLayF({ tables: lay.tables.map((t) => (t.id === id ? { ...t, photo: url } : t)) }); }
+    catch { flash(L('No se pudo subir la foto', 'Could not upload the photo')); }
+  };
+  const saveLayout = async () => {
+    if (!lay || !mgEv.dbId || !supabase || layBusy) return;
+    setLayBusy(true);
+    const seating = lay.seating === 'tables'
+      ? { type: 'tables', tables: lay.tables.filter((t) => Number(t.cap) > 0).map((t, i) => ({ n: i + 1, cap: Number(t.cap), ...(t.photo ? { photo: t.photo } : {}) })) }
+      : lay.seating === 'seats'
+        ? { type: 'seats', rows: Math.max(1, Math.min(20, Number(lay.rows) || 6)), cols: Math.max(1, Math.min(20, Number(lay.cols) || 9)) }
+        : null;
+    const tagArr = lay.tags.split(',').map((s) => s.trim()).filter(Boolean);
+    const lineup = lay.program.filter((p) => p.t.trim() && p.es.trim()).map((p) => ({ t: p.t.trim(), es: p.es.trim(), en: p.es.trim() }));
+    const attrs = {
+      ...(lay.age.trim() ? { age_es: lay.age.trim(), age_en: lay.age.trim() } : {}),
+      ...(lay.includes.trim() ? { includes_es: lay.includes.trim(), includes_en: lay.includes.trim() } : {}),
+      ...(tagArr.length ? { tags_es: tagArr, tags_en: tagArr } : {}),
+      ...(lineup.length ? { lineup } : {}),
+    };
+    const addons = lay.addons.filter((a) => a.es.trim()).map((a) => ({ id: a.id, es: a.es.trim(), en: a.es.trim(), price: Number(a.price) || 0, required: a.required, applyTo: a.seatedOnly ? 'seated' : 'all' }));
+    const { error } = await supabase.from('events').update({ seating, attrs, addons }).eq('id', mgEv.dbId);
+    setLayBusy(false);
+    flash(error ? L('No se pudo guardar', 'Could not save') : L('Guardado', 'Saved'));
+  };
   const [tierBusy, setTierBusy] = useState(false);
   const reloadTiers = async () => {
     if (!mgEv.dbId || !supabase) return;
-    const { data } = await supabase.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort,visible').eq('event_id', mgEv.dbId).order('sort');
+    const { data } = await supabase.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort,visible,seat').eq('event_id', mgEv.dbId).order('sort');
     setTierList(Array.isArray(data) ? (data as unknown as EventTier[]) : []);
   };
   useEffect(() => {
     if (!persistable || !mgEv.dbId || !supabase) { setTierList(null); return; }
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase!.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort,visible').eq('event_id', mgEv.dbId).order('sort');
+      const { data, error } = await supabase!.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort,visible,seat').eq('event_id', mgEv.dbId).order('sort');
       if (cancelled) return;
       setTierList(error || !Array.isArray(data) ? [] : (data as unknown as EventTier[]));
     })();
@@ -301,7 +357,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   }, [mgEv.dbId, admin.demo]);
   const openTierEdit = (t: EventTier | null) => {
     setTierEdit(t ? t.id : 'new');
-    setTierForm(t ? { name: L(t.name_es, t.name_en), price: String(t.price), capacity: t.capacity == null ? '' : String(t.capacity), hidden: t.visible === false } : { name: '', price: '', capacity: '', hidden: false });
+    setTierForm(t ? { name: L(t.name_es, t.name_en), price: String(t.price), capacity: t.capacity == null ? '' : String(t.capacity), hidden: t.visible === false, seat: !!t.seat } : { name: '', price: '', capacity: '', hidden: false, seat: false });
   };
   const saveTier = async () => {
     if (!mgEv.dbId || !supabase || tierBusy) return;
@@ -311,9 +367,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const capacity = tierForm.capacity.trim() === '' ? null : Math.max(0, Number(tierForm.capacity) || 0);
     setTierBusy(true);
     if (tierEdit === 'new') {
-      await supabase.from('event_tiers').insert({ event_id: mgEv.dbId, name_es: name, name_en: name, price, capacity, sort: tierList?.length ?? 0, visible: !tierForm.hidden });
+      await supabase.from('event_tiers').insert({ event_id: mgEv.dbId, name_es: name, name_en: name, price, capacity, sort: tierList?.length ?? 0, visible: !tierForm.hidden, seat: tierForm.seat });
     } else if (tierEdit) {
-      await supabase.from('event_tiers').update({ name_es: name, name_en: name, price, capacity, visible: !tierForm.hidden }).eq('id', tierEdit);
+      await supabase.from('event_tiers').update({ name_es: name, name_en: name, price, capacity, visible: !tierForm.hidden, seat: tierForm.seat }).eq('id', tierEdit);
     }
     setTierBusy(false); setTierEdit(null); await reloadTiers();
     flash(L('Nivel guardado', 'Tier saved'));
@@ -951,6 +1007,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-[6px] border-[1.5px] ${tierForm.hidden ? 'border-primary bg-primary' : 'border-lilac-line bg-white'}`}>{tierForm.hidden && <Check size={13} stroke={3} className="text-white" />}</span>
           <span className="text-[11.5px] font-bold text-ink-soft">{L('Oculto — solo visible con código de acceso', 'Hidden — only shown with an access code')}</span>
         </button>
+        <button onClick={() => setTierForm((f) => ({ ...f, seat: !f.seat }))} className="flex items-center gap-2 text-left">
+          <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-[6px] border-[1.5px] ${tierForm.seat ? 'border-primary bg-primary' : 'border-lilac-line bg-white'}`}>{tierForm.seat && <Check size={13} stroke={3} className="text-white" />}</span>
+          <span className="text-[11.5px] font-bold text-ink-soft">{L('Requiere elegir asiento o mesa', 'Requires picking a seat or table')}</span>
+        </button>
       </div>
       <div className="mt-3 flex gap-2">
         <button onClick={saveTier} disabled={tierBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{tierBusy ? L('Guardando…', 'Saving…') : L('Guardar', 'Save')}</button>
@@ -1137,8 +1197,76 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setView('list');
   };
   const alreadyCancelled = mgEv.lifecycle === 'cancelled';
+  const layInput = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[12.5px] font-semibold text-ink outline-none focus:border-primary';
+  const layoutEditor = lay && (
+    <div className={`${cardCls} p-3.5`}>
+      <div className="mb-2 text-[12.5px] font-extrabold text-ink">{L('Mesas, paquetes y detalles', 'Tables, packages & details')}</div>
+
+      {/* seating */}
+      <div className="mb-1.5 text-[11px] font-extrabold text-muted-2">{L('Asientos', 'Seating')}</div>
+      <div className="flex gap-2">
+        {([['none', L('General', 'General')], ['seats', L('Asientos', 'Numbered')], ['tables', L('Mesas', 'Tables')]] as const).map(([k, lb]) => (
+          <button key={k} onClick={() => setLayF({ seating: k })} className={`flex-1 cursor-pointer rounded-btn py-2 text-[11px] font-extrabold ${lay.seating === k ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{lb}</button>
+        ))}
+      </div>
+      {lay.seating === 'seats' && (
+        <div className="mt-2 flex gap-2">
+          <input value={lay.rows} onChange={(e) => setLayF({ rows: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder={L('Filas', 'Rows')} className={layInput} />
+          <input value={lay.cols} onChange={(e) => setLayF({ cols: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder={L('Por fila', 'Per row')} className={layInput} />
+        </div>
+      )}
+      {lay.seating === 'tables' && (
+        <div className="mt-2 flex flex-col gap-2">
+          {lay.tables.map((t, i) => (
+            <div key={t.id} className="flex items-center gap-2.5 rounded-btn-lg border border-hair bg-white p-2">
+              <button onClick={() => layPhotoRefs.current[t.id]?.click()} className="flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={t.photo ? { backgroundImage: `url(${t.photo})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>{!t.photo && <ImagePlus size={15} stroke={2} className="text-primary-dark" />}</button>
+              <input ref={(el) => { layPhotoRefs.current[t.id] = el; }} type="file" accept="image/*" hidden onChange={(e) => uploadLayPhoto(t.id, e.target.files?.[0])} />
+              <div className="min-w-0 flex-1"><div className="text-[11px] font-extrabold text-ink">{L('Mesa', 'Table')} {i + 1}</div>
+                <div className="mt-1 flex items-center gap-1.5"><span className="text-[10px] font-bold text-muted-2">{L('Personas', 'Seats')}</span><input value={t.cap} onChange={(e) => setLayF({ tables: lay.tables.map((x) => (x.id === t.id ? { ...x, cap: e.target.value.replace(/[^0-9]/g, '') } : x)) })} inputMode="numeric" className="w-14 rounded-field border-[1.5px] border-lilac-line px-2 py-1 text-[12px] font-bold outline-none focus:border-primary" /></div>
+              </div>
+              <button onClick={() => setLayF({ tables: lay.tables.filter((x) => x.id !== t.id) })} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark"><Trash2 size={15} stroke={2} /></button>
+            </div>
+          ))}
+          <button onClick={() => setLayF({ tables: [...lay.tables, { id: nextSub(), cap: '4', photo: '' }] })} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar mesa', 'Add table')}</button>
+        </div>
+      )}
+
+      {/* packages */}
+      <div className="mb-1.5 mt-3 text-[11px] font-extrabold text-muted-2">{L('Paquetes', 'Packages')}</div>
+      {lay.addons.map((a) => (
+        <div key={a.id} className="mb-2 rounded-btn-lg border border-hair bg-white p-2.5">
+          <div className="flex gap-2"><input value={a.es} onChange={(e) => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, es: e.target.value } : x)) })} placeholder={L('Ej. Paquete botella', 'e.g. Bottle package')} className={`${layInput} flex-1`} /><input value={a.price} onChange={(e) => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, price: e.target.value.replace(/[^0-9.]/g, '') } : x)) })} inputMode="decimal" placeholder="$" className={`${layInput} w-20`} /><button onClick={() => setLayF({ addons: lay.addons.filter((x) => x.id !== a.id) })} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark"><Trash2 size={15} stroke={2} /></button></div>
+          <div className="mt-2 flex gap-2"><button onClick={() => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, required: !x.required } : x)) })} className={`rounded-full px-3 py-1 text-[10px] font-extrabold ${a.required ? 'bg-amber-bg text-amber-ink' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.required ? L('✓ Obligatorio', '✓ Required') : L('Obligatorio', 'Required')}</button><button onClick={() => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, seatedOnly: !x.seatedOnly } : x)) })} className={`rounded-full px-3 py-1 text-[10px] font-extrabold ${a.seatedOnly ? 'bg-lilac text-primary-dark' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.seatedOnly ? L('✓ Solo mesas', '✓ Seated only') : L('Solo mesas', 'Seated only')}</button></div>
+        </div>
+      ))}
+      <button onClick={() => setLayF({ addons: [...lay.addons, { id: nextSub(), es: '', price: '', required: false, seatedOnly: lay.seating !== 'none' }] })} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar paquete', 'Add package')}</button>
+
+      {/* program */}
+      <div className="mb-1.5 mt-3 text-[11px] font-extrabold text-muted-2">{L('Programa', 'Run of show')}</div>
+      {lay.program.map((p) => (
+        <div key={p.id} className="mb-2 flex gap-2">
+          <input value={p.t} onChange={(e) => setLayF({ program: lay.program.map((x) => (x.id === p.id ? { ...x, t: e.target.value } : x)) })} placeholder="8:00" className={`${layInput} w-20`} />
+          <input value={p.es} onChange={(e) => setLayF({ program: lay.program.map((x) => (x.id === p.id ? { ...x, es: e.target.value } : x)) })} placeholder={L('Qué pasa', 'What happens')} className={`${layInput} flex-1`} />
+          <button onClick={() => setLayF({ program: lay.program.filter((x) => x.id !== p.id) })} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark"><Trash2 size={15} stroke={2} /></button>
+        </div>
+      ))}
+      <button onClick={() => setLayF({ program: [...lay.program, { id: nextSub(), t: '', es: '' }] })} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar momento', 'Add moment')}</button>
+
+      {/* tags + details */}
+      <div className="mt-3 flex flex-col gap-2">
+        <div><label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Etiquetas (separadas por coma)', 'Tags (comma-separated)')}</label><input value={lay.tags} onChange={(e) => setLayF({ tags: e.target.value })} placeholder={L('Salsa, Baile, +21', 'Salsa, Dancing, 21+')} className={layInput} /></div>
+        <div className="flex gap-2">
+          <div className="flex-1"><label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Edad', 'Age')}</label><input value={lay.age} onChange={(e) => setLayF({ age: e.target.value })} placeholder="+21" className={layInput} /></div>
+          <div className="flex-1"><label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Incluye', 'Includes')}</label><input value={lay.includes} onChange={(e) => setLayF({ includes: e.target.value })} placeholder={L('Cover y show', 'Cover & show')} className={layInput} /></div>
+        </div>
+      </div>
+
+      <button onClick={saveLayout} disabled={layBusy} className="mt-3.5 w-full cursor-pointer rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white disabled:opacity-50">{layBusy ? L('Guardando…', 'Saving…') : L('Guardar cambios', 'Save changes')}</button>
+    </div>
+  );
   const settingsView = (
     <div className="flex flex-col gap-4">
+      {layoutEditor}
       <div className={`${cardCls} p-3.5`}>
         <div className="mb-1 text-[12.5px] font-extrabold text-ink">{L('Más controles en camino', 'More controls on the way')}</div>
         <div className="mb-2.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('Se habilitan al conectar pagos y notificaciones.', 'Unlock once payments and notifications are connected.')}</div>
