@@ -13,6 +13,7 @@ import { useMyActivity } from '@/lib/myActivity';
 import { useUrlDetail } from '@/lib/urlView';
 import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
+import { Qr } from '@/components/Qr';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
@@ -638,6 +639,34 @@ export function EventosScreen() {
         ))}
       </div>
 
+      {/* Explora por categoría — a category grid on the default (unfiltered) view,
+          Eventbrite-style. Only categories that actually have events near you. */}
+      {cat === 'all' && date === 'all' && !sl && !liveLoading && EVENTS.length > 0 && (() => {
+        const withCounts = EVENT_CATS
+          .map((c) => ({ c, n: EVENTS.filter((e) => e.cat === c.id).length }))
+          .filter((x) => x.n > 0);
+        return withCounts.length > 1 ? (
+          <div className="mb-5">
+            <div className="mb-2.5 text-[13.5px] font-extrabold text-ink">{L('Explora por categoría', 'Explore by category')}</div>
+            <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-4">
+              {withCounts.map(({ c, n }) => (
+                <button
+                  key={c.id}
+                  onClick={() => { setCat(c.id); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="group flex items-center gap-2.5 overflow-hidden rounded-card border border-hair bg-white p-2.5 text-left transition-shadow hover:shadow-card"
+                >
+                  <span className="h-11 w-11 flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${c.tile[0]} 0 8px,${c.tile[1]} 8px 16px)` }} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12.5px] font-extrabold text-ink">{L(c.es, c.en)}</span>
+                    <span className="block text-[10.5px] font-bold text-muted-2">{n} {n === 1 ? L('evento', 'event') : L('eventos', 'events')}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null;
+      })()}
+
       {/* grid */}
       {liveLoading ? (
         <SkeletonList count={6} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" />
@@ -1078,18 +1107,32 @@ export function EventosScreen() {
               {anyPaid ? L('¡Boletos reservados!', 'Tickets reserved!') : L('¡Boletos confirmados!', 'Tickets confirmed!')}
             </div>
             {boughtTickets.length > 0 ? (
-              <div className="mt-3 flex w-full max-w-[300px] flex-col gap-2">
+              <div className="mt-3 flex w-full max-w-[300px] flex-col gap-3">
                 {boughtTickets.map((tk, i) => (
-                  <div key={`${tk.code}-${i}`} className="rounded-card border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 px-4 py-3 text-left">
-                    <div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-muted-2">{B(tk.name)}</div>
-                    <div className="mt-0.5 font-mono text-[20px] font-extrabold tracking-[.12em] text-primary-dark">{tk.code}</div>
+                  // Ticket stub with a REAL scannable QR of the entry code (organizer
+                  // scans it at the door). A perforated divider splits header ↔ QR.
+                  <div key={`${tk.code}-${i}`} className="overflow-hidden rounded-card border-[1.5px] border-dashed border-lilac-ring bg-white">
+                    <div className="flex items-center gap-2 bg-lilac-3 px-4 py-2.5 text-left">
+                      <Ticket size={14} stroke={2.2} className="flex-none text-primary" />
+                      <span className="truncate text-[11px] font-extrabold uppercase tracking-[.06em] text-primary-dark">{B(tk.name)}</span>
+                    </div>
+                    <div className="relative flex flex-col items-center gap-2 border-t border-dashed border-lilac-line px-4 py-3.5">
+                      <span className="absolute -left-2 -top-2 h-4 w-4 rounded-full bg-app" />
+                      <span className="absolute -right-2 -top-2 h-4 w-4 rounded-full bg-app" />
+                      <Qr value={tk.code} size={140} />
+                      <span className="font-mono text-[15px] font-extrabold tracking-[.14em] text-primary-dark">{tk.code}</span>
+                    </div>
                   </div>
                 ))}
+                <span className="text-[10.5px] font-semibold text-muted-2">{L('Muestra el código QR en la entrada.', 'Show the QR at the door.')}</span>
               </div>
             ) : boughtCode ? (
-              <div className="mt-3 w-full max-w-[280px] rounded-card border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 px-4 py-3">
-                <div className="text-[10px] font-extrabold uppercase tracking-[.08em] text-muted-2">{L('Código', 'Code')}</div>
-                <div className="mt-0.5 font-mono text-[22px] font-extrabold tracking-[.12em] text-primary-dark">{boughtCode}</div>
+              <div className="mt-3 w-full max-w-[280px] overflow-hidden rounded-card border-[1.5px] border-dashed border-lilac-ring bg-white">
+                <div className="flex flex-col items-center gap-2 px-4 py-4">
+                  <Qr value={boughtCode} size={150} />
+                  <span className="font-mono text-[16px] font-extrabold tracking-[.14em] text-primary-dark">{boughtCode}</span>
+                  <span className="text-[10.5px] font-semibold text-muted-2">{L('Muestra el QR en la entrada', 'Show the QR at the door')}</span>
+                </div>
               </div>
             ) : null}
             {seatSel.length > 0 && (
