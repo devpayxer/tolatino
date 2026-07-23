@@ -1,5 +1,5 @@
-import { ComingSoonScreen } from '@/screens/ComingSoon';
+import { BienesRaicesScreen } from '@/screens/BienesRaices';
 
 export default function Page() {
-  return <ComingSoonScreen view="inmuebles" />;
+  return <BienesRaicesScreen />;
 }

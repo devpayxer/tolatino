@@ -28,6 +28,7 @@ import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusin
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
+import { fetchPropertiesByBizSlug, fmtPrice as reFmtPrice, RE_TILE, type ReCard } from '@/lib/realestate';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 
 // es → en lookup for feature labels ("Lo que ofrece"), so the owner-selected
@@ -37,7 +38,7 @@ for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
 import { DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SERVICES, SHOP, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
 
-type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'related' | 'reviews';
+type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'props' | 'related' | 'reviews';
 const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'related', 'reviews']);
 type RentMode = 'day' | 'hour';
 
@@ -479,6 +480,22 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       if (cancelled) return;
       setRealEvents(rows);
       setEvFetched(true);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [b.slug]);
+  // Real-estate listings (0117): live published properties for this agency —
+  // same module+content gating as every other tab.
+  const [realProps, setRealProps] = useState<ReCard[] | null>(null);
+  const [propsFetched, setPropsFetched] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setRealProps(null); setPropsFetched(false);
+    if (b.modules?.inmuebles !== true) { setPropsFetched(true); return; }
+    fetchPropertiesByBizSlug(b.slug).then((rows) => {
+      if (cancelled) return;
+      setRealProps(rows);
+      setPropsFetched(true);
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1528,6 +1545,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     rentals: modOn('rental') && realRentals != null,
     updates: modOn('updates') && realUpdates != null,
     events: modOn('events') && (realEvents?.length ?? 0) > 0,
+    props: modOn('inmuebles') && (realProps?.length ?? 0) > 0,
   };
   const allTabs: [TabKey, string][] = [
     ['overview', L('Resumen', 'Overview')],
@@ -1537,6 +1555,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     ['services', L('Servicios', 'Services')],
     ['rentals', L('Renta', 'Rentals')],
     ['events', L('Eventos', 'Events')],
+    ['props', L('Propiedades', 'Listings')],
     ['related', L('Relacionados', 'Related')],
     ['reviews', L('Reseñas', 'Reviews')],
   ];
@@ -1547,12 +1566,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const tabResolved: Record<TabKey, boolean> = {
     overview: true, related: true, reviews: true,
     menu: menuFetched, shop: shopFetched, services: svcFetched, rentals: rentFetched,
-    updates: updFetched, events: evFetched,
+    updates: updFetched, events: evFetched, props: propsFetched,
   };
   useEffect(() => {
     if (tabResolved[tab] && !tabShown[tab]) setTab('overview');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, updFetched, evFetched, realMenu, realShop, realServices, realRentals, realUpdates, realEvents, b.slug]);
+  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, updFetched, evFetched, propsFetched, realMenu, realShop, realServices, realRentals, realUpdates, realEvents, realProps, b.slug]);
 
   // Overview = the full, browse-y view (hero + meta). Any other tab switches to a
   // focused mode: the hero collapses into a compact pinned header (title + tabs
@@ -2785,6 +2804,36 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* ============ PROPERTIES (real estate, 0117) ============ */}
+      {/* This agency's live published listings. Tap → /bienes-raices?p=<slug>. */}
+      {tab === 'props' && (
+        <div className="grid grid-cols-1 gap-2.5 pt-4 md:grid-cols-2">
+          {(realProps ?? []).map((pr) => (
+            <Card key={pr.slug} className="overflow-hidden p-0" onClick={() => router.push(`/bienes-raices?p=${pr.slug}`)}>
+              <span
+                className="block h-[120px] w-full"
+                style={pr.photos[0]
+                  ? { backgroundImage: `url(${pr.photos[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  : { background: `repeating-linear-gradient(135deg,${RE_TILE[pr.deal][0]} 0 11px,${RE_TILE[pr.deal][1]} 11px 22px)` }}
+              />
+              <span className="block p-3.5">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[16px] font-extrabold text-ink">{reFmtPrice(pr.price, pr.deal, L('x', 'y') === 'x')}</span>
+                  <span className="rounded-full bg-lilac px-2.5 py-1 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-primary-dark">
+                    {pr.deal === 'venta' ? L('Venta', 'Sale') : pr.deal === 'renta' ? L('Renta', 'Rent') : pr.deal === 'cuarto' ? L('Cuarto', 'Room') : L('Comercial', 'Commercial')}
+                  </span>
+                </span>
+                <span className="mt-1 block truncate text-[13px] font-extrabold text-ink">{pr.title}</span>
+                <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-muted">
+                  {[pr.beds != null ? `${pr.beds} ${L('rec', 'bd')}` : null, pr.baths != null ? `${pr.baths} ${L('baños', 'ba')}` : null, pr.sqft != null ? `${pr.sqft.toLocaleString()} ft²` : null].filter(Boolean).join(' · ')}
+                </span>
+                {pr.address && <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-2">{pr.address}</span>}
+              </span>
+            </Card>
+          ))}
         </div>
       )}
 

@@ -21,7 +21,8 @@ export type CatKey =
   | 'Education'
   | 'Children'
   | 'Sports'
-  | 'Churches';
+  | 'Churches'
+  | 'RealEstate';
 
 export const CAT: Record<CatKey, { bg: string; dot: string; es: string; en: string }> = {
   AutoServices: { bg: '#EFEBFF', dot: '#7B61FF', es: 'Servicios de Auto', en: 'Auto Services' },
@@ -39,6 +40,7 @@ export const CAT: Record<CatKey, { bg: string; dot: string; es: string; en: stri
   Children: { bg: '#DEF1FA', dot: '#34A5D6', es: 'Niños', en: 'Children' },
   Sports: { bg: '#EAF6E0', dot: '#4FA02C', es: 'Vida Activa y Deportes', en: 'Active Life & Sports' },
   Churches: { bg: '#EDE7FC', dot: '#8A5CF0', es: 'Iglesias y Religión', en: 'Churches & Religion' },
+  RealEstate: { bg: '#EFE9FB', dot: '#5B3FD6', es: 'Bienes Raíces', en: 'Real Estate' },
 };
 
 export const CAT_KEYS = Object.keys(CAT) as CatKey[];

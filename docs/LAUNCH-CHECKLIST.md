@@ -1598,3 +1598,28 @@ Pendiente menor de Eventos (no bloquea; polish/parity):
   `fulfilling` y ANTES de `fulfilled`/`refunded` deja el row atascado en
   `fulfilling` (no se re-cumple). Ventana estrecha (1 RPC). Alertar sobre rows
   en `fulfilling` > N min.
+
+### Bienes Raíces — vertical nueva (2026-07-23e)
+Handoff elegido: el bundle de 3 archivos ("Real Estate Flow" — Consumer + Agent
++ Directory), enriquecido con el gate de licencia del handoff 1. Integración:
+capa vertical sobre la app (categoría `RealEstate` de negocios + módulo
+`inmuebles` del panel + cliente en `/bienes-raices`). Migración 0117 aplicada
+(properties/leads/tours/saves, PostGIS+FTS+RLS, 7 RPCs).
+- [x] Categoría **RealEstate** (negocios = inmobiliarias/agentes; inscripción =
+  onboarding existente; directorio = `re_directory` + BizDetail).
+- [x] Seeds: 4 agencias (Hazleton/Bronx, pago+free, logins `a@re1.com`…`b@re2.com`
+  pass `123`), 16 propiedades con coords reales, 5 leads, 3 tours, reseñas.
+- [x] Gate de licencia: publicar exige `re_config.license` (server-side en
+  `upsert_property`).
+Deferred (no bloquea v1):
+- [ ] **Verificación real de licencia** (integración TREC/estado) — hoy el
+  número se captura y se muestra; validar contra el registro estatal después.
+- [ ] **Fotos reales de propiedades** — placeholders rayados hasta que los
+  agentes suban fotos (upload ya soportado en el wizard).
+- [ ] **Escuelas cercanas (GreatSchools)** — API de pago; evaluar fuente
+  gratuita (NCES) después.
+- [ ] **Alertas de búsqueda guardada** (notificar nuevos listados que matcheen)
+  — requiere job/cron; hoy el guardado ♥ sí es cross-device.
+- [ ] **Tab Propiedades en BizDetail**: gating módulo+contenido aplicado; los
+  módulos por-defecto de negocios EXISTENTES no incluyen `inmuebles` (solo la
+  categoría RealEstate lo activa al publicarse o vía Configurar módulos).

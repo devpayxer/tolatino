@@ -6,13 +6,13 @@
 // verbatim. Content varies by plan (free/verified/premium) and rubro.
 
 import { Icon as LucideIcon } from '@tabler/icons-react';
-import { IconChartBar as BarChart3, IconChartLine as ChartLine, IconBike as Bike, IconBriefcase as Briefcase, IconBuilding as Building2, IconCalendar as Calendar, IconClock as Clock, IconCreditCard as CreditCard, IconCurrencyDollar as DollarSign, IconPhoto as ImageIcon, IconLayoutGrid as LayoutGrid, IconLink as Link2, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconPackage as Package, IconScissors as Scissors, IconSettings as Settings, IconShoppingBag as ShoppingBag, IconStar as Star, IconBuildingStore as Store, IconTicket as Ticket, IconTruck as Truck, IconUser as User, IconUsers as Users, IconToolsKitchen2 as Utensils, IconTool as Wrench } from '@tabler/icons-react';
+import { IconChartBar as BarChart3, IconChartLine as ChartLine, IconBike as Bike, IconBriefcase as Briefcase, IconBuilding as Building2, IconCalendar as Calendar, IconClock as Clock, IconCreditCard as CreditCard, IconCurrencyDollar as DollarSign, IconPhoto as ImageIcon, IconLayoutGrid as LayoutGrid, IconLink as Link2, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconPackage as Package, IconScissors as Scissors, IconSettings as Settings, IconShoppingBag as ShoppingBag, IconStar as Star, IconBuildingStore as Store, IconTicket as Ticket, IconHome as HomeIcon, IconTruck as Truck, IconUser as User, IconUsers as Users, IconToolsKitchen2 as Utensils, IconTool as Wrench } from '@tabler/icons-react';
 
 export type Tier = 'free' | 'verified' | 'premium';
-export type Rubro = 'restaurant' | 'beauty' | 'auto' | 'retail' | 'rental';
+export type Rubro = 'restaurant' | 'beauty' | 'auto' | 'retail' | 'rental' | 'realestate';
 export type TabKey =
   | 'insights' | 'stats' | 'listing' | 'photos' | 'hours' | 'related'
-  | 'menu' | 'services' | 'bookings' | 'products' | 'fulfillment' | 'shipping' | 'drivers' | 'rental' | 'events'
+  | 'menu' | 'services' | 'bookings' | 'products' | 'fulfillment' | 'shipping' | 'drivers' | 'rental' | 'events' | 'inmuebles'
   | 'customers' | 'orders' | 'messages' | 'reviews' | 'updates'
   | 'promos' | 'payments' | 'staff' | 'jobs' | 'modules' | 'billing' | 'settings';
 
@@ -26,9 +26,10 @@ export const CAT_INFO: Record<Rubro, CatInfo> = {
   auto: { es: 'Auto · Taller', en: 'Auto Repair · Shop', name: 'Don Beto Mecánica', initials: 'DB', area: 'Spring Branch · Long Point Rd', tile: '#E4ECFB 0 9px,#D7E3F6 9px 18px', svc: Wrench },
   retail: { es: 'Boutique · Ropa', en: 'Boutique · Apparel', name: 'Casa Bonita Shop', initials: 'CB', area: 'East End · Harrisburg Blvd', tile: '#EAE2F8 0 9px,#DCCEF2 9px 18px', svc: Store },
   rental: { es: 'Renta · Equipo', en: 'Rental · Equipment', name: 'Bahía Rentals', initials: 'BR', area: 'Katy · Mason Rd', tile: '#E3F5EA 0 9px,#D6E7D0 9px 18px', svc: Bike },
+  realestate: { es: 'Bienes Raíces · Agencia', en: 'Real Estate · Agency', name: 'Casa Latina Realty', initials: 'CL', area: 'Gulfton · Hillcroft Ave', tile: '#E5DEF9 0 9px,#D9CEF3 9px 18px', svc: HomeIcon },
 };
 
-export type Mods = Record<'menu' | 'services' | 'bookings' | 'products' | 'rental' | 'events' | 'updates' | 'staff', boolean>;
+export type Mods = Record<'menu' | 'services' | 'bookings' | 'products' | 'rental' | 'events' | 'inmuebles' | 'updates' | 'staff', boolean>;
 
 export type PanelCtx = {
   L: Lx;
@@ -64,8 +65,8 @@ export function activeMods(ctx: PanelCtx): Mods {
   if (isFree) {
     // Free tier unlocks the ONE module that matches the rubro — not always the
     // food menu (a beauty/auto listing gets Servicios, retail gets Productos, etc.).
-    const primary: keyof Mods = rubro === 'retail' ? 'products' : rubro === 'rental' ? 'rental' : rubro === 'beauty' || rubro === 'auto' ? 'services' : 'menu';
-    const base: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, updates: false, staff: false };
+    const primary: keyof Mods = rubro === 'realestate' ? 'inmuebles' : rubro === 'retail' ? 'products' : rubro === 'rental' ? 'rental' : rubro === 'beauty' || rubro === 'auto' ? 'services' : 'menu';
+    const base: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, inmuebles: false, updates: false, staff: false };
     base[primary] = true;
     return base;
   }
@@ -98,8 +99,12 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
   if (am.products) sellItems.push(it('products', L('Productos', 'Products'), Package, { count: dc('42') }));
   if (am.rental) sellItems.push(it('rental', L('Renta', 'Rental'), Bike, { count: dc('12') }));
   if (am.events) sellItems.push(it('events', L('Eventos y boletos', 'Events & tickets'), Ticket, { count: dc('4') }));
+  if (am.inmuebles) sellItems.push(it('inmuebles', L('Propiedades', 'Listings'), HomeIcon, { count: dc('6') }));
   const sells = sellItems.length > 0;
-  if (sells) {
+  // Orders/Payouts are commerce concerns — a listings-only real-estate agency
+  // (inmuebles active, nothing else) doesn't get them.
+  const commerce = am.menu || am.services || am.products || am.rental || am.events;
+  if (commerce) {
     sellItems.push(it('orders', L('Pedidos', 'Orders'), ShoppingBag, { count: dc(isFree ? null : '12'), live: !isFree, lockedFree: true }));
     if (am.menu || am.products) sellItems.push(it('fulfillment', L('Entregas y envíos', 'Delivery & shipping'), Truck));
     // Promociones — unified promo/discount hub across Menú + Tienda. Premium benefit.
@@ -173,6 +178,7 @@ export function pageHead(tab: TabKey, ctx: PanelCtx) {
     drivers: [L('Repartidores', 'Drivers'), L('Repartidor propio o apps externas.', 'Own driver or external apps.')],
     rental: [L('Renta', 'Rental'), L('Artículos para rentar con precio por día.', 'Rentable items with daily pricing.')],
     events: [L('Eventos y boletos', 'Events & tickets'), L('Crea eventos y gestiona boletos.', 'Create events and manage tickets.')],
+    inmuebles: [L('Bienes Raíces', 'Real Estate'), L('Publica propiedades y gestiona leads, visitas y ofertas.', 'Publish listings and manage leads, tours and offers.')],
     customers: [L('Clientes', 'Customers'), L('Tu base de clientes y su historial.', 'Your customer base and history.')],
     orders: [L('Pedidos', 'Orders'), L('Gestiona pedidos por estado.', 'Manage orders by status.')],
     messages: [L('Mensajes', 'Messages'), L('Conversaciones con tus clientes.', 'Conversations with your customers.')],
@@ -187,7 +193,7 @@ export function pageHead(tab: TabKey, ctx: PanelCtx) {
     settings: [L('Ajustes', 'Settings'), L('Perfil, seguridad, notificaciones e idioma.', 'Profile, security, notifications and language.')],
   };
   const ctaMap: Partial<Record<TabKey, string>> = {
-    listing: L('Guardar', 'Save'), photos: L('Subir', 'Upload'), menu: L('Agregar platillo', 'Add item'), services: L('Agregar servicio', 'Add service'), products: L('Agregar producto', 'Add product'), events: L('Crear evento', 'Create event'), rental: L('Agregar artículo', 'Add item'), updates: L('Nueva publicación', 'New post'), staff: L('Invitar', 'Invite'), reviews: L('Exportar', 'Export'), customers: L('Exportar', 'Export'), orders: L('Nuevo pedido', 'New order'), insights: L('Nuevo pedido', 'New order'), modules: L('Guardar', 'Save'), billing: L('Cambiar plan', 'Change plan'), settings: L('Guardar', 'Save'), promos: L('Nueva campaña', 'New campaign'),
+    listing: L('Guardar', 'Save'), photos: L('Subir', 'Upload'), menu: L('Agregar platillo', 'Add item'), services: L('Agregar servicio', 'Add service'), products: L('Agregar producto', 'Add product'), events: L('Crear evento', 'Create event'), inmuebles: L('Publicar propiedad', 'Publish listing'), rental: L('Agregar artículo', 'Add item'), updates: L('Nueva publicación', 'New post'), staff: L('Invitar', 'Invite'), reviews: L('Exportar', 'Export'), customers: L('Exportar', 'Export'), orders: L('Nuevo pedido', 'New order'), insights: L('Nuevo pedido', 'New order'), modules: L('Guardar', 'Save'), billing: L('Cambiar plan', 'Change plan'), settings: L('Guardar', 'Save'), promos: L('Nueva campaña', 'New campaign'),
   };
   const [title, sub] = titles[tab];
   return { title, sub, cta: ctaMap[tab] ?? L('Nuevo', 'New'), hasGhost: ['insights', 'orders', 'customers'].includes(tab), ghost: L('Exportar', 'Export'), hasAccent: tab === 'insights', accent: L('Últimos 7 días', 'Last 7 days') };

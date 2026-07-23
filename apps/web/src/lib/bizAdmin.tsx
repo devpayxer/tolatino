@@ -57,6 +57,7 @@ export type BizRow = {
   service_config: ServiceConfig | null; // services structure (categories/add-ons/booking mode)
   product_config: ProductConfig | null; // shop structure (categories/option sets/collections/discounts/sell mode)
   rental_config: RentalConfig | null; // rental structure (categories/add-ons/rental mode)
+  re_config: { license?: string; specialty?: string; langs?: string; zones?: string[]; broker?: string } | null; // real-estate agent config (0117)
   created_at: string;
 };
 
@@ -69,6 +70,7 @@ const RUBRO_FROM_CAT: Record<string, Rubro> = {
   HealthMedicine: 'beauty',
   AutoServices: 'auto',
   Transportation: 'auto',
+  RealEstate: 'realestate',
   Party: 'rental',
   Sports: 'rental',
   Shops: 'retail',
@@ -122,6 +124,7 @@ const DEMO_BIZ: BizRow = {
   service_config: null,
   product_config: null,
   rental_config: null,
+  re_config: null,
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -164,6 +167,7 @@ const DEMO_BIZ_2: BizRow = {
   service_config: null,
   product_config: null,
   rental_config: null,
+  re_config: null,
   created_at: '2024-03-01T00:00:00Z',
 };
 
@@ -172,7 +176,7 @@ const DEMO_BIZ_2: BizRow = {
 // controlled by billing / the review system, not the listing editor.
 const WRITABLE: (keyof BizRow)[] = [
   'name', 'category_id', 'tagline_es', 'tagline_en', 'price_level', 'about_es', 'about_en',
-  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings', 'hours_exceptions', 'menu_config', 'service_config', 'product_config', 'rental_config',
+  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings', 'hours_exceptions', 'menu_config', 'service_config', 'product_config', 'rental_config', 're_config',
 ];
 
 type BizAdminCtx = {

@@ -271,6 +271,7 @@ export const SUBCATS: Record<CatKey, [string, string][]> = {
     ['Bodas religiosas', 'Religious weddings'], ['Bautizos', 'Baptisms'], ['Primera comunión', 'First communion'],
     ['Quinceañera (misa)', 'Quinceañera mass'], ['Funerales', 'Funeral services'], ['Artículos religiosos', 'Religious goods'],
   ],
+  RealEstate: [['Agente independiente', 'Independent agent'], ['Inmobiliaria', 'Real estate agency'], ['Broker', 'Broker'], ['Administración de propiedades', 'Property management'], ['Bienes raíces comercial', 'Commercial real estate'], ['Rentas', 'Rentals']],
 };
 
 // ---------- business features / attributes (dynamic filter) ----------
@@ -359,6 +360,10 @@ export const FEATURES_BY_CAT: Record<CatKey, Feature[]> = {
   Churches: [
     ['Servicios en español', 'Services in Spanish'], ['Servicios en inglés', 'Services in English'], ['Grupos juveniles', 'Youth groups'], ['Estudio bíblico', 'Bible study'],
     ['Guardería', 'Childcare'], ['Ayuda social', 'Social aid'], ['Banco de alimentos', 'Food bank'], ['Música en vivo', 'Live music'],
+  ],
+  RealEstate: [
+    ['Atención bilingüe', 'Bilingual service'], ['Agentes con licencia', 'Licensed agents'], ['Sin verificación de crédito', 'No credit check options'], ['Acepta aval', 'Co-signer accepted'],
+    ['Tours virtuales', 'Virtual tours'], ['Financiamiento', 'Financing help'], ['Primera consulta gratis', 'Free first consultation'], ['Administración de rentas', 'Rental management'],
   ],
 };
 
@@ -560,7 +565,7 @@ export const NAV_CATS: { k: ViewKey; icon: 'users' | 'store' | 'calendar' | 'tru
   { k: 'negocios', icon: 'store', es: 'Negocios', en: 'Business', soon: false },
   { k: 'eventos', icon: 'calendar', es: 'Eventos', en: 'Events', soon: false },
   { k: 'transporte', icon: 'truck', es: 'Transporte', en: 'Transport', soon: true },
-  { k: 'inmuebles', icon: 'home', es: 'Bienes Raíces', en: 'Real Estate', soon: true },
+  { k: 'inmuebles', icon: 'home', es: 'Bienes Raíces', en: 'Real Estate', soon: false },
   { k: 'autos', icon: 'car', es: 'Dealer de carros', en: 'Car Dealers', soon: true },
   { k: 'trabajos', icon: 'briefcase', es: 'Trabajos', en: 'Jobs', soon: true },
 ];

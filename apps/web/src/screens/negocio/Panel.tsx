@@ -29,6 +29,7 @@ import { CustomersModule } from '@/screens/negocio/modules/Customers';
 import { StaffModule } from '@/screens/negocio/modules/Staff';
 import { RentalModule } from '@/screens/negocio/modules/Rental';
 import { EventsModule } from '@/screens/negocio/modules/Events';
+import { RealEstateModule } from '@/screens/negocio/modules/RealEstate';
 import { ProductsModule } from '@/screens/negocio/modules/Products';
 import { FulfillmentModule } from '@/screens/negocio/modules/Fulfillment';
 import { ServicesModule } from '@/screens/negocio/modules/Services';
@@ -56,12 +57,12 @@ const RUBRO_FROM_ONB: Record<string, Rubro> = {
 };
 
 // DEMO (no real listing) shows everything so the panel is fully explorable.
-const DEFAULT_MODS: Mods = { menu: true, services: true, bookings: true, products: true, rental: true, events: true, updates: true, staff: true };
+const DEFAULT_MODS: Mods = { menu: true, services: true, bookings: true, products: true, rental: true, events: true, inmuebles: true, updates: true, staff: true };
 // A REAL business starts LISTING-ONLY: published & visible, but nothing to sell
 // yet ("el listado es el master, vender es opcional"). The owner opts into
 // commerce from "Vender en To'Latino". Non-commerce extras (updates/staff) keep
 // their prior default so only selling is off by default. Stored modules override.
-const LISTING_ONLY_MODS: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, updates: true, staff: true };
+const LISTING_ONLY_MODS: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, inmuebles: false, updates: true, staff: true };
 
 // Valid ?t= values → the dashboard tab restored on refresh (keep in sync with TabKey).
 const VALID_TABS = new Set<string>([
@@ -627,6 +628,7 @@ export function PanelScreen() {
           {(tab === 'staff' || tab === 'jobs') && <StaffModule ctx={ctx} tab={tab} />}
           {tab === 'rental' && <RentalModule ctx={ctx} tab={tab} />}
           {tab === 'events' && <EventsModule ctx={ctx} tab={tab} />}
+          {tab === 'inmuebles' && <RealEstateModule ctx={ctx} tab={tab} />}
           {tab === 'products' && <ProductsModule ctx={ctx} tab={tab} />}
           {(tab === 'fulfillment' || tab === 'shipping' || tab === 'drivers') && <FulfillmentModule ctx={ctx} tab={tab} />}
           {(tab === 'services' || tab === 'bookings') && <ServicesModule ctx={ctx} tab={tab} />}

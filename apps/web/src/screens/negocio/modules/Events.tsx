@@ -97,7 +97,7 @@ const nextSub = () => 's' + (++subSeq);
 // Mirror of Panel.tsx's LISTING_ONLY default so publishing an event can flip the
 // `events` module on while writing the FULL explicit module object (founder
 // gating rule: never leave sibling modules absent, which reads as "off").
-const LISTING_ONLY_MODS = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, updates: true, staff: true };
+const LISTING_ONLY_MODS = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, inmuebles: false, updates: true, staff: true };
 
 export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;

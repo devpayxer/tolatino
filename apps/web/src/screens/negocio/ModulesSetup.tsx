@@ -10,7 +10,7 @@
 import {
   IconBike as Bike, IconCircleCheck as Check, IconCreditCard as Card, IconLock as Lock,
   IconSpeakerphone as Megaphone, IconPackage as Package, IconShoppingBag as Bag, IconStarFilled as StarFilled,
-  IconTicket as Ticket, IconToolsKitchen2 as Utensils, IconTruck as Truck,
+  IconHome as HomeIcon, IconTicket as Ticket, IconToolsKitchen2 as Utensils, IconTruck as Truck,
 } from '@tabler/icons-react';
 import type { Mods, PanelCtx, Rubro } from '@/screens/negocio/tabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
@@ -18,7 +18,7 @@ import { Switch } from '@/components/ui';
 
 // which sellable channel we recommend for each business type
 const RECOMMEND: Record<Rubro, keyof Mods> = {
-  restaurant: 'menu', retail: 'products', beauty: 'services', auto: 'services', rental: 'rental',
+  restaurant: 'menu', retail: 'products', beauty: 'services', auto: 'services', rental: 'rental', realestate: 'inmuebles',
 };
 
 export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: keyof Mods) => void }) {
@@ -38,6 +38,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
     { key: 'services' as const, Icon: ci.svc, bg: '#F1EFFA', label: L('Servicios', 'Services'), desc: L('Ofrece servicios con precios; agenda citas con reservas.', 'Offer priced services; take appointments with bookings.'), adds: L('Puedes activar Reservas con cita', 'Enables appointment Bookings') },
     { key: 'rental' as const, Icon: Bike, bg: '#E3F5EA', label: L('Renta', 'Rental'), desc: L('Renta equipo, mobiliario o vehículos por hora o día.', 'Rent equipment, furniture or vehicles by hour/day.'), adds: L('Calendario de disponibilidad', 'Availability calendar') },
     { key: 'events' as const, Icon: Ticket, bg: '#FDE7EF', label: L('Eventos y boletos', 'Events & tickets'), desc: L('Crea eventos y vende boletos con cupos.', 'Create events and sell tickets with capacity.'), adds: L('Control de cupos y check-in', 'Capacity control and check-in') },
+    { key: 'inmuebles' as const, Icon: HomeIcon, bg: '#E5DEF9', label: L('Bienes Raíces', 'Real Estate'), desc: L('Publica propiedades en venta o renta y gestiona leads y visitas.', 'List properties for sale or rent and manage leads and tours.'), adds: L('Leads, visitas y ofertas en tu panel', 'Leads, tours and offers in your panel') },
   ];
   // recommended channel first
   const ordered = [...sell].sort((a, b) => (a.key === recKey ? -1 : b.key === recKey ? 1 : 0));
