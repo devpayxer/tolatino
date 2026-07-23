@@ -107,7 +107,7 @@ async function fulfillMarketplace(url: string, service: string, stripeKey: strin
       else { errMsg = (r.data as { message?: string })?.message || 'order fulfillment failed'; }
     } else if (pending.kind === 'ticket') {
       const r = await rpc(url, service, 'fulfill_event_tickets_multi', {
-        in_buyer: pending.buyer_id, in_slug: pending.ref, in_items: payload.items ?? [], in_promo: payload.promo ?? null,
+        in_buyer: pending.buyer_id, in_slug: pending.ref, in_items: payload.items ?? [], in_promo: payload.promo ?? null, in_seats: payload.seats ?? null,
       });
       if (r.ok && Array.isArray(r.data) && r.data.length) { result = { tickets: (r.data as { code: string }[]).map((x) => x.code) }; ok = true; }
       else { errMsg = (r.data as { message?: string })?.message || 'ticket fulfillment failed'; }

@@ -502,6 +502,22 @@ Deno.serve(async (req) => {
           if (discount > 0) payload = { ...payload, promo: promo!.code };
         }
       }
+
+      // Seat/table picks (0113): sanitize and FAIL-FAST against already-claimed
+      // seats so the buyer never pays for a seat someone just took. The authority
+      // stays in _issue_tickets_multi's unique claim at issuance (webhook) — if a
+      // race slips past this check, issuance fails and the webhook auto-refunds.
+      if (Array.isArray(body?.seats) && body.seats.length > 0) {
+        const seats = (body.seats as unknown[]).map((s) => String(s).trim().toUpperCase())
+          .filter((s) => /^[A-Z]?T?[0-9]{1,3}$|^[A-Z][0-9]{1,2}$/.test(s)).slice(0, 10);
+        if (seats.length > 0) {
+          const taken = (await get(`event_seat_claims?event_id=eq.${ev.id}&seat=in.(${seats.map(encodeURIComponent).join(',')})&select=seat`)) as { seat: string }[];
+          if (Array.isArray(taken) && taken.length > 0) {
+            return json({ error: 'seat_taken', seats: taken.map((t) => t.seat) }, 409);
+          }
+          payload = { ...payload, seats };
+        }
+      }
     }
 
     const subtotalCents = Math.round(subtotal * 100);
