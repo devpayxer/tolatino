@@ -751,11 +751,14 @@ export type PubTier = {
   // Tier requires a seat/table pick (design's "Asiento" badge; migration 0113).
   seat: boolean;
 };
-// Seat map: null = general admission (no seat step). 0113.
+// Seat map: null = general admission (no seat step). 0113. Tables can carry a photo (0115).
 export type EventSeating =
   | null
   | { type: 'seats'; rows: number; cols: number }
-  | { type: 'tables'; tables: { n: number; cap: number }[] };
+  | { type: 'tables'; tables: { n: number; cap: number; photo?: string }[] };
+// Table package / add-on (0115): required = mandatory (auto-charged); applyTo
+// 'seated' = only with a table/seat ticket. Prices are re-priced server-side.
+export type EventAddon = { id: string; es: string; en: string; descEs?: string; descEn?: string; price: number; required: boolean; applyTo: 'all' | 'seated' };
 // Organizer-authored detail extras (events.attrs, edited in the panel).
 export type EventAttrs = {
   addr?: string;
@@ -778,6 +781,7 @@ export type PubEvent = {
   attrs: EventAttrs; seating: EventSeating;
   organizerVerified: boolean; organizerRating: number | null; organizerEvents: number;
   reviewAvg: number | null; reviewCount: number;
+  addons: EventAddon[];
 };
 
 // events.attrs is stored SQL-friendly (snake_case); the client uses camelCase.
@@ -843,6 +847,12 @@ export async function fetchEventBySlug(slug: string): Promise<PubEvent | null> {
     organizerEvents: Number(r.organizer_events ?? 0),
     reviewAvg: r.review_avg != null ? Number(r.review_avg) : null,
     reviewCount: Number(r.review_count ?? 0),
+    addons: Array.isArray(r.addons) ? (r.addons as Record<string, unknown>[]).map((a) => ({
+      id: String(a.id), es: String(a.es ?? ''), en: String(a.en ?? a.es ?? ''),
+      descEs: a.descEs != null ? String(a.descEs) : undefined, descEn: a.descEn != null ? String(a.descEn) : undefined,
+      price: Number(a.price ?? 0), required: a.required === true,
+      applyTo: a.applyTo === 'seated' ? 'seated' : 'all',
+    })) : [],
   };
 }
 
@@ -932,11 +942,12 @@ export type BoughtTicket = { ticketId: string; code: string; tierId: string };
 /** Buy an ATOMIC multi-tier order (migration 0064): locks every requested tier,
  *  validates all capacities/windows, issues all tickets or none. Throws with a
  *  reason naming the sold-out/closed tier (e.g. "sold out: VIP"). */
-export async function buyEventTicketsMulti(slug: string, items: { tierId: string; qty: number }[], promo?: string, seats?: string[]): Promise<BoughtTicket[]> {
+export async function buyEventTicketsMulti(slug: string, items: { tierId: string; qty: number }[], promo?: string, seats?: string[], addonIds?: string[]): Promise<BoughtTicket[]> {
   if (!supabase) throw new Error('offline');
   const { data, error } = await supabase.rpc('buy_event_tickets_multi', {
     in_slug: slug, in_items: items.map((i) => ({ tier_id: i.tierId, qty: i.qty })), in_promo: promo ?? null,
     in_seats: seats && seats.length ? seats : null,
+    in_addon_ids: addonIds && addonIds.length ? addonIds : null,
   });
   if (error) throw new Error(error.message || 'error');
   if (!Array.isArray(data)) throw new Error('error');

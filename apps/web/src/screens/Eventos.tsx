@@ -149,15 +149,21 @@ function SeatPicker({
               return (
                 <button
                   key={id} onClick={() => onToggle(id)} disabled={isTaken}
-                  className={`flex items-center gap-2.5 rounded-field border-[1.5px] px-3 py-3 text-left ${
+                  className={`flex flex-col overflow-hidden rounded-field border-[1.5px] text-left ${
                     isTaken ? 'cursor-not-allowed border-hair bg-lilac-2/60 opacity-55'
                     : isSel ? 'border-primary bg-lilac-3 shadow-cta-sm'
                     : 'cursor-pointer border-lilac-line bg-white hover:border-primary'}`}
                 >
-                  <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[13px] font-extrabold ${isSel ? 'bg-primary text-white' : 'bg-lilac-2 text-primary-dark'}`}>{t.n}</span>
-                  <span className="min-w-0">
-                    <span className="block text-[12.5px] font-extrabold text-ink">{L('Mesa', 'Table')} {t.n}</span>
-                    <span className="block text-[10.5px] font-bold text-muted-2">{t.cap} {L('personas', 'people')}</span>
+                  {t.photo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={t.photo} alt="" className="h-[76px] w-full flex-none object-cover" />
+                  )}
+                  <span className="flex items-center gap-2.5 px-3 py-2.5">
+                    <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[13px] font-extrabold ${isSel ? 'bg-primary text-white' : 'bg-lilac-2 text-primary-dark'}`}>{t.n}</span>
+                    <span className="min-w-0">
+                      <span className="block text-[12.5px] font-extrabold text-ink">{L('Mesa', 'Table')} {t.n}</span>
+                      <span className="block text-[10.5px] font-bold text-muted-2">{t.cap} {L('personas', 'people')}</span>
+                    </span>
                   </span>
                 </button>
               );
@@ -211,6 +217,7 @@ export function EventosScreen() {
   const [seatTaken, setSeatTaken] = useState<string[]>([]);
   const [seatOpen, setSeatOpen] = useState(false);
   const [evReviews, setEvReviews] = useState<EventReview[] | null>(null);
+  const [addonSel, setAddonSel] = useState<string[]>([]); // chosen OPTIONAL package ids
   const flash = (m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(''), 2200);
@@ -323,7 +330,7 @@ export function EventosScreen() {
     let cancelled = false;
     setPub(null); setPubLoading(true);
     fetchEventBySlug(detailSlug).then((p) => { if (!cancelled) { setPub(p); setPubLoading(false); } });
-    setSeatSel([]); setSeatTaken([]); setEvReviews(null);
+    setSeatSel([]); setSeatTaken([]); setEvReviews(null); setAddonSel([]);
     void fetchSeatClaims(detailSlug).then((s) => { if (!cancelled) setSeatTaken(s); });
     void fetchEventReviews(detailSlug).then((r) => { if (!cancelled) setEvReviews(r); });
     return () => { cancelled = true; };
@@ -376,10 +383,19 @@ export function EventosScreen() {
   const needsSeats = seatedQty > 0 && !!pub?.seating;
   const seatsOk = !needsSeats
     || (seatingType === 'tables' ? seatSel.length === 1 : seatSel.length === seatedQty);
+  // Table packages / add-ons (0115): applicable when scope matches; required are
+  // always charged, optional only when the buyer picks them. Server re-prices.
+  const applicableAddons = (pub?.addons ?? []).filter((a) => a.applyTo === 'all' || (a.applyTo === 'seated' && seatedQty > 0));
+  const chosenAddons = applicableAddons.filter((a) => a.required || addonSel.includes(a.id));
+  const addonTotal = chosenAddons.reduce((s, a) => s + a.price, 0);
+  const toggleAddon = (id: string) => setAddonSel((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
   // Paid tickets whose organizer has connected Stripe → charge online (card).
   // The buyer pays orderTotal + a 5% service fee (matches what Stripe charges).
-  const payOnline = anyPaid && !!pub?.acceptsPayments;
-  const onlineCharge = +(orderTotal * 1.05).toFixed(2);
+  // Add-ons make an otherwise-free order paid; charge online when the organizer takes cards.
+  const orderHasCost = anyPaid || addonTotal > 0;
+  const payOnline = orderHasCost && !!pub?.acceptsPayments;
+  const onlineCharge = +(((orderTotal + addonTotal) * 1.05)).toFixed(2);
+  const cashTotal = +((netTotal + addonTotal)).toFixed(2);
 
   // "Voy" toggle. Live events (with a slug) write attendance via the API — never
   // as a guest (route to /entrar). Fixture events (no slug) keep the local demo
@@ -425,6 +441,8 @@ export function EventosScreen() {
     if (needsSeats && !seatsOk) { setSeatOpen(true); return; }
     const items = selectedTiers.map((t) => ({ tierId: t.id, qty: tierQty[t.id] ?? 0 }));
     const seats = needsSeats ? seatSel : undefined;
+    // Only the chosen OPTIONAL ids — the server always adds required packages.
+    const addonIds = applicableAddons.filter((a) => !a.required && addonSel.includes(a.id)).map((a) => a.id);
 
     // Paid tickets → charge the buyer's card inside OUR own branded sheet (checkout
     // propio SIEMPRE — never Stripe's hosted page). Destination charge to the
@@ -432,7 +450,7 @@ export function EventosScreen() {
     // the webhook once payment succeeds. Free tiers keep the instant-issue path.
     if (payOnline) {
       setBuying(true);
-      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({ kind: 'ticket', slug: pub.slug, items, promo: promoApplied || undefined, seats });
+      const { clientSecret, pendingId, amount, error } = await startMarketplacePayment({ kind: 'ticket', slug: pub.slug, items, promo: promoApplied || undefined, seats, addonIds });
       setBuying(false);
       if (clientSecret && pendingId) {
         setCheckout({ clientSecret, pendingId, amount: amount ?? 0, returnPath: typeof window !== 'undefined' ? window.location.pathname : '/eventos/' });
@@ -450,7 +468,7 @@ export function EventosScreen() {
     }
 
     setBuying(true);
-    const { error, codes, tickets } = await act.buyTicketsMulti(pub.slug, items, promoApplied || undefined, seats);
+    const { error, codes, tickets } = await act.buyTicketsMulti(pub.slug, items, promoApplied || undefined, seats, addonIds);
     setBuying(false);
     if (error) {
       if (/seat taken/i.test(error)) { reloadSeats(); setSeatSel([]); setSeatOpen(true); flash(L('Un asiento se acaba de ocupar. Elige otro.', 'A seat was just taken. Pick another.')); return; }
@@ -959,16 +977,47 @@ export function EventosScreen() {
                   <div className="mt-2.5 flex flex-col gap-1 rounded-field bg-lilac-2 px-3.5 py-2 text-[12.5px] font-bold text-ink-2">
                     <div className="flex items-center justify-between">
                       <span>{orderQty} {orderQty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}</span>
-                      {anyPaid ? (
+                      {orderHasCost ? (
                         <span className="flex items-center gap-1.5">
-                          {discountAmount > 0 && <span className="text-[11px] font-semibold text-muted-2 line-through">${orderTotal.toFixed(2)}</span>}
-                          <span className="text-[14px] font-extrabold text-ink">${netTotal.toFixed(2)}</span>
+                          {discountAmount > 0 && <span className="text-[11px] font-semibold text-muted-2 line-through">${(orderTotal + addonTotal).toFixed(2)}</span>}
+                          <span className="text-[14px] font-extrabold text-ink">${cashTotal.toFixed(2)}</span>
                         </span>
                       ) : (
                         <span className="text-[14px] font-extrabold text-ink">{L('Gratis', 'Free')}</span>
                       )}
                     </div>
+                    {chosenAddons.map((a) => (
+                      <div key={a.id} className="flex items-center justify-between text-[10.5px] font-bold text-muted">
+                        <span>+ {L(a.es, a.en)}{a.required ? ` · ${L('incluido', 'included')}` : ''}</span>
+                        <span>${a.price.toFixed(2)}</span>
+                      </div>
+                    ))}
                     {discountAmount > 0 && <div className="text-[10.5px] font-bold text-green-dark">{L('Descuento aplicado', 'Discount applied')} · −${discountAmount.toFixed(2)}</div>}
+                  </div>
+                )}
+
+                {/* Table packages / add-ons (0115) — required shown as included, optional toggleable */}
+                {applicableAddons.length > 0 && orderQty > 0 && (
+                  <div className="mt-2.5 flex flex-col gap-1.5">
+                    <div className="text-[11px] font-extrabold uppercase tracking-[.04em] text-muted-2">{L('Paquetes', 'Packages')}</div>
+                    {applicableAddons.map((a) => {
+                      const on = a.required || addonSel.includes(a.id);
+                      return (
+                        <button
+                          key={a.id} onClick={() => !a.required && toggleAddon(a.id)} disabled={a.required}
+                          className={`flex items-center gap-2.5 rounded-field border-[1.5px] px-3 py-2 text-left ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'} ${a.required ? 'cursor-default' : 'cursor-pointer'}`}
+                        >
+                          <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-md ${on ? 'bg-primary' : 'border-[1.5px] border-lilac-line bg-white'}`}>
+                            {on && <Check size={12} stroke={3} className="text-white" />}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-[12px] font-extrabold text-ink">{L(a.es, a.en)}{a.required && <span className="ml-1 rounded bg-amber-bg px-1 py-px text-[8.5px] font-extrabold text-amber-ink">{L('Obligatorio', 'Required')}</span>}</span>
+                            {(a.descEs || a.descEn) && <span className="block truncate text-[10.5px] font-medium text-muted-2">{L(a.descEs ?? '', a.descEn ?? a.descEs ?? '')}</span>}
+                          </span>
+                          <span className="flex-none text-[12px] font-extrabold text-ink">${a.price.toFixed(2)}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -994,9 +1043,9 @@ export function EventosScreen() {
                 )}
 
                 <PrimaryBtn className="mt-3" disabled={buying || orderQty === 0 || cancelled || eventPast} onClick={buyNow}>
-                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : (needsSeats && !seatsOk) ? (seatingType === 'tables' ? L('Elige tu mesa', 'Pick your table') : L('Elige tus asientos', 'Pick your seats')) : payOnline ? `${L('Pagar', 'Pay')} ${orderQty} · $${onlineCharge.toFixed(2)}` : anyPaid ? `${L('Reservar', 'Reserve')} ${orderQty} · $${netTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
+                  {cancelled ? L('Evento cancelado', 'Event cancelled') : eventPast ? L('Evento terminado', 'Event ended') : buying ? L('Procesando…', 'Processing…') : orderQty === 0 ? L('Elige tus boletos', 'Pick your tickets') : (needsSeats && !seatsOk) ? (seatingType === 'tables' ? L('Elige tu mesa', 'Pick your table') : L('Elige tus asientos', 'Pick your seats')) : payOnline ? `${L('Pagar', 'Pay')} ${orderQty} · $${onlineCharge.toFixed(2)}` : orderHasCost ? `${L('Reservar', 'Reserve')} ${orderQty} · $${cashTotal.toFixed(2)}` : `${L('Obtener', 'Get')} ${orderQty}`}
                 </PrimaryBtn>
-                {anyPaid && (
+                {orderHasCost && (
                   <div className="mt-1.5 text-center text-[10.5px] font-semibold text-muted-2">
                     {payOnline
                       ? L('Pago seguro con tarjeta · incluye 5% de tarifa de servicio.', 'Secure card payment · includes a 5% service fee.')

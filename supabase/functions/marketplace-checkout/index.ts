@@ -468,7 +468,7 @@ Deno.serve(async (req) => {
       const want = items.map((i: Record<string, unknown>) => ({ tierId: String(i.tierId ?? i.tier_id ?? ''), qty: Math.max(1, Math.min(10, Math.floor(Number(i.qty ?? 1)))) })).filter((i) => i.tierId);
       if (want.length === 0) return json({ error: 'no tickets selected' }, 400);
       const ids = want.map((w) => w.tierId).join(',');
-      const tiers = (await get(`event_tiers?event_id=eq.${ev.id}&id=in.(${ids})&select=id,price`)) as { id: string; price: number }[];
+      const tiers = (await get(`event_tiers?event_id=eq.${ev.id}&id=in.(${ids})&select=id,price,seat`)) as { id: string; price: number; seat?: boolean }[];
       const priceOf = new Map(tiers.map((t) => [t.id, Number(t.price)]));
       if (want.some((w) => !priceOf.has(w.tierId))) return json({ error: 'tier not found' }, 400);
       subtotal = want.reduce((a, w) => a + (priceOf.get(w.tierId) ?? 0) * w.qty, 0);
@@ -507,6 +507,7 @@ Deno.serve(async (req) => {
       // seats so the buyer never pays for a seat someone just took. The authority
       // stays in _issue_tickets_multi's unique claim at issuance (webhook) — if a
       // race slips past this check, issuance fails and the webhook auto-refunds.
+      let seatedPicked = false;
       if (Array.isArray(body?.seats) && body.seats.length > 0) {
         const seats = (body.seats as unknown[]).map((s) => String(s).trim().toUpperCase())
           .filter((s) => /^[A-Z]?T?[0-9]{1,3}$|^[A-Z][0-9]{1,2}$/.test(s)).slice(0, 10);
@@ -515,8 +516,25 @@ Deno.serve(async (req) => {
           if (Array.isArray(taken) && taken.length > 0) {
             return json({ error: 'seat_taken', seats: taken.map((t) => t.seat) }, 409);
           }
-          payload = { ...payload, seats };
+          payload = { ...payload, seats }; seatedPicked = true;
         }
+      }
+
+      // Table PACKAGES / add-ons (0115): re-price server-side via the resolver RPC
+      // (required ones always, optional only if the buyer chose them) — a required
+      // package the venue mandates gets added even if the client omits it, and a
+      // tampered price can't take effect. The resolved total is added to the charge
+      // and the list is stashed so the webhook stamps it on the seated ticket.
+      const seatedTierPicked = seatedPicked || want.some((w) => {
+        const t = (tiers as { id: string; seat?: boolean }[]).find((x) => x.id === w.tierId); return t?.seat === true;
+      });
+      const addonIds = Array.isArray(body?.addonIds) ? (body.addonIds as unknown[]).map(String).slice(0, 20) : [];
+      const resolved = (await rpcGet('resolve_event_addons', { in_ev: ev.id, in_seated: seatedTierPicked, in_ids: addonIds })) as
+        { id: string; es: string; en: string; price: number; required: boolean }[];
+      if (Array.isArray(resolved) && resolved.length > 0) {
+        const addonTotal = resolved.reduce((a, x) => a + (Number(x.price) || 0), 0);
+        subtotal += addonTotal;                       // buyer pays the package(s) too
+        payload = { ...payload, addons: resolved };   // webhook stamps these on the ticket
       }
     }
 

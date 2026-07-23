@@ -75,15 +75,24 @@ const EMPTY_EVENT: EventRow = {
   tile: '#EFEBFF 0 9px,#E5DEF9 9px 18px', status: ['', ''], statusBg: '#E3F5EA', statusC: '#1F8A4C',
 };
 type Attendee = { initials: string; color: string; name: string; tier: string; tierBg: string; tierC: string; diet: string; base: boolean };
-type EventTierDraft = { id: string; name: string; price: string; capacity: string };
+type EventTierDraft = { id: string; name: string; price: string; capacity: string; seat?: boolean };
+type TableDraft = { id: string; cap: string; photo: string };
+type AddonDraft = { id: string; es: string; price: string; required: boolean; seatedOnly: boolean };
 type EventDraft = {
   name: string; desc: string; cat: string; coverUrl: string;
   date: string; startTime: string; endTime: string; online: boolean;
   venue: string; lat: number | null; lng: number | null;
   tiers: EventTierDraft[]; vis: string;
+  // Seating (0113/0115): 'none' = general admission; 'seats' = numbered grid;
+  // 'tables' = a list of tables (each with capacity + optional photo).
+  seating: 'none' | 'seats' | 'tables'; seatRows: string; seatCols: string; tables: TableDraft[];
+  addons: AddonDraft[];              // table packages (optional / mandatory)
+  age: string; includes: string;    // key detail extras (attrs)
 };
 let tierSeq = 0;
 const nextTid = () => 't' + (++tierSeq);
+let subSeq = 0;
+const nextSub = () => 's' + (++subSeq);
 
 export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const { L, es, isFree, isPremium, ci } = ctx;
@@ -1225,9 +1234,22 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     catch { flash(L('No se pudo subir la foto.', "Couldn't upload the photo.")); }
     setCoverBusy(false);
   };
-  const addTier = () => upD({ tiers: [...draft.tiers, { id: nextTid(), name: '', price: '', capacity: '' }] });
+  const addTier = () => upD({ tiers: [...draft.tiers, { id: nextTid(), name: '', price: '', capacity: '', seat: false }] });
   const setTierField = (id: string, patch: Partial<EventTierDraft>) => upD({ tiers: draft.tiers.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
   const removeTier = (id: string) => { if (draft.tiers.length > 1) upD({ tiers: draft.tiers.filter((t) => t.id !== id) }); };
+  // Tables + packages (0113/0115)
+  const addTable = () => upD({ tables: [...draft.tables, { id: nextSub(), cap: '4', photo: '' }] });
+  const setTable = (id: string, patch: Partial<TableDraft>) => upD({ tables: draft.tables.map((t) => (t.id === id ? { ...t, ...patch } : t)) });
+  const removeTable = (id: string) => upD({ tables: draft.tables.filter((t) => t.id !== id) });
+  const tablePhotoRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const uploadTablePhoto = async (id: string, file: File | undefined) => {
+    if (!file) return;
+    try { const url = !persistable || !user || !supabase ? URL.createObjectURL(file) : await uploadImage(file, user.id, 900); setTable(id, { photo: url }); }
+    catch { flash(L('No se pudo subir la foto', 'Could not upload the photo')); }
+  };
+  const addAddon = () => upD({ addons: [...draft.addons, { id: nextSub(), es: '', price: '', required: false, seatedOnly: draft.seating !== 'none' }] });
+  const setAddon = (id: string, patch: Partial<AddonDraft>) => upD({ addons: draft.addons.map((a) => (a.id === id ? { ...a, ...patch } : a)) });
+  const removeAddon = (id: string) => upD({ addons: draft.addons.filter((a) => a.id !== id) });
   const to12h = (hhmm: string) => { if (!hhmm) return ''; const [h, m] = hhmm.split(':').map(Number); if (isNaN(h)) return ''; const ap = h >= 12 ? 'pm' : 'am'; return `${h % 12 || 12}:${String(m ?? 0).padStart(2, '0')} ${ap}`; };
   const wizTimeLabel = draft.startTime ? (draft.endTime ? `${to12h(draft.startTime)} – ${to12h(draft.endTime)}` : to12h(draft.startTime)) : '';
   const wizCat = EVENT_CAT_BY_ID[draft.cat] ?? EVENT_CATS[0];
@@ -1345,9 +1367,83 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <input value={t.capacity} onChange={(e) => setTierField(t.id, { capacity: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="∞" className={fieldCls} />
             </div>
           </div>
+          {draft.seating !== 'none' && (
+            <button onClick={() => setTierField(t.id, { seat: !t.seat })} className="mt-2 flex w-full items-center gap-2 rounded-field bg-lilac-2 px-3 py-2 text-left">
+              <span className={`relative h-[22px] w-[38px] flex-none rounded-full transition-colors ${t.seat ? 'bg-primary' : 'bg-muted-faint'}`}><span className="absolute top-[3px] h-4 w-4 rounded-full bg-white transition-all" style={{ left: t.seat ? 19 : 3 }} /></span>
+              <span className="text-[11.5px] font-extrabold text-ink">{draft.seating === 'tables' ? L('Requiere elegir mesa', 'Requires a table') : L('Requiere elegir asiento', 'Requires a seat')}</span>
+            </button>
+          )}
         </div>
       ))}
       <button onClick={addTier} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-3 text-[12.5px] font-extrabold text-primary-dark">+ {L('Agregar otro nivel', 'Add another tier')}</button>
+
+      {/* ── Asientos y mesas (0113/0115) ── */}
+      <div className="mt-2 border-t border-hair pt-3">
+        <div className="mb-1.5 text-[12.5px] font-extrabold text-ink">{L('Asientos', 'Seating')}</div>
+        <div className="flex gap-2">
+          {([['none', L('General', 'General')], ['seats', L('Asientos', 'Numbered')], ['tables', L('Mesas', 'Tables')]] as const).map(([k, lab]) => (
+            <button key={k} onClick={() => upD({ seating: k })} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[11.5px] font-extrabold ${draft.seating === k ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{lab}</button>
+          ))}
+        </div>
+
+        {draft.seating === 'seats' && (
+          <div className="mt-2.5 flex gap-2">
+            <div className="flex-1"><label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Filas', 'Rows')}</label><input value={draft.seatRows} onChange={(e) => upD({ seatRows: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" className={fieldCls} /></div>
+            <div className="flex-1"><label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Asientos por fila', 'Seats per row')}</label><input value={draft.seatCols} onChange={(e) => upD({ seatCols: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" className={fieldCls} /></div>
+          </div>
+        )}
+
+        {draft.seating === 'tables' && (
+          <div className="mt-2.5 flex flex-col gap-2">
+            {draft.tables.map((t, i) => (
+              <div key={t.id} className="flex items-center gap-2.5 rounded-btn-lg border border-hair bg-white p-2.5">
+                <button onClick={() => tablePhotoRefs.current[t.id]?.click()} className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={t.photo ? { backgroundImage: `url(${t.photo})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
+                  {!t.photo && <ImagePlus size={16} stroke={2} className="text-primary-dark" />}
+                </button>
+                <input ref={(el) => { tablePhotoRefs.current[t.id] = el; }} type="file" accept="image/*" hidden onChange={(e) => uploadTablePhoto(t.id, e.target.files?.[0])} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11.5px] font-extrabold text-ink">{L('Mesa', 'Table')} {i + 1}</div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <label className="text-[10px] font-bold text-muted-2">{L('Personas', 'Seats')}</label>
+                    <input value={t.cap} onChange={(e) => setTable(t.id, { cap: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" className="w-16 rounded-field border-[1.5px] border-lilac-line bg-white px-2 py-1.5 text-[12px] font-bold text-ink outline-none focus:border-primary" />
+                    <span className="text-[9.5px] font-semibold text-muted-2">{t.photo ? L('· foto lista', '· photo set') : L('· toca la foto', '· tap photo')}</span>
+                  </div>
+                </div>
+                <button onClick={() => removeTable(t.id)} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Quitar', 'Remove')}><Trash2 size={15} stroke={2} /></button>
+              </div>
+            ))}
+            <button onClick={addTable} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar mesa', 'Add table')}</button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Paquetes / complementos (0115) ── */}
+      <div className="mt-2 border-t border-hair pt-3">
+        <div className="mb-0.5 text-[12.5px] font-extrabold text-ink">{L('Paquetes', 'Packages')}</div>
+        <p className="mb-2 text-[11px] font-medium leading-relaxed text-muted">{L('Complementos como “paquete de botella” para mesas. Márcalo obligatorio si es requisito para reservar.', 'Extras like a “bottle package” for tables. Mark it required if it’s a must to reserve.')}</p>
+        {draft.addons.map((a) => (
+          <div key={a.id} className="mb-2 rounded-btn-lg border border-hair bg-white p-3">
+            <div className="flex gap-2">
+              <input value={a.es} onChange={(e) => setAddon(a.id, { es: e.target.value })} placeholder={L('Ej. Paquete botella', 'e.g. Bottle package')} className={`${fieldCls} flex-1`} />
+              <input value={a.price} onChange={(e) => setAddon(a.id, { price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="$" className={`${fieldCls} w-24`} />
+              <button onClick={() => removeAddon(a.id)} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Quitar', 'Remove')}><Trash2 size={15} stroke={2} /></button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button onClick={() => setAddon(a.id, { required: !a.required })} className={`rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${a.required ? 'bg-amber-bg text-amber-ink' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.required ? L('✓ Obligatorio', '✓ Required') : L('Obligatorio', 'Required')}</button>
+              <button onClick={() => setAddon(a.id, { seatedOnly: !a.seatedOnly })} className={`rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${a.seatedOnly ? 'bg-lilac text-primary-dark' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.seatedOnly ? L('✓ Solo mesas/asientos', '✓ Seated only') : L('Solo mesas/asientos', 'Seated only')}</button>
+            </div>
+          </div>
+        ))}
+        <button onClick={addAddon} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar paquete', 'Add package')}</button>
+      </div>
+
+      {/* ── Detalles opcionales ── */}
+      <div className="mt-2 border-t border-hair pt-3">
+        <div className="flex gap-2">
+          <div className="flex-1"><label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Edad', 'Age')}</label><input value={draft.age} onChange={(e) => upD({ age: e.target.value })} placeholder={L('Ej. +21', 'e.g. 21+')} className={fieldCls} /></div>
+          <div className="flex-1"><label className="mb-1 block text-[10px] font-bold text-muted-2">{L('Incluye', 'Includes')}</label><input value={draft.includes} onChange={(e) => upD({ includes: e.target.value })} placeholder={L('Ej. Cover y show', 'e.g. Cover & show')} className={fieldCls} /></div>
+        </div>
+      </div>
     </div>
   );
 
@@ -1396,7 +1492,22 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const sd = new Date(startsAt);
     const tiers = draft.tiers
       .filter((t) => t.name.trim())
-      .map((t) => ({ name: t.name.trim(), price: Number(t.price) || 0, capacity: t.capacity.trim() }));
+      .map((t) => ({ name: t.name.trim(), price: Number(t.price) || 0, capacity: t.capacity.trim(), seat: draft.seating !== 'none' && !!t.seat }));
+    // Seating map (0113/0115): tables carry capacity + optional photo; seats a grid.
+    const seatingJson = draft.seating === 'tables'
+      ? { type: 'tables', tables: draft.tables.filter((t) => Number(t.cap) > 0).map((t, i) => ({ n: i + 1, cap: Number(t.cap), ...(t.photo ? { photo: t.photo } : {}) })) }
+      : draft.seating === 'seats'
+        ? { type: 'seats', rows: Math.max(1, Math.min(20, Number(draft.seatRows) || 6)), cols: Math.max(1, Math.min(20, Number(draft.seatCols) || 9)) }
+        : null;
+    // Packages / add-ons (0115): required = mandatory; seatedOnly → applyTo 'seated'.
+    const addonsJson = draft.addons.filter((a) => a.es.trim()).map((a) => ({
+      id: a.id, es: a.es.trim(), en: a.es.trim(), price: Number(a.price) || 0,
+      required: a.required, applyTo: a.seatedOnly ? 'seated' : 'all',
+    }));
+    const attrsJson = {
+      ...(draft.age.trim() ? { age_es: draft.age.trim(), age_en: draft.age.trim() } : {}),
+      ...(draft.includes.trim() ? { includes_es: draft.includes.trim(), includes_en: draft.includes.trim() } : {}),
+    };
     const paid = tiers.map((t) => t.price).filter((p) => p > 0);
     const priceLabel = paid.length ? '$' + Math.min(...paid) : null;
     const local: EventRow = {
@@ -1433,6 +1544,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           p_tile_a: wizCat.tile[0],
           p_tile_b: wizCat.tile[1],
           p_tiers: tiers,
+          p_seating: seatingJson,
+          p_attrs: attrsJson,
+          p_addons: addonsJson,
         });
         // Reconcile with the DB truth (real slug/id/going_count; backfills dbId).
         if (!error) { const rows = await fetchEvents(user.id); setEvents(rows); }
@@ -1574,6 +1688,7 @@ function newDraft(): EventDraft {
     name: '', desc: '', cat: 'musica', coverUrl: '',
     date: '', startTime: '', endTime: '', online: false,
     venue: '', lat: null, lng: null,
-    tiers: [{ id: nextTid(), name: 'Entrada general', price: '', capacity: '' }], vis: 'public',
+    tiers: [{ id: nextTid(), name: 'Entrada general', price: '', capacity: '', seat: false }], vis: 'public',
+    seating: 'none', seatRows: '6', seatCols: '9', tables: [], addons: [], age: '', includes: '',
   };
 }

@@ -64,7 +64,7 @@ type Ctx = {
   // trigger, 0095) — the confirmation UI must show this, never a config guess.
   book: (businessSlug: string, serviceName: string, serviceId: string | null, startsAt: string, partySize: number | null, deposit: number | null, extra?: BookingExtra) => Promise<{ error: string | null; status?: string | null }>;
   buyTickets: (eventSlug: string, tierId: string, qty: number) => Promise<{ error: string | null; code?: string }>;
-  buyTicketsMulti: (eventSlug: string, items: { tierId: string; qty: number }[], promo?: string, seats?: string[]) => Promise<{ error: string | null; codes?: string[]; tickets?: { code: string; tierId: string }[] }>;
+  buyTicketsMulti: (eventSlug: string, items: { tierId: string; qty: number }[], promo?: string, seats?: string[], addonIds?: string[]) => Promise<{ error: string | null; codes?: string[]; tickets?: { code: string; tierId: string }[] }>;
   waitlist: MyWaitlist[];
   waitlistTierIds: Set<string>;
   joinWaitlist: (eventSlug: string, tierId: string | null) => Promise<{ error: string | null }>;
@@ -205,10 +205,10 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
   // Atomic multi-tier purchase via buy_event_tickets_multi (migration 0064): one
   // all-or-nothing order across every selected tier (no partial order if a later
   // tier sold out). Returns the codes + per-ticket tier so the UI can label each.
-  const buyTicketsMulti = useCallback<Ctx['buyTicketsMulti']>(async (eventSlug, items, promo, seats) => {
+  const buyTicketsMulti = useCallback<Ctx['buyTicketsMulti']>(async (eventSlug, items, promo, seats, addonIds) => {
     if (!supabase || !user) return { error: 'auth' };
     try {
-      const rows = await buyEventTicketsMulti(eventSlug, items, promo, seats);
+      const rows = await buyEventTicketsMulti(eventSlug, items, promo, seats, addonIds);
       refresh();
       return { error: null, codes: rows.map((r) => r.code), tickets: rows.map((r) => ({ code: r.code, tierId: r.tierId })) };
     } catch (e) {
