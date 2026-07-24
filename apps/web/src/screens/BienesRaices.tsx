@@ -1089,7 +1089,7 @@ export function BienesRaicesScreen() {
 
               {/* list */}
               {results == null ? (
-                <SkeletonList count={6} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" />
+                <SkeletonList count={6} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" />
               ) : results.length === 0 ? (
                 <Card className="p-10 text-center">
                   {filtered ? (
@@ -1111,7 +1111,7 @@ export function BienesRaicesScreen() {
                 </Card>
               ) : (
                 <>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{listCards.map(cardV)}</div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">{listCards.map(cardV)}</div>
                   {hasMore && (
                     <button
                       onClick={() => void loadMore()}
