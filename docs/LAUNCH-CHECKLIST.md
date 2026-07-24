@@ -1648,3 +1648,28 @@ Deferred (de pago, después):
   agente lo captura manual (ya es real por propiedad).
 - [ ] Cotización de seguro real (API de aseguradora) y pre-aprobación con
   prestamista aliado (canal de ingreso).
+
+### Autos / Dealer de carros — vertical nueva (2026-07-24)
+Diseño elegido: base Z1 "Auto Flow" (el más rico) + injertos de Design A
+(vender particular, Equipo). Migración 0119 aplicada (vehicles/vehicle_leads/
+tests/saves, PostGIS+FTS+RLS, 7 RPCs, auto_config, categoría CarDealer).
+- [x] Cliente /autos: descubrir (BHPH/ITIN toggle), detalle + historial,
+  calculadora de financiamiento, pre-calificación 3 pasos (sin SSN/ITIN → lead
+  prequal + pre-aprobado por crédito), prueba de manejo, comparar (3), trade-in,
+  vender mi carro, guardados ♥, mapa MapLibre, directorio de dealers.
+- [x] Panel del dealer (módulo vehiculos): inventario + estados, wizard 4 pasos
+  con BHPH + geocodificación, leads pipeline, financiamiento (prequal), agenda
+  de pruebas, Equipo (auto_config.team), gate de licencia, demo-mode honesto.
+- [x] Registro: onboarding existente + categoría CarDealer (dealer/particular).
+- [x] Seeds: 4 dealers (Hazleton/Bronx, pago+free, logins a@auto2/b@auto2/
+  a@auto3/b@auto3 pass 123), 16 vehículos, leads con pre-cal, pruebas.
+- [x] Pestaña Vehículos en BizDetail (gating módulo+contenido).
+Deferred (de pago, después):
+- [ ] **Historial real del vehículo** (Carfax/AutoCheck API) — hoy el dealer
+  captura el historial (título limpio/accidentes/dueños) manual, ya es real por
+  auto. Integrar proveedor cuando haya presupuesto.
+- [ ] **Pre-calificación real** (underwriting con prestamista/bureau soft-pull)
+  — hoy es estimado ilustrativo por crédito auto-reportado, claramente
+  etiquetado; sin SSN. Integrar prestamista aliado (canal de ingreso).
+- [ ] **Valor de trade-in real** (KBB/Black Book API) — hoy fórmula del handoff.
+- [ ] **Fotos reales** — placeholders rayados hasta que suban.
