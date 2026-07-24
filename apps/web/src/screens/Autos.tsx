@@ -447,7 +447,7 @@ export function AutosScreen() {
 
   const onVenderPhotos = (files: FileList | null) => {
     if (!files || !vender) return;
-    const room = 6 - vender.photos.length;
+    const room = 12 - vender.photos.length;
     const urls = Array.from(files).slice(0, Math.max(0, room)).map((f) => URL.createObjectURL(f));
     setVender({ ...vender, photos: [...vender.photos, ...urls].slice(0, 6) });
   };
@@ -683,10 +683,30 @@ export function AutosScreen() {
                 </button>
                 {heartBtn(d, 'h-10 w-10', 17)}
               </div>
+              {/* prev/next arrows + counter (CarGurus-style) when there are multiple photos */}
               {d.photos.length > 1 && (
-                <div className="no-scrollbar absolute bottom-3 left-3.5 right-3.5 flex gap-2 overflow-x-auto">
+                <>
+                  <button onClick={() => setGi((i) => (i - 1 + d.photos.length) % d.photos.length)} aria-label={L('Anterior', 'Previous')} className="absolute left-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-card backdrop-blur">
+                    <ChevronLeft size={18} stroke={2.6} className="text-ink" />
+                  </button>
+                  <button onClick={() => setGi((i) => (i + 1) % d.photos.length)} aria-label={L('Siguiente', 'Next')} className="absolute right-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-card backdrop-blur">
+                    <ChevronRight size={18} stroke={2.6} className="text-ink" />
+                  </button>
+                </>
+              )}
+              {d.photos.length > 0 ? (
+                <span className="absolute bottom-3 right-3.5 flex items-center gap-1 rounded-full bg-[rgba(30,27,46,.66)] px-2.5 py-1 text-[11px] font-extrabold text-white backdrop-blur">
+                  <Camera size={12} stroke={2.4} /> {gi + 1} / {d.photos.length}
+                </span>
+              ) : (
+                <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-bold text-muted-2 shadow-card backdrop-blur">
+                  <Camera size={13} stroke={2.2} /> {L('Fotos en camino — pídelas al vendedor', 'Photos coming — ask the seller')}
+                </span>
+              )}
+              {d.photos.length > 1 && (
+                <div className="no-scrollbar absolute bottom-3 left-3.5 flex max-w-[calc(100%-90px)] gap-2 overflow-x-auto">
                   {d.photos.map((ph, i) => (
-                    <button key={i} onClick={() => setGi(i)} aria-label={`${L('Foto', 'Photo')} ${i + 1}`} className={`h-[46px] w-[46px] flex-none cursor-pointer rounded-[10px] border-2 bg-cover bg-center ${i === gi ? 'border-primary' : 'border-white'}`} style={{ backgroundImage: `url(${ph})` }} />
+                    <button key={i} onClick={() => setGi(i)} aria-label={`${L('Foto', 'Photo')} ${i + 1}`} className={`h-[46px] w-[46px] flex-none cursor-pointer rounded-[10px] border-2 bg-cover bg-center ${i === gi ? 'border-primary' : 'border-white'}`} style={{ backgroundImage: `url("${ph}")` }} />
                   ))}
                 </div>
               )}
@@ -1561,12 +1581,12 @@ export function AutosScreen() {
                   <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Fotos', 'Photos')}</div>
                   <div className="grid grid-cols-3 gap-2">
                     {vender.photos.map((ph, i) => (
-                      <div key={i} className="relative aspect-square overflow-hidden rounded-tile bg-cover bg-center" style={{ backgroundImage: `url(${ph})` }}>
+                      <div key={i} className="relative aspect-square overflow-hidden rounded-tile bg-cover bg-center" style={{ backgroundImage: `url("${ph}")` }}>
                         <button onClick={() => setVender({ ...vender, photos: vender.photos.filter((_, j) => j !== i) })} aria-label={L('Quitar', 'Remove')} className="absolute right-1 top-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-[rgba(30,27,46,.6)]"><XIcon size={12} stroke={2.6} className="text-white" /></button>
                         {i === 0 && <span className="absolute bottom-1 left-1 rounded bg-ink px-1.5 py-0.5 text-[8px] font-extrabold text-white">{L('Portada', 'Cover')}</span>}
                       </div>
                     ))}
-                    {vender.photos.length < 6 && (
+                    {vender.photos.length < 12 && (
                       <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-white text-muted-2">
                         <Camera size={20} stroke={2} /><span className="text-[9.5px] font-extrabold">{L('Agregar', 'Add')}</span>
                         <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => onVenderPhotos(e.target.files)} />
@@ -1657,6 +1677,6 @@ export function AutosScreen() {
 // ── striped category placeholder (design-system rule) unless a real photo exists ──
 function tileBg(cond: AuCond, photo?: string | null): CSSProperties {
   return photo
-    ? { background: `center/cover url(${photo})` }
+    ? { background: `center/cover url("${photo}")` }
     : { background: `repeating-linear-gradient(135deg,${AU_TILE[cond][0]} 0 11px,${AU_TILE[cond][1]} 11px 22px)` };
 }

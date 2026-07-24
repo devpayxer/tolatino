@@ -2834,7 +2834,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <span
                 className="block h-[120px] w-full"
                 style={pr.photos[0]
-                  ? { backgroundImage: `url(${pr.photos[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  ? { backgroundImage: `url("${pr.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
                   : { background: `repeating-linear-gradient(135deg,${RE_TILE[pr.deal][0]} 0 11px,${RE_TILE[pr.deal][1]} 11px 22px)` }}
               />
               <span className="block p-3.5">
@@ -2863,7 +2863,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <span
                 className="block h-[120px] w-full"
                 style={v.photos[0]
-                  ? { backgroundImage: `url(${v.photos[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  ? { backgroundImage: `url("${v.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
                   : { background: `repeating-linear-gradient(135deg,${AU_TILE[v.cond][0]} 0 11px,${AU_TILE[v.cond][1]} 11px 22px)` }}
               />
               <span className="block p-3.5">
