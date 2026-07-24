@@ -381,7 +381,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
   const thumbStyle = (p: MyProp) =>
     p.photos[0]
-      ? { backgroundImage: `url(${p.photos[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+      ? { backgroundImage: `url("${p.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
       : { background: tileBg(p.deal) };
 
   // ==================================================================
@@ -458,7 +458,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const addPhotos = async (files: FileList | null) => {
     if (!files || photoBusy) return;
-    const remaining = 6 - draft.photos.length;
+    const remaining = 12 - draft.photos.length;
     const picked = Array.from(files).filter((f) => f.type.startsWith('image/')).slice(0, Math.max(0, remaining));
     if (!picked.length) return;
     setPhotoBusy(true);
@@ -467,7 +467,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       for (const f of picked) {
         urls.push(!persistable || !user || !supabase ? URL.createObjectURL(f) : await uploadImage(f, user.id, 1600));
       }
-      setDraft((d) => ({ ...d, photos: [...d.photos, ...urls].slice(0, 6) }));
+      setDraft((d) => ({ ...d, photos: [...d.photos, ...urls].slice(0, 12) }));
     } catch {
       flash(L('No se pudo subir la foto', "Couldn't upload the photo"));
     }
@@ -1414,18 +1414,18 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const wizStep2 = (
     <div className="flex flex-col gap-3">
-      <p className="text-[11px] font-medium leading-relaxed text-muted">{L('Agrega al menos 1 foto (máx. 6). La primera es la portada.', 'Add at least 1 photo (max 6). The first is the cover.')}</p>
+      <p className="text-[11px] font-medium leading-relaxed text-muted">{L('Agrega al menos 1 foto (máx. 12). La primera es la portada.', 'Add at least 1 photo (max 12). The first is the cover.')}</p>
       <input ref={photoInputRef} type="file" accept="image/*" multiple hidden onChange={(e) => { const f = e.target.files; void addPhotos(f); e.target.value = ''; }} />
       <div className="grid grid-cols-3 gap-2">
         {draft.photos.map((url, i) => (
-          <div key={url} className="relative aspect-square overflow-hidden rounded-tile border border-hair" style={{ backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div key={url} className="relative aspect-square overflow-hidden rounded-tile border border-hair" style={{ backgroundImage: `url("${url}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
             {i === 0 && <span className="absolute left-1.5 top-1.5 rounded bg-ink/70 px-1.5 py-0.5 text-[8.5px] font-extrabold text-white">{L('Portada', 'Cover')}</span>}
             <button onClick={() => removePhoto(url)} className="absolute right-1.5 top-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-ink/70 text-white" aria-label={L('Quitar foto', 'Remove photo')}>
               <Trash2 size={12} stroke={2.2} />
             </button>
           </div>
         ))}
-        {draft.photos.length < 6 && (
+        {draft.photos.length < 12 && (
           <button onClick={() => photoInputRef.current?.click()} disabled={photoBusy} className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 text-primary-dark disabled:opacity-60">
             <ImagePlus size={20} stroke={2} />
             <span className="text-[10px] font-extrabold">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Agregar foto', 'Add photo')}</span>
@@ -1447,7 +1447,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="flex flex-col gap-3.5">
       {/* live preview */}
       <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
-        <div className="relative h-[120px]" style={draft.photos[0] ? { backgroundImage: `url(${draft.photos[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.deal) }}>
+        <div className="relative h-[120px]" style={draft.photos[0] ? { backgroundImage: `url("${draft.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.deal) }}>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))' }} />
           <span className="absolute left-2.5 top-2.5 rounded-[7px] bg-white px-2 py-1 text-[9px] font-extrabold text-primary-dark">{dealLabel(draft.deal)}</span>
           <div className="absolute bottom-2.5 left-3 right-3">
@@ -1561,7 +1561,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
 
         <div className="mt-5 w-full max-w-[420px] overflow-hidden rounded-card-sm border border-hair bg-white text-left shadow-card">
-          <div className="relative h-[104px]" style={draft.photos[0] ? { backgroundImage: `url(${draft.photos[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.deal) }}>
+          <div className="relative h-[104px]" style={draft.photos[0] ? { backgroundImage: `url("${draft.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.deal) }}>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.45))' }} />
             <div className="absolute bottom-2.5 left-3 text-[15px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{draft.title.trim() || L('Propiedad', 'Listing')}</div>
           </div>

@@ -14,7 +14,7 @@ import type { Map as MlMap, Marker as MlMarker } from 'maplibre-gl';
 import {
   IconAdjustmentsHorizontal as Adjustments, IconBath as Bath, IconBed as Bed,
   IconBuildingEstate as BuildingEstate, IconCalculator as Calculator,
-  IconCalendarEvent as CalendarEvent, IconCheck as Check, IconChevronLeft as ChevronLeft,
+  IconCalendarEvent as CalendarEvent, IconCamera as Camera, IconCheck as Check, IconChevronLeft as ChevronLeft,
   IconChevronRight as ChevronRight, IconHeart as Heart, IconHeartFilled as HeartFilled,
   IconId as IdCard, IconInfoCircle as InfoCircle, IconMap as MapIcon, IconMapPin as MapPin,
   IconMessageCircle as MessageCircle, IconNavigation as Navigation, IconPhone as Phone,
@@ -96,7 +96,7 @@ const DEAL_TAG: Record<ReDeal, { cls: string; es: string; en: string }> = {
 /** Striped category placeholder (design-system rule) unless a real photo exists. */
 const tileBg = (deal: ReDeal, photo?: string | null): CSSProperties =>
   photo
-    ? { background: `center/cover url(${photo})` }
+    ? { background: `center/cover url("${photo}")` }
     : { background: `repeating-linear-gradient(135deg,${RE_TILE[deal][0]} 0 11px,${RE_TILE[deal][1]} 11px 22px)` };
 // OpenStreetMap directions (no Google billing, per the stack).
 const mapsUrl = (lat: number | null, lng: number | null, place: string) =>
@@ -760,15 +760,35 @@ export function BienesRaicesScreen() {
                 </button>
                 {heartBtn(d, 'h-10 w-10', 17)}
               </div>
+              {/* prev/next arrows + counter (Zillow-style) when there are multiple photos */}
               {d.photos.length > 1 && (
-                <div className="no-scrollbar absolute bottom-3 left-3.5 right-3.5 flex gap-2 overflow-x-auto">
+                <>
+                  <button onClick={() => setGi((i) => (i - 1 + d.photos.length) % d.photos.length)} aria-label={L('Anterior', 'Previous')} className="absolute left-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-card backdrop-blur">
+                    <ChevronLeft size={18} stroke={2.6} className="text-ink" />
+                  </button>
+                  <button onClick={() => setGi((i) => (i + 1) % d.photos.length)} aria-label={L('Siguiente', 'Next')} className="absolute right-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-card backdrop-blur">
+                    <ChevronRight size={18} stroke={2.6} className="text-ink" />
+                  </button>
+                </>
+              )}
+              {d.photos.length > 0 ? (
+                <span className="absolute bottom-3 right-3.5 flex items-center gap-1 rounded-full bg-[rgba(30,27,46,.66)] px-2.5 py-1 text-[11px] font-extrabold text-white backdrop-blur">
+                  <Camera size={12} stroke={2.4} /> {gi + 1} / {d.photos.length}
+                </span>
+              ) : (
+                <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-bold text-muted-2 shadow-card backdrop-blur">
+                  <Camera size={13} stroke={2.2} /> {L('Fotos en camino — pídelas al agente', 'Photos coming — ask the agent')}
+                </span>
+              )}
+              {d.photos.length > 1 && (
+                <div className="no-scrollbar absolute bottom-3 left-3.5 flex max-w-[calc(100%-90px)] gap-2 overflow-x-auto">
                   {d.photos.map((ph, i) => (
                     <button
                       key={i}
                       onClick={() => setGi(i)}
                       aria-label={`${L('Foto', 'Photo')} ${i + 1}`}
                       className={`h-[46px] w-[46px] flex-none cursor-pointer rounded-[10px] border-2 bg-cover bg-center ${i === gi ? 'border-primary' : 'border-white'}`}
-                      style={{ backgroundImage: `url(${ph})` }}
+                      style={{ backgroundImage: `url("${ph}")` }}
                     />
                   ))}
                 </div>
