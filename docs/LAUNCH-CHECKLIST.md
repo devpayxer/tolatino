@@ -1623,3 +1623,28 @@ Deferred (no bloquea v1):
 - [ ] **Tab Propiedades en BizDetail**: gating módulo+contenido aplicado; los
   módulos por-defecto de negocios EXISTENTES no incluyen `inmuebles` (solo la
   categoría RealEstate lo activa al publicarse o vía Configurar módulos).
+
+### Bienes Raíces — calculadora de hipoteca REAL (2026-07-24, Fase 1+2)
+Migración 0118 + edge function `fred-rates` (v1) + BienesRaices/RealEstate.
+- [x] **Tasa de interés real** — `market_rates` (Freddie Mac PMMS vía FRED), la
+  calculadora arranca con el promedio nacional real y lo re-ajusta por plazo
+  (30yr vs 15yr). Etiqueta "✓ Promedio nacional real · [fecha]".
+- [x] **Impuesto y seguro reales por propiedad** — el agente los captura en el
+  wizard (del registro del condado); la calc los usa con etiqueta **REAL**.
+- [x] **Respaldo por estado** — tabla de tasa efectiva de impuesto + seguro por
+  estado (Census/III) cuando el agente no los puso; etiqueta "est. [estado]".
+- [x] **HOA y PMI** — HOA se suma al total; PMI se agrega solo cuando enganche
+  < 20%. Disclaimer dinámico (real vs estimado).
+- [x] Seeds: casas en venta con impuesto/seguro reales plausibles.
+
+PENDIENTE DEL FOUNDER (1 vez, gratis) para activar la tasa VIVA:
+- [ ] Obtener API key gratis de FRED → https://fredaccount.stlouisfed.org/apikeys
+- [ ] Supabase → Edge Functions → Secrets: agregar `FRED_API_KEY = <tu key>`
+- [ ] Supabase → programar `fred-rates` semanal (cron `0 12 * * 4`, jueves —
+  PMMS se publica los jueves). Mientras tanto usa la tasa semilla (real, del
+  16-jul) y no rompe nada.
+Deferred (de pago, después):
+- [ ] Impuesto por PARCELA desde registros del condado (ATTOM/Estated) — hoy el
+  agente lo captura manual (ya es real por propiedad).
+- [ ] Cotización de seguro real (API de aseguradora) y pre-aprobación con
+  prestamista aliado (canal de ingreso).

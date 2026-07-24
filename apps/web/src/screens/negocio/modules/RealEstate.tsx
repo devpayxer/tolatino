@@ -49,7 +49,7 @@ type PropDraft = {
   deal: ReDeal; ptype: RePtype;
   title: string; address: string; hood: string; city: string;
   price: string; beds: number; baths: number;
-  sqft: string; lotSqft: string; year: string; hoa: string;
+  sqft: string; lotSqft: string; year: string; hoa: string; annualTax: string; annualInsurance: string;
   deposit: string; available: string; lease: string;
   desc: string;
   pets: boolean; noCredit: boolean; cosigner: boolean;
@@ -162,7 +162,7 @@ function newPropDraft(city: string): PropDraft {
   return {
     id: null, status: 'draft', deal: 'venta', ptype: 'casa',
     title: '', address: '', hood: '', city,
-    price: '', beds: 3, baths: 2, sqft: '', lotSqft: '', year: '', hoa: '',
+    price: '', beds: 3, baths: 2, sqft: '', lotSqft: '', year: '', hoa: '', annualTax: '', annualInsurance: '',
     deposit: '', available: '', lease: '',
     desc: '', pets: false, noCredit: false, cosigner: false,
     openHouse: '', feats: [], photos: [], lat: null, lng: null,
@@ -432,7 +432,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     // RLS allows a direct read even for drafts.
     if (persistable && supabase) {
       const { data } = await supabase.from('properties')
-        .select('desc_es,lot_sqft,year_built,hoa,feats,policies,rental')
+        .select('desc_es,lot_sqft,year_built,hoa,annual_tax,annual_insurance,feats,policies,rental')
         .eq('id', p.id).maybeSingle();
       if (data) {
         const r = data as Record<string, unknown>;
@@ -442,6 +442,8 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         base.lotSqft = r.lot_sqft != null ? String(r.lot_sqft) : '';
         base.year = r.year_built != null ? String(r.year_built) : '';
         base.hoa = r.hoa != null ? String(r.hoa) : '';
+        base.annualTax = (r as { annual_tax?: number|null }).annual_tax != null ? String((r as { annual_tax?: number }).annual_tax) : '';
+        base.annualInsurance = (r as { annual_insurance?: number|null }).annual_insurance != null ? String((r as { annual_insurance?: number }).annual_insurance) : '';
         base.pets = pol.pets === true; base.noCredit = pol.noCredit === true; base.cosigner = pol.cosigner === true;
         base.deposit = rent.deposit != null ? String(rent.deposit) : '';
         base.available = rent.available ?? ''; base.lease = rent.lease ?? '';
@@ -497,6 +499,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     baths: draft.ptype === 'terreno' ? '' : draft.baths,
     sqft: draft.sqft.trim(), lot_sqft: draft.lotSqft.trim(),
     year_built: draft.year.trim(), hoa: draft.deal === 'venta' ? draft.hoa.trim() : '',
+    annual_tax: draft.deal === 'venta' ? draft.annualTax.trim() : '', annual_insurance: draft.deal === 'venta' ? draft.annualInsurance.trim() : '',
     address: draft.address.trim(), hood: draft.hood.trim(), city: draft.city.trim(),
     photos: draft.photos,
     feats: draft.feats.map((f) => ({ es: f, en: f })),
@@ -1315,16 +1318,35 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         )}
       </div>
       {draft.deal === 'venta' && (
-        <div className="flex gap-2.5">
-          <div className="flex-1">
-            <label className={labelCls}>{L('Año', 'Year built')}</label>
-            <input value={draft.year} onChange={(e) => upD({ year: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="2005" className={fieldCls} />
+        <>
+          <div className="flex gap-2.5">
+            <div className="flex-1">
+              <label className={labelCls}>{L('Año', 'Year built')}</label>
+              <input value={draft.year} onChange={(e) => upD({ year: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="2005" className={fieldCls} />
+            </div>
+            <div className="flex-1">
+              <label className={labelCls}>{L('HOA $/mes', 'HOA $/mo')}</label>
+              <input value={draft.hoa} onChange={(e) => upD({ hoa: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="0" className={fieldCls} />
+            </div>
           </div>
-          <div className="flex-1">
-            <label className={labelCls}>{L('HOA $/mes', 'HOA $/mo')}</label>
-            <input value={draft.hoa} onChange={(e) => upD({ hoa: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="0" className={fieldCls} />
+          {/* Real escrow (0118): if you enter these from the county record, the
+              buyer's mortgage calculator shows the REAL monthly tax + insurance
+              instead of a per-state estimate — más confianza. */}
+          <div className="rounded-btn-lg bg-lilac-3 p-3">
+            <div className="mb-0.5 text-[11.5px] font-extrabold text-ink">{L('Impuesto y seguro reales', 'Real tax & insurance')}</div>
+            <div className="mb-2 text-[10px] font-medium text-muted-2">{L('Opcional — del registro del condado. Si los pones, la calculadora de hipoteca del comprador usa números reales, no estimados.', 'Optional — from the county record. If set, the buyer’s mortgage calculator uses real numbers, not estimates.')}</div>
+            <div className="flex gap-2.5">
+              <div className="flex-1">
+                <label className={labelCls}>{L('Impuesto predial $/año', 'Property tax $/yr')}</label>
+                <input value={draft.annualTax} onChange={(e) => upD({ annualTax: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder={L('ej. 3,200', 'e.g. 3,200')} className={fieldCls} />
+              </div>
+              <div className="flex-1">
+                <label className={labelCls}>{L('Seguro $/año', 'Insurance $/yr')}</label>
+                <input value={draft.annualInsurance} onChange={(e) => upD({ annualInsurance: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder={L('ej. 1,150', 'e.g. 1,150')} className={fieldCls} />
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {isRent && (

@@ -56,6 +56,8 @@ export type ReDetail = ReCard & {
   publishedAt: string | null;
   bizId: string | null; bizReviews: number | null; bizPhone: string | null;
   bizLicense: string | null; bizLangs: string | null;
+  annualTax: number | null;        // real property tax /yr (agent-entered)
+  annualInsurance: number | null;  // real home insurance /yr (agent-entered)
 };
 
 export type ReAgency = {
@@ -132,6 +134,7 @@ export async function fetchPropertyBySlug(slug: string): Promise<ReDetail | null
     bizId: (r.biz_id as string) ?? null, bizReviews: num(r.biz_reviews),
     bizPhone: (r.biz_phone as string) ?? null, bizLicense: (r.biz_license as string) ?? null,
     bizLangs: (r.biz_langs as string) ?? null,
+    annualTax: num(r.annual_tax), annualInsurance: num(r.annual_insurance),
   };
 }
 
@@ -282,17 +285,99 @@ export async function setTourStatus(id: string, status: ReTourStatus, at?: strin
   return error ? error.message : null;
 }
 
-// ── mortgage math (handoff formula, client-side only) ────────────────────────
-export function mortgageMonthly(price: number, downPct: number, ratePct: number, years: number): {
-  pi: number; tax: number; ins: number; total: number; loan: number;
-} {
-  const loan = price * (1 - downPct / 100);
-  const r = ratePct / 100 / 12;
-  const n = years * 12;
+// ── mortgage math — REAL numbers (0118) ──────────────────────────────────────
+// Escrow (tax + insurance) is real when the agent entered it on the listing
+// (county-record parity); otherwise it falls back to a per-STATE effective rate.
+// HOA folds in when known; PMI is added automatically when down payment < 20%.
+
+// Effective PROPERTY-TAX rate by state (% of value / yr, as a decimal). Public
+// reference figures (Census/Tax Foundation effective rates) — approximate, and
+// always labeled "estimado" in the UI. Used only when the listing has no real tax.
+export const STATE_TAX_RATE: Record<string, number> = {
+  AL: 0.0041, AK: 0.0104, AZ: 0.0063, AR: 0.0064, CA: 0.0071, CO: 0.0051, CT: 0.0179,
+  DE: 0.0058, FL: 0.0091, GA: 0.0090, HI: 0.0029, ID: 0.0064, IL: 0.0208, IN: 0.0085,
+  IA: 0.0153, KS: 0.0141, KY: 0.0086, LA: 0.0056, ME: 0.0128, MD: 0.0106, MA: 0.0114,
+  MI: 0.0138, MN: 0.0111, MS: 0.0079, MO: 0.0097, MT: 0.0074, NE: 0.0161, NV: 0.0059,
+  NH: 0.0186, NJ: 0.0223, NM: 0.0073, NY: 0.0140, NC: 0.0082, ND: 0.0098, OH: 0.0152,
+  OK: 0.0089, OR: 0.0093, PA: 0.0149, RI: 0.0140, SC: 0.0057, SD: 0.0122, TN: 0.0066,
+  TX: 0.0163, UT: 0.0057, VT: 0.0190, VA: 0.0082, WA: 0.0087, WV: 0.0057, WI: 0.0161,
+  WY: 0.0061, DC: 0.0057,
+};
+// Effective HOME-INSURANCE rate by state (% of value / yr). Storm-prone states
+// (FL/LA/OK/TX) run far higher; Northeast/West lower. Approximate (III averages).
+export const STATE_INS_RATE: Record<string, number> = {
+  AL: 0.0070, AK: 0.0030, AZ: 0.0040, AR: 0.0075, CA: 0.0035, CO: 0.0070, CT: 0.0045,
+  DE: 0.0035, FL: 0.0130, GA: 0.0055, HI: 0.0025, ID: 0.0035, IL: 0.0045, IN: 0.0045,
+  IA: 0.0050, KS: 0.0090, KY: 0.0060, LA: 0.0140, ME: 0.0035, MD: 0.0040, MA: 0.0045,
+  MI: 0.0045, MN: 0.0060, MS: 0.0090, MO: 0.0070, MT: 0.0060, NE: 0.0095, NV: 0.0035,
+  NH: 0.0035, NJ: 0.0040, NM: 0.0050, NY: 0.0045, NC: 0.0055, ND: 0.0070, OH: 0.0040,
+  OK: 0.0135, OR: 0.0035, PA: 0.0040, RI: 0.0050, SC: 0.0070, SD: 0.0075, TN: 0.0055,
+  TX: 0.0095, UT: 0.0035, VT: 0.0035, VA: 0.0040, WA: 0.0035, WV: 0.0045, WI: 0.0035,
+  WY: 0.0050, DC: 0.0045,
+};
+const DEFAULT_TAX_RATE = 0.011;  // US median effective property tax
+const DEFAULT_INS_RATE = 0.0045; // US median home insurance
+const PMI_RATE = 0.0075;         // PMI ~0.75%/yr of the loan when down < 20%
+
+/** Two-letter US state from a stored city like "Hazleton, PA" (null if unknown). */
+export function stateFromCity(city: string | null | undefined): string | null {
+  if (!city) return null;
+  const m = city.match(/,\s*([A-Za-z]{2})\s*$/);
+  return m ? m[1].toUpperCase() : null;
+}
+
+export type MortgageInput = {
+  price: number; downPct: number; ratePct: number; years: number;
+  annualTax?: number | null;        // real, agent-entered
+  annualInsurance?: number | null;  // real, agent-entered
+  hoaMonthly?: number | null;       // from the listing
+  state?: string | null;            // 2-letter, for the fallback rates
+};
+export type MortgageOut = {
+  pi: number; taxM: number; insM: number; hoaM: number; pmiM: number;
+  total: number; loan: number;
+  taxReal: boolean; insReal: boolean; pmiOn: boolean; state: string | null;
+};
+
+export function mortgageMonthly(input: MortgageInput): MortgageOut;
+// Back-compat positional overload (price, down, rate, years) → uses state fallbacks.
+export function mortgageMonthly(price: number, downPct: number, ratePct: number, years: number): MortgageOut;
+export function mortgageMonthly(a: MortgageInput | number, b?: number, c?: number, d?: number): MortgageOut {
+  const i: MortgageInput = typeof a === 'number'
+    ? { price: a, downPct: b ?? 20, ratePct: c ?? 6.5, years: d ?? 30 }
+    : a;
+  const price = i.price;
+  const loan = price * (1 - i.downPct / 100);
+  const r = i.ratePct / 100 / 12;
+  const n = i.years * 12;
   const pi = r === 0 ? (n > 0 ? loan / n : 0) : (loan * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  const tax = (price * 0.018) / 12;   // property tax ~1.8%/yr (TX estimate)
-  const ins = (price * 0.004) / 12;   // insurance ~0.4%/yr
-  return { pi, tax, ins, total: pi + tax + ins, loan };
+  const st = i.state ?? null;
+  const taxReal = i.annualTax != null && i.annualTax > 0;
+  const insReal = i.annualInsurance != null && i.annualInsurance > 0;
+  const taxM = taxReal ? i.annualTax! / 12 : (price * (st && STATE_TAX_RATE[st] != null ? STATE_TAX_RATE[st] : DEFAULT_TAX_RATE)) / 12;
+  const insM = insReal ? i.annualInsurance! / 12 : (price * (st && STATE_INS_RATE[st] != null ? STATE_INS_RATE[st] : DEFAULT_INS_RATE)) / 12;
+  const hoaM = i.hoaMonthly && i.hoaMonthly > 0 ? i.hoaMonthly : 0;
+  const pmiOn = i.downPct < 20;
+  const pmiM = pmiOn ? (loan * PMI_RATE) / 12 : 0;
+  return { pi, taxM, insM, hoaM, pmiM, total: pi + taxM + insM + hoaM + pmiM, loan, taxReal, insReal, pmiOn, state: st };
+}
+
+// ── live national mortgage rate (market_rates, refreshed weekly by fred-rates) ─
+export type MarketRate = { term: number; rate: number; asOf: string; source: string };
+export async function fetchMarketRates(): Promise<Record<number, MarketRate>> {
+  if (!supabase) return {};
+  const { data } = await supabase.from('market_rates').select('term,rate,as_of,source');
+  const out: Record<number, MarketRate> = {};
+  (Array.isArray(data) ? data : []).forEach((r) => {
+    const row = r as { term: number; rate: number; as_of: string; source: string };
+    out[Number(row.term)] = { term: Number(row.term), rate: Number(row.rate), asOf: String(row.as_of ?? ''), source: String(row.source ?? '') };
+  });
+  return out;
+}
+/** Pick the market rate for a term (nearest of 15/30), or a sane default. */
+export function marketRateFor(rates: Record<number, MarketRate>, years: number): { rate: number; asOf: string } | null {
+  const pick = rates[years] ?? (years <= 20 ? rates[15] : rates[30]) ?? rates[30] ?? rates[15];
+  return pick ? { rate: pick.rate, asOf: pick.asOf } : null;
 }
 
 export const fmtPrice = (p: number, deal: ReDeal, es: boolean): string => {

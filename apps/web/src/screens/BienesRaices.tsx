@@ -30,8 +30,9 @@ import {
   RE_DEALS, RE_TYPES, RE_TILE,
   searchProperties, fetchPropertyBySlug, trackPropertyView, fetchReDirectory,
   createPropertyLead, bookPropertyTour, fetchSavedPropertyIds, setPropertySaved,
-  fetchSavedProperties, mortgageMonthly, fmtPrice, fmtPriceFull,
-  type ReCard, type ReDetail, type ReAgency, type ReDeal, type RePtype,
+  fetchSavedProperties, mortgageMonthly, stateFromCity, fetchMarketRates, marketRateFor,
+  fmtPrice, fmtPriceFull,
+  type ReCard, type ReDetail, type ReAgency, type ReDeal, type RePtype, type MarketRate,
 } from '@/lib/realestate';
 
 const LIMIT = 20;
@@ -177,7 +178,16 @@ export function BienesRaicesScreen() {
   const lastFitKey = useRef('');
   const [mapSelId, setMapSelId] = useState<string | null>(null);
   // ── flows ──
-  const [calc, setCalc] = useState<{ price: number; down: number; rate: number; years: number } | null>(null);
+  // calc carries the property's REAL escrow (agent-entered tax/insurance + HOA +
+  // state) so the breakdown is real per-listing, not a flat estimate. `rateFromMarket`
+  // tracks whether the shown rate is still the live national default (untouched).
+  const [calc, setCalc] = useState<{
+    price: number; down: number; rate: number; years: number;
+    annualTax: number | null; annualInsurance: number | null; hoaMonthly: number | null;
+    state: string | null; rateFromMarket: boolean;
+  } | null>(null);
+  const [marketRates, setMarketRates] = useState<Record<number, MarketRate>>({});
+  useEffect(() => { void fetchMarketRates().then(setMarketRates); }, []);
   const [sched, setSched] = useState<{ mode: 'presencial' | 'video'; day: number; slot: number; name: string; phone: string; msg: string; busy: boolean; done: boolean; doneAt: string } | null>(null);
   const [ap, setAp] = useState<{ step: number; offer: string; name: string; email: string; phone: string; income: string; move: number; consent: boolean; busy: boolean; done: boolean } | null>(null);
   const [contact, setContact] = useState<{ msg: string; busy: boolean } | null>(null);
@@ -383,7 +393,15 @@ export function BienesRaicesScreen() {
   }, []);
 
   // ── flow openers (auth-gated like Eventos: guests route to /entrar) ──
-  const openCalcWith = (price: number) => setCalc({ price: Math.min(900000, Math.max(50000, Math.round(price))), down: 20, rate: 6.5, years: 30 });
+  const openCalcWith = (price: number, ctx?: { annualTax?: number | null; annualInsurance?: number | null; hoaMonthly?: number | null; state?: string | null }) => {
+    const m = marketRateFor(marketRates, 30);
+    setCalc({
+      price: Math.min(900000, Math.max(50000, Math.round(price))), down: 20,
+      rate: m ? m.rate : 6.5, years: 30, rateFromMarket: !!m,
+      annualTax: ctx?.annualTax ?? null, annualInsurance: ctx?.annualInsurance ?? null,
+      hoaMonthly: ctx?.hoaMonthly ?? null, state: ctx?.state ?? stateFromCity(app.city),
+    });
+  };
   const openSched = () => {
     if (!detail) return;
     if (!user) { router.push('/entrar'); return; }
@@ -582,8 +600,13 @@ export function BienesRaicesScreen() {
     comercial: ['Locales comerciales', 'Commercial spaces', 'Para tu negocio o inversión', 'For your business or investment'],
   };
 
-  // ── mortgage numbers for the calculator sheet ──
-  const calcOut = calc ? mortgageMonthly(calc.price, calc.down, calc.rate, calc.years) : null;
+  // ── mortgage numbers for the calculator sheet (real per-listing escrow) ──
+  const calcOut = calc ? mortgageMonthly({
+    price: calc.price, downPct: calc.down, ratePct: calc.rate, years: calc.years,
+    annualTax: calc.annualTax, annualInsurance: calc.annualInsurance,
+    hoaMonthly: calc.hoaMonthly, state: calc.state,
+  }) : null;
+  const marketAsOf = marketRateFor(marketRates, calc?.years ?? 30)?.asOf ?? '';
 
   // ── DETAIL sub-blocks (rendered in main column on mobile, right rail on lg) ──
   const d = detail;
@@ -660,7 +683,7 @@ export function BienesRaicesScreen() {
   );
   const mortgageTeaser = d && d.deal === 'venta' && (
     <button
-      onClick={() => openCalcWith(d.price)}
+      onClick={() => openCalcWith(d.price, { annualTax: d.annualTax, annualInsurance: d.annualInsurance, hoaMonthly: d.hoa, state: stateFromCity(d.city) })}
       className="flex w-full cursor-pointer items-center gap-3 rounded-tile bg-lilac-2 p-3 text-left"
     >
       <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-white">
@@ -669,7 +692,7 @@ export function BienesRaicesScreen() {
       <span className="min-w-0 flex-1">
         <span className="block text-[12.5px] font-extrabold text-ink">{L('Estima tu pago mensual', 'Estimate your monthly payment')}</span>
         <span className="block text-[10.5px] font-bold text-muted">
-          {L('Desde', 'From')} ${Math.round(mortgageMonthly(d.price, 20, 6.5, 30).total).toLocaleString()}{L('/mes', '/mo')} · 20% {L('de enganche', 'down')}
+          {L('Desde', 'From')} ${Math.round(mortgageMonthly({ price: d.price, downPct: 20, ratePct: marketRateFor(marketRates, 30)?.rate ?? 6.5, years: 30, annualTax: d.annualTax, annualInsurance: d.annualInsurance, hoaMonthly: d.hoa, state: stateFromCity(d.city) }).total).toLocaleString()}{L('/mes', '/mo')} · 20% {L('de enganche', 'down')}
         </span>
       </span>
       <ChevronRight size={16} stroke={2.4} className="flex-none text-primary-dark" />
@@ -1389,7 +1412,10 @@ export function BienesRaicesScreen() {
                   <span className="text-ink">{L('Tasa de interés', 'Interest rate')}</span>
                   <span className="text-primary-dark">{calc.rate.toFixed(1)}%</span>
                 </div>
-                <input type="range" min={3} max={9} step={0.1} value={calc.rate} onChange={(e) => setCalc({ ...calc, rate: Number(e.target.value) })} className="w-full accent-primary" />
+                <input type="range" min={3} max={9} step={0.1} value={calc.rate} onChange={(e) => setCalc({ ...calc, rate: Number(e.target.value), rateFromMarket: false })} className="w-full accent-primary" />
+                {calc.rateFromMarket && marketAsOf && (
+                  <div className="mt-1 text-[9.5px] font-bold text-green-dark">✓ {L('Promedio nacional real', 'Live national average')} · {marketAsOf}</div>
+                )}
               </div>
               <div>
                 <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Plazo', 'Loan term')}</div>
@@ -1397,7 +1423,9 @@ export function BienesRaicesScreen() {
                   {[10, 15, 20, 30].map((y) => (
                     <button
                       key={y}
-                      onClick={() => setCalc({ ...calc, years: y })}
+                      // Switching term re-snaps to the LIVE market rate for that term
+                      // (unless the buyer already dragged the rate manually).
+                      onClick={() => { const m = marketRateFor(marketRates, y); setCalc({ ...calc, years: y, ...(calc.rateFromMarket && m ? { rate: m.rate } : {}) }); }}
                       className={`min-h-[40px] flex-1 cursor-pointer rounded-field text-[11.5px] font-extrabold ${
                         calc.years === y ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}
                     >
@@ -1409,22 +1437,27 @@ export function BienesRaicesScreen() {
             </div>
             <Card className="mt-4 divide-y divide-[rgba(30,27,46,.06)] px-3.5">
               {[
-                { k: L('Capital + interés', 'Principal + interest'), v: calcOut.pi, dot: 'bg-primary' },
-                { k: L('Impuesto predial', 'Property tax'), v: calcOut.tax, dot: 'bg-amber' },
-                { k: L('Seguro', 'Insurance'), v: calcOut.ins, dot: 'bg-green' },
+                { k: L('Capital + interés', 'Principal + interest'), v: calcOut.pi, dot: 'bg-primary', tag: null as string | null },
+                { k: L('Impuesto predial', 'Property tax'), v: calcOut.taxM, dot: 'bg-amber', tag: calcOut.taxReal ? L('real', 'actual') : calc.state ? L(`est. ${calc.state}`, `est. ${calc.state}`) : L('estimado', 'estimate') },
+                { k: L('Seguro', 'Insurance'), v: calcOut.insM, dot: 'bg-green', tag: calcOut.insReal ? L('real', 'actual') : calc.state ? L(`est. ${calc.state}`, `est. ${calc.state}`) : L('estimado', 'estimate') },
+                ...(calcOut.hoaM > 0 ? [{ k: 'HOA', v: calcOut.hoaM, dot: 'bg-blue', tag: L('real', 'actual') }] : []),
+                ...(calcOut.pmiM > 0 ? [{ k: L('PMI (enganche < 20%)', 'PMI (down < 20%)'), v: calcOut.pmiM, dot: 'bg-pink-dark', tag: null }] : []),
               ].map((r) => (
                 <div key={r.k} className="flex items-center justify-between py-2.5 text-[12.5px]">
-                  <span className="flex items-center gap-2 font-semibold text-ink-2">
-                    <span className={`h-2 w-2 rounded-[3px] ${r.dot}`} /> {r.k}
+                  <span className="flex min-w-0 items-center gap-2 font-semibold text-ink-2">
+                    <span className={`h-2 w-2 flex-none rounded-[3px] ${r.dot}`} /> <span className="truncate">{r.k}</span>
+                    {r.tag && <span className={`flex-none rounded px-1.5 py-px text-[8.5px] font-extrabold uppercase ${r.tag === L('real', 'actual') ? 'bg-green-bg text-green-dark' : 'bg-lilac-2 text-muted-2'}`}>{r.tag}</span>}
                   </span>
-                  <span className="font-extrabold text-ink">${Math.round(r.v).toLocaleString()}</span>
+                  <span className="flex-none font-extrabold text-ink">${Math.round(r.v).toLocaleString()}</span>
                 </div>
               ))}
             </Card>
             <div className="mt-3 flex items-start gap-2 rounded-field bg-lilac-2 px-3 py-2.5">
               <InfoCircle size={15} stroke={2.2} className="mt-0.5 flex-none text-primary-dark" />
               <span className="text-[10.5px] font-semibold leading-snug text-ink-soft">
-                {L('Estimado — no es una oferta de crédito. No incluye HOA ni PMI; consulta con un prestamista.', 'Estimate — not a credit offer. Excludes HOA and PMI; check with a lender.')}
+                {(calcOut.taxReal || calcOut.insReal)
+                  ? L('Impuesto y seguro tomados del listado. Estimado — no es una oferta de crédito; confirma con tu prestamista.', 'Tax and insurance from the listing. Estimate — not a credit offer; confirm with your lender.')
+                  : L('Impuesto y seguro estimados por estado. No es una oferta de crédito; confirma con tu prestamista.', 'Tax and insurance estimated by state. Not a credit offer; confirm with your lender.')}
               </span>
             </div>
           </>
