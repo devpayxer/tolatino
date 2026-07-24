@@ -272,6 +272,7 @@ export const SUBCATS: Record<CatKey, [string, string][]> = {
     ['Quinceañera (misa)', 'Quinceañera mass'], ['Funerales', 'Funeral services'], ['Artículos religiosos', 'Religious goods'],
   ],
   RealEstate: [['Agente independiente', 'Independent agent'], ['Inmobiliaria', 'Real estate agency'], ['Broker', 'Broker'], ['Administración de propiedades', 'Property management'], ['Bienes raíces comercial', 'Commercial real estate'], ['Rentas', 'Rentals']],
+  CarDealer: [['Dealer de autos usados', 'Used car dealer'], ['Dealer de autos nuevos', 'New car dealer'], ['Lote de autos', 'Car lot'], ['Aquí pagas aquí', 'Buy here pay here'], ['Vendedor particular', 'Private seller'], ['Motos', 'Motorcycles']],
 };
 
 // ---------- business features / attributes (dynamic filter) ----------
@@ -364,6 +365,10 @@ export const FEATURES_BY_CAT: Record<CatKey, Feature[]> = {
   RealEstate: [
     ['Atención bilingüe', 'Bilingual service'], ['Agentes con licencia', 'Licensed agents'], ['Sin verificación de crédito', 'No credit check options'], ['Acepta aval', 'Co-signer accepted'],
     ['Tours virtuales', 'Virtual tours'], ['Financiamiento', 'Financing help'], ['Primera consulta gratis', 'Free first consultation'], ['Administración de rentas', 'Rental management'],
+  ],
+  CarDealer: [
+    ['Aquí pagas aquí', 'Buy here pay here'], ['Sin verificación de crédito', 'No credit check'], ['Acepta ITIN', 'ITIN accepted'], ['Financiamiento', 'Financing'],
+    ['Acepta trade-in', 'Trade-in accepted'], ['Historial limpio', 'Clean history'], ['Garantía', 'Warranty'], ['Atención bilingüe', 'Bilingual service'],
   ],
 };
 
@@ -566,7 +571,7 @@ export const NAV_CATS: { k: ViewKey; icon: 'users' | 'store' | 'calendar' | 'tru
   { k: 'eventos', icon: 'calendar', es: 'Eventos', en: 'Events', soon: false },
   { k: 'transporte', icon: 'truck', es: 'Transporte', en: 'Transport', soon: true },
   { k: 'inmuebles', icon: 'home', es: 'Bienes Raíces', en: 'Real Estate', soon: false },
-  { k: 'autos', icon: 'car', es: 'Dealer de carros', en: 'Car Dealers', soon: true },
+  { k: 'autos', icon: 'car', es: 'Dealer de carros', en: 'Car Dealers', soon: false },
   { k: 'trabajos', icon: 'briefcase', es: 'Trabajos', en: 'Jobs', soon: true },
 ];
 

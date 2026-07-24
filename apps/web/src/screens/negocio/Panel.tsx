@@ -30,6 +30,7 @@ import { StaffModule } from '@/screens/negocio/modules/Staff';
 import { RentalModule } from '@/screens/negocio/modules/Rental';
 import { EventsModule } from '@/screens/negocio/modules/Events';
 import { RealEstateModule } from '@/screens/negocio/modules/RealEstate';
+import { AutosModule } from '@/screens/negocio/modules/Autos';
 import { ProductsModule } from '@/screens/negocio/modules/Products';
 import { FulfillmentModule } from '@/screens/negocio/modules/Fulfillment';
 import { ServicesModule } from '@/screens/negocio/modules/Services';
@@ -49,7 +50,7 @@ const RICH_MODULES = new Set<TabKey>([
   'stats',
   'listing', 'hours', 'photos', 'related', 'settings', 'messages', 'payments',
   'updates', 'billing', 'customers', 'orders', 'reviews', 'staff', 'jobs',
-  'rental', 'events', 'products', 'fulfillment', 'shipping', 'drivers', 'services', 'bookings', 'menu', 'promos',
+  'rental', 'events', 'inmuebles', 'vehiculos', 'products', 'fulfillment', 'shipping', 'drivers', 'services', 'bookings', 'menu', 'promos',
 ]);
 
 const RUBRO_FROM_ONB: Record<string, Rubro> = {
@@ -57,17 +58,17 @@ const RUBRO_FROM_ONB: Record<string, Rubro> = {
 };
 
 // DEMO (no real listing) shows everything so the panel is fully explorable.
-const DEFAULT_MODS: Mods = { menu: true, services: true, bookings: true, products: true, rental: true, events: true, inmuebles: true, updates: true, staff: true };
+const DEFAULT_MODS: Mods = { menu: true, services: true, bookings: true, products: true, rental: true, events: true, inmuebles: true, vehiculos: true, updates: true, staff: true };
 // A REAL business starts LISTING-ONLY: published & visible, but nothing to sell
 // yet ("el listado es el master, vender es opcional"). The owner opts into
 // commerce from "Vender en To'Latino". Non-commerce extras (updates/staff) keep
 // their prior default so only selling is off by default. Stored modules override.
-const LISTING_ONLY_MODS: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, inmuebles: false, updates: true, staff: true };
+const LISTING_ONLY_MODS: Mods = { menu: false, services: false, bookings: false, products: false, rental: false, events: false, inmuebles: false, vehiculos: false, updates: true, staff: true };
 
 // Valid ?t= values → the dashboard tab restored on refresh (keep in sync with TabKey).
 const VALID_TABS = new Set<string>([
   'insights', 'stats', 'listing', 'photos', 'hours', 'related',
-  'menu', 'services', 'bookings', 'products', 'fulfillment', 'shipping', 'drivers', 'rental', 'events', 'inmuebles',
+  'menu', 'services', 'bookings', 'products', 'fulfillment', 'shipping', 'drivers', 'rental', 'events', 'inmuebles', 'vehiculos',
   'customers', 'orders', 'messages', 'reviews', 'updates',
   'promos', 'payments', 'staff', 'jobs', 'modules', 'billing', 'settings',
 ]);
@@ -629,6 +630,7 @@ export function PanelScreen() {
           {tab === 'rental' && <RentalModule ctx={ctx} tab={tab} />}
           {tab === 'events' && <EventsModule ctx={ctx} tab={tab} />}
           {tab === 'inmuebles' && <RealEstateModule ctx={ctx} tab={tab} />}
+          {tab === 'vehiculos' && <AutosModule ctx={ctx} tab={tab} />}
           {tab === 'products' && <ProductsModule ctx={ctx} tab={tab} />}
           {(tab === 'fulfillment' || tab === 'shipping' || tab === 'drivers') && <FulfillmentModule ctx={ctx} tab={tab} />}
           {(tab === 'services' || tab === 'bookings') && <ServicesModule ctx={ctx} tab={tab} />}

@@ -58,6 +58,7 @@ export type BizRow = {
   product_config: ProductConfig | null; // shop structure (categories/option sets/collections/discounts/sell mode)
   rental_config: RentalConfig | null; // rental structure (categories/add-ons/rental mode)
   re_config: { license?: string; specialty?: string; langs?: string; zones?: string[]; broker?: string } | null; // real-estate agent config (0117)
+  auto_config: { license?: string; sellerType?: string; bhph?: boolean; financing?: boolean; cash?: boolean; langs?: string; zones?: string[] } | null; // car-dealer config (0119)
   created_at: string;
 };
 
@@ -71,6 +72,7 @@ const RUBRO_FROM_CAT: Record<string, Rubro> = {
   AutoServices: 'auto',
   Transportation: 'auto',
   RealEstate: 'realestate',
+  CarDealer: 'cardealer',
   Party: 'rental',
   Sports: 'rental',
   Shops: 'retail',
@@ -125,6 +127,7 @@ const DEMO_BIZ: BizRow = {
   product_config: null,
   rental_config: null,
   re_config: null,
+  auto_config: null,
   created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -168,6 +171,7 @@ const DEMO_BIZ_2: BizRow = {
   product_config: null,
   rental_config: null,
   re_config: null,
+  auto_config: null,
   created_at: '2024-03-01T00:00:00Z',
 };
 
@@ -176,7 +180,7 @@ const DEMO_BIZ_2: BizRow = {
 // controlled by billing / the review system, not the listing editor.
 const WRITABLE: (keyof BizRow)[] = [
   'name', 'category_id', 'tagline_es', 'tagline_en', 'price_level', 'about_es', 'about_en',
-  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings', 'hours_exceptions', 'menu_config', 'service_config', 'product_config', 'rental_config', 're_config',
+  'address', 'city', 'phone', 'website', 'logo_url', 'accepts_messages', 'message_channel', 'message_phone', 'hours', 'features', 'card_features', 'subcategories', 'specialty_es', 'specialty_en', 'is_open', 'modules', 'settings', 'hours_exceptions', 'menu_config', 'service_config', 'product_config', 'rental_config', 're_config', 'auto_config',
 ];
 
 type BizAdminCtx = {

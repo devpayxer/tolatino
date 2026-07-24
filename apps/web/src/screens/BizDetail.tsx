@@ -29,6 +29,7 @@ import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
 import { useNow } from '@/lib/useNow';
 import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShort, statusLabel } from '@/lib/hours';
 import { fetchPropertiesByBizSlug, fmtPrice as reFmtPrice, RE_TILE, type ReCard } from '@/lib/realestate';
+import { fetchVehiclesByBizSlug, fmtAuPrice, AU_TILE, type AuCard } from '@/lib/autos';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
 
 // es → en lookup for feature labels ("Lo que ofrece"), so the owner-selected
@@ -38,7 +39,7 @@ for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
 import { DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SERVICES, SHOP, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
 
-type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'props' | 'related' | 'reviews';
+type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'props' | 'autos' | 'related' | 'reviews';
 const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'related', 'reviews']);
 type RentMode = 'day' | 'hour';
 
@@ -496,6 +497,21 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       if (cancelled) return;
       setRealProps(rows);
       setPropsFetched(true);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [b.slug]);
+  // Car-dealer inventory (0119): live published vehicles for this dealer.
+  const [realAutos, setRealAutos] = useState<AuCard[] | null>(null);
+  const [autosFetched, setAutosFetched] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setRealAutos(null); setAutosFetched(false);
+    if (b.modules?.vehiculos !== true) { setAutosFetched(true); return; }
+    fetchVehiclesByBizSlug(b.slug).then((rows) => {
+      if (cancelled) return;
+      setRealAutos(rows);
+      setAutosFetched(true);
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1546,6 +1562,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     updates: modOn('updates') && realUpdates != null,
     events: modOn('events') && (realEvents?.length ?? 0) > 0,
     props: modOn('inmuebles') && (realProps?.length ?? 0) > 0,
+    autos: modOn('vehiculos') && (realAutos?.length ?? 0) > 0,
   };
   const allTabs: [TabKey, string][] = [
     ['overview', L('Resumen', 'Overview')],
@@ -1556,6 +1573,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     ['rentals', L('Renta', 'Rentals')],
     ['events', L('Eventos', 'Events')],
     ['props', L('Propiedades', 'Listings')],
+    ['autos', L('Autos', 'Vehicles')],
     ['related', L('Relacionados', 'Related')],
     ['reviews', L('Reseñas', 'Reviews')],
   ];
@@ -1566,12 +1584,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const tabResolved: Record<TabKey, boolean> = {
     overview: true, related: true, reviews: true,
     menu: menuFetched, shop: shopFetched, services: svcFetched, rentals: rentFetched,
-    updates: updFetched, events: evFetched, props: propsFetched,
+    updates: updFetched, events: evFetched, props: propsFetched, autos: autosFetched,
   };
   useEffect(() => {
     if (tabResolved[tab] && !tabShown[tab]) setTab('overview');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, updFetched, evFetched, propsFetched, realMenu, realShop, realServices, realRentals, realUpdates, realEvents, realProps, b.slug]);
+  }, [tab, hydrated, menuFetched, shopFetched, svcFetched, rentFetched, updFetched, evFetched, propsFetched, autosFetched, realMenu, realShop, realServices, realRentals, realUpdates, realEvents, realProps, realAutos, b.slug]);
 
   // Overview = the full, browse-y view (hero + meta). Any other tab switches to a
   // focused mode: the hero collapses into a compact pinned header (title + tabs
@@ -2831,6 +2849,32 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   {[pr.beds != null ? `${pr.beds} ${L('rec', 'bd')}` : null, pr.baths != null ? `${pr.baths} ${L('baños', 'ba')}` : null, pr.sqft != null ? `${pr.sqft.toLocaleString()} ft²` : null].filter(Boolean).join(' · ')}
                 </span>
                 {pr.address && <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-2">{pr.address}</span>}
+              </span>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* ============ VEHICLES (car dealer, 0119) ============ */}
+      {tab === 'autos' && (
+        <div className="grid grid-cols-1 gap-2.5 pt-4 md:grid-cols-2">
+          {(realAutos ?? []).map((v) => (
+            <Card key={v.slug} className="overflow-hidden p-0" onClick={() => router.push(`/autos?v=${v.slug}`)}>
+              <span
+                className="block h-[120px] w-full"
+                style={v.photos[0]
+                  ? { backgroundImage: `url(${v.photos[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  : { background: `repeating-linear-gradient(135deg,${AU_TILE[v.cond][0]} 0 11px,${AU_TILE[v.cond][1]} 11px 22px)` }}
+              />
+              <span className="block p-3.5">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[16px] font-extrabold text-ink">{fmtAuPrice(v.price)}</span>
+                  {v.bhph && <span className="rounded-full bg-amber-bg px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[.04em] text-amber-ink">{L('Aquí pagas aquí', 'Buy here pay here')}</span>}
+                </span>
+                <span className="mt-1 block truncate text-[13px] font-extrabold text-ink">{v.year} {v.make} {v.model}</span>
+                <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-muted">
+                  {[v.miles != null ? `${v.miles.toLocaleString()} mi` : null, v.trans, v.fuel].filter(Boolean).join(' · ')}
+                </span>
               </span>
             </Card>
           ))}

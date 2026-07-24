@@ -1,5 +1,5 @@
-import { ComingSoonScreen } from '@/screens/ComingSoon';
+import { AutosScreen } from '@/screens/Autos';
 
 export default function Page() {
-  return <ComingSoonScreen view="autos" />;
+  return <AutosScreen />;
 }
