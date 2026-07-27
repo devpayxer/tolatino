@@ -1,6 +1,8 @@
 # Super Admin Dashboard — Plan Maestro
 
-> **Estado: PLANEADO (2026-07-24) — pendiente de construir con Opus.**
+> **Estado: FASE 1 CONSTRUIDA Y DESPLEGADA (2026-07-24).** Migraciones 0120+0121
+> aplicadas; `/admin` en vivo con Inicio · Usuarios · Negocios · Licencias ·
+> Bitácora. Fases 2 y 3 pendientes (§6).
 > Este documento es la fuente de verdad del panel de control total de To'Latino.
 > **REGLA PERMANENTE:** cada módulo/feature nuevo de la plataforma DEBE agregar su
 > superficie de control aquí (ver §7 "Gobernanza"). Esa regla vive también en

@@ -1673,3 +1673,32 @@ Deferred (de pago, después):
   etiquetado; sin SSN. Integrar prestamista aliado (canal de ingreso).
 - [ ] **Valor de trade-in real** (KBB/Black Book API) — hoy fórmula del handoff.
 - [ ] **Fotos reales** — placeholders rayados hasta que suban.
+
+### Super Admin — FASE 1 construida (2026-07-24)
+Migraciones 0120 (fundación) + 0121 (RPCs) aplicadas. Ruta `/admin` en vivo.
+- [x] **Seguridad**: tabla `admins` con 4 roles, `_require_admin()` en TODOS los
+  RPCs (plpgsql con `perform`, no subconsulta — garantizado), `admin_audit`
+  INMUTABLE (trigger bloquea update/delete), tablas sensibles con RLS deny-all +
+  REVOKE. Verificado: no-admin recibe `forbidden` en cada RPC y ve 404.
+- [x] **Suspensiones que muerden**: usuario suspendido → bloqueado en el trigger
+  UGC (punto único: posts/comentarios/reseñas/propiedades/vehículos/leads/
+  tours/pruebas/reportes/reclamos). Negocio suspendido → filtrado de
+  `search_businesses` y `business_by_slug`. Ambos verificados end-to-end.
+- [x] **Inicio**: KPIs reales (567 usuarios, 548 negocios, GMV $4,706.45/30d,
+  comisión $630.57) + alertas accionables (pagos atascados, licencias, reportes,
+  reclamos, suspendidos).
+- [x] **Usuarios**: buscar/filtrar, ficha 360°, suspender (1d/7d/30d/1año con
+  razón obligatoria) y reactivar. Los admins no se pueden suspender.
+- [x] **Negocios**: buscar/filtrar por plan y estado, ficha con dinero 30d,
+  cambiar plan, suspender/reactivar, ver como cliente.
+- [x] **Licencias**: cola de agentes/dealers, aprobar/rechazar → insignia.
+- [x] **Bitácora**: toda acción con actor, razón, antes/después.
+- [x] Tablas de Fase 2 ya creadas (claims, reports, platform_flags/config) para
+  que esa fase sea solo UI.
+
+PENDIENTE DEL FOUNDER (seguridad, 1 vez):
+- [ ] **Cambiar la contraseña del superadmin** `dev@payxer.com` (la generada se
+  entregó una sola vez en el chat). Hazlo desde Supabase → Authentication →
+  Users, o con "olvidé mi contraseña" cuando SES esté configurado.
+- [ ] Antes del lanzamiento público: revisar `admins` y quitar cualquier cuenta
+  de prueba.
