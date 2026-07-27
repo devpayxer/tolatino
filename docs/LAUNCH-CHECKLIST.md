@@ -1702,3 +1702,38 @@ PENDIENTE DEL FOUNDER (seguridad, 1 vez):
   Users, o con "olvidé mi contraseña" cuando SES esté configurado.
 - [ ] Antes del lanzamiento público: revisar `admins` y quitar cualquier cuenta
   de prueba.
+
+### Super Admin — FASE 2 construida (2026-07-27)
+Migraciones 0122–0125 aplicadas + `refund-purchase` v4. Cuatro secciones nuevas
+en `/admin` y su contraparte en el lado usuario.
+- [x] **Moderación**: cola unificada de reportes con el contenido en contexto
+  (autor, texto, cuántas veces lo reportaron). Ocultar (reversible) / Eliminar
+  (solo UGC) / Descartar, con razón → bitácora. Ocultar saca el contenido de
+  TODAS las lecturas del cliente vía RLS (`using (not hidden)`), no por filtro
+  en cada consulta. Verificado: reseña ocultada desaparece del negocio y vuelve
+  al mostrarla.
+- [x] **Reclamos**: hilo de 3 lados (cliente · negocio · admin) sobre el mismo
+  objeto. Tomar el caso, responder, resolver/rechazar con explicación que le
+  llega al cliente. Lado usuario en Mi cuenta → Mis reclamos.
+- [x] **Dinero**: ledger completo con filtros y total, monitor de pagos cobrados
+  sin entregar (con reintento), y **reembolso manual de cualquier pago** con
+  razón obligatoria (revierte el pago al negocio y nuestra comisión).
+- [x] **Pedidos**: pedidos + reservas + rentas + boletos en una sola lista, con
+  cambio de estado como último recurso (avisa al cliente, queda en bitácora).
+- [x] **Reportar** en las 9 entidades: publicación, comentario, reseña, reseña
+  de evento, negocio, evento, propiedad, vehículo, novedad. Todo cae en la MISMA
+  cola. `post_reports` (0009) quedó obsoleta — no volver a escribirla.
+- [x] Bugs de boletos encontrados verificando en navegador real y corregidos en
+  0125: `events.owner_id` es el USUARIO organizador, no un negocio — por eso los
+  boletos salían "Sin negocio", el reclamo por boleto guardaba un id inválido, y
+  el reembolso de boletos no invalidaba ninguno (el cliente podía entrar gratis
+  con el dinero ya devuelto).
+
+PENDIENTE DEL FOUNDER (Fase 2):
+- [ ] **Usuario `admin-e2e@tolatino.test`**: quedó en `auth.users` BLOQUEADO y
+  sin privilegios (no está en `admins`, no puede iniciar sesión). No se puede
+  borrar porque la bitácora es inmutable y lo referencia — eso es la garantía
+  funcionando. Déjalo así; si algún día quieres limpiarlo, hay que decidir qué
+  hacer con esas entradas de bitácora primero.
+- [ ] Las entradas de bitácora `report.hide` / `report.unhide` con razón
+  "e2e fase 2" son de esa verificación — se quedan (es inmutable, a propósito).

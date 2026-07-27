@@ -864,13 +864,14 @@ export async function fetchSeatClaims(slug: string): Promise<string[]> {
   return (data as { seat: string }[]).map((r) => String(r.seat));
 }
 
-export type EventReview = { name: string; initials: string; rating: number; body: [string, string]; when: string };
+export type EventReview = { id: string; name: string; initials: string; rating: number; body: [string, string]; when: string };
 /** Public event reviews, newest first (0114). [] offline/none. */
 export async function fetchEventReviews(slug: string, max = 20): Promise<EventReview[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc('event_reviews_by_slug', { in_slug: slug, max_results: max });
   if (error || !Array.isArray(data)) return [];
   return (data as Record<string, unknown>[]).map((r) => ({
+    id: String(r.id ?? ''),
     name: String(r.author_name ?? 'Cliente'), initials: String(r.author_initials ?? 'TL'),
     rating: Number(r.rating ?? 5), body: [String(r.body_es ?? ''), String(r.body_en ?? r.body_es ?? '')],
     when: String(r.created_at ?? ''),

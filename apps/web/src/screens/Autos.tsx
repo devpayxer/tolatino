@@ -23,6 +23,7 @@ import {
   IconShare2 as Share2, IconShieldCheck as ShieldCheck, IconStarFilled as StarFilled,
   IconSteeringWheel as Steering, IconTag as Tag, IconX as XIcon,
 } from '@tabler/icons-react';
+import { ReportButton } from '@/components/ReportButton';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -682,6 +683,7 @@ export function AutosScreen() {
                   <Share2 size={16} stroke={2.2} className="text-ink" />
                 </button>
                 {heartBtn(d, 'h-10 w-10', 17)}
+                <ReportButton type="vehicle" id={d.id} variant="icon" className="h-10 w-10 bg-white text-ink shadow-card hover:bg-white" />
               </div>
               {/* prev/next arrows + counter (CarGurus-style) when there are multiple photos */}
               {d.photos.length > 1 && (

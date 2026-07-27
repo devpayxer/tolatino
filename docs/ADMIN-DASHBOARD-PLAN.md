@@ -179,13 +179,37 @@ RLS: `admins`/`admin_audit`/`platform_config` sin acceso de cliente;
 recurso, lectura por partes + admin.
 
 ## 6 · Fases de construcción (con Opus — seguridad = tier alto)
-1. **Fase 1 — Fundación:** migración 0120 + guard `/admin` + shell + Inicio +
-   Usuarios + Negocios (incl. licencias). *Lo mínimo para "controlar todo lo
-   que existe".*
-2. **Fase 2 — Confianza:** Moderación + Reclamos (incl. lado usuario) + Dinero +
-   Pedidos.
+1. **Fase 1 — Fundación: ✅ HECHA** (2026-07-27) — migración 0120 + 0121, guard
+   `/admin`, shell, Inicio + Usuarios + Negocios (incl. licencias) + Bitácora.
+2. **Fase 2 — Confianza: ✅ HECHA** (2026-07-27) — migraciones 0122–0125,
+   Moderación + Reclamos + Dinero + Pedidos en `/admin`, y el lado usuario:
+   botón **Reportar** en las 9 entidades reportables + **Mis reclamos** en Mi
+   cuenta. Detalle abajo.
 3. **Fase 3 — Operación:** Contenido + Catálogo + Notificaciones + Analíticas +
    Sistema/Equipo + flags en el cliente.
+
+### Fase 2 — qué quedó construido (referencia)
+- **Migraciones:** `0122` (columna `hidden` en posts/comentarios/reseñas/reseñas
+  de evento + RLS `using (not hidden)`, 15 RPCs de moderación/reclamos/dinero/
+  pedidos), `0123` (`create_report` resuelve slug→uuid para negocio y evento;
+  `event_reviews_by_slug` devuelve `id`), `0124` (`create_claim` deduce el
+  negocio de la compra y valida que sea del que reclama), `0125` (evento →
+  negocio vía `event_business_id`; arregla boletos en Pedidos, en reclamos y en
+  el reembolso).
+- **Edge function:** `refund-purchase` acepta `kind:'payment'` (reembolso manual
+  del admin). La autorización la exige Postgres dentro de `admin_refund_ctx` /
+  `admin_refund_finalize` bajo el JWT del que llama — la función no decide.
+- **Una sola cola de reportes:** `post_reports` (0009) quedó **obsoleta**; el
+  cliente escribe siempre en `reports` vía `create_report`. No reintroducir
+  escrituras a `post_reports`.
+- **Escalada de 2 pasos en un reclamo** (patrón Amazon/DoorDash): primero el
+  cliente le escribe al negocio desde el detalle del pedido; si eso no resuelve,
+  "El negocio no responde — abrir reclamo" abre el caso con To'Latino. El hilo
+  es el mismo objeto para los 3 lados (cliente · negocio · admin).
+- **La bitácora es inmutable de verdad:** su FK al actor impide borrar un usuario
+  admin que ya actuó (el `ON DELETE SET NULL` choca con el trigger). Para retirar
+  a un admin: borra su fila de `admins` y bloquéalo en `auth.users`; **no** lo
+  borres.
 
 ## 7 · GOBERNANZA (regla permanente)
 **Todo lo nuevo nace con su control de admin.** A partir de ahora, la Definition

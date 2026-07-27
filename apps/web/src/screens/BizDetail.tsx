@@ -16,6 +16,7 @@ import { startConversation, fetchChatMessages, sendChatMessage, markConversation
 import { useMyActivity, useOrderPoll } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
 import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
+import { ReportButton, ReportSheet, canReport } from '@/components/ReportButton';
 import { useUrlTab } from '@/lib/urlView';
 import { bizTile, FEATURES_COMMON, FEATURES_BY_CAT, type Business, type EventItem } from '@/data/fixtures';
 import { useSavedBiz } from '@/lib/savedBiz';
@@ -179,6 +180,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // deep links work (Volver a pedir → ?b=<slug>&bt=menu).
   const [tab, setTab] = useUrlTab<TabKey>('bt', 'overview', (v) => TAB_KEYS.has(v));
   const [contactOpen, setContactOpen] = useState(false);
+  const [reportBizOpen, setReportBizOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatConvId, setChatConvId] = useState<string | null>(null);
   const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([]);
@@ -2391,6 +2393,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   <button onClick={() => void shareUpdate(u)} aria-label={L('Compartir', 'Share')} className="ml-auto cursor-pointer text-muted-2">
                     <Share size={16} stroke={2} />
                   </button>
+                  <ReportButton type="update" id={u.id} variant="icon" className="h-7 w-7" />
                 </div>
               </Card>
             );
@@ -2990,12 +2993,15 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                         <div className="mt-1 text-[12.5px] font-medium leading-[1.5] text-ink-soft">{B(r.reply)}</div>
                       </div>
                     )}
-                    <button
-                      onClick={() => setReviewHelpful((m) => ({ ...m, [r.id]: !m[r.id] }))}
-                      className={`mt-2.5 cursor-pointer text-[11.5px] font-extrabold ${on ? 'text-primary' : 'text-muted-2'}`}
-                    >
-                      👍 {L('Útil', 'Helpful')} · {r.base + (on ? 1 : 0)}
-                    </button>
+                    <div className="mt-2.5 flex items-center gap-3">
+                      <button
+                        onClick={() => setReviewHelpful((m) => ({ ...m, [r.id]: !m[r.id] }))}
+                        className={`cursor-pointer text-[11.5px] font-extrabold ${on ? 'text-primary' : 'text-muted-2'}`}
+                      >
+                        👍 {L('Útil', 'Helpful')} · {r.base + (on ? 1 : 0)}
+                      </button>
+                      <ReportButton type="review" id={r.id} className="ml-auto" />
+                    </div>
                   </Card>
                 );
               });
@@ -3073,11 +3079,19 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <button key={label} onClick={() => (onClick ? onClick() : setContactOpen(false))} className={cls}>{inner}</button>
             );
           })}
-          <button onClick={() => setContactOpen(false)} className="mt-1 w-full cursor-pointer rounded-btn px-2 py-2.5 text-left text-[12.5px] font-bold text-pink-dark hover:bg-pink-bg">
-            {L('Reportar un problema', 'Report a problem')}
-          </button>
+          {canReport(b.slug, 'business') && (
+            <button
+              onClick={() => { setContactOpen(false); if (!user) { router.push('/entrar'); return; } setReportBizOpen(true); }}
+              className="mt-1 min-h-[44px] w-full cursor-pointer rounded-btn px-2 py-2.5 text-left text-[12.5px] font-bold text-pink-dark hover:bg-pink-bg"
+            >
+              {L('Reportar un problema', 'Report a problem')}
+            </button>
+          )}
         </div>
       </Overlay>
+
+      {/* reportar el negocio — se abre desde "Contacto y opciones", ya cerrado */}
+      <ReportSheet type="business" id={b.slug} open={reportBizOpen} onClose={() => setReportBizOpen(false)} />
 
       {/* in-app chat (buyer ↔ seller) */}
       <Overlay open={chatOpen} onClose={() => setChatOpen(false)} width={440}>

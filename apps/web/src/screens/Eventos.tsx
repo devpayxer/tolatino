@@ -17,6 +17,7 @@ import { Qr } from '@/components/Qr';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
+import { ReportButton } from '@/components/ReportButton';
 import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, fetchEventsByOwner, validatePromo, fetchSeatClaims, fetchEventReviews, postEventReview, type PubEvent, type PubTier, type EventReview } from '@/lib/live';
 
 const PAGE_SIZE = 9;
@@ -844,6 +845,10 @@ export function EventosScreen() {
               >
                 <Share2 size={15} stroke={2.2} /> {L('Compartir', 'Share')}
               </button>
+              {detail.slug && (
+                <ReportButton type="event" id={detail.slug} variant="icon"
+                  className="h-[42px] w-[42px] flex-none rounded-btn-lg border-[1.5px] border-lilac-line bg-white" />
+              )}
             </div>
 
             <div className="mt-3 border-t border-hair pt-3">
@@ -965,7 +970,7 @@ export function EventosScreen() {
                 {evReviews && evReviews.length > 0 ? (
                   <div className="flex flex-col gap-2.5">
                     {evReviews.slice(0, 4).map((rv, i) => (
-                      <div key={i} className="rounded-card-sm border border-hair bg-white p-3">
+                      <div key={rv.id || i} className="rounded-card-sm border border-hair bg-white p-3">
                         <div className="flex items-center gap-2">
                           <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-lilac-2 text-[10px] font-extrabold text-primary-dark">{rv.initials}</span>
                           <span className="min-w-0 flex-1 truncate text-[12px] font-extrabold text-ink">{rv.name}</span>
@@ -976,6 +981,7 @@ export function EventosScreen() {
                           </span>
                         </div>
                         {L(rv.body[0], rv.body[1]).trim() && <div className="mt-1.5 text-[12px] font-medium leading-snug text-ink-soft">{L(rv.body[0], rv.body[1])}</div>}
+                        <div className="mt-1.5 flex justify-end"><ReportButton type="event_review" id={rv.id} /></div>
                       </div>
                     ))}
                   </div>

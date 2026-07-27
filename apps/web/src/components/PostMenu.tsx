@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth';
 import { useLiveData } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
 import { Overlay, PrimaryBtn } from '@/components/ui';
+import { createReport } from '@/lib/admin';
 import type { Post } from '@/data/fixtures';
 
 const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
@@ -90,9 +91,9 @@ export function PostMenu({ post }: { post: Post }) {
     if (!reason || busy || !auth.user) return;
     setBusy(true);
     setErr(null);
-    const { error } = await sb
-      .from('post_reports')
-      .upsert({ post_id: post.id, reporter_id: auth.user.id, reason }, { onConflict: 'post_id,reporter_id', ignoreDuplicates: true });
+    // Cola UNIFICADA (`reports`, 0120/0122) — la misma que el admin modera en
+    // /admin → Moderación. La tabla vieja `post_reports` ya no se escribe.
+    const error = await createReport('post', post.id, reason);
     setBusy(false);
     if (error) return setErr(L('No se pudo enviar el reporte.', "Couldn't send the report."));
     setReported(true);

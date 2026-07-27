@@ -10,6 +10,12 @@
 // a purchase already 'refunded' is a no-op; a cash (not-paid-online) purchase
 // returns refunded:false with no error. Secrets: STRIPE_SECRET_KEY. Auto:
 // SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+//
+// kind:'payment' es la rama ADMIN (0122, plan §3.6 Dinero): reembolso manual de
+// CUALQUIER pago del ledger desde /admin. La autorización NO se decide aquí —
+// admin_refund_ctx / admin_refund_finalize corren bajo el JWT del que llama y
+// llaman _require_admin() adentro, así que un no-admin recibe 'forbidden' de
+// Postgres y esta función devuelve 403 sin haber tocado Stripe.
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -33,9 +39,9 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
   try {
     const body = await req.json();
-    const kind = String(body?.kind ?? '');        // 'order' | 'booking' | 'rental'
-    const id = String(body?.id ?? '');             // the order/booking/rental id
-    if (!['order', 'booking', 'rental'].includes(kind) || !id) return json({ error: 'bad request' }, 400);
+    const kind = String(body?.kind ?? '');        // 'order' | 'booking' | 'rental' | 'payment' (admin)
+    const id = String(body?.id ?? '');             // the order/booking/rental id, o el payments.id
+    if (!['order', 'booking', 'rental', 'payment'].includes(kind) || !id) return json({ error: 'bad request' }, 400);
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -44,6 +50,47 @@ Deno.serve(async (req) => {
 
     const svc = { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json' };
     const authHeader = req.headers.get('Authorization') ?? '';
+    const asCaller = { apikey: SERVICE, Authorization: authHeader, 'Content-Type': 'application/json' };
+
+    // ── Rama ADMIN: reembolso manual de un pago del ledger ────────────────────
+    if (kind === 'payment') {
+      const reason = String(body?.reason ?? '').trim();
+      if (!reason) return json({ error: 'razón requerida' }, 400);
+
+      // _require_admin() corre DENTRO de este RPC, bajo el JWT del que llama.
+      const aRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_refund_ctx`, {
+        method: 'POST', headers: asCaller, body: JSON.stringify({ in_payment: id }),
+      });
+      const aBody = await aRes.json().catch(() => null);
+      if (!aRes.ok) {
+        const msg = String(aBody?.message ?? aBody?.error ?? 'forbidden');
+        return json({ error: msg }, /forbidden|auth required/i.test(msg) ? 403 : 400);
+      }
+      const a = Array.isArray(aBody) ? aBody[0] : null;
+      if (!a) return json({ error: 'pago no encontrado' }, 404);
+      if (a.status === 'refunded') return json({ ok: true, refunded: true, already: true });
+      if (!a.intent) return json({ ok: true, refunded: false, reason: 'not_paid_online' });
+
+      const ar = await stripe('refunds', STRIPE, {
+        payment_intent: a.intent, reverse_transfer: 'true', refund_application_fee: 'true',
+      });
+      // Stripe ya lo devolvió antes (p. ej. desde su panel) → seguimos al cierre
+      // para que nuestro ledger deje de mentir; cualquier otro error aborta.
+      if (ar.error && ar.error.code !== 'charge_already_refunded') {
+        return json({ error: ar.error.message ?? 'refund failed' }, 400);
+      }
+
+      // Cierra bajo el JWT del admin: ledger + pending + entidad + aviso + bitácora.
+      const fRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_refund_finalize`, {
+        method: 'POST', headers: asCaller,
+        body: JSON.stringify({ in_payment: id, in_reason: reason }),
+      });
+      if (!fRes.ok) {
+        const f = await fRes.json().catch(() => null);
+        return json({ error: String(f?.message ?? 'no se pudo cerrar el reembolso'), stripe_refunded: !ar.error }, 500);
+      }
+      return json({ ok: true, refunded: true, amount: a.amount, already: !!ar.error });
+    }
 
     // Resolve the refund context UNDER THE CALLER'S JWT so is_owner/is_buyer are real.
     const ctxRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/refund_ctx`, {

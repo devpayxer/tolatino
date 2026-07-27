@@ -5,6 +5,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSend as Send, IconBuildingStore as Store, IconX as X } from '@tabler/icons-react';
+import { ReportButton } from '@/components/ReportButton';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -519,6 +520,7 @@ export function ComunidadScreen() {
                 {L('Responder', 'Reply')}
               </button>
             )}
+            <ReportButton type="comment" id={c.id} className="ml-auto" />
           </div>
           {!isReply && repliesFor(c.id).length > 0 && (
             <div className="mt-2 flex flex-col gap-2">{repliesFor(c.id).map((r) => commentRow(r, true))}</div>

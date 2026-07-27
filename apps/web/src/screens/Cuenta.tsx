@@ -28,10 +28,11 @@ import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { enablePush, disablePush, pushState, type PushState } from '@/lib/push';
 import { orderStageIdx } from '@/components/OrderSteps';
+import { fetchMyClaims, createClaim, claimAddMessage, CLAIM_STATUS, CLAIM_KIND, timeAgo, type MyClaim } from '@/lib/admin';
 
-type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config' | 'pedidos' | 'reservas' | 'rentas' | 'boletos' | 'voy';
+type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config' | 'pedidos' | 'reservas' | 'rentas' | 'boletos' | 'voy' | 'reclamos';
 // Valid ?sec= values restored on refresh (keep in sync with Sec).
-const SEC_VALUES = new Set<string>(['home', 'perfil', 'direcciones', 'posts', 'config', 'pedidos', 'reservas', 'rentas', 'boletos', 'voy']);
+const SEC_VALUES = new Set<string>(['home', 'perfil', 'direcciones', 'posts', 'config', 'pedidos', 'reservas', 'rentas', 'boletos', 'voy', 'reclamos']);
 
 // Status → bilingual label + pill colors, shared across the activity lists.
 const STATUS: Record<string, { es: string; en: string; bg: string; c: string }> = {
@@ -123,6 +124,56 @@ export function CuentaScreen() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
+  // ── Reclamos (0122/0124) — la escalada cuando el negocio no responde ──
+  // Primero se le escribe al negocio (bloque de arriba). Si eso no resuelve,
+  // esto abre un caso con To'Latino: hilo de 3 lados (cliente · negocio · admin)
+  // que el founder atiende desde /admin → Reclamos.
+  const [claims, setClaims] = useState<MyClaim[] | null>(null);
+  const [claimOpen, setClaimOpen] = useState<MyClaim | null>(null);
+  const [claimMsg, setClaimMsg] = useState('');
+  const [claimBusy, setClaimBusy] = useState(false);
+  // hoja "abrir reclamo": sobre qué compra + motivo
+  const [newClaim, setNewClaim] = useState<{ kind: string; refId: string | null; refCode: string | null; businessId: string | null; bizName: string } | null>(null);
+  const [claimReason, setClaimReason] = useState<string | null>(null);
+  const [claimDetail, setClaimDetail] = useState('');
+  const [pickPurchase, setPickPurchase] = useState(false);
+
+  const loadClaims = async () => { setClaims(await fetchMyClaims()); };
+  useEffect(() => {
+    if (!auth.user) { setClaims(null); return; }
+    void loadClaims();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.user]);
+
+  const openClaims = claims?.filter((c) => c.status === 'abierto' || c.status === 'en_revision').length ?? 0;
+
+  const sendClaim = async () => {
+    if (!newClaim || !claimReason || claimBusy) return;
+    setClaimBusy(true);
+    const err = await createClaim({
+      kind: newClaim.kind, refId: newClaim.refId, refCode: newClaim.refCode,
+      businessId: newClaim.businessId, reason: claimReason, detail: claimDetail.trim() || undefined,
+    });
+    setClaimBusy(false);
+    if (err) { flash(L('No se pudo abrir el reclamo', "Couldn't open the claim")); return; }
+    setNewClaim(null); setClaimReason(null); setClaimDetail('');
+    await loadClaims();
+    setSec('reclamos');
+    flash(L('Reclamo abierto — te responderemos aquí', "Claim opened — we'll reply here"));
+  };
+
+  const sendClaimMsg = async () => {
+    if (!claimOpen || !claimMsg.trim() || claimBusy) return;
+    setClaimBusy(true);
+    const err = await claimAddMessage(claimOpen.id, claimMsg.trim());
+    setClaimBusy(false);
+    if (err) { flash(L('No se pudo enviar', "Couldn't send")); return; }
+    setClaimMsg('');
+    const fresh = await fetchMyClaims();
+    setClaims(fresh);
+    setClaimOpen(fresh.find((c) => c.id === claimOpen.id) ?? null);
+  };
+
   // Delivered-screen extras: quick star rating + expandable receipt.
   const [rateStars, setRateStars] = useState(0);
   const [rated, setRated] = useState(false);
@@ -289,6 +340,7 @@ export function CuentaScreen() {
             {row(Bike, '#B5791A', '#FCEFD6', L('Mis rentas', 'My rentals'), L('Equipo y artículos rentados', 'Rented equipment & items'), () => setSec('rentas'), String(act.rentals.length))}
             {row(Ticket, '#D6336C', '#FDE7EF', L('Mis boletos', 'My tickets'), L('Boletos de eventos', 'Event tickets'), () => setSec('boletos'), String(act.tickets.length))}
             {row(CalendarCheck, '#2F6FED', '#E5EFFB', L('Voy a asistir', "I'm going"), L('Eventos que marcaste "Voy"', 'Events you RSVP\'d'), () => setSec('voy'), String(act.going.length))}
+            {row(Flag, '#D6336C', '#FDE7EF', L('Mis reclamos', 'My claims'), L('Casos abiertos con To’Latino', 'Cases open with To’Latino'), () => setSec('reclamos'), openClaims > 0 ? String(openClaims) : String(claims?.length ?? 0))}
           </div>
 
           <div className={`${cardCls} p-2`}>
@@ -606,6 +658,173 @@ export function CuentaScreen() {
         </div>
       )}
 
+      {/* ── MIS RECLAMOS ── */}
+      {sec === 'reclamos' && (
+        <div>
+          {backBar(L('Mis reclamos', 'My claims'))}
+          <div className={`${cardCls} mb-2.5 flex items-start gap-3 p-3.5`}>
+            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-pink-bg"><Flag size={17} stroke={2.2} className="text-pink-dark" /></span>
+            <span className="min-w-0 flex-1 text-[11.5px] font-semibold leading-relaxed text-ink-3">
+              {L('Si le escribiste al negocio y no se resolvió, abre un reclamo desde tu pedido, reserva, renta o boleto. Nosotros entramos a ayudar.',
+                 "If you messaged the business and it wasn't resolved, open a claim from your order, booking, rental or ticket. We step in to help.")}
+            </span>
+          </div>
+          <button onClick={() => setPickPurchase(true)}
+            className="mb-2.5 min-h-[44px] w-full cursor-pointer rounded-btn-lg bg-primary text-[13px] font-extrabold text-white shadow-cta">
+            {L('Abrir un reclamo', 'Open a claim')}
+          </button>
+          {claims === null ? txEmpty(L('Cargando…', 'Loading…'))
+            : claims.length === 0 ? txEmpty(L('No tienes reclamos. Ojalá siga así.', "You have no claims. Long may it last."))
+            : (
+            <div className="flex flex-col gap-2.5">
+              {claims.map((c) => {
+                const st = CLAIM_STATUS[c.status] ?? CLAIM_STATUS.abierto;
+                const kd = CLAIM_KIND[c.kind];
+                return (
+                  <button key={c.id} onClick={() => { setClaimOpen(c); setClaimMsg(''); }} className={`${cardCls} flex cursor-pointer flex-col p-3.5 text-left`}>
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className={`flex-none rounded px-1.5 py-px text-[9px] font-extrabold uppercase ${st.cls}`}>{L(st.es, st.en)}</span>
+                      {kd && <span className="flex-none rounded px-1.5 py-px text-[9px] font-extrabold uppercase bg-lilac-2 text-primary-dark">{L(kd.es, kd.en)}</span>}
+                      {c.ref_code && <span className="flex-none font-mono text-[10px] font-extrabold tracking-[.04em] text-muted-2">{c.ref_code}</span>}
+                      <span className="ml-auto flex-none text-[10.5px] font-semibold text-muted-2">{timeAgo(c.created_at, lang === 'es')}</span>
+                    </span>
+                    <span className="mt-1.5 text-[13px] font-extrabold text-ink">{c.reason}</span>
+                    <span className="mt-0.5 truncate text-[11.5px] font-semibold text-muted">{c.business_name ?? L('Negocio', 'Business')} · {c.messages?.length ?? 0} {L('mensajes', 'messages')}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* hilo del reclamo — lo mismo que ve el negocio y To'Latino */}
+      <Overlay open={claimOpen != null} onClose={() => setClaimOpen(null)} width={480}>
+        {claimOpen && (() => {
+          const st = CLAIM_STATUS[claimOpen.status] ?? CLAIM_STATUS.abierto;
+          const closed = claimOpen.status === 'resuelto' || claimOpen.status === 'rechazado';
+          return (
+            <>
+              <OverlayTitle title={L('Mi reclamo', 'My claim')} onClose={() => setClaimOpen(null)} />
+              <div className="flex flex-col gap-3">
+                <div>
+                  <span className={`inline-block rounded px-1.5 py-px text-[9px] font-extrabold uppercase ${st.cls}`}>{L(st.es, st.en)}</span>
+                  <div className="mt-1.5 text-[15px] font-extrabold leading-snug text-ink">{claimOpen.reason}</div>
+                  <div className="mt-0.5 text-[11.5px] font-semibold text-muted">{claimOpen.business_name ?? L('Negocio', 'Business')}{claimOpen.ref_code ? ` · ${claimOpen.ref_code}` : ''}</div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {(claimOpen.messages ?? []).map((m, i) => {
+                    const mine = m.side === 'cliente';
+                    return (
+                      <div key={i} className={`max-w-[86%] rounded-card-sm px-3 py-2 ${mine ? 'self-end bg-primary text-white' : m.side === 'admin' ? 'self-start bg-lilac-2 text-ink' : 'self-start bg-app text-ink'}`}>
+                        <div className={`text-[9.5px] font-extrabold uppercase tracking-[.04em] ${mine ? 'text-white/70' : 'text-muted-2'}`}>
+                          {mine ? L('Tú', 'You') : m.side === 'admin' ? 'To’Latino' : L('Negocio', 'Business')} · {timeAgo(m.at, lang === 'es')}
+                        </div>
+                        <div className={`mt-0.5 whitespace-pre-wrap break-words text-[12.5px] font-medium leading-relaxed ${mine ? 'text-white' : 'text-ink-2'}`}>{m.text}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {closed && claimOpen.resolution && (
+                  <div className="rounded-field bg-green-bg px-3 py-2.5">
+                    <div className="text-[10px] font-extrabold uppercase tracking-[.04em] text-green-dark">{L('Cómo se resolvió', 'How it was resolved')}</div>
+                    <div className="mt-0.5 text-[12px] font-medium leading-relaxed text-ink-2">{claimOpen.resolution}</div>
+                  </div>
+                )}
+                {closed ? (
+                  <div className="rounded-field bg-app px-3 py-2.5 text-center text-[11.5px] font-bold text-muted">
+                    {L('Este caso está cerrado. Si sigue el problema, abre uno nuevo.', 'This case is closed. If the problem persists, open a new one.')}
+                  </div>
+                ) : (
+                  <div className="border-t border-hair pt-3">
+                    <textarea value={claimMsg} onChange={(e) => setClaimMsg(e.target.value.slice(0, 800))} rows={2}
+                      placeholder={L('Escribe aquí…', 'Write here…')}
+                      className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-medium text-ink outline-none focus:border-primary" />
+                    <PrimaryBtn className="mt-2 w-full" disabled={claimBusy || !claimMsg.trim()} onClick={sendClaimMsg}>
+                      {claimBusy ? L('Enviando…', 'Sending…') : L('Enviar', 'Send')}
+                    </PrimaryBtn>
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
+      </Overlay>
+
+      {/* elegir la compra del reclamo (cubre pedidos, reservas, rentas y boletos) */}
+      <Overlay open={pickPurchase} onClose={() => setPickPurchase(false)} width={440}>
+        <OverlayTitle title={L('¿Sobre qué compra?', 'Which purchase?')} onClose={() => setPickPurchase(false)} />
+        {(() => {
+          const opts: { kind: string; refId: string; refCode: string | null; businessId: string | null; bizName: string; sub: string }[] = [
+            ...act.orders.map((o) => ({ kind: 'orden', refId: o.id, refCode: o.code, businessId: o.business_id, bizName: o.businesses?.name ?? L('Negocio', 'Business'), sub: `${L('Pedido', 'Order')} · ${dt(o.created_at)}` })),
+            ...act.bookings.map((b) => ({ kind: 'reserva', refId: b.id, refCode: null, businessId: b.business_id, bizName: b.businesses?.name ?? L('Negocio', 'Business'), sub: `${b.service_name ?? L('Reserva', 'Booking')} · ${dt(b.starts_at)}` })),
+            ...act.rentals.map((r) => ({ kind: 'renta', refId: r.id, refCode: null, businessId: r.business_id, bizName: r.businesses?.name ?? L('Negocio', 'Business'), sub: `${r.item_name} · ${dt(r.start_at)}` })),
+            ...act.tickets.map((t) => ({ kind: 'boleto', refId: t.id, refCode: t.code, businessId: null, bizName: evTitle(t.events), sub: `${L('Boleto', 'Ticket')} · ${dt(t.created_at)}` })),
+          ];
+          if (opts.length === 0) return (
+            <div className="py-6 text-center text-[12.5px] font-semibold text-muted">
+              {L('Todavía no tienes compras. Un reclamo siempre va sobre algo que compraste.', 'You have no purchases yet. A claim is always about something you bought.')}
+            </div>
+          );
+          return (
+            <div className="flex max-h-[52vh] flex-col gap-1.5 overflow-y-auto">
+              {opts.map((o) => (
+                <button key={`${o.kind}-${o.refId}`}
+                  onClick={() => { setPickPurchase(false); setNewClaim({ kind: o.kind, refId: o.refId, refCode: o.refCode, businessId: o.businessId, bizName: o.bizName }); setClaimReason(null); setClaimDetail(''); }}
+                  className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] border-hair px-3 py-2.5 text-left hover:border-primary">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12.5px] font-extrabold text-ink">{o.bizName}{o.refCode ? ` · ${o.refCode}` : ''}</span>
+                    <span className="block truncate text-[11px] font-semibold text-muted">{o.sub}</span>
+                  </span>
+                  <ChevronRight size={15} className="flex-none text-muted-2" />
+                </button>
+              ))}
+            </div>
+          );
+        })()}
+      </Overlay>
+
+      {/* abrir un reclamo sobre una compra */}
+      <Overlay open={newClaim != null} onClose={() => setNewClaim(null)} width={440}>
+        {newClaim && (
+          <>
+            <OverlayTitle title={L('Abrir un reclamo', 'Open a claim')} onClose={() => setNewClaim(null)} />
+            <div className="mb-3 rounded-field bg-lilac-2 px-3 py-2.5 text-[11.5px] font-semibold leading-relaxed text-ink-soft">
+              {L('To’Latino entra a mediar entre tú y el negocio. Verás las respuestas aquí en Mi cuenta.',
+                 "To'Latino steps in to mediate between you and the business. You'll see replies here in My account.")}
+            </div>
+            <div className="mb-3 rounded-field bg-app px-3 py-2.5">
+              <div className="text-[10px] font-extrabold uppercase tracking-[.04em] text-muted-2">{L('Sobre', 'About')}</div>
+              <div className="mt-0.5 text-[12.5px] font-extrabold text-ink">{newClaim.bizName}{newClaim.refCode ? ` · ${newClaim.refCode}` : ''}</div>
+            </div>
+            <div className="mb-1.5 text-[12.5px] font-extrabold text-ink">{L('¿Qué pasó?', 'What happened?')}</div>
+            <div className="flex flex-col gap-1.5">
+              {[
+                ['No recibí lo que pagué', "I didn't get what I paid for"],
+                ['Llegó mal o incompleto', 'Arrived wrong or incomplete'],
+                ['Me cobraron de más', 'I was overcharged'],
+                ['El negocio no responde', "The business doesn't respond"],
+                ['Pedí un reembolso y no llegó', "I asked for a refund and never got it"],
+                ['Otro problema', 'Another problem'],
+              ].map(([resEs, resEn]) => (
+                <button key={resEn} onClick={() => setClaimReason(resEs)}
+                  className={`min-h-[44px] cursor-pointer rounded-field border-[1.5px] px-3.5 py-2.5 text-left text-[13px] font-bold ${
+                    claimReason === resEs ? 'border-primary bg-lilac-3 text-ink' : 'border-hair text-ink-soft'}`}>
+                  {L(resEs, resEn)}
+                </button>
+              ))}
+            </div>
+            <div className="mb-1.5 mt-3 text-[12.5px] font-extrabold text-ink">{L('Cuéntanos con tus palabras', 'Tell us in your own words')}</div>
+            <textarea value={claimDetail} onChange={(e) => setClaimDetail(e.target.value.slice(0, 800))} rows={3}
+              placeholder={L('Entre más detalles, más rápido lo resolvemos.', 'The more details, the faster we resolve it.')}
+              className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-medium text-ink outline-none focus:border-primary" />
+            <PrimaryBtn className="mt-3" disabled={!claimReason || claimBusy} onClick={sendClaim}>
+              {claimBusy ? L('Abriendo…', 'Opening…') : L('Abrir reclamo', 'Open claim')}
+            </PrimaryBtn>
+          </>
+        )}
+      </Overlay>
+
       {toast && (
         <div className="fixed bottom-24 left-1/2 z-[70] -translate-x-1/2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">{toast}</div>
       )}
@@ -763,6 +982,13 @@ export function CuentaScreen() {
                   else flash(L('No se pudo enviar', "Couldn't send"));
                 }}>{reportBusy ? L('Enviando…', 'Sending…') : L('Enviar al negocio', 'Send to business')}</PrimaryBtn>
               </div>
+              {/* escalada: el negocio ya tuvo su turno y no se resolvió */}
+              <button
+                onClick={() => { setNewClaim({ kind: 'orden', refId: o.id, refCode: o.code, businessId: o.business_id, bizName: o.businesses?.name ?? bizName }); setClaimReason(null); setClaimDetail(''); }}
+                className="mt-2.5 min-h-[44px] w-full cursor-pointer rounded-btn border-[1.5px] border-pink-dark bg-white text-[12px] font-extrabold text-pink-dark"
+              >
+                {L('El negocio no responde — abrir reclamo', "Business isn't responding — open a claim")}
+              </button>
             </div>
           );
 
