@@ -380,3 +380,7 @@ infra/        # Docker Compose, deployment
 - No unnecessary paid dependency introduced.
 - Verified end-to-end (tsc + build + the relevant mobile audit / intercept), not just
   written.
+- **Admin coverage (rule 2026-07-24):** every new entity/flow ships with its Super
+  Admin surface (list/detail/actions/audit) — or an explicit §3 entry with its
+  phase in `docs/ADMIN-DASHBOARD-PLAN.md`. A module the founder can't control
+  from `/admin` is NOT done. Read that plan before admin-related work.

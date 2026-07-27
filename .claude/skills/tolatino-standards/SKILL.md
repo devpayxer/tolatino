@@ -232,3 +232,6 @@ any UI request is to **add what's missing, never replace what exists.**
       reverted (#9).**
 - [ ] If anything was missing from the design system or stack, the founder was
       asked rather than guessed.
+- [ ] **Admin coverage: any new entity/flow added its Super Admin surface (or an
+      explicit §3 entry + phase in `docs/ADMIN-DASHBOARD-PLAN.md`). Nothing ships
+      that the founder can't control from `/admin`.**
