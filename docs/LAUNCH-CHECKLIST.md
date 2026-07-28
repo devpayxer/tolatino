@@ -1737,3 +1737,34 @@ PENDIENTE DEL FOUNDER (Fase 2):
   hacer con esas entradas de bitácora primero.
 - [ ] Las entradas de bitácora `report.hide` / `report.unhide` con razón
   "e2e fase 2" son de esa verificación — se quedan (es inmutable, a propósito).
+
+### Super Admin — FASE 3 + rediseño v2 construida (2026-07-28)
+Migraciones 0126–0129. `/admin` rediseñado por completo al handoff v2 (14
+secciones, escritorio-primero con drawer móvil, nav por rol). Verificado en
+navegador real (escritorio 1440 + móvil 402) y seguridad por rol contra prod.
+- [x] **14 secciones** con la cara v2: Inicio · Zonas · Usuarios · Negocios ·
+  Licencias · Stream · Moderación · Reclamos · Dinero · Pedidos · Contenido ·
+  Catálogo · Notificaciones · Analíticas+Sistema · Módulos (5 verticales).
+- [x] **Nav por rol** aplicada en UI (secciones atenuadas) y **exigida en el
+  servidor** (moderador bloqueado en Dinero/kill-switches/reembolsos — probado).
+- [x] **Zonas / Analíticas / Salud** con datos reales de producción.
+- [x] **Kill-switches** (platform_flags) con efecto real e inmediato; solo
+  superadmin puede cambiarlos, con razón → bitácora.
+
+PENDIENTE DEL FOUNDER / DEFERIDO A ESCALA (Fase 3):
+- [ ] **Zonas por BARRIO**: hoy la unidad es la CIUDAD (los negocios solo guardan
+  `city`, no barrio). Cuando se capture barrio en el alta de negocio, `admin_zones`
+  agrega por barrio sin cambiar la UI.
+- [ ] **Stream con IA real**: hoy el marcado es por palabras clave
+  (`_stream_flag`). Un modelo real de moderación (o un servicio) reemplaza esa
+  función cuando se decida — la UI ya muestra motivo + % de confianza.
+- [ ] **Embudo completo**: hoy mide vistas→contacto→pago (lo que sí trackeamos).
+  Los pasos "abrió menú / agregó al carrito" necesitan tracking de eventos en el
+  cliente (business_metric_daily con esas `kind`).
+- [ ] **Broadcast a escala**: el envío inserta notificaciones hasta un tope de
+  5,000 en vivo y guarda el alcance total real. A 1.2M el fanout debe ser un job
+  (BullMQ) — el historial ya no miente (guarda reach vs sent).
+- [ ] **Trabajos y Transporte**: módulos en piloto (aviso ámbar). Se activan
+  cuando esas verticales se construyan como producto.
+- [ ] **Invitar admin**: asciende una cuenta que YA existe (no crea usuarios).
+  Para un admin nuevo, que la persona se registre primero en To'Latino.

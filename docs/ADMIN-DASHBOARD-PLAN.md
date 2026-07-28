@@ -185,8 +185,44 @@ recurso, lectura por partes + admin.
    Moderación + Reclamos + Dinero + Pedidos en `/admin`, y el lado usuario:
    botón **Reportar** en las 9 entidades reportables + **Mis reclamos** en Mi
    cuenta. Detalle abajo.
-3. **Fase 3 — Operación:** Contenido + Catálogo + Notificaciones + Analíticas +
-   Sistema/Equipo + flags en el cliente.
+3. **Fase 3 — Operación + rediseño v2: ✅ HECHA** (2026-07-28) — se rediseñó
+   TODA la consola al handoff `06-super-admin` **v2** (14 secciones, escritorio-
+   primero con drawer en móvil, sidebar oscuro agrupado con badges de pendientes,
+   nav por rol) y se construyeron las 6 secciones nuevas con su backend
+   (migraciones 0126–0129). Detalle abajo.
+
+### Fase 3 — qué quedó construido (referencia)
+- **Rediseño v2:** `Admin.tsx` reconstruido + `screens/admin/ui.tsx` (primitivas).
+  Sidebar `#1E1B2E` con grupos (Centro de mando · Personas · Confianza ·
+  Operación · Plataforma · Módulos), header sticky con búsqueda contextual +
+  badge de rol, hoja de acción **unificada con razón obligatoria** (todo lo
+  destructivo pasa por ahí). SOLO tokens (`ink`/`primary`/`dash`/`lilac`/…); se
+  añadió `primary.soft` para el logo sobre el sidebar oscuro.
+- **Nav por rol (server + UI):** superadmin ve todo; finanzas/moderador/soporte
+  ven solo lo suyo (secciones ajenas atenuadas → "Sin acceso"). El servidor lo
+  vuelve a exigir: verificado que un moderador recibe `forbidden` en Dinero,
+  kill-switches y reembolsos.
+- **6 secciones nuevas** (migraciones 0126–0128):
+  - **Zonas activas** — agregados por ciudad (negocios/usuarios/GMV/tendencia),
+    estado hot/growing/cooling/dormant/uncovered, ratio usuarios·negocio, bloque
+    "Mayor oportunidad", saltos a Negocios/Campaña.
+  - **Stream** — feed de Comunidad con stats, marcado por **palabras clave**
+    (IA real diferida), destacar/fijar/ocultar/eliminar por post.
+  - **Contenido** — 6 verticales en una lista: destacar en descubrimiento
+    (columna `featured` nueva), ocultar, eliminar.
+  - **Catálogo** — categorías (reordenar/renombrar), amenidades, ciudades
+    (6,978, buscadas en servidor), sugerencias de negocios (aprobar/rechazar).
+  - **Notificaciones** — broadcast segmentado con alcance en vivo + historial
+    con tasa de apertura real (via `notifications.read`).
+  - **Analíticas + Sistema** — crecimiento por vertical/ciudad, embudo real
+    (vistas→contacto→pago), salud del sistema, **kill-switches** con efecto real
+    (platform_flags), equipo admin (invitar/rol/quitar), bitácora inmutable.
+- **Módulos** — Eventos/Bienes Raíces/Autos con KPIs + filas reales por pestaña;
+  Trabajos/Transporte como **piloto** (aviso ámbar, sin filas) hasta que esas
+  verticales existan como producto.
+- **Bug corregido en verificación (0129):** `admin_funnel` tenía una columna de
+  salida `count` que ensombrecía la función agregada `count(*)` → embudo vacío;
+  renombrada a `cnt`.
 
 ### Fase 2 — qué quedó construido (referencia)
 - **Migraciones:** `0122` (columna `hidden` en posts/comentarios/reseñas/reseñas

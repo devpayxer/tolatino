@@ -373,6 +373,218 @@ export const TX_KIND: Record<string, { es: string; en: string }> = {
   renta: { es: 'Renta', en: 'Rental' }, boleto: { es: 'Boleto', en: 'Ticket' },
 };
 
+// ═══════════════════════════ FASE 3 (migraciones 0126–0128) ══════════════════
+
+// ── Zonas ────────────────────────────────────────────────────────────────────
+export type ZoneRow = {
+  zone: string; city: string; businesses: number; users: number; gmv30: number;
+  trend7: number; ratio: number; state: 'hot' | 'growing' | 'cooling' | 'dormant' | 'uncovered'; opportunity: number;
+};
+export const ZONE_STATE: Record<string, { es: string; en: string; bg: string; c: string }> = {
+  hot: { es: 'Caliente', en: 'Hot', bg: '#FDE7EF', c: '#D6336C' },
+  growing: { es: 'Creciendo', en: 'Growing', bg: '#E3F5EA', c: '#1F8A4C' },
+  cooling: { es: 'Enfriándose', en: 'Cooling', bg: '#E5EFFB', c: '#2F6FED' },
+  dormant: { es: 'Dormida', en: 'Dormant', bg: '#FCEFD6', c: '#9A6A12' },
+  uncovered: { es: 'Sin cobertura', en: 'Uncovered', bg: '#F1EFFA', c: '#8A86A0' },
+};
+export async function fetchZones(sort = 'gmv', city?: string): Promise<ZoneRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_zones', { in_sort: sort, in_city: city || null });
+  if (error || !Array.isArray(data)) return [];
+  return data as ZoneRow[];
+}
+
+// ── Stream ───────────────────────────────────────────────────────────────────
+export type StreamPost = {
+  id: string; author: string; initials: string; color: string; hood: string | null; city: string | null;
+  ptype: string; body: string; likes: number; comments: number; shares: number; created_at: string;
+  hidden: boolean; pinned: boolean; featured: boolean; flag_label: string | null; flag_score: number | null;
+};
+export type StreamStats = { posts_today: number; comments_today: number; flagged: number; auto_pct: number };
+export async function fetchStream(type = 'all', state = 'all', city?: string): Promise<StreamPost[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_stream', { in_type: type, in_state: state, in_city: city || null, max_results: 60 });
+  if (error || !Array.isArray(data)) return [];
+  return data as StreamPost[];
+}
+export async function fetchStreamStats(): Promise<StreamStats | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('admin_stream_stats');
+  if (error || !Array.isArray(data) || !data.length) return null;
+  return data[0] as StreamStats;
+}
+export async function adminPinPost(id: string, on: boolean, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_post_pin', { in_id: id, in_on: on, in_reason: reason });
+  return error ? error.message : null;
+}
+
+// ── Contenido ────────────────────────────────────────────────────────────────
+export type ContentRow = {
+  ctype: string; id: string; title: string; author: string | null; meta: string | null;
+  cat: string | null; loc: string | null; status: string; featured: boolean; created_at: string; total_count: number;
+};
+export const CONTENT_TYPE: Record<string, { es: string; en: string }> = {
+  post: { es: 'Comunidad', en: 'Community' }, evento: { es: 'Evento', en: 'Event' },
+  propiedad: { es: 'Propiedad', en: 'Property' }, auto: { es: 'Auto', en: 'Vehicle' },
+  novedad: { es: 'Novedad', en: 'Update' }, reseña: { es: 'Reseña', en: 'Review' },
+};
+export async function fetchContent(type = 'all', q = '', limit = 30, offset = 0): Promise<ContentRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_content_list', { in_type: type, in_q: q || null, max_results: limit, in_offset: offset });
+  if (error || !Array.isArray(data)) return [];
+  return data as ContentRow[];
+}
+export async function adminFeatureContent(type: string, id: string, on: boolean, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_content_feature', { in_type: type, in_id: id, in_on: on, in_reason: reason });
+  return error ? error.message : null;
+}
+export async function adminModerateContent(type: string, id: string, action: 'hide' | 'unhide' | 'remove', reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_content_moderate', { in_type: type, in_id: id, in_action: action, in_reason: reason });
+  return error ? error.message : null;
+}
+
+// ── Catálogo ─────────────────────────────────────────────────────────────────
+export type CatRow = { id: string; name_es: string; name_en: string; sort: number; businesses?: number };
+export type AmenityRow = { id: string; name_es: string; name_en: string; sort: number };
+export type CityRow = { id: number; name: string; state: string; label: string; population: number | null; businesses: number; users: number; total_count: number };
+export type SuggestionRow = { kind: string; id: string; label_es: string; label_en: string; category_id: string | null; business_name: string | null; status: string; created_at: string };
+export async function fetchCategories(): Promise<CatRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_categories_list');
+  return error || !Array.isArray(data) ? [] : data as CatRow[];
+}
+export async function adminReorderCategory(id: string, dir: 'up' | 'down'): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_category_reorder', { in_id: id, in_dir: dir });
+  return error ? error.message : null;
+}
+export async function adminRenameCategory(id: string, es: string, en: string, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_category_rename', { in_id: id, in_es: es, in_en: en, in_reason: reason });
+  return error ? error.message : null;
+}
+export async function fetchAmenities(): Promise<AmenityRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_amenities_list');
+  return error || !Array.isArray(data) ? [] : data as AmenityRow[];
+}
+export async function adminRenameAmenity(id: string, es: string, en: string, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_amenity_rename', { in_id: id, in_es: es, in_en: en, in_reason: reason });
+  return error ? error.message : null;
+}
+export async function fetchCities(q = ''): Promise<CityRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_cities_list', { in_q: q || null, max_results: 40 });
+  return error || !Array.isArray(data) ? [] : data as CityRow[];
+}
+export async function fetchSuggestions(status = 'pending'): Promise<SuggestionRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_suggestions_list', { in_status: status });
+  return error || !Array.isArray(data) ? [] : data as SuggestionRow[];
+}
+export async function adminResolveSuggestion(kind: string, id: string, approve: boolean, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_suggestion_resolve', { in_kind: kind, in_id: id, in_approve: approve, in_reason: reason });
+  return error ? error.message : null;
+}
+
+// ── Notificaciones ───────────────────────────────────────────────────────────
+export type BroadcastRow = { id: string; title: string; segment: Record<string, unknown>; reach: number; sent: number; opened: number; open_pct: number; created_at: string };
+export async function fetchBroadcastReach(city?: string, role = 'all'): Promise<number> {
+  if (!supabase) return 0;
+  const { data, error } = await supabase.rpc('admin_broadcast_reach', { in_city: city || null, in_role: role });
+  return error ? 0 : Number(data ?? 0);
+}
+export async function adminSendBroadcast(p: { title: string; body: string; city?: string; role?: string; vertical?: string }): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_broadcast_send', {
+    in_title: p.title, in_body: p.body, in_city: p.city || null, in_role: p.role || 'all', in_vertical: p.vertical || 'all',
+  });
+  return error ? error.message : null;
+}
+export async function fetchBroadcasts(): Promise<BroadcastRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_broadcasts_history', { max_results: 30 });
+  return error || !Array.isArray(data) ? [] : data as BroadcastRow[];
+}
+
+// ── Analíticas + Sistema ─────────────────────────────────────────────────────
+export type GrowthRow = { kind: string; label: string; pct: number };
+export type FunnelRow = { step: string; label: string; cnt: number; pct: number };
+export type TopBizRow = { rank: number; id: string; name: string; gmv: number };
+export type HealthRow = { label: string; value: string; ok: boolean };
+export type FlagRow = { key: string; enabled: boolean; label_es: string; label_en: string; payload: Record<string, unknown> | null; updated_at: string };
+export type ConfigRow = { key: string; value: unknown; label_es: string; updated_at: string };
+export type TeamRow = { user_id: string; email: string; role: AdminRole; note: string | null; is_owner: boolean; created_at: string };
+export async function fetchGrowth(): Promise<GrowthRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_growth');
+  return error || !Array.isArray(data) ? [] : data as GrowthRow[];
+}
+export async function fetchFunnel(): Promise<FunnelRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_funnel');
+  return error || !Array.isArray(data) ? [] : data as FunnelRow[];
+}
+export async function fetchTopBiz(): Promise<TopBizRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_top_biz', { max_results: 6 });
+  return error || !Array.isArray(data) ? [] : data as TopBizRow[];
+}
+export async function fetchHealth(): Promise<HealthRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_health');
+  return error || !Array.isArray(data) ? [] : data as HealthRow[];
+}
+export async function fetchFlags(): Promise<FlagRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_flags_list');
+  return error || !Array.isArray(data) ? [] : data as FlagRow[];
+}
+export async function adminSetFlag(key: string, enabled: boolean, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_flag_set', { in_key: key, in_enabled: enabled, in_reason: reason });
+  return error ? error.message : null;
+}
+export async function fetchTeam(): Promise<TeamRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_team_list');
+  return error || !Array.isArray(data) ? [] : data as TeamRow[];
+}
+export async function adminInviteAdmin(email: string, role: string, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_team_invite', { in_email: email, in_role: role, in_reason: reason });
+  return error ? error.message : null;
+}
+export async function adminSetTeamRole(userId: string, role: string, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_team_set_role', { in_user: userId, in_role: role, in_reason: reason });
+  return error ? error.message : null;
+}
+export async function adminRemoveAdmin(userId: string, reason: string): Promise<string | null> {
+  if (!supabase) return 'offline';
+  const { error } = await supabase.rpc('admin_team_remove', { in_user: userId, in_reason: reason });
+  return error ? error.message : null;
+}
+
+// ── Módulos ──────────────────────────────────────────────────────────────────
+export type ModuleKpi = { label: string; value: string };
+export type ModuleRow = { id: string; ini: string; color: string; title: string; sub: string; val: string; status: string; featured: boolean };
+export async function fetchModuleKpis(vertical: string): Promise<ModuleKpi[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_module_kpis', { in_vertical: vertical });
+  return error || !Array.isArray(data) ? [] : data as ModuleKpi[];
+}
+export async function fetchModuleRows(vertical: string, tab: string): Promise<ModuleRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc('admin_module_rows', { in_vertical: vertical, in_tab: tab, max_results: 40 });
+  return error || !Array.isArray(data) ? [] : data as ModuleRow[];
+}
+
 // ── formatos ─────────────────────────────────────────────────────────────────
 export const money = (n: number): string =>
   `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

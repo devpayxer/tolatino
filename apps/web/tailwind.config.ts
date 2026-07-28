@@ -11,6 +11,7 @@ const config: Config = {
           DEFAULT: '#7B61FF', // brand purple — CTAs, active states, accents
           dark: '#6D4DF6', // hover / text on lilac
           press: '#6743E2', // pressed / text on white-over-purple
+          soft: '#9B85FF', // lighter purple — logo/text on the dark admin sidebar
         },
         ink: {
           DEFAULT: '#1E1B2E', // headlines, strong text, dark buttons
