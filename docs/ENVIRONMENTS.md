@@ -10,6 +10,27 @@
 > ramas de hoy) y a `docs/DB-ACCESS.md` (cómo el agente aplica migraciones).
 > Última actualización: 2026-07-28.
 
+## Estado del cutover (2026-07-28)
+
+Decisión del fundador: **Opción A** (proyecto de hoy → staging; proyecto nuevo →
+prod prístino) · dominio final **`tolatino.com`** (ya comprado).
+
+| Pieza | Proyecto Supabase | Ref | Estado |
+|---|---|---|---|
+| **Staging** (pruebas, con datos sembrados) | `tolatino` | `zpkaxojonufdwgahiqjh` | En uso (era el único entorno) |
+| **Producción** (limpio) | `tolatino-prod` | `vurqsebgsacickxsxfeh` | ✅ creado · 129 migraciones aplicadas · gazetteer de ciudades cargado · **0 datos de prueba** |
+
+El viejo proyecto `latinoplatform` (inactivo desde mayo, pre-To'Latino) se **borró**
+para liberar el cupo del plan Free. La contraseña de la BD de prod está en el
+scratchpad de la sesión — **resetéala** en el dashboard (Settings → Database →
+Reset database password) para que solo tú la conozcas (las migraciones usan el
+Personal Access Token, no la contraseña, así que resetearla no rompe nada).
+
+**Falta para quedar 100% en vivo** (pasos que solo tú puedes hacer en dashboards —
+ver §4.3–4.6 y el checklist §7): desplegar las Edge Functions + secretos a prod,
+configurar Vercel (Production→prod / Preview→staging), pasar Stripe a LIVE, y
+apuntar `tolatino.com`.
+
 ---
 
 ## 1. La idea base: cada cambio tiene DOS mitades que viajan juntas
@@ -114,30 +135,43 @@ Recomendación: el proyecto de HOY (con todos los datos sembrados) se vuelve
 que queda como **prod prístino** corriendo las 129 migraciones. Cero riesgo de que
 un dato falso aparezca frente a un usuario real.
 
-### 4.1 — Crear el proyecto Supabase de PRODUCCIÓN
-En **supabase.com/dashboard → New project**:
-- Nombre: `tolatino-prod` (el actual pásalo a `tolatino-staging` en Settings).
-- **Región:** la más cercana a tus usuarios (US East si el arranque es la costa
-  este / Hazleton).
-- **Guarda la contraseña de la base** que te da al crear (la necesitas para
-  backups/`pg_dump`).
-- Activa **PostGIS** (Database → Extensions → `postgis`) — el proyecto lo usa para
-  "cerca de mí" / radios.
+### 4.1 — Crear el proyecto Supabase de PRODUCCIÓN — ✅ HECHO (2026-07-28)
+Creado por Claude vía la **Management API** (mismo PAT de `SUPABASE_ACCESS_TOKEN`):
+`tolatino-prod`, región `us-east-1` (igual que staging). Ref `vurqsebgsacickxsxfeh`.
+PostGIS + pg_net + pg_trgm quedan activos por las migraciones (no hay que
+prenderlos a mano). **Contraseña de la BD** generada y guardada en el scratchpad de
+la sesión → **resetéala** en Settings → Database (las migraciones usan el PAT, no
+la contraseña).
+> Reproducir a mano (si algún día hace falta): `POST /v1/projects` con
+> `organization_id`, `name`, `region`, `db_pass`. O en el dashboard → New project.
 
-### 4.2 — Construir el esquema: correr las 129 migraciones en orden
-Aquí es donde un proyecto vacío se vuelve idéntico al actual, pero sin datos.
-**Claude lo hace por ti** apuntando `scripts/sbsql.mjs` al ref del proyecto nuevo:
+### 4.2 — Construir el esquema: 129 migraciones + dato de referencia — ✅ HECHO
+**Migraciones (esquema):** las 129 corridas EN ORDEN, de corrido, una sola vez:
 ```bash
-# (Claude, en la sesión, con SUPABASE_ACCESS_TOKEN del token de prod)
-for f in supabase/migrations/*.sql; do
-  echo ">> $f"; SUPABASE_PROJECT_REF=<ref-de-prod> node scripts/sbsql.mjs --file "$f" || break
+# (con SUPABASE_ACCESS_TOKEN; correr en SEGUNDO PLANO — tardan ~4–5 min)
+for f in $(ls supabase/migrations/*.sql | sort); do
+  SUPABASE_PROJECT_REF=<ref-de-prod> node scripts/sbsql.mjs --file "$f" || break
 done
-# verificar el ledger:
-SUPABASE_PROJECT_REF=<ref-de-prod> node scripts/sbsql.mjs "select count(*) from public.schema_migrations;"
 ```
-> **NO se corre `supabase/seed.sql` ni los `scripts/seed-*.mjs` en producción** —
-> esos siembran negocios/pedidos de prueba (El Sabor, Bodega La Bendición,
-> Barbería D' Primera, etc.). Van SOLO a staging.
+> ⚠️ **Correrlas de una sola vez, completas.** Si un intento se corta a la mitad y
+> re-corres desde 0001 sobre un esquema parcial, revientan por ambigüedad
+> (`search_businesses is not unique`, etc. — mismo peligro de PROGRESS.md: no
+> re-aplicar migraciones viejas sobre un esquema más nuevo). Si se corta: borra el
+> proyecto y recréalo limpio, no "resumas".
+
+**Dato de referencia (NO es dato de prueba — la app lo necesita):**
+- **Categorías y amenidades** las siembran las **migraciones** (0013 / 0117 / 0119)
+  → quedan solas al correr el esquema.
+- **Ciudades** (gazetteer de ~7k US) vienen de `supabase/data/us_cities.csv`. No hay
+  loader SQL en el repo (en staging se importó por el Table Editor). Para prod,
+  Claude generó los `INSERT` desde el CSV y los aplicó por la Management API.
+
+> 🚩 **Trampa: `supabase/seed_cities.sql` está MAL nombrado** — NO carga ciudades;
+> siembra **negocios/eventos/posts de PRUEBA** de 3 ciudades. **Jamás correrlo en
+> prod.** Igual que `supabase/seed.sql`, `supabase/seed-test/*` y `scripts/seed-*.mjs`
+> (El Sabor, Bodega La Bendición, Barbería D' Primera, etc.): **todo eso es solo
+> para staging.** Si algo de eso entra a prod, la vía limpia es recrear el proyecto,
+> no borrar fila por fila (hay filas hijas por ~20 tablas).
 
 ### 4.3 — Storage (imágenes) y Edge Functions
 El esquema no incluye ni los buckets de Storage ni el código de las funciones —
@@ -229,29 +263,26 @@ verdad:
 
 ---
 
-## 6. La única decisión para arrancar el montaje
+## 6. La decisión (ya tomada)
 
-**¿Qué proyecto es el prod limpio?**
+**Elegida la Opción A** (2026-07-28): el proyecto de hoy (`tolatino`,
+`zpkaxojonufdwgahiqjh`) es **staging**; el nuevo (`tolatino-prod`,
+`vurqsebgsacickxsxfeh`) es **prod prístino** con las 129 migraciones + dato de
+referencia y **cero datos de prueba**. Dominio final: **`tolatino.com`**.
 
-- **Opción A (recomendada):** el proyecto de hoy (con todos los datos de prueba)
-  se vuelve **staging**; se crea un **proyecto nuevo** que Claude deja como **prod
-  prístino** corriendo las 129 migraciones. → **Cero riesgo** de datos falsos en
-  producción; separación limpia desde el día uno.
-- **Opción B:** el de hoy se queda como prod y se le **borran** los datos de
-  prueba. → Más rápido de "declarar", pero más riesgo de que quede un negocio/
-  pedido de prueba escondido frente a usuarios reales.
-
-Elegida la opción, el resto (§4) lo ejecuta Claude salvo los pasos que solo tú
-puedes hacer en los dashboards (crear el proyecto Supabase, pegar las llaves LIVE
-de Stripe, configurar el dominio) — esos te los dejo listos para copy-paste.
+Lo que faltaba de §4 lo ejecuta Claude salvo los pasos que solo tú puedes hacer en
+los dashboards (Edge Functions + secretos, Vercel Production/Preview, Stripe LIVE,
+DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
 
 ---
 
 ## 7. Checklist de cutover a producción
 
-- [ ] Decidida la opción A/B (§6).
-- [ ] Proyecto Supabase de prod creado (§4.1); PostGIS activo; contraseña guardada.
-- [ ] Las 129 migraciones corridas en prod; `schema_migrations` cuadra (§4.2).
+- [x] Decidida la opción A/B (§6). → **Opción A** + dominio `tolatino.com`.
+- [x] Proyecto Supabase de prod creado (§4.1) `vurqsebgsacickxsxfeh`; PostGIS activo.
+- [x] Las 129 migraciones corridas en prod; dato de referencia (categorías/ciudades)
+      cargado; **0 negocios/pedidos/posts** (§4.2).
+- [ ] Resetear la contraseña de la BD de prod en el dashboard (§4.1).
 - [ ] Buckets de Storage recreados con políticas públicas de lectura (§4.3).
 - [ ] Las 10 Edge Functions desplegadas a prod (§4.3).
 - [ ] Secretos de prod cargados (Stripe LIVE, VAPID, PUSH_HOOK_SECRET, push_config,
