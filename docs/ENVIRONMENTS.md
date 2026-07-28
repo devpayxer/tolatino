@@ -323,9 +323,15 @@ DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
       cargado; **0 negocios/pedidos/posts** (§4.2).
 - [ ] Resetear la contraseña de la BD de prod en el dashboard (§4.1).
 - [x] Storage: bucket `post-photos` (público, 10 MB) + 3 políticas replicadas (§4.3).
-- [ ] Las 10 Edge Functions desplegadas a prod (§4.3).
-- [ ] Secretos de prod cargados (Stripe LIVE, VAPID, PUSH_HOOK_SECRET, push_config,
-      FRED) (§4.3).
+- [x] Las 10 Edge Functions desplegadas a prod vía Management API (mismo `verify_jwt`
+      que staging) (§4.3).
+- [x] Secretos NO-Stripe cargados en prod: `VAPID_*` (par nuevo generado),
+      `PUSH_HOOK_SECRET`, `SITE_ORIGIN=https://tolatino.vercel.app`; `push_config`
+      insertado (fn_url send-push + hook_secret + anon). VAPID public de prod
+      guardado para `.env.production` en el cutover.
+- [ ] Secretos Stripe en prod: `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (los da
+      el fundador; API de Stripe bloqueada desde el sandbox → webhook se crea en el
+      dashboard). `FRED_API_KEY` opcional (fred-rates).
 - [ ] Cambiar `apps/web/.env.production` → valores de prod (URL + `sb_publishable`)
       en el cutover; **verificar la base horneada en el sitio en vivo** (§4.4).
 - [ ] Limpiar el Vercel del proyecto: la var `NEXT_PUBLIC_SUPABASE_URL` apunta al
