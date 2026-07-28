@@ -204,30 +204,57 @@ se recrean aparte en el proyecto de prod:
     secreto (la crea una migración/insert — replicar el valor).
   - Cualquier otra API key que usen las funciones (p. ej. FRED para `fred-rates`).
 
-### 4.4 — Vercel: separar Production de Preview
-En **Vercel → Project → Settings → Environment Variables**, define cada variable
-para **dos ámbitos** distintos:
-- **Production** (rama `claude/tolatino-repo-setup-1efdil`) → apunta al Supabase
-  **de prod**:
-  ```
-  NEXT_PUBLIC_SUPABASE_URL          = https://<ref-de-prod>.supabase.co
-  NEXT_PUBLIC_SUPABASE_ANON_KEY     = <anon key de prod>
-  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY= pk_live_...        # LIVE
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY      = <vapid public de prod>
-  ```
-- **Preview** (las ramas de sesión) → apunta al Supabase **de staging** (los mismos
-  nombres, con los valores de staging + `pk_test_...`).
+### 4.4 — Config del frontend: vive en `apps/web/.env.production` (¡NO en Vercel!)
 
-Así, cada `git push` a una rama de sesión genera un **Preview URL que pega a
-staging** (probar sin tocar prod), y el ff-merge a la rama de deploy publica a
-**producción con datos limpios**. Estos `NEXT_PUBLIC_*` se **hornean en el build**,
-por eso deben vivir en Vercel por ámbito (el `apps/web/.env.production` del repo es
-solo el respaldo/base y no debe llevar valores de prod secretos — no lo son, pero
-que Vercel sea la fuente por ámbito).
+> **Hallazgo crítico (2026-07-28).** La app es **export estático** (`output:
+> 'export'`, build = `next build`). Las variables `NEXT_PUBLIC_*` se **hornean en
+> el build desde el archivo COMMITEADO `apps/web/.env.production`**. **Verificado en
+> el JS del sitio en vivo:** tiene horneada `zpkaxojonufdwgahiqjh` (staging),
+> exactamente el valor del archivo — **no** el que había en la pantalla de Vercel.
+> Es decir, para este sitio la pantalla **Environment Variables de Vercel estaba
+> siendo ignorada** por el build actual (las llaves de servidor tipo
+> `STRIPE_SECRET_KEY`/`SUPABASE_SECRET_KEY` en Vercel tampoco corren: no hay
+> runtime de servidor en un export estático — los secretos reales viven en los
+> **Edge Functions de Supabase**).
+>
+> ⚠️ **Landmine encontrado:** el Vercel del proyecto tenía
+> `NEXT_PUBLIC_SUPABASE_URL = https://ujvzpfygaqywcdlnplie.supabase.co` — el ref de
+> un proyecto viejo (`latinoplatform`) que se **borró**. Hoy no afecta (el build usa
+> el archivo), pero **si un futuro build llegara a tomar la var de Vercel, apuntaría
+> a una base inexistente y rompería el sitio**. No se pudo confirmar la precedencia
+> Vercel-vs-archivo sin desplegar. **Regla:** mantener el valor de Vercel
+> **consistente** con `.env.production` (o borrarlo), nunca apuntando a un proyecto
+> muerto.
 
-**Dominio:** Vercel → Settings → Domains → agrega tu dominio final y apúntalo a la
-rama de Production. (Nota: `CLAUDE.md` fija **Cloudflare Pages** como host objetivo;
-si migras allá, el patrón Production/Preview es equivalente.)
+**Cómo cambiar de base, entonces:** editar `apps/web/.env.production` (lo hace
+Claude), commit → ff-merge a la rama de deploy → Vercel reconstruye. **Verificar
+SIEMPRE** qué base quedó horneada en el sitio en vivo (no asumir):
+```bash
+# encuentra el chunk JS que trae la URL y confirma el ref esperado
+node scripts/sbsql.mjs "select (select array_agg(distinct m[1]) from
+  regexp_matches((extensions.http_get('https://tolatino.vercel.app/_next/static/chunks/<chunk>.js')).content,
+  'https://([a-z0-9]+)\.supabase\.co','g') as m);"
+```
+Valores de PROD para `.env.production` en el cutover:
+```
+NEXT_PUBLIC_SUPABASE_URL=https://vurqsebgsacickxsxfeh.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<sb_publishable_… de prod>   # la app lee ESTE nombre; el valor es la llave "publishable" nueva
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_…               # en el cutover a LIVE
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<vapid public de prod>
+```
+
+**Preview vs Production:** con export estático + `.env.production` commiteado, TODO
+build (incl. previews) hornea el mismo archivo → **no hay split automático
+staging/preview por env-file**. En la práctica el fundador no usa las Preview URLs y
+Claude desarrolla/verifica contra **staging** vía la Management API
+(`SUPABASE_PROJECT_REF=zpkaxojonufdwgahiqjh`), no vía previews. Si algún día se
+quiere el split real, hay que confirmar por experimento si las vars de Vercel
+sobre-escriben el archivo y, de ser así, scoparlas por ambiente; hasta entonces,
+tratar `.env.production` como "la base de PRODUCCIÓN activa" y ser disciplinado.
+
+**Dominio:** Vercel → Settings → Domains → agrega **`tolatino.com`** y apúntalo a la
+rama de Production (DNS del registrador → Vercel). `CLAUDE.md` fija Cloudflare Pages
+como host objetivo a futuro; el patrón es equivalente.
 
 ### 4.5 — Stripe: de TEST a LIVE
 Hoy los pagos corren en **modo prueba** (`pk_test`/`sk_test`). Para cobrar de
@@ -299,9 +326,12 @@ DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
 - [ ] Las 10 Edge Functions desplegadas a prod (§4.3).
 - [ ] Secretos de prod cargados (Stripe LIVE, VAPID, PUSH_HOOK_SECRET, push_config,
       FRED) (§4.3).
-- [ ] Vercel: variables **Production** → Supabase de prod + `pk_live`; **Preview** →
-      staging + `pk_test` (§4.4).
-- [ ] Dominio final apuntado a Production (§4.4).
+- [ ] Cambiar `apps/web/.env.production` → valores de prod (URL + `sb_publishable`)
+      en el cutover; **verificar la base horneada en el sitio en vivo** (§4.4).
+- [ ] Limpiar el Vercel del proyecto: la var `NEXT_PUBLIC_SUPABASE_URL` apunta al
+      proyecto BORRADO `ujvzpfygaqywcdlnplie` — corregir a la base activa o borrarla
+      (§4.4, landmine).
+- [ ] Dominio `tolatino.com` apuntado a Production (DNS → Vercel) (§4.4).
 - [ ] Stripe en Live: llaves, webhook (ambos eventos), Connect (§4.5).
 - [ ] Verificación E2E en vivo: build correcto, pago real chico, push al teléfono
       (§4.6).
