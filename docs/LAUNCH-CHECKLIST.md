@@ -20,6 +20,21 @@
 
 ## 0. Sandbox → real environment (the big one)
 
+- [ ] **Producción prístina — cutover en curso (2026-07-28). Ver `docs/ENVIRONMENTS.md`.**
+  Decidido: **Opción A** — el proyecto de hoy (`tolatino`, `zpkaxojonufdwgahiqjh`) es
+  **staging**; nuevo proyecto **`tolatino-prod`** (`vurqsebgsacickxsxfeh`, us-east-1)
+  es prod. Dominio final `tolatino.com`. **Hecho por Claude:** borrado del viejo
+  `latinoplatform`, 129 migraciones, gazetteer 6 978 ciudades, 17 categorías
+  canónicas, bucket `post-photos` + políticas, **0 datos de prueba**. **Falta
+  (solo el fundador, dashboards):** (1) resetear contraseña de la BD de prod; (2)
+  desplegar las 10 Edge Functions + secretos a prod (Stripe **LIVE**, VAPID,
+  PUSH_HOOK_SECRET, push_config, FRED); (3) Vercel — variables **Production**→prod
+  (URL `https://vurqsebgsacickxsxfeh.supabase.co` + anon key + `pk_live`) /
+  **Preview**→staging (`pk_test`); (4) Stripe modo Live (llaves + webhook con
+  `checkout.session.completed` **y** `payment_intent.succeeded` + Connect); (5) DNS
+  de `tolatino.com` → Vercel Production. Checklist completo en `ENVIRONMENTS.md §7`.
+  **Nota:** al lanzar público subir prod a Supabase **Pro** (sin auto-pausa +
+  backups) — hoy Free.
 - [ ] **Verify Web Push on a real phone (2026-07-15, migration 0089).** The full
   server pipeline is built, deployed, and verified end-to-end *except delivery*:
   notification insert → `tg_push_fanout` (pg_net) → `send-push` Edge Function

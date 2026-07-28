@@ -295,7 +295,7 @@ DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
 - [x] Las 129 migraciones corridas en prod; dato de referencia (categorías/ciudades)
       cargado; **0 negocios/pedidos/posts** (§4.2).
 - [ ] Resetear la contraseña de la BD de prod en el dashboard (§4.1).
-- [ ] Buckets de Storage recreados con políticas públicas de lectura (§4.3).
+- [x] Storage: bucket `post-photos` (público, 10 MB) + 3 políticas replicadas (§4.3).
 - [ ] Las 10 Edge Functions desplegadas a prod (§4.3).
 - [ ] Secretos de prod cargados (Stripe LIVE, VAPID, PUSH_HOOK_SECRET, push_config,
       FRED) (§4.3).
