@@ -18,7 +18,19 @@ prod prístino) · dominio final **`tolatino.com`** (ya comprado).
 | Pieza | Proyecto Supabase | Ref | Estado |
 |---|---|---|---|
 | **Staging** (pruebas, con datos sembrados) | `tolatino` | `zpkaxojonufdwgahiqjh` | En uso (era el único entorno) |
-| **Producción** (limpio) | `tolatino-prod` | `vurqsebgsacickxsxfeh` | ✅ creado · 129 migraciones aplicadas · gazetteer de ciudades cargado · **0 datos de prueba** |
+| **Producción** (limpio) | `tolatino-prod` | `vurqsebgsacickxsxfeh` | ✅ creado · 129 migraciones · **6 978** ciudades · **17** categorías canónicas · **0** negocios/eventos/posts/amenidades |
+
+**URL de prod:** `https://vurqsebgsacickxsxfeh.supabase.co` (la anon key —pública por
+diseño— se configura en Vercel, ver §4.4).
+
+> **Verificado (2026-07-28):** las 17 categorías de prod == la taxonomía CamelCase
+> del frontend (`FoodDrinks`, `CarDealer`, `RealEstate`…). **Ojo con el instinto de
+> "copiar de staging":** staging está **contaminado con datos demo** (`seed.sql`
+> metió ~16 categorías extra en minúscula — `food`, `beauty` — y 19 amenidades que
+> NO son canónicas). **Prod, hecho solo de migraciones, es la verdad limpia** — no
+> sincronizar categorías/amenidades desde staging. La tabla `amenities` es catálogo
+> del **admin** (ninguna migración la siembra); vacía es el estado correcto y el
+> fundador la curará desde `/admin` si quiere.
 
 El viejo proyecto `latinoplatform` (inactivo desde mayo, pre-To'Latino) se **borró**
 para liberar el cupo del plan Free. La contraseña de la BD de prod está en el
