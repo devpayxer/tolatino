@@ -364,7 +364,30 @@ DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
       `.env.production` commiteado. **Regla a futuro:** no volver a crear
       `NEXT_PUBLIC_*` en Vercel para este proyecto — se ignoran y solo pueden
       desincronizarse del archivo.
-- [ ] Dominio `tolatino.com` apuntado a Production (DNS → Vercel) (§4.4).
+- [x] **Dominio `tolatino.com` EN VIVO (2026-07-29).** DNS en Cloudflare, hosting en
+      Vercel. Registros creados por el fundador y verificados vía DoH
+      (`dns.google/resolve`): apex `A tolatino.com → 76.76.21.21` y
+      `CNAME www → cname.vercel-dns.com` (resuelve a 76.76.21.98 / 66.33.60.67).
+      **Proxy de Cloudflare APAGADO (nube gris)** — confirmado porque las IPs que
+      responden son de Vercel, no de Cloudflare; con el proxy naranja Vercel da
+      errores de certificado/redirect loop.
+      **Servicio verificado de verdad:** `https://tolatino.com/` y
+      `https://www.tolatino.com/` → **HTTP 200** con el HTML de la app, SSL válido, y
+      los chunks de `/negocios/` traen `vurqsebgsacickxsxfeh` (3) y **0** de staging.
+      ⚠️ Vercel muestra `tolatino.com` como *Invalid Configuration* + *DNS Change
+      Recommended* en `www`: es **cosmético/desfasado** (Vercel sugiere sus IPs más
+      nuevas y aún no re-verificó). El dominio SIRVE correctamente; un clic en
+      **Refresh** en Settings → Domains lo pone verde. No cambiar el DNS que ya
+      funciona por perseguir el aviso.
+- [x] **URLs de Auth de prod corregidas (2026-07-29) — era un BLOQUEADOR.** El
+      proyecto de prod venía con `site_url = http://localhost:3000` y
+      `uri_allow_list` **vacía**, y `mailer_autoconfirm = false` (el registro exige
+      confirmar por correo) → el enlace de confirmación habría apuntado a localhost y
+      **nadie habría podido activar su cuenta, ni el fundador**. Ahora
+      `site_url = https://tolatino.com` y la allow-list cubre `tolatino.com`,
+      `www.tolatino.com` y `tolatino.vercel.app` (con `/**`), para que funcione por
+      cualquiera de los tres. `SITE_ORIGIN` de las Edge Functions también actualizado
+      a `https://tolatino.com`.
 - [ ] Stripe en Live: llaves, webhook (ambos eventos), Connect (§4.5).
 - [ ] Verificación E2E en vivo: build correcto, pago real chico, push al teléfono
       (§4.6).
