@@ -1768,3 +1768,28 @@ PENDIENTE DEL FOUNDER / DEFERIDO A ESCALA (Fase 3):
   cuando esas verticales se construyan como producto.
 - [ ] **Invitar admin**: asciende una cuenta que YA existe (no crea usuarios).
   Para un admin nuevo, que la persona se registre primero en To'Latino.
+
+### Escala — índices geo de la auditoría (2026-07-29, migración 0130)
+Cierra el último punto de BASE DE DATOS que seguía abierto de
+`docs/LAUNCH-AUDIT-2026-07-21.md` → "DATOS / ESCALA / SEGURIDAD":
+*"las queries geo derrotan su índice GIST (usan `ST_Distance` en vez de
+`ST_DWithin` → seq-scan a escala)"*.
+- [x] **`businesses_v2`, `search_businesses`, `posts_near`** filtran el radio con
+  `st_dwithin(location, punto, radio)` en lugar de `st_distance(...) <= radio`.
+  Mismo esferoide → **mismos resultados**, pero descarta por la caja del índice
+  antes de calcular: apto para `businesses_location_gix` / `posts_location_gix`.
+- [x] El filtro se escribe con los **parámetros** de la función (no con la columna
+  del CTE `origin`) para que el planificador resuelva `user_lat is null` /
+  `radius_m is null` al planear y deje `st_dwithin(...)` como condición de índice.
+- [x] Índices parciales `businesses_no_location_idx` / `posts_no_location_idx`
+  para la rama "fila sin coordenadas" (que por diseño sí se muestra) — sin ellos
+  ese `or location is null` obliga a escaneo completo igual.
+- [x] La distancia **devuelta** y el orden siguen con `st_distance` (valor exacto
+  que muestra la UI), ya sólo sobre las filas que pasaron el filtro.
+- Verificado: la migración aplica y se re-aplica limpia (idempotente) y las 3
+  funciones ejecutan, contra un Postgres local con esquema-stub.
+
+PENDIENTE (de la misma sección del audit, NO es SQL — queda abierto):
+- [ ] **Paginación keyset** del feed de Comunidad (hoy tope 50 sin paginar) y
+  **scope de los canales realtime** (fan-out global) — son cambios de cliente +
+  firma de RPC, se atacan en su propia rebanada.
