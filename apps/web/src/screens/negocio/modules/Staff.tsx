@@ -161,32 +161,19 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const roleLabel = (r: Role) => ({ owner: L('Dueña', 'Owner'), manager: L('Gerente', 'Manager'), staff: 'Staff', driver: L('Repartidor', 'Driver') }[r]);
 
-  const baseRoster = useMemo<Member[]>(
-    () => [
-      { id: 1, nm: 'Elisabeth Rivera', c: '#7B61FF', role: 'owner', titleEs: 'Fundadora', titleEn: 'Founder', hours: 'Full-time', dot: '#1F9D57', stEs: 'En turno', stEn: 'On shift', permsEs: 'Acceso total', permsEn: 'All access', since: '2002' },
-      { id: 2, nm: 'Marisa Díaz', c: '#1F9D57', role: 'manager', titleEs: salon ? 'Estilista jefa' : 'Jefa de panadería', titleEn: salon ? 'Lead stylist' : 'Head baker', hours: 'Full-time', dot: '#1F9D57', stEs: 'En turno', stEn: 'On shift', permsEs: 'Todo menos pagos', permsEn: 'All but billing', since: '2024' },
-      { id: 3, nm: 'Marco Pellegrino', c: '#E8954A', role: 'driver', titleEs: 'Repartidor líder', titleEn: 'Lead driver', hours: 'Part-time', dot: '#1F9D57', stEs: 'En entrega · #2487', stEn: 'On delivery · #2487', permsEs: 'Pedidos y entregas', permsEn: 'Orders & deliveries', since: '2023' },
-      { id: 4, nm: 'Sofía Reyes', c: '#D6336C', role: 'staff', titleEs: salon ? 'Recepción' : 'Atención a clientes', titleEn: 'Front of house', hours: 'Full-time', dot: '#1F9D57', stEs: 'En turno · piso', stEn: 'On shift · floor', permsEs: 'Pedidos y reservas', permsEn: 'Orders & bookings', since: '2024' },
-      { id: 5, nm: 'Carlos Méndez', c: '#2A5C8A', role: 'staff', titleEs: salon ? 'Asistente' : 'Cocinero de línea', titleEn: salon ? 'Assistant' : 'Line cook', hours: 'Full-time', dot: '#F4B740', stEs: 'En descanso', stEn: 'On break', permsEs: 'Menú y pedidos', permsEn: 'Menu & orders', since: '2024' },
-      { id: 6, nm: 'David Bao', c: '#138A72', role: 'manager', titleEs: salon ? 'Colorista' : 'Sommelier', titleEn: salon ? 'Colorist' : 'Sommelier', hours: 'Full-time', dot: '#1F9D57', stEs: 'En turno · barra', stEn: 'On shift · bar', permsEs: 'Barra y vinos', permsEn: 'Bar & wine', since: '2023' },
-      { id: 7, nm: 'Lucía Martín', c: '#9F1239', role: 'driver', titleEs: 'Repartidora', titleEn: 'Driver', hours: 'Part-time', dot: '#C0BBD0', stEs: 'Libre hoy', stEn: 'Off today', permsEs: 'Pedidos y entregas', permsEn: 'Orders & deliveries', since: '2025' },
-    ],
-    [salon],
-  );
+  // baseRoster y seedJobs ELIMINADOS (2026-07-29): eran un equipo de 7 empleados
+  // y unas vacantes FABRICADOS que se usaban como respaldo. Un dueño real podía
+  // verlos si el backend fallaba un instante. Sin negocio real no se muestra nada.
 
-  const seedJobs = useMemo<Job[]>(
-    () => [
-      { id: 1, titleEs: 'Cocinero de línea · noche', titleEn: 'Line cook · evening', pay: '$22–$26/hr', typeEs: 'Tiempo completo · 4 días', typeEn: 'Full-time · 4 days/wk', applied: 12, viewed: 280, whenEs: 'hace 8 días', whenEn: '8 days ago', tag: 'live' },
-      { id: 2, titleEs: 'Repartidor · fines de semana', titleEn: 'Driver · weekends', pay: `$18/hr + ${L('propinas', 'tips')}`, typeEs: 'Medio tiempo · Sáb–Dom', typeEn: 'Part-time · Sat–Sun', applied: 8, viewed: 142, whenEs: 'hace 4 días', whenEn: '4 days ago', tag: 'live' },
-      { id: 3, titleEs: 'Pastelero · masa madre', titleEn: 'Pastry chef · sourdough', pay: '$28–$32/hr', typeEs: 'Tiempo completo · 5 días', typeEn: 'Full-time · 5 days/wk', applied: 4, viewed: 62, whenEs: 'ayer', whenEn: 'yesterday', tag: 'new' },
-    ],
-    [L],
-  );
 
   // Roster is state-driven: demo seeds from the fixture; a real business loads
   // its PRIVATE staff from Supabase (empty until the owner invites anyone).
   useEffect(() => {
-    if (!persistable || !real || !supabase) { setMembers(baseRoster); return; }
+    // Sin negocio real / sin backend → VACÍO, nunca el roster fabricado. Ese
+    // respaldo mostraba un equipo de 7 personas inventadas (Elisabeth Rivera,
+    // Marisa Díaz, Marco Pellegrino…) y podía alcanzar a un dueño REAL si el
+    // backend fallaba un instante: vería empleados que no contrató (regla #8).
+    if (!persistable || !real || !supabase) { setMembers([]); return; }
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase!
@@ -200,12 +187,12 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [real?.id, admin.demo, baseRoster]);
+  }, [real?.id, admin.demo]);
 
   // Job postings: demo seeds from fixtures; a real business loads its PUBLIC
   // postings from Supabase (newest first).
   useEffect(() => {
-    if (!persistable || !real || !supabase) { setJobs(seedJobs); return; }
+    if (!persistable || !real || !supabase) { setJobs([]); return; } // sin vacantes fabricadas
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase!
@@ -219,7 +206,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [real?.id, admin.demo, seedJobs]);
+  }, [real?.id, admin.demo]);
 
   const roster = members; // roster renders straight from state now
 
@@ -502,18 +489,17 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- time clock ----
+  // Reloj de asistencia: NO hay backend de fichaje todavía, así que no se inventan
+  // cifras. Antes estas tarjetas decían "5 en turno · 62.4 horas hoy · 1 cerca de
+  // extra" y la tabla listaba 5 empleados fichando (Elisabeth Rivera, Marisa Díaz…)
+  // — todo fabricado y visible para un dueño REAL (regla #8). Queda anotado en
+  // docs/LAUNCH-CHECKLIST.md para construirse de verdad.
   const timeStats = [
-    { label: L('En turno', 'Clocked in'), value: '5', note: L('activos', 'on shift'), noteCls: 'text-green-dark', tone: cardCls },
-    { label: L('Horas hoy', 'Hours today'), value: '62.4', note: L('▲ en ritmo', '▲ on pace'), noteCls: 'text-green-dark', tone: cardCls },
-    { label: L('Cerca de extra', 'Near OT'), value: '1', note: '⚠ 48h', noteCls: 'text-amber-ink', tone: 'rounded-card-sm border border-amber bg-amber-bg' },
+    { label: L('En turno', 'Clocked in'), value: '—', note: L('sin registros', 'no records'), noteCls: 'text-muted-2', tone: cardCls },
+    { label: L('Horas hoy', 'Hours today'), value: '—', note: L('sin registros', 'no records'), noteCls: 'text-muted-2', tone: cardCls },
+    { label: L('Cerca de extra', 'Near OT'), value: '—', note: L('sin registros', 'no records'), noteCls: 'text-muted-2', tone: cardCls },
   ];
-  const timeRaw: [string, string, string, string, number, number, string][] = [
-    ['Elisabeth Rivera', '#1E1B2E', '6:52a', '—', 7.1, 48.2, '#1F9D57'],
-    ['Marisa Díaz', '#6D4DF6', '4:58a', '1:04p', 7.6, 38.4, '#C0BBD0'],
-    ['David Bao', '#138A72', '10:55a', '—', 3.1, 41.0, '#1F9D57'],
-    ['Sofía Reyes', '#1F9D57', '10:58a', '—', 3.0, 36.5, '#1F9D57'],
-    ['Carlos Méndez', '#E8954A', '11:02a', '—', 2.2, 39.1, '#F4B740'],
-  ];
+  const timeRaw: [string, string, string, string, number, number, string][] = [];
 
   const timeView = (
     <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
@@ -532,6 +518,14 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink"><Clock size={14} stroke={2.2} className="text-primary-dark" />{L('Reloj · hoy', 'Time clock · today')}</span>
             <button onClick={() => flash(L('Exportando reporte…', 'Exporting report…'))} className="cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Exportar', 'Export')}</button>
           </div>
+          {timeRaw.length === 0 && (
+            <div className="py-6 text-center">
+              <div className="text-[12.5px] font-extrabold text-ink">{L('Aún no hay registros de asistencia', 'No attendance records yet')}</div>
+              <div className="mt-1 text-[11px] font-semibold text-muted">
+                {L('El fichaje de entrada y salida estará disponible pronto.', 'Clock in/out is coming soon.')}
+              </div>
+            </div>
+          )}
           {timeRaw.map(([nm, c, cin, out, today, week, dot], i) => (
             <div key={String(nm)} className={`flex items-center gap-3 py-2.5 ${i < timeRaw.length - 1 ? 'border-b border-hair' : ''}`}>
               <span className="relative flex-none">

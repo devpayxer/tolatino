@@ -214,7 +214,11 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   // ── orders (business_orders) ────────────────────────────────────────────────
   const [orders, setOrders] = useState<OrderRow[]>(DEMO_ORDERS);
   const reloadOrders = () => {
-    if (!persistable || !real || !supabase) { setOrders(DEMO_ORDERS); return; }
+    // Sin negocio real / sin backend → SIN pedidos. Antes caía a DEMO_ORDERS:
+    // pedidos fabricados con totales y clientes. Es el peor caso posible —
+    // operaciones y dinero — y podía alcanzar a un dueño real si el backend
+    // fallaba un instante (regla #8).
+    if (!persistable || !real || !supabase) { setOrders([]); return; }
     // select('*') so a missing `fulfillment` column (pre-0049) never errors.
     supabase.from('business_orders').select('*').eq('business_id', real.id).order('created_at', { ascending: false }).limit(120)
       .then(({ data, error }) => {

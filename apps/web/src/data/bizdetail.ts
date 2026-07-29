@@ -149,18 +149,11 @@ export const DETAIL_EVENTS: { d: Bi; day: string; title: Bi; loc: Bi; base: numb
   { d: ['AGO', 'AUG'], day: '30', title: ['Música en vivo', 'Live music'], loc: ['En el local · 8:00 pm', 'In-store · 8:00 pm'], base: 54, desc: ['Noche de banda y cumbia con invitados especiales. Reserva tu mesa.', 'Banda and cumbia night with special guests. Reserve your table.'] },
 ];
 
-export const STAFF: { name: string; role: Bi }[] = [
-  { name: 'Don Beto', role: ['Dueño y cocinero', 'Owner & cook'] },
-  { name: 'María G.', role: ['Gerente', 'Manager'] },
-  { name: 'Carlos R.', role: ['Taquero', 'Taquero'] },
-  { name: 'Ana E.', role: ['Cajera', 'Cashier'] },
-];
+// STAFF ELIMINADO (2026-07-29): personal y reseñas fabricados, sin uso.
 
-export const SEED_REVIEWS: { id: string; ini: string; name: string; color: string; stars: number; when: Bi; text: Bi; base: number }[] = [
-  { id: 'r1', ini: 'AM', name: 'Ana M.', color: '#2F6FED', stars: 5, when: ['hace 1 semana', '1w'], text: ['Lugar familiar y limpio, precios justos. Volveré pronto.', 'Family-friendly and clean, fair prices. Coming back soon.'], base: 8 },
-  { id: 'r2', ini: 'JP', name: 'Jonathan P.', color: '#E8954A', stars: 4, when: ['hace 2 semanas', '2w'], text: ['Buen servicio y muy amables. Súper recomendado.', 'Great service and very kind. Highly recommended.'], base: 3 },
-  { id: 'r3', ini: 'RM', name: 'Roberto M.', color: '#7B61FF', stars: 5, when: ['hace 1 mes', '1mo'], text: ['El mejor de la zona, siempre fresco y con buena sazón.', 'Best in the area, always fresh and full of flavor.'], base: 5 },
-];
+
+// SEED_REVIEWS ELIMINADO (2026-07-29): personal y reseñas fabricados, sin uso.
+
 
 export const UPDATE_POSTS: { tag?: Bi; tagBg?: string; tagC?: string; when: Bi; textEs: (biz: string) => string; textEn: (biz: string) => string; tile: string | null; base: number }[] = [
   { tag: ['Promoción', 'Promo'], tagBg: '#EFEBFF', tagC: '#6D4DF6', when: ['hace 2 días', '2d'], textEs: (b) => `📢 Promoción de la semana en ${b}. ¡Aprovecha y pásate con la familia!`, textEn: (b) => `📢 This week's promo at ${b}. Come by with the family!`, tile: 'repeating-linear-gradient(135deg,#ECE3F8 0 12px,#E2D6F3 12px 24px)', base: 84 },

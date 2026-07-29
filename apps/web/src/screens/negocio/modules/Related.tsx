@@ -16,7 +16,6 @@ import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge, Overlay, OverlayTitle } from '@/components/ui';
 import { Toast } from '@/screens/negocio/modules/_page';
 import type { PanelCtx } from '@/screens/negocio/tabs';
-import { BUSINESSES } from '@/data/fixtures';
 import {
   fetchRelationsAdmin, searchBusinessesToLink, requestRelation, respondRelation, removeRelation,
   type AdminRelation, type LinkCandidate,
@@ -57,16 +56,12 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
   // Seed only an INCOMING cross-owner request, so the demo shows all three flows:
   // approve/reject it, quick-link your own other listing (still unlinked below),
   // and search to link anyone. A real owner never hits this branch.
-  const seedDemo = useCallback((): AdminRelation[] => {
-    const ext = BUSINESSES[0];
-    if (!ext) return [];
-    return [{
-      relationId: newId(), direction: 'in', otherId: `demo-${ext.slug}`, otherSlug: ext.slug, otherName: ext.name,
-      otherCategory: ext.cat, otherCity: ext.city ?? null, tileA: ext.t[0], tileB: ext.t[1],
-      otherTier: ext.verified ? 'verified' : 'free', roleEs: 'Aliado', roleEn: 'Partner', status: 'pending', sameOwner: false,
-      createdAt: '2024-06-01T00:00:00Z',
-    }];
-  }, []);
+  // YA NO SIEMBRA NADA (2026-07-29). Antes fabricaba una solicitud ENTRANTE de
+  // "Aliado" desde BUSINESSES[0] ('Taquería La Esperanza') para que el flujo de
+  // aprobar/rechazar fuera explorable sin cuenta. El fundador la vio en producción
+  // como si un negocio real le hubiera pedido alianza (regla #8). El modo demo ya
+  // no se activa nunca con backend configurado, y BUSINESSES fue eliminado.
+  const seedDemo = useCallback((): AdminRelation[] => [], []);
 
   const reload = useCallback(async () => {
     if (!active) { setRelations([]); setLoading(false); return; }
@@ -373,12 +368,10 @@ function LinkSheet({
   // Local demo directory: the owner's other listings + the public sample listings.
   const demoDir = useMemo<LinkCandidate[]>(() => {
     if (!demo) return [];
-    const own = ownBusinesses.filter((b) => b.id !== source.id).map(rowToCandidate);
-    const ext = BUSINESSES.map((b): LinkCandidate => ({
-      id: `demo-${b.slug}`, slug: b.slug, name: b.name, categoryId: b.cat, city: b.city ?? null,
-      tileA: b.t[0], tileB: b.t[1], tier: b.verified ? 'verified' : 'free', sameOwner: false,
-    }));
-    return [...own, ...ext];
+    // Solo los OTROS listados del propio dueño. Antes se añadían los BUSINESSES de
+    // fixtures como "listados de muestra públicos" → se podía relacionar el negocio
+    // con uno inexistente (regla #8).
+    return ownBusinesses.filter((b) => b.id !== source.id).map(rowToCandidate);
   }, [demo, ownBusinesses, source.id]);
 
   // Reset when opened.

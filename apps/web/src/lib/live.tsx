@@ -8,7 +8,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { BUSINESSES, EVENTS, POSTS, type Business, type EventItem, type Post } from '@/data/fixtures';
+import { type Business, type EventItem, type Post } from '@/data/fixtures';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { useApp } from '@/lib/state';
 import { normalizeMenuConfig } from '@/lib/menuConfig';
@@ -1067,7 +1067,7 @@ type LiveData = {
   refresh: () => void;
 };
 
-const Ctx = createContext<LiveData>({ businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false, loading: false, refresh: () => {} });
+const Ctx = createContext<LiveData>({ businesses: [], events: [], posts: [], live: false, loading: false, refresh: () => {} });
 
 // ~80 km radius for businesses/events: keeps a whole metro together.
 const RADIUS_M = 80000;
@@ -1080,10 +1080,11 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
   // With a real backend, start EMPTY + loading so screens render skeletons (never
   // a flash of demo fixtures) until the first fetch lands. With no backend
   // configured (pure static build), seed the fixtures as the intended demo.
+  // Siempre EMPTY: con backend se muestran esqueletos hasta que llega el primer
+  // fetch; sin backend no se inventa nada (antes se sembraban las fixtures y ese
+  // era el respaldo que podía filtrar negocios/posts falsos — regla #8).
   const [data, setData] = useState<Omit<LiveData, 'refresh'>>(
-    supabase
-      ? { businesses: [], events: [], posts: [], live: false, loading: true }
-      : { businesses: BUSINESSES, events: EVENTS, posts: POSTS, live: false, loading: false },
+    { businesses: [], events: [], posts: [], live: false, loading: !!supabase },
   );
 
   useEffect(() => {

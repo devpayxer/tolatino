@@ -35,6 +35,14 @@
   de `tolatino.com` → Vercel Production. Checklist completo en `ENVIRONMENTS.md §7`.
   **Nota:** al lanzar público subir prod a Supabase **Pro** (sin auto-pausa +
   backups) — hoy Free.
+- [ ] **Reloj de asistencia · Horarios · Nómina (módulo Equipo) siguen sin backend.**
+  Para un dueño REAL el panel ya muestra tarjetas honestas de "lo estamos
+  terminando" (ese gating `isReal ? soonCard : …` estaba bien hecho). Las tablas
+  fabricadas (5 empleados fichando, nómina con sueldos y un botón "Nómina corrida ·
+  depósito en 2 días") solo vivían en el modo demo, que se eliminó — así que hoy son
+  código muerto e inalcanzable, pero siguen en el paquete. Al construir cada
+  feature, borrar su tabla fabricada (`schedRaw`, `payRaw`, `shiftRaw` en
+  `modules/Staff.tsx`). Nómina toca dinero real: no se lanza sin proveedor.
 - [ ] **🔴 BLOQUEADOR DE LANZAMIENTO: no hay servicio de correo propio (SMTP).**
   Descubierto 2026-07-29 al hacer el ensayo en producción. El proyecto de prod NO
   tiene SMTP configurado (`smtp_host = null`), así que usa el servicio integrado de

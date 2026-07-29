@@ -120,7 +120,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
   // Load the real business's updates — ALL statuses (owner-read policy, 0094).
   // Scheduled posts whose time already passed auto-publish here (lazy publish).
   useEffect(() => {
-    if (!persistable || !real || !supabase) { setPosts(seed); return; }
+    if (!persistable || !real || !supabase) { setPosts([]); return; } // sin novedades fabricadas (regla #8)
     let cancelled = false;
     (async () => {
       const { data } = await supabase!

@@ -6,7 +6,7 @@
 // per-user in Supabase; the shapes stay the same.
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { DEFAULT_CITY, NOTIFS, type Post, type PostType } from '@/data/fixtures';
+import { DEFAULT_CITY, type Post, type PostType } from '@/data/fixtures';
 import { DEFAULT_COORDS } from '@/lib/geo';
 
 type Toggles = Record<string, boolean>;
@@ -245,7 +245,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notifRead,
       markNotifRead: (id) => setNotifRead((m) => ({ ...m, [id]: true })),
       markAllNotifsRead: () =>
-        setNotifRead(Object.fromEntries(NOTIFS.map((n) => [n.id, true]))),
+        setNotifRead({}), // las notificaciones reales se marcan en lib/notifications (markAllRead)
       unreadCount,
       feedView,
       setFeedView,

@@ -17,7 +17,7 @@ import { Avatar, Card, EmptyState, Overlay, SkeletonList, YouAvatar } from '@/co
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { ProfileNav } from '@/components/ProfileNav';
-import { SEED_COMMENTS, SEED_REPLIES, bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
+import { bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 
 // Real (Supabase) posts/comments carry a UUID id; fixtures do not.
@@ -377,8 +377,8 @@ export function ComunidadScreen() {
     ? byHood.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))
     : byHood;
 
-  const topComments = (pid: string) => [...(SEED_COMMENTS[pid] ?? []), ...(dbTop[pid] ?? []), ...(userComments[pid] ?? [])];
-  const repliesFor = (cid: string) => [...(SEED_REPLIES[cid] ?? []), ...(dbReplies[cid] ?? []), ...(userReplies[cid] ?? [])];
+  const topComments = (pid: string) => [...(dbTop[pid] ?? []), ...(userComments[pid] ?? [])]; // solo comentarios reales
+  const repliesFor = (cid: string) => [...(dbReplies[cid] ?? []), ...(userReplies[cid] ?? [])]; // solo respuestas reales
   // Feed count: real posts use the DB total (loaded for the whole visible feed
   // and kept live via bumpComment); fixtures count their local comments. The
   // Interactions provider only tracks the HOME feed, so for Saved/Following posts
