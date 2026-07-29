@@ -345,10 +345,25 @@ DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
       segura: prod tenía **0** filas en `push_subscriptions`). Stripe se queda en
       `pk_test` a propósito para el ensayo. **Build verificado:** el JS compilado
       hornea solo `vurqsebgsacickxsxfeh` (3 ocurrencias) y **cero** rastros de
-      `zpkaxojonufdwgahiqjh`. Falta confirmar lo mismo en el sitio YA desplegado.
-- [ ] Limpiar el Vercel del proyecto: la var `NEXT_PUBLIC_SUPABASE_URL` apunta al
-      proyecto BORRADO `ujvzpfygaqywcdlnplie` — corregir a la base activa o borrarla
-      (§4.4, landmine).
+      `zpkaxojonufdwgahiqjh`.
+- [x] **Desplegado y VERIFICADO en el sitio en vivo (2026-07-29, cutover paso 3).**
+      ff-merge de `claude/new-prompt-xkubrd` → `claude/tolatino-repo-setup-1efdil`
+      (fast-forward limpio) → Vercel reconstruyó. **Comprobado sobre el JS servido**
+      (no asumido): los chunks de `/negocios/` contienen `vurqsebgsacickxsxfeh` en 3
+      de ellos y **0** ocurrencias de `zpkaxojonufdwgahiqjh`. Nota de método: la
+      landing (`/`) NO trae el cliente de Supabase, así que verificar ahí da falso
+      negativo — hay que pedir los chunks de una ruta que consulte datos
+      (`/negocios/`). El sandbox no alcanza internet (proxy 403), así que la
+      comprobación se hizo con `extensions.http_get` desde Postgres.
+      Estado de prod al desplegar: 6 978 ciudades, 17 categorías, **0** negocios /
+      publicaciones / eventos / usuarios → el sitio se ve VACÍO a propósito.
+- [x] **Landmine de Vercel resuelto (2026-07-29):** el fundador confirmó por captura
+      que **Environment Variables del proyecto está VACÍO** ("No Environment Variables
+      Added", pestaña Project, filtros en All). Ya no existe la var que apuntaba al
+      proyecto borrado `ujvzpfygaqywcdlnplie`. Estado ideal: el build depende solo del
+      `.env.production` commiteado. **Regla a futuro:** no volver a crear
+      `NEXT_PUBLIC_*` en Vercel para este proyecto — se ignoran y solo pueden
+      desincronizarse del archivo.
 - [ ] Dominio `tolatino.com` apuntado a Production (DNS → Vercel) (§4.4).
 - [ ] Stripe en Live: llaves, webhook (ambos eventos), Connect (§4.5).
 - [ ] Verificación E2E en vivo: build correcto, pago real chico, push al teléfono
