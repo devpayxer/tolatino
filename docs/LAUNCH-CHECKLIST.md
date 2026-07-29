@@ -35,6 +35,27 @@
   de `tolatino.com` → Vercel Production. Checklist completo en `ENVIRONMENTS.md §7`.
   **Nota:** al lanzar público subir prod a Supabase **Pro** (sin auto-pausa +
   backups) — hoy Free.
+- [ ] **Escala: pendientes de la auditoría 2026-07-29 (migración 0130 cerró lo crítico).**
+  Lo ARREGLADO y verificado ya está en 0130 (geo indexado, guards de columnas,
+  índices FK, orden determinista). Queda pendiente, por orden de impacto:
+  1. **`properties_search` / `vehicles_search` usan `count(*) over ()`** para el
+     total de resultados → obliga a materializar TODAS las filas que casan, aunque
+     solo se devuelvan 100. A 1M de propiedades/autos cada búsqueda escanea todo.
+     Además calculan `st_distance` sobre el conjunto completo (no tienen parámetro
+     de radio, así que no aplica `st_dwithin`). Arreglo: contador estimado
+     (`reltuples`/`EXPLAIN`) o tope ("+99 resultados"), y añadir radio opcional.
+  2. **Paginación por OFFSET** en búsqueda/listados: `offset N` es O(N) — la
+     página 500 lee 500 páginas. Migrar a keyset/cursor
+     (`where (dist, id) > (last_dist, last_id)`) cuando haya volumen real.
+     (0130 ya dejó el orden determinista, requisito previo para keyset.)
+  3. **Bundle móvil**: `/negocio` (panel del dueño) pesa **482 kB** de First Load
+     JS y `/negocios` 292 kB (medido en el build 2026-07-29). Los módulos del panel
+     se cargan todos juntos; falta `dynamic()` por módulo. Afecta sobre todo a
+     dueños en red lenta.
+  4. **Catálogos sin paginación server-side** (tienda ~300 productos en un RPC,
+     ya anotado): con miles de ítems hay que paginar en el servidor.
+  5. **Realtime a escala**: revisar que las suscripciones filtren por fila/canal y
+     no por tabla completa antes de crecer.
 - [ ] **Verify Web Push on a real phone (2026-07-15, migration 0089).** The full
   server pipeline is built, deployed, and verified end-to-end *except delivery*:
   notification insert → `tg_push_fanout` (pg_net) → `send-push` Edge Function
