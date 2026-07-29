@@ -35,6 +35,39 @@
   de `tolatino.com` → Vercel Production. Checklist completo en `ENVIRONMENTS.md §7`.
   **Nota:** al lanzar público subir prod a Supabase **Pro** (sin auto-pausa +
   backups) — hoy Free.
+- [ ] **🔴 BLOQUEADOR DE LANZAMIENTO: no hay servicio de correo propio (SMTP).**
+  Descubierto 2026-07-29 al hacer el ensayo en producción. El proyecto de prod NO
+  tiene SMTP configurado (`smtp_host = null`), así que usa el servicio integrado de
+  Supabase: **`rate_limit_email_sent = 2` correos por HORA en todo el proyecto**, sin
+  garantía de entrega (Supabase lo documenta como solo-para-pruebas). Con
+  `mailer_autoconfirm = false` el registro EXIGE confirmar por correo → **nadie
+  puede activar su cuenta**. El fundador se registró y su cuenta quedó sin confirmar
+  (se confirmó a mano por SQL para desbloquear las pruebas).
+  **Arreglo (ya decidido en CLAUDE.md): Amazon SES**, ~$0.10 / 1 000 correos.
+  Pasos: crear identidad de dominio en SES para `tolatino.com` (registros DKIM en
+  Cloudflare), salir del *sandbox* de SES (si no, solo se envía a correos
+  verificados), crear credenciales SMTP y pegarlas en Supabase → Authentication →
+  SMTP Settings (host `email-smtp.<región>.amazonaws.com`, puerto 587, remitente
+  `hola@tolatino.com`). Subir después `rate_limit_email_sent`. **Sin esto no se
+  puede abrir el registro al público.**
+- [ ] **Construir de verdad dos secciones que se retiraron por ser falsas (2026-07-29).**
+  Vivían en la columna derecha de Comunidad (tablet/escritorio) con datos 100%
+  inventados y se mostraban a usuarios reales; se eliminaron por la regla #8. Hay que
+  hacerlas con datos reales antes de reponerlas (Nextdoor las tiene):
+  1. **Tendencias** — temas/etiquetas más activos de la zona. Necesita extraer temas
+     de los posts reales y contarlos por ciudad/barrio en una ventana de tiempo.
+  2. **Vecinos sugeridos** — "vecinos que quizá conoces". Necesita una fuente real
+     (perfiles cercanos por PostGIS, excluyendo a quien ya sigues) y respetar
+     privacidad: hoy `profiles` solo es legible por su dueño, así que hace falta un
+     RPC `SECURITY DEFINER` que devuelva un mínimo (nombre visible, barrio) con
+     consentimiento explícito — NO abrir la tabla.
+- [ ] **Decidir: el hero de la landing muestra un negocio de ejemplo inventado.**
+  `Landing.tsx` pinta tarjetas decorativas inclinadas con "Taquería La Esperanza ·
+  4.9★" y un post de ejemplo. Es ilustración de marketing (no un listado navegable),
+  práctica normal en cualquier web, y por eso se dejó. Pero conviene decidir a
+  conciencia: (a) dejarlo como ilustración, (b) cambiarlo por un negocio REAL con su
+  permiso — lo más potente cuando haya negocios, (c) neutralizarlo con texto
+  genérico. Revisar cuando haya negocios reales en la plataforma.
 - [ ] **Escala: pendientes de la auditoría 2026-07-29 (migración 0130 cerró lo crítico).**
   Lo ARREGLADO y verificado ya está en 0130 (geo indexado, guards de columnas,
   índices FK, orden determinista). Queda pendiente, por orden de impacto:

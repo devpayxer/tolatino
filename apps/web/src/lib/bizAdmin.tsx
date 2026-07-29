@@ -86,94 +86,16 @@ const RUBRO_FROM_CAT: Record<string, Rubro> = {
 
 export const rubroFromCat = (cat: string): Rubro => RUBRO_FROM_CAT[cat] ?? 'retail';
 
-// Demo business used when nobody is signed in, so the dashboard is fully
-// explorable (real editors with sample data). Edits stay local — never
-// persisted. A signed-in owner always sees their real business(es) instead.
-const DEMO_BIZ: BizRow = {
-  id: 'demo',
-  slug: 'taqueria-la-esperanza',
-  name: 'Taquería La Esperanza',
-  category_id: 'FoodDrinks',
-  tagline_es: 'Sabor de casa en Bellaire',
-  tagline_en: 'Home-style flavor in Bellaire',
-  tier: 'verified',
-  price_level: '$$',
-  about_es: 'Negocio familiar. Preparamos todo a diario con ingredientes locales. Catering disponible.',
-  about_en: 'Family business. Everything made daily with local ingredients. Catering available.',
-  address: '5821 Bellaire Blvd, Houston, TX',
-  city: 'Houston, TX',
-  phone: '(832) 555-4521',
-  website: 'taquerialaesperanza.com',
-  logo_url: null,
-  accepts_messages: true,
-  message_channel: 'whatsapp',
-  message_phone: null,
-  hours: [[[600, 1200]], [[540, 1320]], [[540, 1320]], [[540, 1320]], [[540, 1320]], [[540, 1380]], [[540, 1380]]],
-  hours_exceptions: null,
-  features: ['A domicilio', 'Para llevar', 'Comedor', 'Se habla español'],
-  card_features: ['A domicilio', 'Para llevar', 'Se habla español'],
-  subcategories: ['Tacos', 'Comida mexicana'],
-  specialty_es: 'Tacos al pastor',
-  specialty_en: 'Al pastor tacos',
-  is_open: true,
-  rating: 4.8,
-  reviews_count: 412,
-  tile_a: '#ECE3F8',
-  tile_b: '#E3D7F4',
-  modules: null,
-  settings: null,
-  menu_config: null,
-  service_config: null,
-  product_config: null,
-  rental_config: null,
-  re_config: null,
-  auto_config: null,
-  created_at: '2024-01-01T00:00:00Z',
-};
-
-// A second demo business so the switcher flow is visible/explorable when nobody
-// is signed in (a real owner sees their own list instead). Different rubro.
-const DEMO_BIZ_2: BizRow = {
-  id: 'demo-2',
-  slug: 'salon-bella-vida',
-  name: 'Salón Bella Vida',
-  category_id: 'BeautyHealth',
-  tagline_es: 'Belleza con cariño',
-  tagline_en: 'Beauty with care',
-  tier: 'free',
-  price_level: '$$',
-  about_es: 'Salón familiar. Cortes, color y uñas con productos de calidad.',
-  about_en: 'Family salon. Cuts, color and nails with quality products.',
-  address: '2140 Long Point Rd, Houston, TX',
-  city: 'Houston, TX',
-  phone: '(713) 555-0192',
-  website: null,
-  logo_url: null,
-  accepts_messages: true,
-  message_channel: 'sms',
-  message_phone: null,
-  hours: [[], [[540, 1140]], [[540, 1140]], [[540, 1140]], [[540, 1140]], [[540, 1080]], []],
-  hours_exceptions: null,
-  features: ['Con cita', 'Sin cita', 'Se habla español'],
-  card_features: ['Con cita', 'Se habla español'],
-  subcategories: ['Salón de belleza', 'Uñas'],
-  specialty_es: 'Color y tratamientos',
-  specialty_en: 'Color & treatments',
-  is_open: true,
-  rating: 4.7,
-  reviews_count: 138,
-  tile_a: '#FBE9F0',
-  tile_b: '#F5D8E6',
-  modules: null,
-  settings: null,
-  menu_config: null,
-  service_config: null,
-  product_config: null,
-  rental_config: null,
-  re_config: null,
-  auto_config: null,
-  created_at: '2024-03-01T00:00:00Z',
-};
+// SIN negocio demo (2026-07-29). Antes vivían aquí DEMO_BIZ ('Taquería La
+// Esperanza', tier verified, 4.8★/412 reseñas) y DEMO_BIZ_2 ('Salón Bella Vida'),
+// que se mostraban a quien NO tuviera sesión para que el panel fuera explorable.
+// En producción eso es inaceptable (regla #8: nada fabricado presentado como
+// real): el fundador se registró, quedó sin sesión por confirmar el correo, abrió
+// /negocio y vio un negocio VERIFICADO con 412 reseñas que parecía SUYO — además
+// de una solicitud de 'Aliado' inventada. La confianza ES el producto; un dueño
+// nuevo que ve datos que no son suyos no vuelve.
+// Ahora, sin sesión el panel usa el MISMO estado vacío que un dueño recién
+// registrado sin negocios ('conecta tu negocio'), que ya existía y es correcto.
 
 // Columns that are safe to write from the client (map 1:1 to editable form
 // fields). tier / rating / reviews_count are intentionally NOT here — they are
@@ -204,18 +126,21 @@ const Ctx = createContext<BizAdminCtx | null>(null);
 export function BizAdminProvider({ children }: { children: ReactNode }) {
   const { user, configured } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [demo, setDemo] = useState(true);
-  const [businesses, setBusinesses] = useState<BizRow[]>([DEMO_BIZ, DEMO_BIZ_2]);
-  const [activeId, setActiveId] = useState<string | null>(DEMO_BIZ.id);
+  // `demo` = modo escaparate SIN backend (build estático puro, sin Supabase).
+  // Con backend configurado NUNCA se activa: un visitante sin sesión ve el mismo
+  // estado vacío que un dueño sin negocios, jamás datos fabricados (regla #8).
+  const [demo, setDemo] = useState(false);
+  const [businesses, setBusinesses] = useState<BizRow[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
-    // Not signed in (or Supabase not configured) → DEMO mode: one sample
-    // business so every editor is explorable; edits stay local.
+    // Sin sesión (o sin Supabase) → VACÍO, no demo. El panel muestra su estado
+    // "conecta tu negocio", que es la verdad: este visitante no administra nada.
     if (!supabase || !user) {
-      setDemo(true);
-      setBusinesses([DEMO_BIZ, DEMO_BIZ_2]);
-      setActiveId((prev) => (prev === DEMO_BIZ_2.id ? DEMO_BIZ_2.id : DEMO_BIZ.id));
+      setDemo(false);
+      setBusinesses([]);
+      setActiveId(null);
       setLoading(false);
       return;
     }

@@ -17,7 +17,7 @@ import { Avatar, Card, EmptyState, Overlay, SkeletonList, YouAvatar } from '@/co
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { ProfileNav } from '@/components/ProfileNav';
-import { NEIGHBORS, SEED_COMMENTS, SEED_REPLIES, TRENDING, bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
+import { SEED_COMMENTS, SEED_REPLIES, bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 
 // Real (Supabase) posts/comments carry a UUID id; fixtures do not.
@@ -531,7 +531,7 @@ export function ComunidadScreen() {
   };
 
   return (
-    <div className="grid items-start gap-[22px] lg:grid-cols-[218px_1fr_264px] md:grid-cols-[1fr_252px]">
+    <div className="grid items-start gap-[22px] lg:grid-cols-[218px_1fr]">
       {/* left rail — profile nav + barrios (desktop only) */}
       <aside className="sticky top-[130px] hidden flex-col gap-[18px] lg:flex">
         <ProfileNav />
@@ -671,47 +671,17 @@ export function ComunidadScreen() {
         )}
       </div>
 
-      {/* right rail — trending + neighbors (tablet & desktop) */}
-      <aside className="sticky top-[130px] hidden flex-col gap-4 md:flex">
-        <Card className="p-[17px]">
-          <div className="mb-3 text-[13.5px] font-extrabold text-ink">{L('Tendencias', 'Trending')}</div>
-          <div className="flex flex-col gap-3">
-            {TRENDING.map((x) => (
-              <div key={x.tag} className="cursor-pointer">
-                <div className="text-[13px] font-extrabold text-primary">{x.tag}</div>
-                <div className="mt-px text-[11px] font-semibold text-muted-2">
-                  {x.posts} {L('publicaciones', 'posts')}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card className="p-[17px]">
-          <div className="mb-3 text-[13.5px] font-extrabold text-ink">{L('Vecinos sugeridos', 'Suggested neighbors')}</div>
-          <div className="flex flex-col gap-3">
-            {NEIGHBORS.map((n, i) => {
-              const on = !!app.followed[i];
-              return (
-                <div key={n.name} className="flex items-center gap-2.5">
-                  <Avatar initials={n.initials} color={n.color} size={36} />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[12.5px] font-extrabold text-ink">{n.name}</div>
-                    <div className="text-[10.5px] font-semibold text-muted-2">{n.hood}</div>
-                  </div>
-                  <button
-                    onClick={() => app.toggleFollowed(i)}
-                    className={`flex-none cursor-pointer rounded-full px-3 py-1.5 text-[11px] font-extrabold ${
-                      on ? 'bg-lilac text-primary-dark' : 'bg-primary text-white'
-                    }`}
-                  >
-                    {on ? L('Siguiendo', 'Following') : L('Seguir', 'Follow')}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      </aside>
+      {/* Rail derecho RETIRADO (2026-07-29). Tenía dos tarjetas 100% fabricadas
+          que se mostraban a usuarios reales en tablet/escritorio (regla #8):
+            · "Tendencias": hashtags inventados con conteos falsos
+              (#TaqueríasHTX · 156 publicaciones, #MejorMecánico · 84…).
+            · "Vecinos sugeridos": tres personas que NO existen (Ana E.,
+              Roberto M., Sofía L.) con un botón "Seguir" funcional.
+          Ninguna tiene fuente de datos real todavía. Ambas quedan anotadas en
+          docs/LAUNCH-CHECKLIST.md para construirse de verdad (Nextdoor sí las
+          tiene: temas activos por zona y "vecinos que quizá conoces"). Hasta
+          entonces no se muestra nada: el feed gana ancho y no se miente.
+          La rejilla de arriba pierde su última columna en consecuencia. */}
 
       {/* comment thread */}
       <Overlay open={!!threadPost} onClose={closeThread} width={520} fullHeightSheet>

@@ -8,7 +8,7 @@
 // Post form is 3 steps: type → write (photos / tag business / poll options) →
 // preview.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconCalendar as Calendar, IconClock as Clock, IconHelpCircle as HelpCircle, IconHeart as Heart, IconPhotoPlus as ImagePlus, IconLogin as LogIn, IconMessageCircle as MessageCircle, IconPlus as Plus, IconBuildingStore as Store, IconTag as Tag, IconX as X, IconChartBar as BarChart3, IconCheck as Check } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
@@ -22,7 +22,7 @@ import { formatPhone } from '@/lib/phone';
 import { CAT, CAT_KEYS, type CatKey } from '@/lib/tiles';
 import type { WeekHours } from '@/lib/hours';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
-import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, TAG_BIZ_NAMES, VIEW_PATH, hoodsForCity } from '@/data/fixtures';
+import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, VIEW_PATH, hoodsForCity } from '@/data/fixtures';
 import { PostCard, type FeedPost } from '@/components/PostCard';
 import { HoursEditor, defaultWeek } from '@/components/HoursEditor';
 
@@ -38,6 +38,8 @@ export function PublishModal() {
   const app = useApp();
   const auth = useAuth();
   const live = useLiveData();
+  // Nombres de negocios REALES cercanos para el selector de "Etiquetar negocio".
+  const taggableBiz = useMemo(() => live.businesses.slice(0, 12).map((b) => b.name), [live.businesses]);
   const router = useRouter();
 
   const [step, setStep] = useState(1);
@@ -534,13 +536,25 @@ export function PublishModal() {
               {postType === 'rec' && (
                 <div>
                   <div className="mb-1.5 text-[12px] font-extrabold text-ink">{L('Etiquetar negocio', 'Tag a business')}</div>
-                  <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                    {TAG_BIZ_NAMES.map((b) => (
-                      <button key={b} onClick={() => setTaggedBiz(taggedBiz === b ? null : b)} className={chip(taggedBiz === b)}>
-                        {b}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Negocios REALES cercanos (2026-07-29). Antes salían TAG_BIZ_NAMES:
+                      4 nombres inventados (Taquería La Esperanza, Salón Glamour,
+                      Taller Don Beto, Panadería Dulce Hogar) → un vecino podía
+                      publicar una recomendación etiquetando un negocio que NO
+                      existe. Ahora se ofrecen los del feed real; si aún no hay
+                      ninguno cerca, no se ofrece nada (regla #8). */}
+                  {taggableBiz.length > 0 ? (
+                    <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                      {taggableBiz.map((b) => (
+                        <button key={b} onClick={() => setTaggedBiz(taggedBiz === b ? null : b)} className={chip(taggedBiz === b)}>
+                          {b}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-[11.5px] font-semibold text-muted">
+                      {L('Aún no hay negocios cerca para etiquetar.', 'No nearby businesses to tag yet.')}
+                    </div>
+                  )}
                 </div>
               )}
 

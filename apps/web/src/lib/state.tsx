@@ -167,7 +167,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [postSeq, setPostSeq] = useState(0);
   const [biz, setBiz] = useState<BizProfile | null>(null);
 
-  const unreadCount = NOTIFS.filter((n) => n.unread && !notifRead[n.id]).length;
+  // Contador de no leídas: SIEMPRE desde lib/notifications (filas reales). El
+  // cálculo anterior salía de las NOTIFS de fixtures → insignia falsa. Se deja a 0
+  // aquí para no reintroducirla; los consumidores usan useNotifications().
+  const unreadCount = 0;
 
   const value = useMemo<AppCtx>(
     () => ({

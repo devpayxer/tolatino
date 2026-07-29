@@ -7,13 +7,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconChartBar as BarChart3, IconBell as Bell, IconBike as Bike, IconCheck as Check, IconChevronDown as ChevronDown, IconExternalLink as ExternalLink, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconPackage as Package, IconPlus as Plus, IconSearch as Search, IconShoppingBag as ShoppingBag, IconSpeakerphone as Megaphone, IconStar as Star, IconTicket as Ticket, IconToolsKitchen2 as Utensils, IconX as X } from '@tabler/icons-react';
+import { IconChartBar as BarChart3, IconBell as Bell, IconBike as Bike, IconCheck as Check, IconChevronDown as ChevronDown, IconExternalLink as ExternalLink, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconPackage as Package, IconPlus as Plus, IconSearch as Search, IconShoppingBag as ShoppingBag, IconBuildingStore as Store, IconSpeakerphone as Megaphone, IconStar as Star, IconTicket as Ticket, IconToolsKitchen2 as Utensils, IconX as X } from '@tabler/icons-react';
 import type { Icon as LucideIcon } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { supabase } from '@/lib/supabase';
 import { useScrollLock } from '@/lib/scrollLock';
 import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
+import { useAuth } from '@/lib/auth';
 import { CAT, type CatKey } from '@/lib/tiles';
 import { VerifiedBadge } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
@@ -112,6 +113,7 @@ export function PanelScreen() {
   const [bellOpen, setBellOpen] = useState(false);
   const [avisos, setAvisos] = useState({ orders: 0, reviews: 0, messages: 0 });
   const admin = useBizAdmin();
+  const { user } = useAuth();
   const real = admin.active; // the signed-in owner's active business (null in demo)
 
   // Real gallery photo count for the active business → the "Fotos y media" nav
@@ -199,8 +201,11 @@ export function PanelScreen() {
   const initialsOf = (n: string) => n.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'TL';
   const catLabel = (cat: string) => L(CAT[cat as CatKey]?.es ?? cat, CAT[cat as CatKey]?.en ?? cat);
 
-  const bizName = real ? real.name : isFree ? 'Lupita’s Tortillería' : (app.biz?.name && app.biz.plan === 'pro' ? app.biz.name : ci.name);
-  const bizInitials = real ? initialsOf(real.name) : isFree ? 'LT' : ci.initials;
+  // Sin negocio real el panel no llega aquí (compuerta arriba). Los respaldos
+  // fabricados ('Lupita’s Tortillería', ci.name/ci.area de CAT_INFO) se eliminan
+  // para que ni una regresión pueda volver a mostrar un negocio que no existe.
+  const bizName = real?.name ?? app.biz?.name ?? '';
+  const bizInitials = real ? initialsOf(real.name) : initialsOf(app.biz?.name ?? '');
   // Business avatar: the uploaded logo when present, else the initials tile.
   const bizAvatar = (cls: string) =>
     real?.logo_url ? (
@@ -211,8 +216,8 @@ export function PanelScreen() {
         {bizInitials}
       </span>
     );
-  const bizCategory = real ? catLabel(real.category_id) : isFree ? L('Panadería · Tortillería', 'Bakery · Tortillería') : L(ci.es, ci.en);
-  const bizArea = real ? (real.address || real.city || '') : ci.area;
+  const bizCategory = real ? catLabel(real.category_id) : L(ci.es, ci.en); // etiqueta del rubro (legítima), nunca un nombre inventado
+  const bizArea = real ? (real.address || real.city || '') : '';
   const catTile = real ? `${real.tile_a ?? '#EFEBFF'} 0 9px,${real.tile_b ?? '#E5DEF9'} 9px 18px` : isFree ? '#FCE3EC 0 9px,#F6CEDD 9px 18px' : ci.tile;
 
   const livePill = real
@@ -447,6 +452,64 @@ export function PanelScreen() {
   // Handoff mobile chrome: the top bar is DARK on Inicio/Insights and light with
   // a title elsewhere; desktop (lg+) keeps the light topbar + sidebar shell.
   const isInicio = tab === 'insights';
+
+  // ── COMPUERTA (2026-07-29): sin negocio real NO se dibuja el tablero ──────
+  // Antes el panel se renderizaba siempre y los módulos rellenaban con datos
+  // fabricados (DashboardHome: 'Taquería La Esperanza', 4.8★, 128 reseñas). El
+  // fundador se registró, quedó sin sesión por confirmar el correo, abrió
+  // /negocio y creyó tener un negocio VERIFICADO asignado. Regla #8: nada
+  // fabricado presentado como real. Ahora se dice la verdad y se ofrece la
+  // acción correcta según el caso.
+  if (!admin.loading && !real) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-dash px-6 py-12">
+        <div className="w-full max-w-[380px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
+            <Store size={26} stroke={2.2} className="text-primary" />
+          </span>
+          {user ? (
+            <>
+              <h1 className="mt-4 text-[19px] font-extrabold tracking-[-.02em] text-ink">
+                {L('Aún no tienes un negocio', "You don't have a business yet")}
+              </h1>
+              <p className="mt-1.5 text-[13px] font-medium leading-snug text-muted">
+                {L('Publica tu negocio o actividad para que los vecinos te encuentren. Es gratis y toma unos minutos.',
+                   'Publish your business or activity so neighbors can find you. It’s free and takes a few minutes.')}
+              </p>
+              <button
+                onClick={() => router.push('/negocio/publicar')}
+                className="mt-5 w-full cursor-pointer rounded-field bg-primary px-5 py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm"
+              >
+                {L('Publicar mi negocio', 'Publish my business')}
+              </button>
+            </>
+          ) : (
+            <>
+              <h1 className="mt-4 text-[19px] font-extrabold tracking-[-.02em] text-ink">
+                {L('Inicia sesión para administrar tu negocio', 'Sign in to manage your business')}
+              </h1>
+              <p className="mt-1.5 text-[13px] font-medium leading-snug text-muted">
+                {L('Entra con tu cuenta para ver tu panel: pedidos, reseñas, menú y estadísticas.',
+                   'Sign in to see your dashboard: orders, reviews, menu and stats.')}
+              </p>
+              <button
+                onClick={() => router.push('/entrar')}
+                className="mt-5 w-full cursor-pointer rounded-field bg-primary px-5 py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm"
+              >
+                {L('Iniciar sesión', 'Sign in')}
+              </button>
+              <button
+                onClick={() => router.push('/negocio/publicar')}
+                className="mt-2.5 w-full cursor-pointer rounded-field bg-lilac-2 px-5 py-3 text-[13.5px] font-extrabold text-primary-dark"
+              >
+                {L('Publicar un negocio nuevo', 'Publish a new business')}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-dash">

@@ -18,16 +18,20 @@ export type TabKey =
 
 export type Lx = (es: string, en: string) => string;
 
+// name/initials/area quedan VACÍOS a propósito (2026-07-29): traían negocios y
+// direcciones inventadas ('Taquería La Esperanza · Bellaire Blvd') que el panel
+// usaba como respaldo y el dueño leía como suyas. Lo legítimo de este mapa es la
+// etiqueta del rubro (es/en), el degradado (tile) y el icono (svc).
 export type CatInfo = { es: string; en: string; name: string; initials: string; area: string; tile: string; svc: LucideIcon };
 
 export const CAT_INFO: Record<Rubro, CatInfo> = {
-  restaurant: { es: 'Restaurante · Taquería', en: 'Restaurant · Taco shop', name: 'Taquería La Esperanza', initials: 'TE', area: 'Bellaire · Bellaire Blvd', tile: '#ECE3F8 0 9px,#E3D7F4 9px 18px', svc: Utensils },
-  beauty: { es: 'Belleza · Salón', en: 'Beauty · Hair Salon', name: 'Salón Bella Vida', initials: 'BV', area: 'Gulfton · Hillcroft Ave', tile: '#FCE3EC 0 9px,#F6CEDD 9px 18px', svc: Scissors },
-  auto: { es: 'Auto · Taller', en: 'Auto Repair · Shop', name: 'Don Beto Mecánica', initials: 'DB', area: 'Spring Branch · Long Point Rd', tile: '#E4ECFB 0 9px,#D7E3F6 9px 18px', svc: Wrench },
-  retail: { es: 'Boutique · Ropa', en: 'Boutique · Apparel', name: 'Casa Bonita Shop', initials: 'CB', area: 'East End · Harrisburg Blvd', tile: '#EAE2F8 0 9px,#DCCEF2 9px 18px', svc: Store },
-  rental: { es: 'Renta · Equipo', en: 'Rental · Equipment', name: 'Bahía Rentals', initials: 'BR', area: 'Katy · Mason Rd', tile: '#E3F5EA 0 9px,#D6E7D0 9px 18px', svc: Bike },
-  realestate: { es: 'Bienes Raíces · Agencia', en: 'Real Estate · Agency', name: 'Casa Latina Realty', initials: 'CL', area: 'Gulfton · Hillcroft Ave', tile: '#E5DEF9 0 9px,#D9CEF3 9px 18px', svc: HomeIcon },
-  cardealer: { es: 'Dealer · Autos', en: 'Car Dealer', name: 'Autos del Valle', initials: 'AV', area: 'Spring Branch · Long Point Rd', tile: '#E4EEFB 0 9px,#DAE5F6 9px 18px', svc: CarIcon },
+  restaurant: { es: 'Restaurante · Taquería', en: 'Restaurant · Taco shop', name: '', initials: '', area: '', tile: '#ECE3F8 0 9px,#E3D7F4 9px 18px', svc: Utensils },
+  beauty: { es: 'Belleza · Salón', en: 'Beauty · Hair Salon', name: '', initials: '', area: '', tile: '#FCE3EC 0 9px,#F6CEDD 9px 18px', svc: Scissors },
+  auto: { es: 'Auto · Taller', en: 'Auto Repair · Shop', name: '', initials: '', area: '', tile: '#E4ECFB 0 9px,#D7E3F6 9px 18px', svc: Wrench },
+  retail: { es: 'Boutique · Ropa', en: 'Boutique · Apparel', name: '', initials: '', area: '', tile: '#EAE2F8 0 9px,#DCCEF2 9px 18px', svc: Store },
+  rental: { es: 'Renta · Equipo', en: 'Rental · Equipment', name: '', initials: '', area: '', tile: '#E3F5EA 0 9px,#D6E7D0 9px 18px', svc: Bike },
+  realestate: { es: 'Bienes Raíces · Agencia', en: 'Real Estate · Agency', name: '', initials: '', area: '', tile: '#E5DEF9 0 9px,#D9CEF3 9px 18px', svc: HomeIcon },
+  cardealer: { es: 'Dealer · Autos', en: 'Car Dealer', name: '', initials: '', area: '', tile: '#E4EEFB 0 9px,#DAE5F6 9px 18px', svc: CarIcon },
 };
 
 export type Mods = Record<'menu' | 'services' | 'bookings' | 'products' | 'rental' | 'events' | 'inmuebles' | 'vehiculos' | 'updates' | 'staff', boolean>;

@@ -25,7 +25,10 @@ type AuthCtx = {
   profile: Profile | null;
   loading: boolean;
   configured: boolean;
-  signUp: (name: string, email: string, password: string, loc?: { label: string; lat: number; lng: number }) => Promise<{ error: string | null }>;
+  /** `needsConfirmation` = Supabase NO devolvió sesión → el correo debe
+   *  confirmarse antes de poder entrar. La UI tiene que decirlo; si se ignora,
+   *  el usuario cree que ya entró y navega como invitado. */
+  signUp: (name: string, email: string, password: string, loc?: { label: string; lat: number; lng: number }) => Promise<{ error: string | null; needsConfirmation?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   saveLocation: (loc: { label: string; lat: number; lng: number }) => Promise<void>;
@@ -73,10 +76,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Carga el perfil y, si NO existe, lo crea desde user_metadata. Ese hueco era
+  // real: al registrarse con confirmación de correo activa no hay sesión, el
+  // insert lo bloquea RLS y nada lo reintentaba → usuario sin nombre ni ciudad.
+  // Ahora el primer login autenticado siempre deja el perfil listo.
   const loadProfile = useCallback(async (uid: string) => {
     if (!supabase) return;
     const { data } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
-    setProfile((data as Profile) ?? null);
+    if (data) { setProfile(data as Profile); return; }
+    const { data: ures } = await supabase.auth.getUser();
+    const meta = (ures?.user?.user_metadata ?? {}) as Record<string, unknown>;
+    const name = typeof meta.display_name === 'string' && meta.display_name.trim() ? meta.display_name.trim() : 'Vecino';
+    const row = {
+      id: uid,
+      display_name: name,
+      initials: initialsOf(name),
+      avatar_color: colorFor(uid),
+      city_label: typeof meta.city_label === 'string' ? meta.city_label : null,
+      lat: typeof meta.lat === 'number' ? meta.lat : null,
+      lng: typeof meta.lng === 'number' ? meta.lng : null,
+    };
+    const { error } = await supabase.from('profiles').upsert(row);
+    setProfile(error ? null : row);
   }, []);
 
   useEffect(() => {
@@ -101,10 +122,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp: AuthCtx['signUp'] = async (name, email, password, loc) => {
     if (!supabase) return { error: 'not_configured' };
-    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
+    // El nombre/ciudad van a user_metadata: si la cuenta requiere confirmar el
+    // correo NO hay sesión, y el insert en `profiles` lo bloquea RLS
+    // (auth.uid() = id). Guardándolos en el propio usuario, ensureProfile() crea
+    // el perfil en el PRIMER login autenticado, desde cualquier dispositivo.
+    // (Antes se perdían: el upsert fallaba en silencio y el dueño entraba sin
+    // nombre ni ciudad — verificado en prod 2026-07-29: 1 usuario, 0 perfiles.)
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: { data: { display_name: name.trim(), city_label: loc?.label ?? null, lat: loc?.lat ?? null, lng: loc?.lng ?? null } },
+    });
     if (error) return { error: friendly(error.message) };
     const u = data.user;
-    if (u) {
+    // Con sesión (confirmación desactivada) creamos el perfil ya.
+    if (u && data.session) {
       const row = {
         id: u.id,
         display_name: name.trim(),
@@ -117,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.from('profiles').upsert(row);
       setProfile(row);
     }
-    return { error: null };
+    return { error: null, needsConfirmation: !data.session };
   };
 
   const signIn: AuthCtx['signIn'] = async (email, password) => {

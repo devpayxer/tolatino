@@ -213,7 +213,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     fetchBusinessMenu(b.slug).then((m) => { if (!cancelled) { setRealMenu(m); setMenuFetched(true); } });
     return () => { cancelled = true; };
   }, [b.slug]);
-  const menuCats = realMenu?.cats ?? MENU;
+  // Sin respaldo a fixtures (2026-07-29): antes `?? MENU` podía pintar un menú
+  // INVENTADO en la página de un negocio real. Hoy la pestaña solo aparece si
+  // `realMenu != null` (regla de visibilidad), así que era inalcanzable — pero si
+  // ese gating se rompiera, el negocio mostraría platillos que no vende. Vacío.
+  const menuCats = realMenu?.cats ?? [];
   // Owner-tagged "Popular" dishes across categories → the top section + purple chip.
   const menuPopular = menuCats.flatMap((c) => c.items.filter((it) => it.tag && it.tag[0] === 'Popular').map((item) => ({ catKey: c.key, item }))).slice(0, 8);
   // "Ordenar de nuevo" — DoorDash/Uber Eats' "Order it again": items THIS
@@ -299,7 +303,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     fetchBusinessProducts(b.slug).then((s) => { if (!cancelled) { setRealShop(s); setShopFetched(true); } });
     return () => { cancelled = true; };
   }, [b.slug]);
-  const shopCats = realShop?.cats ?? SHOP;
+  const shopCats = realShop?.cats ?? []; // sin respaldo a la tienda de fixtures (ver nota en menuCats)
   // Display-only shop: selling off → catalog (no cart). Cash orders still work.
   const shopDisplayOnly = realShop != null && !realShop.selling;
 
@@ -342,7 +346,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     setEndoReason('');                         // new → open the optional-reason sheet
   };
   const rentalItems: PubRental[] = realRentals?.items
-    ?? RENTAL.map((r, i) => ({ id: `fx${i}`, n: r.n, d: r.d, tile: r.tile, hour: r.hour, day: r.day, week: r.week, dep: r.dep, addons: [], avail: '', stock: 1, unit: ['unidad', 'unit'] as Bi, catKey: '_', catName: ['Renta', 'Rentals'] as Bi }));
+    ?? []; // sin respaldo a RENTAL de fixtures: pintaba artículos de renta INVENTADOS (regla #8)
   // Display-only rentals: renting off → catalog (no Rentar). Cash rentals still work.
   const rentDisplayOnly = realRentals != null && !realRentals.renting;
 
@@ -351,7 +355,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const groupsFor = (catKey: string, item: MenuItem) => {
     const key = `${catKey}::${item.n[0]}`;
     if (catKey.startsWith('sh:')) return realShop?.groups[key] ?? [];
-    return realMenu ? realMenu.groups[key] ?? [] : OPTION_GROUPS[catKey] ?? [];
+    return realMenu?.groups[key] ?? []; // sin respaldo a OPTION_GROUPS de fixtures
   };
 
   // Approved related listings (migration 0044). Empty offline / when none linked →
@@ -1184,6 +1188,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     priceLabel: null, dur: s.dur, bookable: s.bookable, addons: s.addons,
     id: s.id, capMax: capMaxOf(s.capacity), tile: s.tile, img: s.img, days: s.days, variant: s.variant,
   });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- ya sin uso: la rama de servicios de fixtures se eliminó (2026-07-29)
   const fixtureToTarget = (f: (typeof SERVICES)[number]): SvcTarget => ({
     name: B(f.n), descEs: f.d[0], descEn: f.d[1], price: null, priceType: 'cotiza',
     priceLabel: f.price, dur: '', bookable: true, addons: [], id: null, capMax: 0,
@@ -2687,19 +2692,16 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-2.5 pt-4">
-            {SERVICES.map((s) => (
-              <Card key={s.n[0]} className="flex items-center gap-3 p-4">
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-extrabold text-ink">{B(s.n)}</div>
-                  <div className="mt-0.5 text-[12px] font-semibold text-muted">{B(s.d)}</div>
-                  <div className="mt-1 text-[12.5px] font-extrabold text-primary-dark">{B(s.price)}</div>
-                </div>
-                <button onClick={() => openSvc(fixtureToTarget(s))} className="flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">
-                  {L('Reservar', 'Book')}
-                </button>
-              </Card>
-            ))}
+          /* Servicios activos pero SIN contenido real. Antes esta rama pintaba los
+             SERVICES de fixtures con botón "Reservar" funcional → un cliente podía
+             intentar reservar un servicio que el negocio NO ofrece (regla #8).
+             Ahora se dice la verdad y se invita a contactar. */
+          <div className="flex items-center gap-2.5 rounded-tile bg-lilac-2 px-3.5 py-2.5">
+            <Store size={16} stroke={2.2} className="flex-none text-primary-dark" />
+            <span className="text-[12px] font-semibold leading-snug text-ink-soft">
+              {L('Este negocio aún no publicó sus servicios — llama o visita para preguntar.',
+                 "This business hasn't listed its services yet — call or visit to ask.")}
+            </span>
           </div>
         )
       )}

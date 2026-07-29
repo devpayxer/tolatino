@@ -14,7 +14,7 @@ import { PrimaryBtn, Wordmark } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { POPULAR_CITIES, getBrowserLocation, nearestCity, searchCities, type Place } from '@/lib/geo';
 
-type Step = 'welcome' | 'register' | 'login' | 'location' | 'done';
+type Step = 'welcome' | 'register' | 'login' | 'location' | 'done' | 'confirm';
 
 export function OnboardingScreen() {
   const { L } = useLang();
@@ -38,9 +38,13 @@ export function OnboardingScreen() {
     if (!email.includes('@')) return setErr(L('Escribe un correo válido.', 'Enter a valid email.'));
     if (password.length < 6) return setErr(L('La contraseña debe tener al menos 6 caracteres.', 'Password must be at least 6 characters.'));
     setBusy(true);
-    const { error } = await auth.signUp(name, email, password, { label: app.city, lat: app.coords.lat, lng: app.coords.lng });
+    const { error, needsConfirmation } = await auth.signUp(name, email, password, { label: app.city, lat: app.coords.lat, lng: app.coords.lng });
     setBusy(false);
     if (error) return setErr(authErrorText(error, L));
+    // Sin sesión = falta confirmar el correo. Antes se caía a 'location' y el
+    // usuario creía haber entrado, pero navegaba como INVITADO (así fue como el
+    // fundador acabó viendo el panel de negocio en modo demo). Ahora se le dice.
+    if (needsConfirmation) return setStep('confirm');
     setStep('location');
   };
 
@@ -166,6 +170,29 @@ export function OnboardingScreen() {
 
           {/* LOCATION */}
           {step === 'location' && <LocationStep onPick={pickLocation} />}
+
+          {/* CONFIRMA TU CORREO — sin sesión todavía */}
+          {step === 'confirm' && (
+            <div className="flex flex-col items-center text-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-lilac">
+                <Mail size={28} className="text-primary" />
+              </span>
+              <h1 className="mt-4 text-[22px] font-extrabold tracking-[-.02em] text-ink">
+                {L('Confirma tu correo', 'Confirm your email')}
+              </h1>
+              <p className="mt-1.5 max-w-[320px] text-[13px] font-medium text-muted">
+                {L(`Te enviamos un enlace a ${email.trim()}. Ábrelo para activar tu cuenta y poder entrar.`,
+                   `We sent a link to ${email.trim()}. Open it to activate your account and sign in.`)}
+              </p>
+              <p className="mt-3 max-w-[320px] text-[12px] font-semibold text-muted-2">
+                {L('¿No lo ves? Revisa la carpeta de spam o correo no deseado.',
+                   "Don't see it? Check your spam or junk folder.")}
+              </p>
+              <PrimaryBtn className="mt-5" onClick={() => { setErr(null); setStep('login'); }}>
+                {L('Ya lo confirmé — iniciar sesión', 'I confirmed it — sign in')}
+              </PrimaryBtn>
+            </div>
+          )}
 
           {/* DONE */}
           {step === 'done' && (

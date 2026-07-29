@@ -94,8 +94,11 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   const active = orders.filter((o) => ['new', 'preparing', 'ready'].includes(o.status));
   const newCount = orders.filter((o) => o.status === 'new').length;
   const unreplied = reviews.filter((r) => !r.replied).length;
-  const rating = real ? ((real.reviews_count ?? 0) > 0 ? Number(real.rating).toFixed(1) : '—') : '4.8';
-  const reviewsCount = real ? (real.reviews_count ?? 0) : 128;
+  // Sin negocio real el panel ya no se dibuja (compuerta en Panel.tsx), pero los
+  // respaldos fabricados se eliminan igual: '4.8' / 128 reseñas / 'Taquería La
+  // Esperanza' hacían creer al dueño que tenía un negocio verificado (regla #8).
+  const rating = (real?.reviews_count ?? 0) > 0 ? Number(real?.rating).toFixed(1) : '—';
+  const reviewsCount = real?.reviews_count ?? 0;
 
   // 7-day sales series (real)
   const series = useMemo(() => {
@@ -141,7 +144,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   ];
 
   const dateStr = mounted ? new Date().toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday: 'long', day: 'numeric', month: 'short' }) : '';
-  const name = real?.name ?? (isFree ? 'Lupita’s Tortillería' : 'Taquería La Esperanza');
+  const name = real?.name ?? '';
 
   // ── attention items (real signals only) ──────────────────────────────────
   type Todo = { icon: typeof Bell; bg: string; c: string; title: string; sub: string; btn: string; tab: TabKey };
