@@ -379,6 +379,15 @@ DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
       nuevas y aún no re-verificó). El dominio SIRVE correctamente; un clic en
       **Refresh** en Settings → Domains lo pone verde. No cambiar el DNS que ya
       funciona por perseguir el aviso.
+      ℹ️ **Gotcha del día del cutover:** justo después de crear los registros, el
+      fundador vio `DNS_PROBE_FINISHED_NXDOMAIN` en su PC del trabajo mientras el
+      dominio YA servía HTTP 200 desde fuera. Es caché de DNS local/corporativa (o un
+      filtro que bloquea dominios recién registrados), NO el dominio. Se resolvió al
+      propagarse. **Cómo diagnosticarlo sin dudar:** consultar un resolutor público
+      (`https://dns.google/resolve?name=tolatino.com&type=A`) y pedir el sitio por
+      HTTP; si eso responde, el dominio está bien y el problema es la red del que
+      mira. Probar en el teléfono con WiFi apagado (datos celulares) salta cualquier
+      red corporativa. `ipconfig /flushdns` en Windows limpia la caché local.
 - [x] **URLs de Auth de prod corregidas (2026-07-29) — era un BLOQUEADOR.** El
       proyecto de prod venía con `site_url = http://localhost:3000` y
       `uri_allow_list` **vacía**, y `mailer_autoconfirm = false` (el registro exige
