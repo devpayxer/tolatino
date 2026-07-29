@@ -336,8 +336,16 @@ DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
       confirmada (la misma del `.env.production`). `FRED_API_KEY` pendiente/opcional.
       **Para LANZAR con dinero real:** repetir con `sk_live`/`pk_live` + un webhook
       **Live** (nuevo `whsec`), y activar Stripe Connect en Live.
-- [ ] Cambiar `apps/web/.env.production` → valores de prod (URL + `sb_publishable`)
-      en el cutover; **verificar la base horneada en el sitio en vivo** (§4.4).
+- [x] **Cambiado `apps/web/.env.production` → PROD (2026-07-29, cutover paso 1).**
+      `NEXT_PUBLIC_SUPABASE_URL` = `https://vurqsebgsacickxsxfeh.supabase.co` y la
+      `sb_publishable` de prod (verificada con un GET real a `/rest/v1/categories`
+      → HTTP 200 antes de compilar). **VAPID:** la pública de prod NO había quedado
+      guardada en el repo, así que se generó un **par nuevo** y se cargó
+      `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` en los secretos de prod (rotación
+      segura: prod tenía **0** filas en `push_subscriptions`). Stripe se queda en
+      `pk_test` a propósito para el ensayo. **Build verificado:** el JS compilado
+      hornea solo `vurqsebgsacickxsxfeh` (3 ocurrencias) y **cero** rastros de
+      `zpkaxojonufdwgahiqjh`. Falta confirmar lo mismo en el sitio YA desplegado.
 - [ ] Limpiar el Vercel del proyecto: la var `NEXT_PUBLIC_SUPABASE_URL` apunta al
       proyecto BORRADO `ujvzpfygaqywcdlnplie` — corregir a la base activa o borrarla
       (§4.4, landmine).
