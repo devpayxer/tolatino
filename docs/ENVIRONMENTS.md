@@ -329,9 +329,13 @@ DNS de `tolatino.com`) — esos te los dejo listos para copy-paste.
       `PUSH_HOOK_SECRET`, `SITE_ORIGIN=https://tolatino.vercel.app`; `push_config`
       insertado (fn_url send-push + hook_secret + anon). VAPID public de prod
       guardado para `.env.production` en el cutover.
-- [ ] Secretos Stripe en prod: `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (los da
-      el fundador; API de Stripe bloqueada desde el sandbox → webhook se crea en el
-      dashboard). `FRED_API_KEY` opcional (fred-rates).
+- [x] Secretos Stripe en prod **en MODO PRUEBA** (2026-07-29): `STRIPE_SECRET_KEY`
+      (`sk_test`, misma cuenta que staging) + `STRIPE_WEBHOOK_SECRET` del webhook de
+      prueba que el fundador creó apuntando a `…/functions/v1/stripe-webhook` con los
+      eventos `checkout.session.completed` + `payment_intent.succeeded`. `pk_test`
+      confirmada (la misma del `.env.production`). `FRED_API_KEY` pendiente/opcional.
+      **Para LANZAR con dinero real:** repetir con `sk_live`/`pk_live` + un webhook
+      **Live** (nuevo `whsec`), y activar Stripe Connect en Live.
 - [ ] Cambiar `apps/web/.env.production` → valores de prod (URL + `sb_publishable`)
       en el cutover; **verificar la base horneada en el sitio en vivo** (§4.4).
 - [ ] Limpiar el Vercel del proyecto: la var `NEXT_PUBLIC_SUPABASE_URL` apunta al
