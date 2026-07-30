@@ -1005,7 +1005,11 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- bookings (Reservas) — Booksy-style day agenda ----
-  const allBk = bookingRows ?? DEMO_BOOKINGS;
+  // Sin filas reales → agenda VACÍA, nunca DEMO_BOOKINGS. `bookingRows` queda en
+  // null cuando no hay negocio real o el backend falla (l.196), así que este
+  // respaldo podía mostrarle CITAS INVENTADAS a un dueño real durante un fallo de
+  // red — con nombres de clientes y horas que no existen (regla #8).
+  const allBk = bookingRows ?? [];
   const nowMs = Date.now();
   const activeSt = (s: BkStatus) => s === 'pending' || s === 'confirmed' || s === 'seated';
   const countOn = (key: string) => allBk.filter((b) => activeSt(b.status) && bookingDayKey(b.starts_at) === key).length;

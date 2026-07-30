@@ -1,5 +1,42 @@
 # To'Latino — Launch & Scale Checklist (deferred decisions)
 
+> ## ⚡ ESTADO AL 2026-07-29 — lee esto primero
+>
+> **111 pendientes · 108 hechos.** No todos pesan igual. Esto es lo que de verdad
+> bloquea abrir la puerta al público, en orden:
+>
+> **🔴 Bloquean el lanzamiento (sin esto no se puede abrir):**
+> 1. **SMTP propio (Amazon SES)** — hoy Supabase limita a 2 correos/hora y **nadie
+>    puede confirmar su cuenta**. Detalle y pasos en §0. Es EL bloqueador.
+> 2. **Stripe en LIVE** — llaves `sk_live`/`pk_live`, webhook Live nuevo y Connect
+>    en Live. Hoy todo está en modo PRUEBA a propósito.
+> 3. **Rotar la `sk_test` expuesta** en chat durante la configuración (§Payments).
+> 4. **Prueba real de punta a punta con dinero de verdad** (un cargo chico) una vez
+>    hechos 1-3.
+>
+> **🟡 Importantes antes de crecer (no bloquean el día 1):**
+> - Radio de entrega **no** se valida en el servidor al cobrar: alguien fuera de
+>   zona puede pagar un envío que el negocio tendrá que cancelar.
+> - Reconciliación "lo que pagó el comprador" vs "total del pedido".
+> - Limpieza de `pending_purchases` abandonados.
+> - Anti-spam / límites de publicación (hay un guard básico; falta lo compartido).
+> - Escala: `count(*) over ()` en búsquedas de propiedades/autos y paginación por
+>   OFFSET (ver §1, auditoría 0130).
+>
+> **🟢 Buenas noticias verificadas en código el 2026-07-29** (estaban marcadas
+> pendientes pero YA estaban hechas):
+> - El servidor **re-tarifica** pedidos y reservas desde el catálogo: el precio que
+>   manda el navegador se ignora. Nadie puede pagar $0.55 por un pedido de $50.
+> - El webhook de Stripe maneja los dos eventos con protección de carrera y reclamo
+>   atómico: los reintentos no cobran ni entregan dos veces.
+> - Producción está EN VIVO en `tolatino.com` con la base limpia.
+> - El panel ya no muestra datos fabricados a nadie (auditoría del 2026-07-29).
+>
+> **Cómo usar este archivo:** los ítems marcados `[x] VERIFICADO HECHO` llevan la
+> evidencia de por qué. Si algo parece pendiente, comprueba primero en el código
+> antes de rehacerlo — este checklist se adelanta a veces a la realidad.
+
+
 > **Purpose.** A running list of everything we deliberately deferred while
 > building fast in the **sandbox**, to revisit **before/at public launch** and
 > **at scale (1M+/mo)**. The founder won't remember these by heart, and neither
@@ -20,7 +57,16 @@
 
 ## 0. Sandbox → real environment (the big one)
 
-- [ ] **Producción prístina — cutover en curso (2026-07-28). Ver `docs/ENVIRONMENTS.md`.**
+- [x] **HECHO 2026-07-29 — Producción EN VIVO en `tolatino.com`.** El cutover se
+  completó: `.env.production` apunta a la base de prod limpia (verificado sobre el
+  JS servido: 3 ocurrencias del ref de prod, 0 de staging), dominio conectado
+  (Cloudflare DNS → Vercel, proxy apagado, HTTP 200 + SSL en apex y www), URLs de
+  Auth corregidas (venían en `localhost:3000` con allow-list vacía → nadie podría
+  haber confirmado su cuenta) y `SITE_ORIGIN` movido al dominio. **Sigue pendiente
+  y es lo único que falta para cobrar de verdad: Stripe en LIVE** (llaves
+  `sk_live`/`pk_live`, webhook Live nuevo, Connect en Live) — hoy todo está en modo
+  PRUEBA a propósito. Detalle completo en `docs/ENVIRONMENTS.md §7`.
+  Contexto original del plan:
   Decidido: **Opción A** — el proyecto de hoy (`tolatino`, `zpkaxojonufdwgahiqjh`) es
   **staging**; nuevo proyecto **`tolatino-prod`** (`vurqsebgsacickxsxfeh`, us-east-1)
   es prod. Dominio final `tolatino.com`. **Hecho por Claude:** borrado del viejo
@@ -198,8 +244,11 @@
   dependency). Before launch decide the anti-fake-account path: enable email
   confirmation (needs **Amazon SES** for deliverability), and/or **WhatsApp OTP**
   (audience fits — Latinos use WhatsApp heavily).
-- [ ] **Transactional email.** None wired yet. Start with **Amazon SES**
-  (~$0.10/1k) for confirmations/notifications; consider self-hosted Postal later.
+- [ ] **Transactional email → ver el BLOQUEADOR detallado en §0** (2026-07-29).
+  Sigue sin cablear y ahora se sabe que **bloquea el registro público**: sin SMTP
+  propio, Supabase limita a 2 correos/hora y nadie puede confirmar su cuenta. Los
+  pasos concretos de Amazon SES están en §0; este ítem queda como referencia
+  cruzada para no resolverlo dos veces.
 - [ ] **Supabase advisor: `rls_disabled_in_public` on `spatial_ref_sys`
   (known PostGIS exception — NOT a data risk).** The security-advisor email flags
   this table. Verified 2026-07-09: **every table holding user data already has RLS
@@ -1291,8 +1340,16 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   `events_by_owner` (exists), plus new `business_staff`-by-slug and
   `business_updates`-by-slug RPCs, and render real rows instead of fixtures.
 
-- [ ] **Business panel: signed-in user with NO business → uniform empty state
-  (2026-07-08 audit, D3).** When a user is signed in but owns no business
+- [x] **HECHO 2026-07-29 — Business panel: signed-in user with NO business → uniform
+  empty state (era 2026-07-08 audit, D3).** Resuelto de raíz y MEJOR que lo que
+  pedía este ítem: en vez de arreglar módulo por módulo, `PanelScreen` ahora tiene
+  una COMPUERTA — sin negocio real no se renderiza ningún módulo, sale un estado
+  vacío honesto ("Inicia sesión para administrar tu negocio" si no hay sesión,
+  "Publica mi negocio" si la hay). Uniforme por construcción: ningún módulo puede
+  volver a enseñar sus semillas demo. Además se ELIMINARON las semillas (roster de
+  7 empleados, DEMO_ORDERS, DEMO_BOOKINGS, novedades, la solicitud de "Aliado" de
+  Related) y el modo demo ya no se activa nunca con backend configurado.
+  Descripción original del hueco, para contexto: When a user is signed in but owns no business
   (`admin.active == null && !admin.demo`), the catalog/customer modules (Food,
   Products, Services, Rental, Events, Customers, Staff, Updates) currently fall
   back to their DEMO seed data (e.g. 9 sample dishes, fixture orders), while
@@ -1356,12 +1413,12 @@ Purchases are staged in `pending_purchases`, charged on Stripe's hosted page, an
   test-mode rental with card 4242 on a Stripe-connected business, then release +
   capture from the panel and confirm on the Stripe dashboard. Residual: a true
   simultaneous online-pay race (see availability item) — unrelated to the hold.
-- [ ] **Re-price bookings/rentals server-side.** Like orders, the booking deposit /
+- [x] **VERIFICADO HECHO (2026-07-29) — las reservas también se re-tarifican desde la BD, nunca desde `body.subtotal` (marketplace-checkout l.262+). Ítem original** · Re-price bookings/rentals server-side.** Like orders, the booking deposit /
   rental fee is computed client-side and validated (`> 0`, `< 100000`) server-side,
   not re-derived from the service/rental config. Recompute from
   `service_config`/`rental_config` before real-money launch (tickets are already
   server-priced).
-- [ ] **Re-price orders against the catalog before real-money launch.** For orders
+- [x] **VERIFICADO HECHO (2026-07-29) — el servidor re-tarifica cada línea desde el catálogo y el precio del cliente se IGNORA (marketplace-checkout l.161-192: busca cada `business_items` id en el menú/tienda del negocio y recalcula base + extras). Un pedido de $50 no puede cobrarse a $0.55. Ítem original** · Re-price orders against the catalog before real-money launch.** For orders
   the checkout function totals the **submitted** line items (qty × unit, validated
   `> 0`), not a re-price against the live menu/product prices. A tampered client
   could submit a lower unit price. Tickets are already priced server-side from
@@ -1483,7 +1540,7 @@ PROGRESS.md 2026-07-10 entries for both). Remaining follow-ups:
   allows pickup tips — add if wanted.
 
 ### Checkout on-site (Stripe Payment Element) (2026-07-14)
-- [ ] **Stripe webhook must include `payment_intent.succeeded`.** The on-site
+- [x] **VERIFICADO HECHO (2026-07-29) — el webhook maneja AMBOS eventos con protección de carrera: el pago por hoja propia (Payment Element) no genera `session`, así que lo cumple el evento de PaymentIntent, y si existe `session` se deja que ése cumpla para no duplicar; además reclama la fila de forma atómica antes de entregar (`claimPending`), así los reintentos de Stripe no cobran ni entregan dos veces. Ítem original** · Stripe webhook must include `payment_intent.succeeded`.** The on-site
   checkout fulfills orders on that event; add it to the To'Latino webhook endpoint
   in the Stripe Dashboard (Developers → Webhooks). Hosted-checkout flows still fire
   `checkout.session.completed` (already subscribed). Until this is added, orders
