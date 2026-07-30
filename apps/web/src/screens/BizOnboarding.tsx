@@ -213,7 +213,7 @@ export function BizOnboardingScreen() {
               </span>
             </button>
             <div className="mt-4 flex flex-col gap-3.5">
-              {field(L('Nombre del negocio', 'Business name'), <input value={form.name} onChange={setF('name')} placeholder={L('Ej. Taquería La Esperanza', 'e.g. Taquería La Esperanza')} className={inputCls} />)}
+              {field(L('Nombre del negocio', 'Business name'), <input value={form.name} onChange={setF('name')} placeholder={L('Ej. Panadería del barrio', 'e.g. Neighborhood bakery')} className={inputCls} />)}
               {field(L('Teléfono del negocio', 'Business phone'), <input value={form.bphone} onChange={setF('bphone')} placeholder="(713) 555-0100" className={inputCls} />)}
               {field(L('Dirección', 'Address'), <input value={form.addr} onChange={setF('addr')} placeholder={L('Calle, ciudad', 'Street, city')} className={inputCls} />)}
               {field(L('Descripción', 'Description'), <textarea value={form.desc} onChange={setF('desc')} rows={3} placeholder={L('Cuéntale a tus clientes qué ofreces…', 'Tell customers what you offer…')} className={`${inputCls} resize-none`} />)}

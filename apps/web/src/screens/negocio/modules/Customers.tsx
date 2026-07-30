@@ -239,41 +239,13 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const initialMode: Mode = tab === 'orders' ? 'orders' : tab === 'reviews' ? 'reviews' : 'customers';
 
-  // ---- seed data ------------------------------------------------------------
-  const seedCustomers = useMemo<Customer[]>(
-    () => [
-      { id: 1, initials: 'ML', color: '#7B61FF', name: 'María López', visits: 24, spent: '$1,824', last: ['hace 2 días', '2 days ago'], tag: ['VIP', 'VIP'], vip: true, isNew: false, atRisk: false },
-      { id: 2, initials: 'MT', color: '#1F9D57', name: 'Mission Tech', visits: 12, spent: '$4,680', last: ['hoy', 'today'], tag: ['B2B', 'B2B'], vip: true, isNew: false, atRisk: false, b2b: true },
-      { id: 3, initials: 'JT', color: '#2A5C8A', name: 'James Tate', visits: 18, spent: '$1,420', last: ['hace 1 sem', '1 wk ago'], tag: ['Recurrente', 'Regular'], vip: false, isNew: false, atRisk: false },
-      { id: 4, initials: 'SR', color: '#D6336C', name: 'Sofía Reyes', visits: 14, spent: '$840', last: ['hoy', 'today'], tag: ['Recurrente', 'Regular'], vip: false, isNew: false, atRisk: false },
-      { id: 5, initials: 'AF', color: '#E8954A', name: 'Anna F.', visits: 8, spent: '$986', last: ['hace 3 días', '3 days ago'], tag: ['Catas', 'Tasting'], vip: false, isNew: false, atRisk: false },
-      { id: 6, initials: 'CM', color: '#9A6A12', name: 'Carlos M.', visits: 3, spent: '$184', last: ['hace 4 días', '4 days ago'], tag: ['Nuevo', 'New'], vip: false, isNew: true, atRisk: false },
-      { id: 7, initials: 'RG', color: '#B5791A', name: 'Rosa G.', visits: 11, spent: '$620', last: ['hace 68 días', '68 days ago'], tag: ['En riesgo', 'At risk'], vip: false, isNew: false, atRisk: true },
-    ],
-    [],
-  );
+  // seedCustomers / seedOrders / seedReviews ELIMINADOS (2026-07-29). Eran 7
+  // clientes con montos gastados, pedidos con totales y reseñas con texto —
+  // todo fabricado — que se usaban como respaldo cuando la carga real fallaba.
+  // Los cazó scripts/verify-build.mjs después de que la revisión manual los
+  // pasara por alto: por eso el guardián revisa el BUILD y no el criterio.
 
-  const seedOrders = useMemo<Order[]>(
-    () => [
-      { id: '#2487', who: ['María López', 'María López'], placed: ['ahora', 'just now'], urgent: true, channel: 'delivery', status: 'new', total: '$48.20', items: ['2× Quesabirria, Horchata, Agua', '2× Quesabirria, Horchata, Water'] },
-      { id: '#2486', who: ['Mesa 7', 'Table 7'], placed: ['hace 2 min', '2m ago'], urgent: false, channel: 'dinein', status: 'new', total: '$92.00', items: ['3× Tacos al pastor, Vino tinto', '3× Tacos al pastor, Red wine'] },
-      { id: '#2484', who: ['James Tate', 'James Tate'], placed: ['hace 8 min', '8m ago'], urgent: false, channel: 'pickup', status: 'preparing', total: '$40.40', items: ['Canasta de pan, Bucatini', 'Bread basket, Bucatini'] },
-      { id: '#2483', who: ['Mesa 12', 'Table 12'], placed: ['hace 12 min', '12m ago'], urgent: false, channel: 'dinein', status: 'preparing', total: '$280.00', items: ['Menú degustación · 5 platos', 'Tasting menu · 5 courses'] },
-      { id: '#2481', who: ['Carlos M.', 'Carlos M.'], placed: ['hace 18 min', '18m ago'], urgent: false, channel: 'delivery', status: 'ready', total: '$24.50', items: ['Torta ahogada, 2× Refrescos', 'Torta ahogada, 2× Sodas'] },
-      { id: '#2477', who: ['Mesa 5', 'Table 5'], placed: ['cerrado', 'closed'], urgent: false, channel: 'dinein', status: 'completed', total: '$220.00', items: ['Cena para 4, 3× Cócteles', 'Dinner for 4, 3× Cocktails'] },
-    ],
-    [],
-  );
 
-  const seedReviews = useMemo<Review[]>(
-    () => [
-      { id: 1, initials: 'JT', color: '#2A5C8A', name: ['James Tate', 'James Tate'], stars: 4, date: es ? '14 min' : '14m', ch: 'Google', helpful: 8, text: ['El servicio fue un poco lento pero la comida lo compensó. El menú degustación fue lo mejor.', 'Service was a bit slow but the food made up for it. The tasting menu was a highlight.'], ai: ['¡Gracias por las amables palabras, James! Nos alegra que el menú degustación te encantara. Estamos mejorando los tiempos en la cena.', 'Thanks for the kind words, James! So glad the tasting menu landed. We’re tightening up our dinner pacing.'] },
-      { id: 2, initials: 'ML', color: '#7B61FF', name: ['María López', 'María López'], stars: 5, date: '2h', ch: 'Nearby', helpful: 14, text: ['El mejor al pastor de Houston. Los martes de 2x1 son una experiencia religiosa.', 'Best al pastor in Houston. Taco Tuesday is a religious experience.'], ai: ['¡Mil gracias, María! Nos llena de alegría — significa mucho para todo el equipo. ¡Te esperamos pronto!', 'Thank you so much, María! We’re thrilled — it means the world to the whole team.'] },
-      { id: 3, initials: 'DK', color: '#D6336C', name: ['Daniel Kim', 'Daniel Kim'], stars: 5, date: '3d', ch: 'Google', helpful: 22, text: ['Cena de cumpleaños — trajeron una vela en el pastel. Hicieron la noche.', 'Birthday dinner — they brought out a candle on the cake. Made the night.'], ai: ['', ''], seededReply: ['¡Mil gracias por las amables palabras — nos vemos pronto!', 'Thank you so much for the kind words — see you again soon!'] },
-      { id: 4, initials: 'A', color: '#9A96AE', name: ['Anónimo', 'Anonymous'], stars: 1, date: '2d', ch: 'Yelp', helpful: 0, text: ['Nunca comí aquí pero el dueño es claramente caro y grosero. Una estrella.', 'Never even ate here but the owner is clearly overpriced and rude. One star.'], ai: ['Hola — tomamos en serio toda retroalimentación, pero no tenemos registro de una visita con este nombre. Si cenaste con nosotros, contáctanos directamente.', 'Hi — we take all feedback seriously, but we have no record of a visit under this name. Please reach out directly.'] },
-    ],
-    [es],
-  );
 
   // Reviews are the only real-data view here (Clientes/Pedidos stay fixture).
   // Signed-in owner → load their business's reviews; demo → keep the fixture.
@@ -281,12 +253,16 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const real = admin.active;
   const persistable = !admin.demo && !!real; // real signed-in business → persist replies
   const [realReviews, setRealReviews] = useState<Review[] | null>(null);
-  const reviews = realReviews ?? seedReviews;
+  // Sin respaldo fabricado (2026-07-29, lo cazó scripts/verify-build.mjs). Estos
+  // `?? seed…` mostraban a un dueño REAL clientes, pedidos y reseñas inventados
+  // cuando la carga fallaba o aún no había respuesta — con nombres, montos
+  // gastados y textos que no existen (regla #8).
+  const reviews = realReviews ?? [];
   // Clientes / Pedidos also load real data for a signed-in business (demo keeps
   // the fixtures). Orders live in the mutable `orders` state below (the advance
   // button edits them), so only Clientes needs its own real/fixture switch here.
   const [realCustomers, setRealCustomers] = useState<Customer[] | null>(null);
-  const customers = realCustomers ?? seedCustomers;
+  const customers = realCustomers ?? [];
 
   // ---- state ----------------------------------------------------------------
   const [mode, setMode] = useState<Mode>(initialMode);
@@ -304,14 +280,14 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       : { 0: true, 1: true, 2: true, 3: false },
   );
 
-  const [orders, setOrders] = useState<Order[]>(seedOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [oStatus, setOStatus] = useState<OView>('new');
 
   const [rvFilter, setRvFilter] = useState<RvFilter>('all');
   const [replyText, setReplyText] = useState<Record<number, string>>({});
   const [posted, setPosted] = useState<Record<number, [string, string]>>(() => {
     const seeded: Record<number, [string, string]> = {};
-    seedReviews.forEach((r) => { if (r.seededReply) seeded[r.id] = r.seededReply; });
+    // (ya no se siembran respuestas de reseñas fabricadas)
     return seeded;
   });
   const [flagged, setFlagged] = useState<Record<number, boolean>>({ 4: true });
@@ -375,7 +351,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // persist to `business_orders` via `advance`; demo mutations stay local.
   useEffect(() => {
     if (!persistable || !real || !supabase) {
-      setOrders(seedOrders); // demo / not configured → fixture
+      setOrders([]); // sin negocio real / sin backend → SIN pedidos fabricados
       return;
     }
     let cancelled = false;

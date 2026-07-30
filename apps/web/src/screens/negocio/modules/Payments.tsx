@@ -28,7 +28,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
 
   useEffect(() => {
     if (!persistable || !real || !supabase) {
-      setSum(admin.demo ? { revenue: 48120, orders: 1284 } : { revenue: 0, orders: 0 });
+      setSum({ revenue: 0, orders: 0 }); // sin ingresos fabricados: el modo demo ya no existe (regla #8)
       setLoading(false);
       return;
     }

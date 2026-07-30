@@ -161,6 +161,59 @@ once and **prompt-cached** (cached reads ≈ 0.1× input cost), so keeping stand
 here — and giving each task a tight, well-scoped prompt — minimizes repeated token
 spend. Don't re-explain the project per task; point at this file.
 
+### Auditorías: qué modelo, qué esfuerzo y — sobre todo — qué MÉTODO
+> Grabado el 2026-07-29 a petición del fundador: *"cada vez que haces algo
+> descubres un problema viejo, y me preocupa; ¿qué modelo y effort garantizan que
+> todo está bien?"*
+
+**Lo primero, con honestidad: ningún modelo ni effort GARANTIZA que un código no
+tenga problemas.** Nadie puede prometer eso. Lo que sí se puede prometer es
+*cobertura sistemática*: "se buscó exhaustivamente en estas clases y esto salió".
+Cualquier respuesta que suene a "ya está todo bien" sin decir QUÉ se buscó es
+humo — y si Claude la da, está fallando a la regla de reportar con fidelidad.
+
+**Ajustes para una auditoría** (`/model` → **Opus**, `/effort` → **high**):
+aplica el criterio de esta misma sección — escalar por **costo de equivocarse**,
+no por tamaño. Una auditoría pre-lanzamiento toca dinero, RLS y confianza: caro y
+difícil de ver a ojo. **No usar `max`**: cuesta varias veces más y compra más
+razonamiento por paso, no más cobertura — y el problema de una auditoría es
+cobertura.
+
+**Pero el modelo NO es lo que más mueve la aguja. El método sí:**
+
+1. **Auditar por CLASES, no por pantallas.** La pregunta correcta es *"¿en qué
+   lugares puede pasar X?"*, no *"¿está bien esta pantalla?"*. Evidencia real: la
+   pregunta "¿dónde puede un dato inventado llegar al usuario?" destapó **11**
+   fugas el 2026-07-29 (panel, aliados, tendencias, vecinos, etiquetas de negocio,
+   menú, tienda, servicios, renta, equipo, pedidos). Ir pantalla por pantalla
+   habría encontrado 2 o 3.
+2. **Los bugs vienen en familias, no sueltos.** Los 11 tenían UNA causa (la app
+   nació como prototipo con datos de escaparate y el andamio nunca se retiró al
+   conectar la base real). El bug geo tenía UNA causa repetida en 5 RPCs
+   (`st_distance <= r` en vez de `st_dwithin`). Al encontrar algo, **la siguiente
+   pregunta es siempre "¿dónde más está este mismo patrón?"** — nunca arreglar el
+   caso y seguir.
+3. **Cada clase cazada deja un guardián automático**, si es posible. Un chequeo en
+   el build vale más que cualquier modelo: convierte "ojalá los hayamos encontrado
+   todos" en "es imposible volver a publicarlos". Ver `scripts/verify-build.mjs`.
+4. **Verificar sobre lo SERVIDO, no sobre la intención.** Varias veces el código
+   parecía correcto y el build servido decía otra cosa (el ref de la base, los
+   nombres fabricados). Revisar `apps/web/out` / el sitio en vivo, no solo el
+   fuente.
+5. **Desconfiar del propio "listo".** Dos veces en esa sesión un resultado
+   "limpio" era falso (un bucle sin entrada, una prueba que reescribía el mismo
+   valor y no disparaba el guard). Si una comprobación sale limpia a la primera,
+   preguntarse si de verdad se ejecutó.
+
+**Y lo que NO hay que hacer:** subir el modelo esperando que "vea" lo que no se le
+pidió mirar. Un prompt de auditoría vago en Opus/max encuentra menos que un prompt
+por clases en Sonnet.
+
+**Ultracode / multi-agente:** útil para barridos exhaustivos, pero el 2026-07-29
+los 7 agentes fallaron sin ejecutar una sola herramienta (fallo del sandbox) y
+gastaron 262k tokens sin producir nada. Si se usa, **verificar que los agentes
+realmente devolvieron hallazgos** antes de confiar en un "no se encontró nada".
+
 **Founder's quick guide (how to spend less per task):**
 - **Default the session to a Sonnet-tier model** (`/model` → Sonnet). Don't
   default to the top tier "to avoid redoing work" — most rework this project has

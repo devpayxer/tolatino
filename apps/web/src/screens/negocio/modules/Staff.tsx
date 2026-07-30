@@ -439,15 +439,11 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- schedule (today gantt) ----
-  const schedRaw: [string, string, number, number, string][] = [
-    ['Marisa', L('Pan', 'Baker'), 5, 13, '#6D4DF6'],
-    ['Elisabeth', L('Chef', 'Chef'), 7, 22, '#1E1B2E'],
-    ['David', L('Barra', 'Bar'), 11, 23, '#9579FF'],
-    ['Sofía', 'FOH', 11, 19, '#1F9D57'],
-    ['Marco', L('Repart', 'Driver'), 11, 23, '#D6336C'],
-    ['Carlos', L('Cocina', 'Cook'), 11, 21, '#E8954A'],
-    ['Tomás', L('Postre', 'Pastry'), 5, 13, '#138A72'],
-  ];
+  // schedRaw VACÍO (2026-07-29): traía un horario semanal con empleados fabricados. Vivía en la rama de
+  // modo demo, que ya no se activa nunca — pero inalcanzable está a una regresión
+  // de ser alcanzable, así que el guardián del build (scripts/verify-build.mjs) lo
+  // rechaza. Al construir la feature de verdad, poblarlo desde la BD.
+  const schedRaw: [string, string, number, number, string][] = [];
   const nowLeft = (14 / 24) * 100;
 
   const scheduleView = (
@@ -566,13 +562,11 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
 
   // ---- payroll ----
-  const payRaw: [string, string, string, number, number, string][] = [
-    ['Marisa Díaz', '#6D4DF6', '$32', 38, 2, '$1,312'],
-    ['David Bao', '#138A72', '$30', 40, 1, '$1,245'],
-    ['Sofía Reyes', '#1F9D57', '$24', 36, 0, '$864'],
-    ['Carlos Méndez', '#E8954A', '$23', 39, 0, '$897'],
-    ['Marco P.', '#D6336C', '$18', 28, 0, '$504+'],
-  ];
+  // payRaw VACÍO (2026-07-29): traía una nómina con sueldos y pagos fabricados. Vivía en la rama de
+  // modo demo, que ya no se activa nunca — pero inalcanzable está a una regresión
+  // de ser alcanzable, así que el guardián del build (scripts/verify-build.mjs) lo
+  // rechaza. Al construir la feature de verdad, poblarlo desde la BD.
+  const payRaw: [string, string, string, number, number, string][] = [];
   const runPayroll = () => { setPayrollDone(true); flash(L('Nómina corrida · depósito en 2 días', 'Payroll run · deposit in 2 days')); };
 
   const payrollView = (
@@ -871,7 +865,11 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- member detail page ----------
   const vm = roster.find((m) => m.id === viewing) ?? null;
-  const shiftRaw: [string, string][] = [['L', '7a–10p'], ['M', '7a–10p'], ['X', 'OFF'], ['J', '7a–10p'], ['V', '7a–11p'], ['S', '9a–4p'], ['D', 'OFF']];
+  // shiftRaw VACÍO (2026-07-29): traía turnos de la semana fabricados. Vivía en la rama de
+  // modo demo, que ya no se activa nunca — pero inalcanzable está a una regresión
+  // de ser alcanzable, así que el guardián del build (scripts/verify-build.mjs) lo
+  // rechaza. Al construir la feature de verdad, poblarlo desde la BD.
+  const shiftRaw: [string, string][] = [];
 
   const memberPage = vm && (
     <ModulePage

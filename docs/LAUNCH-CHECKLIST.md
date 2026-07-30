@@ -32,6 +32,17 @@
 > - Producción está EN VIVO en `tolatino.com` con la base limpia.
 > - El panel ya no muestra datos fabricados a nadie (auditoría del 2026-07-29).
 >
+> **🛡️ Guardián del build (nuevo, 2026-07-29): `scripts/verify-build.mjs`.**
+> Corre SOLO después de cada `pnpm build` (script `postbuild`) y **rompe el
+> despliegue** si detecta en el sitio compilado: negocios/personas fabricados,
+> métricas inventadas, la base de datos equivocada horneada, o un secreto
+> (`sk_live`, `sb_secret`…) filtrado al navegador. `STRIPE_EXPECT=live|test`
+> además verifica que el modo de Stripe sea el esperado.
+> **Ya demostró su valor:** encontró clientes, pedidos y reseñas fabricados en el
+> módulo Clientes que la revisión manual había pasado por alto. Si algo legítimo
+> lo dispara, ajusta la regla en el script **y deja escrito por qué** — una
+> excepción sin explicación es una puerta abierta.
+>
 > **Cómo usar este archivo:** los ítems marcados `[x] VERIFICADO HECHO` llevan la
 > evidencia de por qué. Si algo parece pendiente, comprueba primero en el código
 > antes de rehacerlo — este checklist se adelanta a veces a la realidad.

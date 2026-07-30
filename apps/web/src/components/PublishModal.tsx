@@ -616,7 +616,7 @@ export function PublishModal() {
         <div className="flex flex-col gap-3.5">
           {field(
             L('Nombre del negocio', 'Business name'),
-            <input value={bizName} onChange={(e) => setBizName(e.target.value)} className={inputCls} placeholder={L('Ej. Taquería La Esperanza', 'e.g. Taquería La Esperanza')} />,
+            <input value={bizName} onChange={(e) => setBizName(e.target.value)} className={inputCls} placeholder={L('Ej. Panadería del barrio', 'e.g. Neighborhood bakery')} />,
           )}
 
           <div>

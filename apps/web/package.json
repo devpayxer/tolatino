@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postbuild": "node ../../scripts/verify-build.mjs out",
+    "verify": "node ../../scripts/verify-build.mjs out"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^3.10.0",

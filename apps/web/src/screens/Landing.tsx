@@ -171,8 +171,15 @@ export function LandingScreen() {
               </div>
               <div className="absolute right-0 top-[130px] w-[72%] rotate-[3deg] rounded-card-sm border border-hair bg-white p-3.5 shadow-card-lg lg:top-[150px]">
                 <span className="block h-[60px] rounded-[10px]" style={{ background: tile('#ECE3F8', '#E3D7F4') }} />
+                {/* Nombre GENÉRICO a propósito (2026-07-29). Antes decía "Taquería La
+                    Esperanza", el mismo negocio fabricado que el fundador vio en su
+                    panel y creyó suyo. El hero es ilustración de marketing, así que
+                    un nombre concreto no aporta nada y sí confunde; además obligaba
+                    a una excepción en scripts/verify-build.mjs, y una excepción es
+                    una puerta abierta. Cuando haya negocios reales, se puede poner
+                    uno DE VERDAD con su permiso — eso sí vende. */}
                 <div className="mt-2 flex items-center gap-1.5">
-                  <span className="text-[12.5px] font-extrabold">Taquería La Esperanza</span>
+                  <span className="text-[12.5px] font-extrabold">{L('Panadería del barrio', 'Neighborhood bakery')}</span>
                 </div>
                 <div className="text-[10.5px] font-bold text-muted">{L('Comida Mexicana', 'Mexican Food')}</div>
                 <div className="mt-1 flex items-center gap-1 text-[11px] font-extrabold">
