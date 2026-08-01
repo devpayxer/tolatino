@@ -100,6 +100,26 @@
   código muerto e inalcanzable, pero siguen en el paquete. Al construir cada
   feature, borrar su tabla fabricada (`schedRaw`, `payRaw`, `shiftRaw` en
   `modules/Staff.tsx`). Nómina toca dinero real: no se lanza sin proveedor.
+- [ ] **Landing v3: piezas del handoff que quedaron APAGADAS a propósito (2026-07-29).**
+  1. **Bloque de descarga de app** (`showAppSection`): lleva botones de App Store y
+     Google Play, y las apps NO existen. Un botón que no lleva a ningún lado es un
+     estado roto publicado como final (regla #8). `SHOW_APP_SECTION = false` en
+     `screens/Landing.tsx`; encender el día que haya apps.
+  2. **Modal de registro propio**: el handoff propone registrarse sin salir de la
+     landing. Los CTA llevan al flujo real (`/entrar`, `/negocio/publicar`) para no
+     duplicar la lógica de auth — que ya resuelve el aviso de "confirma tu correo" y
+     la creación del perfil. Si se construye el modal, debe REUSAR `useAuth`, nunca
+     reimplementarlo.
+  3. **Testimonios**: se muestran solo si `landing_testimonials` devuelve reseñas
+     reales de 5★. Los tres del handoff son personas inventadas — no se publican.
+  4. **Fotos reales**: todo el arte sigue siendo el degradado rayado del design
+     system. El handoff avisa que la fotografía real cambia bastante el peso visual
+     de las tarjetas de negocio y evento.
+- [ ] **Escala: `platform_stats()` hace conteos exactos (2026-07-29).** Hoy es
+  instantáneo (547 negocios) pero es un `count(*)` por visita a la landing. A 1M+
+  migrar a estimaciones de `pg_class.reltuples` (O(1)) o a una tabla de contadores
+  refrescada por cron. La función ya es `stable` y el cliente la pide una sola vez
+  por montaje.
 - [ ] **🔴 BLOQUEADOR DE LANZAMIENTO: no hay servicio de correo propio (SMTP).**
   Descubierto 2026-07-29 al hacer el ensayo en producción. El proyecto de prod NO
   tiene SMTP configurado (`smtp_host = null`), así que usa el servicio integrado de

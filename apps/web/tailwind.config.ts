@@ -34,6 +34,19 @@ const config: Config = {
         app: '#F4F2F9', // app viewport background
         dash: '#E7E5EC', // dashboard background
         teal: { DEFAULT: '#0E9384', bg: '#D6F3EF' }, // poll tag
+        // ── Landing pública v3 (handoff "ToLatino Home", variante B, 2026-07-29) ──
+        // Superficies oscuras e inmersivas que antes no existían en el sistema.
+        night: {
+          DEFAULT: '#120F20', // fondo del hero y del pie
+          band: '#151124',    // banda oscura de eventos
+        },
+        // Morados para leer SOBRE oscuro (los de `primary` no contrastan ahí).
+        'primary-on-dark': '#A48CFF', // wordmark sobre fondo oscuro
+        'primary-pale': '#C9B6FF',    // inicio del degradado del titular, iconos en oscuro
+        rose: { DEFAULT: '#D6336C', deep: '#B0357E' }, // restaurantes, fecha, fin del degradado
+        page: '#FBFAFE',   // fondo de la landing (más claro que `app`)
+        mint: '#7BE0A8',   // ticks y precios "Gratis" sobre oscuro
+        sky: '#8FC5F5',    // icono bilingüe del hero
       },
       borderColor: {
         hair: 'rgba(30,27,46,.08)', // subtle card borders / dividers
