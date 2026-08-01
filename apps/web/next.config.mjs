@@ -49,6 +49,10 @@ if (target === 'staging' && !staging) {
 const envOverride = staging
   ? Object.fromEntries(Object.entries(staging).filter(([k]) => k.startsWith('NEXT_PUBLIC_')))
   : {};
+// Bandera visible para el código del navegador: la usan el aviso "SITIO DE
+// PRUEBAS" y el bloqueo de indexación. Así un sitio de pruebas no puede pasar por
+// el real ni aparecer en Google.
+envOverride.NEXT_PUBLIC_TOLATINO_ENV = target;
 
 console.log(
   `▸ To'Latino build → ${target.toUpperCase()}` +

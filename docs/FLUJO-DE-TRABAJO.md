@@ -41,6 +41,32 @@ con el destino — en las dos direcciones:
 6. **Claude verifica el sitio EN VIVO** (no asume): que la base horneada sea la de
    producción y que la pantalla se vea bien.
 
+## Por qué el sitio de pruebas NO va en `tolatino.com`
+
+Se llegó a crear `pruebas.tolatino.com` y **se deshizo el mismo día** (2026-07-29)
+por una objeción del fundador que era correcta: *"cualquier usuario podría
+encontrar este sitio"*.
+
+Tenía razón, y hay un motivo técnico concreto: **todo subdominio es público**.
+Al emitirse su certificado SSL, el nombre queda registrado en los *Certificate
+Transparency logs*, que cualquiera puede consultar (crt.sh y similares). Un
+`pruebas.tolatino.com` sería encontrable en minutos, y quien entrara vería
+negocios sembrados y precios que no existen **con la marca del sitio real**.
+
+**Decisión:** el sitio de pruebas vive en la URL que da Vercel para la rama
+(`tolatino-git-pruebas-….vercel.app`) — fuera del dominio de marca. Además:
+
+1. **`robots.txt` prohíbe TODO** en el build de pruebas (`Disallow: /`), y la
+   cabecera `robots` del HTML añade `noindex, nofollow, nocache`. Cinturón y
+   tirantes: aunque alguien enlace el sitio, Google no lo indexa.
+2. **Franja ámbar imposible de ignorar** arriba de todo: *"SITIO DE PRUEBAS · LOS
+   DATOS NO SON REALES"*. Solo aparece cuando el build apunta a la base de pruebas.
+3. Producción no se ve afectada: su `robots.txt` sigue permitiendo el rastreo (el
+   SEO es adquisición gratis) y no lleva franja. Verificado compilando las dos.
+
+Si algún día hace falta cerrarlo del todo, Vercel ofrece protección por contraseña
+en sus planes de pago; hoy no se paga por eso.
+
 ## Dónde encontrar la URL de vista previa
 
 En **vercel.com** → proyecto **tolatino** → pestaña **Deployments**. El despliegue

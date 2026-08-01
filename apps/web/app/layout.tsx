@@ -7,8 +7,13 @@ const TITLE = "To'Latino — Tu gente, tu barrio, tu idioma";
 const DESC =
   'Descubre negocios, eventos y vecinos de confianza cerca de ti — todo en español. De latinos para latinos.';
 
+const IS_STAGING = process.env.NEXT_PUBLIC_TOLATINO_ENV === 'staging';
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // Cinturón y tirantes junto a robots.ts: aunque alguien enlace el sitio de
+  // pruebas, esta cabecera le dice a Google que NO lo indexe ni lo siga.
+  ...(IS_STAGING ? { robots: { index: false, follow: false, nocache: true } } : {}),
   title: { default: TITLE, template: "%s · To'Latino" },
   description: DESC,
   applicationName: "To'Latino",
@@ -60,6 +65,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        {/* Franja de PRUEBAS (2026-07-29). El fundador señaló, con razón, que un
+            sitio de pruebas accesible puede confundirse con el real. Aquí nadie
+            puede equivocarse: la franja es imposible de pasar por alto y solo
+            aparece cuando el build apunta a la base de pruebas. */}
+        {IS_STAGING && (
+          <div
+            role="status"
+            style={{
+              position: 'sticky', top: 0, zIndex: 9999,
+              background: '#F4B740', color: '#1E1B2E',
+              font: '800 11.5px/1.35 "Plus Jakarta Sans", system-ui, sans-serif',
+              letterSpacing: '.02em', textAlign: 'center',
+              padding: '6px 12px', textTransform: 'uppercase',
+            }}
+          >
+            Sitio de pruebas · los datos no son reales
+          </div>
+        )}
         <Providers>{children}</Providers>
       </body>
     </html>
