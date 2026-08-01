@@ -254,6 +254,25 @@ realmente devolvieron hallazgos** antes de confiar en un "no se encontró nada".
   a wired screen twice. No external design tool needed for derivable screens;
   Claude must offer the mock → screenshot → approval → wire loop (skill §8).
 
+## Flujo de trabajo: desarrollar → probar → publicar (2026-07-29)
+
+**Léelo completo en `docs/FLUJO-DE-TRABAJO.md`.** Resumen que NO se salta:
+
+1. Se desarrolla en la rama de trabajo (`claude/…`), **nunca** en la de producción.
+2. Se verifica en local: `tsc` + `pnpm build` (el guardián `scripts/verify-build.mjs`
+   corre solo en `postbuild` y **rompe el build**) + capturas en navegador real.
+3. Se publica la rama → Vercel crea una **URL de vista previa** que apunta sola a la
+   **base de PRUEBAS** (`next.config.mjs` lo decide por `VERCEL_ENV`). El fundador
+   puede tocar todo sin ensuciar producción.
+4. **El fundador aprueba ahí.** Es el momento barato de aprobar diseño: cuesta menos
+   aprobar una pantalla que rehacer una pantalla ya conectada.
+5. Con su visto bueno: `ff-merge` a la rama de producción → `tolatino.com`.
+6. Se verifica el sitio **EN VIVO**, no la intención del código.
+
+El guardián impide las dos catástrofes simétricas: producción leyendo la base de
+pruebas (pasó), y una vista previa escribiendo en la base REAL (habría pasado en
+cuanto probáramos algo).
+
 ## Design system — in the repo (source of truth)
 
 **Handoff COMPLETO (2026-07-10, "Plataforma multicanal") is the current,

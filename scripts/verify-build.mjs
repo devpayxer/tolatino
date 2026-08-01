@@ -38,12 +38,10 @@ const RULES = [
     // pasaría a "624", que choca con cualquier hash del bundle (falso positivo
     // real, visto el 2026-07-29). Se buscan tal cual, con comillas incluidas.
     literals: ['revenue:48120', 'revenue: 48120'] },
-  // 3 · La base equivocada horneada en el build. Este es el que evita servir
-  //     staging en producción (pasó: el sitio en vivo leyó staging semanas).
-  { id: 'base-staging', where: 'all', why: 'El build apunta a la base de STAGING, no a producción',
-    literals: ['zpkaxojonufdwgahiqjh'] },
+  // 3 · Proyecto Supabase BORRADO — nunca correcto, en ningún entorno.
   { id: 'base-borrada', where: 'all', why: 'El build apunta a un proyecto Supabase BORRADO',
     literals: ['ujvzpfygaqywcdlnplie'] },
+  // (La coherencia base↔entorno se comprueba abajo: depende del destino.)
   // 4 · Secretos que jamás deben viajar al navegador.
   { id: 'secretos', where: 'all', why: 'SECRETO expuesto en el cliente — rotar de inmediato',
     literals: ['sk_live_', 'sk_test_', 'sb_secret_', 'SUPABASE_SERVICE_ROLE_KEY'] },
@@ -114,6 +112,35 @@ for (const rule of RULES) {
   }
 }
 
+// ── Coherencia base ↔ entorno ───────────────────────────────────────────────
+// El build debe traer la base del destino y NINGUNA otra. Esto es lo que impide
+// las dos catástrofes simétricas: publicar producción leyendo la base de pruebas
+// (pasó: el sitio en vivo sirvió staging durante semanas) y — peor — que una
+// vista previa escriba en la base REAL mientras el fundador "solo estaba
+// probando". El destino sale de TOLATINO_TARGET o de VERCEL_ENV, igual que en
+// next.config.mjs, así que guardián y build no pueden desalinearse.
+const REF_PROD = 'vurqsebgsacickxsxfeh';
+const REF_STAGING = 'zpkaxojonufdwgahiqjh';
+const target =
+  process.env.TOLATINO_TARGET ??
+  (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production' ? 'staging' : 'production');
+const esperado = target === 'staging' ? REF_STAGING : REF_PROD;
+const prohibido = target === 'staging' ? REF_PROD : REF_STAGING;
+
+const textoTodo = [...jsFiles, ...htmlFiles]
+  .map((f) => { try { return readFileSync(f, 'utf8'); } catch { return ''; } })
+  .join('');
+let envFail = false;
+let envMsg = `  Destino: ${target.toUpperCase()} · base esperada ${esperado}`;
+if (!textoTodo.includes(esperado)) {
+  envFail = true;
+  envMsg += `\n  ✖ El build NO trae la base esperada (${esperado}).`;
+}
+if (textoTodo.includes(prohibido)) {
+  envFail = true;
+  envMsg += `\n  ✖ El build trae la base EQUIVOCADA (${prohibido}) — ${target === 'staging' ? 'una prueba escribiría en PRODUCCIÓN' : 'producción leería la base de pruebas'}.`;
+}
+
 // ── Coherencia de Stripe: la llave publicable del build debe coincidir con el
 //    modo esperado. Evita lanzar con `pk_test` creyendo que cobras de verdad, y
 //    evita cobrar de verdad creyendo que estás en pruebas.
@@ -129,9 +156,10 @@ if (expect === 'test' && hasLive) { stripeFail = true; stripeMsg += '\n  ✖ Se 
 
 // ── Reporte ─────────────────────────────────────────────────────────────────
 console.log(`\nverify-build · ${jsFiles.length} archivos JS, ${htmlFiles.length} HTML en ${OUT}`);
+console.log(envMsg);
 console.log(stripeMsg);
 
-if (hits.length === 0 && !stripeFail) {
+if (hits.length === 0 && !stripeFail && !envFail) {
   console.log('\n✅ Sin datos fabricados, sin secretos y con la base correcta.\n');
   process.exit(0);
 }
