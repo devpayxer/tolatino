@@ -141,6 +141,17 @@
   o se aprovechan en la variante post-lanzamiento o se borran con una migración.
   Si se reactivan: hacen `count(*)` exacto — a 1M+ hay que migrar a estimaciones de
   `pg_class.reltuples` (O(1)) o a una tabla de contadores refrescada por cron.
+- [ ] **Cabeceras de seguridad: falta la CSP (2026-08-02).** Ya van
+  `X-Frame-Options`, `X-Content-Type-Options` y `Referrer-Policy` en
+  `vercel.json` (ver `docs/CABECERAS-SEGURIDAD.md`). Falta
+  `Content-Security-Policy`, que es la que de verdad limita qué puede ejecutarse
+  en la página. No se puso de golpe porque el sitio carga Stripe, tipografías de
+  Google, mapas de OSM y usa estilos en línea: una CSP mal calibrada deja la
+  pantalla en blanco o mata el pago. Camino correcto: publicar primero
+  `Content-Security-Policy-Report-Only` unos días, recoger qué bloquearía, y
+  solo entonces aplicarla. Tampoco se puso `Permissions-Policy`: la app necesita
+  geolocalización, cámara (escáner de QR) y notificaciones, y apagarlas por
+  descuido daría un fallo silencioso y difícil de diagnosticar.
 - [ ] **🔴 BLOQUEADOR DE LANZAMIENTO: no hay servicio de correo propio (SMTP).**
   Descubierto 2026-07-29 al hacer el ensayo en producción. El proyecto de prod NO
   tiene SMTP configurado (`smtp_host = null`), así que usa el servicio integrado de
