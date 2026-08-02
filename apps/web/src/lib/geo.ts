@@ -91,13 +91,26 @@ export async function searchCities(query: string, signal?: AbortSignal): Promise
 /** GPS coords → nearest city: our gazetteer first (PostGIS KNN), OSM fallback. */
 export async function nearestCity(lat: number, lng: number, signal?: AbortSignal): Promise<Place> {
   if (supabase) {
-    const { data, error } = await supabase.rpc('nearest_city', { user_lat: lat, user_lng: lng });
-    if (!error && data && data.length) {
-      const c = (data as { label: string; lat: number; lng: number }[])[0];
-      return { label: c.label, lat: c.lat, lng: c.lng };
+    // El try/catch NO es decorativo: ante un fallo de red supabase-js RECHAZA la
+    // promesa en vez de devolver `{ error }`, así que sin esto una conexión
+    // floja tumbaba toda la función y se perdía hasta el respaldo de OSM.
+    try {
+      const { data, error } = await supabase.rpc('nearest_city', { user_lat: lat, user_lng: lng });
+      if (!error && data && data.length) {
+        const c = (data as { label: string; lat: number; lng: number }[])[0];
+        return { label: c.label, lat: c.lat, lng: c.lng };
+      }
+    } catch {
+      /* sin red o RPC caído: se sigue con OpenStreetMap */
     }
   }
   return reverseGeocode(lat, lng, signal);
+}
+
+/** ¿La etiqueta es un par de coordenadas? Pasa cuando fallan los dos
+ *  geocodificadores: sirve, pero no se puede enseñar como nombre de ciudad. */
+export function isCoordLabel(label: string): boolean {
+  return /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(label.trim());
 }
 
 /** Reverse geocode via OpenStreetMap (Nominatim) — fallback for nearestCity. */

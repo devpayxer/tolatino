@@ -141,6 +141,15 @@
   o se aprovechan en la variante post-lanzamiento o se borran con una migración.
   Si se reactivan: hacen `count(*)` exacto — a 1M+ hay que migrar a estimaciones de
   `pg_class.reltuples` (O(1)) o a una tabla de contadores refrescada por cron.
+- [ ] **Ciudad automática: decidir qué pasa si el permiso se deniega (2026-08-02).**
+  La app detecta la ciudad al entrar (ver `lib/state.tsx`), pero si el visitante
+  DENIEGA el permiso del navegador se queda **Houston** por defecto — que hoy es
+  la ciudad de lanzamiento, así que está bien. Cuando haya más ciudades activas,
+  eso deja de ser razonable: alguien de Los Ángeles que dice "no" vería negocios
+  de Houston sin entender por qué. Opciones a evaluar entonces: (a) preguntar la
+  ciudad de entrada en vez de asumir una, o (b) una estimación por IP — hoy
+  imposible sin un servicio externo, porque el sitio es export estático y no hay
+  servidor que lea la IP. Revisar al abrir la segunda ciudad.
 - [ ] **Cabeceras de seguridad: falta la CSP (2026-08-02).** Ya van
   `X-Frame-Options`, `X-Content-Type-Options` y `Referrer-Policy` en
   `vercel.json` (ver `docs/CABECERAS-SEGURIDAD.md`). Falta

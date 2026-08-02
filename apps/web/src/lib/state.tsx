@@ -7,7 +7,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_CITY, type Post, type PostType } from '@/data/fixtures';
-import { DEFAULT_COORDS } from '@/lib/geo';
+import { DEFAULT_COORDS, getBrowserLocation, isCoordLabel, nearestCity } from '@/lib/geo';
 
 type Toggles = Record<string, boolean>;
 
@@ -121,33 +121,94 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const coords = addressCoords ?? cityCoords;
 
-  const persistGeo = (label: string, cc: Coords, addr: string | null, ac: Coords | null, aid: string | null) => {
+  // `auto` distingue la ciudad DETECTADA de la ELEGIDA. Es lo que permite
+  // refrescar la primera cuando el usuario viaja, sin pisar nunca la segunda.
+  const persistGeo = (label: string, cc: Coords, addr: string | null, ac: Coords | null, aid: string | null, auto = false) => {
     try {
-      localStorage.setItem(CITY_KEY, JSON.stringify({ label, lat: cc.lat, lng: cc.lng, address: addr, alat: ac?.lat ?? null, alng: ac?.lng ?? null, addressId: aid }));
+      localStorage.setItem(CITY_KEY, JSON.stringify({ label, lat: cc.lat, lng: cc.lng, address: addr, alat: ac?.lat ?? null, alng: ac?.lng ?? null, addressId: aid, auto }));
     } catch {
       /* storage blocked (private mode) — keep working in-memory */
     }
   };
 
-  // Rehydrate the chosen city + address once on mount (client-only, avoids
-  // SSR/hydration mismatch: first paint is the default, then we swap in saved).
+  // Rehidratar la ciudad guardada y, si no hay ninguna ELEGIDA, detectarla.
+  //
+  // Por qué importa: la portada es para gente que llega por primera vez y sin
+  // cuenta. Enseñarle "Houston" a alguien de Los Ángeles no es un detalle
+  // estético — es enseñarle negocios, eventos y publicaciones de otra ciudad,
+  // o sea la app entera equivocada desde el primer segundo.
+  //
+  // Reglas, en este orden:
+  //  1. Si el usuario ELIGIÓ ciudad (o entró con su cuenta), no se toca jamás.
+  //  2. Si la ciudad guardada la detectamos nosotros y el permiso YA está
+  //     concedido, se vuelve a detectar en silencio — sin preguntar nada — para
+  //     que quien viaje vea su ciudad de verdad.
+  //  3. Si no hay nada guardado, se pide la ubicación. Es lo que hacen Yelp y
+  //     DoorDash al entrar por primera vez.
+  //  4. Si el permiso ya estaba DENEGADO, ni se intenta: llamar solo produce un
+  //     error y gasta una oportunidad. Se queda la ciudad por defecto y el
+  //     usuario la cambia a mano cuando quiera.
+  // Se corre una sola vez, en el cliente (el primer pintado usa el valor por
+  // defecto y luego se sustituye, para no romper la hidratación).
   useEffect(() => {
+    let cancelled = false;
+
+    type Saved = { label?: string; lat?: number; lng?: number; address?: string | null; alat?: number | null; alng?: number | null; addressId?: string | null; auto?: boolean };
+    let saved: Saved | null = null;
     try {
       const raw = localStorage.getItem(CITY_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw) as { label?: string; lat?: number; lng?: number; address?: string | null; alat?: number | null; alng?: number | null; addressId?: string | null };
-      if (saved.label && typeof saved.lat === 'number' && typeof saved.lng === 'number') {
-        setCity(saved.label);
-        setCityCoords({ lat: saved.lat, lng: saved.lng });
-        if (saved.address && typeof saved.alat === 'number' && typeof saved.alng === 'number') {
-          setAddress(saved.address);
-          setAddressCoords({ lat: saved.alat, lng: saved.alng });
-          setAddressId(saved.addressId ?? null);
-        }
-      }
+      if (raw) saved = JSON.parse(raw) as Saved;
     } catch {
       /* ignore malformed/blocked storage */
     }
+
+    const guardada = !!(saved && saved.label && typeof saved.lat === 'number' && typeof saved.lng === 'number');
+    if (guardada && saved) {
+      setCity(saved.label!);
+      setCityCoords({ lat: saved.lat!, lng: saved.lng! });
+      if (saved.address && typeof saved.alat === 'number' && typeof saved.alng === 'number') {
+        setAddress(saved.address);
+        setAddressCoords({ lat: saved.alat, lng: saved.alng });
+        setAddressId(saved.addressId ?? null);
+      }
+    }
+
+    // Regla 1: una ciudad elegida a mano manda siempre.
+    if (guardada && saved?.auto !== true) return;
+    // Una dirección exacta guardada ya define el origen: no la pisamos.
+    if (guardada && saved?.address) return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+
+    (async () => {
+      let permiso: PermissionState | null = null;
+      try {
+        permiso = (await navigator.permissions?.query({ name: 'geolocation' as PermissionName }))?.state ?? null;
+      } catch {
+        /* Safari viejo no tiene Permissions API — se sigue sin él */
+      }
+      if (cancelled) return;
+      if (permiso === 'denied') return;                       // regla 4
+      if (guardada && permiso !== 'granted') return;          // regla 2: sin permiso, se respeta lo detectado la vez anterior
+
+      try {
+        const { lat, lng } = await getBrowserLocation();
+        if (cancelled) return;
+        const place = await nearestCity(lat, lng);
+        if (cancelled || !place?.label) return;
+        // Si fallan los dos geocodificadores, `nearestCity` devuelve las
+        // coordenadas como etiqueta. Sirven para calcular, pero "To'lo Latino de
+        // 25.762, -80.192" parece la app rota: mejor dejar la ciudad por defecto.
+        if (isCoordLabel(place.label)) return;
+        setCity(place.label);
+        setCityCoords({ lat: place.lat, lng: place.lng });
+        persistGeo(place.label, { lat: place.lat, lng: place.lng }, null, null, null, true);
+      } catch {
+        /* denegado, sin señal o sin cobertura: se queda la ciudad por defecto */
+      }
+    })();
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
