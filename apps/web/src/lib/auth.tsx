@@ -13,6 +13,8 @@ export type Profile = {
   display_name: string;
   initials: string;
   avatar_color: string;
+  /** Foto de perfil (bucket `post-photos`), o null = iniciales sobre color. */
+  avatar_url?: string | null;
   city_label: string | null;
   lat: number | null;
   lng: number | null;

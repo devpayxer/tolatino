@@ -9,6 +9,7 @@ import { ReportButton } from '@/components/ReportButton';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
+import { useAvatar } from '@/lib/avatars';
 import { useInteractions } from '@/lib/interactions';
 import { useFollows } from '@/lib/follows';
 import { useUrlDetail } from '@/lib/urlView';
@@ -35,6 +36,7 @@ function relTime(iso: string): [string, string] {
 type CommentRow = {
   id: string;
   parent_id: string | null;
+  author_id: string | null;
   author_name: string;
   author_initials: string;
   author_color: string;
@@ -45,6 +47,16 @@ type CommentRow = {
   created_at: string;
 };
 
+/** Avatar de un comentario: la foto propia sale del perfil ya cargado; la de
+ *  los demás, del lote de `useAvatar`. Es un componente y no una función suelta
+ *  porque usa hooks, y estos van dentro de una lista. */
+function CommentAvatar({ c, size }: { c: Comment; size: number }) {
+  const auth = useAuth();
+  const own = !!c.authorId && c.authorId === auth.user?.id;
+  const other = useAvatar(own ? null : c.authorId);
+  return <Avatar initials={c.initials} color={c.color} src={own ? auth.profile?.avatar_url : other} size={size} />;
+}
+
 function mapComment(r: CommentRow): Comment {
   const [tEs, tEn] = relTime(r.created_at);
   return {
@@ -52,6 +64,7 @@ function mapComment(r: CommentRow): Comment {
     initials: r.author_initials,
     color: r.author_color,
     name: r.author_name,
+    authorId: r.author_id ?? undefined,
     timeEs: tEs,
     timeEn: tEn,
     likes: r.like_count,
@@ -487,7 +500,7 @@ export function ComunidadScreen() {
     const likes = commentLikeCount[c.id] ?? c.likes;
     return (
       <div key={c.id} className={`flex items-start gap-[9px] ${isReply ? 'ml-10' : ''}`}>
-        <Avatar initials={c.initials} color={c.color} size={isReply ? 26 : 30} />
+        <CommentAvatar c={c} size={isReply ? 26 : 30} />
         <div className="min-w-0 flex-1">
           <div className="rounded-[13px] bg-[#F5F3FB] px-3 py-[9px]">
             <div className="flex items-baseline justify-between gap-2">
@@ -581,7 +594,9 @@ export function ComunidadScreen() {
         {/* composer */}
         <Card className="mb-4 p-[15px]">
           <div className="flex items-center gap-[11px]">
-            <YouAvatar size={42} />
+            {auth.profile
+              ? <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} src={auth.profile.avatar_url} size={42} />
+              : <YouAvatar size={42} />}
             <button
               onClick={() => app.openPub('post')}
               className="min-w-0 flex-1 cursor-pointer rounded-field bg-app px-3.5 py-3 text-left text-[13.5px] font-medium text-muted hover:bg-[#ECE9F6]"
@@ -758,7 +773,9 @@ export function ComunidadScreen() {
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <YouAvatar size={36} />
+                {auth.profile
+                  ? <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} src={auth.profile.avatar_url} size={36} />
+                  : <YouAvatar size={36} />}
                 <input
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}

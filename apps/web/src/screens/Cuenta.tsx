@@ -9,10 +9,11 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconFlag as Flag, IconPhone as Phone, IconPlus as Plus, IconReceipt as Receipt, IconRepeat as Repeat, IconShoppingBag as ShoppingBag, IconStar as Star, IconStarFilled as StarFilled, IconTicket as Ticket, IconTrash as Trash2, IconTruck as Truck, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
+import { IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCamera as Camera, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconLoader2 as Loader2, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconFlag as Flag, IconPhone as Phone, IconPlus as Plus, IconReceipt as Receipt, IconRepeat as Repeat, IconShoppingBag as ShoppingBag, IconStar as Star, IconStarFilled as StarFilled, IconTicket as Ticket, IconTrash as Trash2, IconTruck as Truck, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
+import { useAvatarUpload } from '@/lib/avatarUpload';
 import { useAddresses } from '@/lib/addresses';
 import { useFollows } from '@/lib/follows';
 import { useSavedBiz } from '@/lib/savedBiz';
@@ -187,6 +188,7 @@ export function CuentaScreen() {
 
   const guest = auth.configured && !auth.user;
   const p = auth.profile;
+  const photo = useAvatarUpload();
   const notifs: Notifs = { ...DEFAULT_NOTIFS, ...((p?.settings?.notifications as Partial<Notifs>) ?? {}) };
   const myPosts = live.posts.filter((x) => x.authorId && x.authorId === auth.user?.id);
 
@@ -266,7 +268,7 @@ export function CuentaScreen() {
   const header = (
     <Card className="p-[17px]">
       <div className="flex items-center gap-3">
-        {p ? <Avatar initials={p.initials} color={p.avatar_color} size={48} /> : <YouAvatar size={48} />}
+        {p ? <Avatar initials={p.initials} color={p.avatar_color} src={p.avatar_url} size={48} /> : <YouAvatar size={48} />}
         <div className="min-w-0 flex-1">
           <div className="truncate text-[16px] font-extrabold text-ink">{p?.display_name ?? L('Invitado', 'Guest')}</div>
           <button onClick={() => app.setCityOpen(true)} className="mt-1 inline-flex max-w-full cursor-pointer items-center gap-1 rounded-full bg-lilac-2 px-2.5 py-1 text-[11.5px] font-extrabold text-ink">
@@ -373,6 +375,35 @@ export function CuentaScreen() {
         <div>
           {backBar(L('Mi perfil', 'My profile'))}
           <div className={`${cardCls} flex flex-col gap-3.5 p-4 md:p-5`}>
+            {/* Foto — la misma mecánica que el alta (useAvatarUpload): comprime
+                en el teléfono antes de subir y borra la anterior al cambiarla. */}
+            <div className="flex items-center gap-3.5">
+              <span className="relative flex-none">
+                <Avatar initials={p?.initials ?? 'TÚ'} color={p?.avatar_color} src={photo.shown} size={64} />
+                {photo.busy && (
+                  <span className="absolute inset-0 flex items-center justify-center rounded-full" style={{ background: 'rgba(30,27,46,.5)' }}>
+                    <Loader2 size={18} className="animate-spin text-white" stroke={2.4} />
+                  </span>
+                )}
+              </span>
+              <input ref={photo.inputRef} type="file" accept="image/*" className="sr-only" tabIndex={-1}
+                     onChange={(e) => photo.pick(e.target.files?.[0])} />
+              <div className="min-w-0">
+                <button type="button" onClick={photo.open} disabled={photo.busy}
+                        className="flex cursor-pointer items-center gap-2 rounded-field border-[1.5px] border-dashed border-lilac-ring bg-app px-3.5 py-2.5 text-[12px] font-extrabold text-primary-dark disabled:cursor-default disabled:opacity-60">
+                  <Camera size={15} stroke={2} aria-hidden />
+                  {photo.busy ? L('Subiendo…', 'Uploading…') : photo.url ? L('Cambiar foto', 'Change photo') : L('Agregar foto', 'Add photo')}
+                </button>
+                {photo.url && !photo.busy && (
+                  <button type="button" onClick={photo.remove} className="mt-1.5 cursor-pointer text-[11.5px] font-bold text-muted-2 underline">
+                    {L('Quitar foto', 'Remove photo')}
+                  </button>
+                )}
+              </div>
+            </div>
+            {photo.error && (
+              <div role="alert" className="rounded-field bg-pink-bg px-3 py-2.5 text-[11.5px] font-bold text-pink-dark">{photo.error}</div>
+            )}
             <label className="block">
               <span className="mb-1.5 block text-[12px] font-extrabold text-ink">{L('Nombre', 'Name')}</span>
               <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />

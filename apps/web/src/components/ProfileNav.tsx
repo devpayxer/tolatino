@@ -54,7 +54,7 @@ export function ProfileNav({ onNavigate, className }: { onNavigate?: () => void;
     <Card className={`p-[17px] ${className ?? ''}`}>
       <div className="flex items-center gap-3">
         {auth.profile ? (
-          <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} size={44} />
+          <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} src={auth.profile.avatar_url} size={44} />
         ) : (
           <YouAvatar size={44} />
         )}

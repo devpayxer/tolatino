@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { useInteractions } from '@/lib/interactions';
 import { useFollows } from '@/lib/follows';
 import { Avatar } from '@/components/ui';
+import { useAvatar } from '@/lib/avatars';
 import { PostMenu } from '@/components/PostMenu';
 import type { Post, PostType } from '@/data/fixtures';
 import { tile } from '@/lib/tiles';
@@ -56,6 +57,12 @@ export function PostCard({
 
   const [slide, setSlide] = useState(0);
 
+  // Foto del autor. La propia sale del perfil ya cargado (así se ve al instante
+  // al cambiarla); la de los demás, del lote de `useAvatar`.
+  const own = !!post.authorId && post.authorId === auth.user?.id;
+  const otherPhoto = useAvatar(own ? null : post.authorId);
+  const authorPhoto = own ? auth.profile?.avatar_url ?? null : otherPhoto;
+
   const recOn = !!it.liked[post.id];
   const saveOn = !!it.saved[post.id];
   const recCount = it.likeCount[post.id] ?? post.recommends;
@@ -88,7 +95,7 @@ export function PostCard({
   return (
     <div className="rounded-card border border-hair bg-white p-[18px] shadow-card">
       <div className="flex items-start gap-3">
-        <Avatar initials={post.initials} color={post.color} size={44} />
+        <Avatar initials={post.initials} color={post.color} src={authorPhoto} size={44} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-[7px]">
             <span className="text-[14.5px] font-extrabold text-ink">{post.name}</span>

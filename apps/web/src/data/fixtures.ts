@@ -400,6 +400,8 @@ export type Comment = {
   initials: string;
   color: string;
   name: string;
+  /** Autor — para pintar su foto de perfil (ver `lib/avatars`). */
+  authorId?: string;
   hoodEs?: string;
   timeEs: string;
   timeEn: string;

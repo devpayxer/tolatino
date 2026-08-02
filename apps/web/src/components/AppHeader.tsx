@@ -225,7 +225,7 @@ export function AppHeader() {
           </button>
           {auth.profile ? (
             <button onClick={() => app.setUserOpen(true)} className="flex-none cursor-pointer rounded-full" aria-label={auth.profile.display_name}>
-              <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} size={36} className="border-2 border-lilac-ring" />
+              <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} src={auth.profile.avatar_url} size={36} className="border-2 border-lilac-ring" />
             </button>
           ) : (
             <YouAvatar size={36} onClick={() => app.setUserOpen(true)} />

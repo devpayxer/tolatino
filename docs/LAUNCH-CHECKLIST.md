@@ -194,9 +194,19 @@
   2. **Selector de país del teléfono** — hoy el prefijo es `+1` fijo (solo
      EE. UU.). Cuando haga falta otro país: selector real + validación con
      libphonenumber.
-  3. **Foto de perfil** — el handoff trae un botón "Agregar foto" que en el
-     prototipo solo enseña un aviso. Aquí se sustituyó por una línea honesta
-     ("la puedes poner después"). Falta construir la subida de verdad.
+  3. ~~**Foto de perfil**~~ — **HECHA (2026-08-02)**, migración 0134. El botón
+     "Agregar foto" del handoff sube de verdad: comprime en el teléfono (recorte
+     cuadrado, 400 px, WebP, sin EXIF — 600 KB ⇢ 3 KB medido), guarda,
+     borra la anterior al cambiarla y revierte si falla. Se ve en la cabecera, el
+     compositor, las tarjetas del feed, los comentarios y Mi cuenta → Mi perfil.
+     Lo que queda: **las demás superficies siguen con iniciales** — reseñas,
+     chat con el negocio, respaldos del negocio (`endorsements_by_slug`), la
+     ficha del cliente en el panel (CRM) y los pedidos. Todas ellas fabrican el
+     avatar desde columnas denormalizadas (`author_initials`, `customer_color`…)
+     y no llevan el id del usuario en su RPC; para que muestren la foto hay que
+     añadir el id a cada RPC y pasarlo por `useAvatar`. No es urgente (las
+     iniciales son un estado legítimo, no roto), pero está a medias mientras
+     tanto.
   4. **Zona por COLONIA** — el handoff elige colonia y código postal; la app
      trabaja por ciudad y no tenemos datos de colonias. Si algún día se quiere
      esa granularidad, hace falta una tabla de colonias con sus polígonos.

@@ -5,6 +5,38 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-08-02.
 
+## Foto de perfil real, de punta a punta (2026-08-02, migración 0134)
+
+El avatar dejó de ser solo iniciales. El botón "Agregar foto" que el handoff de
+alta ya dibujaba —y que en el prototipo solo enseñaba un aviso— ahora hace lo que
+promete, en el alta y en **Mi cuenta → Mi perfil**.
+
+**Toda la mecánica vive en `lib/avatarUpload.ts`** (`useAvatarUpload`), no en las
+pantallas: son dos sitios haciendo lo mismo, y copiarlo era garantizar que uno
+borrara el archivo viejo y el otro no. Hace, en orden: vista previa local →
+comprimir → subir → guardar → borrar la anterior → revertir si algo falla.
+
+**Comprime SIEMPRE antes de subir** (`uploadAvatar` → `compressImage`, ahora con
+recorte cuadrado): medido en navegador real, 1600×900 y 602 KB ⇢ **400×400 WebP
+de 3.3 KB, 182× más ligero**, y sin EXIF (las fotos de teléfono llevan el GPS
+dentro; ese dato no sube).
+
+**Cómo se ve la foto de OTRA persona.** `profiles` es privado por RLS desde 0082
+—guarda `lat`/`lng`, la casa de cada quien— y no se reabre. La migración 0134
+añade `public_avatars(ids)`, que devuelve SOLO la URL de la foto, y
+`lib/avatars.ts` la pide **una vez por página** (veinte tarjetas del feed = UNA
+consulta, verificado). Se descartó denormalizar la foto en `posts` como se hizo
+con el nombre: una foto se cambia, y la copia dejaría la cara vieja pegada en
+todo lo publicado antes, en cinco tablas distintas.
+
+Se ve en: cabecera, compositor, tarjetas del feed, comentarios y Mi cuenta.
+Siguen con iniciales (anotado en LAUNCH-CHECKLIST): reseñas, chat con el negocio,
+respaldos, CRM y pedidos — sus RPC no traen el id del autor.
+
+⚠️ Igual que 0132: **`grant update (avatar_url)`** es imprescindible. La 0130
+cerró `update` sobre `profiles` a una lista explícita de columnas, y un permiso
+por columnas NO cubre las nuevas.
+
 ## Portada NUEVA en producción — handoff oficial (2026-08-02)
 
 `tolatino.com` sirve la portada del handoff **"To'Latino — Official Home Page"**,

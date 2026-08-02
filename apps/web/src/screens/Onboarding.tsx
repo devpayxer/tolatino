@@ -45,7 +45,8 @@ import { useRouter } from 'next/navigation';
 import {
   IconAlertCircle as AlertCircle, IconArrowRight as ArrowRight, IconBell as Bell,
   IconBriefcase as Briefcase, IconBuildingStore as Store, IconCalendar as Calendar,
-  IconCar as Car, IconCheck as Check, IconChevronLeft as ChevronLeft, IconGlobe as Globe,
+  IconCamera as Camera, IconCar as Car, IconCheck as Check, IconChevronLeft as ChevronLeft,
+  IconGlobe as Globe,
   IconHeartbeat as Heartbeat, IconHome as HomeIcon, IconLock as Lock, IconMail as Mail,
   IconMapPin as MapPin, IconMessageCircle as MessageSquare, IconPackage as Package,
   IconPhone as Phone, IconSearch as Search, IconShieldCheck as ShieldCheck,
@@ -54,8 +55,9 @@ import {
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth, authErrorText } from '@/lib/auth';
-import { LogoMark } from '@/components/ui';
+import { Avatar, LogoMark } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
+import { useAvatarUpload } from '@/lib/avatarUpload';
 import {
   POPULAR_CITIES, getBrowserLocation, isCoordLabel, nearestCity, searchCities, type Place,
 } from '@/lib/geo';
@@ -117,6 +119,7 @@ export function OnboardingScreen() {
   // perfil
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
+  const photo = useAvatarUpload();
 
   // zona
   const [geo, setGeo] = useState<Geo>('ask');
@@ -246,6 +249,11 @@ export function OnboardingScreen() {
     setBusy(false);
     setStep('location');
   };
+
+  // La foto de perfil se sube en cuanto se elige, no al pulsar "Continuar": si
+  // el usuario cierra la pestaña a media alta, la foto ya quedó guardada. Toda
+  // la mecánica (comprimir, subir, guardar, borrar la anterior, revertir si
+  // falla) vive en `useAvatarUpload`, compartida con Mi cuenta.
 
   const useMyLocation = async () => {
     setErr(null);
@@ -573,12 +581,43 @@ export function OnboardingScreen() {
                   <H1>{L('¿Cómo te llamamos?', 'What should we call you?')}</H1>
                   <Sub>{L('Así te ven los negocios cuando pides, reservas o preguntas.', 'This is how businesses see you when you order, book or ask.')}</Sub>
                   <div className="mt-[22px] flex items-center gap-[14px]">
-                    <span aria-hidden className="flex h-16 w-16 flex-none items-center justify-center rounded-[20px] text-[20px] font-extrabold text-white"
-                          style={{ background: 'linear-gradient(140deg,#7B61FF,#B0357E)' }}>{initials}</span>
-                    <p className="text-[12px] font-semibold leading-[1.5] text-home-mute">
-                      {L('Tu foto la puedes poner después, desde tu cuenta.', 'You can add your photo later, from your account.')}
-                    </p>
+                    <span aria-hidden className="relative flex-none">
+                      <Avatar initials={initials} color="linear-gradient(140deg,#7B61FF,#B0357E)" src={photo.shown} size={64} radius={20} />
+                      {photo.busy && (
+                        <span className="absolute inset-0 flex items-center justify-center rounded-[20px]" style={{ background: 'rgba(30,27,46,.5)' }}>
+                          <span className="tl-spin block h-[18px] w-[18px] rounded-full border-2 border-white" style={{ borderTopColor: 'transparent' }} />
+                        </span>
+                      )}
+                    </span>
+                    <input ref={photo.inputRef} type="file" accept="image/*" className="sr-only" tabIndex={-1}
+                           onChange={(e) => photo.pick(e.target.files?.[0])} />
+                    <div className="min-w-0">
+                      <button type="button" onClick={photo.open} disabled={photo.busy}
+                              className="tl-focus flex cursor-pointer items-center gap-2 rounded-[13px] border-[1.5px] border-dashed border-auth-line2 bg-page px-4 py-3 text-[12px] font-extrabold text-primary-dark disabled:cursor-default disabled:opacity-60">
+                        <Camera size={15} stroke={2} aria-hidden />
+                        {photo.busy
+                          ? L('Subiendo…', 'Uploading…')
+                          : photo.url ? L('Cambiar foto', 'Change photo') : L('Agregar foto', 'Add photo')}
+                      </button>
+                      {photo.url && !photo.busy ? (
+                        <button type="button" onClick={photo.remove} className="tl-focus mt-[7px] cursor-pointer text-[11.5px] font-bold text-home-mute underline">
+                          {L('Quitar foto', 'Remove photo')}
+                        </button>
+                      ) : (
+                        !photo.url && (
+                          <p className="mt-[7px] text-[11.5px] font-semibold leading-[1.45] text-home-mute">
+                            {L('Opcional — también puedes ponerla después.', 'Optional — you can also add it later.')}
+                          </p>
+                        )
+                      )}
+                    </div>
                   </div>
+                  {photo.error && (
+                    <div role="alert" className="mt-[11px] flex items-center gap-2 rounded-[12px] bg-pink-bg px-[13px] py-[10px]">
+                      <AlertCircle size={15} stroke={2.2} className="flex-none text-rose" aria-hidden />
+                      <span className="text-[11.5px] font-bold text-rose-ink">{photo.error}</span>
+                    </div>
+                  )}
                   <div className="tl-two mt-[18px] grid gap-3">
                     <div>
                       <Label>{L('Nombre', 'First name')} *</Label>

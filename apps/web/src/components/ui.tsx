@@ -3,7 +3,7 @@
 // Shared UI primitives — compose every screen from these; don't fork markup.
 
 import { IconX as X } from '@tabler/icons-react';
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 
 /**
@@ -60,18 +60,41 @@ export function Avatar({
   color,
   size = 44,
   className = '',
+  /** Foto de perfil. Si falta o no carga, quedan las iniciales debajo. */
+  src,
+  /** Redondez en px. Por defecto círculo; el alta lo pide cuadrado-redondeado. */
+  radius,
 }: {
   initials: string;
   color?: string;
   size?: number;
   className?: string;
+  src?: string | null;
+  radius?: number;
 }) {
+  // Una URL rota (archivo borrado, sin red) no puede dejar un cuadro gris: al
+  // fallar la carga se descarta la foto y vuelven las iniciales.
+  const [broken, setBroken] = useState(false);
+  useEffect(() => setBroken(false), [src]);
+  const photo = src && !broken ? src : null;
+
   return (
     <span
-      className={`flex flex-none items-center justify-center rounded-full font-extrabold text-white ${className}`}
-      style={{ width: size, height: size, background: color, fontSize: size * 0.34 }}
+      className={`relative flex flex-none items-center justify-center overflow-hidden font-extrabold text-white ${className}`}
+      style={{ width: size, height: size, background: color, fontSize: size * 0.34, borderRadius: radius ?? '50%' }}
     >
       {initials}
+      {photo && (
+        // eslint-disable-next-line @next/next/no-img-element -- export estático: sin optimizador de imágenes
+        <img
+          src={photo}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setBroken(true)}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
     </span>
   );
 }
