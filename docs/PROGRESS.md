@@ -3,7 +3,50 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-07-21.
+> Last updated: 2026-08-02.
+
+## Portada NUEVA en producción — handoff oficial (2026-08-02)
+
+`tolatino.com` sirve la portada del handoff **"To'Latino — Official Home Page"**,
+que reemplaza a todos los handoffs de Home anteriores. Es la página de
+PRE-LANZAMIENTO: una sola pantalla (100svh) con insignia "Nuevo · Llegando a
+{ciudad}", titular con selector de ciudad, 8 chips de vertical, buscador,
+fila de cuenta y tarjeta de comunidad; debajo "¿Por qué To'Latino?" (6 filas) y
+la banda morada para negocios. Todo vive en `apps/web/src/screens/Landing.tsx`.
+
+Lo que hay que saber antes de tocarla:
+
+1. **Sin conteos, en ningún sitio.** El handoff los prohíbe expresamente («do not
+   add counts — deliberate pre-launch honesty»). Por eso `platform_stats()`,
+   `landing_testimonials()` y `landing_marketplace()` (migración 0131) quedaron
+   SIN llamador. No los reintroduzcas en la portada sin pedirlo al fundador.
+2. **🔴 La tarjeta del feed usa 19 publicaciones DE MUESTRA** (`lib/landing.ts`):
+   personas y negocios que no existen. Decisión explícita del fundador
+   (2026-08-02) tras haberla conectado al feed real. **Pendiente obligatorio
+   antes de abrir el registro al público** — ver LAUNCH-CHECKLIST. El guardián
+   del build NO detiene esos nombres.
+3. **El móvil está medido, no improvisado.** Toda la maquetación de ≤599px vive
+   en el bloque `<style jsx global>` del final del archivo, en tres niveles: base
+   móvil, ≤740px de alto y ≤680px de alto. Reglas que NO se deben romper:
+   · el bloque central usa `flex: 1` (NUNCA un `min-height` calculado: con eso el
+     padre lo centraba y quedaba todo apretado arriba);
+   · dos márgenes `auto` (encima de los chips y encima de la fila de cuenta)
+     reparten el hueco sobrante y dejan el buscador centrado;
+   · el suelo de 20px de `.tl-searchwrap` está igualado con lo que aporta el
+     bloque de abajo, para que los dos huecos midan lo mismo.
+   **Al probar, usa alturas de navegador REALES** (390×700, 402×670, 375×553…),
+   no las nominales del teléfono: `100svh` descuenta la barra del navegador y un
+   iPhone de 844px deja ~700px útiles. Medir a 844 esconde el problema.
+4. **Buscador:** marcador 12px cursiva en móvil / 14px en escritorio; al escribir
+   16px en móvil (para que Safari de iOS no acerque la pantalla) y 14px en
+   escritorio. Al enfocar en móvil el marcador se desvanece para que el cambio de
+   tamaño no se note.
+5. **La franja amarilla de "SITIO DE PRUEBAS" ya no existe** (la quitó el fundador
+   el 2026-08-02). El sitio de pruebas sigue protegido por `robots.txt`
+   (`Disallow: /`), `noindex` en la cabecera y una URL fuera del dominio de marca
+   — pero ya no avisa a la vista. Al compartir un enlace de pruebas, dilo.
+6. **`NEXT_PUBLIC_SITE_URL=https://tolatino.com`** en `.env.production`: antes el
+   canónico, el Open Graph y el sitemap apuntaban a `tolatino.vercel.app`.
 
 ## 🔑 You CAN run migrations yourself — `scripts/sbsql.mjs` (2026-07-22)
 
