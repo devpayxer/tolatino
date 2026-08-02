@@ -549,6 +549,18 @@ export function LandingScreen() {
            cambiar el tamaño de la letra al empezar a escribir. */
         .tl-input { font-size: 14px !important; font-style: normal; line-height: 20px; text-overflow: ellipsis; }
         .tl-input:placeholder-shown { font-size: 10px !important; font-style: italic; }
+        /* En el TELÉFONO el texto escrito sube a 16px. No es capricho: Safari de
+           iOS acerca la pantalla sola en cuanto enfocas un campo con letra menor
+           de 16px, y ese zoom no se deshace al salir del campo — el usuario se
+           queda con la portada acercada. Por eso toda la app usa 16px en móvil.
+           Y como el marcador de 10px también dispararía el zoom (está visible
+           justo cuando enfocas), al enfocar se sube a 16 y se desvanece: como el
+           marcador deja de verse, el cambio de tamaño no se nota. */
+        @media (max-width: 767px) {
+          .tl-input { font-size: 16px !important; }
+          .tl-input:placeholder-shown:focus { font-size: 16px !important; font-style: normal; }
+          .tl-input:focus::placeholder { color: transparent; }
+        }
         /* El foco del campo se marca iluminando la TARJETA entera, no dibujando
            un recuadro alrededor del campo: dentro de la tarjeta blanca ese
            recuadro parecía un segundo campo metido dentro del primero. El aviso
