@@ -594,7 +594,13 @@ export function LandingScreen() {
           /* Ritmo del móvil, medido por el handoff en un teléfono real:
              insignia 72 · insignia→H1 18 · subtítulo→buscador 64 · la fila de
              cuenta y el feed anclados abajo. */
-          .tl-hero-inner { padding-top: 16px; justify-content: flex-start; min-height: calc(100svh - 150px); }
+          /* El bloque central OCUPA todo el alto libre (flex:1) en vez de
+             reservarlo con un min-height calculado. Así el reparto es siempre el
+             mismo, mida lo que mida la pantalla: titular arriba, buscador en el
+             centro, "¿Ya tienes cuenta?" + tarjeta abajo. Con min-height, en
+             cuanto el teléfono era bajo el bloque se quedaba corto y el padre lo
+             centraba: todo junto arriba y un hueco muerto abajo. */
+          .tl-hero-inner { padding-top: 16px; justify-content: flex-start; flex: 1; align-self: stretch; }
           .tl-searchwrap { margin-top: 64px; display: flex; flex-direction: column; flex: 1; }
           /* Las tres garantías (verificados · idiomas · pagos) NO se muestran en
              el teléfono, por petición del fundador: apretaban el bloque central
@@ -640,7 +646,7 @@ export function LandingScreen() {
            que aquí se comprime: mismos elementos, mismo orden, nada se quita —
            solo se aprietan los huecos y las tipografías más grandes. */
         @media (max-width: 599px) and (max-height: 740px) {
-          .tl-hero-inner { padding-top: 10px !important; min-height: 0 !important; }
+          .tl-hero-inner { padding-top: 10px !important; }
           .tl-kick { padding: 4px 10px !important; }
           .tl-kick span { font-size: 9.5px !important; }
           .tl-h1 { font-size: clamp(22px,6.6vw,26px) !important; margin-top: 12px !important; }
