@@ -65,24 +65,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {/* Franja de PRUEBAS (2026-07-29). El fundador señaló, con razón, que un
-            sitio de pruebas accesible puede confundirse con el real. Aquí nadie
-            puede equivocarse: la franja es imposible de pasar por alto y solo
-            aparece cuando el build apunta a la base de pruebas. */}
-        {IS_STAGING && (
-          <div
-            role="status"
-            style={{
-              position: 'sticky', top: 0, zIndex: 9999,
-              background: '#F4B740', color: '#1E1B2E',
-              font: '800 11.5px/1.35 "Plus Jakarta Sans", system-ui, sans-serif',
-              letterSpacing: '.02em', textAlign: 'center',
-              padding: '6px 12px', textTransform: 'uppercase',
-            }}
-          >
-            Sitio de pruebas · los datos no son reales
-          </div>
-        )}
+        {/* La franja amarilla "SITIO DE PRUEBAS" se retiró a petición del
+            fundador (2026-08-02): robaba una pantalla que en móvil está medida
+            al píxel. Lo que protegía el sitio de pruebas de verdad NO era la
+            franja, y sigue en pie:
+              · `robots.ts` responde `Disallow: /` en el build de pruebas,
+              · `metadata.robots` marca noindex/nofollow (esta misma página),
+              · la URL vive fuera del dominio de marca (rama en Vercel).
+            Lo único que se pierde es el aviso VISIBLE: quien abra la vista
+            previa sin saberlo no verá que los datos son de prueba. Anotado en
+            docs/LAUNCH-CHECKLIST.md. */}
         <Providers>{children}</Providers>
       </body>
     </html>

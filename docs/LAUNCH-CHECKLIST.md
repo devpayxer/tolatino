@@ -105,13 +105,23 @@
   portada se rehízo entera. Es una página de PRE-LANZAMIENTO: sin conteos, sin
   prueba social, sin testimonios (el propio handoff lo prohíbe: *"do not add
   counts — deliberate pre-launch honesty"*). Pendientes:
-  1. **Tarjeta del feed vacía hasta que haya vecinos publicando.** Lee `posts_near`
-     alrededor de la ciudad elegida; hoy en pruebas devuelve 0 filas y por eso la
-     tarjeta no se dibuja. Es el comportamiento correcto (mejor sin tarjeta que con
-     vecinos inventados), pero **revisar el día del lanzamiento**: si la ciudad
-     arranca sin publicaciones, el hero se ve más vacío de lo diseñado. Opciones a
-     decidir entonces: sembrar la conversación con publicaciones REALES del equipo,
-     o ampliar el radio de la portada.
+  1. **🔴 La tarjeta del feed muestra 19 publicaciones DE MUESTRA (2026-08-02).**
+     Personas y negocios que no existen ("José M.", "Tacos Yucatán", "Doña Chuy",
+     "Barbería El Corte"), en la página más vista, con pinta de conversación real
+     de vecinos. Es la misma clase de dato que se limpió el 2026-07-29 (regla #8).
+     **Decisión explícita del fundador**: se había conectado al feed REAL
+     (`posts_near`) — que es lo que pide el propio handoff para producción — pero
+     hoy no hay publicaciones cerca y la tarjeta quedaba vacía, dejando el hero
+     más pobre. Atenuantes: es ilustración, nada se puede abrir, guardar ni
+     contactar. **Pendiente OBLIGATORIO antes de abrir el registro al público:**
+     volver al feed real (sustituir `apps/web/src/lib/landing.ts` por la llamada a
+     `posts_near`; la tarjeta ya está escrita para las dos fuentes) y decidir qué
+     hacer si la ciudad arranca sin conversación — sembrarla con publicaciones
+     REALES del equipo o ampliar el radio.
+     ⚠️ Ojo: el guardián `scripts/verify-build.mjs` NO detiene estos nombres (sus
+     reglas listan los de la limpieza anterior). Si se decide dejarlos hasta el
+     lanzamiento, añadirlos como regla el día que se retiren, para que no puedan
+     volver por accidente.
   2. **Revisar la copia cuando la plataforma deje de ser nueva.** La insignia dice
      "Nuevo · Llegando a {ciudad}" y la sección de negocios habla de ser de los
      primeros. Cuando haya negocios activos, esa copia deja de ser cierta y hay que

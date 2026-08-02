@@ -18,9 +18,12 @@
 // 2. Los DATOS son reales (regla #8):
 //    · Conteos: el handoff los PROHÍBE («No platform statistics appear anywhere;
 //      do not add counts — deliberate pre-launch honesty»). No hay ni uno.
-//    · Feed: sus 19 publicaciones son de muestra y el propio handoff pide leer
-//      el feed real en producción. Aquí sale de `posts_near`; sin publicaciones
-//      cerca, la tarjeta no se dibuja.
+//    · Feed: EXCEPCIÓN consciente. Las 19 publicaciones de la tarjeta son las
+//      de MUESTRA del handoff, por decisión del fundador (2026-08-02). Se llegó
+//      a conectar al feed real (`posts_near`) — que es lo que pide el propio
+//      handoff — pero hoy no hay publicaciones cerca y la tarjeta quedaba
+//      vacía. Está anotado en LAUNCH-CHECKLIST como pendiente obligatorio
+//      antes de abrir el registro al público. Ver `lib/landing.ts`.
 //    · Ciudad, búsqueda, sesión y alta de negocio van a los flujos REALES de la
 //      app (el handoff los marca como "not in this design").
 //
@@ -44,8 +47,7 @@ import {
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
-import { useLandingFeed, agoText } from '@/lib/landing';
-import { postTag } from '@/lib/postTag';
+import { FEED_SAMPLE, FEED_KIND } from '@/lib/landing';
 import { CityModal } from '@/components/CityModal';
 
 type Vertical = 'all' | 'food' | 'serv' | 'evt' | 'rent' | 're' | 'auto' | 'job';
@@ -69,7 +71,6 @@ export function LandingScreen() {
   const app = useApp();
   const { user, profile } = useAuth();
   const router = useRouter();
-  const feed = useLandingFeed();
 
   const [tab, setTab] = useState<Vertical>('all');
   const [query, setQuery] = useState('');
@@ -79,17 +80,17 @@ export function LandingScreen() {
   const cityShort = app.cityShort || app.city;
 
   // ── Feed rotatorio ────────────────────────────────────────────────────────
-  // Se pausa al pasar el ratón o al enfocar (§Accessibility) y no arranca si hay
-  // una sola publicación. `idx` crece sin límite y se lee con módulo: esa
-  // paridad es la que alterna las dos animaciones gemelas del handoff, que es su
-  // truco para que la entrada se repita sin remontar la tarjeta.
+  // Se pausa al pasar el ratón o al enfocar (§Accessibility). `idx` crece sin
+  // límite y se lee con módulo: esa paridad alterna las dos animaciones gemelas
+  // del handoff, su truco para repetir la entrada sin remontar la tarjeta.
   useEffect(() => {
-    if (paused || feed.length < 2) return;
+    if (paused) return;
     const t = window.setInterval(() => setIdx((i) => i + 1), FEED_MS);
     return () => window.clearInterval(t);
-  }, [paused, feed.length]);
+  }, [paused]);
 
-  const post = feed.length ? feed[idx % feed.length] : null;
+  const post = FEED_SAMPLE[idx % FEED_SAMPLE.length];
+  const kind = FEED_KIND[post.kind];
 
   // ── Búsqueda ──────────────────────────────────────────────────────────────
   // Reutiliza la búsqueda GLOBAL que ya funciona (`app.setSearch` + la ruta del
@@ -175,17 +176,21 @@ export function LandingScreen() {
 
   // Marca: el logotipo del handoff (`uploads/logo_tolatino_color.svg`, 482×482,
   // trazo único) SIEMPRE después de la palabra, como indica §Icons.
-  const LogoMark = ({ size }: { size: number }) => (
+  const LogoMark = () => (
     <svg viewBox="0 0 482 482" fill="none" aria-hidden focusable="false"
-         style={{ width: size, height: size, marginLeft: Math.round(size * 0.28), alignSelf: 'center', flex: 'none' }}>
+         style={{ width: 'calc(var(--bs) * .88)', height: 'calc(var(--bs) * .88)', marginLeft: 'calc(var(--bs) * .25)', alignSelf: 'center', flex: 'none' }}>
       <path fill="#7B61FF" d="M241 0C374.101 0 482 107.899 482 241C482 368.894 382.378 473.519 256.5 481.509V450.929L381.533 334.135C382.856 332.899 383.895 331.39 384.577 329.714L418.577 246.214C420.824 240.696 418.864 234.358 413.894 231.072L294.394 152.072C292.802 151.02 290.991 150.347 289.102 150.103L288.723 150.06L205.263 141.857L151.825 107.028C151.144 106.585 150.422 106.208 149.668 105.904L117.808 93.0771L110.363 43.1562C110.159 41.785 109.729 40.4722 109.104 39.2637C147 14.4373 192.314 0 241 0ZM57.3691 122.079C58.9823 126.176 62.6321 129.122 66.9775 129.835L155.481 144.344L181.041 163.33L159.012 237.961C157.746 242.248 158.867 246.885 161.95 250.122L218.336 309.304L199.104 457.391C198.508 461.983 200.499 466.528 204.279 469.203L221.23 481.199C97.3773 471.143 0 367.444 0 241C0 187.108 17.6887 137.348 47.5771 97.209L57.3691 122.079ZM297 91.5V116.5H308.5V91.5H297ZM241 113.5H282.5V88.5H241V113.5ZM187.655 61.1211C184.505 59.3389 180.743 59.0113 177.341 60.2119L177.013 60.333L157.513 67.833L166.487 91.167L180.48 85.7842L213.345 104.379L225.655 82.6211L187.655 61.1211Z" />
     </svg>
   );
+  // El tamaño viaja como variable CSS (`--bs`) en vez de como `fontSize` en
+  // línea: así una media query puede encogerlo en teléfonos estrechos, donde la
+  // marca + el idioma + el botón de negocio no caben en la barra.
   const Brand = ({ size }: { size: number }) => (
-    <span className="flex flex-none items-baseline" style={{ letterSpacing: '-.03em' }}>
-      <span className="font-extrabold text-ink" style={{ fontSize: size }}>To&rsquo;</span>
-      <span className="font-extrabold text-primary" style={{ fontSize: size }}>Latino</span>
-      <LogoMark size={Math.round(size * 0.88)} />
+    <span className="tl-brand flex flex-none items-baseline"
+          style={{ letterSpacing: '-.03em', ['--bs' as string]: `${size}px` }}>
+      <span className="font-extrabold text-ink" style={{ fontSize: 'var(--bs)' }}>To&rsquo;</span>
+      <span className="font-extrabold text-primary" style={{ fontSize: 'var(--bs)' }}>Latino</span>
+      <LogoMark />
     </span>
   );
 
@@ -204,13 +209,13 @@ export function LandingScreen() {
               style={{ bottom: '-14%', left: '-20%', width: 'min(600px,80vw)', height: 'min(600px,60vh)', background: 'radial-gradient(circle, rgba(244,183,64,.1), transparent 66%)' }} />
 
         {/* ── Barra superior ── */}
-        <div className={`relative flex items-center gap-[clamp(10px,2vw,16px)] py-[clamp(14px,3vw,24px)] ${gutter}`}>
+        <div className={`tl-bar relative flex items-center gap-[clamp(10px,2vw,16px)] py-[clamp(14px,3vw,24px)] ${gutter}`}>
           <a href="/" aria-label="To'Latino" className="tl-focus flex-none">
             <Brand size={22} />
           </a>
 
           <div role="group" aria-label={L('Idioma', 'Language')}
-               className="ml-auto flex flex-none rounded-full border border-home-line2 bg-lilac-2 p-[3px]">
+               className="tl-langpill ml-auto flex flex-none rounded-full border border-home-line2 bg-lilac-2 p-[3px]">
             {(['es', 'en'] as const).map((l) => (
               <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l}
                       className={`tl-focus cursor-pointer rounded-full px-[13px] py-[6px] text-[11.5px] font-extrabold uppercase ${lang === l ? 'bg-primary text-white' : 'text-muted'}`}>
@@ -345,44 +350,39 @@ export function LandingScreen() {
                 )}
               </div>
 
-              {/* Tarjeta del feed — publicaciones REALES cerca de la ciudad
-                  elegida. Sin publicaciones no se dibuja nada (regla #8). */}
-              {post && (
-                <button onClick={() => setIdx((i) => i + 1)}
-                        onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
-                        onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}
-                        aria-label={L('Ver la siguiente publicación de la comunidad', 'See the next community post')}
-                        className="tl-feed tl-focus mx-auto flex w-full max-w-[460px] cursor-pointer items-center rounded-[16px] border border-hair bg-white px-[14px] py-[13px]"
-                        style={{ marginTop: 'clamp(8px,1.4vw,14px)', minHeight: 92, boxShadow: '0 8px 24px rgba(60,50,110,.07)' }}>
-                  <div aria-live="polite" key={post.id}
-                       className={`flex w-full items-start gap-[11px] text-left ${idx % 2 === 0 ? 'tl-pa' : 'tl-pb'}`}>
-                    <span aria-hidden className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full text-[11.5px] font-extrabold text-white"
+              {/* Tarjeta del feed. ⚠️ Contenido de MUESTRA del handoff (ver
+                  `lib/landing.ts`): personas y negocios que no existen. Decisión
+                  del fundador; hay que sustituirlo por el feed real antes de
+                  abrir el registro al público. */}
+              <button onClick={() => setIdx((i) => i + 1)}
+                      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+                      onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}
+                      aria-label={L('Ver la siguiente publicación de la comunidad', 'See the next community post')}
+                      className="tl-feed tl-focus mx-auto flex w-full max-w-[460px] cursor-pointer items-center rounded-[16px] border border-hair bg-white px-[14px] py-[13px]"
+                      style={{ marginTop: 'clamp(8px,1.4vw,14px)', minHeight: 92, boxShadow: '0 8px 24px rgba(60,50,110,.07)' }}>
+                <div aria-live="polite" key={idx % FEED_SAMPLE.length}
+                     className={`flex w-full items-start gap-[11px] text-left ${idx % 2 === 0 ? 'tl-pa' : 'tl-pb'}`}>
+                  <span aria-hidden className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full text-[11.5px] font-extrabold text-white"
                           style={{ background: post.color }}>
                       {post.initials}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-[7px]">
-                        <span className="tl-pname overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] font-extrabold text-ink">{post.name}</span>
-                        {(() => {
-                          const t = postTag(post.type, L);
-                          return (
-                            <span className="flex-none rounded-[7px] px-2 py-[3px] text-[9px] font-extrabold uppercase"
-                                  style={{ background: t.bg, color: t.color, letterSpacing: '.07em' }}>
-                              {t.label}
-                            </span>
-                          );
-                        })()}
+                        <span className="tl-pname overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] font-extrabold text-ink">{post.who}</span>
+                        <span className="flex-none rounded-[7px] px-2 py-[3px] text-[9px] font-extrabold uppercase"
+                              style={{ background: kind.bg, color: kind.color, letterSpacing: '.07em' }}>
+                          {L(kind.es, kind.en)}
+                        </span>
                       </div>
                       <p className="tl-ptext tl-clamp text-[13px] font-medium text-ink-soft" style={{ lineHeight: 1.45, marginTop: 5, textWrap: 'pretty' }}>
                         {es ? post.es : post.en}
                       </p>
                       <p className="tl-pmeta text-[10.5px] font-semibold text-muted" style={{ marginTop: 6 }}>
-                        {[post.hood, agoText(post.minutes, es)].filter(Boolean).join(' · ')}
+                        {post.hood} · {L(post.agoEs, post.agoEn)}
                       </p>
                     </div>
                   </div>
-                </button>
-              )}
+              </button>
             </div>
           </div>
         </div>
@@ -591,7 +591,52 @@ export function LandingScreen() {
           .tl-btn-biz { padding: 9px 12px !important; font-size: 12px !important; border-radius: 11px !important; }
           .tl-marqband span { font-size: 10px !important; }
         }
-        /* Ventanas bajas: la marquesina estorba y el titular se achica */
+        /* ── Teléfonos ESTRECHOS ────────────────────────────────────────────
+           A 375px la barra superior no daba de sí y "Mi negocio" se salía por
+           el borde. Se encoge la marca y se aprietan los huecos; nada se oculta,
+           porque el botón de negocio es una de las dos conversiones de la página. */
+        @media (max-width: 400px) {
+          .tl-brand { --bs: 19px !important; }
+          .tl-bar { gap: 8px !important; padding-left: 14px !important; padding-right: 14px !important; }
+          .tl-langpill button { padding-left: 10px !important; padding-right: 10px !important; }
+          .tl-btn-biz { padding: 9px 10px !important; gap: 5px !important; }
+        }
+
+        /* ── Teléfonos CORTOS ───────────────────────────────────────────────
+           El ritmo del handoff está medido en un teléfono de 402×806. En uno
+           de 375×667 (iPhone SE, Androids viejos) esos mismos huecos fijos
+           sacaban la portada 122px fuera de pantalla y obligaban a rodar para
+           ver el buscador. El fundador pidió que se vea COMPLETA de entrada, así
+           que aquí se comprime: mismos elementos, mismo orden, nada se quita —
+           solo se aprietan los huecos y las tipografías más grandes. */
+        @media (max-width: 599px) and (max-height: 740px) {
+          .tl-hero-inner { padding-top: 16px !important; min-height: 0 !important; }
+          .tl-kick { padding: 4px 10px !important; }
+          .tl-kick span { font-size: 9.5px !important; }
+          .tl-h1 { font-size: clamp(22px,6.6vw,26px) !important; margin-top: 12px !important; }
+          .tl-sub { font-size: 11.5px !important; margin-top: 6px !important; }
+          .tl-searchwrap { margin-top: 24px !important; }
+          .tl-chips { padding-bottom: 7px !important; }
+          .tl-chips > button { padding: 7px 11px !important; font-size: 11px !important; }
+          .tl-search { padding: 5px !important; }
+          .tl-search input { padding-top: 10px !important; padding-bottom: 10px !important; }
+          .tl-sbtn { padding: 10px 14px !important; }
+          .tl-points { margin-top: 8px !important; gap: 5px 10px !important; }
+          .tl-authrow { padding-top: 10px !important; }
+          .tl-join { padding: 10px 8px !important; min-height: 40px !important; }
+          .tl-feed { min-height: 68px !important; padding: 9px 11px !important; margin-top: 8px !important; }
+        }
+        /* Aún más cortos (360×640): además se retira la marquesina, que es
+           decorativa, antes que dejar el buscador fuera de pantalla. */
+        @media (max-width: 599px) and (max-height: 680px) {
+          .tl-marqband { display: none !important; }
+          .tl-hero-inner { padding-top: 12px !important; }
+          .tl-h1 { font-size: clamp(21px,6.2vw,24px) !important; margin-top: 10px !important; }
+          .tl-searchwrap { margin-top: 16px !important; }
+          .tl-ptext { -webkit-line-clamp: 2; }
+        }
+
+        /* Ventanas bajas de ESCRITORIO: la marquesina estorba y el titular se achica */
         @media (max-height: 700px) and (min-width: 600px) {
           .tl-marqband { display: none !important; }
           .tl-h1 { font-size: clamp(25px, min(5.4vw,5vh), 44px) !important; }

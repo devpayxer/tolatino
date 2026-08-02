@@ -59,10 +59,14 @@ negocios sembrados y precios que no existen **con la marca del sitio real**.
 1. **`robots.txt` prohíbe TODO** en el build de pruebas (`Disallow: /`), y la
    cabecera `robots` del HTML añade `noindex, nofollow, nocache`. Cinturón y
    tirantes: aunque alguien enlace el sitio, Google no lo indexa.
-2. **Franja ámbar imposible de ignorar** arriba de todo: *"SITIO DE PRUEBAS · LOS
-   DATOS NO SON REALES"*. Solo aparece cuando el build apunta a la base de pruebas.
+2. ~~Franja ámbar "SITIO DE PRUEBAS · LOS DATOS NO SON REALES"~~ **RETIRADA el
+   2026-08-02** a petición del fundador: robaba una pantalla que en móvil está
+   medida al píxel, y la portada tiene que verse completa de entrada. Lo que
+   protege el sitio de pruebas era el punto 1, que sigue intacto. **Lo que se
+   pierde:** el aviso VISIBLE. Quien reciba el enlace sin contexto no verá que
+   los datos son de prueba — hay que decírselo al compartirlo.
 3. Producción no se ve afectada: su `robots.txt` sigue permitiendo el rastreo (el
-   SEO es adquisición gratis) y no lleva franja. Verificado compilando las dos.
+   SEO es adquisición gratis). Verificado compilando las dos.
 
 Si algún día hace falta cerrarlo del todo, Vercel ofrece protección por contraseña
 en sus planes de pago; hoy no se paga por eso.
