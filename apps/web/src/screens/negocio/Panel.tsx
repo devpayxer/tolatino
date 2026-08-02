@@ -16,7 +16,7 @@ import { useScrollLock } from '@/lib/scrollLock';
 import { useBizAdmin, rubroFromCat } from '@/lib/bizAdmin';
 import { useAuth } from '@/lib/auth';
 import { CAT, type CatKey } from '@/lib/tiles';
-import { VerifiedBadge } from '@/components/ui';
+import { LogoMark, VerifiedBadge } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { CAT_INFO, activeMods, buildNav, pageHead, type Mods, type PanelCtx, type Rubro, type TabKey, type Tier } from '@/screens/negocio/tabs';
 import { HoursReminders } from '@/screens/negocio/HoursReminders';
@@ -526,6 +526,10 @@ export function PanelScreen() {
           <button onClick={() => router.push('/comunidad')} className="flex cursor-pointer items-baseline">
             <span className={`text-[18px] font-extrabold tracking-[-.03em] ${isInicio ? 'text-white lg:text-ink' : 'text-ink'}`}>To&rsquo;</span>
             <span className={`text-[18px] font-extrabold tracking-[-.03em] ${isInicio ? 'text-amber lg:text-primary' : 'text-primary'}`}>Latino</span>
+            {/* En la pantalla de Inicio la cabecera es oscura en móvil y clara en
+                escritorio, así que el logotipo cambia de tono con ella. */}
+            <LogoMark size={16} color={isInicio ? '#F4B740' : '#7B61FF'} className="ml-1 self-center lg:hidden" />
+            <LogoMark size={16} className="ml-1 hidden self-center lg:block" />
             <span className={`ml-1.5 text-[10.5px] font-bold md:hidden ${isInicio ? 'text-[rgba(255,255,255,.55)]' : 'text-muted'}`}>{L('Negocios', 'Business')}</span>
           </button>
           <span className="hidden rounded-full bg-lilac px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[.04em] text-primary-dark md:inline">

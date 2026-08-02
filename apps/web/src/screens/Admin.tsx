@@ -28,7 +28,7 @@ import {
 import type { Icon as TablerIcon } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
-import { SkeletonList } from '@/components/ui';
+import { LogoMark, SkeletonList } from '@/components/ui';
 import { Toast } from '@/screens/negocio/modules/_page';
 import { Pill, Panel, Stat, FilterChip, ChipRow, Empty, BlockTitle, Toggle, type Tone } from '@/screens/admin/ui';
 import {
@@ -369,7 +369,9 @@ export function AdminScreen() {
         <div className="flex items-baseline gap-1 border-b border-white/10 px-5 py-4">
           <span className="text-[19px] font-extrabold tracking-[-.02em] text-white">To&rsquo;</span>
           <span className="text-[19px] font-extrabold tracking-[-.02em] text-primary-soft">Latino</span>
-          <span className="ml-1 h-1.5 w-1.5 rotate-45 self-center bg-amber" />
+          {/* Sobre la barra oscura el morado de marca no contrasta: el logotipo
+              va en el mismo tono claro que la palabra. */}
+          <LogoMark size={17} color="#9B85FF" className="ml-1 self-center" />
         </div>
         <div className="no-scrollbar flex-1 overflow-y-auto">{nav}</div>
         <div className="flex items-center gap-2.5 border-t border-white/10 px-4 py-3">
@@ -409,7 +411,7 @@ export function AdminScreen() {
           <button aria-label={L('Cerrar', 'Close')} onClick={() => setNavOpen(false)} className="absolute inset-0 cursor-pointer bg-[rgba(20,15,40,.55)]" />
           <div className="absolute left-0 top-0 flex h-full w-[262px] flex-col bg-ink shadow-pop">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
-              <div className="flex items-baseline gap-1"><span className="text-[16px] font-extrabold text-white">To&rsquo;</span><span className="text-[16px] font-extrabold text-primary-soft">Latino</span></div>
+              <div className="flex items-baseline gap-1"><span className="text-[16px] font-extrabold text-white">To&rsquo;</span><span className="text-[16px] font-extrabold text-primary-soft">Latino</span><LogoMark size={14} color="#9B85FF" className="ml-0.5 self-center" /></div>
               <button onClick={() => setNavOpen(false)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/10"><X size={15} stroke={2.4} className="text-white" /></button>
             </div>
             <div className="no-scrollbar flex-1 overflow-y-auto">{nav}</div>

@@ -6,8 +6,28 @@ import { IconX as X } from '@tabler/icons-react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 
-/** CSS wordmark: To'(ink) + Latino(purple) + amber diamond. */
+/**
+ * Logotipo de la marca — el globo con América en negativo.
+ *
+ * FUENTE ÚNICA: este trazo es el mismo que `apps/web/public/logo-tolatino.svg`
+ * y el que usa `scripts/make-brand-assets.mjs` para generar los iconos y la
+ * imagen para redes. Va INCRUSTADO (no `<img src>`) para que herede el color
+ * del sitio donde se ponga y no cueste una petición más.
+ *
+ * Sustituye al rombo ámbar que se usaba de marcador mientras no había logotipo.
+ */
+export function LogoMark({ size = 16, color = '#7B61FF', className }: { size?: number; color?: string; className?: string }) {
+  return (
+    <svg viewBox="0 0 482 482" fill="none" aria-hidden focusable="false" className={className}
+         style={{ width: size, height: size, flex: 'none' }}>
+      <path fill={color} d="M241 0C374.101 0 482 107.899 482 241C482 368.894 382.378 473.519 256.5 481.509V450.929L381.533 334.135C382.856 332.899 383.895 331.39 384.577 329.714L418.577 246.214C420.824 240.696 418.864 234.358 413.894 231.072L294.394 152.072C292.802 151.02 290.991 150.347 289.102 150.103L288.723 150.06L205.263 141.857L151.825 107.028C151.144 106.585 150.422 106.208 149.668 105.904L117.808 93.0771L110.363 43.1562C110.159 41.785 109.729 40.4722 109.104 39.2637C147 14.4373 192.314 0 241 0ZM57.3691 122.079C58.9823 126.176 62.6321 129.122 66.9775 129.835L155.481 144.344L181.041 163.33L159.012 237.961C157.746 242.248 158.867 246.885 161.95 250.122L218.336 309.304L199.104 457.391C198.508 461.983 200.499 466.528 204.279 469.203L221.23 481.199C97.3773 471.143 0 367.444 0 241C0 187.108 17.6887 137.348 47.5771 97.209L57.3691 122.079ZM297 91.5V116.5H308.5V91.5H297ZM241 113.5H282.5V88.5H241V113.5ZM187.655 61.1211C184.505 59.3389 180.743 59.0113 177.341 60.2119L177.013 60.333L157.513 67.833L166.487 91.167L180.48 85.7842L213.345 104.379L225.655 82.6211L187.655 61.1211Z" />
+    </svg>
+  );
+}
+
+/** Marca completa: To'(tinta) + Latino(morado) + logotipo. */
 export function Wordmark({ size = 'md', onClick }: { size?: 'sm' | 'md' | 'lg'; onClick?: () => void }) {
+  const fs = size === 'lg' ? 21 : size === 'md' ? 20 : 18;
   const px = size === 'lg' ? 'text-[21px]' : size === 'md' ? 'text-[20px]' : 'text-[18px]';
   return (
     <span
@@ -16,7 +36,7 @@ export function Wordmark({ size = 'md', onClick }: { size?: 'sm' | 'md' | 'lg'; 
     >
       <span className="text-ink">To&rsquo;</span>
       <span className="text-primary">Latino</span>
-      <span className="ml-1 inline-block h-1.5 w-1.5 rotate-45 self-center bg-amber" />
+      <LogoMark size={Math.round(fs * 0.88)} className="ml-1 self-center" />
     </span>
   );
 }

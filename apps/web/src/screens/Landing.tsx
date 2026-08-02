@@ -49,6 +49,7 @@ import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { FEED_SAMPLE, FEED_KIND } from '@/lib/landing';
 import { CityModal } from '@/components/CityModal';
+import { LogoMark } from '@/components/ui';
 
 type Vertical = 'all' | 'food' | 'serv' | 'evt' | 'rent' | 're' | 'auto' | 'job';
 
@@ -174,23 +175,19 @@ export function LandingScreen() {
 
   const firstName = (profile?.display_name ?? '').trim().split(' ')[0];
 
-  // Marca: el logotipo del handoff (`uploads/logo_tolatino_color.svg`, 482×482,
-  // trazo único) SIEMPRE después de la palabra, como indica §Icons.
-  const LogoMark = () => (
-    <svg viewBox="0 0 482 482" fill="none" aria-hidden focusable="false"
-         style={{ width: 'calc(var(--bs) * .88)', height: 'calc(var(--bs) * .88)', marginLeft: 'calc(var(--bs) * .25)', alignSelf: 'center', flex: 'none' }}>
-      <path fill="#7B61FF" d="M241 0C374.101 0 482 107.899 482 241C482 368.894 382.378 473.519 256.5 481.509V450.929L381.533 334.135C382.856 332.899 383.895 331.39 384.577 329.714L418.577 246.214C420.824 240.696 418.864 234.358 413.894 231.072L294.394 152.072C292.802 151.02 290.991 150.347 289.102 150.103L288.723 150.06L205.263 141.857L151.825 107.028C151.144 106.585 150.422 106.208 149.668 105.904L117.808 93.0771L110.363 43.1562C110.159 41.785 109.729 40.4722 109.104 39.2637C147 14.4373 192.314 0 241 0ZM57.3691 122.079C58.9823 126.176 62.6321 129.122 66.9775 129.835L155.481 144.344L181.041 163.33L159.012 237.961C157.746 242.248 158.867 246.885 161.95 250.122L218.336 309.304L199.104 457.391C198.508 461.983 200.499 466.528 204.279 469.203L221.23 481.199C97.3773 471.143 0 367.444 0 241C0 187.108 17.6887 137.348 47.5771 97.209L57.3691 122.079ZM297 91.5V116.5H308.5V91.5H297ZM241 113.5H282.5V88.5H241V113.5ZM187.655 61.1211C184.505 59.3389 180.743 59.0113 177.341 60.2119L177.013 60.333L157.513 67.833L166.487 91.167L180.48 85.7842L213.345 104.379L225.655 82.6211L187.655 61.1211Z" />
-    </svg>
-  );
-  // El tamaño viaja como variable CSS (`--bs`) en vez de como `fontSize` en
-  // línea: así una media query puede encogerlo en teléfonos estrechos, donde la
-  // marca + el idioma + el botón de negocio no caben en la barra.
+  // Marca: palabra + logotipo. El trazo vive en `components/ui` (LogoMark), que
+  // es la MISMA pieza que usan la cabecera de la app, el panel de negocio, el
+  // panel de administración y los iconos generados. Aquí el tamaño viaja como
+  // variable CSS (`--bs`) para que una media query pueda encogerlo en teléfonos
+  // estrechos, donde la marca + el idioma + el botón de negocio no caben.
   const Brand = ({ size }: { size: number }) => (
     <span className="tl-brand flex flex-none items-baseline"
           style={{ letterSpacing: '-.03em', ['--bs' as string]: `${size}px` }}>
       <span className="font-extrabold text-ink" style={{ fontSize: 'var(--bs)' }}>To&rsquo;</span>
       <span className="font-extrabold text-primary" style={{ fontSize: 'var(--bs)' }}>Latino</span>
-      <LogoMark />
+      <span className="tl-logo self-center" style={{ marginLeft: 'calc(var(--bs) * .25)' }}>
+        <LogoMark size={Math.round(size * 0.88)} />
+      </span>
     </span>
   );
 
@@ -513,13 +510,17 @@ export function LandingScreen() {
 
       {/* ═════════════ PIE ═════════════ */}
       <footer className={`bg-page pt-[clamp(40px,6vw,72px)] ${gutter}`}>
-        <div className="mx-auto flex max-w-[1080px] flex-wrap items-center gap-[14px] pt-5"
+        {/* En el teléfono el pie se APILA a la izquierda —marca, copyright,
+            enlaces—: en una sola fila los enlaces legales se iban a un segundo
+            renglón pegados al borde derecho y parecía un error de maquetación.
+            A partir de 600px vuelve a la fila única del handoff. */}
+        <div className="mx-auto flex max-w-[1080px] flex-col items-start gap-3 pt-5 min-[600px]:flex-row min-[600px]:flex-wrap min-[600px]:items-center min-[600px]:gap-[14px]"
              style={{ borderTop: '1px solid rgba(30,27,46,.07)', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
           <Brand size={18} />
           <span className="text-[11.5px] font-semibold text-muted">© {new Date().getFullYear()} To&rsquo;Latino</span>
           {/* Los enlaces legales no están en el handoff, pero la ley sí los pide
               y las dos páginas ya existen: se añaden sin tocar su composición. */}
-          <nav aria-label={L('Legal', 'Legal')} className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1">
+          <nav aria-label={L('Legal', 'Legal')} className="flex flex-wrap items-center gap-x-4 gap-y-1 min-[600px]:ml-auto">
             <a href="/terminos/" className="tl-focus text-[11.5px] font-semibold text-muted hover:text-primary-dark">{L('Términos', 'Terms')}</a>
             <a href="/privacidad/" className="tl-focus text-[11.5px] font-semibold text-muted hover:text-primary-dark">{L('Privacidad', 'Privacy')}</a>
           </nav>
@@ -647,6 +648,7 @@ export function LandingScreen() {
            porque el botón de negocio es una de las dos conversiones de la página. */
         @media (max-width: 400px) {
           .tl-brand { --bs: 19px !important; }
+          .tl-logo svg { width: 17px !important; height: 17px !important; }
           .tl-bar { gap: 8px !important; padding-left: 14px !important; padding-right: 14px !important; }
           .tl-langpill button { padding-left: 10px !important; padding-right: 10px !important; }
           .tl-btn-biz { padding: 9px 10px !important; gap: 5px !important; }
