@@ -34,12 +34,13 @@
 // decorativas con `aria-hidden`, blancos de toque de 44px, y el texto más tenue
 // subido de #9A96AE a #8A86A0 como recomienda el propio documento.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   IconArrowDown as ArrowDown, IconBriefcase as Briefcase, IconBuildingStore as Store,
   IconCalendar as Calendar, IconCar as Car, IconChartBar as BarChart,
-  IconChevronDown as ChevronDown, IconCreditCard as CreditCard, IconGlobe as Globe,
+  IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft,
+  IconChevronRight as ChevronRight, IconCreditCard as CreditCard, IconGlobe as Globe,
   IconHome as HomeIcon, IconMapPin as MapPin, IconMessageCircle as MessageSquare,
   IconPackage as Package, IconSearch as Search, IconShieldCheck as ShieldCheck,
   IconToolsKitchen2 as Utensils, IconTool as Wrench,
@@ -92,6 +93,39 @@ export function LandingScreen() {
 
   const post = FEED_SAMPLE[idx % FEED_SAMPLE.length];
   const kind = FEED_KIND[post.kind];
+
+  // ── Riel de chips ─────────────────────────────────────────────────────────
+  // Los 8 verticales no caben en los 760px del bloque, ni siquiera en
+  // escritorio. En el teléfono se arrastran con el dedo, pero con ratón no hay
+  // gesto equivalente: los tres últimos quedaban invisibles y nadie sabía que
+  // estaban ahí. Se añaden dos flechas, que aparecen SOLO cuando hay algo hacia
+  // ese lado y solo en escritorio (en móvil estorbarían y taparían chips).
+  const railRef = useRef<HTMLDivElement>(null);
+  const [rail, setRail] = useState({ izq: false, der: false });
+
+  const syncRail = useCallback(() => {
+    const el = railRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    // 4px de tolerancia: el desplazamiento subpíxel nunca llega al extremo exacto.
+    setRail({ izq: el.scrollLeft > 4, der: el.scrollLeft < max - 4 });
+  }, []);
+
+  useEffect(() => {
+    syncRail();
+    const el = railRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', syncRail, { passive: true });
+    window.addEventListener('resize', syncRail);
+    return () => { el.removeEventListener('scroll', syncRail); window.removeEventListener('resize', syncRail); };
+  }, [syncRail, lang]); // `lang` porque las etiquetas cambian de ancho al traducir
+
+  const moverRiel = (dir: -1 | 1) => {
+    const el = railRef.current;
+    if (!el) return;
+    const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollBy({ left: dir * Math.max(160, el.clientWidth * 0.7), behavior: suave ? 'smooth' : 'auto' });
+  };
 
   // ── Búsqueda ──────────────────────────────────────────────────────────────
   // Reutiliza la búsqueda GLOBAL que ya funciona (`app.setSearch` + la ruta del
@@ -260,18 +294,42 @@ export function LandingScreen() {
             </p>
 
             <div className="tl-up4 tl-searchwrap">
-              {/* Chips de vertical: cambian el marcador del buscador y la ruta */}
-              <div className="no-scrollbar tl-chips flex gap-[7px] overflow-x-auto pb-[11px]" style={{ justifyContent: 'safe center' }}>
-                {VERTICALS.map(({ k, es: e, en, Icon }) => {
-                  const on = tab === k;
-                  return (
-                    <button key={k} onClick={() => setTab(k)} aria-pressed={on}
-                            className={`tl-focus flex flex-none cursor-pointer items-center gap-[7px] whitespace-nowrap rounded-full border px-[15px] py-[9px] text-[12.5px] font-extrabold ${on ? 'border-primary bg-primary text-white' : 'border-hair bg-white text-ink-soft'}`}>
-                      <Icon size={14} stroke={2.2} className={`flex-none ${on ? 'text-white' : 'text-muted'}`} aria-hidden />
-                      {L(e, en)}
-                    </button>
-                  );
-                })}
+              {/* Chips de vertical: cambian el marcador del buscador y la ruta.
+                  El envoltorio es `relative` para colgar de él las flechas SIN
+                  ocupar alto: el ritmo vertical del hero está medido al píxel y
+                  una fila más lo rompería. */}
+              <div className="tl-chipswrap relative">
+                <div ref={railRef} data-fade={`${rail.izq ? 'l' : ''}${rail.der ? 'r' : ''}`}
+                     className="no-scrollbar tl-chips flex gap-[7px] overflow-x-auto pb-[11px]" style={{ justifyContent: 'safe center' }}>
+                  {VERTICALS.map(({ k, es: e, en, Icon }) => {
+                    const on = tab === k;
+                    return (
+                      <button key={k} onClick={() => setTab(k)} aria-pressed={on}
+                              className={`tl-focus flex flex-none cursor-pointer items-center gap-[7px] whitespace-nowrap rounded-full border px-[15px] py-[9px] text-[12.5px] font-extrabold ${on ? 'border-primary bg-primary text-white' : 'border-hair bg-white text-ink-soft'}`}>
+                        <Icon size={14} stroke={2.2} className={`flex-none ${on ? 'text-white' : 'text-muted'}`} aria-hidden />
+                        {L(e, en)}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Flechas: solo escritorio, solo si hay algo hacia ese lado.
+                    `pointer-events-none` en el carril para no robar el clic a
+                    los chips que quedan debajo; los botones lo reactivan. */}
+                <div aria-hidden={!rail.izq && !rail.der}
+                     className="pointer-events-none absolute inset-x-0 top-0 bottom-[11px] hidden items-center justify-between min-[600px]:flex">
+                  {([-1, 1] as const).map((dir) => {
+                    const visible = dir === -1 ? rail.izq : rail.der;
+                    const Icon = dir === -1 ? ChevronLeft : ChevronRight;
+                    return (
+                      <button key={dir} onClick={() => moverRiel(dir)} tabIndex={visible ? 0 : -1}
+                              aria-label={dir === -1 ? L('Ver categorías anteriores', 'See previous categories') : L('Ver más categorías', 'See more categories')}
+                              className={`tl-railbtn tl-focus pointer-events-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border border-hair bg-white ${visible ? '' : 'tl-railoff'} ${dir === -1 ? 'ml-[-6px]' : 'mr-[-6px] ml-auto'}`}>
+                        <Icon size={16} stroke={2.4} className="text-ink-soft" aria-hidden />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="tl-search rounded-[clamp(16px,2vw,19px)] border-[1.5px] bg-white p-[8px]"
@@ -575,6 +633,22 @@ export function LandingScreen() {
            de foco sigue siendo visible, que es lo que pide el handoff. */
         .tl-input:focus-visible { outline: none; }
         .tl-search:focus-within { border-color: rgba(123,97,255,.5) !important; box-shadow: 0 20px 48px rgba(60,50,110,.13), 0 0 0 3px rgba(123,97,255,.15) !important; }
+        /* Flechas del riel de chips: se desvanecen en vez de desaparecer, para
+           que la fila no dé un salto al llegar a un extremo. */
+        .tl-railbtn { transition: opacity .18s ease, border-color .18s ease, box-shadow .18s ease;
+                      box-shadow: 0 4px 12px rgba(60,50,110,.1); }
+        .tl-railbtn:hover { border-color: rgba(123,97,255,.4); box-shadow: 0 6px 16px rgba(60,50,110,.14); }
+        .tl-railoff { opacity: 0; pointer-events: none !important; }
+        /* Los chips se DESVANECEN por el lado que tiene flecha, para que se vea
+           que la fila continúa y no parezca que la flecha los tapa. Se hace con
+           máscara y no con un degradado encima porque el fondo del hero no es
+           un color plano —lleva tres resplandores— y cualquier degradado sólido
+           se notaría como una banda. La máscara funciona sobre cualquier fondo. */
+        @media (min-width: 600px) {
+          .tl-chips[data-fade="r"] { -webkit-mask-image: linear-gradient(90deg,#000 0,#000 calc(100% - 46px),transparent 100%); mask-image: linear-gradient(90deg,#000 0,#000 calc(100% - 46px),transparent 100%); }
+          .tl-chips[data-fade="l"] { -webkit-mask-image: linear-gradient(90deg,transparent 0,#000 46px,#000 100%); mask-image: linear-gradient(90deg,transparent 0,#000 46px,#000 100%); }
+          .tl-chips[data-fade="lr"] { -webkit-mask-image: linear-gradient(90deg,transparent 0,#000 46px,#000 calc(100% - 46px),transparent 100%); mask-image: linear-gradient(90deg,transparent 0,#000 46px,#000 calc(100% - 46px),transparent 100%); }
+        }
         .tl-join:hover { background: #F5F2FE; }
         .tl-btn-biz { transition: border-color .18s ease; }
         .tl-btn-biz:hover { border-color: rgba(123,97,255,.4); }
@@ -616,7 +690,7 @@ export function LandingScreen() {
              el texto centrado dentro de unos enlaces de 44px— para que los dos
              huecos midan lo mismo. Medido: 1px de diferencia en seis pantallas. */
           .tl-searchwrap { margin-top: 20px; display: flex; flex-direction: column; flex: 1; }
-          .tl-chips { margin-top: auto; }
+          .tl-chipswrap { margin-top: auto; }
           /* Las tres garantías (verificados · idiomas · pagos) NO se muestran en
              el teléfono, por petición del fundador: apretaban el bloque central
              y su sitio natural es el escritorio, donde sobra ancho. El aire que
