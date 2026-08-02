@@ -161,15 +161,31 @@
   2. **SMS (respaldo)** — Twilio: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y
      `TWILIO_FROM` (o `TWILIO_MESSAGING_SERVICE_SID`). Antes hay que verificar
      un número toll-free (días) o registrar 10DLC (semanas).
-  3. **Encender el teléfono en Supabase** — `external_phone_enabled` está en
-     `false`; y conectar el hook: Authentication → Hooks → Send SMS → apuntar a
-     la función y pegar su secreto en `SEND_OTP_HOOK_SECRET`.
+  3. **Encender el teléfono en Supabase** — en PRODUCCIÓN `external_phone_enabled`
+     sigue en `false` (en pruebas ya está en `true`); y conectar el hook:
+     Authentication → Hooks → Send SMS → apuntar a la función y pegar su secreto
+     en `SEND_OTP_HOOK_SECRET`.
   4. **Correo (recuperación)** — Amazon SES + la plantilla de "Magic Link" con
      `{{ .Token }}`, o el usuario recibe un enlace en vez de un código. Sigue el
      tope de 2 correos por hora hasta que SES esté.
   5. **Rate limits** — subir los de SMS/correo cuando haya tráfico real.
   Mientras tanto queda la puerta de la contraseña en "Entrar", que es lo único
   que permite entrar hoy.
+- [ ] **🔴 Números de prueba con código `000000`: SOLO en pruebas, y caducan
+  (2026-08-02).** Para poder recorrer el alta completa sin cuentas de WhatsApp ni
+  Twilio, el proyecto de **pruebas** (`zpkaxojonufdwgahiqjh`) tiene configurado el
+  mecanismo oficial de Supabase `sms_test_otp`: cinco números que aceptan `000000`
+  y **no envían ningún SMS** (Supabase ni siquiera llama al proveedor).
+  - Números: `+1 713 555-0101`, `+1 713 555-0102`, `+1 713 555-0103`,
+    `+1 214 555-0101`, `+1 210 555-0101` — todos del rango 555-01xx, reservado por
+    la ITU para ficción, así que no pertenecen a ninguna persona real.
+  - `sms_test_otp_valid_until` = **2026-11-30**. Pasada esa fecha dejan de
+    funcionar solos; es una fecha de caducidad a propósito, no un olvido.
+  - **PRODUCCIÓN NO LOS TIENE** (`sms_test_otp` = vacío, `external_phone_enabled`
+    = `false`) y no debe tenerlos nunca: un número de prueba en producción es una
+    cuenta que cualquiera abre sabiendo el número.
+  - **Antes de lanzar**: verificar que en producción `sms_test_otp` sigue vacío, y
+    borrarlos también de pruebas en cuanto WhatsApp/Twilio estén conectados.
 - [ ] **Alta: piezas del handoff que quedaron fuera a propósito (2026-08-02).**
   1. **Google / Apple / Facebook** — decisión del fundador: cada uno necesita
      una app de desarrollador suya (Apple cuesta $99/año) y claves en Supabase;
