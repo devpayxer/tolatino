@@ -47,6 +47,24 @@ const config: Config = {
         page: '#FBFAFE',   // fondo de la landing (más claro que `app`)
         mint: '#7BE0A8',   // ticks y precios "Gratis" sobre oscuro
         sky: '#8FC5F5',    // icono bilingüe del hero
+        // ── Home OFICIAL (handoff "To'Latino — Official Home Page", 2026-08-02) ──
+        // Reemplaza los handoffs anteriores de la portada. Estos tonos son los de
+        // su tabla de color; los que ya existían arriba no se tocan.
+        home: {
+          deep: '#5B3FD6',      // inicio del degradado morado de la banda de negocios
+          ink: '#56506E',       // subtítulo del hero
+          mute: '#7E7A92',       // texto apagado (fila de cuenta, notas)
+          ph: '#A9A4BD',        // marcador de posición del buscador
+          idx: '#B7B0CE',       // índices 01–06 y marquesina
+          badge: '#4A3B8A',     // texto de la insignia "Nuevo · Llegando a…"
+          line: '#E2DEF4',      // borde del botón de negocio
+          line2: '#E9E5F5',     // borde de la pastilla ES/EN
+          tint: '#F5F2FE',      // fondo al pasar el ratón sobre Entrar/Regístrate
+        },
+        clay: { DEFAULT: '#C26A1A', bg: '#FCE9D6' }, // renta / eventos con boletos
+        ocean: { DEFAULT: '#2A6CB0', bg: '#E4EEFB' }, // idioma / "vende"
+        jade: '#0E9488',   // comunidad (fila 03)
+        slate: '#5B5570',  // avatares neutros del feed
       },
       borderColor: {
         hair: 'rgba(30,27,46,.08)', // subtle card borders / dividers

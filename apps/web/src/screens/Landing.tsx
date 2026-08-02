@@ -1,94 +1,100 @@
 'use client';
 
-// Bienvenida (`/`) — landing pública. Handoff "ToLatino — Home Page (public
-// landing)", variante CONTENIDA (2026-07-29, el bundle correcto: el primero que
-// llegó era la variante full-bleed y se descartó).
+// Bienvenida (`/`) — portada pública.
 //
-// Estructura: contenedor de 1280px centrado sobre #FBFAFE, barra superior CLARA
-// y pegajosa, hero blanco centrado, y luego rejillas (no rieles). Tres saltos
-// responsive: ≤1040, ≤760, ≤560.
+// Handoff: "To'Latino — Official Home Page" (2026-08-02), que en su primera línea
+// dice: «Replaces any previous To'Latino home-page handoff». Es la portada de la
+// fase PRE-LANZAMIENTO: la plataforma es nueva y todavía no tiene negocios
+// activos, así que la página NO presume conteos ni prueba social — vende la
+// visión, deja probar una búsqueda por vertical y convierte hacia dos públicos:
+// vecinos (Entrar / Regístrate) y dueños de negocio (Registrar mi negocio).
 //
-// Dos reglas gobiernan este archivo:
+// Dos reglas gobiernan el archivo:
 //
-// 1. El handoff manda en lo VISUAL (regla #2).
-// 2. Los DATOS son reales (regla #8). El handoff avisa que sus negocios,
-//    listados y testimonios son "representative sample data". Publicarlos sería
-//    repetir lo que se limpió el 2026-07-29 — y en la página más vista, con
-//    testimonios de personas inventadas, que es lo más dañino para la confianza.
-//    Aquí todo sale de la base: negocios y eventos de `useLiveData`, conteos /
-//    testimonios / mercado de la migración 0131. Sin datos, la sección se oculta
-//    o muestra un vacío honesto con invitación a publicar.
+// 1. El handoff manda en lo VISUAL (regla #2): color, tipografía, ritmo vertical,
+//    tiempos de animación y copia son finales. El ritmo del móvil se afinó en un
+//    teléfono real, petición por petición, así que las medidas de ≤599px se
+//    respetan al pie de la letra.
+// 2. Los DATOS son reales (regla #8):
+//    · Conteos: el handoff los PROHÍBE («No platform statistics appear anywhere;
+//      do not add counts — deliberate pre-launch honesty»). No hay ni uno.
+//    · Feed: sus 19 publicaciones son de muestra y el propio handoff pide leer
+//      el feed real en producción. Aquí sale de `posts_near`; sin publicaciones
+//      cerca, la tarjeta no se dibuja.
+//    · Ciudad, búsqueda, sesión y alta de negocio van a los flujos REALES de la
+//      app (el handoff los marca como "not in this design").
 //
-// HUECOS DEL PROTOTIPO QUE EL PROPIO HANDOFF PIDE CERRAR (§Accessibility) y que
-// aquí quedan cerrados:
-//   · Menú móvil — el handoff lo llama "the single biggest gap": bajo 1040px sus
-//     seis enlaces desaparecían sin reemplazo. Aquí hay hoja a pantalla completa.
-//   · `scroll-padding-top` para que la barra pegajosa no tape los anclajes.
-//   · Botones y enlaces REALES (no `<div onClick>`), con nombres accesibles.
-//   · Contraste: se usa #8A86A0 en vez de #B7B0CE, y blanco al 60% en la tarjeta
-//     oscura, como recomienda el propio handoff.
-//   · Anillos de foco visibles, `prefers-reduced-motion`, y la calificación con
-//     alternativa textual en vez de "★★★★★" suelto.
-//
-// Lo que queda APAGADO a propósito: el bloque de descarga de app. Sus botones de
-// App Store y Google Play no llevan a ningún lado porque las apps no existen —
-// un estado roto publicado como final (regla #8). Anotado en LAUNCH-CHECKLIST.
+// HUECOS QUE EL PROPIO HANDOFF PIDE CERRAR (§Accessibility) y aquí quedan
+// cerrados: pastilla ES/EN con `role="group"` + `aria-pressed`, anillos de foco
+// visibles, feed con `aria-live` que se pausa al pasar el ratón o al enfocar,
+// selector de ciudad como `<button>` con nombre accesible, marquesina y capas
+// decorativas con `aria-hidden`, blancos de toque de 44px, y el texto más tenue
+// subido de #9A96AE a #8A86A0 como recomienda el propio documento.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  IconBriefcase as Briefcase, IconCalendar as Calendar, IconCar as Car,
-  IconChartBar as BarChart, IconCheck as Check, IconCreditCard as CreditCard,
-  IconGlobe as Globe, IconHome as HomeIcon, IconMapPin as MapPin,
-  IconMenu2 as Menu, IconMessageCircle as MessageSquare, IconPackage as Package,
-  IconSearch as Search, IconShieldCheck as ShieldCheck, IconStar as Star,
-  IconToolsKitchen2 as Utensils, IconTruck as Truck, IconUsers as Users,
-  IconTool as Wrench, IconX as X,
+  IconArrowDown as ArrowDown, IconBriefcase as Briefcase, IconBuildingStore as Store,
+  IconCalendar as Calendar, IconCar as Car, IconChartBar as BarChart,
+  IconChevronDown as ChevronDown, IconCreditCard as CreditCard, IconGlobe as Globe,
+  IconHome as HomeIcon, IconMapPin as MapPin, IconMessageCircle as MessageSquare,
+  IconPackage as Package, IconSearch as Search, IconShieldCheck as ShieldCheck,
+  IconToolsKitchen2 as Utensils, IconTool as Wrench,
 } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { useLiveData } from '@/lib/live';
-import { useLandingData, compact, money } from '@/lib/landing';
+import { useAuth } from '@/lib/auth';
+import { useLandingFeed, agoText } from '@/lib/landing';
+import { postTag } from '@/lib/postTag';
 import { CityModal } from '@/components/CityModal';
-import { tile } from '@/lib/tiles';
-
-const SHOW_APP_SECTION = false; // sin apps publicadas, el bloque no se muestra
 
 type Vertical = 'all' | 'food' | 'serv' | 'evt' | 'rent' | 're' | 'auto' | 'job';
 
+// Espejo de los tokens `home`/`clay`/`ocean`/`jade` de tailwind.config.ts, para
+// las filas cuyo color cambia por elemento (Tailwind no admite clases dinámicas).
+const A = {
+  rose: '#D6336C', roseBg: '#FDE7EF',
+  purple: '#6D4DF6', purpleBg: '#EFEBFF',
+  jade: '#0E9488', jadeBg: 'rgba(14,148,136,.1)',
+  clay: '#C26A1A', clayBg: '#FCE9D6',
+  green: '#1F9D57', greenBg: '#E3F5EA',
+  ocean: '#2A6CB0', oceanBg: '#E4EEFB',
+} as const;
+
+const FEED_MS = 4200; // el handoff fija 4.2 s por publicación
+
 export function LandingScreen() {
   const { L, lang, setLang } = useLang();
+  const es = lang === 'es';
   const app = useApp();
+  const { user, profile } = useAuth();
   const router = useRouter();
-  const live = useLiveData();
-  const { stats, testimonials, market } = useLandingData();
+  const feed = useLandingFeed();
 
   const [tab, setTab] = useState<Vertical>('all');
   const [query, setQuery] = useState('');
-  const [menu, setMenu] = useState(false);
-  const [toast, setToast] = useState('');
-  const toastT = useRef<number | undefined>(undefined);
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
 
-  const flash = useCallback((m: string) => {
-    setToast(m);
-    window.clearTimeout(toastT.current);
-    toastT.current = window.setTimeout(() => setToast(''), 2000);
-  }, []);
-  useEffect(() => () => window.clearTimeout(toastT.current), []);
+  const cityShort = app.cityShort || app.city;
 
-  // Bloquear el scroll del cuerpo con el menú abierto, y cerrarlo con Escape.
+  // ── Feed rotatorio ────────────────────────────────────────────────────────
+  // Se pausa al pasar el ratón o al enfocar (§Accessibility) y no arranca si hay
+  // una sola publicación. `idx` crece sin límite y se lee con módulo: esa
+  // paridad es la que alterna las dos animaciones gemelas del handoff, que es su
+  // truco para que la entrada se repita sin remontar la tarjeta.
   useEffect(() => {
-    if (!menu) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(false); };
-    window.addEventListener('keydown', onKey);
-    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
-  }, [menu]);
+    if (paused || feed.length < 2) return;
+    const t = window.setInterval(() => setIdx((i) => i + 1), FEED_MS);
+    return () => window.clearInterval(t);
+  }, [paused, feed.length]);
 
-  // Búsqueda: reutiliza la búsqueda GLOBAL que ya funciona (`app.setSearch` +
-  // ruta del vertical). No se inventa una ruta /buscar inexistente: cada
-  // pantalla de la app ya filtra por `app.search`.
+  const post = feed.length ? feed[idx % feed.length] : null;
+
+  // ── Búsqueda ──────────────────────────────────────────────────────────────
+  // Reutiliza la búsqueda GLOBAL que ya funciona (`app.setSearch` + la ruta del
+  // vertical): cada pantalla filtra por `app.search`. No se inventa una ruta
+  // /buscar inexistente. El handoff pide además que buscar NO exija cuenta.
   const VERT_PATH: Record<Vertical, string> = {
     all: '/negocios/', food: '/negocios/', serv: '/negocios/', evt: '/eventos/',
     rent: '/negocios/', re: '/bienes-raices/', auto: '/autos/', job: '/trabajos/',
@@ -97,13 +103,10 @@ export function LandingScreen() {
     app.setSearch(query.trim());
     router.push(VERT_PATH[tab]);
   };
-
   const go = (path: string) => router.push(path);
-  const openSignup = (kind: 'user' | 'biz' = 'user') =>
-    router.push(kind === 'biz' ? '/negocio/publicar/' : '/entrar/');
 
   const VERTICALS: { k: Vertical; es: string; en: string; Icon: typeof Search }[] = [
-    { k: 'all', es: 'Todo', en: 'Everything', Icon: Search },
+    { k: 'all', es: 'Todo', en: 'Everything', Icon: Store },
     { k: 'food', es: 'Comida', en: 'Food', Icon: Utensils },
     { k: 'serv', es: 'Servicios', en: 'Services', Icon: Wrench },
     { k: 'evt', es: 'Eventos', en: 'Events', Icon: Calendar },
@@ -113,7 +116,7 @@ export function LandingScreen() {
     { k: 'job', es: 'Empleos', en: 'Jobs', Icon: Briefcase },
   ];
   const PLACEHOLDER: Record<Vertical, [string, string]> = {
-    all: ['Busca negocios, comida, eventos, casas, autos o empleos…', 'Search businesses, food, events, homes, autos or jobs…'],
+    all: ['Busca comida, servicios, eventos, casas, autos o empleos…', 'Search food, services, events, homes, autos or jobs…'],
     food: ['Tacos, birria, mariscos, pastelería…', 'Tacos, birria, seafood, bakery…'],
     serv: ['Barbería, uñas, mecánico, limpieza…', 'Barber, nails, mechanic, cleaning…'],
     evt: ['Bailes, conciertos, ferias, quinceañeras…', 'Dances, concerts, fairs, quinceañeras…'],
@@ -122,657 +125,509 @@ export function LandingScreen() {
     auto: ['Trocas, sedanes, aquí pagas aquí…', 'Trucks, sedans, buy here pay here…'],
     job: ['Construcción, cocina, limpieza, oficina…', 'Construction, kitchen, cleaning, office…'],
   };
-  const POPULAR: Record<Vertical, [string[], string[]]> = {
-    all: [['Tacos al pastor', 'Barbería cerca', 'Baile este sábado', 'Brincolines', 'Troca usada'],
-          ['Al pastor tacos', 'Barber near me', 'Dance this Saturday', 'Bounce houses', 'Used truck']],
-    food: [['Birria', 'Mariscos', 'Tamales', 'Pastelería', 'Taquiza'], ['Birria', 'Seafood', 'Tamales', 'Bakery', 'Catering']],
-    serv: [['Barbería', 'Uñas', 'Mecánico', 'Limpieza', 'Dentista'], ['Barber', 'Nails', 'Mechanic', 'Cleaning', 'Dentist']],
-    evt: [['Banda en vivo', 'Lucha libre', 'Feria', 'Gratis', 'Familiar'], ['Live banda', 'Lucha libre', 'Fair', 'Free', 'Family']],
-    rent: [['Brincolines', 'Mesas y sillas', 'Sonido', 'Herramientas', 'Camping'], ['Bounce houses', 'Tables & chairs', 'Sound', 'Tools', 'Camping']],
-    re: [['Casas en venta', 'Renta 2 recámaras', 'Cuartos', 'Local comercial'], ['Homes for sale', '2 bd rentals', 'Rooms', 'Retail space']],
-    auto: [['Aquí pagas aquí', 'Trocas', 'Sin crédito', 'Vans'], ['Buy here pay here', 'Trucks', 'No credit', 'Vans']],
-    job: [['Efectivo', 'Por día', 'Cocinero', 'Limpieza', 'Bilingüe'], ['Cash pay', 'Day labor', 'Cook', 'Cleaning', 'Bilingual']],
-  };
 
-  const cityShort = app.cityShort || app.city;
-  const bizCount = stats?.businesses ?? null;
-
-  // Categorías: color e icono del handoff, CONTEOS REALES. El conteo solo se
-  // pinta si la base lo da — nunca se inventa un "312 negocios".
-  const CATS = useMemo(() => {
-    const c = stats?.by_category ?? {};
-    const sum = (...keys: string[]) => {
-      const n = keys.reduce((a, k) => a + (c[k] ?? 0), 0);
-      return n > 0 ? n : null;
-    };
-    return [
-      { es: 'Restaurantes', en: 'Restaurants', n: sum('FoodDrinks'), unit: ['negocios', 'places'], color: '#D6336C', bg: 'rgba(214,51,108,.12)', glow: 'rgba(214,51,108,.07)', Icon: Utensils, path: '/negocios/' },
-      { es: 'Servicios', en: 'Services', n: sum('ProServices', 'HomeServices'), unit: ['negocios', 'places'], color: '#0E9488', bg: 'rgba(14,148,136,.12)', glow: 'rgba(14,148,136,.07)', Icon: Wrench, path: '/negocios/' },
-      { es: 'Eventos', en: 'Events', n: stats?.events_week ?? null, unit: ['esta semana', 'this week'], color: '#B8860B', bg: 'rgba(244,183,64,.16)', glow: 'rgba(244,183,64,.09)', Icon: Calendar, path: '/eventos/' },
-      { es: 'Renta', en: 'Rentals', n: sum('Party', 'Sports'), unit: ['negocios', 'places'], color: '#E8954A', bg: 'rgba(232,149,74,.14)', glow: 'rgba(232,149,74,.08)', Icon: Package, path: '/negocios/' },
-      { es: 'Bienes Raíces', en: 'Real Estate', n: stats?.properties ?? null, unit: ['propiedades', 'listings'], color: '#2A6CB0', bg: 'rgba(42,108,176,.12)', glow: 'rgba(42,108,176,.07)', Icon: HomeIcon, path: '/bienes-raices/' },
-      { es: 'Autos', en: 'Autos', n: stats?.vehicles ?? null, unit: ['vehículos', 'vehicles'], color: '#1F9D57', bg: 'rgba(31,157,87,.12)', glow: 'rgba(31,157,87,.07)', Icon: Car, path: '/autos/' },
-      { es: 'Empleos', en: 'Jobs', n: stats?.jobs ?? null, unit: ['vacantes', 'openings'], color: '#7B61FF', bg: 'rgba(123,97,255,.13)', glow: 'rgba(123,97,255,.08)', Icon: Briefcase, path: '/trabajos/' },
-      { es: 'Belleza', en: 'Beauty', n: sum('BeautyHealth'), unit: ['negocios', 'places'], color: '#B0357E', bg: 'rgba(176,53,126,.12)', glow: 'rgba(176,53,126,.07)', Icon: Star, path: '/negocios/' },
-      { es: 'Transporte', en: 'Transport', n: sum('Transportation'), unit: ['negocios', 'places'], color: '#5B5570', bg: 'rgba(91,85,112,.12)', glow: 'rgba(91,85,112,.07)', Icon: Truck, path: '/negocios/' },
-      { es: 'Comunidad', en: 'Community', n: stats?.posts ?? null, unit: ['publicaciones', 'posts'], color: '#6D4DF6', bg: 'rgba(109,77,246,.12)', glow: 'rgba(109,77,246,.07)', Icon: MessageSquare, path: '/comunidad/' },
-    ];
-  }, [stats]);
-
-  const NAV = [
-    { id: 'explorar', es: 'Explorar', en: 'Explore' },
-    { id: 'negocios', es: 'Negocios', en: 'Businesses' },
-    { id: 'eventos', es: 'Eventos', en: 'Events' },
-    { id: 'mercado', es: 'Mercado', en: 'Marketplace' },
-    { id: 'como', es: 'Cómo funciona', en: 'How it works' },
-    { id: 'para-negocios', es: 'Para negocios', en: 'For business' },
+  const POINTS = [
+    { es: 'Negocios verificados', en: 'Verified businesses', c: A.green, Icon: ShieldCheck },
+    { es: 'Español e inglés', en: 'Spanish & English', c: A.ocean, Icon: Globe },
+    { es: 'Pagos protegidos', en: 'Protected payments', c: A.clay, Icon: CreditCard },
   ];
 
-  // Marca sobre claro (ink + morado), como pide esta variante.
-  const Brand = ({ size = 23 }: { size?: number }) => (
-    <span className="flex items-baseline font-extrabold" style={{ fontSize: size, letterSpacing: '-.03em' }}>
-      <span className="text-ink">To</span>
-      <span className="text-primary">Latino</span>
-      <i className="ml-1 inline-block h-1.5 w-1.5 rotate-45 bg-amber" aria-hidden />
+  const ROWS = [
+    { n: '01', es: 'Pide desde casa', en: 'Order from home', c: A.rose, bg: A.roseBg, Icon: Utensils,
+      dEs: 'Tus antojos y el mandado de negocios de tu gente — a domicilio o para recoger.',
+      dEn: "Your cravings and groceries from your people's businesses — delivered or for pickup." },
+    { n: '02', es: 'Agenda sin llamar', en: 'Book without calling', c: A.purple, bg: A.purpleBg, Icon: Calendar,
+      dEs: 'Barbería, uñas, mecánico o doctor: tu cita en dos toques, con recordatorio.',
+      dEn: 'Barber, nails, mechanic or doctor: your appointment in two taps, with a reminder.' },
+    { n: '03', es: 'Comunidad de verdad', en: 'A real community', c: A.jade, bg: A.jadeBg, Icon: MessageSquare,
+      dEs: 'Pregunta, recomienda y entérate de lo que pasa en tu zona, entre paisanos.',
+      dEn: 'Ask, recommend and hear what is happening in your area, among your own.' },
+    { n: '04', es: 'Vive tus eventos', en: 'Live your events', c: A.clay, bg: A.clayBg, Icon: Calendar,
+      dEs: 'Boletos con QR para bailes, ferias, kermeses y lucha libre — sin filas.',
+      dEn: 'QR tickets for dances, fairs, kermeses and lucha libre — no lines.' },
+    { n: '05', es: 'Con confianza', en: 'With confidence', c: A.green, bg: A.greenBg, Icon: ShieldCheck,
+      dEs: 'Negocios verificados uno por uno, reseñas reales y pagos protegidos.',
+      dEn: 'Businesses verified one by one, real reviews and protected payments.' },
+    { n: '06', es: 'En tu idioma', en: 'In your language', c: A.ocean, bg: A.oceanBg, Icon: Globe,
+      dEs: 'Español primero, inglés cuando lo necesites. Aquí nadie se pierde.',
+      dEn: 'Spanish first, English when you need it. Nobody gets lost here.' },
+  ];
+
+  const PERKS = [
+    { es: 'Perfil verificado', en: 'Verified profile', dEs: 'Insignia y prioridad en búsqueda', dEn: 'Badge and search priority', Icon: ShieldCheck },
+    { es: 'Pedidos y citas', en: 'Orders & bookings', dEs: 'Cobra en línea o en persona', dEn: 'Charge online or in person', Icon: Calendar },
+    { es: 'Clientes directos', en: 'Direct customers', dEs: 'Chat y WhatsApp sin intermediarios', dEn: 'Chat and WhatsApp, no middlemen', Icon: MessageSquare },
+    { es: 'Analíticas claras', en: 'Clear analytics', dEs: 'Vistas, clientes y ventas', dEn: 'Views, customers and sales', Icon: BarChart },
+  ];
+
+  // La marquesina repite la lista dos veces: el desplazamiento del 50% la
+  // convierte en un bucle continuo, sin salto visible.
+  const MARQUEE = useMemo(() => {
+    const m = [
+      L('Restaurantes', 'Restaurants'), L('Barberías', 'Barber shops'), L('Eventos', 'Events'),
+      L('Renta de fiestas', 'Party rentals'), L('Bienes raíces', 'Real estate'), L('Autos', 'Autos'),
+      L('Empleos', 'Jobs'), L('Belleza', 'Beauty'), L('Transporte', 'Transport'), L('Comunidad', 'Community'),
+    ];
+    return m.concat(m);
+  }, [L]);
+
+  const firstName = (profile?.display_name ?? '').trim().split(' ')[0];
+
+  // Marca: el logotipo del handoff (`uploads/logo_tolatino_color.svg`, 482×482,
+  // trazo único) SIEMPRE después de la palabra, como indica §Icons.
+  const LogoMark = ({ size }: { size: number }) => (
+    <svg viewBox="0 0 482 482" fill="none" aria-hidden focusable="false"
+         style={{ width: size, height: size, marginLeft: Math.round(size * 0.28), alignSelf: 'center', flex: 'none' }}>
+      <path fill="#7B61FF" d="M241 0C374.101 0 482 107.899 482 241C482 368.894 382.378 473.519 256.5 481.509V450.929L381.533 334.135C382.856 332.899 383.895 331.39 384.577 329.714L418.577 246.214C420.824 240.696 418.864 234.358 413.894 231.072L294.394 152.072C292.802 151.02 290.991 150.347 289.102 150.103L288.723 150.06L205.263 141.857L151.825 107.028C151.144 106.585 150.422 106.208 149.668 105.904L117.808 93.0771L110.363 43.1562C110.159 41.785 109.729 40.4722 109.104 39.2637C147 14.4373 192.314 0 241 0ZM57.3691 122.079C58.9823 126.176 62.6321 129.122 66.9775 129.835L155.481 144.344L181.041 163.33L159.012 237.961C157.746 242.248 158.867 246.885 161.95 250.122L218.336 309.304L199.104 457.391C198.508 461.983 200.499 466.528 204.279 469.203L221.23 481.199C97.3773 471.143 0 367.444 0 241C0 187.108 17.6887 137.348 47.5771 97.209L57.3691 122.079ZM297 91.5V116.5H308.5V91.5H297ZM241 113.5H282.5V88.5H241V113.5ZM187.655 61.1211C184.505 59.3389 180.743 59.0113 177.341 60.2119L177.013 60.333L157.513 67.833L166.487 91.167L180.48 85.7842L213.345 104.379L225.655 82.6211L187.655 61.1211Z" />
+    </svg>
+  );
+  const Brand = ({ size }: { size: number }) => (
+    <span className="flex flex-none items-baseline" style={{ letterSpacing: '-.03em' }}>
+      <span className="font-extrabold text-ink" style={{ fontSize: size }}>To&rsquo;</span>
+      <span className="font-extrabold text-primary" style={{ fontSize: size }}>Latino</span>
+      <LogoMark size={Math.round(size * 0.88)} />
     </span>
   );
 
-  // Contenedor de 1280px con los gutters de los tres saltos.
-  const wrap = 'mx-auto w-full max-w-[1280px] px-4 min-[561px]:px-[22px] min-[1041px]:px-[30px]';
-  const secTop = 'pt-[54px]';
-  const h2cls = 'text-[21px] min-[561px]:text-[24px] min-[761px]:text-[30px] font-extrabold text-ink tracking-[-.03em]';
-
-  const LangPill = () => (
-    <div role="group" aria-label={L('Idioma', 'Language')} className="flex flex-none items-center rounded-full bg-lilac-2 p-[3px]">
-      {(['es', 'en'] as const).map((l) => (
-        <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l}
-                className={`tl-focus cursor-pointer rounded-full px-3 py-1.5 text-[11.5px] font-extrabold uppercase ${lang === l ? 'bg-primary text-white' : 'text-muted'}`}>
-          {l}
-        </button>
-      ))}
-    </div>
-  );
+  const gutter = 'px-[clamp(18px,5vw,56px)]';
 
   return (
-    <div className="min-h-screen bg-page">
-      {/* ═══════ BARRA SUPERIOR (clara, pegajosa) ═══════ */}
-      <header className="sticky top-0 z-40 border-b border-hair" style={{ background: 'rgba(251,250,254,.92)', backdropFilter: 'blur(14px)' }}>
-        <div className={`${wrap} flex items-center gap-4 py-[13px]`}>
-          <button onClick={() => go('/')} className="tl-focus flex-none cursor-pointer" aria-label="To'Latino"><Brand /></button>
-
-          <nav aria-label={L('Secciones', 'Sections')} className="no-scrollbar hidden min-w-0 flex-1 gap-0.5 overflow-x-auto min-[1041px]:flex">
-            {NAV.map((n) => (
-              <a key={n.id} href={`#${n.id}`}
-                 className="tl-focus whitespace-nowrap rounded-[10px] px-3 py-[9px] text-[13px] font-bold text-ink-soft transition-colors hover:bg-lilac-2">
-                {L(n.es, n.en)}
-              </a>
-            ))}
-          </nav>
-
-          <div className="ml-auto flex min-w-0 items-center gap-2 min-[1041px]:ml-0">
-            {/* Bajo 561px la pastilla de idioma se oculta AQUÍ para que quepan la
-                marca, "Crear cuenta" y el botón de menú (si no, el menú se salía
-                de la pantalla a 390px). El idioma sigue disponible dentro del
-                menú móvil, que es donde se busca en un teléfono. */}
-            <span className="hidden min-[561px]:block"><LangPill /></span>
-            <button onClick={() => go('/entrar/')} className="tl-focus hidden cursor-pointer px-1 py-[9px] text-[13px] font-extrabold text-ink-soft min-[561px]:block">
-              {L('Iniciar sesión', 'Log in')}
-            </button>
-            <button onClick={() => openSignup('user')}
-                    className="tl-focus flex-none cursor-pointer rounded-btn bg-primary px-[18px] py-[11px] text-[13px] font-extrabold text-white"
-                    style={{ boxShadow: '0 10px 22px rgba(123,97,255,.32)' }}>
-              {L('Crear cuenta', 'Sign up')}
-            </button>
-            {/* Menú móvil: el handoff lo pide como su hueco más grande. */}
-            <button onClick={() => setMenu(true)} aria-label={L('Abrir menú', 'Open menu')}
-                    className="tl-focus flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-btn border border-hair bg-white min-[1041px]:hidden">
-              <Menu size={18} stroke={2.4} className="text-ink" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* ═══════ HERO (blanco, centrado) ═══════ */}
-      <section className="relative overflow-hidden border-b border-hair bg-white">
+    <div className="bg-page">
+      {/* ═════════════ HERO — una pantalla completa (min-height:100svh) ═════════════ */}
+      <div className="relative flex min-h-[100svh] flex-col overflow-hidden bg-page">
+        {/* Resplandores decorativos */}
         <span aria-hidden className="pointer-events-none absolute left-1/2 -translate-x-1/2"
-              style={{ top: -320, width: 1100, height: 640, background: 'radial-gradient(ellipse at center, rgba(123,97,255,.13), transparent 66%)' }} />
+              style={{ top: '-32%', width: 'min(1500px,160vw)', height: 'min(950px,115vh)', background: 'radial-gradient(ellipse at center, rgba(123,97,255,.14), transparent 62%)' }} />
         <span aria-hidden className="pointer-events-none absolute"
-              style={{ top: 40, right: -120, width: 420, height: 420, background: 'radial-gradient(circle, rgba(244,183,64,.12), transparent 68%)' }} />
+              style={{ bottom: '-22%', right: '-16%', width: 'min(720px,90vw)', height: 'min(720px,70vh)', background: 'radial-gradient(circle, rgba(214,51,108,.09), transparent 66%)' }} />
+        <span aria-hidden className="pointer-events-none absolute"
+              style={{ bottom: '-14%', left: '-20%', width: 'min(600px,80vw)', height: 'min(600px,60vh)', background: 'radial-gradient(circle, rgba(244,183,64,.1), transparent 66%)' }} />
 
-        <div className={`${wrap} relative pb-11 pt-14 text-center`}>
-          <span className="mb-[22px] inline-flex items-center gap-2 rounded-full bg-lilac-2 px-[14px] py-[7px]" style={{ border: '1px solid rgba(123,97,255,.2)' }}>
-            <i className="tl-pulse inline-block h-[7px] w-[7px] rounded-full bg-green" aria-hidden />
-            <span className="text-[11.5px] font-bold" style={{ color: '#4A3B8A' }}>
-              {bizCount != null
-                ? L(`Ya estamos en vivo en ${cityShort} · ${compact(bizCount)} negocios latinos`, `Now live in ${cityShort} · ${compact(bizCount)} Latino businesses`)
-                : L(`Ya estamos en vivo en ${cityShort}`, `Now live in ${cityShort}`)}
-            </span>
-          </span>
+        {/* ── Barra superior ── */}
+        <div className={`relative flex items-center gap-[clamp(10px,2vw,16px)] py-[clamp(14px,3vw,24px)] ${gutter}`}>
+          <a href="/" aria-label="To'Latino" className="tl-focus flex-none">
+            <Brand size={22} />
+          </a>
 
-          <h1 className="mx-auto max-w-[880px] text-[30px] font-extrabold leading-[1.05] tracking-[-.035em] text-ink min-[561px]:text-[36px] min-[761px]:text-[44px] min-[1041px]:text-[56px]" style={{ textWrap: 'balance' }}>
-            {L(`Todo lo latino de ${cityShort},`, `Everything Latino in ${cityShort},`)}{' '}
-            <span style={{ background: 'linear-gradient(100deg, #7B61FF, #D6336C 60%, #F4B740)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
-              {L('en un solo lugar.', 'in one place.')}
-            </span>
-          </h1>
-
-          {/* El handoff avisa que su ES y su EN dicen cosas distintas y pide
-              alinearlos. Se toma la voz ES (con el "to'" coloquial, que es marca
-              de la casa) y se traduce fiel al inglés. */}
-          <p className="mx-auto mt-5 max-w-[600px] text-[17px] font-medium leading-[1.6] text-ink-2" style={{ textWrap: 'pretty' }}>
-            {L(`Encuentra to' los negocios, productos y servicios latinos de ${cityShort}.`,
-               `Find all the Latino businesses, products and services in ${cityShort}.`)}
-          </p>
-
-          <div className="mx-auto mt-8 max-w-[820px]">
-            <div className="no-scrollbar flex justify-start gap-[7px] overflow-x-auto pb-3 min-[761px]:justify-center">
-              {VERTICALS.map(({ k, es, en, Icon }) => {
-                const on = tab === k;
-                return (
-                  <button key={k} onClick={() => setTab(k)} aria-pressed={on}
-                          className={`tl-focus flex flex-none cursor-pointer items-center gap-[7px] whitespace-nowrap rounded-full px-[15px] py-[9px] text-[12.5px] font-extrabold ${on ? 'border border-primary bg-primary text-white' : 'border border-hair bg-white text-ink-soft'}`}>
-                    <Icon size={14} stroke={2.2} className={on ? 'text-white' : 'text-muted'} />
-                    {L(es, en)}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5 rounded-[15px] border-[1.5px] border-hair bg-white p-[11px] min-[561px]:rounded-[18px] min-[561px]:py-[9px] min-[561px]:pl-[18px] min-[561px]:pr-[9px]"
-                 style={{ boxShadow: '0 16px 40px rgba(60,50,110,.1)' }}>
-              <Search size={19} className="flex-none text-muted-2" aria-hidden />
-              <input value={query} onChange={(e) => setQuery(e.target.value)}
-                     onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
-                     placeholder={L(PLACEHOLDER[tab][0], PLACEHOLDER[tab][1])}
-                     aria-label={L('Buscar', 'Search')}
-                     className="tl-focus min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-ink outline-none placeholder:text-muted-2" />
-              <span className="hidden h-6 w-px flex-none bg-hair min-[561px]:block" aria-hidden />
-              <button onClick={() => app.setCityOpen(true)} className="tl-focus flex flex-none cursor-pointer items-center gap-1.5">
-                <MapPin size={15} className="text-primary" aria-hidden />
-                <span className="text-[13px] font-bold text-ink-soft">{app.city}</span>
-              </button>
-              <button onClick={submitSearch}
-                      className="tl-focus w-full flex-none cursor-pointer rounded-[13px] bg-primary px-[26px] py-[13px] text-[14px] font-extrabold text-white min-[561px]:w-auto min-[561px]:py-[14px]"
-                      style={{ boxShadow: '0 10px 22px rgba(123,97,255,.34)' }}>
-                {L('Buscar', 'Search')}
-              </button>
-            </div>
-
-            <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">
-              <span className="text-[11.5px] font-bold text-muted-2">{L('Popular:', 'Popular:')}</span>
-              {POPULAR[tab][lang === 'es' ? 0 : 1].map((t) => (
-                <button key={t} onClick={() => setQuery(t)}
-                        className="tl-focus cursor-pointer rounded-full border border-hair bg-white px-3 py-1.5 text-[11.5px] font-bold text-ink-soft">
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Fila de confianza — cifras REALES; sin dato, guion */}
-          <div className="mt-9 grid grid-cols-2 gap-3 min-[561px]:flex min-[561px]:flex-wrap min-[561px]:justify-center min-[561px]:gap-4 min-[761px]:gap-[26px]">
-            {[
-              { v: compact(stats?.verified), es: 'Negocios verificados', en: 'Verified businesses', Icon: ShieldCheck, c: '#1F9D57', bg: '#E3F5EA' },
-              { v: compact(stats?.neighbors), es: 'Vecinos activos', en: 'Active neighbors', Icon: Users, c: '#7B61FF', bg: '#EFEBFF' },
-              { v: stats?.avg_rating != null ? `${stats.avg_rating} ★` : '—', es: 'Calificación promedio', en: 'Average rating', Icon: Star, c: '#E8954A', bg: '#FCE9D6' },
-              { v: 'ES / EN', es: 'Todo bilingüe', en: 'Fully bilingual', Icon: Globe, c: '#2A6CB0', bg: '#E4EEFB' },
-            ].map((s) => (
-              <div key={s.es} className="flex min-w-0 items-center gap-2.5 text-left">
-                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[10px]" style={{ background: s.bg }}>
-                  <s.Icon size={16} stroke={2.2} style={{ color: s.c }} aria-hidden />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-[14px] font-extrabold text-ink">{s.v}</span>
-                  <span className="block truncate text-[11px] font-semibold text-muted-2">{L(s.es, s.en)}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ CATEGORÍAS ═══════ */}
-      <section id="explorar" className={`${wrap} ${secTop}`}>
-        <div className="mb-[22px] flex flex-wrap items-end justify-between gap-3 min-[761px]:gap-5">
-          <div>
-            <h2 className={h2cls}>{L('Explora por categoría', 'Explore by category')}</h2>
-            <p className="mt-1.5 text-[14.5px] font-medium text-ink-2">
-              {L('Todo lo que necesitas, de gente que habla tu idioma.', 'Everything you need, from people who speak your language.')}
-            </p>
-          </div>
-          <button onClick={() => openSignup('user')}
-                  className="tl-focus cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-[18px] py-[11px] text-[12.5px] font-extrabold text-primary-dark">
-            {L('Crear cuenta gratis', 'Create free account')}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3.5 min-[561px]:grid-cols-3 min-[1041px]:grid-cols-5">
-          {CATS.map((c) => (
-            <button key={c.es} onClick={() => go(c.path)}
-                    className="tl-cat tl-focus relative cursor-pointer overflow-hidden rounded-[19px] border border-hair bg-white p-[19px] text-left"
-                    style={{ boxShadow: '0 5px 16px rgba(60,50,110,.05)' }}>
-              <span aria-hidden className="absolute rounded-full" style={{ top: -26, right: -26, width: 96, height: 96, background: c.glow }} />
-              <span className="relative flex h-[46px] w-[46px] items-center justify-center rounded-tile" style={{ background: c.bg }}>
-                <c.Icon size={22} stroke={2} style={{ color: c.color }} aria-hidden />
-              </span>
-              <span className="relative mt-3.5 block text-[14.5px] font-extrabold tracking-[-.01em] text-ink">{L(c.es, c.en)}</span>
-              {c.n != null && (
-                <span className="relative mt-[3px] block text-[11.5px] font-semibold text-muted-2">
-                  {c.n.toLocaleString('en-US')} {L(c.unit[0], c.unit[1])}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══════ NEGOCIOS DESTACADOS (reales) ═══════ */}
-      <section id="negocios" className={`${wrap} ${secTop}`}>
-        <div className="mb-[22px] flex flex-wrap items-end justify-between gap-3 min-[761px]:gap-5">
-          <div>
-            <span className="flex w-fit items-center gap-1.5 rounded-full bg-green-bg px-[11px] py-[5px]">
-              <i className="inline-block h-1.5 w-1.5 rounded-full bg-green" aria-hidden />
-              <span className="text-[10px] font-extrabold uppercase tracking-[.09em] text-green-dark">{L('Cerca de ti', 'Near you')}</span>
-            </span>
-            <h2 className={`${h2cls} mt-2.5`}>{L(`Negocios destacados en ${cityShort}`, `Featured businesses in ${cityShort}`)}</h2>
-            <p className="mt-1.5 text-[14.5px] font-medium text-ink-2">
-              {L('Verificados, con reseñas reales de la comunidad.', 'Verified, with real reviews from the community.')}
-            </p>
-          </div>
-          <button onClick={() => go('/negocios/')} className="tl-focus cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
-            {bizCount != null ? L(`Ver los ${compact(bizCount)} →`, `See all ${compact(bizCount)} →`) : L('Ver negocios →', 'See businesses →')}
-          </button>
-        </div>
-
-        {live.businesses.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 min-[561px]:grid-cols-2 min-[1041px]:grid-cols-4">
-            {live.businesses.slice(0, 8).map((b) => (
-              <button key={b.slug} onClick={() => go(`/negocios/${b.slug}/`)}
-                      className="tl-biz tl-focus cursor-pointer overflow-hidden rounded-card border border-hair bg-white text-left"
-                      style={{ boxShadow: '0 6px 18px rgba(60,50,110,.06)' }}>
-                <span className="relative block h-[132px]" style={{ background: tile(b.t[0], b.t[1]) }}>
-                  {b.open && (
-                    <span className="absolute bottom-[11px] left-[11px] flex items-center gap-1.5 rounded-lg px-2.5 py-[5px]" style={{ background: 'rgba(255,255,255,.94)' }}>
-                      <i className="inline-block h-1.5 w-1.5 rounded-full bg-green" aria-hidden />
-                      <span className="text-[9.5px] font-extrabold text-green-dark">{L('Abierto ahora', 'Open now')}</span>
-                    </span>
-                  )}
-                </span>
-                <span className="block px-[15px] pb-[15px] pt-3.5">
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-[14.5px] font-extrabold tracking-[-.01em] text-ink">{b.name}</span>
-                    {b.verified && (
-                      <span className="flex h-[15px] w-[15px] flex-none items-center justify-center rounded-full bg-primary" title={L('Verificado', 'Verified')}>
-                        <Check size={9} stroke={3.6} className="text-white" />
-                      </span>
-                    )}
-                  </span>
-                  <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-muted-2">
-                    {[lang === 'es' ? b.specEs : b.specEn, b.city].filter(Boolean).join(' · ')}
-                  </span>
-                  <span className="mt-[11px] flex items-center gap-1.5 border-t border-hair pt-[11px]">
-                    <Star size={12} className="fill-amber text-amber" aria-hidden />
-                    <span className="text-[12px] font-extrabold text-ink">{b.rating}</span>
-                    <span className="text-[11px] font-semibold text-muted-2">({b.reviews})</span>
-                    {b.dist && <span className="ml-auto text-[11px] font-bold text-ink-soft">{b.dist}</span>}
-                  </span>
-                </span>
+          <div role="group" aria-label={L('Idioma', 'Language')}
+               className="ml-auto flex flex-none rounded-full border border-home-line2 bg-lilac-2 p-[3px]">
+            {(['es', 'en'] as const).map((l) => (
+              <button key={l} onClick={() => setLang(l)} aria-pressed={lang === l}
+                      className={`tl-focus cursor-pointer rounded-full px-[13px] py-[6px] text-[11.5px] font-extrabold uppercase ${lang === l ? 'bg-primary text-white' : 'text-muted'}`}>
+                {l}
               </button>
             ))}
           </div>
-        ) : (
-          <div className="rounded-card border border-hair bg-white p-8 text-center">
-            <p className="text-[14px] font-extrabold text-ink">{L('Aún no hay negocios cerca de ti', 'No businesses near you yet')}</p>
-            <p className="mt-1 text-[12.5px] font-medium text-muted">{L('Sé el primero en publicar el tuyo — es gratis.', 'Be the first to publish yours — it’s free.')}</p>
-            <button onClick={() => openSignup('biz')} className="tl-focus mt-4 cursor-pointer rounded-btn bg-primary px-5 py-3 text-[13px] font-extrabold text-white">
-              {L('Publicar mi negocio', 'Publish my business')}
-            </button>
-          </div>
-        )}
-      </section>
 
-      {/* ═══════ EVENTOS — tarjeta oscura (reales) ═══════ */}
-      <section id="eventos" className={`${wrap} ${secTop}`}>
-        <div className="relative overflow-hidden rounded-[26px] p-6 min-[761px]:p-[34px]" style={{ background: 'linear-gradient(150deg, #1E1B2E, #2A2440)' }}>
-          <span aria-hidden className="pointer-events-none absolute" style={{ top: -90, right: -60, width: 340, height: 340, background: 'radial-gradient(circle, rgba(214,51,108,.28), transparent 68%)' }} />
-          <div className="relative mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <span className="w-fit rounded-full px-[11px] py-[5px] text-[10px] font-extrabold uppercase tracking-[.09em] text-amber" style={{ background: 'rgba(244,183,64,.16)' }}>
-                {L('Este fin de semana', 'This weekend')}
+          <button onClick={() => go(user ? '/negocio/' : '/negocio/publicar/')}
+                  className="tl-btn-biz tl-focus flex flex-none cursor-pointer items-center gap-[7px] whitespace-nowrap rounded-btn border-[1.5px] border-home-line bg-white px-[clamp(12px,2vw,18px)] py-[10px] text-[12.5px] font-extrabold text-primary-dark"
+                  style={{ boxShadow: '0 4px 12px rgba(60,50,110,.06)' }}>
+            <Store size={14} stroke={2.2} className="flex-none text-amber" aria-hidden />
+            <span className="tl-lgi">{user ? L('Mi negocio', 'My business') : L('Registrar mi negocio', 'List my business')}</span>
+            <span className="tl-smi">{L('Mi negocio', 'My business')}</span>
+          </button>
+        </div>
+
+        {/* ── Centro ── */}
+        <div className="relative mx-auto flex w-full max-w-[940px] flex-1 flex-col items-center justify-center px-[clamp(18px,5vw,40px)] text-center">
+          <div className="tl-hero-inner">
+            <span className="tl-up1 tl-kick inline-flex items-center gap-[9px] rounded-full bg-lilac-2 px-[15px] py-[7px]"
+                  style={{ border: '1px solid rgba(123,97,255,.22)' }}>
+              <i aria-hidden className="tl-pulse h-[7px] w-[7px] flex-none rounded-full bg-green" />
+              <span className="font-bold text-home-badge" style={{ fontSize: 'clamp(10.5px,1.5vw,12px)', letterSpacing: '.01em' }}>
+                {L(`Nuevo · Llegando a ${cityShort}`, `New · Coming to ${cityShort}`)}
               </span>
-              <h2 className="mt-2.5 text-[21px] font-extrabold tracking-[-.03em] text-white min-[561px]:text-[24px] min-[761px]:text-[30px]">
-                {L('Eventos de tu comunidad', 'Events in your community')}
-              </h2>
-              <p className="mt-1.5 text-[14px] font-medium" style={{ color: 'rgba(255,255,255,.6)' }}>
-                {L('Bailes, ferias y celebraciones — con boletos en la app.', 'Dances, fairs and celebrations — with tickets in the app.')}
-              </p>
-            </div>
-            <button onClick={() => go('/eventos/')} className="tl-focus cursor-pointer rounded-btn border border-white/20 bg-white/10 px-[18px] py-[11px] text-[12.5px] font-extrabold text-white">
-              {L('Ver todos los eventos', 'See all events')}
-            </button>
-          </div>
+            </span>
 
-          {live.events.length > 0 ? (
-            <div className="relative grid grid-cols-1 gap-[15px] min-[561px]:grid-cols-2 min-[761px]:grid-cols-3">
-              {live.events.slice(0, 6).map((e, i) => (
-                <button key={`${e.tEs}-${i}`} onClick={() => go('/eventos/')}
-                        className="tl-evt tl-focus cursor-pointer overflow-hidden rounded-[19px] border border-white/10 bg-white/[.06] text-left">
-                  <span className="relative block h-[112px]" style={{ background: tile(e.t[0], e.t[1]) }}>
-                    <span className="absolute left-[11px] top-[11px] rounded-[9px] bg-white px-[9px] py-[5px] text-center">
-                      <span className="block text-[8.5px] font-extrabold uppercase tracking-[.06em] text-rose">{e.dEs}</span>
-                      <span className="block text-[15px] font-extrabold leading-none text-ink">{e.day}</span>
-                    </span>
-                  </span>
-                  <span className="block px-3.5 pb-3.5 pt-[13px]">
-                    <span className="block text-[14px] font-extrabold leading-[1.25] text-white">{L(e.tEs, e.tEn)}</span>
-                    <span className="mt-1 block truncate text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,.6)' }}>
-                      {[L(e.lEs, e.lEn), L(e.timeEs, e.timeEn)].filter(Boolean).join(' · ')}
-                    </span>
-                    <span className="mt-[11px] flex items-center">
-                      <span className={`text-[13px] font-extrabold ${e.free ? 'text-mint' : 'text-amber'}`}>
-                        {e.free ? L('Gratis', 'Free') : (e.price ?? '')}
-                      </span>
-                      {e.going != null && (
-                        <span className="ml-auto text-[10.5px] font-bold" style={{ color: 'rgba(255,255,255,.6)' }}>
-                          {compact(e.going)} {L('van', 'going')}
-                        </span>
-                      )}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="relative rounded-card border border-white/10 bg-white/[.06] p-8 text-center">
-              <p className="text-[14px] font-extrabold text-white">{L('Todavía no hay eventos cerca', 'No events near you yet')}</p>
-              <p className="mt-1 text-[12.5px] font-medium" style={{ color: 'rgba(255,255,255,.6)' }}>
-                {L('¿Organizas algo? Publícalo y vende boletos.', 'Organizing something? Publish it and sell tickets.')}
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
+            <h1 className="tl-up2 tl-h1 font-extrabold text-ink"
+                style={{ fontSize: 'clamp(26px, min(6.4vw,8vh), 62px)', letterSpacing: '-.04em', lineHeight: 1.06, margin: 'clamp(16px,2.6vw,26px) 0 0', textWrap: 'balance' }}>
+              {L('To’lo Latino de', 'Everything Latino in')}{' '}
+              <button onClick={() => app.setCityOpen(true)} aria-label={L('Cambiar ciudad', 'Change city')}
+                      className="tl-focus inline-flex cursor-pointer items-center gap-[.13em]">
+                <span style={{ background: 'linear-gradient(96deg,#7B61FF,#D6336C 55%,#F4B740)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+                  {cityShort}
+                </span>
+                <ChevronDown stroke={2.8} className="flex-none text-primary-dark" style={{ width: '.4em', height: '.4em', marginTop: '.14em' }} aria-hidden />
+              </button>
+            </h1>
 
-      {/* ═══════ MERCADO (reales) ═══════ */}
-      <section id="mercado" className={`${wrap} ${secTop}`}>
-        <div className="mx-auto mb-[26px] max-w-[600px] text-center">
-          <h2 className={h2cls}>{L('Un mercado completo', 'A complete marketplace')}</h2>
-          <p className="mt-1.5 text-[14.5px] font-medium text-ink-2">
-            {L('Casas, autos y empleos de la comunidad — sin intermediarios que no te entienden.',
-               'Homes, autos and jobs from the community — without middlemen who don’t get you.')}
-          </p>
-        </div>
+            <p className="tl-up3 tl-sub font-medium text-home-ink"
+               style={{ fontSize: 'clamp(13.5px,1.7vw,17.5px)', lineHeight: 1.55, marginTop: 'clamp(8px,1.1vw,13px)' }}>
+              {L('Encuentra to’los negocios, productos y servicios latinos', 'Find every Latino business, product and service')}{' '}
+              <span className="font-bold text-ink">{L('en tu zona.', 'in your area.')}</span>
+            </p>
 
-        <div className="grid grid-cols-1 gap-4 min-[561px]:grid-cols-2 min-[761px]:grid-cols-3">
-          {([
-            { key: 'homes' as const, Icon: HomeIcon, color: '#2A6CB0', bg: 'rgba(42,108,176,.12)', es: 'Casas y rentas', en: 'Homes & rentals', n: stats?.properties, unit: ['propiedades', 'listings'], cta: ['Ver propiedades', 'Browse homes'], path: '/bienes-raices/', money: true },
-            { key: 'autos' as const, Icon: Car, color: '#1F9D57', bg: 'rgba(31,157,87,.12)', es: 'Autos y trocas', en: 'Autos & trucks', n: stats?.vehicles, unit: ['vehículos', 'vehicles'], cta: ['Ver autos', 'Browse autos'], path: '/autos/', money: true },
-            { key: 'jobs' as const, Icon: Briefcase, color: '#7B61FF', bg: 'rgba(123,97,255,.13)', es: 'Empleos cerca', en: 'Jobs near you', n: stats?.jobs, unit: ['vacantes', 'openings'], cta: ['Ver empleos', 'Browse jobs'], path: '/trabajos/', money: false },
-          ]).map((col) => {
-            const rows = market[col.key];
-            return (
-              <div key={col.key} className="rounded-[22px] border border-hair bg-white p-5" style={{ boxShadow: '0 6px 18px rgba(60,50,110,.05)' }}>
-                <div className="mb-4 flex items-center gap-3">
-                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn" style={{ background: col.bg }}>
-                    <col.Icon size={20} stroke={2} style={{ color: col.color }} aria-hidden />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[15.5px] font-extrabold tracking-[-.01em] text-ink">{L(col.es, col.en)}</span>
-                    {col.n != null && (
-                      <span className="block text-[11px] font-semibold text-muted-2">{col.n.toLocaleString('en-US')} {L(col.unit[0], col.unit[1])}</span>
-                    )}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-2.5">
-                  {rows.length > 0 ? rows.map((r, i) => (
-                    <button key={r.slug ?? r.id ?? i} onClick={() => go(col.path)}
-                            className="tl-row tl-focus flex cursor-pointer items-center gap-[11px] rounded-tile border border-hair p-[11px] text-left">
-                      <span className="h-[46px] w-[46px] flex-none rounded-[11px]" style={{ background: tile('#EFEBFF', '#E5DEF9') }} aria-hidden />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[12.5px] font-extrabold text-ink">{r.name}</span>
-                        {r.meta && <span className="block truncate text-[10.5px] font-semibold text-muted-2">{r.meta}</span>}
-                      </span>
-                      <span className="flex-none text-right">
-                        <span className={`block text-[13px] font-extrabold ${col.money ? 'text-ink' : 'text-green-dark'}`}>
-                          {col.money ? money(r.price) : (r.pay ?? '—')}
-                        </span>
-                        {col.key === 'autos' && r.bhph && (
-                          <span className="mt-1 inline-block whitespace-nowrap rounded-md bg-amber-bg px-[7px] py-[3px] text-[8.5px] font-extrabold text-amber-ink">
-                            {L('Aquí pagas aquí', 'Buy here pay here')}
-                          </span>
-                        )}
-                      </span>
+            <div className="tl-up4 tl-searchwrap">
+              {/* Chips de vertical: cambian el marcador del buscador y la ruta */}
+              <div className="no-scrollbar tl-chips flex gap-[7px] overflow-x-auto pb-[11px]" style={{ justifyContent: 'safe center' }}>
+                {VERTICALS.map(({ k, es: e, en, Icon }) => {
+                  const on = tab === k;
+                  return (
+                    <button key={k} onClick={() => setTab(k)} aria-pressed={on}
+                            className={`tl-focus flex flex-none cursor-pointer items-center gap-[7px] whitespace-nowrap rounded-full border px-[15px] py-[9px] text-[12.5px] font-extrabold ${on ? 'border-primary bg-primary text-white' : 'border-hair bg-white text-ink-soft'}`}>
+                      <Icon size={14} stroke={2.2} className={`flex-none ${on ? 'text-white' : 'text-muted'}`} aria-hidden />
+                      {L(e, en)}
                     </button>
-                  )) : (
-                    <p className="py-6 text-center text-[12px] font-semibold text-muted-2">
-                      {L('Aún no hay publicaciones aquí.', 'Nothing listed here yet.')}
-                    </p>
-                  )}
-                </div>
-
-                <button onClick={() => go(col.path)}
-                        className="tl-focus mt-3.5 w-full cursor-pointer rounded-btn border-[1.5px] border-lilac-line py-[11px] text-[12px] font-extrabold text-primary-dark">
-                  {L(col.cta[0], col.cta[1])}
-                </button>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      </section>
 
-      {/* ═══════ CÓMO FUNCIONA ═══════ */}
-      <section id="como" className={`${wrap} pt-[60px]`}>
-        <div className="mx-auto mb-8 max-w-[600px] text-center">
-          <span className="text-[10px] font-extrabold uppercase tracking-[.15em] text-primary">{L('Cómo funciona', 'How it works')}</span>
-          <h2 className="mt-2.5 text-[22px] font-extrabold tracking-[-.03em] text-ink min-[761px]:text-[32px]">
-            {L('Tres pasos y ya', 'Three steps and done')}
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 gap-4 min-[561px]:grid-cols-2 min-[761px]:grid-cols-3">
-          {[
-            { t: ['Crea tu cuenta gratis', 'Create your free account'], b: ['Con tu correo. No pedimos tarjeta ni papeles.', 'With your email. No card, no paperwork.'] },
-            { t: ['Busca en tu idioma', 'Search in your language'], b: ['Filtra por barrio, precio y horario. Todo verificado y con reseñas.', 'Filter by neighborhood, price and hours. All verified and reviewed.'] },
-            { t: ['Pide, agenda o aplica', 'Order, book or apply'], b: ['Paga protegido en la app o contacta directo por chat y WhatsApp.', 'Pay protected in the app or contact directly by chat and WhatsApp.'] },
-          ].map((s, i) => (
-            <div key={i} className="rounded-card border border-hair bg-white p-6 text-center">
-              <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-tile bg-lilac-2 text-[16px] font-extrabold text-primary-dark">{i + 1}</span>
-              <h3 className="mt-3.5 text-[16px] font-extrabold tracking-[-.01em] text-ink">{L(s.t[0], s.t[1])}</h3>
-              <p className="mt-2 text-[13px] font-medium leading-[1.6] text-ink-2">{L(s.b[0], s.b[1])}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══════ PARA NEGOCIOS — tarjeta morada ═══════ */}
-      <section id="para-negocios" className={`${wrap} pt-[60px]`}>
-        <div className="relative overflow-hidden rounded-[26px] p-6 min-[761px]:p-10" style={{ background: 'linear-gradient(140deg, #6D4DF6, #8B6BFF 55%, #B0357E)' }}>
-          <span aria-hidden className="pointer-events-none absolute rounded-full" style={{ bottom: -140, left: -60, width: 400, height: 400, background: 'rgba(255,255,255,.09)' }} />
-          <div className="relative grid items-center gap-7 min-[1041px]:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] min-[1041px]:gap-10">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-[.15em]" style={{ color: 'rgba(255,255,255,.78)' }}>
-                {L('Para dueños de negocio', 'For business owners')}
-              </span>
-              <h2 className="mt-2.5 text-[24px] font-extrabold leading-[1.15] tracking-[-.03em] text-white min-[761px]:text-[34px]">
-                {L('Tu negocio completo, desde tu celular', 'Your whole business, from your phone')}
-              </h2>
-              <p className="mt-3 text-[14.5px] font-medium leading-[1.65]" style={{ color: 'rgba(255,255,255,.8)' }}>
-                {L('Publica gratis y crece cuando quieras: menú, citas, boletos, rentas, empleados, cobros y clientes — todo en un panel en español.',
-                   'List free and grow when you want: menu, bookings, tickets, rentals, staff, payments and customers — all in one Spanish dashboard.')}
-              </p>
-              <div className="mt-6 flex flex-wrap gap-2.5">
-                <button onClick={() => openSignup('biz')}
-                        className="tl-focus cursor-pointer rounded-[13px] bg-white px-6 py-3.5 text-[13.5px] font-extrabold text-primary-dark"
-                        style={{ boxShadow: '0 12px 28px rgba(20,10,50,.24)' }}>
-                  {L('Registrar mi negocio', 'Register my business')}
-                </button>
-                <a href="#como" className="tl-focus cursor-pointer rounded-[13px] border border-white/30 bg-white/10 px-6 py-3.5 text-[13.5px] font-extrabold text-white">
-                  {L('Ver cómo funciona', 'See how it works')}
-                </a>
-              </div>
-              <p className="mt-3.5 text-[11.5px] font-bold" style={{ color: 'rgba(255,255,255,.7)' }}>
-                {bizCount != null
-                  ? L(`Gratis para empezar · sin contratos · ${compact(bizCount)} negocios ya están aquí`, `Free to start · no contracts · ${compact(bizCount)} businesses already here`)
-                  : L('Gratis para empezar · sin contratos', 'Free to start · no contracts')}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-[11px] min-[561px]:grid-cols-2">
-              {[
-                { Icon: ShieldCheck, t: ['Perfil verificado', 'Verified profile'], b: ['Insignia morada y prioridad en búsqueda', 'Purple badge and search priority'] },
-                { Icon: Utensils, t: ['Menú y pedidos', 'Menu & orders'], b: ['Cobra en línea, entrega o recoge', 'Charge online, deliver or pick up'] },
-                { Icon: Calendar, t: ['Citas y agenda', 'Bookings & calendar'], b: ['Recordatorios automáticos', 'Automatic reminders'] },
-                { Icon: Package, t: ['Boletos y rentas', 'Tickets & rentals'], b: ['QR, depósitos y devoluciones', 'QR, deposits and returns'] },
-                { Icon: CreditCard, t: ['Cobros protegidos', 'Protected payments'], b: ['Tarjeta, efectivo y facturas', 'Card, cash and invoices'] },
-                { Icon: BarChart, t: ['Analíticas claras', 'Clear analytics'], b: ['Vistas, clientes y ventas', 'Views, customers and sales'] },
-              ].map((p) => (
-                <div key={p.t[0]} className="rounded-[15px] border border-white/15 bg-white/[.12] p-3.5">
-                  <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-white/20">
-                    <p.Icon size={15} className="text-white" aria-hidden />
-                  </span>
-                  <span className="mt-2.5 block text-[12.5px] font-extrabold text-white">{L(p.t[0], p.t[1])}</span>
-                  <span className="block text-[10.5px] font-medium leading-[1.45]" style={{ color: 'rgba(255,255,255,.72)' }}>{L(p.b[0], p.b[1])}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ TESTIMONIOS — solo si son REALES ═══════ */}
-      {testimonials.length > 0 && (
-        <section className={`${wrap} pt-[60px]`}>
-          <h2 className={`${h2cls} mb-7 text-center`}>{L('Lo que dice la comunidad', 'What the community says')}</h2>
-          <div className="grid grid-cols-1 gap-4 min-[561px]:grid-cols-2 min-[761px]:grid-cols-3">
-            {testimonials.map((t, i) => (
-              <div key={t.id} className="rounded-card border border-hair bg-white p-[22px]">
-                <span className="block text-[13px] font-extrabold tracking-[.08em] text-amber" aria-hidden>★★★★★</span>
-                <span className="sr-only">{L(`${t.rating} de 5 estrellas`, `${t.rating} out of 5 stars`)}</span>
-                <p className="mt-3 text-[14px] font-medium leading-[1.65] text-ink-soft">
-                  “{(lang === 'es' ? t.body_es : t.body_en) || t.body_es || t.body_en}”
-                </p>
-                <div className="mt-4 flex items-center gap-2.5 border-t border-hair pt-3.5">
-                  <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-[11px] text-[12px] font-extrabold text-white"
-                        style={{ background: ['#7B61FF', '#D6336C', '#1F9D57'][i % 3] }} aria-hidden>
-                    {t.initials}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[12.5px] font-extrabold text-ink">{t.author}</span>
-                    <span className="block truncate text-[11px] font-semibold text-muted-2">{L('Sobre', 'On')} {t.biz_name}</span>
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ═══════ PIE (claro) ═══════ */}
-      <footer className="mt-16 border-t border-hair bg-white">
-        <div className={`${wrap} flex flex-wrap items-start gap-8 py-10`}>
-          <div className="flex-1 basis-[300px]">
-            <Brand size={21} />
-            <p className="mt-3 max-w-[320px] text-[12.5px] font-medium leading-[1.6] text-muted">
-              {L(`La plataforma de la comunidad latina de ${cityShort}. Hecha por nosotros, para nosotros.`,
-                 `The platform for the Latino community of ${cityShort}. Made by us, for us.`)}
-            </p>
-          </div>
-          {[
-            { h: ['Explorar', 'Explore'], items: [[L('Restaurantes', 'Restaurants'), '/negocios/'], [L('Servicios', 'Services'), '/negocios/'], [L('Eventos', 'Events'), '/eventos/'], [L('Comunidad', 'Community'), '/comunidad/']] as [string, string][] },
-            { h: ['Mercado', 'Marketplace'], items: [[L('Bienes Raíces', 'Real Estate'), '/bienes-raices/'], [L('Autos', 'Autos'), '/autos/'], [L('Empleos', 'Jobs'), '/trabajos/'], [L('Transporte', 'Transport'), '/transporte/']] as [string, string][] },
-            { h: ['Negocios', 'Business'], items: [[L('Registrar mi negocio', 'Register my business'), '/negocio/publicar/'], [L('Mi panel', 'My dashboard'), '/negocio/']] as [string, string][] },
-            { h: ['Compañía', 'Company'], items: [[L('Privacidad', 'Privacy'), '/privacidad/'], [L('Términos', 'Terms'), '/terminos/']] as [string, string][] },
-          ].map((col) => (
-            <div key={col.h[0]} className="min-w-[132px] flex-none">
-              <p className="mb-3 text-[10px] font-extrabold uppercase tracking-[.11em] text-muted-2">{L(col.h[0], col.h[1])}</p>
-              <div className="flex flex-col gap-2.5">
-                {col.items.map(([label, path]) => (
-                  <button key={label} onClick={() => go(path)}
-                          className="tl-focus cursor-pointer text-left text-[12.5px] font-semibold text-ink-2 transition-colors hover:text-primary-dark">
-                    {label}
+              <div className="tl-search rounded-[clamp(16px,2vw,19px)] border-[1.5px] bg-white p-[8px]"
+                   style={{ borderColor: 'rgba(30,27,46,.1)', boxShadow: '0 20px 48px rgba(60,50,110,.13)' }}>
+                <div className="flex min-w-0 items-center gap-[10px] pl-[13px] pr-[4px]">
+                  <Search size={19} stroke={2.2} className="flex-none text-muted-2" aria-hidden />
+                  <input value={query} onChange={(e) => setQuery(e.target.value)}
+                         onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
+                         placeholder={L(PLACEHOLDER[tab][0], PLACEHOLDER[tab][1])}
+                         aria-label={L('Buscar', 'Search')}
+                         className="tl-focus min-w-0 flex-1 border-none bg-transparent py-[13px] font-semibold italic text-ink outline-none placeholder:text-home-ph"
+                         style={{ fontSize: 'clamp(12.5px,1.3vw,13.5px)' }} />
+                  <span aria-hidden className="tl-lg h-6 w-px flex-none" style={{ background: 'rgba(30,27,46,.1)' }} />
+                  <button onClick={() => app.setCityOpen(true)} aria-label={L('Cambiar ciudad', 'Change city')}
+                          className="tl-lg tl-focus flex-none cursor-pointer items-center gap-[6px] px-2">
+                    <MapPin size={15} stroke={2.4} className="flex-none text-primary" aria-hidden />
+                    <span className="whitespace-nowrap text-[13px] font-bold text-ink-soft">{app.city}</span>
                   </button>
+                </div>
+                <div className="flex min-w-0 items-stretch gap-[8px]">
+                  <button onClick={() => app.setCityOpen(true)} aria-label={L('Cambiar ciudad', 'Change city')}
+                          className="tl-sm tl-focus max-w-[46%] flex-none cursor-pointer items-center gap-[6px] rounded-field border bg-page px-[13px]"
+                          style={{ borderColor: 'rgba(30,27,46,.1)' }}>
+                    <MapPin size={14} stroke={2.4} className="flex-none text-primary" aria-hidden />
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] font-bold text-ink-soft">{app.city}</span>
+                  </button>
+                  <button onClick={submitSearch}
+                          className="tl-sbtn tl-focus flex-1 cursor-pointer rounded-btn bg-primary px-[clamp(22px,3vw,30px)] py-[14px] text-[14px] font-extrabold text-white"
+                          style={{ boxShadow: '0 10px 22px rgba(123,97,255,.34)' }}>
+                    {L('Buscar', 'Search')}
+                  </button>
+                </div>
+              </div>
+
+              <div className="tl-points flex flex-wrap items-center justify-center gap-[clamp(14px,2.6vw,26px)]"
+                   style={{ marginTop: 'clamp(14px,2.2vw,20px)' }}>
+                {POINTS.map((p) => (
+                  <div key={p.es} className="flex items-center gap-[7px]">
+                    <p.Icon size={14} stroke={2.3} className="flex-none" style={{ color: p.c }} aria-hidden />
+                    <span className="whitespace-nowrap font-bold text-muted" style={{ fontSize: 'clamp(10.5px,1.3vw,12px)' }}>{L(p.es, p.en)}</span>
+                  </div>
                 ))}
               </div>
+
+              {/* Fila de cuenta — real: con sesión abierta lleva a la app */}
+              <div className="tl-authrow flex flex-wrap items-center justify-center gap-[2px]">
+                {user ? (
+                  <>
+                    <span className="tl-jointitle text-[13px] font-semibold text-home-mute">
+                      {firstName ? L(`Hola, ${firstName}.`, `Hi, ${firstName}.`) : L('Ya tienes tu sesión abierta.', 'You are already signed in.')}
+                    </span>
+                    <button onClick={() => go('/comunidad/')}
+                            className="tl-join tl-focus inline-flex min-h-[44px] cursor-pointer items-center rounded-field px-3 py-3 text-[13px] font-extrabold text-primary-dark">
+                      {L('Entrar a la app', 'Open the app')}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="tl-jointitle text-[13px] font-semibold text-home-mute">
+                      <span className="tl-lgi">{L('¿Ya eres parte de tu comunidad?', 'Already part of your community?')}</span>
+                      <span className="tl-smi">{L('¿Ya tienes cuenta?', 'Already have an account?')}</span>
+                    </span>
+                    <button onClick={() => go('/entrar/')}
+                            className="tl-join tl-focus inline-flex min-h-[44px] cursor-pointer items-center rounded-field px-3 py-3 text-[13px] font-extrabold text-primary-dark">
+                      {L('Entrar', 'Log in')}
+                    </button>
+                    <span aria-hidden className="h-[14px] w-px flex-none" style={{ background: 'rgba(30,27,46,.14)' }} />
+                    <button onClick={() => go('/entrar/?crear=1')}
+                            className="tl-join tl-focus inline-flex min-h-[44px] cursor-pointer items-center rounded-field px-3 py-3 text-[13px] font-extrabold text-primary-dark">
+                      {L('Regístrate', 'Sign up')}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Tarjeta del feed — publicaciones REALES cerca de la ciudad
+                  elegida. Sin publicaciones no se dibuja nada (regla #8). */}
+              {post && (
+                <button onClick={() => setIdx((i) => i + 1)}
+                        onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+                        onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}
+                        aria-label={L('Ver la siguiente publicación de la comunidad', 'See the next community post')}
+                        className="tl-feed tl-focus mx-auto flex w-full max-w-[460px] cursor-pointer items-center rounded-[16px] border border-hair bg-white px-[14px] py-[13px]"
+                        style={{ marginTop: 'clamp(8px,1.4vw,14px)', minHeight: 92, boxShadow: '0 8px 24px rgba(60,50,110,.07)' }}>
+                  <div aria-live="polite" key={post.id}
+                       className={`flex w-full items-start gap-[11px] text-left ${idx % 2 === 0 ? 'tl-pa' : 'tl-pb'}`}>
+                    <span aria-hidden className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full text-[11.5px] font-extrabold text-white"
+                          style={{ background: post.color }}>
+                      {post.initials}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-[7px]">
+                        <span className="tl-pname overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] font-extrabold text-ink">{post.name}</span>
+                        {(() => {
+                          const t = postTag(post.type, L);
+                          return (
+                            <span className="flex-none rounded-[7px] px-2 py-[3px] text-[9px] font-extrabold uppercase"
+                                  style={{ background: t.bg, color: t.color, letterSpacing: '.07em' }}>
+                              {t.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                      <p className="tl-ptext tl-clamp text-[13px] font-medium text-ink-soft" style={{ lineHeight: 1.45, marginTop: 5, textWrap: 'pretty' }}>
+                        {es ? post.es : post.en}
+                      </p>
+                      <p className="tl-pmeta text-[10.5px] font-semibold text-muted" style={{ marginTop: 6 }}>
+                        {[post.hood, agoText(post.minutes, es)].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
-          ))}
+          </div>
         </div>
-        <div className={`${wrap} flex flex-wrap items-center justify-between gap-2 border-t border-hair py-[18px]`}>
-          <span className="text-[11.5px] font-medium text-muted-2">
-            © {new Date().getFullYear()} To&rsquo;Latino. {L('Todos los derechos reservados.', 'All rights reserved.')}
-          </span>
-          <span className="text-[11.5px] font-semibold text-muted-2">{L(`Hecho con orgullo en ${app.city}`, `Made with pride in ${app.city}`)}</span>
+
+        {/* ── Marquesina + señal de desplazamiento ── */}
+        <div className="relative">
+          <div aria-hidden className="tl-marqband overflow-hidden py-[clamp(11px,1.6vw,15px)]"
+               style={{ borderTop: '1px solid rgba(30,27,46,.07)', WebkitMaskImage: 'linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)', maskImage: 'linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)' }}>
+            <div className="tl-marq flex w-max gap-[clamp(26px,4vw,44px)]">
+              {MARQUEE.map((m, i) => (
+                <span key={`${m}-${i}`} className="inline-flex items-center gap-[clamp(26px,4vw,44px)] whitespace-nowrap font-extrabold uppercase text-home-idx"
+                      style={{ fontSize: 'clamp(11px,1.3vw,12.5px)', letterSpacing: '.14em' }}>
+                  {m}
+                  <span className="h-[5px] w-[5px] rotate-45 bg-amber opacity-70" />
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className={`flex items-center justify-center py-[clamp(9px,1.4vw,13px)] ${gutter}`}
+               style={{ borderTop: '1px solid rgba(30,27,46,.06)', paddingBottom: 'calc(clamp(11px,1.6vw,15px) + env(safe-area-inset-bottom))' }}>
+            <a href="#conoce" className="tl-focus flex items-center gap-[7px] text-[10.5px] font-extrabold uppercase text-muted" style={{ letterSpacing: '.13em' }}>
+              {L('Conoce más', 'Learn more')}
+              <ArrowDown size={13} stroke={2.4} className="flex-none" aria-hidden />
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* ═════════════ ¿POR QUÉ TO'LATINO? ═════════════ */}
+      <section id="conoce" className={`relative bg-page pt-[clamp(56px,9vw,110px)] ${gutter}`}>
+        <div className="mx-auto max-w-[1000px]">
+          <div className="mx-auto max-w-[560px] text-center">
+            <p className="text-[10px] font-extrabold uppercase text-primary" style={{ letterSpacing: '.16em' }}>
+              {L('¿Por qué To’Latino?', 'Why To’Latino?')}
+            </p>
+            <h2 className="font-extrabold text-ink"
+                style={{ fontSize: 'clamp(23px,4.2vw,38px)', letterSpacing: '-.035em', lineHeight: 1.14, marginTop: 12, textWrap: 'balance' }}>
+              {L('Hecho por latinos, para latinos', 'Made by Latinos, for Latinos')}
+            </h2>
+            <p className="mx-auto max-w-[44ch] font-medium text-home-mute"
+               style={{ fontSize: 'clamp(13px,1.5vw,15.5px)', lineHeight: 1.6, marginTop: 11, textWrap: 'pretty' }}>
+              {L(`Una sola app para resolver el día a día en ${cityShort}.`, `One app to handle everyday life in ${cityShort}.`)}
+            </p>
+          </div>
+
+          <div className="tl-rows" style={{ marginTop: 'clamp(26px,4vw,44px)', borderTop: '1px solid rgba(30,27,46,.08)' }}>
+            {ROWS.map((r) => (
+              <div key={r.n} className="flex items-start gap-[14px] px-[2px] py-[clamp(17px,2.2vw,22px)]"
+                   style={{ borderBottom: '1px solid rgba(30,27,46,.08)' }}>
+                <span aria-hidden className="flex h-10 w-10 flex-none items-center justify-center rounded-[13px]" style={{ background: r.bg }}>
+                  <r.Icon size={19} stroke={2} style={{ color: r.c }} />
+                </span>
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-extrabold text-ink" style={{ fontSize: 'clamp(14px,1.6vw,15.5px)', letterSpacing: '-.015em' }}>{L(r.es, r.en)}</h3>
+                    <span aria-hidden className="ml-auto flex-none text-[10px] font-extrabold text-home-idx" style={{ letterSpacing: '.06em' }}>{r.n}</span>
+                  </div>
+                  <p className="font-medium text-muted" style={{ fontSize: 'clamp(12px,1.4vw,13px)', lineHeight: 1.55, marginTop: 4, textWrap: 'pretty' }}>
+                    {L(r.dEs, r.dEn)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col items-center gap-[10px]" style={{ marginTop: 'clamp(24px,3.4vw,36px)' }}>
+            <button onClick={() => go(user ? '/comunidad/' : '/entrar/?crear=1')}
+                    className="tl-focus cursor-pointer rounded-[13px] bg-primary px-[30px] py-[15px] text-[13.5px] font-extrabold text-white"
+                    style={{ boxShadow: '0 12px 26px rgba(123,97,255,.32)' }}>
+              {user ? L('Entrar a la app', 'Open the app') : L('Crear mi cuenta', 'Create my account')}
+            </button>
+            {!user && <span className="text-[11px] font-semibold text-muted">{L('En menos de un minuto', 'In less than a minute')}</span>}
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════ PARA NEGOCIOS ═════════════ */}
+      <section id="negocios" className={`relative bg-page pt-[clamp(116px,17vw,216px)] ${gutter}`}>
+        <div className="relative mx-auto max-w-[1080px] overflow-hidden p-[clamp(26px,4.4vw,52px)]"
+             style={{ background: 'linear-gradient(150deg,#5B3FD6,#7B61FF 46%,#B0357E)', borderRadius: 'clamp(22px,3vw,30px)' }}>
+          <span aria-hidden className="pointer-events-none absolute rounded-full"
+                style={{ top: '-30%', right: '-14%', width: 'min(460px,70%)', height: 'min(460px,120%)', background: 'rgba(255,255,255,.1)' }} />
+          <span aria-hidden className="pointer-events-none absolute rounded-full"
+                style={{ bottom: '-42%', left: '-16%', width: 'min(420px,65%)', height: 'min(420px,110%)', background: 'rgba(244,183,64,.13)' }} />
+
+          <div className="tl-bizgrid relative">
+            <div>
+              <span className="inline-flex items-center gap-[7px] rounded-full px-3 py-[6px]"
+                    style={{ background: 'rgba(244,183,64,.2)', border: '1px solid rgba(244,183,64,.34)' }}>
+                <span className="text-[9.5px] font-extrabold uppercase" style={{ color: '#FFD37A', letterSpacing: '.13em' }}>
+                  {L('Para negocios', 'For business')}
+                </span>
+              </span>
+              <h2 className="font-extrabold text-white"
+                  style={{ fontSize: 'clamp(21px,3.4vw,34px)', letterSpacing: '-.03em', lineHeight: 1.2, marginTop: 14, textWrap: 'balance' }}>
+                {L('¿Eres latino y quieres emprender o ya tienes un negocio establecido?', 'Are you Latino and want to start out — or already run a business?')}
+              </h2>
+              <p className="max-w-[46ch] font-medium"
+                 style={{ fontSize: 'clamp(13.5px,1.5vw,15.5px)', color: 'rgba(255,255,255,.84)', lineHeight: 1.65, marginTop: 12, textWrap: 'pretty' }}>
+                {L(`Publica tu negocio y llega a la gente de ${cityShort} que te está buscando — todo en español.`,
+                   `List your business and reach the people in ${cityShort} who are looking for you — all in Spanish.`)}
+              </p>
+              <button onClick={() => go(user ? '/negocio/' : '/negocio/publicar/')}
+                      className="tl-focus flex w-full max-w-[340px] cursor-pointer items-center justify-center gap-[9px] rounded-btn-lg bg-white px-[26px] py-[16px] text-[14.5px] font-extrabold text-primary-dark"
+                      style={{ marginTop: 'clamp(20px,2.6vw,26px)', boxShadow: '0 14px 32px rgba(20,10,50,.28)' }}>
+                <Store size={17} stroke={2.4} className="flex-none" aria-hidden />
+                {user ? L('Ir a mi negocio', 'Go to my business') : L('Registrar mi negocio', 'List my business')}
+              </button>
+              <p className="text-[11.5px] font-bold" style={{ color: 'rgba(255,255,255,.74)', marginTop: 13 }}>
+                {L('Listo en 5 minutos · sin contratos', 'Ready in 5 minutes · no contracts')}
+              </p>
+            </div>
+
+            <div className="tl-perks">
+              {PERKS.map((p) => (
+                <div key={p.es} className="rounded-[15px] p-[14px]"
+                     style={{ background: 'rgba(255,255,255,.13)', border: '1px solid rgba(255,255,255,.18)' }}>
+                  <span aria-hidden className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,.2)' }}>
+                    <p.Icon size={15} stroke={2.2} className="text-white" />
+                  </span>
+                  <h3 className="text-[12.5px] font-extrabold text-white" style={{ marginTop: 10 }}>{L(p.es, p.en)}</h3>
+                  <p className="text-[10.5px] font-medium" style={{ color: 'rgba(255,255,255,.74)', marginTop: 3, lineHeight: 1.45 }}>{L(p.dEs, p.dEn)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════ PIE ═════════════ */}
+      <footer className={`bg-page pt-[clamp(40px,6vw,72px)] ${gutter}`}>
+        <div className="mx-auto flex max-w-[1080px] flex-wrap items-center gap-[14px] pt-5"
+             style={{ borderTop: '1px solid rgba(30,27,46,.07)', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+          <Brand size={18} />
+          <span className="text-[11.5px] font-semibold text-muted">© {new Date().getFullYear()} To&rsquo;Latino</span>
+          {/* Los enlaces legales no están en el handoff, pero la ley sí los pide
+              y las dos páginas ya existen: se añaden sin tocar su composición. */}
+          <nav aria-label={L('Legal', 'Legal')} className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1">
+            <a href="/terminos/" className="tl-focus text-[11.5px] font-semibold text-muted hover:text-primary-dark">{L('Términos', 'Terms')}</a>
+            <a href="/privacidad/" className="tl-focus text-[11.5px] font-semibold text-muted hover:text-primary-dark">{L('Privacidad', 'Privacy')}</a>
+          </nav>
         </div>
       </footer>
-
-      {/* ═══════ MENÚ MÓVIL (hueco que el handoff pide cerrar) ═══════ */}
-      {menu && (
-        <div role="dialog" aria-modal="true" aria-label={L('Menú', 'Menu')}
-             className="tl-menu fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-white p-5">
-          <div className="flex items-center justify-between">
-            <Brand size={21} />
-            <button onClick={() => setMenu(false)} aria-label={L('Cerrar menú', 'Close menu')}
-                    className="tl-focus flex h-10 w-10 cursor-pointer items-center justify-center rounded-btn bg-app">
-              <X size={16} stroke={2.6} className="text-ink" />
-            </button>
-          </div>
-          <nav className="mt-7 flex flex-col">
-            {NAV.map((n) => (
-              <a key={n.id} href={`#${n.id}`} onClick={() => setMenu(false)}
-                 className="tl-focus border-b border-hair py-3 text-[26px] font-extrabold tracking-[-.035em] text-ink">
-                {L(n.es, n.en)}
-              </a>
-            ))}
-          </nav>
-          <div className="mt-auto flex flex-col gap-2.5 pt-8">
-            <button onClick={() => { setMenu(false); openSignup('user'); }}
-                    className="tl-focus w-full cursor-pointer rounded-btn-lg bg-primary py-4 text-[14px] font-extrabold text-white">
-              {L('Crear cuenta gratis', 'Create free account')}
-            </button>
-            <button onClick={() => { setMenu(false); go('/entrar/'); }}
-                    className="tl-focus w-full cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-4 text-[14px] font-extrabold text-primary-dark">
-              {L('Iniciar sesión', 'Log in')}
-            </button>
-            <div className="mt-2 flex items-center gap-3 text-[11.5px] font-bold text-muted-2">
-              <span>{L('Idioma', 'Language')}</span>
-              <LangPill />
-              <span className="ml-auto truncate">{app.city}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════ TOAST ═══════ */}
-      {toast && (
-        <div role="status" className="tl-pop fixed bottom-[26px] left-1/2 z-[70] flex -translate-x-1/2 items-center gap-2 rounded-[13px] bg-ink px-[22px] py-[13px] text-[12.5px] font-extrabold text-white"
-             style={{ boxShadow: '0 18px 44px rgba(28,24,46,.4)', maxWidth: 'calc(100vw - 32px)' }}>
-          <Check size={15} className="text-mint" aria-hidden /> {toast}
-        </div>
-      )}
 
       <CityModal />
 
       <style jsx global>{`
-        html { scroll-behavior: smooth; scroll-padding-top: 72px; }
-        .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        html { scroll-behavior: smooth; }
+        body { background: #FBFAFE; } /* el rebote del scroll no debe enseñar el gris de la app */
+
         .tl-focus:focus-visible { outline: 2px solid #7B61FF; outline-offset: 2px; border-radius: 10px; }
-        .tl-cat { transition: box-shadow .18s ease, border-color .18s ease; }
-        .tl-cat:hover { border-color: rgba(123,97,255,.36); box-shadow: 0 12px 28px rgba(60,50,110,.11); }
-        .tl-biz { transition: box-shadow .18s ease; }
-        .tl-biz:hover { box-shadow: 0 16px 34px rgba(60,50,110,.13); }
-        .tl-evt { transition: border-color .18s ease; }
-        .tl-evt:hover { border-color: rgba(244,183,64,.4); }
-        .tl-row { transition: border-color .18s ease, background .18s ease; }
-        .tl-row:hover { border-color: rgba(123,97,255,.3); background: #FBFAFE; }
-        @keyframes tlp { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
+
+        /* Bloque central del hero */
+        .tl-hero-inner { display: flex; flex-direction: column; align-items: center; width: 100%; padding: clamp(14px,3vw,28px) 0; }
+        .tl-searchwrap { width: 100%; max-width: 760px; margin-top: clamp(68px,7vw,86px); }
+        .tl-authrow { margin-top: clamp(26px,6vw,76px); }
+        .tl-search { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
+        .tl-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        /* El marcador del buscador es largo a propósito (lo fija el handoff) y
+           en móvil la regla anti-zoom de iOS lo sube a 16px, así que no cabe.
+           Que termine en puntos suspensivos y no cortado a media palabra. */
+        .tl-search input { text-overflow: ellipsis; }
+        .tl-join:hover { background: #F5F2FE; }
+        .tl-btn-biz { transition: border-color .18s ease; }
+        .tl-btn-biz:hover { border-color: rgba(123,97,255,.4); }
+        .tl-feed { transition: border-color .18s ease; }
+        .tl-feed:hover { border-color: rgba(123,97,255,.28); }
+
+        /* Variantes larga (≥600px) / corta (≤599px) de las etiquetas y de los
+           dos selectores de ciudad del buscador. */
+        .tl-sm { display: flex; }
+        .tl-lg { display: none; }
+        .tl-lgi { display: inline; }
+        .tl-smi { display: none; }
+        @media (min-width: 600px) {
+          .tl-sm { display: none !important; }
+          .tl-lg { display: flex; }
+          .tl-search { grid-template-columns: minmax(0,1fr) auto; }
+          .tl-sub { white-space: nowrap; }
+        }
+        @media (max-width: 599px) {
+          .tl-lgi { display: none; }
+          .tl-smi { display: inline; }
+          /* Ritmo del móvil, medido por el handoff en un teléfono real:
+             insignia 72 · insignia→H1 18 · subtítulo→buscador 64 · la fila de
+             cuenta y el feed anclados abajo. */
+          .tl-hero-inner { padding-top: 34px; justify-content: flex-start; min-height: calc(100svh - 150px); }
+          .tl-searchwrap { margin-top: 64px; display: flex; flex-direction: column; flex: 1; }
+          .tl-authrow { margin-top: auto !important; padding-top: 20px; gap: 0; }
+          .tl-kick { padding: 5px 11px; }
+          .tl-kick span { font-size: 10px; }
+          .tl-h1 { font-size: clamp(26px,8vw,31px) !important; line-height: 1.14 !important; letter-spacing: -.03em !important; margin-top: 18px !important; }
+          .tl-sub { font-size: 12.5px !important; max-width: 34ch; margin: 8px auto 0 !important; text-wrap: balance; }
+          .tl-chips { gap: 6px; padding-bottom: 9px; }
+          .tl-chips > button { padding: 8px 12px; font-size: 11.5px; gap: 6px; }
+          .tl-search { border-radius: 15px !important; padding: 6px !important; }
+          .tl-sbtn { padding: 11px 14px !important; font-size: 13px !important; border-radius: 10px !important; }
+          .tl-points { gap: 7px 11px !important; margin-top: 11px !important; }
+          .tl-points span { font-size: 10px !important; }
+          .tl-jointitle, .tl-join { font-size: 12px !important; }
+          .tl-join { padding: 12px 8px !important; }
+          .tl-feed { padding: 11px 12px !important; min-height: 80px !important; margin-top: 4px !important; border-radius: 14px !important; }
+          .tl-pname, .tl-ptext { font-size: 12px !important; }
+          .tl-ptext { margin-top: 4px !important; }
+          .tl-pmeta { font-size: 10px !important; margin-top: 4px !important; }
+          .tl-btn-biz { padding: 9px 12px !important; font-size: 12px !important; border-radius: 11px !important; }
+          .tl-marqband span { font-size: 10px !important; }
+        }
+        /* Ventanas bajas: la marquesina estorba y el titular se achica */
+        @media (max-height: 700px) and (min-width: 600px) {
+          .tl-marqband { display: none !important; }
+          .tl-h1 { font-size: clamp(25px, min(5.4vw,5vh), 44px) !important; }
+          .tl-sub { font-size: 13.5px !important; margin-top: 6px !important; }
+          .tl-kick { padding: 5px 12px; }
+          .tl-searchwrap { margin-top: 52px; }
+          .tl-points { margin-top: 12px !important; }
+          .tl-authrow { margin-top: 24px; }
+        }
+        @media (max-height: 440px) and (orientation: landscape) {
+          .tl-marqband { display: none !important; }
+          .tl-h1 { font-size: clamp(22px, min(5vw,5.4vh), 34px) !important; margin-top: 10px !important; }
+        }
+
+        /* Rejillas de las dos secciones inferiores */
+        .tl-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,300px), 1fr)); column-gap: clamp(28px,4vw,56px); }
+        .tl-bizgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,320px), 1fr)); gap: clamp(24px,3.4vw,44px); align-items: center; }
+        .tl-perks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%,150px), 1fr)); gap: 10px; }
+
+        /* Animaciones del handoff */
+        @keyframes tlp { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+        @keyframes tlup { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
+        @keyframes tlmarq { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+        @keyframes tlpa { from { opacity: 0; transform: translateY(9px) } to { opacity: 1; transform: none } }
+        @keyframes tlpb { from { opacity: 0; transform: translateY(9px) } to { opacity: 1; transform: none } }
         .tl-pulse { animation: tlp 1.8s ease-in-out infinite; }
-        @keyframes tlmenu { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } }
-        .tl-menu { animation: tlmenu .22s ease; }
-        @keyframes tlpop { from { opacity: 0; transform: translate(-50%, 10px) } to { opacity: 1; transform: translate(-50%, 0) } }
-        .tl-pop { animation: tlpop .22s ease; }
+        .tl-up1 { animation: tlup .6s cubic-bezier(.22,.7,.25,1) both; }
+        .tl-up2 { animation: tlup .6s .08s cubic-bezier(.22,.7,.25,1) both; }
+        .tl-up3 { animation: tlup .6s .16s cubic-bezier(.22,.7,.25,1) both; }
+        .tl-up4 { animation: tlup .6s .24s cubic-bezier(.22,.7,.25,1) both; }
+        .tl-marq { animation: tlmarq 36s linear infinite; }
+        .tl-pa { animation: tlpa .42s cubic-bezier(.22,.7,.25,1) both; }
+        .tl-pb { animation: tlpb .42s cubic-bezier(.22,.7,.25,1) both; }
         @media (prefers-reduced-motion: reduce) {
           html { scroll-behavior: auto; }
-          .tl-pulse, .tl-menu, .tl-pop { animation: none !important; }
+          .tl-pulse, .tl-up1, .tl-up2, .tl-up3, .tl-up4, .tl-marq, .tl-pa, .tl-pb { animation: none !important; }
         }
       `}</style>
     </div>

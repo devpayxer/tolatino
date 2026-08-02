@@ -1,105 +1,92 @@
 'use client';
 
-// Datos públicos de la landing (handoff "ToLatino Home", variante B, 2026-07-29).
+// Datos públicos de la portada (handoff "To'Latino — Official Home Page",
+// 2026-08-02, que reemplaza los handoffs anteriores de Home).
 //
-// El handoff trae negocios, listados y testimonios de MUESTRA. Publicarlos sería
-// repetir lo que se limpió el 2026-07-29: datos fabricados presentados como
-// reales (regla #8) — y en la página más vista, con testimonios inventados, que
-// es lo más dañino para la confianza. Aquí se traen los REALES (migración 0131);
-// cuando no hay, la sección correspondiente se oculta o muestra su vacío.
+// El handoff trae 19 publicaciones de MUESTRA para la tarjeta del feed y lo dice
+// explícitamente: «The community feed is static sample data — production should
+// read the real feed». Publicar las de muestra sería repetir lo que se limpió el
+// 2026-07-29: personas y recomendaciones inventadas presentadas como reales, en
+// la página más vista (regla #8). Aquí se lee el feed REAL; si no hay nada
+// alrededor, la tarjeta simplemente no se dibuja.
+//
+// El mismo handoff prohíbe conteos: «No platform statistics appear anywhere; do
+// not add counts (deliberate pre-launch honesty)». Por eso este archivo ya no
+// expone `platform_stats` ni testimonios ni mercado: la portada no los usa. Las
+// funciones SQL de la migración 0131 quedan en la base, sin llamador.
+//
+// ESCALA: una sola llamada a `posts_near` (índice GIST vía ST_DWithin, migración
+// 0130) con un tope pequeño. La portada no pagina ni recarga: se pide una vez
+// por montaje y se rota en el cliente.
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useApp } from '@/lib/state';
+import type { PostType } from '@/data/fixtures';
 
-export type PlatformStats = {
-  businesses: number;
-  verified: number;
-  avg_rating: number | null;
-  reviews: number;
-  neighbors: number;
-  posts: number;
-  events_week: number;
-  properties: number;
-  vehicles: number;
-  jobs: number;
-  by_category: Record<string, number>;
-};
-
-export type Testimonial = {
+/** Lo mínimo que pinta la tarjeta del hero — no se traen columnas de más. */
+export type FeedTeaser = {
   id: string;
-  author: string;
-  initials: string;
-  rating: number;
-  body_es: string | null;
-  body_en: string | null;
-  biz_name: string;
-  biz_slug: string;
-  biz_city: string | null;
-};
-
-export type MarketRow = {
-  slug?: string;
-  id?: string;
+  type: PostType;
   name: string;
-  meta: string | null;
-  price: number | null;
-  deal?: string | null;
-  bhph?: boolean | null;
-  pay?: string | null;
+  initials: string;
+  color: string;
+  hood: string;
+  es: string;
+  en: string;
+  minutes: number; // antigüedad en minutos; el texto se arma en el idioma activo
 };
 
-export type Marketplace = { homes: MarketRow[]; autos: MarketRow[]; jobs: MarketRow[] };
+// 30 millas: el mismo radio hiperlocal que usa el feed de Comunidad.
+const RADIUS_M = 48280;
+const MAX = 20;
 
-const EMPTY_MARKET: Marketplace = { homes: [], autos: [], jobs: [] };
+const TYPES: PostType[] = ['ask', 'rec', 'local', 'sale', 'poll'];
 
 /**
- * Una sola carga por montaje. Los tres RPCs son `stable`, así que la respuesta
- * se puede cachear; no se re-piden al teclear ni al cambiar de idioma.
- * Si algo falla, se devuelve vacío y las secciones se ocultan solas — nunca se
- * cae a datos de muestra.
+ * Publicaciones reales cerca de la ciudad elegida, para la tarjeta rotatoria del
+ * hero. Devuelve `[]` mientras carga y también cuando no hay nada: la portada
+ * oculta la tarjeta en ambos casos (mejor sin tarjeta que con vecinos inventados).
  */
-export function useLandingData() {
-  const [stats, setStats] = useState<PlatformStats | null>(null);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [market, setMarket] = useState<Marketplace>(EMPTY_MARKET);
-  const [loading, setLoading] = useState(true);
+export function useLandingFeed(): FeedTeaser[] {
+  const { coords } = useApp();
+  const [posts, setPosts] = useState<FeedTeaser[]>([]);
 
   useEffect(() => {
-    if (!supabase) { setLoading(false); return; }
+    if (!supabase) return;
     let cancelled = false;
     (async () => {
-      try {
-        const [s, t, m] = await Promise.all([
-          supabase!.rpc('platform_stats'),
-          supabase!.rpc('landing_testimonials', { max_results: 3 }),
-          supabase!.rpc('landing_marketplace', { max_each: 3 }),
-        ]);
-        if (cancelled) return;
-        if (!s.error && s.data) setStats(s.data as unknown as PlatformStats);
-        if (!t.error && Array.isArray(t.data)) setTestimonials(t.data as unknown as Testimonial[]);
-        if (!m.error && m.data) {
-          const mm = m.data as unknown as Partial<Marketplace>;
-          setMarket({ homes: mm.homes ?? [], autos: mm.autos ?? [], jobs: mm.jobs ?? [] });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      const { data, error } = await supabase!.rpc('posts_near', {
+        user_lat: coords.lat, user_lng: coords.lng, radius_m: RADIUS_M, max_results: MAX,
+      });
+      if (cancelled || error || !Array.isArray(data)) return;
+      const now = Date.now();
+      setPosts((data as Record<string, unknown>[]).map((r): FeedTeaser => {
+        const t = String(r.type);
+        return {
+          id: String(r.id),
+          type: (TYPES.includes(t as PostType) ? t : 'local') as PostType,
+          name: String(r.author_name ?? ''),
+          initials: String(r.author_initials ?? ''),
+          color: String(r.author_color ?? '#7B61FF'),
+          hood: String(r.hood ?? ''),
+          es: String(r.body_es ?? ''),
+          en: String(r.body_en ?? r.body_es ?? ''),
+          minutes: Math.max(1, Math.round((now - new Date(String(r.created_at)).getTime()) / 60000)),
+        };
+      }).filter((p) => p.es.trim().length > 0));
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [coords.lat, coords.lng]);
 
-  return { stats, testimonials, market, loading };
+  return posts;
 }
 
-/** 1284 → "1,284" · 48200 → "48.2k". Sin inventar: si no hay dato, guion. */
-export function compact(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return '—';
-  if (n >= 10000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`;
-  return n.toLocaleString('en-US');
-}
-
-/** $34,900 · $1,650 — sin decimales, que es como se leen los precios del mercado. */
-export function money(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return '—';
-  return `$${Math.round(n).toLocaleString('en-US')}`;
+/** 4 → "hace 4 min" · 90 → "hace 2 h" · 3000 → "hace 2 d". */
+export function agoText(minutes: number, es: boolean): string {
+  if (minutes < 60) return es ? `hace ${minutes} min` : `${minutes} min ago`;
+  const h = Math.round(minutes / 60);
+  if (h < 24) return es ? `hace ${h} h` : `${h} h ago`;
+  const d = Math.round(h / 24);
+  return es ? `hace ${d} d` : `${d} d ago`;
 }

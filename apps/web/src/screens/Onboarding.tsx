@@ -23,6 +23,12 @@ export function OnboardingScreen() {
   const router = useRouter();
 
   const [step, setStep] = useState<Step>('welcome');
+  // La portada distingue "Entrar" de "Regístrate"; con `?crear=1` se abre
+  // directamente el formulario de alta en vez de la bienvenida. Se lee en el
+  // cliente (la exportación es estática, no hay `searchParams` del servidor).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('crear') === '1') setStep('register');
+  }, []);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

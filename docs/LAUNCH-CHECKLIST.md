@@ -100,26 +100,37 @@
   código muerto e inalcanzable, pero siguen en el paquete. Al construir cada
   feature, borrar su tabla fabricada (`schedRaw`, `payRaw`, `shiftRaw` en
   `modules/Staff.tsx`). Nómina toca dinero real: no se lanza sin proveedor.
-- [ ] **Landing v3: piezas del handoff que quedaron APAGADAS a propósito (2026-07-29).**
-  1. **Bloque de descarga de app** (`showAppSection`): lleva botones de App Store y
-     Google Play, y las apps NO existen. Un botón que no lleva a ningún lado es un
-     estado roto publicado como final (regla #8). `SHOW_APP_SECTION = false` en
-     `screens/Landing.tsx`; encender el día que haya apps.
-  2. **Modal de registro propio**: el handoff propone registrarse sin salir de la
-     landing. Los CTA llevan al flujo real (`/entrar`, `/negocio/publicar`) para no
-     duplicar la lógica de auth — que ya resuelve el aviso de "confirma tu correo" y
-     la creación del perfil. Si se construye el modal, debe REUSAR `useAuth`, nunca
-     reimplementarlo.
-  3. **Testimonios**: se muestran solo si `landing_testimonials` devuelve reseñas
-     reales de 5★. Los tres del handoff son personas inventadas — no se publican.
-  4. **Fotos reales**: todo el arte sigue siendo el degradado rayado del design
-     system. El handoff avisa que la fotografía real cambia bastante el peso visual
-     de las tarjetas de negocio y evento.
-- [ ] **Escala: `platform_stats()` hace conteos exactos (2026-07-29).** Hoy es
-  instantáneo (547 negocios) pero es un `count(*)` por visita a la landing. A 1M+
-  migrar a estimaciones de `pg_class.reltuples` (O(1)) o a una tabla de contadores
-  refrescada por cron. La función ya es `stable` y el cliente la pide una sola vez
-  por montaje.
+- [ ] **Portada OFICIAL (handoff 2026-08-02) — lo que queda pendiente.**
+  El handoff "To'Latino — Official Home Page" reemplazó a los anteriores y la
+  portada se rehízo entera. Es una página de PRE-LANZAMIENTO: sin conteos, sin
+  prueba social, sin testimonios (el propio handoff lo prohíbe: *"do not add
+  counts — deliberate pre-launch honesty"*). Pendientes:
+  1. **Tarjeta del feed vacía hasta que haya vecinos publicando.** Lee `posts_near`
+     alrededor de la ciudad elegida; hoy en pruebas devuelve 0 filas y por eso la
+     tarjeta no se dibuja. Es el comportamiento correcto (mejor sin tarjeta que con
+     vecinos inventados), pero **revisar el día del lanzamiento**: si la ciudad
+     arranca sin publicaciones, el hero se ve más vacío de lo diseñado. Opciones a
+     decidir entonces: sembrar la conversación con publicaciones REALES del equipo,
+     o ampliar el radio de la portada.
+  2. **Revisar la copia cuando la plataforma deje de ser nueva.** La insignia dice
+     "Nuevo · Llegando a {ciudad}" y la sección de negocios habla de ser de los
+     primeros. Cuando haya negocios activos, esa copia deja de ser cierta y hay que
+     pedirle a Claude Design la variante de post-lanzamiento (con conteos reales, que
+     hoy están deliberadamente prohibidos).
+  3. **Fotos reales**: la portada no usa fotografía; si algún día se añade, tiene
+     que salir de negocios reales con permiso, nunca de banco de imágenes que
+     simule negocios que no existen.
+  4. **Modal de registro propio**: el handoff no lo trae y los CTA llevan al flujo
+     real (`/entrar`, `/entrar?crear=1`, `/negocio/publicar`). Si algún día se
+     construye un registro dentro de la portada, debe REUSAR `useAuth` — que ya
+     resuelve el aviso de "confirma tu correo" y la creación del perfil.
+- [ ] **Limpiar: `platform_stats()`, `landing_testimonials()` y
+  `landing_marketplace()` quedaron sin llamador (2026-08-02).** Las creó la
+  migración 0131 para la portada anterior; la portada oficial prohíbe los conteos,
+  así que ya nadie las usa. No estorban (son de lectura pública y agregada), pero
+  o se aprovechan en la variante post-lanzamiento o se borran con una migración.
+  Si se reactivan: hacen `count(*)` exacto — a 1M+ hay que migrar a estimaciones de
+  `pg_class.reltuples` (O(1)) o a una tabla de contadores refrescada por cron.
 - [ ] **🔴 BLOQUEADOR DE LANZAMIENTO: no hay servicio de correo propio (SMTP).**
   Descubierto 2026-07-29 al hacer el ensayo en producción. El proyecto de prod NO
   tiene SMTP configurado (`smtp_host = null`), así que usa el servicio integrado de
@@ -146,13 +157,9 @@
      privacidad: hoy `profiles` solo es legible por su dueño, así que hace falta un
      RPC `SECURITY DEFINER` que devuelva un mínimo (nombre visible, barrio) con
      consentimiento explícito — NO abrir la tabla.
-- [ ] **Decidir: el hero de la landing muestra un negocio de ejemplo inventado.**
-  `Landing.tsx` pinta tarjetas decorativas inclinadas con "Taquería La Esperanza ·
-  4.9★" y un post de ejemplo. Es ilustración de marketing (no un listado navegable),
-  práctica normal en cualquier web, y por eso se dejó. Pero conviene decidir a
-  conciencia: (a) dejarlo como ilustración, (b) cambiarlo por un negocio REAL con su
-  permiso — lo más potente cuando haya negocios, (c) neutralizarlo con texto
-  genérico. Revisar cuando haya negocios reales en la plataforma.
+- [x] ~~Decidir: el hero de la landing muestra un negocio de ejemplo inventado.~~
+  **RESUELTO (2026-08-02):** la portada oficial no tiene tarjetas decorativas de
+  negocio. Lo único con datos es la tarjeta del feed, y lee publicaciones REALES.
 - [ ] **Escala: pendientes de la auditoría 2026-07-29 (migración 0130 cerró lo crítico).**
   Lo ARREGLADO y verificado ya está en 0130 (geo indexado, guards de columnas,
   índices FK, orden determinista). Queda pendiente, por orden de impacto:

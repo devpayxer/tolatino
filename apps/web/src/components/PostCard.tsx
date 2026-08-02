@@ -12,25 +12,15 @@ import { useInteractions } from '@/lib/interactions';
 import { useFollows } from '@/lib/follows';
 import { Avatar } from '@/components/ui';
 import { PostMenu } from '@/components/PostMenu';
-import type { Post, PostType } from '@/data/fixtures';
+import { postTag } from '@/lib/postTag';
+import type { Post } from '@/data/fixtures';
 import { tile } from '@/lib/tiles';
 
 export type FeedPost = Post;
 
-export function postTag(type: PostType, L: (a: string, b: string) => string) {
-  switch (type) {
-    case 'ask':
-      return { label: L('Pregunta', 'Asking'), color: '#6D4DF6', bg: '#EFEBFF' };
-    case 'rec':
-      return { label: L('Recomienda', 'Recommends'), color: '#1F8A4C', bg: '#E3F5EA' };
-    case 'sale':
-      return { label: L('Vendo', 'For sale'), color: '#B26A00', bg: '#FCEFD6' };
-    case 'poll':
-      return { label: L('Encuesta', 'Poll'), color: '#0E9384', bg: '#D6F3EF' };
-    default:
-      return { label: L('Mi barrio', 'Local'), color: '#2F6FED', bg: '#E5EFFB' };
-  }
-}
+// Re-exportada por compatibilidad: la definición vive en `@/lib/postTag` para
+// que la portada pueda usarla sin arrastrar esta tarjeta entera a su paquete.
+export { postTag } from '@/lib/postTag';
 
 export function PostCard({
   post,
