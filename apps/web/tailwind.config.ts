@@ -27,7 +27,7 @@ const config: Config = {
           faint2: '#B0ACC0',
         },
         amber: { DEFAULT: '#F4B740', ink: '#9A6A12', bg: '#FCEFD6' }, // brand diamond, stars, price/soon badges
-        green: { DEFAULT: '#1F9D57', dark: '#1F8A4C', bg: '#E3F5EA' }, // open, verified, success
+        green: { DEFAULT: '#1F9D57', dark: '#1F8A4C', bg: '#E3F5EA', bg2: '#EAF6EF', ink: '#176B3A' }, // open, verified, success
         pink: { DEFAULT: '#F0466E', dark: '#D6336C', bg: '#FDE7EF' }, // like, notif badge, logout
         blue: { DEFAULT: '#2F6FED', bg: '#E5EFFB' }, // "Mi barrio", info links
         lilac: { DEFAULT: '#EFEBFF', 2: '#F1EFFA', 3: '#F3F0FF', line: '#E7E3F4', ring: '#DCD4FA' }, // chips, avatars, soft bg
@@ -43,7 +43,7 @@ const config: Config = {
         // Morados para leer SOBRE oscuro (los de `primary` no contrastan ahí).
         'primary-on-dark': '#A48CFF', // wordmark sobre fondo oscuro
         'primary-pale': '#C9B6FF',    // inicio del degradado del titular, iconos en oscuro
-        rose: { DEFAULT: '#D6336C', deep: '#B0357E' }, // restaurantes, fecha, fin del degradado
+        rose: { DEFAULT: '#D6336C', deep: '#B0357E', ink: '#A81E4D' }, // restaurantes, fecha, fin del degradado
         page: '#FBFAFE',   // fondo de la landing (más claro que `app`)
         mint: '#7BE0A8',   // ticks y precios "Gratis" sobre oscuro
         sky: '#8FC5F5',    // icono bilingüe del hero
@@ -65,6 +65,18 @@ const config: Config = {
         ocean: { DEFAULT: '#2A6CB0', bg: '#E4EEFB' }, // idioma / "vende"
         jade: '#0E9488',   // comunidad (fila 03)
         slate: '#5B5570',  // avatares neutros del feed
+        // ── Alta de usuario (handoff "Onboarding & Auth Flow", 2026-08-02) ──
+        auth: {
+          panel: '#2A2440',   // degradado del panel de marca (inicio)
+          panel2: '#171426',  // degradado del panel de marca (medio)
+          line: '#E6E2F2',    // borde de campos y tarjetas
+          line2: '#C9C2E6',   // borde al pasar el ratón
+          line3: '#D8D2EC',   // punto de radio apagado
+          track: '#ECE8F4',   // carril de la barra de progreso
+          off: '#CFC7EC',     // botón principal deshabilitado
+          soft: '#8B6BFF',    // "Latino" sobre el panel oscuro
+          pale: '#B9A6FF',    // iconos sobre el panel oscuro
+        },
       },
       borderColor: {
         hair: 'rgba(30,27,46,.08)', // subtle card borders / dividers

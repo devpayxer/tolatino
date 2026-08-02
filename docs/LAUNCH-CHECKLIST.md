@@ -150,6 +150,39 @@
   ciudad de entrada en vez de asumir una, o (b) una estimación por IP — hoy
   imposible sin un servicio externo, porque el sitio es export estático y no hay
   servidor que lea la IP. Revisar al abrir la segunda ciudad.
+- [ ] **🔴 Alta sin contraseña: falta la configuración en Supabase (2026-08-02).**
+  El flujo nuevo (`/entrar`) ya manda y valida códigos de 6 dígitos, pero
+  Supabase tiene que poder ENTREGARLOS. Sin esto la pantalla funciona y el
+  código no llega nunca:
+  1. **SMS** — Authentication → Providers → **Phone**: encenderlo y pegar las
+     credenciales de Twilio (Account SID, Auth Token, Message Service SID).
+     Cuesta ~$0.008 por mensaje en EE. UU.
+  2. **Correo** — la plantilla de "Magic Link" debe incluir `{{ .Token }}`; si
+     solo trae el enlace, el usuario recibe un enlace y no un código de 6
+     dígitos. Y sigue en pie el bloqueador de SMTP: 2 correos por hora hasta
+     que haya Amazon SES.
+  3. **Rate limits** — Authentication → Rate Limits: subir el de SMS/correo por
+     encima del mínimo cuando haya tráfico real.
+  Mientras tanto queda la puerta de la contraseña en "Entrar", que es lo único
+  que permite entrar hoy.
+- [ ] **Alta: piezas del handoff que quedaron fuera a propósito (2026-08-02).**
+  1. **Google / Apple / Facebook** — decisión del fundador: cada uno necesita
+     una app de desarrollador suya (Apple cuesta $99/año) y claves en Supabase;
+     un botón social sin configurar falla al pulsarlo. Se añaden cuando existan
+     las cuentas.
+  2. **Selector de país del teléfono** — hoy el prefijo es `+1` fijo (solo
+     EE. UU.). Cuando haga falta otro país: selector real + validación con
+     libphonenumber.
+  3. **Foto de perfil** — el handoff trae un botón "Agregar foto" que en el
+     prototipo solo enseña un aviso. Aquí se sustituyó por una línea honesta
+     ("la puedes poner después"). Falta construir la subida de verdad.
+  4. **Zona por COLONIA** — el handoff elige colonia y código postal; la app
+     trabaja por ciudad y no tenemos datos de colonias. Si algún día se quiere
+     esa granularidad, hace falta una tabla de colonias con sus polígonos.
+  5. **Los intereses se guardan pero todavía no ordenan nada.** Están en
+     `profiles.interests` y la copia ya no promete más de lo que hace ("con eso
+     ordenamos lo que ves primero" ⇢ hay que cumplirlo). Pendiente: usarlos en
+     el orden del inicio y de Negocios.
 - [ ] **Cabeceras de seguridad: falta la CSP (2026-08-02).** Ya van
   `X-Frame-Options`, `X-Content-Type-Options` y `Referrer-Policy` en
   `vercel.json` (ver `docs/CABECERAS-SEGURIDAD.md`). Falta

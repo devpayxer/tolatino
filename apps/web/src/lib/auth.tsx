@@ -18,6 +18,7 @@ export type Profile = {
   lng: number | null;
   bio?: string | null;
   settings?: Record<string, unknown> | null;
+  interests?: string[] | null;
 };
 
 type AuthCtx = {
@@ -30,6 +31,11 @@ type AuthCtx = {
    *  el usuario cree que ya entró y navega como invitado. */
   signUp: (name: string, email: string, password: string, loc?: { label: string; lat: number; lng: number }) => Promise<{ error: string | null; needsConfirmation?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  /** Alta/entrada SIN contraseña: manda un código de 6 dígitos por correo o SMS.
+   *  `channel` decide el canal; el destino ya viene normalizado (E.164 para SMS). */
+  sendCode: (target: string, channel: 'email' | 'sms') => Promise<{ error: string | null }>;
+  /** Comprueba el código. Si es correcto deja la sesión abierta. */
+  verifyCode: (target: string, channel: 'email' | 'sms', code: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   saveLocation: (loc: { label: string; lat: number; lng: number }) => Promise<void>;
   updateProfile: (patch: Partial<Profile>) => Promise<{ error: string | null }>;
@@ -50,11 +56,25 @@ function colorFor(seed: string): string {
 
 // Auth failures return a STABLE code (never a localized sentence) so the UI can
 // render it in the active language via authErrorText() — Spanish-first, EN secondary.
-export type AuthErrCode = 'email_taken' | 'invalid_login' | 'weak_password' | 'bad_email' | 'not_configured' | 'generic';
+export type AuthErrCode =
+  | 'email_taken' | 'invalid_login' | 'weak_password' | 'bad_email' | 'not_configured' | 'generic'
+  // Sin contraseña
+  | 'bad_code' | 'expired_code' | 'too_many' | 'bad_phone' | 'sms_not_configured' | 'email_not_configured';
 function friendly(msg: string | undefined): AuthErrCode {
   const m = (msg || '').toLowerCase();
   if (m.includes('already registered') || m.includes('already been registered')) return 'email_taken';
   if (m.includes('invalid login')) return 'invalid_login';
+  // El orden importa: Supabase dice "Token has expired or is invalid" para un
+  // código malo, y ese texto contiene "email" en algunas variantes.
+  if (m.includes('expired')) return 'expired_code';
+  if (m.includes('token') || m.includes('otp') || m.includes('code')) return 'bad_code';
+  // Límite de envíos: es el fallo MÁS probable hoy (el proyecto manda 2 correos
+  // por hora hasta que haya SMTP propio). Merece su propio mensaje, porque
+  // "algo salió mal" haría que el usuario reintente y empeore el bloqueo.
+  if (m.includes('rate limit') || m.includes('too many') || m.includes('security purposes')) return 'too_many';
+  if (m.includes('phone') && (m.includes('provider') || m.includes('disabled') || m.includes('not enabled'))) return 'sms_not_configured';
+  if (m.includes('phone')) return 'bad_phone';
+  if (m.includes('signups not allowed') || m.includes('email provider') || m.includes('email logins are disabled')) return 'email_not_configured';
   if (m.includes('password')) return 'weak_password';
   if (m.includes('email')) return 'bad_email';
   return 'generic';
@@ -67,6 +87,12 @@ export function authErrorText(code: string | null | undefined, L: (a: string, b:
     case 'weak_password': return L('La contraseña debe tener al menos 6 caracteres.', 'Password must be at least 6 characters.');
     case 'bad_email': return L('Revisa el correo que escribiste.', 'Check the email you entered.');
     case 'not_configured': return L('El inicio de sesión no está configurado.', 'Sign-in is not configured.');
+    case 'bad_code': return L('Código incorrecto. Revísalo e intenta otra vez.', 'Wrong code. Check it and try again.');
+    case 'expired_code': return L('Ese código ya venció. Pide uno nuevo.', 'That code expired. Ask for a new one.');
+    case 'too_many': return L('Demasiados intentos. Espera un minuto y vuelve a pedirlo.', 'Too many attempts. Wait a minute and try again.');
+    case 'bad_phone': return L('Revisa el número que escribiste.', 'Check the number you entered.');
+    case 'sms_not_configured': return L('El envío por SMS todavía no está activo. Usa tu correo.', 'SMS delivery is not active yet. Use your email.');
+    case 'email_not_configured': return L('El envío por correo todavía no está activo. Usa tu teléfono.', 'Email delivery is not active yet. Use your phone.');
     default: return L('Algo salió mal. Intenta de nuevo.', 'Something went wrong. Try again.');
   }
 }
@@ -158,6 +184,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error ? friendly(error.message) : null };
   };
 
+  // ── Sin contraseña ────────────────────────────────────────────────────────
+  // `signInWithOtp` sirve para ENTRAR y para REGISTRARSE: si el destino no tiene
+  // cuenta, la crea. Por eso el flujo no necesita distinguir antes de mandar el
+  // código — el usuario solo escribe su teléfono o su correo.
+  const sendCode: AuthCtx['sendCode'] = async (target, channel) => {
+    if (!supabase) return { error: 'not_configured' };
+    const { error } = channel === 'sms'
+      ? await supabase.auth.signInWithOtp({ phone: target })
+      : await supabase.auth.signInWithOtp({ email: target.trim().toLowerCase() });
+    return { error: error ? friendly(error.message) : null };
+  };
+
+  const verifyCode: AuthCtx['verifyCode'] = async (target, channel, code) => {
+    if (!supabase) return { error: 'not_configured' };
+    const { error } = channel === 'sms'
+      ? await supabase.auth.verifyOtp({ phone: target, token: code, type: 'sms' })
+      : await supabase.auth.verifyOtp({ email: target.trim().toLowerCase(), token: code, type: 'email' });
+    // Con código correcto ya hay sesión: `onAuthStateChange` carga (o crea) el
+    // perfil, así que aquí no hace falta tocar nada más.
+    return { error: error ? friendly(error.message) : null };
+  };
+
   const signOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -185,7 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, profile, loading, configured: !!supabase, signUp, signIn, signOut, saveLocation, updateProfile }}>
+    <Ctx.Provider value={{ user, profile, loading, configured: !!supabase, signUp, signIn, sendCode, verifyCode, signOut, saveLocation, updateProfile }}>
       {children}
     </Ctx.Provider>
   );
