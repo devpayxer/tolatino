@@ -569,8 +569,15 @@ export function LandingScreen() {
           /* Ritmo del móvil, medido por el handoff en un teléfono real:
              insignia 72 · insignia→H1 18 · subtítulo→buscador 64 · la fila de
              cuenta y el feed anclados abajo. */
-          .tl-hero-inner { padding-top: 34px; justify-content: flex-start; min-height: calc(100svh - 150px); }
+          .tl-hero-inner { padding-top: 16px; justify-content: flex-start; min-height: calc(100svh - 150px); }
           .tl-searchwrap { margin-top: 64px; display: flex; flex-direction: column; flex: 1; }
+          /* Las tres garantías (verificados · idiomas · pagos) NO se muestran en
+             el teléfono, por petición del fundador: apretaban el bloque central
+             y su sitio natural es el escritorio, donde sobra ancho. El aire que
+             liberan, más los 18px que sube el titular, van al hueco elástico de
+             encima de la fila de cuenta — que es lo que hace que la pantalla
+             respire. En ≥600px siguen igual que en el handoff. */
+          .tl-points { display: none !important; }
           .tl-authrow { margin-top: auto !important; padding-top: 20px; gap: 0; }
           .tl-kick { padding: 5px 11px; }
           .tl-kick span { font-size: 10px; }
@@ -580,8 +587,6 @@ export function LandingScreen() {
           .tl-chips > button { padding: 8px 12px; font-size: 11.5px; gap: 6px; }
           .tl-search { border-radius: 15px !important; padding: 6px !important; }
           .tl-sbtn { padding: 11px 14px !important; font-size: 13px !important; border-radius: 10px !important; }
-          .tl-points { gap: 7px 11px !important; margin-top: 11px !important; }
-          .tl-points span { font-size: 10px !important; }
           .tl-jointitle, .tl-join { font-size: 12px !important; }
           .tl-join { padding: 12px 8px !important; }
           .tl-feed { padding: 11px 12px !important; min-height: 80px !important; margin-top: 4px !important; border-radius: 14px !important; }
@@ -610,7 +615,7 @@ export function LandingScreen() {
            que aquí se comprime: mismos elementos, mismo orden, nada se quita —
            solo se aprietan los huecos y las tipografías más grandes. */
         @media (max-width: 599px) and (max-height: 740px) {
-          .tl-hero-inner { padding-top: 16px !important; min-height: 0 !important; }
+          .tl-hero-inner { padding-top: 10px !important; min-height: 0 !important; }
           .tl-kick { padding: 4px 10px !important; }
           .tl-kick span { font-size: 9.5px !important; }
           .tl-h1 { font-size: clamp(22px,6.6vw,26px) !important; margin-top: 12px !important; }
@@ -621,7 +626,6 @@ export function LandingScreen() {
           .tl-search { padding: 5px !important; }
           .tl-search input { padding-top: 10px !important; padding-bottom: 10px !important; }
           .tl-sbtn { padding: 10px 14px !important; }
-          .tl-points { margin-top: 8px !important; gap: 5px 10px !important; }
           .tl-authrow { padding-top: 10px !important; }
           .tl-join { padding: 10px 8px !important; min-height: 40px !important; }
           .tl-feed { min-height: 68px !important; padding: 9px 11px !important; margin-top: 8px !important; }
@@ -630,7 +634,7 @@ export function LandingScreen() {
            decorativa, antes que dejar el buscador fuera de pantalla. */
         @media (max-width: 599px) and (max-height: 680px) {
           .tl-marqband { display: none !important; }
-          .tl-hero-inner { padding-top: 12px !important; }
+          .tl-hero-inner { padding-top: 6px !important; }
           .tl-h1 { font-size: clamp(21px,6.2vw,24px) !important; margin-top: 10px !important; }
           .tl-searchwrap { margin-top: 16px !important; }
           .tl-ptext { -webkit-line-clamp: 2; }
