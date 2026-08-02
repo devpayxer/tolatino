@@ -150,19 +150,24 @@
   ciudad de entrada en vez de asumir una, o (b) una estimación por IP — hoy
   imposible sin un servicio externo, porque el sitio es export estático y no hay
   servidor que lea la IP. Revisar al abrir la segunda ciudad.
-- [ ] **🔴 Alta sin contraseña: falta la configuración en Supabase (2026-08-02).**
-  El flujo nuevo (`/entrar`) ya manda y valida códigos de 6 dígitos, pero
-  Supabase tiene que poder ENTREGARLOS. Sin esto la pantalla funciona y el
-  código no llega nunca:
-  1. **SMS** — Authentication → Providers → **Phone**: encenderlo y pegar las
-     credenciales de Twilio (Account SID, Auth Token, Message Service SID).
-     Cuesta ~$0.008 por mensaje en EE. UU.
-  2. **Correo** — la plantilla de "Magic Link" debe incluir `{{ .Token }}`; si
-     solo trae el enlace, el usuario recibe un enlace y no un código de 6
-     dígitos. Y sigue en pie el bloqueador de SMTP: 2 correos por hora hasta
-     que haya Amazon SES.
-  3. **Rate limits** — Authentication → Rate Limits: subir el de SMS/correo por
-     encima del mínimo cuando haya tráfico real.
+- [ ] **🔴 Alta sin contraseña: faltan las CUENTAS de los canales (2026-08-02).**
+  La capa de entrega ya es NUESTRA: la función `send-otp` recibe el código de
+  Supabase y decide por dónde sale (WhatsApp primero, SMS de respaldo). Está
+  desplegada y probada en pruebas — firma verificada, reintento en cadena,
+  bloqueo por país y bitácora sin datos sensibles. Lo que falta son las cuentas:
+  1. **WhatsApp (principal)** — cuenta de Meta Business verificada, número
+     dedicado y plantilla de autenticación aprobada. Luego los secretos
+     `WHATSAPP_TOKEN` y `WHATSAPP_PHONE_ID`.
+  2. **SMS (respaldo)** — Twilio: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y
+     `TWILIO_FROM` (o `TWILIO_MESSAGING_SERVICE_SID`). Antes hay que verificar
+     un número toll-free (días) o registrar 10DLC (semanas).
+  3. **Encender el teléfono en Supabase** — `external_phone_enabled` está en
+     `false`; y conectar el hook: Authentication → Hooks → Send SMS → apuntar a
+     la función y pegar su secreto en `SEND_OTP_HOOK_SECRET`.
+  4. **Correo (recuperación)** — Amazon SES + la plantilla de "Magic Link" con
+     `{{ .Token }}`, o el usuario recibe un enlace en vez de un código. Sigue el
+     tope de 2 correos por hora hasta que SES esté.
+  5. **Rate limits** — subir los de SMS/correo cuando haya tráfico real.
   Mientras tanto queda la puerta de la contraseña en "Entrar", que es lo único
   que permite entrar hoy.
 - [ ] **Alta: piezas del handoff que quedaron fuera a propósito (2026-08-02).**
