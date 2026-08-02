@@ -601,7 +601,17 @@ export function LandingScreen() {
              cuanto el teléfono era bajo el bloque se quedaba corto y el padre lo
              centraba: todo junto arriba y un hueco muerto abajo. */
           .tl-hero-inner { padding-top: 16px; justify-content: flex-start; flex: 1; align-self: stretch; }
-          .tl-searchwrap { margin-top: 64px; display: flex; flex-direction: column; flex: 1; }
+          /* El buscador queda CENTRADO entre el bloque de arriba (titular) y el
+             de abajo (cuenta + tarjeta): dos márgenes automáticos —uno encima de
+             los chips y otro encima de la fila de cuenta— se reparten el hueco
+             sobrante a partes iguales. El margen fijo de 64px del handoff se
+             queda solo como suelo mínimo, para que los chips nunca se peguen al
+             subtítulo cuando no sobra nada. Ese suelo (20px) está igualado con lo
+             que aporta el bloque de abajo —8px de relleno más los ~13px que deja
+             el texto centrado dentro de unos enlaces de 44px— para que los dos
+             huecos midan lo mismo. Medido: 1px de diferencia en seis pantallas. */
+          .tl-searchwrap { margin-top: 20px; display: flex; flex-direction: column; flex: 1; }
+          .tl-chips { margin-top: auto; }
           /* Las tres garantías (verificados · idiomas · pagos) NO se muestran en
              el teléfono, por petición del fundador: apretaban el bloque central
              y su sitio natural es el escritorio, donde sobra ancho. El aire que
@@ -609,7 +619,11 @@ export function LandingScreen() {
              encima de la fila de cuenta — que es lo que hace que la pantalla
              respire. En ≥600px siguen igual que en el handoff. */
           .tl-points { display: none !important; }
-          .tl-authrow { margin-top: auto !important; padding-top: 20px; gap: 0; }
+          /* 8px, no 20: los enlaces Entrar/Regístrate miden 44px de alto por
+             accesibilidad y su texto queda centrado dentro, así que ya aportan
+             ~13px de aire por arriba. Con 20 el hueco de abajo salía 13px mayor
+             que el de arriba y el buscador no quedaba centrado. */
+          .tl-authrow { margin-top: auto !important; padding-top: 8px; gap: 0; }
           .tl-kick { padding: 5px 11px; }
           .tl-kick span { font-size: 10px; }
           .tl-h1 { font-size: clamp(26px,8vw,31px) !important; line-height: 1.14 !important; letter-spacing: -.03em !important; margin-top: 18px !important; }
@@ -651,7 +665,6 @@ export function LandingScreen() {
           .tl-kick span { font-size: 9.5px !important; }
           .tl-h1 { font-size: clamp(22px,6.6vw,26px) !important; margin-top: 12px !important; }
           .tl-sub { font-size: 11.5px !important; margin-top: 6px !important; }
-          .tl-searchwrap { margin-top: 24px !important; }
           .tl-chips { padding-bottom: 7px !important; }
           .tl-chips > button { padding: 7px 11px !important; font-size: 11px !important; }
           .tl-search { padding: 5px !important; }
@@ -667,7 +680,6 @@ export function LandingScreen() {
           .tl-marqband { display: none !important; }
           .tl-hero-inner { padding-top: 6px !important; }
           .tl-h1 { font-size: clamp(21px,6.2vw,24px) !important; margin-top: 10px !important; }
-          .tl-searchwrap { margin-top: 16px !important; }
           .tl-ptext { -webkit-line-clamp: 2; }
         }
 
