@@ -285,8 +285,7 @@ export function LandingScreen() {
                          onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
                          placeholder={L(PLACEHOLDER[tab][0], PLACEHOLDER[tab][1])}
                          aria-label={L('Buscar', 'Search')}
-                         className="tl-focus min-w-0 flex-1 border-none bg-transparent py-[13px] font-semibold italic text-ink outline-none placeholder:text-home-ph"
-                         style={{ fontSize: 'clamp(12.5px,1.3vw,13.5px)' }} />
+                         className="tl-input tl-focus min-w-0 flex-1 border-none bg-transparent py-[13px] font-semibold text-ink outline-none placeholder:text-home-ph" />
                   <span aria-hidden className="tl-lg h-6 w-px flex-none" style={{ background: 'rgba(30,27,46,.1)' }} />
                   <button onClick={() => app.setCityOpen(true)} aria-label={L('Cambiar ciudad', 'Change city')}
                           className="tl-lg tl-focus flex-none cursor-pointer items-center gap-[6px] px-2">
@@ -541,10 +540,21 @@ export function LandingScreen() {
         .tl-authrow { margin-top: clamp(26px,6vw,76px); }
         .tl-search { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
         .tl-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        /* El marcador del buscador es largo a propósito (lo fija el handoff) y
-           en móvil la regla anti-zoom de iOS lo sube a 16px, así que no cabe.
-           Que termine en puntos suspensivos y no cortado a media palabra. */
-        .tl-search input { text-overflow: ellipsis; }
+        /* Buscador: el MARCADOR va pequeño y en cursiva; lo que el usuario
+           ESCRIBE, normal y más grande. La seudoclase :placeholder-shown es
+           exactamente eso — se cumple mientras el campo está vacío, sin
+           JavaScript. El !important es necesario para ganarle a la regla global
+           que sube todos los campos a 16px en móvil (la que evita el zoom de
+           iOS), y el line-height fijo impide que la tarjeta dé un salto al
+           cambiar el tamaño de la letra al empezar a escribir. */
+        .tl-input { font-size: 14px !important; font-style: normal; line-height: 20px; text-overflow: ellipsis; }
+        .tl-input:placeholder-shown { font-size: 10px !important; font-style: italic; }
+        /* El foco del campo se marca iluminando la TARJETA entera, no dibujando
+           un recuadro alrededor del campo: dentro de la tarjeta blanca ese
+           recuadro parecía un segundo campo metido dentro del primero. El aviso
+           de foco sigue siendo visible, que es lo que pide el handoff. */
+        .tl-input:focus-visible { outline: none; }
+        .tl-search:focus-within { border-color: rgba(123,97,255,.5) !important; box-shadow: 0 20px 48px rgba(60,50,110,.13), 0 0 0 3px rgba(123,97,255,.15) !important; }
         .tl-join:hover { background: #F5F2FE; }
         .tl-btn-biz { transition: border-color .18s ease; }
         .tl-btn-biz:hover { border-color: rgba(123,97,255,.4); }
@@ -624,7 +634,7 @@ export function LandingScreen() {
           .tl-chips { padding-bottom: 7px !important; }
           .tl-chips > button { padding: 7px 11px !important; font-size: 11px !important; }
           .tl-search { padding: 5px !important; }
-          .tl-search input { padding-top: 10px !important; padding-bottom: 10px !important; }
+          .tl-input { padding-top: 10px !important; padding-bottom: 10px !important; }
           .tl-sbtn { padding: 10px 14px !important; }
           .tl-authrow { padding-top: 10px !important; }
           .tl-join { padding: 10px 8px !important; min-height: 40px !important; }
