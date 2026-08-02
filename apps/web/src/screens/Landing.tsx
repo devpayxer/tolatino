@@ -547,17 +547,20 @@ export function LandingScreen() {
            que sube todos los campos a 16px en móvil (la que evita el zoom de
            iOS), y el line-height fijo impide que la tarjeta dé un salto al
            cambiar el tamaño de la letra al empezar a escribir. */
+        /* ESCRITORIO: 14px en los dos estados — el marcador solo se distingue por
+           la cursiva, así que el campo no cambia de tamaño al escribir. */
         .tl-input { font-size: 14px !important; font-style: normal; line-height: 20px; text-overflow: ellipsis; }
-        .tl-input:placeholder-shown { font-size: 10px !important; font-style: italic; }
-        /* En el TELÉFONO el texto escrito sube a 16px. No es capricho: Safari de
-           iOS acerca la pantalla sola en cuanto enfocas un campo con letra menor
-           de 16px, y ese zoom no se deshace al salir del campo — el usuario se
-           queda con la portada acercada. Por eso toda la app usa 16px en móvil.
-           Y como el marcador de 10px también dispararía el zoom (está visible
-           justo cuando enfocas), al enfocar se sube a 16 y se desvanece: como el
-           marcador deja de verse, el cambio de tamaño no se nota. */
+        .tl-input:placeholder-shown { font-size: 14px !important; font-style: italic; }
+        /* TELÉFONO: marcador 12px, texto escrito 16px. Los 16 no son capricho:
+           Safari de iOS acerca la pantalla sola en cuanto enfocas un campo con
+           letra menor de 16px, y ese zoom no se deshace al salir del campo — el
+           usuario se queda con la portada acercada. Por eso toda la app usa 16px
+           en móvil. Y como el marcador de 12px también lo dispararía (está
+           visible justo cuando enfocas), al enfocar sube a 16 y se desvanece:
+           como deja de verse, el cambio de tamaño no se nota. */
         @media (max-width: 767px) {
           .tl-input { font-size: 16px !important; }
+          .tl-input:placeholder-shown { font-size: 12px !important; }
           .tl-input:placeholder-shown:focus { font-size: 16px !important; font-style: normal; }
           .tl-input:focus::placeholder { color: transparent; }
         }
