@@ -510,17 +510,21 @@ export function LandingScreen() {
 
       {/* ═════════════ PIE ═════════════ */}
       <footer className={`bg-page pt-[clamp(40px,6vw,72px)] ${gutter}`}>
-        {/* En el teléfono el pie se APILA a la izquierda —marca, copyright,
-            enlaces—: en una sola fila los enlaces legales se iban a un segundo
-            renglón pegados al borde derecho y parecía un error de maquetación.
-            A partir de 600px vuelve a la fila única del handoff. */}
-        <div className="mx-auto flex max-w-[1080px] flex-col items-start gap-3 pt-5 min-[600px]:flex-row min-[600px]:flex-wrap min-[600px]:items-center min-[600px]:gap-[14px]"
+        {/* En el teléfono solo BAJA el copyright: la marca y los enlaces legales
+            se quedan en la misma línea, uno a cada extremo. En una sola fila con
+            los tres, los enlaces caían a un segundo renglón pegados al borde
+            derecho y parecía un error. Se resuelve con `order` + `w-full` sobre
+            el copyright, no partiendo el pie en dos bloques. A partir de 600px
+            vuelve a la fila única del handoff (marca · copyright … enlaces). */}
+        <div className="mx-auto flex max-w-[1080px] flex-wrap items-center gap-x-[14px] gap-y-2 pt-5"
              style={{ borderTop: '1px solid rgba(30,27,46,.07)', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
           <Brand size={18} />
-          <span className="text-[11.5px] font-semibold text-muted">© {new Date().getFullYear()} To&rsquo;Latino</span>
+          <span className="order-3 w-full text-[11.5px] font-semibold text-muted min-[600px]:order-2 min-[600px]:w-auto">
+            © {new Date().getFullYear()} To&rsquo;Latino
+          </span>
           {/* Los enlaces legales no están en el handoff, pero la ley sí los pide
               y las dos páginas ya existen: se añaden sin tocar su composición. */}
-          <nav aria-label={L('Legal', 'Legal')} className="flex flex-wrap items-center gap-x-4 gap-y-1 min-[600px]:ml-auto">
+          <nav aria-label={L('Legal', 'Legal')} className="order-2 ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 min-[600px]:order-3">
             <a href="/terminos/" className="tl-focus text-[11.5px] font-semibold text-muted hover:text-primary-dark">{L('Términos', 'Terms')}</a>
             <a href="/privacidad/" className="tl-focus text-[11.5px] font-semibold text-muted hover:text-primary-dark">{L('Privacidad', 'Privacy')}</a>
           </nav>
