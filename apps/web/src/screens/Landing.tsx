@@ -638,7 +638,17 @@ export function LandingScreen() {
         .tl-railbtn { transition: opacity .18s ease, border-color .18s ease, box-shadow .18s ease;
                       box-shadow: 0 4px 12px rgba(60,50,110,.1); }
         .tl-railbtn:hover { border-color: rgba(123,97,255,.4); box-shadow: 0 6px 16px rgba(60,50,110,.14); }
-        .tl-railoff { opacity: 0; pointer-events: none !important; }
+        .tl-railoff { opacity: 0 !important; pointer-events: none !important; }
+        /* Las flechas solo asoman al acercar el ratón al riel — o al llegar con
+           el tabulador, para que quien no use ratón también las encuentre. Se
+           condiciona a que el puntero sea de verdad un ratón: en una tableta de
+           600px o más no hay "hover", así que allí se quedan siempre visibles en
+           vez de volverse inalcanzables. */
+        @media (hover: hover) and (pointer: fine) and (min-width: 600px) {
+          .tl-railbtn { opacity: 0; }
+          .tl-chipswrap:hover .tl-railbtn,
+          .tl-railbtn:focus-visible { opacity: 1; }
+        }
         /* Los chips se DESVANECEN por el lado que tiene flecha, para que se vea
            que la fila continúa y no parezca que la flecha los tapa. Se hace con
            máscara y no con un degradado encima porque el fondo del hero no es
