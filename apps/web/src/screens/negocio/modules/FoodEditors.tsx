@@ -118,7 +118,7 @@ export function CategoryEditor({
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
           <div className="flex flex-wrap gap-1.5">
             {MENU_TILES.map((t) => (
-              <button key={t} type="button" onClick={() => setTile(t)} aria-label="tile"
+              <button key={t} type="button" onClick={() => setTile(t)} aria-label={L('Estampado', 'Pattern')}
                 className={`h-10 w-10 cursor-pointer rounded-[10px] border-2 ${tile === t ? 'border-primary' : 'border-transparent'}`}
                 style={{ background: `repeating-linear-gradient(135deg,${t})` }} />
             ))}

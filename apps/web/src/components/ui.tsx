@@ -3,7 +3,7 @@
 // Shared UI primitives — compose every screen from these; don't fork markup.
 
 import { IconX as X } from '@tabler/icons-react';
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 import { useLang } from '@/lib/i18n';
 
@@ -102,14 +102,15 @@ export function Avatar({
 
 /** The signed-in "TÚ" avatar (lilac). */
 export function YouAvatar({ size = 40, onClick }: { size?: number; onClick?: () => void }) {
+  const { L } = useLang();
   return (
     <button
       onClick={onClick}
-      className="flex flex-none cursor-pointer items-center justify-center rounded-full border-2 border-lilac-ring bg-lilac font-extrabold text-primary-dark"
+      className="tap flex flex-none cursor-pointer items-center justify-center rounded-full border-2 border-lilac-ring bg-lilac font-extrabold text-primary-dark"
       style={{ width: size, height: size, fontSize: 12 }}
-      aria-label="TÚ"
+      aria-label={L('Tu cuenta', 'Your account')}
     >
-      TÚ
+      {L('TÚ', 'YOU')}
     </button>
   );
 }
@@ -206,6 +207,42 @@ export function Overlay({
   zIndex?: number;
 }) {
   useScrollLock(open); // lock background scroll while this overlay is open (site-wide)
+  // Una hoja no era un diálogo: sin `role`, sin Escape, sin trampa de foco y sin
+  // devolver el foco al cerrar. Con el teclado te salías de la hoja sin que ella
+  // se enterara y seguías tabulando por el feed de detrás; con lector de pantalla
+  // no se anunciaba nada. (2ª auditoría de Comunidad, 2026-08-03.)
+  const caja = useRef<HTMLDivElement>(null);
+  const focoPrevio = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    focoPrevio.current = document.activeElement as HTMLElement | null;
+    // El primer control de la hoja recibe el foco; si no hay ninguno, la caja.
+    const t = window.setTimeout(() => {
+      const c = caja.current;
+      if (!c) return;
+      const foco = c.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      (foco ?? c).focus({ preventScroll: true });
+    }, 0);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.stopPropagation(); onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const c = caja.current;
+      if (!c) return;
+      const focos = [...c.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        .filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (focos.length === 0) return;
+      const primero = focos[0], ultimo = focos[focos.length - 1];
+      // El foco da la vuelta DENTRO de la hoja en vez de escaparse al fondo.
+      if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+      else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      window.clearTimeout(t);
+      document.removeEventListener('keydown', onKey, true);
+      focoPrevio.current?.focus?.({ preventScroll: true });
+    };
+  }, [open, onClose]);
   if (!open) return null;
   const desktopAlign =
     align === 'right'
@@ -220,9 +257,13 @@ export function Overlay({
       onClick={onClose}
     >
       <div
+        ref={caja}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         style={{ ['--w' as string]: `${width}px` }}
-        className={`w-full overflow-y-auto rounded-t-panel bg-white p-4 pb-7 shadow-sheet md:w-[var(--w)] md:max-w-[calc(100%-28px)] md:rounded-card md:p-5 md:shadow-modal ${
+        className={`w-full overflow-y-auto rounded-t-panel bg-white p-4 pb-7 shadow-sheet outline-none md:w-[var(--w)] md:max-w-[calc(100%-28px)] md:rounded-card md:p-5 md:shadow-modal ${
           fullHeightSheet ? 'h-[90%] md:h-auto md:max-h-[min(640px,calc(100%-40px))]' : 'max-h-[88%] md:max-h-[calc(100%-24px)]'
         }`}
       >

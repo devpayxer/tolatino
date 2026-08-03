@@ -28,6 +28,8 @@ import { Qr } from '@/components/Qr';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Switch, YouAvatar } from '@/components/ui';
 import { LangToggle } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
+import { mapPost, type PostRow } from '@/lib/posts';
+import type { Post } from '@/data/fixtures';
 import { enablePush, disablePush, pushState, type PushState } from '@/lib/push';
 import { orderStageIdx } from '@/components/OrderSteps';
 import { fetchMyClaims, createClaim, claimAddMessage, CLAIM_STATUS, CLAIM_KIND, timeAgo, type MyClaim } from '@/lib/admin';
@@ -211,7 +213,24 @@ export function CuentaScreen() {
     flash(L('Desbloqueado', 'Unblocked'));
   };
   const notifs: Notifs = { ...DEFAULT_NOTIFS, ...((p?.settings?.notifications as Partial<Notifs>) ?? {}) };
-  const myPosts = live.posts.filter((x) => x.authorId && x.authorId === auth.user?.id);
+  // «Mis publicaciones» salía del feed GEOGRÁFICO de la ciudad en la que
+  // estuvieras (30 millas, 50 filas): al cambiar de ciudad tus propias
+  // publicaciones desaparecían, y las que se salían de esas 50 nunca aparecían.
+  // Ahora se piden por autor, que es lo que la pantalla dice que enseña.
+  // (2ª auditoría de Comunidad, 2026-08-03.)
+  const [myPosts, setMyPosts] = useState<Post[]>([]);
+  const [myPostsFailed, setMyPostsFailed] = useState(false);
+  useEffect(() => {
+    const uid = auth.user?.id;
+    if (!supabase || !uid) { setMyPosts([]); setMyPostsFailed(false); return; }
+    let cancelado = false;
+    void supabase.rpc('neighbor_posts', { in_id: uid, max_results: 60 }).then(({ data, error }) => {
+      if (cancelado) return;
+      setMyPostsFailed(!!error);
+      setMyPosts(!error && Array.isArray(data) ? (data as PostRow[]).map(mapPost) : []);
+    });
+    return () => { cancelado = true; };
+  }, [auth.user?.id]);
 
   const es = L('es', 'en') === 'es';
   const dt = (iso: string) => new Date(iso).toLocaleString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
@@ -517,7 +536,9 @@ export function CuentaScreen() {
       {sec === 'posts' && (
         <div>
           {backBar(L('Mis publicaciones', 'My posts'))}
-          {myPosts.length === 0 ? (
+          {myPostsFailed ? (
+            <div className={`${cardCls} p-6 text-center text-[13px] font-semibold text-muted`}>{L('No pudimos cargar tus publicaciones. Revisa tu conexión.', "We couldn't load your posts. Check your connection.")}</div>
+          ) : myPosts.length === 0 ? (
             <div className={`${cardCls} p-6 text-center text-[13px] font-semibold text-muted`}>{L('Aún no has publicado nada.', "You haven't posted anything yet.")}</div>
           ) : (
             <div className="flex flex-col gap-3">

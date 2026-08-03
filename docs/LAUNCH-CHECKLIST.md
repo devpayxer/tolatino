@@ -184,10 +184,13 @@
        pedido y avisos, ese techo llega rápido. Migrar son cuatro campos.
      - **`no-reply@` no recibe.** Cuando haya buzón real en el dominio, cambiarlo
        por una dirección que sí lea a alguien.
-- [ ] **🔴 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — 17 cosas abiertas (los 5 🔴 y los 4 🟠 ya cerrados). Comunidad
-  NO está lista para lanzar.** 56 agentes, 8 clases, 2.055 herramientas
-  ejecutadas; 47 hallazgos, 7 refutados. **Ya cerrado en la migración 0139**
-  (aplicada a las dos bases y verificada re-ejecutando el ataque): 14 funciones
+- [x] **✅ 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — LAS 23 CERRADAS.** Comunidad
+  queda lista salvo lo que dependa del fundador (ver más abajo). 56 agentes, 8
+  clases, 2.055 herramientas ejecutadas; 47 hallazgos, 7 refutados. Cerradas en
+  las migraciones **0139–0141** (todas aplicadas a las dos bases y verificadas
+  ejecutando cada caso, no leyendo el código) más los arreglos de cliente, con
+  dos guardianes nuevos que impiden que dos de las clases vuelvan.
+  **La migración 0139** (verificada re-ejecutando el ataque): 14 funciones
   con privilegios estaban abiertas a internet con la llave publicable — entre
   ellas `apply_subscription`, `mark_payment`, `fulfill_order` y las de boletos,
   o sea plan Premium gratis, pagos marcados como pagados y boletos sin comprar;
@@ -259,35 +262,57 @@
      se juntan en un lote, así que ninguna superficie futura se puede olvidar.
      Verificado: 100 publicaciones en 3 lotes (50+30+20), todas con su conteo.
 
-  **LO QUE SIGUE ABIERTO, por tema:**
-  10. **Media · Guardados y Siguiendo mienten** cuando fallan; el hilo dice «1
-     comentario» y debajo enseña «Aún no hay comentarios» (el conteo del
-     servidor cuenta lo que la RLS después esconde).
-  11. **Media · `featured_by` / `hidden_by` son públicos**: cualquiera puede
-     saber QUIÉN modera, y con `neighbor_profile` sacar su nombre y ciudad.
-  12. **Media · Accesibilidad de las hojas**: `Overlay` no es un diálogo — sin
-     `role`, sin Escape, sin trampa de foco, sin devolver el foco al cerrar.
-  13. **Media · El índice de 0138 nunca se creó** (`posts_author_idx` chocó de
-     nombre con uno anterior y el `if not exists` lo saltó en silencio).
-  14. **Media · Un comentario puede FINGIR que se publicó** (camino local de
-     respaldo) y encima se firma con un barrio inventado, «Bellaire».
-  15. **Media · Con búsqueda activa, el filtro de barrio se ilumina y no filtra.**
-  16. **Media · Ocultar un comentario manda sus respuestas a un limbo** y el
-     contador las sigue contando.
-  17. **Media · Seguir y bloquear no tienen freno anti-spam** (el límite de 30/h
-     no cubre esas tablas): una cuenta puede hacer sonar el teléfono de otra.
-  18. **Baja · `create_report` acepta uuids inventados** para publicaciones y
-     comentarios (para negocios y eventos sí valida).
-  19. **Baja · El perfil de vecino no tiene botón de cerrar** ni responde al
-     gesto Atrás del teléfono.
-  20. **Baja · Etiquetas de accesibilidad sin `L()`**: queda «TÚ» en inglés (las
-     iniciales de respaldo del avatar) y los `aria-label="tile"`/`"color"` de los
-     editores del panel de negocio. Ya arreglados los de Comunidad: «clear»,
-     «back», y el botón de cerrar el hilo, que directamente no tenía etiqueta.
-  21. **Baja · `NeighborSheet.bloquear()` recarga la página pase lo que pase**:
-     un fallo se ve como éxito.
-  22. **Baja · Bloquear no deja de seguir**, y las cuentas se contradicen.
-  23. **Baja · «Mis publicaciones» depende de la ciudad** en la que estés.
+  **✅ LAS 14 RESTANTES (🟡 media y ⚪ baja) — CERRADAS (2026-08-03).** Base de
+  datos: migración `0141`, aplicada a las DOS bases y verificada ejecutando cada
+  caso. Cliente: verificado en navegador real.
+  10. ~~Guardados y Siguiendo mienten cuando fallan.~~ Los errores se tiraban a la
+     basura, así que una consulta caída decía «no tienes publicaciones guardadas»
+     mientras las tuyas seguían ahí. Ahora se distingue. El descuadre del hilo
+     («1 comentario» + «aún no hay comentarios») lo cerró 0140 al dejar de contar
+     lo escondido; 0141 completa el caso de las respuestas huérfanas (16).
+  11. ~~`featured_by` / `hidden_by` son públicos.~~ Una publicación DESTACADA es
+     visible por definición y llevaba pegado el uuid del moderador; y al mostrar
+     de nuevo algo oculto, `hidden_by` se quedaba escrito en una fila que vuelve
+     a ser pública. Con `neighbor_profile` eso da nombre y ciudad de quien
+     modera. Ya no se firma la fila: quién hizo qué queda en `admin_audit`, que
+     es de solo-admin. **No se pudo arreglar con permisos por columna** —
+     `authenticated` tiene SELECT de TABLA y un `revoke (columna)` no le quita
+     nada (comprobado: `attacl` en null, `has_column_privilege` sigue en true).
+     Guardián nuevo: `auditar_moderadores_expuestos()`.
+  12. ~~`Overlay` no es un diálogo.~~ Ahora lleva `role="dialog"`, `aria-modal`,
+     Escape, trampa de foco y devuelve el foco al cerrar — para TODAS las hojas
+     de la app, no solo las de Comunidad.
+  13. ~~El índice de 0138 nunca se creó.~~ `if not exists` mira el NOMBRE, no las
+     columnas, y 0130 ya había creado un `posts_author_idx` distinto. Creado como
+     `posts_author_created_idx (author_id, created_at desc)`.
+  14. ~~Un comentario puede FINGIR que se publicó.~~ Con base de datos configurada
+     ya no existe camino local: si algo falla se dice. Y se fue el barrio
+     inventado «Bellaire», que aparecía aunque estuvieras en otra ciudad.
+  15. ~~Con búsqueda activa el filtro de barrio no filtra.~~ Lo que devolvía la
+     base se pintaba sin filtrar, así que la pastilla decía «Gulfton» y se veía
+     media ciudad.
+  16. ~~Ocultar un comentario manda sus respuestas a un limbo.~~ Trigger nuevo:
+     al ocultar el padre se ocultan sus respuestas, y al mostrarlo vuelven solo
+     las que se ocultaron por eso. Verificado: conteo 0 → 2 → 0.
+  17. ~~Seguir y bloquear sin freno anti-spam.~~ Tope por hora (120 y 60) con el
+     mismo limitador de 0111.
+  18. ~~`create_report` acepta uuids inventados.~~ Ahora valida el tipo y que la
+     cosa exista. Verificado con id inventado, tipo inventado, texto que no es
+     uuid, y uno legítimo (que sigue pasando).
+  19. ~~El perfil de vecino no tiene cerrar ni gesto Atrás.~~ Botón de cerrar, y
+     la hoja vive en la URL (`?vecino=`) como el hilo: Atrás la cierra sin salir
+     de Comunidad, y un refresco la reabre.
+  20. ~~Etiquetas de accesibilidad sin `L()`.~~ Cerrado del todo: «TÚ», «clear»,
+     «back», los `tile`/`color` de los editores del panel, y el botón de cerrar
+     el hilo, que no tenía etiqueta ninguna.
+  21. ~~`bloquear()` recarga pase lo que pase.~~ Si el servidor rechaza se dice y
+     la hoja se queda abierta, en vez de recargar como si hubiera funcionado.
+  22. ~~Bloquear no deja de seguir.~~ Trigger nuevo que corta el vínculo en los
+     DOS sentidos, más el arreglo de lo ya contradictorio.
+  23. ~~«Mis publicaciones» depende de la ciudad.~~ Salía del feed geográfico (30
+     millas, 50 filas): al cambiar de ciudad tus publicaciones desaparecían.
+     Ahora se piden por autor, que es lo que la pantalla dice que enseña.
+
 - [ ] **Auditoría de Comunidad (2026-08-03) — lo que quedó ABIERTO.** Cerrado ya
   en la migración 0135 + cliente: el agujero de columnas (suplantar al autor,
   inflar ♥, auto-destacarse), el negocio etiquetado sin enlace y el botón de

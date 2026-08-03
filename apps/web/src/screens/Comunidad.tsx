@@ -22,18 +22,10 @@ import { PostCard } from '@/components/PostCard';
 import { ProfileNav } from '@/components/ProfileNav';
 import { bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
+import { COMMUNITY_RADIUS_M, mapPost, relTime, type PostRow } from '@/lib/posts';
 
 // Real (Supabase) posts/comments carry a UUID id; fixtures do not.
 const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
-
-function relTime(iso: string): [string, string] {
-  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (mins < 60) return [`hace ${mins} min`, `${mins}m`];
-  const h = Math.round(mins / 60);
-  if (h < 24) return [`hace ${h} h`, `${h}h`];
-  const d = Math.round(h / 24);
-  return [`hace ${d} d`, `${d}d`];
-}
 
 type CommentRow = {
   id: string;
@@ -74,62 +66,6 @@ function mapComment(r: CommentRow): Comment {
     es: r.body,
     en: r.body,
     biz: r.biz_name ? { name: r.biz_name, slug: r.biz_slug ?? undefined, rating: r.biz_rating ?? '' } : undefined,
-  };
-}
-
-// 30 miles — the hyperlocal community radius (matches posts_near in live.tsx).
-const COMMUNITY_RADIUS_M = 48280;
-
-type PostRow = {
-  id: string;
-  type: Post['type'];
-  author_id: string | null;
-  author_initials: string;
-  author_color: string;
-  author_name: string;
-  hood: string | null;
-  city: string | null;
-  created_at: string;
-  recommends: number | null;
-  edited_at: string | null;
-  pinned: boolean | null;
-  business_name: string | null;
-  business_slug: string | null;
-  business_rating: number | null;
-  poll_options: string[] | null;
-  poll_votes: number[] | null;
-  images: string[] | null;
-  body_es: string;
-  body_en: string;
-  lat: number | null;
-  lng: number | null;
-};
-
-function mapPost(r: PostRow): Post {
-  const [tEs, tEn] = relTime(r.created_at);
-  return {
-    id: String(r.id),
-    type: r.type,
-    initials: r.author_initials,
-    color: r.author_color,
-    name: r.author_name,
-    authorId: r.author_id ?? undefined,
-    hoodEs: r.hood ?? '',
-    city: r.city ?? undefined,
-    timeEs: tEs,
-    timeEn: tEn,
-    createdAt: r.created_at,
-    pinned: !!r.pinned,
-    recommends: Number(r.recommends ?? 0),
-    edited: !!r.edited_at,
-    business: r.business_name ?? undefined,
-    businessSlug: r.business_slug ?? undefined,
-    bizRating: r.business_rating != null ? Number(r.business_rating).toFixed(1) : undefined,
-    poll: r.poll_options ?? undefined,
-    pollBase: r.poll_votes ?? undefined,
-    images: r.images ?? undefined,
-    es: r.body_es,
-    en: r.body_en,
   };
 }
 
@@ -177,7 +113,11 @@ export function ComunidadScreen() {
   const [sending, setSending] = useState(false);
   const [delComment, setDelComment] = useState<{ id: string; parent: boolean } | null>(null);
   const [commentErr, setCommentErr] = useState<string | null>(null);
-  const [vecino, setVecino] = useState<string | null>(null);
+  // El perfil de vecino vive en la URL (?vecino=<id>) igual que el hilo: así el
+  // botón Atrás del teléfono lo cierra, un refresco lo reabre y el enlace se
+  // puede compartir. Antes era estado local y Atrás te sacaba de Comunidad
+  // entera. (2ª auditoría de Comunidad.)
+  const { value: vecino, open: setVecino, close: cerrarVecino } = useUrlDetail('vecino');
   // La publicación abierta por enlace (notificación, Compartir, refresco) puede
   // NO estar en la página del feed que hay cargada — es el caso normal: el aviso
   // llega horas después. Antes el hilo se buscaba solo en la lista en memoria,
@@ -432,6 +372,10 @@ export function ComunidadScreen() {
   const homeMode = app.feedView === 'home';
   const [viewFeed, setViewFeed] = useState<Post[]>([]);
   const [viewLoading, setViewLoading] = useState(false);
+  // «No pudimos cargarlo» no es lo mismo que «no tienes nada». Sin esto, una
+  // consulta caída le decía al usuario que no había guardado nada — y lo que
+  // tenía guardado seguía ahí. (2ª auditoría de Comunidad.)
+  const [viewFailed, setViewFailed] = useState(false);
   useEffect(() => {
     if (homeMode) return;
     const sb = supabase;
@@ -442,24 +386,30 @@ export function ComunidadScreen() {
     }
     let cancelled = false;
     setViewLoading(true);
+    setViewFailed(false);
     (async () => {
       let rows: PostRow[] = [];
+      let fallo = false;
       if (app.feedView === 'saved') {
         const s = await sb.from('saved_posts').select('post_id').eq('user_id', uid);
+        if (s.error) fallo = true;
         const ids = ((s.data as { post_id: string }[]) ?? []).map((r) => r.post_id);
-        if (ids.length) {
-          const { data } = await sb.from('posts').select('*').in('id', ids).order('created_at', { ascending: false });
+        if (!fallo && ids.length) {
+          const { data, error } = await sb.from('posts').select('*').in('id', ids).order('created_at', { ascending: false });
+          if (error) fallo = true;
           rows = (data as PostRow[]) ?? [];
         }
       } else if (app.feedView === 'following') {
         const ids = [...follows.following];
         if (ids.length) {
-          const { data } = await sb.from('posts').select('*').in('author_id', ids).order('created_at', { ascending: false }).limit(50);
+          const { data, error } = await sb.from('posts').select('*').in('author_id', ids).order('created_at', { ascending: false }).limit(50);
+          if (error) fallo = true;
           rows = (data as PostRow[]) ?? [];
         }
       }
       if (!cancelled) {
         setViewFeed(rows.map(mapPost));
+        setViewFailed(fallo);
         setViewLoading(false);
       }
     })();
@@ -485,7 +435,11 @@ export function ComunidadScreen() {
   const localMatch = sl
     ? byHood.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))
     : byHood;
-  const posts = sl && found !== null ? found : localMatch;
+  // Lo que devuelve la base NO venía filtrado por barrio: con una búsqueda
+  // activa la pastilla del barrio se quedaba encendida y no filtraba nada, así
+  // que el usuario leía «Gulfton» y veía media ciudad. (2ª auditoría.)
+  const fuente = sl && found !== null ? found : localMatch;
+  const posts = homeMode && hood !== 'all' ? fuente.filter((p) => p.hoodEs === hood) : fuente;
 
   const topComments = (pid: string) => [...(dbTop[pid] ?? []), ...(userComments[pid] ?? [])]; // solo comentarios reales
   const repliesFor = (cid: string) => [...(dbReplies[cid] ?? []), ...(userReplies[cid] ?? [])]; // solo respuestas reales
@@ -525,8 +479,18 @@ export function ComunidadScreen() {
     // Guests must sign in before commenting on a real feed.
     if (!it.gate()) return;
 
-    // Real post + signed-in user → persist to Supabase.
-    if (supabase && auth.user && auth.profile && isUuid(pid)) {
+    // Con base de datos configurada NUNCA se cae al camino local: un comentario
+    // que se pinta y no se guarda es una mentira (regla #8), y encima se firmaba
+    // con un barrio inventado. Si falta algo, se dice. (2ª auditoría.)
+    if (supabase) {
+      if (!isUuid(pid)) {
+        setCommentErr(L('Esta publicación de ejemplo no acepta comentarios.', "This sample post doesn't take comments."));
+        return;
+      }
+      if (!auth.user || !auth.profile) {
+        setCommentErr(L('Tu perfil todavía se está cargando. Inténtalo en un momento.', 'Your profile is still loading. Try again in a moment.'));
+        return;
+      }
       setSending(true);
       const row = {
         post_id: pid,
@@ -561,13 +525,14 @@ export function ComunidadScreen() {
       return;
     }
 
-    // Demo / not configured → optimistic local comment.
+    // Solo el prototipo SIN base de datos llega aquí. Sin barrio: antes se
+    // firmaba «Bellaire», un barrio de Houston elegido a dedo que aparecía
+    // aunque el usuario estuviera en otra ciudad.
     const base: Comment = {
       id: `u${commentSeq}`,
       initials: auth.profile?.initials ?? 'TÚ',
       color: auth.profile?.avatar_color ?? '#7B61FF',
       name: auth.profile?.display_name ?? L('Tú', 'You'),
-      hoodEs: 'Bellaire',
       timeEs: 'ahora',
       timeEn: 'now',
       likes: 0,
@@ -832,6 +797,13 @@ export function ComunidadScreen() {
         ) : posts.length === 0 ? (
           !homeMode && viewLoading ? (
             <EmptyState title={L('Cargando…', 'Loading…')} />
+          ) : viewFailed ? (
+            <EmptyState
+              title={app.feedView === 'saved'
+                ? L('No pudimos cargar tus guardados', "We couldn't load your saved posts")
+                : L('No pudimos cargar a quien sigues', "We couldn't load who you follow")}
+              sub={L('Revisa tu conexión y desliza hacia abajo para reintentar.', 'Check your connection and pull down to retry.')}
+            />
           ) : app.feedView === 'saved' ? (
             <EmptyState
               title={L('No tienes publicaciones guardadas', 'You have no saved posts')}
@@ -843,7 +815,12 @@ export function ComunidadScreen() {
               sub={L('Sigue a vecinos desde el menú “…” de sus publicaciones.', 'Follow neighbors from the “…” menu on their posts.')}
             />
           ) : app.search ? (
-            <EmptyState title={L('Sin resultados para tu búsqueda', 'No results for your search')} />
+            <EmptyState
+              title={hood !== 'all'
+                ? L(`Sin resultados en ${hood}`, `No results in ${hood}`)
+                : L('Sin resultados para tu búsqueda', 'No results for your search')}
+              sub={hood !== 'all' ? L('Prueba en «Todos» para buscar en toda la ciudad.', 'Try “All” to search the whole city.') : undefined}
+            />
           ) : hood !== 'all' ? (
             <EmptyState
               title={L(`Todavía no hay publicaciones en ${hood}`, `No posts in ${hood} yet`)}
@@ -1032,8 +1009,7 @@ export function ComunidadScreen() {
 
       <NeighborSheet
         userId={vecino}
-        onClose={() => setVecino(null)}
-        mapPost={(r) => mapPost(r as unknown as PostRow)}
+        onClose={cerrarVecino}
         onOpenThread={openThreadUrl}
       />
 

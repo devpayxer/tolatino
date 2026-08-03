@@ -168,7 +168,7 @@ export function ZoneEditor({
           <div className={fieldLabel}>{L('Color en el mapa', 'Map color')}</div>
           <div className="flex flex-wrap gap-2">
             {ZONE_COLORS.map((c) => (
-              <button key={c} type="button" onClick={() => setColor(c)} aria-label="color"
+              <button key={c} type="button" onClick={() => setColor(c)} aria-label={L('Color', 'Color')}
                 className={`h-10 w-10 cursor-pointer rounded-full border-2 ${color === c ? 'border-ink' : 'border-transparent'}`}
                 style={{ background: c }} />
             ))}
@@ -316,7 +316,7 @@ export function DriverEditor({
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
           <div className="flex flex-wrap gap-2">
             {DRIVER_COLORS.map((c) => (
-              <button key={c} type="button" onClick={() => setColor(c)} aria-label="color"
+              <button key={c} type="button" onClick={() => setColor(c)} aria-label={L('Color', 'Color')}
                 className={`h-10 w-10 cursor-pointer rounded-full border-2 ${color === c ? 'border-ink' : 'border-transparent'}`}
                 style={{ background: c }} />
             ))}

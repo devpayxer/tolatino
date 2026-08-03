@@ -20,8 +20,9 @@ import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { useFollows } from '@/lib/follows';
 import { supabase } from '@/lib/supabase';
-import { Avatar, EmptyState, Overlay, SkeletonList } from '@/components/ui';
+import { Avatar, EmptyState, Overlay, OverlayTitle, SkeletonList } from '@/components/ui';
 import { PostCard } from '@/components/PostCard';
+import { mapPost, type PostRow } from '@/lib/posts';
 import type { Post } from '@/data/fixtures';
 
 type Perfil = {
@@ -32,12 +33,11 @@ type Perfil = {
 };
 
 export function NeighborSheet({
-  userId, onClose, mapPost, onOpenThread,
+  userId, onClose, onOpenThread,
 }: {
   userId: string | null;
   onClose: () => void;
   /** El mapeo de filas a publicaciones vive en Comunidad; se reutiliza aquí. */
-  mapPost: (r: Record<string, unknown>) => Post;
   onOpenThread: (postId: string) => void;
 }) {
   const { L } = useLang();
@@ -47,6 +47,7 @@ export function NeighborSheet({
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId || !supabase) { setPerfil(null); setPosts(null); return; }
@@ -61,11 +62,11 @@ export function NeighborSheet({
       ]);
       if (cancelado) return;
       setPerfil(Array.isArray(pf.data) && pf.data.length ? (pf.data[0] as Perfil) : null);
-      setPosts(Array.isArray(ps.data) ? (ps.data as Record<string, unknown>[]).map(mapPost) : []);
+      setPosts(Array.isArray(ps.data) ? (ps.data as PostRow[]).map(mapPost) : []);
       setLoading(false);
     })();
     return () => { cancelado = true; };
-  }, [userId, mapPost]);
+  }, [userId]);
 
   const esMio = !!userId && userId === auth.user?.id;
   const siguiendo = !!userId && follows.isFollowing(userId);
@@ -73,8 +74,17 @@ export function NeighborSheet({
   const bloquear = async () => {
     if (!userId || !auth.user || !supabase || blocking) return;
     setBlocking(true);
-    await supabase.from('user_blocks').insert({ blocker_id: auth.user.id, blocked_id: userId });
+    setError(null);
+    const { error } = await supabase.from('user_blocks').insert({ blocker_id: auth.user.id, blocked_id: userId });
     setBlocking(false);
+    // Antes se recargaba la página PASARA LO QUE PASARA: si el bloqueo fallaba,
+    // el vecino seguía ahí y parecía que había funcionado. (2ª auditoría.)
+    if (error) {
+      setError(/Demasiadas/i.test(error.message)
+        ? L('Demasiadas acciones seguidas. Espera un momento.', 'Too many actions in a row. Wait a moment.')
+        : L('No pudimos bloquear a este vecino. Inténtalo de nuevo.', "We couldn't block this neighbor. Try again."));
+      return;
+    }
     onClose();
     // La política de RLS ya le saca de todas las listas; recargar la página es
     // la forma más honesta de que el feed refleje eso sin estados a medias.
@@ -95,6 +105,9 @@ export function NeighborSheet({
         />
       ) : (
         <div className="flex h-full flex-col">
+          {/* La hoja no tenía forma de cerrarse salvo tocando fuera: sin botón y
+              sin gesto Atrás. (2ª auditoría.) */}
+          <OverlayTitle title={L('Vecino', 'Neighbor')} onClose={onClose} />
           <div className="flex items-start gap-3.5 pb-4">
             <Avatar initials={perfil.initials} color={perfil.color} src={perfil.avatar_url} size={62} />
             <div className="min-w-0 flex-1">
@@ -134,6 +147,11 @@ export function NeighborSheet({
               >
                 <Ban size={17} stroke={2.2} />
               </button>
+            </div>
+          )}
+          {error && (
+            <div role="alert" className="mb-3 rounded-field bg-pink-bg px-3 py-2 text-[12.5px] font-bold text-pink-dark">
+              {error}
             </div>
           )}
 

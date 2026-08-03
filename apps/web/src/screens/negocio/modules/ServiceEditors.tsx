@@ -79,7 +79,7 @@ export function ServiceCategoryEditor({
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
           <div className="flex flex-wrap gap-1.5">
             {SERVICE_TILES.map((t) => (
-              <button key={t} type="button" onClick={() => setTile(t)} aria-label="tile"
+              <button key={t} type="button" onClick={() => setTile(t)} aria-label={L('Estampado', 'Pattern')}
                 className={`h-10 w-10 cursor-pointer rounded-[10px] border-2 ${tile === t ? 'border-primary' : 'border-transparent'}`}
                 style={{ background: `repeating-linear-gradient(135deg,${t})` }} />
             ))}
@@ -251,7 +251,7 @@ export function ServiceProviderEditor({
           <div className={fieldLabel}>{L('Color del avatar', 'Avatar color')}</div>
           <div className="flex flex-wrap gap-1.5">
             {PROVIDER_COLORS.map((c) => (
-              <button key={c} type="button" onClick={() => setColor(c)} aria-label="color"
+              <button key={c} type="button" onClick={() => setColor(c)} aria-label={L('Color', 'Color')}
                 className={`h-9 w-9 cursor-pointer rounded-full border-2 ${color === c ? 'border-ink' : 'border-transparent'}`} style={{ background: c }} />
             ))}
           </div>
