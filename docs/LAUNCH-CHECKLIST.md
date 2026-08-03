@@ -165,27 +165,42 @@
      sigue en `false` (en pruebas ya está en `true`); y conectar el hook:
      Authentication → Hooks → Send SMS → apuntar a la función y pegar su secreto
      en `SEND_OTP_HOOK_SECRET`.
-  4. **🔴 Correo: HOY MANDA UN ENLACE, NO EL CÓDIGO — y no se puede arreglar sin
-     SMTP propio (confirmado 2026-08-03).** El fundador se registró en producción
-     y recibió un enlace. La causa: las plantillas por defecto de Supabase usan
-     `{{ .ConfirmationURL }}`. Se intentó cambiarlas por `{{ .Token }}` y la API
-     lo RECHAZA: *"Email template modification is not available for free tier
-     projects using the default email provider. Please upgrade your plan or
-     configure a custom SMTP provider."* O sea: **cambiar la plantilla exige SMTP
-     propio**, no es opcional ni cosmético — es lo que separa "recibes un código
-     de 6 dígitos" de "recibes un enlace".
-     - **Qué hace falta:** un proveedor SMTP en Authentication → Emails → SMTP
-       Settings (host, puerto, usuario, contraseña, remitente). Con eso se
-       desbloquean las plantillas Y desaparece el tope de 2 correos por hora.
-     - **Opciones:** Amazon SES (~$0.10/1.000, el plan de `CLAUDE.md`; exige
-       verificar el dominio por DNS y salir del sandbox) o cualquier SMTP con
-       capa gratis para arrancar hoy. Es portable: cambiar de uno a otro son
-       cuatro campos.
-     - **Mitigación ya puesta (2026-08-03):** el enlace ahora aterriza en
-       `/entrar/` y el alta CONTINÚA desde ahí (antes caía en la portada y la
-       cuenta quedaba para siempre como "Vecino", sin ciudad ni intereses). Es un
-       parche: el diseño pide un código de 6 dígitos y hasta que haya SMTP el
-       usuario sigue recibiendo un enlace.
+  4. ~~**Correo**~~ — **RESUELTO en PRODUCCIÓN el 2026-08-03 con Brevo SMTP.**
+     El fundador se registró y recibió un ENLACE en vez del código: las
+     plantillas por defecto de Supabase usan `{{ .ConfirmationURL }}`, y
+     cambiarlas por `{{ .Token }}` la API lo rechazaba — *"Email template
+     modification is not available for free tier projects using the default email
+     provider"*. O sea: **la plantilla no se toca sin SMTP propio.** Ya está
+     puesto (`smtp-relay.brevo.com:587`, remitente `no-reply@tolatino.com`,
+     dominio autenticado con DKIM y subdominio de marca `em`), y con ello:
+     plantillas en español con el código de 6 dígitos (también en el asunto), y
+     el tope pasó de **2 a 30 correos por hora**.
+     **Lo que queda pendiente de esto:**
+     - **PRUEBAS sigue SIN SMTP** → ahí el correo continúa mandando un enlace y
+       con tope de 2/hora. Repetir la configuración con la misma cuenta de Brevo
+       cuando estorbe.
+     - **Amazon SES para el lanzamiento**: Brevo regala 300 correos/día
+       COMPARTIDOS entre todo lo que salga de la cuenta. Con confirmaciones de
+       pedido y avisos, ese techo llega rápido. Migrar son cuatro campos.
+     - **`no-reply@` no recibe.** Cuando haya buzón real en el dominio, cambiarlo
+       por una dirección que sí lea a alguien.
+- [ ] **🔴 La llave SMTP de Brevo CADUCA — dos relojes distintos (2026-08-03).**
+  Si muere, nadie puede registrarse y NADA avisa: el síntoma es "no me llega el
+  código", igual que un problema de red.
+  1. **Vence el 2 de agosto de 2027** (se generó a 1 año). Renovarla antes.
+  2. **Y muere a los 90 DÍAS SIN ACTIVIDAD**, pase lo que pase con la fecha
+     anterior — lo dice Brevo en la propia pantalla. Antes de lanzar, con poco
+     tráfico, 90 días sin un solo registro es perfectamente posible.
+  Mitigación cuando haya monitorización: alertar si `otp_deliveries` (o los
+  registros de Auth) no ven un envío correcto en X días.
+- [ ] **🔴 Producción NO tiene copias de seguridad utilizables (2026-08-03).**
+  Consultado por API: `pitr_enabled: false` y **cero copias listadas** (el plan
+  gratis de Supabase no guarda copias descargables). Hoy el daño sería pequeño
+  —la base tiene poco más que datos sembrados— pero el día que haya negocios,
+  pedidos y pagos reales, un borrado accidental no tendría vuelta atrás.
+  Opciones: plan Pro de Supabase (copias diarias + PITR), o un `pg_dump`
+  programado a almacenamiento propio, que es lo barato y encaja con la regla de
+  no depender de servicios de pago. Decidir ANTES de que entre dinero real.
   5. **Rate limits** — subir los de SMS/correo cuando haya tráfico real.
   Mientras tanto queda la puerta de la contraseña en "Entrar", que es lo único
   que permite entrar hoy.
