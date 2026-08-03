@@ -184,7 +184,7 @@
        pedido y avisos, ese techo llega rápido. Migrar son cuatro campos.
      - **`no-reply@` no recibe.** Cuando haya buzón real en el dominio, cambiarlo
        por una dirección que sí lea a alguien.
-- [ ] **🔴 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — 21 cosas abiertas (los 5 🔴 ya cerrados). Comunidad
+- [ ] **🔴 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — 17 cosas abiertas (los 5 🔴 y los 4 🟠 ya cerrados). Comunidad
   NO está lista para lanzar.** 56 agentes, 8 clases, 2.055 herramientas
   ejecutadas; 47 hallazgos, 7 refutados. **Ya cerrado en la migración 0139**
   (aplicada a las dos bases y verificada re-ejecutando el ataque): 14 funciones
@@ -226,17 +226,40 @@
      la insignia sale de un `count: 'exact'` de la base, no del largo de la
      lista. Verificado con 150 avisos: 40 → 80 → 120 → 150.
 
+  **✅ LOS CUATRO 🟠 «ALTA» — CERRADOS (2026-08-03).** Verificados en navegador
+  real a 360/390/430px y con la función de push ejecutada de verdad:
+  6. ~~15 tipos de notificación que la base emite y la interfaz no sabe dibujar.~~
+     Eran **14 sin dibujar en la campana y 23 sin texto en el teléfono** — más de
+     lo que decía la auditoría. Causa: TRES sitios tienen que conocer cada tipo
+     (la base que lo emite, la campana, la función de push) y los tres se
+     mantenían a mano, así que se separaron sin que nadie lo notara. Añadidos
+     todos (cuenta suspendida/restaurada, cambio de plan, reclamos, reembolsos,
+     interesados y visitas de carros y bienes raíces, reseñas, boletos, y las 4
+     de comunidad). **Guardián nuevo en `scripts/verify-build.mjs`:** saca los
+     tipos de las migraciones y rompe el build si a la campana o al push le falta
+     alguno — probado inyectando una regresión de cada clase. Deja de ser posible
+     que se vuelvan a separar.
+  7. ~~Casi ningún botón llega a 44px.~~ Todos los controles de Comunidad llegan
+     a 44 en 360, 390 y 430px, medido con `elementFromPoint` (dónde aterriza el
+     dedo de verdad, no la caja CSS) y comprobando además que dos zonas no se
+     pisen. Los iconos se siguen **dibujando** igual: la zona crece con padding +
+     margen negativo, o con la utilidad `.tap` / `.tap-y` cuando el control tiene
+     fondo propio. Diferencia visual total, comparada píxel a píxel: 0,43% — la
+     pastilla ES/EN es más ancha (cada mitad son dos botones pegados, no podían
+     crecer con un pseudo-elemento sin robarse el toque) y el marcador se separó
+     12px de compartir. Trampa que costó encontrar: `overflow-x-auto` en la fila
+     de barrios **recortaba también a lo alto** la zona ampliada.
+  8. ~~Fijar una publicación vieja rompe la paginación.~~ El cursor de «Ver más»
+     ya no puede salir de una publicación fijada (el servidor las sube a la
+     primera página aunque sean de hace un año, y el cliente tomaba esa como
+     «la más vieja que tengo»). Verificado con 100 publicaciones y la más vieja
+     fijada: se cargan las 100, sin saltarse ninguna.
+  9. ~~Lo que llega por «Ver más», búsqueda o el perfil de un vecino se pinta sin
+     ♥ ni conteo.~~ Ahora **cada tarjeta pide sus propios datos** y las peticiones
+     se juntan en un lote, así que ninguna superficie futura se puede olvidar.
+     Verificado: 100 publicaciones en 3 lotes (50+30+20), todas con su conteo.
+
   **LO QUE SIGUE ABIERTO, por tema:**
-  6. **Alta · 15 tipos de notificación que la base emite y la interfaz no sabe
-     dibujar** — salen como «Notificación» sin texto. Y las 4 nuevas de
-     comunidad llegan al teléfono con el cuerpo vacío.
-  7. **Alta · Casi ningún botón llega a 44px** (marcador y compartir miden 16),
-     contra la regla #1.
-  8. **Alta · Fijar una publicación vieja rompe la paginación**: «Ver más» salta
-     el hueco entre la fijada y el resto.
-  9. **Alta · Lo que llega por «Ver más», por búsqueda o por el perfil de un
-     vecino se pinta sin ♥ ni conteo de comentarios**: `InteractionsProvider`
-     solo mira el feed inicial.
   10. **Media · Guardados y Siguiendo mienten** cuando fallan; el hilo dice «1
      comentario» y debajo enseña «Aún no hay comentarios» (el conteo del
      servidor cuenta lo que la RLS después esconde).
@@ -257,8 +280,10 @@
      comentarios (para negocios y eventos sí valida).
   19. **Baja · El perfil de vecino no tiene botón de cerrar** ni responde al
      gesto Atrás del teléfono.
-  20. **Baja · Etiquetas de accesibilidad sin `L()`**: dicen «TÚ» en inglés y
-     «clear»/«back» en español.
+  20. **Baja · Etiquetas de accesibilidad sin `L()`**: queda «TÚ» en inglés (las
+     iniciales de respaldo del avatar) y los `aria-label="tile"`/`"color"` de los
+     editores del panel de negocio. Ya arreglados los de Comunidad: «clear»,
+     «back», y el botón de cerrar el hilo, que directamente no tenía etiqueta.
   21. **Baja · `NeighborSheet.bloquear()` recarga la página pase lo que pase**:
      un fallo se ve como éxito.
   22. **Baja · Bloquear no deja de seguir**, y las cuentas se contradicen.

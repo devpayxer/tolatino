@@ -121,7 +121,8 @@ export function PostMenu({ post }: { post: Post }) {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={L('Opciones', 'Options')}
-        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-lilac-2"
+        // El circulito se sigue viendo de 32px; el dedo aterriza en 44.
+        className="tap flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-lilac-2"
       >
         <MoreHorizontal size={18} stroke={2.4} />
       </button>

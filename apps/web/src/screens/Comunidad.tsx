@@ -361,17 +361,28 @@ export function ComunidadScreen() {
   /** Trae la siguiente página, más vieja que la última que ya tenemos. */
   const loadMore = async () => {
     if (!supabase || loadingMore || noMore) return;
-    const last = [...allPosts].filter((p) => p.createdAt).sort((a, b) => (a.createdAt! < b.createdAt! ? 1 : -1)).pop();
+    // El cursor NO puede salir de una publicación FIJADA. `posts_near` sube las
+    // fijadas al principio de la primera página aunque sean de hace un año; si
+    // se tomaba «la más vieja que tengo» salía esa, y la siguiente página pedía
+    // «más viejas que hace un año» — o sea, se saltaba todo lo de en medio. El
+    // fundador fija una publicación vieja y el feed se queda sin la mitad.
+    // (2ª auditoría de Comunidad.)
+    const PAGINA = 30;
+    const cronologicas = allPosts.filter((p) => p.createdAt && !p.pinned);
+    const last = [...cronologicas].sort((a, b) => (a.createdAt! < b.createdAt! ? 1 : -1)).pop();
     if (!last?.createdAt) return;
     setLoadingMore(true);
     const { data, error } = await supabase.rpc('posts_near', {
-      user_lat: cLat, user_lng: cLng, radius_m: COMMUNITY_RADIUS_M, max_results: 30,
+      user_lat: cLat, user_lng: cLng, radius_m: COMMUNITY_RADIUS_M, max_results: PAGINA,
       before_created_at: last.createdAt, before_id: last.id,
     });
     setLoadingMore(false);
     if (error || !Array.isArray(data)) return;
     const rows = (data as PostRow[]).map(mapPost);
     if (rows.length === 0) { setNoMore(true); return; }
+    // Una página incompleta significa que ya no hay más detrás: así el botón
+    // desaparece en vez de pedir una página vacía de más.
+    if (rows.length < PAGINA) setNoMore(true);
     setOlder((prev) => dedupeById([...prev, ...rows]));
   };
 
@@ -696,7 +707,7 @@ export function ComunidadScreen() {
                   <button
                     key={k}
                     onClick={() => setHood(k)}
-                    className={`flex w-full cursor-pointer items-center justify-between rounded-[9px] px-2.5 py-2 text-left text-[12.5px] ${
+                    className={`flex min-h-11 w-full cursor-pointer items-center justify-between rounded-[9px] px-2.5 py-2 text-left text-[12.5px] ${
                       hood === k ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
                     }`}
                   >
@@ -736,14 +747,14 @@ export function ComunidadScreen() {
             de pastillas deslizable, que es el patrón del propio handoff para
             filtros en móvil — no se inventa nada. */}
         {homeMode && hoodOptions.length > 0 && (
-          <div className="no-scrollbar -mx-1 mb-3.5 flex gap-2 overflow-x-auto px-1 lg:hidden">
+          <div className="no-scrollbar -mx-1 -my-1.5 mb-[8px] flex gap-2 overflow-x-auto px-1 py-1.5 lg:hidden">
             {[{ k: 'all', label: L('Todos', 'All'), n: allPosts.length }, ...hoodOptions.map((h) => ({ k: h, label: h, n: hoodCount(h) }))].map(
               ({ k, label, n }) => (
                 <button
                   key={k}
                   onClick={() => setHood(k)}
                   aria-pressed={hood === k}
-                  className={`flex-none cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-[12.5px] font-extrabold ${
+                  className={`tap-y flex-none cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-[12.5px] font-extrabold ${
                     hood === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'
                   }`}
                 >
@@ -771,7 +782,7 @@ export function ComunidadScreen() {
           {/* Cada chip abre LO QUE DICE. Antes los tres abrían el mismo
               compositor sin preseleccionar nada, y "Evento" llevaba al de
               publicaciones — que no tiene tipo evento. */}
-          <div className="mt-3 flex flex-wrap gap-[7px] border-t border-hair pt-3">
+          <div className="mt-3 flex flex-wrap gap-x-[7px] gap-y-[13px] border-t border-hair pt-3">
             {(
               [
                 { label: L('Pregunta', 'Ask'), color: '#6D4DF6', bg: '#EFEBFF', go: () => app.openPub('post', 'ask') },
@@ -782,7 +793,7 @@ export function ComunidadScreen() {
               <button
                 key={c.label}
                 onClick={c.go}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-[9px] px-3 py-[7px] text-[11.5px] font-extrabold"
+                className="tap-y inline-flex cursor-pointer items-center gap-1.5 rounded-[9px] px-3 py-[7px] text-[11.5px] font-extrabold"
                 style={{ background: c.bg, color: c.color }}
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.color }} />
@@ -915,7 +926,8 @@ export function ComunidadScreen() {
               </span>
               <button
                 onClick={closeThread}
-                className="ml-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
+                aria-label={L('Cerrar', 'Close')}
+                className="tap ml-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
               >
                 <X size={15} stroke={2.8} />
               </button>
@@ -995,7 +1007,7 @@ export function ComunidadScreen() {
                 />
                 <button
                   onClick={() => setCommentBizOpen(!commentBizOpen)}
-                  className={`flex h-[38px] w-[38px] flex-none cursor-pointer items-center justify-center rounded-full ${
+                  className={`tap flex h-[38px] w-[38px] flex-none cursor-pointer items-center justify-center rounded-full ${
                     commentBizOpen || commentBiz ? 'bg-green text-white' : 'bg-lilac-2 text-muted'
                   }`}
                   aria-label={L('Recomendar un negocio', 'Recommend a business')}
@@ -1005,7 +1017,7 @@ export function ComunidadScreen() {
                 <button
                   onClick={sendComment}
                   disabled={!canComment || sending}
-                  className={`flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-white ${
+                  className={`tap flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-white ${
                     canComment && !sending ? 'cursor-pointer bg-primary' : 'cursor-not-allowed bg-[#E3DEF2]'
                   }`}
                   aria-label={L('Enviar', 'Send')}

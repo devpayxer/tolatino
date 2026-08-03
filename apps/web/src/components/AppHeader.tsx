@@ -21,11 +21,15 @@ const NAV_ICONS = { users: Users, store: Store, calendar: Calendar, truck: Truck
 
 export function LangToggle({ mini = false }: { mini?: boolean }) {
   const { lang, setLang } = useLang();
-  const base = mini ? 'px-[9px] py-[5px] text-[10.5px]' : 'px-3 py-1.5 text-[12px]';
+  // La pastilla se sigue viendo igual de baja, pero cada mitad mide 44px de
+  // ancho: son dos botones PEGADOS, asi que la zona de toque no puede crecer a
+  // los lados con un pseudo-elemento sin robarle el toque al de al lado — tiene
+  // que ser ancho de verdad. (2a auditoria de Comunidad.)
+  const base = mini ? 'min-w-11 justify-center py-[5px] text-[10.5px]' : 'px-3 py-1.5 text-[12px]';
   const btn = (code: 'es' | 'en', label: string) => (
     <button
       onClick={() => setLang(code)}
-      className={`cursor-pointer rounded-full font-extrabold ${base} ${lang === code ? 'bg-primary text-white' : 'text-muted'}`}
+      className={`tap-y flex cursor-pointer rounded-full font-extrabold ${base} ${lang === code ? 'bg-primary text-white' : 'text-muted'}`}
     >
       {label}
     </button>
@@ -66,7 +70,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
         <button
           onClick={() => setQuery('')}
           className="flex h-5 w-5 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-line"
-          aria-label="clear"
+          aria-label={L('Borrar la búsqueda', 'Clear search')}
         >
           <X size={9} stroke={3.4} className="text-ink-2" />
         </button>
@@ -217,7 +221,7 @@ export function AppHeader() {
         <Wordmark onClick={() => router.push(VIEW_PATH.comunidad)} size="sm" />
         <button
           onClick={() => app.setCityOpen(true)}
-          className="flex flex-none cursor-pointer items-center gap-[5px] rounded-full bg-lilac-2 px-2.5 py-[7px] text-[12px] font-extrabold text-ink md:px-3 md:py-2"
+          className="tap flex flex-none cursor-pointer items-center gap-[5px] rounded-full bg-lilac-2 px-2.5 py-[7px] text-[12px] font-extrabold text-ink md:px-3 md:py-2"
         >
           <MapPin size={13} className="text-primary" stroke={2.4} />
           <span className="max-w-[64px] truncate md:max-w-none">{app.city}</span>
@@ -249,7 +253,7 @@ export function AppHeader() {
             <span className="hidden lg:inline">{L('Publicar', 'List')}</span>
           </button>
           {auth.profile ? (
-            <button onClick={() => app.setUserOpen(true)} className="flex-none cursor-pointer rounded-full" aria-label={auth.profile.display_name}>
+            <button onClick={() => app.setUserOpen(true)} className="tap flex-none cursor-pointer rounded-full" aria-label={auth.profile.display_name}>
               <Avatar initials={auth.profile.initials} color={auth.profile.avatar_color} src={auth.profile.avatar_url} size={36} className="border-2 border-lilac-ring" />
             </button>
           ) : (
@@ -313,7 +317,7 @@ export function SearchChip({ count, className = '' }: { count: number; className
         <button
           onClick={() => setSearch('')}
           className="flex h-4 w-4 flex-none cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,.28)]"
-          aria-label="clear search"
+          aria-label={L('Borrar la búsqueda', 'Clear search')}
         >
           <X size={8} stroke={4} />
         </button>

@@ -154,12 +154,78 @@ let stripeFail = false;
 if (expect === 'live' && !hasLive) { stripeFail = true; stripeMsg += '\n  ✖ Se esperaba LIVE y el build no trae pk_live.'; }
 if (expect === 'test' && hasLive) { stripeFail = true; stripeMsg += '\n  ✖ Se esperaba PRUEBAS y el build trae pk_live — cobraría de verdad.'; }
 
+// ── Avisos que la base emite y nadie sabe dibujar ───────────────────────────
+// POR QUÉ: hay TRES sitios que tienen que conocer cada tipo de aviso — la base
+// (que lo emite), la campana de la app y la función de push — y los tres se
+// mantenían A MANO. Se separaron sin que nadie lo notara: la 2ª auditoría de
+// Comunidad (2026-08-03) encontró 15 tipos que salían como «Notificación» sin
+// una línea de texto, y 23 que llegaban al teléfono con el cuerpo VACÍO.
+// Arreglarlos a mano no impide que vuelvan: el próximo `notify_user(...)` con
+// un tipo nuevo repite el fallo. Esto lo hace imposible de publicar.
+//
+// Se lee el FUENTE (las migraciones y los dos ficheros de texto), no el build:
+// la función de push no viaja en el bundle del navegador.
+const kindsFail = [];
+let kindsMsg = '';
+try {
+  const raiz = new URL('..', import.meta.url).pathname;
+  const migDir = join(raiz, 'supabase/migrations');
+  const sql = readdirSync(migDir).filter((f) => f.endsWith('.sql'))
+    .map((f) => readFileSync(join(migDir, f), 'utf8')).join('\n');
+
+  // Lo que la base EMITE: notify_user(...,'kind',...) / notify_once(...).
+  const emite = new Set();
+  for (const m of sql.matchAll(/notify_(?:user|once)\s*\(\s*[^,]+,\s*'([a-z_]+)'/g)) {
+    // Un tipo que acaba en «_» no es un tipo: es el prefijo de una
+    // concatenación ('claim_' || in_status), que se expande justo abajo.
+    if (!m[1].endsWith('_')) emite.add(m[1]);
+  }
+  // Tipos construidos por concatenación. Los valores posibles NO son la lista
+  // que la función valida al entrar (`not in (...)`) sino la condición que
+  // envuelve al aviso: `admin_claim_update` acepta 4 estados pero solo avisa
+  // en 2. Usar la lista de validación inventaría dos tipos que nunca se emiten.
+  for (const m of sql.matchAll(/'([a-z_]+_)'\s*\|\|\s*(\w+)/g)) {
+    const [, prefijo, variable] = m;
+    const antes = sql.slice(Math.max(0, m.index - 600), m.index);
+    const guardas = [...antes.matchAll(new RegExp(`\\b${variable}\\s+in\\s*\\(([^)]+)\\)`, 'g'))];
+    const lista = guardas.length ? guardas[guardas.length - 1][1] : null;
+    if (lista) for (const v of lista.matchAll(/'([a-z_]+)'/g)) emite.add(prefijo + v[1]);
+  }
+
+  // Lo que cada consumidor SABE DIBUJAR: los `case '...'` de su switch.
+  const casos = (ruta) => {
+    const t = readFileSync(join(raiz, ruta), 'utf8');
+    return new Set([...t.matchAll(/case\s+'([a-z_]+)'\s*:/g)].map((m) => m[1]));
+  };
+  const consumidores = [
+    ['la campana de la app', 'apps/web/src/lib/notifications.tsx'],
+    ['la notificación al teléfono', 'supabase/functions/send-push/index.ts'],
+  ];
+  for (const [nombre, ruta] of consumidores) {
+    const sabe = casos(ruta);
+    const faltan = [...emite].filter((k) => !sabe.has(k)).sort();
+    if (faltan.length) kindsFail.push({ nombre, ruta, faltan });
+  }
+  kindsMsg = `  Avisos: la base emite ${emite.size} tipos`
+    + (kindsFail.length ? '' : ', y los dos consumidores los dibujan todos');
+} catch (e) {
+  // Si el repo no está completo (p. ej. se verifica solo `out/`), no se
+  // inventa un ✅: se dice que no se pudo comprobar.
+  kindsMsg = `  Avisos: no se pudo comprobar (${e.message})`;
+}
+
 // ── Reporte ─────────────────────────────────────────────────────────────────
 console.log(`\nverify-build · ${jsFiles.length} archivos JS, ${htmlFiles.length} HTML en ${OUT}`);
 console.log(envMsg);
 console.log(stripeMsg);
+console.log(kindsMsg);
+for (const { nombre, ruta, faltan } of kindsFail) {
+  console.error(`\n  ✖ ${faltan.length} tipo(s) que la base emite y ${nombre} NO sabe dibujar:`);
+  console.error(`      ${faltan.join(', ')}`);
+  console.error(`      → añade un \`case\` para cada uno en ${ruta}`);
+}
 
-if (hits.length === 0 && !stripeFail && !envFail) {
+if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0) {
   console.log('\n✅ Sin datos fabricados, sin secretos y con la base correcta.\n');
   process.exit(0);
 }

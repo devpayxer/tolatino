@@ -58,6 +58,43 @@ select {
   display: none;
 }
 
+/* ── Zona de toque de 44px ───────────────────────────────────────────────────
+ * El Handoff pide botones de 44px como mínimo, pero varios controles se dibujan
+ * mucho más chicos a propósito (el marcador y compartir de una publicación
+ * miden 16px, las pastillas de barrio 35 de alto). La 2ª auditoría de Comunidad
+ * (2026-08-03) los encontró: se ven bien y se fallan con el dedo.
+ *
+ * `tap` agranda la ZONA QUE RECIBE EL TOQUE sin mover ni un pixel de lo que se
+ * ve: un pseudo-elemento centrado de 44×44 por encima del control. Se usa en
+ * los controles que NO pueden crecer de verdad porque tienen fondo o borde
+ * propios (pastillas, pestañas); los que solo son un icono sí crecen con
+ * padding + margen negativo, que es equivalente y además se puede medir.
+ *
+ * Ojo: dos `tap` pegados se solapan y el de después en el DOM se queda el toque
+ * — por eso hay que dejarles hueco, no ponerlos a 6px uno de otro.
+ */
+.tap,
+.tap-y {
+  position: relative;
+}
+.tap::after,
+.tap-y::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+.tap::after {
+  width: max(100%, 44px);
+}
+/* Solo a lo alto: para controles pegados a un hermano (ES|EN, pastillas de una
+ * fila) donde crecer a lo ancho le robaría el toque al de al lado. */
+.tap-y::after {
+  width: 100%;
+}
+
 .text-balance {
   text-wrap: balance;
 }

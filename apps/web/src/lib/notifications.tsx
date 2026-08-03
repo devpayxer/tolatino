@@ -53,7 +53,34 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   reply_new: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
   post_like: { icon: 'heart', color: '#D6336C', bg: '#FDE7EF' },
   follow_new: { icon: 'user', color: '#1F8A4C', bg: '#E3F5EA' },
+  // Cuenta, plan, reclamos y dinero (0121/0122). La base los emitía desde hacía
+  // meses y la campana los pintaba como «Notificación» sin una línea de texto.
+  account_suspended: { icon: 'user', color: '#D6336C', bg: '#FDE7EF' },
+  account_restored: { icon: 'user', color: '#1F8A4C', bg: '#E3F5EA' },
+  business_tier_changed: { icon: 'store', color: '#B8860B', bg: '#FCF1C7' },
+  order_status_admin: { icon: 'store', color: '#2F6FED', bg: '#E5EFFB' },
+  purchase_fulfilled: { icon: 'store', color: '#1F8A4C', bg: '#E3F5EA' },
+  purchase_refunded: { icon: 'tag', color: '#B8860B', bg: '#FCF1C7' },
+  claim_opened: { icon: 'message', color: '#D6336C', bg: '#FDE7EF' },
+  claim_message: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
+  claim_resuelto: { icon: 'message', color: '#1F8A4C', bg: '#E3F5EA' },
+  claim_rechazado: { icon: 'message', color: '#D6336C', bg: '#FDE7EF' },
+  // Dealer de carros (0119) y Bienes raíces (0117) — avisos para el dueño.
+  auto_lead: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
+  auto_test: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
+  re_lead: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
+  re_tour: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
 };
+// Qué cosa se compró / se reclama, en palabras. La base manda claves distintas
+// según de dónde venga (`payments.kind` en inglés, los reclamos en español).
+const COSA: Record<string, [string, string]> = {
+  order: ['tu pedido', 'your order'], orden: ['tu pedido', 'your order'],
+  booking: ['tu reserva', 'your booking'], reserva: ['tu reserva', 'your booking'],
+  rental: ['tu renta', 'your rental'], renta: ['tu renta', 'your rental'],
+  ticket: ['tu boleto', 'your ticket'], boleto: ['tu boleto', 'your ticket'],
+  otro: ['tu compra', 'your purchase'],
+};
+const cosa = (v: unknown): [string, string] => COSA[String(v)] ?? ['tu compra', 'your purchase'];
 const STATUS: Record<string, [string, string]> = {
   new: ['nuevo', 'new'], preparing: ['en preparación', 'preparing'], ready: ['listo', 'ready'],
   completed: ['completado', 'completed'], cancelled: ['cancelado', 'cancelled'],
@@ -63,6 +90,13 @@ const STATUS: Record<string, [string, string]> = {
 };
 const money = (v: unknown) => (v == null ? '' : `$${Number(v).toFixed(2)}`);
 const st = (v: unknown): [string, string] => STATUS[String(v)] ?? [String(v ?? ''), String(v ?? '')];
+/** Fecha+hora corta y bilingüe para las citas que llegan por aviso. */
+const cuando = (v: unknown): [string, string] => {
+  const t = v ? new Date(String(v)) : null;
+  if (!t || Number.isNaN(t.getTime())) return ['', ''];
+  const o: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' };
+  return [t.toLocaleString('es-US', o), t.toLocaleString('en-US', o)];
+};
 
 function kindText(kind: string, d: Record<string, unknown>): { title: [string, string]; sub: [string, string] } {
   const s = (k: string) => String(d[k] ?? '');
@@ -138,12 +172,80 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
     case 'rsvp_new': return { title: ['Nuevo asistente', 'New attendee'], sub: [s('event'), s('event')] };
     case 'event_cancelled': return { title: ['Evento cancelado', 'Event cancelled'], sub: [s('event'), s('event')] };
     case 'waitlist_open': return { title: ['¡Se liberó un lugar!', 'A spot opened up!'], sub: [s('event'), s('event')] };
-    case 'message': return { title: [`Mensaje de ${s('name')}`, `Message from ${s('name')}`], sub: [s('preview'), s('preview')] };
+    case 'message': return { title: [`Mensaje de ${s('name')}`, `Message from ${s('name')}`], sub: [s('preview') || 'Toca para leerlo', s('preview') || 'Tap to read it'] };
     // ── Comunidad ──
-    case 'comment_new': return { title: [`${s('name')} comentó tu publicación`, `${s('name')} commented on your post`], sub: [s('preview'), s('preview')] };
-    case 'reply_new':   return { title: [`${s('name')} te respondió`, `${s('name')} replied to you`], sub: [s('preview'), s('preview')] };
-    case 'post_like':   return { title: [`A ${s('name')} le gustó tu publicación`, `${s('name')} liked your post`], sub: [s('preview'), s('preview')] };
+    case 'comment_new': return { title: [`${s('name')} comentó tu publicación`, `${s('name')} commented on your post`], sub: [s('preview') || 'Toca para leerlo', s('preview') || 'Tap to read it'] };
+    case 'reply_new':   return { title: [`${s('name')} te respondió`, `${s('name')} replied to you`], sub: [s('preview') || 'Toca para leerlo', s('preview') || 'Tap to read it'] };
+    case 'post_like':   return { title: [`A ${s('name')} le gustó tu publicación`, `${s('name')} liked your post`], sub: [s('preview') || 'Tu publicación', s('preview') || 'Your post'] };
     case 'follow_new':  return { title: [`${s('name')} te sigue`, `${s('name')} is following you`], sub: ['Ahora ve tus publicaciones en su inicio', 'They now see your posts in their feed'] };
+    // ── Cuenta y plan ──
+    case 'account_suspended': {
+      const [d1, e1] = cuando(d.until);
+      const hasta: [string, string] = d.until
+        ? [`Hasta el ${d1}${s('reason') ? ` · ${s('reason')}` : ''}`, `Until ${e1}${s('reason') ? ` · ${s('reason')}` : ''}`]
+        : [s('reason') || 'Escríbenos si crees que fue un error', s('reason') || 'Contact us if you think this was a mistake'];
+      return { title: ['Tu cuenta quedó suspendida', 'Your account was suspended'], sub: hasta };
+    }
+    case 'account_restored':
+      return { title: ['Tu cuenta volvió a estar activa ✅', 'Your account is active again ✅'], sub: ['Ya puedes publicar y comprar como siempre', 'You can post and buy again as usual'] };
+    case 'business_tier_changed': {
+      const biz = s('business');
+      return { title: [`Tu negocio pasó al plan ${s('tier')}`, `Your business moved to the ${s('tier')} plan`], sub: [biz, biz] };
+    }
+    // ── Dinero y reclamos ──
+    case 'order_status_admin': {
+      const [q, w] = cosa(d.kind);
+      const [a, b] = st(d.status);
+      return { title: [`Soporte actualizó ${q}`, `Support updated ${w}`], sub: [`${s('code')} · ${a}`.trim(), `${s('code')} · ${b}`.trim()] };
+    }
+    case 'purchase_fulfilled': {
+      const [q, w] = cosa(d.kind);
+      return { title: ['Tu compra ya quedó registrada ✅', 'Your purchase went through ✅'], sub: [`Ya puedes ver ${q} en tu cuenta`, `You can now see ${w} in your account`] };
+    }
+    case 'purchase_refunded': {
+      const [q, w] = cosa(d.kind);
+      const por = s('reason');
+      return { title: [`Te reembolsamos ${q}`, `We refunded ${w}`], sub: [`${s('code')}${por ? ` · ${por}` : ''}`.trim(), `${s('code')}${por ? ` · ${por}` : ''}`.trim()] };
+    }
+    case 'claim_opened': {
+      const [q, w] = cosa(d.kind);
+      return { title: ['Un cliente abrió un reclamo', 'A customer opened a claim'], sub: [`${s('code')} · sobre ${q}`, `${s('code')} · about ${w}`] };
+    }
+    case 'claim_message':
+      return { title: ['Nuevo mensaje en tu reclamo 💬', 'New message on your claim 💬'], sub: [s('code'), s('code')] };
+    case 'claim_resuelto':
+      return { title: ['Tu reclamo se resolvió ✅', 'Your claim was resolved ✅'], sub: [s('resolution') || s('code'), s('resolution') || s('code')] };
+    case 'claim_rechazado':
+      return { title: ['Tu reclamo fue rechazado', 'Your claim was declined'], sub: [s('resolution') || s('code'), s('resolution') || s('code')] };
+    // ── Dealer de carros ──
+    case 'auto_lead': {
+      const v = s('vehicle');
+      const quien: [string, string] = [`${s('name')}${v ? ` · ${v}` : ''}`, `${s('name')}${v ? ` · ${v}` : ''}`];
+      if (d.kind === 'oferta') return { title: ['Recibiste una oferta por un carro 💵', 'You got an offer on a car 💵'], sub: quien };
+      if (d.kind === 'prequal') return { title: ['Alguien pidió precalificar un crédito', 'Someone asked to get pre-qualified'], sub: quien };
+      if (d.kind === 'prueba') return { title: ['Alguien quiere una prueba de manejo 🚗', 'Someone wants a test drive 🚗'], sub: quien };
+      return { title: ['Nuevo interesado en un carro 🚗', 'New lead on a car 🚗'], sub: quien };
+    }
+    case 'auto_test': {
+      const [d1, e1] = cuando(d.at);
+      return { title: ['Prueba de manejo agendada 🚗', 'Test drive booked 🚗'], sub: [`${s('vehicle')} · ${d1}`.trim(), `${s('vehicle')} · ${e1}`.trim()] };
+    }
+    // ── Bienes raíces ──
+    case 're_lead': {
+      const pr = s('property');
+      const quien: [string, string] = [`${s('name')}${pr ? ` · ${pr}` : ''}`, `${s('name')}${pr ? ` · ${pr}` : ''}`];
+      if (d.kind === 'oferta') return { title: [`Recibiste una oferta${d.offer ? ` de ${money(d.offer)}` : ''} 💵`, `You got an offer${d.offer ? ` of ${money(d.offer)}` : ''} 💵`], sub: quien };
+      if (d.kind === 'solicitud') return { title: ['Nueva solicitud de renta 🏠', 'New rental application 🏠'], sub: quien };
+      return { title: ['Nuevo interesado en una propiedad 🏠', 'New lead on a property 🏠'], sub: quien };
+    }
+    case 're_tour': {
+      const [d1, e1] = cuando(d.at);
+      const video = d.mode === 'video';
+      return {
+        title: video ? ['Visita por video agendada 🏠', 'Video tour booked 🏠'] : ['Visita agendada 🏠', 'Tour booked 🏠'],
+        sub: [`${s('property')} · ${d1}`.trim(), `${s('property')} · ${e1}`.trim()],
+      };
+    }
     default: return { title: ['Notificación', 'Notification'], sub: ['', ''] };
   }
 }
@@ -161,10 +263,19 @@ function groupOf(iso: string): 'hoy' | 'semana' | 'antes' {
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
   return d < 1 ? 'hoy' : d < 7 ? 'semana' : 'antes';
 }
+// Muchos títulos acaban en un emoji. En un teléfono de 390px el título parte en
+// dos líneas y el emoji se queda SOLO en la de abajo, que se lee como un fallo.
+// Se pega a la última palabra con un espacio duro. Aquí, una vez, en vez de en
+// cada uno de los 33 textos (y vale para los que vengan).
+const pegarEmoji = (s: string) => s.replace(/\s+(\p{Extended_Pictographic}\uFE0F?)$/u, '\u00A0$1');
 const rowToItem = (r: RawRow, read: boolean): NotifItem => {
   const m = META[r.kind] ?? { icon: 'store', color: '#6D4DF6', bg: '#EFEBFF' };
   const t = kindText(r.kind, r.data ?? {});
-  return { id: r.id, icon: m.icon, color: m.color, bg: m.bg, title: t.title, sub: t.sub, group: groupOf(r.created_at), time: relTime(r.created_at), read, link: r.link || '/cuenta' };
+  return {
+    id: r.id, icon: m.icon, color: m.color, bg: m.bg,
+    title: [pegarEmoji(t.title[0]), pegarEmoji(t.title[1])],
+    sub: t.sub, group: groupOf(r.created_at), time: relTime(r.created_at), read, link: r.link || '/cuenta',
+  };
 };
 
 type Ctx = {

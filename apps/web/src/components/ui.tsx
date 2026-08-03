@@ -5,6 +5,7 @@
 import { IconX as X } from '@tabler/icons-react';
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
+import { useLang } from '@/lib/i18n';
 
 /**
  * Logotipo de la marca — el globo con América en negativo.
@@ -232,13 +233,14 @@ export function Overlay({
 }
 
 export function OverlayTitle({ title, onClose, onBack }: { title: string; onClose: () => void; onBack?: () => void }) {
+  const { L } = useLang();
   return (
     <div className="mb-3 flex items-center gap-2">
       {onBack && (
         <button
           onClick={onBack}
-          className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2"
-          aria-label="back"
+          className="tap flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2"
+          aria-label={L('Atrás', 'Back')}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="text-ink">
             <polyline points="15 18 9 12 15 6" />
@@ -248,8 +250,8 @@ export function OverlayTitle({ title, onClose, onBack }: { title: string; onClos
       <div className="text-[16px] font-extrabold text-ink">{title}</div>
       <button
         onClick={onClose}
-        className="ml-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
-        aria-label="close"
+        className="tap ml-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-2"
+        aria-label={L('Cerrar', 'Close')}
       >
         <X size={15} stroke={2.8} />
       </button>

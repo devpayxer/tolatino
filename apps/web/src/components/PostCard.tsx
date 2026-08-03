@@ -4,7 +4,7 @@
 // hood·time, text, optional poll / tagged business, actions (♥ recommend,
 // comments → thread, save, share). All toggles carry real state.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { IconBookmark as Bookmark, IconBookmarkFilled as BookmarkFilled, IconCheck as Check, IconChevronRight as ChevronRight, IconMessageCircle as MessageCircle, IconPin as Pin, IconShare as Share } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
@@ -66,6 +66,15 @@ export function PostCard({
   const otherPhoto = useAvatar(own ? null : post.authorId);
   const authorPhoto = own ? auth.profile?.avatar_url ?? null : otherPhoto;
 
+  // La tarjeta pide sus propios datos (♥, guardado, voto, conteo). Da igual por
+  // dónde haya llegado: feed, «Ver más», búsqueda, Guardados, el perfil de un
+  // vecino o un enlace suelto. Antes solo se hidrataba el feed inicial y todo
+  // lo demás salía apagado y con 0 comentarios. (2ª auditoría de Comunidad.)
+  const ensure = it.ensure;
+  useEffect(() => {
+    if (!preview) ensure(post.id);
+  }, [ensure, post.id, preview]);
+
   const recOn = !!it.liked[post.id];
   const saveOn = !!it.saved[post.id];
   const recCount = it.likeCount[post.id] ?? post.recommends;
@@ -114,7 +123,7 @@ export function PostCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-[7px]">
             {onOpenAuthor && post.authorId && !preview ? (
-              <button onClick={() => onOpenAuthor(post.authorId as string)} className="cursor-pointer text-[14.5px] font-extrabold text-ink hover:underline">
+              <button onClick={() => onOpenAuthor(post.authorId as string)} className="relative z-[1] -my-[11px] cursor-pointer py-[11px] text-[14.5px] font-extrabold text-ink hover:underline">
                 {post.name}
               </button>
             ) : (
@@ -142,7 +151,7 @@ export function PostCard({
             {canFollow && (
               <button
                 onClick={() => follows.toggleFollow(post.authorId as string)}
-                className={`inline-flex cursor-pointer items-center rounded-[7px] border px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] ${
+                className={`tap-y inline-flex cursor-pointer items-center rounded-[7px] border px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] ${
                   following ? 'border-hair-strong text-muted' : 'border-primary text-primary-dark'
                 }`}
               >
@@ -261,11 +270,17 @@ export function PostCard({
         );
       })()}
 
+      {/* Los cuatro botones se DIBUJAN igual que en el prototipo (el marcador y
+          compartir miden 16px), pero la zona que recibe el dedo llega a 44px
+          con padding + margen negativo: el margen negativo devuelve el espacio
+          que el padding se llevó, así que no se mueve nada. El hueco entre el
+          marcador y compartir pasa de 18 a 28px porque dos zonas de 44 pegadas
+          se pisan y la segunda le roba el toque a la primera. (2ª auditoría.) */}
       <div className="mt-[13px] flex items-center gap-[18px] border-t border-hair pt-3">
         <button
           disabled={preview}
           onClick={() => it.gate() && it.toggleLike(post.id, post.recommends)}
-          className={`flex cursor-pointer items-center gap-1.5 text-[13px] font-extrabold ${recOn ? 'text-pink' : 'text-muted'}`}
+          className={`-mx-2 -my-3 flex cursor-pointer items-center gap-1.5 px-2 py-3 text-[13px] font-extrabold ${recOn ? 'text-pink' : 'text-muted'}`}
         >
           <span className="text-[16px] leading-none">♥</span>
           {recCount}
@@ -273,7 +288,7 @@ export function PostCard({
         <button
           disabled={preview}
           onClick={onOpenThread}
-          className="flex cursor-pointer items-center gap-1.5 text-[13px] font-extrabold text-muted"
+          className="-mx-2 -my-3 flex cursor-pointer items-center gap-1.5 px-2 py-3 text-[13px] font-extrabold text-muted"
         >
           <MessageCircle size={16} stroke={2.2} />
           {commentTotal}
@@ -281,7 +296,7 @@ export function PostCard({
         <button
           disabled={preview}
           onClick={() => it.gate() && it.toggleSave(post.id)}
-          className="ml-auto flex cursor-pointer items-center"
+          className="-my-[14px] -mx-[14px] ml-auto flex cursor-pointer items-center p-[14px]"
           aria-label={L('Guardar', 'Save')}
         >
           {saveOn ? <BookmarkFilled size={16} className="text-primary" /> : <Bookmark size={16} stroke={2.2} className="text-muted" />}
@@ -289,7 +304,7 @@ export function PostCard({
         <button
           disabled={preview}
           onClick={share}
-          className={`flex cursor-pointer items-center gap-1.5 text-[12px] font-extrabold ${copied ? 'text-green-dark' : 'text-muted'}`}
+          className={`-my-[14px] -ml-[2px] -mr-[14px] flex cursor-pointer items-center gap-1.5 p-[14px] text-[12px] font-extrabold ${copied ? 'text-green-dark' : 'text-muted'}`}
           aria-label={L('Compartir', 'Share')}
         >
           <Share size={16} stroke={2.2} />
