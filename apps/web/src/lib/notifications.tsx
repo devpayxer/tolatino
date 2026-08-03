@@ -47,6 +47,12 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   event_cancelled: { icon: 'calendar', color: '#D6336C', bg: '#FDE7EF' },
   waitlist_open: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
   message: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
+  // Comunidad (migración 0136). Hasta 2026-08-03 la sección era muda: te
+  // comentaban o te seguían y nadie te avisaba.
+  comment_new: { icon: 'message', color: '#6D4DF6', bg: '#EFEBFF' },
+  reply_new: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
+  post_like: { icon: 'heart', color: '#D6336C', bg: '#FDE7EF' },
+  follow_new: { icon: 'user', color: '#1F8A4C', bg: '#E3F5EA' },
 };
 const STATUS: Record<string, [string, string]> = {
   new: ['nuevo', 'new'], preparing: ['en preparación', 'preparing'], ready: ['listo', 'ready'],
@@ -133,6 +139,11 @@ function kindText(kind: string, d: Record<string, unknown>): { title: [string, s
     case 'event_cancelled': return { title: ['Evento cancelado', 'Event cancelled'], sub: [s('event'), s('event')] };
     case 'waitlist_open': return { title: ['¡Se liberó un lugar!', 'A spot opened up!'], sub: [s('event'), s('event')] };
     case 'message': return { title: [`Mensaje de ${s('name')}`, `Message from ${s('name')}`], sub: [s('preview'), s('preview')] };
+    // ── Comunidad ──
+    case 'comment_new': return { title: [`${s('name')} comentó tu publicación`, `${s('name')} commented on your post`], sub: [s('preview'), s('preview')] };
+    case 'reply_new':   return { title: [`${s('name')} te respondió`, `${s('name')} replied to you`], sub: [s('preview'), s('preview')] };
+    case 'post_like':   return { title: [`A ${s('name')} le gustó tu publicación`, `${s('name')} liked your post`], sub: [s('preview'), s('preview')] };
+    case 'follow_new':  return { title: [`${s('name')} te sigue`, `${s('name')} is following you`], sub: ['Ahora ve tus publicaciones en su inicio', 'They now see your posts in their feed'] };
     default: return { title: ['Notificación', 'Notification'], sub: ['', ''] };
   }
 }

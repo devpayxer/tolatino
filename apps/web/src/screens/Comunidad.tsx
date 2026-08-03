@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSend as Send, IconBuildingStore as Store, IconX as X } from '@tabler/icons-react';
 import { ReportButton } from '@/components/ReportButton';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -89,6 +90,7 @@ type PostRow = {
   city: string | null;
   created_at: string;
   recommends: number | null;
+  edited_at: string | null;
   business_name: string | null;
   business_slug: string | null;
   business_rating: number | null;
@@ -115,6 +117,7 @@ function mapPost(r: PostRow): Post {
     timeEs: tEs,
     timeEn: tEn,
     recommends: Number(r.recommends ?? 0),
+    edited: !!r.edited_at,
     business: r.business_name ?? undefined,
     businessSlug: r.business_slug ?? undefined,
     bizRating: r.business_rating != null ? Number(r.business_rating).toFixed(1) : undefined,
@@ -168,6 +171,7 @@ export function ComunidadScreen() {
   const [commentBizQuery, setCommentBizQuery] = useState('');
   const [commentSeq, setCommentSeq] = useState(0);
   const [sending, setSending] = useState(false);
+  const [delComment, setDelComment] = useState<{ id: string; parent: boolean } | null>(null);
 
   // New posts from other users arriving live: buffered in `pending` (shown as a
   // pill) until the user taps to reveal them — so the feed never jumps while
@@ -477,6 +481,23 @@ export function ComunidadScreen() {
     resetComposer();
   };
 
+  /** Borra el propio comentario (y sus respuestas: la clave foránea es en
+   *  cascada). Se quita de la lista abierta al momento, sin recargar el hilo. */
+  const doDeleteComment = async () => {
+    const target = delComment;
+    if (!target || !supabase) return;
+    setDelComment(null);
+    const { error } = await supabase.from('post_comments').delete().eq('id', target.id);
+    if (error) return;
+    const quitar = (list: Comment[] = []) => list.filter((x) => x.id !== target.id);
+    setDbTop((m) => Object.fromEntries(Object.entries(m).map(([k, v]) => [k, quitar(v)])));
+    setDbReplies((m) => {
+      const next = Object.fromEntries(Object.entries(m).map(([k, v]) => [k, quitar(v)]));
+      delete next[target.id]; // sus respuestas se fueron con él
+      return next;
+    });
+  };
+
   const toggleCommentLike = (c: Comment) => {
     if (!it.gate()) return;
     const liked = !!commentLikes[c.id];
@@ -538,7 +559,18 @@ export function ComunidadScreen() {
                 {L('Responder', 'Reply')}
               </button>
             )}
-            <ReportButton type="comment" id={c.id} className="ml-auto" />
+            {/* Borrar el propio comentario. La política de RLS ya lo permitía
+                (`delete own comment`); simplemente no había botón, así que una
+                errata se quedaba publicada para siempre. */}
+            {c.authorId && c.authorId === auth.user?.id && isUuid(c.id) && (
+              <button
+                onClick={() => setDelComment({ id: c.id, parent: isReply })}
+                className="cursor-pointer text-[11.5px] font-extrabold text-muted hover:text-pink-dark"
+              >
+                {L('Borrar', 'Delete')}
+              </button>
+            )}
+            {c.authorId !== auth.user?.id && <ReportButton type="comment" id={c.id} className="ml-auto" />}
           </div>
           {!isReply && repliesFor(c.id).length > 0 && (
             <div className="mt-2 flex flex-col gap-2">{repliesFor(c.id).map((r) => commentRow(r, true))}</div>
@@ -596,6 +628,31 @@ export function ComunidadScreen() {
           </div>
         )}
 
+        {/* Barrios en MÓVIL y tablet. El filtro existía solo en el rail de
+            escritorio (`lg:flex`), o sea invisible para el 99% del tráfico:
+            una función construida que casi nadie podía usar. Aquí va como fila
+            de pastillas deslizable, que es el patrón del propio handoff para
+            filtros en móvil — no se inventa nada. */}
+        {homeMode && hoodOptions.length > 0 && (
+          <div className="no-scrollbar -mx-1 mb-3.5 flex gap-2 overflow-x-auto px-1 lg:hidden">
+            {[{ k: 'all', label: L('Todos', 'All'), n: allPosts.length }, ...hoodOptions.map((h) => ({ k: h, label: h, n: hoodCount(h) }))].map(
+              ({ k, label, n }) => (
+                <button
+                  key={k}
+                  onClick={() => setHood(k)}
+                  aria-pressed={hood === k}
+                  className={`flex-none cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-[12.5px] font-extrabold ${
+                    hood === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'
+                  }`}
+                >
+                  {label}
+                  {n > 0 && <span className={`ml-1.5 text-[11px] ${hood === k ? 'text-white/70' : 'text-muted'}`}>{n}</span>}
+                </button>
+              ),
+            )}
+          </div>
+        )}
+
         {/* composer */}
         <Card className="mb-4 p-[15px]">
           <div className="flex items-center gap-[11px]">
@@ -609,17 +666,20 @@ export function ComunidadScreen() {
               {L('¿Qué pasa en tu barrio?', "What's up in your hood?")}
             </button>
           </div>
+          {/* Cada chip abre LO QUE DICE. Antes los tres abrían el mismo
+              compositor sin preseleccionar nada, y "Evento" llevaba al de
+              publicaciones — que no tiene tipo evento. */}
           <div className="mt-3 flex flex-wrap gap-[7px] border-t border-hair pt-3">
             {(
               [
-                { label: L('Pregunta', 'Ask'), color: '#6D4DF6', bg: '#EFEBFF' },
-                { label: L('Recomienda', 'Recommend'), color: '#1F8A4C', bg: '#E3F5EA' },
-                { label: L('Evento', 'Event'), color: '#2F6FED', bg: '#E5EFFB' },
+                { label: L('Pregunta', 'Ask'), color: '#6D4DF6', bg: '#EFEBFF', go: () => app.openPub('post', 'ask') },
+                { label: L('Recomienda', 'Recommend'), color: '#1F8A4C', bg: '#E3F5EA', go: () => app.openPub('post', 'rec') },
+                { label: L('Evento', 'Event'), color: '#2F6FED', bg: '#E5EFFB', go: () => app.openPub('evento') },
               ] as const
             ).map((c) => (
               <button
                 key={c.label}
-                onClick={() => app.openPub('post')}
+                onClick={c.go}
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-[9px] px-3 py-[7px] text-[11.5px] font-extrabold"
                 style={{ background: c.bg, color: c.color }}
               >
@@ -812,6 +872,17 @@ export function ComunidadScreen() {
           </div>
         )}
       </Overlay>
+
+      <ConfirmDialog
+        open={!!delComment}
+        title={L('¿Borrar tu comentario?', 'Delete your comment?')}
+        message={L('No se puede deshacer. Si tenía respuestas, también se borran.',
+                   "This can't be undone. Any replies to it go too.")}
+        confirmLabel={L('Borrar', 'Delete')}
+        cancelLabel={L('Cancelar', 'Cancel')}
+        onConfirm={doDeleteComment}
+        onClose={() => setDelComment(null)}
+      />
     </div>
   );
 }

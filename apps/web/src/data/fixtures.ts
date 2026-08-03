@@ -381,6 +381,8 @@ export type Post = {
   timeEs: string;
   timeEn: string;
   recommends: number;
+  /** El autor lo editó después de publicarlo (migración 0136). */
+  edited?: boolean;
   business?: string;
   /** Slug del negocio etiquetado — lo resuelve el servidor (migración 0135) y es
    *  lo que convierte la etiqueta en un enlace a la ficha. */

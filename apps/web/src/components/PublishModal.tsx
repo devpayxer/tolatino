@@ -221,6 +221,14 @@ export function PublishModal() {
 
   const type = app.pubType;
   const isChooser = app.pubOpen && !type && !done;
+
+  // Si se abrió desde un chip que YA dice qué se va a publicar ("Pregunta",
+  // "Recomienda"), se salta la pantalla de elegir tipo: el usuario ya eligió.
+  useEffect(() => {
+    if (!app.pubOpen || !app.pubSeed) return;
+    setPostType(app.pubSeed);
+    setStep(2);
+  }, [app.pubOpen, app.pubSeed]);
   const isPoll = postType === 'poll';
   const pollFilled = pollOptions.filter((o) => o.trim()).length;
   const canPost = isPoll ? text.trim().length > 0 && pollFilled >= 2 : text.trim().length > 0;

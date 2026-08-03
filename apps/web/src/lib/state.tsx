@@ -83,7 +83,10 @@ type AppCtx = {
   // publish flow
   pubOpen: boolean;
   pubType: PubType | null;
-  openPub: (type?: PubType) => void;
+  /** Tipo de publicación preseleccionado ('ask' | 'rec' | …) cuando se abre el
+   *  compositor desde un chip que ya dice cuál es. */
+  pubSeed: PostType | null;
+  openPub: (type?: PubType, seed?: PostType) => void;
   closePub: () => void;
   setPubType: (t: PubType | null) => void;
   newPosts: Post[];
@@ -224,6 +227,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [userOpen, setUserOpen] = useState(false);
   const [pubOpen, setPubOpen] = useState(false);
   const [pubType, setPubType] = useState<PubType | null>(null);
+  const [pubSeed, setPubSeed] = useState<PostType | null>(null);
   const [newPosts, setNewPosts] = useState<Post[]>([]);
   const [postSeq, setPostSeq] = useState(0);
   const [biz, setBiz] = useState<BizProfile | null>(null);
@@ -314,13 +318,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUserOpen,
       pubOpen,
       pubType,
-      openPub: (type) => {
+      pubSeed,
+      openPub: (type, seed) => {
         setPubType(type ?? null);
+        setPubSeed(seed ?? null);
         setPubOpen(true);
       },
       closePub: () => {
         setPubOpen(false);
         setPubType(null);
+        setPubSeed(null);
       },
       setPubType,
       newPosts,
@@ -332,7 +339,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       biz,
       setBiz,
     }),
-    [city, cityCoords, coords, address, addressCoords, addressId, cityOpen, addressOpen, addressMode, deliveryAddrId, query, search, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, newPosts, postSeq, biz],
+    [city, cityCoords, coords, address, addressCoords, addressId, cityOpen, addressOpen, addressMode, deliveryAddrId, query, search, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, pubSeed, newPosts, postSeq, biz],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

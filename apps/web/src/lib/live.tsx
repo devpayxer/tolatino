@@ -1138,6 +1138,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             timeEs: tEs,
             timeEn: tEn,
             recommends: Number(r.recommends ?? 0),
+            edited: !!r.edited_at,
             business: (r.business_name as string) ?? undefined,
             businessSlug: (r.business_slug as string) ?? undefined,
             bizRating: r.business_rating != null ? Number(r.business_rating).toFixed(1) : undefined,
