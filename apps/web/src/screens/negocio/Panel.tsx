@@ -493,7 +493,7 @@ export function PanelScreen() {
                    'Sign in to see your dashboard: orders, reviews, menu and stats.')}
               </p>
               <button
-                onClick={() => router.push('/entrar')}
+                onClick={() => router.push('/entrar/?entrar=1')}
                 className="mt-5 w-full cursor-pointer rounded-field bg-primary px-5 py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm"
               >
                 {L('Iniciar sesión', 'Sign in')}

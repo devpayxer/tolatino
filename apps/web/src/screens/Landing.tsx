@@ -391,7 +391,7 @@ export function LandingScreen() {
                       <span className="tl-lgi">{L('¿Ya eres parte de tu comunidad?', 'Already part of your community?')}</span>
                       <span className="tl-smi">{L('¿Ya tienes cuenta?', 'Already have an account?')}</span>
                     </span>
-                    <button onClick={() => go('/entrar/')}
+                    <button onClick={() => go('/entrar/?entrar=1')}
                             className="tl-join tl-focus inline-flex min-h-[44px] cursor-pointer items-center rounded-field px-3 py-3 text-[13px] font-extrabold text-primary-dark">
                       {L('Entrar', 'Log in')}
                     </button>

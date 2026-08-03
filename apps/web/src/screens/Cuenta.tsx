@@ -323,7 +323,7 @@ export function CuentaScreen() {
             <div className="flex items-center gap-3 rounded-card border border-hair bg-white p-3.5 shadow-card">
               <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-lilac"><LogIn size={18} className="text-primary" stroke={2.2} /></span>
               <span className="min-w-0 flex-1 text-[12.5px] font-semibold text-ink-3">{L('Inicia sesión para editar tu perfil y guardar tu actividad.', 'Sign in to edit your profile and keep your activity.')}</span>
-              <button onClick={() => router.push('/entrar')} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Entrar', 'Sign in')}</button>
+              <button onClick={() => router.push('/entrar/?entrar=1')} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Entrar', 'Sign in')}</button>
             </div>
           )}
           {header}

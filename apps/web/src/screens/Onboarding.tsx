@@ -159,9 +159,15 @@ export function OnboardingScreen() {
     router.replace('/comunidad/');
   }, [auth.loading, auth.user, auth.profile, step, router]);
 
-  // `?crear=1` entra directo al alta (lo usa "Regístrate" de la portada).
+  // El botón que se pulsó MANDA. Si dice "Regístrate" se abre el alta; si dice
+  // "Entrar" se abre la entrada. Antes ambos caían en la bienvenida, que es una
+  // pantalla de alta ("Crea tu cuenta en menos de un minuto"), así que quien ya
+  // tenía cuenta y pulsaba Entrar acababa leyendo cómo registrarse. Cambiar de
+  // uno a otro se puede, pero ya dentro y a propósito, con el enlace del pie.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('crear') === '1') setStep('method');
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('crear') === '1') { setMode('signup'); setStep('method'); }
+    else if (q.get('entrar') === '1') { setMode('login'); setStep('login'); }
   }, []);
 
   // Cuenta atrás del reenvío: solo corre en la pantalla del código.
@@ -527,6 +533,16 @@ export function OnboardingScreen() {
                   <Cta on={channel === 'sms' ? phone.length === 10 : email.includes('@')} onClick={sendCode}>
                     {busy ? L('Enviando…', 'Sending…') : L('Enviarme el código', 'Send me the code')}
                   </Cta>
+
+                  {/* La salida hacia el otro camino. Existe la inversa en la
+                      pantalla de entrada ("¿No tienes cuenta? Créala ahora"):
+                      desde cualquiera de las dos se puede cruzar, pero eligiendo. */}
+                  <p className="mt-5 text-center text-[13px] font-semibold text-home-mute">
+                    {L('¿Ya tienes cuenta?', 'Already have an account?')}{' '}
+                    <button onClick={() => { setMode('login'); setErr(null); setStep('login'); }} className="tl-focus cursor-pointer font-extrabold text-primary-dark">
+                      {L('Entrar', 'Log in')}
+                    </button>
+                  </p>
                 </div>
               )}
 

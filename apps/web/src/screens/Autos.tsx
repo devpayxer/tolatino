@@ -1120,7 +1120,7 @@ export function AutosScreen() {
                 <Card className="p-10 text-center">
                   <div className="text-[15px] font-extrabold text-ink">{L('Inicia sesión para ver tus guardados', 'Sign in to see your saved cars')}</div>
                   <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Tus favoritos te siguen en todos tus dispositivos.', 'Your favorites follow you across devices.')}</div>
-                  <PrimaryBtn className="mx-auto mt-4 max-w-[240px]" onClick={() => router.push('/entrar')}>{L('Iniciar sesión', 'Sign in')}</PrimaryBtn>
+                  <PrimaryBtn className="mx-auto mt-4 max-w-[240px]" onClick={() => router.push('/entrar/?entrar=1')}>{L('Iniciar sesión', 'Sign in')}</PrimaryBtn>
                 </Card>
               ) : savedList == null ? (
                 <SkeletonList count={3} className="flex flex-col gap-3" />
