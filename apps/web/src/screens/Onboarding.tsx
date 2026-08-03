@@ -140,12 +140,24 @@ export function OnboardingScreen() {
   const targetLabel = channel === 'sms' ? `+1 ${formatUsPhone(phone)}` : email.trim().toLowerCase();
 
   // ── Ya hay sesión ─────────────────────────────────────────────────────────
-  // Solo se redirige desde las pantallas de ENTRADA. A media alta el usuario ya
+  // Solo se mira desde las pantallas de ENTRADA. A media alta el usuario ya
   // tiene sesión (el código la abre) y sacarlo de aquí lo dejaría sin nombre,
   // sin zona y sin intereses.
+  //
+  // Y hay una segunda forma de llegar aquí CON sesión y sin alta hecha: un
+  // enlace de acceso del correo. Supabase abre la sesión al aterrizar, pero el
+  // alta no ha pasado. Antes se le mandaba a /comunidad y se quedaba para
+  // siempre como "Vecino", sin ciudad y sin intereses — la cuenta existía pero
+  // el alta nunca ocurría. Ahora se le deja EXACTAMENTE donde estaría si
+  // hubiera escrito el código: en el paso del nombre.
   useEffect(() => {
-    if (!auth.loading && auth.user && (step === 'welcome' || step === 'login')) router.replace('/comunidad/');
-  }, [auth.loading, auth.user, step, router]);
+    if (auth.loading || !auth.user) return;
+    if (step !== 'welcome' && step !== 'login') return;
+    if (!auth.profile) return; // aún cargando el perfil: no se decide todavía
+    const n = (auth.profile.display_name ?? '').trim();
+    if (!n || n === 'Vecino') { setMode('signup'); setStep('profile'); return; }
+    router.replace('/comunidad/');
+  }, [auth.loading, auth.user, auth.profile, step, router]);
 
   // `?crear=1` entra directo al alta (lo usa "Regístrate" de la portada).
   useEffect(() => {

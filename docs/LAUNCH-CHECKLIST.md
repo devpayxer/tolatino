@@ -165,9 +165,27 @@
      sigue en `false` (en pruebas ya está en `true`); y conectar el hook:
      Authentication → Hooks → Send SMS → apuntar a la función y pegar su secreto
      en `SEND_OTP_HOOK_SECRET`.
-  4. **Correo (recuperación)** — Amazon SES + la plantilla de "Magic Link" con
-     `{{ .Token }}`, o el usuario recibe un enlace en vez de un código. Sigue el
-     tope de 2 correos por hora hasta que SES esté.
+  4. **🔴 Correo: HOY MANDA UN ENLACE, NO EL CÓDIGO — y no se puede arreglar sin
+     SMTP propio (confirmado 2026-08-03).** El fundador se registró en producción
+     y recibió un enlace. La causa: las plantillas por defecto de Supabase usan
+     `{{ .ConfirmationURL }}`. Se intentó cambiarlas por `{{ .Token }}` y la API
+     lo RECHAZA: *"Email template modification is not available for free tier
+     projects using the default email provider. Please upgrade your plan or
+     configure a custom SMTP provider."* O sea: **cambiar la plantilla exige SMTP
+     propio**, no es opcional ni cosmético — es lo que separa "recibes un código
+     de 6 dígitos" de "recibes un enlace".
+     - **Qué hace falta:** un proveedor SMTP en Authentication → Emails → SMTP
+       Settings (host, puerto, usuario, contraseña, remitente). Con eso se
+       desbloquean las plantillas Y desaparece el tope de 2 correos por hora.
+     - **Opciones:** Amazon SES (~$0.10/1.000, el plan de `CLAUDE.md`; exige
+       verificar el dominio por DNS y salir del sandbox) o cualquier SMTP con
+       capa gratis para arrancar hoy. Es portable: cambiar de uno a otro son
+       cuatro campos.
+     - **Mitigación ya puesta (2026-08-03):** el enlace ahora aterriza en
+       `/entrar/` y el alta CONTINÚA desde ahí (antes caía en la portada y la
+       cuenta quedaba para siempre como "Vecino", sin ciudad ni intereses). Es un
+       parche: el diseño pide un código de 6 dígitos y hasta que haya SMTP el
+       usuario sigue recibiendo un enlace.
   5. **Rate limits** — subir los de SMS/correo cuando haya tráfico real.
   Mientras tanto queda la puerta de la contraseña en "Entrar", que es lo único
   que permite entrar hoy.
