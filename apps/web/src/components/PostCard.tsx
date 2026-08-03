@@ -5,7 +5,7 @@
 // comments → thread, save, share). All toggles carry real state.
 
 import { useState } from 'react';
-import { IconBookmark as Bookmark, IconBookmarkFilled as BookmarkFilled, IconCheck as Check, IconChevronRight as ChevronRight, IconMessageCircle as MessageCircle, IconShare as Share } from '@tabler/icons-react';
+import { IconBookmark as Bookmark, IconBookmarkFilled as BookmarkFilled, IconCheck as Check, IconChevronRight as ChevronRight, IconMessageCircle as MessageCircle, IconPin as Pin, IconShare as Share } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { useInteractions } from '@/lib/interactions';
@@ -38,11 +38,14 @@ export function PostCard({
   preview = false,
   commentCount,
   onOpenThread,
+  onOpenAuthor,
 }: {
   post: FeedPost;
   preview?: boolean;
   commentCount?: number;
   onOpenThread?: () => void;
+  /** Abre el perfil del autor. Sin esto el nombre no es pulsable. */
+  onOpenAuthor?: (userId: string) => void;
 }) {
   const { L } = useLang();
   const auth = useAuth();
@@ -101,10 +104,27 @@ export function PostCard({
   return (
     <div className="rounded-card border border-hair bg-white p-[18px] shadow-card">
       <div className="flex items-start gap-3">
-        <Avatar initials={post.initials} color={post.color} src={authorPhoto} size={44} />
+        {onOpenAuthor && post.authorId && !preview ? (
+          <button onClick={() => onOpenAuthor(post.authorId as string)} className="flex-none cursor-pointer" aria-label={post.name}>
+            <Avatar initials={post.initials} color={post.color} src={authorPhoto} size={44} />
+          </button>
+        ) : (
+          <Avatar initials={post.initials} color={post.color} src={authorPhoto} size={44} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-[7px]">
-            <span className="text-[14.5px] font-extrabold text-ink">{post.name}</span>
+            {onOpenAuthor && post.authorId && !preview ? (
+              <button onClick={() => onOpenAuthor(post.authorId as string)} className="cursor-pointer text-[14.5px] font-extrabold text-ink hover:underline">
+                {post.name}
+              </button>
+            ) : (
+              <span className="text-[14.5px] font-extrabold text-ink">{post.name}</span>
+            )}
+            {post.pinned && (
+              <span className="inline-flex items-center gap-1 rounded-[7px] bg-amber-bg px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-amber-ink">
+                <Pin size={10} stroke={2.6} aria-hidden /> {L('Fijado', 'Pinned')}
+              </span>
+            )}
             <span
               className="inline-flex items-center rounded-[7px] px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em]"
               style={{ background: tag.bg, color: tag.color }}

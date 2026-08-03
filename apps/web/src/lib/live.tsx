@@ -1137,6 +1137,8 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             city: (r.city as string) ?? undefined,
             timeEs: tEs,
             timeEn: tEn,
+            createdAt: String(r.created_at),
+            pinned: r.pinned === true,
             recommends: Number(r.recommends ?? 0),
             edited: !!r.edited_at,
             business: (r.business_name as string) ?? undefined,

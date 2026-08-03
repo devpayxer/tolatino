@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSend as Send, IconBuildingStore as Store, IconX as X } from '@tabler/icons-react';
 import { ReportButton } from '@/components/ReportButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { NeighborSheet } from '@/components/NeighborSheet';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
@@ -91,6 +92,7 @@ type PostRow = {
   created_at: string;
   recommends: number | null;
   edited_at: string | null;
+  pinned: boolean | null;
   business_name: string | null;
   business_slug: string | null;
   business_rating: number | null;
@@ -116,6 +118,8 @@ function mapPost(r: PostRow): Post {
     city: r.city ?? undefined,
     timeEs: tEs,
     timeEn: tEn,
+    createdAt: r.created_at,
+    pinned: !!r.pinned,
     recommends: Number(r.recommends ?? 0),
     edited: !!r.edited_at,
     business: r.business_name ?? undefined,
@@ -172,6 +176,16 @@ export function ComunidadScreen() {
   const [commentSeq, setCommentSeq] = useState(0);
   const [sending, setSending] = useState(false);
   const [delComment, setDelComment] = useState<{ id: string; parent: boolean } | null>(null);
+  const [vecino, setVecino] = useState<string | null>(null);
+
+  // Paginación por cursor: `older` son las páginas ya traídas, `noMore` marca
+  // que la base ya no tiene nada más viejo dentro del radio.
+  const [older, setOlder] = useState<Post[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [noMore, setNoMore] = useState(false);
+  // Búsqueda REAL contra la base (`search_posts`), no un filtro de lo cargado.
+  const [found, setFound] = useState<Post[] | null>(null);
+  const [searching, setSearching] = useState(false);
 
   // New posts from other users arriving live: buffered in `pending` (shown as a
   // pill) until the user taps to reveal them — so the feed never jumps while
@@ -275,10 +289,10 @@ export function ComunidadScreen() {
 
   const allPosts: Post[] = useMemo(
     () =>
-      dedupeById([...revealed, ...app.newPosts, ...POSTS])
+      dedupeById([...revealed, ...app.newPosts, ...POSTS, ...older])
         .filter((p) => !removedIds.has(p.id))
         .map((p) => editedPosts[p.id] ?? p),
-    [revealed, app.newPosts, POSTS, removedIds, editedPosts],
+    [revealed, app.newPosts, POSTS, older, removedIds, editedPosts],
   );
 
   // Keep a live set of the ids already in the feed so the realtime handler can
@@ -296,6 +310,8 @@ export function ComunidadScreen() {
     setRemovedIds(new Set());
     setEditedPosts({});
     setHood('all'); // barrios differ per city — reset the filter
+    setOlder([]);
+    setNoMore(false);
   }, [cLat, cLng]);
 
   // Live feed: buffer new posts from OTHER users within the 30-mile radius.
@@ -334,6 +350,36 @@ export function ComunidadScreen() {
       sb.removeChannel(ch);
     };
   }, [cLat, cLng, auth.user]);
+
+  /** Trae la siguiente página, más vieja que la última que ya tenemos. */
+  const loadMore = async () => {
+    if (!supabase || loadingMore || noMore) return;
+    const last = [...allPosts].filter((p) => p.createdAt).sort((a, b) => (a.createdAt! < b.createdAt! ? 1 : -1)).pop();
+    if (!last?.createdAt) return;
+    setLoadingMore(true);
+    const { data, error } = await supabase.rpc('posts_near', {
+      user_lat: cLat, user_lng: cLng, radius_m: COMMUNITY_RADIUS_M, max_results: 30,
+      before_created_at: last.createdAt, before_id: last.id,
+    });
+    setLoadingMore(false);
+    if (error || !Array.isArray(data)) return;
+    const rows = (data as PostRow[]).map(mapPost);
+    if (rows.length === 0) { setNoMore(true); return; }
+    setOlder((prev) => dedupeById([...prev, ...rows]));
+  };
+
+  // Buscar en TODA la comunidad. El freno evita una consulta por tecla.
+  useEffect(() => {
+    const q = app.search.trim();
+    if (!supabase || q.length < 2) { setFound(null); setSearching(false); return; }
+    setSearching(true);
+    const t = window.setTimeout(() => {
+      supabase!.rpc('search_posts', { in_q: q, user_lat: cLat, user_lng: cLng, radius_m: COMMUNITY_RADIUS_M, max_results: 50 })
+        .then(({ data, error }) => setFound(error || !Array.isArray(data) ? [] : (data as PostRow[]).map(mapPost)))
+        .then(() => setSearching(false), () => setSearching(false));
+    }, 260);
+    return () => window.clearTimeout(t);
+  }, [app.search, cLat, cLng]);
 
   const showNewPosts = () => {
     setRevealed((r) => dedupeById([...pending, ...r]));
@@ -392,10 +438,14 @@ export function ComunidadScreen() {
 
   const baseFeed = homeMode ? allPosts : viewFeed;
   const byHood = homeMode && hood !== 'all' ? baseFeed.filter((p) => p.hoodEs === hood) : baseFeed;
+  // Con búsqueda activa manda lo que devuelve la base; sin ella, el feed local.
+  // Mientras la base responde se sigue enseñando el filtro sobre lo cargado, para
+  // que la lista no parpadee a vacío entre tecla y respuesta.
   const sl = app.search.trim().toLowerCase();
-  const posts = sl
+  const localMatch = sl
     ? byHood.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(sl))
     : byHood;
+  const posts = sl && found !== null ? found : localMatch;
 
   const topComments = (pid: string) => [...(dbTop[pid] ?? []), ...(userComments[pid] ?? [])]; // solo comentarios reales
   const repliesFor = (cid: string) => [...(dbReplies[cid] ?? []), ...(userReplies[cid] ?? [])]; // solo respuestas reales
@@ -523,11 +573,21 @@ export function ComunidadScreen() {
     const likes = commentLikeCount[c.id] ?? c.likes;
     return (
       <div key={c.id} className={`flex items-start gap-[9px] ${isReply ? 'ml-10' : ''}`}>
-        <CommentAvatar c={c} size={isReply ? 26 : 30} />
+        {c.authorId ? (
+          <button onClick={() => setVecino(c.authorId!)} className="flex-none cursor-pointer" aria-label={c.name}>
+            <CommentAvatar c={c} size={isReply ? 26 : 30} />
+          </button>
+        ) : (
+          <CommentAvatar c={c} size={isReply ? 26 : 30} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="rounded-[13px] bg-[#F5F3FB] px-3 py-[9px]">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[12px] font-extrabold text-ink">{c.name}</span>
+              {c.authorId ? (
+                <button onClick={() => setVecino(c.authorId!)} className="cursor-pointer text-[12px] font-extrabold text-ink hover:underline">{c.name}</button>
+              ) : (
+                <span className="text-[12px] font-extrabold text-ink">{c.name}</span>
+              )}
               <span className="text-[10.5px] font-semibold text-muted-2">
                 {c.hoodEs ? `${c.hoodEs} · ` : ''}
                 {L(c.timeEs, c.timeEn)}
@@ -745,8 +805,26 @@ export function ComunidadScreen() {
         ) : (
           <div className="flex flex-col gap-3.5">
             {posts.map((p) => (
-              <PostCard key={p.id} post={p} commentCount={commentCount(p.id)} onOpenThread={() => openThreadUrl(p.id)} />
+              <PostCard key={p.id} post={p} commentCount={commentCount(p.id)} onOpenThread={() => openThreadUrl(p.id)} onOpenAuthor={setVecino} />
             ))}
+
+            {/* Cargar más. Solo en el inicio y sin búsqueda: Guardados,
+                Siguiendo y los resultados de búsqueda traen su propia lista
+                completa, así que un botón ahí prometería algo que no hay. */}
+            {homeMode && !sl && !noMore && posts.length >= 20 && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="mx-auto mt-1 cursor-pointer rounded-full border border-hair bg-white px-5 py-2.5 text-[13px] font-extrabold text-primary-dark shadow-card disabled:opacity-60"
+              >
+                {loadingMore ? L('Cargando…', 'Loading…') : L('Ver más publicaciones', 'Show more posts')}
+              </button>
+            )}
+            {homeMode && !sl && noMore && posts.length >= 20 && (
+              <div className="py-2 text-center text-[12px] font-semibold text-muted">
+                {L('Has llegado al final por ahora.', "That's everything for now.")}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -781,7 +859,7 @@ export function ComunidadScreen() {
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
-              <PostCard post={threadPost} commentCount={commentCount(threadPost.id)} />
+              <PostCard post={threadPost} commentCount={commentCount(threadPost.id)} onOpenAuthor={setVecino} />
               <div className="mt-4 flex flex-col gap-3 pb-4">
                 {topComments(threadPost.id).length === 0 ? (
                   <EmptyState
@@ -872,6 +950,13 @@ export function ComunidadScreen() {
           </div>
         )}
       </Overlay>
+
+      <NeighborSheet
+        userId={vecino}
+        onClose={() => setVecino(null)}
+        mapPost={(r) => mapPost(r as unknown as PostRow)}
+        onOpenThread={openThreadUrl}
+      />
 
       <ConfirmDialog
         open={!!delComment}

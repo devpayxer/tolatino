@@ -12,8 +12,9 @@ import { useApp } from '@/lib/state';
 import { useNotifications } from '@/lib/notifications';
 import { useAuth } from '@/lib/auth';
 import { Avatar, Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
-import { NAV_CATS, VIEW_PATH, bizTile, eventTile, type Business, type EventItem } from '@/data/fixtures';
+import { NAV_CATS, VIEW_PATH, bizTile, eventTile, type Business, type EventItem, type Post } from '@/data/fixtures';
 import { useLiveData, searchBusinesses, searchEvents } from '@/lib/live';
+import { supabase } from '@/lib/supabase';
 import { CAT, tile } from '@/lib/tiles';
 
 const NAV_ICONS = { users: Users, store: Store, calendar: Calendar, truck: Truck, home: Home, car: Car, briefcase: Briefcase };
@@ -108,6 +109,29 @@ function SearchDropdown() {
     return () => { cancelled = true; clearTimeout(t); };
   }, [query, coords?.lat, coords?.lng]);
 
+  // Sugerencias de Comunidad contra la BASE, igual que Negocios y Eventos. Antes
+  // solo miraba las publicaciones ya cargadas: escribir algo de la semana pasada
+  // no sugería nada aunque existiera. (Auditoría de Comunidad, 2026-08-03.)
+  const [serverPosts, setServerPosts] = useState<Post[] | null>(null);
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2 || !supabase) { setServerPosts(null); return; }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      supabase!.rpc('search_posts', { in_q: q, user_lat: coords?.lat ?? null, user_lng: coords?.lng ?? null, max_results: 6 })
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          setServerPosts(error || !Array.isArray(data) ? [] : (data as Record<string, unknown>[]).map((r) => ({
+            id: String(r.id), type: r.type as Post['type'], initials: String(r.author_initials),
+            color: String(r.author_color), name: String(r.author_name), hoodEs: String(r.hood ?? ''),
+            city: (r.city as string) ?? undefined, timeEs: '', timeEn: '', recommends: 0,
+            es: String(r.body_es), en: String(r.body_en),
+          })));
+        });
+    }, 220);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query, coords?.lat, coords?.lng]);
+
   const ql = query.trim().toLowerCase();
   if (!ql) return null;
 
@@ -123,7 +147,8 @@ function SearchDropdown() {
   const bizHits = serverBiz != null && serverBiz.length > 0 ? serverBiz : clientBizHits;
   const clientEvHits = EVENTS.filter((e) => `${e.tEs} ${e.tEn} ${e.lEs} ${e.lEn}`.toLowerCase().includes(ql));
   const evHits = serverEv != null && serverEv.length > 0 ? serverEv : clientEvHits;
-  const postHits = POSTS.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(ql));
+  const clientPostHits = POSTS.filter((p) => `${p.es} ${p.en} ${p.name} ${p.business ?? ''}`.toLowerCase().includes(ql));
+  const postHits = serverPosts != null && serverPosts.length > 0 ? serverPosts : clientPostHits;
   const total = bizHits.length + evHits.length + postHits.length;
 
   const groups: { label: string; count: number; items: { name: string; meta: string; tile: string; view: 'comunidad' | 'negocios' | 'eventos' }[] }[] = [

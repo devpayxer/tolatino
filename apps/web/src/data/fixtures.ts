@@ -380,6 +380,11 @@ export type Post = {
   city?: string; // full city label ("Houston, TX") — shown as "Barrio, Ciudad"
   timeEs: string;
   timeEn: string;
+  /** Fecha real (ISO) — el cursor de paginación va por aquí, no por el
+   *  texto relativo. Ausente en publicaciones locales de respaldo. */
+  createdAt?: string;
+  /** El admin la fijó arriba del feed (`posts.pinned`). */
+  pinned?: boolean;
   recommends: number;
   /** El autor lo editó después de publicarlo (migración 0136). */
   edited?: boolean;

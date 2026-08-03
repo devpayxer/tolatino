@@ -189,28 +189,27 @@
   inflar ♥, auto-destacarse), el negocio etiquetado sin enlace y el botón de
   compartir que compartía el feed en vez de la publicación. Lo que sigue
   pendiente, por orden de importancia:
-  ~~1. Notificaciones de comunidad~~ · ~~2. Borrar el propio comentario~~ ·
-  ~~4. Barrios en móvil~~ · ~~5. El chip "Evento"~~ · ~~6. Marca "editado"~~ →
-  **HECHOS el 2026-08-03** (migración 0136 + cliente). Sigue abierto:
-  3. **No hay perfil de vecino.** El nombre y la foto del autor no son pulsables
-     y no existe pantalla con sus publicaciones. Se sigue a alguien a ciegas.
-  6b. **Editar sigue tocando solo el texto**: la marca "editado" ya sale y la
-     base ya permite cambiar también las fotos, pero el formulario de edición
-     (`PostMenu`) no las ofrece. La encuesta y el negocio etiquetado se quedan
-     fuera a propósito — cambiar opciones con votos ya emitidos los invalida.
-  7. **Escala**: sin paginación (50 publicaciones y se acabó); el contador de
-     comentarios se calcula bajando TODAS las filas de comentarios del feed al
-     navegador; la búsqueda dentro de Comunidad filtra solo lo ya cargado en vez
-     de consultar la base; `posts.pinned`/`featured` existen y nadie los lee, así
-     que fijar o destacar desde el admin no hace nada.
-  8. **No se puede bloquear ni silenciar a un vecino** — solo reportar. En una
-     app de barrio, donde la gente se conoce, hace falta antes de abrir al
-     público.
-  9. **Sin menciones (@vecino) ni temas/hashtags.**
-  10. **Las notificaciones de comunidad NO llegan al teléfono todavía**: el
-     reparto a Web Push existe (`trg_push_fanout`, 0089) pero está sin
-     configurar (`private.push_config` vacío → se salta en silencio). Faltan las
-     llaves VAPID del fundador.
+  **Cerrado TODO menos dos cosas** (2026-08-03, migraciones 0135–0138 + cliente):
+  agujero de columnas, enlace al negocio, compartir, notificaciones, borrar
+  comentario, barrios en móvil, chip de Evento, marca "editado", paginación por
+  cursor, conteo de comentarios en el servidor, búsqueda real (con español y sin
+  acentos), `pinned` visible, bloquear/desbloquear vecinos y perfil de vecino.
+  Sigue abierto:
+  1. **Menciones (@vecino) y temas/hashtags** — decidido NO hacerlo ahora: una
+     mención sin buscador de personas ni avisos propios es media función, y
+     los hashtags sin nadie que los use quedan vacíos. Se retoma cuando haya
+     conversación real que lo pida.
+  2. **Editar sigue tocando solo el texto**: la marca "editado" ya sale y la base
+     ya permite cambiar las fotos, pero el formulario (`PostMenu`) no las ofrece.
+     La encuesta y el negocio etiquetado se quedan fuera a propósito — cambiar
+     opciones con votos ya emitidos los invalida.
+  3. **Las notificaciones de comunidad NO llegan al teléfono todavía**: el
+     reparto a Web Push existe (`trg_push_fanout`, 0089) pero está sin configurar
+     (`private.push_config` vacío → se salta en silencio). Faltan las llaves
+     VAPID del fundador.
+  4. **`featured` sigue sin leerse** (a diferencia de `pinned`, que ya sube las
+     publicaciones fijadas al principio del feed). Decidir si "destacado" tiene
+     un sitio propio o se borra la columna.
 - [ ] **🔴 La llave SMTP de Brevo CADUCA — dos relojes distintos (2026-08-03).**
   Si muere, nadie puede registrarse y NADA avisa: el síntoma es "no me llega el
   código", igual que un problema de red.

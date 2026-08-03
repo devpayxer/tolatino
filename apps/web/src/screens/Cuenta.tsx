@@ -9,10 +9,11 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCamera as Camera, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconLoader2 as Loader2, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconFlag as Flag, IconPhone as Phone, IconPlus as Plus, IconReceipt as Receipt, IconRepeat as Repeat, IconShoppingBag as ShoppingBag, IconStar as Star, IconStarFilled as StarFilled, IconTicket as Ticket, IconTrash as Trash2, IconTruck as Truck, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
+import { IconBan as Ban, IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCamera as Camera, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconLoader2 as Loader2, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconFlag as Flag, IconPhone as Phone, IconPlus as Plus, IconReceipt as Receipt, IconRepeat as Repeat, IconShoppingBag as ShoppingBag, IconStar as Star, IconStarFilled as StarFilled, IconTicket as Ticket, IconTrash as Trash2, IconTruck as Truck, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import { useAvatarUpload } from '@/lib/avatarUpload';
 import { useAddresses } from '@/lib/addresses';
 import { useFollows } from '@/lib/follows';
@@ -31,9 +32,9 @@ import { enablePush, disablePush, pushState, type PushState } from '@/lib/push';
 import { orderStageIdx } from '@/components/OrderSteps';
 import { fetchMyClaims, createClaim, claimAddMessage, CLAIM_STATUS, CLAIM_KIND, timeAgo, type MyClaim } from '@/lib/admin';
 
-type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config' | 'pedidos' | 'reservas' | 'rentas' | 'boletos' | 'voy' | 'reclamos';
+type Sec = 'home' | 'perfil' | 'direcciones' | 'posts' | 'config' | 'pedidos' | 'reservas' | 'rentas' | 'boletos' | 'voy' | 'reclamos' | 'bloqueados';
 // Valid ?sec= values restored on refresh (keep in sync with Sec).
-const SEC_VALUES = new Set<string>(['home', 'perfil', 'direcciones', 'posts', 'config', 'pedidos', 'reservas', 'rentas', 'boletos', 'voy', 'reclamos']);
+const SEC_VALUES = new Set<string>(['home', 'perfil', 'direcciones', 'posts', 'config', 'pedidos', 'reservas', 'rentas', 'boletos', 'voy', 'reclamos', 'bloqueados']);
 
 // Status → bilingual label + pill colors, shared across the activity lists.
 const STATUS: Record<string, { es: string; en: string; bg: string; c: string }> = {
@@ -189,6 +190,26 @@ export function CuentaScreen() {
   const guest = auth.configured && !auth.user;
   const p = auth.profile;
   const photo = useAvatarUpload();
+
+  // Vecinos bloqueados. La tabla guarda ids y `profiles` es privado, así que el
+  // nombre lo trae un RPC (`blocked_users`, 0137) que solo devuelve TU lista.
+  type Bloqueado = { id: string; name: string; avatar_url: string | null; blocked_at: string };
+  const [blocked, setBlocked] = useState<Bloqueado[]>([]);
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const loadBlocked = async () => {
+    if (!supabase || !auth.user) return;
+    setBlockedLoading(true);
+    const { data } = await supabase.rpc('blocked_users');
+    setBlocked(Array.isArray(data) ? (data as Bloqueado[]) : []);
+    setBlockedLoading(false);
+  };
+  const unblock = async (id: string) => {
+    if (!supabase || !auth.user) return;
+    setBlocked((l) => l.filter((x) => x.id !== id));
+    await supabase.from('user_blocks').delete().eq('blocker_id', auth.user.id).eq('blocked_id', id);
+    live.refresh();
+    flash(L('Desbloqueado', 'Unblocked'));
+  };
   const notifs: Notifs = { ...DEFAULT_NOTIFS, ...((p?.settings?.notifications as Partial<Notifs>) ?? {}) };
   const myPosts = live.posts.filter((x) => x.authorId && x.authorId === auth.user?.id);
 
@@ -351,6 +372,7 @@ export function CuentaScreen() {
             {row(MapPin, '#1F8A4C', '#E3F5EA', L('Direcciones', 'Addresses'), L('Tus direcciones guardadas', 'Your saved addresses'), () => setSec('direcciones'), String(addr.addresses.length))}
             {row(Bell, '#B5791A', '#FCEFD6', L('Notificaciones', 'Notifications'), L('Alertas y avisos', 'Alerts and updates'), () => app.setNotifOpen(true))}
             {row(Globe, '#0E9384', '#D6F3EF', L('Configuración', 'Settings'), L('Idioma, notificaciones, cuenta', 'Language, notifications, account'), () => setSec('config'))}
+            {row(Ban, '#5A5570', '#F1EFFA', L('Vecinos bloqueados', 'Blocked neighbors'), L('A quién dejaste de ver', "Who you've stopped seeing"), () => { loadBlocked(); setSec('bloqueados'); })}
           </div>
 
           <div className={`${cardCls} p-2`}>
@@ -423,6 +445,39 @@ export function CuentaScreen() {
               {savingProfile ? L('Guardando…', 'Saving…') : L('Guardar perfil', 'Save profile')}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ── BLOQUEADOS ── */}
+      {sec === 'bloqueados' && (
+        <div>
+          {backBar(L('Vecinos bloqueados', 'Blocked neighbors'))}
+          {blockedLoading ? (
+            <div className={`${cardCls} p-6 text-center text-[13px] font-semibold text-muted`}>{L('Cargando…', 'Loading…')}</div>
+          ) : blocked.length === 0 ? (
+            <div className={`${cardCls} p-6 text-center`}>
+              <div className="text-[13.5px] font-extrabold text-ink">{L('No has bloqueado a nadie', "You haven't blocked anyone")}</div>
+              <div className="mt-1.5 text-[12.5px] font-semibold leading-relaxed text-muted">
+                {L('Si alguna vez lo necesitas, está en el menú “…” de sus publicaciones. No se le avisa.',
+                   'If you ever need to, it\'s in the “…” menu on their posts. They are not notified.')}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {blocked.map((b) => (
+                <div key={b.id} className={`${cardCls} flex items-center gap-3 p-3.5`}>
+                  <Avatar initials={(b.name || 'V').slice(0, 2).toUpperCase()} color="#8A86A0" src={b.avatar_url} size={38} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13.5px] font-extrabold text-ink">{b.name}</span>
+                    <span className="block text-[11.5px] font-semibold text-muted">{L('Bloqueado el ', 'Blocked on ')}{dt(b.blocked_at)}</span>
+                  </span>
+                  <button onClick={() => unblock(b.id)} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-3 py-2 text-[12px] font-extrabold text-primary-dark">
+                    {L('Desbloquear', 'Unblock')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

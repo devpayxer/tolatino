@@ -70,13 +70,14 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     (async () => {
+      // El conteo lo hace la BASE (`post_comment_counts`, migración 0137). Antes
+      // se bajaban TODAS las filas de comentarios del feed al navegador solo
+      // para contarlas: con hilos activos son miles de filas por visita para
+      // pintar tres números.
       const counts: Num = {};
-      const cc = await supabase.from('post_comments').select('id, post_id').in('post_id', postIds);
-      if (!cc.error && cc.data) {
-        for (const r of cc.data as { id: string; post_id: string }[]) {
-          counts[r.post_id] = (counts[r.post_id] ?? 0) + 1;
-          seen.current.add(r.id);
-        }
+      const cc = await supabase.rpc('post_comment_counts', { ids: postIds });
+      if (!cc.error && Array.isArray(cc.data)) {
+        for (const r of cc.data as { post_id: string; n: number }[]) counts[r.post_id] = Number(r.n);
       }
       if (!cancelled) setCommentCount(counts);
 

@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { IconFlag as Flag, IconDots as MoreHorizontal, IconPencil as Pencil, IconTrash as Trash2 } from '@tabler/icons-react';
+import { IconBan as Ban, IconFlag as Flag, IconDots as MoreHorizontal, IconPencil as Pencil, IconTrash as Trash2 } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { useLiveData } from '@/lib/live';
@@ -32,7 +32,7 @@ export function PostMenu({ post }: { post: Post }) {
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
-  const [action, setAction] = useState<null | 'edit' | 'delete' | 'report'>(null);
+  const [action, setAction] = useState<null | 'edit' | 'delete' | 'report' | 'block'>(null);
   const [text, setText] = useState(post.es);
   const [reason, setReason] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -73,6 +73,21 @@ export function PostMenu({ post }: { post: Post }) {
     const { error } = await sb.from('posts').delete().eq('id', post.id);
     setBusy(false);
     if (error) return setErr(L('No se pudo eliminar. Intenta de nuevo.', "Couldn't delete. Try again."));
+    live.refresh();
+    closeAll();
+  };
+
+  // Bloquear: silencioso y de una sola dirección — el otro no se entera. Va a la
+  // tabla `user_blocks`, y a partir de ahí la propia política de RLS le quita de
+  // TODOS los caminos de lectura (inicio, guardados, siguiendo, búsqueda,
+  // comentarios), no solo del feed que estamos mirando.
+  const doBlock = async () => {
+    if (busy || !auth.user || !post.authorId) return;
+    setBusy(true);
+    setErr(null);
+    const { error } = await sb.from('user_blocks').insert({ blocker_id: auth.user.id, blocked_id: post.authorId });
+    setBusy(false);
+    if (error) return setErr(L('No se pudo bloquear. Intenta de nuevo.', "Couldn't block. Try again."));
     live.refresh();
     closeAll();
   };
@@ -132,9 +147,16 @@ export function PostMenu({ post }: { post: Post }) {
                 </button>
               </>
             ) : (
-              <button onClick={openReport} className={`${itemCls} text-ink hover:bg-app`}>
-                <Flag size={15} stroke={2.2} /> {L('Reportar', 'Report')}
-              </button>
+              <>
+                <button onClick={openReport} className={`${itemCls} text-ink hover:bg-app`}>
+                  <Flag size={15} stroke={2.2} /> {L('Reportar', 'Report')}
+                </button>
+                {auth.user && post.authorId && (
+                  <button onClick={() => { setOpen(false); setAction('block'); }} className={`${itemCls} text-ink hover:bg-app`}>
+                    <Ban size={15} stroke={2.2} /> {L('Bloquear a', 'Block')} {post.name}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </>
@@ -168,6 +190,24 @@ export function PostMenu({ post }: { post: Post }) {
           </button>
           <button onClick={doDelete} disabled={busy} className="flex-1 cursor-pointer rounded-btn bg-pink py-3 text-[13px] font-extrabold text-white disabled:opacity-60">
             {busy ? L('Eliminando…', 'Deleting…') : L('Eliminar', 'Delete')}
+          </button>
+        </div>
+      </Overlay>
+
+      {/* Bloquear */}
+      <Overlay open={action === 'block'} onClose={closeAll} width={400}>
+        <div className="text-[16px] font-extrabold text-ink">{L('¿Bloquear a', 'Block')} {post.name}?</div>
+        <p className="mt-1.5 text-[13px] font-semibold leading-relaxed text-muted">
+          {L('Dejarás de ver sus publicaciones y comentarios en toda la app. No se le avisa. Puedes deshacerlo desde Mi cuenta.',
+             "You'll stop seeing their posts and comments everywhere. They are not notified. You can undo this from My account.")}
+        </p>
+        {err && <div className="mt-2 text-[12px] font-semibold text-pink-dark">{err}</div>}
+        <div className="mt-4 flex gap-2">
+          <button onClick={closeAll} className="flex-1 cursor-pointer rounded-btn bg-lilac-2 py-3 text-[13px] font-extrabold text-ink-2">
+            {L('Cancelar', 'Cancel')}
+          </button>
+          <button onClick={doBlock} disabled={busy} className="flex-1 cursor-pointer rounded-btn bg-ink py-3 text-[13px] font-extrabold text-white disabled:opacity-60">
+            {busy ? L('Bloqueando…', 'Blocking…') : L('Bloquear', 'Block')}
           </button>
         </div>
       </Overlay>
