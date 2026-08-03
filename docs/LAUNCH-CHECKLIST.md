@@ -203,10 +203,15 @@
      ya permite cambiar las fotos, pero el formulario (`PostMenu`) no las ofrece.
      La encuesta y el negocio etiquetado se quedan fuera a propósito — cambiar
      opciones con votos ya emitidos los invalida.
-  3. **Las notificaciones de comunidad NO llegan al teléfono todavía**: el
-     reparto a Web Push existe (`trg_push_fanout`, 0089) pero está sin configurar
-     (`private.push_config` vacío → se salta en silencio). Faltan las llaves
-     VAPID del fundador.
+  3. ~~Web Push sin configurar~~ — **FALSA ALARMA, comprobado el 2026-08-03**:
+     producción YA tiene todo puesto — la función `send-push` desplegada y
+     activa, los secretos `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
+     `VAPID_SUBJECT` / `PUSH_HOOK_SECRET`, y `private.push_config` con su URL y
+     su secreto. Verificado además que la clave pública del build es la MISMA que
+     la del secreto (comparando su sha256; el API no devuelve el valor en claro).
+     Lo único que falta es que alguien ACTIVE las notificaciones desde
+     Mi cuenta → Configuración: hoy hay 0 suscripciones, y sin suscripción no
+     hay a dónde enviar. No hace falta generar ninguna llave.
   4. **`featured` sigue sin leerse** (a diferencia de `pinned`, que ya sube las
      publicaciones fijadas al principio del feed). Decidir si "destacado" tiene
      un sitio propio o se borra la columna.
