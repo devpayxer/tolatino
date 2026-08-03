@@ -184,6 +184,73 @@
        pedido y avisos, ese techo llega rápido. Migrar son cuatro campos.
      - **`no-reply@` no recibe.** Cuando haya buzón real en el dominio, cambiarlo
        por una dirección que sí lea a alguien.
+- [ ] **🔴 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — 26 cosas abiertas. Comunidad
+  NO está lista para lanzar.** 56 agentes, 8 clases, 2.055 herramientas
+  ejecutadas; 47 hallazgos, 7 refutados. **Ya cerrado en la migración 0139**
+  (aplicada a las dos bases y verificada re-ejecutando el ataque): 14 funciones
+  con privilegios estaban abiertas a internet con la llave publicable — entre
+  ellas `apply_subscription`, `mark_payment`, `fulfill_order` y las de boletos,
+  o sea plan Premium gratis, pagos marcados como pagados y boletos sin comprar;
+  más `notify_once`/`notify_user` (alertas falsas con enlace externo en la
+  campana de cualquiera) y la suplantación que 0135 dejó abierta para quien no
+  tiene fila en `profiles`. Producción no había sufrido abuso (0 pagos, 0
+  suscripciones, 0 boletos). Queda el guardián `auditar_funciones_expuestas()`:
+  debe devolver 0 filas salvo los 3 contadores de vistas.
+  **LO QUE SIGUE ABIERTO, por tema:**
+  1. **🔴 El bloqueo no llega a las notificaciones.** Bloqueas a un vecino y te
+     sigue timbrando la campana (y el teléfono) con su nombre y su texto. Los
+     triggers de 0136 no consultan `user_blocks`.
+  2. **🔴 Un enlace a una publicación no abre nada** si esa publicación no está
+     en la página del feed ya cargada: el hilo se busca solo en la lista en
+     memoria. Rompe el enlace de CADA notificación y el botón Compartir. Es el
+     bug del que ya había una nota suelta en este archivo.
+  3. **🔴 Ocultar por moderación no cierra la publicación**: sigue admitiendo
+     comentarios y ♥ de quien conserve el id, y su autor sigue recibiendo el
+     aviso. `hidden` solo filtra la LECTURA.
+  4. **🔴 La app finge éxito cuando el servidor rechaza.** Guardar se pinta
+     lleno aunque el insert falle; un comentario rechazado (cuenta suspendida,
+     límite de 30/hora) no produce ni un mensaje; la campana pinta «Todo al día»
+     cuando la consulta falló; el feed dice «Todavía no hay publicaciones»
+     cuando en realidad no pudo cargar. Regla #8, cuatro veces.
+  5. **🔴 La campana está topada en 60**: la insignia da un número falso, los
+     avisos 61+ son inalcanzables y «Marcar todo leído» los marca sin que nadie
+     los haya visto.
+  6. **Alta · 15 tipos de notificación que la base emite y la interfaz no sabe
+     dibujar** — salen como «Notificación» sin texto. Y las 4 nuevas de
+     comunidad llegan al teléfono con el cuerpo vacío.
+  7. **Alta · Casi ningún botón llega a 44px** (marcador y compartir miden 16),
+     contra la regla #1.
+  8. **Alta · Fijar una publicación vieja rompe la paginación**: «Ver más» salta
+     el hueco entre la fijada y el resto.
+  9. **Alta · Lo que llega por «Ver más», por búsqueda o por el perfil de un
+     vecino se pinta sin ♥ ni conteo de comentarios**: `InteractionsProvider`
+     solo mira el feed inicial.
+  10. **Media · Guardados y Siguiendo mienten** cuando fallan; el hilo dice «1
+     comentario» y debajo enseña «Aún no hay comentarios» (el conteo del
+     servidor cuenta lo que la RLS después esconde).
+  11. **Media · `featured_by` / `hidden_by` son públicos**: cualquiera puede
+     saber QUIÉN modera, y con `neighbor_profile` sacar su nombre y ciudad.
+  12. **Media · Accesibilidad de las hojas**: `Overlay` no es un diálogo — sin
+     `role`, sin Escape, sin trampa de foco, sin devolver el foco al cerrar.
+  13. **Media · El índice de 0138 nunca se creó** (`posts_author_idx` chocó de
+     nombre con uno anterior y el `if not exists` lo saltó en silencio).
+  14. **Media · Un comentario puede FINGIR que se publicó** (camino local de
+     respaldo) y encima se firma con un barrio inventado, «Bellaire».
+  15. **Media · Con búsqueda activa, el filtro de barrio se ilumina y no filtra.**
+  16. **Media · Ocultar un comentario manda sus respuestas a un limbo** y el
+     contador las sigue contando.
+  17. **Media · Seguir y bloquear no tienen freno anti-spam** (el límite de 30/h
+     no cubre esas tablas): una cuenta puede hacer sonar el teléfono de otra.
+  18. **Baja · `create_report` acepta uuids inventados** para publicaciones y
+     comentarios (para negocios y eventos sí valida).
+  19. **Baja · El perfil de vecino no tiene botón de cerrar** ni responde al
+     gesto Atrás del teléfono.
+  20. **Baja · Etiquetas de accesibilidad sin `L()`**: dicen «TÚ» en inglés y
+     «clear»/«back» en español.
+  21. **Baja · `NeighborSheet.bloquear()` recarga la página pase lo que pase**:
+     un fallo se ve como éxito.
+  22. **Baja · Bloquear no deja de seguir**, y las cuentas se contradicen.
+  23. **Baja · «Mis publicaciones» depende de la ciudad** en la que estés.
 - [ ] **Auditoría de Comunidad (2026-08-03) — lo que quedó ABIERTO.** Cerrado ya
   en la migración 0135 + cliente: el agujero de columnas (suplantar al autor,
   inflar ♥, auto-destacarse), el negocio etiquetado sin enlace y el botón de
