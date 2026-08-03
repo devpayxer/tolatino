@@ -14,7 +14,7 @@ import { IconCalendar as Calendar, IconClock as Clock, IconHelpCircle as HelpCir
 import { useLang } from '@/lib/i18n';
 import { useApp, type PostType } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
-import { useLiveData } from '@/lib/live';
+import { useLiveData, searchBusinesses } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
 import { uploadPostImages } from '@/lib/image';
 import { getBrowserLocation } from '@/lib/geo';
@@ -38,8 +38,15 @@ export function PublishModal() {
   const app = useApp();
   const auth = useAuth();
   const live = useLiveData();
-  // Nombres de negocios REALES cercanos para el selector de "Etiquetar negocio".
-  const taggableBiz = useMemo(() => live.businesses.slice(0, 12).map((b) => b.name), [live.businesses]);
+  // Negocios REALES cercanos para "Etiquetar negocio" — los primeros como
+  // sugerencia rápida, y un buscador contra la base para el resto (antes solo
+  // había 12 y sin buscar: si tu negocio no estaba entre esos 12, no lo podías
+  // etiquetar). Se guarda el SLUG, no el nombre: es lo que hace que la etiqueta
+  // lleve a la ficha, y el servidor lo verifica (migración 0135).
+  const taggableBiz = useMemo(
+    () => live.businesses.slice(0, 12).map((b) => ({ slug: b.slug, name: b.name })),
+    [live.businesses],
+  );
   const router = useRouter();
 
   const [step, setStep] = useState(1);
@@ -56,8 +63,26 @@ export function PublishModal() {
     setHood('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.cityShort]);
+
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [taggedBiz, setTaggedBiz] = useState<string | null>(null);
+  const [taggedBiz, setTaggedBiz] = useState<{ slug: string; name: string } | null>(null);
+  const [bizQuery, setBizQuery] = useState('');
+  const [bizHits, setBizHits] = useState<{ slug: string; name: string; city?: string }[]>([]);
+  const [bizSearching, setBizSearching] = useState(false);
+
+  // Buscador de negocios para etiquetar: con freno para no consultar por tecla.
+  useEffect(() => {
+    const q = bizQuery.trim();
+    if (q.length < 2) { setBizHits([]); setBizSearching(false); return; }
+    setBizSearching(true);
+    const t = window.setTimeout(() => {
+      searchBusinesses({ q, lat: app.coords.lat, lng: app.coords.lng, limit: 8 })
+        .then((rows) => setBizHits(rows.map((b) => ({ slug: b.slug, name: b.name, city: b.city }))))
+        .catch(() => setBizHits([]))
+        .finally(() => setBizSearching(false));
+    }, 240);
+    return () => window.clearTimeout(t);
+  }, [bizQuery, app.coords.lat, app.coords.lng]);
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [posting, setPosting] = useState(false);
   const [postErr, setPostErr] = useState<string | null>(null);
@@ -221,7 +246,8 @@ export function PublishModal() {
       timeEs: 'ahora',
       timeEn: 'now',
       recommends: 0,
-      business: taggedBiz ?? undefined,
+      business: taggedBiz?.name ?? undefined,
+      businessSlug: taggedBiz?.slug,
       bizRating: undefined, // never fabricate a rating for a tagged business
       poll: isPoll ? opts : undefined,
       pollBase: isPoll ? opts.map(() => 0) : undefined,
@@ -269,7 +295,7 @@ export function PublishModal() {
         lng: app.coords.lng,
         body_es: txt,
         body_en: txt,
-        business_name: taggedBiz,
+        business_slug: taggedBiz?.slug ?? null,
         business_rating: null, // never fabricate a rating (rule #8)
         poll_options: isPoll ? opts : null,
         poll_votes: isPoll ? opts.map(() => 0) : null,
@@ -340,7 +366,8 @@ export function PublishModal() {
     timeEs: 'ahora',
     timeEn: 'now',
     recommends: 0,
-    business: taggedBiz ?? undefined,
+    business: taggedBiz?.name ?? undefined,
+    businessSlug: taggedBiz?.slug,
     bizRating: undefined, // never fabricate a rating for a tagged business
     poll: isPoll ? pollOptions.map((o) => o.trim()).filter(Boolean) : undefined,
     pollBase: isPoll ? pollOptions.map(() => 0) : undefined,
@@ -542,18 +569,62 @@ export function PublishModal() {
                       publicar una recomendación etiquetando un negocio que NO
                       existe. Ahora se ofrecen los del feed real; si aún no hay
                       ninguno cerca, no se ofrece nada (regla #8). */}
-                  {taggableBiz.length > 0 ? (
-                    <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                      {taggableBiz.map((b) => (
-                        <button key={b} onClick={() => setTaggedBiz(taggedBiz === b ? null : b)} className={chip(taggedBiz === b)}>
-                          {b}
-                        </button>
-                      ))}
+                  {taggedBiz ? (
+                    <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-green-bg px-3 py-2 text-[12.5px] font-extrabold text-green-dark">
+                      <Store size={14} stroke={2.4} className="flex-none" />
+                      <span className="truncate">{taggedBiz.name}</span>
+                      <button onClick={() => setTaggedBiz(null)} className="cursor-pointer" aria-label={L('Quitar', 'Remove')}>
+                        <X size={12} stroke={3} />
+                      </button>
                     </div>
                   ) : (
-                    <div className="text-[11.5px] font-semibold text-muted">
-                      {L('Aún no hay negocios cerca para etiquetar.', 'No nearby businesses to tag yet.')}
-                    </div>
+                    <>
+                      <input
+                        value={bizQuery}
+                        onChange={(e) => setBizQuery(e.target.value)}
+                        placeholder={L('Busca el negocio por nombre…', 'Search the business by name…')}
+                        aria-label={L('Buscar negocio', 'Search business')}
+                        className={inputCls}
+                      />
+                      {bizQuery.trim().length >= 2 ? (
+                        <div className="mt-2 flex flex-col gap-1">
+                          {bizSearching && bizHits.length === 0 && (
+                            <div className="px-1 py-2 text-[11.5px] font-semibold text-muted">{L('Buscando…', 'Searching…')}</div>
+                          )}
+                          {!bizSearching && bizHits.length === 0 && (
+                            <div className="px-1 py-2 text-[11.5px] font-semibold text-muted">
+                              {L('No encontramos ese negocio. Solo puedes etiquetar negocios ya publicados en To’Latino.',
+                                 "We couldn't find that business. You can only tag businesses already listed on To’Latino.")}
+                            </div>
+                          )}
+                          {bizHits.map((b) => (
+                            <button
+                              key={b.slug}
+                              onClick={() => { setTaggedBiz({ slug: b.slug, name: b.name }); setBizQuery(''); setBizHits([]); }}
+                              className="flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] p-2 text-left hover:bg-app"
+                            >
+                              <Store size={15} stroke={2.2} className="flex-none text-primary-dark" />
+                              <span className="min-w-0">
+                                <span className="block truncate text-[12.5px] font-extrabold text-ink">{b.name}</span>
+                                {b.city && <span className="block truncate text-[11px] font-bold text-muted">{b.city}</span>}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : taggableBiz.length > 0 ? (
+                        <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto">
+                          {taggableBiz.map((b) => (
+                            <button key={b.slug} onClick={() => setTaggedBiz(b)} className={chip(false)}>
+                              {b.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-[11.5px] font-semibold text-muted">
+                          {L('Aún no hay negocios cerca para etiquetar.', 'No nearby businesses to tag yet.')}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

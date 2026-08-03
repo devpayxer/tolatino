@@ -42,6 +42,7 @@ type CommentRow = {
   author_color: string;
   body: string;
   biz_name: string | null;
+  biz_slug: string | null;
   biz_rating: string | null;
   like_count: number;
   created_at: string;
@@ -70,7 +71,7 @@ function mapComment(r: CommentRow): Comment {
     likes: r.like_count,
     es: r.body,
     en: r.body,
-    biz: r.biz_name ? { name: r.biz_name, rating: r.biz_rating ?? '' } : undefined,
+    biz: r.biz_name ? { name: r.biz_name, slug: r.biz_slug ?? undefined, rating: r.biz_rating ?? '' } : undefined,
   };
 }
 
@@ -89,6 +90,7 @@ type PostRow = {
   created_at: string;
   recommends: number | null;
   business_name: string | null;
+  business_slug: string | null;
   business_rating: number | null;
   poll_options: string[] | null;
   poll_votes: number[] | null;
@@ -114,6 +116,7 @@ function mapPost(r: PostRow): Post {
     timeEn: tEn,
     recommends: Number(r.recommends ?? 0),
     business: r.business_name ?? undefined,
+    businessSlug: r.business_slug ?? undefined,
     bizRating: r.business_rating != null ? Number(r.business_rating).toFixed(1) : undefined,
     poll: r.poll_options ?? undefined,
     pollBase: r.poll_votes ?? undefined,
@@ -160,7 +163,7 @@ export function ComunidadScreen() {
   const [dbReplies, setDbReplies] = useState<Record<string, Comment[]>>({});
   const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({});
   const [commentLikeCount, setCommentLikeCount] = useState<Record<string, number>>({});
-  const [commentBiz, setCommentBiz] = useState<string | null>(null);
+  const [commentBiz, setCommentBiz] = useState<{ slug: string; name: string } | null>(null);
   const [commentBizOpen, setCommentBizOpen] = useState(false);
   const [commentBizQuery, setCommentBizQuery] = useState('');
   const [commentSeq, setCommentSeq] = useState(0);
@@ -438,8 +441,7 @@ export function ComunidadScreen() {
         author_initials: auth.profile.initials,
         author_color: auth.profile.avatar_color,
         body: txt,
-        biz_name: commentBiz ?? null,
-        biz_rating: null, // never fabricate a rating for a tagged business (rule #8)
+        biz_slug: commentBiz?.slug ?? null, // el servidor resuelve nombre e id (0135)
       };
       const { data, error } = await supabase.from('post_comments').insert(row).select().single();
       setSending(false);
@@ -464,7 +466,7 @@ export function ComunidadScreen() {
       likes: 0,
       es: txt,
       en: txt,
-      biz: commentBiz ? { name: commentBiz } : undefined,
+      biz: commentBiz ? { name: commentBiz.name, slug: commentBiz.slug } : undefined,
     };
     setCommentSeq((n) => n + 1);
     if (replyTo) {
@@ -511,12 +513,15 @@ export function ComunidadScreen() {
               </span>
             </div>
             {(c.es || c.en) && <div className="mt-0.5 text-[12.5px] font-medium leading-[1.45] text-ink-body">{L(c.es, c.en)}</div>}
-            {c.biz && (
-              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-[9px] bg-green-bg px-2 py-1 text-[11px] font-extrabold text-green-dark">
-                <Store size={12} stroke={2.4} />
-                {c.biz.name}{c.biz.rating ? ` · ★ ${c.biz.rating}` : ''}
-              </div>
-            )}
+            {c.biz && (() => {
+              const cls = 'mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-[9px] bg-green-bg px-2 py-1 text-[11px] font-extrabold text-green-dark';
+              const inner = <><Store size={12} stroke={2.4} className="flex-none" /><span className="truncate">{c.biz!.name}{c.biz!.rating ? ` · ★ ${c.biz!.rating}` : ''}</span></>;
+              // Con slug lleva a la ficha; los comentarios viejos (etiquetados
+              // solo por nombre) se pintan igual pero sin enlace.
+              return c.biz.slug
+                ? <a href={`/negocios/?b=${encodeURIComponent(c.biz.slug)}`} className={`${cls} cursor-pointer hover:bg-green-bg2`}>{inner}</a>
+                : <div className={cls}>{inner}</div>;
+            })()}
           </div>
           <div className="mt-1 flex items-center gap-3.5 px-1">
             <button
@@ -741,7 +746,7 @@ export function ComunidadScreen() {
               {commentBiz && (
                 <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-green-bg px-3 py-1.5 text-[11.5px] font-extrabold text-green-dark">
                   <Store size={12} stroke={2.4} />
-                  {commentBiz}
+                  {commentBiz.name}
                   <button onClick={() => setCommentBiz(null)} className="cursor-pointer">
                     <X size={11} stroke={3} />
                   </button>
@@ -759,7 +764,7 @@ export function ComunidadScreen() {
                     <button
                       key={b.id}
                       onClick={() => {
-                        setCommentBiz(commentBiz === b.name ? null : b.name);
+                        setCommentBiz(commentBiz?.slug === b.slug ? null : { slug: b.slug, name: b.name });
                         setCommentBizOpen(false);
                         setCommentBizQuery('');
                       }}

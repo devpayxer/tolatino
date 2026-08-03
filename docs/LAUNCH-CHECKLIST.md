@@ -184,6 +184,38 @@
        pedido y avisos, ese techo llega rápido. Migrar son cuatro campos.
      - **`no-reply@` no recibe.** Cuando haya buzón real en el dominio, cambiarlo
        por una dirección que sí lea a alguien.
+- [ ] **Auditoría de Comunidad (2026-08-03) — lo que quedó ABIERTO.** Cerrado ya
+  en la migración 0135 + cliente: el agujero de columnas (suplantar al autor,
+  inflar ♥, auto-destacarse), el negocio etiquetado sin enlace y el botón de
+  compartir que compartía el feed en vez de la publicación. Lo que sigue
+  pendiente, por orden de importancia:
+  1. **🔴 CERO notificaciones de comunidad.** Te comentan, te responden, te dan ♥
+     o te siguen: silencio. La tabla `notifications` y la campana funcionan (las
+     usan pedidos, reservas, reseñas y boletos); comunidad no escribe ninguna.
+     En Nextdoor y Facebook Groups ese aviso ES el producto — sin él la gente
+     publica una vez y no vuelve. Hacen falta `comment_new`, `reply_new`,
+     `post_like`, `follow_new` (+ su texto en `lib/notifications`).
+  2. **No se puede borrar el propio comentario.** La política de RLS ya lo
+     permite (`delete own comment`); falta el botón. Tampoco se puede editar
+     (no hay política de UPDATE — decidir si se añade).
+  3. **No hay perfil de vecino.** El nombre y la foto del autor no son pulsables
+     y no existe pantalla con sus publicaciones. Se sigue a alguien a ciegas.
+  4. **El filtro de Barrios solo existe en escritorio** (el rail es `lg:flex`).
+     El 99% del tráfico es móvil: función construida que casi nadie puede usar.
+  5. **El chip "Evento" del compositor abre el compositor de PUBLICACIONES**, que
+     no tiene tipo evento (ask/rec/local/sale/poll). Y los tres chips
+     (Pregunta/Recomienda/Evento) no preseleccionan el tipo: hacen lo mismo.
+  6. **Editar no marca "editado"** y solo cambia el texto (no fotos, ni encuesta,
+     ni negocio etiquetado).
+  7. **Escala**: sin paginación (50 publicaciones y se acabó); el contador de
+     comentarios se calcula bajando TODAS las filas de comentarios del feed al
+     navegador; la búsqueda dentro de Comunidad filtra solo lo ya cargado en vez
+     de consultar la base; `posts.pinned`/`featured` existen y nadie los lee, así
+     que fijar o destacar desde el admin no hace nada.
+  8. **No se puede bloquear ni silenciar a un vecino** — solo reportar. En una
+     app de barrio, donde la gente se conoce, hace falta antes de abrir al
+     público.
+  9. **Sin menciones (@vecino) ni temas/hashtags.**
 - [ ] **🔴 La llave SMTP de Brevo CADUCA — dos relojes distintos (2026-08-03).**
   Si muere, nadie puede registrarse y NADA avisa: el síntoma es "no me llega el
   código", igual que un problema de red.

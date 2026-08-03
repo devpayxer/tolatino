@@ -382,6 +382,9 @@ export type Post = {
   timeEn: string;
   recommends: number;
   business?: string;
+  /** Slug del negocio etiquetado — lo resuelve el servidor (migración 0135) y es
+   *  lo que convierte la etiqueta en un enlace a la ficha. */
+  businessSlug?: string;
   bizRating?: string;
   poll?: string[];
   pollBase?: number[];
@@ -406,7 +409,7 @@ export type Comment = {
   timeEs: string;
   timeEn: string;
   likes: number;
-  biz?: { name: string; rating?: string };
+  biz?: { name: string; slug?: string; rating?: string };
   es: string;
   en: string;
 };

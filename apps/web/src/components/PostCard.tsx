@@ -5,7 +5,7 @@
 // comments → thread, save, share). All toggles carry real state.
 
 import { useState } from 'react';
-import { IconBookmark as Bookmark, IconBookmarkFilled as BookmarkFilled, IconCheck as Check, IconMessageCircle as MessageCircle, IconShare as Share } from '@tabler/icons-react';
+import { IconBookmark as Bookmark, IconBookmarkFilled as BookmarkFilled, IconCheck as Check, IconChevronRight as ChevronRight, IconMessageCircle as MessageCircle, IconShare as Share } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { useInteractions } from '@/lib/interactions';
@@ -72,7 +72,13 @@ export function PostCard({
   const voted = voteIdx !== undefined;
 
   const share = async () => {
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/comunidad` : '';
+    // El enlace tiene que abrir ESTA publicación, no el feed. El permalink ya
+    // existía (`?post=<id>`, es lo que reabre el hilo al refrescar); simplemente
+    // no se estaba usando al compartir, así que quien recibía el mensaje caía en
+    // el feed y no encontraba de qué le hablaban.
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}/comunidad/?post=${encodeURIComponent(post.id)}`
+      : '';
     const text = `${post.name} · To'Latino: ${L(post.es, post.en)}`;
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
@@ -206,17 +212,33 @@ export function PostCard({
         </div>
       )}
 
-      {post.business && (
-        <div className="mt-[11px] inline-flex items-center gap-2 rounded-btn border border-hair bg-app px-3 py-2">
-          <span className="h-8 w-8 flex-none rounded-[9px]" style={{ background: tile('#EFEBFF', '#E5DEF9', 7) }} />
-          <span className="min-w-0">
-            <span className="block text-[12.5px] font-extrabold text-ink">{post.business}</span>
-            <span className="mt-px block text-[10.5px] font-bold text-green-dark">
-              {post.bizRating ? `★ ${post.bizRating} · ` : ''}{L('Negocio etiquetado', 'Tagged business')}
+      {/* Negocio etiquetado. Con slug es un ENLACE a la ficha — que es el punto de
+          una recomendación: llevar a alguien al negocio. Las publicaciones viejas
+          (etiquetadas por nombre, antes de la migración 0135) no tienen slug: se
+          pintan igual pero sin enlace, en vez de un enlace que no lleva a nada. */}
+      {post.business && (() => {
+        const inner = (
+          <>
+            <span className="h-8 w-8 flex-none rounded-[9px]" style={{ background: tile('#EFEBFF', '#E5DEF9', 7) }} />
+            <span className="min-w-0 text-left">
+              <span className="block truncate text-[12.5px] font-extrabold text-ink">{post.business}</span>
+              <span className="mt-px block text-[10.5px] font-bold text-green-dark">
+                {post.bizRating ? `★ ${post.bizRating} · ` : ''}
+                {post.businessSlug ? L('Ver el negocio', 'View business') : L('Negocio etiquetado', 'Tagged business')}
+              </span>
             </span>
-          </span>
-        </div>
-      )}
+            {post.businessSlug && <ChevronRight size={15} stroke={2.4} className="flex-none text-muted-2" aria-hidden />}
+          </>
+        );
+        const cls = 'mt-[11px] inline-flex max-w-full items-center gap-2 rounded-btn border border-hair bg-app px-3 py-2';
+        return post.businessSlug && !preview ? (
+          <a href={`/negocios/?b=${encodeURIComponent(post.businessSlug)}`} className={`${cls} cursor-pointer hover:border-hair-strong`}>
+            {inner}
+          </a>
+        ) : (
+          <div className={cls}>{inner}</div>
+        );
+      })()}
 
       <div className="mt-[13px] flex items-center gap-[18px] border-t border-hair pt-3">
         <button

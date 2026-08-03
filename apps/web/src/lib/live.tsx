@@ -1139,6 +1139,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
             timeEn: tEn,
             recommends: Number(r.recommends ?? 0),
             business: (r.business_name as string) ?? undefined,
+            businessSlug: (r.business_slug as string) ?? undefined,
             bizRating: r.business_rating != null ? Number(r.business_rating).toFixed(1) : undefined,
             poll: (r.poll_options as string[]) ?? undefined,
             pollBase: (r.poll_votes as number[]) ?? undefined,
