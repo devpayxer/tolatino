@@ -189,24 +189,15 @@
   inflar ♥, auto-destacarse), el negocio etiquetado sin enlace y el botón de
   compartir que compartía el feed en vez de la publicación. Lo que sigue
   pendiente, por orden de importancia:
-  1. **🔴 CERO notificaciones de comunidad.** Te comentan, te responden, te dan ♥
-     o te siguen: silencio. La tabla `notifications` y la campana funcionan (las
-     usan pedidos, reservas, reseñas y boletos); comunidad no escribe ninguna.
-     En Nextdoor y Facebook Groups ese aviso ES el producto — sin él la gente
-     publica una vez y no vuelve. Hacen falta `comment_new`, `reply_new`,
-     `post_like`, `follow_new` (+ su texto en `lib/notifications`).
-  2. **No se puede borrar el propio comentario.** La política de RLS ya lo
-     permite (`delete own comment`); falta el botón. Tampoco se puede editar
-     (no hay política de UPDATE — decidir si se añade).
+  ~~1. Notificaciones de comunidad~~ · ~~2. Borrar el propio comentario~~ ·
+  ~~4. Barrios en móvil~~ · ~~5. El chip "Evento"~~ · ~~6. Marca "editado"~~ →
+  **HECHOS el 2026-08-03** (migración 0136 + cliente). Sigue abierto:
   3. **No hay perfil de vecino.** El nombre y la foto del autor no son pulsables
      y no existe pantalla con sus publicaciones. Se sigue a alguien a ciegas.
-  4. **El filtro de Barrios solo existe en escritorio** (el rail es `lg:flex`).
-     El 99% del tráfico es móvil: función construida que casi nadie puede usar.
-  5. **El chip "Evento" del compositor abre el compositor de PUBLICACIONES**, que
-     no tiene tipo evento (ask/rec/local/sale/poll). Y los tres chips
-     (Pregunta/Recomienda/Evento) no preseleccionan el tipo: hacen lo mismo.
-  6. **Editar no marca "editado"** y solo cambia el texto (no fotos, ni encuesta,
-     ni negocio etiquetado).
+  6b. **Editar sigue tocando solo el texto**: la marca "editado" ya sale y la
+     base ya permite cambiar también las fotos, pero el formulario de edición
+     (`PostMenu`) no las ofrece. La encuesta y el negocio etiquetado se quedan
+     fuera a propósito — cambiar opciones con votos ya emitidos los invalida.
   7. **Escala**: sin paginación (50 publicaciones y se acabó); el contador de
      comentarios se calcula bajando TODAS las filas de comentarios del feed al
      navegador; la búsqueda dentro de Comunidad filtra solo lo ya cargado en vez
@@ -216,6 +207,10 @@
      app de barrio, donde la gente se conoce, hace falta antes de abrir al
      público.
   9. **Sin menciones (@vecino) ni temas/hashtags.**
+  10. **Las notificaciones de comunidad NO llegan al teléfono todavía**: el
+     reparto a Web Push existe (`trg_push_fanout`, 0089) pero está sin
+     configurar (`private.push_config` vacío → se salta en silencio). Faltan las
+     llaves VAPID del fundador.
 - [ ] **🔴 La llave SMTP de Brevo CADUCA — dos relojes distintos (2026-08-03).**
   Si muere, nadie puede registrarse y NADA avisa: el síntoma es "no me llega el
   código", igual que un problema de red.
