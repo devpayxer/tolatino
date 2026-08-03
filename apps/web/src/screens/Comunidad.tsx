@@ -155,7 +155,7 @@ export function ComunidadScreen() {
   const auth = useAuth();
   const it = useInteractions();
   const follows = useFollows();
-  const { posts: POSTS, businesses: BUSINESSES, loading: liveLoading } = useLiveData();
+  const { posts: POSTS, businesses: BUSINESSES, loading: liveLoading, failed: liveFailed } = useLiveData();
   const [hood, setHood] = useState('all');
 
   // thread state — the open post thread lives in the URL (?post=<id>) so a refresh
@@ -176,7 +176,14 @@ export function ComunidadScreen() {
   const [commentSeq, setCommentSeq] = useState(0);
   const [sending, setSending] = useState(false);
   const [delComment, setDelComment] = useState<{ id: string; parent: boolean } | null>(null);
+  const [commentErr, setCommentErr] = useState<string | null>(null);
   const [vecino, setVecino] = useState<string | null>(null);
+  // La publicación abierta por enlace (notificación, Compartir, refresco) puede
+  // NO estar en la página del feed que hay cargada — es el caso normal: el aviso
+  // llega horas después. Antes el hilo se buscaba solo en la lista en memoria,
+  // así que el enlace no abría nada. (2ª auditoría, 2026-08-03.)
+  const [linkedPost, setLinkedPost] = useState<Post | null>(null);
+  const [linkedMissing, setLinkedMissing] = useState(false);
 
   // Paginación por cursor: `older` son las páginas ya traídas, `noMore` marca
   // que la base ya no tiene nada más viejo dentro del radio.
@@ -381,6 +388,28 @@ export function ComunidadScreen() {
     return () => window.clearTimeout(t);
   }, [app.search, cLat, cLng]);
 
+  // Si el id de la URL no está entre lo cargado, se pide a la base. `post_by_id`
+  // es SECURITY INVOKER, así que respeta la moderación y el bloqueo: si no se
+  // puede ver, devuelve vacío y se dice claramente en vez de dejar el hueco.
+  useEffect(() => {
+    const pid = threadPostId;
+    if (!pid || !supabase || !isUuid(pid)) { setLinkedPost(null); setLinkedMissing(false); return; }
+    // Solo se mira `allPosts`: `viewFeed` (Guardados/Siguiendo) se declara más
+    // abajo, y si la publicación estuviera ahí lo único que pasa es una consulta
+    // de más, que no molesta.
+    if (allPosts.some((p) => p.id === pid)) { setLinkedMissing(false); return; }
+    let cancelado = false;
+    setLinkedMissing(false);
+    void supabase.rpc('post_by_id', { in_id: pid }).then(({ data, error }) => {
+      if (cancelado) return;
+      const filas = !error && Array.isArray(data) ? (data as PostRow[]) : [];
+      if (filas.length) setLinkedPost(mapPost(filas[0]));
+      else { setLinkedPost(null); setLinkedMissing(true); }
+    });
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadPostId, allPosts.length]);
+
   const showNewPosts = () => {
     setRevealed((r) => dedupeById([...pending, ...r]));
     setPending([]);
@@ -459,7 +488,7 @@ export function ComunidadScreen() {
     return it.commentCount[pid] ?? loaded;
   };
 
-  const threadPost = [...allPosts, ...viewFeed].find((p) => p.id === threadPostId) ?? null;
+  const threadPost = [...allPosts, ...viewFeed].find((p) => p.id === threadPostId) ?? linkedPost;
   const canComment = commentText.trim().length > 0 || !!commentBiz;
 
   const closeThread = () => {
@@ -475,6 +504,7 @@ export function ComunidadScreen() {
     setReplyTo(null);
     setCommentBiz(null);
     setCommentBizOpen(false);
+    setCommentErr(null);
   };
 
   const sendComment = async () => {
@@ -499,7 +529,19 @@ export function ComunidadScreen() {
       };
       const { data, error } = await supabase.from('post_comments').insert(row).select().single();
       setSending(false);
-      if (error || !data) return;
+      // Antes: `if (error) return` — el texto se quedaba en la caja, sin aviso ni
+      // pista. Y falla en casos que ocurren de verdad: cuenta suspendida, límite
+      // de 30 por hora, publicación ocultada por moderación mientras escribías.
+      if (error || !data) {
+        setCommentErr(
+          /suspend/i.test(error?.message ?? '') ? L('Tu cuenta está suspendida temporalmente.', 'Your account is temporarily suspended.')
+          : /Demasiadas/i.test(error?.message ?? '') ? L('Demasiadas acciones seguidas. Espera un momento.', 'Too many actions in a row. Wait a moment.')
+          : /no acepta comentarios|ya no está disponible|ya no existe/i.test(error?.message ?? '') ? (error!.message)
+          : L('No pudimos publicar tu comentario. Inténtalo de nuevo.', "We couldn't post your comment. Try again."),
+        );
+        return;
+      }
+      setCommentErr(null);
       const c = mapComment(data as CommentRow);
       if (replyTo) setDbReplies((m) => ({ ...m, [replyTo.cid]: [...(m[replyTo.cid] ?? []), c] }));
       else setDbTop((m) => ({ ...m, [pid]: [...(m[pid] ?? []), c] }));
@@ -796,6 +838,14 @@ export function ComunidadScreen() {
               title={L(`Todavía no hay publicaciones en ${hood}`, `No posts in ${hood} yet`)}
               sub={L('Sé el primero en compartir algo con tu barrio.', 'Be the first to share something with your neighborhood.')}
             />
+          ) : liveFailed ? (
+            /* «No se pudo cargar» NO es «tu barrio está vacío». Sin esta rama, la
+               red caída invitaba al usuario a ser «el primero en publicar» en un
+               barrio que en realidad está lleno. (2ª auditoría, 2026-08-03.) */
+            <EmptyState
+              title={L('No pudimos cargar tu barrio', "We couldn't load your neighborhood")}
+              sub={L('Revisa tu conexión y desliza hacia abajo para reintentar.', 'Check your connection and pull down to retry.')}
+            />
           ) : (
             <EmptyState
               title={L(`Todavía no hay publicaciones en ${app.cityShort}`, `No posts in ${app.cityShort} yet`)}
@@ -842,7 +892,19 @@ export function ComunidadScreen() {
           La rejilla de arriba pierde su última columna en consecuencia. */}
 
       {/* comment thread */}
-      <Overlay open={!!threadPost} onClose={closeThread} width={520} fullHeightSheet>
+      <Overlay open={!!threadPost || linkedMissing} onClose={closeThread} width={520} fullHeightSheet>
+        {!threadPost && linkedMissing && (
+          <div className="py-6">
+            <EmptyState
+              title={L('Esta publicación ya no está disponible', 'This post is no longer available')}
+              sub={L('Puede que su autor la haya borrado, o que ya no esté a tu alcance.',
+                     'The author may have deleted it, or it may no longer be available to you.')}
+            />
+            <button onClick={closeThread} className="mx-auto mt-4 block cursor-pointer rounded-btn bg-lilac-2 px-5 py-2.5 text-[13px] font-extrabold text-primary-dark">
+              {L('Volver al inicio', 'Back to the feed')}
+            </button>
+          </div>
+        )}
         {threadPost && (
           <div className="flex h-full flex-col">
             <div className="flex items-center gap-2 pb-3">
@@ -872,6 +934,11 @@ export function ComunidadScreen() {
               </div>
             </div>
             <div className="border-t border-hair pt-3">
+              {commentErr && (
+                <div role="alert" className="mb-2 rounded-[10px] bg-pink-bg px-3 py-2 text-[11.5px] font-bold text-pink-dark">
+                  {commentErr}
+                </div>
+              )}
               {replyTo && (
                 <div className="mb-2 flex items-center justify-between rounded-[9px] bg-lilac-3 px-3 py-1.5 text-[11.5px] font-extrabold text-primary-dark">
                   {L('Respondiendo a ', 'Replying to ')}

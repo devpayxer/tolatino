@@ -167,7 +167,19 @@ const rowToItem = (r: RawRow, read: boolean): NotifItem => {
   return { id: r.id, icon: m.icon, color: m.color, bg: m.bg, title: t.title, sub: t.sub, group: groupOf(r.created_at), time: relTime(r.created_at), read, link: r.link || '/cuenta' };
 };
 
-type Ctx = { items: NotifItem[]; unreadCount: number; demo: boolean; markRead: (id: string) => void; markAllRead: () => void };
+type Ctx = {
+  items: NotifItem[]; unreadCount: number; demo: boolean;
+  /** La consulta falló (no es lo mismo que «no tienes avisos»). */
+  failed: boolean;
+  /** Hay más de los que se han traído: la insignia usa el total real. */
+  hasMore: boolean;
+  loadingMore: boolean;
+  loadMore: () => void;
+  markRead: (id: string) => void; markAllRead: () => void;
+};
+/** Cuántas se traen por página. Antes eran 60 fijas y no había forma de ver la 61. */
+const PAGE = 40;
+
 const NotifCtx = createContext<Ctx | null>(null);
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
@@ -175,6 +187,15 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { lang } = useLang();
   const [rows, setRows] = useState<RawRow[] | null>(null); // null → demo (logged out)
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
+  // Un fallo de la consulta NO es una campana vacía. Antes se descartaba el
+  // `error` y «no se pudo cargar» se pintaba igual que «todo al día» — el
+  // usuario se quedaba sin saber que le habían escrito. (2ª auditoría.)
+  const [failed, setFailed] = useState(false);
+  // El total REAL de no leídos, contado en la base. La insignia se calculaba
+  // sobre las 60 traídas: con 119 sin leer, decía 57.
+  const [unreadTotal, setUnreadTotal] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // If this device already granted push, refresh its stored subscription on login
   // (endpoints rotate) so send-push keeps reaching it. Silent no-op otherwise.
@@ -182,14 +203,32 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   // load + realtime for the signed-in user
   useEffect(() => {
-    if (!user || !supabase) { setRows(null); setReadSet(new Set()); return; }
+    if (!user || !supabase) { setRows(null); setReadSet(new Set()); setFailed(false); return; }
     let cancelled = false;
-    supabase.from('notifications').select('id,kind,data,link,read,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(60)
-      .then(({ data }) => { if (!cancelled) setRows((data as RawRow[]) ?? []); });
+    setFailed(false);
+    void (async () => {
+      const [page, unread, all] = await Promise.all([
+        supabase!.from('notifications').select('id,kind,data,link,read,created_at')
+          .eq('user_id', user.id).order('created_at', { ascending: false }).limit(PAGE),
+        supabase!.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
+        supabase!.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      ]);
+      if (cancelled) return;
+      if (page.error) { setFailed(true); setRows([]); return; }
+      setRows((page.data as RawRow[]) ?? []);
+      setUnreadTotal(unread.count ?? 0);
+      setTotal(all.count ?? 0);
+    })();
     const ch = supabase
       .channel(`notif-${user.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        (payload) => setRows((l) => { const r = payload.new as RawRow; return l && l.some((x) => x.id === r.id) ? l : [r, ...(l ?? [])]; }))
+        (payload) => setRows((l) => {
+          const r = payload.new as RawRow;
+          if (l && l.some((x) => x.id === r.id)) return l;
+          setUnreadTotal((n) => n + 1);
+          setTotal((n) => n + 1);
+          return [r, ...(l ?? [])];
+        }))
       .subscribe();
     return () => { cancelled = true; supabase!.removeChannel(ch); };
   }, [user?.id]);
@@ -201,7 +240,27 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     return [];
   }, [rows, readSet]);
 
-  const unreadCount = items.filter((i) => !i.read).length;
+  // El total sale de la base; se le restan los que se han marcado leídos en esta
+  // sesión y que ya estaban traídos.
+  const leidosAhora = items.filter((i) => readSet.has(i.id) && !rows?.find((r) => r.id === i.id)?.read).length;
+  const unreadCount = Math.max(0, unreadTotal - leidosAhora);
+  const hasMore = !!rows && rows.length < total;
+
+  const loadMore = useCallback(() => {
+    if (!user || !supabase || !rows || loadingMore) return;
+    setLoadingMore(true);
+    void supabase.from('notifications').select('id,kind,data,link,read,created_at')
+      .eq('user_id', user.id).order('created_at', { ascending: false })
+      .range(rows.length, rows.length + PAGE - 1)
+      .then(({ data, error }) => {
+        setLoadingMore(false);
+        if (error || !Array.isArray(data)) return;
+        setRows((l) => {
+          const vistos = new Set((l ?? []).map((x) => x.id));
+          return [...(l ?? []), ...(data as RawRow[]).filter((r) => !vistos.has(r.id))];
+        });
+      });
+  }, [user, rows, loadingMore]);
 
   const markRead = useCallback((id: string) => {
     setReadSet((s) => new Set(s).add(id));
@@ -209,10 +268,14 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [user, rows]);
   const markAllRead = useCallback(() => {
     setReadSet(new Set(items.map((i) => i.id)));
+    setUnreadTotal(0);
     if (user && supabase && rows) supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false).then(() => {});
   }, [user, rows, items]);
 
-  const value = useMemo<Ctx>(() => ({ items, unreadCount, demo: !rows, markRead, markAllRead }), [items, unreadCount, rows, markRead, markAllRead]);
+  const value = useMemo<Ctx>(
+    () => ({ items, unreadCount, demo: !rows, failed, hasMore, loadingMore, loadMore, markRead, markAllRead }),
+    [items, unreadCount, rows, failed, hasMore, loadingMore, loadMore, markRead, markAllRead],
+  );
   return <NotifCtx.Provider value={value}>{children}</NotifCtx.Provider>;
 }
 

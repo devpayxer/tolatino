@@ -53,6 +53,14 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
   // Comment ids already counted — dedupes a locally-inserted comment against
   // its own realtime echo, and realtime echoes against the initial DB load.
   const seen = useRef<Set<string>>(new Set());
+  // Espejo del estado para leerlo dentro de los toggles sin re-crear el
+  // callback en cada render. El efecto de red NO puede vivir dentro del
+  // updater de `setState`: React puede ejecutar el updater dos veces y
+  // entonces se dispara la escritura por duplicado.
+  const likedRef = useRef<Bool>({});
+  const savedRef = useRef<Bool>({});
+  likedRef.current = liked;
+  savedRef.current = saved;
 
   const ids = posts.map((p) => p.id).filter(isUuid).join(',');
 
@@ -111,33 +119,42 @@ export function InteractionsProvider({ children }: { children: ReactNode }) {
 
   const toggleLike = useCallback(
     (postId: string, baseCount: number) => {
-      setLiked((m) => {
-        const next = !m[postId];
-        setLikeCount((c) => ({ ...c, [postId]: (c[postId] ?? baseCount) + (next ? 1 : -1) }));
-        if (supabase && user) {
-          supabase.rpc('toggle_post_like', { p_post: postId }).then(({ data, error }) => {
-            if (!error && data && data[0]) {
-              setLiked((mm) => ({ ...mm, [postId]: data[0].liked }));
-              setLikeCount((c) => ({ ...c, [postId]: data[0].count }));
-            }
-          });
-        }
-        return { ...m, [postId]: next };
-      });
+      const next = !likedRef.current[postId];
+      setLiked((m) => ({ ...m, [postId]: next }));
+      setLikeCount((c) => ({ ...c, [postId]: (c[postId] ?? baseCount) + (next ? 1 : -1) }));
+      if (supabase && user) {
+        supabase.rpc('toggle_post_like', { p_post: postId }).then(({ data, error }) => {
+          if (!error && data && data[0]) {
+            setLiked((mm) => ({ ...mm, [postId]: data[0].liked }));
+            setLikeCount((c) => ({ ...c, [postId]: data[0].count }));
+          } else if (error) {
+            // Deshacer el optimismo: el servidor puede rechazarlo de verdad
+            // (publicación ocultada por moderación, autor que te bloqueó).
+            setLiked((mm) => ({ ...mm, [postId]: !next }));
+            setLikeCount((c) => ({ ...c, [postId]: (c[postId] ?? baseCount) + (next ? -1 : 1) }));
+          }
+        });
+      }
     },
     [user],
   );
 
   const toggleSave = useCallback(
     (postId: string) => {
-      setSaved((m) => {
-        const next = !m[postId];
-        if (supabase && user) {
-          if (next) supabase.from('saved_posts').insert({ post_id: postId, user_id: user.id }).then(() => {});
-          else supabase.from('saved_posts').delete().eq('post_id', postId).eq('user_id', user.id).then(() => {});
-        }
-        return { ...m, [postId]: next };
-      });
+      const next = !savedRef.current[postId];
+      setSaved((m) => ({ ...m, [postId]: next }));
+      if (supabase && user) {
+        // El marcador FINGÍA que había guardado: se pintaba lleno y el error
+        // del servidor se tiraba a la basura. Si la escritura falla (cuenta
+        // suspendida, RLS, sin red), el usuario veía «guardado» y luego no
+        // aparecía en Guardados. Ahora se revierte. (2ª auditoría.)
+        const q = next
+          ? supabase.from('saved_posts').insert({ post_id: postId, user_id: user.id })
+          : supabase.from('saved_posts').delete().eq('post_id', postId).eq('user_id', user.id);
+        q.then(({ error }) => {
+          if (error) setSaved((mm) => ({ ...mm, [postId]: !next }));
+        });
+      }
     },
     [user],
   );

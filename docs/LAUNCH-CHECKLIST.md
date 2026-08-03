@@ -184,7 +184,7 @@
        pedido y avisos, ese techo llega rápido. Migrar son cuatro campos.
      - **`no-reply@` no recibe.** Cuando haya buzón real en el dominio, cambiarlo
        por una dirección que sí lea a alguien.
-- [ ] **🔴 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — 26 cosas abiertas. Comunidad
+- [ ] **🔴 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — 21 cosas abiertas (los 5 🔴 ya cerrados). Comunidad
   NO está lista para lanzar.** 56 agentes, 8 clases, 2.055 herramientas
   ejecutadas; 47 hallazgos, 7 refutados. **Ya cerrado en la migración 0139**
   (aplicada a las dos bases y verificada re-ejecutando el ataque): 14 funciones
@@ -196,25 +196,37 @@
   tiene fila en `profiles`. Producción no había sufrido abuso (0 pagos, 0
   suscripciones, 0 boletos). Queda el guardián `auditar_funciones_expuestas()`:
   debe devolver 0 filas salvo los 3 contadores de vistas.
+
+  **✅ LOS CINCO 🔴 «ROMPEN LA CONFIANZA» — CERRADOS (2026-08-03, migración 0140
+  aplicada a las DOS bases y verificada; cliente verificado en navegador real a
+  390×700).** Lo que se hizo y cómo se comprobó:
+  1. ~~El bloqueo no llega a las notificaciones.~~ `notify_once()` ahora consulta
+     `user_blocks` y no crea el aviso si el destinatario bloqueó al actor. Además
+     el bloqueo pasó de filtrar solo LECTURA a frenar la ESCRITURA: nuevo trigger
+     `a_comments_check_target` (SECURITY DEFINER + `auth.uid()`, comprobación
+     **en los dos sentidos**) y las mismas comprobaciones dentro de
+     `toggle_post_like` y en la política INSERT de `post_likes`. Comprobado en la
+     base: sin bloqueo el aviso llega (1); con bloqueo el comentario y el ♥ se
+     rechazan y los avisos quedan en 0.
+  2. ~~Un enlace a una publicación no abre nada.~~ Nuevo RPC `post_by_id(uuid)`
+     (INVOKER, la RLS manda); `?post=<id>` que no está en el feed cargado se trae
+     de la base. Verificado con el feed devolviendo VACÍO: el hilo abre igual.
+  3. ~~Ocultar por moderación no cierra la publicación.~~ El trigger nuevo
+     rechaza comentar en una publicación oculta, `toggle_post_like` igual, y
+     `post_comment_counts` deja de contar lo escondido y lo bloqueado.
+     Comprobado: comentar en una oculta → rechazado.
+  4. ~~La app finge éxito cuando el servidor rechaza.~~ Guardar y ♥ revierten el
+     pintado optimista si la escritura falla (y la llamada de red salió de dentro
+     del updater de `setState`, donde React puede ejecutarla dos veces); el
+     comentario rechazado enseña el motivo en español; la campana distingue «No
+     pudimos cargar tus avisos» de «Todo al día»; el feed distingue «No pudimos
+     cargar tu barrio» de «Todavía no hay publicaciones». Los cuatro verificados
+     en navegador con el servidor devolviendo 403/500.
+  5. ~~La campana está topada en 60.~~ Página de 40 + «Ver avisos anteriores», y
+     la insignia sale de un `count: 'exact'` de la base, no del largo de la
+     lista. Verificado con 150 avisos: 40 → 80 → 120 → 150.
+
   **LO QUE SIGUE ABIERTO, por tema:**
-  1. **🔴 El bloqueo no llega a las notificaciones.** Bloqueas a un vecino y te
-     sigue timbrando la campana (y el teléfono) con su nombre y su texto. Los
-     triggers de 0136 no consultan `user_blocks`.
-  2. **🔴 Un enlace a una publicación no abre nada** si esa publicación no está
-     en la página del feed ya cargada: el hilo se busca solo en la lista en
-     memoria. Rompe el enlace de CADA notificación y el botón Compartir. Es el
-     bug del que ya había una nota suelta en este archivo.
-  3. **🔴 Ocultar por moderación no cierra la publicación**: sigue admitiendo
-     comentarios y ♥ de quien conserve el id, y su autor sigue recibiendo el
-     aviso. `hidden` solo filtra la LECTURA.
-  4. **🔴 La app finge éxito cuando el servidor rechaza.** Guardar se pinta
-     lleno aunque el insert falle; un comentario rechazado (cuenta suspendida,
-     límite de 30/hora) no produce ni un mensaje; la campana pinta «Todo al día»
-     cuando la consulta falló; el feed dice «Todavía no hay publicaciones»
-     cuando en realidad no pudo cargar. Regla #8, cuatro veces.
-  5. **🔴 La campana está topada en 60**: la insignia da un número falso, los
-     avisos 61+ son inalcanzables y «Marcar todo leído» los marca sin que nadie
-     los haya visto.
   6. **Alta · 15 tipos de notificación que la base emite y la interfaz no sabe
      dibujar** — salen como «Notificación» sin texto. Y las 4 nuevas de
      comunidad llegan al teléfono con el cuerpo vacío.

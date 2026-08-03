@@ -1063,11 +1063,14 @@ type LiveData = {
   /** True until the FIRST real fetch resolves (only when a backend is
    *  configured). Screens show skeletons instead of flashing demo fixtures. */
   loading: boolean;
+  /** Las consultas fallaron. Distinto de «no hay nada cerca»: sin esto, la red
+   *  caída se pintaba como un barrio vacío. (2ª auditoría, 2026-08-03.) */
+  failed: boolean;
   /** Re-fetch from Supabase (e.g. right after publishing a post). */
   refresh: () => void;
 };
 
-const Ctx = createContext<LiveData>({ businesses: [], events: [], posts: [], live: false, loading: false, refresh: () => {} });
+const Ctx = createContext<LiveData>({ businesses: [], events: [], posts: [], live: false, loading: false, failed: false, refresh: () => {} });
 
 // ~80 km radius for businesses/events: keeps a whole metro together.
 const RADIUS_M = 80000;
@@ -1084,7 +1087,7 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
   // fetch; sin backend no se inventa nada (antes se sembraban las fixtures y ese
   // era el respaldo que podía filtrar negocios/posts falsos — regla #8).
   const [data, setData] = useState<Omit<LiveData, 'refresh'>>(
-    { businesses: [], events: [], posts: [], live: false, loading: !!supabase },
+    { businesses: [], events: [], posts: [], live: false, loading: !!supabase, failed: false },
   );
 
   useEffect(() => {
@@ -1108,7 +1111,11 @@ export function LiveDataProvider({ children }: { children: ReactNode }) {
       // fill in real rows below. (When Supabase isn't configured at all we never
       // reach here — the initial state above keeps fixtures for a backend-less
       // preview build only.)
-      const next: Omit<LiveData, 'refresh'> = { businesses: [], events: [], posts: [], live: false, loading: false };
+      const next: Omit<LiveData, 'refresh'> = { businesses: [], events: [], posts: [], live: false, loading: false, failed: false };
+      // Que las TRES consultas fallen no es «tu barrio está vacío»: es que no se
+      // pudo cargar. Sin esta distinción el feed decía «Todavía no hay
+      // publicaciones» con la red caída. (2ª auditoría, 2026-08-03.)
+      next.failed = !!biz.error && !!ev.error && !!po.error;
 
       // A SUCCESSFUL query is trusted even when empty (a city with no listings
       // genuinely shows none); an ERRORED query leaves that section empty.

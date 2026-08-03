@@ -20,7 +20,7 @@ export function NotifPanel() {
   const B = (p: [string, string]) => L(p[0], p[1]);
   const app = useApp();
   const router = useRouter();
-  const { items, unreadCount, markRead, markAllRead } = useNotifications();
+  const { items, unreadCount, failed, hasMore, loadingMore, loadMore, markRead, markAllRead } = useNotifications();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
   const filtered = items.filter((n) => filter === 'all' || !n.read);
@@ -64,7 +64,22 @@ export function NotifPanel() {
         </button>
       </div>
 
-      {filtered.length === 0 ? (
+      {/* «No se pudo cargar» NO es «no tienes nada». Antes se descartaba el error
+          y un fallo de red se pintaba como «Todo al día»: el usuario se quedaba
+          sin saber que le habían escrito. (2ª auditoría, 2026-08-03.) */}
+      {failed ? (
+        <div className="flex flex-col items-center py-10 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-pink-bg">
+            <Bell size={20} className="text-pink-dark" stroke={2.2} />
+          </span>
+          <div className="mt-3 text-[14px] font-extrabold text-ink">
+            {L('No pudimos cargar tus avisos', "We couldn't load your alerts")}
+          </div>
+          <div className="mt-1 text-[12px] font-semibold text-muted">
+            {L('Revisa tu conexión y vuelve a abrir esta pantalla.', 'Check your connection and open this screen again.')}
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center py-10 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-bg">
             <Bell size={20} className="text-green" stroke={2.2} />
@@ -109,6 +124,17 @@ export function NotifPanel() {
             </div>
           );
         })
+      )}
+
+      {/* Antes solo se traían 60 y no había forma de llegar a la 61. */}
+      {!failed && hasMore && filter === 'all' && (
+        <button
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="mx-auto mt-2 block cursor-pointer rounded-full border border-hair bg-white px-4 py-2 text-[12.5px] font-extrabold text-primary-dark disabled:opacity-60"
+        >
+          {loadingMore ? L('Cargando…', 'Loading…') : L('Ver avisos anteriores', 'Show earlier alerts')}
+        </button>
       )}
     </Overlay>
   );
