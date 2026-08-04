@@ -1,0 +1,195 @@
+# Respaldo diario de la base de PRODUCCIÓN.
+#
+# POR QUÉ EXISTE: el plan gratuito de Supabase no guarda copias restaurables
+# (comprobado por API el 2026-08-04: `pitr_enabled: false`, `backups: []`). Hoy
+# el daño sería pequeño, pero el día que haya negocios, pedidos y pagos reales un
+# borrado accidental o una migración torcida no tendrían vuelta atrás. Esto lo
+# cubre sin pagar nada, y encaja con la regla del proyecto de no depender de
+# servicios de pago mientras haya una alternativa propia.
+#
+# DÓNDE QUEDA LA COPIA: como *artifact* de la propia ejecución, 90 días (el
+# máximo del plan gratuito). Cada día deja uno nuevo, así que siempre hay una
+# ventana móvil de 90 días.
+#
+# ⚠️ EL REPOSITORIO ES PÚBLICO, y en un repo público CUALQUIERA puede descargar
+# los artifacts. Por eso el volcado se cifra ANTES de subirse (AES-256 con
+# contraseña). Sin la contraseña el archivo no sirve de nada. Si algún día el
+# repo pasa a privado, el cifrado se queda igualmente: no estorba.
+#
+# QUÉ **NO** CUBRE — leer esto antes de confiar en la copia:
+#   · Las FOTOS. Viven en Supabase Storage (S3), no dentro de Postgres, así que
+#     un `pg_dump` no las toca. Un desastre total perdería las imágenes de
+#     negocios, publicaciones y perfiles. Anotado en docs/LAUNCH-CHECKLIST.md.
+#   · Los secretos de las Edge Functions (claves de Stripe, VAPID). Están en el
+#     almacén de Supabase y hay que reponerlos a mano.
+#
+# SECRETOS QUE HAY QUE CREAR (Settings → Secrets and variables → Actions):
+#   · PROD_DB_URL         — la cadena «Session pooler» del proyecto de PRODUCCIÓN
+#   · BACKUP_PASSPHRASE   — una contraseña larga, guardada en el gestor de claves
+# Sin ellos el trabajo falla a propósito y en la primera línea: una copia que no
+# se hace tiene que gritar, no callarse.
+
+name: Respaldo diario de producción
+
+on:
+  schedule:
+    # 07:40 UTC ≈ 02:40 en Houston. Minuto no redondo a propósito: a las horas en
+    # punto GitHub encola millones de trabajos y los retrasa.
+    - cron: '40 7 * * *'
+  workflow_dispatch: # botón «Run workflow» para probarlo cuando quieras
+
+# Sin permisos de escritura: este trabajo solo lee la base y sube un archivo.
+permissions:
+  contents: read
+
+concurrency:
+  group: respaldo-produccion
+  cancel-in-progress: false
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Comprobar que los secretos existen
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          fallo=0
+          [ -z "$DB_URL" ] && { echo "::error::Falta el secreto PROD_DB_URL"; fallo=1; }
+          [ -z "$PASS" ]   && { echo "::error::Falta el secreto BACKUP_PASSPHRASE"; fallo=1; }
+          [ "$fallo" = "1" ] && exit 1
+          echo "Secretos presentes."
+
+      - name: Instalar pg_dump 17 (el servidor es Postgres 17)
+        run: |
+          set -euo pipefail
+          # pg_dump tiene que ser >= al servidor; Ubuntu trae uno más viejo.
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Volcar la base
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+        run: |
+          set -euo pipefail
+          FECHA=$(date -u +%Y-%m-%d)
+          echo "FECHA=$FECHA" >> "$GITHUB_ENV"
+          # Formato `custom` (-Fc): comprimido y restaurable por partes con
+          # pg_restore — se puede recuperar UNA tabla sin tocar el resto.
+          # Se vuelcan los tres esquemas que importan:
+          #   public  → todos los datos de la app
+          #   auth    → las cuentas (sin esto, restaurar deja los datos huérfanos)
+          #   storage → los METADATOS de los archivos (los archivos en sí, no)
+          pg_dump "$PROD_DB_URL" \
+            --format=custom \
+            --no-owner --no-privileges \
+            --schema=public --schema=auth --schema=storage \
+            --file="tolatino-prod-$FECHA.dump"
+          ls -lh "tolatino-prod-$FECHA.dump"
+
+      - name: Comprobar que la copia SIRVE (no solo que existe)
+        run: |
+          set -euo pipefail
+          F="tolatino-prod-$FECHA.dump"
+          # 1. ¿Tiene tamaño? Un volcado de 0 bytes «existe» y no vale nada.
+          #    El piso es BAJO a propósito: el formato `custom` comprime, y una
+          #    base joven cabe en pocos kilobytes. Poner un piso alto («si pesa
+          #    menos de 100 kB algo falla») da falsas alarmas — probado en local:
+          #    600 negocios y 3.000 publicaciones caben en 28 kB. Quien decide si
+          #    la copia vale es la comprobación de contenido y el ensayo de
+          #    restauración de abajo, no la báscula.
+          BYTES=$(stat -c%s "$F")
+          echo "Tamaño: $BYTES bytes"
+          [ "$BYTES" -lt 10000 ] && { echo "::error::El volcado pesa $BYTES bytes — está truncado o vacío"; exit 1; }
+          # 2. ¿Es un volcado legible? pg_restore --list falla si está corrupto.
+          pg_restore --list "$F" > /tmp/indice.txt
+          # 3. ¿Están las tablas que tienen que estar? Una copia a la que le
+          #    falta `businesses` o `auth.users` no es una copia, es una trampa.
+          FALTAN=""
+          for T in "public businesses" "public posts" "public profiles" "public business_orders" "auth users"; do
+            grep -q "TABLE DATA $T" /tmp/indice.txt || FALTAN="$FALTAN [$T]"
+          done
+          if [ -n "$FALTAN" ]; then
+            echo "::error::Al volcado le faltan tablas:$FALTAN"
+            exit 1
+          fi
+          echo "Contenido verificado: $(grep -c 'TABLE DATA' /tmp/indice.txt) tablas con datos."
+
+      - name: Cifrar (el repo es PÚBLICO — los artifacts se pueden descargar)
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          F="tolatino-prod-$FECHA.dump"
+          gpg --batch --yes --symmetric --cipher-algo AES256 \
+              --passphrase "$BACKUP_PASSPHRASE" \
+              --output "$F.gpg" "$F"
+          ls -lh "$F.gpg"
+          # El volcado en claro se queda SOLO en el disco del ejecutor (que se
+          # destruye al terminar) porque el ensayo de restauración lo necesita.
+          # Lo que se sube es únicamente el `.gpg` — ver el paso siguiente.
+
+      - name: Guardar la copia (90 días)
+        uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-produccion-${{ env.FECHA }}
+          path: tolatino-prod-${{ env.FECHA }}.dump.gpg
+          retention-days: 90
+          if-no-files-found: error
+
+      # ── Ensayo de restauración ────────────────────────────────────────────
+      # «Tener una copia» y «poder restaurarla» no son lo mismo, y la diferencia
+      # solo se descubre el peor día. Aquí se restaura de verdad, contra un
+      # Postgres limpio, y se cuentan filas.
+      #
+      # `continue-on-error` a propósito: el ensayo puede ensuciarse por
+      # extensiones de Supabase que un Postgres pelado no tiene. Si eso pasa,
+      # quiero enterarme — pero JAMÁS a costa de perder el respaldo del día. Por
+      # eso este paso va después de guardar la copia y no puede tumbar el
+      # trabajo.
+      - name: Ensayo de restauración (no bloquea el respaldo)
+        id: ensayo
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          docker run -d --name ensayo -e POSTGRES_PASSWORD=x -p 55432:5432 postgis/postgis:17-3.4 > /dev/null
+          for i in $(seq 1 30); do
+            docker exec ensayo pg_isready -U postgres > /dev/null 2>&1 && break
+            sleep 2
+          done
+          D="postgresql://postgres:x@127.0.0.1:55432/postgres"
+          psql "$D" -q -c 'create schema if not exists auth; create schema if not exists storage; create schema if not exists extensions;' || true
+          # Sin --exit-on-error: los errores de extensiones ausentes son ruido
+          # esperado. Lo que decide es si los DATOS llegaron.
+          pg_restore --no-owner --no-privileges --dbname "$D" "tolatino-prod-$FECHA.dump" 2> /tmp/restore.err || true
+          echo "Avisos durante la restauración: $(wc -l < /tmp/restore.err)"
+          FALLO=0
+          for T in public.businesses public.posts public.profiles auth.users; do
+            N=$(psql "$D" -tAc "select count(*) from $T" 2>/dev/null || echo ERROR)
+            echo "  $T → $N filas"
+            [ "$N" = "ERROR" ] && FALLO=1
+          done
+          docker rm -f ensayo > /dev/null 2>&1 || true
+          [ "$FALLO" = "1" ] && { echo "::warning::El ensayo no pudo leer alguna tabla — revisa el log"; exit 1; }
+          echo "Ensayo correcto: la copia de hoy se restaura."
+
+      - name: Resumen
+        run: |
+          {
+            echo "### Respaldo de producción · $FECHA"
+            echo ""
+            echo "Copia cifrada guardada como artifact, 90 días de retención."
+            echo ""
+            echo "Ensayo de restauración: **${{ steps.ensayo.outcome }}**."
+            echo ""
+            echo "Para restaurarla: **docs/RESPALDOS.md**."
+            echo ""
+            echo "> Recuerda: esto **no** incluye las fotos (viven en Supabase Storage)."
+          } >> "$GITHUB_STEP_SUMMARY"

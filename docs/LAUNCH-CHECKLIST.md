@@ -463,14 +463,30 @@
      tráfico, 90 días sin un solo registro es perfectamente posible.
   Mitigación cuando haya monitorización: alertar si `otp_deliveries` (o los
   registros de Auth) no ven un envío correcto en X días.
-- [ ] **🔴 Producción NO tiene copias de seguridad utilizables (2026-08-03).**
-  Consultado por API: `pitr_enabled: false` y **cero copias listadas** (el plan
-  gratis de Supabase no guarda copias descargables). Hoy el daño sería pequeño
-  —la base tiene poco más que datos sembrados— pero el día que haya negocios,
-  pedidos y pagos reales, un borrado accidental no tendría vuelta atrás.
-  Opciones: plan Pro de Supabase (copias diarias + PITR), o un `pg_dump`
-  programado a almacenamiento propio, que es lo barato y encaja con la regla de
-  no depender de servicios de pago. Decidir ANTES de que entre dinero real.
+- [x] ~~**🔴 Producción NO tiene copias de seguridad utilizables (2026-08-03).**~~
+  **RESUELTO el 2026-08-04, gratis.** Se eligió el `pg_dump` programado (la
+  opción que no depende de un servicio de pago). Está en
+  `.github/workflows/respaldo-produccion.yml` y documentado en
+  **`docs/RESPALDOS.md`** — leer eso antes de necesitarlo.
+  Diario, cifrado con AES-256 (el repo es PÚBLICO y los artifacts se descargan
+  sin permiso), 90 días de retención, y con **ensayo de restauración diario**:
+  levanta un Postgres limpio, restaura la copia del día y cuenta filas. Tener una
+  copia y poder restaurarla no son lo mismo.
+  **FALTA UN PASO DEL FUNDADOR:** crear dos secretos en GitHub (`PROD_DB_URL` y
+  `BACKUP_PASSPHRASE`) y darle una vez a «Run workflow». Hasta que eso pase, el
+  trabajo falla a propósito en la primera línea — **no hay respaldos todavía**.
+  Pasos exactos en `docs/RESPALDOS.md`.
+  **Y lo que este respaldo NO cubre, que sigue abierto:**
+  1. **Las FOTOS.** Viven en Supabase Storage (S3), fuera de Postgres: un
+     `pg_dump` no las toca. Un desastre total dejaría las filas apuntando a
+     archivos que ya no existen. Hace falta un segundo trabajo que liste el
+     bucket y baje los objetos — necesita la clave `service_role` como secreto,
+     que es mucho poder guardado en un repo público; decidir con cuidado.
+  2. **Los secretos de las Edge Functions** (Stripe, VAPID) y la configuración
+     del proyecto (SMTP, plantillas): se reponen a mano.
+  3. **PITR.** Esto da una copia AL DÍA. Perder medio día de pedidos es
+     asumible hoy y no lo será después: el día del primer pedido pagado de
+     verdad, plan Pro.
   5. **Rate limits** — subir los de SMS/correo cuando haya tráfico real.
   Mientras tanto queda la puerta de la contraseña en "Entrar", que es lo único
   que permite entrar hoy.
