@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconPhotoPlus as ImagePlus, IconLoader2 as Loader2, IconStar as Star, IconBuildingStore as Store, IconTrash as Trash2 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
+import { escribir } from '@/lib/escribir';
 import { useAuth } from '@/lib/auth';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { uploadPostImages, uploadImage, LOGO_MAX_EDGE } from '@/lib/image';
@@ -124,19 +125,28 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
     if (!real || !supabase || busyId) return;
     setBusyId(id);
     // optimistic
+    const antes = photos.map((p) => ({ id: p.id, is_cover: p.is_cover }));
     setPhotos((ps) => ps.map((p) => ({ ...p, is_cover: p.id === id })));
-    await supabase.from('business_photos').update({ is_cover: false }).eq('business_id', real.id);
-    await supabase.from('business_photos').update({ is_cover: true }).eq('id', id);
+    const e1 = await escribir(supabase.from('business_photos').update({ is_cover: false }).eq('business_id', real.id), L('es', 'en') === 'en');
+    const e2 = e1 ? null : await escribir(supabase.from('business_photos').update({ is_cover: true }).eq('id', id), L('es', 'en') === 'en');
     setBusyId(null);
+    if (e1 || e2) {
+      // Se deshace: si no, la portada se ve cambiada y al recargar vuelve la vieja.
+      setPhotos((ps) => ps.map((p) => ({ ...p, is_cover: antes.find((a) => a.id === p.id)?.is_cover ?? false })));
+      flash(e1 || e2 || '');
+      return;
+    }
     flash(L('Portada actualizada', 'Cover updated'));
   };
 
   const remove = async (id: string) => {
     if (!supabase || busyId) return;
     setBusyId(id);
+    const antes = photos;
     setPhotos((ps) => ps.filter((p) => p.id !== id));
-    await supabase.from('business_photos').delete().eq('id', id);
+    const err = await escribir(supabase.from('business_photos').delete().eq('id', id), L('es', 'en') === 'en');
     setBusyId(null);
+    if (err) { setPhotos(antes); flash(err); return; }
     flash(L('Foto eliminada', 'Photo removed'));
   };
 

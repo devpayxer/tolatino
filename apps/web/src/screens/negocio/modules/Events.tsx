@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconCheck as Check, IconCurrencyDollar as DollarSign, IconPhotoPlus as ImagePlus, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconNavigation as Navigation, IconPlus as Plus, IconQrcode as QrCode, IconRefresh as RefreshCw, IconSearch as Search, IconShare2 as Share2, IconTag as Tag, IconTicket as Ticket, IconTrash as Trash2, IconTrendingUp as TrendingUp, IconUsers as Users, IconX as X } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { escribir } from '@/lib/escribir';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useUrlTab } from '@/lib/urlView';
@@ -381,17 +382,20 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const price = Number(tierForm.price) || 0;
     const capacity = tierForm.capacity.trim() === '' ? null : Math.max(0, Number(tierForm.capacity) || 0);
     setTierBusy(true);
-    if (tierEdit === 'new') {
-      await supabase.from('event_tiers').insert({ event_id: mgEv.dbId, name_es: name, name_en: name, price, capacity, sort: tierList?.length ?? 0, visible: !tierForm.hidden, seat: tierForm.seat });
-    } else if (tierEdit) {
-      await supabase.from('event_tiers').update({ name_es: name, name_en: name, price, capacity, visible: !tierForm.hidden, seat: tierForm.seat }).eq('id', tierEdit);
-    }
-    setTierBusy(false); setTierEdit(null); await reloadTiers();
+    const err = tierEdit === 'new'
+      ? await escribir(supabase.from('event_tiers').insert({ event_id: mgEv.dbId, name_es: name, name_en: name, price, capacity, sort: tierList?.length ?? 0, visible: !tierForm.hidden, seat: tierForm.seat }), L('es', 'en') === 'en')
+      : tierEdit
+        ? await escribir(supabase.from('event_tiers').update({ name_es: name, name_en: name, price, capacity, visible: !tierForm.hidden, seat: tierForm.seat }).eq('id', tierEdit), L('es', 'en') === 'en')
+        : null;
+    setTierBusy(false);
+    if (err) { flash(err); return; }   // la hoja se queda abierta con lo escrito
+    setTierEdit(null); await reloadTiers();
     flash(L('Nivel guardado', 'Tier saved'));
   };
   const deleteTier = async (id: string) => {
     if (!supabase) return;
-    await supabase.from('event_tiers').delete().eq('id', id);
+    const err = await escribir(supabase.from('event_tiers').delete().eq('id', id), L('es', 'en') === 'en');
+    if (err) { flash(err); return; }
     setTierEdit(null); await reloadTiers();
     flash(L('Nivel eliminado', 'Tier removed'));
   };

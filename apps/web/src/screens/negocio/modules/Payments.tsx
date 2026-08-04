@@ -13,11 +13,15 @@ import { supabase } from '@/lib/supabase';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import type { PanelCtx } from '@/screens/negocio/tabs';
 import { startConnectOnboarding, getConnectStatus, type ConnectStatus } from '@/lib/stripe';
+import { Toast } from '@/screens/negocio/modules/_page';
 
 type Summary = { revenue: number; orders: number };
 
 export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
   const { L } = ctx;
+  // Este módulo no tenía forma de avisar de nada. Mismo aviso que usa Facturación.
+  const [toast, setToast] = useState('');
+  const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 2600); };
   const admin = useBizAdmin();
   const router = useRouter();
   const real = admin.active;
@@ -75,9 +79,18 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
   const connectOnboard = async () => {
     if (!real) return;
     setConnectBusy(true);
-    const { url } = await startConnectOnboarding(real.id);
+    const { url, error } = await startConnectOnboarding(real.id);
     setConnectBusy(false);
-    if (url) window.location.href = url;
+    // Sin este aviso el botón «Conectar» no hacía NADA visible cuando fallaba:
+    // el dueño pulsaba, no pasaba nada, y se quedaba sin poder cobrar sin saber
+    // por qué. (Auditoría de Negocios, 2026-08-04.)
+    if (!url) {
+      flash(error === 'offline'
+        ? L('Sin conexión. Revisa tu internet.', 'No connection. Check your internet.')
+        : L('No pudimos abrir la conexión con Stripe. Inténtalo de nuevo.', "We couldn't open the Stripe connection. Try again."));
+      return;
+    }
+    window.location.href = url;
   };
 
   if (admin.loading || loading) {
@@ -160,6 +173,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
           </div>
         );
       })()}
+      <Toast msg={toast} />
     </div>
   );
 }

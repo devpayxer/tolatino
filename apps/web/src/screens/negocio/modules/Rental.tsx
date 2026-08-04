@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconAlertTriangle as AlertTriangle, IconPackages as Boxes, IconCalendar as CalendarDays, IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronUp as ChevronUp, IconCopy as Copy, IconCurrencyDollar as DollarSign, IconLoader2 as Loader2, IconLock as Lock, IconMinus as Minus, IconPackage as Package, IconPencil as Pencil, IconPlus as Plus, IconShield as Shield, IconBuildingStore as Store, IconTrash as Trash2, IconUpload as Upload, IconBolt as Zap } from '@tabler/icons-react';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
+import { escribir } from '@/lib/escribir';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { ChipRow } from '@/components/ChipRow';
 import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
@@ -242,8 +243,16 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, admin.demo]);
   const setReqStatus = async (id: string, status: string) => {
+    const antes = reqRows?.find((r) => r.id === id)?.status;
     setReqRows((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, status } : r)) : rows));
-    if (persistable && supabase) await supabase.from('business_rental_orders').update({ status }).eq('id', id);
+    if (persistable && supabase) {
+      const err = await escribir(supabase.from('business_rental_orders').update({ status }).eq('id', id), L('es', 'en') === 'en');
+      if (err) {
+        setReqRows((rows) => (rows ? rows.map((r) => (r.id === id && antes ? { ...r, status: antes } : r)) : rows));
+        flash(err);
+        return;
+      }
+    }
     flash(L('Renta actualizada', 'Rental updated'));
   };
   // Deposit hold (0101): release on return, or capture part of it for damage.

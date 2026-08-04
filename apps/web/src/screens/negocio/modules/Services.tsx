@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconChevronUp as ChevronUp, IconCopy as Copy, IconCurrencyDollar as DollarSign, IconLoader2 as Loader2, IconLock as Lock, IconMessage2 as MessageSquare, IconPencil as Pencil, IconPlus as Plus, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconBuildingStore as Store, IconTrash as Trash2, IconUpload as Upload, IconUsers as Users, IconTool as Wrench, IconCircleX as XCircle, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { escribir } from '@/lib/escribir';
 import { ChipRow } from '@/components/ChipRow';
 import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -201,8 +202,18 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   };
   useEffect(() => { reloadBookings(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [real?.id, admin.demo]);
   const setBookingStatus = async (id: string, status: BkStatus) => {
+    // El error se TIRABA y se anunciaba «Reserva actualizada» pasara lo que
+    // pasara: el dueño veía una cita confirmada que el cliente nunca recibió.
+    const antes = bookingRows?.find((r) => r.id === id)?.status;
     setBookingRows((rows) => (rows ? rows.map((r) => (r.id === id ? { ...r, status } : r)) : rows));
-    if (persistable && supabase) await supabase.from('business_bookings').update({ status }).eq('id', id);
+    if (persistable && supabase) {
+      const err = await escribir(supabase.from('business_bookings').update({ status }).eq('id', id), L('es', 'en') === 'en');
+      if (err) {
+        setBookingRows((rows) => (rows ? rows.map((r) => (r.id === id && antes ? { ...r, status: antes } : r)) : rows));
+        flash(err);
+        return;
+      }
+    }
     flash(L('Reserva actualizada', 'Booking updated'));
   };
   // Walk-in / phone booking: the owner creates it directly as CONFIRMED. The

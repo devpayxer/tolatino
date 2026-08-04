@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconCheck as Check, IconChevronRight as ChevronRight, IconEye as Eye, IconClock as Clock, IconCurrencyDollar as DollarSign, IconDownload as Download, IconFlag as Flag, IconGift as Gift, IconHeart as Heart, IconMail as Mail, IconPhone as Phone, IconRefresh as RefreshCw, IconSearch as Search, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconStar as Star, IconTruck as Truck, IconUserPlus as UserPlus, IconUsers as Users, IconCircleX as XCircle, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
+import { escribir } from '@/lib/escribir';
 import { useBizAdmin } from '@/lib/bizAdmin';
 import { useUrlTab } from '@/lib/urlView';
 import { supabase } from '@/lib/supabase';
@@ -485,10 +486,15 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const saveCustomer = async (patch: { notes?: string; tag?: string }) => {
     if (!selCust) return;
     const apply = (x: Customer): Customer => ({ ...x, notes: patch.notes ?? x.notes, tag: patch.tag ? [patch.tag, patch.tag] : x.tag });
+    const antesCust = selCust;
+    const antesLista = realCustomers;
     setSelCust((c) => (c ? apply(c) : c));
     const id = selCust.dbId;
     setRealCustomers((list) => (list && id ? list.map((x) => (x.dbId === id ? apply(x) : x)) : list));
-    if (persistable && id && supabase) await supabase.from('business_customers').update(patch).eq('id', id);
+    if (persistable && id && supabase) {
+      const err = await escribir(supabase.from('business_customers').update(patch).eq('id', id), L('es', 'en') === 'en');
+      if (err) { setSelCust(antesCust); setRealCustomers(antesLista); flash(err); return; }
+    }
     flash(L('Cliente actualizado', 'Customer updated'));
   };
 
@@ -818,10 +824,20 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // Reject a new order with a reason (customer is notified, not charged) —
   // same DB effect as `cancelOrder`, distinct toast copy.
   const rejectOrder = async (o: Order, reasonEs: string) => {
+    // Anunciaba «Pedido rechazado» ANTES de esperar la escritura, y sin mirar si
+    // había funcionado: el pedido seguía vivo en la cocina del cliente.
+    const antes = o.status;
     setOrders((list) => list.map((x) => ((o.dbId ? x.dbId === o.dbId : x.id === o.id) ? { ...x, status: 'cancelled' as OStatus } : x)));
     setSelOrder(null); setRejectFor(null); setPrepFor(null);
+    if (persistable && o.dbId && supabase) {
+      const err = await escribir(supabase.from('business_orders').update({ status: 'cancelled' }).eq('id', o.dbId), L('es', 'en') === 'en');
+      if (err) {
+        setOrders((list) => list.map((x) => ((o.dbId ? x.dbId === o.dbId : x.id === o.id) ? { ...x, status: antes } : x)));
+        flash(err);
+        return;
+      }
+    }
     flash(L(`Pedido rechazado · ${reasonEs}`, `Order rejected`));
-    if (persistable && o.dbId && supabase) await supabase.from('business_orders').update({ status: 'cancelled' }).eq('id', o.dbId);
   };
   // The one action button on a card/detail — same position, label/behavior now
   // routes through the new sheets where a real decision is needed.
