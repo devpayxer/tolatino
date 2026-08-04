@@ -543,6 +543,17 @@
   SMTP Settings (host `email-smtp.<región>.amazonaws.com`, puerto 587, remitente
   `hola@tolatino.com`). Subir después `rate_limit_email_sent`. **Sin esto no se
   puede abrir el registro al público.**
+- [ ] **El perfil se puede quedar a medias, y nadie se lo recuerda al usuario.**
+  Descubierto el 2026-08-04: la única cuenta de producción tenía foto e intereses
+  pero seguía llamándose «Vecino» y sin ciudad. La causa inmediata ya está
+  arreglada (las escrituras del alta fallaban en silencio y el usuario avanzaba
+  igual; ahora se detiene y avisa), y entrar ya no exige tener el alta completa.
+  **Lo que falta:** un recordatorio suave para quien quedó a medias — hoy entra a
+  la app como «Vecino» y nada le sugiere ponerse nombre o ciudad. Sin ciudad, el
+  feed no sabe qué barrio enseñarle. Decidir dónde va el aviso (¿banda en
+  Comunidad? ¿punto en Mi cuenta?) — es UI nueva, así que hay que acordarla antes
+  de construirla.
+
 - [ ] **Construir de verdad dos secciones que se retiraron por ser falsas (2026-07-29).**
   Vivían en la columna derecha de Comunidad (tablet/escritorio) con datos 100%
   inventados y se mostraban a usuarios reales; se eliminaron por la regla #8. Hay que

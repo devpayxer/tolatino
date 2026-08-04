@@ -154,8 +154,15 @@ export function OnboardingScreen() {
     if (auth.loading || !auth.user) return;
     if (step !== 'welcome' && step !== 'login') return;
     if (!auth.profile) return; // aún cargando el perfil: no se decide todavía
-    const n = (auth.profile.display_name ?? '').trim();
-    if (!n || n === 'Vecino') { setMode('signup'); setStep('profile'); return; }
+    // Misma regla que tras el código: manda la EDAD de la cuenta, no el nombre.
+    // Un perfil viejo entra aunque le falte el nombre o la ciudad; si no, quien
+    // se quedó con el nombre por defecto no podría entrar NUNCA.
+    // Sin `created_at` = el perfil lo acaba de crear el propio contexto en
+    // memoria (llegó por enlace del correo y no había fila): eso es tan nuevo
+    // como se puede ser, así que va al alta.
+    const nacido = auth.profile.created_at ? new Date(auth.profile.created_at).getTime() : NaN;
+    const recien = !Number.isFinite(nacido) || Date.now() - nacido < 2 * 60 * 1000;
+    if (recien) { setMode('signup'); setStep('profile'); return; }
     router.replace('/comunidad/');
   }, [auth.loading, auth.user, auth.profile, step, router]);
 
@@ -230,16 +237,32 @@ export function OnboardingScreen() {
     if (error) { setBusy(false); setCode(['', '', '', '', '', '']); boxes.current[0]?.focus(); return setErr(error); }
 
     // ¿Es alguien que vuelve o alguien nuevo? No se decide por el botón que
-    // pulsó, sino por si su perfil ya tiene nombre: quien pulsa "Inicia sesión"
-    // sin tener cuenta acaba de crearla y TIENE que completar el alta.
+    // pulsó — quien pulsa "Inicia sesión" sin tener cuenta acaba de crearla y
+    // TIENE que completar el alta.
+    //
+    // Y NO se decide por el nombre. Antes la regla era «tiene nombre y no es
+    // 'Vecino'», y dejaba una trampa sin salida: la cuenta real de producción
+    // tenía foto e intereses pero se había quedado con el nombre por defecto,
+    // así que CADA VEZ que entraba —correo, código, dentro— la app la mandaba
+    // de vuelta al "Paso 3 de 5". Para siempre. Reportado por el fundador el
+    // 2026-08-04 con la captura del bucle.
+    //
+    // La regla correcta es la EDAD de la cuenta: si su perfil ya existía antes
+    // de este inicio de sesión, es alguien que vuelve y entra. Que le falte el
+    // nombre o la ciudad se arregla en Mi cuenta; no es motivo para cerrarle la
+    // puerta. Solo pasa por el alta quien acaba de crear la cuenta ahora mismo.
+    const NUEVA_MS = 2 * 60 * 1000; // el perfil se crea al validar este código
     let vuelve = false;
     try {
       const { data: u } = await supabase!.auth.getUser();
       if (u?.user) {
-        const { data: p } = await supabase!.from('profiles').select('display_name, interests, city_label').eq('id', u.user.id).maybeSingle();
+        const { data: p } = await supabase!.from('profiles').select('display_name, created_at').eq('id', u.user.id).maybeSingle();
+        if (p) {
+          const nacido = new Date(p.created_at as string).getTime();
+          vuelve = Number.isFinite(nacido) && Date.now() - nacido > NUEVA_MS;
+        }
         const n = (p?.display_name ?? '').trim();
-        vuelve = !!n && n !== 'Vecino';
-        if (vuelve) {
+        if (n && n !== 'Vecino') {
           const parts = n.split(' ');
           setFirst(parts[0] ?? '');
           setLast(parts.slice(1).join(' '));
@@ -247,8 +270,9 @@ export function OnboardingScreen() {
       }
     } catch { /* si falla la consulta se sigue por el camino de alta */ }
     setBusy(false);
-    setStep(vuelve ? 'done' : 'profile');
-    setMode(vuelve ? 'login' : 'signup');
+    if (vuelve) { router.replace('/comunidad/'); return; }
+    setStep('profile');
+    setMode('signup');
   };
 
   /** Guarda en el perfil. Reintenta una vez: justo tras validar el código la
@@ -263,8 +287,13 @@ export function OnboardingScreen() {
   const saveName = async () => {
     if (!first.trim() || busy) return;
     setBusy(true);
-    await savePatch({ display_name: `${first.trim()} ${last.trim()}`.trim() });
+    const { error } = await savePatch({ display_name: `${first.trim()} ${last.trim()}`.trim() });
     setBusy(false);
+    // Si no se guardó, NO se avanza. Antes se pasaba al siguiente paso pase lo
+    // que pase: el nombre se perdía sin decir nada y el alta «terminaba» dejando
+    // la cuenta como «Vecino» — que es justo lo que la devolvía al alta en cada
+    // inicio de sesión.
+    if (error) { setErr('generic'); return; }
     setStep('location');
   };
 
@@ -291,15 +320,17 @@ export function OnboardingScreen() {
   const confirmPlace = async (p: Place) => {
     setBusy(true);
     app.setCityWithCoords(p.label, { lat: p.lat, lng: p.lng });
-    await auth.saveLocation({ label: p.label, lat: p.lat, lng: p.lng });
+    const { error } = await auth.saveLocation({ label: p.label, lat: p.lat, lng: p.lng });
     setBusy(false);
+    if (error) { setErr('generic'); return; } // ver `saveName`
     setStep('interests');
   };
 
   const finish = async (keys: string[]) => {
     setBusy(true);
-    if (keys.length) await savePatch({ interests: keys });
+    const r = keys.length ? await savePatch({ interests: keys }) : { error: null };
     setBusy(false);
+    if (r.error) { setErr('generic'); return; } // ver `saveName`
     setStep('done');
   };
 

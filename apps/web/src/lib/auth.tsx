@@ -21,6 +21,11 @@ export type Profile = {
   bio?: string | null;
   settings?: Record<string, unknown> | null;
   interests?: string[] | null;
+  /** Cuándo se creó la cuenta. Es lo que distingue a quien VUELVE de quien
+   *  acaba de registrarse — ver `Onboarding`. Puede faltar en los perfiles que
+   *  este mismo módulo acaba de crear en memoria (`loadProfile` / `signUp`), y
+   *  esa ausencia significa precisamente «recién nacido». */
+  created_at?: string | null;
 };
 
 type AuthCtx = {
@@ -39,7 +44,7 @@ type AuthCtx = {
   /** Comprueba el código. Si es correcto deja la sesión abierta. */
   verifyCode: (target: string, channel: 'email' | 'sms', code: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  saveLocation: (loc: { label: string; lat: number; lng: number }) => Promise<void>;
+  saveLocation: (loc: { label: string; lat: number; lng: number }) => Promise<{ error: string | null }>;
   updateProfile: (patch: Partial<Profile>) => Promise<{ error: string | null }>;
 };
 
@@ -223,22 +228,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
+  /** Quién soy AHORA. El contexto tarda un instante en enterarse de la sesión
+   *  recién abierta por un código OTP: `onAuthStateChange` es asíncrono, así que
+   *  justo después de validar el código `user` todavía puede ser `null`. Cuando
+   *  eso pasaba, guardar el perfil no fallaba — no hacía NADA, en silencio, y el
+   *  alta seguía adelante como si se hubiera guardado. Así acabó la única cuenta
+   *  de producción llamándose «Vecino» y sin ciudad. Ahora, si el contexto aún
+   *  no lo sabe, se le pregunta directamente a Supabase. (2026-08-04.) */
+  const idActual = async (): Promise<string | null> => {
+    if (user) return user.id;
+    if (!supabase) return null;
+    try {
+      const { data } = await supabase.auth.getUser();
+      return data?.user?.id ?? null;
+    } catch { return null; }
+  };
+
   const saveLocation: AuthCtx['saveLocation'] = async (loc) => {
-    if (!supabase || !user) return;
+    if (!supabase) return { error: null };
+    const id = await idActual();
+    if (!id) return { error: 'no-user' };
     const patch = { city_label: loc.label, lat: loc.lat, lng: loc.lng };
-    await supabase.from('profiles').update(patch).eq('id', user.id);
+    const { error } = await supabase.from('profiles').update(patch).eq('id', id);
+    if (error) return { error: error.message };
     setProfile((p) => (p ? { ...p, ...patch } : p));
+    return { error: null };
   };
 
   // Edit the user's own profile (name / bio / settings). Recomputes initials
   // from the name so the avatar stays in sync. Optimistic local update.
   const updateProfile: AuthCtx['updateProfile'] = async (patch) => {
-    if (!user) return { error: 'no-user' };
     const next: Partial<Profile> = { ...patch };
     if (typeof patch.display_name === 'string') next.initials = initialsOf(patch.display_name);
     setProfile((p) => (p ? { ...p, ...next } : p));
     if (!supabase) return { error: null };
-    const { error } = await supabase.from('profiles').update(next).eq('id', user.id);
+    // Ver `idActual`: el contexto puede no tener la sesión todavía.
+    const id = await idActual();
+    if (!id) return { error: 'no-user' };
+    const { error } = await supabase.from('profiles').update(next).eq('id', id);
     return { error: error ? error.message : null };
   };
 
