@@ -527,6 +527,17 @@
   estética=peluquería), «¿quisiste decir…?», estado sin-resultados con
   sugerencias, y las búsquedas recientes.
 
+- [ ] **Búsqueda: cuando `businesses`/`properties`/`vehicles` crezcan, revisar
+  el índice de tipo y el umbral de erratas (2026-08-04).** Dos apuntes que hoy
+  no duelen:
+  1. `search_tsv` de `vehicles` y `properties` es una columna GENERADA. Añadirle
+     un campo (como se hizo con `vtype`/`ptype` en 0146) **reescribe la tabla
+     entera** y hay que tirar y rehacer su índice GIN. Con 16 filas fue
+     instantáneo; con un millón hay que planificarlo (ventana, o `concurrently`).
+  2. El umbral de erratas va escrito como `word_similarity(...) > 0.45` porque
+     Supabase no deja bajarlo por función. Eso no aprovecha el índice de
+     trigramas que sí usaría el operador `<%`.
+
 - [ ] **Analítica de búsqueda: úsala, y dos cabos sueltos (2026-08-04).**
   Migración `0145`. `search_log` cuenta, de forma **anónima y agregada**, qué se
   busca y cuántos resultados salieron: sin usuario, sin sesión, sin IP y sin
