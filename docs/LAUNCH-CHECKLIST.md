@@ -527,6 +527,35 @@
   estética=peluquería), «¿quisiste decir…?», estado sin-resultados con
   sugerencias, y las búsquedas recientes.
 
+- [ ] **🔴 `spatial_ref_sys` está abierta a ESCRITURA para cualquiera con la
+  clave pública — y NO se puede cerrar desde SQL (2026-08-04).** Lo avisó el
+  Security Advisor de Supabase por correo, en los DOS proyectos.
+  **Qué es y qué NO es:** `spatial_ref_sys` es la tabla de catálogo de PostGIS
+  (8.500 sistemas de coordenadas, el catálogo EPSG). **No contiene ni un dato
+  del fundador ni de ningún usuario** — es idéntica en cualquier instalación de
+  PostGIS del mundo. Así que **no hay nada que filtrar**. Lo que hay es algo que
+  ROMPER.
+  **Comprobado desde fuera**, con solo la clave pública (`anon`):
+  `GET → 200` y **`DELETE → 204`**. Cualquiera puede vaciarla.
+  **Y comprobado el daño** (borrando dentro de una transacción con `rollback`):
+  con la tabla vacía, `search_businesses` falla con
+  `Cannot find SRID (4326) in spatial_ref_sys`. Es decir: **se cae toda la capa
+  geográfica** — «cerca de mí», que es el corazón de la app. Verificado después
+  que la tabla seguía con sus 8.500 filas y la búsqueda funcionando.
+  **Por qué no lo puedo arreglar yo:** los permisos los concedió `supabase_admin`
+  y solo ese rol puede quitarlos. Nuestro rol es `postgres`, que NO es miembro
+  ni superusuario. Tres intentos, los tres denegados:
+  `alter table … enable row level security` → *must be owner*;
+  `revoke … from anon, authenticated` → se ejecuta pero no cambia el ACL;
+  `set role supabase_admin` → *permission denied*.
+  **Lo que SÍ se puede hacer, y es del fundador:** el botón **«Resolve issue»**
+  del correo (o Dashboard → Advisors → Security). Esa herramienta corre con los
+  privilegios que hacen falta. Si no lo resuelve, abrir ticket con Supabase
+  citando `rls_disabled_in_public` sobre `public.spatial_ref_sys`.
+  **Riesgo mientras tanto:** bajo pero real. Nadie gana nada borrándola salvo
+  tumbar el buscador; se arregla reinstalando el catálogo, pero con la app en
+  el aire y sin aviso. **Hacerlo antes de abrir al público.**
+
 - [ ] **Búsqueda: cuando `businesses`/`properties`/`vehicles` crezcan, revisar
   el índice de tipo y el umbral de erratas (2026-08-04).** Dos apuntes que hoy
   no duelen:
