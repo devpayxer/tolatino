@@ -3,7 +3,33 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-08-02.
+> Last updated: 2026-08-04.
+
+## Permisos: lo que no debería estar abierto, cerrado (2026-08-04, migración 0148)
+
+Segunda tanda del Security Advisor, la que quedó viva después de `0147`. Está
+contada entera en `docs/LAUNCH-CHECKLIST.md`; lo que hay que saber al retomar:
+
+- **No había fuga.** Antes de cerrar nada se comprobó si algo filtraba: las 56
+  `admin_*` devuelven `401 · auth required` sin sesión, una por una, y ninguna
+  escribe antes de su guard. Lo que se cerró es **superficie**, no un incidente:
+  53 disparadores `tg_*`, las 56 `admin_*` y 41 RPC que ya rechazaban al
+  visitante. `anon` conserva las ~44 públicas de verdad (catálogo, fichas,
+  búsqueda) — ese ES el producto.
+- **Lo que sí era una fuga pequeña:** el cubo `post-photos` se podía **listar**
+  sin cuenta, y cada carpeta es un `user_id`. Cerrado; las fotos se siguen viendo
+  porque en un cubo público la URL no pasa por RLS (comprobado, mismos bytes).
+- **Guardián nuevo:** `tools/mobile-audit/permisos-anon.js`. Correrlo tras
+  cualquier `grant`/`revoke`. Limpio = `25 RPC distintas, 0 denegadas`.
+- **Dos cosas NO se pueden arreglar desde SQL** y van en el ticket de Supabase
+  (`docs/ticket-supabase-spatial-ref-sys.md`): `spatial_ref_sys` y `pg_net`. En
+  ambas el `revoke` **falla en silencio** — se lleva las concesiones explícitas y
+  deja el `=X` de PUBLIC, que lo concedió `supabase_admin`. Mirar
+  `has_function_privilege`, nunca el ACL a ojo.
+- **Las extensiones en `public` se quedan**, por decisión medida: `anon` y
+  `authenticated` no tienen `create` en `public`, así que el ataque que la regla
+  describe no tiene camino; y mover `pg_trgm` rompería la búsqueda, porque `0147`
+  fijó `search_path = public, pg_temp`.
 
 ## Foto de perfil real, de punta a punta (2026-08-02, migración 0134)
 

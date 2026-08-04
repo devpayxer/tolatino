@@ -26,6 +26,23 @@ Cada estado detecta: desborde horizontal de página, elementos fuera del viewpor
 interno), y scroll horizontal dentro de sheets. Cada violación se registra y se
 captura en `img/audit/FAIL-*.png` (carpeta gitignored).
 
+## `permisos-anon.js` — el visitante sin cuenta no choca con ningún permiso
+
+No mide layout: mide **permisos**. Recorre el sitio SIN sesión (portada, las
+cinco secciones, la ficha de un negocio entrando por «Ver perfil» y pinchando sus
+pestañas, y una búsqueda) y **falla si cualquier llamada a Supabase devuelve
+`401`/`403` o un cuerpo con «permission denied»**.
+
+Existe por la migración `0148`, que le quita a `anon` el permiso de ejecutar 150
+funciones. La comprobación de mesa —«esas ya devolvían *auth required*»— prueba
+lo que YO creo que llama la app; esto prueba lo que la app llama de verdad.
+Córrelo después de **cualquier** cambio de `grant`/`revoke` o de políticas.
+
+Además se planta a sí mismo dos trampas, porque las dos ya han hecho pasar una
+prueba en vacío: aborta si la ficha del negocio no llegó a abrirse, y aborta si
+no pudo pinchar al menos dos pestañas. Corrida limpia: `25 RPC distintas, 0
+denegadas`.
+
 ## Uso
 ```bash
 pnpm --filter @tolatino/web build
@@ -33,6 +50,7 @@ cd apps/web/out && python3 -m http.server 4173 &   # sirve el export estático
 cd tools/mobile-audit && npm i                      # una vez — instala Playwright local
 node audit.js                                       # dashboard  → "0 violation state(s)"
 node publish.js                                     # publicar   → "0 violation state(s)"
+node permisos-anon.js                               # permisos   → "0 denegadas"
 ```
 En el entorno de Claude Code el Chromium vive en `/opt/pw-browsers/chromium`
 (ya referenciado en los scripts); este tool es independiente del workspace pnpm

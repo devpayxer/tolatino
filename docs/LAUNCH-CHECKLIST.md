@@ -550,6 +550,58 @@
   reescribió como bucle sobre lo que cada base tenga suelto: portable e
   idempotente.
 
+- [x] ~~**356 avisos más del Security Advisor, la segunda tanda.**~~ **RESUELTO
+  el 2026-08-04** (migración `0148`). Después de `0147` el panel seguía marcando
+  otras tres clases. Se midieron contra PRODUCCIÓN con la clave publicable y sin
+  cuenta, y salieron así:
+  · **175 funciones `SECURITY DEFINER` en `public` alcanzables por `anon`.**
+    Lo primero fue comprobar si alguna FILTRABA algo, no cerrarlas a ciegas:
+    las 56 `admin_*` devuelven `401 · auth required` una por una, y ninguna
+    escribe antes de llamar a `_require_admin` (se comparó la posición del guard
+    con la del primer `insert/update/delete`: cero casos). La única sin guard,
+    `admin_whoami`, filtra por `auth.uid()`, así que sin sesión devuelve `[]`.
+    **O sea: no había fuga.** Lo que había era superficie, y esa sí se cerró:
+    **53 disparadores** (`tg_*`, que no son una API y nadie llama a mano),
+    **56 `admin_*`** y **41 RPC** que ya rechazaban al visitante. Quedan abiertas
+    a `anon` las ~44 que son públicas de verdad — catálogo, fichas, búsqueda —
+    porque ese ES el producto.
+    **Por qué importa aunque hoy no filtrara:** el día que alguien añada una
+    `admin_*` nueva y se olvide del guard, hoy nacería ABIERTA; con el `execute`
+    cerrado, ese olvido es inofensivo.
+  · **El cubo `post-photos` se podía INVENTARIAR sin cuenta.** `POST
+    /storage/v1/object/list/post-photos` → `200` con la lista de carpetas, y cada
+    carpeta **es el `user_id`**; entrando en una, el nombre de cada archivo. Un
+    censo de quién ha subido fotos y cuántas, servido en bandeja. Arreglado
+    dejando el SELECT de `storage.objects` solo para la carpeta propia. Las fotos
+    se siguen viendo: en un cubo público la URL `/object/public/…` no pasa por
+    RLS — comprobado antes y después, `200` y los mismos 800.807 bytes.
+  · **Guardián nuevo:** `tools/mobile-audit/permisos-anon.js` recorre el sitio
+    SIN cuenta (portada, las 5 secciones, ficha de negocio con sus pestañas,
+    búsqueda) y falla si alguna llamada devuelve `401`/`403` o «permission
+    denied». Corrida limpia: **25 RPC distintas, 0 denegadas**. Correrlo tras
+    cualquier cambio de permisos.
+
+- [ ] **Extensiones en el esquema `public` (postgis, pg_trgm, unaccent, pg_net)
+  — decisión tomada: NO se mueven (2026-08-04).** El Security Advisor las marca
+  como `extension_in_public`. Lo que preocupa a esa regla es que alguien cree en
+  `public` un objeto que **suplante** a una función de la extensión. Comprobado
+  en producción: `has_schema_privilege('anon','public','create')` y el de
+  `authenticated` son **`false`** — ni el visitante ni el usuario con cuenta
+  pueden crear nada ahí. Así que el ataque que la regla describe **no tiene
+  camino**.
+  **Y moverlas sí rompe cosas.** Se probó de verdad (en pruebas, deshaciéndolo):
+  `alter extension pg_trgm set schema extensions` **SÍ se puede** — no es que
+  esté prohibido, es que no conviene. `0147` fijó `search_path = public, pg_temp`
+  en todas nuestras funciones, así que en cuanto `word_similarity` deje de estar
+  en `public`, **se caen `search_businesses`, `properties_search`,
+  `vehicles_search` y `sugerir_termino`**. Con `unaccent` es peor (`tl_unaccent`
+  es IMMUTABLE y vive dentro de columnas GENERADAS y de índices), y con `postgis`
+  peor todavía: el tipo `geography` está en la definición de las tablas.
+  **Revisar solo si:** Supabase pasa el aviso a error, o algún día se conceda
+  `create` en `public` a un rol de aplicación. Entonces el orden sería
+  `unaccent` → `pg_trgm` → nunca `postgis`, y cada paso con su `search_path`
+  actualizado ANTES de mover.
+
 - [ ] **🔴 `spatial_ref_sys` está abierta a ESCRITURA para cualquiera con la
   clave pública — y NO se puede cerrar desde SQL (2026-08-04).** Lo avisó el
   Security Advisor de Supabase por correo, en los DOS proyectos.
@@ -578,6 +630,22 @@
   **Riesgo mientras tanto:** bajo pero real. Nadie gana nada borrándola salvo
   tumbar el buscador; se arregla reinstalando el catálogo, pero con la app en
   el aire y sin aviso. **Hacerlo antes de abrir al público.**
+  **Ticket ya enviado por el fundador (2026-08-04).** Cuando Supabase conteste,
+  la comprobación es de un minuto: el mismo `DELETE` desde fuera tiene que pasar
+  de **204 a 401/403**.
+  **SEGUNDO CASO IDÉNTICO, añadido al mismo ticket: `pg_net` (2026-08-04).**
+  `anon` y `authenticated` pueden ejecutar `net.http_post` / `net.http_get`, que
+  hacen peticiones HTTP **desde el servidor de la base** — la materia prima de un
+  SSRF. Misma pared, y el fracaso es SILENCIOSO, que es lo peligroso:
+  `revoke execute on function net.http_post(…) from public, anon, authenticated`
+  se lleva las concesiones explícitas y deja en pie el `=X` de PUBLIC, así que
+  `has_function_privilege('anon', …)` **sigue siendo `true`** aunque el ACL se vea
+  más corto; y `revoke usage on schema net` no cambia **ni un byte**.
+  **Por qué no es urgente:** el esquema `net` no lo publica PostgREST, así que no
+  se alcanza desde el navegador, y la única función de `public` que menciona
+  `net.http` es `tg_push_fanout` — `SECURITY DEFINER` de `postgres`, corre con el
+  permiso de su dueño. **Regla mientras tanto:** nunca escribir una función en
+  `public` que pase texto del usuario a `net.http_*`.
 
 - [ ] **Búsqueda: cuando `businesses`/`properties`/`vehicles` crezcan, revisar
   el índice de tipo y el umbral de erratas (2026-08-04).** Dos apuntes que hoy

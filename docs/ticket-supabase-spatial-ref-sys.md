@@ -94,6 +94,25 @@ If revoking is not something you do per-project, I'd appreciate guidance on the
 supported way to close this — I would rather not move the PostGIS extension to
 another schema, since every table and function in my app depends on it.
 
+SAME PROBLEM, SECOND CASE: pg_net
+
+While locking down function privileges I hit the identical wall on `pg_net`.
+`anon` and `authenticated` can EXECUTE `net.http_post` / `net.http_get`, which
+make outbound HTTP requests from the database server. As `postgres` I cannot
+close it:
+
+  - REVOKE EXECUTE ON FUNCTION net.http_post(...) FROM public, anon, authenticated;
+      -> removes only the explicit grants; the PUBLIC grant (`=X/supabase_admin`)
+         survives, so has_function_privilege('anon', ..., 'execute') is still true
+
+  - REVOKE USAGE ON SCHEMA net FROM public, anon, authenticated;
+      -> runs without error and leaves nspacl byte-for-byte unchanged
+
+The schema is not exposed through PostgREST today, so it is not reachable from
+the browser — this is defence in depth, not an active incident. Could you either
+revoke EXECUTE on the `net.*` functions from `anon`/`authenticated`, or tell me
+the supported way to do it myself? Same two projects.
+
 Thanks.
 ```
 
