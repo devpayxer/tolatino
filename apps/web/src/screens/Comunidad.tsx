@@ -431,7 +431,7 @@ export function ComunidadScreen() {
   // Columna derecha (escritorio ≥1280). Solo con sesión: el RPC no devuelve nada
   // a un invitado, así que ni se pregunta. Mismo radio que el feed, para no
   // sugerir a alguien a quien el usuario nunca vería publicar.
-  const { vecinos } = useNeighborsNearby(cLat, cLng, COMMUNITY_RADIUS_M, !!auth.user);
+  const { vecinos, loading: vecinosCargando } = useNeighborsNearby(cLat, cLng, COMMUNITY_RADIUS_M, !!auth.user);
 
   const baseFeed = homeMode ? allPosts : viewFeed;
   const byHood = homeMode && hood !== 'all' ? baseFeed.filter((p) => p.hoodEs === hood) : baseFeed;
@@ -672,7 +672,7 @@ export function ComunidadScreen() {
     // texto cansa y la foto se ve desproporcionada. En ≥1280 la tercera columna
     // del Handoff recupera ese espacio (feed ≈558); entre 1024 y 1279 no cabría
     // (dejaría el feed en ~400), así que ahí se topa con `max-w` y ya.
-    <div className="grid items-start gap-[22px] lg:grid-cols-[218px_minmax(0,1fr)] xl:grid-cols-[218px_minmax(0,1fr)_300px]">
+    <div className="grid items-start gap-[22px] lg:grid-cols-[218px_minmax(0,1fr)] min-[1180px]:grid-cols-[218px_minmax(0,1fr)_300px]">
       {/* left rail — profile nav + barrios (desktop only) */}
       <aside className="sticky top-[130px] hidden flex-col gap-[18px] lg:flex">
         <ProfileNav />
@@ -704,7 +704,7 @@ export function ComunidadScreen() {
           sin rieles) el feed llegaba a 983px de ancho — todavía peor que en
           escritorio. Se centra mientras sobra sitio; a partir de 1280, con la
           columna derecha puesta, la rejilla ya reparte el ancho y el tope estorba. */}
-      <div className="mx-auto w-full min-w-0 md:max-w-[620px] xl:mx-0 xl:max-w-none">
+      <div className="mx-auto w-full min-w-0 md:max-w-[620px] min-[1180px]:mx-0 min-[1180px]:max-w-none">
         {/* view title for Saved / Following (Home keeps the search chip) */}
         {homeMode ? (
           <SearchChip count={posts.length} className="mb-3.5" />
@@ -897,8 +897,10 @@ export function ComunidadScreen() {
               docs/LAUNCH-CHECKLIST.md.
           Solo desde 1280px: por debajo, la tercera columna dejaría el feed en
           unos 400px. */}
-      <aside className="sticky top-[130px] hidden flex-col gap-[18px] xl:flex">
-        <VecinosCerca vecinos={vecinos} onOpen={setVecino} />
+      <aside className="sticky top-[130px] hidden flex-col gap-[18px] min-[1180px]:flex">
+        {/* A un invitado no se le enseña ni siquiera el vacío: la tarjeta habla
+            de «tus vecinos» y sin sesión no hay tal cosa. */}
+        {auth.user && <VecinosCerca vecinos={vecinos} loading={vecinosCargando} onOpen={setVecino} />}
       </aside>
 
       {/* comment thread */}

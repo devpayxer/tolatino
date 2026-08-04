@@ -49,17 +49,38 @@ function Fila({ v, onOpen }: { v: Vecino; onOpen: (id: string) => void }) {
   );
 }
 
-export function VecinosCerca({ vecinos, onOpen }: { vecinos: Vecino[]; onOpen: (id: string) => void }) {
+export function VecinosCerca({
+  vecinos,
+  loading,
+  onOpen,
+}: {
+  vecinos: Vecino[];
+  loading: boolean;
+  onOpen: (id: string) => void;
+}) {
   const { L } = useLang();
-  if (vecinos.length === 0) return null;
+  // Mientras se pregunta no se pinta nada: una tarjeta que dice «no hay nadie» y
+  // medio segundo después lista a cuatro personas es peor que esperar.
+  if (loading) return null;
   return (
     <Card className="p-[17px]">
       <div className="mb-3 text-[13.5px] font-extrabold text-ink">{L('Vecinos cerca de ti', 'Neighbors near you')}</div>
-      <div className="flex flex-col gap-3">
-        {vecinos.map((v) => (
-          <Fila key={v.id} v={v} onOpen={onOpen} />
-        ))}
-      </div>
+      {vecinos.length === 0 ? (
+        // Vacío HONESTO, no tarjeta desaparecida. Antes, sin vecinos que sugerir
+        // la tarjeta entera se esfumaba, y eso es indistinguible de «esto no
+        // está desplegado» o «la consulta falló» — justo la duda que costó una
+        // vuelta entera el 2026-08-04. Nextdoor hace lo mismo aquí.
+        <div className="text-[12px] font-semibold leading-[1.5] text-muted-2">
+          {L('Por ahora no hay vecinos nuevos que sugerirte por aquí. Aparecerán cuando alguien más publique cerca.',
+             'No new neighbors to suggest around here yet. They’ll show up when someone else posts nearby.')}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {vecinos.map((v) => (
+            <Fila key={v.id} v={v} onOpen={onOpen} />
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
