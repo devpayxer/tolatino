@@ -527,6 +527,29 @@
   estética=peluquería), «¿quisiste decir…?», estado sin-resultados con
   sugerencias, y las búsquedas recientes.
 
+- [x] ~~**367 avisos del Security Advisor de Supabase.**~~ **RESUELTO el
+  2026-08-04** (migración `0147`), en las DOS bases. Lo que eran de verdad, tras
+  medirlos separando lo nuestro de lo que trae PostGIS:
+  · **145 políticas RLS** que llamaban a `auth.uid()` **una vez por FILA**. No
+    era seguridad: era VELOCIDAD. Medido sobre 2.101 filas en el camino sin
+    índice —el que aparece a escala—: **0,33 ms envuelto contra 3,13 ms sin
+    envolver, unas 10 veces**, y la diferencia crece con cada fila.
+  · **11 funciones nuestras sin `search_path` fijo.** Ninguna era
+    `SECURITY DEFINER`, que es la única combinación explotable de verdad.
+  **Cómo se demostró que nadie ve una fila de más** (dos pruebas, no una):
+  1. Huella `count` + `md5` de las claves visibles en 62 tablas × 5 identidades
+     (anónimo, tres usuarios, un dueño), antes y después: **310 mediciones, 0
+     diferencias**. Las cinco identidades ven cosas distintas entre sí (hasta 11
+     tablas), así que la huella discrimina.
+  2. Texto normalizado de cada política antes/después: **145 de 145 idénticas**
+     salvo el envoltorio, 0 con cualquier otro cambio. Esto cubre además las
+     políticas de INSERT/UPDATE/DELETE, que una huella de lecturas no prueba.
+  **Lo que enseñó el intento fallido:** la primera versión listaba las funciones
+  a mano y **rompió en producción** («`_seed_user` does not exist» — solo existe
+  en pruebas). La petición se deshizo entera, sin dejar nada a medias. Se
+  reescribió como bucle sobre lo que cada base tenga suelto: portable e
+  idempotente.
+
 - [ ] **🔴 `spatial_ref_sys` está abierta a ESCRITURA para cualquiera con la
   clave pública — y NO se puede cerrar desde SQL (2026-08-04).** Lo avisó el
   Security Advisor de Supabase por correo, en los DOS proyectos.
