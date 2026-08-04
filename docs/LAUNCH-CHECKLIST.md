@@ -495,6 +495,20 @@
      asumible hoy y no lo será después: el día del primer pedido pagado de
      verdad, plan Pro.
 
+- [ ] **🔴 La lista de espera «¡Avísame!» NO GUARDA NADA — está viva en
+  producción (descubierto 2026-08-04).** En `/transporte` y `/trabajos`,
+  `ComingSoonScreen` pide el correo, responde «¡Listo! Te avisamos cuando abra»
+  y **tira el correo a la basura**: el `onSubmit` solo llama a
+  `app.markWaitDone(view)`, no hay ni una escritura a la base. No existe tabla
+  de lista de espera general (hay `event_waitlist`, que es otra cosa).
+  Es una violación de la regla #8 de las caras: no es una pantalla incompleta,
+  es una promesa explícita que no se cumple, hecha a la gente que más cuesta
+  conseguir — los primeros interesados. Y bloquea cualquier plan de portada
+  «coming soon», porque el único trabajo de esa página es justo ese.
+  **Arreglo:** tabla `waitlist` (correo, ciudad, sección, origen, fecha) con RLS
+  de solo-INSERT para `anon`, índice único por correo+sección, y que el formulario
+  escriba de verdad y muestre el error si falla en vez de celebrar.
+
 - [ ] **🔴 SISTEMA DE RESPALDO DEL LANZAMIENTO — montar ANTES del primer pedido
   pagado (acordado 2026-08-04).** Plan completo y razonado en
   **`docs/RESPALDOS.md` → «Plan para el LANZAMIENTO»**; esto es la lista de
