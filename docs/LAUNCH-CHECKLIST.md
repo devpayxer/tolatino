@@ -472,10 +472,17 @@
   sin permiso), 90 días de retención, y con **ensayo de restauración diario**:
   levanta un Postgres limpio, restaura la copia del día y cuenta filas. Tener una
   copia y poder restaurarla no son lo mismo.
-  **FALTA UN PASO DEL FUNDADOR:** crear dos secretos en GitHub (`PROD_DB_URL` y
-  `BACKUP_PASSPHRASE`) y darle una vez a «Run workflow». Hasta que eso pase, el
-  trabajo falla a propósito en la primera línea — **no hay respaldos todavía**.
-  Pasos exactos en `docs/RESPALDOS.md`.
+  **CAMBIO DE DECISIÓN EL MISMO DÍA:** el fundador prefiere **pagar el plan Pro
+  de Supabase**, que añade lo que el script no puede dar: **PITR** (volver a un
+  momento concreto, no solo al volcado nocturno). El diario del workflow queda
+  **APAGADO**; el trabajo sigue en el repo y se lanza a mano, como copia de
+  FUERA de Supabase — porque las copias de Supabase viven dentro de Supabase y
+  se irían con la cuenta si esta se bloquea o el proyecto se borra.
+  **PENDIENTE hasta que el pago esté hecho: NO HAY RESPALDOS.** Y al pagar, hay
+  que comprobar tres cosas (detalle en `docs/RESPALDOS.md`): que las copias y el
+  PITR salgan activos de verdad en el panel; que el proyecto de PRUEBAS no
+  empiece a facturar cómputo sin querer (el plan es por organización, y hay dos
+  proyectos); y si las copias incluyen **Storage** o solo la base.
   **Y lo que este respaldo NO cubre, que sigue abierto:**
   1. **Las FOTOS.** Viven en Supabase Storage (S3), fuera de Postgres: un
      `pg_dump` no las toca. Un desastre total dejaría las filas apuntando a

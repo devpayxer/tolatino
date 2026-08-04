@@ -32,11 +32,21 @@
 name: Respaldo diario de producción
 
 on:
-  schedule:
-    # 07:40 UTC ≈ 02:40 en Houston. Minuto no redondo a propósito: a las horas en
-    # punto GitHub encola millones de trabajos y los retrasa.
-    - cron: '40 7 * * *'
-  workflow_dispatch: # botón «Run workflow» para probarlo cuando quieras
+  # ── DIARIO DESACTIVADO (2026-08-04) ──────────────────────────────────────
+  # El fundador decidió pagar el plan Pro de Supabase, que da copias diarias
+  # gestionadas MÁS recuperación a un punto en el tiempo (PITR) — volver a las
+  # 14:32 de ayer, no al volcado de las 02:40. Eso este script no lo puede dar.
+  #
+  # No se borra, por una razón concreta: las copias de Supabase viven DENTRO de
+  # Supabase. Si la cuenta se bloquea, el pago falla o el proyecto se borra por
+  # error, esas copias se van con él. Esto es la copia de fuera — el principio
+  # de siempre: al menos una en otro sitio. Sigue disponible a mano.
+  #
+  # Para reactivar el diario: descomenta estas dos líneas y crea los dos
+  # secretos (ver docs/RESPALDOS.md).
+  # schedule:
+  #   - cron: '40 7 * * *'   # 07:40 UTC ≈ 02:40 en Houston
+  workflow_dispatch: # botón «Run workflow» — el único disparador hoy
 
 # Sin permisos de escritura: este trabajo solo lee la base y sube un archivo.
 permissions:

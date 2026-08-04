@@ -3,7 +3,37 @@
 > Léelo entero **antes** de necesitarlo. El día que haga falta restaurar no es
 > el día de aprender cómo se hace.
 
-## Qué hay montado
+## Decisión vigente (2026-08-04): el respaldo principal es el plan Pro de Supabase
+
+El fundador decidió pagar el **plan Pro**. Da copias diarias gestionadas **más
+recuperación a un punto en el tiempo (PITR)**: volver a «ayer a las 14:32», no
+solo al volcado nocturno. Eso el script de este repo no lo puede dar, y es la
+diferencia que importa cuando perder medio día de pedidos cuesta dinero.
+
+**El trabajo de GitHub Actions sigue existiendo, pero con el diario APAGADO** —
+solo se lanza a mano desde Actions → «Run workflow». No se borró por una razón
+concreta: **las copias de Supabase viven dentro de Supabase.** Si la cuenta se
+bloquea, un pago falla o el proyecto se borra por error, esas copias se van con
+él. Este es el plan B de fuera, y cuesta cero tenerlo ahí.
+
+**Para reactivarlo:** descomenta las dos líneas del `schedule` en
+`.github/workflows/respaldo-produccion.yml` y crea los dos secretos de más
+abajo.
+
+### Qué comprobar DESPUÉS de pagar
+
+Que el plan esté cobrado no significa que las copias estén activas. Verificar:
+
+1. En Supabase → proyecto `tolatino-prod` → **Database** → **Backups**: que
+   aparezcan copias listadas y que **PITR** salga habilitado.
+2. Que el proyecto de **pruebas** (`tolatino`) no esté generando coste que no
+   quieres: el plan Pro se contrata por *organización*, y una organización con
+   dos proyectos puede facturar cómputo por los dos.
+3. Si las copias de Supabase incluyen **Storage** (las fotos) o solo la base de
+   datos. Si solo cubren la base, el hueco de las fotos **sigue abierto** — ver
+   la tabla de «Lo que NO cubre».
+
+## Qué hay montado (el plan B, hoy solo manual)
 
 Un trabajo de GitHub Actions (`.github/workflows/respaldo-produccion.yml`) que
 **cada día a las 07:40 UTC** (≈02:40 en Houston):
