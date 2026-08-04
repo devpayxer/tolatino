@@ -581,6 +581,21 @@
     denied». Corrida limpia: **25 RPC distintas, 0 denegadas**. Correrlo tras
     cualquier cambio de permisos.
 
+- [ ] **Los correos de la base de PRUEBAS no llevan la marca, y no se puede
+  arreglar ahí (2026-08-04).** Al poner la plantilla de «elige una contraseña
+  nueva» en español, producción la aceptó y pruebas la rechazó:
+  > *Email template modification is not available for free tier projects using
+  > the default email provider.*
+  Producción tiene SMTP propio (**Brevo**, `no-reply@tolatino.com`) y por eso sus
+  cuatro plantillas —código, confirmación, reautenticación y ahora recuperación—
+  están en español y con el diseño. **Pruebas usa el proveedor por defecto de
+  Supabase y NINGUNA de sus plantillas tiene marca** (su asunto de acceso sigue
+  siendo *«Your sign-in link»*). No es una regresión: siempre fue así.
+  **Qué significa al probar:** el *flujo* de contraseña olvidada sí se prueba en
+  pruebas (el enlace lleva a la pantalla correcta — verificado); el *correo* solo
+  se puede ver como lo verá la gente en producción. Si algún día hace falta,
+  se arregla configurando el mismo SMTP de Brevo en el proyecto de pruebas.
+
 - [ ] **🟠 Producción no tiene NINGUNA tarea programada: `pg_cron` no está
   instalada (2026-08-04).** Salió al dar de alta al fundador como `superadmin` en
   producción y probar el panel como él: la pestaña **Salud** reventaba con

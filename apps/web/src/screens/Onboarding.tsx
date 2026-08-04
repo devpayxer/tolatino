@@ -62,7 +62,7 @@ import {
   POPULAR_CITIES, getBrowserLocation, isCoordLabel, nearestCity, searchCities, type Place,
 } from '@/lib/geo';
 
-type Step = 'welcome' | 'method' | 'otp' | 'profile' | 'location' | 'interests' | 'done' | 'login';
+type Step = 'welcome' | 'method' | 'otp' | 'profile' | 'location' | 'interests' | 'done' | 'login' | 'reset';
 type Geo = 'ask' | 'detecting' | 'found' | 'manual' | 'denied';
 type Channel = 'sms' | 'email';
 
@@ -72,6 +72,18 @@ const BACK: Partial<Record<Step, Step>> = {
 };
 /** Supabase rechaza un reenvío antes de 60s: la cuenta atrás lo respeta. */
 const RESEND_S = 60;
+/** Mínimo NUESTRO, más estricto que el del proyecto (`password_min_length` = 6).
+ *  Se pide aquí porque es donde el usuario la elige; subir el del servidor es
+ *  cosa del fundador y está anotado en `docs/LAUNCH-CHECKLIST.md`. */
+const PW_MIN = 8;
+
+/** ¿Venimos del enlace «elige una contraseña nueva»?
+ *  Supabase lo marca con `type=recovery`, normalmente en el hash y a veces en la
+ *  query (según el flujo). Se miran los dos. */
+function esVueltaDeRecuperacion(): boolean {
+  if (typeof window === 'undefined') return false;
+  return /(?:^|[#&?])type=recovery(?:&|$)/.test(window.location.hash + window.location.search);
+}
 
 /** Las 10 del handoff. La CLAVE es lo que se guarda; la etiqueta solo se pinta. */
 const INTERESTS: { k: string; es: string; en: string; c: string; bg: string; Icon: typeof Search }[] = [
@@ -103,7 +115,12 @@ export function OnboardingScreen() {
   const auth = useAuth();
   const router = useRouter();
 
-  const [step, setStep] = useState<Step>('welcome');
+  // Se decide EN EL PRIMER RENDER, no en un efecto, y eso no es un detalle: el
+  // enlace de recuperación trae `type=recovery` en el hash, y `supabase-js` lo
+  // consume y lo borra de la URL en cuanto puede. Si se mirara desde un efecto
+  // habría carrera, y el efecto de «ya hay sesión» de más abajo mandaría al
+  // usuario a /comunidad sin darle jamás la pantalla de contraseña nueva.
+  const [step, setStep] = useState<Step>(() => (esVueltaDeRecuperacion() ? 'reset' : 'welcome'));
   const [mode, setMode] = useState<'signup' | 'login'>('signup');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -135,6 +152,11 @@ export function OnboardingScreen() {
   const [pwOpen, setPwOpen] = useState(false);
   const [pwEmail, setPwEmail] = useState('');
   const [pw, setPw] = useState('');
+  // contraseña olvidada: envío del correo y elección de la nueva
+  const [resetSent, setResetSent] = useState(false);
+  const [pwNew, setPwNew] = useState('');
+  const [pwNew2, setPwNew2] = useState('');
+  const [pwSaved, setPwSaved] = useState(false);
 
   const target = channel === 'sms' ? `+1${phone}` : email.trim().toLowerCase();
   const targetLabel = channel === 'sms' ? `+1 ${formatUsPhone(phone)}` : email.trim().toLowerCase();
@@ -165,6 +187,24 @@ export function OnboardingScreen() {
     if (recien) { setMode('signup'); setStep('profile'); return; }
     router.replace('/comunidad/');
   }, [auth.loading, auth.user, auth.profile, step, router]);
+
+  // Red de seguridad del enlace de recuperación, por los dos lados:
+  //  · Si `supabase-js` se comió el hash antes del primer render, el evento
+  //    `PASSWORD_RECOVERY` nos trae igualmente a la pantalla correcta.
+  //  · Y si el enlace ya venció o se usó, NO hay sesión: entonces el formulario
+  //    no puede guardar nada, y hay que decirlo en vez de dejar un botón muerto.
+  useEffect(() => {
+    if (!supabase) return;
+    const { data } = supabase.auth.onAuthStateChange((evento) => {
+      if (evento === 'PASSWORD_RECOVERY') { setErr(null); setStep('reset'); }
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (step !== 'reset' || auth.loading || auth.user) return;
+    setErr('reset_link_dead');
+  }, [step, auth.loading, auth.user]);
 
   // El botón que se pulsó MANDA. Si dice "Regístrate" se abre el alta; si dice
   // "Entrar" se abre la entrada. Antes ambos caían en la bienvenida, que es una
@@ -335,6 +375,30 @@ export function OnboardingScreen() {
   };
 
   const enterApp = () => router.push('/comunidad/');
+
+  const pedirReset = async () => {
+    setErr(null);
+    if (!pwEmail.includes('@')) return setErr('bad_email');
+    setBusy(true);
+    const { error } = await auth.sendPasswordReset(pwEmail);
+    setBusy(false);
+    if (error) return setErr(error);
+    // Se confirma SIEMPRE que se envió, sin decir si el correo existe o no: lo
+    // contrario convertiría esta pantalla en un comprobador de quién tiene
+    // cuenta en To'Latino.
+    setResetSent(true);
+  };
+
+  const guardarPwNueva = async () => {
+    setErr(null);
+    if (pwNew.length < PW_MIN) return setErr('weak_password');
+    if (pwNew !== pwNew2) return setErr('pw_mismatch');
+    setBusy(true);
+    const { error } = await auth.setPassword(pwNew);
+    setBusy(false);
+    if (error) return setErr(error);
+    setPwSaved(true);
+  };
 
   const signInPassword = async () => {
     setErr(null);
@@ -893,6 +957,52 @@ export function OnboardingScreen() {
                 </div>
               )}
 
+              {/* ─────────── CONTRASEÑA NUEVA (se llega por el correo) ─────────── */}
+              {step === 'reset' && (
+                <div className="tl-pop">
+                  {pwSaved ? (
+                    <>
+                      <span aria-hidden className="flex h-[52px] w-[52px] items-center justify-center rounded-[17px] bg-green-bg">
+                        <Check size={26} stroke={2.6} className="text-green-ink" />
+                      </span>
+                      <H1>{L('Contraseña guardada', 'Password saved')}</H1>
+                      <Sub>{L('Ya puedes entrar con ella. Y recuerda: el camino normal sigue siendo el código que te llega al correo.', 'You can sign in with it now. Remember: the usual way is still the code we email you.')}</Sub>
+                      <Cta on onClick={enterApp}>{L('Entrar a To’Latino', 'Enter To’Latino')} <ArrowRight size={17} stroke={2.4} aria-hidden /></Cta>
+                    </>
+                  ) : (
+                    <>
+                      <span aria-hidden className="flex h-[52px] w-[52px] items-center justify-center rounded-[17px] bg-app">
+                        <Lock size={24} stroke={2.3} className="text-primary-dark" />
+                      </span>
+                      <H1>{L('Elige tu contraseña nueva', 'Choose your new password')}</H1>
+                      <Sub>{L('Escríbela dos veces para que no se cuele una errata. Mínimo 8 caracteres.', 'Type it twice so a typo can’t slip through. At least 8 characters.')}</Sub>
+
+                      <div className="mt-[18px]">
+                        <Label>{L('Contraseña nueva', 'New password')}</Label>
+                        <input value={pwNew} onChange={(e) => { setPwNew(e.target.value); setErr(null); }} type="password"
+                               autoComplete="new-password" placeholder="••••••••"
+                               aria-label={L('Contraseña nueva', 'New password')} className={field} />
+                        <input value={pwNew2} onChange={(e) => { setPwNew2(e.target.value); setErr(null); }} type="password"
+                               autoComplete="new-password" placeholder={L('Repítela', 'Repeat it')}
+                               onKeyDown={(e) => { if (e.key === 'Enter') guardarPwNueva(); }}
+                               aria-label={L('Repite la contraseña', 'Repeat the password')} className={`${field} mt-2`} />
+                      </div>
+
+                      <Err />
+                      <Cta on={pwNew.length >= PW_MIN && pwNew2.length > 0 && !!auth.user} onClick={guardarPwNueva}>
+                        {busy ? L('Guardando…', 'Saving…') : L('Guardar contraseña', 'Save password')}
+                      </Cta>
+
+                      <p className="mt-5 text-center text-[13px] font-semibold text-home-mute">
+                        <button onClick={() => { setErr(null); setMode('login'); setStep('login'); }} className="tl-focus cursor-pointer font-extrabold text-primary-dark">
+                          {L('Mejor entrar con un código', 'I’d rather use a code')}
+                        </button>
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* ─────────── ENTRAR ─────────── */}
               {step === 'login' && (
                 <div className="tl-pop">
@@ -951,6 +1061,21 @@ export function OnboardingScreen() {
                                onKeyDown={(e) => { if (e.key === 'Enter') signInPassword(); }}
                                placeholder="••••••••" aria-label={L('Contraseña', 'Password')} className={`${field} mt-2`} />
                         <Cta on={pwEmail.includes('@') && pw.length > 0} onClick={signInPassword}>{L('Entrar', 'Log in')}</Cta>
+
+                        {/* Una puerta de servicio sin llave de repuesto no sirve:
+                            si se te olvida la contraseña te quedas fuera. */}
+                        {resetSent ? (
+                          <p role="status" className="mt-3 flex items-start gap-2 rounded-[12px] bg-green-bg2 px-[13px] py-[11px] text-[11px] font-semibold leading-[1.45] text-green-ink">
+                            <ShieldCheck size={15} stroke={2.2} className="mt-[1px] flex-none text-green" aria-hidden />
+                            {L('Si esa cuenta existe, te mandamos un correo para elegir una contraseña nueva. Revisa también la carpeta de spam.',
+                               'If that account exists, we emailed you a link to choose a new password. Check your spam folder too.')}
+                          </p>
+                        ) : (
+                          <button onClick={busy ? undefined : pedirReset} disabled={busy}
+                                  className="tl-focus mt-3 w-full cursor-pointer py-2 text-[12px] font-extrabold text-home-mute">
+                            {busy ? L('Enviando…', 'Sending…') : L('¿Olvidaste tu contraseña?', 'Forgot your password?')}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

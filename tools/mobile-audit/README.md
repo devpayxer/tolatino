@@ -43,6 +43,32 @@ prueba en vacío: aborta si la ficha del negocio no llegó a abrirse, y aborta s
 no pudo pinchar al menos dos pestañas. Corrida limpia: `25 RPC distintas, 0
 denegadas`.
 
+## `reset-contrasena.js` — «olvidé mi contraseña», de punta a punta
+
+La contraseña es la **puerta de servicio** de To'Latino: el camino normal es el
+código al correo. Una puerta de servicio sin llave de repuesto no sirve de nada,
+y este flujo tiene que funcionar justo el día que el correo del código falle —
+que es el único día que alguien lo va a usar. No se puede comprobar a ojo: hace
+falta un enlace real de Supabase.
+
+Crea un **usuario desechable** (nunca una cuenta real), le pide a Supabase un
+enlace de recuperación de verdad, aterriza con él en la pantalla, comprueba que
+**dos contraseñas distintas dan error**, guarda la buena, y por último verifica
+contra el servidor que **se puede entrar con la nueva y NO con la vieja** — una
+pantalla verde por sí sola no demuestra nada. Al terminar borra el usuario.
+
+Va contra `localhost:3000` **y ese puerto importa**: es el que está en la lista
+de redirecciones permitidas de la base de pruebas. En 4173 Supabase ignora el
+destino y manda al `site_url`.
+
+```bash
+cd apps/web/out && python3 -m http.server 3000 --bind 127.0.0.1 &
+cd tools/mobile-audit && KEYS_JSON=<archivo-de-claves> node reset-contrasena.js
+```
+`KEYS_JSON` es la respuesta de `/v1/projects/<ref>/api-keys?reveal=true`. Se pasa
+por **archivo** a propósito: la clave de servicio no se escribe en el repo ni en
+la línea de comandos.
+
 ## Uso
 ```bash
 pnpm --filter @tolatino/web build

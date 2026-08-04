@@ -43,6 +43,12 @@ type AuthCtx = {
   sendCode: (target: string, channel: 'email' | 'sms') => Promise<{ error: string | null }>;
   /** Comprueba el código. Si es correcto deja la sesión abierta. */
   verifyCode: (target: string, channel: 'email' | 'sms', code: string) => Promise<{ error: string | null }>;
+  /** Manda el correo de «elige una contraseña nueva». El enlace vuelve a
+   *  `/entrar/`, que es donde vive la pantalla que la pone. */
+  sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
+  /** Guarda la contraseña nueva. Solo funciona con sesión abierta — la abre el
+   *  propio enlace del correo. */
+  setPassword: (password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   saveLocation: (loc: { label: string; lat: number; lng: number }) => Promise<{ error: string | null }>;
   updateProfile: (patch: Partial<Profile>) => Promise<{ error: string | null }>;
@@ -66,7 +72,9 @@ function colorFor(seed: string): string {
 export type AuthErrCode =
   | 'email_taken' | 'invalid_login' | 'weak_password' | 'bad_email' | 'not_configured' | 'generic'
   // Sin contraseña
-  | 'bad_code' | 'expired_code' | 'too_many' | 'bad_phone' | 'sms_not_configured' | 'email_not_configured';
+  | 'bad_code' | 'expired_code' | 'too_many' | 'bad_phone' | 'sms_not_configured' | 'email_not_configured'
+  // Contraseña olvidada
+  | 'pw_mismatch' | 'reset_link_dead';
 function friendly(msg: string | undefined): AuthErrCode {
   const m = (msg || '').toLowerCase();
   if (m.includes('already registered') || m.includes('already been registered')) return 'email_taken';
@@ -91,7 +99,9 @@ export function authErrorText(code: string | null | undefined, L: (a: string, b:
   switch (code) {
     case 'email_taken': return L('Ese correo ya tiene una cuenta. Inicia sesión.', 'That email already has an account. Sign in.');
     case 'invalid_login': return L('Correo o contraseña incorrectos.', 'Incorrect email or password.');
-    case 'weak_password': return L('La contraseña debe tener al menos 6 caracteres.', 'Password must be at least 6 characters.');
+    case 'weak_password': return L('La contraseña debe tener al menos 8 caracteres.', 'Password must be at least 8 characters.');
+    case 'pw_mismatch': return L('Las dos contraseñas no son iguales.', 'The two passwords don’t match.');
+    case 'reset_link_dead': return L('Ese enlace ya venció o se usó. Pide otro desde «Entrar».', 'That link expired or was already used. Ask for a new one from “Log in”.');
     case 'bad_email': return L('Revisa el correo que escribiste.', 'Check the email you entered.');
     case 'not_configured': return L('El inicio de sesión no está configurado.', 'Sign-in is not configured.');
     case 'bad_code': return L('Código incorrecto. Revísalo e intenta otra vez.', 'Wrong code. Check it and try again.');
@@ -221,6 +231,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error ? friendly(error.message) : null };
   };
 
+  // ── Contraseña olvidada ───────────────────────────────────────────────────
+  // Existe porque la contraseña es la puerta de servicio del día que el correo
+  // con el código falle (ver `Onboarding`). Una puerta de servicio sin llave de
+  // repuesto no sirve de nada: si se te olvida, te quedas fuera para siempre.
+  //
+  // El enlace vuelve al ORIGEN real desde el que se pidió, no a una constante —
+  // igual que `sendCode`—, así una vista previa manda a la vista previa y
+  // producción a producción. Y apunta a `/entrar/` porque ahí es donde está la
+  // pantalla que recoge la sesión de recuperación y pide la contraseña nueva.
+  const sendPasswordReset: AuthCtx['sendPasswordReset'] = async (email) => {
+    if (!supabase) return { error: 'not_configured' };
+    const redirect = typeof window !== 'undefined' ? `${window.location.origin}/entrar/` : undefined;
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: redirect });
+    return { error: error ? friendly(error.message) : null };
+  };
+
+  const setPassword: AuthCtx['setPassword'] = async (password) => {
+    if (!supabase) return { error: 'not_configured' };
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error: error ? friendly(error.message) : null };
+  };
+
   const signOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -270,7 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, profile, loading, configured: !!supabase, signUp, signIn, sendCode, verifyCode, signOut, saveLocation, updateProfile }}>
+    <Ctx.Provider value={{ user, profile, loading, configured: !!supabase, signUp, signIn, sendCode, verifyCode, sendPasswordReset, setPassword, signOut, saveLocation, updateProfile }}>
       {children}
     </Ctx.Provider>
   );
