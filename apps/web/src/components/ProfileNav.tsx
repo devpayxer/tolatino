@@ -75,7 +75,11 @@ export function ProfileNav({ onNavigate, className }: { onNavigate?: () => void;
       </div>
 
       {auth.user ? (
-        <div className="mt-3.5 grid grid-cols-3 border-t border-hair pt-3">
+        // Fila en flex, no en `grid-cols-3`: en el riel de 218px cada tercio
+        // medía 61px y «Seguidores» necesita 70, así que las tres etiquetas se
+        // desbordaban y se leían pegadas («SiguiendoSeguidores Posts»). En flex
+        // cada bloque ocupa lo suyo y sobra sitio.
+        <div className="mt-3.5 flex justify-between gap-2 border-t border-hair pt-3">
           {stats.map(([n, es, en]) => (
             <div key={en} className="text-center">
               <div className="text-[15px] font-extrabold text-ink">{n}</div>

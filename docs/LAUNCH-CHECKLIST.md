@@ -547,13 +547,20 @@
   Vivían en la columna derecha de Comunidad (tablet/escritorio) con datos 100%
   inventados y se mostraban a usuarios reales; se eliminaron por la regla #8. Hay que
   hacerlas con datos reales antes de reponerlas (Nextdoor las tiene):
-  1. **Tendencias** — temas/etiquetas más activos de la zona. Necesita extraer temas
-     de los posts reales y contarlos por ciudad/barrio en una ventana de tiempo.
-  2. **Vecinos sugeridos** — "vecinos que quizá conoces". Necesita una fuente real
-     (perfiles cercanos por PostGIS, excluyendo a quien ya sigues) y respetar
-     privacidad: hoy `profiles` solo es legible por su dueño, así que hace falta un
-     RPC `SECURITY DEFINER` que devuelva un mínimo (nombre visible, barrio) con
-     consentimiento explícito — NO abrir la tabla.
+  1. **Tendencias** — temas/etiquetas más activos de la zona. **SIGUE PENDIENTE.**
+     Necesita extraer temas de los posts reales y contarlos por ciudad/barrio en una
+     ventana de tiempo. Hoy no hay hashtags ni etiquetas en el modelo de datos, así
+     que cualquier cifra que se pintara volvería a ser inventada. Requiere decidir
+     antes de dónde sale el tema: ¿hashtags que el usuario escribe? ¿categoría del
+     post? ¿palabras frecuentes? Ninguna de las tres existe todavía.
+  2. ~~**Vecinos sugeridos**~~ — **HECHO (2026-08-04).** Migración `0143`: RPC
+     `neighbors_nearby` (`SECURITY DEFINER`), que sale de `posts` — donde el nombre,
+     las iniciales, el color y el barrio ya van desnormalizados — y NO toca
+     `profiles`, así que las coordenadas de la casa de nadie se quedan donde estaban.
+     Excluye a uno mismo, a quien ya sigues, a quien bloqueaste y a quien te bloqueó
+     (los dos sentidos: la política de `user_blocks` solo deja ver los bloqueos
+     propios, por eso hace falta DEFINER). Sin sesión no devuelve nada; `anon` no
+     tiene permiso de ejecución. Se pinta en `VecinosCerca` a partir de 1280px.
 - [x] ~~Decidir: el hero de la landing muestra un negocio de ejemplo inventado.~~
   **RESUELTO (2026-08-02):** la portada oficial no tiene tarjetas decorativas de
   negocio. Lo único con datos es la tarjeta del feed, y lee publicaciones REALES.

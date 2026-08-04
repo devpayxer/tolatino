@@ -20,6 +20,8 @@ import { Avatar, Card, EmptyState, Overlay, SkeletonList, YouAvatar } from '@/co
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { ProfileNav } from '@/components/ProfileNav';
+import { VecinosCerca } from '@/components/VecinosCerca';
+import { useNeighborsNearby } from '@/lib/vecinos';
 import { bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 import { COMMUNITY_RADIUS_M, mapPost, relTime, type PostRow } from '@/lib/posts';
@@ -426,6 +428,11 @@ export function ComunidadScreen() {
   }, [app.cityShort, allPosts]);
   const hoodCount = (name: string) => allPosts.filter((p) => p.hoodEs === name).length;
 
+  // Columna derecha (escritorio ≥1280). Solo con sesión: el RPC no devuelve nada
+  // a un invitado, así que ni se pregunta. Mismo radio que el feed, para no
+  // sugerir a alguien a quien el usuario nunca vería publicar.
+  const { vecinos } = useNeighborsNearby(cLat, cLng, COMMUNITY_RADIUS_M, !!auth.user);
+
   const baseFeed = homeMode ? allPosts : viewFeed;
   const byHood = homeMode && hood !== 'all' ? baseFeed.filter((p) => p.hoodEs === hood) : baseFeed;
   // Con búsqueda activa manda lo que devuelve la base; sin ella, el feed local.
@@ -659,7 +666,13 @@ export function ComunidadScreen() {
   };
 
   return (
-    <div className="grid items-start gap-[22px] lg:grid-cols-[218px_1fr]">
+    // Escritorio: el feed va TOPADO, no a todo lo ancho. Con `1fr` la foto de
+    // una publicación medía 842px en un portátil de 1512 — un 40% más ancha que
+    // Nextdoor, Facebook o X, que rondan los 600, y a esa medida la línea de
+    // texto cansa y la foto se ve desproporcionada. En ≥1280 la tercera columna
+    // del Handoff recupera ese espacio (feed ≈558); entre 1024 y 1279 no cabría
+    // (dejaría el feed en ~400), así que ahí se topa con `max-w` y ya.
+    <div className="grid items-start gap-[22px] lg:grid-cols-[218px_minmax(0,1fr)] xl:grid-cols-[218px_minmax(0,1fr)_300px]">
       {/* left rail — profile nav + barrios (desktop only) */}
       <aside className="sticky top-[130px] hidden flex-col gap-[18px] lg:flex">
         <ProfileNav />
@@ -687,7 +700,11 @@ export function ComunidadScreen() {
       </aside>
 
       {/* feed */}
-      <div className="min-w-0">
+      {/* El tope de 620px vale desde tablet: sin él, a 1023px (una columna sola,
+          sin rieles) el feed llegaba a 983px de ancho — todavía peor que en
+          escritorio. Se centra mientras sobra sitio; a partir de 1280, con la
+          columna derecha puesta, la rejilla ya reparte el ancho y el tope estorba. */}
+      <div className="mx-auto w-full min-w-0 md:max-w-[620px] xl:mx-0 xl:max-w-none">
         {/* view title for Saved / Following (Home keeps the search chip) */}
         {homeMode ? (
           <SearchChip count={posts.length} className="mb-3.5" />
@@ -867,17 +884,22 @@ export function ComunidadScreen() {
         )}
       </div>
 
-      {/* Rail derecho RETIRADO (2026-07-29). Tenía dos tarjetas 100% fabricadas
-          que se mostraban a usuarios reales en tablet/escritorio (regla #8):
-            · "Tendencias": hashtags inventados con conteos falsos
-              (#TaqueríasHTX · 156 publicaciones, #MejorMecánico · 84…).
-            · "Vecinos sugeridos": tres personas que NO existen (Ana E.,
-              Roberto M., Sofía L.) con un botón "Seguir" funcional.
-          Ninguna tiene fuente de datos real todavía. Ambas quedan anotadas en
-          docs/LAUNCH-CHECKLIST.md para construirse de verdad (Nextdoor sí las
-          tiene: temas activos por zona y "vecinos que quizá conoces"). Hasta
-          entonces no se muestra nada: el feed gana ancho y no se miente.
-          La rejilla de arriba pierde su última columna en consecuencia. */}
+      {/* Rail derecho — vuelve el 2026-08-04, con datos REALES.
+          Se había retirado entero el 2026-07-29 porque sus dos tarjetas eran
+          fabricadas (regla #8): "Tendencias" con hashtags y conteos inventados
+          (#TaqueríasHTX · 156 publicaciones…) y "Vecinos sugeridos" con tres
+          personas que no existen (Ana E., Roberto M., Sofía L.) y un botón
+          Seguir funcional. Vuelve solo la mitad que se sostiene:
+            · Vecinos → RPC `neighbors_nearby` (migración 0143): gente que SÍ ha
+              publicado en tu radio y a la que aún no sigues.
+            · Tendencias → NO se reconstruye. No hay hashtags en el modelo de
+              datos; cualquier cifra sería inventada otra vez. Sigue anotado en
+              docs/LAUNCH-CHECKLIST.md.
+          Solo desde 1280px: por debajo, la tercera columna dejaría el feed en
+          unos 400px. */}
+      <aside className="sticky top-[130px] hidden flex-col gap-[18px] xl:flex">
+        <VecinosCerca vecinos={vecinos} onOpen={setVecino} />
+      </aside>
 
       {/* comment thread */}
       <Overlay open={!!threadPost || linkedMissing} onClose={closeThread} width={520} fullHeightSheet>
