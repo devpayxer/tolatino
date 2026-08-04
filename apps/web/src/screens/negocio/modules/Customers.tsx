@@ -263,6 +263,10 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // the fixtures). Orders live in the mutable `orders` state below (the advance
   // button edits them), so only Clientes needs its own real/fixture switch here.
   const [realCustomers, setRealCustomers] = useState<Customer[] | null>(null);
+  // «No cargó» no es «no tienes». (Auditoría de Negocios, 2026-08-04.)
+  const [falloPedidos, setFalloPedidos] = useState(false);
+  const [falloClientes, setFalloClientes] = useState(false);
+  const [falloResenas, setFalloResenas] = useState(false);
   const customers = realCustomers ?? [];
 
   // ---- state ----------------------------------------------------------------
@@ -315,6 +319,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
+      setFalloResenas(!!error);
       const rows = error || !Array.isArray(data) ? [] : (data as ReviewRow[]);
       const mapped = rows.map((r, i) => rowToReview(r, i, es));
       setRealReviews(mapped);
@@ -341,6 +346,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
+      setFalloClientes(!!error);
       const rows = error || !Array.isArray(data) ? [] : (data as CustomerRow[]);
       setRealCustomers(rows.map((r, i) => rowToCustomer(r, i)));
     })();
@@ -363,6 +369,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
+      setFalloPedidos(!!error);
       const rows = error || !Array.isArray(data) ? [] : (data as OrderRow[]);
       rows.forEach((r) => seenOrderIds.current.add(r.id)); // don't re-toast orders already on screen
       setOrders(rows.map(rowToOrder));
@@ -900,7 +907,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-2">
             {orderList.length === 0 ? (
               <div className={`${cardCls} p-9 text-center md:col-span-2`}>
-                <div className="text-[13px] font-semibold text-muted">{L('No hay pedidos en este estado.', 'No orders in this status.')}</div>
+                <div className="text-[13px] font-semibold text-muted">{falloPedidos ? L('No pudimos cargar tus pedidos. Revisa tu conexión.', "We couldn't load your orders. Check your connection.") : L('No hay pedidos en este estado.', 'No orders in this status.')}</div>
               </div>
             ) : (
               orderList.map((o) => {
@@ -1098,7 +1105,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="flex flex-col gap-3">
           {reviewList.length === 0 ? (
             <div className={`${cardCls} p-9 text-center`}>
-              <div className="text-[13px] font-semibold text-muted">{L('No hay reseñas con este filtro.', 'No reviews for this filter.')}</div>
+              <div className="text-[13px] font-semibold text-muted">{falloResenas ? L('No pudimos cargar tus reseñas. Revisa tu conexión.', "We couldn't load your reviews. Check your connection.") : L('No hay reseñas con este filtro.', 'No reviews for this filter.')}</div>
             </div>
           ) : (
             reviewList.map((r) => {

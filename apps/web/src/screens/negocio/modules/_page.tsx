@@ -75,3 +75,25 @@ export function Toast({ msg }: { msg: string }) {
     </div>
   );
 }
+
+/**
+ * «No pudimos cargar esto» — el aviso honesto de una consulta que falló.
+ *
+ * POR QUÉ EXISTE: la auditoría de Negocios (2026-08-04) encontró 14 lecturas del
+ * panel que, al fallar, escribían una lista VACÍA. El dueño leía «Sin pedidos en
+ * este filtro» o «Sin citas» cuando en realidad la consulta se había caído — y en
+ * un panel de negocio eso no es cosmético: quien ve «0 pedidos» no cocina.
+ * Se pinta ARRIBA del listado, sin borrar lo que ya hubiera en pantalla.
+ */
+export function FalloCarga({ msg, onReintentar }: { msg: string; onReintentar?: () => void }) {
+  return (
+    <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 rounded-field border border-[#F3C9D6] bg-pink-bg px-3.5 py-2.5 text-[12.5px] font-bold text-pink-dark">
+      <span>{msg}</span>
+      {onReintentar && (
+        <button onClick={onReintentar} className="tap-y ml-auto cursor-pointer rounded-btn bg-white px-3 py-1.5 text-[12px] font-extrabold text-ink shadow-card">
+          {msg.startsWith('We') || msg.startsWith("Couldn") ? 'Retry' : 'Reintentar'}
+        </button>
+      )}
+    </div>
+  );
+}

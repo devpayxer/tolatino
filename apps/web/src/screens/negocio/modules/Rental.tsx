@@ -211,6 +211,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ── incoming customer rental ORDERS (business_rental_orders, 0097) ─────────
   const [reqRows, setReqRows] = useState<RentalReq[] | null>(null);
+  const [falloRentas, setFalloRentas] = useState(false);
   useEffect(() => {
     if (!persistable || !real || !supabase) { setReqRows(null); return; }
     let cancelled = false;
@@ -221,7 +222,12 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
-      const rows: RentalReq[] = error || !Array.isArray(data) ? [] : (data as Record<string, unknown>[]).map((o) => {
+      // Un fallo NO es «no hay solicitudes». Se marca; y NO se deja `null`, porque
+      // `reqRows ?? reqSeed` caería en los datos de EJEMPLO — enseñar rentas
+      // inventadas como si fueran suyas sería peor que enseñar la lista vacía.
+      setFalloRentas(!!error);
+      if (error || !Array.isArray(data)) { setReqRows((prev) => prev ?? []); return; }
+      const rows: RentalReq[] = (data as Record<string, unknown>[]).map((o) => {
         const lines = Array.isArray(o.business_rentals) ? (o.business_rentals as { item_name: string; qty: number }[]) : [];
         return {
           id: String(o.id), customer_name: (o.customer_name as string) ?? null,
@@ -1094,7 +1100,9 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       {/* the pipeline, grouped by what YOU need to do next */}
       {opsPending.length + opsConfirmed.length + opsInUse.length + opsHistory.length === 0 ? (
-        <div className={`${cardCls} p-8 text-center text-[12.5px] font-semibold text-muted`}>{L('Sin rentas por ahora. Cuando un cliente rente, aparece aquí para manejarla paso a paso.', 'No rentals yet. When a customer rents, it shows here to manage step by step.')}</div>
+        <div className={`${cardCls} p-8 text-center text-[12.5px] font-semibold text-muted`}>{falloRentas
+          ? L('No pudimos cargar tus rentas. Revisa tu conexión y vuelve a entrar.', "We couldn't load your rentals. Check your connection and come back.")
+          : L('Sin rentas por ahora. Cuando un cliente rente, aparece aquí para manejarla paso a paso.', 'No rentals yet. When a customer rents, it shows here to manage step by step.')}</div>
       ) : (
         <div className="flex flex-col gap-5">
           {opsGroup(L('Acción necesaria', 'Needs action'), L('Confírmala o recházala', 'Confirm or decline'), opsPending, 'bg-amber')}

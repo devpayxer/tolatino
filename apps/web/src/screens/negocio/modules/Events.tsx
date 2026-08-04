@@ -115,6 +115,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [cancelBusy, setCancelBusy] = useState(false);
   const [attendeeQuery, setAttendeeQuery] = useState('');
   const [ticketRows, setTicketRows] = useState<TicketRow[] | null>(null);
+  // «No cargó» no es «no tienes». (Auditoría de Negocios, 2026-08-04.)
+  const [falloEventos, setFalloEventos] = useState(false);
   const [wizStep, setWizStep] = useState(0);
   const [wizMax, setWizMax] = useState(0);
   const [wizBusy, setWizBusy] = useState(false); // publishing in flight (blocks double-submit)
@@ -276,6 +278,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         .eq('event_id', mgEv.dbId)
         .order('created_at', { ascending: false });
       if (cancelled) return;
+      setFalloEventos(!!error);
       setTicketRows(error || !Array.isArray(data) ? [] : (data as unknown as TicketRow[]));
     })();
     return () => { cancelled = true; };
@@ -366,6 +369,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     (async () => {
       const { data, error } = await supabase!.from('event_tiers').select('id,name_es,name_en,price,capacity,sold,sort,visible,seat').eq('event_id', mgEv.dbId).order('sort');
       if (cancelled) return;
+      setFalloEventos((f) => f || !!error);
       setTierList(error || !Array.isArray(data) ? [] : (data as unknown as EventTier[]));
     })();
     return () => { cancelled = true; };
@@ -810,7 +814,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="grid items-start gap-3 xl:grid-cols-2">
       <div className={`${cardCls} p-3.5`}>
         <div className="mb-2.5 text-[12.5px] font-extrabold text-ink">{L('Ventas por nivel', 'Sales by tier')}</div>
-        {displayTiers.length === 0 && <div className="py-3 text-[11.5px] font-semibold text-muted-2">{L('Aún no hay niveles de boleto.', 'No ticket tiers yet.')}</div>}
+        {displayTiers.length === 0 && <div className="py-3 text-[11.5px] font-semibold text-muted-2">{falloEventos ? L('No pudimos cargar los niveles. Revisa tu conexión.', "We couldn't load the tiers. Check your connection.") : L('Aún no hay niveles de boleto.', 'No ticket tiers yet.')}</div>}
         {displayTiers.map((r) => (
           <div key={r.id} className="py-1.5">
             <div className="mb-1.5 flex justify-between">
@@ -869,7 +873,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: a.used ? '#E3F5EA' : a.refunded ? '#FDE7EF' : '#F1EFFA', color: a.used ? '#1F8A4C' : a.refunded ? '#D6336C' : '#9A96AE' }}>{a.used ? L('Ingresó', 'Checked in') : a.refunded ? L('Reembolsado', 'Refunded') : L('Confirmado', 'Going')}</span>
             </div>
           ))}
-          {realAttendees.length === 0 && <div className="col-span-full rounded-btn-lg border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{aq ? L('Sin resultados', 'No results') : L('Aún no hay asistentes. Aparecerán aquí cuando compren boletos.', 'No attendees yet. They show up here once they buy tickets.')}</div>}
+          {realAttendees.length === 0 && <div className="col-span-full rounded-btn-lg border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{aq ? L('Sin resultados', 'No results') : falloEventos ? L('No pudimos cargar tus asistentes. Revisa tu conexión.', "We couldn't load your attendees. Check your connection.") : L('Aún no hay asistentes. Aparecerán aquí cuando compren boletos.', 'No attendees yet. They show up here once they buy tickets.')}</div>}
         </div>
       ) : (
         <div className="grid gap-2.5 md:grid-cols-2">
@@ -945,7 +949,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div>
         <div className="mb-2.5 px-0.5 text-[12px] font-extrabold text-ink">{L('Boletos', 'Tickets')} · {ticketsSold}</div>
         {(ticketRows ?? []).length === 0 ? (
-          <div className="rounded-btn-lg border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{L('Aún no hay boletos vendidos.', 'No tickets sold yet.')}</div>
+          <div className="rounded-btn-lg border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{falloEventos ? L('No pudimos cargar tus boletos. Revisa tu conexión.', "We couldn't load your tickets. Check your connection.") : L('Aún no hay boletos vendidos.', 'No tickets sold yet.')}</div>
         ) : (
           <div className="flex flex-col gap-2">
             {(ticketRows ?? []).map((t) => {

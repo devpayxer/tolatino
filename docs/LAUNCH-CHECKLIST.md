@@ -184,6 +184,29 @@
        pedido y avisos, ese techo llega rápido. Migrar son cuatro campos.
      - **`no-reply@` no recibe.** Cuando haya buzón real en el dominio, cambiarlo
        por una dirección que sí lea a alguien.
+- [ ] **🔴 AUDITORÍA DE NEGOCIOS (2026-08-04) — EN CURSO.** ~27.000 líneas entre
+  el panel del negocio (33 archivos), la ficha pública y el `/negocios` del
+  cliente. Se audita **por clases**, no por pantallas. Van **3 de 10**:
+  1. ~~**Dinero.**~~ 🔴 **Un comprador podía ponerle el precio a su propio
+     pedido**: 3 platos de $45 registrados como $0,01 (ataque real, no lectura de
+     código). Lo mismo con el total de las reservas. El pedido con TARJETA sí se
+     preciaba en el servidor; el de EFECTIVO lo insertaba el navegador. Cerrado en
+     `0142` + la función de pago: el efectivo pasa por la MISMA implementación de
+     precios, y el modelo canónico (¿tiene Stripe? → en línea; si no → en el
+     local) lo decide ahora el SERVIDOR. Guardián `auditar_precio_del_comprador()`.
+  2. ~~**La app finge éxito.**~~ Siete sitios del panel pintaban el cambio,
+     tiraban el error y anunciaban «listo»: confirmar una CITA, el estado de una
+     RENTA, rechazar un PEDIDO (lo anunciaba antes de esperar la escritura),
+     notas de cliente, portada y borrado de FOTOS, niveles de BOLETOS (precio y
+     aforo), y «Conectar con Stripe», que no hacía nada visible al fallar — ese
+     módulo no tenía forma de avisar de nada. Un patrón único: `lib/escribir.ts`.
+  3. ~~**«No hay nada» vs «no cargó».**~~ 14 lecturas convertían un fallo en una
+     lista vacía: el dueño leía «Sin pedidos», «Sin citas», «Sin rentas» con la
+     consulta caída. En un panel de negocio quien ve «0 pedidos» no cocina.
+  **Faltan 7 clases:** permisos/RLS, datos fabricados, visibilidad de módulos en
+  la ficha, escala (índices, N+1, paginación), móvil (44px y desbordes), idioma,
+  y stubs presentados como terminados. Y las tandas B (vender y cobrar), C
+  (operar) y D (eventos) sin barrer del todo.
 - [x] **✅ 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — LAS 23 CERRADAS.** Comunidad
   queda lista salvo lo que dependa del fundador (ver más abajo). 56 agentes, 8
   clases, 2.055 herramientas ejecutadas; 47 hallazgos, 7 refutados. Cerradas en

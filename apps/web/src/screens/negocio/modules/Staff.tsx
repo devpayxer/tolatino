@@ -136,6 +136,8 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   void isPremium; void ci; // ctx destructured per module contract; not all fields used here
   const salon = ctx.rubro === 'beauty';
 
+  const [falloEquipo, setFalloEquipo] = useState(false);
+
   const [mode, setMode] = useState<Mode>(tab === 'jobs' ? 'jobs' : 'staff');
   const [stabStaff, setStabStaff] = useState<StaffTab>('roster');
   const [stabJobs, setStabJobs] = useState<JobTab>('jobs');
@@ -182,6 +184,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         .eq('business_id', real.id)
         .order('created_at', { ascending: true });
       if (cancelled) return;
+      setFalloEquipo(!!error);
       const rows = error || !Array.isArray(data) ? [] : (data as unknown as StaffRow[]);
       setMembers(rows.map(rowToMember));
     })();
@@ -201,6 +204,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         .eq('business_id', real.id)
         .order('created_at', { ascending: false });
       if (cancelled) return;
+      setFalloEquipo((f) => f || !!error);
       const rows = error || !Array.isArray(data) ? [] : (data as unknown as JobRow[]);
       setJobs(rows.map(rowToJob));
     })();
@@ -516,7 +520,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           {timeRaw.length === 0 && (
             <div className="py-6 text-center">
-              <div className="text-[12.5px] font-extrabold text-ink">{L('Aún no hay registros de asistencia', 'No attendance records yet')}</div>
+              <div className="text-[12.5px] font-extrabold text-ink">{falloEquipo ? L('No pudimos cargar los registros. Revisa tu conexión.', "We couldn't load the records. Check your connection.") : L('Aún no hay registros de asistencia', 'No attendance records yet')}</div>
               <div className="mt-1 text-[11px] font-semibold text-muted">
                 {L('El fichaje de entrada y salida estará disponible pronto.', 'Clock in/out is coming soon.')}
               </div>

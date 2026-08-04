@@ -198,9 +198,14 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     supabase.from('business_bookings')
       .select('id,service_name,customer_name,party_size,starts_at,status,deposit,notes,created_at,duration_min,staff_id,staff_name,addons,variant,total,customer_phone')
       .eq('business_id', real.id).order('starts_at', { ascending: true })
-      .then(({ data, error }) => setBookingRows(error || !Array.isArray(data) ? [] : (data as unknown as BookingRow[])));
+      .then(({ data, error }) => {
+        // Un fallo NO es «no tienes citas»: se marca y el vacío lo dice.
+        setFalloCitas(!!error);
+        if (!error && Array.isArray(data)) setBookingRows(data as unknown as BookingRow[]);
+      });
   };
   useEffect(() => { reloadBookings(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [real?.id, admin.demo]);
+  const [falloCitas, setFalloCitas] = useState(false);
   const setBookingStatus = async (id: string, status: BkStatus) => {
     // El error se TIRABA y se anunciaba «Reserva actualizada» pasara lo que
     // pasara: el dueño veía una cita confirmada que el cliente nunca recibió.
@@ -1098,7 +1103,9 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       )}
 
       {bkList.length === 0 ? (
-        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{bookingRows == null ? L('Reservas de ejemplo — las reales de tus clientes aparecerán aquí.', 'Sample bookings — your real customer bookings appear here.') : L('Sin citas en este día/filtro.', 'No appointments for this day/filter.')}</div>
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{falloCitas
+          ? L('No pudimos cargar tus citas. Revisa tu conexión y vuelve a entrar.', "We couldn't load your appointments. Check your connection and come back.")
+          : bookingRows == null ? L('Reservas de ejemplo — las reales de tus clientes aparecerán aquí.', 'Sample bookings — your real customer bookings appear here.') : L('Sin citas en este día/filtro.', 'No appointments for this day/filter.')}</div>
       ) : (
         <div className="grid gap-2.5 md:grid-cols-2">
           {bkList.map((b) => {
