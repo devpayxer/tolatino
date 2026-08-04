@@ -4,7 +4,7 @@
 // bell · publish · avatar, plus the horizontal 7-category bar and the live
 // grouped search-suggestions dropdown.
 
-import { useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { IconBell as Bell, IconBriefcase as Briefcase, IconCalendar as Calendar, IconCar as Car, IconHome as Home, IconMapPin as MapPin, IconPlus as Plus, IconSearch as Search, IconBuildingStore as Store, IconClock as Clock, IconTruck as Truck, IconUsers as Users, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
@@ -45,30 +45,52 @@ export function LangToggle({ mini = false }: { mini?: boolean }) {
 
 function SearchBox({ mobile = false }: { mobile?: boolean }) {
   const { L } = useLang();
-  const { query, setQuery, setSearch } = useApp();
+  const { query, setQuery, setSearch, setSearchOpen } = useApp();
   const router = useRouter();
+  const campo = useRef<HTMLInputElement>(null);
   const commit = () => {
     if (!query.trim()) return;
-    setSearch(query.trim());
+    setSearch(query.trim());   // guarda en el historial y cierra el desplegable
     setQuery('');
+    campo.current?.blur();     // en el teléfono, además, baja el teclado
     router.push(VIEW_PATH.negocios);
   };
   return (
-    <div
+    // FORMULARIO de verdad, no un div. En el teléfono esto es la diferencia
+    // entre que la búsqueda funcione y que no: sin `form`, iOS pinta un simple
+    // retorno de carro y —peor— trataba el campo como si fuera de acceso, con la
+    // barra de autorrelleno de contraseñas encima del teclado comiéndose la
+    // pulsación. Con `form` + `enterKeyHint`, la tecla dice «buscar» y envía.
+    // Lo reportó el fundador el 2026-08-04: escribir y dar a Enter no guardaba
+    // nada, porque el Enter no llegaba nunca.
+    <form
+      onSubmit={(e) => { e.preventDefault(); commit(); }}
+      role="search"
+      data-buscador
       className={`flex min-w-0 items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-[13px] ${
         mobile ? 'py-[10px]' : 'w-full max-w-[520px] py-[9px]'
       }`}
     >
       <Search size={16} className="flex-none text-primary" stroke={2.2} />
       <input
+        ref={campo}
+        type="search"
+        name="busqueda"
+        enterKeyHint="search"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        aria-label={L('Buscar', 'Search')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && commit()}
+        onFocus={() => setSearchOpen(true)}
         placeholder={L('Busca tacos, mecánico, salón…', 'Search tacos, mechanic, salon…')}
-        className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] font-medium text-ink outline-none placeholder:text-muted"
+        className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] font-medium text-ink outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
       />
       {query.length > 0 && (
         <button
+          type="button"
           onClick={() => setQuery('')}
           className="flex h-5 w-5 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-line"
           aria-label={L('Borrar la búsqueda', 'Clear search')}
@@ -76,7 +98,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
           <X size={9} stroke={3.4} className="text-ink-2" />
         </button>
       )}
-    </div>
+    </form>
   );
 }
 
@@ -96,7 +118,7 @@ const CAJA = 'absolute left-1/2 top-[calc(100%+6px)] z-[45] max-h-[340px] w-[cal
 
 function SearchDropdown() {
   const { L } = useLang();
-  const { query, setQuery, setSearch, city, coords } = useApp();
+  const { query, setQuery, setSearch, searchOpen, setSearchOpen, city, coords } = useApp();
   const { businesses: BUSINESSES, events: EVENTS, posts: POSTS } = useLiveData();
   const router = useRouter();
   // Full-catalog business suggestions via server FTS (same RPC the Negocios
@@ -178,11 +200,34 @@ function SearchDropdown() {
     return () => { cancelado = true; clearTimeout(t); };
   }, [query, pocosResultados]);
 
+  // Tocar fuera o pulsar Escape cierra el desplegable. `pointerdown` y no
+  // `click`: si se esperara al click, el botón de dentro se cerraría antes de
+  // recibir su propia pulsación.
+  useEffect(() => {
+    if (!searchOpen) return;
+    const fuera = (e: PointerEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t?.closest?.('[data-buscador]')) setSearchOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setSearchOpen(false); };
+    document.addEventListener('pointerdown', fuera, true);
+    document.addEventListener('keydown', esc, true);
+    return () => {
+      document.removeEventListener('pointerdown', fuera, true);
+      document.removeEventListener('keydown', esc, true);
+    };
+  }, [searchOpen, setSearchOpen]);
+
   const ql = query.trim().toLowerCase();
+
+  // Cerrado = no se pinta nada. Antes «sin texto» bastaba para no pintar; al
+  // añadir las recientes eso dejó de ser cierto y el desplegable se quedaba
+  // encima de los resultados después de buscar.
+  if (!searchOpen) return null;
 
   const go = (view: 'comunidad' | 'negocios' | 'eventos') => {
     const q = query.trim();
-    setSearch(q);          // `setSearch` ya guarda el historial (ver lib/state)
+    setSearch(q);          // guarda el historial y cierra el desplegable
     setSello((n) => n + 1);
     setQuery('');
     router.push(VIEW_PATH[view]);
@@ -193,7 +238,7 @@ function SearchDropdown() {
   if (!ql) {
     if (recientes.length === 0) return null;
     return (
-      <div className={CAJA}>
+      <div className={CAJA} data-buscador>
         <div className="flex items-baseline justify-between px-2.5 pb-1 pt-2">
           <span className="text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2">
             {L('Búsquedas recientes', 'Recent searches')}
@@ -246,7 +291,7 @@ function SearchDropdown() {
   ];
 
   return (
-    <div className={CAJA}>
+    <div className={CAJA} data-buscador>
       {groups.filter((g) => g.count > 0).map((g) => (
         <div key={g.label}>
           <div className="px-2.5 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2">

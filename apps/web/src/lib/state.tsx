@@ -26,6 +26,12 @@ type AppCtx = {
   coords: Coords;
   setCity: (c: string) => void;
   setCityWithCoords: (label: string, coords: Coords) => void;
+  /** ¿Está el buscador activo? El desplegable (recientes o sugerencias) solo se
+   *  pinta cuando lo está. Vive aquí, y no dentro del buscador, porque la caja y
+   *  el desplegable son hermanos y se pintan en DOS sitios (la fila de móvil y
+   *  la barra de escritorio). */
+  searchOpen: boolean;
+  setSearchOpen: (v: boolean) => void;
   cityOpen: boolean;
   setCityOpen: (v: boolean) => void;
 
@@ -118,6 +124,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [addressCoords, setAddressCoords] = useState<Coords | null>(null);
   const [addressId, setAddressId] = useState<string | null>(null); // saved-address id when the origin is a saved one
+  const [searchOpen, setSearchOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [addressOpen, setAddressOpen] = useState(false);
   const [addressMode, setAddressMode] = useState<'global' | 'delivery'>('global');
@@ -227,6 +234,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setSearch = useCallback((v: string) => {
     setSearchRaw(v);
     guardarReciente(v);   // ignora lo vacío y lo de menos de 2 letras
+    // Confirmar una búsqueda CIERRA el buscador. Sin esto el desplegable se
+    // quedaba abierto encima de los resultados que acabas de pedir — lo
+    // reportó el fundador el 2026-08-04, y era mío: al añadir las recientes,
+    // «sin texto» dejó de significar «no mostrar nada» y pasó a significar
+    // «mostrar recientes», así que después de buscar reaparecía.
+    setSearchOpen(false);
   }, []);
   const [savedPosts, setSavedPosts] = useState<Toggles>({});
   const [recd, setRecd] = useState<Toggles>({});
@@ -265,6 +278,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAddressId(null);
         persistGeo(label, c, null, null, null);
       },
+      searchOpen,
+      setSearchOpen,
       cityOpen,
       setCityOpen,
       address,
@@ -352,7 +367,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       biz,
       setBiz,
     }),
-    [city, cityCoords, coords, address, addressCoords, addressId, cityOpen, addressOpen, addressMode, deliveryAddrId, query, search, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, pubSeed, newPosts, postSeq, biz],
+    [city, cityCoords, coords, address, addressCoords, addressId, searchOpen, cityOpen, addressOpen, addressMode, deliveryAddrId, query, search, savedPosts, recd, going, followed, pollVotes, waitDone, notifOpen, notifRead, unreadCount, feedView, userOpen, pubOpen, pubType, pubSeed, newPosts, postSeq, biz],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
