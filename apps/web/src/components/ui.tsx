@@ -213,6 +213,17 @@ export function Overlay({
   // no se anunciaba nada. (2ª auditoría de Comunidad, 2026-08-03.)
   const caja = useRef<HTMLDivElement>(null);
   const focoPrevio = useRef<HTMLElement | null>(null);
+  // `onClose` llega casi siempre como una flecha nueva en cada render del padre
+  // (`onClose={close}` con `const close = () => …`). Si el efecto dependiera de
+  // ella, se DESMONTARÍA Y VOLVERÍA A MONTAR en cada render — y su limpieza
+  // devuelve el foco al elemento anterior. Resultado: escribías una letra, el
+  // padre re-renderizaba, y el foco saltaba fuera del campo; en el teléfono se
+  // cerraba el teclado y en escritorio había que volver a hacer clic tras cada
+  // letra. Por eso el manejador vive en una ref y el efecto solo depende de
+  // `open`. (Regresión mía del 2026-08-03 al convertir la hoja en diálogo;
+  // reportada por el fundador el 2026-08-04.)
+  const alCerrar = useRef(onClose);
+  alCerrar.current = onClose;
   useEffect(() => {
     if (!open) return;
     focoPrevio.current = document.activeElement as HTMLElement | null;
@@ -224,7 +235,7 @@ export function Overlay({
       (foco ?? c).focus({ preventScroll: true });
     }, 0);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); return; }
+      if (e.key === 'Escape') { e.stopPropagation(); alCerrar.current(); return; }
       if (e.key !== 'Tab') return;
       const c = caja.current;
       if (!c) return;
@@ -242,7 +253,9 @@ export function Overlay({
       document.removeEventListener('keydown', onKey, true);
       focoPrevio.current?.focus?.({ preventScroll: true });
     };
-  }, [open, onClose]);
+    // OJO: `onClose` NO va aquí a propósito — ver la nota de `alCerrar` arriba.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   if (!open) return null;
   const desktopAlign =
     align === 'right'

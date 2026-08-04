@@ -253,16 +253,59 @@ try {
   demoMsg = `  Panel: no se pudo comprobar (${e.message})`;
 }
 
+// ── Guardián: un efecto NO puede depender de una función que llega por prop ──
+// De dónde sale: el 2026-08-04 el fundador reportó que solo podía escribir UNA
+// letra — en el móvil se le cerraba el teclado y en escritorio tenía que volver
+// a hacer clic tras cada tecla. Causa: el efecto de `Overlay` (trampa de foco,
+// Escape, devolver el foco al cerrar) llevaba `onClose` en sus dependencias.
+// Casi todos los padres pasan `onClose={close}` con `const close = () => …`,
+// que es una función NUEVA en cada render; el efecto se desmontaba y volvía a
+// montarse con cada letra, y su limpieza devolvía el foco al elemento anterior.
+//
+// La regla: si un efecto lista una prop con forma de manejador (`onAlgo`), o
+// bien esa función viene memorizada, o el efecto se re-monta sin control. Se
+// resuelve guardando el manejador en una ref y dejando fuera la dependencia.
+const efectoFail = [];
+let efectoMsg = '';
+try {
+  const raiz = new URL('..', import.meta.url).pathname;
+  const base = join(raiz, 'apps/web/src');
+  const archivos = walk(base).filter((f) => /\.tsx?$/.test(f));
+  const deps = /\}\s*,\s*\[([^\]]*)\]\s*\)\s*;/g;
+  for (const f of archivos) {
+    const src = readFileSync(f, 'utf8');
+    for (const m of src.matchAll(deps)) {
+      const lista = m[1].split(',').map((d) => d.trim()).filter(Boolean);
+      const malas = lista.filter((d) => /^on[A-Z]\w*$/.test(d));
+      if (malas.length) {
+        efectoFail.push({ archivo: f.slice(base.length + 1), linea: src.slice(0, m.index).split('\n').length, malas });
+      }
+    }
+  }
+  efectoMsg = `  Efectos: ${archivos.length} archivos revisados`
+    + (efectoFail.length ? '' : ', ninguno depende de un manejador recibido por prop');
+} catch (e) {
+  efectoMsg = `  Efectos: no se pudo comprobar (${e.message})`;
+}
+
 // ── Reporte ─────────────────────────────────────────────────────────────────
 console.log(`\nverify-build · ${jsFiles.length} archivos JS, ${htmlFiles.length} HTML en ${OUT}`);
 console.log(envMsg);
 console.log(stripeMsg);
 console.log(kindsMsg);
 console.log(demoMsg);
+console.log(efectoMsg);
 for (const { nombre, ruta, faltan } of kindsFail) {
   console.error(`\n  ✖ ${faltan.length} tipo(s) que la base emite y ${nombre} NO sabe dibujar:`);
   console.error(`      ${faltan.join(', ')}`);
   console.error(`      → añade un \`case\` para cada uno en ${ruta}`);
+}
+
+for (const e of efectoFail) {
+  console.error(`\n  ✖ ${e.archivo}:${e.linea}: un efecto depende de \`${e.malas.join('`, `')}\` (prop manejadora).`);
+  console.error('      → el padre casi siempre pasa una flecha nueva en cada render: el efecto');
+  console.error('        se re-monta con cada tecla y su limpieza roba el foco del campo.');
+  console.error('        Guarda el manejador en una ref y sácalo de las dependencias.');
 }
 
 for (const d of demoFail) {
@@ -270,7 +313,7 @@ for (const d of demoFail) {
   console.error('      → el valor inicial debe ser vacío; que el cargador decida si toca demo.');
 }
 
-if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0) {
+if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0) {
   console.log('\n✅ Sin datos fabricados, sin secretos y con la base correcta.\n');
   process.exit(0);
 }
