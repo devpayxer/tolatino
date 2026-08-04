@@ -553,14 +553,35 @@
      que cualquier cifra que se pintara volvería a ser inventada. Requiere decidir
      antes de dónde sale el tema: ¿hashtags que el usuario escribe? ¿categoría del
      post? ¿palabras frecuentes? Ninguna de las tres existe todavía.
-  2. ~~**Vecinos sugeridos**~~ — **HECHO (2026-08-04).** Migración `0143`: RPC
+  2. **Vecinos sugeridos** — **construido y RETIRADO el mismo día (2026-08-04),
+     por decisión del fundador.** Se hizo de verdad: migración `0143`, RPC
      `neighbors_nearby` (`SECURITY DEFINER`), que sale de `posts` — donde el nombre,
      las iniciales, el color y el barrio ya van desnormalizados — y NO toca
-     `profiles`, así que las coordenadas de la casa de nadie se quedan donde estaban.
-     Excluye a uno mismo, a quien ya sigues, a quien bloqueaste y a quien te bloqueó
-     (los dos sentidos: la política de `user_blocks` solo deja ver los bloqueos
-     propios, por eso hace falta DEFINER). Sin sesión no devuelve nada; `anon` no
-     tiene permiso de ejecución. Se pinta en `VecinosCerca` a partir de 1280px.
+     `profiles`, así que las coordenadas de la casa de nadie se leen. Excluye a uno
+     mismo, a quien ya sigues, a quien bloqueaste y a quien te bloqueó (los dos
+     sentidos: la política de `user_blocks` solo deja ver los bloqueos propios, por
+     eso hace falta DEFINER). Sin sesión no devuelve nada; `anon` no tiene permiso.
+     **El fundador prefirió que esa columna trabajara para el negocio** (negocios
+     destacados + invitación a publicar + eventos próximos), así que la tarjeta se
+     quitó. **El RPC sigue aplicado en pruebas y en el repo (`0143`), listo para
+     reusar** si algún día se quiere «descubrir vecinos» en otra superficie. Si se
+     repone, el componente está en el historial de git (`VecinosCerca.tsx`).
+
+- [x] ~~La columna derecha de Comunidad en escritorio.~~ **RESUELTA (2026-08-04).**
+  Lleva dos bloques, los dos con datos que la pantalla ya tenía cargados (cero
+  consultas nuevas):
+  1. **Negocios destacados** — orden definido, no a ojo: verificados primero
+     (`tier <> 'free'`), dentro de cada grupo quien tiene reseñas antes que quien
+     no, luego mejor calificación y más reseñas. Lo segundo importa: sin ello un
+     negocio recién dado de alta con 0 reseñas encabezaba la lista por una
+     calificación que nadie le había puesto. Debajo, la invitación a publicar el
+     propio negocio → `/negocio/publicar`.
+  2. **Eventos próximos** — `events_near` ya devuelve solo lo que no ha terminado,
+     ordenado por fecha, así que «los próximos» son los primeros. Sin eventos la
+     tarjeta no se pinta.
+  **Pendiente cuando haya monetización:** hoy «destacado» NO se puede comprar. Si
+  algún día se vende ese puesto, hay que etiquetarlo como promocionado a la vista
+  (Yelp y Google lo marcan; ocultarlo sería engañar al lector).
 - [x] ~~Decidir: el hero de la landing muestra un negocio de ejemplo inventado.~~
   **RESUELTO (2026-08-02):** la portada oficial no tiene tarjetas decorativas de
   negocio. Lo único con datos es la tarjeta del feed, y lee publicaciones REALES.

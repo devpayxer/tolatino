@@ -1,7 +1,7 @@
 'use client';
 
 // Comunidad (`/comunidad`) — Nextdoor-style home of the app (Handoff v2).
-// Desktop: barrios rail / feed / tendencias+vecinos. Mobile: single column.
+// Escritorio: barrios / feed / negocios destacados + eventos. Móvil: una columna.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSend as Send, IconBuildingStore as Store, IconX as X } from '@tabler/icons-react';
@@ -20,8 +20,7 @@ import { Avatar, Card, EmptyState, Overlay, SkeletonList, YouAvatar } from '@/co
 import { SearchChip } from '@/components/AppHeader';
 import { PostCard } from '@/components/PostCard';
 import { ProfileNav } from '@/components/ProfileNav';
-import { VecinosCerca } from '@/components/VecinosCerca';
-import { useNeighborsNearby } from '@/lib/vecinos';
+import { NegociosDestacados, EventosProximos } from '@/components/RailComunidad';
 import { bizTile, hoodsForCity, type Comment, type Post } from '@/data/fixtures';
 import { useLiveData } from '@/lib/live';
 import { COMMUNITY_RADIUS_M, mapPost, relTime, type PostRow } from '@/lib/posts';
@@ -93,7 +92,7 @@ export function ComunidadScreen() {
   const auth = useAuth();
   const it = useInteractions();
   const follows = useFollows();
-  const { posts: POSTS, businesses: BUSINESSES, loading: liveLoading, failed: liveFailed } = useLiveData();
+  const { posts: POSTS, businesses: BUSINESSES, events: EVENTS, loading: liveLoading, failed: liveFailed } = useLiveData();
   const [hood, setHood] = useState('all');
 
   // thread state — the open post thread lives in the URL (?post=<id>) so a refresh
@@ -427,11 +426,6 @@ export function ComunidadScreen() {
     return [...new Set([...curated, ...fromData])];
   }, [app.cityShort, allPosts]);
   const hoodCount = (name: string) => allPosts.filter((p) => p.hoodEs === name).length;
-
-  // Columna derecha (escritorio ≥1280). Solo con sesión: el RPC no devuelve nada
-  // a un invitado, así que ni se pregunta. Mismo radio que el feed, para no
-  // sugerir a alguien a quien el usuario nunca vería publicar.
-  const { vecinos, loading: vecinosCargando } = useNeighborsNearby(cLat, cLng, COMMUNITY_RADIUS_M, !!auth.user);
 
   const baseFeed = homeMode ? allPosts : viewFeed;
   const byHood = homeMode && hood !== 'all' ? baseFeed.filter((p) => p.hoodEs === hood) : baseFeed;
@@ -889,18 +883,24 @@ export function ComunidadScreen() {
           fabricadas (regla #8): "Tendencias" con hashtags y conteos inventados
           (#TaqueríasHTX · 156 publicaciones…) y "Vecinos sugeridos" con tres
           personas que no existen (Ana E., Roberto M., Sofía L.) y un botón
-          Seguir funcional. Vuelve solo la mitad que se sostiene:
-            · Vecinos → RPC `neighbors_nearby` (migración 0143): gente que SÍ ha
-              publicado en tu radio y a la que aún no sigues.
+          Seguir funcional.
+
+          Qué lleva ahora, y por qué (decisión del fundador el mismo día): en vez
+          de sugerir vecinos, la columna trabaja para el negocio — «Negocios
+          destacados» con la invitación a publicar el tuyo, y debajo «Eventos
+          próximos». Las dos leen lo que `useLiveData` YA tiene cargado para esta
+          pantalla, así que no cuestan ni una consulta más.
             · Tendencias → NO se reconstruye. No hay hashtags en el modelo de
               datos; cualquier cifra sería inventada otra vez. Sigue anotado en
               docs/LAUNCH-CHECKLIST.md.
-          Solo desde 1280px: por debajo, la tercera columna dejaría el feed en
-          unos 400px. */}
+            · Vecinos sugeridos → construido y luego retirado de aquí a petición
+              del fundador. El RPC `neighbors_nearby` (migración 0143) se queda en
+              la base, listo para reusar.
+          Solo desde 1180px: por debajo, la tercera columna dejaría el feed
+          demasiado estrecho. */}
       <aside className="sticky top-[130px] hidden flex-col gap-[18px] min-[1180px]:flex">
-        {/* A un invitado no se le enseña ni siquiera el vacío: la tarjeta habla
-            de «tus vecinos» y sin sesión no hay tal cosa. */}
-        {auth.user && <VecinosCerca vecinos={vecinos} loading={vecinosCargando} onOpen={setVecino} />}
+        <NegociosDestacados negocios={BUSINESSES} />
+        <EventosProximos eventos={EVENTS} />
       </aside>
 
       {/* comment thread */}
