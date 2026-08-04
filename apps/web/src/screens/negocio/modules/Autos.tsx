@@ -300,7 +300,10 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [vehRows, setVehRows] = useState<MyVehicle[] | null>(null);
   const [leadRows, setLeadRows] = useState<MyLead[] | null>(null);
   const [testRows, setTestRows] = useState<MyTest[] | null>(null);
-  const [teamDemo, setTeamDemo] = useState<Member[]>(seedTeam);
+    // El estado inicial NO puede ser de ejemplo: se pinta antes de saber si
+  // hay negocio real, así que un dueño ve un instante el catálogo de otro.
+  // Quien decide es el cargador de abajo. (Auditoría de Negocios, 2026-08-04.)
+  const [teamDemo, setTeamDemo] = useState<Member[]>([]);
 
   // fetchMyVehicles has no owner filter (RLS also returns everyone's published
   // rows), so intersect with the signed-in owner's own vehicle ids — then scope

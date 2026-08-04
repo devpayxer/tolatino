@@ -164,7 +164,10 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const addonOf = (id: string) => cfg.addons.find((a) => a.id === id);
 
   // ── services (business_items kind='service') ───────────────────────────────
-  const [services, setServices] = useState<Svc[]>(DEMO_SVCS);
+    // El estado inicial NO puede ser de ejemplo: se pinta antes de saber si
+  // hay negocio real, así que un dueño ve un instante el catálogo de otro.
+  // Quien decide es el cargador de abajo. (Auditoría de Negocios, 2026-08-04.)
+  const [services, setServices] = useState<Svc[]>([]);
   useEffect(() => {
     if (!persistable || !real) { setServices(DEMO_SVCS); return; }
     let cancelled = false;

@@ -186,7 +186,7 @@
        por una dirección que sí lea a alguien.
 - [ ] **🔴 AUDITORÍA DE NEGOCIOS (2026-08-04) — EN CURSO.** ~27.000 líneas entre
   el panel del negocio (33 archivos), la ficha pública y el `/negocios` del
-  cliente. Se audita **por clases**, no por pantallas. Van **3 de 10**:
+  cliente. Se audita **por clases**, no por pantallas. Van **5 de 10**:
   1. ~~**Dinero.**~~ 🔴 **Un comprador podía ponerle el precio a su propio
      pedido**: 3 platos de $45 registrados como $0,01 (ataque real, no lectura de
      código). Lo mismo con el total de las reservas. El pedido con TARJETA sí se
@@ -203,9 +203,32 @@
   3. ~~**«No hay nada» vs «no cargó».**~~ 14 lecturas convertían un fallo en una
      lista vacía: el dueño leía «Sin pedidos», «Sin citas», «Sin rentas» con la
      consulta caída. En un panel de negocio quien ve «0 pedidos» no cocina.
-  **Faltan 7 clases:** permisos/RLS, datos fabricados, visibilidad de módulos en
-  la ficha, escala (índices, N+1, paginación), móvil (44px y desbordes), idioma,
-  y stubs presentados como terminados. Y las tandas B (vender y cobrar), C
+  4. ~~**Permisos.**~~ **Limpia** — y merece decirse: la tabla `businesses` es
+     solo-del-dueño y todo lo público sale de RPCs con lista explícita de
+     columnas, así que ni Stripe, ni ajustes, ni dueño, ni correo se escapan.
+     Ocho ataques reales, todos rechazados: renombrar el negocio de otro, borrar
+     sus fotos/equipo/novedades, ver sus clientes/pedidos/cobros, leer o inyectar
+     mensajes en una conversación ajena, hacerse pasar por el negocio en el chat,
+     dejar varias reseñas de 1★ en el mismo sitio, quedarse con el negocio
+     cambiando `owner_id`, crear un negocio a nombre de otro, y llamar a las
+     funciones de admin. Tres pruebas salieron «limpias» sin probar nada (la
+     tabla estaba vacía para ese negocio) y hubo que sembrar datos reales.
+  5. ~~**Datos fabricados.**~~ 🔴 «Entregas» abría con **cinco pedidos inventados**
+     —nombres, platillos y direcciones de Houston— porque el estado inicial era
+     `DEMO_ORDERS`. La auditoría de 2026-07-29 quitó los respaldos `?? DEMO` pero
+     dejó los estados INICIALES, que se pintan antes de saber si hay negocio real.
+     Eran **8 módulos**. Todos a vacío; la constante de pedidos, borrada.
+     **Guardián nuevo** en `verify-build`: rompe el build si un `useState` del
+     panel arranca con datos de ejemplo (probado inyectando la regresión), con
+     una excepción escrita para los `*Config`, que son categorías de arranque y
+     no datos de nadie.
+     **Aviso honesto:** la fuga PERSISTENTE la introduje yo en la clase 3 (al
+     dejar de pisar la lista al fallar, los ejemplos se quedaban fijos); lo
+     pre-existente era un parpadeo. Las dos están cerradas.
+
+  **Faltan 5 clases:** visibilidad de módulos en la ficha,
+  escala (índices, N+1, paginación), móvil (44px y desbordes), idioma, y stubs
+  presentados como terminados. Y las tandas B (vender y cobrar), C
   (operar) y D (eventos) sin barrer del todo.
 - [x] **✅ 2ª AUDITORÍA DE COMUNIDAD (2026-08-03) — LAS 23 CERRADAS.** Comunidad
   queda lista salvo lo que dependa del fundador (ver más abajo). 56 agentes, 8

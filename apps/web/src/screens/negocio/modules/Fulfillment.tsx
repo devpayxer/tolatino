@@ -83,18 +83,7 @@ type Fulfil = {
 };
 type OrderRow = { id: string; code: string | null; customer_name: string | null; items: OrderItem[]; total: number | null; channel: string; status: OStatus; created_at: string; fulfillment: Fulfil };
 
-const DEMO_ORDERS: OrderRow[] = [
-  { id: 'd1', code: '#2491', customer_name: 'Sofía R.', items: [{ name: 'Tacos al pastor', qty: 3 }, { name: 'Horchata', qty: 1 }], total: 18.5, channel: 'delivery', status: 'new', created_at: '', fulfillment: { address: '2140 Long Point Rd · Z1', dispatch: 'unassigned' } },
-  { id: 'd2', code: '#2490', customer_name: 'Juan M.', items: [{ name: 'Quesabirria (3)', qty: 1 }, { name: 'Consomé', qty: 1 }], total: 13, channel: 'delivery', status: 'preparing', created_at: '', fulfillment: { address: '5410 Bellaire Blvd · Z1', dispatch: 'unassigned' } },
-  { id: 'd3', code: '#2489', customer_name: 'Ana L.', items: [{ name: 'Torta ahogada', qty: 1 }, { name: 'Jamaica', qty: 2 }], total: 15.5, channel: 'delivery', status: 'ready', created_at: '', fulfillment: { address: '9203 Westheimer Rd · Z2', dispatch: 'unassigned' } },
-  { id: 'd4', code: '#2488', customer_name: 'Carlos V.', items: [{ name: 'Gringa', qty: 2 }], total: 14, channel: 'delivery', status: 'ready', created_at: '', fulfillment: { address: '711 Katy Fwy · Z2', dispatch: 'assigned', driver: 'Andrea V.' } },
-  { id: 'd5', code: '#2487', customer_name: 'Marco T.', items: [{ name: 'Combo familiar', qty: 1 }], total: 32, channel: 'delivery', status: 'ready', created_at: '', fulfillment: { address: '1200 McKinney St · Z3', dispatch: 'on_the_way', driver: 'Marco P.', eta: '8 min' } },
-  { id: 'd6', code: '#2482', customer_name: 'Lucía G.', items: [{ name: 'Tacos de suadero', qty: 4 }], total: 22, channel: 'delivery', status: 'completed', created_at: '', fulfillment: { address: '340 Waugh Dr · Z1', dispatch: 'delivered', driver: 'Diego R.' } },
-  { id: 's1', code: '#S-118', customer_name: 'Elena V.', items: [{ name: 'Mermelada 6oz', qty: 3 }, { name: 'Aceite de oliva', qty: 1 }], total: 66, channel: 'ship', status: 'new', created_at: '', fulfillment: { address: 'Austin, TX 78701', ship: 'to_pack' } },
-  { id: 's2', code: '#S-117', customer_name: 'Robert K.', items: [{ name: 'Libro de recetas', qty: 1 }], total: 42, channel: 'ship', status: 'preparing', created_at: '', fulfillment: { address: 'Dallas, TX 75201', ship: 'packed' } },
-  { id: 's3', code: '#S-115', customer_name: 'María P.', items: [{ name: 'Café en grano 12oz', qty: 2 }], total: 38, channel: 'ship', status: 'ready', created_at: '', fulfillment: { address: 'San Antonio, TX 78205', ship: 'shipped', carrier: 'USPS Priority', tracking: '9400 1000 0000 4521 8890 12', pkg: 'Caja S' } },
-  { id: 's4', code: '#S-112', customer_name: 'Diego H.', items: [{ name: 'Tote de lona', qty: 1 }, { name: 'Taza', qty: 2 }], total: 46, channel: 'ship', status: 'completed', created_at: '', fulfillment: { address: 'El Paso, TX 79901', ship: 'delivered', carrier: 'UPS Ground', tracking: '1Z 999 AA1 01 2345 6784', pkg: 'Caja M' } },
-];
+
 
 const PKG_SIZES = ['Sobre', 'Caja S', 'Caja M', 'Caja L'];
 
@@ -212,7 +201,11 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   };
 
   // ── orders (business_orders) ────────────────────────────────────────────────
-  const [orders, setOrders] = useState<OrderRow[]>(DEMO_ORDERS);
+  // NUNCA arranca con pedidos inventados. Hasta 2026-08-04 el estado inicial era
+  // DEMO_ORDERS: un dueño real abría «Entregas» y veía cinco pedidos con nombres,
+  // platillos y direcciones de Houston que no eran suyos. La auditoría de
+  // 2026-07-29 quitó el `?? DEMO` del respaldo pero dejó el estado INICIAL.
+  const [orders, setOrders] = useState<OrderRow[]>([]);
   const [falloPedidos, setFalloPedidos] = useState(false);
   const reloadOrders = () => {
     // Sin negocio real / sin backend → SIN pedidos. Antes caía a DEMO_ORDERS:
@@ -224,7 +217,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     supabase.from('business_orders').select('*').eq('business_id', real.id).order('created_at', { ascending: false }).limit(120)
       .then(({ data, error }) => {
         // Un fallo NO es «no hay pedidos»: quien lee eso deja de cocinar.
-        if (error || !Array.isArray(data)) { setFalloPedidos(true); return; }
+        if (error || !Array.isArray(data)) { setFalloPedidos(true); return; }   // la lista se queda vacía, nunca en ejemplos
         setFalloPedidos(false);
         setOrders((data as Record<string, unknown>[]).map((r): OrderRow => ({
           id: String(r.id), code: (r.code as string) ?? null, customer_name: (r.customer_name as string) ?? null,
@@ -366,7 +359,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
       {delList.length === 0 ? (
         <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{falloPedidos
           ? L('No pudimos cargar tus pedidos. Revisa tu conexión y vuelve a entrar.', "We couldn't load your orders. Check your connection and come back.")
-          : orders === DEMO_ORDERS ? L('Pedidos de ejemplo — los reales de tus clientes aparecerán aquí.', 'Sample orders — your real customer orders appear here.') : L('Sin pedidos de entrega en este filtro.', 'No delivery orders in this filter.')}</div>
+          : L('Sin pedidos de entrega en este filtro.', 'No delivery orders in this filter.')}</div>
       ) : (
         <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
           {delList.map((o) => {
@@ -669,7 +662,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         ))}
       </ChipRow>
       {shipList.length === 0 ? (
-        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{orders === DEMO_ORDERS ? L('Envíos de ejemplo — los pedidos con envío aparecerán aquí.', 'Sample shipments — orders needing shipping appear here.') : L('Sin envíos en este filtro.', 'No shipments in this filter.')}</div>
+        <div className={`${cardCls} p-9 text-center text-[13px] font-semibold text-muted`}>{falloPedidos ? L('No pudimos cargar tus envíos. Revisa tu conexión.', "We couldn't load your shipments. Check your connection.") : L('Sin envíos en este filtro.', 'No shipments in this filter.')}</div>
       ) : (
         <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
           {shipList.map((o) => {

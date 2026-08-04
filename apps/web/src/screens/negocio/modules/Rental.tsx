@@ -185,7 +185,10 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       { id: 4, es: 'Bocina y micrófono', en: 'Speaker & microphone', descEs: 'Sonido profesional para tu evento', descEn: 'Pro sound for your event', cat: 'equipo', tile: t('equipo'), booked: 3, stock: 3, out: 1, unitEs: 'equipo', unitEn: 'kit', dep: 80, hour: 25, day: 90, week: 360, availEs: 'Entre semana', availEn: 'Weekdays', addons: ['setup', 'insurance'], tags: [], policies: [...DEFAULT_POLICY_IDS] },
     ];
   };
-  const [items, setItems] = useState<Item[]>(demoSeed);
+    // El estado inicial NO puede ser de ejemplo: se pinta antes de saber si
+  // hay negocio real, así que un dueño ve un instante el catálogo de otro.
+  // Quien decide es el cargador de abajo. (Auditoría de Negocios, 2026-08-04.)
+  const [items, setItems] = useState<Item[]>([]);
   useEffect(() => {
     if (!persistable || !real) { setItems(demoSeed()); return; }
     let cancelled = false;

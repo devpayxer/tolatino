@@ -202,7 +202,10 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const catLabel = (c: MenuCategory) => L(c.es, c.en);
 
   // ── items ───────────────────────────────────────────────────────────────────
-  const [items, setItems] = useState<Item[]>(DEMO_ITEMS);
+    // El estado inicial NO puede ser de ejemplo: se pinta antes de saber si
+  // hay negocio real, así que un dueño ve un instante el catálogo de otro.
+  // Quien decide es el cargador de abajo. (Auditoría de Negocios, 2026-08-04.)
+  const [items, setItems] = useState<Item[]>([]);
   useEffect(() => {
     if (!persistable || !real) { setItems(DEMO_ITEMS); return; }
     let cancelled = false;

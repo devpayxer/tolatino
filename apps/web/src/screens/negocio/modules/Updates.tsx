@@ -95,7 +95,10 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
     [],
   );
 
-  const [posts, setPosts] = useState<Post[]>(seed);
+    // El estado inicial NO puede ser de ejemplo: se pinta antes de saber si
+  // hay negocio real, así que un dueño ve un instante el catálogo de otro.
+  // Quien decide es el cargador de abajo. (Auditoría de Negocios, 2026-08-04.)
+  const [posts, setPosts] = useState<Post[]>([]);
   const [tab, setTab] = useState<'all' | Status>('all');
   const [draft, setDraft] = useState('');
   const [kind, setKind] = useState<Kind>('news');

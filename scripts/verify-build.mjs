@@ -214,18 +214,58 @@ try {
   kindsMsg = `  Avisos: no se pudo comprobar (${e.message})`;
 }
 
+// ── Datos de ejemplo como estado INICIAL del panel ──────────────────────────
+// POR QUÉ: el estado inicial se pinta ANTES de saber si hay un negocio real, así
+// que un dueño ve un instante el catálogo, los pedidos o los clientes de otro.
+// La auditoría de 2026-07-29 quitó los respaldos `?? DEMO` pero dejó los estados
+// INICIALES; la de 2026-08-04 encontró que «Entregas» abría con cinco pedidos
+// inventados —con nombres, platillos y direcciones de Houston— y que además se
+// quedaban fijos si la consulta fallaba.
+// LA REGLA: los datos de ejemplo solo pueden aparecer cuando el cargador decide
+// (detrás de `persistable`/`admin.demo`), NUNCA como valor inicial de useState.
+const demoFail = [];
+let demoMsg = '';
+try {
+  const raiz = new URL('..', import.meta.url).pathname;
+  const dir = join(raiz, 'apps/web/src/screens/negocio/modules');
+  let revisados = 0;
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.tsx'))) {
+    revisados++;
+    const src = readFileSync(join(dir, f), 'utf8');
+    for (const m of src.matchAll(/useState<[^>]*>\(\s*(DEMO[A-Z_]*|seed[A-Za-z]*|demo[A-Za-z]*)\s*[),]/g)) {
+      // EXCEPCIÓN documentada: los `*Config` no son datos de NADIE — son las
+      // categorías y ajustes de arranque que se le ofrecen a un dueño nuevo
+      // («Degustaciones», «Clases y talleres»). Ofrecer un punto de partida es
+      // diseño; el problema es enseñar el catálogo, los pedidos o los clientes
+      // de otro como si fueran suyos.
+      if (/Config$/.test(m[1])) continue;
+      demoFail.push({ archivo: f, constante: m[1] });
+    }
+  }
+  demoMsg = `  Panel: ${revisados} módulos revisados`
+    + (demoFail.length ? '' : ', ninguno arranca con datos de ejemplo');
+} catch (e) {
+  demoMsg = `  Panel: no se pudo comprobar (${e.message})`;
+}
+
 // ── Reporte ─────────────────────────────────────────────────────────────────
 console.log(`\nverify-build · ${jsFiles.length} archivos JS, ${htmlFiles.length} HTML en ${OUT}`);
 console.log(envMsg);
 console.log(stripeMsg);
 console.log(kindsMsg);
+console.log(demoMsg);
 for (const { nombre, ruta, faltan } of kindsFail) {
   console.error(`\n  ✖ ${faltan.length} tipo(s) que la base emite y ${nombre} NO sabe dibujar:`);
   console.error(`      ${faltan.join(', ')}`);
   console.error(`      → añade un \`case\` para cada uno en ${ruta}`);
 }
 
-if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0) {
+for (const d of demoFail) {
+  console.error(`\n  ✖ ${d.archivo}: useState arranca con \`${d.constante}\` (datos de ejemplo).`);
+  console.error('      → el valor inicial debe ser vacío; que el cargador decida si toca demo.');
+}
+
+if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0) {
   console.log('\n✅ Sin datos fabricados, sin secretos y con la base correcta.\n');
   process.exit(0);
 }

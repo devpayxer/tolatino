@@ -151,7 +151,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     { id: 4, name: L('Noche de Lotería', 'Lotería Night'), mon: 'NOV', day: '22', time: '5 PM', price: '$10', priceN: 10, sold: 14, cap: 16, tile: '#EAE2F8 0 9px,#DCCEF2 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E3F5EA', statusC: '#1F8A4C' },
   ], [es, L]);
 
-  const [events, setEvents] = useState<EventRow[]>(seedEvents);
+    // El estado inicial NO puede ser de ejemplo: se pinta antes de saber si
+  // hay negocio real, así que un dueño ve un instante el catálogo de otro.
+  // Quien decide es el cargador de abajo. (Auditoría de Negocios, 2026-08-04.)
+  const [events, setEvents] = useState<EventRow[]>([]);
 
   // Map an `events` DB row → the module's rich EventRow (tracks the uuid as dbId
   // so later edit/delete can target it). Capacity isn't modeled server-side yet,

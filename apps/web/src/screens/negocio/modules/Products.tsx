@@ -156,7 +156,10 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   const optSetOf = (id: string) => cfg.optionSets.find((o) => o.id === id);
 
   // ── products (business_items kind='product') ───────────────────────────────
-  const [products, setProducts] = useState<Prod[]>(DEMO_PRODS);
+    // El estado inicial NO puede ser de ejemplo: se pinta antes de saber si
+  // hay negocio real, así que un dueño ve un instante el catálogo de otro.
+  // Quien decide es el cargador de abajo. (Auditoría de Negocios, 2026-08-04.)
+  const [products, setProducts] = useState<Prod[]>([]);
   useEffect(() => {
     if (!persistable || !real) { setProducts(DEMO_PRODS); return; }
     let cancelled = false;
