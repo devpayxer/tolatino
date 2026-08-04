@@ -543,6 +543,34 @@
   SMTP Settings (host `email-smtp.<región>.amazonaws.com`, puerto 587, remitente
   `hola@tolatino.com`). Subir después `rate_limit_email_sent`. **Sin esto no se
   puede abrir el registro al público.**
+- [x] ~~Supabase avisó de que la base pasaba del límite gratuito (798 MB de 500).~~
+  **RESUELTO el 2026-08-04, sin pagar nada.** Tres datos que importan:
+  1. El aviso era del proyecto **`tolatino` = la base de PRUEBAS**
+     (`zpkaxojonufdwgahiqjh`), NO de producción. Producción (`tolatino-prod`,
+     `vurqsebgsacickxsxfeh`) estaba en **30 MB** y sigue limpia.
+  2. No eran datos: eran **índices inflados**. `posts` tenía 30 filas y 24 kB de
+     datos… con 115 MB de índices; `post_comments`, 6 filas y 62 MB. La causa está
+     en `pg_stat_user_tables`: **2,2 M de publicaciones insertadas y 1,9 M
+     borradas** (más 600 k comentarios) en las pruebas de escala de las
+     auditorías. Postgres recupera el espacio de las filas borradas, pero **NO
+     encoge los ficheros de índice**.
+  3. Arreglo: `reindex table` sobre `posts`, `post_comments` y `notifications`.
+     **233 MB → 56 MB**, en segundos, sin tocar un solo dato.
+  **Regla para la próxima:** toda prueba de escala que inserte y borre en masa
+  termina con un `reindex table` de las tablas tocadas. Si no, la basura se queda
+  en el disco y parece que hace falta el plan de pago. Y antes de creerse un aviso
+  de facturación, mirar **qué** proyecto es y **qué** ocupa:
+  ```sql
+  select n.nspname||'.'||c.relname as tabla,
+         pg_size_pretty(pg_total_relation_size(c.oid)) as total,
+         pg_size_pretty(pg_relation_size(c.oid)) as datos,
+         c.reltuples::bigint as filas
+  from pg_class c join pg_namespace n on n.oid=c.relnamespace
+  where c.relkind in ('r','m') and pg_total_relation_size(c.oid) > 1024*1024
+  order by pg_total_relation_size(c.oid) desc limit 15;
+  ```
+  Datos MUY por debajo del total = índices inflados, no falta de espacio.
+
 - [ ] **El perfil se puede quedar a medias, y nadie se lo recuerda al usuario.**
   Descubierto el 2026-08-04: la única cuenta de producción tenía foto e intereses
   pero seguía llamándose «Vecino» y sin ciudad. La causa inmediata ya está
