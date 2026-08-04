@@ -30,9 +30,11 @@ con el destino — en las dos direcciones:
 1. **Claude desarrolla** en la rama de trabajo (`claude/…`), nunca en la de producción.
 2. **Claude verifica localmente**: `tsc` + `pnpm build` (el guardián corre solo) +
    capturas en un navegador real a 390×844.
-3. **Claude publica la rama** → Vercel crea una **URL de vista previa**.
-   Esa URL usa la **base de pruebas**: el fundador puede tocar todo — registrarse,
-   publicar negocios, hacer pedidos de prueba — **sin ensuciar producción**.
+3. **Claude empuja la rama `pruebas`** → Vercel reconstruye
+   `https://tolatino-git-pruebas-devpayxers-projects.vercel.app/`, que es **la
+   única URL a la que el fundador tiene acceso**. Usa la **base de pruebas**: él
+   puede tocar todo — registrarse, publicar negocios, hacer pedidos de prueba —
+   **sin ensuciar producción**. Ver "Dónde prueba el fundador" más abajo.
 4. **El fundador prueba en su teléfono** y aprueba o pide cambios.
    *Aquí es donde se aprueba el DISEÑO: es más barato aprobar una pantalla que
    rehacer una pantalla ya conectada.*
@@ -71,11 +73,38 @@ negocios sembrados y precios que no existen **con la marca del sitio real**.
 Si algún día hace falta cerrarlo del todo, Vercel ofrece protección por contraseña
 en sus planes de pago; hoy no se paga por eso.
 
-## Dónde encontrar la URL de vista previa
+## Dónde prueba el fundador (2026-08-04)
 
-En **vercel.com** → proyecto **tolatino** → pestaña **Deployments**. El despliegue
-más reciente de la rama `claude/…` tiene su propia URL (`tolatino-git-…vercel.app`).
-Claude también la puede pegar en el chat al terminar cada cambio.
+**Una sola URL, y sale de una sola rama:**
+
+| | |
+|---|---|
+| URL | `https://tolatino-git-pruebas-devpayxers-projects.vercel.app/` |
+| Rama | **`pruebas`** |
+| Base de datos | pruebas (`zpkaxojonufdwgahiqjh`) |
+
+Las ramas `claude/…` también generan su propia vista previa en Vercel, pero están
+**detrás del SSO de Vercel y el fundador no entra ahí**. Mandarle esa URL no sirve
+de nada.
+
+**Por qué está escrito esto:** el 2026-08-04 se subieron 13 commits a la rama de
+trabajo y se le dijo «ya puedes probar». Su sitio no había cambiado, porque su
+sitio no sale de esa rama. Tuvo que corregirlo él: *«donde tengo acceso es aquí,
+y es aquí donde debes actualizar para yo hacer el test»*.
+
+**Cómo se actualiza** (debe ser *fast-forward*; si no lo es, parar y preguntar):
+
+```bash
+git merge-base --is-ancestor origin/pruebas origin/<rama-de-trabajo>  # ¿limpio?
+git push origin origin/<rama-de-trabajo>:refs/heads/pruebas
+git log --oneline origin/pruebas..origin/<rama-de-trabajo>            # tiene que dar vacío
+```
+
+**Y antes de decirle «pruébalo»:** aplicar en la base de PRUEBAS las migraciones
+que ese código necesite (`SUPABASE_PROJECT_REF=zpkaxojonufdwgahiqjh node
+scripts/sbsql.mjs --file <migración>`), o se encontrará el sitio roto por una
+función que falta; y decirle **qué mirar y bajo qué condiciones** (¿sesión
+iniciada? ¿ancho mínimo? ¿ciudad concreta?).
 
 ## Comandos (para Claude, no para el fundador)
 
@@ -94,6 +123,9 @@ STRIPE_EXPECT=live node scripts/verify-build.mjs   # exigir Stripe en vivo
 ## Reglas que NO se saltan
 
 - **Nunca** se trabaja directo en la rama de producción.
+- **Un cambio no está entregado hasta que `pruebas` lo tiene.** Verificarlo en
+  local no cuenta: el fundador no ve el local ni las vistas previas de las ramas
+  `claude/…`. Empujar `pruebas` es el paso 3 del flujo, no un extra opcional.
 - **Nunca** se publica a producción sin que el fundador haya visto la vista previa,
   salvo que él lo pida explícitamente (arreglos urgentes).
 - **Siempre** se verifica sobre lo SERVIDO (el build / el sitio), no sobre la

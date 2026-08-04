@@ -261,13 +261,53 @@ realmente devolvieron hallazgos** antes de confiar en un "no se encontró nada".
 1. Se desarrolla en la rama de trabajo (`claude/…`), **nunca** en la de producción.
 2. Se verifica en local: `tsc` + `pnpm build` (el guardián `scripts/verify-build.mjs`
    corre solo en `postbuild` y **rompe el build**) + capturas en navegador real.
-3. Se publica la rama → Vercel crea una **URL de vista previa** que apunta sola a la
-   **base de PRUEBAS** (`next.config.mjs` lo decide por `VERCEL_ENV`). El fundador
-   puede tocar todo sin ensuciar producción.
+3. **Se empuja la rama `pruebas` — SIEMPRE, en cuanto un cambio esté listo.**
+   Ver la regla completa justo debajo. Es el ÚNICO sitio donde el fundador puede
+   probar.
 4. **El fundador aprueba ahí.** Es el momento barato de aprobar diseño: cuesta menos
    aprobar una pantalla que rehacer una pantalla ya conectada.
 5. Con su visto bueno: `ff-merge` a la rama de producción → `tolatino.com`.
 6. Se verifica el sitio **EN VIVO**, no la intención del código.
+
+### El sitio de pruebas del fundador es la rama `pruebas` (2026-08-04)
+> Grabado porque se perdió una vuelta entera: se subieron 13 commits a la rama
+> `claude/…` y se le dijo al fundador «ya está listo para probar». Su sitio no
+> cambió, porque su sitio **no sale de esa rama**. Él lo dijo claro: *«donde tengo
+> acceso es aquí, y es aquí donde debes actualizar para yo hacer el test»*.
+
+**Su URL — la única a la que tiene acceso — es:**
+`https://tolatino-git-pruebas-devpayxers-projects.vercel.app/`
+Sale de la rama **`pruebas`**, y de ninguna otra. Las URLs de vista previa de las
+ramas `claude/…` existen, pero están detrás del SSO de Vercel y **él no entra ahí**.
+No sirve de nada mandárselas.
+
+**La regla, entonces:** terminar un cambio y verificarlo en local **no es
+terminar**. Mientras `pruebas` no tenga el commit, para el fundador el cambio no
+existe. El paso 3 es parte del trabajo, no un extra:
+
+```
+git push origin origin/<rama-de-trabajo>:refs/heads/pruebas
+```
+
+Debe ser un *fast-forward* limpio (comprobarlo con
+`git merge-base --is-ancestor origin/pruebas origin/<rama-de-trabajo>`); si no lo
+es, **parar y preguntar** en vez de forzar.
+
+**Antes de decirle «pruébalo», comprobar tres cosas** — las tres se pueden
+verificar solo, y las tres han fallado ya:
+1. `origin/pruebas` apunta al commit nuevo
+   (`git log --oneline origin/pruebas..origin/<rama>` tiene que dar 0 líneas).
+2. Las migraciones que ese código necesita **están aplicadas en la base de
+   PRUEBAS** (`zpkaxojonufdwgahiqjh`), o el sitio se le rompe por una función que
+   falta. Aplicarlas con `SUPABASE_PROJECT_REF=zpkaxojonufdwgahiqjh node
+   scripts/sbsql.mjs --file <migración>`.
+3. Decirle **qué mirar y en qué condiciones** (¿hace falta sesión iniciada?
+   ¿un ancho mínimo? ¿una ciudad concreta?). «Ya está listo» no es una
+   instrucción de prueba.
+
+Producción (`tolatino.com`) sigue igual que siempre: solo con su visto bueno
+explícito, y con las migraciones pegadas por él en el SQL Editor del proyecto de
+producción.
 
 El guardián impide las dos catástrofes simétricas: producción leyendo la base de
 pruebas (pasó), y una vista previa escribiendo en la base REAL (habría pasado en

@@ -1551,23 +1551,41 @@ occurrence of that item on the page.
 - **Branches / deploy flow:**
   - Develop on the **current session branch** (it churns each session — pin it here
     per session, don't hardcode an old one). This session: **`claude/progress-md-review-r5bdar`**.
-  - Release by **fast-forward-merging** into **`claude/tolatino-repo-setup-1efdil`**
-    (the branch **Vercel** auto-deploys). Sequence every time (swap in the current
-    session branch for `<dev>`):
+  - **⚠️ FIRST push `pruebas` — that is the ONLY site the founder can open.**
+    His URL is `https://tolatino-git-pruebas-devpayxers-projects.vercel.app/`, fed
+    by the **`pruebas`** branch (staging DB). The per-branch previews of `claude/…`
+    branches sit behind Vercel SSO and **he has no access to them** — sending him
+    one is useless. Every finished change, same turn:
     ```
     git add -A && git commit -m "…"
     git push -u origin <dev>
+    git merge-base --is-ancestor origin/pruebas origin/<dev>   # must be a clean ff
+    git push origin origin/<dev>:refs/heads/pruebas
+    git log --oneline origin/pruebas..origin/<dev>             # must print nothing
+    ```
+    Also apply any migration the change needs to the **staging** DB
+    (`SUPABASE_PROJECT_REF=zpkaxojonufdwgahiqjh node scripts/sbsql.mjs --file …`),
+    and tell him **what to look at and under what conditions** (signed in? minimum
+    width? specific city?). Burned on 2026-08-04: 13 commits pushed to the work
+    branch and "it's ready to test" — his site had not changed at all, because his
+    site does not come from that branch. He had to correct it himself.
+  - Release to production by **fast-forward-merging** into
+    **`claude/tolatino-repo-setup-1efdil`** (the branch **Vercel** serves at
+    `tolatino.com`), **only once he has approved on the test site** — or when he
+    asks for it explicitly:
+    ```
     git checkout claude/tolatino-repo-setup-1efdil
     git merge --ff-only <dev>
     git push -u origin claude/tolatino-repo-setup-1efdil
     git checkout <dev>
     ```
-  - **⚠️ The ff-merge to the deploy branch is PART OF EVERY FIX, same turn — not a
-    separate later step.** Forgetting it has burned the founder TWICE (2026-07-15
-    cash sheet, 2026-07-16 rental flow): the fix was verified and "done" on the dev
-    branch while the live site kept serving the old build, and the founder re-reported
-    the same bug in growing frustration. A change isn't "shipped" until it's pushed to
-    `claude/tolatino-repo-setup-1efdil`.
+  - **⚠️ Publishing is PART OF EVERY FIX, same turn — not a separate later step.**
+    Forgetting it has burned the founder THREE times (2026-07-15 cash sheet,
+    2026-07-16 rental flow, 2026-08-04 the whole Negocios/Comunidad audit): the fix
+    was verified and "done" on the dev branch while the site he opens kept serving
+    the old build, and he re-reported the same thing in growing frustration. A
+    change isn't "shipped" until it's on `pruebas` (for him to test) and, after his
+    approval, on `claude/tolatino-repo-setup-1efdil` (for production).
   - Git identity for commits: `user.email noreply@anthropic.com`, `user.name Claude`.
 - **Live site:** `tolatino.vercel.app` (Vercel; Cloudflare Pages is the eventual target per `CLAUDE.md`).
 - **Verifying what production actually serves (sandbox can't reach vercel.app):** run
