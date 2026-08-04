@@ -527,6 +527,25 @@
   estética=peluquería), «¿quisiste decir…?», estado sin-resultados con
   sugerencias, y las búsquedas recientes.
 
+- [ ] **Analítica de búsqueda: úsala, y dos cabos sueltos (2026-08-04).**
+  Migración `0145`. `search_log` cuenta, de forma **anónima y agregada**, qué se
+  busca y cuántos resultados salieron: sin usuario, sin sesión, sin IP y sin
+  hora (solo el día). Mil personas buscando «mecánico» son UNA fila con
+  `veces = 1000`. Comprobado que ni `anon` ni `authenticated` pueden leerla
+  (RLS sin políticas + `revoke select`).
+  1. **Mirarla.** `select * from public.busquedas_sin_resultados(30);` en el SQL
+     Editor devuelve lo que la gente buscó y **no encontró**: esa es la lista de
+     a qué negocios ir a tocarles la puerta. Pendiente: llevarla al panel
+     `/admin` (ver `docs/ADMIN-DASHBOARD-PLAN.md`) para no depender del SQL.
+  2. **Solo registra Negocios.** Eventos, Comunidad, Renta y Carros aún no
+     llaman a `registrar_busqueda`. La función ya acepta esas secciones; falta
+     conectarlas donde cada pantalla conoce su número de resultados.
+  3. **Escala.** El umbral de erratas va escrito como
+     `word_similarity(...) > 0.45` porque Supabase no deja bajarlo por función
+     (`alter function … set` → permiso denegado). Eso NO usa el índice de
+     trigramas que sí usaría el operador `<%`. A la escala de hoy da igual;
+     revisar cuando `businesses`, `properties` o `vehicles` crezcan de verdad.
+
 - [ ] **🔴 La lista de espera «¡Avísame!» NO GUARDA NADA — está viva en
   producción (descubierto 2026-08-04).** En `/transporte` y `/trabajos`,
   `ComingSoonScreen` pide el correo, responde «¡Listo! Te avisamos cuando abra»

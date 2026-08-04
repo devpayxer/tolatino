@@ -22,6 +22,7 @@ import { bizStatus, isOpenNow, statusLabel } from '@/lib/hours';
 import { CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
 import { registrarClaveDetalle } from '@/lib/urlView';
+import { registrarBusqueda } from '@/lib/analitica';
 
 const DIST_MIN = 5;
 const DIST_MAX = 50;
@@ -164,7 +165,15 @@ export function NegociosScreen() {
       void searchBusinesses({
         q: rawQ, lat: app.coords?.lat ?? null, lng: app.coords?.lng ?? null, city: app.city,
         cat: f.cat, price: f.price, minRating: f.rating ? parseFloat(f.rating) : null, limit: 40,
-      }).then((rows) => { if (!cancelled) setServerResults(rows); });
+      }).then((rows) => {
+        if (cancelled) return;
+        setServerResults(rows);
+        // Se anota QUÉ se buscó y CUÁNTO salió — anónimo y agregado (ver
+        // `lib/analitica`). Se hace aquí y no al pulsar «buscar» porque este es
+        // el único punto que conoce el número real de resultados, que es el
+        // dato que importa: un término con 0 es un negocio que falta.
+        registrarBusqueda(rawQ, 'negocios', rows.length, app.city);
+      });
     }, 250);
     return () => { cancelled = true; window.clearTimeout(t); };
   }, [rawQ, f.cat, f.price, f.rating, app.city, app.coords?.lat, app.coords?.lng]);
