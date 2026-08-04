@@ -13,6 +13,8 @@
 // (La analítica de búsqueda —qué se busca y qué NO encuentra nada— es otra cosa
 // y va aparte: anónima y agregada, sin usuario. Ver docs/LAUNCH-CHECKLIST.md.)
 
+import { useSyncExternalStore } from 'react';
+
 const CLAVE = 'tl_busquedas_recientes';
 const MAX = 5;
 const DIAS = 30;
@@ -61,13 +63,54 @@ export function guardarReciente(q: string): void {
   const clave = limpio.toLowerCase();
   const resto = leerRecientes().filter((r) => r.q.toLowerCase() !== clave);
   escribir([{ q: limpio, ts: Date.now() }, ...resto]);
+  notificar();
 }
 
 export function borrarReciente(q: string): void {
   const clave = q.trim().toLowerCase();
   escribir(leerRecientes().filter((r) => r.q.toLowerCase() !== clave));
+  notificar();
 }
 
 export function borrarTodasLasRecientes(): void {
   escribir([]);
+  notificar();
+}
+
+// ── La lista, viva ────────────────────────────────────────────────────────
+// `localStorage` no avisa de sus propios cambios dentro de la misma pestaña, así
+// que quien pinte la lista tiene que enterarse por otro lado. La primera versión
+// lo resolvía refrescando A MANO desde los dos sitios que escribían — y el Enter
+// no pasaba por ninguno de los dos: la lista se quedaba vieja hasta recargar la
+// página. Lo reportó el fundador el 2026-08-04.
+//
+// Se arregla donde no se puede olvidar: aquí. Cualquier escritura avisa, y quien
+// use `useRecientes()` se entera sola. No hay «sitios que acordarse de tocar».
+const oyentes = new Set<() => void>();
+let cache: Reciente[] | null = null;
+const VACIO: Reciente[] = [];
+
+function notificar(): void {
+  cache = null;                 // la próxima lectura vuelve a mirar el almacén
+  oyentes.forEach((f) => f());
+}
+
+function suscribir(f: () => void): () => void {
+  oyentes.add(f);
+  // Y si el cambio viene de OTRA pestaña, el navegador sí lo avisa por aquí.
+  const deOtraPestana = (e: StorageEvent) => { if (e.key === CLAVE) notificar(); };
+  window.addEventListener('storage', deOtraPestana);
+  return () => { oyentes.delete(f); window.removeEventListener('storage', deOtraPestana); };
+}
+
+// `useSyncExternalStore` exige que dos lecturas seguidas devuelvan el MISMO
+// objeto si nada cambió; por eso la caché, y por eso `notificar` la invalida.
+function instantanea(): Reciente[] {
+  if (cache === null) cache = leerRecientes();
+  return cache;
+}
+
+/** Las búsquedas recientes, siempre al día. */
+export function useRecientes(): Reciente[] {
+  return useSyncExternalStore(suscribir, instantanea, () => VACIO);
 }

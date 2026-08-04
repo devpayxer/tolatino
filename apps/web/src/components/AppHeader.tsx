@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { Avatar, Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
 import { NAV_CATS, VIEW_PATH, bizTile, eventTile, type Business, type EventItem, type Post } from '@/data/fixtures';
 import { useLiveData, searchBusinesses, searchEvents } from '@/lib/live';
-import { borrarReciente, borrarTodasLasRecientes, leerRecientes, type Reciente } from '@/lib/recientes';
+import { borrarReciente, borrarTodasLasRecientes, useRecientes } from '@/lib/recientes';
 import { supabase } from '@/lib/supabase';
 import { CAT, tile } from '@/lib/tiles';
 
@@ -85,6 +85,10 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setSearchOpen(true)}
+        // También al TOCAR, no solo al enfocar: si se cerró con Escape (o
+        // tocando fuera sin quitar el foco), el campo ya está enfocado y
+        // `onFocus` no vuelve a dispararse — tocarlo otra vez no reabría nada.
+        onClick={() => setSearchOpen(true)}
         placeholder={L('Busca tacos, mecánico, salón…', 'Search tacos, mechanic, salon…')}
         className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] font-medium text-ink outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
       />
@@ -174,11 +178,8 @@ function SearchDropdown() {
   }, [query, coords?.lat, coords?.lng]);
 
   // ── AÑADIDO: recientes ─────────────────────────────────────────────────
-  // Se leen una vez al montar y tras cada búsqueda; `localStorage` no avisa de
-  // sus propios cambios, así que se refresca a mano con `sello`.
-  const [sello, setSello] = useState(0);
-  const [recientes, setRecientes] = useState<Reciente[]>([]);
-  useEffect(() => { setRecientes(leerRecientes()); }, [sello]);
+  // La lista se avisa sola desde `lib/recientes` — escriba quien escriba.
+  const recientes = useRecientes();
 
   // ── AÑADIDO: «¿quisiste decir…?» ───────────────────────────────────────
   // Solo se pregunta cuando la búsqueda va MAL (poco o nada), no siempre: si ya
@@ -228,7 +229,6 @@ function SearchDropdown() {
   const go = (view: 'comunidad' | 'negocios' | 'eventos') => {
     const q = query.trim();
     setSearch(q);          // guarda el historial y cierra el desplegable
-    setSello((n) => n + 1);
     setQuery('');
     router.push(VIEW_PATH[view]);
   };
@@ -244,7 +244,7 @@ function SearchDropdown() {
             {L('Búsquedas recientes', 'Recent searches')}
           </span>
           <button
-            onClick={() => { borrarTodasLasRecientes(); setSello((n) => n + 1); }}
+            onClick={() => borrarTodasLasRecientes()}
             className="cursor-pointer text-[11px] font-extrabold text-primary-dark"
           >
             {L('Borrar todo', 'Clear all')}
@@ -253,7 +253,7 @@ function SearchDropdown() {
         {recientes.map((r) => (
           <div key={r.q} className="flex items-center gap-1 rounded-field pr-1 hover:bg-app">
             <button
-              onClick={() => { setQuery(r.q); setSearch(r.q); setSello((n) => n + 1); }}
+              onClick={() => { setQuery(r.q); setSearch(r.q); }}
               className="flex min-w-0 flex-1 cursor-pointer items-center gap-[11px] p-2.5 text-left"
             >
               <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-[10px] bg-lilac-2">
@@ -262,7 +262,7 @@ function SearchDropdown() {
               <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{r.q}</span>
             </button>
             <button
-              onClick={() => { borrarReciente(r.q); setSello((n) => n + 1); }}
+              onClick={() => borrarReciente(r.q)}
               className="tap flex-none cursor-pointer rounded-full p-1.5 text-muted-2 hover:text-ink"
               aria-label={L(`Quitar ${r.q} de recientes`, `Remove ${r.q} from recent`)}
             >
