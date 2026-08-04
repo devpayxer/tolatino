@@ -495,6 +495,38 @@
      asumible hoy y no lo será después: el día del primer pedido pagado de
      verdad, plan Pro.
 
+- [ ] **🔴 LA BÚSQUEDA NO ENTIENDE ESPAÑOL (diagnosticado 2026-08-04).**
+  El fundador escribió «mecanico» y no salió NINGÚN taller, habiendo 18 en el
+  radio. Medido contra los 548 negocios de pruebas:
+  `mecanico`→0 · `mecánico`→4 · `mecanica`→2 · `mecánica`→4 · `mecanioc`→0.
+  **Tres causas, todas comprobadas por SQL:**
+  1. El índice usa `to_tsvector('simple', …)`. El diccionario `simple` **no
+     quita tildes y no reduce a la raíz**. Probado:
+     `simple` → `'mecánica'` · `spanish` → `'mecan'`. Con español, «mecanico»,
+     «mecánico», «mecanica», «mecánicos» y «MECANICO» caen todos en `mecan` y
+     casan. Nadie escribe tildes en el teléfono.
+  2. El índice mete `category_id` **en crudo y en inglés** (`AutoServices`) —
+     nadie teclea eso. Las etiquetas legibles («Servicios de Auto», «taller
+     mecánico») viven solo en el frontend (`CAT` en `lib/tiles.ts`, `SUBCATS` en
+     `data/fixtures.ts`) y **nunca llegan al índice**.
+  3. Las erratas se intentan con `similarity(b.name, t) > 0.2` — solo contra el
+     NOMBRE, y `similarity` de una palabra corta contra un texto largo siempre
+     puntúa bajo. La herramienta correcta es **`word_similarity` (`<%`)**, que
+     compara contra la mejor palabra del texto.
+  **Ganancia medida sobre los datos reales, sin tocar ni un negocio:**
+  `mecanico` pasa de **0 a 18 resultados** solo con (1) diccionario español +
+  `unaccent` y (2) la etiqueta legible de la categoría dentro del índice. Con
+  `word_similarity` a 0.6, `mecaniko`, `mecanioc` y `taler` también dan 18.
+  `unaccent` y `pg_trgm` ya están instaladas en las dos bases.
+  **Afecta igual a `search_events`, `search_posts`, `properties_search` y
+  `vehicles_search`** — mismo patrón `'simple'`; hay que revisarlas todas, no
+  solo negocios.
+  **Pendiente de diseño (el fundador lo prepara en Claude Design):** el buscador
+  necesita además diccionario de SINÓNIMOS y jerga latina regional
+  (mecánico=taller=automotriz=hojalatería; bodega=colmado=abarrotes; salón=
+  estética=peluquería), «¿quisiste decir…?», estado sin-resultados con
+  sugerencias, y las búsquedas recientes.
+
 - [ ] **🔴 La lista de espera «¡Avísame!» NO GUARDA NADA — está viva en
   producción (descubierto 2026-08-04).** En `/transporte` y `/trabajos`,
   `ComingSoonScreen` pide el correo, responde «¡Listo! Te avisamos cuando abra»
