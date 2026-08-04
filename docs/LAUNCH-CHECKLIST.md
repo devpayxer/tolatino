@@ -581,6 +581,25 @@
     denied». Corrida limpia: **25 RPC distintas, 0 denegadas**. Correrlo tras
     cualquier cambio de permisos.
 
+- [ ] **🟠 Producción no tiene NINGUNA tarea programada: `pg_cron` no está
+  instalada (2026-08-04).** Salió al dar de alta al fundador como `superadmin` en
+  producción y probar el panel como él: la pestaña **Salud** reventaba con
+  `relation "cron.job" does not exist`. Llevaba ahí desde que se escribió
+  `admin_health`; **nadie lo había visto porque en producción no había ningún
+  administrador que pudiera abrir el panel**.
+  `0150` arregla que el panel se caiga —ahora la fila sale en ROJO con el motivo
+  escrito, que es la verdad— pero **no instala nada**. Lo que sigue pendiente:
+  · La única tarea que existe es **`fred-rates-weekly`** (jueves 12:00), que llama
+    a la Edge Function `fred-rates` para refrescar las **tasas hipotecarias** que
+    enseña Bienes Raíces. En producción no corre, así que esas tasas **nunca se
+    actualizan**.
+  · Para arreglarlo: `create extension if not exists pg_cron;` en producción y
+    volver a crear el `cron.schedule`, **cambiando el ref del proyecto en la URL**
+    (el comando de pruebas apunta a `zpkaxojonufdwgahiqjh`). El comando no lleva
+    ninguna clave dentro — comprobado.
+  · **Antes de lanzar Bienes Raíces**, o las tasas que vea la gente serán las del
+    día que se sembraron.
+
 - [ ] **Extensiones en el esquema `public` (postgis, pg_trgm, unaccent, pg_net)
   — decisión tomada: NO se mueven (2026-08-04).** El Security Advisor las marca
   como `extension_in_public`. Lo que preocupa a esa regla es que alguien cree en
