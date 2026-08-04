@@ -16,7 +16,13 @@
 import { useSyncExternalStore } from 'react';
 
 const CLAVE = 'tl_busquedas_recientes';
-const MAX = 5;
+// Se GUARDAN 10 aunque por defecto solo se vean 4 (ver `AppHeader`). Esa
+// diferencia es la que hace que, al borrar una de las visibles, entre la
+// siguiente por abajo en vez de quedar un hueco. Petición del fundador,
+// 2026-08-04.
+const MAX = 10;
+/** Cuántas se enseñan de entrada; el resto, tras «Ver todo». */
+export const VISIBLES = 4;
 const DIAS = 30;
 const MS = DIAS * 24 * 60 * 60 * 1000;
 

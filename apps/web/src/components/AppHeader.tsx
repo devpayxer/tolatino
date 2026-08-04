@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { Avatar, Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
 import { NAV_CATS, VIEW_PATH, bizTile, eventTile, type Business, type EventItem, type Post } from '@/data/fixtures';
 import { useLiveData, searchBusinesses, searchEvents } from '@/lib/live';
-import { borrarReciente, borrarTodasLasRecientes, useRecientes } from '@/lib/recientes';
+import { VISIBLES, borrarReciente, borrarTodasLasRecientes, useRecientes } from '@/lib/recientes';
 import { supabase } from '@/lib/supabase';
 import { CAT, tile } from '@/lib/tiles';
 
@@ -118,7 +118,7 @@ const ATAJOS = [
   { es: 'plomero', en: 'plumber' },
 ];
 
-const CAJA = 'absolute left-1/2 top-[calc(100%+6px)] z-[45] max-h-[340px] w-[calc(100%-20px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-hair-strong bg-white p-2 shadow-pop md:w-[560px]';
+const CAJA = 'absolute left-1/2 top-[calc(100%+6px)] z-[45] max-h-[min(70svh,420px)] w-[calc(100%-20px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-hair-strong bg-white p-2 shadow-pop md:w-[560px]';
 
 function SearchDropdown() {
   const { L } = useLang();
@@ -180,6 +180,10 @@ function SearchDropdown() {
   // ── AÑADIDO: recientes ─────────────────────────────────────────────────
   // La lista se avisa sola desde `lib/recientes` — escriba quien escriba.
   const recientes = useRecientes();
+  // De entrada se ven 4; «Ver todo» abre hasta 10. Se pliega sola al cerrar el
+  // buscador: la próxima vez que lo abras vuelve a estar corta.
+  const [verTodo, setVerTodo] = useState(false);
+  useEffect(() => { if (!searchOpen) setVerTodo(false); }, [searchOpen]);
 
   // ── AÑADIDO: «¿quisiste decir…?» ───────────────────────────────────────
   // Solo se pregunta cuando la búsqueda va MAL (poco o nada), no siempre: si ya
@@ -250,14 +254,18 @@ function SearchDropdown() {
             {L('Borrar todo', 'Clear all')}
           </button>
         </div>
-        {recientes.map((r) => (
+        {(verTodo ? recientes : recientes.slice(0, VISIBLES)).map((r) => (
+          // Fila COMPACTA: 30px de icono + 7 arriba y abajo = 44px justos. Se
+          // aprieta lo que se ve, no lo que se puede tocar — 44px sigue siendo
+          // el mínimo del dedo (regla móvil #1). Antes eran 58px por fila y
+          // cinco filas estiraban el desplegable media pantalla.
           <div key={r.q} className="flex items-center gap-1 rounded-field pr-1 hover:bg-app">
             <button
               onClick={() => { setQuery(r.q); setSearch(r.q); }}
-              className="flex min-w-0 flex-1 cursor-pointer items-center gap-[11px] p-2.5 text-left"
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-2 py-[7px] text-left"
             >
-              <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-[10px] bg-lilac-2">
-                <Clock size={17} stroke={2.2} className="text-primary-dark" />
+              <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-lilac-2">
+                <Clock size={15} stroke={2.2} className="text-primary-dark" />
               </span>
               <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{r.q}</span>
             </button>
@@ -270,6 +278,16 @@ function SearchDropdown() {
             </button>
           </div>
         ))}
+        {recientes.length > VISIBLES && (
+          <button
+            onClick={() => setVerTodo((v) => !v)}
+            className="tap-y mt-0.5 w-full cursor-pointer rounded-field py-2 text-[11.5px] font-extrabold text-primary-dark hover:bg-app"
+          >
+            {verTodo
+              ? L('Ver menos', 'Show less')
+              : L(`Ver todo (${recientes.length})`, `Show all (${recientes.length})`)}
+          </button>
+        )}
       </div>
     );
   }
