@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { Avatar, Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
 import { NAV_CATS, VIEW_PATH, bizTile, eventTile, type Business, type EventItem, type Post } from '@/data/fixtures';
 import { useLiveData, searchBusinesses, searchEvents } from '@/lib/live';
-import { borrarReciente, borrarTodasLasRecientes, guardarReciente, leerRecientes, type Reciente } from '@/lib/recientes';
+import { borrarReciente, borrarTodasLasRecientes, leerRecientes, type Reciente } from '@/lib/recientes';
 import { supabase } from '@/lib/supabase';
 import { CAT, tile } from '@/lib/tiles';
 
@@ -182,9 +182,8 @@ function SearchDropdown() {
 
   const go = (view: 'comunidad' | 'negocios' | 'eventos') => {
     const q = query.trim();
-    guardarReciente(q);
+    setSearch(q);          // `setSearch` ya guarda el historial (ver lib/state)
     setSello((n) => n + 1);
-    setSearch(q);
     setQuery('');
     router.push(VIEW_PATH[view]);
   };
@@ -209,7 +208,7 @@ function SearchDropdown() {
         {recientes.map((r) => (
           <div key={r.q} className="flex items-center gap-1 rounded-field pr-1 hover:bg-app">
             <button
-              onClick={() => { setQuery(r.q); setSearch(r.q); guardarReciente(r.q); setSello((n) => n + 1); }}
+              onClick={() => { setQuery(r.q); setSearch(r.q); setSello((n) => n + 1); }}
               className="flex min-w-0 flex-1 cursor-pointer items-center gap-[11px] p-2.5 text-left"
             >
               <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-[10px] bg-lilac-2">

@@ -5,9 +5,10 @@
 // publish flow, and posts the user creates. In production the toggles persist
 // per-user in Supabase; the shapes stay the same.
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_CITY, type Post, type PostType } from '@/data/fixtures';
 import { DEFAULT_COORDS, getBrowserLocation, isCoordLabel, nearestCity } from '@/lib/geo';
+import { guardarReciente } from '@/lib/recientes';
 
 type Toggles = Record<string, boolean>;
 
@@ -214,7 +215,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [query, setQuery] = useState('');
-  const [search, setSearch] = useState('');
+  const [search, setSearchRaw] = useState('');
+  // El historial se guarda AQUÍ, donde una búsqueda se CONFIRMA — no en cada
+  // botón que la confirma. `setSearch` se llama desde siete sitios (el buscador
+  // de la cabecera, el de la portada, los resultados, los chips…) y solo dos
+  // guardaban: escribir y dar a buscar, que es el camino normal, no se guardaba.
+  // Lo reportó el fundador el 2026-08-04: «solo guardó cuando lo puse mal»,
+  // porque en el estado sin-resultados lo único pulsable era un botón que sí
+  // pasaba por ahí. Poniéndolo en el punto único de confirmación, ningún camino
+  // nuevo puede volver a olvidarse. (§9: arreglar en la primitiva compartida.)
+  const setSearch = useCallback((v: string) => {
+    setSearchRaw(v);
+    guardarReciente(v);   // ignora lo vacío y lo de menos de 2 letras
+  }, []);
   const [savedPosts, setSavedPosts] = useState<Toggles>({});
   const [recd, setRecd] = useState<Toggles>({});
   const [going, setGoing] = useState<Toggles>({});
