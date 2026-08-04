@@ -34,6 +34,7 @@ function curlRelay(req) {
 
 const denegadas = [];
 const llamadas = new Set();
+let saltado = null;
 
 (async () => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -70,6 +71,14 @@ const llamadas = new Set();
   //     un enlace directo puede «funcionar» aunque la lista esté rota).
   await ir('/negocios', 3500);
   const verPerfil = page.locator('text=Ver perfil >> visible=true').first();
+  // Una base VACÍA (producción antes de lanzar) no tiene fichas que abrir. Se
+  // salta el paso, pero se dice a gritos: si no, un «OK» daría a entender que se
+  // probó la ficha cuando no había ninguna.
+  const hayNegocios = await verPerfil.count();
+  if (!hayNegocios) {
+    saltado = 'ficha de negocio (la base no tiene negocios que abrir)';
+    console.log(`AVISO · paso saltado: ${saltado}`);
+  } else {
   await verPerfil.click({ timeout: 8000 });
   await page.waitForTimeout(3500);
   // Que la ficha ABRIÓ de verdad: si no, el recorrido de pestañas de abajo no
@@ -101,6 +110,7 @@ const llamadas = new Set();
     process.exit(1);
   }
   console.log(`pestañas de la ficha recorridas: ${tocadas}`);
+  }
 
   // 3 · Buscar — la superficie que más RPC dispara.
   await ir('/negocios', 2500);
@@ -125,5 +135,9 @@ const llamadas = new Set();
     for (const d of denegadas) console.error(`  ${d.status}  ${d.url}\n        ${d.body}`);
     process.exit(1);
   }
-  console.log('\nOK · ningun 401/403 ni «permission denied» para un visitante sin cuenta.');
+  if (saltado) {
+    console.log(`\nOK PARCIAL · ningun 401/403, pero NO se probo: ${saltado}.`);
+  } else {
+    console.log('\nOK · ningun 401/403 ni «permission denied» para un visitante sin cuenta.');
+  }
 })();
