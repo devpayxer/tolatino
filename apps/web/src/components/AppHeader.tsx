@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { IconBell as Bell, IconBriefcase as Briefcase, IconCalendar as Calendar, IconCar as Car, IconHome as Home, IconMapPin as MapPin, IconPlus as Plus, IconSearch as Search, IconBuildingStore as Store, IconTruck as Truck, IconUsers as Users, IconX as X } from '@tabler/icons-react';
+import { IconBell as Bell, IconBriefcase as Briefcase, IconCalendar as Calendar, IconCar as Car, IconHome as Home, IconMapPin as MapPin, IconPlus as Plus, IconSearch as Search, IconBuildingStore as Store, IconClock as Clock, IconTruck as Truck, IconUsers as Users, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useNotifications } from '@/lib/notifications';
@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { Avatar, Chip, SoonTag, Wordmark, YouAvatar } from '@/components/ui';
 import { NAV_CATS, VIEW_PATH, bizTile, eventTile, type Business, type EventItem, type Post } from '@/data/fixtures';
 import { useLiveData, searchBusinesses, searchEvents } from '@/lib/live';
+import { borrarReciente, borrarTodasLasRecientes, guardarReciente, leerRecientes, type Reciente } from '@/lib/recientes';
 import { supabase } from '@/lib/supabase';
 import { CAT, tile } from '@/lib/tiles';
 
@@ -79,6 +80,20 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
   );
 }
 
+// Misma caja para los dos estados del desplegable (recientes y resultados), para
+// que no puedan divergir.
+// Atajos del estado sin-resultados: las categorías que más se buscan. No son
+// decorativos — rellenan el buscador y disparan la búsqueda de verdad.
+const ATAJOS = [
+  { es: 'mecánico', en: 'mechanic' },
+  { es: 'comida', en: 'food' },
+  { es: 'salón', en: 'salon' },
+  { es: 'tienda', en: 'store' },
+  { es: 'plomero', en: 'plumber' },
+];
+
+const CAJA = 'absolute left-1/2 top-[calc(100%+6px)] z-[45] max-h-[340px] w-[calc(100%-20px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-hair-strong bg-white p-2 shadow-pop md:w-[560px]';
+
 function SearchDropdown() {
   const { L } = useLang();
   const { query, setQuery, setSearch, city, coords } = useApp();
@@ -136,14 +151,84 @@ function SearchDropdown() {
     return () => { cancelled = true; clearTimeout(t); };
   }, [query, coords?.lat, coords?.lng]);
 
+  // ── AÑADIDO: recientes ─────────────────────────────────────────────────
+  // Se leen una vez al montar y tras cada búsqueda; `localStorage` no avisa de
+  // sus propios cambios, así que se refresca a mano con `sello`.
+  const [sello, setSello] = useState(0);
+  const [recientes, setRecientes] = useState<Reciente[]>([]);
+  useEffect(() => { setRecientes(leerRecientes()); }, [sello]);
+
+  // ── AÑADIDO: «¿quisiste decir…?» ───────────────────────────────────────
+  // Solo se pregunta cuando la búsqueda va MAL (poco o nada), no siempre: si ya
+  // encontró lo que buscaba, corregirle la palabra es ruido.
+  const [correccion, setCorreccion] = useState<string | null>(null);
+  const pocosResultados =
+    (serverBiz?.length ?? 0) + (serverEv?.length ?? 0) + (serverPosts?.length ?? 0) === 0;
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 3 || !supabase || !pocosResultados) { setCorreccion(null); return; }
+    let cancelado = false;
+    const t = setTimeout(() => {
+      supabase!.rpc('sugerir_termino', { in_q: q }).then(({ data, error }) => {
+        if (cancelado) return;
+        const s = !error && typeof data === 'string' ? data.trim() : '';
+        setCorreccion(s && s.toLowerCase() !== q.toLowerCase() ? s : null);
+      });
+    }, 320);
+    return () => { cancelado = true; clearTimeout(t); };
+  }, [query, pocosResultados]);
+
   const ql = query.trim().toLowerCase();
-  if (!ql) return null;
 
   const go = (view: 'comunidad' | 'negocios' | 'eventos') => {
-    setSearch(query.trim());
+    const q = query.trim();
+    guardarReciente(q);
+    setSello((n) => n + 1);
+    setSearch(q);
     setQuery('');
     router.push(VIEW_PATH[view]);
   };
+
+  // Sin nada escrito: en vez de no mostrar nada, las últimas búsquedas. Es el
+  // momento en que el buscador puede ahorrarle a alguien teclear otra vez.
+  if (!ql) {
+    if (recientes.length === 0) return null;
+    return (
+      <div className={CAJA}>
+        <div className="flex items-baseline justify-between px-2.5 pb-1 pt-2">
+          <span className="text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2">
+            {L('Búsquedas recientes', 'Recent searches')}
+          </span>
+          <button
+            onClick={() => { borrarTodasLasRecientes(); setSello((n) => n + 1); }}
+            className="cursor-pointer text-[11px] font-extrabold text-primary-dark"
+          >
+            {L('Borrar todo', 'Clear all')}
+          </button>
+        </div>
+        {recientes.map((r) => (
+          <div key={r.q} className="flex items-center gap-1 rounded-field pr-1 hover:bg-app">
+            <button
+              onClick={() => { setQuery(r.q); setSearch(r.q); guardarReciente(r.q); setSello((n) => n + 1); }}
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-[11px] p-2.5 text-left"
+            >
+              <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-[10px] bg-lilac-2">
+                <Clock size={17} stroke={2.2} className="text-primary-dark" />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{r.q}</span>
+            </button>
+            <button
+              onClick={() => { borrarReciente(r.q); setSello((n) => n + 1); }}
+              className="tap flex-none cursor-pointer rounded-full p-1.5 text-muted-2 hover:text-ink"
+              aria-label={L(`Quitar ${r.q} de recientes`, `Remove ${r.q} from recent`)}
+            >
+              <X size={14} stroke={2.6} />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const clientBizHits = BUSINESSES.filter((b) =>
     `${b.name} ${CAT[b.cat].es} ${CAT[b.cat].en} ${b.specEs} ${b.specEn}`.toLowerCase().includes(ql),
@@ -162,7 +247,7 @@ function SearchDropdown() {
   ];
 
   return (
-    <div className="absolute left-1/2 top-[calc(100%+6px)] z-[45] max-h-[340px] w-[calc(100%-20px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-hair-strong bg-white p-2 shadow-pop md:w-[560px]">
+    <div className={CAJA}>
       {groups.filter((g) => g.count > 0).map((g) => (
         <div key={g.label}>
           <div className="px-2.5 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2">
@@ -183,9 +268,52 @@ function SearchDropdown() {
           ))}
         </div>
       ))}
+      {/* AÑADIDO · «¿Quisiste decir…?». Antes de rendirse, el buscador propone.
+          La corrección sale del vocabulario de la propia app (los términos de
+          las categorías y las claves de sinónimos), así que solo sugiere
+          palabras que de verdad llevan a algún sitio. */}
+      {correccion && (
+        <button
+          onClick={() => { setQuery(correccion); setCorreccion(null); }}
+          className="mb-1 flex w-full cursor-pointer items-center gap-2 rounded-field bg-amber-bg px-3 py-2.5 text-left"
+        >
+          <Search size={14} stroke={2.4} className="flex-none text-amber-ink" />
+          <span className="min-w-0 text-[12.5px] font-semibold text-amber-ink">
+            {L('¿Quisiste decir', 'Did you mean')}{' '}
+            <span className="font-extrabold underline">{correccion}</span>?
+          </span>
+        </button>
+      )}
+
       {total === 0 ? (
-        <div className="px-3 py-6 text-center text-[12.5px] font-semibold text-muted">
-          {L('Sin resultados para tu búsqueda', 'No results for your search')}
+        /* AÑADIDO · sin resultados CON SALIDA. Antes era una línea muerta: te
+           decía que no había nada y te dejaba ahí. Un buscador serio siempre
+           ofrece el siguiente paso. */
+        <div className="px-3 py-5">
+          <div className="text-center text-[13px] font-extrabold text-ink">
+            {L(`Nada por aquí para “${query.trim()}”`, `Nothing here for “${query.trim()}”`)}
+          </div>
+          <div className="mx-auto mt-1 max-w-[300px] text-center text-[11.5px] font-semibold leading-[1.5] text-muted">
+            {L('Puede que aún no esté en tu zona. Prueba con otra palabra o mira por categoría.',
+               'It may not be in your area yet. Try another word or browse by category.')}
+          </div>
+          <div className="mt-3.5 flex flex-wrap justify-center gap-1.5">
+            {ATAJOS.map((a) => (
+              <button
+                key={a.es}
+                onClick={() => { setQuery(L(a.es, a.en)); }}
+                className="tap-y cursor-pointer rounded-full bg-lilac-2 px-3 py-1.5 text-[11.5px] font-extrabold text-primary-dark"
+              >
+                {L(a.es, a.en)}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => go('negocios')}
+            className="mt-3.5 flex w-full cursor-pointer items-center justify-center rounded-btn bg-lilac-3 px-3.5 py-2.5 text-[12.5px] font-extrabold text-primary-dark"
+          >
+            {L('Ver todos los negocios cerca', 'See all businesses nearby')}
+          </button>
         </div>
       ) : (
         <button

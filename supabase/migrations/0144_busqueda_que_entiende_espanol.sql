@@ -469,3 +469,38 @@ create index if not exists businesses_name_trgm_idx
   on public.businesses using gin (lower(public.tl_unaccent(name)) gin_trgm_ops);
 
 notify pgrst, 'reload schema';
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- 8 · «¿Quisiste decir…?»
+-- ════════════════════════════════════════════════════════════════════════════
+-- Cuando alguien escribe «carniceria» y no hay ninguna, o escribe «mecnico» tan
+-- mal que ni las erratas lo alcanzan, un buscador serio no se encoge de hombros:
+-- propone. La corrección sale del vocabulario que YA tenemos —los términos de
+-- las categorías y las claves de sinónimos—, no de un diccionario genérico:
+-- así solo sugiere palabras que de verdad llevan a algún sitio de esta app.
+create or replace function public.sugerir_termino(in_q text)
+returns text
+language sql
+stable
+security definer
+set search_path to 'public'
+as $$
+  with q as (select lower(public.tl_unaccent(btrim(coalesce(in_q, '')))) as t),
+  vocabulario as (
+    select unnest(string_to_array(c.terms, ' ')) as palabra from public.search_categories c
+    union
+    select s.term from public.search_synonyms s
+  )
+  select v.palabra
+    from vocabulario v, q
+   where length(q.t) >= 3
+     and length(v.palabra) >= 3
+     and v.palabra <> q.t
+     and word_similarity(q.t, v.palabra) > 0.5
+   order by word_similarity(q.t, v.palabra) desc, length(v.palabra)
+   limit 1;
+$$;
+
+grant execute on function public.sugerir_termino(text) to anon, authenticated;
+
+notify pgrst, 'reload schema';
