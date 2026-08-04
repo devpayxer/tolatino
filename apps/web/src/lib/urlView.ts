@@ -15,6 +15,40 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // This is deliberately built on the History API (not next/router) so it updates the
 // URL WITHOUT a route navigation — the screen keeps its scroll, filters and data.
 
+// ── Cerrar lo que esté abierto ────────────────────────────────────────────
+// Cada pantalla que abre un detalle guarda su id en estado de React y solo
+// vuelve a mirar la URL al montar y con Atrás (`popstate`). Eso deja un hueco:
+// una navegación que cambia la URL SIN recargar la pantalla —buscar algo desde
+// dentro de una ficha, por ejemplo— no la cierra. El fundador lo vio el
+// 2026-08-04: estando dentro de un negocio, buscar dejaba la ficha encima.
+//
+// El arreglo se apoya en lo ÚNICO que todas comparten: todas escuchan
+// `popstate`. Se quitan los parámetros de detalle y se emite ese mismo evento,
+// así que se enteran todas — incluida la de Negocios, que no usa este hook sino
+// su propia versión a mano. Sin tocar ninguna.
+const clavesDetalle = new Set<string>();
+
+/** Declara que `key` abre un detalle. Devuelve la baja. */
+export function registrarClaveDetalle(key: string): () => void {
+  clavesDetalle.add(key);
+  return () => { clavesDetalle.delete(key); };
+}
+
+/** Cierra cualquier detalle abierto (ficha, evento, hilo, perfil…). */
+export function cerrarDetalles(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const url = new URL(window.location.href);
+    let cambio = false;
+    clavesDetalle.forEach((k) => {
+      if (url.searchParams.has(k)) { url.searchParams.delete(k); cambio = true; }
+    });
+    if (!cambio) return;
+    window.history.replaceState({}, '', url.toString());
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  } catch { /* sin History API la navegación normal ya cambia de pantalla */ }
+}
+
 const readParam = (key: string): string | null => {
   if (typeof window === 'undefined') return null;
   try { return new URLSearchParams(window.location.search).get(key); } catch { return null; }
@@ -68,6 +102,8 @@ export function useUrlDetail(key: string, isValid?: (v: string) => boolean): {
   value: string | null; open: (id: string) => void; close: () => void;
 } {
   const [value, setValue] = useState<string | null>(null);
+  // Se apunta para que `cerrarDetalles()` sepa que esta clave existe.
+  useEffect(() => registrarClaveDetalle(key), [key]);
   useEffect(() => {
     const v = readParam(key);
     if (v && (!isValid || isValid(v))) setValue(v);

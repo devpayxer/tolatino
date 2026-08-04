@@ -21,6 +21,7 @@ import { useNow } from '@/lib/useNow';
 import { bizStatus, isOpenNow, statusLabel } from '@/lib/hours';
 import { CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { BizDetail } from '@/screens/BizDetail';
+import { registrarClaveDetalle } from '@/lib/urlView';
 
 const DIST_MIN = 5;
 const DIST_MAX = 50;
@@ -100,6 +101,11 @@ export function NegociosScreen() {
     if (window.history.state && window.history.state.tlBiz) window.history.back();
     else if (new URLSearchParams(window.location.search).get('b')) window.history.replaceState(null, '', window.location.pathname);
   };
+  // La ficha abierta vive en `?b=`, con su propia mecánica (no usa
+  // `useUrlDetail`). Se apunta la clave para que `cerrarDetalles()` la cierre
+  // igual que a las demás — p. ej. al buscar algo desde dentro de una ficha.
+  useEffect(() => registrarClaveDetalle('b'), []);
+
   // On first mount, open whatever ?b= points to (deep link / refresh). Once.
   const deepLinked = useRef(false);
   useEffect(() => {

@@ -9,6 +9,7 @@ import { useCallback, createContext, useContext, useEffect, useMemo, useState, t
 import { DEFAULT_CITY, type Post, type PostType } from '@/data/fixtures';
 import { DEFAULT_COORDS, getBrowserLocation, isCoordLabel, nearestCity } from '@/lib/geo';
 import { guardarReciente } from '@/lib/recientes';
+import { cerrarDetalles } from '@/lib/urlView';
 
 type Toggles = Record<string, boolean>;
 
@@ -240,6 +241,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // «sin texto» dejó de significar «no mostrar nada» y pasó a significar
     // «mostrar recientes», así que después de buscar reaparecía.
     setSearchOpen(false);
+    // Y cierra lo que estuviera abierto encima. Buscar es «llévame a otro
+    // sitio»: si te quedas dentro de la ficha del negocio en el que estabas,
+    // la búsqueda parece no haber hecho nada. Vale para ficha, evento, hilo y
+    // perfil de vecino — ver `cerrarDetalles`.
+    if (v.trim()) cerrarDetalles();
   }, []);
   const [savedPosts, setSavedPosts] = useState<Toggles>({});
   const [recd, setRecd] = useState<Toggles>({});
