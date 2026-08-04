@@ -518,12 +518,12 @@ export function PanelScreen() {
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 md:px-5">
           <button
             onClick={() => setDrawer(true)}
-            className={`flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full lg:hidden ${isInicio ? 'bg-[rgba(255,255,255,.12)]' : 'bg-lilac-2'}`}
+            className={`tap flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full lg:hidden ${isInicio ? 'bg-[rgba(255,255,255,.12)]' : 'bg-lilac-2'}`}
             aria-label={L('Menú', 'Menu')}
           >
             <Menu size={17} stroke={2.2} className={isInicio ? 'text-white' : 'text-ink'} />
           </button>
-          <button onClick={() => router.push('/comunidad')} className="flex cursor-pointer items-baseline">
+          <button onClick={() => router.push('/comunidad')} className="tap-y flex cursor-pointer items-baseline">
             <span className={`text-[18px] font-extrabold tracking-[-.03em] ${isInicio ? 'text-white lg:text-ink' : 'text-ink'}`}>To&rsquo;</span>
             <span className={`text-[18px] font-extrabold tracking-[-.03em] ${isInicio ? 'text-amber lg:text-primary' : 'text-primary'}`}>Latino</span>
             {/* En la pantalla de Inicio la cabecera es oscura en móvil y clara en
@@ -566,7 +566,7 @@ export function PanelScreen() {
             <div className="relative flex-none">
               <button
                 onClick={() => setBellOpen((o) => !o)}
-                className={`relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full ${isInicio ? 'bg-[rgba(255,255,255,.12)] lg:bg-lilac-2' : 'bg-lilac-2'}`}
+                className={`tap relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full ${isInicio ? 'bg-[rgba(255,255,255,.12)] lg:bg-lilac-2' : 'bg-lilac-2'}`}
                 aria-label={L('Notificaciones', 'Notifications')}
                 aria-expanded={bellOpen}
               >
@@ -615,7 +615,7 @@ export function PanelScreen() {
               {sidebar}
             </div>
             <div className="flex-1 bg-[rgba(30,27,46,.45)]" />
-            <button onClick={() => setDrawer(false)} className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Cerrar', 'Close')}>
+            <button onClick={() => setDrawer(false)} className="tap absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Cerrar', 'Close')}>
               <X size={16} stroke={2.6} className="text-ink" />
             </button>
           </div>

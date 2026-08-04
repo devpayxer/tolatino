@@ -1569,7 +1569,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     shop: modOn('products') && realShop != null,
     services: modOn('services') && realServices != null,
     rentals: modOn('rental') && realRentals != null,
-    updates: modOn('updates') && realUpdates != null,
+    // `fetchBusinessUpdates` devuelve [] (nunca null), así que `!= null` era
+    // SIEMPRE cierto: la pestaña Novedades salía con CERO publicaciones. Es el
+    // ejemplo exacto de la regla del fundador («activo pero vacío → no aparece»).
+    // Se cuenta el contenido, como en eventos/propiedades/autos.
+    updates: modOn('updates') && (realUpdates?.length ?? 0) > 0,
     events: modOn('events') && (realEvents?.length ?? 0) > 0,
     props: modOn('inmuebles') && (realProps?.length ?? 0) > 0,
     autos: modOn('vehiculos') && (realAutos?.length ?? 0) > 0,

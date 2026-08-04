@@ -177,7 +177,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   const Sec = ({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) => (
     <div className="mt-1 flex items-center justify-between px-0.5">
       <h2 className="text-[14px] font-extrabold tracking-[-.01em] text-ink">{title}</h2>
-      {action && <button onClick={onAction} className="cursor-pointer text-[11.5px] font-extrabold text-primary-dark">{action} ›</button>}
+      {action && <button onClick={onAction} className="tap-y cursor-pointer text-[11.5px] font-extrabold text-primary-dark">{action} ›</button>}
     </div>
   );
   const Kpi = ({ label, value, sub, subC }: { label: string; value: string; sub?: string; subC?: string }) => (
@@ -206,7 +206,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
           <div className="mt-0.5 text-[11px] font-semibold text-muted">{completeness < 100 ? L(`Tu página está ${completeness}% completa`, `Your page is ${completeness}% complete`) : L('Tu página está completa', 'Your page is complete')}</div>
           {completeness < 100 && <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-lilac-line"><span className="block h-full rounded-full bg-primary" style={{ width: `${completeness}%` }} /></div>}
         </div>
-        {sells && real && <button className="flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft"><Pause size={12} stroke={2.4} className="mr-1 inline" />{L('Pausar', 'Pause')}</button>}
+        {sells && real && <button className="tap-y flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft"><Pause size={12} stroke={2.4} className="mr-1 inline" />{L('Pausar', 'Pause')}</button>}
       </div>
 
       {/* requiere tu atención */}

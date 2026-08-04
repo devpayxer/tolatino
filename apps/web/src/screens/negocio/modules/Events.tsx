@@ -463,7 +463,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const scanSupported = useBarcodeSupport(); // camera scan only where BarcodeDetector exists
   const reloadTickets = async () => {
     if (!mgEv.dbId || !supabase) return;
-    const { data } = await supabase.from('event_tickets').select('id,customer_name,qty,admitted,total,code,status,created_at').eq('event_id', mgEv.dbId).order('created_at', { ascending: false });
+    const { data } = await supabase.from('event_tickets').select('id,customer_name,qty,admitted,total,code,status,created_at').eq('event_id', mgEv.dbId).order('created_at', { ascending: false }).limit(500);
+    // Tope: un evento con miles de asistentes se bajaba entero al navegador.
     setTicketRows(Array.isArray(data) ? (data as unknown as TicketRow[]) : []);
   };
   // Admit N guests of a (possibly group) ticket per scan (checkin_ticket, migration

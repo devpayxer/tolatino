@@ -186,7 +186,7 @@
        por una dirección que sí lea a alguien.
 - [ ] **🔴 AUDITORÍA DE NEGOCIOS (2026-08-04) — EN CURSO.** ~27.000 líneas entre
   el panel del negocio (33 archivos), la ficha pública y el `/negocios` del
-  cliente. Se audita **por clases**, no por pantallas. Van **5 de 10**:
+  cliente. Se audita **por clases**, no por pantallas. **Las 10 clases barridas**:
   1. ~~**Dinero.**~~ 🔴 **Un comprador podía ponerle el precio a su propio
      pedido**: 3 platos de $45 registrados como $0,01 (ataque real, no lectura de
      código). Lo mismo con el total de las reservas. El pedido con TARJETA sí se
@@ -226,7 +226,36 @@
      dejar de pisar la lista al fallar, los ejemplos se quedaban fijos); lo
      pre-existente era un parpadeo. Las dos están cerradas.
 
-  **Faltan 5 clases:** visibilidad de módulos en la ficha,
+  6. ~~**Visibilidad de módulos.**~~ La pestaña **Novedades salía con CERO
+     publicaciones**: `fetchBusinessUpdates` devuelve `[]` (nunca `null`) y el
+     gate era `realUpdates != null`, o sea siempre cierto. Es el ejemplo exacto
+     de la regla («activo pero vacío → no aparece»). Ahora cuenta contenido, como
+     eventos/propiedades/autos. Menú, Tienda, Servicios y Renta ya cumplían (sus
+     `fetch…` devuelven `null` cuando no hay filas — comprobado leyendo cada uno).
+     **Nivel de prueba: código y build, no navegador** — no conseguí montar la
+     ficha en el banco de pruebas sin gastar de más; lo digo en vez de colármelo.
+  7. ~~**Escala.**~~ Cero claves foráneas sin índice y cero N+1. El susto del geo
+     fue **falsa alarma de mi propio regex**: las tres funciones que usan
+     `st_distance` lo **calculan para mostrarlo**, no filtran con él (y la de
+     reparto ya usa `st_dwithin`). Sí había **consultas sin tope**: la cuenta de
+     un cliente se bajaba TODOS sus pedidos, reservas, rentas y boletos en cada
+     visita, y un evento se bajaba TODOS sus asistentes. Topes puestos (200/500).
+     **Pendiente:** «ver más» para historiales largos — hoy se corta por lo viejo.
+  8. ~~**Móvil (44px).**~~ El cromo del panel —hamburguesa que abre la navegación
+     (36px), campana, logotipo, «Pausar», «Ver más ›»— estaba por debajo. A cero
+     en 390px. **Pendiente:** barrido módulo a módulo del panel; el cajón lateral
+     no me dejó recorrerlos automáticamente (Servicios mostró 10 controles cortos).
+  9. ~~**Idioma.**~~ Limpio: cero `aria-label` en inglés duro y cero texto de
+     interfaz sin `L()` en el panel.
+  10. **Stubs.** 🔴 Envíos ofrecía **USPS, UPS y FedEx con tarifas concretas**
+     ($8.00, $10.00, $18.00) y plazos, sin decir en ningún sitio que no están
+     conectados: un dueño configuraba envíos creyendo que ese era el precio real.
+     Ahora lleva un aviso «Aún no conectado» explicando que son de referencia.
+     Los mensajeros externos (DoorDash Drive, Rappi/Uber Eats) están en el mismo
+     caso — **falta** ponerles el mismo aviso. El módulo Equipo ya se etiqueta
+     «Próximamente», que es la forma correcta.
+
+  **Lo que queda de esta auditoría:** visibilidad de módulos en la ficha,
   escala (índices, N+1, paginación), móvil (44px y desbordes), idioma, y stubs
   presentados como terminados. Y las tandas B (vender y cobrar), C
   (operar) y D (eventos) sin barrer del todo.

@@ -764,6 +764,19 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
       ) : (
         <>
           <div className="px-0.5 text-[12px] font-extrabold text-ink">{L('Transportistas y tarifas', 'Carriers & rates')}</div>
+          {/* Estas tarifas NO vienen de USPS/UPS/FedEx: son de referencia hasta que
+              se conecten sus APIs. Sin este aviso, un dueño configuraba envíos
+              creyendo que $8.00 era el precio real que le iban a cobrar.
+              (Auditoría de Negocios, 2026-08-04 — regla #8.) */}
+          <div role="note" className="flex items-start gap-2 rounded-field border border-[#F2E3BF] bg-amber-bg px-3 py-2.5">
+            <span className="mt-px flex-none rounded-full bg-amber-ink/10 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-amber-ink">
+              {L('Aún no conectado', 'Not connected yet')}
+            </span>
+            <span className="text-[11px] font-semibold leading-[1.5] text-amber-ink">
+              {L('Las tarifas de abajo son de referencia. Todavía no están conectadas con USPS, UPS ni FedEx, así que el precio real puede cambiar. Puedes dejarlo listo y lo activamos en cuanto conectemos sus sistemas.',
+                 'The rates below are for reference. They are not connected to USPS, UPS or FedEx yet, so the real price may differ. You can set it up now and we will switch it on once their systems are connected.')}
+            </span>
+          </div>
           <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             {CARRIERS.map((c, i) => {
               const on = carrierState[i];

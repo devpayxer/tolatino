@@ -39,7 +39,7 @@ export function ModulePage({
         <button
           onClick={onBack}
           aria-label={backLabel}
-          className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"
+          className="tap flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"
         >
           <ChevronLeft size={18} stroke={2.4} />
         </button>

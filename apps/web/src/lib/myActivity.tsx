@@ -105,10 +105,10 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     (async () => {
       const uid = user.id;
       const [o, b, r, t, g, w] = await Promise.all([
-        supabase!.from('business_orders').select(`id,business_id,code,items,total,channel,status,created_at,fulfillment,${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }),
-        supabase!.from('business_bookings').select(`id,business_id,service_name,service_id,party_size,starts_at,status,deposit,created_at,duration_min,staff_id,staff_name,addons,variant,total,notes,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }),
-        supabase!.from('business_rental_orders').select(`id,business_id,start_at,end_at,fee_total,deposit_total,status,paid,deposit_status,deposit_captured,created_at,business_rentals(item_name,qty),${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }),
-        supabase!.from('event_tickets').select(`id,event_id,qty,admitted,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }),
+        supabase!.from('business_orders').select(`id,business_id,code,items,total,channel,status,created_at,fulfillment,${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }).limit(200),
+        supabase!.from('business_bookings').select(`id,business_id,service_name,service_id,party_size,starts_at,status,deposit,created_at,duration_min,staff_id,staff_name,addons,variant,total,notes,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }).limit(200),
+        supabase!.from('business_rental_orders').select(`id,business_id,start_at,end_at,fee_total,deposit_total,status,paid,deposit_status,deposit_captured,created_at,business_rentals(item_name,qty),${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }).limit(200),
+        supabase!.from('event_tickets').select(`id,event_id,qty,admitted,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }).limit(200),
         supabase!.from('event_attendance').select(`event_id,created_at,${EV}`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('event_waitlist').select('event_id,tier_id,status').eq('user_id', uid),
       ]);
