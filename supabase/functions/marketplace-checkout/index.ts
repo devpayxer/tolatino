@@ -145,6 +145,11 @@ Deno.serve(async (req) => {
     let productName = "To'Latino";
     let subtotal = 0;                                   // dollars (goods value P)
     let payload: Record<string, unknown> = {};
+    // Pedido «pago en el establecimiento»: se PRECIA igual que uno con tarjeta y
+    // se inserta aquí mismo, sin Stripe. Una sola implementación de precios para
+    // los dos caminos — dos copias a mano se separan (lección de las
+    // notificaciones, 2026-08-03).
+    let cod = false;
     const ref = slug;
 
     // Extra money on top of the goods value P: delivery fee + tip go 100% to the
@@ -156,8 +161,18 @@ Deno.serve(async (req) => {
     if (kind === 'order') {
       const biz = (await get(`businesses?slug=eq.${encodeURIComponent(slug)}&select=id,name,stripe_account_id,connect_charges_enabled,settings`))?.[0];
       if (!biz) return json({ error: 'business not found' }, 404);
-      if (!biz.connect_charges_enabled || !biz.stripe_account_id) return json({ error: 'seller_not_payable' }, 400);
-      businessId = biz.id; sellerAccount = biz.stripe_account_id; productName = `${biz.name} · Pedido`;
+      // El pedido EN EFECTIVO (el negocio no tiene Stripe) también entra por aquí.
+      // Antes el navegador lo insertaba directo en `business_orders` mandando el
+      // total: un comprador podía pedir 3 platos de $45 y registrarlos como $0,01
+      // (comprobado con un ataque real el 2026-08-04). Se rebota solo si el
+      // cliente pide pagar con tarjeta a un negocio que no puede cobrarla.
+      // Y así el MODELO CANÓNICO lo decide el SERVIDOR a partir de un solo hecho
+      // del negocio (¿tiene Stripe?), no el navegador.
+      cod = !biz.connect_charges_enabled || !biz.stripe_account_id;
+      if (cod && body?.cod !== true) return json({ error: 'seller_not_payable' }, 400);
+      if (!cod && body?.cod === true) return json({ error: 'seller_is_payable' }, 400);
+      businessId = biz.id; productName = `${biz.name} · Pedido`;
+      if (!cod) sellerAccount = biz.stripe_account_id;
       // RE-PRICE every line from authoritative DB prices — the client's `price`
       // is IGNORED. Each line must carry a real business_items id + its structured
       // add-on picks (sel); we recompute base + option prices from the business's
@@ -258,6 +273,30 @@ Deno.serve(async (req) => {
           paid_total: Math.round(subtotal * 105 + deliveryFee * 100 + tip * 100 - discount * 100) / 100,
         },
       };
+
+      if (cod) {
+        // El nombre lo pone el SERVIDOR desde `profiles` — igual que hace
+        // `fulfill_order` para los pedidos pagados. Antes lo mandaba el navegador.
+        const prof = (await get(`profiles?id=eq.${buyer}&select=display_name`))?.[0];
+        const nombreComprador = String(prof?.display_name ?? '').trim() || 'Cliente';
+        // Pago en el establecimiento: no hay comisión de servicio ni propina en
+        // línea — el cliente paga la mercancía (y el envío, si lo hay) en mano.
+        const totalCod = Math.round((subtotal + deliveryFee - discount) * 100) / 100;
+        const f = { ...(payload.fulfillment as Record<string, unknown>), payment: 'cash',
+                    service_fee: 0, tip: 0, paid_total: totalCod };
+        const code = 'TL-' + crypto.randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase();
+        const ins = await fetch(`${SUPABASE_URL}/rest/v1/business_orders`, {
+          method: 'POST',
+          headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+          body: JSON.stringify({
+            business_id: businessId, user_id: buyer, customer_name: nombreComprador,
+            items: lines, total: totalCod, channel, status: 'new', code, fulfillment: f,
+          }),
+        });
+        if (!ins.ok) return json({ error: 'could_not_place' }, 400);
+        const row = (await ins.json())?.[0];
+        return json({ orderId: row?.id ?? null, code: row?.code ?? code, amount: Math.round(totalCod * 100) });
+      }
     } else if (kind === 'booking') {
       // RE-PRICE the booking from DB (never trust body.subtotal). Payment is a
       // BUSINESS-level decision (the seller took cards → we're here); ANY priced

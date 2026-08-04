@@ -23,7 +23,7 @@ import { useSavedBiz } from '@/lib/savedBiz';
 import { useEndorsed } from '@/lib/endorsed';
 import { useAddresses } from '@/lib/addresses';
 import { loadCart, saveCart, loadSaved, saveSaved } from '@/lib/cartStore';
-import { startMarketplacePayment } from '@/lib/stripe';
+import { placeCashOrder, startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { fetchBusinessPhotos, fetchBusinessBySlug, fetchBusinessMenu, fetchBusinessServices, fetchBusinessProducts, fetchBusinessRentals, fetchBookingLoad, fetchBookingBusy, fetchBusinessReviews, fetchBusinessUpdates, fetchMyUpdateLikes, toggleUpdateLike, bumpUpdateViews, fetchEventsByOwner, createRentalOrder, fetchRentalBusy, fetchEndorsement, postReview, checkDeliveryRange, checkPromo, trackListingView, type PublicMenu, type PublicServices, type PubSvc, type PubProvider, type BookingBusy, type PublicShop, type PublicRentals, type PubRental, type PubReview, type PubUpdate, type RentalBusy, type Endorsement } from '@/lib/live';
 import { fetchBusinessRelations, type PublicRelation } from '@/lib/relations';
@@ -841,33 +841,36 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (cartCount === 0 || paying || belowMin || outOfRange) return;
     if (isDelivery && !chosenAddr) { setCartView('address'); return; }
     setPaying(true);
-    const items = Object.values(cart).map((l) => ({ name: l.name, qty: l.qty, price: l.unit, opts: [l.optsLabel, l.note ? `📝 ${l.note}` : ''].filter(Boolean).join(' · ') || undefined, ...(l.img ? { img: l.img } : {}) }));
-    // Cash order — same fulfillment shape a paid delivery order gets, so the seller's
-    // Cocina shows the address + amount-to-collect. `payment:'cash'` flags it so the
-    // seller knows to collect on delivery/pickup (not prepaid). No online fees/tip.
-    // A STORE cart (all lines from Tienda) stamps kind:'store' → Amazon-style copy
-    // + a day-based delivery window instead of kitchen minutes.
-    const fulfillment: Record<string, unknown> = {
-      payment: 'cash', subtotal: +cartTotal.toFixed(2), service_fee: 0, tip: 0,
-      delivery_fee: isDelivery ? deliveryFee : 0, collect_total: grandTotal,
-      ...(storeCart ? { kind: 'store' } : {}),
-      ...(discount > 0 && promo ? { promo: promo.code, discount: +discount.toFixed(2) } : {}),
-      ...(isDelivery && chosenAddr
-        ? {
-            address: chosenAddr.formatted, address_label: chosenAddr.label ?? undefined, dispatch: 'unassigned',
-            ...(storeCart
-              ? (del?.time ? { eta_range: del.time } : {})
-              : { eta_range: del?.prep ? `${del.prep}–${del.prep + 15} min` : '30–45 min' }),
-          }
-        : {}),
+    // MISMAS líneas que el pago con tarjeta: con `id` y las opciones elegidas,
+    // que es lo que permite al servidor recalcular el precio desde el catálogo.
+    // Antes este camino los tiraba y mandaba el total que dijera el navegador.
+    const items = Object.values(cart).map((l) => ({
+      id: l.id, sel: l.sel ?? [],
+      name: l.name, qty: l.qty, price: l.unit,
+      opts: [l.optsLabel, l.note ? `\u{1F4DD} ${l.note}` : ''].filter(Boolean).join(' \u00B7 ') || undefined,
+      ...(l.img ? { img: l.img } : {}),
+    }));
+    // El pedido en efectivo lo crea el SERVIDOR (misma función que el de tarjeta):
+    // precia desde el catálogo del negocio, arma el `fulfillment` y lo inserta.
+    const { code, error } = await placeCashOrder({
+      kind: 'order', slug: b.slug, items,
+      channel: isDelivery ? 'delivery' : 'pickup',
+      ...(isDelivery && chosenAddr ? { address: { formatted: chosenAddr.formatted, label: chosenAddr.label ?? undefined } } : {}),
       ...(isDelivery ? { instructions: composeInstructions() } : {}),
-    };
-    const { error, id } = await act.placeOrder(b.slug, items, grandTotal, isDelivery ? 'delivery' : 'pickup', fulfillment);
+      ...(promo ? { promo: promo.code } : {}),
+    });
     setPaying(false);
-    if (error) { flash(L('No se pudo enviar el pedido', 'Could not place order')); return; }
+    if (error) {
+      flash(error === 'below_minimum' ? L('No llegas al mínimo del negocio', "You're below the business minimum")
+        : error === 'item_unavailable' ? L('Un artículo ya no está disponible', 'An item is no longer available')
+        : error === 'no_delivery' ? L('Este negocio no hace entregas ahora', "This business isn't delivering right now")
+        : L('No se pudo enviar el pedido', 'Could not place order'));
+      return;
+    }
     setDoneStore(storeCart);
     setCart({}); // order placed → empty the cart (clears its saved copy too)
-    setDoneOrderId(id ?? '');
+    setDoneOrderId(code ?? '');
+
   };
 
   // Default single-option selections for a customize sheet: first in-stock value

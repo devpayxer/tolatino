@@ -207,6 +207,21 @@ export async function startMarketplaceCheckout(input: MarketplaceInput, returnPa
  * (no redirect to Stripe's hosted page). The order/tickets are still created only
  * once payment succeeds (webhook → payment_intent.succeeded).
  */
+/**
+ * Pedido «pago en el establecimiento». Va por la MISMA función que el pago con
+ * tarjeta para que el precio lo calcule el servidor desde el catálogo del
+ * negocio. Antes el navegador insertaba la fila con el total que él quisiera:
+ * un comprador podía pedir 3 platos de $45 y dejarlos registrados en $0,01
+ * (comprobado con un ataque real el 2026-08-04).
+ */
+export async function placeCashOrder(
+  input: Extract<MarketplaceInput, { kind: 'order' }>,
+): Promise<{ orderId?: string; code?: string; error?: string }> {
+  const { data, error } = await callMarketplace({ ...input, cod: true, origin: origin() });
+  if (data?.code) return { orderId: (data.orderId as string) ?? undefined, code: data.code as string };
+  return { error: error || 'could_not_place' };
+}
+
 export async function startMarketplacePayment(
   input: MarketplaceInput,
 ): Promise<{ clientSecret?: string; pendingId?: string; amount?: number; error?: string }> {
