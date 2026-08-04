@@ -111,7 +111,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
           {L('Publica tu negocio para ver tus ingresos y pagos.', 'Publish your business to see revenue and payouts.')}
         </p>
-        <button onClick={() => router.push('/negocio/publicar')} className="mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
+        <button onClick={() => router.push('/negocio/publicar')} className="tap-y mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
           {L('Publicar negocio', 'Publish business')}
         </button>
       </div>
@@ -164,7 +164,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
                 {active ? (
                   <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-bg px-3 py-1 text-[11px] font-extrabold text-green-dark"><Check size={12} stroke={3} />{L('Recibiendo pagos', 'Receiving payments')}</span>
                 ) : (
-                  <button onClick={connectOnboard} disabled={connectBusy || connect === null} className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-60">
+                  <button onClick={connectOnboard} disabled={connectBusy || connect === null} className="tap-y mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-60">
                     {connectBusy ? L('Abriendo Stripe…', 'Opening Stripe…') : <>{pending ? L('Continuar verificación', 'Continue verification') : L('Conectar con Stripe', 'Connect with Stripe')}<ExternalLink size={13} stroke={2.4} /></>}
                   </button>
                 )}

@@ -249,6 +249,19 @@ export function CuentaScreen() {
     return pill(stage);
   };
   const txEmpty = (msg: string) => <div className={`${cardCls} p-6 text-center text-[13px] font-semibold text-muted`}>{msg}</div>;
+  /** «Ver más» del historial. Antes el tope de 200 cortaba en silencio y lo más
+   *  viejo quedaba inalcanzable — un tope sin salida es la otra forma de mentir.
+   *  (Auditoría de Negocios, 2026-08-04.) */
+  const verMas = () =>
+    act.hayMas ? (
+      <button
+        onClick={act.cargarMas}
+        disabled={act.cargandoMas}
+        className="tap-y mx-auto mt-3 cursor-pointer rounded-btn border border-hair bg-white px-5 py-2.5 text-[13px] font-extrabold text-primary-dark shadow-card disabled:opacity-60"
+      >
+        {act.cargandoMas ? L('Cargando…', 'Loading…') : L('Ver más', 'Show more')}
+      </button>
+    ) : null;
   const txItem = (key: string, title: string, sub: string, right: ReactNode) => (
     <div key={key} className={`${cardCls} flex items-center gap-3 p-3.5`}>
       <span className="min-w-0 flex-1">
@@ -637,6 +650,7 @@ export function CuentaScreen() {
                   <ChevronRight size={16} className="flex-none text-muted" />
                 </button>
               ))}
+              {verMas()}
             </div>
           )}
         </div>
@@ -672,6 +686,7 @@ export function CuentaScreen() {
                 {upcoming.map(bkCard)}
                 {past.length > 0 && <div className="mt-1 text-[11.5px] font-extrabold uppercase tracking-wide text-muted">{L('Anteriores', 'Past')}</div>}
                 {past.map(bkCard)}
+                {verMas()}
               </div>
             );
           })()}
@@ -693,6 +708,7 @@ export function CuentaScreen() {
                   `${r.item_count > 1 ? `${r.item_count} ${L('artículos', 'items')} · ` : ''}${r.item_name} · ${dt(r.start_at)}${r.deposit ? ` · ${L('dep.', 'dep.')} ${money(r.deposit)}` : ''}${r.paid ? ` · ${L('pagada', 'paid')}` : ''}${dep ? ` · ${dep}` : ''}`,
                   <>{r.total != null && <span className="text-[13px] font-extrabold text-ink">{money(r.total)}</span>}{pill(r.status)}{cancelBtn('rental', r.id, r.status)}</>);
               })}
+              {verMas()}
             </div>
           )}
         </div>
@@ -740,6 +756,7 @@ export function CuentaScreen() {
                   </div>
                 );
               })}
+              {verMas()}
             </div>
           )}
         </div>

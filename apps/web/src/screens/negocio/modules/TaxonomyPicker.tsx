@@ -43,7 +43,7 @@ export function TaxonomyPicker({
   };
 
   const chip = (on: boolean) =>
-    `cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`;
+    `tap-y cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`;
 
   return (
     <div>
@@ -55,7 +55,7 @@ export function TaxonomyPicker({
         {groups.map((g, gi) => (
           <div key={gi} className={gi > 0 ? 'mt-2.5' : ''}>
             {g.title && <div className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[.04em] text-muted">{g.title}</div>}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
               {g.items.map(([es, en]) => (
                 <button key={es} type="button" onClick={() => onToggle(es)} className={chip(selected.includes(es))}>
                   {L(es, en)}
@@ -65,7 +65,7 @@ export function TaxonomyPicker({
           </div>
         ))}
 
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-x-2 gap-y-[18px]">
           {extras.map((es) => (
             <button key={`x-${es}`} type="button" onClick={() => onToggle(es)} className={chip(true)}>
               {es}
@@ -84,7 +84,7 @@ export function TaxonomyPicker({
             <button
               type="button"
               onClick={() => { setAdding(true); setVal(''); }}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] border-dashed border-lilac-line bg-white px-3 py-2 text-[12px] font-extrabold text-primary-dark"
+              className="tap-y inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] border-dashed border-lilac-line bg-white px-3 py-2 text-[12px] font-extrabold text-primary-dark"
             >
               <Plus size={13} stroke={2.8} /> {L('Agregar', 'Add')}
             </button>

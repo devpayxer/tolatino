@@ -327,7 +327,7 @@ export function PanelScreen() {
           <div className="relative mt-3">
             <button
               onClick={() => setSwitcherOpen((o) => !o)}
-              className="flex w-full cursor-pointer items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-app px-2.5 py-2 text-left"
+              className="tap-y flex w-full cursor-pointer items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-app px-2.5 py-2 text-left"
               aria-label={L('Cambiar de negocio', 'Switch business')}
               aria-expanded={switcherOpen}
             >
@@ -348,7 +348,7 @@ export function PanelScreen() {
                         <button
                           key={b.id}
                           onClick={() => { admin.setActive(b.id); setSwitcherOpen(false); }}
-                          className={`flex w-full cursor-pointer items-center gap-2.5 rounded-btn px-2 py-2 text-left ${on ? 'bg-lilac-2' : 'hover:bg-app'}`}
+                          className={`tap-y flex w-full cursor-pointer items-center gap-2.5 rounded-btn px-2 py-2 text-left ${on ? 'bg-lilac-2' : 'hover:bg-app'}`}
                         >
                           <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-[11px] font-extrabold text-white" style={{ background: b.tier === 'free' ? '#9F1239' : '#7B61FF' }}>
                             {initialsOf(b.name)}
@@ -364,7 +364,7 @@ export function PanelScreen() {
                   </div>
                   <button
                     onClick={() => { setSwitcherOpen(false); router.push('/negocio/publicar'); }}
-                    className="flex w-full cursor-pointer items-center gap-2 border-t border-hair px-3 py-2.5 text-left text-[12px] font-extrabold text-primary-dark hover:bg-app"
+                    className="tap-y flex w-full cursor-pointer items-center gap-2 border-t border-hair px-3 py-2.5 text-left text-[12px] font-extrabold text-primary-dark hover:bg-app"
                   >
                     <Plus size={14} stroke={2.6} /> {L('Publicar otro negocio', 'Publish another business')}
                   </button>
@@ -440,7 +440,7 @@ export function PanelScreen() {
             <div className="mt-0.5 text-[10.5px] font-semibold leading-snug text-[rgba(255,255,255,.85)]">
               {L('Activa menú, reservas, productos y más. Insignia verificada y 5× más visibilidad.', 'Activate menu, bookings, products & more. Verified badge and 5× visibility.')}
             </div>
-            <button onClick={() => ctx.go('billing')} className="mt-2 cursor-pointer rounded-[9px] bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-primary-press">
+            <button onClick={() => ctx.go('billing')} className="tap-y mt-2 cursor-pointer rounded-[9px] bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-primary-press">
               {L('Mejorar a Verified ›', 'Upgrade to Verified ›')}
             </button>
           </div>
@@ -550,7 +550,7 @@ export function PanelScreen() {
             {jumpOpen && jumpMatches.length > 0 && (
               <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 overflow-hidden rounded-card-sm border border-hair bg-white p-1.5 shadow-modal">
                 {jumpMatches.map((m) => (
-                  <button key={m.id} onMouseDown={(e) => e.preventDefault()} onClick={() => { ctx.go(m.id); setJumpQ(''); setJumpOpen(false); }} className="flex w-full cursor-pointer items-center rounded-btn px-2.5 py-2 text-left hover:bg-app">
+                  <button key={m.id} onMouseDown={(e) => e.preventDefault()} onClick={() => { ctx.go(m.id); setJumpQ(''); setJumpOpen(false); }} className="tap-y flex w-full cursor-pointer items-center rounded-btn px-2.5 py-2 text-left hover:bg-app">
                     <span className="text-[12.5px] font-bold text-ink-soft">{m.label}</span>
                   </button>
                 ))}
@@ -558,7 +558,7 @@ export function PanelScreen() {
             )}
           </div>
           <div className="ml-auto flex flex-none items-center gap-2">
-            <button onClick={() => router.push(ownPage)} className="hidden cursor-pointer items-center gap-1.5 rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft md:flex">
+            <button onClick={() => router.push(ownPage)} className="tap-y hidden cursor-pointer items-center gap-1.5 rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft md:flex">
               <ExternalLink size={12} stroke={2.4} />
               {L('Ver mi página', 'View my page')}
             </button>
@@ -585,7 +585,7 @@ export function PanelScreen() {
                     {bellRows.length > 0 ? (
                       <div className="p-1.5">
                         {bellRows.map((b, i) => (
-                          <button key={i} onClick={() => { ctx.go(b.tab); setBellOpen(false); }} className="flex w-full cursor-pointer items-center gap-2.5 rounded-btn px-2.5 py-2.5 text-left hover:bg-app">
+                          <button key={i} onClick={() => { ctx.go(b.tab); setBellOpen(false); }} className="tap-y flex w-full cursor-pointer items-center gap-2.5 rounded-btn px-2.5 py-2.5 text-left hover:bg-app">
                             <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-lilac"><Bell size={13} stroke={2.4} className="text-primary-dark" /></span>
                             <span className="min-w-0 flex-1 text-[12px] font-bold text-ink-soft">{b.label}</span>
                             <span className="flex-none text-[11px] font-extrabold text-primary-dark">›</span>
@@ -650,12 +650,12 @@ export function PanelScreen() {
             </div>
             <div className="ml-auto flex flex-none items-center gap-2">
               {head.hasGhost && (
-                <button className="hidden cursor-pointer rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink-soft md:block">
+                <button className="tap-y hidden cursor-pointer rounded-[10px] border-[1.5px] border-lilac-line bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink-soft md:block">
                   {head.ghost}
                 </button>
               )}
               {!RICH_MODULES.has(tab) && (
-                <button className="cursor-pointer rounded-[10px] bg-primary px-4 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">
+                <button className="tap-y cursor-pointer rounded-[10px] bg-primary px-4 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">
                   + {head.cta}
                 </button>
               )}
@@ -666,7 +666,7 @@ export function PanelScreen() {
           {/* demo plan switcher inside billing — lets you preview each tier when
               exploring without a real listing; a real business shows its own plan */}
           {tab === 'billing' && !real && (
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-card-sm border border-hair bg-white p-3.5 shadow-card">
+            <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-[18px] rounded-card-sm border border-hair bg-white p-3.5 shadow-card">
               <span className="text-[12px] font-extrabold text-ink">{L('Vista previa del plan:', 'Preview plan:')}</span>
               {(
                 [
@@ -678,7 +678,7 @@ export function PanelScreen() {
                 <button
                   key={k}
                   onClick={() => setDemoTier(k)}
-                  className={`cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${demoTier === k ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-2'}`}
+                  className={`tap-y cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${demoTier === k ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-2'}`}
                 >
                   {lab}
                 </button>

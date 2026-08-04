@@ -206,7 +206,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
           <div className="mt-0.5 text-[11px] font-semibold text-muted">{completeness < 100 ? L(`Tu página está ${completeness}% completa`, `Your page is ${completeness}% complete`) : L('Tu página está completa', 'Your page is complete')}</div>
           {completeness < 100 && <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-lilac-line"><span className="block h-full rounded-full bg-primary" style={{ width: `${completeness}%` }} /></div>}
         </div>
-        {sells && real && <button className="tap-y flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft"><Pause size={12} stroke={2.4} className="mr-1 inline" />{L('Pausar', 'Pause')}</button>}
+        {sells && real && <button className="tap-y tap-y flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink-soft"><Pause size={12} stroke={2.4} className="mr-1 inline" />{L('Pausar', 'Pause')}</button>}
       </div>
 
       {/* requiere tu atención */}
@@ -217,7 +217,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
             <div key={i} className={`flex items-center gap-3 px-3.5 py-3 ${i < todos.length - 1 ? 'border-b border-hair' : ''}`}>
               <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-[10px] ${t.bg}`}><t.icon size={16} stroke={2.2} className={t.c} /></span>
               <div className="min-w-0 flex-1"><div className="text-[12.5px] font-extrabold text-ink">{t.title}</div><div className="mt-0.5 truncate text-[10.5px] font-semibold text-muted">{t.sub}</div></div>
-              <button onClick={() => go(t.tab)} className={`flex-none cursor-pointer rounded-[9px] px-3 py-2 text-[10.5px] font-extrabold ${i === 0 ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac text-primary-dark'}`}>{t.btn}</button>
+              <button onClick={() => go(t.tab)} className={`tap-y flex-none cursor-pointer rounded-[9px] px-3 py-2 text-[10.5px] font-extrabold ${i === 0 ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac text-primary-dark'}`}>{t.btn}</button>
             </div>
           ))}
         </div>
@@ -355,7 +355,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
         <div className="mt-1 flex items-center gap-3 rounded-card-sm border border-lilac-line p-3.5" style={{ background: 'linear-gradient(135deg,#efe9ff,#f7f3ff)' }}>
           <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn bg-white shadow-card"><Cart size={20} stroke={2.2} className="text-primary" /></span>
           <div className="min-w-0 flex-1"><div className="text-[13px] font-extrabold text-ink">{L('¿Vendes o tomas pedidos?', 'Do you sell or take orders?')}</div><div className="text-[11px] font-semibold text-ink-2">{L('Activa menú, productos, reservas o eventos. Tu página sigue igual.', 'Turn on menu, products, bookings or events. Your page stays the same.')}</div></div>
-          <button onClick={() => go('modules')} className="flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Activar', 'Enable')}</button>
+          <button onClick={() => go('modules')} className="tap-y flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Activar', 'Enable')}</button>
         </div>
       )}
     </div>

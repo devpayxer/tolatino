@@ -190,7 +190,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
             <div className="truncate text-[14.5px] font-extrabold text-ink">{c.name}</div>
             {statusPill(c.status)}
           </div>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <div className="mt-1.5 flex flex-wrap gap-x-1 gap-y-[18px].5">
             <span className="rounded-chip bg-lilac-2 px-2 py-0.5 text-[10.5px] font-bold text-ink-2">{valLabel}</span>
             {(() => { const sm = scopeMeta(c.scope); return <span className={`rounded-chip px-2 py-0.5 text-[10.5px] font-bold ${sm.cls}`}>{es ? sm.es : sm.en}</span>; })()}
             {c.code && <span className="rounded-chip bg-[#F1F5FF] px-2 py-0.5 font-mono text-[10.5px] font-extrabold tracking-wider text-[#4338CA]">{c.code}</span>}
@@ -201,15 +201,15 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
               ? <span className="text-[10.5px] font-extrabold text-ink-2"><b className="text-primary-dark">{c.redemptions}</b> {L('canjes', 'redemptions')}</span>
               : (
                 <span className="flex gap-1.5">
-                  <button onClick={() => setStatus(c, 'active')} className="cursor-pointer rounded-chip border-[1.5px] border-lilac-line px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{c.status === 'scheduled' ? L('Activar', 'Activate') : L('Reanudar', 'Resume')}</button>
-                  <button onClick={() => setSheet({ open: true, scope: c.scope, edit: c })} className="cursor-pointer rounded-chip border-[1.5px] border-hair px-2.5 py-1 text-[10.5px] font-extrabold text-muted">{L('Editar', 'Edit')}</button>
+                  <button onClick={() => setStatus(c, 'active')} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-lilac-line px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{c.status === 'scheduled' ? L('Activar', 'Activate') : L('Reanudar', 'Resume')}</button>
+                  <button onClick={() => setSheet({ open: true, scope: c.scope, edit: c })} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-hair px-2.5 py-1 text-[10.5px] font-extrabold text-muted">{L('Editar', 'Edit')}</button>
                 </span>
               )}
           </div>
           {c.status === 'active' && (
             <div className="mt-2 flex gap-1.5">
-              <button onClick={() => setSheet({ open: true, scope: c.scope, edit: c })} className="cursor-pointer rounded-chip border-[1.5px] border-lilac-line px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
-              <button onClick={() => setStatus(c, 'paused')} className="cursor-pointer rounded-chip border-[1.5px] border-hair px-2.5 py-1 text-[10.5px] font-extrabold text-muted">{L('Pausar', 'Pause')}</button>
+              <button onClick={() => setSheet({ open: true, scope: c.scope, edit: c })} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-lilac-line px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
+              <button onClick={() => setStatus(c, 'paused')} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-hair px-2.5 py-1 text-[10.5px] font-extrabold text-muted">{L('Pausar', 'Pause')}</button>
             </div>
           )}
         </div>
@@ -250,9 +250,9 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
       </div>
 
       {/* filter tabs */}
-      <div className="mt-3.5 flex gap-2 overflow-x-auto pb-0.5">
+      <div className="-my-1.5 py-1.5 mt-3.5 flex gap-2 overflow-x-auto pb-0.5">
         {FT.map(([k, lbl]) => (
-          <button key={k} onClick={() => setFilter(k)} className={`flex-none cursor-pointer rounded-chip px-3.5 py-1.5 text-[12px] font-extrabold transition-colors ${filter === k ? 'bg-primary text-white' : 'border border-hair bg-white text-muted'}`}>{lbl}</button>
+          <button key={k} onClick={() => setFilter(k)} className={`tap-y flex-none cursor-pointer rounded-chip px-3.5 py-1.5 text-[12px] font-extrabold transition-colors ${filter === k ? 'bg-primary text-white' : 'border border-hair bg-white text-muted'}`}>{lbl}</button>
         ))}
       </div>
 
@@ -357,10 +357,10 @@ function CampaignEditor({
         {!edit && scopes.length > 1 && (
           <div>
             <div className={lbl}>{L('¿Dónde aplica?', 'Where does it apply?')}</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
               {scopes.map((s) => {
                 const scopeLabel: Record<Scope, string> = { menu: L('Menú de comida', 'Food menu'), service: L('Servicios', 'Services'), rental: L('Renta', 'Rental'), shop: L('Tienda', 'Shop') };
-                return <button key={s} onClick={() => onScope(s)} className={`min-w-[calc(50%-4px)] flex-1 cursor-pointer rounded-field border-[1.5px] py-2.5 text-[12.5px] font-extrabold ${scope === s ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>{scopeLabel[s]}</button>;
+                return <button key={s} onClick={() => onScope(s)} className={`tap-y min-w-[calc(50%-4px)] flex-1 cursor-pointer rounded-field border-[1.5px] py-2.5 text-[12.5px] font-extrabold ${scope === s ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>{scopeLabel[s]}</button>;
               })}
             </div>
           </div>
@@ -368,11 +368,11 @@ function CampaignEditor({
         {/* type */}
         <div>
           <div className={lbl}>{L('Tipo de promoción', 'Promo type')}</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
             {types.map((t) => {
               const on = type === t;
               const labels: Record<string, string> = { percent: L('% descuento', '% off'), amount: L('$ descuento', '$ off'), combo: L('Combo', 'Combo'), bogo: L('2x1', 'BOGO'), happy: L('Happy hour', 'Happy hour'), shipping: L('Envío gratis', 'Free shipping') };
-              return <button key={t} onClick={() => setType(t)} className={`cursor-pointer rounded-field border-[1.5px] px-3 py-2 text-[12px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>{labels[t]}</button>;
+              return <button key={t} onClick={() => setType(t)} className={`tap-y cursor-pointer rounded-field border-[1.5px] px-3 py-2 text-[12px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>{labels[t]}</button>;
             })}
           </div>
         </div>
@@ -404,7 +404,7 @@ function CampaignEditor({
           <div className={lbl}>{L('Estado', 'Status')}</div>
           <div className="flex gap-2">
             {(['active', 'paused', 'scheduled'] as Status[]).map((s) => (
-              <button key={s} onClick={() => setStatus(s)} className={`flex-1 cursor-pointer rounded-field border-[1.5px] py-2 text-[11.5px] font-extrabold ${status === s ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>{s === 'active' ? L('Activa', 'Active') : s === 'paused' ? L('Pausada', 'Paused') : L('Programada', 'Scheduled')}</button>
+              <button key={s} onClick={() => setStatus(s)} className={`tap-y flex-1 cursor-pointer rounded-field border-[1.5px] py-2 text-[11.5px] font-extrabold ${status === s ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>{s === 'active' ? L('Activa', 'Active') : s === 'paused' ? L('Pausada', 'Paused') : L('Programada', 'Scheduled')}</button>
             ))}
           </div>
         </div>
@@ -415,7 +415,7 @@ function CampaignEditor({
 
       <div className="mt-5 flex gap-2.5">
         {edit && !confirm && <button onClick={() => setConfirm(true)} className="flex-none cursor-pointer rounded-btn border-[1.5px] border-pink-bg px-3.5 py-3 text-pink-dark"><IconTrash size={16} /></button>}
-        {edit && confirm && <button onClick={() => onDelete(edit)} className="flex-none cursor-pointer rounded-btn bg-pink-bg px-3.5 py-3 text-[12px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>}
+        {edit && confirm && <button onClick={() => onDelete(edit)} className="tap flex-none cursor-pointer rounded-btn bg-pink-bg px-3.5 py-3 text-[12px] font-extrabold text-pink-dark">{L('Eliminar', 'Delete')}</button>}
         <button onClick={save} disabled={!ready} className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
           <IconCheck size={16} stroke={2.6} /> {edit ? L('Guardar cambios', 'Save changes') : L('Crear campaña', 'Create campaign')}
         </button>

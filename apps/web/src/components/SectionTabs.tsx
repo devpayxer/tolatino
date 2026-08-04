@@ -31,7 +31,7 @@ export function SectionTabs<T extends string>({
               type="button"
               onClick={() => onChange(key)}
               aria-current={on ? 'page' : undefined}
-              className={`relative flex min-h-[42px] flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap px-1.5 pb-2.5 pt-2 text-[13.5px] transition-colors ${
+              className={`tap-y relative flex min-h-[42px] flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap px-1.5 pb-2.5 pt-2 text-[13.5px] transition-colors ${
                 on ? 'font-extrabold text-primary-dark' : 'font-bold text-muted hover:text-ink-soft'
               }`}
             >

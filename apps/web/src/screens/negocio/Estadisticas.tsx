@@ -207,7 +207,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
       {/* range selector */}
       <div className="flex items-center gap-1.5">
         {([7, 30, 90] as const).map((r) => (
-          <button key={r} onClick={() => setRange(r)} className={`cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${range === r ? 'bg-primary text-white shadow-cta-sm' : 'bg-white text-ink-soft shadow-card'}`}>
+          <button key={r} onClick={() => setRange(r)} className={`tap-y cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${range === r ? 'bg-primary text-white shadow-cta-sm' : 'bg-white text-ink-soft shadow-card'}`}>
             {L(`${r} días`, `${r} days`)}
           </button>
         ))}
@@ -283,7 +283,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
                 </div>
                 <div className="mt-1 text-[10.5px] font-bold text-muted-2">{ordCur > 0 ? L(`${ordCur} ${ordCur === 1 ? 'pedido' : 'pedidos'}`, `${ordCur} order${ordCur === 1 ? '' : 's'}`) : L('Aún sin pedidos', 'No orders yet')}</div>
               </div>
-              <button onClick={() => go('orders')} className="cursor-pointer rounded-[10px] bg-lilac px-3 py-2 text-[10.5px] font-extrabold text-primary-dark">{L('Ver pedidos', 'View orders')}</button>
+              <button onClick={() => go('orders')} className="tap-y cursor-pointer rounded-[10px] bg-lilac px-3 py-2 text-[10.5px] font-extrabold text-primary-dark">{L('Ver pedidos', 'View orders')}</button>
             </div>
             {revCur > 0 && <div className="mt-3"><Area data={revSeries} color="#1F9D57" /></div>}
           </div>

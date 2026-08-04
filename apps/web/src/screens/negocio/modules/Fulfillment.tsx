@@ -124,8 +124,11 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   const flash = (m: string) => { setToast(m); window.setTimeout(() => setToast(''), 1900); };
 
   // ── setup config (zones / drivers / pickup / carriers / external) ───────────
-  const [zones, setZones] = useState<Zone[]>(ZONE_SEED);
-  const [drivers, setDrivers] = useState<OwnDriver[]>(DRIVER_SEED);
+  // Estado inicial VACÍO: se pinta antes de saber si hay negocio real, así que
+  // un dueño veía un instante zonas con tarifas ($5, $12) y cuatro repartidores
+  // inventados en ruta. Quien decide es el cargador (`admin.demo ? … : []`).
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [drivers, setDrivers] = useState<OwnDriver[]>([]);
   const [pickState, setPickState] = useState<Record<number, boolean>>(arrToRec(PICK_DEF));
   const [carrierState, setCarrierState] = useState<Record<number, boolean>>(arrToRec(CARRIER_DEF));
   const [extState, setExtState] = useState<Record<number, boolean>>(arrToRec(EXT_DEF));
@@ -312,8 +315,8 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
 
   // ---------- shared styles ----------
   const dashBtn = 'w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-line bg-lilac-3 px-3 py-3.5 text-[12.5px] font-extrabold text-primary-dark';
-  const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
-  const fchip = (on: boolean) => `flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
+  const chip = (on: boolean) => `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+  const fchip = (on: boolean) => `tap-y flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
   const Toggle = ({ on, onClick }: { on: boolean; onClick: () => void }) => (
     <button onClick={onClick} aria-pressed={on} className={`relative h-[26px] w-[46px] flex-none cursor-pointer rounded-full transition-colors ${on ? 'bg-primary' : 'bg-lilac-line'}`}>
       <span className={`absolute top-[3px] h-5 w-5 rounded-full bg-white shadow-sm transition-all ${on ? 'left-[23px]' : 'left-[3px]'}`} />
@@ -408,8 +411,8 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
 
                 {!done && (
                   <div className="mt-2.5 flex items-center gap-2 border-t border-dashed border-hair pt-2.5">
-                    <button onClick={() => delAdvance(o)} className="flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">{delAdvLabel(o)}</button>
-                    {(o.status === 'new' || o.status === 'preparing') && <button onClick={() => { setStatus(o, 'cancelled'); flash(L('Pedido cancelado', 'Order cancelled')); }} className="flex-none cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-3 py-2 text-[11px] font-extrabold text-pink-dark">{L('Cancelar', 'Cancel')}</button>}
+                    <button onClick={() => delAdvance(o)} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">{delAdvLabel(o)}</button>
+                    {(o.status === 'new' || o.status === 'preparing') && <button onClick={() => { setStatus(o, 'cancelled'); flash(L('Pedido cancelado', 'Order cancelled')); }} className="tap-y flex-none cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-3 py-2 text-[11px] font-extrabold text-pink-dark">{L('Cancelar', 'Cancel')}</button>}
                   </div>
                 )}
               </div>
@@ -466,7 +469,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     <div className="flex flex-col gap-3.5">
       <div className="flex gap-1.5 rounded-btn border border-hair bg-white p-1">
         {(['own', 'external'] as const).map((d) => (
-          <button key={d} onClick={() => setDriverTab(d)} className={`flex-1 cursor-pointer rounded-[9px] py-2 text-[11.5px] font-extrabold ${driverTab === d ? 'bg-primary text-white' : 'text-ink-2'}`}>{d === 'own' ? L('Propios', 'Own') : L('Apps externas', 'External apps')}</button>
+          <button key={d} onClick={() => setDriverTab(d)} className={`tap-y flex-1 cursor-pointer rounded-[9px] py-2 text-[11.5px] font-extrabold ${driverTab === d ? 'bg-primary text-white' : 'text-ink-2'}`}>{d === 'own' ? L('Propios', 'Own') : L('Apps externas', 'External apps')}</button>
         ))}
       </div>
       {driverTab === 'external' && (
@@ -504,6 +507,18 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         </div>
       ) : (
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+          {/* Mismo caso que los transportistas: Uber Direct, DoorDash Drive y
+              Rappi no están conectados, pero se ofrecían con tarifa concreta.
+              (Auditoría de Negocios, 2026-08-04 — regla #8.) */}
+          <div role="note" className="flex items-start gap-2 rounded-field border border-[#F2E3BF] bg-amber-bg px-3 py-2.5 md:col-span-2 xl:col-span-1 2xl:col-span-2">
+            <span className="mt-px flex-none rounded-full bg-amber-ink/10 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-amber-ink">
+              {L('Aún no conectado', 'Not connected yet')}
+            </span>
+            <span className="text-[11px] font-semibold leading-[1.5] text-amber-ink">
+              {L('Estas tarifas son de referencia. Todavía no están conectadas con Uber, DoorDash ni Rappi, así que el precio real puede cambiar. Puedes dejarlo listo y lo activamos en cuanto conectemos sus sistemas.',
+                 'These rates are for reference. They are not connected to Uber, DoorDash or Rappi yet, so the real price may differ. You can set it up now and we will switch it on once their systems are connected.')}
+            </span>
+          </div>
           {EXT_APPS.map((a, i) => {
             const on = extState[i];
             return (
@@ -552,7 +567,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         {settingRow(
           L('Alcance de entrega', 'Delivery reach'),
           L('Lo define tu zona más lejana (pestaña Zonas). Fuera de este radio, el cliente no puede pedir a domicilio.', 'Set by your farthest zone (Zones tab). Beyond this radius, customers can’t order delivery.'),
-          <button onClick={() => setDelTab('zones')} className="flex flex-none items-center gap-1.5 rounded-field bg-lilac-2 px-3 py-2 text-[12.5px] font-extrabold text-primary-dark">
+          <button onClick={() => setDelTab('zones')} className="tap-y flex flex-none items-center gap-1.5 rounded-field bg-lilac-2 px-3 py-2 text-[12.5px] font-extrabold text-primary-dark">
             {zones.length === 0 ? L('Sin zonas', 'No zones') : reachMi ? `${L('Hasta', 'Up to')} ${reachMi} mi` : L('Sin límite', 'No limit')}
             <span className="text-[11px] text-muted-2">›</span>
           </button>,
@@ -581,7 +596,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                   const on = tips.mode === m;
                   return (
                     <button key={m} onClick={() => setTips((t) => ({ ...t, mode: m, presets: m === 'percent' ? [10, 15, 20] : [2, 3, 5], def: 0 }))}
-                      className={`flex-1 cursor-pointer rounded-field border-[1.5px] py-2 text-[12px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
+                      className={`tap-y flex-1 cursor-pointer rounded-field border-[1.5px] py-2 text-[12px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
                       {m === 'percent' ? L('Porcentaje (%)', 'Percent (%)') : L('Monto fijo ($)', 'Fixed amount ($)')}
                     </button>
                   );
@@ -606,12 +621,12 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             <div className="border-b border-hair py-3">
               <div className="text-[12px] font-bold text-ink">{L('Preseleccionada', 'Pre-selected')}</div>
               <div className="mt-0.5 text-[10px] font-medium text-muted-2">{L('La que aparece marcada por defecto (el cliente puede cambiarla).', 'Shown selected by default (the customer can change it).')}</div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-x-1 gap-y-[18px].5">
                 {[0, ...tips.presets.filter((p) => p > 0)].map((v, i) => {
                   const on = tips.def === v;
                   return (
                     <button key={i} onClick={() => setTips((t) => ({ ...t, def: v }))}
-                      className={`cursor-pointer rounded-field border-[1.5px] px-3 py-1.5 text-[11.5px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
+                      className={`tap-y cursor-pointer rounded-field border-[1.5px] px-3 py-1.5 text-[11.5px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}>
                       {v === 0 ? L('Sin propina', 'No tip') : tips.mode === 'percent' ? `${v}%` : `$${v}`}
                     </button>
                   );
@@ -687,8 +702,8 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                 )}
                 {!done && (
                   <div className="mt-2.5 flex items-center gap-2 border-t border-dashed border-hair pt-2.5">
-                    <button onClick={() => shipAdvance(o)} className="flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">{shipAdvLabel(o)}</button>
-                    {(st === 'to_pack') && <button onClick={() => { setStatus(o, 'cancelled'); flash(L('Envío cancelado', 'Shipment cancelled')); }} className="flex-none cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-3 py-2 text-[11px] font-extrabold text-pink-dark">{L('Cancelar', 'Cancel')}</button>}
+                    <button onClick={() => shipAdvance(o)} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">{shipAdvLabel(o)}</button>
+                    {(st === 'to_pack') && <button onClick={() => { setStatus(o, 'cancelled'); flash(L('Envío cancelado', 'Shipment cancelled')); }} className="tap-y flex-none cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-3 py-2 text-[11px] font-extrabold text-pink-dark">{L('Cancelar', 'Cancel')}</button>}
                   </div>
                 )}
               </div>
@@ -745,7 +760,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     <div className="flex flex-col gap-3.5">
       <div className="flex gap-1.5 rounded-btn border border-hair bg-white p-1">
         {(['own', 'external'] as const).map((n) => (
-          <button key={n} onClick={() => setNatTab(n)} className={`flex-1 cursor-pointer rounded-[9px] py-2 text-[11.5px] font-extrabold ${natTab === n ? 'bg-primary text-white' : 'text-ink-2'}`}>{n === 'own' ? L('Tarifa propia', 'Own rate') : L('Transportistas', 'Carriers')}</button>
+          <button key={n} onClick={() => setNatTab(n)} className={`tap-y flex-1 cursor-pointer rounded-[9px] py-2 text-[11.5px] font-extrabold ${natTab === n ? 'bg-primary text-white' : 'text-ink-2'}`}>{n === 'own' ? L('Tarifa propia', 'Own rate') : L('Transportistas', 'Carriers')}</button>
         ))}
       </div>
       {natTab === 'own' ? (
@@ -807,7 +822,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         {settingRow(L('Costo de manejo', 'Handling fee'), L('Se suma a cada envío (empaque, etc.).', 'Added to each shipment (packaging, etc.).'), numBox(shipOps.handling, (v) => setShipOps((o) => ({ ...o, handling: v })), '$'), false)}
         <div className="flex items-center gap-3 border-b border-hair py-3">
           <div className="min-w-0 flex-1"><div className="text-[12px] font-bold text-ink">{L('Paquete predeterminado', 'Default package')}</div><div className="mt-0.5 text-[10px] font-medium text-muted-2">{L('Tamaño sugerido al crear etiquetas.', 'Suggested size when creating labels.')}</div></div>
-          <div className="flex flex-none gap-1">{PKG_SIZES.map((p) => <button key={p} onClick={() => setShipOps((o) => ({ ...o, pkg: p }))} className={`cursor-pointer rounded-lg px-2 py-1.5 text-[10px] font-extrabold ${shipOps.pkg === p ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>{p}</button>)}</div>
+          <div className="flex flex-none gap-1">{PKG_SIZES.map((p) => <button key={p} onClick={() => setShipOps((o) => ({ ...o, pkg: p }))} className={`tap-y cursor-pointer rounded-lg px-2 py-1.5 text-[10px] font-extrabold ${shipOps.pkg === p ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>{p}</button>)}</div>
         </div>
         <div className="py-3">
           <div className="text-[12px] font-bold text-ink">{L('Dirección de origen', 'Origin address')}</div>
@@ -873,7 +888,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             <span className="block text-[12.5px] font-extrabold text-ink">{L('La entrega y el envío en línea son funciones Verified.', 'Online delivery & shipping are Verified features.')}</span>
             <span className="block text-[11px] font-semibold text-amber-ink">{L('Estás viendo una vista previa. Verifícate para activar entregas.', "You're seeing a preview. Get verified to enable fulfillment.")}</span>
           </span>
-          <button onClick={() => go('billing')} className="flex-none cursor-pointer rounded-btn bg-ink px-3.5 py-2 text-[11.5px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
+          <button onClick={() => go('billing')} className="tap-y flex-none cursor-pointer rounded-btn bg-ink px-3.5 py-2 text-[11.5px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
         </div>
       )}
 
@@ -907,7 +922,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               <div className="rounded-field bg-lilac-2 px-3.5 py-3 text-center">
                 <div className="text-[12px] font-extrabold text-ink">{L('Aún no tienes repartidores', 'No drivers yet')}</div>
                 <div className="mt-0.5 text-[11px] font-semibold text-muted">{L('Agrega a tu equipo de entrega para asignar pedidos.', 'Add your delivery team to assign orders.')}</div>
-                <button onClick={() => { setAssignFor(null); setDriverSheet({ idx: -1, initial: null }); }} className="mt-2.5 cursor-pointer rounded-btn bg-primary px-4 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                <button onClick={() => { setAssignFor(null); setDriverSheet({ idx: -1, initial: null }); }} className="tap-y mt-2.5 cursor-pointer rounded-btn bg-primary px-4 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
                   + {L('Agregar repartidor', 'Add driver')}
                 </button>
               </div>
@@ -931,9 +946,9 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               </div>
             )}
             <div className="text-[11px] font-extrabold text-ink-soft">{L('O usa una app externa', 'Or use an external app')}</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
               {EXT_APPS.filter((_, i) => extState[i]).map((a) => (
-                <button key={a.name} onClick={() => assignDriver(a.name)} className="flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 hover:border-primary">
+                <button key={a.name} onClick={() => assignDriver(a.name)} className="tap-y flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 hover:border-primary">
                   <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md text-[11px] font-extrabold text-white" style={{ background: a.color }}>{a.label}</span>
                   <span className="text-[11.5px] font-extrabold text-ink">{a.name}</span>
                 </button>
@@ -963,7 +978,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             </div>
             <div>
               <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Paquete', 'Package')}</div>
-              <div className="flex flex-wrap gap-2">{PKG_SIZES.map((p) => <button key={p} onClick={() => setLabelPkg(p)} className={chip(labelPkg === p)}>{p}</button>)}</div>
+              <div className="flex flex-wrap gap-x-2 gap-y-[18px]">{PKG_SIZES.map((p) => <button key={p} onClick={() => setLabelPkg(p)} className={chip(labelPkg === p)}>{p}</button>)}</div>
             </div>
             <div>
               <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Número de rastreo', 'Tracking number')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>

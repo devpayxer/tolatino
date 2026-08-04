@@ -68,7 +68,7 @@ export function ProductCategoryEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Ícono', 'Icon')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {Object.entries(PRODUCT_CAT_ICONS).map(([k, Icon]) => (
               <button key={k} type="button" onClick={() => setIcon(k)} aria-label={k}
                 className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] ${icon === k ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
@@ -79,7 +79,7 @@ export function ProductCategoryEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {PRODUCT_TILES.map((t) => (
               <button key={t} type="button" onClick={() => setTile(t)} aria-label={L('Estampado', 'Pattern')}
                 className={`h-10 w-10 cursor-pointer rounded-[10px] border-2 ${tile === t ? 'border-primary' : 'border-transparent'}`}
@@ -165,7 +165,7 @@ export function OptionSetEditor({
           <div className={fieldLabel}>{L('Tipo', 'Type')}</div>
           <div className="flex gap-1.5">
             {([[true, L('Elegir una (variante)', 'Choose one (variant)')], [false, L('Varios (extras)', 'Multiple (add-ons)')]] as [boolean, string][]).map(([v, lbl]) => (
-              <button key={String(v)} onClick={() => setSingle(v)} className={`flex-1 cursor-pointer rounded-btn py-2 text-[11.5px] font-extrabold ${single === v ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{lbl}</button>
+              <button key={String(v)} onClick={() => setSingle(v)} className={`tap-y flex-1 cursor-pointer rounded-btn py-2 text-[11.5px] font-extrabold ${single === v ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{lbl}</button>
             ))}
           </div>
         </div>
@@ -254,7 +254,7 @@ export function CollectionEditor({
         <div><div className={fieldLabel}>{L('Descripción', 'Description')}</div><input value={descEs} onChange={(e) => setDescEs(e.target.value)} placeholder={L('Paquetes curados de temporada', 'Curated seasonal bundles')} className={inputCls} /></div>
         <div>
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {PRODUCT_TILES.map((t) => (
               <button key={t} type="button" onClick={() => setTile(t)} aria-label={L('Estampado', 'Pattern')}
                 className={`h-10 w-10 cursor-pointer rounded-[10px] border-2 ${tile === t ? 'border-primary' : 'border-transparent'}`}
@@ -363,7 +363,7 @@ export function DiscountEditor({
           <div className={fieldLabel}>{L('Tipo', 'Type')}</div>
           <div className="grid grid-cols-2 gap-1.5">
             {DISCOUNT_TYPES.map(([t, esL, enL]) => (
-              <button key={t} onClick={() => setType(t)} className={`cursor-pointer rounded-btn py-2 text-[11.5px] font-extrabold ${type === t ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{L(esL, enL)}</button>
+              <button key={t} onClick={() => setType(t)} className={`tap-y cursor-pointer rounded-btn py-2 text-[11.5px] font-extrabold ${type === t ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{L(esL, enL)}</button>
             ))}
           </div>
         </div>

@@ -132,7 +132,7 @@ export function Chip({
     <button
       onClick={onClick}
       style={style}
-      className={`flex-none whitespace-nowrap rounded-full px-[15px] py-2 text-[12.5px] font-extrabold transition-colors ${
+      className={`tap-y flex-none whitespace-nowrap rounded-full px-[15px] py-2 text-[12.5px] font-extrabold transition-colors ${
         active
           ? 'bg-primary text-white shadow-cta-sm'
           : 'bg-white text-ink-soft shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'

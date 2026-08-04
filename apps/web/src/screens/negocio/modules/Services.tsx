@@ -129,7 +129,7 @@ const bookingDayKey = (iso: string): string => {
   return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+const chip = (on: boolean) => `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
 const inputCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary';
 const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12.5px] font-extrabold text-primary-dark';
@@ -499,7 +499,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       </div>
     );
-    const seg = (on: boolean) => `flex-1 cursor-pointer rounded-lg px-3 py-2 text-center text-[11px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
+    const seg = (on: boolean) => `tap-y flex-1 cursor-pointer rounded-lg px-3 py-2 text-center text-[11px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
 
     return (
       <>
@@ -542,7 +542,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
                     <ChipRow className="-mx-1 px-1">
                       {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>)}
-                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="tap-y flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </ChipRow>
                   </div>
                   <div>
@@ -564,9 +564,9 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   </div>
                   <div>
                     <div className={fieldLabel}>{L('Etiquetas', 'Tags')}</div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
                       {[...SVC_TAGS, ...cfg.tags].map((t) => { const on = draft.tags.includes(t); return <button key={t} onClick={() => upD({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{SVC_TAGS.includes(t) ? tagLabel(t, L) : t}</button>; })}
-                      <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+                      <button onClick={() => setTagSheet(true)} className="tap-y cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </div>
                   </div>
                 </div>
@@ -628,7 +628,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                             <button onClick={() => upD({ varOpts: draft.varOpts.filter((_, j) => j !== i) })} aria-label={L('Quitar', 'Remove')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-btn border-[1.5px] border-lilac-line bg-white text-muted"><Trash2 size={14} stroke={2.2} /></button>
                           </div>
                         ))}
-                        <button onClick={() => upD({ varOpts: [...draft.varOpts, { es: '', delta: '' }] })} className="cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-white py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar opción', 'Add option')}</button>
+                        <button onClick={() => upD({ varOpts: [...draft.varOpts, { es: '', delta: '' }] })} className="tap-y cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-white py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar opción', 'Add option')}</button>
                         <div className="text-[10px] font-medium text-muted-2">{L('La primera opción suele ser la base (+$0 = Incluido).', 'The first option is usually the base (+$0 = Included).')}</div>
                       </div>
                     )}
@@ -682,7 +682,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       </div>
                       <div>
                         <div className={fieldLabel}>{L('Días disponibles', 'Available days')}</div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
                           {(es ? DAY_KEYS : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']).map((d, i) => { const key = DAY_KEYS[i]; const on = draft.days.includes(key); return <button key={key} onClick={() => upD({ days: on ? draft.days.filter((x) => x !== key) : [...draft.days, key] })} className={`h-9 w-11 flex-none rounded-lg text-[11px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>{d}</button>; })}
                         </div>
                       </div>
@@ -725,7 +725,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         <div className={fieldLabel}>{L('Administrar servicio', 'Manage service')}</div>
                         <div className="flex gap-2.5">
                           <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} stroke={2.4} />{L('Duplicar', 'Duplicate')}</button>
-                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="tap flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
                         </div>
                       </div>
                     )}
@@ -744,7 +744,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   }
 
   // ============================ MODULE ============================
-  const modeBtn = (on: boolean) => `flex flex-1 items-center justify-center gap-2 rounded-btn py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
+  const modeBtn = (on: boolean) => `tap-y flex flex-1 items-center justify-center gap-2 rounded-btn py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
 
   function editorSheets() {
     return (
@@ -783,9 +783,9 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="flex flex-col gap-3.5">
           <div>
             <div className={fieldLabel}>{L('Servicio', 'Service')} *</div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
               {walkServices.map((s) => (
-                <button key={s.id} onClick={() => setWalk((w) => ({ ...w, svcId: s.id }))} className={`cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.svcId === s.id ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
+                <button key={s.id} onClick={() => setWalk((w) => ({ ...w, svcId: s.id }))} className={`tap-y cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.svcId === s.id ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
                   {s.name}
                 </button>
               ))}
@@ -799,7 +799,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className={fieldLabel}>{L('Fecha', 'Date')} *</div>
             <ChipRow className="-mx-1 px-1">
               {agendaDays.map((d) => (
-                <button key={d.key} onClick={() => setWalk((w) => ({ ...w, day: d.key }))} className={`flex-none cursor-pointer rounded-btn px-2.5 py-1.5 text-center ${walk.day === d.key ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                <button key={d.key} onClick={() => setWalk((w) => ({ ...w, day: d.key }))} className={`tap-y flex-none cursor-pointer rounded-btn px-2.5 py-1.5 text-center ${walk.day === d.key ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
                   <span className={`block text-[9.5px] font-bold ${walk.day === d.key ? 'text-white/80' : 'text-muted'}`}>{d.lab}</span>
                   <span className="block text-[13px] font-extrabold leading-tight">{d.day}</span>
                 </button>
@@ -810,17 +810,17 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className={fieldLabel}>{L('Hora', 'Time')} *</div>
             <ChipRow className="-mx-1 px-1">
               {times.map((t) => (
-                <button key={t} onClick={() => setWalk((w) => ({ ...w, time: t }))} className={`flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[11px] font-extrabold ${walk.time === t ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>{t}</button>
+                <button key={t} onClick={() => setWalk((w) => ({ ...w, time: t }))} className={`tap-y flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[11px] font-extrabold ${walk.time === t ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>{t}</button>
               ))}
             </ChipRow>
           </div>
           {activePros.length > 0 && (
             <div>
               <div className={fieldLabel}>{L('Profesional', 'Professional')}</div>
-              <div className="flex flex-wrap gap-1.5">
-                <button onClick={() => setWalk((w) => ({ ...w, staff: '' }))} className={`cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.staff === '' ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>{L('Sin asignar', 'Unassigned')}</button>
+              <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
+                <button onClick={() => setWalk((w) => ({ ...w, staff: '' }))} className={`tap-y cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.staff === '' ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>{L('Sin asignar', 'Unassigned')}</button>
                 {activePros.map((p) => (
-                  <button key={p.id} onClick={() => setWalk((w) => ({ ...w, staff: p.id }))} className={`flex cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.staff === p.id ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
+                  <button key={p.id} onClick={() => setWalk((w) => ({ ...w, staff: p.id }))} className={`tap-y flex cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${walk.staff === p.id ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
                     <span className="h-3 w-3 rounded-full" style={{ background: p.color }} />{p.name}
                   </button>
                 ))}
@@ -855,8 +855,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className={`${cardCls} p-3.5`}>
         <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CalendarCheck size={15} stroke={2.2} className="text-primary-dark" />{L('Modo del listado', 'Listing mode')}</div>
         <div className="flex rounded-full bg-lilac-2 p-0.5">
-          <button onClick={() => { if (cfg.booking) { saveCfg({ ...cfg, booking: false }); flash(L('Servicios en modo Solo mostrar', 'Services set to Display only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.booking ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo mostrar', 'Display only')}</button>
-          <button onClick={() => { if (!cfg.booking) { saveCfg({ ...cfg, booking: true }); flash(L('Servicios con reservas en línea', 'Services set to Online bookings')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.booking ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Aceptar reservas', 'Accept bookings')}</button>
+          <button onClick={() => { if (cfg.booking) { saveCfg({ ...cfg, booking: false }); flash(L('Servicios en modo Solo mostrar', 'Services set to Display only')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.booking ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo mostrar', 'Display only')}</button>
+          <button onClick={() => { if (!cfg.booking) { saveCfg({ ...cfg, booking: true }); flash(L('Servicios con reservas en línea', 'Services set to Online bookings')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.booking ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Aceptar reservas', 'Accept bookings')}</button>
         </div>
         <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
           {cfg.booking
@@ -871,8 +871,8 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className={`${cardCls} p-3.5`}>
           <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CheckCircle2 size={15} stroke={2.2} className="text-primary-dark" />{L('Confirmación de citas', 'Booking confirmation')}</div>
           <div className="flex rounded-full bg-lilac-2 p-0.5">
-            <button onClick={() => { if (cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: false }); flash(L('Las citas requieren tu aprobación', 'Bookings now need your approval')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Requiere aprobación', 'Needs approval')}</button>
-            <button onClick={() => { if (!cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: true }); flash(L('Las citas se confirman automáticamente', 'Bookings now confirm automatically')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Automática', 'Automatic')}</button>
+            <button onClick={() => { if (cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: false }); flash(L('Las citas requieren tu aprobación', 'Bookings now need your approval')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Requiere aprobación', 'Needs approval')}</button>
+            <button onClick={() => { if (!cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: true }); flash(L('Las citas se confirman automáticamente', 'Bookings now confirm automatically')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Automática', 'Automatic')}</button>
           </div>
           <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
             {cfg.autoConfirm
@@ -910,7 +910,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{priceLabelOf(s)}</span>
                     </span>
                     <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{s.dur} · {s.bookable ? L('reservable', 'bookable') : L('solo consulta', 'inquiry only')}</span>
-                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                       {s.addons.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{s.addons.length} {L('add-ons', 'add-ons')}</span>}
                       {s.tags.map((t) => <span key={t} className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[9px] font-extrabold text-amber-ink">{tagLabel(t, L)}</span>)}
                     </span>
@@ -1048,7 +1048,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     { Icon: CalendarDays, c: '#6D4DF6', bg: '#EFEBFF', label: L('Próximas', 'Upcoming'), value: String(upcoming) },
     { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Cobrado en línea', 'Paid online'), value: `$${depositsHeld}` },
   ];
-  const bkFilterChip = (on: boolean) => `flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
+  const bkFilterChip = (on: boolean) => `tap-y flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
 
   const bookings = (
     <div className="flex flex-col gap-4">
@@ -1064,14 +1064,14 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       {/* agenda day strip: Todas + next 14 days with live counts */}
       <ChipRow className="-mx-1 px-1">
-        <button onClick={() => setBkDay('all')} className={`flex-none cursor-pointer rounded-btn px-3 py-2 text-center ${bkDay === 'all' ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+        <button onClick={() => setBkDay('all')} className={`tap-y flex-none cursor-pointer rounded-btn px-3 py-2 text-center ${bkDay === 'all' ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
           <span className="block text-[11.5px] font-extrabold">{L('Todas', 'All')}</span>
         </button>
         {agendaDays.map((d) => {
           const on = bkDay === d.key;
           const n = countOn(d.key);
           return (
-            <button key={d.key} onClick={() => setBkDay(d.key)} className={`flex-none cursor-pointer rounded-btn px-2.5 py-1.5 text-center ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+            <button key={d.key} onClick={() => setBkDay(d.key)} className={`tap-y flex-none cursor-pointer rounded-btn px-2.5 py-1.5 text-center ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
               <span className={`block text-[9.5px] font-bold ${on ? 'text-white/80' : 'text-muted'}`}>{d.lab}</span>
               <span className="block text-[13.5px] font-extrabold leading-tight">{d.day}</span>
               <span className={`block text-[8.5px] font-extrabold ${n > 0 ? (on ? 'text-white' : 'text-primary-dark') : 'opacity-0'}`}>{n} {n === 1 ? L('cita', 'appt') : L('citas', 'appts')}</span>
@@ -1080,14 +1080,14 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         })}
       </ChipRow>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-[18px]">
         <ChipRow className="-mx-1 min-w-0 flex-1 px-1">
           {([['all', L('Todas', 'All')], ['pending', L('Por confirmar', 'Pending')], ['confirmed', L('Confirmadas', 'Confirmed')], ['seated', L('En curso', 'In progress')], ['done', L('Completadas', 'Done')], ['no_show', L('No vino', 'No-show')], ['cancelled', L('Canceladas', 'Cancelled')]] as [typeof bookFilter, string][]).map(([k, lbl]) => (
             <button key={k} onClick={() => setBookFilter(k)} className={bkFilterChip(bookFilter === k)}>{lbl}</button>
           ))}
         </ChipRow>
         {persistable && walkServices.length > 0 && (
-          <button onClick={() => { setWalk({ svcId: walkServices[0].id, name: '', phone: '', day: todayKey, time: '12:00', staff: '', note: '' }); setWalkOpen(true); }} className="flex-none cursor-pointer rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+          <button onClick={() => { setWalk({ svcId: walkServices[0].id, name: '', phone: '', day: todayKey, time: '12:00', staff: '', note: '' }); setWalkOpen(true); }} className="tap-y flex-none cursor-pointer rounded-btn bg-primary px-3 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
             + {L('Agendar cita', 'Add appointment')}
           </button>
         )}
@@ -1098,7 +1098,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <ChipRow className="-mx-1 px-1">
           <button onClick={() => setBkStaff('all')} className={bkFilterChip(bkStaff === 'all')}>{L('Todo el equipo', 'Whole team')}</button>
           {cfg.providers.filter((p) => p.active !== false).map((p) => (
-            <button key={p.id} onClick={() => setBkStaff(p.id)} className={`flex-none flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${bkStaff === p.id ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>
+            <button key={p.id} onClick={() => setBkStaff(p.id)} className={`tap-y flex-none flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${bkStaff === p.id ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`}>
               <span className="h-3.5 w-3.5 rounded-full" style={{ background: p.color }} />{p.name}
             </button>
           ))}
@@ -1130,7 +1130,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       {b.party_size && b.party_size > 1 ? ` · ${b.party_size} ${L('pers', 'ppl')}` : ''}
                     </div>
                     <div className="mt-0.5 text-[10px] font-medium text-muted-2">{bookingWhen(b.starts_at, es)}</div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                       {b.staff_name && (
                         <span className="flex items-center gap-1 rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-extrabold text-ink-2">
                           <span className="h-2.5 w-2.5 rounded-full" style={{ background: providerColor(b.staff_id) }} />{b.staff_name}
@@ -1145,12 +1145,12 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <span className={`flex-none self-start rounded-md px-2 py-1 text-[9px] font-extrabold ${bd.cls}`}>{L(bd.es, bd.en)}</span>
                 </div>
                 {canAct && (
-                  <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-dashed border-hair pt-2.5">
-                    {b.status === 'pending' && <button onClick={() => setBookingStatus(b.id, 'confirmed')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Confirmar', 'Confirm')}</button>}
-                    {b.status === 'confirmed' && <button onClick={() => setBookingStatus(b.id, 'seated')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Iniciar', 'Start')}</button>}
-                    {b.status === 'seated' && <button onClick={() => setBookingStatus(b.id, 'done')} className="rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Completar', 'Complete')}</button>}
-                    {b.status === 'confirmed' && started && <button onClick={() => setBookingStatus(b.id, 'no_show')} className="rounded-lg border-[1.5px] border-amber-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-amber-ink">{L('No vino', 'No-show')}</button>}
-                    {(b.status === 'pending' || b.status === 'confirmed') && <button onClick={() => setBookingStatus(b.id, 'cancelled')} className="rounded-lg border-[1.5px] border-pink-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-pink-dark">{b.status === 'pending' ? L('Rechazar', 'Decline') : L('Cancelar', 'Cancel')}</button>}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-[18px] border-t border-dashed border-hair pt-2.5">
+                    {b.status === 'pending' && <button onClick={() => setBookingStatus(b.id, 'confirmed')} className="tap-y rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Confirmar', 'Confirm')}</button>}
+                    {b.status === 'confirmed' && <button onClick={() => setBookingStatus(b.id, 'seated')} className="tap-y rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Iniciar', 'Start')}</button>}
+                    {b.status === 'seated' && <button onClick={() => setBookingStatus(b.id, 'done')} className="tap-y rounded-lg bg-primary px-2.5 py-1.5 text-[10px] font-extrabold text-white">{L('Completar', 'Complete')}</button>}
+                    {b.status === 'confirmed' && started && <button onClick={() => setBookingStatus(b.id, 'no_show')} className="tap-y rounded-lg border-[1.5px] border-amber-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-amber-ink">{L('No vino', 'No-show')}</button>}
+                    {(b.status === 'pending' || b.status === 'confirmed') && <button onClick={() => setBookingStatus(b.id, 'cancelled')} className="tap-y rounded-lg border-[1.5px] border-pink-bg bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-pink-dark">{b.status === 'pending' ? L('Rechazar', 'Decline') : L('Cancelar', 'Cancel')}</button>}
                   </div>
                 )}
               </div>
@@ -1191,7 +1191,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="block text-[13.5px] font-extrabold">{L('Recordatorios SMS automáticos', 'Automatic SMS reminders')}</span>
             <span className="mt-0.5 block max-w-[520px] text-[11.5px] font-medium leading-snug text-[rgba(255,255,255,.7)]">{L('Reduce no-shows con recordatorios automáticos a tus clientes. Incluido en Premium.', 'Cut no-shows with automatic reminders to your customers. Included with Premium.')}</span>
           </span>
-          <button onClick={() => ctx.go('billing')} className="flex-none rounded-btn bg-amber px-3.5 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar a Premium', 'Upgrade to Premium')}</button>
+          <button onClick={() => ctx.go('billing')} className="tap-y flex-none rounded-btn bg-amber px-3.5 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar a Premium', 'Upgrade to Premium')}</button>
         </div>
       )}
 

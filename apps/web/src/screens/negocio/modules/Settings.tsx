@@ -51,7 +51,7 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
   const sec = 'mb-2.5 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted';
 
   const navRow = (Icon: typeof Store, c: string, bg: string, title: string, sub: string, onClick: () => void) => (
-    <button onClick={onClick} className="flex w-full cursor-pointer items-center gap-3 py-2 text-left">
+    <button onClick={onClick} className="tap-y flex w-full cursor-pointer items-center gap-3 py-2 text-left">
       <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn" style={{ background: bg }}>
         <Icon size={16} strokeWidth={2.2} style={{ color: c }} />
       </span>
@@ -124,12 +124,12 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
               <span className="block text-[13px] font-extrabold text-ink">{L('Plan', 'Plan')}</span>
               <span className="block text-[11.5px] font-semibold text-muted">{real ? (real.tier === 'free' ? 'Free' : real.tier === 'premium' ? '✦ Premium' : 'Verified') : '—'}</span>
             </span>
-            <button onClick={() => go('billing' as TabKey)} className="cursor-pointer rounded-btn bg-lilac-2 px-3 py-1.5 text-[11.5px] font-extrabold text-primary-dark">
+            <button onClick={() => go('billing' as TabKey)} className="tap-y cursor-pointer rounded-btn bg-lilac-2 px-3 py-1.5 text-[11.5px] font-extrabold text-primary-dark">
               {L('Ver', 'View')}
             </button>
           </div>
           {user && (
-            <button onClick={doSignOut} className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-pink-bg bg-white py-2.5 text-[12.5px] font-extrabold text-pink-dark">
+            <button onClick={doSignOut} className="tap-y mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-pink-bg bg-white py-2.5 text-[12.5px] font-extrabold text-pink-dark">
               <LogOut size={14} stroke={2.4} />
               {L('Cerrar sesión', 'Sign out')}
             </button>

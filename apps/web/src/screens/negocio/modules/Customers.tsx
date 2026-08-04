@@ -460,7 +460,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---- shared bits ----------------------------------------------------------
   const chip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+    `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 
   const Kpi = ({ Icon, c, bg, label, value, delta, dC }: { Icon: typeof Users; c: string; bg: string; label: string; value: string; delta: string; dC?: string }) => (
     <div className={`${cardCls} p-3.5`}>
@@ -625,12 +625,12 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted"
               />
             </div>
-            <button onClick={exportCsv} className="flex flex-none items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12px] font-extrabold text-ink-soft" title={L('Exportar CSV', 'Export CSV')}>
+            <button onClick={exportCsv} className="tap-y flex flex-none items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12px] font-extrabold text-ink-soft" title={L('Exportar CSV', 'Export CSV')}>
               <Download size={15} stroke={2.2} className="text-muted-2" /><span className="hidden sm:inline">{L('Exportar', 'Export')}</span>
             </button>
           </div>
 
-          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
+          <div className="-my-1.5 py-1.5 no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
             {segTabs.map(([k, label]) => (
               <button key={k} onClick={() => setSeg(k)} className={chip(seg === k)}>{label}</button>
             ))}
@@ -890,12 +890,12 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-4">
-          <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
+          <div className="-my-1.5 py-1.5 no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
             {statusKeys.map((k) => {
               const on = oStatus === k;
               const n = orders.filter((o) => viewMatch(o, k)).length;
               return (
-                <button key={k} onClick={() => setOStatus(k)} className={`flex flex-none cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`}>
+                <button key={k} onClick={() => setOStatus(k)} className={`tap-y flex flex-none cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`}>
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: viewDot(k) }} />
                   {viewMeta(k)}
                   <span className={`font-extrabold ${on ? 'text-white/80' : 'text-muted-2'}`}>{n}</span>
@@ -951,7 +951,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                           <XCircle size={12} stroke={2.6} />{L('Cancelado', 'Cancelled')}
                         </div>
                       ) : ca ? (
-                        <button onClick={(e) => { e.stopPropagation(); ca.onClick(); }} className="mt-3 flex w-full items-center justify-center gap-1 rounded-field bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+                        <button onClick={(e) => { e.stopPropagation(); ca.onClick(); }} className="tap-y mt-3 flex w-full items-center justify-center gap-1 rounded-field bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">
                           {ca.label}<ChevronRight size={14} stroke={2.6} />
                         </button>
                       ) : null}
@@ -1093,7 +1093,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         </div>
 
-        <div className="no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
+        <div className="-my-1.5 py-1.5 no-scrollbar -mx-1 flex gap-2 min-w-0 overflow-x-auto px-1">
           {rvFilters.map(([k, label, n]) => (
             <button key={k} onClick={() => setRvFilter(k)} className={chip(rvFilter === k)}>
               {label}
@@ -1118,7 +1118,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: r.color }}>{r.initials}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                         <span className="text-[12.5px] font-extrabold text-ink">{L(r.name[0], r.name[1])}</span>
                         <span className={`rounded px-1.5 py-px text-[8px] font-extrabold ${CH_REVIEW[r.ch]}`}>{r.ch}</span>
                         {isFlagged && <span className="rounded bg-pink-bg px-1.5 py-px text-[8px] font-extrabold text-pink-dark">{L('Reportada', 'Flagged')}</span>}
@@ -1151,14 +1151,14 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         placeholder={L('Escribe una respuesta o genera un borrador con IA…', 'Write a reply or draft one with AI…')}
                         className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[11.5px] font-medium leading-snug text-ink outline-none placeholder:text-muted focus:border-primary"
                       />
-                      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-                        <button onClick={() => toggleFlag(r)} className="flex cursor-pointer items-center gap-1 rounded-field px-2.5 py-2 text-[10px] font-extrabold text-pink-dark">
+                      <div className="mt-2 flex flex-wrap items-center justify-end gap-x-2 gap-y-[18px]">
+                        <button onClick={() => toggleFlag(r)} className="tap-y flex cursor-pointer items-center gap-1 rounded-field px-2.5 py-2 text-[10px] font-extrabold text-pink-dark">
                           <Flag size={11} stroke={2.4} />{isFlagged ? L('Quitar reporte', 'Unflag') : L('Reportar', 'Flag')}
                         </button>
-                        <button onClick={() => aiDraft(r)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-primary-dark">
+                        <button onClick={() => aiDraft(r)} className="tap-y flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-primary-dark">
                           <Sparkles size={11} stroke={2.4} />{L('Sugerir', 'Suggest')}
                         </button>
-                        <button onClick={() => sendReply(r)} className="cursor-pointer rounded-field bg-primary px-3.5 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm">
+                        <button onClick={() => sendReply(r)} className="tap-y cursor-pointer rounded-field bg-primary px-3.5 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm">
                           {L('Responder', 'Send reply')}
                         </button>
                       </div>
@@ -1230,7 +1230,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-btn px-3 py-2.5 text-[12.5px] font-extrabold transition-colors ${on ? 'bg-ink text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-2'}`}
+              className={`tap-y flex flex-1 items-center justify-center gap-1.5 rounded-btn px-3 py-2.5 text-[12.5px] font-extrabold transition-colors ${on ? 'bg-ink text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-2'}`}
             >
               {label}
               {n > 0 && <span className={`rounded-full px-1.5 py-px text-[9px] font-extrabold text-white ${on ? 'bg-primary' : 'bg-pink-dark'}`}>{n}</span>}
@@ -1246,7 +1246,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="block text-[13px] font-extrabold text-ink">{L('Pedidos y reseñas necesitan verificación.', 'Orders & reviews need verification.')}</span>
             <span className="block text-[11.5px] font-semibold text-amber-ink">{L('Verifica tu negocio para desbloquear pedidos, respuestas y lealtad.', 'Verify your business to unlock orders, replies and loyalty.')}</span>
           </span>
-          <button onClick={() => ctx.go('billing')} className="flex-none cursor-pointer rounded-btn bg-ink px-3.5 py-2 text-[12px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
+          <button onClick={() => ctx.go('billing')} className="tap-y flex-none cursor-pointer rounded-btn bg-ink px-3.5 py-2 text-[12px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
         </div>
       )}
 
@@ -1261,7 +1261,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="block text-[13.5px] font-extrabold">{L('Respuestas con IA en un toque', 'One-tap AI replies')}</span>
             <span className="block text-[11.5px] font-semibold leading-snug text-[rgba(255,255,255,.7)]">{L('Premium redacta respuestas según el tono de tu marca. $49/mes.', 'Premium drafts replies in your brand voice. $49/mo.')}</span>
           </span>
-          <button onClick={() => ctx.go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar', 'Upgrade')}</button>
+          <button onClick={() => ctx.go('billing')} className="tap-y flex-none cursor-pointer rounded-btn bg-amber px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar', 'Upgrade')}</button>
         </div>
       )}
 
@@ -1287,9 +1287,9 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div className="mt-4">
             <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Etiqueta', 'Tag')}</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
               {['VIP', 'Recurrente', 'Nuevo', 'En riesgo', 'B2B'].map((t) => (
-                <button key={t} onClick={() => saveCustomer({ tag: t })} className={`cursor-pointer rounded-full px-3 py-1.5 text-[11px] font-extrabold ${selCust.tag[0] === t ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>{t}</button>
+                <button key={t} onClick={() => saveCustomer({ tag: t })} className={`tap-y cursor-pointer rounded-full px-3 py-1.5 text-[11px] font-extrabold ${selCust.tag[0] === t ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>{t}</button>
               ))}
             </div>
           </div>
@@ -1416,7 +1416,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <div className="mt-4 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Tiempo de preparación', 'Prep time')}</div>
               <div className="mt-2 grid grid-cols-4 gap-2">
                 {[10, 15, 20, 30].map((m) => (
-                  <button key={m} onClick={() => setPrepMin(m)} className={`rounded-field py-2.5 text-[12.5px] font-extrabold ${prepMin === m ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>{m} min</button>
+                  <button key={m} onClick={() => setPrepMin(m)} className={`tap-y rounded-field py-2.5 text-[12.5px] font-extrabold ${prepMin === m ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>{m} min</button>
                 ))}
               </div>
             </>
@@ -1436,7 +1436,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Llega al cliente en aprox.', 'Arrives at the customer in approx.')}</div>
           <div className="mt-2 grid grid-cols-5 gap-2">
             {[5, 10, 15, 20, 30].map((m) => (
-              <button key={m} onClick={() => setAssignEta(m)} className={`cursor-pointer rounded-field py-2.5 text-[12px] font-extrabold ${assignEta === m ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>{m} min</button>
+              <button key={m} onClick={() => setAssignEta(m)} className={`tap-y cursor-pointer rounded-field py-2.5 text-[12px] font-extrabold ${assignEta === m ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>{m} min</button>
             ))}
           </div>
           <div className="mt-4 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Tus repartidores', 'Your drivers')}</div>
@@ -1445,7 +1445,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           )}
           <div className="mt-2 flex flex-col gap-2">
             {ownDrivers.map((d, i) => (
-              <button key={i} onClick={() => assignDriver(assignFor, d.name, d.phone, d.vehicle)} className="flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-left">
+              <button key={i} onClick={() => assignDriver(assignFor, d.name, d.phone, d.vehicle)} className="tap-y flex items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-left">
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: d.color }}>{d.initials}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[12.5px] font-extrabold text-ink">{d.name}</span>
@@ -1457,7 +1457,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-4 text-[10.5px] font-extrabold uppercase tracking-wide text-muted">{L('Apps externas (respaldo)', 'External apps (backup)')}</div>
           <div className="mt-2 flex flex-col gap-2">
             {EXTERNAL_DRIVERS.map((e) => (
-              <button key={e.name} onClick={() => assignDriver(assignFor, `${e.name} (externo)`)} className="flex items-center justify-between rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-left">
+              <button key={e.name} onClick={() => assignDriver(assignFor, `${e.name} (externo)`)} className="tap-y flex items-center justify-between rounded-field border-[1.5px] border-lilac-line px-3 py-2.5 text-left">
                 <span className="text-[12.5px] font-extrabold text-ink">{e.name}</span>
                 <span className="text-[10.5px] font-extrabold text-primary-dark">{e.rate}</span>
               </button>

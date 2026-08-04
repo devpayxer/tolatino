@@ -284,11 +284,11 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
   const topPosts = [...live].sort((a, b) => b.views - a.views).slice(0, 3);
 
   const chip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+    `tap-y flex-none cursor-pointer rounded-full px-3 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
   const typeChip = (on: boolean) =>
-    `cursor-pointer rounded-full px-2.5 py-1 text-[11px] ${on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-muted'}`;
+    `tap-y cursor-pointer rounded-full px-2.5 py-1 text-[11px] ${on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-muted'}`;
   const attach = (on: boolean) =>
-    `flex cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 text-[11px] font-bold ${on ? 'border-primary bg-lilac text-primary-dark' : 'border-lilac-line bg-white text-muted'}`;
+    `tap-y flex cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 text-[11px] font-bold ${on ? 'border-primary bg-lilac text-primary-dark' : 'border-lilac-line bg-white text-muted'}`;
 
   // Default schedule suggestion: tomorrow 9:00 local, as a datetime-local value.
   const defaultSched = () => {
@@ -324,13 +324,13 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
               <button onClick={() => setPhotoUrl('')} aria-label={L('Quitar foto', 'Remove photo')} className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-ink text-white shadow-card"><X size={12} stroke={2.8} /></button>
             </div>
           )}
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
             <span className="text-[10.5px] font-bold text-muted">{L('Tipo:', 'Type:')}</span>
             {(['news', 'offer', 'event'] as Kind[]).map((k) => (
               <button key={k} onClick={() => setKind(k)} className={typeChip(kind === k)}>{kindLabel(k)}</button>
             ))}
           </div>
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-[18px]">
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = ''; }} />
             <button onClick={() => fileRef.current?.click()} disabled={photoBusy} className={attach(!!photoUrl)}>
               <ImageIcon size={13} stroke={2} />{photoBusy ? L('Subiendo…', 'Uploading…') : L('Foto', 'Photo')}
@@ -342,16 +342,16 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
       <div className="mt-3 flex gap-2 border-t border-hair pt-3">
         {editingId == null ? (
           <>
-            <button onClick={() => void create('draft')} className="cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[11.5px] font-extrabold text-ink">
+            <button onClick={() => void create('draft')} className="tap-y cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[11.5px] font-extrabold text-ink">
               {L('Borrador', 'Draft')}
             </button>
-            <button onClick={() => { setSchedAt(defaultSched()); setSchedOpen(true); }} className="flex cursor-pointer items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[11.5px] font-extrabold text-primary-dark">
+            <button onClick={() => { setSchedAt(defaultSched()); setSchedOpen(true); }} className="tap-y flex cursor-pointer items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[11.5px] font-extrabold text-primary-dark">
               <Calendar size={13} stroke={2.2} />{L('Programar', 'Schedule')}
             </button>
             <button
               onClick={() => void create('live')}
               disabled={!draft.trim()}
-              className={`flex-1 rounded-field py-2.5 text-[12.5px] font-extrabold text-white ${draft.trim() ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}
+              className={`tap-y flex-1 rounded-field py-2.5 text-[12.5px] font-extrabold text-white ${draft.trim() ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}
             >
               {L('Publicar', 'Post now')}
             </button>
@@ -360,7 +360,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
           <button
             onClick={() => void create('live')}
             disabled={!draft.trim()}
-            className={`flex-1 rounded-field py-2.5 text-[12.5px] font-extrabold text-white ${draft.trim() ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}
+            className={`tap-y flex-1 rounded-field py-2.5 text-[12.5px] font-extrabold text-white ${draft.trim() ? 'cursor-pointer bg-primary shadow-cta-sm' : 'cursor-not-allowed bg-lilac-line'}`}
           >
             {L('Guardar cambios', 'Save changes')}
           </button>
@@ -424,7 +424,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
                     <span className="text-[12px] font-extrabold text-ink">{ci.name.split(' ')[0]}</span>
                     {!isFree && <VerifiedBadge size={13} />}
                   </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                     {p.pinned && <span className="rounded bg-amber-bg px-1.5 py-px text-[8px] font-extrabold text-amber-ink">📌 {L('Fijado', 'Pinned')}</span>}
                     <span className="text-[9.5px] font-semibold text-muted-2">
                       {p.status === 'scheduled' ? schedLabel(p.scheduledAt, es, L)
@@ -456,21 +456,21 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
               <div className="mt-2 flex justify-end gap-2 border-t border-hair px-3.5 py-3">
                 {p.status === 'scheduled' && (
                   <>
-                    <button onClick={() => { setReschedFor(p); setSchedAt(p.scheduledAt ? p.scheduledAt.slice(0, 16) : defaultSched()); }} className="cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink">
+                    <button onClick={() => { setReschedFor(p); setSchedAt(p.scheduledAt ? p.scheduledAt.slice(0, 16) : defaultSched()); }} className="tap-y cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink">
                       {L('Reprogramar', 'Reschedule')}
                     </button>
-                    <button onClick={() => publishNow(p)} className="flex cursor-pointer items-center gap-1 rounded-field bg-primary px-3 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm"><Zap size={12} stroke={2.4} />{L('Publicar', 'Post now')}</button>
+                    <button onClick={() => publishNow(p)} className="tap-y flex cursor-pointer items-center gap-1 rounded-field bg-primary px-3 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm"><Zap size={12} stroke={2.4} />{L('Publicar', 'Post now')}</button>
                   </>
                 )}
                 {p.status === 'draft' && (
                   <>
-                    <button onClick={() => setConfirmDel(p)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><Trash2 size={12} stroke={2.2} />{L('Eliminar', 'Delete')}</button>
-                    <button onClick={() => startEdit(p)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><Pencil size={12} stroke={2.2} />{L('Editar', 'Edit')}</button>
-                    <button onClick={() => publishNow(p)} className="cursor-pointer rounded-field bg-primary px-3 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm">{L('Publicar', 'Publish')}</button>
+                    <button onClick={() => setConfirmDel(p)} className="tap tap-y flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><Trash2 size={12} stroke={2.2} />{L('Eliminar', 'Delete')}</button>
+                    <button onClick={() => startEdit(p)} className="tap-y flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><Pencil size={12} stroke={2.2} />{L('Editar', 'Edit')}</button>
+                    <button onClick={() => publishNow(p)} className="tap-y cursor-pointer rounded-field bg-primary px-3 py-2 text-[10.5px] font-extrabold text-white shadow-cta-sm">{L('Publicar', 'Publish')}</button>
                   </>
                 )}
                 {p.status === 'archived' && (
-                  <button onClick={() => reuse(p)} className="flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><RefreshCw size={12} stroke={2.2} />{L('Reusar', 'Re-run')}</button>
+                  <button onClick={() => reuse(p)} className="tap-y flex cursor-pointer items-center gap-1 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2 text-[10.5px] font-extrabold text-ink"><RefreshCw size={12} stroke={2.2} />{L('Reusar', 'Re-run')}</button>
                 )}
               </div>
             )}
@@ -483,7 +483,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
   return (
     <div className="relative pb-8">
       {/* sub-tabs */}
-      <div className="no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
+      <div className="-my-1.5 py-1.5 no-scrollbar -mx-1 mb-4 flex gap-2 min-w-0 overflow-x-auto px-1">
         {tabs.map(([k, label, n]) => (
           <button key={k} onClick={() => setTab(k)} className={chip(tab === k)}>
             {label}

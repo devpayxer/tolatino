@@ -166,7 +166,7 @@ export function ZoneEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Color en el mapa', 'Map color')}</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
             {ZONE_COLORS.map((c) => (
               <button key={c} type="button" onClick={() => setColor(c)} aria-label={L('Color', 'Color')}
                 className={`h-10 w-10 cursor-pointer rounded-full border-2 ${color === c ? 'border-ink' : 'border-transparent'}`}
@@ -303,10 +303,10 @@ export function DriverEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Estado', 'Status')}</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
             {DRIVER_STATUS.map((s) => (
               <button key={s.key} type="button" onClick={() => setStatusKey(s.key)}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-extrabold ${statusKey === s.key ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
+                className={`tap-y flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-extrabold ${statusKey === s.key ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-soft'}`}>
                 <span className="h-2 w-2 rounded-full" style={{ background: statusKey === s.key ? '#fff' : s.dot }} />{L(s.sEs, s.sEn)}
               </button>
             ))}
@@ -314,7 +314,7 @@ export function DriverEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
             {DRIVER_COLORS.map((c) => (
               <button key={c} type="button" onClick={() => setColor(c)} aria-label={L('Color', 'Color')}
                 className={`h-10 w-10 cursor-pointer rounded-full border-2 ${color === c ? 'border-ink' : 'border-transparent'}`}

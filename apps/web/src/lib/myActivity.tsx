@@ -57,6 +57,11 @@ type Ctx = {
   goingIds: Set<string>; // attendance event uuids
   goingSlugs: Set<string>; // attendance event slugs (matches consumer EventItem.slug)
   refresh: () => void;
+  /** Hay historial más viejo del que se está mostrando. */
+  hayMas: boolean;
+  /** Trae la siguiente tanda del historial (200 más). */
+  cargarMas: () => void;
+  cargandoMas: boolean;
   // Consumer objects carry the public `slug`, not the DB uuid — creators resolve
   // slug → id, then insert with user_id = the customer.
   placeOrder: (businessSlug: string, items: OrderItem[], total: number, channel: string, fulfillment?: Record<string, unknown>) => Promise<{ error: string | null; id?: string; code?: string }>;
@@ -86,6 +91,11 @@ const EV = 'events(slug,title_es,title_en,starts_at,venue_es,venue_en,time_label
 export function MyActivityProvider({ children }: { children: ReactNode }) {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
+  // Historial paginado: antes se bajaba ENTERO en cada visita (un cliente con un
+  // año de pedidos se traía todos). El tope crece de 200 en 200 con «Ver más».
+  const [tope, setTope] = useState(200);
+  const [hayMas, setHayMas] = useState(false);
+  const [cargandoMas, setCargandoMas] = useState(false);
   const [orders, setOrders] = useState<MyOrder[]>([]);
   const [bookings, setBookings] = useState<MyBooking[]>([]);
   const [rentals, setRentals] = useState<MyRental[]>([]);
@@ -104,29 +114,37 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     (async () => {
       const uid = user.id;
+      // Se pide UNA fila de más que el tope: si vuelve, es que hay historial más
+      // viejo y el botón «Ver más» debe salir. Sin esto el tope cortaba en
+      // silencio, que es la otra forma de mentir. (Auditoría de Negocios.)
+      const pedir = tope + 1;
       const [o, b, r, t, g, w] = await Promise.all([
-        supabase!.from('business_orders').select(`id,business_id,code,items,total,channel,status,created_at,fulfillment,${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }).limit(200),
-        supabase!.from('business_bookings').select(`id,business_id,service_name,service_id,party_size,starts_at,status,deposit,created_at,duration_min,staff_id,staff_name,addons,variant,total,notes,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }).limit(200),
-        supabase!.from('business_rental_orders').select(`id,business_id,start_at,end_at,fee_total,deposit_total,status,paid,deposit_status,deposit_captured,created_at,business_rentals(item_name,qty),${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }).limit(200),
-        supabase!.from('event_tickets').select(`id,event_id,qty,admitted,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }).limit(200),
+        supabase!.from('business_orders').select(`id,business_id,code,items,total,channel,status,created_at,fulfillment,${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }).limit(pedir),
+        supabase!.from('business_bookings').select(`id,business_id,service_name,service_id,party_size,starts_at,status,deposit,created_at,duration_min,staff_id,staff_name,addons,variant,total,notes,${BIZ}`).eq('user_id', uid).order('starts_at', { ascending: false }).limit(pedir),
+        supabase!.from('business_rental_orders').select(`id,business_id,start_at,end_at,fee_total,deposit_total,status,paid,deposit_status,deposit_captured,created_at,business_rentals(item_name,qty),${BIZ}`).eq('user_id', uid).order('created_at', { ascending: false }).limit(pedir),
+        supabase!.from('event_tickets').select(`id,event_id,qty,admitted,total,unit_price,code,status,used_at,created_at,${EV},event_tiers(name_es,name_en)`).eq('user_id', uid).order('created_at', { ascending: false }).limit(pedir),
         supabase!.from('event_attendance').select(`event_id,created_at,${EV}`).eq('user_id', uid).order('created_at', { ascending: false }),
         supabase!.from('event_waitlist').select('event_id,tier_id,status').eq('user_id', uid),
       ]);
       if (cancelled) return;
-      if (!o.error && o.data) setOrders(o.data as unknown as MyOrder[]);
-      if (!b.error && b.data) setBookings(b.data as unknown as MyBooking[]);
-      if (!r.error && r.data) setRentals((r.data as unknown as (Omit<MyRental, 'item_name' | 'item_count' | 'total' | 'deposit'> & { fee_total: number | null; deposit_total: number | null; business_rentals: { item_name: string; qty: number }[] })[]).map((o) => {
+      setCargandoMas(false);
+      const sobra = (x: { data: unknown[] | null }) => Array.isArray(x.data) && x.data.length > tope;
+      setHayMas(sobra(o) || sobra(b) || sobra(r) || sobra(t));
+      const corta = <T,>(rows: T[]) => rows.slice(0, tope);
+      if (!o.error && o.data) setOrders(corta(o.data as unknown as MyOrder[]));
+      if (!b.error && b.data) setBookings(corta(b.data as unknown as MyBooking[]));
+      if (!r.error && r.data) setRentals(corta((r.data as unknown as (Omit<MyRental, 'item_name' | 'item_count' | 'total' | 'deposit'> & { fee_total: number | null; deposit_total: number | null; business_rentals: { item_name: string; qty: number }[] })[]).map((o) => {
         const lines = Array.isArray(o.business_rentals) ? o.business_rentals : [];
         const first = lines[0]?.item_name ?? 'Renta';
         return { id: o.id, business_id: o.business_id, item_name: lines.length > 1 ? `${first} +${lines.length - 1}` : first, item_count: lines.length, start_at: o.start_at, end_at: o.end_at, total: o.fee_total, deposit: o.deposit_total, status: o.status, paid: o.paid === true, depositStatus: String((o as { deposit_status?: string }).deposit_status ?? 'none'), depositCaptured: Number((o as { deposit_captured?: number }).deposit_captured ?? 0), created_at: o.created_at, businesses: o.businesses };
-      }));
-      if (!t.error && t.data) setTickets(t.data as unknown as MyTicket[]);
+      })));
+      if (!t.error && t.data) setTickets(corta(t.data as unknown as MyTicket[]));
       if (!g.error && g.data) setGoing(g.data as unknown as MyGoing[]);
       if (!w.error && w.data) setWaitlist(w.data as unknown as MyWaitlist[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [user, version]);
+  }, [user, version, tope]);
 
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
@@ -271,7 +289,12 @@ export function MyActivityProvider({ children }: { children: ReactNode }) {
   // tiers the user is actively waiting on (for the "En espera ✓" toggle on sold-out tiers).
   const waitlistTierIds = useMemo(() => new Set(waitlist.filter((w) => w.tier_id && w.status !== 'converted').map((w) => w.tier_id!)), [waitlist]);
 
-  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, placeOrder, book, buyTickets, buyTicketsMulti, waitlist, waitlistTierIds, joinWaitlist, leaveWaitlist, rsvp, cancel, rescheduleBooking };
+  const cargarMas = useCallback(() => {
+    if (cargandoMas) return;
+    setCargandoMas(true);
+    setTope((t) => t + 200);
+  }, [cargandoMas]);
+  const value: Ctx = { loading, orders, bookings, rentals, tickets, going, goingIds, goingSlugs, refresh, hayMas, cargarMas, cargandoMas, placeOrder, book, buyTickets, buyTicketsMulti, waitlist, waitlistTierIds, joinWaitlist, leaveWaitlist, rsvp, cancel, rescheduleBooking };
   return <C.Provider value={value}>{children}</C.Provider>;
 }
 

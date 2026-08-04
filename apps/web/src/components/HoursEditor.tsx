@@ -106,7 +106,7 @@ export function HoursEditor({
         <button
           type="button"
           onClick={applyToAll}
-          className="self-start cursor-pointer text-[11.5px] font-extrabold text-primary-dark"
+          className="tap-y self-start cursor-pointer text-[11.5px] font-extrabold text-primary-dark"
         >
           {L('Aplicar el primer día a toda la semana', 'Apply the first open day to the whole week')}
         </button>
@@ -174,7 +174,7 @@ export function HoursEditor({
                     <button
                       type="button"
                       onClick={() => addFranja(d)}
-                      className="flex cursor-pointer items-center gap-1.5 self-start text-[11.5px] font-extrabold text-primary-dark"
+                      className="tap-y flex cursor-pointer items-center gap-1.5 self-start text-[11.5px] font-extrabold text-primary-dark"
                     >
                       <Plus size={13} stroke={2.6} />
                       {L('Otra franja', 'Add slot')}

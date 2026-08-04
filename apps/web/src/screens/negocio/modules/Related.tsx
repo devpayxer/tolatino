@@ -164,7 +164,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
           {L('Publica tu negocio para relacionar otros listados.', 'Publish your business to link other listings.')}
         </p>
-        <button onClick={() => router.push('/negocio/publicar')} className="mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
+        <button onClick={() => router.push('/negocio/publicar')} className="tap-y mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
           {L('Publicar negocio', 'Publish business')}
         </button>
       </div>
@@ -226,7 +226,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
 
           <button
             onClick={() => setSheet(true)}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn bg-primary py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
+            className="tap-y flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn bg-primary py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
           >
             <Plus size={15} stroke={2.6} />
             {L('Relacionar un listado', 'Link a listing')}
@@ -260,7 +260,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
                       <button
                         onClick={() => doRespond(r, true)}
                         disabled={busy === r.relationId}
-                        className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50"
+                        className="tap-y flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50"
                       >
                         {busy === r.relationId ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} stroke={2.8} />}
                         {L('Aprobar', 'Approve')}
@@ -268,7 +268,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
                       <button
                         onClick={() => doRespond(r, false)}
                         disabled={busy === r.relationId}
-                        className="flex-none cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-2 text-[12px] font-extrabold text-ink-soft disabled:opacity-50"
+                        className="tap-y flex-none cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-2 text-[12px] font-extrabold text-ink-soft disabled:opacity-50"
                       >
                         {L('Rechazar', 'Decline')}
                       </button>
@@ -316,7 +316,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
                     </span>
                     <button
                       onClick={() => doRequest(rowToCandidate(b))}
-                      className="flex flex-none cursor-pointer items-center gap-1 rounded-btn bg-lilac-2 px-3 py-2 text-[11.5px] font-extrabold text-primary-dark"
+                      className="tap-y flex flex-none cursor-pointer items-center gap-1 rounded-btn bg-lilac-2 px-3 py-2 text-[11.5px] font-extrabold text-primary-dark"
                     >
                       <Plus size={13} stroke={2.8} />
                       {L('Relacionar', 'Link')}
@@ -466,14 +466,14 @@ function LinkSheet({
 
           <div className="mt-3.5">
             <span className="mb-1.5 block text-[11.5px] font-extrabold text-ink">{L('Rol', 'Role')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
               {ROLE_PRESETS.map(([e, n]) => {
                 const on = roleEs === e;
                 return (
                   <button
                     key={e}
                     onClick={() => { if (on) { setRoleEs(''); setRoleEn(''); } else { setRoleEs(e); setRoleEn(n); } }}
-                    className={`cursor-pointer rounded-full px-3 py-1.5 text-[11.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-soft'}`}
+                    className={`tap-y cursor-pointer rounded-full px-3 py-1.5 text-[11.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-soft'}`}
                   >
                     {es ? e : n}
                   </button>

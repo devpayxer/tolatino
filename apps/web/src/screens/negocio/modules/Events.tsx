@@ -531,7 +531,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- shared UI helpers ----------
   const chip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+    `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 
 
   // Honest placeholder for features on the roadmap but not yet built (matches the
@@ -590,7 +590,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="rounded-card-sm border border-hair bg-white py-12 text-center shadow-card">
             <div className="text-[13.5px] font-extrabold text-ink">{L('Aún no tienes eventos próximos', 'No upcoming events yet')}</div>
             <div className="mt-1 text-[11.5px] font-medium text-muted-2">{L('Crea tu primer evento y ponlo en venta en minutos.', 'Create your first event and put it on sale in minutes.')}</div>
-            <button onClick={startWizard} className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
+            <button onClick={startWizard} className="tap-y mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
               <Plus size={15} stroke={2.6} />{L('Crear evento', 'Create event')}
             </button>
           </div>
@@ -622,8 +622,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barC }} />
                   </div>
                   <div className="mt-3 flex gap-2">
-                    <button onClick={() => goManage(e.id)} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Gestionar', 'Manage')}</button>
-                    <button onClick={() => goManage(e.id, 'checkin')} className="flex cursor-pointer items-center gap-1.5 rounded-btn border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[11.5px] font-extrabold text-ink">
+                    <button onClick={() => goManage(e.id)} className="tap-y tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Gestionar', 'Manage')}</button>
+                    <button onClick={() => goManage(e.id, 'checkin')} className="tap-y flex cursor-pointer items-center gap-1.5 rounded-btn border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[11.5px] font-extrabold text-ink">
                       <QrCode size={13} stroke={2} className="text-primary-dark" />{L('Check-in', 'Check-in')}
                     </button>
                   </div>
@@ -667,7 +667,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-1 text-[11.5px] font-semibold leading-snug text-white/85">
             {L('Pronto podrás invitar promotores con un código: comparten tu evento y ganan comisión por boleto.', 'Soon you\'ll invite promoters with a code: they share your event and earn commission per ticket.')}
           </div>
-          <button onClick={() => setListTab('promoters')} className="mt-2.5 cursor-pointer rounded-[10px] bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-primary-press">{L('Ver promotores', 'View promoters')}</button>
+          <button onClick={() => setListTab('promoters')} className="tap-y mt-2.5 cursor-pointer rounded-[10px] bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-primary-press">{L('Ver promotores', 'View promoters')}</button>
         </div>
       </div>
     </div>
@@ -741,7 +741,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           value={listTab}
           onChange={setListTab}
         />
-        <button onClick={startWizard} className="mb-1.5 hidden flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm sm:flex">
+        <button onClick={startWizard} className="tap-y mb-1.5 hidden flex-none cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm sm:flex">
           <Plus size={15} stroke={2.6} />{L('Crear evento', 'Create event')}
         </button>
       </div>
@@ -913,7 +913,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       {checkinRes.buyer && <div className="mt-0.5 text-[11px] font-semibold text-white/75">{checkinRes.buyer}{checkinRes.tier ? ` · ${checkinRes.tier}` : ''}</div>}
       {checkinRes.ok && remaining > 0 && (
-        <button onClick={() => runCheckin(checkinRes.code, remaining)} className="mt-2 cursor-pointer rounded-btn bg-primary px-3 py-1.5 text-[11px] font-extrabold text-white">
+        <button onClick={() => runCheckin(checkinRes.code, remaining)} className="tap-y mt-2 cursor-pointer rounded-btn bg-primary px-3 py-1.5 text-[11px] font-extrabold text-white">
           {L('Admitir los', 'Admit the')} {remaining} {L('restantes', 'remaining')}
         </button>
       )}
@@ -931,13 +931,13 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             placeholder={L('Código del boleto', 'Ticket code')}
             className="min-w-0 flex-1 rounded-btn bg-white/10 px-3 py-2.5 text-center font-mono text-[15px] font-extrabold uppercase tracking-[.14em] text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-white/40 focus:bg-white/15"
           />
-          <button onClick={() => runCheckin()} disabled={checkinBusy || !checkinCode.trim()} className="flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white disabled:opacity-40">{L('Validar', 'Check')}</button>
+          <button onClick={() => runCheckin()} disabled={checkinBusy || !checkinCode.trim()} className="tap-y flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white disabled:opacity-40">{L('Validar', 'Check')}</button>
         </div>
         {scanSupported && (
           scanOpen ? (
             <div className="mt-3"><QrScanner onCode={(v) => { setScanOpen(false); void runCheckin(v); }} onClose={() => setScanOpen(false)} L={L} /></div>
           ) : (
-            <button onClick={() => setScanOpen(true)} className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn bg-white/10 py-2.5 text-[12px] font-extrabold text-white">
+            <button onClick={() => setScanOpen(true)} className="tap-y mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn bg-white/10 py-2.5 text-[12px] font-extrabold text-white">
               <QrCode size={15} stroke={2.2} /> {L('Escanear con cámara', 'Scan with camera')}
             </button>
           )
@@ -970,7 +970,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   ) : fully ? (
                     <span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Ingresó', 'In')}</span>
                   ) : (
-                    <button onClick={() => runCheckin(t.code, 1)} disabled={checkinBusy} className={`flex-none cursor-pointer rounded-md px-2.5 py-1 text-[9px] font-extrabold disabled:opacity-50 ${partial ? 'bg-amber-bg text-amber-ink' : 'bg-primary text-white'}`}>+1 {L('admitir', 'admit')}</button>
+                    <button onClick={() => runCheckin(t.code, 1)} disabled={checkinBusy} className={`tap-y flex-none cursor-pointer rounded-md px-2.5 py-1 text-[9px] font-extrabold disabled:opacity-50 ${partial ? 'bg-amber-bg text-amber-ink' : 'bg-primary text-white'}`}>+1 {L('admitir', 'admit')}</button>
                   )}
                 </div>
               );
@@ -1004,7 +1004,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <Check size={13} stroke={3} className="text-green" />
                   </button>
                 ) : (
-                  <button onClick={() => { setCheckedIn((s) => ({ ...s, [a.name]: true })); flash(L('Ingreso registrado', 'Checked in')); }} className="flex-none cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-[10px] font-extrabold text-white">{L('Ingresar', 'Check in')}</button>
+                  <button onClick={() => { setCheckedIn((s) => ({ ...s, [a.name]: true })); flash(L('Ingreso registrado', 'Checked in')); }} className="tap-y flex-none cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-[10px] font-extrabold text-white">{L('Ingresar', 'Check in')}</button>
                 )}
               </div>
             );
@@ -1040,9 +1040,9 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </button>
       </div>
       <div className="mt-3 flex gap-2">
-        <button onClick={saveTier} disabled={tierBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{tierBusy ? L('Guardando…', 'Saving…') : L('Guardar', 'Save')}</button>
-        <button onClick={() => setTierEdit(null)} className="cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
-        {tierEdit !== 'new' && tierEdit && <button onClick={() => deleteTier(tierEdit)} className="cursor-pointer rounded-btn bg-pink-bg px-4 py-2.5 text-[12px] font-extrabold text-pink-dark">{L('Eliminar', 'Remove')}</button>}
+        <button onClick={saveTier} disabled={tierBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{tierBusy ? L('Guardando…', 'Saving…') : L('Guardar', 'Save')}</button>
+        <button onClick={() => setTierEdit(null)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+        {tierEdit !== 'new' && tierEdit && <button onClick={() => deleteTier(tierEdit)} className="tap tap-y cursor-pointer rounded-btn bg-pink-bg px-4 py-2.5 text-[12px] font-extrabold text-pink-dark">{L('Eliminar', 'Remove')}</button>}
       </div>
     </div>
   );
@@ -1147,12 +1147,12 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               )}
               <input value={promoForm.maxUses} onChange={(e) => setPromoForm((f) => ({ ...f, maxUses: e.target.value.replace(/[^0-9]/g, '') }))} inputMode="numeric" placeholder={L('Usos máx · vacío = ilimitado', 'Max uses · blank = unlimited')} className={`${tierInput} mb-2`} />
               <div className="flex gap-2">
-                <button onClick={savePromo} disabled={promoBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{promoBusy ? L('Guardando…', 'Saving…') : L('Crear código', 'Create code')}</button>
-                <button onClick={() => setPromoAdd(false)} className="cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+                <button onClick={savePromo} disabled={promoBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{promoBusy ? L('Guardando…', 'Saving…') : L('Crear código', 'Create code')}</button>
+                <button onClick={() => setPromoAdd(false)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
               </div>
             </div>
           ) : (
-            <button onClick={() => setPromoAdd(true)} className="mt-2 w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar código', 'Add code')}</button>
+            <button onClick={() => setPromoAdd(true)} className="tap-y mt-2 w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar código', 'Add code')}</button>
           )}
         </div>
       )}
@@ -1173,7 +1173,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="text-[11.5px] font-extrabold text-ink">{waitlistActive} {L('en espera', 'waiting')}</div>
           <div className="mt-0.5 text-[10px] font-medium leading-snug text-ink-3">{L('Avísales cuando se liberen lugares. Notifica — no aparta; el primero en comprar lo toma.', 'Tell them when spots free up. It notifies — it doesn\'t hold; first to buy takes it.')}</div>
         </div>
-        <button onClick={notifyWaitlist} disabled={waitBusy || waitlistActive === 0} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-40">{waitBusy ? L('Avisando…', 'Notifying…') : L('Avisar a la lista', 'Notify the list')}</button>
+        <button onClick={notifyWaitlist} disabled={waitBusy || waitlistActive === 0} className="tap-y flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-40">{waitBusy ? L('Avisando…', 'Notifying…') : L('Avisar a la lista', 'Notify the list')}</button>
       </div>
       {(waitRows ?? []).length === 0 ? (
         <div className="rounded-card-sm border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Nadie en lista de espera todavía.', 'No one on the waitlist yet.')}</div>
@@ -1233,7 +1233,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="mb-1.5 text-[11px] font-extrabold text-muted-2">{L('Asientos', 'Seating')}</div>
       <div className="flex gap-2">
         {([['none', L('General', 'General')], ['seats', L('Asientos', 'Numbered')], ['tables', L('Mesas', 'Tables')]] as const).map(([k, lb]) => (
-          <button key={k} onClick={() => setLayF({ seating: k })} className={`flex-1 cursor-pointer rounded-btn py-2 text-[11px] font-extrabold ${lay.seating === k ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{lb}</button>
+          <button key={k} onClick={() => setLayF({ seating: k })} className={`tap-y flex-1 cursor-pointer rounded-btn py-2 text-[11px] font-extrabold ${lay.seating === k ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{lb}</button>
         ))}
       </div>
       {lay.seating === 'seats' && (
@@ -1254,7 +1254,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button onClick={() => setLayF({ tables: lay.tables.filter((x) => x.id !== t.id) })} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark"><Trash2 size={15} stroke={2} /></button>
             </div>
           ))}
-          <button onClick={() => setLayF({ tables: [...lay.tables, { id: nextSub(), cap: '4', photo: '' }] })} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar mesa', 'Add table')}</button>
+          <button onClick={() => setLayF({ tables: [...lay.tables, { id: nextSub(), cap: '4', photo: '' }] })} className="tap-y w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar mesa', 'Add table')}</button>
         </div>
       )}
 
@@ -1263,10 +1263,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {lay.addons.map((a) => (
         <div key={a.id} className="mb-2 rounded-btn-lg border border-hair bg-white p-2.5">
           <div className="flex gap-2"><input value={a.es} onChange={(e) => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, es: e.target.value } : x)) })} placeholder={L('Ej. Paquete botella', 'e.g. Bottle package')} className={`${layInput} flex-1`} /><input value={a.price} onChange={(e) => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, price: e.target.value.replace(/[^0-9.]/g, '') } : x)) })} inputMode="decimal" placeholder="$" className={`${layInput} w-20`} /><button onClick={() => setLayF({ addons: lay.addons.filter((x) => x.id !== a.id) })} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark"><Trash2 size={15} stroke={2} /></button></div>
-          <div className="mt-2 flex gap-2"><button onClick={() => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, required: !x.required } : x)) })} className={`rounded-full px-3 py-1 text-[10px] font-extrabold ${a.required ? 'bg-amber-bg text-amber-ink' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.required ? L('✓ Obligatorio', '✓ Required') : L('Obligatorio', 'Required')}</button><button onClick={() => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, seatedOnly: !x.seatedOnly } : x)) })} className={`rounded-full px-3 py-1 text-[10px] font-extrabold ${a.seatedOnly ? 'bg-lilac text-primary-dark' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.seatedOnly ? L('✓ Solo mesas', '✓ Seated only') : L('Solo mesas', 'Seated only')}</button></div>
+          <div className="mt-2 flex gap-2"><button onClick={() => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, required: !x.required } : x)) })} className={`tap-y rounded-full px-3 py-1 text-[10px] font-extrabold ${a.required ? 'bg-amber-bg text-amber-ink' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.required ? L('✓ Obligatorio', '✓ Required') : L('Obligatorio', 'Required')}</button><button onClick={() => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, seatedOnly: !x.seatedOnly } : x)) })} className={`tap-y rounded-full px-3 py-1 text-[10px] font-extrabold ${a.seatedOnly ? 'bg-lilac text-primary-dark' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.seatedOnly ? L('✓ Solo mesas', '✓ Seated only') : L('Solo mesas', 'Seated only')}</button></div>
         </div>
       ))}
-      <button onClick={() => setLayF({ addons: [...lay.addons, { id: nextSub(), es: '', price: '', required: false, seatedOnly: lay.seating !== 'none' }] })} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar paquete', 'Add package')}</button>
+      <button onClick={() => setLayF({ addons: [...lay.addons, { id: nextSub(), es: '', price: '', required: false, seatedOnly: lay.seating !== 'none' }] })} className="tap-y w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar paquete', 'Add package')}</button>
 
       {/* program */}
       <div className="mb-1.5 mt-3 text-[11px] font-extrabold text-muted-2">{L('Programa', 'Run of show')}</div>
@@ -1277,7 +1277,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <button onClick={() => setLayF({ program: lay.program.filter((x) => x.id !== p.id) })} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark"><Trash2 size={15} stroke={2} /></button>
         </div>
       ))}
-      <button onClick={() => setLayF({ program: [...lay.program, { id: nextSub(), t: '', es: '' }] })} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar momento', 'Add moment')}</button>
+      <button onClick={() => setLayF({ program: [...lay.program, { id: nextSub(), t: '', es: '' }] })} className="tap-y w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2 text-[11.5px] font-extrabold text-primary-dark">+ {L('Agregar momento', 'Add moment')}</button>
 
       {/* tags + details */}
       <div className="mt-3 flex flex-col gap-2">
@@ -1313,8 +1313,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="rounded-btn-lg border-[1.5px] border-pink-bg bg-white p-3.5">
           <div className="text-[12px] font-bold text-ink">{L('¿Cancelar este evento? Se avisará a quienes ya tienen boleto y dejará de venderse.', 'Cancel this event? Ticket holders will be notified and sales will stop.')}</div>
           <div className="mt-3 flex gap-2">
-            <button onClick={() => setAskCancel(false)} className="flex-1 cursor-pointer rounded-btn border border-hair bg-white py-2.5 text-[12px] font-extrabold text-ink-soft">{L('No, volver', 'No, go back')}</button>
-            <button onClick={cancelEvent} disabled={cancelBusy} className="flex-1 cursor-pointer rounded-btn bg-pink-dark py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{cancelBusy ? L('Cancelando…', 'Cancelling…') : L('Sí, cancelar', 'Yes, cancel')}</button>
+            <button onClick={() => setAskCancel(false)} className="tap-y flex-1 cursor-pointer rounded-btn border border-hair bg-white py-2.5 text-[12px] font-extrabold text-ink-soft">{L('No, volver', 'No, go back')}</button>
+            <button onClick={cancelEvent} disabled={cancelBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-pink-dark py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{cancelBusy ? L('Cancelando…', 'Cancelling…') : L('Sí, cancelar', 'Yes, cancel')}</button>
           </div>
         </div>
       ) : (
@@ -1450,7 +1450,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Categoría', 'Category')} *</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
           {EVENT_CATS.map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
         </div>
       </div>
@@ -1463,8 +1463,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div>
         <label className={labelCls}>{L('Tipo de evento', 'Event type')}</label>
         <div className="flex gap-2">
-          <button type="button" onClick={() => upD({ online: false })} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[12px] font-extrabold ${!draft.online ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{L('📍 Presencial', '📍 In person')}</button>
-          <button type="button" onClick={() => upD({ online: true })} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[12px] font-extrabold ${draft.online ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{L('💻 En línea', '💻 Online')}</button>
+          <button type="button" onClick={() => upD({ online: false })} className={`tap-y flex-1 cursor-pointer rounded-btn py-2.5 text-[12px] font-extrabold ${!draft.online ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{L('📍 Presencial', '📍 In person')}</button>
+          <button type="button" onClick={() => upD({ online: true })} className={`tap-y flex-1 cursor-pointer rounded-btn py-2.5 text-[12px] font-extrabold ${draft.online ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{L('💻 En línea', '💻 Online')}</button>
         </div>
       </div>
       <div>
@@ -1536,7 +1536,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             </div>
           </div>
           {draft.seating !== 'none' && (
-            <button onClick={() => setTierField(t.id, { seat: !t.seat })} className="mt-2 flex w-full items-center gap-2 rounded-field bg-lilac-2 px-3 py-2 text-left">
+            <button onClick={() => setTierField(t.id, { seat: !t.seat })} className="tap-y mt-2 flex w-full items-center gap-2 rounded-field bg-lilac-2 px-3 py-2 text-left">
               <span className={`relative h-[22px] w-[38px] flex-none rounded-full transition-colors ${t.seat ? 'bg-primary' : 'bg-muted-faint'}`}><span className="absolute top-[3px] h-4 w-4 rounded-full bg-white transition-all" style={{ left: t.seat ? 19 : 3 }} /></span>
               <span className="text-[11.5px] font-extrabold text-ink">{draft.seating === 'tables' ? L('Requiere elegir mesa', 'Requires a table') : L('Requiere elegir asiento', 'Requires a seat')}</span>
             </button>
@@ -1550,7 +1550,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mb-1.5 text-[12.5px] font-extrabold text-ink">{L('Asientos', 'Seating')}</div>
         <div className="flex gap-2">
           {([['none', L('General', 'General')], ['seats', L('Asientos', 'Numbered')], ['tables', L('Mesas', 'Tables')]] as const).map(([k, lab]) => (
-            <button key={k} onClick={() => upD({ seating: k })} className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[11.5px] font-extrabold ${draft.seating === k ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{lab}</button>
+            <button key={k} onClick={() => upD({ seating: k })} className={`tap-y flex-1 cursor-pointer rounded-btn py-2.5 text-[11.5px] font-extrabold ${draft.seating === k ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}>{lab}</button>
           ))}
         </div>
 
@@ -1580,7 +1580,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <button onClick={() => removeTable(t.id)} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Quitar', 'Remove')}><Trash2 size={15} stroke={2} /></button>
               </div>
             ))}
-            <button onClick={addTable} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar mesa', 'Add table')}</button>
+            <button onClick={addTable} className="tap-y w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar mesa', 'Add table')}</button>
           </div>
         )}
       </div>
@@ -1596,13 +1596,13 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <input value={a.price} onChange={(e) => setAddon(a.id, { price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="$" className={`${fieldCls} w-24`} />
               <button onClick={() => removeAddon(a.id)} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark" aria-label={L('Quitar', 'Remove')}><Trash2 size={15} stroke={2} /></button>
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button onClick={() => setAddon(a.id, { required: !a.required })} className={`rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${a.required ? 'bg-amber-bg text-amber-ink' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.required ? L('✓ Obligatorio', '✓ Required') : L('Obligatorio', 'Required')}</button>
-              <button onClick={() => setAddon(a.id, { seatedOnly: !a.seatedOnly })} className={`rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${a.seatedOnly ? 'bg-lilac text-primary-dark' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.seatedOnly ? L('✓ Solo mesas/asientos', '✓ Seated only') : L('Solo mesas/asientos', 'Seated only')}</button>
+            <div className="mt-2 flex flex-wrap gap-x-2 gap-y-[18px]">
+              <button onClick={() => setAddon(a.id, { required: !a.required })} className={`tap-y rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${a.required ? 'bg-amber-bg text-amber-ink' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.required ? L('✓ Obligatorio', '✓ Required') : L('Obligatorio', 'Required')}</button>
+              <button onClick={() => setAddon(a.id, { seatedOnly: !a.seatedOnly })} className={`tap-y rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${a.seatedOnly ? 'bg-lilac text-primary-dark' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.seatedOnly ? L('✓ Solo mesas/asientos', '✓ Seated only') : L('Solo mesas/asientos', 'Seated only')}</button>
             </div>
           </div>
         ))}
-        <button onClick={addAddon} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar paquete', 'Add package')}</button>
+        <button onClick={addAddon} className="tap-y w-full cursor-pointer rounded-btn-lg border-[1.5px] border-dashed border-lilac-ring bg-lilac-3 py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar paquete', 'Add package')}</button>
       </div>
 
       {/* ── Detalles opcionales ── */}
@@ -1760,7 +1760,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       }
     >
-      <div className="no-scrollbar mb-4 flex gap-2 min-w-0 overflow-x-auto pb-0.5">
+      <div className="-my-1.5 py-1.5 no-scrollbar mb-4 flex gap-2 min-w-0 overflow-x-auto pb-0.5">
         {wizStepDefs.map(([, label], i) => {
           const active = wizStep === i, done = i < wizStep || (i <= wizMax && i !== wizStep);
           return (
@@ -1845,7 +1845,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="block text-[13px] font-extrabold text-ink">{L('Eventos y boletos es parte del plan Verified.', 'Events & tickets is part of the Verified plan.')}</span>
             <span className="block text-[11.5px] font-semibold text-amber-ink">{L('Estás viendo una vista previa. Verifica tu negocio para vender boletos.', "You're viewing a preview. Verify your business to sell tickets.")}</span>
           </span>
-          <button onClick={() => ctx.go('billing')} className="flex-none cursor-pointer rounded-[10px] bg-ink px-3.5 py-2 text-[12px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
+          <button onClick={() => ctx.go('billing')} className="tap-y flex-none cursor-pointer rounded-[10px] bg-ink px-3.5 py-2 text-[12px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
         </div>
       )}
 

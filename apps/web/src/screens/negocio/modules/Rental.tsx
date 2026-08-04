@@ -134,7 +134,7 @@ const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border
 const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 const money = (n: number) => '$' + n.toLocaleString();
 const chip = (on: boolean) =>
-  `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+  `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 
 const RENT_TAGS = ['Más rentado', 'Para eventos', 'Nuevo', 'Popular'];
 const tagLabel = (t: string, L: (es: string, en: string) => string) =>
@@ -487,7 +487,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="max-w-[420px] text-[12.5px] font-semibold leading-relaxed text-muted">
             {L('Publica artículos para rentar por hora, día o semana — con depósitos, calendario y control de daños. Verifica tu negocio para activarlo.', 'List items to rent by hour, day or week — with deposits, a calendar and damage tracking. Verify your business to turn it on.')}
           </div>
-          <button onClick={() => ctx.go('billing')} className="mt-1 cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">{L('Iniciar verificación', 'Start verification')}</button>
+          <button onClick={() => ctx.go('billing')} className="tap-y mt-1 cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">{L('Iniciar verificación', 'Start verification')}</button>
         </div>
       </div>
     );
@@ -590,7 +590,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
                     <ChipRow className="-mx-1 px-1">
                       {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{L(c.es, c.en)}</button>)}
-                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="tap-y flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </ChipRow>
                   </div>
                   <div>
@@ -616,9 +616,9 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   </div>
                   <div>
                     <div className={fieldLabel}>{L('Etiquetas', 'Tags')}</div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
                       {[...RENT_TAGS, ...cfg.tags].map((t) => { const on = draft.tags.includes(t); return <button key={t} onClick={() => upD({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{RENT_TAGS.includes(t) ? tagLabel(t, L) : t}</button>; })}
-                      <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+                      <button onClick={() => setTagSheet(true)} className="tap-y cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </div>
                   </div>
                 </div>
@@ -720,7 +720,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         <div className={fieldLabel}>{L('Administrar artículo', 'Manage item')}</div>
                         <div className="flex gap-2.5">
                           <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} stroke={2.4} />{L('Duplicar', 'Duplicate')}</button>
-                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="tap flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
                         </div>
                       </div>
                     )}
@@ -767,7 +767,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   }
 
   // ============================ MODULE ============================
-  const modeBtn = (on: boolean) => `flex flex-1 items-center justify-center gap-2 rounded-btn py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
+  const modeBtn = (on: boolean) => `tap-y flex flex-1 items-center justify-center gap-2 rounded-btn py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
 
   const kpis = [
     { Icon: Boxes, c: '#6D4DF6', bg: '#EFEBFF', label: L('Artículos', 'Items'), value: String(items.length) },
@@ -797,8 +797,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className={`${cardCls} p-3.5`}>
         <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CalendarDays size={15} stroke={2.2} className="text-primary-dark" />{L('Modo del listado', 'Listing mode')}</div>
         <div className="flex rounded-full bg-lilac-2 p-0.5">
-          <button onClick={() => { if (cfg.renting) { saveCfg({ ...cfg, renting: false }); flash(L('Renta en modo Solo mostrar', 'Rentals set to Display only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.renting ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo mostrar', 'Display only')}</button>
-          <button onClick={() => { if (!cfg.renting) { saveCfg({ ...cfg, renting: true }); flash(L('Renta en línea activada', 'Online rentals enabled')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.renting ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Aceptar rentas', 'Accept rentals')}</button>
+          <button onClick={() => { if (cfg.renting) { saveCfg({ ...cfg, renting: false }); flash(L('Renta en modo Solo mostrar', 'Rentals set to Display only')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.renting ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo mostrar', 'Display only')}</button>
+          <button onClick={() => { if (!cfg.renting) { saveCfg({ ...cfg, renting: true }); flash(L('Renta en línea activada', 'Online rentals enabled')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.renting ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Aceptar rentas', 'Accept rentals')}</button>
         </div>
         <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
           {cfg.renting
@@ -812,8 +812,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className={`${cardCls} p-3.5`}>
           <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CheckCircle2 size={15} stroke={2.2} className="text-primary-dark" />{L('Confirmación de rentas', 'Rental confirmation')}</div>
           <div className="flex rounded-full bg-lilac-2 p-0.5">
-            <button onClick={() => { if (cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: false }); flash(L('Las rentas requieren tu aprobación', 'Rentals now need your approval')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Requiere aprobación', 'Needs approval')}</button>
-            <button onClick={() => { if (!cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: true }); flash(L('Las rentas se confirman automáticamente', 'Rentals now confirm automatically')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Automática', 'Automatic')}</button>
+            <button onClick={() => { if (cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: false }); flash(L('Las rentas requieren tu aprobación', 'Rentals now need your approval')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Requiere aprobación', 'Needs approval')}</button>
+            <button onClick={() => { if (!cfg.autoConfirm) { saveCfg({ ...cfg, autoConfirm: true }); flash(L('Las rentas se confirman automáticamente', 'Rentals now confirm automatically')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.autoConfirm ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Automática', 'Automatic')}</button>
           </div>
           <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
             {cfg.autoConfirm
@@ -857,7 +857,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{money(it.day)}/{L('día', 'day')}</span>
                       </span>
                       <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{L(it.availEs, it.availEn)} · {availOf(it)}/{it.stock} {L(it.unitEs, it.unitEn)}</span>
-                      <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                         <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9.5px] font-extrabold ${s.cls}`}><span className="h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />{s.label}</span>
                         {it.dep > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{L('Depósito', 'Deposit')} {money(it.dep)}</span>}
                         {it.addons.length > 0 && <span className="rounded-md bg-lilac-2 px-1.5 py-0.5 text-[9px] font-extrabold text-ink-2">{it.addons.length} {L('extras', 'add-ons')}</span>}
@@ -1042,16 +1042,16 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         )}
         {(r.status === 'pending' || r.status === 'confirmed' || r.status === 'out') && (
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'confirmed')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>)}
-            {r.status === 'confirmed' && (<button onClick={() => setReqStatus(r.id, 'out')} className="flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{r.depositStatus === 'held' ? L('Entregar', 'Hand out') : L('Entregar · toma el depósito', 'Hand out · take deposit')}</button>)}
+          <div className="mt-2.5 flex flex-wrap gap-x-2 gap-y-[18px]">
+            {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'confirmed')} className="tap-y flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>)}
+            {r.status === 'confirmed' && (<button onClick={() => setReqStatus(r.id, 'out')} className="tap-y flex-1 cursor-pointer rounded-field bg-primary py-2 text-[11px] font-extrabold text-white shadow-cta-sm">{r.depositStatus === 'held' ? L('Entregar', 'Hand out') : L('Entregar · toma el depósito', 'Hand out · take deposit')}</button>)}
             {r.status === 'out' && (
               <>
-                <button disabled={depBusy} onClick={() => returnAndRelease(r)} className="flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink disabled:opacity-50">{r.depositStatus === 'held' ? L('Devuelto · liberar depósito', 'Returned · release deposit') : L('Devuelto · regresa el depósito', 'Returned · refund deposit')}</button>
-                {r.depositStatus === 'held' && (<button disabled={depBusy} onClick={() => { setDamageFor(r); setDamageAmt(''); }} className="flex-none cursor-pointer rounded-field bg-pink-bg px-3 py-2 text-[11px] font-extrabold text-pink-dark disabled:opacity-50">{L('Daño', 'Damage')}</button>)}
+                <button disabled={depBusy} onClick={() => returnAndRelease(r)} className="tap-y flex-1 cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[11px] font-extrabold text-ink disabled:opacity-50">{r.depositStatus === 'held' ? L('Devuelto · liberar depósito', 'Returned · release deposit') : L('Devuelto · regresa el depósito', 'Returned · refund deposit')}</button>
+                {r.depositStatus === 'held' && (<button disabled={depBusy} onClick={() => { setDamageFor(r); setDamageAmt(''); }} className="tap-y flex-none cursor-pointer rounded-field bg-pink-bg px-3 py-2 text-[11px] font-extrabold text-pink-dark disabled:opacity-50">{L('Daño', 'Damage')}</button>)}
               </>
             )}
-            {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'cancelled')} className="flex-none cursor-pointer rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-ink-2">{L('Rechazar', 'Decline')}</button>)}
+            {r.status === 'pending' && (<button onClick={() => setReqStatus(r.id, 'cancelled')} className="tap-y flex-none cursor-pointer rounded-field bg-lilac-2 px-3 py-2 text-[11px] font-extrabold text-ink-2">{L('Rechazar', 'Decline')}</button>)}
           </div>
         )}
       </div>
@@ -1160,7 +1160,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="block text-[13.5px] font-extrabold">{L('Renta con seguro y verificación de ID', 'Rentals with insurance & ID checks')}</span>
             <span className="mt-0.5 block text-[11.5px] font-semibold leading-snug text-[rgba(255,255,255,.7)]">{L('Cobros de depósito automáticos y verificación del cliente con Premium.', 'Automatic deposit holds and renter verification with Premium.')}</span>
           </span>
-          <button onClick={() => ctx.go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar', 'Upgrade')}</button>
+          <button onClick={() => ctx.go('billing')} className="tap-y flex-none cursor-pointer rounded-btn bg-amber px-4 py-2.5 text-[12px] font-extrabold text-ink">{L('Mejorar', 'Upgrade')}</button>
         </div>
       )}
 
@@ -1175,7 +1175,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="mt-3 flex items-center gap-2 rounded-field border-[1.5px] border-lilac-line px-3 py-2.5">
               <DollarSign size={16} className="flex-none text-muted-2" />
               <input autoFocus inputMode="decimal" value={damageAmt} onChange={(e) => setDamageAmt(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.00" className="w-full bg-transparent text-[15px] font-extrabold text-ink outline-none" />
-              <button onClick={() => setDamageAmt(String(Number(damageFor.deposit ?? 0)))} className="flex-none cursor-pointer rounded-btn bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{L('Todo', 'All')}</button>
+              <button onClick={() => setDamageAmt(String(Number(damageFor.deposit ?? 0)))} className="tap-y flex-none cursor-pointer rounded-btn bg-lilac-2 px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{L('Todo', 'All')}</button>
             </div>
             <div className="mt-4 flex gap-2">
               <button disabled={depBusy} onClick={() => setDamageFor(null)} className="flex-1 cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[13px] font-extrabold text-ink disabled:opacity-50">{L('Cancelar', 'Cancel')}</button>
@@ -1254,7 +1254,7 @@ function ItemDetail({
                   <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold capitalize text-ink">{unit} {i + 1}</span><span className="block text-[10px] font-medium text-muted-2">{out ? L('Rentado', 'Rented') : L('Disponible ahora', 'Available now')}</span></span>
                   {out
                     ? (walkIn
-                        ? (<button onClick={onReturn} className="flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-ink">{L('Devolver', 'Return')}</button>)
+                        ? (<button onClick={onReturn} className="tap-y flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-ink">{L('Devolver', 'Return')}</button>)
                         : (<span className="flex-none rounded-md bg-pink-bg px-2 py-1 text-[9px] font-extrabold text-pink-dark">{L('Rentado', 'Rented')}</span>))
                     : (<span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Libre', 'Free')}</span>)}
                 </div>
@@ -1337,7 +1337,7 @@ function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
           {step === 1 && (
             <>
               <Field label={L('Periodo de renta', 'Rental period')}>
-                <div className="flex gap-1.5">{(['hour', 'day', 'week'] as Period[]).map((p) => (<button key={p} onClick={() => setPeriod(p)} className={`flex-1 rounded-[9px] py-2 text-[11.5px] font-extrabold ${period === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{{ hour: L('Hora', 'Hour'), day: L('Día', 'Day'), week: L('Semana', 'Week') }[p]}</button>))}</div>
+                <div className="flex gap-1.5">{(['hour', 'day', 'week'] as Period[]).map((p) => (<button key={p} onClick={() => setPeriod(p)} className={`tap-y flex-1 rounded-[9px] py-2 text-[11.5px] font-extrabold ${period === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}>{{ hour: L('Hora', 'Hour'), day: L('Día', 'Day'), week: L('Semana', 'Week') }[p]}</button>))}</div>
               </Field>
               <div className="flex gap-3">
                 <Field label={L('Cantidad', 'Quantity')} className="flex-1">
@@ -1430,11 +1430,11 @@ function SuccessSheet({ ctx, title, sub, onClose }: { ctx: PanelCtx; title: stri
 
 function StepBar({ steps, step, onGo }: { steps: string[]; step: number; onGo: (i: number) => void }) {
   return (
-    <div className="no-scrollbar flex gap-2 min-w-0 overflow-x-auto">
+    <div className="-my-1.5 py-1.5 no-scrollbar flex gap-2 min-w-0 overflow-x-auto">
       {steps.map((label, i) => {
         const active = i === step, done = i < step;
         return (
-          <button key={label} onClick={() => onGo(i)} className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
+          <button key={label} onClick={() => onGo(i)} className={`tap-y flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold ${active ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}>
             <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] text-white ${active ? 'bg-white/25' : done ? 'bg-primary' : 'bg-muted-faint'}`}>{done ? '✓' : i + 1}</span>{label}
           </button>
         );

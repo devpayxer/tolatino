@@ -36,7 +36,7 @@ export const PROMO_TYPES: { type: PromoType; Icon: LucideIcon; es: string; en: s
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
 const inputCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary';
 const segCls = (on: boolean) =>
-  `flex-1 cursor-pointer rounded-full py-2 text-center text-[11.5px] font-extrabold transition-colors ${on ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`;
+  `tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[11.5px] font-extrabold transition-colors ${on ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`;
 const saveBtn = 'flex-1 cursor-pointer rounded-btn bg-primary py-3 text-[13px] font-extrabold text-white shadow-cta-sm disabled:cursor-not-allowed disabled:opacity-50';
 const dangerBtn = 'flex-none cursor-pointer rounded-btn border-[1.5px] border-pink-bg bg-white px-4 py-3 text-[12.5px] font-extrabold text-pink-dark disabled:cursor-not-allowed disabled:opacity-40';
 const ghostBtn = 'flex-none cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white px-4 py-3 text-[12.5px] font-extrabold text-ink';
@@ -105,7 +105,7 @@ export function CategoryEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Ícono', 'Icon')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {Object.entries(CAT_ICONS).map(([k, Icon]) => (
               <button key={k} type="button" onClick={() => setIcon(k)} aria-label={k}
                 className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] ${icon === k ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
@@ -116,7 +116,7 @@ export function CategoryEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {MENU_TILES.map((t) => (
               <button key={t} type="button" onClick={() => setTile(t)} aria-label={L('Estampado', 'Pattern')}
                 className={`h-10 w-10 cursor-pointer rounded-[10px] border-2 ${tile === t ? 'border-primary' : 'border-transparent'}`}
@@ -208,7 +208,7 @@ export function ModGroupEditor({
             <button type="button" onClick={() => setSingle(false)} className={segCls(!single)}>{L('Varias', 'Multiple')}</button>
           </div>
         </div>
-        <button type="button" onClick={() => setRequired(!required)} className="flex cursor-pointer items-center gap-2.5 rounded-field border border-hair bg-app px-3 py-2.5 text-left">
+        <button type="button" onClick={() => setRequired(!required)} className="tap-y flex cursor-pointer items-center gap-2.5 rounded-field border border-hair bg-app px-3 py-2.5 text-left">
           <span className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded ${required ? 'bg-primary' : 'bg-lilac-line'}`}>{required && <Check size={11} className="text-white" stroke={3.2} />}</span>
           <span className="min-w-0 flex-1">
             <span className="block text-[12px] font-bold text-ink">{L('Obligatorio', 'Required')}</span>

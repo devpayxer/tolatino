@@ -47,7 +47,7 @@ export function ChipRow({ children, className = '' }: { children: ReactNode; cla
           <ChevronLeft size={15} stroke={2.6} />
         </button>
       )}
-      <div ref={ref} onScroll={check} className={`no-scrollbar flex min-w-0 touch-pan-x gap-2 overflow-x-auto ${className}`}>
+      <div ref={ref} onScroll={check} className={`no-scrollbar -my-1.5 flex min-w-0 touch-pan-x gap-2 overflow-x-auto py-1.5 ${className}`}>
         {children}
       </div>
       {canR && (

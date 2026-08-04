@@ -85,7 +85,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
             <p className="mt-1 max-w-[560px] text-[12.5px] font-semibold leading-snug text-ink-2">
               {L('Tus clientes ya pueden pedirte y pagarte en efectivo. Para vender en línea y aceptar pagos con tarjeta —con depósito automático a tu banco— conecta Stripe. Es opcional; puedes hacerlo cuando quieras.', 'Customers can already order and pay you in cash. To sell online and accept card payments —with automatic bank deposits— connect Stripe. It’s optional; do it whenever you like.')}
             </p>
-            <button onClick={() => go('payments')} className="mt-2.5 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
+            <button onClick={() => go('payments')} className="tap-y mt-2.5 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
               <Card size={13} stroke={2.4} />{L('Aceptar pagos con tarjeta', 'Accept card payments')}
             </button>
           </div>
@@ -127,7 +127,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
           up Pedidos/Entregas/Pagos too?" confusion */}
       <div className="rounded-card-sm border border-hair bg-white p-4 shadow-card">
         <div className="text-[12.5px] font-extrabold text-ink">{L('Al activar ventas, To’Latino agrega solo:', 'When you start selling, To’Latino adds automatically:')}</div>
-        <div className="mt-2.5 flex flex-wrap gap-2">
+        <div className="mt-2.5 flex flex-wrap gap-x-2 gap-y-[18px]">
           {[
             { Icon: Bag, label: L('Pedidos', 'Orders') },
             { Icon: Truck, label: L('Entregas y envíos', 'Delivery & shipping') },
@@ -160,7 +160,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
         <div className="rounded-card-sm border border-lilac-line bg-white p-4 text-center shadow-card">
           <div className="text-[13px] font-extrabold text-ink">{L('Vender es parte de Verified', 'Selling is part of Verified')}</div>
           <div className="mt-0.5 text-[12px] font-semibold text-muted">{L('Tu página gratis ya te hace visible. Mejora a Verified para activar menú, productos, reservas y más.', 'Your free page already makes you visible. Upgrade to Verified to enable menu, products, bookings and more.')}</div>
-          <button onClick={() => ctx.go('billing')} className="mt-3 cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Ver planes', 'See plans')}</button>
+          <button onClick={() => ctx.go('billing')} className="tap-y mt-3 cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Ver planes', 'See plans')}</button>
         </div>
       )}
     </div>

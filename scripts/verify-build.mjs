@@ -232,7 +232,12 @@ try {
   for (const f of readdirSync(dir).filter((x) => x.endsWith('.tsx'))) {
     revisados++;
     const src = readFileSync(join(dir, f), 'utf8');
-    for (const m of src.matchAll(/useState<[^>]*>\(\s*(DEMO[A-Z_]*|seed[A-Za-z]*|demo[A-Za-z]*)\s*[),]/g)) {
+    for (const m of src.matchAll(/useState<[^>]*>\(\s*([A-Z_]*(?:DEMO|SEED|FIXT|SAMPLE)[A-Z_]*|(?:seed|demo|sample|fixt)[A-Za-z]*|[a-zA-Z]*(?:Seed|Demo|Sample)[A-Za-z]*)\s*[),]/g)) {
+      // El patrón cubre DEMO_*, *_SEED, seedX, demoX, sampleX y XSeed: la primera
+      // versión solo miraba DEMO/seed/demo al PRINCIPIO del nombre y se le escapó
+      // `DRIVER_SEED` — cuatro repartidores inventados con rutas y tiempos de
+      // llegada. Un guardián con un hueco es peor que no tenerlo, porque da
+      // tranquilidad falsa. (2026-08-04.)
       // EXCEPCIÓN documentada: los `*Config` no son datos de NADIE — son las
       // categorías y ajustes de arranque que se le ofrecen a un dueño nuevo
       // («Degustaciones», «Clases y talleres»). Ofrecer un punto de partida es

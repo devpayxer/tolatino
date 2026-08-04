@@ -364,7 +364,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- shared UI helpers ----------
   const chip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+    `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
   const fieldCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[13px] font-semibold text-ink outline-none focus:border-primary';
   const labelCls = 'mb-1.5 block text-[11px] font-extrabold text-ink-soft';
 
@@ -643,7 +643,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Especialidad', 'Specialty')}</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
           {SPECIALTIES.map((s) => (
             <button key={s.id} onClick={() => setLicForm((f) => ({ ...f, specialty: s.id }))} className={chip(licForm.specialty === s.id)}>{L(s.es, s.en)}</button>
           ))}
@@ -661,10 +661,10 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <input value={licForm.zones} onChange={(e) => setLicForm((f) => ({ ...f, zones: e.target.value }))} placeholder={L('Ej. Oak Forest, Heights, Katy', 'e.g. Oak Forest, Heights, Katy')} className={fieldCls} />
       </div>
       <div className="flex gap-2">
-        <button onClick={saveLicense} disabled={licBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
+        <button onClick={saveLicense} disabled={licBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
           {licBusy ? L('Guardando…', 'Saving…') : L('Guardar licencia', 'Save license')}
         </button>
-        <button onClick={() => setLicEdit(false)} className="cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+        <button onClick={() => setLicEdit(false)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
       </div>
     </div>
   );
@@ -677,7 +677,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-0.5 text-[11.5px] font-semibold leading-snug text-amber-ink">{L('Los compradores confían en agentes verificados. Puedes guardar borradores mientras tanto.', 'Buyers trust verified agents. You can save drafts in the meantime.')}</div>
         </div>
         {!licEdit && (
-          <button onClick={openLicForm} className="flex-none cursor-pointer rounded-[10px] bg-ink px-3.5 py-2 text-[12px] font-extrabold text-white">{L('Agregar', 'Add')}</button>
+          <button onClick={openLicForm} className="tap-y flex-none cursor-pointer rounded-[10px] bg-ink px-3.5 py-2 text-[12px] font-extrabold text-white">{L('Agregar', 'Add')}</button>
         )}
       </div>
       {licEdit && licenseForm}
@@ -697,7 +697,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {reConfig?.langs ? ` · ${reConfig.langs}` : ''}{reConfig?.zones ? ` · ${reConfig.zones}` : ''}
           </div>
         </div>
-        {!licEdit && <button onClick={openLicForm} className="flex-none cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>}
+        {!licEdit && <button onClick={openLicForm} className="tap-y flex-none cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>}
       </div>
       {licEdit && licenseForm}
     </div>
@@ -770,7 +770,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div className="flex flex-col">
             {attention.map((a, i) => (
-              <button key={a.id} onClick={a.go} className={`flex cursor-pointer items-center gap-2.5 py-2.5 text-left ${i < attention.length - 1 ? 'border-b border-hair' : ''}`}>
+              <button key={a.id} onClick={a.go} className={`tap-y flex cursor-pointer items-center gap-2.5 py-2.5 text-left ${i < attention.length - 1 ? 'border-b border-hair' : ''}`}>
                 <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] ${a.icon === 'tour' ? 'bg-amber-bg' : 'bg-pink-bg'}`}>
                   {a.icon === 'tour' ? <CalendarEvent size={15} stroke={2.2} className="text-amber-ink" /> : <Users size={15} stroke={2.2} className="text-pink-dark" />}
                 </span>
@@ -809,11 +809,11 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div>
         <div className="mb-2.5 flex items-center justify-between">
           <div className="text-[15px] font-extrabold text-ink">{L('Mis listados', 'My listings')}</div>
-          <button onClick={startWizard} className="flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
+          <button onClick={startWizard} className="tap-y flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
             <Plus size={14} stroke={2.6} />{L('Publicar propiedad', 'Publish listing')}
           </button>
         </div>
-        <div className="no-scrollbar mb-3 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+        <div className="-my-1.5 py-1.5 no-scrollbar mb-3 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
           {listFilters.map((f) => <button key={f.id} onClick={() => setListFilter(f.id)} className={chip(listFilter === f.id)}>{L(f.es, f.en)}</button>)}
         </div>
 
@@ -835,7 +835,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 : L('Cambia el filtro o publica una propiedad nueva.', 'Change the filter or publish a new listing.')}
             </div>
             {listings.length === 0 && (
-              <button onClick={startWizard} className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
+              <button onClick={startWizard} className="tap-y mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
                 <Plus size={15} stroke={2.6} />{L('Publicar propiedad', 'Publish listing')}
               </button>
             )}
@@ -869,7 +869,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         onBack={() => setView('list')}
         maxW={760}
         action={
-          <button onClick={() => void startEdit(p)} className="cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>
+          <button onClick={() => void startEdit(p)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>
         }
       >
         <div className="flex flex-col gap-4">
@@ -902,7 +902,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* status */}
           <div className={`${cardCls} p-3.5`}>
             <div className="mb-2 text-[12.5px] font-extrabold text-ink">{L('Estado del listado', 'Listing status')}</div>
-            <div className="no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+            <div className="-my-1.5 py-1.5 no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5">
               {SETTABLE_STATUS.map((s) => (
                 <button key={s} onClick={() => void changeStatus(p, s)} disabled={statusBusy} className={`${chip(p.status === s)} disabled:opacity-60`}>
                   {L(STATUS_META[s].es, STATUS_META[s].en)}
@@ -929,7 +929,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 {pLeads.slice(0, 5).map((l, i) => {
                   const st = stageMeta(l.stage);
                   return (
-                    <button key={l.id} onClick={() => { setLeadId(l.id); setLeadBack('detail'); setView('lead'); }} className={`flex cursor-pointer items-center gap-2.5 py-2.5 text-left ${i < Math.min(pLeads.length, 5) - 1 ? 'border-b border-hair' : ''}`}>
+                    <button key={l.id} onClick={() => { setLeadId(l.id); setLeadBack('detail'); setView('lead'); }} className={`tap-y flex cursor-pointer items-center gap-2.5 py-2.5 text-left ${i < Math.min(pLeads.length, 5) - 1 ? 'border-b border-hair' : ''}`}>
                       <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[10.5px] font-extrabold text-white" style={{ background: avColor(l.name) }}>{initials(l.name)}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[12px] font-extrabold text-ink">{l.name}</span>
@@ -979,7 +979,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const leadsPage = (
     <ModulePage title={L('Leads y consultas', 'Leads & inquiries')} subtitle={L('Tu pipeline de clientes', 'Your client pipeline')} onBack={() => setView('list')} maxW={760}>
-      <div className="no-scrollbar mb-3 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+      <div className="-my-1.5 py-1.5 no-scrollbar mb-3 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
         {leadFilters.map((f) => <button key={f.id} onClick={() => setLeadFilter(f.id)} className={chip(leadFilter === f.id)}>{L(f.es, f.en)}</button>)}
       </div>
       {persistable && leadRows === null ? (
@@ -1007,7 +1007,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className="min-w-0 truncate text-[12.5px] font-extrabold text-ink">{l.name}</span>
                       <span className="flex-none text-[9.5px] font-semibold text-muted-2">{timeAgo(l.createdAt, es)}</span>
                     </span>
-                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                       {kindPill(l)}
                       <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
                     </span>
@@ -1026,7 +1026,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <Mail size={13} stroke={2.2} className="text-primary-dark" />{L('Correo', 'Email')}
                     </a>
                   )}
-                  <button onClick={() => { setLeadId(l.id); setLeadBack('leads'); setView('lead'); }} className="flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[11px] font-extrabold text-white">{L('Abrir', 'Open')}</button>
+                  <button onClick={() => { setLeadId(l.id); setLeadBack('leads'); setView('lead'); }} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[11px] font-extrabold text-white">{L('Abrir', 'Open')}</button>
                 </div>
               </div>
             );
@@ -1057,7 +1057,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-[15px] font-extrabold text-white" style={{ background: avColor(l.name) }}>{initials(l.name)}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-extrabold text-ink">{l.name}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <div className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                   {kindPill(l)}
                   <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
                 </div>
@@ -1092,7 +1092,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
           <div className={`${cardCls} p-3.5`}>
             <div className="mb-2 text-[12.5px] font-extrabold text-ink">{L('Mover a etapa', 'Move to stage')}</div>
-            <div className="no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+            <div className="-my-1.5 py-1.5 no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5">
               {STAGES.map((s) => (
                 <button key={s.id} onClick={() => void moveStage(l, s.id)} className={chip(l.stage === s.id)}>{L(s.es, s.en)}</button>
               ))}
@@ -1115,13 +1115,13 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const toursPage = (
     <ModulePage title={L('Agenda de visitas', 'Tour calendar')} subtitle={L('Confirma y organiza tus tours', 'Confirm and organize your tours')} onBack={() => setView('list')} maxW={760}>
-      <div className="no-scrollbar mb-4 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+      <div className="-my-1.5 py-1.5 no-scrollbar mb-4 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
         {agendaDays.map((d) => {
           const key = dayKey(d);
           const on = key === tourDay;
           const has = tours.some((t) => dayKeyOf(t.at) === key);
           return (
-            <button key={key} onClick={() => setTourDay(key)} className={`flex w-14 flex-none cursor-pointer flex-col items-center rounded-btn-lg py-2.5 ${on ? 'bg-primary text-white shadow-cta-sm' : 'border border-lilac-line bg-white text-ink'}`}>
+            <button key={key} onClick={() => setTourDay(key)} className={`tap-y flex w-14 flex-none cursor-pointer flex-col items-center rounded-btn-lg py-2.5 ${on ? 'bg-primary text-white shadow-cta-sm' : 'border border-lilac-line bg-white text-ink'}`}>
               <span className={`text-[9px] font-extrabold uppercase ${on ? 'text-white/80' : 'text-muted-2'}`}>{(es ? DOW_ES : DOW_EN)[d.getDay()]}</span>
               <span className="text-[15px] font-extrabold leading-tight">{d.getDate()}</span>
               <span className={`mt-0.5 h-1 w-1 rounded-full ${has ? (on ? 'bg-white' : 'bg-primary') : 'bg-transparent'}`} />
@@ -1166,14 +1166,14 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 </div>
 
                 {(t.status === 'pendiente' || t.status === 'confirmada') && (
-                  <div className="mt-3 flex flex-wrap gap-2 border-t border-hair pt-3">
+                  <div className="mt-3 flex flex-wrap gap-x-2 gap-y-[18px] border-t border-hair pt-3">
                     {t.status === 'pendiente' && (
-                      <button onClick={() => void tourAction(t, 'confirmada')} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>
+                      <button onClick={() => void tourAction(t, 'confirmada')} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>
                     )}
                     {t.status === 'confirmada' && (
-                      <button onClick={() => void tourAction(t, 'completada')} className="flex-1 cursor-pointer rounded-btn bg-green py-2.5 text-[11.5px] font-extrabold text-white">{L('Completada', 'Completed')}</button>
+                      <button onClick={() => void tourAction(t, 'completada')} className="tap-y flex-1 cursor-pointer rounded-btn bg-green py-2.5 text-[11.5px] font-extrabold text-white">{L('Completada', 'Completed')}</button>
                     )}
-                    <button onClick={() => { setReschedId(reschedId === t.id ? null : t.id); setReschedAt(toLocalInput(t.at)); }} className="flex-1 cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[11.5px] font-extrabold text-ink">{L('Reprogramar', 'Reschedule')}</button>
+                    <button onClick={() => { setReschedId(reschedId === t.id ? null : t.id); setReschedAt(toLocalInput(t.at)); }} className="tap-y flex-1 cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[11.5px] font-extrabold text-ink">{L('Reprogramar', 'Reschedule')}</button>
                   </div>
                 )}
                 {reschedId === t.id && (
@@ -1184,11 +1184,11 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <button
                         onClick={() => { if (!reschedAt) return; void tourAction(t, 'pendiente', new Date(reschedAt).toISOString()); }}
                         disabled={!reschedAt}
-                        className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white disabled:opacity-40"
+                        className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white disabled:opacity-40"
                       >
                         {L('Proponer horario', 'Propose time')}
                       </button>
-                      <button onClick={() => { setReschedId(null); setReschedAt(''); }} className="cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[11.5px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+                      <button onClick={() => { setReschedId(null); setReschedAt(''); }} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[11.5px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
                     </div>
                   </div>
                 )}
@@ -1230,7 +1230,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 const allowed = PTYPE_FOR_DEAL[d.id];
                 upD({ deal: d.id, ptype: allowed.includes(draft.ptype) ? draft.ptype : allowed[0] });
               }}
-              className={`cursor-pointer rounded-btn py-2 text-[11px] font-extrabold ${draft.deal === d.id ? 'bg-white text-primary-dark shadow-card' : 'text-ink-2'}`}
+              className={`tap-y cursor-pointer rounded-btn py-2 text-[11px] font-extrabold ${draft.deal === d.id ? 'bg-white text-primary-dark shadow-card' : 'text-ink-2'}`}
             >
               {L(d.es, d.en)}
             </button>
@@ -1239,7 +1239,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Tipo de propiedad', 'Property type')} *</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
           {PTYPE_FOR_DEAL[draft.deal].map((t) => (
             <button key={t} onClick={() => upD({ ptype: t })} className={chip(draft.ptype === t)}>{ptypeLabel(t)}</button>
           ))}
@@ -1376,7 +1376,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       <div>
         <label className={labelCls}>{L('Políticas', 'Policies')}</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
           {([
             ['pets', draft.pets, L('Mascotas OK', 'Pets OK')],
             ['noCredit', draft.noCredit, L('Sin verificación de crédito', 'No credit check')],
@@ -1395,7 +1395,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div>
         <label className={labelCls}>{L('Características', 'Features')}</label>
         {draft.feats.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-1.5">
+          <div className="mb-2 flex flex-wrap gap-x-1 gap-y-[18px].5">
             {draft.feats.map((f) => (
               <span key={f} className="flex items-center gap-1.5 rounded-full bg-lilac px-3 py-1.5 text-[11px] font-extrabold text-primary-dark">
                 {f}
@@ -1514,7 +1514,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       }
     >
-      <div className="no-scrollbar mb-4 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+      <div className="-my-1.5 py-1.5 no-scrollbar mb-4 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
         {stepDefs.map((label, i) => {
           const active = wizStep === i;
           const done = i < wizStep || (i <= wizMax && i !== wizStep);

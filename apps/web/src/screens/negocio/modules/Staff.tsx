@@ -270,9 +270,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- shared chip helpers ----------
   const modeBtn = (on: boolean) =>
-    `relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn px-2 py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
+    `tap-y tap-y relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn px-2 py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
   const filterChip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'border border-lilac-line bg-white font-bold text-ink-soft'}`;
+    `tap-y tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'border border-lilac-line bg-white font-bold text-ink-soft'}`;
 
   const dotColor = (dot: string) => (dot === '#1F9D57' ? 'text-green-dark' : dot === '#F4B740' ? 'text-amber-ink' : 'text-muted-2');
 
@@ -363,7 +363,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const inviteBtn = (
     <button
       onClick={() => setInviteOpen(true)}
-      className="flex cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
+      className="tap-y flex cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
     >
       <Plus size={15} stroke={2.6} />{L('Invitar', 'Invite')}
     </button>
@@ -373,7 +373,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-3.5">
         <div className="flex items-center justify-between gap-2">
-          <div className="no-scrollbar -mx-1 flex flex-1 gap-2 min-w-0 overflow-x-auto px-1">
+          <div className="-my-1.5 py-1.5 no-scrollbar -mx-1 flex flex-1 gap-2 min-w-0 overflow-x-auto px-1">
             {filters.map(([k, label]) => (
               <button key={k} onClick={() => setRfilter(k)} className={filterChip(rfilter === k)}>{label}</button>
             ))}
@@ -411,7 +411,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <div className="mt-1 text-[11.5px] font-semibold leading-snug text-ink-3">
                 {L('Mejora a Verified para agregar miembros ilimitados, roles y permisos por persona.', 'Upgrade to Verified to add unlimited members, roles and per-person permissions.')}
               </div>
-              <button onClick={() => ctx.go('billing')} className="mt-2.5 cursor-pointer rounded-field bg-primary px-3.5 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
+              <button onClick={() => ctx.go('billing')} className="tap-y mt-2.5 cursor-pointer rounded-field bg-primary px-3.5 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">
                 {L('Agregar más miembros', 'Add more members')}
               </button>
             </div>
@@ -425,7 +425,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className={`${cardCls} p-4 xl:sticky xl:top-[74px]`}>
         <div className="mb-3 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink"><Shield size={14} stroke={2.2} className="text-primary-dark" />{L('Roles y permisos', 'Roles & permissions')}</span>
-          <button onClick={() => setStabStaff('roles')} className="cursor-pointer text-[11px] font-extrabold text-primary-dark">{L('Gestionar', 'Manage')} ›</button>
+          <button onClick={() => setStabStaff('roles')} className="tap-y cursor-pointer text-[11px] font-extrabold text-primary-dark">{L('Gestionar', 'Manage')} ›</button>
         </div>
         <div className="flex flex-col gap-2.5">
           {rolesPreview.map((r) => (
@@ -453,9 +453,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const scheduleView = (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <button className="flex cursor-pointer items-center rounded-field border border-hair bg-white px-2.5 py-2 text-ink-soft"><ChevronLeft size={14} stroke={2.4} /></button>
-        <button className="flex-1 cursor-pointer rounded-field border border-hair bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink">{L('Semana del', 'Week of')} · 13 Oct</button>
-        <button className="flex cursor-pointer items-center rounded-field border border-hair bg-white px-2.5 py-2 text-ink-soft"><ChevronRight size={14} stroke={2.4} /></button>
+        <button className="tap-y flex cursor-pointer items-center rounded-field border border-hair bg-white px-2.5 py-2 text-ink-soft"><ChevronLeft size={14} stroke={2.4} /></button>
+        <button className="tap-y flex-1 cursor-pointer rounded-field border border-hair bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink">{L('Semana del', 'Week of')} · 13 Oct</button>
+        <button className="tap-y flex cursor-pointer items-center rounded-field border border-hair bg-white px-2.5 py-2 text-ink-soft"><ChevronRight size={14} stroke={2.4} /></button>
       </div>
       <div className={`${cardCls} p-4`}>
         <div className="mb-3 flex items-center justify-between">
@@ -667,7 +667,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               </div>
               <button className="cursor-pointer text-muted-2" aria-label={L('Editar rol', 'Edit role')}><Pencil size={13} stroke={2.2} /></button>
             </div>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <div className="mt-2.5 flex flex-wrap gap-x-1 gap-y-[18px].5">
               {(es ? r.es : r.en).map((c) => (
                 <span key={c} className="rounded-md border border-hair bg-app px-2 py-0.5 text-[10px] font-semibold text-ink-soft">{c}</span>
               ))}
@@ -677,7 +677,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       <div className={`${cardCls} p-4`}>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-[18px]">
           <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink"><Lock size={14} stroke={2.2} className="text-primary-dark" />{L('Matriz de permisos', 'Permission matrix')}</span>
           <span className="flex gap-3">
             <span className="flex items-center gap-1 text-[9px] font-bold text-green-dark"><Pencil size={9} stroke={2.4} />{L('Editar', 'Edit')}</span>
@@ -873,7 +873,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="relative">
           <div className="text-[13.5px] font-extrabold">{L('Impulsa tu vacante', 'Boost your job post')}</div>
           <div className="mt-1.5 text-[11.5px] font-medium leading-relaxed text-white/70">{L('Aparece primero en el tablero de empleos de la comunidad por $20/semana.', 'Appear first on the community job board for $20/week.')}</div>
-          <button onClick={() => flash(L('Impulso activado', 'Boost activated'))} className="mt-3 w-full cursor-pointer rounded-btn bg-amber py-2.5 text-[12px] font-extrabold text-ink">
+          <button onClick={() => flash(L('Impulso activado', 'Boost activated'))} className="tap-y mt-3 w-full cursor-pointer rounded-btn bg-amber py-2.5 text-[12px] font-extrabold text-ink">
             {L('Activar impulso', 'Activate boost')}
           </button>
         </div>
@@ -903,8 +903,8 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     >
       <div className="flex flex-col gap-3.5">
         <div className="flex gap-2.5">
-          <button onClick={() => flash(L('Chat abierto', 'Chat opened'))} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white"><MessageCircle size={14} stroke={2.2} />{L('Mensaje', 'Message')}</button>
-          <button onClick={() => setStabStaff('roles')} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn border border-hair-strong bg-white py-2.5 text-[12px] font-extrabold text-ink-soft"><Pencil size={14} stroke={2.2} />{L('Editar rol', 'Edit role')}</button>
+          <button onClick={() => flash(L('Chat abierto', 'Chat opened'))} className="tap-y flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white"><MessageCircle size={14} stroke={2.2} />{L('Mensaje', 'Message')}</button>
+          <button onClick={() => setStabStaff('roles')} className="tap-y flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn border border-hair-strong bg-white py-2.5 text-[12px] font-extrabold text-ink-soft"><Pencil size={14} stroke={2.2} />{L('Editar rol', 'Edit role')}</button>
         </div>
 
         <div className={`${cardCls} p-3.5`}>
@@ -1002,7 +1002,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button
                 key={r}
                 onClick={() => setInviteRole(r)}
-                className={`flex-1 cursor-pointer rounded-btn py-2.5 text-[11.5px] font-extrabold ${inviteRole === r ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}
+                className={`tap-y flex-1 cursor-pointer rounded-btn py-2.5 text-[11.5px] font-extrabold ${inviteRole === r ? 'bg-primary text-white' : 'border border-lilac-line bg-white text-ink-2'}`}
               >
                 {label}
               </button>

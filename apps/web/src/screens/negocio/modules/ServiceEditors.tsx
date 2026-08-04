@@ -66,7 +66,7 @@ export function ServiceCategoryEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Ícono', 'Icon')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {Object.entries(SVC_CAT_ICONS).map(([k, Icon]) => (
               <button key={k} type="button" onClick={() => setIcon(k)} aria-label={k}
                 className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] ${icon === k ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
@@ -77,7 +77,7 @@ export function ServiceCategoryEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {SERVICE_TILES.map((t) => (
               <button key={t} type="button" onClick={() => setTile(t)} aria-label={L('Estampado', 'Pattern')}
                 className={`h-10 w-10 cursor-pointer rounded-[10px] border-2 ${tile === t ? 'border-primary' : 'border-transparent'}`}
@@ -249,7 +249,7 @@ export function ServiceProviderEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Color del avatar', 'Avatar color')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {PROVIDER_COLORS.map((c) => (
               <button key={c} type="button" onClick={() => setColor(c)} aria-label={L('Color', 'Color')}
                 className={`h-9 w-9 cursor-pointer rounded-full border-2 ${color === c ? 'border-ink' : 'border-transparent'}`} style={{ background: c }} />
@@ -259,12 +259,12 @@ export function ServiceProviderEditor({
         <div>
           <div className={fieldLabel}>{L('Servicios que realiza', 'Services they perform')}</div>
           <div className="mb-1.5 text-[10.5px] font-medium text-muted">{L('Sin selección = realiza todos los servicios.', 'No selection = performs every service.')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {services.map((s) => {
               const on = svcIds.includes(s.id);
               return (
                 <button key={s.id} type="button" onClick={() => setSvcIds((l) => (on ? l.filter((x) => x !== s.id) : [...l, s.id]))}
-                  className={`cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
+                  className={`tap-y cursor-pointer rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-extrabold ${on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
                   {s.name}
                 </button>
               );

@@ -65,7 +65,7 @@ export function RentalCategoryEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Ícono', 'Icon')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {Object.entries(RENT_CAT_ICONS).map(([k, Icon]) => (
               <button key={k} type="button" onClick={() => setIcon(k)} aria-label={k}
                 className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] ${icon === k ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-muted'}`}>
@@ -76,7 +76,7 @@ export function RentalCategoryEditor({
         </div>
         <div>
           <div className={fieldLabel}>{L('Color', 'Color')}</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
             {RENTAL_TILES.map((t) => (
               <button key={t} type="button" onClick={() => setTile(t)} aria-label={L('Estampado', 'Pattern')}
                 className={`h-10 w-10 cursor-pointer rounded-[10px] border-2 ${tile === t ? 'border-primary' : 'border-transparent'}`}

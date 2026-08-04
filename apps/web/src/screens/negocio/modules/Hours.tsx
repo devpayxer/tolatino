@@ -77,7 +77,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
           {L('Publica tu negocio para definir tu horario de atención.', 'Publish your business to set its opening hours.')}
         </p>
-        <button onClick={() => router.push('/negocio/publicar')} className="mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
+        <button onClick={() => router.push('/negocio/publicar')} className="tap-y mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
           {L('Publicar negocio', 'Publish business')}
         </button>
       </div>
@@ -97,7 +97,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
   };
 
   const seg = (on: boolean) =>
-    `flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${on ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`;
+    `tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${on ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`;
 
   const addException = () => {
     if (!fDate) { flash(L('Elige una fecha.', 'Pick a date.')); return; }
@@ -148,7 +148,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                   {L('Con Pro divides el día en varias franjas y programas feriados, vacaciones y cierres especiales.', 'With Pro you split the day into multiple slots and schedule holidays, vacations and special closures.')}
                 </span>
               </span>
-              <button onClick={() => go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-3.5 py-2 text-[11.5px] font-extrabold text-ink">
+              <button onClick={() => go('billing')} className="tap-y flex-none cursor-pointer rounded-btn bg-amber px-3.5 py-2 text-[11.5px] font-extrabold text-ink">
                 {L('Mejorar a Pro', 'Upgrade to Pro')}
               </button>
             </div>
@@ -186,7 +186,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
               </p>
               <button
                 onClick={() => go('billing')}
-                className="mt-4 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
+                className="tap-y mt-4 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm"
               >
                 {L('Mejorar a Pro', 'Upgrade to Pro')}
               </button>
@@ -271,7 +271,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                         </label>
                       </div>
                     )}
-                    <button onClick={addException} className="mt-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">
+                    <button onClick={addException} className="tap-y mt-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">
                       {L('Agregar día', 'Add day')}
                     </button>
                   </div>

@@ -133,7 +133,7 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 }
 
 const chip = (on: boolean) =>
-  `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+  `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 
 const sectionLabel = 'text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-faint';
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
@@ -455,7 +455,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               </span>
               <button
                 onClick={() => { patchItem(a.id, { stock: 'in' }); flash(L('Platillo en stock', 'Item back in stock')); }}
-                className="flex-none cursor-pointer self-center rounded-lg border border-hair-strong bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-ink"
+                className="tap-y flex-none cursor-pointer self-center rounded-lg border border-hair-strong bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-ink"
               >
                 {a.action}
               </button>
@@ -477,13 +477,13 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="flex rounded-full bg-lilac-2 p-0.5">
               <button
                 onClick={() => { if (cfg.ordering) { saveCfg({ ...cfg, ordering: false }); flash(L('Menú en modo Solo mostrar', 'Menu set to Display only')); } }}
-                className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.ordering ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}
+                className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.ordering ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}
               >
                 {L('Solo mostrar', 'Display only')}
               </button>
               <button
                 onClick={() => { if (!cfg.ordering) { saveCfg({ ...cfg, ordering: true }); flash(L('Menú con Pedidos en línea', 'Menu set to Online orders')); } }}
-                className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.ordering ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}
+                className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.ordering ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}
               >
                 {L('Pedidos en línea', 'Online orders')}
               </button>
@@ -568,7 +568,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className="flex-none text-[13.5px] font-extrabold text-ink">{money(i.price)}</span>
                     </span>
                     <span className="mt-0.5 line-clamp-2 block text-[11px] font-medium leading-snug text-muted">{L(i.es, i.en)}</span>
-                    <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <span className="mt-1.5 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                       <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9.5px] font-extrabold ${sm.badge}`}>
                         <span className={`h-[5px] w-[5px] rounded-full ${sm.dot}`} />{L(sm.es, sm.en)}
                       </span>
@@ -624,7 +624,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
                     {!c.visible && <span className="flex-none rounded bg-lilac-line px-1.5 py-0.5 text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}
                   </span>
-                  <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <span className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                     {c.schedEs && <span className="inline-flex items-center gap-1 rounded bg-lilac-2 px-1.5 py-0.5 text-[9px] font-bold text-ink-2">🕐 {L(c.schedEs, c.schedEn ?? c.schedEs)}</span>}
                     <span className="text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('platillo', 'item') : L('platillos', 'items')}</span>
                   </span>
@@ -665,7 +665,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   {m.required && <span className="flex-none rounded bg-lilac px-1.5 py-0.5 text-[8.5px] font-extrabold text-primary-dark">{L('Obligatorio', 'Required')}</span>}
                   <span className="ml-auto flex-none text-[10px] font-semibold text-muted-2">{m.single ? L('Elige uno', 'Choose one') : L('Elige varios', 'Choose multiple')} · {used} {used === 1 ? L('platillo', 'item') : L('platillos', 'items')}</span>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
                   {m.options.map((o) => (
                     <span key={o.es} className="rounded-lg border border-hair bg-app px-2.5 py-1.5 text-[10.5px] font-bold text-ink-soft">
                       {L(o.es, o.en ?? o.es)} <span className={o.price ? 'text-ink' : 'text-muted-2'}>{o.price ? `+$${o.price}` : '+$0'}</span>
@@ -798,7 +798,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       </span>
                       <button
                         onClick={() => upsertPromo({ ...p, status: p.status === 'active' ? 'paused' : 'active', startDate: undefined })}
-                        className={`cursor-pointer rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold ${p.status === 'active' ? 'bg-lilac-2 text-ink-2' : 'bg-primary text-white shadow-cta-sm'}`}
+                        className={`tap-y cursor-pointer rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold ${p.status === 'active' ? 'bg-lilac-2 text-ink-2' : 'bg-primary text-white shadow-cta-sm'}`}
                       >
                         {p.status === 'active' ? L('Pausar', 'Pause') : L('Activar', 'Activate')}
                       </button>
@@ -922,7 +922,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <span className="block text-[12.5px] font-extrabold text-ink">{s.name}</span>
                     <span className="block text-[10px] font-medium text-pink-dark">{L('Oculto del menú público', 'Hidden from the public menu')}</span>
                   </span>
-                  <button onClick={() => setStock(s.id, 'in')} className="flex-none cursor-pointer self-center rounded-[9px] bg-primary px-3 py-2 text-[10px] font-extrabold text-white">{L('Reabastecer', 'Restock')}</button>
+                  <button onClick={() => setStock(s.id, 'in')} className="tap-y flex-none cursor-pointer self-center rounded-[9px] bg-primary px-3 py-2 text-[10px] font-extrabold text-white">{L('Reabastecer', 'Restock')}</button>
                 </div>
               );
             })}
@@ -944,11 +944,11 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className={`block text-[10px] font-semibold ${s.stock === 'low' ? 'text-amber-ink' : 'text-muted-2'}`}>{s.stock === 'low' ? L('Bajo stock', 'Low stock') : L('En stock', 'In stock')}</span>
                     </span>
                     {s.stock === 'low' && (
-                      <button onClick={() => setStock(s.id, 'in')} className="flex-none cursor-pointer rounded-[9px] border border-hair-strong bg-white px-3 py-2 text-[10px] font-extrabold text-ink">{L('En stock', 'In stock')}</button>
+                      <button onClick={() => setStock(s.id, 'in')} className="tap-y flex-none cursor-pointer rounded-[9px] border border-hair-strong bg-white px-3 py-2 text-[10px] font-extrabold text-ink">{L('En stock', 'In stock')}</button>
                     )}
-                    <button onClick={() => setStock(s.id, s.stock === 'low' ? 'out' : 'low')} className="flex-none cursor-pointer rounded-[9px] border border-amber-bg bg-white px-3 py-2 text-[10px] font-extrabold text-amber-ink">{s.stock === 'low' ? '86' : L('Bajo', 'Low')}</button>
+                    <button onClick={() => setStock(s.id, s.stock === 'low' ? 'out' : 'low')} className="tap-y flex-none cursor-pointer rounded-[9px] border border-amber-bg bg-white px-3 py-2 text-[10px] font-extrabold text-amber-ink">{s.stock === 'low' ? '86' : L('Bajo', 'Low')}</button>
                     {s.stock !== 'low' && (
-                      <button onClick={() => setStock(s.id, 'out')} className="flex-none cursor-pointer rounded-[9px] border border-pink-bg bg-white px-3 py-2 text-[10px] font-extrabold text-pink-dark">86</button>
+                      <button onClick={() => setStock(s.id, 'out')} className="tap-y flex-none cursor-pointer rounded-[9px] border border-pink-bg bg-white px-3 py-2 text-[10px] font-extrabold text-pink-dark">86</button>
                     )}
                   </div>
                 );
@@ -973,7 +973,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className="block text-[12.5px] font-extrabold text-ink">{s.name}</span>
                       <span className="block text-[10px] font-semibold text-amber-ink">{s.dailyLimit ? `${L('Límite diario', 'Daily limit')} ${s.dailyLimit}` : L('Marcado bajo por el equipo', 'Marked low by the team')}</span>
                     </span>
-                    <button onClick={() => setStock(s.id, 'in')} className="flex-none cursor-pointer rounded-[9px] bg-primary px-3 py-2 text-[10px] font-extrabold text-white">{L('En stock', 'In stock')}</button>
+                    <button onClick={() => setStock(s.id, 'in')} className="tap-y flex-none cursor-pointer rounded-[9px] bg-primary px-3 py-2 text-[10px] font-extrabold text-white">{L('En stock', 'In stock')}</button>
                   </div>
                 );
               })}
@@ -1130,17 +1130,17 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => (
               <button key={c.id} onClick={() => upDraft({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>
             ))}
-            <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+            <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="tap-y flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
           </ChipRow>
         </div>
         <div>
           <div className={fieldLabel}>{L('Etiquetas', 'Flags')}</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
             {([['isNew', L('Nuevo', 'New')], ['popular', L('Popular', 'Popular')], ['featured', L('Destacado', 'Featured')]] as [string, string][]).map(([k, lab]) => (
               <button key={k} onClick={() => upDraft({ flags: { ...draft.flags, [k]: !draft.flags[k] } })} className={chip(!!draft.flags[k])}>{lab}</button>
             ))}
             {cfg.tags.map((t) => { const on = draft.tags.includes(t); return <button key={t} onClick={() => upDraft({ tags: on ? draft.tags.filter((x) => x !== t) : [...draft.tags, t] })} className={chip(on)}>{t}</button>; })}
-            <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+            <button onClick={() => setTagSheet(true)} className="tap-y cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
           </div>
         </div>
         <div>
@@ -1196,7 +1196,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {chanDefs.map(([k, lab, Icon]) => {
               const on = draft.channels[k];
               return (
-                <button key={k} onClick={() => upDraft({ channels: { ...draft.channels, [k]: !on } })} className={`flex items-center gap-2 rounded-field border-[1.5px] px-3 py-2.5 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
+                <button key={k} onClick={() => upDraft({ channels: { ...draft.channels, [k]: !on } })} className={`tap-y flex items-center gap-2 rounded-field border-[1.5px] px-3 py-2.5 ${on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}>
                   <span className={`flex h-4 w-4 flex-none items-center justify-center rounded ${on ? 'bg-primary' : 'bg-lilac-line'}`}>{on && <Check size={10} className="text-white" stroke={3.4} />}</span>
                   <Icon size={15} strokeWidth={2} className={on ? 'text-primary-dark' : 'text-muted-2'} />
                   <span className="text-[12px] font-bold text-ink">{lab}</span>
@@ -1269,7 +1269,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="flex flex-col gap-3.5">
         <div>
           <div className={fieldLabel}>{L('Etiquetas dietéticas', 'Dietary tags')}</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
             {dietDefs.map((d) => {
               const has = draft.diet.includes(d);
               return <button key={d} onClick={() => upDraft({ diet: has ? draft.diet.filter((x) => x !== d) : [...draft.diet, d] })} className={chip(has)}>{d}</button>;
@@ -1286,7 +1286,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               const swCls = v === 2 ? 'bg-pink-bg text-pink-dark' : v === 1 ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted-faint';
               const border = v === 2 ? 'border-pink-bg' : v === 1 ? 'border-amber-bg' : 'border-lilac-line';
               return (
-                <button key={a} onClick={() => { const na = [...draft.allergens]; na[i] = na[i] === 0 ? 2 : na[i] === 2 ? 1 : 0; upDraft({ allergens: na }); }} className={`flex items-center gap-2.5 rounded-field border-[1.5px] bg-white px-3 py-2.5 ${border}`}>
+                <button key={a} onClick={() => { const na = [...draft.allergens]; na[i] = na[i] === 0 ? 2 : na[i] === 2 ? 1 : 0; upDraft({ allergens: na }); }} className={`tap-y flex items-center gap-2.5 rounded-field border-[1.5px] bg-white px-3 py-2.5 ${border}`}>
                   <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-md text-[12px] font-extrabold ${swCls}`}>{v === 2 ? '✓' : v === 1 ? '~' : '·'}</span>
                   <span className="min-w-0 flex-1 text-left">
                     <span className="block text-[11.5px] font-extrabold text-ink">{a}</span>
@@ -1306,7 +1306,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className={fieldLabel}>{L('Disponibilidad', 'Availability')}</div>
           <div className="flex gap-1.5">
             {([['in', L('En stock', 'In stock')], ['low', L('Bajo', 'Low')], ['out', '86']] as [Stock, string][]).map(([k, lab]) => (
-              <button key={k} onClick={() => upDraft({ stock: k })} className={`min-w-0 flex-1 cursor-pointer truncate rounded-[9px] px-2 py-2.5 text-[11.5px] font-extrabold ${draft.stock === k ? (k === 'out' ? 'bg-pink-dark text-white' : k === 'low' ? 'bg-amber-ink text-white' : 'bg-primary text-white') : 'bg-lilac-2 text-ink-2'}`}>{lab}</button>
+              <button key={k} onClick={() => upDraft({ stock: k })} className={`tap-y min-w-0 flex-1 cursor-pointer truncate rounded-[9px] px-2 py-2.5 text-[11.5px] font-extrabold ${draft.stock === k ? (k === 'out' ? 'bg-pink-dark text-white' : k === 'low' ? 'bg-amber-ink text-white' : 'bg-primary text-white') : 'bg-lilac-2 text-ink-2'}`}>{lab}</button>
             ))}
           </div>
         </div>
@@ -1384,7 +1384,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink">
                 <Copy size={14} stroke={2.4} />{L('Duplicar', 'Duplicate')}
               </button>
-              <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">
+              <button onClick={() => setConfirmDel(true)} className="tap flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark">
                 <Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}
               </button>
             </div>

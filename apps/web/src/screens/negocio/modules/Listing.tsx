@@ -255,7 +255,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
         </p>
         <button
           onClick={() => router.push('/negocio/publicar')}
-          className="mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm"
+          className="tap-y mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm"
         >
           {L('Publicar negocio', 'Publish business')}
         </button>
@@ -308,7 +308,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                   {L('Desbloquea subcategorías, “Lo que ofrece”, destacados en la tarjeta, mensajes y sitio web con Pro.', 'Unlock subcategories, “What it offers”, card highlights, messaging and website with Pro.')}
                 </span>
               </span>
-              <button onClick={() => go('billing')} className="flex-none cursor-pointer rounded-btn bg-amber px-3.5 py-2 text-[11.5px] font-extrabold text-ink">
+              <button onClick={() => go('billing')} className="tap-y flex-none cursor-pointer rounded-btn bg-amber px-3.5 py-2 text-[11.5px] font-extrabold text-ink">
                 {L('Mejorar a Pro', 'Upgrade to Pro')}
               </button>
             </div>
@@ -405,7 +405,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                 </div>
               ) : (
                 <>
-                  <div className="mt-2.5 flex flex-wrap gap-2">
+                  <div className="mt-2.5 flex flex-wrap gap-x-2 gap-y-[18px]">
                     {draft.features.map((es) => {
                       const on = draft.cardFeatures.includes(es);
                       return (
@@ -413,7 +413,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                           key={es}
                           type="button"
                           onClick={() => toggleCard(es)}
-                          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-amber text-ink' : 'bg-lilac-2 text-ink-2'}`}
+                          className={`tap-y inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-extrabold ${on ? 'bg-amber text-ink' : 'bg-lilac-2 text-ink-2'}`}
                         >
                           {on ? <StarFilled size={12} /> : <Star size={12} stroke={2.6} />}
                           {L(es, FEAT_EN[es] ?? es)}
@@ -426,7 +426,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                   {draft.cardFeatures.length > 0 && (
                     <div className="mt-3 rounded-card-sm border border-hair bg-white p-3">
                       <div className="mb-1.5 text-[9.5px] font-extrabold uppercase tracking-[.05em] text-muted-2">{L('Vista previa en la tarjeta', 'Card preview')}</div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
                         {draft.cardFeatures.map((es) => (
                           <span key={es} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-2.5 py-1 text-[11px] font-bold text-ink-soft">
                             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
@@ -462,7 +462,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                     key={p}
                     type="button"
                     onClick={() => set('price_level', draft.price_level === p ? '' : p)}
-                    className={`cursor-pointer rounded-full px-4 py-2 text-[12.5px] font-extrabold ${draft.price_level === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                    className={`tap-y cursor-pointer rounded-full px-4 py-2 text-[12.5px] font-extrabold ${draft.price_level === p ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
                   >
                     {p}
                   </button>
@@ -499,7 +499,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                         key={val}
                         type="button"
                         onClick={() => set('messageChannel', val)}
-                        className={`flex-1 cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${draft.messageChannel === val ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                        className={`tap-y flex-1 cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${draft.messageChannel === val ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
                       >
                         {lab}
                       </button>
@@ -514,7 +514,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                           key={String(val)}
                           type="button"
                           onClick={() => set('sameNumber', val)}
-                          className={`flex-1 cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${draft.sameNumber === val ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
+                          className={`tap-y flex-1 cursor-pointer rounded-full px-3 py-2 text-[12px] font-extrabold ${draft.sameNumber === val ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'}`}
                         >
                           {lab}
                         </button>
@@ -622,7 +622,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
           <button
             onClick={() => router.push(`/negocios?b=${real.slug}`)}
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark"
+            className="tap-y flex cursor-pointer items-center justify-center gap-2 rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-primary-dark"
           >
             <ExternalLink size={13} stroke={2.4} />
             {L('Ver listado público', 'View public listing')}

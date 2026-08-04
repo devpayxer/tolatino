@@ -168,7 +168,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
           {L('Publica tu negocio para subir fotos de tu local, productos y equipo.', 'Publish your business to upload photos of your place, products and team.')}
         </p>
-        <button onClick={() => router.push('/negocio/publicar')} className="mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
+        <button onClick={() => router.push('/negocio/publicar')} className="tap-y mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
           {L('Publicar negocio', 'Publish business')}
         </button>
       </div>
@@ -199,17 +199,17 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
           <div className="mt-0.5 text-[11.5px] font-semibold leading-snug text-muted">
             {L('Se muestra en tu tarjeta y en tu panel. Se optimiza antes de subir.', 'Shown on your card and dashboard. Optimized before upload.')}
           </div>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-x-2 gap-y-[18px]">
             <button
               onClick={() => logoInput.current?.click()}
               disabled={logoBusy}
-              className="flex cursor-pointer items-center gap-1.5 rounded-btn bg-lilac-2 px-3 py-1.5 text-[11.5px] font-extrabold text-primary-dark disabled:opacity-50"
+              className="tap-y flex cursor-pointer items-center gap-1.5 rounded-btn bg-lilac-2 px-3 py-1.5 text-[11.5px] font-extrabold text-primary-dark disabled:opacity-50"
             >
               {logoBusy && <Loader2 size={12} className="animate-spin" />}
               {logoBusy ? L('Subiendo…', 'Uploading…') : real.logo_url ? L('Cambiar logo', 'Change logo') : L('Subir logo', 'Upload logo')}
             </button>
             {real.logo_url && (
-              <button onClick={removeLogo} disabled={logoBusy} className="cursor-pointer rounded-btn px-3 py-1.5 text-[11.5px] font-extrabold text-pink-dark disabled:opacity-50">
+              <button onClick={removeLogo} disabled={logoBusy} className="tap-y cursor-pointer rounded-btn px-3 py-1.5 text-[11.5px] font-extrabold text-pink-dark disabled:opacity-50">
                 {L('Quitar', 'Remove')}
               </button>
             )}
@@ -224,7 +224,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
         <button
           onClick={() => fileInput.current?.click()}
           disabled={uploading || photos.length >= maxPhotos}
-          className="flex flex-none cursor-pointer items-center gap-2 rounded-btn bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-50"
+          className="tap-y flex flex-none cursor-pointer items-center gap-2 rounded-btn bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white shadow-cta-sm disabled:opacity-50"
         >
           {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} stroke={2.4} />}
           {uploading ? L('Subiendo…', 'Uploading…') : L('Subir fotos', 'Upload photos')}
@@ -275,7 +275,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
                   <button
                     onClick={() => setCover(p.id)}
                     disabled={!!busyId}
-                    className="flex-1 cursor-pointer rounded-btn bg-white/90 py-1.5 text-[10.5px] font-extrabold text-ink"
+                    className="tap-y flex-1 cursor-pointer rounded-btn bg-white/90 py-1.5 text-[10.5px] font-extrabold text-ink"
                   >
                     {L('Portada', 'Cover')}
                   </button>
@@ -284,7 +284,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
                   onClick={() => remove(p.id)}
                   disabled={!!busyId}
                   aria-label={L('Eliminar', 'Delete')}
-                  className="flex h-7 flex-none cursor-pointer items-center justify-center rounded-btn bg-white/90 px-2 text-pink-dark"
+                  className="tap flex h-7 flex-none cursor-pointer items-center justify-center rounded-btn bg-white/90 px-2 text-pink-dark"
                 >
                   <Trash2 size={13} stroke={2.4} />
                 </button>

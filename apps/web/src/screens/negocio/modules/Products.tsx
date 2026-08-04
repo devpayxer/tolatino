@@ -116,7 +116,7 @@ function prodToRow(p: Prod, businessId: string, sort: number): NewBizItem {
 }
 
 // ---------- shared styles ----------
-const chip = (on: boolean) => `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+const chip = (on: boolean) => `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
 const inputCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary';
 const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12.5px] font-extrabold text-primary-dark';
@@ -465,7 +465,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className={fieldLabel}>{L('Categoría', 'Category')} *</div>
                     <ChipRow className="-mx-1 px-1">
                       {cfg.categories.filter((c) => c.visible || c.id === draft.cat).map((c) => <button key={c.id} onClick={() => upD({ cat: c.id })} className={chip(draft.cat === c.id)}>{catLabel(c)}</button>)}
-                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+                      <button onClick={() => { setCatFromWiz(true); setCatSheet({ open: true, initial: null }); }} className="tap-y flex-none cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </ChipRow>
                   </div>
                   <div>
@@ -487,9 +487,9 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                   </div>
                   <div>
                     <div className={fieldLabel}>{L('Etiquetas', 'Badges')}</div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
                       {[...BADGES, ...cfg.tags].map((t) => { const on = draft.badges.includes(t); return <button key={t} onClick={() => upD({ badges: on ? draft.badges.filter((x) => x !== t) : [...draft.badges, t] })} className={chip(on)}>{BADGES.includes(t) ? tagLabel(t, L) : t}</button>; })}
-                      <button onClick={() => setTagSheet(true)} className="cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
+                      <button onClick={() => setTagSheet(true)} className="tap-y cursor-pointer rounded-full border-[1.5px] border-dashed border-lilac-line px-3.5 py-2 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar', 'Add')}</button>
                     </div>
                   </div>
 
@@ -522,12 +522,12 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                               </div>
                             ))}
                           </div>
-                          <button type="button" onClick={() => upD({ specs: [...draft.specs, { es: '', valEs: '' }] })} className="mt-2 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar especificación', 'Add specification')}</button>
+                          <button type="button" onClick={() => upD({ specs: [...draft.specs, { es: '', valEs: '' }] })} className="tap-y mt-2 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-2.5 text-[12px] font-extrabold text-primary-dark">+ {L('Agregar especificación', 'Add specification')}</button>
                           <div className="mt-1.5 text-[10px] font-medium text-muted-2">{L('Sugerencias: Dimensiones · Material · Color · Peso · Garantía · Requiere armado', 'Suggestions: Dimensions · Material · Color · Weight · Warranty · Assembly required')}</div>
                         </div>
                         <div>
                           <div className={fieldLabel}>{L('Galería de fotos', 'Photo gallery')} <span className="font-semibold text-muted">· {L('hasta 6', 'up to 6')}</span></div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
                             {draft.photos.map((u, i) => (
                               <div key={i} className="relative h-[72px] w-[72px] overflow-hidden rounded-tile border border-hair">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -693,7 +693,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                         <div className={fieldLabel}>{L('Administrar producto', 'Manage product')}</div>
                         <div className="flex gap-2.5">
                           <button onClick={duplicateFromDraft} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3 text-[12.5px] font-extrabold text-ink"><Copy size={14} stroke={2.4} />{L('Duplicar', 'Duplicate')}</button>
-                          <button onClick={() => setConfirmDel(true)} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
+                          <button onClick={() => setConfirmDel(true)} className="tap flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn-lg border-[1.5px] border-pink-bg bg-white py-3 text-[12.5px] font-extrabold text-pink-dark"><Trash2 size={14} stroke={2.4} />{L('Eliminar', 'Delete')}</button>
                         </div>
                       </div>
                     )}
@@ -741,8 +741,8 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       <div className={`${cardCls} p-3.5`}>
         <div className="mb-2 flex items-center gap-2 text-[12.5px] font-extrabold text-ink"><CreditCard size={15} stroke={2.2} className="text-primary-dark" />{L('Modo de la tienda', 'Shop mode')}</div>
         <div className="flex rounded-full bg-lilac-2 p-0.5">
-          <button onClick={() => { if (cfg.selling) { saveCfg({ ...cfg, selling: false }); flash(L('Tienda en modo Solo catálogo', 'Shop set to Catalog only')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.selling ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo catálogo', 'Catalog only')}</button>
-          <button onClick={() => { if (!cfg.selling) { saveCfg({ ...cfg, selling: true }); flash(L('Tienda con venta en línea', 'Shop set to Online selling')); } }} className={`flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.selling ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Vender en línea', 'Sell online')}</button>
+          <button onClick={() => { if (cfg.selling) { saveCfg({ ...cfg, selling: false }); flash(L('Tienda en modo Solo catálogo', 'Shop set to Catalog only')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${!cfg.selling ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Solo catálogo', 'Catalog only')}</button>
+          <button onClick={() => { if (!cfg.selling) { saveCfg({ ...cfg, selling: true }); flash(L('Tienda con venta en línea', 'Shop set to Online selling')); } }} className={`tap-y flex-1 cursor-pointer rounded-full py-2 text-center text-[12px] font-extrabold transition-colors ${cfg.selling ? 'bg-white text-primary-dark shadow-cta-sm' : 'text-muted'}`}>{L('Vender en línea', 'Sell online')}</button>
         </div>
         <p className="mt-2 text-[11px] font-medium leading-relaxed text-muted">
           {cfg.selling
@@ -785,7 +785,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                       </span>
                     </span>
                     <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{catLabel(catOf(p.cat))}{p.sku ? ` · ${p.sku}` : ''}</span>
-                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                       {cfg.selling && <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-extrabold ${pillCls}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{p.stock === 0 ? lab : p.stock}</span>}
                       {p.options.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{variantCount(p.options, cfg.optionSets) || p.options.length} {L('variantes', 'variants')}</span>}
                       {p.badges.map((t) => <span key={t} className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[9px] font-extrabold text-amber-ink">{tagLabel(t, L)}</span>)}
@@ -914,7 +914,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{L(d.descEs, d.descEn)}</div>
                   </div>
                 </button>
-                <button onClick={() => toggleDiscount(d.id)} className={`flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${paused ? 'bg-lilac-2 text-muted-2' : 'bg-green-bg text-green-dark'}`}>{paused ? L('Pausado', 'Paused') : L('Activo', 'Active')}</button>
+                <button onClick={() => toggleDiscount(d.id)} className={`tap-y flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${paused ? 'bg-lilac-2 text-muted-2' : 'bg-green-bg text-green-dark'}`}>{paused ? L('Pausado', 'Paused') : L('Activo', 'Active')}</button>
               </div>
             );
           })}
@@ -982,7 +982,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
             <span className="block text-[12.5px] font-extrabold text-ink">{L('La tienda en línea es una función Verified.', 'The online shop is a Verified feature.')}</span>
             <span className="block text-[11px] font-semibold text-amber-ink">{L('Estás viendo una vista previa. Verifícate para vender productos.', "You're seeing a preview. Get verified to sell products.")}</span>
           </span>
-          <button onClick={() => go('billing')} className="flex-none cursor-pointer rounded-btn bg-ink px-3.5 py-2 text-[11.5px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
+          <button onClick={() => go('billing')} className="tap-y flex-none cursor-pointer rounded-btn bg-ink px-3.5 py-2 text-[11.5px] font-extrabold text-white">{L('Verificar', 'Verify')}</button>
         </div>
       )}
 

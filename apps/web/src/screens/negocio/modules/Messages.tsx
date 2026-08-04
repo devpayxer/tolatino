@@ -142,7 +142,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
         <p className="mx-auto mt-1.5 max-w-[320px] text-[13px] font-semibold leading-relaxed text-muted">
           {L('Publica tu negocio para chatear con tus clientes aquí.', 'Publish your business to chat with your customers here.')}
         </p>
-        <button onClick={() => router.push('/negocio/publicar')} className="mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
+        <button onClick={() => router.push('/negocio/publicar')} className="tap-y mt-5 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
           {L('Publicar negocio', 'Publish business')}
         </button>
       </div>

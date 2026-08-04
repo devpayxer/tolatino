@@ -98,7 +98,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <p className="mt-1.5 text-[12px] font-semibold leading-relaxed text-muted">
         {L('Tu método de pago y tus facturas se administran en el portal seguro de Stripe.', 'Your card and invoices live in Stripe’s secure portal.')}
       </p>
-      <button onClick={openPortal} disabled={busy} className="mt-4 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white disabled:opacity-60">
+      <button onClick={openPortal} disabled={busy} className="tap-y mt-4 cursor-pointer rounded-btn bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white disabled:opacity-60">
         {L('Abrir portal de pagos', 'Open billing portal')}
       </button>
     </div>
@@ -193,7 +193,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className={`text-[14px] font-bold ${subCls}`}>{planCard.price}</span>
         </div>
         <div className={`mt-1 text-[11.5px] font-medium leading-snug ${subCls}`}>{planCard.line}</div>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-x-2 gap-y-[18px]">
           {planCard.upgrade && (
             <button
               onClick={() => openUpgrade(planCard.upgrade!.to)}
@@ -206,7 +206,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {planCard.showChange && (
             <button
               onClick={() => openUpgrade()}
-              className={`cursor-pointer rounded-btn border bg-transparent px-[15px] py-[11px] text-[12px] font-extrabold ${fgCls}`}
+              className={`tap-y cursor-pointer rounded-btn border bg-transparent px-[15px] py-[11px] text-[12px] font-extrabold ${fgCls}`}
               style={{ borderColor: ghostRing }}
             >
               {L('Cambiar plan', 'Change plan')}
@@ -606,7 +606,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 business must not see a non-functional purchase surface. */}
             {!isReal && addonsEl}
             {isPaid && (
-              <button onClick={() => setCancelOpen(true)} className="cursor-pointer py-2 text-center text-[11.5px] font-bold text-muted-2 underline">
+              <button onClick={() => setCancelOpen(true)} className="tap-y cursor-pointer py-2 text-center text-[11.5px] font-bold text-muted-2 underline">
                 {L('Cancelar suscripción', 'Cancel subscription')}
               </button>
             )}

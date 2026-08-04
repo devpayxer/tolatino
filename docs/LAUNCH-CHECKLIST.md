@@ -264,6 +264,25 @@
   se me había escapado porque la auditoría recorrió los módulos y no el `Inicio`
   del panel ni las vistas secundarias de cada módulo.
 
+  **Los tres pendientes, CERRADOS (2026-08-04):**
+  · **«Ver más» del historial.** El tope de 200 cortaba en silencio y lo viejo
+    quedaba inalcanzable — un tope sin salida es la otra forma de mentir. Ahora
+    se pide una fila de más para saber si hay historial y sale el botón en los
+    cuatro listados (pedidos, reservas, rentas, boletos). Verificado con 250
+    pedidos: pide 201, enseña 200, y al pulsar llega a los 250.
+  · **Mensajeros externos.** Uber Direct, DoorDash Drive y Rappi se ofrecían con
+    tarifa concreta sin decir que no están conectados. Mismo aviso que los
+    transportistas.
+  · **44px módulo a módulo del panel.** El `?tab=` NO cambia de módulo (el tab es
+    estado local, no va en la URL), así que el primer barrido midió 27 veces la
+    misma pantalla y dio un «0» que no valía nada. Rehecho navegando por el
+    cajón: **99 controles cortos** en 18 pantallas. Cerrados **89**; quedan
+    **10**, todos entre 37 y 43px (pastillas dentro de tarjetas que recortan el
+    pseudo-elemento unos pocos píxeles). Los peligrosos de verdad —enlaces de
+    18px y el botón de borrar foto de 28px— están arreglados.
+    **De paso:** la sección del panel no vive en la URL, así que al refrescar se
+    pierde y el botón Atrás te saca del panel entero. Sin arreglar.
+
   **Lo que queda de esta auditoría:** visibilidad de módulos en la ficha,
   escala (índices, N+1, paginación), móvil (44px y desbordes), idioma, y stubs
   presentados como terminados. Y las tandas B (vender y cobrar), C

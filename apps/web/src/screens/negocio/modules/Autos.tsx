@@ -370,7 +370,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- shared UI helpers ----------
   const chip = (on: boolean) =>
-    `flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
+    `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
   const fieldCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 py-2.5 text-[13px] font-semibold text-ink outline-none focus:border-primary';
   const labelCls = 'mb-1.5 block text-[11px] font-extrabold text-ink-soft';
 
@@ -392,7 +392,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const segmented = <T extends string>(items: { id: T; es: string; en: string }[], val: T, on: (v: T) => void, cols: number) => (
     <div className="grid gap-1.5 rounded-btn-lg bg-lilac-2 p-1" style={{ gridTemplateColumns: `repeat(${cols},minmax(0,1fr))` }}>
       {items.map((it) => (
-        <button key={it.id} onClick={() => on(it.id)} className={`cursor-pointer rounded-btn py-2 text-[11px] font-extrabold ${val === it.id ? 'bg-white text-primary-dark shadow-card' : 'text-ink-2'}`}>
+        <button key={it.id} onClick={() => on(it.id)} className={`tap-y cursor-pointer rounded-btn py-2 text-[11px] font-extrabold ${val === it.id ? 'bg-white text-primary-dark shadow-card' : 'text-ink-2'}`}>
           {L(it.es, it.en)}
         </button>
       ))}
@@ -660,7 +660,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Tipo de vendedor', 'Seller type')}</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
           {SELLER_TYPES.map((s) => (
             <button key={s.id} onClick={() => setLicForm((f) => ({ ...f, sellerType: s.id }))} className={chip(licForm.sellerType === s.id)}>{L(s.es, s.en)}</button>
           ))}
@@ -668,7 +668,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Formas de pago que ofreces', 'Payment options you offer')}</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
           <button onClick={() => setLicForm((f) => ({ ...f, financing: !f.financing }))} className={chip(licForm.financing)}>{licForm.financing ? '✓ ' : ''}{L('Financiamiento', 'Financing')}</button>
           <button onClick={() => setLicForm((f) => ({ ...f, bhph: !f.bhph }))} className={chip(licForm.bhph)}>{licForm.bhph ? '✓ ' : ''}{L('Aquí pagas aquí', 'Buy here pay here')}</button>
           <button onClick={() => setLicForm((f) => ({ ...f, cash: !f.cash }))} className={chip(licForm.cash)}>{licForm.cash ? '✓ ' : ''}{L('Contado', 'Cash')}</button>
@@ -686,10 +686,10 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <input value={licForm.zones} onChange={(e) => setLicForm((f) => ({ ...f, zones: e.target.value }))} placeholder={L('Ej. Spring Branch, Katy, Pasadena', 'e.g. Spring Branch, Katy, Pasadena')} className={fieldCls} />
       </div>
       <div className="flex gap-2">
-        <button onClick={saveLicense} disabled={licBusy} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
+        <button onClick={saveLicense} disabled={licBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
           {licBusy ? L('Guardando…', 'Saving…') : L('Guardar licencia', 'Save license')}
         </button>
-        <button onClick={() => setLicEdit(false)} className="cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+        <button onClick={() => setLicEdit(false)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
       </div>
     </div>
   );
@@ -702,7 +702,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-0.5 text-[11.5px] font-semibold leading-snug text-amber-ink">{L('Los compradores confían en dealers verificados. Puedes guardar borradores mientras tanto.', 'Buyers trust verified dealers. You can save drafts in the meantime.')}</div>
         </div>
         {!licEdit && (
-          <button onClick={openLicForm} className="flex-none cursor-pointer rounded-[10px] bg-ink px-3.5 py-2 text-[12px] font-extrabold text-white">{L('Agregar', 'Add')}</button>
+          <button onClick={openLicForm} className="tap-y flex-none cursor-pointer rounded-[10px] bg-ink px-3.5 py-2 text-[12px] font-extrabold text-white">{L('Agregar', 'Add')}</button>
         )}
       </div>
       {licEdit && licenseForm}
@@ -722,7 +722,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {autoConfig?.bhph ? ` · ${L('Aquí pagas aquí', 'BHPH')}` : ''}{autoConfig?.langs ? ` · ${autoConfig.langs}` : ''}{autoConfig?.zones ? ` · ${autoConfig.zones}` : ''}
           </div>
         </div>
-        {!licEdit && <button onClick={openLicForm} className="flex-none cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>}
+        {!licEdit && <button onClick={openLicForm} className="tap-y flex-none cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>}
       </div>
       {licEdit && licenseForm}
     </div>
@@ -754,7 +754,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className="absolute left-1.5 top-1.5">{statusBadge(v.status)}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
             <span className="text-[15px] font-extrabold text-ink">{fmtAuPrice(v.price)}</span>
             {v.bhph && <span className="rounded-md bg-amber-bg px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase text-amber-ink">{L('Aquí pagas aquí', 'BHPH')}</span>}
           </div>
@@ -808,7 +808,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div className="flex flex-col">
             {attention.map((a, i) => (
-              <button key={a.id} onClick={a.go} className={`flex cursor-pointer items-center gap-2.5 py-2.5 text-left ${i < attention.length - 1 ? 'border-b border-hair' : ''}`}>
+              <button key={a.id} onClick={a.go} className={`tap-y flex cursor-pointer items-center gap-2.5 py-2.5 text-left ${i < attention.length - 1 ? 'border-b border-hair' : ''}`}>
                 <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] ${a.icon === 'test' ? 'bg-amber-bg' : a.icon === 'fin' ? 'bg-blue-bg' : 'bg-pink-bg'}`}>
                   {a.icon === 'test' ? <CalendarEvent size={15} stroke={2.2} className="text-amber-ink" /> : a.icon === 'fin' ? <CreditCard size={15} stroke={2.2} className="text-blue" /> : <Users size={15} stroke={2.2} className="text-pink-dark" />}
                 </span>
@@ -835,11 +835,11 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div>
         <div className="mb-2.5 flex items-center justify-between">
           <div className="text-[15px] font-extrabold text-ink">{L('Mi inventario', 'My inventory')}</div>
-          <button onClick={startWizard} className="flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
+          <button onClick={startWizard} className="tap-y flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
             <Plus size={14} stroke={2.6} />{L('Publicar auto', 'Publish vehicle')}
           </button>
         </div>
-        <div className="no-scrollbar mb-3 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+        <div className="-my-1.5 py-1.5 no-scrollbar mb-3 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
           {listFilters.map((f) => <button key={f.id} onClick={() => setListFilter(f.id)} className={chip(listFilter === f.id)}>{L(f.es, f.en)}</button>)}
         </div>
 
@@ -859,7 +859,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 : L('Cambia el filtro o publica un auto nuevo.', 'Change the filter or publish a new vehicle.')}
             </div>
             {vehicles.length === 0 && (
-              <button onClick={startWizard} className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
+              <button onClick={startWizard} className="tap-y mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
                 <Plus size={15} stroke={2.6} />{L('Publicar auto', 'Publish vehicle')}
               </button>
             )}
@@ -900,7 +900,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         subtitle={L('Detalle del auto', 'Vehicle detail')}
         onBack={() => setView('list')}
         maxW={760}
-        action={<button onClick={() => void startEdit(v)} className="cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>}
+        action={<button onClick={() => void startEdit(v)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>}
       >
         <div className="flex flex-col gap-4">
           <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
@@ -940,7 +940,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* status */}
           <div className={`${cardCls} p-3.5`}>
             <div className="mb-2 text-[12.5px] font-extrabold text-ink">{L('Estado del auto', 'Vehicle status')}</div>
-            <div className="no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+            <div className="-my-1.5 py-1.5 no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5">
               {SETTABLE_STATUS.map((s) => (
                 <button key={s} onClick={() => void changeStatus(v, s)} disabled={statusBusy} className={`${chip(v.status === s)} disabled:opacity-60`}>
                   {L(STATUS_META[s].es, STATUS_META[s].en)}
@@ -967,7 +967,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 {vLeads.slice(0, 5).map((l, i) => {
                   const st = stageMeta(l.stage);
                   return (
-                    <button key={l.id} onClick={() => { setLeadId(l.id); setLeadBack('detail'); setView('lead'); }} className={`flex cursor-pointer items-center gap-2.5 py-2.5 text-left ${i < Math.min(vLeads.length, 5) - 1 ? 'border-b border-hair' : ''}`}>
+                    <button key={l.id} onClick={() => { setLeadId(l.id); setLeadBack('detail'); setView('lead'); }} className={`tap-y flex cursor-pointer items-center gap-2.5 py-2.5 text-left ${i < Math.min(vLeads.length, 5) - 1 ? 'border-b border-hair' : ''}`}>
                       <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[10.5px] font-extrabold text-white" style={{ background: avColor(l.name) }}>{initials(l.name)}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[12px] font-extrabold text-ink">{l.name}</span>
@@ -1019,7 +1019,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const leadsPage = (
     <ModulePage title={L('Leads y consultas', 'Leads & inquiries')} subtitle={L('Tu pipeline de compradores', 'Your buyer pipeline')} onBack={() => setView('list')} maxW={760}>
-      <div className="no-scrollbar mb-3 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+      <div className="-my-1.5 py-1.5 no-scrollbar mb-3 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
         {leadFilters.map((f) => <button key={f.id} onClick={() => setLeadFilter(f.id)} className={chip(leadFilter === f.id)}>{L(f.es, f.en)}</button>)}
       </div>
       {persistable && leadRows === null ? (
@@ -1047,7 +1047,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className="min-w-0 truncate text-[12.5px] font-extrabold text-ink">{l.name}</span>
                       <span className="flex-none text-[9.5px] font-semibold text-muted-2">{timeAgo(l.createdAt, es)}</span>
                     </span>
-                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                       {kindPill(l)}
                       <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
                     </span>
@@ -1071,7 +1071,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <Mail size={13} stroke={2.2} className="text-primary-dark" />{L('Correo', 'Email')}
                     </a>
                   )}
-                  <button onClick={() => { setLeadId(l.id); setLeadBack('leads'); setView('lead'); }} className="flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[11px] font-extrabold text-white">{L('Abrir', 'Open')}</button>
+                  <button onClick={() => { setLeadId(l.id); setLeadBack('leads'); setView('lead'); }} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2 text-[11px] font-extrabold text-white">{L('Abrir', 'Open')}</button>
                 </div>
               </div>
             );
@@ -1107,7 +1107,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-[15px] font-extrabold text-white" style={{ background: avColor(l.name) }}>{initials(l.name)}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-extrabold text-ink">{l.name}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <div className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
                   {kindPill(l)}
                   <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
                 </div>
@@ -1142,7 +1142,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
           <div className={`${cardCls} p-3.5`}>
             <div className="mb-2 text-[12.5px] font-extrabold text-ink">{L('Mover a etapa', 'Move to stage')}</div>
-            <div className="no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+            <div className="-my-1.5 py-1.5 no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5">
               {STAGES.map((s) => (
                 <button key={s.id} onClick={() => void moveStage(l, s.id)} className={chip(l.stage === s.id)}>{L(s.es, s.en)}</button>
               ))}
@@ -1233,13 +1233,13 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const testsPage = (
     <ModulePage title={L('Agenda de pruebas', 'Test drive calendar')} subtitle={L('Confirma y organiza tus pruebas de manejo', 'Confirm and organize your test drives')} onBack={() => setView('list')} maxW={760}>
-      <div className="no-scrollbar mb-4 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+      <div className="-my-1.5 py-1.5 no-scrollbar mb-4 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
         {agendaDays.map((d) => {
           const key = dayKey(d);
           const on = key === testDay;
           const has = tests.some((t) => dayKeyOf(t.at) === key);
           return (
-            <button key={key} onClick={() => setTestDay(key)} className={`flex w-14 flex-none cursor-pointer flex-col items-center rounded-btn-lg py-2.5 ${on ? 'bg-primary text-white shadow-cta-sm' : 'border border-lilac-line bg-white text-ink'}`}>
+            <button key={key} onClick={() => setTestDay(key)} className={`tap-y flex w-14 flex-none cursor-pointer flex-col items-center rounded-btn-lg py-2.5 ${on ? 'bg-primary text-white shadow-cta-sm' : 'border border-lilac-line bg-white text-ink'}`}>
               <span className={`text-[9px] font-extrabold uppercase ${on ? 'text-white/80' : 'text-muted-2'}`}>{(es ? DOW_ES : DOW_EN)[d.getDay()]}</span>
               <span className="text-[15px] font-extrabold leading-tight">{d.getDate()}</span>
               <span className={`mt-0.5 h-1 w-1 rounded-full ${has ? (on ? 'bg-white' : 'bg-primary') : 'bg-transparent'}`} />
@@ -1282,14 +1282,14 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 </div>
 
                 {(t.status === 'pendiente' || t.status === 'confirmada') && (
-                  <div className="mt-3 flex flex-wrap gap-2 border-t border-hair pt-3">
+                  <div className="mt-3 flex flex-wrap gap-x-2 gap-y-[18px] border-t border-hair pt-3">
                     {t.status === 'pendiente' && (
-                      <button onClick={() => void testAction(t, 'confirmada')} className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>
+                      <button onClick={() => void testAction(t, 'confirmada')} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Confirmar', 'Confirm')}</button>
                     )}
                     {t.status === 'confirmada' && (
-                      <button onClick={() => void testAction(t, 'completada')} className="flex-1 cursor-pointer rounded-btn bg-green py-2.5 text-[11.5px] font-extrabold text-white">{L('Completada', 'Completed')}</button>
+                      <button onClick={() => void testAction(t, 'completada')} className="tap-y flex-1 cursor-pointer rounded-btn bg-green py-2.5 text-[11.5px] font-extrabold text-white">{L('Completada', 'Completed')}</button>
                     )}
-                    <button onClick={() => { setReschedId(reschedId === t.id ? null : t.id); setReschedAt(toLocalInput(t.at)); }} className="flex-1 cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[11.5px] font-extrabold text-ink">{L('Reprogramar', 'Reschedule')}</button>
+                    <button onClick={() => { setReschedId(reschedId === t.id ? null : t.id); setReschedAt(toLocalInput(t.at)); }} className="tap-y flex-1 cursor-pointer rounded-btn border-[1.5px] border-lilac-line bg-white py-2.5 text-[11.5px] font-extrabold text-ink">{L('Reprogramar', 'Reschedule')}</button>
                   </div>
                 )}
                 {reschedId === t.id && (
@@ -1300,11 +1300,11 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <button
                         onClick={() => { if (!reschedAt) return; void testAction(t, 'pendiente', new Date(reschedAt).toISOString()); }}
                         disabled={!reschedAt}
-                        className="flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white disabled:opacity-40"
+                        className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[11.5px] font-extrabold text-white disabled:opacity-40"
                       >
                         {L('Proponer horario', 'Propose time')}
                       </button>
-                      <button onClick={() => { setReschedId(null); setReschedAt(''); }} className="cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[11.5px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+                      <button onClick={() => { setReschedId(null); setReschedAt(''); }} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[11.5px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
                     </div>
                   </div>
                 )}
@@ -1330,7 +1330,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <input value={memForm.role} onChange={(e) => setMemForm((f) => ({ ...f, role: e.target.value }))} placeholder={L('Rol (ej. Ventas)', 'Role (e.g. Sales)')} className={`${fieldCls} flex-1`} />
               <input value={memForm.phone} onChange={(e) => setMemForm((f) => ({ ...f, phone: e.target.value }))} placeholder={L('Teléfono', 'Phone')} inputMode="tel" className={`${fieldCls} flex-1`} />
             </div>
-            <button onClick={() => void addMember()} disabled={teamBusy} className="flex cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
+            <button onClick={() => void addMember()} disabled={teamBusy} className="tap-y flex cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
               <UserPlus size={15} stroke={2.4} />{teamBusy ? L('Guardando…', 'Saving…') : L('Agregar al equipo', 'Add to team')}
             </button>
           </div>
@@ -1354,7 +1354,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 {m.phone && (
                   <a href={`tel:${m.phone}`} className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-lilac-2 text-primary-dark" aria-label={L('Llamar', 'Call')}><Phone size={15} stroke={2.2} /></a>
                 )}
-                <button onClick={() => void removeMember(i)} disabled={teamBusy} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-soft disabled:opacity-50" aria-label={L('Eliminar', 'Remove')}><Trash2 size={15} stroke={2.2} /></button>
+                <button onClick={() => void removeMember(i)} disabled={teamBusy} className="tap flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink-soft disabled:opacity-50" aria-label={L('Eliminar', 'Remove')}><Trash2 size={15} stroke={2.2} /></button>
               </div>
             ))}
           </div>
@@ -1376,7 +1376,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Tipo de vehículo', 'Vehicle type')} *</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
           {AU_TYPES.map((t) => (
             <button key={t.id} onClick={() => upD({ vtype: t.id })} className={chip(draft.vtype === t.id)}>{L(t.es, t.en)}</button>
           ))}
@@ -1473,7 +1473,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div>
         <label className={labelCls}>{L('Opciones de venta', 'Sale options')}</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
           <button onClick={() => upD({ bhph: !draft.bhph })} className={chip(draft.bhph)}>{draft.bhph ? '✓ ' : ''}{L('Aquí pagas aquí (sin crédito)', 'Buy here pay here (no credit)')}</button>
           <button onClick={() => upD({ financing: !draft.financing })} className={chip(draft.financing)}>{draft.financing ? '✓ ' : ''}{L('Financiamiento', 'Financing')}</button>
           <button onClick={() => upD({ tradeIn: !draft.tradeIn })} className={chip(draft.tradeIn)}>{draft.tradeIn ? '✓ ' : ''}{L('Acepta trade-in', 'Accepts trade-in')}</button>
@@ -1482,7 +1482,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div>
         <label className={labelCls}>{L('Características', 'Features')}</label>
         {draft.feats.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-1.5">
+          <div className="mb-2 flex flex-wrap gap-x-1 gap-y-[18px].5">
             {draft.feats.map((f) => (
               <span key={f} className="flex items-center gap-1.5 rounded-full bg-lilac px-3 py-1.5 text-[11px] font-extrabold text-primary-dark">
                 {f}
@@ -1604,7 +1604,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       }
     >
-      <div className="no-scrollbar mb-4 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
+      <div className="-my-1.5 py-1.5 no-scrollbar mb-4 flex min-w-0 gap-2 overflow-x-auto pb-0.5">
         {stepDefs.map((label, i) => {
           const active = wizStep === i;
           const done = i < wizStep || (i <= wizMax && i !== wizStep);
