@@ -280,8 +280,15 @@
     **10**, todos entre 37 y 43px (pastillas dentro de tarjetas que recortan el
     pseudo-elemento unos pocos píxeles). Los peligrosos de verdad —enlaces de
     18px y el botón de borrar foto de 28px— están arreglados.
-    **De paso:** la sección del panel no vive en la URL, así que al refrescar se
-    pierde y el botón Atrás te saca del panel entero. Sin arreglar.
+  · **El botón Atrás dentro del panel.** CORRECCIÓN a lo que dije antes: la
+    sección **sí** vivía en la URL (`?t=`) y el refresco **sí** la conservaba —
+    me equivoqué en esa mitad. Lo cierto era lo de Atrás: se usaba
+    `replaceState` («para no ensuciar el historial»), así que Atrás desde
+    cualquier sección sacaba del panel entero. En un teléfono, donde toda la
+    navegación va por el cajón, eso es perder el sitio de golpe. Cambiado a
+    `pushState`: Atrás vuelve a la sección anterior y solo sale desde Inicio.
+    Verificado: Inicio → Reseñas → Mensajes, Atrás → Reseñas, Atrás → Inicio,
+    Atrás → fuera; y un refresco en `?t=reviews` aterriza en Reseñas.
 
   **Lo que queda de esta auditoría:** visibilidad de módulos en la ficha,
   escala (índices, N+1, paginación), móvil (44px y desbordes), idioma, y stubs

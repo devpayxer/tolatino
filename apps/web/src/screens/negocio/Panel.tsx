@@ -82,10 +82,18 @@ export function PanelScreen() {
   const [tab, setTab] = useState<TabKey>('insights');
   const tabInit = useRef(false);
   const reflectReady = useRef(false);
-  // The active dashboard tab lives in the URL (/negocio?t=<tab>) so a refresh keeps
-  // you on the same section instead of bouncing to Inicio. `tab` (React) mirrors it;
-  // we replace (not push) so tab clicks don't spam browser history — refresh-safe
-  // without hijacking the back button. `insights` (home) omits the param.
+  // La sección activa vive en la URL (/negocio?t=<sección>) para que un refresco
+  // te deje donde estabas. `tab` (React) la refleja; `insights` (Inicio) omite el
+  // parámetro.
+  //
+  // PUSH, no replace (2026-08-04). Antes se reemplazaba «para no ensuciar el
+  // historial», pero el efecto era que Atrás desde CUALQUIER sección te sacaba
+  // del panel entero — en un teléfono, donde toda la navegación va por el cajón,
+  // eso es perder el sitio de golpe. Ahora Atrás vuelve a la sección anterior y,
+  // desde Inicio, sale del panel: el comportamiento que espera cualquiera en un
+  // móvil. Es lo mismo que se hizo con el perfil de vecino en Comunidad.
+  // Ojo: solo se empuja cuando la sección CAMBIA de verdad, así que abrir la
+  // misma dos veces no añade entradas.
   useEffect(() => {
     if (tabInit.current || typeof window === 'undefined') return;
     tabInit.current = true;
@@ -97,7 +105,10 @@ export function PanelScreen() {
     if (!reflectReady.current) { reflectReady.current = true; return; } // skip mount so we don't strip ?t before restore
     const url = new URL(window.location.href);
     if (tab === 'insights') url.searchParams.delete('t'); else url.searchParams.set('t', tab);
-    window.history.replaceState(window.history.state, '', url.toString());
+    // Si la URL ya dice esta sección (p. ej. llegamos por Atrás), no se empuja
+    // otra entrada: si no, Atrás se quedaría atrapado yendo y viniendo.
+    if (url.toString() === window.location.href) return;
+    window.history.pushState(window.history.state, '', url.toString());
   }, [tab]);
   useEffect(() => {
     if (typeof window === 'undefined') return;
