@@ -174,3 +174,126 @@ medio día de pedidos cuesta dinero de verdad.
 
 **Regla:** el día del primer pedido pagado de verdad, súbete a Pro. Hasta
 entonces, esto sobra y cuesta cero.
+
+---
+
+# Plan para el LANZAMIENTO (acordado 2026-08-04)
+
+> Esto es lo que hay que tener montado **antes** de que entre el primer pedido
+> pagado de verdad. Hoy no hace falta: la base tiene una cuenta y 49 kB de fotos.
+
+## La pregunta correcta no es «qué respaldo», es «de qué desastre me protejo»
+
+Cada capa cubre una cosa distinta. Ninguna cubre las demás, y por eso hacen
+falta varias:
+
+| Lo que puede pasar | Qué te salva | Qué NO te salva |
+|---|---|---|
+| «Borré una tabla hace 3 horas» / una migración se comió los pedidos | **PITR** (Supabase Pro): volver al minuto exacto de antes | Un volcado nocturno: perderías el día entero |
+| Un bug lleva 3 días estropeando datos y te enteras hoy | Historial de varios días (PITR de 7 días + copias diarias) | Una sola copia: ya está sobrescrita |
+| La cuenta se bloquea, falla el pago, borras el proyecto, incidente del proveedor | **La copia de FUERA** (el workflow de este repo) | PITR y las copias de Supabase: viven DENTRO de Supabase |
+| Se pierden las fotos | **Sincronización de Storage** aparte | Ni PITR ni `pg_dump` las tocan: no están en Postgres |
+| Hay que reconstruir el proyecto entero desde cero | Migraciones + Edge Functions (ya en git) + un cuaderno con la config del panel | Solo los datos: te quedas con filas y sin app |
+| El respaldo llevaba 3 semanas fallando y nadie lo sabía | **Monitorización** | Todo lo anterior. Es el fallo más común y el más tonto |
+
+## Lo primero que hay que decidir (y es una decisión de negocio, no técnica)
+
+**¿Cuántos minutos de pedidos puedes permitirte perder?**
+
+No es una pregunta retórica. Si una taquería recibe pedidos a las 13:40 y
+restauras al volcado de las 02:40, esa gente pagó y **no hay registro de su
+comida**. Para una app que cobra, la respuesta razonable es **minutos, no
+horas** — y eso es exactamente lo que compra el PITR y lo que ningún volcado
+nocturno puede dar.
+
+Escríbelo como número antes de montar nada: es lo que decide si el plan basta.
+
+## Las cuatro capas, en orden de importancia
+
+### 1. Supabase Pro · PITR — el 90% de los sustos
+Copias diarias gestionadas + recuperación a un punto en el tiempo. Cubre el caso
+que de verdad ocurre: el error humano de hace unas horas. Cero mantenimiento.
+**~$25/mes.**
+
+### 2. Copia semanal FUERA de Supabase — el seguro contra perder la cuenta
+Reactivar el workflow de este repo (`schedule` descomentado). Cifrado, con
+verificación de contenido y ensayo de restauración. **Cambiar el destino de los
+artifacts de GitHub a Cloudflare R2** (10 GB gratis, sin coste de salida): los
+artifacts caducan a los 90 días y no permiten retención larga.
+
+Retención recomendada: **diarias 30 días · semanales 3 meses · mensuales 12
+meses**. Las mensuales importan por una razón poco obvia: una disputa de pago o
+una consulta fiscal puede llegar meses después. Pesa céntimos.
+
+### 3. Las fotos (Storage) — hoy 49 kB, mañana el catálogo de cada negocio
+`pg_dump` guarda los METADATOS (qué archivo tenía cada negocio), no los
+archivos. Restaurar solo la base dejaría cada ficha apuntando a una imagen que
+ya no existe.
+
+Hace falta un trabajo aparte que sincronice el bucket `post-photos` a R2 (`rclone`
+o el SDK de S3 — Supabase Storage habla S3). Necesita la clave `service_role`
+guardada como secreto, y el repo es **público**: decidir con cuidado, o mover el
+repo a privado antes.
+
+**Antes de montarlo, comprobar si Supabase Pro ya respalda Storage.** Si lo
+hace, esta capa se simplifica a la copia externa.
+
+### 4. Lo que no son datos — el cuaderno de reconstrucción
+Con la base restaurada pero sin esto, no hay app. Ya está casi todo en git:
+
+- ✅ Esquema → `supabase/migrations/`
+- ✅ Lógica de servidor → `supabase/functions/` (11 funciones)
+- ❌ **Secretos** de las Edge Functions (Stripe, VAPID, webhook)
+- ❌ **Config del panel**: SMTP, plantillas de correo, límites de envío,
+  proveedores de auth, URLs de redirección
+- ❌ **Config de Stripe**: endpoint del webhook y qué eventos escucha
+
+Lo que falta se documenta en un cuaderno (no los secretos en sí: dónde están y
+cómo se reponen). Media hora de trabajo que el peor día vale su peso en oro.
+
+## Las dos cosas que casi nadie hace, y son las que fallan
+
+### El ENSAYO de restauración
+**Un respaldo es una hipótesis hasta que lo restauras.** El workflow ya ensaya a
+diario contra un Postgres limpio y cuenta filas. Además, **cada trimestre**, un
+ensayo de verdad hecho a mano: restaurar en un proyecto nuevo, abrir la app
+contra él y comprobar que se entra, que los pedidos están y que las fotos
+cargan. Cronometrarlo — ese número es tu tiempo real de recuperación.
+
+### La MONITORIZACIÓN
+El modo de fallo más común de un respaldo no es que se corrompa: es que **dejó
+de ejecutarse hace tres semanas y nadie miró**. Hace falta un aviso cuando no
+haya copia correcta en 48 h. Sin esto, todo lo demás es decorado.
+
+## El otro paracaídas que ya existe: Stripe
+
+Para el dinero, **Stripe es una fuente de verdad independiente**. Si la base
+perdiera pedidos, los cobros siguen en Stripe con su importe, su fecha y su
+comprador. Reconstruir «quién pagó qué» es posible aunque el respaldo fallara.
+
+No sustituye al respaldo —Stripe no sabe qué platillos llevaba el pedido ni a qué
+dirección iba— pero es la red por debajo de la red, y conviene tenerlo escrito en
+el procedimiento de recuperación.
+
+## Coste total del plan
+
+| Concepto | Coste |
+|---|---|
+| Supabase Pro (PITR + copias) | ~$25/mes |
+| Cloudflare R2 (10 GB gratis) | $0 |
+| GitHub Actions | $0 |
+| **Total** | **~$25/mes** |
+
+Todo lo demás es trabajo, no dinero.
+
+## Orden en que lo montaría
+
+1. **Pagar Pro y VERIFICAR** que PITR sale activo (no dar por hecho que pagar = respaldado).
+2. **Reactivar la copia externa** semanal, con destino R2 y retención larga.
+3. **Monitorización**: aviso si no hay copia correcta en 48 h.
+4. **Sincronizar las fotos** a R2.
+5. **Escribir el cuaderno** de reconstrucción.
+6. **Primer ensayo completo cronometrado**, y repetirlo cada trimestre.
+
+Los pasos 1 a 3 son los que no pueden faltar el día del lanzamiento. Del 4 al 6
+pueden ir en la primera semana, pero no más allá.
