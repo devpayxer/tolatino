@@ -494,6 +494,73 @@
   3. **PITR.** Esto da una copia AL DÍA. Perder medio día de pedidos es
      asumible hoy y no lo será después: el día del primer pedido pagado de
      verdad, plan Pro.
+
+- [ ] **🔴 SISTEMA DE RESPALDO DEL LANZAMIENTO — montar ANTES del primer pedido
+  pagado (acordado 2026-08-04).** Plan completo y razonado en
+  **`docs/RESPALDOS.md` → «Plan para el LANZAMIENTO»**; esto es la lista de
+  ejecución. Hoy no hace falta (una cuenta, 49 kB de fotos); el día que se cobre
+  de verdad, sí.
+
+  **Primero, una decisión que NO es técnica y que hay que escribir como número:**
+  **¿cuántos minutos de pedidos se pueden perder?** Si una taquería recibe
+  pedidos a la 1:40 pm y se restaura al volcado de las 2:40 am, esa gente pagó y
+  no hay registro de su comida. Para una app que cobra, la respuesta razonable
+  son **minutos** — y eso solo lo da el PITR. Ese número decide si el plan basta.
+
+  **Las cuatro capas. Cada una cubre un desastre distinto y ninguna cubre las
+  otras** — por eso hacen falta varias, no «la mejor»:
+  1. **Supabase Pro con PITR** (~$25/mes) → el error humano de hace unas horas,
+     que es el 90% de los sustos reales. Cero mantenimiento.
+  2. **Copia FUERA de Supabase** → cuenta bloqueada, pago fallido, proyecto
+     borrado por error, incidente del proveedor. El PITR **no** cubre esto: vive
+     dentro de Supabase. Reactivar `.github/workflows/respaldo-produccion.yml`
+     (descomentar el `schedule`) y **cambiar el destino de los artifacts de
+     GitHub a Cloudflare R2** — los artifacts caducan a los 90 días y no sirven
+     para retención larga. Retención: **diarias 30 días · semanales 3 meses ·
+     mensuales 12 meses** (las mensuales porque una disputa de pago o una
+     consulta fiscal llega meses después).
+  3. **Las FOTOS (Storage)** → `pg_dump` guarda qué imagen tenía cada ficha, no
+     la imagen. Restaurar solo la base deja todo apuntando a archivos que ya no
+     existen. Sincronizar el bucket `post-photos` a R2 (habla S3: `rclone` vale).
+     ⚠️ Necesita la clave `service_role` como secreto y **el repo es PÚBLICO** —
+     decidir con cuidado, o pasar el repo a privado antes. Y comprobar primero
+     si el Pro ya respalda Storage: si lo hace, esta capa se simplifica.
+  4. **Cuaderno de reconstrucción** → con la base restaurada pero sin esto, no
+     hay app. Ya en git: migraciones ✓ y las 11 Edge Functions ✓. **Falta
+     documentar** (dónde están y cómo se reponen, NO los secretos en sí): claves
+     de Stripe y VAPID, config de SMTP y plantillas de correo, límites de envío,
+     URLs de redirección de auth, y el endpoint del webhook de Stripe con los
+     eventos que escucha.
+
+  **Las dos cosas que casi nadie hace y son justo las que fallan:**
+  - **ENSAYO de restauración.** Un respaldo es una hipótesis hasta que se
+    restaura. El workflow ya ensaya a diario, pero hace falta uno **trimestral a
+    mano**: restaurar en un proyecto nuevo, abrir la app contra él, entrar, ver
+    los pedidos, ver que las fotos cargan. **Cronometrarlo** — ese número es el
+    tiempo real de recuperación.
+  - **MONITORIZACIÓN.** El fallo más común de un respaldo no es corromperse: es
+    que **dejó de ejecutarse hace tres semanas y nadie miró**. Aviso si no hay
+    copia correcta en 48 h. Sin esto, lo demás es decorado.
+
+  **Paracaídas que ya existe y conviene tener escrito en el procedimiento:**
+  **Stripe es una fuente de verdad independiente para el dinero.** Si la base
+  perdiera pedidos, los cobros siguen ahí con importe, fecha y comprador. No
+  sustituye al respaldo (Stripe no sabe qué platillos llevaba el pedido ni a qué
+  dirección iba), pero es la red por debajo de la red.
+
+  **Coste total: ~$25/mes** — lo pone todo el Pro; R2 y GitHub Actions son
+  gratis a este tamaño. El resto es trabajo, no dinero.
+
+  **Orden de ejecución. Del 1 al 3 NO pueden faltar el día del lanzamiento; del
+  4 al 6, la primera semana:**
+  - [ ] 1. Pagar Pro y **VERIFICAR** que PITR sale activo (pagar ≠ estar
+        respaldado). Comprobar de paso que el proyecto de PRUEBAS no empieza a
+        facturar cómputo: el plan es por organización y hay dos proyectos.
+  - [ ] 2. Reactivar la copia externa, destino R2, retención larga.
+  - [ ] 3. Monitorización (aviso a las 48 h sin copia correcta).
+  - [ ] 4. Sincronizar las fotos a R2.
+  - [ ] 5. Escribir el cuaderno de reconstrucción.
+  - [ ] 6. Primer ensayo completo cronometrado, y repetirlo cada trimestre.
   5. **Rate limits** — subir los de SMS/correo cuando haya tráfico real.
   Mientras tanto queda la puerta de la contraseña en "Entrar", que es lo único
   que permite entrar hoy.
