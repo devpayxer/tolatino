@@ -1213,10 +1213,4 @@ const SVC_TAGS = ['Más reservado', 'Familiar', 'Premium', 'Nuevo'];
 const tagLabel = (t: string, L: (es: string, en: string) => string) => ({ 'Más reservado': L('Más reservado', 'Most booked'), Familiar: L('Familiar', 'Family'), Premium: 'Premium', Nuevo: L('Nuevo', 'New') } as Record<string, string>)[t] ?? t;
 
 // Sample bookings for demo (no dbId → no persistence, no status actions).
-const DEMO_BK_EXTRA = { duration_min: null, staff_id: null, staff_name: null, addons: null, variant: null, total: null, customer_phone: null };
-const DEMO_BOOKINGS: BookingRow[] = [
-  { id: 'd1', service_name: 'Sourdough 101', customer_name: 'Sofía R.', party_size: 2, starts_at: '2026-07-11T18:00:00Z', status: 'pending', deposit: 85, notes: 'Primera vez, alergia a nueces.', created_at: '', ...DEMO_BK_EXTRA, duration_min: 120, staff_name: 'Miguel' },
-  { id: 'd2', service_name: 'Menú degustación', customer_name: 'Anna F.', party_size: 2, starts_at: '2026-07-12T19:30:00Z', status: 'confirmed', deposit: 140, notes: 'Maridaje de vino. Aniversario.', created_at: '', ...DEMO_BK_EXTRA, duration_min: 150, staff_name: 'Chef Rosa', total: 140 },
-  { id: 'd3', service_name: 'Cata de vinos', customer_name: 'Daniel K.', party_size: 4, starts_at: '2026-07-13T15:00:00Z', status: 'confirmed', deposit: 0, notes: '', created_at: '', ...DEMO_BK_EXTRA, duration_min: 90 },
-  { id: 'd4', service_name: 'Comedor privado', customer_name: 'Mission Tech', party_size: 18, starts_at: '2026-07-20T18:00:00Z', status: 'done', deposit: 500, notes: '2 vegetarianos, 1 sin gluten.', created_at: '', ...DEMO_BK_EXTRA, duration_min: 180, total: 500 },
-];
+

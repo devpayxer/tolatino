@@ -787,6 +787,20 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   const pipelineView = (
     <div className="flex flex-col gap-4">
+      {/* Estos candidatos son un EJEMPLO: no hay bolsa de trabajo conectada
+          todavía. Sin este aviso, un dueño con una vacante creía que 9 personas
+          se habían postulado de verdad. (Auditoría de Negocios, 2026-08-04.) */}
+      {isReal && (
+        <div role="note" className="flex items-start gap-2 rounded-field border border-[#F2E3BF] bg-amber-bg px-3 py-2.5">
+          <span className="mt-px flex-none rounded-full bg-amber-ink/10 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-amber-ink">
+            {L('Ejemplo', 'Sample')}
+          </span>
+          <span className="text-[11px] font-semibold leading-[1.5] text-amber-ink">
+            {L('Así se verá tu bolsa de candidatos. Todavía no está conectada, así que estas personas no son postulaciones reales.',
+               'This is how your candidate pipeline will look. It is not connected yet, so these are not real applicants.')}
+          </span>
+        </div>
+      )}
       <div className="flex items-center gap-3 rounded-btn-lg bg-lilac-2 p-3">
         <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-primary"><Inbox size={15} stroke={2.2} className="text-white" /></span>
         <div className="min-w-0 flex-1">

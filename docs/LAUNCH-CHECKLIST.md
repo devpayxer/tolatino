@@ -255,6 +255,15 @@
      caso — **falta** ponerles el mismo aviso. El módulo Equipo ya se etiqueta
      «Próximamente», que es la forma correcta.
 
+  **Repaso sobre el sitio EN VIVO (2026-08-04):** dos nombres inventados seguían
+  en el paquete servido. Se persiguieron uno a uno: `DashboardHome` y `Mensajes`
+  están BIEN (solo salen tras `admin.demo`, el modo explorar); `DEMO_BOOKINGS` de
+  Servicios era **código muerto** —declarado y sin usar— y se borró; y el embudo
+  de candidatos de Equipo enseñaba **9 postulantes inventados** sin decir que la
+  bolsa de trabajo no está conectada: ahora lleva un aviso «Ejemplo». Ese último
+  se me había escapado porque la auditoría recorrió los módulos y no el `Inicio`
+  del panel ni las vistas secundarias de cada módulo.
+
   **Lo que queda de esta auditoría:** visibilidad de módulos en la ficha,
   escala (índices, N+1, paginación), móvil (44px y desbordes), idioma, y stubs
   presentados como terminados. Y las tandas B (vender y cobrar), C
