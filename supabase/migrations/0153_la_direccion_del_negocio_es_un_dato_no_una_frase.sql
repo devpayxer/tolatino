@@ -110,7 +110,19 @@ begin
 end
 $fn$;
 
-grant execute on function public.create_business(text, text, text[], text, text, text, text, text, text, text, text, text, double precision, double precision, text[], jsonb, text, text, text) to authenticated;
+-- ⚠️ REVOCAR DE PUBLIC ANTES DE CONCEDER, y este orden importa.
+-- Al crear una función NUEVA —y esta lo es, porque cambió el número de
+-- parámetros— PostgreSQL la deja ejecutable por PUBLIC por defecto. Conceder a
+-- `authenticated` NO quita eso: son cosas distintas. Sin esta línea,
+-- `create_business` queda abierta a `anon` siendo `security definer`.
+-- Lo cazó `scripts/verify-permisos.mjs` al aplicarla (regla A4), que es
+-- exactamente para lo que existe. Misma lección que la 0148: el permiso de
+-- PUBLIC hay que quitarlo, no taparlo con un grant.
+-- (El cuerpo ya exige sesión —`if uid is null then raise exception`— así que no
+-- había nada explotable; pero una `security definer` alcanzable por anónimos no
+-- se deja abierta «porque por dentro valida».)
+revoke execute on function public.create_business(text, text, text[], text, text, text, text, text, text, text, text, text, double precision, double precision, text[], jsonb, text, text, text) from public, anon;
+grant  execute on function public.create_business(text, text, text[], text, text, text, text, text, text, text, text, text, double precision, double precision, text[], jsonb, text, text, text) to authenticated;
 
 -- ⚠️ RETIRAR LA VERSIÓN VIEJA, y esto NO es limpieza opcional.
 -- `create or replace` con distinto número de parámetros **no reemplaza: crea una
