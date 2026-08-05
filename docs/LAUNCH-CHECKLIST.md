@@ -149,6 +149,23 @@
   estados donde estemos).
   **Ojo si algo se ve raro:** si el estilo vectorial no carga, el mapa cae solo
   al raster de OSM de antes — se verá feo pero nunca en blanco.
+  **Corregido el mismo día, y merece leerse porque el fallo era del respaldo, no
+  del mapa:** el fundador mandó una captura con la sección «Ubicación» en un
+  RECTÁNGULO GRIS VACÍO. El respaldo existía pero (a) no se llamaba desde ningún
+  sitio —las tres pantallas construían el mapa a mano— y (b) se daba por
+  satisfecho si el ESTILO traía capas. El estilo es un JSON de otra URL: llega
+  perfectamente mientras los tiles, que son el mapa, no llegan nunca. Ahora la
+  señal es la única que no miente —**¿pintó MapLibre algún tile?**— y va en dos
+  tiempos: 3,5 s para el vectorial, 3,5 s para el raster, y si ninguno responde
+  la ficha vuelve a su marcador rayado en vez de dejar un hueco.
+  Centinela: `tools/mobile-audit/mapa-ficha.js` (finge un proveedor vivo para
+  comprobar que NO salta el respaldo, y los tumba todos para comprobar que sí).
+  **Queda pendiente, a propósito:** en las vistas de mapa a pantalla completa de
+  **Bienes Raíces** y **Dealer de carros** ese último escalón no está — si
+  cayeran los DOS proveedores se verían los pines de precio sobre un fondo
+  vacío. Es una vista que el usuario elige (puede volver a la lista) y hace falta
+  que fallen ambos, por eso no se tocó; si alguna vez se ve, se les pasa el mismo
+  `onSinMapa` que ya acepta `crearMapa`.
 
 - [ ] **🟡 Imágenes de demo (Unsplash) — SOLO PRUEBAS, nunca a producción
   (2026-08-05).** Para explorar los demos como una app profesional se sembraron

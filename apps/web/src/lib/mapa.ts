@@ -112,25 +112,76 @@ export function aplicarPaletaToLatino(map: MapaLike): void {
   }
 }
 
-/**
- * Crea el mapa con el estilo vectorial y lo repinta; si ese estilo no carga
- * (proveedor caído, red del usuario), reintenta con el raster de siempre.
- * Devuelve el mapa ya listo.
- */
-export async function crearMapa(
-  ml: typeof import('maplibre-gl'),
-  opciones: { container: HTMLElement; center: [number, number]; zoom: number },
-): Promise<import('maplibre-gl').Map> {
-  const map = new ml.Map({ ...opciones, style: MAPA_STYLE, attributionControl: false });
+/** Cuánto se le da a cada proveedor para pintar su primer tile. */
+const ESPERA_MS = 3500;
 
-  map.on('style.load', () => aplicarPaletaToLatino(map as unknown as MapaLike));
-  map.once('error', (e: unknown) => {
-    // Solo importa el fallo al CARGAR el estilo: un tile suelto que falle no
-    // justifica tirar el mapa entero abajo.
-    const err = e as { error?: { message?: string } };
-    if (!/style|load/i.test(err?.error?.message ?? '')) return;
-    try { map.setStyle(MAPA_RASTER as unknown as string); } catch { /* ya está */ }
+/**
+ * Crea el mapa con el estilo vectorial, lo repinta con nuestra paleta y — si no
+ * llega a pintarse — cae al raster de siempre; y si tampoco, avisa para que
+ * quien lo montó enseñe otra cosa en vez de un rectángulo vacío.
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ * LO QUE SE MIDE ES **SI SE PINTÓ UN TILE**, no si «cargó el estilo»
+ * ════════════════════════════════════════════════════════════════════════════
+ * Aquí van dos errores míos seguidos, que es lo que el fundador acabó viendo:
+ *
+ *  1. La primera versión escuchaba `error` y filtraba el mensaje con una
+ *     expresión regular. Si el proveedor no contesta (una red que se traga la
+ *     petición, un 404 que no dispara ese evento), no saltaba nada.
+ *  2. La segunda puso un cronómetro, pero se daba por satisfecha si el ESTILO
+ *     traía capas. Y el estilo es un JSON de otra URL: puede llegar
+ *     perfectamente mientras los tiles —que son el mapa— no llegan nunca. Ese
+ *     caso da exactamente un RECTÁNGULO VACÍO, porque el mapa cree que va bien.
+ *
+ * La única señal que no miente es que MapLibre haya recibido un tile: el evento
+ * `data` con `dataType === 'source'` y un `tile` dentro. Si a los 3,5 s no ha
+ * llegado NI UNO, ese proveedor no sirve, diga lo que diga su JSON.
+ *
+ * El raster lleva además un filtro CSS que le baja la saturación: el OSM crudo
+ * (el que el fundador llamó «antiguo») pasa de amarillo chillón a gris limpio.
+ */
+export function crearMapa(
+  ml: typeof import('maplibre-gl'),
+  opciones: {
+    container: HTMLElement; center: [number, number]; zoom: number;
+    interactive?: boolean;
+    /** Se llama si NINGÚN proveedor pintó nada. Para no dejar un hueco gris. */
+    onSinMapa?: () => void;
+  },
+): import('maplibre-gl').Map {
+  const { onSinMapa, ...opts } = opciones;
+  const map = new ml.Map({ ...opts, style: MAPA_STYLE, attributionControl: false });
+
+  let tiles = 0;          // tiles pintados desde el último cambio de estilo
+  let enRaster = false;
+  let muerto = false;
+
+  map.on('data', (e: { dataType?: string; tile?: unknown }) => {
+    if (e?.dataType === 'source' && e.tile) tiles++;
   });
+  map.once('remove', () => { muerto = true; });
+
+  const revisar = () => {
+    if (muerto || tiles > 0) return;   // hay mapa: nada que hacer
+    if (!enRaster) {
+      enRaster = true;
+      try {
+        map.setStyle(MAPA_RASTER as never);
+        const lienzo = map.getCanvasContainer?.();
+        if (lienzo) lienzo.style.filter = 'saturate(.72) contrast(1.03) brightness(1.02)';
+      } catch { return; }             // el mapa ya se destruyó
+      window.setTimeout(revisar, ESPERA_MS);   // segunda oportunidad, ya en raster
+      return;
+    }
+    // Ni vectorial ni raster. Se dice, no se disimula.
+    try { onSinMapa?.(); } catch { /* quien escuche verá */ }
+  };
+
+  map.on('style.load', () => {
+    tiles = 0;                                   // el contador es por estilo
+    if (!enRaster) aplicarPaletaToLatino(map as unknown as MapaLike);
+  });
+  window.setTimeout(revisar, ESPERA_MS);
 
   return map;
 }

@@ -8,7 +8,7 @@
 // mirror Eventos.tsx (useUrlDetail deep link, Overlay sheets, toast, tokens).
 
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { MAPA_STYLE, aplicarPaletaToLatino } from '@/lib/mapa';
+import { crearMapa } from '@/lib/mapa';
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Map as MlMap, Marker as MlMarker } from 'maplibre-gl';
@@ -343,16 +343,13 @@ export function BienesRaicesScreen() {
       const ml = await import('maplibre-gl');
       if (cancelled || !mapDiv.current) return;
       if (!mapRef.current) {
-        mapRef.current = new ml.Map({
+        // `crearMapa` trae el respaldo por tiempo: si el estilo vectorial no
+        // llega, cae al raster en vez de dejar el mapa vacío.
+        mapRef.current = crearMapa(ml, {
           container: mapDiv.current,
-          style: MAPA_STYLE,
-          attributionControl: false,
           center: [geoResults[0].lng, geoResults[0].lat],
           zoom: 11,
         });
-        // Repintar con nuestra paleta en cuanto el estilo esté cargado, y en
-        // cada recarga de estilo (p. ej. si cae al raster de respaldo).
-        mapRef.current.on('style.load', () => aplicarPaletaToLatino(mapRef.current as never));
       }
       const map = mapRef.current;
       markersRef.current.forEach((m) => m.remove());
