@@ -92,6 +92,27 @@
   de `tolatino.com` → Vercel Production. Checklist completo en `ENVIRONMENTS.md §7`.
   **Nota:** al lanzar público subir prod a Supabase **Pro** (sin auto-pausa +
   backups) — hoy Free.
+- [ ] **🟡 Imágenes de demo (Unsplash) — SOLO PRUEBAS, nunca a producción
+  (2026-08-05).** Para explorar los demos como una app profesional se sembraron
+  imágenes reales en la base de PRUEBAS: avatar + portada + galería de 6 en cada
+  negocio (547), una imagen en cada uno de los 6.246 ítems (menú/tienda/
+  servicios), y fotos en propiedades y vehículos. Herramienta:
+  `scripts/seed-imagenes-unsplash.mjs` (idempotente, `--fetch` cachea pools y
+  `--apply` escribe; determinista por hash del id). **No guarda nada en el
+  bucket**: enlaza directo a la CDN de Unsplash (`images.unsplash.com`), que es
+  lo que sus guías prefieren y deja el almacenamiento en cero.
+  **Lo que NO se puede olvidar:**
+  · Son fotos de stock sobre negocios FICTICIOS. **No pueden pasar a producción**
+    — sería engañoso (regla #8). El script se niega a correr contra el ref de
+    producción. En producción, cada negocio real trae sus propias fotos
+    (`image.ts` → bucket `post-photos`, ya construido, $0).
+  · **Guías de Unsplash:** para un uso PÚBLICO habría que atribuir al fotógrafo
+    (nombre + enlace) y disparar su endpoint de descarga. Aquí son datos de demo
+    internos; el crédito del autor queda guardado en el pool por si hiciera falta.
+  · **La cuenta/app de Unsplash** (plan Demo, 50 req/hora) se puede borrar o
+    rotar cuando se quiera; las imágenes ya enlazadas seguirían cargando por CDN.
+  · Solo «El Sabor de Quisqueya» quedó intacto (tiene fotos reales del fundador).
+
 - [ ] **Reloj de asistencia · Horarios · Nómina (módulo Equipo) siguen sin backend.**
   Para un dueño REAL el panel ya muestra tarjetas honestas de "lo estamos
   terminando" (ese gating `isReal ? soonCard : …` estaba bien hecho). Las tablas

@@ -43,3 +43,7 @@ coverage/
 # mobile-audit: standalone tool, Playwright installed locally via npm (not pnpm)
 tools/mobile-audit/package-lock.json
 tools/mobile-audit/img/
+
+# Caché local de pools de Unsplash (URLs de fotos) — no va al repo.
+.unsplash-pools.json
+.unsplash-pools.json.sql
