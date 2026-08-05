@@ -92,6 +92,21 @@
   de `tolatino.com` → Vercel Production. Checklist completo en `ENVIRONMENTS.md §7`.
   **Nota:** al lanzar público subir prod a Supabase **Pro** (sin auto-pausa +
   backups) — hoy Free.
+- [ ] **🟠 Onboarding de negocio: falta el COBRO de Verified (2026-08-05).** El
+  wizard nuevo (handoff "Business Onboarding") ya publica de verdad en Free:
+  7 pasos, autoguardado, crea el negocio con `create_business`, sube logo y
+  fotos, guarda horarios y provisiona el módulo del panel.
+  **Lo que NO está:** la suscripción Verified de **$14.99/mes**. Decisión del
+  fundador (2026-08-05): cobro real **dentro de nuestra hoja** (Stripe Payment
+  Element + `clientSecret`), nunca redirigiendo a la página de Stripe. Hoy el
+  paso 7 dice la verdad —«publicamos gratis ahora; Verified se activa desde tu
+  panel»— en vez de enseñar campos de tarjeta falsos como hacía la versión vieja.
+  **Para cerrarlo hace falta:** una Edge Function que cree Customer +
+  Subscription y devuelva el `clientSecret`, el Payment Element en el paso 7, y
+  que el webhook ponga `tier='verified'`. Ojo: el `startCheckout` que ya existe
+  **redirige a Stripe** (rompe «checkout propio») y su precio en código es
+  **$4.99**, no $14.99 — hay que corregir ambas cosas al hacerlo.
+
 - [ ] **🟡 Imágenes de demo (Unsplash) — SOLO PRUEBAS, nunca a producción
   (2026-08-05).** Para explorar los demos como una app profesional se sembraron
   imágenes reales en la base de PRUEBAS: avatar + portada + galería de 6 en cada
