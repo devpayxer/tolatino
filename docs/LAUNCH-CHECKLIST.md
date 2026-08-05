@@ -128,6 +128,28 @@
     facturas `INV-1740`). Para un negocio real hay que enseñar las de Stripe o
     no enseñar nada.
 
+- [ ] **🟠 Las migraciones se aplican a mano y NADIE lleva la cuenta — dos
+  llevaban meses sin ejecutarse en producción (2026-08-05).** Al preguntar el
+  fundador si quedaba algo pendiente para producción, salió que la **0131**
+  (funciones del landing) y la **0143** (`neighbors_nearby` + el índice del feed
+  por autor) estaban **subidas como código en la rama de producción y jamás
+  ejecutadas en su base**. Nadie podía saberlo: como se pegan a mano en el SQL
+  Editor, **no existe `supabase_migrations.schema_migrations`**, que es la tabla
+  donde el CLI anota lo aplicado.
+  **Aplicadas ya las cuatro que faltaban** (0131, 0143, 0151, 0152), en orden y
+  comprobando antes que las funciones que se reemplazaban en producción eran
+  idénticas a las de pruebas — si hubieran divergido, `create or replace` habría
+  escrito encima de otra cosa.
+  **Guardián nuevo: `node scripts/verify-bases.mjs`.** No compara migraciones,
+  compara el RESULTADO (funciones, columnas, índices, políticas, triggers) de
+  las dos bases, porque una migración puede aplicarse a medias o alguien puede
+  tocar el panel, y el nombre del archivo no se entera. Sale con error si a
+  producción le falta algo. **Correrlo SIEMPRE antes de pasar código**, que es
+  cuando duele: código nuevo llamando a una función que allí no existe.
+  **Lo que queda pendiente de esto:** decidir si se adopta la tabla de control
+  del CLI de Supabase, o si el guardián basta. Hoy basta, pero solo porque hay
+  exactamente dos bases.
+
 - [ ] **`businesses.search_vector` es peso muerto: sobra ella y sobra su índice
   (2026-08-05).** Al arreglar la búsqueda (0152) se vio que la columna VIEJA
   sigue ahí con su GIN (`businesses_search_gin`), y que **ningún trigger la
