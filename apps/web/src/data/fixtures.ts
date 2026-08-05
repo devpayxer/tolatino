@@ -74,6 +74,10 @@ export type Business = {
   // Seller has an active Stripe Connect account → the app offers "Pagar ahora"
   // (online card) instead of pay-on-pickup. Absent/false on demo fixtures.
   acceptsPayments?: boolean;
+  // Punto en el mapa (solo `business_by_slug`, y SOLO si el negocio tiene
+  // dirección: quien trabaja desde casa no publica su domicilio — ver 0151).
+  lat?: number | null;
+  lng?: number | null;
   // The business's delivery offer (from its own settings; business_by_slug only).
   // radius = max delivery distance in miles; undefined = the owner set no limit.
   // tips = the OWNER's own driver-tip policy (opt-in, 100% to their driver — the

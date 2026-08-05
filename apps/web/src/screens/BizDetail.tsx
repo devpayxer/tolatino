@@ -15,6 +15,7 @@ import { uploadPostImages } from '@/lib/image';
 import { startConversation, fetchChatMessages, sendChatMessage, markConversationRead, subscribeChat, type ChatMsg } from '@/lib/chat';
 import { useMyActivity, useOrderPoll } from '@/lib/myActivity';
 import { Avatar, Card, Overlay, OverlayTitle, PrimaryBtn, Stars, VerifiedBadge } from '@/components/ui';
+import { MapaMini } from '@/components/MapaMini';
 import { orderStageIdx, OrderStepsVertical } from '@/components/OrderSteps';
 import { ReportButton, ReportSheet, canReport } from '@/components/ReportButton';
 import { useUrlTab } from '@/lib/urlView';
@@ -2293,9 +2294,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <>
               {divider}
               {secTitle(L('Ubicación', 'Location'))}
-              <div className="relative h-[130px] overflow-hidden rounded-[15px]" style={{ background: 'repeating-linear-gradient(135deg,#E7ECF3 0 14px,#DCE3EC 14px 28px)' }}>
-                <MapPin size={30} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full fill-primary text-white" stroke={1.5} />
-              </div>
+              {/* Mapa REAL del negocio. Antes esto era el rayado gris con un
+                  pin dibujado siempre en el centro — parecía un mapa apagado y
+                  no lo era. `MapaMini` cae solo a ese mismo marcador cuando el
+                  negocio no tiene dirección (quien trabaja desde casa no
+                  publica su domicilio; ver la migración 0151). */}
+              <MapaMini lat={b.lat} lng={b.lng} color={CAT[b.cat].dot} alto={130} />
               <div className="mt-[11px] flex items-center justify-between">
                 <span className="text-[13px] font-semibold text-ink-soft">{address}</span>
                 <button onClick={() => setContactOpen(true)} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">

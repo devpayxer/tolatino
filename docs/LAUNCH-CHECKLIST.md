@@ -128,6 +128,28 @@
     facturas `INV-1740`). Para un negocio real hay que enseñar las de Stripe o
     no enseñar nada.
 
+- [ ] **Mapas: alojar los tiles nosotros cuando convenga (2026-08-05).** Los
+  mapas usaban `tile.openstreetmap.org` — imágenes de 256 px con el estilo
+  clásico de OSM: cargado, borroso en retina y **imposible de personalizar**
+  (llega ya pintado). El fundador lo describió como «mapbox crudo, antiguo y de
+  mala calidad», y tenía razón. Ahora usan **tiles vectoriales de OpenFreeMap**
+  repintados con nuestra paleta (`apps/web/src/lib/mapa.ts`).
+  **Por qué OpenFreeMap y no otro:** gratis, sin clave que caduque, sin límite
+  de peticiones y —lo que decidió— **el mismo formato se puede alojar uno
+  mismo**. Se descartaron Google Maps y Mapbox por cobrar por petición.
+  **Para alojarlo (decisión del fundador: «si podemos alojarlo, mucho mejor»):**
+  1. Bajar el `.pmtiles` de la zona que interese (Protomaps/Planetiler).
+     Pensilvania + Nueva York ≈ 1–3 GB; EE. UU. entero ≈ 25–30 GB.
+  2. Servirlo desde Supabase Storage o Cloudflare R2 — es UN archivo y el
+     navegador pide rangos HTTP, así que **no hace falta servidor de tiles**.
+  3. Poner `NEXT_PUBLIC_MAPA_STYLE` apuntando a nuestro estilo. **Nada más**: el
+     código no cambia, por eso la URL vive en una variable.
+  **Cuándo:** cuando OpenFreeMap dé problemas o el tráfico lo justifique. Hoy no
+  urge, y el almacenamiento no es gratis (con Supabase Pro caben de sobra los
+  estados donde estemos).
+  **Ojo si algo se ve raro:** si el estilo vectorial no carga, el mapa cae solo
+  al raster de OSM de antes — se verá feo pero nunca en blanco.
+
 - [ ] **🟡 Imágenes de demo (Unsplash) — SOLO PRUEBAS, nunca a producción
   (2026-08-05).** Para explorar los demos como una app profesional se sembraron
   imágenes reales en la base de PRUEBAS: avatar + portada + galería de 6 en cada

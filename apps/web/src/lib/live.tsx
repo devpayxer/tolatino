@@ -65,6 +65,9 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     modules: (r.modules as Record<string, boolean> | null) ?? undefined,
     // seller can take online card payments (business_by_slug only)
     acceptsPayments: r.accepts_payments === true,
+    // punto del mapa (business_by_slug; null si el negocio no tiene dirección)
+    lat: r.lat != null ? Number(r.lat) : null,
+    lng: r.lng != null ? Number(r.lng) : null,
     // the business's own delivery offer (fee / minimum / prep time / radius)
     delivery: (() => {
       const d = r.delivery as Record<string, unknown> | null | undefined;

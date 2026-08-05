@@ -8,6 +8,7 @@
 // Overlay sheets, toast, price-pin map, saved hearts, tokens only).
 
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { MAPA_STYLE, aplicarPaletaToLatino } from '@/lib/mapa';
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Map as MlMap, Marker as MlMarker } from 'maplibre-gl';
@@ -304,14 +305,14 @@ export function AutosScreen() {
       if (!mapRef.current) {
         mapRef.current = new ml.Map({
           container: mapDiv.current,
-          style: {
-            version: 8,
-            sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution: '© OpenStreetMap' } },
-            layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-          },
+          style: MAPA_STYLE,
+          attributionControl: false,
           center: [geoResults[0].lng, geoResults[0].lat],
           zoom: 11,
         });
+        // Repintar con nuestra paleta en cuanto el estilo esté cargado, y en
+        // cada recarga de estilo (p. ej. si cae al raster de respaldo).
+        mapRef.current.on('style.load', () => aplicarPaletaToLatino(mapRef.current as never));
       }
       const map = mapRef.current;
       markersRef.current.forEach((m) => m.remove());
