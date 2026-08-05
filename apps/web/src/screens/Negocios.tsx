@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMap as MapIcon, IconMapPin as MapPin, IconPhone as Phone, IconAdjustmentsHorizontal as SlidersHorizontal, IconThumbUp as ThumbUp, IconThumbUpFilled as ThumbUpFilled, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { BizLogo, Card, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
+import { BizLogo, Card, Overlay, OverlayTitle, Paginacion, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData, fetchBusinessBySlug, searchBusinesses, trackSearchAppearance } from '@/lib/live';
@@ -141,6 +141,8 @@ export function NegociosScreen() {
     return () => window.removeEventListener('tl:navtab', onNavTab as EventListener);
   }, []);
   const [showAllFeat, setShowAllFeat] = useState(false);
+  // A donde sube la vista al cambiar de página (ver <Paginacion>).
+  const listaRef = useRef<HTMLDivElement | null>(null);
 
   const patch = (p: Partial<Filters>) => {
     setF((cur) => ({ ...cur, ...p }));
@@ -600,7 +602,7 @@ export function NegociosScreen() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <div ref={listaRef} data-lista className="grid grid-cols-1 gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               {pageResults.map((b, i) => {
                 // Full-width label at the verified → sin-verificar boundary so the
                 // two tiers read as distinct groups (verified always on top).
@@ -620,36 +622,13 @@ export function NegociosScreen() {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <div className="mt-5 flex items-center justify-center gap-2">
-              <button
-                onClick={() => setPage(Math.max(1, curPage - 1))}
-                className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage > 1 ? 'cursor-pointer' : 'opacity-40'}`}
-              >
-                <ChevronLeft size={15} stroke={2.4} />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setPage(n)}
-                  className={`flex h-[34px] min-w-[34px] cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] px-2 text-[12.5px] font-extrabold ${
-                    n === curPage ? 'border-primary bg-primary text-white shadow-cta-sm' : 'border-lilac-line bg-white text-ink-soft'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-              <button
-                onClick={() => setPage(Math.min(totalPages, curPage + 1))}
-                className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage < totalPages ? 'cursor-pointer' : 'opacity-40'}`}
-              >
-                <ChevronRight size={15} stroke={2.4} />
-              </button>
-              <span className="ml-2 text-[11.5px] font-bold text-muted">
-                {(curPage - 1) * PAGE_SIZE + 1}–{Math.min(curPage * PAGE_SIZE, results.length)} {L('de', 'of')} {results.length}
-              </span>
-            </div>
-          )}
+          <Paginacion
+            page={curPage}
+            totalPages={totalPages}
+            onChange={setPage}
+            listaRef={listaRef}
+            resumen={`${(curPage - 1) * PAGE_SIZE + 1}\u2013${Math.min(curPage * PAGE_SIZE, results.length)} ${L('de', 'of')} ${results.length}`}
+          />
         </div>
       </div>
 

@@ -114,6 +114,78 @@ export function BizLogo({ name, logoUrl, color = '#7B61FF', size = 84, radius = 
   );
 }
 
+/**
+ * Paginación de una lista de resultados.
+ *
+ * POR QUÉ ES UN COMPONENTE Y NO ESTÁ COPIADO EN CADA PANTALLA. Lo reportó el
+ * fundador el 2026-08-05: al tocar la página 2 en Negocios, la vista se quedaba
+ * ABAJO, en los propios botones, y había que subir a mano para ver los
+ * resultados nuevos. El mismo bloque estaba duplicado en Negocios y en Eventos,
+ * así que el mismo fallo estaba en las dos. Ahora vive aquí una sola vez: quien
+ * pagine, sube.
+ *
+ * Sube al principio de la LISTA (no al tope absoluto de la página) descontando
+ * la altura del encabezado pegajoso, que se mide en vivo — el mismo criterio de
+ * «sin números mágicos» que ya usa Comunidad. Así la primera tarjeta queda justo
+ * debajo del encabezado y no escondida detrás.
+ *
+ * El salto es instantáneo a propósito: la lista entera cambió, no hay
+ * continuidad visual que preservar, y un desplazamiento suave por una lista
+ * larga se siente lento (mismo comportamiento que Amazon o Yelp).
+ */
+export function Paginacion({ page, totalPages, onChange, listaRef, resumen }: {
+  page: number;
+  totalPages: number;
+  onChange: (n: number) => void;
+  /** Contenedor de los resultados: es a donde se sube al cambiar de página. */
+  listaRef?: { current: HTMLElement | null };
+  /** Texto opcional a la derecha, p. ej. «1–6 de 50». */
+  resumen?: ReactNode;
+}) {
+  if (totalPages <= 1) return null;
+
+  const ir = (n: number) => {
+    const destino = Math.min(totalPages, Math.max(1, n));
+    if (destino === page) return;
+    onChange(destino);
+    if (typeof window === 'undefined') return;
+    // Después del repintado: si se sube antes, se mide la lista vieja.
+    window.requestAnimationFrame(() => {
+      const lista = listaRef?.current;
+      if (!lista) { window.scrollTo({ top: 0 }); return; }
+      const header = document.querySelector('header');
+      const alto = header instanceof HTMLElement ? header.offsetHeight : 0;
+      const y = lista.getBoundingClientRect().top + window.scrollY - alto - 8;
+      window.scrollTo({ top: Math.max(0, y) });
+    });
+  };
+
+  const flecha = 'flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white';
+  return (
+    <div className="mt-5 flex items-center justify-center gap-2">
+      <button onClick={() => ir(page - 1)} aria-label="Anterior" className={`${flecha} ${page > 1 ? 'cursor-pointer' : 'opacity-40'}`}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+      </button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+        <button
+          key={n}
+          onClick={() => ir(n)}
+          aria-current={n === page ? 'page' : undefined}
+          className={`flex h-[34px] min-w-[34px] cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] px-2 text-[12.5px] font-extrabold ${
+            n === page ? 'border-primary bg-primary text-white shadow-cta-sm' : 'border-lilac-line bg-white text-ink-soft'
+          }`}
+        >
+          {n}
+        </button>
+      ))}
+      <button onClick={() => ir(page + 1)} aria-label="Siguiente" className={`${flecha} ${page < totalPages ? 'cursor-pointer' : 'opacity-40'}`}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+      </button>
+      {resumen && <span className="ml-2 text-[11.5px] font-bold text-muted">{resumen}</span>}
+    </div>
+  );
+}
+
 export function Avatar({
   initials,
   color,

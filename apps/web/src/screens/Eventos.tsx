@@ -3,7 +3,7 @@
 // Eventos (`/eventos`) — Handoff v2: featured banner (purple band), filter
 // chips + date chips, event grid with real "Voy" state, detail + tickets.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconCalendarPlus as CalendarPlus, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconMapPin as MapPin, IconNavigation as Navigation, IconShare2 as Share2, IconBuildingStore as Store, IconTag as Tag, IconTicket as Ticket, IconArmchair as Armchair, IconStar as Star, IconStarFilled as StarFilled, IconClock as Clock, IconInfoCircle as InfoCircle, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
@@ -14,7 +14,7 @@ import { useUrlDetail } from '@/lib/urlView';
 import { startMarketplacePayment } from '@/lib/stripe';
 import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { Qr } from '@/components/Qr';
-import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList } from '@/components/ui';
+import { Card, Chip, Overlay, OverlayTitle, Paginacion, PrimaryBtn, SkeletonList } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
 import { ReportButton } from '@/components/ReportButton';
@@ -327,6 +327,8 @@ export function EventosScreen() {
 
   // Pagination over the filtered list (minus the featured hero when it's shown).
   useEffect(() => { setPage(1); }, [sl, cat, date, serverEvents]);
+  // A donde sube la vista al cambiar de página (ver <Paginacion>).
+  const listaRef = useRef<HTMLDivElement | null>(null);
   const gridList = fe ? list.slice(1) : list;
   const totalPages = Math.max(1, Math.ceil(gridList.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
@@ -721,7 +723,7 @@ export function EventosScreen() {
           )}
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div ref={listaRef} data-lista className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {pageList.map((e) => (
             <Card
               key={e.slug ?? e.id}
@@ -759,33 +761,7 @@ export function EventosScreen() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <button
-            onClick={() => setPage(Math.max(1, curPage - 1))}
-            className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage > 1 ? 'cursor-pointer' : 'opacity-40'}`}
-          >
-            <ChevronLeft size={15} stroke={2.4} />
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              onClick={() => setPage(n)}
-              className={`flex h-[34px] min-w-[34px] cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] px-2 text-[12.5px] font-extrabold ${
-                n === curPage ? 'border-primary bg-primary text-white shadow-cta-sm' : 'border-lilac-line bg-white text-ink-soft'
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-          <button
-            onClick={() => setPage(Math.min(totalPages, curPage + 1))}
-            className={`flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-lilac-line bg-white ${curPage < totalPages ? 'cursor-pointer' : 'opacity-40'}`}
-          >
-            <ChevronRight size={15} stroke={2.4} />
-          </button>
-        </div>
-      )}
+      <Paginacion page={curPage} totalPages={totalPages} onChange={setPage} listaRef={listaRef} />
 
       {/* event detail + tickets */}
       <Overlay open={!!detail} onClose={closeDetail} width={480}>
