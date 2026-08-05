@@ -17,8 +17,9 @@
 import { useRouter } from 'next/navigation';
 import { IconMapPin as MapPin, IconStar as Star } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
-import { Card } from '@/components/ui';
+import { BizLogo, Card } from '@/components/ui';
 import { bizTile, type Business, type EventItem } from '@/data/fixtures';
+import { CAT } from '@/lib/tiles';
 
 const MAX_NEGOCIOS = 3;
 const MAX_EVENTOS = 3;
@@ -56,13 +57,9 @@ function NegocioFila({ b, onOpen }: { b: Business; onOpen: () => void }) {
   const { L } = useLang();
   return (
     <button onClick={onOpen} className="flex w-full cursor-pointer items-center gap-2.5 text-left">
-      {/* El logo si lo subió; si no, el degradado de su categoría — el mismo
-          marcador de posición que usa toda la app hasta que hay foto real. */}
-      {b.logoUrl ? (
-        <img src={b.logoUrl} alt="" className="h-9 w-9 flex-none rounded-[10px] object-cover" />
-      ) : (
-        <span className="h-9 w-9 flex-none rounded-[10px]" style={{ background: bizTile(b) }} />
-      )}
+      {/* El logo si lo subió; si no, el monograma con sus iniciales sobre el
+          color de su rubro — el mismo que usa el listado de Negocios. */}
+      <BizLogo name={b.name} logoUrl={b.logoUrl} color={CAT[b.cat].dot} size={36} radius={10} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1">
           <span className="min-w-0 truncate text-[12.5px] font-extrabold text-ink">{b.name}</span>

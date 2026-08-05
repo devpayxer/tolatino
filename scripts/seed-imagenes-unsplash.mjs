@@ -216,8 +216,12 @@ function apply(pools) {
     const base = Math.abs(hashStr(b.id));
     const idx = [];
     for (let k = 0; idx.length < 6 && k < n; k++) { const v = (base + k) % n; if (!idx.includes(v)) idx.push(v); }
-    const avatar = sized(pool[idx[0]].raw, 'w=200&h=200&q=70');
-    partes.push(`update public.businesses set logo_url=${q(avatar)} where id=${q(b.id)};`);
+    // OJO: aquí NO se pone `logo_url`. Se hizo al principio (una foto recortada
+    // en cuadrado) y no funcionaba: una foto de stock no parece un logo. Desde
+    // 2026-08-05 el logo que falta lo pinta `<BizLogo>` en el navegador con las
+    // iniciales del negocio sobre el color de su rubro — sin guardar nada y sin
+    // depender de ningún servicio externo. Si alguien vuelve a sembrar
+    // `logo_url` aquí, tapará ese monograma con una foto que no es un logo.
     idx.forEach((v, k) => {
       const url = sized(pool[v].raw, k === 0 ? 'w=1280&h=720&q=75' : 'w=1000&h=667&q=72');
       filasFoto.push(`(${q(b.id)},${q(url)},${k === 0},${k})`);
@@ -265,7 +269,7 @@ function apply(pools) {
       from (select ${arrLit(urls)} as arr) a;`);
   }
 
-  console.log(`Escribiendo: ${objetivo.length} avatares, ${filasFoto.length} fotos de galería, ${Object.keys(ITEM_A_POOL).length} lotes de ítems, propiedades y vehículos…`);
+  console.log(`Escribiendo: ${filasFoto.length} fotos de galería, ${Object.keys(ITEM_A_POOL).length} lotes de ítems, propiedades y vehículos…`);
   sql(partes.join('\n'));
   console.log('Listo.');
 }

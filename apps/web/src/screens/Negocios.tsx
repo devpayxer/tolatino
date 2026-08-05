@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMap as MapIcon, IconMapPin as MapPin, IconPhone as Phone, IconAdjustmentsHorizontal as SlidersHorizontal, IconThumbUp as ThumbUp, IconThumbUpFilled as ThumbUpFilled, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
-import { Card, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
+import { BizLogo, Card, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
 import { SearchChip } from '@/components/AppHeader';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, bizTile, type Business } from '@/data/fixtures';
 import { useLiveData, fetchBusinessBySlug, searchBusinesses, trackSearchAppearance } from '@/lib/live';
@@ -811,12 +811,7 @@ function BizCardVerified({ b, onOpen }: { b: Business; onOpen: () => void }) {
   return (
     <Card onClick={onOpen} className="border-[rgba(123,97,255,.22)] p-3.5 shadow-[0_2px_14px_rgba(123,97,255,.09)] transition-shadow hover:shadow-card-lg">
       <div className="flex items-start gap-3">
-        {b.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={b.logoUrl} alt="" className="h-[84px] w-[84px] flex-none rounded-tile border border-hair object-cover" />
-        ) : (
-          <span className="h-[84px] w-[84px] flex-none rounded-tile" style={{ background: bizTile(b) }} />
-        )}
+        <BizLogo name={b.name} logoUrl={b.logoUrl} color={CAT[b.cat].dot} size={84} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-[15.5px] font-extrabold text-ink">{b.name}</span>
@@ -889,12 +884,7 @@ function BizCardBasic({ b, onOpen }: { b: Business; onOpen: () => void }) {
   return (
     <Card onClick={onOpen} className="p-3 transition-shadow hover:shadow-card-lg">
       <div className="flex items-start gap-3">
-        {b.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={b.logoUrl} alt="" className="h-[58px] w-[58px] flex-none rounded-tile border border-hair object-cover" />
-        ) : (
-          <span className="h-[58px] w-[58px] flex-none rounded-tile opacity-90" style={{ background: bizTile(b) }} />
-        )}
+        <BizLogo name={b.name} logoUrl={b.logoUrl} color={CAT[b.cat].dot} size={58} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-[14px] font-extrabold text-ink">{b.name}</span>

@@ -56,6 +56,64 @@ export function VerifiedBadge({ size = 19 }: { size?: number }) {
   );
 }
 
+/**
+ * El logo de un negocio en el lado del cliente: su imagen si la subió, y si no
+ * un MONOGRAMA con sus iniciales sobre el color de su rubro.
+ *
+ * Por qué existe (decisión del fundador, 2026-08-05). Antes, un negocio sin
+ * logo salía como un cuadrado rayado VACÍO — un listado lleno de huecos grises,
+ * justo lo contrario de la confianza que tiene que dar. Se descartó tirar de un
+ * servicio de avatares externo (dicebear, ui-avatars): sería una petición a un
+ * tercero cada vez que alguien abre el listado, y a escala eso es una
+ * dependencia en el camino crítico. Esto se pinta solo, sin red y sin guardar
+ * nada.
+ *
+ * Se eligió monograma y no un icono del rubro a propósito: con iconos, las 36
+ * barberías de una ciudad se verían IGUAL. Las iniciales distinguen cada
+ * negocio y el color ya dice de qué es. Mismo criterio que Gmail o Slack.
+ *
+ * El panel del dueño tiene su propia versión (`bizAvatar` en `Panel.tsx`), que
+ * colorea por PLAN en vez de por rubro — es intencional allí y no se toca.
+ */
+export function BizLogo({ name, logoUrl, color = '#7B61FF', size = 84, radius = 14, className = '' }: {
+  name: string;
+  logoUrl?: string | null;
+  /** Color del rubro (`tile_b` del negocio). */
+  color?: string;
+  size?: number;
+  radius?: number;
+  className?: string;
+}) {
+  const initials = (name || '')
+    .split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'TL';
+  if (logoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={logoUrl} alt=""
+        className={`flex-none border border-hair object-cover ${className}`}
+        style={{ width: size, height: size, borderRadius: radius }}
+      />
+    );
+  }
+  return (
+    <span
+      aria-hidden
+      className={`flex flex-none items-center justify-center font-extrabold leading-none text-white ${className}`}
+      style={{
+        width: size, height: size, borderRadius: radius,
+        // El mismo degradado que usa el paso "Logo y fotos" del alta, para que
+        // el dueño vea en el listado exactamente lo que se le enseñó al publicar.
+        background: `linear-gradient(140deg, ${color}, #7B61FF)`,
+        fontSize: Math.round(size * 0.34),
+        letterSpacing: '-.02em',
+      }}
+    >
+      {initials}
+    </span>
+  );
+}
+
 export function Avatar({
   initials,
   color,
