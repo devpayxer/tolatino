@@ -38,8 +38,8 @@ const appearance = {
 
 const money = (cents: number) => '$' + (cents / 100).toFixed(2);
 
-function PayForm({ amount, returnPath, pendingId, onClose }: {
-  amount: number; returnPath: string; pendingId: string; onClose: () => void;
+function PayForm({ amount, returnPath, pendingId, subscription, onClose }: {
+  amount: number; returnPath: string; pendingId: string; subscription?: boolean; onClose: () => void;
 }) {
   const { L } = useLang();
   const stripe = useStripe();
@@ -53,22 +53,37 @@ function PayForm({ amount, returnPath, pendingId, onClose }: {
     setBusy(true); setErr('');
     // On success Stripe redirects the browser to return_url; we only get back here
     // on an immediate error (card declined / validation) — show it, stay on the sheet.
-    const return_url = `${window.location.origin}${returnPath}?pay=success&pid=${encodeURIComponent(pendingId)}`;
+    // Una suscripción no tiene compra en escena que consultar: vuelve con su
+    // propia marca (`?sub=success`) y el tier lo pone el webhook.
+    const qs = subscription ? '?sub=success' : `?pay=success&pid=${encodeURIComponent(pendingId)}`;
+    const return_url = `${window.location.origin}${returnPath}${qs}`;
     const { error } = await stripe.confirmPayment({ elements, confirmParams: { return_url } });
     if (error) { setErr(error.message || L('No se pudo procesar el pago. Revisa tus datos.', 'Payment could not be processed. Check your details.')); setBusy(false); }
   };
 
   return (
     <>
-      <OverlayTitle title={L('Pagar', 'Pay')} onClose={onClose} />
+      <OverlayTitle title={subscription ? L('Activar Verified', 'Activate Verified') : L('Pagar', 'Pay')} onClose={onClose} />
       <div className="mb-4 flex items-baseline justify-between rounded-field bg-lilac-2 px-4 py-3">
-        <span className="text-[12.5px] font-bold text-ink-2">{L('Total a pagar', 'Total to pay')}</span>
-        <span className="text-[20px] font-extrabold text-ink">{money(amount)}</span>
+        <span className="text-[12.5px] font-bold text-ink-2">
+          {subscription ? L('Hoy pagas', 'Charged today') : L('Total a pagar', 'Total to pay')}
+        </span>
+        <span className="text-[20px] font-extrabold text-ink">
+          {money(amount)}{subscription && <span className="text-[11px] font-bold text-muted">/{L('mes', 'mo')}</span>}
+        </span>
       </div>
+      {subscription && (
+        <p className="mb-3 text-[11.5px] font-semibold leading-[1.5] text-muted">
+          {L('Se renueva cada mes. Cancela cuando quieras desde tu panel, en Facturación.',
+             'Renews monthly. Cancel anytime from your dashboard, under Billing.')}
+        </p>
+      )}
       <PaymentElement onReady={() => setReady(true)} options={{ layout: 'tabs' }} />
       {err && <div className="mt-3 rounded-field bg-pink-bg px-3 py-2.5 text-[12px] font-bold text-pink-dark">{err}</div>}
       <PrimaryBtn className="mt-4" onClick={pay} disabled={!stripe || !ready || busy}>
-        {busy ? L('Procesando…', 'Processing…') : `${L('Pagar', 'Pay')} · ${money(amount)}`}
+        {busy ? L('Procesando…', 'Processing…')
+          : subscription ? `${L('Suscribirme', 'Subscribe')} · ${money(amount)}/${L('mes', 'mo')}`
+            : `${L('Pagar', 'Pay')} · ${money(amount)}`}
       </PrimaryBtn>
       <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-muted">
         <Lock size={13} stroke={2.2} />
@@ -78,19 +93,22 @@ function PayForm({ amount, returnPath, pendingId, onClose }: {
   );
 }
 
-export function CheckoutSheet({ open, clientSecret, amount, returnPath, pendingId, onClose }: {
+export function CheckoutSheet({ open, clientSecret, amount, returnPath, pendingId = '', subscription, onClose }: {
   open: boolean;
   clientSecret: string | null;
   amount: number;
   returnPath: string;
-  pendingId: string;
+  /** Compra en escena a la que volver. No aplica en modo suscripción. */
+  pendingId?: string;
+  /** Cobro recurrente (Verified): cambia el copy y la vuelta, mismo Element. */
+  subscription?: boolean;
   onClose: () => void;
 }) {
   if (!open || !clientSecret) return null;
   return (
     <Overlay open onClose={onClose} width={460} fullHeightSheet>
       <Elements stripe={getStripe()} options={{ clientSecret, appearance }}>
-        <PayForm amount={amount} returnPath={returnPath} pendingId={pendingId} onClose={onClose} />
+        <PayForm amount={amount} returnPath={returnPath} pendingId={pendingId} subscription={subscription} onClose={onClose} />
       </Elements>
     </Overlay>
   );

@@ -92,20 +92,41 @@
   de `tolatino.com` → Vercel Production. Checklist completo en `ENVIRONMENTS.md §7`.
   **Nota:** al lanzar público subir prod a Supabase **Pro** (sin auto-pausa +
   backups) — hoy Free.
-- [ ] **🟠 Onboarding de negocio: falta el COBRO de Verified (2026-08-05).** El
-  wizard nuevo (handoff "Business Onboarding") ya publica de verdad en Free:
-  7 pasos, autoguardado, crea el negocio con `create_business`, sube logo y
-  fotos, guarda horarios y provisiona el módulo del panel.
-  **Lo que NO está:** la suscripción Verified de **$14.99/mes**. Decisión del
-  fundador (2026-08-05): cobro real **dentro de nuestra hoja** (Stripe Payment
-  Element + `clientSecret`), nunca redirigiendo a la página de Stripe. Hoy el
-  paso 7 dice la verdad —«publicamos gratis ahora; Verified se activa desde tu
-  panel»— en vez de enseñar campos de tarjeta falsos como hacía la versión vieja.
-  **Para cerrarlo hace falta:** una Edge Function que cree Customer +
-  Subscription y devuelva el `clientSecret`, el Payment Element en el paso 7, y
-  que el webhook ponga `tier='verified'`. Ojo: el `startCheckout` que ya existe
-  **redirige a Stripe** (rompe «checkout propio») y su precio en código es
-  **$4.99**, no $14.99 — hay que corregir ambas cosas al hacerlo.
+- [ ] **🟠 Suscripción Verified: HECHA en pruebas, falta desplegarla a
+  PRODUCCIÓN (2026-08-05).** El onboarding nuevo publica de verdad (Free) y ahora
+  **cobra Verified $14.99/mes dentro de nuestra hoja** (Payment Element), sin
+  redirigir a Stripe — la regla «checkout propio». Función nueva:
+  `supabase/functions/stripe-subscribe`.
+  **Lo que falta para producción:**
+  1. Desplegarla al proyecto de producción:
+     `SUPABASE_PROJECT_REF=vurqsebgsacickxsxfeh node scripts/deploy-fn.mjs stripe-subscribe supabase/functions/stripe-subscribe/index.ts true`
+     (⚠️ **`true` al final = `verify_jwt`**. Sin eso, cualquiera podría llamarla.)
+  2. Que `STRIPE_SECRET_KEY` exista en el entorno de las Edge Functions de
+     producción, y que el webhook escuche `customer.subscription.*` (ya lo hace).
+  3. Stripe sigue en **modo prueba** en producción (`pk_test`): pasar a vivo es
+     el punto de esta lista sobre llaves `sk_live`/`pk_live`.
+  **Cómo está construido, para no romperlo:** la función NUNCA otorga el tier —
+  solo crea la suscripción como `incomplete` y devuelve el `clientSecret`. El
+  tier lo pone el **webhook** vía `apply_subscription` cuando Stripe confirma el
+  cobro. Si algún día se "arregla" poniendo el tier ahí, se estaría regalando
+  Verified sin cobrar. Verificado con usuarios desechables: sin sesión → 401,
+  sesión ajena → 403, dueño → `clientSecret` + `$14.99`, y el tier se queda en
+  `free` hasta el webhook.
+  **Trampa de la API de Stripe que ya costó una vuelta:** el secreto del primer
+  cobro está en `invoice.confirmation_secret` en las versiones nuevas y en
+  `invoice.payment_intent` en las viejas. La función prueba las dos; si alguien
+  la simplifica a una sola, vuelve el error «no client secret».
+
+- [ ] **Facturación del panel: Premium sigue redirigiendo a Stripe, y sus datos
+  son de demo (2026-08-05).** Al alinear precios se arreglaron dos cosas en
+  `modules/Billing.tsx`: Verified anunciaba **$19/mes** (el plan vale $14.99 —
+  cobrar distinto de lo anunciado es un fallo de confianza) y su cobro **salía a
+  la página de Stripe**; ahora usa la hoja propia. **Queda pendiente:**
+  · **Premium** ($49) sigue por `startCheckout` (redirige, rompe «checkout
+    propio») porque su precio y beneficios no están decididos. Decidir si existe.
+  · La pestaña **Facturas** muestra cifras inventadas («Pagado este año $190.00»,
+    facturas `INV-1740`). Para un negocio real hay que enseñar las de Stripe o
+    no enseñar nada.
 
 - [ ] **🟡 Imágenes de demo (Unsplash) — SOLO PRUEBAS, nunca a producción
   (2026-08-05).** Para explorar los demos como una app profesional se sembraron

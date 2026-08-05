@@ -16,7 +16,8 @@ import type { PanelCtx, TabKey, Tier } from '@/screens/negocio/tabs';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
 import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { useBizAdmin } from '@/lib/bizAdmin';
-import { startCheckout, openBillingPortal } from '@/lib/stripe';
+import { startCheckout, startSubscription, openBillingPortal } from '@/lib/stripe';
+import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { supabase } from '@/lib/supabase';
 import { useScrollLock } from '@/lib/scrollLock';
 
@@ -40,6 +41,8 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const [sub, setSub] = useState<Sub>('plan');
   const [addons, setAddons] = useState<Record<AddonKey, boolean>>({ featured: false, boost: false, seats: false, sms: false });
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [subSecret, setSubSecret] = useState<string | null>(null);   // hoja propia de Verified
+  const [subAmount, setSubAmount] = useState(1499);
   const [cancelOpen, setCancelOpen] = useState(false);
   useScrollLock(cancelOpen);
   const [pick, setPick] = useState<'verified' | 'premium'>('premium');
@@ -64,7 +67,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const meta = { free: { name: 'Free', price: '$0/mes' }, verified: { name: 'Verified', price: '$19/mes' }, premium: { name: 'Premium', price: '$49/mes' } }[tier];
+  const meta = { free: { name: 'Free', price: '$0/mes' }, verified: { name: 'Verified', price: '$14.99/mes' }, premium: { name: 'Premium', price: '$49/mes' } }[tier];
 
   // A REAL signed-in business shows its REAL subscription (business_subscriptions)
   // and manages its card/invoices in the Stripe portal — never invented data.
@@ -109,9 +112,25 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     setUpgradeOpen(true);
   };
   const confirmUpgrade = async () => {
-    // Real business → Stripe Checkout (redirect). Demo → local restyle (showcase).
     if (real && !admin.demo) {
       setBusy(true);
+      // Verified se cobra DENTRO de nuestra hoja (regla «checkout propio»): la
+      // tarjeta nunca sale de To'Latino. Antes esto redirigía a la página de
+      // Stripe — y además anunciaba $19 cuando el plan vale $14.99.
+      if (pick === 'verified') {
+        const r = await startSubscription('verified', real.id);
+        setBusy(false);
+        if (r.clientSecret) {
+          setSubAmount(r.amount ?? 1499);
+          setSubSecret(r.clientSecret);
+          setUpgradeOpen(false);
+          return;
+        }
+        if (r.alreadyActive) { flash(L('Ya tienes Verified activo', 'You already have Verified')); return; }
+        flash(r.error === 'offline' ? L('Sin conexión', 'Offline') : L('No se pudo iniciar el pago. Intenta de nuevo.', 'Could not start checkout. Try again.'));
+        return;
+      }
+      // Premium sigue por el camino antiguo hasta que tenga precio decidido.
       const { url, error } = await startCheckout(pick, real.id);
       setBusy(false);
       if (url) { window.location.href = url; return; }
@@ -157,7 +176,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         bg: '#fff', blob: 'rgba(123,97,255,.06)', badge: '○', name: 'Free', price: '· $0/mes',
         renew: L('Sin tarjeta', 'No card'),
         line: L('Listado básico. Mejora para desbloquear módulos e insignia.', 'Basic listing. Upgrade to unlock modules and the badge.'),
-        upgrade: { label: L('Mejorar a Verified · $19/mes', 'Upgrade to Verified · $19/mo'), bg: '#7B61FF', c: '#fff', to: 'verified' as const },
+        upgrade: { label: L('Mejorar a Verified · $14.99/mes', 'Upgrade to Verified · $14.99/mo'), bg: '#7B61FF', c: '#fff', to: 'verified' as const },
         showChange: false,
       }
     : isPremium
@@ -168,7 +187,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           upgrade: null, showChange: true,
         }
       : {
-          bg: 'linear-gradient(150deg,#7B61FF,#6743E2)', blob: 'rgba(255,255,255,.14)', badge: '✓', name: 'Verified', price: '· $19/mes',
+          bg: 'linear-gradient(150deg,#7B61FF,#6743E2)', blob: 'rgba(255,255,255,.14)', badge: '✓', name: 'Verified', price: '· $14.99/mes',
           renew: L('Renueva 14 Nov', 'Renews Nov 14'),
           line: L('Insignia verificada, todos los módulos y 5× visibilidad.', 'Verified badge, all modules and 5× visibility.'),
           upgrade: { label: L('Mejorar a Premium · $49/mes', 'Upgrade to Premium · $49/mo'), bg: '#F4B740', c: '#1E1B2E', to: 'premium' as const },
@@ -346,7 +365,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const Y = '✓', N = '—';
   const planHeads: { name: string; price: string; current: boolean; hi: boolean }[] = [
     { name: 'Free', price: '$0', current: isFree, hi: false },
-    { name: 'Verified', price: '$19/mo', current: tier === 'verified', hi: true },
+    { name: 'Verified', price: '$14.99/mo', current: tier === 'verified', hi: true },
     { name: 'Premium', price: '$49/mo', current: isPremium, hi: false },
   ];
   const compareRows: [string, string, string, string][] = [
@@ -514,7 +533,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <div className="mt-0.5 text-[10px] font-medium text-muted-2">{iv[1]} · Verified · {L('mensual', 'monthly')}</div>
             </div>
             <div className="flex-none text-right">
-              <div className="text-[12.5px] font-extrabold text-ink">$19.00</div>
+              <div className="text-[12.5px] font-extrabold text-ink">$14.99</div>
               <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Pagada', 'Paid')}</span>
             </div>
             <button onClick={() => flash(L('Descargando ', 'Downloading ') + iv[0])} className="flex-none cursor-pointer p-1 text-muted-2" aria-label={L('Descargar', 'Download')}>
@@ -528,10 +547,10 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- upgrade sheet content ----------
   const planOpts: { key: 'verified' | 'premium'; name: string; price: string; popular: boolean; feats: string[] }[] = [
-    { key: 'verified', name: 'Verified', price: '$19/mes', popular: true, feats: [L('Insignia verificada', 'Verified badge'), L('Todos los módulos', 'All modules'), L('Fotos ilimitadas · 5× visibilidad', 'Unlimited photos · 5× visibility')] },
+    { key: 'verified', name: 'Verified', price: '$14.99/mes', popular: true, feats: [L('Insignia verificada', 'Verified badge'), L('Todos los módulos', 'All modules'), L('Fotos ilimitadas · 5× visibilidad', 'Unlimited photos · 5× visibility')] },
     { key: 'premium', name: 'Premium', price: '$49/mes', popular: false, feats: [L('Todo lo de Verified', 'Everything in Verified'), L('Insights AI + posición destacada', 'Insights AI + featured'), L('Soporte 24/7', '24/7 support')] },
   ];
-  const pickMeta = { verified: ['Verified', '$19/mes'], premium: ['Premium', '$49/mes'] }[pick];
+  const pickMeta = { verified: ['Verified', '$14.99/mes'], premium: ['Premium', '$49/mes'] }[pick];
 
   // ---------- upgrade page (full-screen) ----------
   const upgradePage = (
@@ -581,7 +600,12 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- render ----------
   // Upgrade takes over the screen as a full page (no cramped bottom sheet).
-  if (upgradeOpen) return <>{upgradePage}<Toast msg={toast} /></>;
+  const subSheet = (
+    <CheckoutSheet open={!!subSecret} clientSecret={subSecret} amount={subAmount}
+      returnPath="/negocio/" subscription onClose={() => setSubSecret(null)} />
+  );
+
+  if (upgradeOpen) return <>{upgradePage}{subSheet}<Toast msg={toast} /></>;
 
   return (
     <div className="relative pb-8">
@@ -662,6 +686,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       )}
 
+      {subSheet}
       <Toast msg={toast} />
     </div>
   );

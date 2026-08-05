@@ -49,6 +49,8 @@ import { CAT, CAT_KEYS, tile, type CatKey } from '@/lib/tiles';
 import { clearDraft, loadDraft, saveDraft } from '@/lib/draftStore';
 import type { WeekHours } from '@/lib/hours';
 import { PrimaryBtn, VerifiedBadge, Wordmark } from '@/components/ui';
+import { CheckoutSheet } from '@/components/CheckoutSheet';
+import { startSubscription } from '@/lib/stripe';
 import { LangToggle } from '@/components/AppHeader';
 import { HoursEditor, defaultWeek } from '@/components/HoursEditor';
 import { FEATURES_BY_CAT, FEATURES_COMMON, SUBCATS, VIEW_PATH } from '@/data/fixtures';
@@ -97,6 +99,8 @@ export function BizOnboardingScreen() {
 
   const [step, setStep] = useState<Step>('cat');
   const [cat, setCat] = useState<CatKey | null>(null);
+  const [subSecret, setSubSecret] = useState<string | null>(null);   // hoja de pago de Verified
+  const [payAmount, setPayAmount] = useState(Math.round(14.99 * 100));
   const [subs, setSubs] = useState<string[]>([]);
   const [allSubs, setAllSubs] = useState(false);
   const [name, setName] = useState('');
@@ -249,6 +253,20 @@ export function BizOnboardingScreen() {
     live.refresh();      // el listado nuevo aparece para todos los vecinos
     setBusy(false);
     setStep('done');
+
+    // Verified se cobra DESPUÉS de publicar, a propósito: si la tarjeta falla,
+    // el negocio ya quedó publicado y nadie pierde su trabajo. El tier lo pone
+    // el webhook cuando Stripe confirma; aquí solo se abre nuestra hoja.
+    if (isVerified && bizId) {
+      const r = await startSubscription('verified', bizId);
+      if (r.clientSecret) {
+        setPayAmount(r.amount ?? Math.round(VERIFIED_PRICE * 100));
+        setSubSecret(r.clientSecret);
+      } else if (!r.alreadyActive) {
+        flash(L('Tu negocio quedó publicado. Activa Verified desde tu panel.',
+                'Your business is live. Activate Verified from your dashboard.'));
+      }
+    }
   };
 
   const next = () => {
@@ -781,12 +799,28 @@ export function BizOnboardingScreen() {
 
                 {/* Plan / cobro */}
                 {isVerified ? (
-                  <div className="mt-4 flex items-start gap-2.5 rounded-[12px] bg-lilac-2 p-3.5">
-                    <ShieldCheck size={16} stroke={2.2} className="mt-px flex-none text-primary-dark" />
-                    <span className="text-[11.5px] font-semibold leading-[1.45] text-home-badge">
-                      {L('Publicamos tu negocio ahora mismo, gratis. El cobro de Verified ($14.99/mes) se activa desde tu panel en Facturación — con tu tarjeta, dentro de To’Latino.',
-                         "We publish your business right now, free. Verified ($14.99/mo) is activated from your dashboard under Billing — with your card, inside To'Latino.")}
-                    </span>
+                  <div className="mt-4 rounded-[16px] border-[1.5px] border-lilac-line p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[11px] bg-lilac">
+                        <ShieldCheck size={17} stroke={2.2} className="text-primary-dark" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[13.5px] font-extrabold text-ink">Verified</span>
+                        <span className="block text-[11px] font-medium text-muted-2">{L('Suscripción mensual', 'Monthly subscription')}</span>
+                      </span>
+                      <span className="text-right">
+                        <span className="block text-[16px] font-extrabold text-ink">${VERIFIED_PRICE}</span>
+                        <span className="block text-[10px] font-semibold text-muted-2">/{L('mes', 'mo')}</span>
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-hair pt-3">
+                      <span className="text-[12.5px] font-extrabold text-ink">{L('Total hoy', 'Total today')}</span>
+                      <span className="text-[15px] font-extrabold text-ink">${VERIFIED_PRICE}</span>
+                    </div>
+                    <p className="mt-2.5 text-[11px] font-semibold leading-[1.45] text-muted">
+                      {L('Publicamos tu negocio primero y luego te pedimos la tarjeta, dentro de To’Latino. Si el cobro falla, tu negocio ya quedó publicado.',
+                         "We publish your business first, then ask for your card inside To'Latino. If the charge fails, your listing is already live.")}
+                    </p>
                   </div>
                 ) : (
                   <div className="mt-4 flex items-start gap-2.5 rounded-[12px] bg-green-bg2 p-3.5">
@@ -896,6 +930,18 @@ export function BizOnboardingScreen() {
           )}
         </div>
       </div>
+
+      {/* Cobro de Verified — nuestra hoja, con el Payment Element de Stripe.
+          Se abre encima de la pantalla "listo": el negocio YA está publicado, así
+          que cerrarla sin pagar no pierde nada, solo deja el plan en Free. */}
+      <CheckoutSheet
+        open={!!subSecret}
+        clientSecret={subSecret}
+        amount={payAmount}
+        returnPath="/negocio/"
+        subscription
+        onClose={() => setSubSecret(null)}
+      />
 
       {/* Toast */}
       {toast && (

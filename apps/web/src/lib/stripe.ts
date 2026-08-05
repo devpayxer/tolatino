@@ -19,6 +19,28 @@ export function getStripe(): Promise<Stripe | null> {
   return stripeJs;
 }
 
+/**
+ * Suscribir un negocio a Verified COBRANDO DENTRO DE NUESTRA HOJA.
+ *
+ * Devuelve el `clientSecret` de la primera factura para montarlo en
+ * `CheckoutSheet` (Payment Element) — nunca una URL de Stripe. Es la regla
+ * «checkout propio SIEMPRE» del fundador: Stripe pinta los campos de tarjeta
+ * dentro de iframes seguros (el PCI sigue mínimo), pero la marca y el flujo son
+ * de To'Latino.
+ *
+ * El tier NO se otorga aquí: lo pone el webhook cuando Stripe confirma el cobro.
+ * `alreadyActive` avisa de que el negocio ya paga, para no cobrarle dos veces.
+ */
+export async function startSubscription(
+  plan: 'verified', businessId: string,
+): Promise<{ clientSecret?: string; amount?: number; alreadyActive?: boolean; error?: string }> {
+  if (!supabase) return { error: 'offline' };
+  const { data, error } = await supabase.functions.invoke('stripe-subscribe', { body: { plan, businessId } });
+  if (data?.clientSecret) return { clientSecret: data.clientSecret as string, amount: data.amount as number };
+  if (data?.alreadyActive) return { alreadyActive: true };
+  return { error: (data?.error as string) || error?.message || 'subscribe failed' };
+}
+
 /** Start a subscription Checkout for a business plan. Returns the Stripe URL. */
 export async function startCheckout(plan: 'verified' | 'premium', businessId: string): Promise<{ url?: string; error?: string }> {
   if (!supabase) return { error: 'offline' };
