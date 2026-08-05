@@ -8,6 +8,7 @@
 // mirror Eventos.tsx (useUrlDetail deep link, Overlay sheets, toast, tokens).
 
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { crearMapa } from '@/lib/mapa';
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
@@ -630,7 +631,7 @@ export function BienesRaicesScreen() {
       <div className="flex items-center gap-3">
         {d.bizLogo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={d.bizLogo} alt="" className="h-12 w-12 flex-none rounded-tile object-cover" />
+          <img src={imgUrl(d.bizLogo, ANCHO.icono)} alt="" className="h-12 w-12 flex-none rounded-tile object-cover" />
         ) : (
           <span className="flex h-12 w-12 flex-none items-center justify-center rounded-tile bg-lilac-2 text-[15px] font-extrabold text-primary-dark">
             {initialsOf(d.bizName)}
@@ -788,7 +789,7 @@ export function BienesRaicesScreen() {
                       onClick={() => setGi(i)}
                       aria-label={`${L('Foto', 'Photo')} ${i + 1}`}
                       className={`h-[46px] w-[46px] flex-none cursor-pointer rounded-[10px] border-2 bg-cover bg-center ${i === gi ? 'border-primary' : 'border-white'}`}
-                      style={{ backgroundImage: `url("${ph}")` }}
+                      style={{ backgroundImage: `url("${imgUrl(ph, ANCHO.tarjeta)}")` }}
                     />
                   ))}
                 </div>
@@ -1070,7 +1071,7 @@ export function BienesRaicesScreen() {
                     <div className="flex items-center gap-2.5 bg-white px-4 py-2.5">
                       {feat.bizLogo ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={feat.bizLogo} alt="" className="h-8 w-8 flex-none rounded-[9px] object-cover" />
+                        <img src={imgUrl(feat.bizLogo, ANCHO.icono)} alt="" className="h-8 w-8 flex-none rounded-[9px] object-cover" />
                       ) : (
                         <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-lilac-2 text-[11px] font-extrabold text-primary-dark">
                           {initialsOf(feat.bizName)}
@@ -1275,7 +1276,7 @@ export function BienesRaicesScreen() {
                     <Card key={a.id} className="flex items-center gap-3 p-3.5" onClick={() => router.push(`/negocios/?b=${encodeURIComponent(a.slug)}`)}>
                       {a.logo ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={a.logo} alt="" className="h-12 w-12 flex-none rounded-tile object-cover" />
+                        <img src={imgUrl(a.logo, ANCHO.icono)} alt="" className="h-12 w-12 flex-none rounded-tile object-cover" />
                       ) : (
                         <span className="flex h-12 w-12 flex-none items-center justify-center rounded-tile bg-lilac-2 text-[15px] font-extrabold text-primary-dark">
                           {initialsOf(a.name)}
@@ -1817,7 +1818,7 @@ export function BienesRaicesScreen() {
               <Card className="mt-4 flex w-full max-w-[310px] items-center gap-3 p-3.5 text-left">
                 {d.bizLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={d.bizLogo} alt="" className="h-11 w-11 flex-none rounded-tile object-cover" />
+                  <img src={imgUrl(d.bizLogo, ANCHO.icono)} alt="" className="h-11 w-11 flex-none rounded-tile object-cover" />
                 ) : (
                   <span className="flex h-11 w-11 flex-none items-center justify-center rounded-tile bg-lilac-2 text-[14px] font-extrabold text-primary-dark">
                     {initialsOf(d.bizName)}
@@ -1848,7 +1849,7 @@ export function BienesRaicesScreen() {
               <div className="mb-3 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
                 {d.bizLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={d.bizLogo} alt="" className="h-10 w-10 flex-none rounded-tile object-cover" />
+                  <img src={imgUrl(d.bizLogo, ANCHO.icono)} alt="" className="h-10 w-10 flex-none rounded-tile object-cover" />
                 ) : (
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-tile bg-lilac-2 text-[13px] font-extrabold text-primary-dark">
                     {initialsOf(d.bizName)}

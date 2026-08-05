@@ -38,9 +38,18 @@ function curlRelay(req) {
 // poder medir su peso REAL en vez de contar ceros.
 function curlBinario(url) {
   return new Promise((resolve) => {
-    execFile('curl', ['-sS', '--max-time', '25', '--output', '-', url],
+    execFile('curl', ['-sS', '--max-time', '25', '-H', 'Accept: image/webp,image/*,*/*', '--output', '-', url],
       { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 }, (e, o) => resolve(e && !o?.length ? null : o));
   });
+}
+
+/** Qué tipo anunciar: lo que de verdad va a devolver esa URL. */
+function tipoDe(url) {
+  if (/\/render\/image\//.test(url)) return 'image/webp';
+  if (/[?&]fm=webp/.test(url)) return 'image/webp';
+  if (/\.png(\?|$)/i.test(url)) return 'image/png';
+  if (/\.webp(\?|$)/i.test(url)) return 'image/webp';
+  return 'image/jpeg';
 }
 
 const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
@@ -66,18 +75,24 @@ const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
     pedidos.push({ url: req.url(), ms: Date.now() - t0, bytes });
   });
 
-  await page.route('**://*.supabase.co/rest/**', async (route) => {
-    const { status, body } = await curlRelay(route.request());
-    await route.fulfill({ status, headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }, body });
-  });
+  // UNA sola ruta para Supabase, que decide dentro. Antes eran dos y las
+  // imágenes salían rotas: en Playwright gana la ruta registrada MÁS TARDE, así
+  // que la genérica se comía las de `/storage/` y las devolvía como texto —
+  // binario corrompido. El fallo era de la prueba, no de la app.
   await page.route('**://*.supabase.co/**', async (route) => {
+    const url = route.request().url();
+    if (url.includes('/storage/v1/')) {
+      const buf = await curlBinario(url);
+      if (!buf) return route.abort();
+      return route.fulfill({ status: 200, headers: { 'content-type': tipoDe(url), 'access-control-allow-origin': '*' }, body: buf });
+    }
     const { status, body } = await curlRelay(route.request());
     await route.fulfill({ status, headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }, body });
   });
   await page.route('**://images.unsplash.com/**', async (route) => {
     const buf = await curlBinario(route.request().url());
     if (!buf) return route.abort();
-    await route.fulfill({ status: 200, headers: { 'content-type': 'image/jpeg', 'access-control-allow-origin': '*' }, body: buf });
+    await route.fulfill({ status: 200, headers: { 'content-type': tipoDe(route.request().url()), 'access-control-allow-origin': '*' }, body: buf });
   });
   await page.route('**://fonts.g*/**', (r) => r.abort());
   await page.addInitScript(() => localStorage.setItem('tl.city', JSON.stringify({ label: 'Hazleton, PA', lat: 40.9584, lng: -75.9746, address: null, alat: null, alng: null, addressId: null })));
@@ -90,7 +105,7 @@ const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
   await page.waitForTimeout(2500);
 
   // ── imágenes ──────────────────────────────────────────────────────────────
-  const imgs = pedidos.filter((p) => /images\.unsplash\.com|storage\/v1\/object/.test(p.url));
+  const imgs = pedidos.filter((p) => /images\.unsplash\.com|storage\/v1\//.test(p.url));
   const totalImg = imgs.reduce((a, b) => a + b.bytes, 0);
   console.log('\n── IMÁGENES (ficha del negocio, 402 px de ancho) ───────────────');
   console.log(`  ${imgs.length} imágenes · ${kb(totalImg)} en total · ${imgs.length ? kb(totalImg / imgs.length) : '—'} de media`);

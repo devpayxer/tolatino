@@ -6,6 +6,7 @@
 // module pages.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { useRouter } from 'next/navigation';
 import { IconChartBar as BarChart3, IconBell as Bell, IconBike as Bike, IconCheck as Check, IconChevronDown as ChevronDown, IconExternalLink as ExternalLink, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconPackage as Package, IconPlus as Plus, IconSearch as Search, IconShoppingBag as ShoppingBag, IconBuildingStore as Store, IconSpeakerphone as Megaphone, IconStar as Star, IconTicket as Ticket, IconToolsKitchen2 as Utensils, IconX as X } from '@tabler/icons-react';
 import type { Icon as LucideIcon } from '@tabler/icons-react';
@@ -221,7 +222,7 @@ export function PanelScreen() {
   const bizAvatar = (cls: string) =>
     real?.logo_url ? (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={real.logo_url} alt="" className={`${cls} flex-none border border-hair object-cover`} />
+      <img src={imgUrl(real.logo_url, ANCHO.icono)} alt="" className={`${cls} flex-none border border-hair object-cover`} />
     ) : (
       <span className={`${cls} flex flex-none items-center justify-center font-extrabold text-white`} style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
         {bizInitials}

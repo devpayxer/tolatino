@@ -17,6 +17,7 @@
 // Setup (zones/drivers/pickup/carriers) persists to businesses.settings.
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconBike as Bike, IconPackages as Boxes, IconCircleCheck as CheckCircle2, IconClock as Clock, IconHelmet as HardHat, IconMapPin as MapPin, IconNavigation as Navigation, IconPackage as Package, IconPackage as PackageCheck, IconRoute as Route, IconBuildingStore as Store, IconTag as Tag, IconTruck as Truck, IconToolsKitchen2 as Utensils, IconBolt as Zap } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
@@ -486,7 +487,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                 <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-[12px] font-extrabold text-white" style={{ background: d.photo ? '#EAE7F6' : d.color }}>
                   {d.photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={d.photo} alt="" className="h-full w-full object-cover" />
+                    <img src={imgUrl(d.photo, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                   ) : d.initials}
                 </span>
                 <span className="absolute -bottom-px -right-px h-3 w-3 rounded-full border-2 border-white" style={{ background: d.dot }} />
@@ -933,7 +934,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                     <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full text-[11px] font-extrabold text-white" style={{ background: d.photo ? '#EAE7F6' : d.color }}>
                       {d.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={d.photo} alt="" className="h-full w-full object-cover" />
+                        <img src={imgUrl(d.photo, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                       ) : d.initials}
                     </span>
                     <span className="min-w-0 flex-1"><span className="block text-[12.5px] font-extrabold text-ink">{d.name}</span><span className="block text-[10px] font-semibold text-muted-2">{L(d.sEs, d.sEn)}{d.vehicle ? ` · ${d.vehicle}` : ''}</span></span>

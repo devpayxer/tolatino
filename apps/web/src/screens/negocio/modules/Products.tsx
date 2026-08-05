@@ -17,6 +17,7 @@
 // card — so Products and the Food menu configure fulfillment once.
 
 import { useEffect, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronUp as ChevronUp, IconCopy as Copy, IconCreditCard as CreditCard, IconHelmet as HardHat, IconLayersIntersect as Layers, IconLoader2 as Loader2, IconPencil as Pencil, IconPlus as Plus, IconSearch as Search, IconBuildingStore as Store, IconTrash as Trash2, IconTruck as Truck, IconUpload as Upload } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
@@ -384,7 +385,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
             <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
               <div className="relative h-[104px]" style={{ background: stripe(dc.tile) }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                {draft.photoUrl && <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
               </div>
               <div className="flex items-center justify-between p-3.5">
                 <div className="min-w-0">
@@ -412,7 +413,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       <div className={`overflow-hidden ${cardCls}`}>
         <div className="relative h-[96px]" style={{ background: stripe(dc.tile) }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          {draft.photoUrl && <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
         </div>
         <div className="flex items-start justify-between gap-2.5 p-3.5">
           <div className="min-w-0">
@@ -473,7 +474,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                     {draft.photoUrl ? (
                       <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
+                        <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                         <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
                         <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} stroke={2.2} /></button>
                       </div>
@@ -531,7 +532,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                             {draft.photos.map((u, i) => (
                               <div key={i} className="relative h-[72px] w-[72px] overflow-hidden rounded-tile border border-hair">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={u} alt="" className="h-full w-full object-cover" />
+                                <img src={imgUrl(u, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                                 <button type="button" onClick={() => upD({ photos: draft.photos.filter((_, j) => j !== i) })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-0.5 top-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={11} stroke={2.4} /></button>
                               </div>
                             ))}
@@ -774,7 +775,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                 <div className="flex gap-3">
                   <span className="relative h-[60px] w-[60px] flex-none overflow-hidden rounded-tile" style={{ background: stripe(catOf(p.cat).tile) }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {p.imageUrl && <img src={p.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                    {p.imageUrl && <img src={imgUrl(p.imageUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-start justify-between gap-2">
@@ -946,7 +947,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
               <button key={p.id} onClick={() => startEdit(p)} className={`flex w-full cursor-pointer items-center gap-3 px-3.5 py-3 text-left ${i < products.length - 1 ? 'border-b border-hair' : ''}`}>
                 <span className="relative h-10 w-10 flex-none overflow-hidden rounded-tile" style={{ background: stripe(catOf(p.cat).tile) }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {p.imageUrl && <img src={p.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                  {p.imageUrl && <img src={imgUrl(p.imageUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[12px] font-extrabold text-ink">{p.name}</div>

@@ -12,6 +12,7 @@
 // the rail to a sticky side column.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { IconCalendar as Calendar, IconCheck as Check, IconHeartFilled as Heart, IconPhoto as ImageIcon, IconDots as MoreHorizontal, IconPin as Pin, IconPencil as Pencil, IconRefresh as RefreshCw, IconTag as Tag, IconTrash as Trash2, IconArchive as Archive, IconBolt as Zap, IconX as X } from '@tabler/icons-react';
 import { Overlay, OverlayTitle, VerifiedBadge } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -320,7 +321,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
           {photoUrl && (
             <div className="relative mt-2 w-fit">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl} alt="" className="h-20 w-28 rounded-tile object-cover" />
+              <img src={imgUrl(photoUrl, ANCHO.tarjeta)} alt="" className="h-20 w-28 rounded-tile object-cover" />
               <button onClick={() => setPhotoUrl('')} aria-label={L('Quitar foto', 'Remove photo')} className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-ink text-white shadow-card"><X size={12} stroke={2.8} /></button>
             </div>
           )}
@@ -394,7 +395,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
           <div key={p.id} className="flex items-center gap-2.5">
             <span className="h-8 w-8 flex-none overflow-hidden rounded-lg" style={{ background: `repeating-linear-gradient(135deg,${KIND_TILE[p.kind]})` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {p.imageUrl && <img src={p.imageUrl} alt="" className="h-full w-full object-cover" />}
+              {p.imageUrl && <img src={imgUrl(p.imageUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />}
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[12px] font-bold text-ink">{L(p.es, p.en)}</span>
@@ -444,7 +445,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
             <div className="whitespace-pre-line px-3.5 pt-2.5 text-[13.5px] font-bold leading-snug text-ink">{L(p.es, p.en)}</div>
             {p.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.imageUrl} alt="" className="mx-3.5 mt-3 max-h-[220px] w-[calc(100%-28px)] rounded-tile object-cover" />
+              <img src={imgUrl(p.imageUrl, ANCHO.ancha)} alt="" className="mx-3.5 mt-3 max-h-[220px] w-[calc(100%-28px)] rounded-tile object-cover" />
             ) : null}
 
             {p.status === 'live' ? (

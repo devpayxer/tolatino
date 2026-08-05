@@ -128,6 +128,31 @@
     facturas `INV-1740`). Para un negocio real hay que enseñar las de Stripe o
     no enseñar nada.
 
+- [ ] **🟡 El transformador de imágenes de Supabase se está usando, y se
+  factura (2026-08-05).** El fundador preguntó por qué tardaban las fotos
+  teniendo ya un conversor a WebP. Lo teníamos —`lib/image.ts` convierte al
+  SUBIR— pero guardaba UN archivo de 1600 px que luego se servía igual al avatar
+  de 44, a la tarjeta de 374 y a la galería. Medido en una ficha a 402 px de
+  ancho: **710 KB → 234 KB** al pedir el tamaño correcto.
+  **Cómo quedó** (`apps/web/src/lib/img.ts`, `imgUrl()`, y los 84 sitios que
+  pintan imágenes pasan por ahí):
+  1. **Lo que se sube desde hoy** guarda además copias de 200/400/800 en la
+     carpeta `r/`. Servirlas es **gratis** y no depende de nadie.
+  2. **Lo subido ANTES** no tiene esas copias, así que va por el transformador
+     de Supabase (`/render/image/…`). Antes recibía **cero** peticiones y ahora
+     recibe **todas** las de imágenes antiguas. Es función de plan de pago.
+  3. Las fotos del demo son enlaces a Unsplash: se les pide `fm=webp` y el ancho
+     bueno, gratis.
+  **Lo que hay que vigilar / decidir:** no pude leer la línea de facturación
+  desde la sesión (la página de precios devuelve 403 al agente), así que **el
+  coste real del punto 2 está sin comprobar**. Si aparece en la factura y
+  molesta, hay dos salidas y ninguna toca las pantallas: reprocesar lo viejo con
+  un script que genere sus copias `r/`, o cambiar la última línea de `imgUrl()`
+  para que devuelva la URL cruda. Se decidió así a propósito (fundador: «las
+  dos») para no dejar sin arreglo lo ya subido.
+  Centinela: `tools/mobile-audit/imagenes-tamano.js` — exige que ningún archivo
+  traiga más píxeles que los que su hueco necesita, y que ninguno se rompa.
+
 - [ ] **Mapas: alojar los tiles nosotros cuando convenga (2026-08-05).** Los
   mapas usaban `tile.openstreetmap.org` — imágenes de 256 px con el estilo
   clásico de OSM: cargado, borroso en retina y **imposible de personalizar**

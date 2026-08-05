@@ -15,6 +15,7 @@
 // explorable; nothing persists. Mobile-first throughout.
 
 import { useEffect, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconAlertTriangle as AlertTriangle, IconCalendar as Calendar, IconCheck as Check, IconChevronDown as ChevronDown, IconChevronUp as ChevronUp, IconClock as Clock, IconCopy as Copy, IconGift as Gift, IconInfoCircle as Info, IconLink as Link2, IconLoader2 as Loader2, IconPencil as Pencil, IconPlus as Plus, IconSearch as Search, IconShieldCheck as ShieldCheck, IconShoppingBag as ShoppingBag, IconSparkles as Sparkles, IconTrash as Trash2, IconTruck as Truck, IconUpload as Upload, IconToolsKitchen2 as Utensils, IconX as X, IconBolt as Zap } from '@tabler/icons-react';
 import { useAuth } from '@/lib/auth';
@@ -555,7 +556,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 >
                   <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${c.tile})` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {i.imageUrl && <img src={i.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                    {i.imageUrl && <img src={imgUrl(i.imageUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     {ribbon && (
                       <span className={`absolute left-0 top-0 rounded-br-[7px] px-1.5 py-0.5 text-[8px] font-extrabold text-white ${i.isNew ? 'bg-primary' : 'bg-amber'}`}>
                         {i.isNew ? L('Nuevo', 'New') : L('Bajo', 'Low')}
@@ -1103,7 +1104,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="overflow-hidden rounded-tile border border-hair bg-white">
       <div className="relative h-[104px]" style={{ background: `repeating-linear-gradient(135deg,${draftCat.tile})` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        {draft.photoUrl && <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
         <div className="absolute left-2.5 top-2.5 flex gap-1.5">
           {draft.flags.isNew && <span className="rounded-md bg-lilac px-2 py-0.5 text-[9px] font-extrabold text-primary-dark">{L('Nuevo', 'New')}</span>}
           {draft.flags.popular && <span className="rounded-md bg-amber-bg px-2 py-0.5 text-[9px] font-extrabold text-amber-ink">{L('Popular', 'Popular')}</span>}
@@ -1148,7 +1149,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {draft.photoUrl ? (
             <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
+              <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
               <button type="button" onClick={() => wizFileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">
                 {photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}
               </button>
@@ -1479,7 +1480,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mt-5 w-full overflow-hidden rounded-tile border border-hair bg-white text-left">
           <div className="relative h-[110px]" style={{ background: `repeating-linear-gradient(135deg,${draftCat.tile})` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+            {draft.photoUrl && <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
           </div>
           <div className="flex items-center justify-between p-3.5">
             <div className="min-w-0">

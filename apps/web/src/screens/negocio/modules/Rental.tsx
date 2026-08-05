@@ -16,6 +16,7 @@
 // explorable in demo (local sample); a signed-in owner persists to Supabase.
 
 import { useEffect, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconAlertTriangle as AlertTriangle, IconPackages as Boxes, IconCalendar as CalendarDays, IconCheck as Check, IconCircleCheck as CheckCircle2, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronUp as ChevronUp, IconCopy as Copy, IconCurrencyDollar as DollarSign, IconLoader2 as Loader2, IconLock as Lock, IconMinus as Minus, IconPackage as Package, IconPencil as Pencil, IconPlus as Plus, IconShield as Shield, IconBuildingStore as Store, IconTrash as Trash2, IconUpload as Upload, IconBolt as Zap } from '@tabler/icons-react';
 import { ModulePage, Toast } from '@/screens/negocio/modules/_page';
@@ -506,7 +507,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className={`mt-5 w-full overflow-hidden text-left ${cardCls}`}>
               <div className="relative h-[104px]" style={{ background: stripe(dc.tile) }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                {draft.photoUrl && <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
               </div>
               <div className="flex items-center justify-between p-3.5">
                 <div className="min-w-0">
@@ -534,7 +535,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className={`overflow-hidden ${cardCls}`}>
         <div className="relative h-[96px]" style={{ background: stripe(dc.tile) }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {draft.photoUrl && <img src={draft.photoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          {draft.photoUrl && <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
         </div>
         <div className="flex items-start justify-between gap-2.5 p-3.5">
           <div className="min-w-0">
@@ -598,7 +599,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     {draft.photoUrl ? (
                       <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={draft.photoUrl} alt="" className="h-full w-full object-cover" />
+                        <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                         <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
                         <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} stroke={2.2} /></button>
                       </div>
@@ -849,7 +850,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div className="flex gap-3">
                     <span className="relative h-[60px] w-[60px] flex-none overflow-hidden rounded-tile" style={{ background: stripe(tileOf(it)) }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {it.imageUrl && <img src={it.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                      {it.imageUrl && <img src={imgUrl(it.imageUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
@@ -1226,7 +1227,7 @@ function ItemDetail({
         <div className="overflow-hidden rounded-card-sm border border-hair">
           <div className="relative h-[110px]" style={{ background: stripe(tile) }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {item.imageUrl && <img src={item.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+            {item.imageUrl && <img src={imgUrl(item.imageUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
             <span className={`absolute right-2.5 top-2.5 rounded-md px-2 py-1 text-[9px] font-extrabold ${s.cls}`}>{s.label}</span>
           </div>
           <div className="p-3.5">
@@ -1449,7 +1450,7 @@ function ItemStrip({ item, ctx, tile, right }: { item: Item; ctx: PanelCtx; tile
     <div className={`${cardCls} flex items-center gap-3 p-3`}>
       <span className="relative h-11 w-11 flex-none overflow-hidden rounded-[11px]" style={{ background: stripe(tile) }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {item.imageUrl && <img src={item.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        {item.imageUrl && <img src={imgUrl(item.imageUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
       </span>
       <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L(item.es, item.en)}</span><span className="block truncate text-[10px] font-medium text-muted-2">{right}</span></span>
     </div>

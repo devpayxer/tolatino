@@ -3,6 +3,7 @@
 // Shared UI primitives — compose every screen from these; don't fork markup.
 
 import { IconX as X } from '@tabler/icons-react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 import { useLang } from '@/lib/i18n';
@@ -90,7 +91,7 @@ export function BizLogo({ name, logoUrl, color = '#7B61FF', size = 84, radius = 
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={logoUrl} alt=""
+        src={imgUrl(logoUrl, ANCHO.icono)} alt=""
         className={`flex-none border border-hair object-cover ${className}`}
         style={{ width: size, height: size, borderRadius: radius }}
       />
@@ -218,7 +219,7 @@ export function Avatar({
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element -- export estático: sin optimizador de imágenes
         <img
-          src={photo}
+          src={imgUrl(photo, ANCHO.icono)}
           alt=""
           loading="lazy"
           decoding="async"

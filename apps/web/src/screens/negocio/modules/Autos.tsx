@@ -13,6 +13,7 @@
 // states — never fabricated numbers for a real dealer).
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import {
   IconCalendarEvent as CalendarEvent, IconCar as Car, IconCertificate as Certificate,
   IconCheck as Check, IconChevronRight as ChevronRight, IconCreditCard as CreditCard,
@@ -385,7 +386,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const vehTitle = (v: { year: number; make: string; model: string }) => `${v.year} ${v.make} ${v.model}`.trim();
   const thumbStyle = (v: MyVehicle) =>
     v.photos[0]
-      ? { backgroundImage: `url("${v.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
+      ? { backgroundImage: `url("${imgUrl(v.photos[0], ANCHO.tarjeta)}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
       : { background: tileBg(v.cond) };
 
   // Segmented control (condition / transmission / fuel).
@@ -1505,7 +1506,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <input ref={photoInputRef} type="file" accept="image/*" multiple hidden onChange={(e) => { const f = e.target.files; void addPhotos(f); e.target.value = ''; }} />
       <div className="grid grid-cols-3 gap-2">
         {draft.photos.map((url, i) => (
-          <div key={url} className="relative aspect-square overflow-hidden rounded-tile border border-hair" style={{ backgroundImage: `url("${url}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div key={url} className="relative aspect-square overflow-hidden rounded-tile border border-hair" style={{ backgroundImage: `url("${imgUrl(url, ANCHO.tarjeta)}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
             {i === 0 && <span className="absolute left-1.5 top-1.5 rounded bg-ink/70 px-1.5 py-0.5 text-[8.5px] font-extrabold text-white">{L('Portada', 'Cover')}</span>}
             <button onClick={() => removePhoto(url)} className="absolute right-1.5 top-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-ink/70 text-white" aria-label={L('Quitar foto', 'Remove photo')}>
               <Trash2 size={12} stroke={2.2} />
@@ -1533,7 +1534,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="flex flex-col gap-3.5">
       {/* live preview */}
       <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
-        <div className="relative h-[120px]" style={draft.photos[0] ? { backgroundImage: `url("${draft.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.cond) }}>
+        <div className="relative h-[120px]" style={draft.photos[0] ? { backgroundImage: `url("${imgUrl(draft.photos[0], ANCHO.ancha)}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.cond) }}>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))' }} />
           <span className="absolute left-2.5 top-2.5 rounded-[7px] bg-white px-2 py-1 text-[9px] font-extrabold text-primary-dark">{condLabel(draft.cond)}</span>
           {draft.bhph && <span className="absolute right-2.5 top-2.5 rounded-md bg-amber-bg px-2 py-1 text-[9px] font-extrabold uppercase text-amber-ink">{L('Aquí pagas aquí', 'BHPH')}</span>}
@@ -1651,7 +1652,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
 
         <div className="mt-5 w-full max-w-[420px] overflow-hidden rounded-card-sm border border-hair bg-white text-left shadow-card">
-          <div className="relative h-[104px]" style={draft.photos[0] ? { backgroundImage: `url("${draft.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.cond) }}>
+          <div className="relative h-[104px]" style={draft.photos[0] ? { backgroundImage: `url("${imgUrl(draft.photos[0], ANCHO.ancha)}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.cond) }}>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.45))' }} />
             <div className="absolute bottom-2.5 left-3 text-[15px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{`${draft.year.trim()} ${draft.make.trim()} ${draft.model.trim()}`.trim() || L('Auto', 'Vehicle')}</div>
           </div>

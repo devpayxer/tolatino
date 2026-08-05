@@ -30,6 +30,7 @@
 // en pantalla en vez de fingir que quedaron guardadas.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { useRouter } from 'next/navigation';
 import {
   IconArrowRight as ArrowRight, IconCamera as Camera, IconCheck as Check,
@@ -559,7 +560,7 @@ export function BizOnboardingScreen() {
                     className="flex h-[74px] w-[74px] flex-none items-center justify-center overflow-hidden rounded-[20px] text-[22px] font-extrabold text-white"
                     style={{ background: `linear-gradient(140deg, ${catInfo?.dot ?? '#7B61FF'}, #7B61FF)` }}
                   >
-                    {logo ? <img src={logo.url} alt="" className="h-full w-full object-cover" /> : initials}
+                    {logo ? <img src={imgUrl(logo.url, ANCHO.icono)} alt="" className="h-full w-full object-cover" /> : initials}
                   </span>
                   <div className="min-w-0">
                     <button onClick={() => logoInput.current?.click()} className="cursor-pointer rounded-[13px] border-[1.5px] border-dashed border-lilac-ring bg-page px-4 py-3 text-[12px] font-extrabold text-primary-dark">
@@ -578,7 +579,7 @@ export function BizOnboardingScreen() {
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {gallery.map((p, i) => (
                     <span key={p.url} className="relative aspect-square overflow-hidden rounded-[13px]">
-                      <img src={p.url} alt="" className="h-full w-full object-cover" />
+                      <img src={imgUrl(p.url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                       {i === 0 && (
                         <span className="absolute left-1 top-1 rounded-full bg-green px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase text-white">
                           {L('Portada', 'Cover')}
@@ -760,12 +761,12 @@ export function BizOnboardingScreen() {
                 {/* Vista previa del listado */}
                 <div className="mt-5 overflow-hidden rounded-[18px] border border-hair bg-white shadow-card">
                   <div className="h-[96px] w-full" style={{ background: gallery[0] ? undefined : tile(catInfo?.bg ?? '#EFEBFF', catInfo?.dot ?? '#7B61FF', 12) }}>
-                    {gallery[0] && <img src={gallery[0].url} alt="" className="h-full w-full object-cover" />}
+                    {gallery[0] && <img src={imgUrl(gallery[0].url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />}
                   </div>
                   <div className="px-4 pb-4">
                     <span className="-mt-7 mb-2 flex h-14 w-14 items-center justify-center overflow-hidden rounded-[16px] border-[3px] border-white text-[16px] font-extrabold text-white"
                       style={{ background: `linear-gradient(140deg, ${catInfo?.dot ?? '#7B61FF'}, #7B61FF)` }}>
-                      {logo ? <img src={logo.url} alt="" className="h-full w-full object-cover" /> : initials}
+                      {logo ? <img src={imgUrl(logo.url, ANCHO.icono)} alt="" className="h-full w-full object-cover" /> : initials}
                     </span>
                     <div className="flex items-center gap-1.5">
                       <span className="truncate text-[15px] font-extrabold text-ink">{name.trim() || L('Tu negocio', 'Your business')}</span>

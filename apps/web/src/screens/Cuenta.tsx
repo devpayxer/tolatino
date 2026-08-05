@@ -8,6 +8,7 @@
 // Siguiendo / Notificaciones / the business panel. No improvised UI.
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { useRouter } from 'next/navigation';
 import { IconBan as Ban, IconBell as Bell, IconBike as Bike, IconBookmark as Bookmark, IconCalendarCheck as CalendarCheck, IconCalendar as CalendarDays, IconCamera as Camera, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconGlobe as Globe, IconLoader2 as Loader2, IconHelpCircle as HelpCircle, IconLayoutDashboard as LayoutDashboard, IconLogin as LogIn, IconLogout as LogOut, IconMail as Mail, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconMessageCircle as MessageCircle, IconFlag as Flag, IconPhone as Phone, IconPlus as Plus, IconReceipt as Receipt, IconRepeat as Repeat, IconShoppingBag as ShoppingBag, IconStar as Star, IconStarFilled as StarFilled, IconTicket as Ticket, IconTrash as Trash2, IconTruck as Truck, IconUser as User, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
@@ -1061,7 +1062,7 @@ export function CuentaScreen() {
                   {isStore && (
                     <span className="relative h-9 w-9 flex-none overflow-hidden rounded-lg bg-lilac-2">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                      {it.img && <img src={imgUrl(it.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     </span>
                   )}
                   <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}{it.opts ? <span className="text-muted"> · {it.opts}</span> : null}</span>

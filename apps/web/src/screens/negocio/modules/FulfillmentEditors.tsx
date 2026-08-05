@@ -8,6 +8,7 @@
 // source and are re-imported by Fulfillment.tsx.
 
 import { useEffect, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { IconCamera as Camera, IconLoader2 as Loader2, IconTrash as Trash2, IconX as X } from '@tabler/icons-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -273,7 +274,7 @@ export function DriverEditor({
             <span className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full border-[1.5px] border-lilac-line" style={{ background: photo ? '#EAE7F6' : color }}>
               {photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={photo} alt="" className="h-full w-full object-cover" />
+                <img src={imgUrl(photo, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-[22px] font-extrabold text-white">{driverInitials(name)}</span>
               )}

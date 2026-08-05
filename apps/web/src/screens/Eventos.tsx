@@ -4,6 +4,7 @@
 // chips + date chips, event grid with real "Voy" state, detail + tickets.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { useRouter } from 'next/navigation';
 import { IconCalendarPlus as CalendarPlus, IconCheck as Check, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconMapPin as MapPin, IconNavigation as Navigation, IconShare2 as Share2, IconBuildingStore as Store, IconTag as Tag, IconTicket as Ticket, IconArmchair as Armchair, IconStar as Star, IconStarFilled as StarFilled, IconClock as Clock, IconInfoCircle as InfoCircle, IconUsers as Users } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
@@ -163,7 +164,7 @@ function SeatPicker({
                 >
                   {t.photo && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={t.photo} alt="" className="h-[76px] w-full flex-none object-cover" />
+                    <img src={imgUrl(t.photo, ANCHO.tarjeta)} alt="" className="h-[76px] w-full flex-none object-cover" />
                   )}
                   <span className="flex items-center gap-2.5 px-3 py-2.5">
                     <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[13px] font-extrabold ${isSel ? 'bg-primary text-white' : 'bg-lilac-2 text-primary-dark'}`}>{t.n}</span>

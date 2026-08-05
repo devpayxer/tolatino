@@ -10,6 +10,7 @@
 // sticky rail and the manage/wizard panels widen into multi-column layouts.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { IconCheck as Check, IconCurrencyDollar as DollarSign, IconPhotoPlus as ImagePlus, IconMapPin as MapPin, IconSpeakerphone as Megaphone, IconNavigation as Navigation, IconPlus as Plus, IconQrcode as QrCode, IconRefresh as RefreshCw, IconSearch as Search, IconShare2 as Share2, IconTag as Tag, IconTicket as Ticket, IconTrash as Trash2, IconTrendingUp as TrendingUp, IconUsers as Users, IconX as X } from '@tabler/icons-react';
 import type { PanelCtx, TabKey } from '@/screens/negocio/tabs';
 import { escribir } from '@/lib/escribir';
@@ -1246,7 +1247,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mt-2 flex flex-col gap-2">
           {lay.tables.map((t, i) => (
             <div key={t.id} className="flex items-center gap-2.5 rounded-btn-lg border border-hair bg-white p-2">
-              <button onClick={() => layPhotoRefs.current[t.id]?.click()} className="flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={t.photo ? { backgroundImage: `url(${t.photo})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>{!t.photo && <ImagePlus size={15} stroke={2} className="text-primary-dark" />}</button>
+              <button onClick={() => layPhotoRefs.current[t.id]?.click()} className="flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={t.photo ? { backgroundImage: `url(${imgUrl(t.photo, ANCHO.icono)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>{!t.photo && <ImagePlus size={15} stroke={2} className="text-primary-dark" />}</button>
               <input ref={(el) => { layPhotoRefs.current[t.id] = el; }} type="file" accept="image/*" hidden onChange={(e) => uploadLayPhoto(t.id, e.target.files?.[0])} />
               <div className="min-w-0 flex-1"><div className="text-[11px] font-extrabold text-ink">{L('Mesa', 'Table')} {i + 1}</div>
                 <div className="mt-1 flex items-center gap-1.5"><span className="text-[10px] font-bold text-muted-2">{L('Personas', 'Seats')}</span><input value={t.cap} onChange={(e) => setLayF({ tables: lay.tables.map((x) => (x.id === t.id ? { ...x, cap: e.target.value.replace(/[^0-9]/g, '') } : x)) })} inputMode="numeric" className="w-14 rounded-field border-[1.5px] border-lilac-line px-2 py-1 text-[12px] font-bold outline-none focus:border-primary" /></div>
@@ -1565,7 +1566,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-2.5 flex flex-col gap-2">
             {draft.tables.map((t, i) => (
               <div key={t.id} className="flex items-center gap-2.5 rounded-btn-lg border border-hair bg-white p-2.5">
-                <button onClick={() => tablePhotoRefs.current[t.id]?.click()} className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={t.photo ? { backgroundImage: `url(${t.photo})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
+                <button onClick={() => tablePhotoRefs.current[t.id]?.click()} className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={t.photo ? { backgroundImage: `url(${imgUrl(t.photo, ANCHO.icono)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
                   {!t.photo && <ImagePlus size={16} stroke={2} className="text-primary-dark" />}
                 </button>
                 <input ref={(el) => { tablePhotoRefs.current[t.id] = el; }} type="file" accept="image/*" hidden onChange={(e) => uploadTablePhoto(t.id, e.target.files?.[0])} />

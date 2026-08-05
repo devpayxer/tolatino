@@ -6,6 +6,7 @@
 // 0019, RLS: public read + owner writes). Set a cover, delete, and see the count.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { useRouter } from 'next/navigation';
 import { IconPhotoPlus as ImagePlus, IconLoader2 as Loader2, IconStar as Star, IconBuildingStore as Store, IconTrash as Trash2 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
@@ -184,7 +185,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
       <div className="mb-4 flex items-center gap-3.5 rounded-card border border-hair bg-white p-4 shadow-card">
         {real.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={real.logo_url} alt={L('Logo del negocio', 'Business logo')} className="h-[68px] w-[68px] flex-none rounded-tile border border-hair object-cover" />
+          <img src={imgUrl(real.logo_url, ANCHO.icono)} alt={L('Logo del negocio', 'Business logo')} className="h-[68px] w-[68px] flex-none rounded-tile border border-hair object-cover" />
         ) : (
           <button
             onClick={() => logoInput.current?.click()}
@@ -263,7 +264,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
           {photos.map((p) => (
             <div key={p.id} className="group relative aspect-square overflow-hidden rounded-tile border border-hair bg-app">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="" className="h-full w-full object-cover" />
+              <img src={imgUrl(p.url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
               {p.is_cover && (
                 <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-full bg-ink/85 px-2 py-0.5 text-[9.5px] font-extrabold text-white">
                   <Star size={10} stroke={2.6} className="text-amber" />

@@ -5,6 +5,7 @@
 // comments → thread, save, share). All toggles carry real state.
 
 import { useEffect, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { IconBookmark as Bookmark, IconBookmarkFilled as BookmarkFilled, IconCheck as Check, IconChevronRight as ChevronRight, IconMessageCircle as MessageCircle, IconPin as Pin, IconShare as Share } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
@@ -179,7 +180,7 @@ export function PostCard({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={i}
-                src={src}
+                src={imgUrl(src, ANCHO.ancha)}
                 alt=""
                 loading="lazy"
                 draggable={false}

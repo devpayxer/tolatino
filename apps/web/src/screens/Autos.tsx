@@ -8,6 +8,7 @@
 // Overlay sheets, toast, price-pin map, saved hearts, tokens only).
 
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { crearMapa } from '@/lib/mapa';
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
@@ -594,7 +595,7 @@ export function AutosScreen() {
       <div className="flex items-center gap-3">
         {d.bizLogo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={d.bizLogo} alt="" className="h-12 w-12 flex-none rounded-tile object-cover" />
+          <img src={imgUrl(d.bizLogo, ANCHO.icono)} alt="" className="h-12 w-12 flex-none rounded-tile object-cover" />
         ) : (
           <span className="flex h-12 w-12 flex-none items-center justify-center rounded-tile bg-lilac-2 text-[15px] font-extrabold text-primary-dark">{initialsOf(d.bizName)}</span>
         )}
@@ -706,7 +707,7 @@ export function AutosScreen() {
               {d.photos.length > 1 && (
                 <div className="no-scrollbar absolute bottom-3 left-3.5 flex max-w-[calc(100%-90px)] gap-2 overflow-x-auto">
                   {d.photos.map((ph, i) => (
-                    <button key={i} onClick={() => setGi(i)} aria-label={`${L('Foto', 'Photo')} ${i + 1}`} className={`h-[46px] w-[46px] flex-none cursor-pointer rounded-[10px] border-2 bg-cover bg-center ${i === gi ? 'border-primary' : 'border-white'}`} style={{ backgroundImage: `url("${ph}")` }} />
+                    <button key={i} onClick={() => setGi(i)} aria-label={`${L('Foto', 'Photo')} ${i + 1}`} className={`h-[46px] w-[46px] flex-none cursor-pointer rounded-[10px] border-2 bg-cover bg-center ${i === gi ? 'border-primary' : 'border-white'}`} style={{ backgroundImage: `url("${imgUrl(ph, ANCHO.icono)}")` }} />
                   ))}
                 </div>
               )}
@@ -1160,7 +1161,7 @@ export function AutosScreen() {
                     <Card key={a.id} className="flex items-center gap-3 p-3.5" onClick={() => router.push(`/negocios/?b=${encodeURIComponent(a.slug)}`)}>
                       {a.logo ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={a.logo} alt="" className="h-12 w-12 flex-none rounded-tile object-cover" />
+                        <img src={imgUrl(a.logo, ANCHO.icono)} alt="" className="h-12 w-12 flex-none rounded-tile object-cover" />
                       ) : (
                         <span className="flex h-12 w-12 flex-none items-center justify-center rounded-tile bg-lilac-2 text-[15px] font-extrabold text-primary-dark">{initialsOf(a.name)}</span>
                       )}
@@ -1581,7 +1582,7 @@ export function AutosScreen() {
                   <div className="mb-1.5 text-[11px] font-extrabold text-ink-soft">{L('Fotos', 'Photos')}</div>
                   <div className="grid grid-cols-3 gap-2">
                     {vender.photos.map((ph, i) => (
-                      <div key={i} className="relative aspect-square overflow-hidden rounded-tile bg-cover bg-center" style={{ backgroundImage: `url("${ph}")` }}>
+                      <div key={i} className="relative aspect-square overflow-hidden rounded-tile bg-cover bg-center" style={{ backgroundImage: `url("${imgUrl(ph, ANCHO.tarjeta)}")` }}>
                         <button onClick={() => setVender({ ...vender, photos: vender.photos.filter((_, j) => j !== i) })} aria-label={L('Quitar', 'Remove')} className="absolute right-1 top-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-[rgba(30,27,46,.6)]"><XIcon size={12} stroke={2.6} className="text-white" /></button>
                         {i === 0 && <span className="absolute bottom-1 left-1 rounded bg-ink px-1.5 py-0.5 text-[8px] font-extrabold text-white">{L('Portada', 'Cover')}</span>}
                       </div>
@@ -1610,7 +1611,7 @@ export function AutosScreen() {
               <div className="mb-3 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
                 {d.bizLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={d.bizLogo} alt="" className="h-10 w-10 flex-none rounded-tile object-cover" />
+                  <img src={imgUrl(d.bizLogo, ANCHO.icono)} alt="" className="h-10 w-10 flex-none rounded-tile object-cover" />
                 ) : (
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-tile bg-lilac-2 text-[13px] font-extrabold text-primary-dark">{initialsOf(d.bizName)}</span>
                 )}

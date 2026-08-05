@@ -10,6 +10,7 @@
 // ?pay=cancel keeps the light toast.
 
 import { useEffect, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { useRouter } from 'next/navigation';
 import { IconCheck as Check, IconChevronRight as ChevronRight, IconClock as Clock, IconLoader2 as Loader2, IconReceipt as Receipt, IconTicket as Ticket, IconX as X } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
@@ -219,7 +220,7 @@ export function PurchaseReturnToast() {
                   {isStore && (
                     <span className="relative h-9 w-9 flex-none overflow-hidden rounded-lg bg-lilac-2">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                      {it.img && <img src={imgUrl(it.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                     </span>
                   )}
                   <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}</span>

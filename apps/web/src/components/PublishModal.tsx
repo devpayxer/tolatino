@@ -9,6 +9,7 @@
 // preview.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { useRouter } from 'next/navigation';
 import { IconCalendar as Calendar, IconClock as Clock, IconHelpCircle as HelpCircle, IconHeart as Heart, IconPhotoPlus as ImagePlus, IconLogin as LogIn, IconMessageCircle as MessageCircle, IconPlus as Plus, IconBuildingStore as Store, IconTag as Tag, IconX as X, IconChartBar as BarChart3, IconCheck as Check } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
@@ -542,7 +543,7 @@ export function PublishModal() {
                     {photos.map((p, i) => (
                       <span key={p.url} className="relative h-[68px] w-[68px] overflow-hidden rounded-btn bg-app">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={p.url} alt="" className="h-full w-full object-cover" />
+                        <img src={imgUrl(p.url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                         <button
                           onClick={() => removePhoto(i)}
                           className="absolute -right-1.5 -top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-ink text-white"

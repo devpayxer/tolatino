@@ -7,6 +7,7 @@
 // FoodEditors.
 
 import { useEffect, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { Icon as LucideIcon } from '@tabler/icons-react';
 import { IconBrush as Brush, IconCamera as Camera, IconCar as Car, IconCheck as Check, IconDroplets as Droplets, IconDumbbell as Dumbbell, IconGift as Gift, IconSchool as GraduationCap, IconHandFinger as Hand, IconHeart as Heart, IconHome as Home, IconMusic as Music, IconScissors as Scissors, IconSparkles as Sparkles, IconTrash as Trash2, IconUsers as Users, IconToolsKitchen2 as Utensils, IconGlassCocktail as Wine, IconTool as Wrench } from '@tabler/icons-react';
 import { Overlay, OverlayTitle } from '@/components/ui';
@@ -234,7 +235,7 @@ export function ServiceProviderEditor({
         <div className="flex items-center gap-3.5">
           <label className="relative flex h-16 w-16 flex-none cursor-pointer items-center justify-center overflow-hidden rounded-full text-[20px] font-extrabold text-white" style={{ background: color }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {photo ? <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" /> : (name.trim() ? name.trim().split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() : <Camera size={20} stroke={2} />)}
+            {photo ? <img src={imgUrl(photo, ANCHO.icono)} alt="" className="absolute inset-0 h-full w-full object-cover" /> : (name.trim() ? name.trim().split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() : <Camera size={20} stroke={2} />)}
             <input type="file" accept="image/*" className="hidden" onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ''; }} />
             {photoBusy && <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-[9px] font-extrabold text-white">…</span>}
           </label>

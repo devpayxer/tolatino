@@ -5,6 +5,7 @@
 // Relacionados · Reseñas), cart + checkout, service booking, contact sheet.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { imgUrl, ANCHO } from '@/lib/img';
 import { IconCheck as Check, IconChevronDown as ChevronDown, IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconClock as Clock, IconFlame as Flame, IconGlobe as Globe, IconHeart as Heart, IconHeartFilled as HeartFilled, IconMapPin as MapPin, IconMenu2 as Menu, IconMessageCircle as MessageCircle, IconMinus as Minus, IconDots as MoreHorizontal, IconNavigation as Navigation, IconPhone as Phone, IconPlus as Plus, IconSearch as Search, IconSend as Send, IconShare as Share, IconBuildingStore as Store, IconTrash as Trash2, IconX as X, IconHome2 as Home, IconHandStop as HandStop, IconBuildingCommunity as Building, IconCalendarEvent as CalendarIcon, IconThumbUp as ThumbUp, IconThumbUpFilled as ThumbUpFilled } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
@@ -1838,7 +1839,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     <>
       <span className="relative h-[64px] w-[64px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        {it.img && <img src={imgUrl(it.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
@@ -1870,7 +1871,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     <div key={B(it.n)} className="flex items-start gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card">
       <span className="relative h-[60px] w-[60px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        {it.img && <img src={imgUrl(it.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="flex items-baseline justify-between gap-2">
@@ -1992,7 +1993,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <div className="relative aspect-[4/3] w-full" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
           {it.img && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={it.img} alt={B(it.n)} className="absolute inset-0 h-full w-full object-cover" />
+            <img src={imgUrl(it.img, ANCHO.tarjeta)} alt={B(it.n)} className="absolute inset-0 h-full w-full object-cover" />
           )}
           {off > 0 && !soldOut && (
             <span className="absolute left-2 top-2 rounded-md bg-pink px-1.5 py-0.5 text-[10px] font-extrabold text-white shadow-card">−{off}%</span>
@@ -2046,7 +2047,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       <div key={s.id} onClick={() => { setSvcAddOns({}); setSvcInfo(s); }} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card">
         <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${s.tile})` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {s.img && <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          {s.img && <img src={imgUrl(s.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
           {s.badge && (
             <span className={`absolute left-1 top-1 rounded-md px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wide ${s.badge === 'popular' ? 'bg-amber-bg text-amber-ink' : 'bg-lilac text-primary-dark'}`}>
               {s.badge === 'popular' ? 'Popular' : L('Nuevo', 'New')}
@@ -2084,7 +2085,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       <div className="relative mb-4 h-[200px] overflow-hidden rounded-card" style={{ background: bizTile(b) }}>
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt={b.name} onClick={() => setPhotoTile(cover)} className="absolute inset-0 h-full w-full cursor-pointer object-cover" />
+          <img src={imgUrl(cover, ANCHO.ancha)} alt={b.name} onClick={() => setPhotoTile(cover)} className="absolute inset-0 h-full w-full cursor-pointer object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A8FC4]">[ foto ]</div>
         )}
@@ -2284,7 +2285,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             {photos.length > 0
               ? photos.map((u) => (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img key={u} src={u} alt="" onClick={() => setPhotoTile(u)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px] border border-hair object-cover" />
+                  <img key={u} src={imgUrl(u, ANCHO.tarjeta)} alt="" onClick={() => setPhotoTile(u)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px] border border-hair object-cover" />
                 ))
               : DETAIL_PHOTOS.map((t) => (
                   <button key={t} onClick={() => setPhotoTile(t)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px]" style={{ background: t }} />
@@ -2395,7 +2396,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 <div className="mt-[11px] whitespace-pre-line text-[14px] font-medium leading-normal text-ink-body">{B(u.body)}</div>
                 {u.img && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={u.img} alt="" className="mt-[11px] max-h-[260px] w-full rounded-[13px] object-cover" />
+                  <img src={imgUrl(u.img, ANCHO.ancha)} alt="" className="mt-[11px] max-h-[260px] w-full rounded-[13px] object-cover" />
                 )}
                 <div className="mt-3 flex items-center gap-5 border-t border-hair pt-[11px]">
                   <button onClick={() => void toggleUpd(u)} className={`flex cursor-pointer items-center gap-1.5 text-[12.5px] font-bold ${liked ? 'text-pink' : 'text-muted-2'}`}>
@@ -2760,7 +2761,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <Card key={it.id} className="flex items-center gap-3 p-3.5">
                 <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.tile})` }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                  {it.img && <img src={imgUrl(it.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[14px] font-extrabold text-ink">{B(it.n)}</div>
@@ -2850,7 +2851,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <span
                 className="block h-[120px] w-full"
                 style={pr.photos[0]
-                  ? { backgroundImage: `url("${pr.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  ? { backgroundImage: `url("${imgUrl(pr.photos[0], ANCHO.tarjeta)}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
                   : { background: `repeating-linear-gradient(135deg,${RE_TILE[pr.deal][0]} 0 11px,${RE_TILE[pr.deal][1]} 11px 22px)` }}
               />
               <span className="block p-3.5">
@@ -2879,7 +2880,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <span
                 className="block h-[120px] w-full"
                 style={v.photos[0]
-                  ? { backgroundImage: `url("${v.photos[0]}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  ? { backgroundImage: `url("${imgUrl(v.photos[0], ANCHO.tarjeta)}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
                   : { background: `repeating-linear-gradient(135deg,${AU_TILE[v.cond][0]} 0 11px,${AU_TILE[v.cond][1]} 11px 22px)` }}
               />
               <span className="block p-3.5">
@@ -2988,7 +2989,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                         {r.photos.map((src) => (
                           <button key={src} onClick={() => setPhotoTile(src)} className="flex-none cursor-pointer">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={src} alt="" loading="lazy" className="h-20 w-20 rounded-field object-cover" />
+                            <img src={imgUrl(src, ANCHO.tarjeta)} alt="" loading="lazy" className="h-20 w-20 rounded-field object-cover" />
                           </button>
                         ))}
                       </div>
@@ -3142,7 +3143,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(20,16,34,.82)] p-6" onClick={() => setPhotoTile(null)}>
           {isUrl(photoTile) ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoTile} alt="" className="max-h-[80%] w-auto max-w-full rounded-card object-contain" />
+            <img src={imgUrl(photoTile, ANCHO.original)} alt="" className="max-h-[80%] w-auto max-w-full rounded-card object-contain" />
           ) : (
             <div className="h-[70%] w-full max-w-[640px] rounded-card" style={{ background: photoTile }} />
           )}
@@ -3175,7 +3176,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   {(gallery.length ? gallery : ['']).map((u, i) => (
                     <div key={i} className={`relative aspect-[4/3] flex-none snap-center overflow-hidden rounded-card ${gallery.length > 1 ? 'w-[86%]' : 'w-full'}`} style={{ background: `repeating-linear-gradient(135deg,${mIt.bg})` }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {u && <img src={u} alt={`${B(mIt.n)} ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />}
+                      {u && <img src={imgUrl(u, ANCHO.ancha)} alt={`${B(mIt.n)} ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />}
                       {mOff > 0 && i === 0 && <span className="absolute left-2.5 top-2.5 rounded-md bg-pink px-2 py-0.5 text-[11px] font-extrabold text-white shadow-card">−{mOff}%</span>}
                       {gallery.length > 1 && <span className="absolute bottom-2 right-2 rounded-full bg-ink/70 px-2 py-0.5 text-[10px] font-extrabold text-white">{i + 1}/{gallery.length}</span>}
                     </div>
@@ -3195,7 +3196,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <div className="flex items-center gap-3">
                 <span className="relative h-14 w-14 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${mIt.bg})` }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {mIt.img && <img src={mIt.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                  {mIt.img && <img src={imgUrl(mIt.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                 </span>
                 <div className="min-w-0">
                   <div className="text-[15px] font-extrabold text-ink">{B(mIt.n)}</div>
@@ -3449,7 +3450,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     {oStore && (
                       <span className="relative h-9 w-9 flex-none overflow-hidden rounded-lg bg-lilac-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        {it.img && <img src={it.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                        {it.img && <img src={imgUrl(it.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                       </span>
                     )}
                     <span className="min-w-0 flex-1 truncate">{it.qty}× {it.name}</span>
@@ -3553,7 +3554,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                         <div className="flex gap-3">
                           <span className="relative h-16 w-16 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${l.bg})` }}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            {l.img && <img src={l.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                            {l.img && <img src={imgUrl(l.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                           </span>
                           <div className="min-w-0 flex-1">
                             <div className="line-clamp-2 text-[13px] font-extrabold leading-snug text-ink">{l.name}</div>
@@ -3784,7 +3785,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     <div key={sv.key} className="flex items-center gap-3 rounded-card-sm border border-dashed border-lilac-line bg-app p-2.5">
                       <span className="relative h-12 w-12 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${sv.line.bg})` }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        {sv.line.img && <img src={sv.line.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                        {sv.line.img && <img src={imgUrl(sv.line.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[12.5px] font-extrabold text-ink">{sv.line.name}</span>
@@ -3844,7 +3845,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <>
               <div className="relative -mx-4 -mt-4 h-[130px] overflow-hidden rounded-t-panel md:-mx-5 md:-mt-5 md:rounded-t-card" style={{ background: `repeating-linear-gradient(135deg,${s.tile})` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {s.img && <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                {s.img && <img src={imgUrl(s.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
                 <button onClick={() => setSvcInfo(null)} className="absolute left-3 top-3 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card">
                   <X size={15} stroke={2.6} className="text-ink" />
                 </button>
@@ -3933,7 +3934,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                           <span className={`relative mx-auto flex h-[58px] w-[58px] items-center justify-center overflow-hidden rounded-full text-[17px] font-extrabold text-white ${on ? 'ring-[3px] ring-ink ring-offset-2' : ''}`} style={{ background: p.color }}>
                             {p.photo
                               // eslint-disable-next-line @next/next/no-img-element
-                              ? <img src={p.photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                              ? <img src={imgUrl(p.photo, ANCHO.icono)} alt="" className="absolute inset-0 h-full w-full object-cover" />
                               : p.id === 'any' ? '★' : initials(p.name)}
                             {on && (
                               <span className="absolute bottom-0 right-0 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-ink">
@@ -4228,7 +4229,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   <div key={l.it.id} className="flex items-center gap-3 rounded-field border border-hair p-2.5">
                     <span className="h-11 w-11 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${l.it.tile})` }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {l.it.img && <img src={l.it.img} alt="" className="h-full w-full object-cover" />}
+                      {l.it.img && <img src={imgUrl(l.it.img, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-extrabold text-ink">{B(l.it.n)}</div>
@@ -4363,7 +4364,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {myPhotos.map((p, i) => (
             <div key={p.url} className="relative h-16 w-16 overflow-hidden rounded-field">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="" className="h-full w-full object-cover" />
+              <img src={imgUrl(p.url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
               <button
                 onClick={() => removeReviewPhoto(i)}
                 className="absolute right-0.5 top-0.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-ink/70 text-white"
