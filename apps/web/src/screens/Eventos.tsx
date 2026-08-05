@@ -602,7 +602,15 @@ export function EventosScreen() {
       {fe && (
       <div
         className="relative mb-[22px] flex cursor-pointer flex-col items-start gap-[18px] overflow-hidden rounded-[22px] p-[22px] shadow-band md:flex-row md:items-center md:gap-[26px] md:p-[28px]"
-        style={{ background: 'linear-gradient(150deg,#6743E2,#8268FF)' }}
+        // Con portada, la foto va DEBAJO del mismo morado de siempre, ahora
+        // translúcido: el destacado se ve como en Eventbrite sin perder la
+        // identidad de la tarjeta ni la legibilidad del texto blanco encima.
+        // Sin portada se queda exactamente como estaba.
+        style={{
+          background: fe.cover
+            ? `linear-gradient(150deg,rgba(103,67,226,.84),rgba(130,104,255,.68)), center/cover url(${fe.cover})`
+            : 'linear-gradient(150deg,#6743E2,#8268FF)',
+        }}
         onClick={() => openDetail(fe)}
       >
         <span className="flex h-[68px] w-[68px] flex-none flex-col items-center justify-center rounded-2xl bg-white">

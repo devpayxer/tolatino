@@ -89,6 +89,24 @@ const POOLS = {
   // fichas especiales
   casa:  'house home real estate',
   carro: 'car vehicle for sale',
+  // portadas de EVENTOS (una por `events.cat`)
+  ev_musica:    'live music concert crowd',
+  ev_comida:    'food festival street food',
+  ev_mercado:   'street market stalls',
+  ev_comunidad: 'community gathering people',
+  ev_deportes:  'sports match crowd',
+};
+
+/** `events.cat` → pool de portada. Lo que no esté aquí cae en `ev_comunidad`. */
+const EVENT_A_POOL = {
+  musica: 'ev_musica',
+  comida: 'ev_comida',
+  mercado: 'ev_mercado',
+  comunidad: 'ev_comunidad',
+  nightlife: 'nocturna',
+  deportes: 'ev_deportes',
+  familia: 'ev_comunidad',
+  cultura: 'ev_comunidad',
 };
 
 // categoría de negocio → pool para su portada/galería/avatar
@@ -220,7 +238,21 @@ function apply(pools) {
       where i.kind=${q(kind)} and i.business_id in (select id from public.businesses where category_id=${q(cat)});`);
   }
 
-  // 4 · Propiedades y vehículos: 4 fotos cada uno (columna array), por hash.
+  // 4 · Portada de cada EVENTO, según su `cat`.
+  //     Solo se tocan los que NO tienen portada o cuya portada ya vino de aquí:
+  //     una portada subida por el dueño es suya y no se pisa.
+  for (const [cat, poolId] of Object.entries(EVENT_A_POOL)) {
+    const pool = pools[poolId];
+    if (!pool) continue;
+    const urls = pool.map((p) => sized(p.raw, 'w=1200&h=675&q=75'));
+    partes.push(`
+      update public.events e set cover_url = a.arr[(abs(hashtextextended(e.id::text,0)) % ${urls.length}) + 1]
+      from (select ${arrLit(urls)} as arr) a
+      where e.cat = ${q(cat)}
+        and (e.cover_url is null or e.cover_url = '' or e.cover_url like '%images.unsplash.com%');`);
+  }
+
+  // 5 · Propiedades y vehículos: 4 fotos cada uno (columna array), por hash.
   for (const [tabla, poolId] of [['properties', 'casa'], ['vehicles', 'carro']]) {
     const urls = pools[poolId].map((p) => sized(p.raw, 'w=1000&h=667&q=75'));
     // `photos` es jsonb (no text[]): se envuelve con to_jsonb.
