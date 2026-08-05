@@ -118,7 +118,24 @@ pnpm --filter @tolatino/web build
 # comprobar un build ya hecho contra un destino concreto
 TOLATINO_TARGET=staging node scripts/verify-build.mjs
 STRIPE_EXPECT=live node scripts/verify-build.mjs   # exigir Stripe en vivo
+
+# permisos de la base: que ninguna admin_*/disparador/función nazca abierta a
+# anon (correr tras CUALQUIER migración que cree o toque funciones o permisos)
+SUPABASE_PROJECT_REF=zpkaxojonufdwgahiqjh node scripts/verify-permisos.mjs  # pruebas
+node scripts/verify-permisos.mjs                                           # producción
 ```
+
+### Los tres guardianes, y qué caza cada uno
+- **`scripts/verify-build.mjs`** (corre solo en `postbuild`) — que el build
+  servido no lleve datos fabricados, secretos, ni apunte a la base equivocada.
+- **`scripts/verify-permisos.mjs`** — mira la BASE: que ninguna `admin_*` o
+  disparador sea ejecutable por `anon`, que el panel siga vivo para
+  `authenticated`, y que ninguna función SECURITY DEFINER nazca abierta fuera de
+  su lista blanca. Necesita `SUPABASE_ACCESS_TOKEN`, así que **no** se puede
+  enganchar al build de Vercel; se corre a mano tras tocar funciones/permisos.
+- **`tools/mobile-audit/permisos-anon.js`** — mira el NAVEGADOR: recorre el sitio
+  sin sesión y falla si algo público devuelve `permission denied`. Es el reverso
+  de `verify-permisos`: aquél caza «nació abierto», éste caza «se cerró de más».
 
 ## Reglas que NO se saltan
 

@@ -575,11 +575,19 @@
     dejando el SELECT de `storage.objects` solo para la carpeta propia. Las fotos
     se siguen viendo: en un cubo público la URL `/object/public/…` no pasa por
     RLS — comprobado antes y después, `200` y los mismos 800.807 bytes.
-  · **Guardián nuevo:** `tools/mobile-audit/permisos-anon.js` recorre el sitio
-    SIN cuenta (portada, las 5 secciones, ficha de negocio con sus pestañas,
-    búsqueda) y falla si alguna llamada devuelve `401`/`403` o «permission
-    denied». Corrida limpia: **25 RPC distintas, 0 denegadas**. Correrlo tras
-    cualquier cambio de permisos.
+  · **Dos guardianes nuevos, uno por cada dirección del error:**
+    1. `scripts/verify-permisos.mjs` (mira la BASE) — falla si una `admin_*` o un
+       disparador es ejecutable por `anon`, si el panel queda roto para
+       `authenticated`, o si una función SECURITY DEFINER nace abierta fuera de su
+       lista blanca de 44. Es el guardián que la 0148 no había dejado: sin él, la
+       próxima `admin_*` nacía abierta y nada la cazaba (regla §3). **Probado por
+       los dos lados**: pasa limpio en las dos bases y, con 4 funciones
+       defectuosas sembradas a propósito (una por invariante), las cazó las 4 y
+       salió con código 1 — una comprobación que no puede fallar no vale.
+    2. `tools/mobile-audit/permisos-anon.js` (mira el NAVEGADOR) — recorre el
+       sitio SIN cuenta y falla si algo público devuelve `401`/`403`. Es el
+       reverso: caza «se cerró de más». Corrida limpia: **25 RPC, 0 denegadas**.
+    Correr los dos tras cualquier cambio de permisos.
 
 - [ ] **Los correos de la base de PRUEBAS no llevan la marca, y no se puede
   arreglar ahí (2026-08-04).** Al poner la plantilla de «elige una contraseña
