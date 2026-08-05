@@ -128,6 +128,17 @@
     facturas `INV-1740`). Para un negocio real hay que enseñar las de Stripe o
     no enseñar nada.
 
+- [ ] **`businesses.search_vector` es peso muerto: sobra ella y sobra su índice
+  (2026-08-05).** Al arreglar la búsqueda (0152) se vio que la columna VIEJA
+  sigue ahí con su GIN (`businesses_search_gin`), y que **ningún trigger la
+  mantiene** desde la 0144 — solo `trg_business_search_tsv`, que llena
+  `search_tsv`. Se comprobó que ninguna función la lee: el único sitio donde
+  aparece es `admin_business_detail`, y es para QUITARLA del JSON.
+  O sea: se paga el coste de escritura de un índice que no sirve a nadie.
+  **No se borró en la 0152 a propósito** — borrar es irreversible y esa
+  migración ya cambiaba bastante. Hacerlo aparte, confirmando antes con
+  `pg_stat_user_indexes` que el índice tiene 0 lecturas.
+
 - [ ] **🟡 El transformador de imágenes de Supabase se está usando, y se
   factura (2026-08-05).** El fundador preguntó por qué tardaban las fotos
   teniendo ya un conversor a WebP. Lo teníamos —`lib/image.ts` convierte al
@@ -616,7 +627,7 @@
      asumible hoy y no lo será después: el día del primer pedido pagado de
      verdad, plan Pro.
 
-- [ ] **🔴 LA BÚSQUEDA NO ENTIENDE ESPAÑOL (diagnosticado 2026-08-04).**
+- [x] **LA BÚSQUEDA NO ENTIENDE ESPAÑOL — arreglada (0144) y, el 2026-08-05, arreglada de verdad (0152).**
   El fundador escribió «mecanico» y no salió NINGÚN taller, habiendo 18 en el
   radio. Medido contra los 548 negocios de pruebas:
   `mecanico`→0 · `mecánico`→4 · `mecanica`→2 · `mecánica`→4 · `mecanioc`→0.
@@ -638,6 +649,26 @@
   `mecanico` pasa de **0 a 18 resultados** solo con (1) diccionario español +
   `unaccent` y (2) la etiqueta legible de la categoría dentro del índice. Con
   `word_similarity` a 0.6, `mecaniko`, `mecanioc` y `taler` también dan 18.
+  **LO QUE FALTABA, descubierto el 2026-08-05 al ir a arreglarlo:** los
+  resultados ya eran correctos —por eso se dio por cerrada— pero nadie había
+  mirado CÓMO se conseguían. Medido con `explain (analyze)` sobre 547 negocios:
+  el camino principal (`search_tsv @@ …`) hacía **Seq Scan en 533 ms** y la capa
+  de erratas **Seq Scan en 465 ms**. La causa era de una línea: la 0144 creó la
+  columna `search_tsv` y **nunca creó su índice**; el único GIN que había apunta
+  a `search_vector`, la columna VIEJA que ya no mantiene ningún trigger.
+  Con 547 filas no se nota; con el objetivo de 1M+ una búsqueda que lee la tabla
+  entera no es lenta, es imposible. **Esto no se ve probando la app.**
+  **0152** pone el índice que faltaba, guarda el mismo texto también en plano
+  (`search_txt`, para que la capa de erratas no se fabrique el suyo y se quede
+  sin la etiqueta de la categoría) y cambia `word_similarity(...) > 0.45` por el
+  operador `<%`, que sí puede apoyarse en un índice. Resultado medido:
+  · principal **533 ms → 4 ms** (Bitmap Index Scan)
+  · erratas **465 ms → 15 ms**, y `mecaniko`/`mecanioc` pasan de **5 a 18**
+  El mismo patrón se buscó en TODA la base: de las 6 columnas `tsvector` solo a
+  esta le faltaba índice, y la capa de erratas no indexable se repetía solo en
+  `search_events` — arreglada igual en la misma migración.
+  El umbral se queda en **0.45** con datos, no a ojo: a 0.40 `peluceria` pasa de
+  40 a 160 resultados de 548, que es dejar de buscar y empezar a devolver todo.
   `unaccent` y `pg_trgm` ya están instaladas en las dos bases.
   **Afecta igual a `search_events`, `search_posts`, `properties_search` y
   `vehicles_search`** — mismo patrón `'simple'`; hay que revisarlas todas, no
