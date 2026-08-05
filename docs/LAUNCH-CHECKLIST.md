@@ -128,6 +128,59 @@
     facturas `INV-1740`). Para un negocio real hay que enseñar las de Stripe o
     no enseñar nada.
 
+- [ ] **🟠 ÚLTIMO PASO ANTES DE ABRIR: montar Stripe en producción (acordado
+  2026-08-05).** Decisión del fundador, y es la buena: **no se toca Stripe en
+  producción hasta el final.** Él prueba en el sitio de `pruebas`, no en el live;
+  montar allí claves de prueba sería trabajo para deshacerlo después. La cuenta
+  real se abre cuando la compañía esté registrada, y entonces se hace esto de una
+  vez. **Producción no cobra nada hoy porque no hay ni un negocio dado de alta.**
+
+  El orden importa; cada punto rompe al siguiente si falta.
+
+  1. **Activar la cuenta de Stripe** (modo LIVE): datos de la compañía, cuenta
+     bancaria y datos fiscales. Sin esto Stripe acepta pagos pero no transfiere.
+  2. **Clave secreta.** Stripe → *Developers → API keys*, en **LIVE** → copiar
+     `sk_live_…` → Supabase, proyecto `tolatino-prod` → *Edge Functions →
+     Secrets* → `STRIPE_SECRET_KEY`. **Nunca por chat ni al repo** (es público):
+     del panel de Stripe al panel de Supabase, directo.
+  3. **Webhook**, también en LIVE → *Developers → Webhooks → Add endpoint*:
+     `https://vurqsebgsacickxsxfeh.supabase.co/functions/v1/stripe-webhook`
+     Exactamente estos cinco eventos, que son los que el código atiende:
+     `account.updated`, `checkout.session.completed`,
+     `customer.subscription.updated`, `customer.subscription.deleted`,
+     `payment_intent.succeeded`.
+     El *Signing secret* (`whsec_…`) **de ESE endpoint** va en
+     `STRIPE_WEBHOOK_SECRET` de `tolatino-prod`. Es distinto del de pruebas: el
+     secreto es por endpoint. Si se copia el otro, el webhook rechaza todo por
+     firma inválida — y una suscripción se cobraría **sin subir el negocio a
+     Verified**, porque es el webhook quien cambia el plan.
+  4. **Connect en LIVE:** activado, con el perfil de plataforma relleno (Stripe
+     lo exige antes de dejar crear cuentas live). El código crea cuentas
+     **Express** pidiendo `card_payments` y `transfers`.
+  5. **Desplegar `stripe-subscribe`** en producción con `verify_jwt = true`. Hoy
+     NO está desplegada; la app la llama desde `lib/stripe.ts`, así que sin ella
+     el cobro de Verified falla. (`send-otp` tampoco está: confirmar si es un
+     hook de Auth del panel.)
+  6. **`STRIPE_EXPECT=live`** en las variables de Vercel del entorno Production.
+     A partir de ahí `scripts/verify-build.mjs` **rompe el build** si el build de
+     producción no trae `pk_live` — o sea, si alguien lanza creyendo que cobra y
+     está en pruebas.
+  7. **Prueba final con una tarjeta real**: dar de alta un negocio, suscribirlo a
+     Verified ($14.99), comprobar en Stripe que el cobro entró y en la base que
+     `businesses.tier` pasó a `verified`. Reembolsarse a uno mismo después.
+
+  **NO crear a mano el producto ni el precio de Verified.** `stripe-subscribe` lo
+  crea solo la primera vez con `lookup_key = tolatino_verified_1499_monthly`, y
+  el importe vive en el servidor. Crearlo a mano deja dos precios y se cobra el
+  que no es.
+
+  **Un cabo suelto que conviene saber, sin urgencia:** hoy
+  `apps/web/.env.production` ya lleva una `pk_live` (clave PÚBLICA, no es una
+  fuga) mientras la secreta guardada en `tolatino-prod` es de modo desconocido —
+  no se puede leer, Supabase la devuelve cifrada. Si estuvieran en modos
+  distintos, no se notaría hasta el día de abrir. El punto 2 lo resuelve porque
+  reescribe la secreta; y el punto 7 lo comprueba de verdad.
+
 - [ ] **🟠 Las migraciones se aplican a mano y NADIE lleva la cuenta — dos
   llevaban meses sin ejecutarse en producción (2026-08-05).** Al preguntar el
   fundador si quedaba algo pendiente para producción, salió que la **0131**
