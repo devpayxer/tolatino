@@ -138,16 +138,51 @@ export async function reverseGeocode(lat: number, lng: number, signal?: AbortSig
 // `verified` = exact rooftop match from the US Census geocoder (official TIGER
 // data). `approx` = synthesized house-number + street suggestion (coords at the
 // street until the pick is snapped through the Census geocoder).
-export type Address = { formatted: string; lat: number; lng: number; city: string; verified?: boolean; approx?: boolean };
+/**
+ * Una dirección resuelta.
+ *
+ * `formatted` es la línea entera de siempre. Las PIEZAS (`line1`, `city`,
+ * `state`, `postal`) se añadieron el 2026-08-05 porque el alta de negocio pide
+ * un formulario de verdad — calle, ciudad, estado y código postal por separado —
+ * y hasta ahora el geocodificador SÍ conocía el estado y el ZIP (los usa
+ * `addrLabel` para componer la cadena) pero los tiraba después de juntarlos. Sin
+ * ellas, rellenar el formulario obligaría a partir el texto con expresiones
+ * regulares, que es adivinar lo que ya sabíamos.
+ *
+ * Son opcionales a propósito: hay fuentes que no las traen (una dirección de
+ * OSM sin `postcode`), y quien las use tiene que aguantar que falten.
+ */
+export type Address = {
+  formatted: string; lat: number; lng: number; city: string;
+  verified?: boolean; approx?: boolean;
+  /** Calle y número, sin ciudad ni estado. */
+  line1?: string;
+  /** Solo el nombre de la ciudad (`city` trae «Ciudad, ST»). */
+  cityName?: string;
+  /** Sigla de dos letras: PA, TX… */
+  state?: string;
+  /** Código postal. */
+  postal?: string;
+};
 
 function stAbbr(p: Record<string, string | undefined>): string {
   return p.countrycode?.toUpperCase() === 'US' ? US_STATE_ABBR[p.state ?? ''] ?? p.state ?? '' : p.state ?? '';
 }
 
+/** Las piezas sueltas, antes de juntarlas. Es la misma lectura que hace
+ *  `addrLabel`; se separó para poder rellenar un formulario con ellas. */
+function addrParts(p: Record<string, string | undefined>) {
+  return {
+    line1: [p.housenumber, p.street || p.name].filter(Boolean).join(' ') || p.name || '',
+    cityName: p.city || p.town || p.village || p.municipality || p.district || p.locality || p.suburb || p.county || '',
+    state: stAbbr(p),
+    postal: p.postcode || '',
+  };
+}
+
 function addrLabel(p: Record<string, string | undefined>): string {
-  const line1 = [p.housenumber, p.street || p.name].filter(Boolean).join(' ') || p.name || '';
-  const cityPart = p.city || p.town || p.village || p.district || p.locality || p.suburb || p.county || '';
-  const tail = [cityPart, [stAbbr(p), p.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const { line1, cityName, state, postal } = addrParts(p);
+  const tail = [cityName, [state, postal].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   return [line1, tail].filter(Boolean).join(', ');
 }
 
@@ -200,7 +235,7 @@ async function photonSearch(q: string, near: NearCtx | null | undefined, signal:
       const formatted = addrLabel(p);
       if (!formatted || seen.has(formatted.toLowerCase())) continue;
       seen.add(formatted.toLowerCase());
-      out.push({ formatted, lat, lng, city: cityLabelOf(p) });
+      out.push({ formatted, lat, lng, city: cityLabelOf(p), ...addrParts(p) });
       if (out.length >= 6) break;
     }
     return out;
@@ -262,7 +297,15 @@ export async function censusGeocode(oneline: string, signal?: AbortSignal): Prom
   const parts = m.matchedAddress.split(',').map((s) => s.trim());
   const formatted =
     parts.length >= 4 ? `${titleCase(parts[0])}, ${titleCase(parts[1])}, ${parts[2]} ${parts[3]}` : titleCase(m.matchedAddress);
-  return { formatted, lat: m.coordinates.y, lng: m.coordinates.x, city, verified: true };
+  // Las piezas salen de `addressComponents`, que es el dato OFICIAL del censo —
+  // no de partir `formatted`, que es texto ya cocinado.
+  return {
+    formatted, lat: m.coordinates.y, lng: m.coordinates.x, city, verified: true,
+    line1: parts.length >= 1 ? titleCase(parts[0]) : undefined,
+    cityName: comp.city ? titleCase(comp.city) : undefined,
+    state: comp.state || undefined,
+    postal: comp.zip || undefined,
+  };
 }
 
 /** Did the Census match the SAME house+street the user picked? (Census can
@@ -431,8 +474,8 @@ export async function reverseAddress(lat: number, lng: number, signal?: AbortSig
         countrycode: a.country_code,
       };
       const formatted = addrLabel(p);
-      if (formatted) return { formatted, lat, lng, city: cityLabelOf(p) };
-      if (data.display_name) return { formatted: data.display_name, lat, lng, city: cityLabelOf(p) };
+      if (formatted) return { formatted, lat, lng, city: cityLabelOf(p), ...addrParts(p) };
+      if (data.display_name) return { formatted: data.display_name, lat, lng, city: cityLabelOf(p), ...addrParts(p) };
     }
   } catch {
     /* ignore — fall through */

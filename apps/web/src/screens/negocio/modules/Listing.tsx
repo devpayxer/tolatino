@@ -11,6 +11,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconClock as Clock, IconExternalLink as ExternalLink, IconGlobe as Globe, IconPhoto as ImageIcon, IconChecklist as ListChecks, IconLoader2 as Loader2, IconLock as Lock, IconMessageCircle as MessageCircle, IconShield as Shield, IconStar as Star, IconStarFilled as StarFilled, IconBuildingStore as Store, IconTag as Tag } from '@tabler/icons-react';
 import { useBizAdmin } from '@/lib/bizAdmin';
+import { DireccionForm, type DireccionNegocio } from '@/components/DireccionForm';
+import { supabase } from '@/lib/supabase';
 import { formatPhone } from '@/lib/phone';
 import { listSuggestions, proposeSuggestion, cancelSuggestion, type Suggestion, type SuggestionTable } from '@/lib/suggestions';
 import { TaxonomyPicker } from '@/screens/negocio/modules/TaxonomyPicker';
@@ -35,7 +37,9 @@ type Draft = {
   tagline: string;
   price_level: string;
   phone: string;
-  address: string;
+  /** La dirección completa y su punto (0153). Antes era una cadena suelta y al
+   *  cambiarla el pin del negocio se quedaba donde estaba. */
+  dir: DireccionNegocio;
   website: string;
   acceptsMessages: boolean;
   messageChannel: string; // 'sms' | 'whatsapp'
@@ -55,6 +59,7 @@ const normalizeWebsite = (v: string): string | null => {
 const draftOf = (b: {
   name: string; category_id: string; tagline_es: string | null; price_level: string | null;
   phone: string | null; address: string | null; website: string | null;
+  address_line2?: string | null; city?: string | null; state?: string | null; postal_code?: string | null;
   accepts_messages: boolean; message_channel: string | null; message_phone: string | null;
   subcategories: string[] | null; features: string[] | null; card_features: string[] | null; about_es: string | null;
 }): Draft => ({
@@ -67,7 +72,14 @@ const draftOf = (b: {
   tagline: b.tagline_es ?? '',
   price_level: b.price_level ?? '',
   phone: formatPhone(b.phone ?? ''),
-  address: b.address ?? '',
+  dir: {
+    line1: b.address ?? '', line2: b.address_line2 ?? '',
+    city: b.city ?? '', state: b.state ?? '', postal: b.postal_code ?? '',
+    // El punto NO se trae: si el dueño no toca la dirección no se reescribe, y
+    // si la toca hay que volver a geocodificar. Traerlo invitaría a guardar la
+    // coordenada vieja con una calle nueva, que es el fallo original.
+    lat: null, lng: null,
+  },
   website: b.website ?? '',
   acceptsMessages: b.accepts_messages ?? false,
   messageChannel: b.message_channel ?? 'whatsapp',
@@ -196,7 +208,11 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       draft.tagline.trim() !== (real.tagline_es ?? '') ||
       draft.price_level !== (real.price_level ?? '') ||
       draft.phone.trim() !== (real.phone ?? '') ||
-      draft.address.trim() !== (real.address ?? '') ||
+      draft.dir.line1.trim() !== (real.address ?? '') ||
+      draft.dir.line2.trim() !== (real.address_line2 ?? '') ||
+      draft.dir.city.trim() !== (real.city ?? '') ||
+      draft.dir.state !== (real.state ?? '') ||
+      draft.dir.postal.trim() !== (real.postal_code ?? '') ||
       draft.about.trim() !== (real.about_es ?? ''));
 
   const save = async () => {
@@ -209,7 +225,6 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       tagline_en: draft.tagline.trim() || null,
       price_level: draft.price_level || null,
       phone: draft.phone.trim() || null,
-      address: draft.address.trim() || null,
       about_es: draft.about.trim() || null,
       about_en: draft.about.trim() || null,
       // Pro-only fields never leave the client on the Free tier.
@@ -223,9 +238,37 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
         message_phone: draft.acceptsMessages && !draft.sameNumber ? (draft.messagePhone.trim() || null) : null,
       }),
     });
+    // La DIRECCIÓN va aparte, por `set_business_address`, y no en el UPDATE de
+    // arriba. No es por gusto: esa función escribe la calle Y el punto del mapa
+    // en la misma operación. Antes esto era una columna de texto más, así que un
+    // negocio podía mudarse de calle y su pin se quedaba en la anterior — nadie
+    // se enteraba hasta que un cliente no lo encontraba.
+    let errDir: string | null = null;
+    const dirCambio =
+      draft.dir.line1.trim() !== (real.address ?? '') ||
+      draft.dir.line2.trim() !== (real.address_line2 ?? '') ||
+      draft.dir.city.trim() !== (real.city ?? '') ||
+      draft.dir.state !== (real.state ?? '') ||
+      draft.dir.postal.trim() !== (real.postal_code ?? '');
+    if (dirCambio && supabase && !admin.demo) {
+      const { error: e } = await supabase.rpc('set_business_address', {
+        p_business_id: real.id,
+        p_address: draft.dir.line1.trim(),
+        p_line2: draft.dir.line2.trim(),
+        p_city: draft.dir.city.trim(),
+        p_state: draft.dir.state,
+        p_postal: draft.dir.postal.trim(),
+        // Sin coordenada nueva se manda null y el servidor CONSERVA la que
+        // había: mejor un punto viejo que ninguno.
+        p_lat: draft.dir.lat,
+        p_lng: draft.dir.lng,
+      });
+      errDir = e?.message ?? null;
+    }
+
     setSaving(false);
     flash(
-      error
+      error || errDir
         ? L('No se pudo guardar. Intenta de nuevo.', "Couldn't save. Try again.")
         : skipped?.length
           ? L('Guardado — falta una migración para algunos campos', 'Saved — some fields need a pending DB migration')
@@ -546,10 +589,10 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
               )}
             </div>}
 
-            <label className="block">
+            <div className="block">
               {label(L('Dirección', 'Address'))}
-              <input value={draft.address} onChange={(e) => set('address', e.target.value)} className={inputCls} placeholder={L('Calle y número', 'Street address')} />
-            </label>
+              <DireccionForm valor={draft.dir} onChange={(d) => set('dir', d)} inputCls={inputCls} />
+            </div>
 
             {/* Sitio web (Pro) */}
             {isFree ? proLock(Globe, L('Sitio web', 'Website'), L('Enlaza tu página desde tu ficha pública.', 'Link your website from your public listing.'))

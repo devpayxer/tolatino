@@ -41,6 +41,7 @@ import {
 } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { DireccionForm, DIRECCION_VACIA, direccionCompleta, type DireccionNegocio } from '@/components/DireccionForm';
 import { useAuth } from '@/lib/auth';
 import { useLiveData } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
@@ -85,7 +86,10 @@ const DRAFT_KEY = 'tl_biz_onboarding_v1';
 /** Lo que SÍ cabe en el borrador (todo serializable; las fotos no van aquí). */
 type Draft = {
   step: Step; cat: CatKey | null; subs: string[];
-  name: string; desc: string; phone: string; wa: string; addr: string; noAddr: boolean;
+  name: string; desc: string; phone: string; wa: string; noAddr: boolean;
+  /** Dirección en piezas (0153). Los borradores viejos traían `addr` suelto y se
+   *  migran al leerlos: no vale tirar el trabajo de alguien por cambiar el tipo. */
+  dir: DireccionNegocio; addr?: string;
   features: string[]; hours: WeekHours | null; plan: 'free' | 'verified'; terms: boolean;
 };
 
@@ -108,7 +112,10 @@ export function BizOnboardingScreen() {
   const [desc, setDesc] = useState('');
   const [phone, setPhone] = useState('');
   const [wa, setWa] = useState('');
-  const [addr, setAddr] = useState('');
+  const [dir, setDir] = useState<DireccionNegocio>(DIRECCION_VACIA);
+  /** La dirección en una línea, para el resumen final. */
+  const dirResumen = [dir.line1, dir.line2, dir.city, [dir.state, dir.postal].filter(Boolean).join(' ')]
+    .map((x) => x.trim()).filter(Boolean).join(', ');
   const [noAddr, setNoAddr] = useState(false);
   const [features, setFeatures] = useState<string[]>([]);
   const [hours, setHours] = useState<WeekHours | null>(null);
@@ -136,7 +143,9 @@ export function BizOnboardingScreen() {
     hydrated.current = true;
     if (!d) return;
     setCat(d.cat); setSubs(d.subs ?? []); setName(d.name ?? ''); setDesc(d.desc ?? '');
-    setPhone(d.phone ?? ''); setWa(d.wa ?? ''); setAddr(d.addr ?? ''); setNoAddr(!!d.noAddr);
+    setPhone(d.phone ?? ''); setWa(d.wa ?? ''); setNoAddr(!!d.noAddr);
+    // Borrador viejo: la calle iba en `addr` y no había piezas ni coordenada.
+    setDir(d.dir ?? (d.addr ? { ...DIRECCION_VACIA, line1: d.addr } : DIRECCION_VACIA));
     setFeatures(d.features ?? []); setHours(d.hours ?? null); setPlan(d.plan ?? 'verified');
     setTerms(!!d.terms);
     // `publishing` nunca se restaura: una publicación a medias no se reanuda sola.
@@ -145,8 +154,8 @@ export function BizOnboardingScreen() {
 
   useEffect(() => {
     if (!hydrated.current || step === 'done') return;
-    saveDraft<Draft>(DRAFT_KEY, { step, cat, subs, name, desc, phone, wa, addr, noAddr, features, hours, plan, terms });
-  }, [step, cat, subs, name, desc, phone, wa, addr, noAddr, features, hours, plan, terms]);
+    saveDraft<Draft>(DRAFT_KEY, { step, cat, subs, name, desc, phone, wa, dir, noAddr, features, hours, plan, terms });
+  }, [step, cat, subs, name, desc, phone, wa, dir, noAddr, features, hours, plan, terms]);
 
   // ── Derivados ─────────────────────────────────────────────────────────────
   const catInfo = cat ? CAT[cat] : null;
@@ -166,13 +175,20 @@ export function BizOnboardingScreen() {
     step === 'cat' ? !!cat
       : step === 'sub' ? subs.length > 0
         : step === 'info' ? name.trim().length > 0 && phone.trim().length > 0
+          // Con local, la dirección es obligatoria: es de donde sale el punto
+          // del negocio en el mapa y en las búsquedas por cercanía. Sin local no
+          // se pide nada — ese camino usa la ciudad a propósito.
+          && (noAddr || direccionCompleta(dir))
           : step === 'pay' ? terms
             : true;
 
   const invalidMsg = () =>
     step === 'cat' ? L('Elige una categoría', 'Pick a category')
       : step === 'sub' ? L('Elige al menos una subcategoría', 'Pick at least one subcategory')
-        : step === 'info' ? L('Falta el nombre y el teléfono', 'Name and phone are required')
+        : step === 'info'
+          ? (name.trim().length > 0 && phone.trim().length > 0
+              ? L('Falta la dirección: calle y ciudad', 'Address is missing: street and city')
+              : L('Falta el nombre y el teléfono', 'Name and phone are required'))
           : L('Acepta los términos para publicar', 'Accept the terms to publish');
 
   // ── Publicar de verdad ────────────────────────────────────────────────────
@@ -186,7 +202,7 @@ export function BizOnboardingScreen() {
     // Publicar exige cuenta. El borrador ya está guardado, así que el viaje a
     // /entrar no cuesta nada: al volver se retoma en este mismo paso.
     if (supabase && !auth.user) {
-      saveDraft<Draft>(DRAFT_KEY, { step: 'pay', cat, subs, name, desc, phone, wa, addr, noAddr, features, hours, plan, terms });
+      saveDraft<Draft>(DRAFT_KEY, { step: 'pay', cat, subs, name, desc, phone, wa, dir, noAddr, features, hours, plan, terms });
       router.push('/entrar');
       return;
     }
@@ -201,17 +217,26 @@ export function BizOnboardingScreen() {
       p_subcats: subs,
       p_price: null,
       p_phone: phone.trim(),
-      p_address: noAddr ? '' : addr.trim(),
-      p_city: app.city,
+      p_address: noAddr ? '' : dir.line1.trim(),
+      // Sin local NO se guarda dirección y la ciudad es la de la app: es lo que
+      // el alta promete por escrito («mostramos tu zona, no tu dirección»).
+      p_city: noAddr ? app.city : (dir.city.trim() || app.city),
       p_about: desc.trim(),
       p_specialty_es: sub0?.[0] ?? '',
       p_specialty_en: sub0?.[1] ?? '',
       p_tile_a: CAT[cat].bg,
       p_tile_b: CAT[cat].dot,
-      p_lat: app.coords.lat,
-      p_lng: app.coords.lng,
+      // LA COORDENADA DEL NEGOCIO, no la de la ciudad que el dueño tuviera
+      // elegida — que es lo que se guardaba antes y dejaba a todos los pines en
+      // el centro del pueblo. Si no se pudo geocodificar, el centro de la ciudad
+      // es un respaldo honesto y el dueño puede corregirlo desde el panel.
+      p_lat: noAddr ? app.coords.lat : (dir.lat ?? app.coords.lat),
+      p_lng: noAddr ? app.coords.lng : (dir.lng ?? app.coords.lng),
       p_features: features,
       p_hours: hours,
+      p_address_line2: noAddr ? null : (dir.line2.trim() || null),
+      p_state: noAddr ? null : (dir.state || null),
+      p_postal: noAddr ? null : (dir.postal.trim() || null),
     });
 
     if (error || !slug) {
@@ -507,8 +532,9 @@ export function BizOnboardingScreen() {
                     {field(L('WhatsApp (si es otro)', 'WhatsApp (if different)'),
                       <input value={wa} onChange={(e) => setWa(formatPhone(e.target.value))} inputMode="tel" placeholder={L('Opcional', 'Optional')} className={inputCls} />)}
                   </div>
-                  {!noAddr && field(L('Dirección', 'Address'),
-                    <input value={addr} onChange={(e) => setAddr(e.target.value)} placeholder={L('Calle, ciudad y código postal', 'Street, city and ZIP')} className={inputCls} />)}
+                  {!noAddr && (
+                    <DireccionForm valor={dir} onChange={setDir} cerca={{ lat: app.coords.lat, lng: app.coords.lng, city: app.city }} inputCls={inputCls} />
+                  )}
 
                   <button
                     onClick={() => setNoAddr((v) => !v)}
@@ -785,7 +811,7 @@ export function BizOnboardingScreen() {
                     [L('Tipos', 'Types'), subs.length ? subs.slice(0, 3).join(', ') + (subs.length > 3 ? '…' : '') : '—', 'sub'],
                     [L('Herramienta', 'Tool'), tool ? L(tool.es, tool.en) : '—', 'sub'],
                     [L('Contacto', 'Contact'), phone || '—', 'info'],
-                    [L('Dirección', 'Address'), noAddr ? L('A domicilio', 'On-site') : (addr || '—'), 'info'],
+                    [L('Dirección', 'Address'), noAddr ? L('A domicilio', 'On-site') : (dirResumen || '—'), 'info'],
                     [L('Fotos', 'Photos'), gallery.length ? `${gallery.length} ${L('fotos', 'photos')}` : L('Sin fotos', 'No photos'), 'media'],
                     [L('Horario', 'Hours'), hours ? L('Configurado', 'Set') : L('Sin horario', 'Not set'), 'hours'],
                     [L('Plan', 'Plan'), isVerified ? `Verified · $${VERIFIED_PRICE}/${L('mes', 'mo')}` : 'Free · $0', 'plan'],

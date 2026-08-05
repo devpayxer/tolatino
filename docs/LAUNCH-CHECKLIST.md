@@ -128,6 +128,18 @@
     facturas `INV-1740`). Para un negocio real hay que enseñar las de Stripe o
     no enseñar nada.
 
+- [ ] **Rellenar estado y ZIP de los negocios ya existentes (2026-08-05).** La
+  0153 añadió `state`, `postal_code` y `address_line2`, y el alta ya los pide.
+  Los negocios creados ANTES los tienen a null: su `address` es una cadena suelta
+  con todo dentro. No urge —la ficha se ve igual y la búsqueda no depende de
+  ellos— pero mientras estén vacíos no se puede filtrar por código postal, que es
+  lo primero que pide un negocio con reparto («¿a qué ZIPs llego?»).
+  **Cómo:** un script que lea `address`, lo pase por `censusGeocode` y escriba las
+  piezas con `set_business_address`. En la base de PRUEBAS son 548 filas
+  sembradas: ahí da igual. En producción hoy no hay ninguno, así que la deuda
+  real es cero — se cierra sola si se hace antes de que entren negocios de
+  verdad.
+
 - [ ] **🟠 ÚLTIMO PASO ANTES DE ABRIR: montar Stripe en producción (acordado
   2026-08-05).** Decisión del fundador, y es la buena: **no se toca Stripe en
   producción hasta el final.** Él prueba en el sitio de `pruebas`, no en el live;
