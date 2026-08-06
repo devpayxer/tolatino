@@ -7,7 +7,8 @@
 // isn't configured) it stays in DEMO mode so the dashboard is always explorable —
 // the Panel keeps its fixture identity in that case.
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import type { Mods, Rubro, Tier } from '@/screens/negocio/tabs';
@@ -121,6 +122,13 @@ type BizAdminCtx = {
   configured: boolean; // Supabase present
   demo: boolean; // not signed in → sample business, edits local only, no network reads
   loading: boolean;
+  /** Re-comprobación EN CURSO sobre datos ya cargados. Quien pinte «aún no
+   *  tienes negocio» debe esperar a que baje: si no, enseña esa frase durante
+   *  la comprobación que precisamente va a desmentirla. */
+  revalidando: boolean;
+  /** La última carga FALLÓ y no hay nada que enseñar. No es lo mismo que «no
+   *  tienes negocios», y decir lo segundo cuando pasa lo primero es mentir. */
+  errorCarga: boolean;
   hasReal: boolean; // signed-in owner has ≥1 real business
   businesses: BizRow[];
   active: BizRow | null;
@@ -145,6 +153,14 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
   const [businesses, setBusinesses] = useState<BizRow[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
+  const [revalidando, setRevalidando] = useState(false);
+  const [errorCarga, setErrorCarga] = useState(false);
+  // Qué usuario tiene ya una carga BUENA. Distingue la primera carga (que sí
+  // enseña el gate) de una re-comprobación (que debe ser muda).
+  const cargadoPara = useRef<string | null>(null);
+  // ¿En qué ruta del panel estamos? `/negocio/publicar` vive DENTRO de este
+  // layout, así que al terminar el alta el proveedor NO se vuelve a montar.
+  const pathname = usePathname();
 
   useEffect(() => {
     // Sin sesión (o sin Supabase) → VACÍO, no demo. El panel muestra su estado
@@ -154,11 +170,33 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
       setBusinesses([]);
       setActiveId(null);
       setLoading(false);
+      setErrorCarga(false);
+      cargadoPara.current = null;
       return;
     }
     let cancelled = false;
     setDemo(false);
-    setLoading(true);
+    // ════════════════════════════════════════════════════════════════════════
+    // POR QUÉ ESTO SE RE-EJECUTA AL CAMBIAR DE RUTA (2026-08-05)
+    // ════════════════════════════════════════════════════════════════════════
+    // El fundador creó un negocio, pagó Verified, tocó «Entrar a mi panel» y le
+    // salió «Aún no tienes un negocio». El negocio existía y estaba pagado: lo
+    // que fallaba era ESTA lista. `/negocio/publicar` está dentro del layout
+    // que monta este proveedor, así que el alta entera transcurre SIN
+    // remontarlo — y la lista seguía siendo la que se cargó al entrar, cuando
+    // el dueño no tenía nada. Al volver a `/negocio` no se recargaba porque el
+    // efecto solo dependía de `user.id`, que no había cambiado.
+    //
+    // Arreglarlo aquí y no en el alta es a propósito: había DOS sitios que
+    // crean negocios (el alta y `PublishModal`) y NINGUNO avisaba al panel.
+    // Depender de que cada llamador se acuerde es cómo vuelve este fallo.
+    //
+    // La re-comprobación es MUDA (no toca `loading`): subirlo aquí volvería a
+    // parpadear los seis módulos a spinner en cada navegación, que es el bug
+    // que documenta el comentario del final de este efecto.
+    const esPrimera = cargadoPara.current !== user.id;
+    if (esPrimera) setLoading(true);
+    else setRevalidando(true);
     (async () => {
       try {
         // select('*') — NOT an explicit column list — so a not-yet-applied
@@ -177,16 +215,21 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
         if (error) {
           // Transient error/timeout → keep whatever we already have; never wipe a
           // working dashboard. A refresh re-tries the load.
+          // Y si NO había nada cargado, se marca: «no pudimos leer» y «no tienes
+          // negocios» son cosas distintas y la pantalla debe decir cuál es.
+          if (esPrimera) setErrorCarga(true);
           return;
         }
         const rows = Array.isArray(data) ? (data as unknown as BizRow[]) : [];
         setBusinesses(rows);
+        setErrorCarga(false);
+        cargadoPara.current = user.id;
         // keep the current selection if it still exists, else pick the first
         setActiveId((prev) => (prev && rows.some((r) => r.id === prev) ? prev : rows[0]?.id ?? null));
       } finally {
         // Always clear the gate on the live request — no early return (cancel or
         // error) can leave the six bizAdmin-gated modules spinning forever.
-        if (!cancelled) setLoading(false);
+        if (!cancelled) { setLoading(false); setRevalidando(false); }
       }
     })();
     return () => {
@@ -198,7 +241,7 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
     // refresh → setLoading(true) re-flashed all six gated modules to a spinner
     // mid-session. The id only changes on a real sign-in/out, which is when a
     // reload is actually warranted.
-  }, [user?.id, version]);
+  }, [user?.id, version, pathname]);
 
   const active = useMemo(() => businesses.find((b) => b.id === activeId) ?? null, [businesses, activeId]);
 
@@ -241,6 +284,8 @@ export function BizAdminProvider({ children }: { children: ReactNode }) {
     configured,
     demo,
     loading,
+    revalidando,
+    errorCarga,
     hasReal: !demo && businesses.length > 0,
     businesses,
     active,

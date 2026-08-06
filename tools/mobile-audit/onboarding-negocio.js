@@ -13,6 +13,11 @@
 //      NO puede aparecer la celebración: aparece la sala de espera del cobro,
 //      sobrevive a una recarga SIN crear otro negocio, y solo `?sub=success`
 //      (la vuelta de Stripe) enseña el confeti.
+//   6. (2026-08-06) «Pagué y al entrar al panel me dijo que no tengo negocio»
+//      → el último paso del recorrido es TOCAR «Entrar a mi panel» y exigir
+//      que el panel muestre el negocio. `/negocio/publicar` vive dentro del
+//      layout que monta el proveedor del panel, así que su lista no se
+//      recargaba al terminar el alta: seguía siendo la de antes de crear nada.
 //
 // TODA la red va simulada (sesión incluida): así se recorre hasta el pago sin
 // escribir ni una fila en la base real, y los contadores de llamadas permiten
@@ -265,7 +270,27 @@ const mal = (m) => { console.log(`  ❌ ${m}`); fallos.push(m); };
   else ok('a quien ya pagó no se le vende Verified');
   await medir('10-pagado');
 
-  // y recargar después: el borrador quedó limpio → flujo desde cero
+  // ── 8 · «Entrar a mi panel»: el panel TIENE que ver el negocio ────────────
+  // Aquí se navega como navega una persona (clic, no `goto`): el proveedor del
+  // panel NO se remonta, y ese era justo el fallo.
+  const respuestaNegocios = JSON.stringify([{
+    id: '11111111-1111-4111-8111-111111111111', slug: 'tamales-dona-lupe-x1',
+    name: 'Tamales Doña Lupe', category_id: 'FoodDrinks', tier: 'verified',
+    owner_id: SESION.user.id, modules: { menu: true, updates: true }, settings: {},
+    hours: null, features: [], card_features: [], subcategories: [], is_open: true,
+    address: '762 Mcnair St', city: 'Hazleton, PA', state: 'PA', postal_code: '18201',
+  }]);
+  await page.route('**://*.supabase.co/rest/v1/businesses?select=***', (r) =>
+    r.fulfill({ status: 200, headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }, body: respuestaNegocios }));
+  await clicar('Entrar a mi panel', 3500);
+  await page.waitForTimeout(3000);
+  t = await cuerpo();
+  if (/Aún no tienes un negocio|don't have a business/i.test(t)) mal('EL PANEL DICE QUE NO HAY NEGOCIO tras publicar y pagar (el bug del fundador)');
+  else if (!/Tamales Doña Lupe/.test(t)) mal(`el panel no muestra el negocio recién creado · ${t.slice(0, 90)}`);
+  else ok('«Entrar a mi panel» abre el panel CON el negocio recién creado');
+  await medir('11-panel');
+
+  // y volver al alta: el borrador quedó limpio → flujo desde cero
   await page.goto(`${BASE}/negocio/publicar/`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2500);
   if (!/¿A qué se dedica tu negocio\?/.test(await cuerpo())) mal('tras terminar, el flujo no arranca limpio desde el paso 1');

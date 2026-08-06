@@ -472,14 +472,37 @@ export function PanelScreen() {
   // /negocio y creyó tener un negocio VERIFICADO asignado. Regla #8: nada
   // fabricado presentado como real. Ahora se dice la verdad y se ofrece la
   // acción correcta según el caso.
-  if (!admin.loading && !real) {
+  // `revalidando` cuenta como cargando (2026-08-05): el fundador acabó de pagar
+  // Verified, tocó «Entrar a mi panel» y leyó «Aún no tienes un negocio». Sin
+  // esperar a la re-comprobación, esta pantalla afirma justo lo que la consulta
+  // en vuelo va a desmentir medio segundo después.
+  if (!admin.loading && !admin.revalidando && !real) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-dash px-6 py-12">
         <div className="w-full max-w-[380px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
             <Store size={26} stroke={2.2} className="text-primary" />
           </span>
-          {user ? (
+          {user && admin.errorCarga ? (
+            /* No pudimos LEER. Decir «aún no tienes un negocio» aquí sería
+               mentirle a alguien que quizá tiene tres — y su reacción natural
+               (publicar otro) crearía un duplicado. */
+            <>
+              <h1 className="mt-4 text-[19px] font-extrabold tracking-[-.02em] text-ink">
+                {L('No pudimos cargar tu negocio', "We couldn't load your business")}
+              </h1>
+              <p className="mt-1.5 text-[13px] font-medium leading-snug text-muted">
+                {L('Puede ser tu conexión. Tu negocio y tus datos están a salvo.',
+                   'It might be your connection. Your business and data are safe.')}
+              </p>
+              <button
+                onClick={() => admin.refresh()}
+                className="mt-5 w-full cursor-pointer rounded-field bg-primary px-5 py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm"
+              >
+                {L('Reintentar', 'Try again')}
+              </button>
+            </>
+          ) : user ? (
             <>
               <h1 className="mt-4 text-[19px] font-extrabold tracking-[-.02em] text-ink">
                 {L('Aún no tienes un negocio', "You don't have a business yet")}

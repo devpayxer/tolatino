@@ -170,6 +170,31 @@
   despliega en el paso 5 de la receta de Stripe (así el flujo cae en «continúa
   con Free» honesto mientras tanto, en vez de cobrar a medio configurar).
 
+- [x] **«Pagué Verified y el panel me dijo que no tengo negocio» (2026-08-06).**
+  El fundador creó un negocio, pagó, tocó «Entrar a mi panel» y leyó *«Aún no
+  tienes un negocio»*. Comprobado en la base: el negocio existía, con su dueño
+  correcto y `tier = verified` — el cobro y el webhook habían funcionado. Se
+  reprodujo la consulta EXACTA del panel con un token real de ese usuario:
+  devolvía su negocio. El fallo era de estado en el cliente.
+  **La causa:** `BizAdminProvider` se monta en `app/negocio/layout.tsx`, y
+  `/negocio/publicar` está DENTRO de ese layout. El alta entera transcurre sin
+  remontar el proveedor, así que su lista de negocios seguía siendo la cargada
+  al entrar — cuando el dueño no tenía ninguno. Al volver a `/negocio` no se
+  recargaba porque el efecto solo dependía de `user.id`.
+  **Arreglado en el proveedor, no en el llamador**, a propósito: había DOS
+  sitios que crean negocios (el alta y `PublishModal`) y NINGUNO avisaba al
+  panel; depender de que cada uno se acuerde es cómo vuelve el fallo. Ahora
+  revalida al cambiar de ruta, en silencio (subir `loading` volvería a
+  parpadear los seis módulos a spinner, que es un bug ya documentado). El alta
+  además llama `admin.refresh()` para que el panel llegue con el dato puesto.
+  **De paso, la misma pantalla dejó de mentir en otro caso:** si la consulta
+  FALLA (red, tiempo agotado) también decía «aún no tienes un negocio» — y la
+  reacción natural del dueño, publicar otro, habría creado un duplicado. Ahora
+  distingue «no pudimos cargar tu negocio · Reintentar».
+  Centinela: `tools/mobile-audit/onboarding-negocio.js` termina TOCANDO «Entrar
+  a mi panel» y exige ver el negocio. Probado con dientes: al revertir el
+  arreglo, la prueba falla con el mensaje del fundador.
+
 - [ ] **Rellenar estado y ZIP de los negocios ya existentes (2026-08-05).** La
   0153 añadió `state`, `postal_code` y `address_line2`, y el alta ya los pide.
   Los negocios creados ANTES los tienen a null: su `address` es una cadena suelta

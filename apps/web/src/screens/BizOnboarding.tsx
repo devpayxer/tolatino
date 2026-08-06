@@ -44,6 +44,7 @@ import { useApp } from '@/lib/state';
 import { DireccionForm, DIRECCION_VACIA, direccionCompleta, type DireccionNegocio } from '@/components/DireccionForm';
 import { useAuth } from '@/lib/auth';
 import { useLiveData } from '@/lib/live';
+import { useBizAdmin } from '@/lib/bizAdmin';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
 import { formatPhone } from '@/lib/phone';
@@ -111,6 +112,10 @@ export function BizOnboardingScreen() {
   const app = useApp();
   const auth = useAuth();
   const live = useLiveData();
+  // El panel vive en el MISMO layout que esta pantalla, así que su lista de
+  // negocios no se recarga sola al terminar. Se le avisa aquí además de la
+  // revalidación por ruta: así el panel ya tiene el negocio ANTES de llegar.
+  const admin = useBizAdmin();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>('cat');
@@ -386,6 +391,7 @@ export function BizOnboardingScreen() {
       }
 
       live.refresh();      // el listado nuevo aparece para todos los vecinos
+      admin.refresh();     // …y el panel del dueño deja de creer que no tiene nada
     }
 
     // ── Free: no hay cobro. Publicado = terminado. ──
