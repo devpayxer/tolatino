@@ -1990,11 +1990,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     if (max < 2) return null;
     const iMax = pico.indexOf(max);
     const h12 = (i: number) => { const h = i + 7; return `${((h + 11) % 12) + 1} ${h < 12 ? 'am' : 'pm'}`; };
+    // «la 1 pm» pero «las 2 pm» — el artículo cambia solo con la una
+    const art = (i: number) => (((i + 7 + 11) % 12) + 1 === 1 ? 'la' : 'las');
     // primera hora tras el pico donde el nivel baja a ≤1 (se «tranquiliza»)
     let calma: number | null = null;
     for (let i = iMax + 1; i < 14; i++) if (pico[i] <= 1) { calma = i; break; }
     return L(
-      `Lleno cerca de las ${h12(iMax)}${calma != null ? ` · más tranquilo después de las ${h12(calma)}` : ''}`,
+      `Lleno cerca de ${art(iMax)} ${h12(iMax)}${calma != null ? ` · más tranquilo después de ${art(calma)} ${h12(calma)}` : ''}`,
       `Busy around ${h12(iMax)}${calma != null ? ` · quieter after ${h12(calma)}` : ''}`,
     );
   })();
