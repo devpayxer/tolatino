@@ -1862,6 +1862,50 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     return null;
   })();
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // FILA DE ACCIONES — solo móvil (handoff §3)
+  // ══════════════════════════════════════════════════════════════════════════
+  // En escritorio estas acciones viven en el riel; en móvil estaban ENTERRADAS
+  // detrás del «…» de contacto: para llamar o para saber cómo llegar había que
+  // abrir una hoja. Yelp y Google Business las ponen justo bajo el nombre,
+  // porque son las dos cosas que la gente viene a hacer. Cada tarjeta aparece
+  // solo si el dato existe: sin teléfono no hay «Llamar».
+  const accionesMovil: { Icon: typeof Navigation; label: string; onClick?: () => void; href?: string; activo?: boolean }[] = [
+    ...(hasAddress ? [{ Icon: Navigation, label: L('Cómo llegar', 'Directions'), href: mapsHref, onClick: () => trackListingView(b.slug, 'direction') }] : []),
+    ...(hasPhone ? [{ Icon: Phone, label: L('Llamar', 'Call'), href: `tel:${phone.replace(/[^\d+]/g, '')}`, onClick: () => trackListingView(b.slug, 'call') }] : []),
+    ...(accion ? [{ Icon: Store, label: accion.label, onClick: accion.onClick }] : []),
+    { Icon: saved ? HeartFilled : Heart, label: saved ? L('Guardado', 'Saved') : L('Guardar', 'Save'), onClick: toggleSave, activo: saved },
+  ];
+  const filaAcciones = accionesMovil.length > 1 && (
+    <div data-acciones className="mt-4 grid gap-2 min-[1100px]:hidden" style={{ gridTemplateColumns: `repeat(${accionesMovil.length}, minmax(0,1fr))` }}>
+      {accionesMovil.map((a) => {
+        const dentro = (
+          <>
+            <span className={`flex h-8 w-8 items-center justify-center rounded-[10px] ${a.activo ? 'bg-pink-bg' : 'bg-lilac-3'}`}>
+              <a.Icon size={16} stroke={2.2} className={a.activo ? 'text-pink' : 'text-primary-dark'} />
+            </span>
+            <span className="w-full truncate text-center text-[10.5px] font-extrabold text-ink">{a.label}</span>
+          </>
+        );
+        // 44px de alto mínimo: son los objetivos táctiles que más se tocan.
+        const cls = `tap flex min-h-[62px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] px-1.5 py-2 ${a.activo ? 'border-pink/40 bg-pink-bg/40' : 'border-lilac-line bg-white'}`;
+        return a.href
+          ? <a key={a.label} href={a.href} onClick={a.onClick} className={cls}>{dentro}</a>
+          : <button key={a.label} onClick={a.onClick} className={cls}>{dentro}</button>;
+      })}
+    </div>
+  );
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // «LO MÁS PEDIDO» (handoff §5.5) — el camino a la compra desde el Resumen
+  // ══════════════════════════════════════════════════════════════════════════
+  // Sale de los platillos que el DUEÑO marcó como populares en su panel. Si no
+  // marcó ninguno, este bloque no existe — no se inventa un «más pedido».
+  const populares = (realMenu?.cats ?? [])
+    .flatMap((c) => c.items.map((it) => ({ catKey: c.key, it })))
+    .filter(({ it }) => !!it.tag)
+    .slice(0, 8);
+
   const railCard = 'rounded-card border border-hair bg-white p-4 shadow-card';
   const desktopRail = (
     <aside className="hidden min-[1100px]:block">
@@ -2311,6 +2355,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       {endo.note && (
         <div className="mt-2 text-[12.5px] font-medium italic leading-snug text-ink-3">“{endo.note}”</div>
       )}
+      {filaAcciones}
       </div>
 
       {/* One sticky header for every tab. On a non-Overview tab the negative top
@@ -2380,6 +2425,41 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </>
             );
           })()}
+          {/* «Lo más pedido» (handoff §5.5): el camino a la compra desde el
+              Resumen. Solo con platillos que el dueño marcó como populares —
+              si no marcó ninguno, este bloque no existe. */}
+          {populares.length > 0 && (
+            <>
+              <div className="mb-3 flex items-center justify-between">
+                <span data-mas-pedido className="text-[15.5px] font-extrabold text-ink">{L('Lo más pedido', 'Most ordered')}</span>
+                <button onClick={() => onTab(tabShown.menu ? 'menu' : 'shop')} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
+                  {L('Ver todo →', 'See all →')}
+                </button>
+              </div>
+              <div className="no-scrollbar -mx-3.5 flex touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain px-3.5 pb-1 md:-mx-5 md:px-5">
+                {populares.map(({ catKey, it }) => (
+                  <button key={`${catKey}-${it.n[0]}`} onClick={() => openItem(catKey, it)}
+                    className="tap w-[152px] flex-none cursor-pointer overflow-hidden rounded-tile border border-hair bg-white text-left shadow-card">
+                    <span className="block h-[96px] w-full" style={{ background: it.bg }}>
+                      {it.img && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={imgUrl(it.img, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
+                      )}
+                    </span>
+                    <span className="block px-2.5 pb-2.5 pt-2">
+                      {it.tag && (
+                        <span className="mb-1 inline-block rounded-md px-1.5 py-0.5 text-[9px] font-extrabold"
+                          style={{ background: it.tagBg, color: it.tagC }}>{B(it.tag)}</span>
+                      )}
+                      <span className="block truncate text-[12.5px] font-extrabold text-ink">{B(it.n)}</span>
+                      <span className="mt-0.5 block text-[12.5px] font-extrabold text-primary-dark">${it.price.toFixed(2)}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {divider}
+            </>
+          )}
           {secTitle(L('Acerca de', 'About'))}
           <div className="whitespace-pre-line text-[14px] font-medium leading-[1.6] text-ink-soft">
             {/* real owner description when present; otherwise a friendly template

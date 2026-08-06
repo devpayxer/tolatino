@@ -12,13 +12,29 @@
 //    todo en una columna estrecha, salta aquí.
 //  · El riel trae datos REALES (horario del negocio, su dirección) → un riel
 //    con texto inventado sería peor que no tenerlo (regla #8).
-//  · A 402px el marcado es el de siempre: el riel NO se pinta y el Horario
-//    sigue en el Resumen. Escritorio se deriva del móvil, nunca al revés.
+//  · A 402px el riel NO se pinta y el Horario sigue en el Resumen. Escritorio
+//    se deriva del móvil, nunca al revés.
+//  · En móvil está la FILA DE ACCIONES del handoff §3 (cómo llegar / llamar /
+//    la acción del negocio / guardar), con objetivos táctiles de 44px. Antes
+//    esas dos primeras estaban enterradas tras el «…» de contacto.
+//  · «Lo más pedido» (§5.5) aparece cuando el dueño marcó platillos populares,
+//    y NO aparece cuando no los marcó — nunca se inventa un «más pedido».
 //  · A 1099px (un píxel por debajo del corte) todo vuelve a una columna, sin
 //    romperse a medio camino.
 //  · Ninguna anchura desborda en horizontal.
 //
-// Uso: SHOTS_DIR=<dir> node ficha-escritorio.js   (con el export en 4173)
+// CÓMO SE EJECUTA — importa, y ya costó una vuelta perdida:
+//   1) el export TIENE que estar construido contra la base de PRUEBAS, que es la
+//      que tiene los 548 negocios sembrados:
+//        VERCEL_ENV=preview pnpm -C apps/web build
+//      Con `.env.production` la ficha sale "Sin resultados" y el guardián marca
+//      ocho fallos que NO son del código: es la base vacía.
+//   2) servir `apps/web/out` en 4173 (`npx serve -s out -l 4173`).
+//   3) los dos casos, uno con populares y otro sin ellos:
+//        SHOTS_DIR=<dir> node ficha-escritorio.js                         # hz-food-p4
+//        SLUG=hz-beauty-p6 SIN_POPULARES=1 SHOTS_DIR=<dir> node ficha-escritorio.js
+//      El caso negativo NO puede pasar en vacío: si la ficha no cargara, la
+//      aserción de la fila de acciones falla y tumba la corrida entera.
 
 const { chromium } = require('playwright');
 const { execFile } = require('child_process');
@@ -134,6 +150,31 @@ const mal = (m) => { console.log(`  ❌ ${m}`); fallos.push(m); };
     else ok('el Horario sigue en el Resumen del móvil');
     if (!/Fotos/.test(r.cuerpo)) mal('la sección Fotos desapareció');
     else ok('la sección Fotos sigue ahí');
+
+    // La fila de acciones del handoff §3: existe y se puede tocar de verdad.
+    const acc = await page.evaluate(() => {
+      const fila = document.querySelector('[data-acciones]');
+      if (!fila) return null;
+      const hijos = Array.from(fila.children);
+      return {
+        n: hijos.length,
+        altoMin: Math.round(Math.min(...hijos.map((c) => c.getBoundingClientRect().height))),
+        textos: hijos.map((c) => (c.innerText || '').replace(/\s+/g, ' ').trim()),
+      };
+    });
+    if (!acc) mal('falta la fila de acciones en móvil (handoff §3)');
+    else if (acc.n < 3) mal(`la fila de acciones solo tiene ${acc.n} tarjetas`);
+    else if (acc.altoMin < 44) mal(`las tarjetas de acción miden ${acc.altoMin}px de alto (mínimo táctil 44)`);
+    else ok(`fila de acciones con ${acc.n} tarjetas de ${acc.altoMin}px: ${acc.textos.join(' · ')}`);
+
+    // «Lo más pedido»: tiene que salir SOLO si hay platillos marcados.
+    const masPedido = await page.evaluate(() => !!document.querySelector('[data-mas-pedido]'));
+    if (process.env.SIN_POPULARES) {
+      if (masPedido) mal('«Lo más pedido» aparece en un negocio sin platillos populares');
+      else ok('sin populares marcados, «Lo más pedido» no se inventa');
+    } else if (!masPedido) {
+      mal('falta «Lo más pedido» en un negocio que sí tiene platillos populares');
+    } else ok('«Lo más pedido» sale de los platillos que marcó el dueño');
     if (r.desborde) mal('desborde horizontal a 402px');
     await page.screenshot({ path: `${SHOTS}/ficha-402.png` });
     await page.close();
