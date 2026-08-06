@@ -34,11 +34,31 @@ export function getStripe(): Promise<Stripe | null> {
 export async function startSubscription(
   plan: 'verified', businessId: string,
 ): Promise<{ clientSecret?: string; amount?: number; alreadyActive?: boolean; error?: string }> {
-  if (!supabase) return { error: 'offline' };
-  const { data, error } = await supabase.functions.invoke('stripe-subscribe', { body: { plan, businessId } });
-  if (data?.clientSecret) return { clientSecret: data.clientSecret as string, amount: data.amount as number };
-  if (data?.alreadyActive) return { alreadyActive: true };
-  return { error: (data?.error as string) || error?.message || 'subscribe failed' };
+  // fetch directo y NO functions.invoke, a propósito (auditoría 2026-08-05):
+  // invoke tira el CUERPO de toda respuesta no-2xx, y `alreadyActive` viaja en
+  // un 409 — con invoke esa rama era código muerto. El dueño que ya había
+  // pagado y reintentaba veía «no pudimos iniciar el cobro» para siempre,
+  // mientras se le cobraba cada mes. Aquí el cuerpo se lee SIEMPRE.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabase || !url || !anon) return { error: 'offline' };
+  const { data: sess } = await supabase.auth.getSession(); // refresca si caducó
+  const token = sess.session?.access_token;
+  if (!token) return { error: 'auth' };
+  try {
+    const res = await fetch(`${url}/functions/v1/stripe-subscribe`, {
+      method: 'POST',
+      headers: { apikey: anon, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan, businessId }),
+    });
+    let data: Record<string, unknown> | null = null;
+    try { data = (await res.json()) as Record<string, unknown>; } catch { data = null; }
+    if (data?.clientSecret) return { clientSecret: data.clientSecret as string, amount: data.amount as number };
+    if (data?.alreadyActive) return { alreadyActive: true };
+    return { error: (data?.error as string) || `http_${res.status}` };
+  } catch {
+    return { error: 'network' };
+  }
 }
 
 /** Start a subscription Checkout for a business plan. Returns the Stripe URL. */

@@ -276,6 +276,23 @@ Deno.serve(async (req) => {
       const businessId = smeta.business_id;
       if (businessId) {
         const status = event.type === 'customer.subscription.deleted' ? 'canceled' : (sub.status as string);
+        // Un evento NO-activo de una suscripción que YA NO es la vigente se
+        // ignora (auditoría 2026-08-05): cuando un reintento de pago dejaba una
+        // suscripción abandonada, su expiración (~23 h después) llegaba aquí con
+        // el mismo business_id y tumbaba a `free` el tier que la suscripción
+        // BUENA acababa de pagar. La vara: solo la suscripción registrada puede
+        // bajar el tier; subir (active/trialing) puede cualquiera, porque una
+        // suscripción nueva que cobra ES la vigente desde ese momento.
+        if (status !== 'active' && status !== 'trialing') {
+          const filaRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/business_subscriptions?business_id=eq.${businessId}&select=stripe_subscription_id`,
+            { headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` } },
+          );
+          const vigente = (await filaRes.json())?.[0]?.stripe_subscription_id;
+          if (vigente && vigente !== sub.id) {
+            return new Response(JSON.stringify({ received: true, ignored: 'stale subscription' }), { headers: { 'Content-Type': 'application/json' } });
+          }
+        }
         await applySub(SUPABASE_URL, SERVICE, businessId, (sub.customer as string) ?? '', (sub.id as string) ?? '', smeta.plan || planFromSub(sub as never), status, sub.current_period_end as number);
       }
     } else if (event.type === 'account.updated') {

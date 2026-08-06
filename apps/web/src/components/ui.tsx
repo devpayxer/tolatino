@@ -536,7 +536,12 @@ export function PrimaryBtn({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`w-full rounded-btn-lg p-[13px] text-[14px] font-extrabold text-white transition-colors ${
+      // Sin `transition-colors` a propósito (2026-08-05): el fundador notaba que
+      // el botón «tardaba en activarse» al completar un paso del alta. La
+      // transición fundía el gris→morado en vez de cambiarlo al instante, y en
+      // un teléfono ese fundido se lee como retraso. Habilitarse es un cambio de
+      // ESTADO, no una animación.
+      className={`w-full rounded-btn-lg p-[13px] text-[14px] font-extrabold text-white ${
         disabled ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta hover:bg-primary-dark'
       } ${className}`}
     >

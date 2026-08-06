@@ -128,6 +128,48 @@
     facturas `INV-1740`). Para un negocio real hay que enseñar las de Stripe o
     no enseñar nada.
 
+- [x] **AUDITORÍA DEL ALTA DE NEGOCIO (2026-08-05) — 5 fallos del fundador + 10
+  de la auditoría multi-agente, todos arreglados y con centinela.** El fundador
+  pidió auditar el flujo entero («imagínate que esto es tuyo») con 5 fallos
+  vistos por él: CTA lenta al elegir subcategoría (una transición CSS fundía el
+  gris→morado: fuera; medido, 48 ms), el popup de dirección reabriéndose (el
+  efecto dependía de un objeto recreado en cada render), Free sin límite de
+  fotos (ahora 1 portada + 5 espacios bloqueados que Verified abre), sin aviso
+  de más horarios en el panel (añadido), y **la celebración saliendo antes del
+  pago** — rediseñado: guardar → COBRAR → celebrar, con sala de espera
+  (`paying`) que sobrevive recargas sin duplicar el negocio.
+  La auditoría multi-agente (5 buscadores por clase + 10 verificadores
+  adversariales; 10 confirmados, 0 refutados) encontró y se arregló:
+  1. **Un pago FALLIDO por método con redirección se celebraba como recibido**
+     (el `?sub=success` iba fijo en la URL de vuelta): ahora el pago con tarjeta
+     se resuelve EN la página (`redirect:'if_required'` en `CheckoutSheet`) y la
+     vuelta por redirect exige `redirect_status=succeeded`.
+  2. **Cada reintento de pago creaba OTRA suscripción en Stripe**, y la
+     abandonada, al expirar (~23 h), tumbaba a `free` el tier recién pagado:
+     `stripe-subscribe` ahora REUTILIZA la suscripción incompleta;
+     `stripe-webhook` ignora eventos de suscripciones que ya no son la vigente;
+     y la **0154** pone la misma regla dentro de `apply_subscription` (probada
+     con dientes en los dos sentidos).
+  3. `alreadyActive` era código muerto (functions.invoke tira el cuerpo de un
+     409): `startSubscription` ahora usa fetch directo y lee el cuerpo siempre.
+  4. El id del negocio se leía sin reintentos y sin persistir hasta el final:
+     un parpadeo de red mandaba el alta Verified por la salida Free en
+     silencio, y cerrar durante la subida de fotos duplicaba el negocio.
+  5. Errores de `update`/`insert` de PostgREST tragados (no lanzan); la CTA
+     deshabilitada era muda (el mensaje de qué falta era código muerto — ahora
+     el botón gris habla al tocarlo); y las 6 fotos de Verified se publicaban
+     SIN haber pagado — ahora antes del pago sube solo la portada y las extra
+     suben al confirmarse el cobro en la página.
+  **Pendiente conocido, honesto:** quien paga con un método CON redirección
+  (Cash App, etc.) pierde las fotos extra elegidas (los archivos viven en
+  memoria y el redirect recarga la página) — quedan avisados de subirlas desde
+  el panel. Centinela: `tools/mobile-audit/onboarding-negocio.js` (19
+  aserciones, red y sesión simuladas, contadores de llamadas).
+  **Nota Stripe:** `stripe-webhook` corregido está desplegado en AMBOS
+  proyectos; `stripe-subscribe` corregido solo en pruebas — en producción se
+  despliega en el paso 5 de la receta de Stripe (así el flujo cae en «continúa
+  con Free» honesto mientras tanto, en vez de cobrar a medio configurar).
+
 - [ ] **Rellenar estado y ZIP de los negocios ya existentes (2026-08-05).** La
   0153 añadió `state`, `postal_code` y `address_line2`, y el alta ya los pide.
   Los negocios creados ANTES los tienen a null: su `address` es una cadena suelta

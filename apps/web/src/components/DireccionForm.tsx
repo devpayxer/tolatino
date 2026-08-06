@@ -79,27 +79,39 @@ export function DireccionForm({
   const [geocodificando, setGeocodificando] = useState(false);
   const aborto = useRef<AbortController | null>(null);
   const acabaDeElegir = useRef(false);
+  const enFoco = useRef(false);
 
   const set = (parche: Partial<DireccionNegocio>) => onChange({ ...valor, ...parche });
 
   // Autocompletado con freno: se espera a que deje de escribir. Sin esto se
   // dispararía una petición por tecla contra un servicio gratuito ajeno.
+  //
+  // DOS REGLAS QUE NO SON ADORNO (fundador, 2026-08-05: «el popup vuelve y se
+  // abre» después de elegir):
+  //  1. Las dependencias son PRIMITIVAS (lat/lng/city sueltos), nunca el objeto
+  //     `cerca`: el padre lo recreaba en cada render, así que CUALQUIER estado
+  //     que cambiara en la pantalla —escribir el teléfono, un toast— relanzaba
+  //     esta búsqueda y reabría la lista sobre una dirección ya elegida.
+  //  2. La lista solo se abre si el campo TIENE EL FOCO: una respuesta que
+  //     llega tarde, cuando ya se está en otro campo, no tiene derecho a
+  //     plantarse encima.
   useEffect(() => {
     const q = valor.line1.trim();
     if (acabaDeElegir.current) { acabaDeElegir.current = false; return; }
-    if (q.length < 4) { setSugerencias([]); return; }
+    if (q.length < 4) { setSugerencias([]); setAbierto(false); return; }
     const t = setTimeout(() => {
       aborto.current?.abort();
       const ac = new AbortController();
       aborto.current = ac;
       setBuscando(true);
       searchAddress(q, cerca ?? null, ac.signal)
-        .then((r) => { if (!ac.signal.aborted) { setSugerencias(r); setAbierto(r.length > 0); } })
+        .then((r) => { if (!ac.signal.aborted) { setSugerencias(r); setAbierto(r.length > 0 && enFoco.current); } })
         .catch(() => { /* sin red: se sigue a mano */ })
         .finally(() => { if (!ac.signal.aborted) setBuscando(false); });
     }, 450);
     return () => clearTimeout(t);
-  }, [valor.line1, cerca]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `cerca` va desarmado en primitivas: ver la regla 1 de arriba
+  }, [valor.line1, cerca?.lat, cerca?.lng, cerca?.city]);
 
   const elegir = (a: Address) => {
     acabaDeElegir.current = true;
@@ -150,8 +162,8 @@ export function DireccionForm({
           disabled={disabled}
           autoComplete="street-address"
           onChange={(e) => set({ line1: e.target.value, lat: null, lng: null })}
-          onFocus={() => setAbierto(sugerencias.length > 0)}
-          onBlur={() => { setTimeout(() => setAbierto(false), 150); alSalir(); }}
+          onFocus={() => { enFoco.current = true; setAbierto(sugerencias.length > 0); }}
+          onBlur={() => { enFoco.current = false; setTimeout(() => setAbierto(false), 150); alSalir(); }}
           placeholder={L('Ej. 762 McNair St', 'e.g. 762 McNair St')}
           className={inputCls}
         />

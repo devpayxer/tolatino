@@ -124,6 +124,45 @@ Deno.serve(async (req) => {
       return json({ error: 'already subscribed', alreadyActive: true }, 409);
     }
 
+    // ── Si hay una suscripción ESPERANDO SU PRIMER PAGO, se REUTILIZA ──
+    // (auditoría 2026-08-05). Antes cada reintento creaba una suscripción
+    // nueva, y la abandonada seguía viva en Stripe: al expirar (~23 h) su
+    // webhook llegaba con el MISMO business_id y tumbaba a `free` el tier que
+    // la suscripción buena acababa de pagar. Peor: dos hojas abiertas podían
+    // confirmar DOS suscripciones — doble cobro mensual con una sola visible
+    // en la base. Reutilizar la `incomplete` elimina la carrera de raíz: solo
+    // existe UNA suscripción por negocio, se pague al primer intento o al quinto.
+    if (existing?.stripe_subscription_id) {
+      const prev = await stripeGet(
+        `subscriptions/${existing.stripe_subscription_id}?expand[]=latest_invoice.confirmation_secret`,
+        STRIPE,
+      );
+      if (prev?.status === 'active' || prev?.status === 'trialing') {
+        return json({ error: 'already subscribed', alreadyActive: true }, 409);
+      }
+      if (prev?.status === 'incomplete') {
+        let cs: string | undefined = prev?.latest_invoice?.confirmation_secret?.client_secret;
+        if (!cs) {
+          const invId = typeof prev.latest_invoice === 'string' ? prev.latest_invoice : prev.latest_invoice?.id;
+          if (invId) {
+            const inv = await stripeGet(`invoices/${invId}?expand[]=confirmation_secret`, STRIPE);
+            cs = inv?.confirmation_secret?.client_secret;
+            if (!cs) {
+              const piId = typeof inv?.payment_intent === 'string' ? inv.payment_intent : inv?.payment_intent?.id;
+              if (piId) cs = (await stripeGet(`payment_intents/${piId}`, STRIPE))?.client_secret;
+            }
+          }
+        }
+        if (cs) return json({ clientSecret: cs, subscriptionId: prev.id, amount: PLANS[plan].amount });
+        // Sin secreto rescatable (factura anulada, etc.): se cancela la vieja y
+        // se sigue al camino normal — nunca dos suscripciones conviviendo.
+        await fetch(`https://api.stripe.com/v1/subscriptions/${prev.id}`, {
+          method: 'DELETE', headers: { Authorization: `Bearer ${STRIPE}` },
+        });
+      }
+      // incomplete_expired / canceled: muertas en Stripe; se crea una nueva.
+    }
+
     let customer: string | undefined = existing?.stripe_customer_id;
     if (!customer) {
       const c = await stripePost('customers', STRIPE, {

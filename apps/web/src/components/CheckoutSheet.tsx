@@ -38,8 +38,9 @@ const appearance = {
 
 const money = (cents: number) => '$' + (cents / 100).toFixed(2);
 
-function PayForm({ amount, returnPath, pendingId, subscription, onClose }: {
+function PayForm({ amount, returnPath, pendingId, subscription, onClose, onSuccess }: {
   amount: number; returnPath: string; pendingId: string; subscription?: boolean; onClose: () => void;
+  onSuccess?: () => void;
 }) {
   const { L } = useLang();
   const stripe = useStripe();
@@ -51,14 +52,37 @@ function PayForm({ amount, returnPath, pendingId, subscription, onClose }: {
   const pay = async () => {
     if (!stripe || !elements || busy) return;
     setBusy(true); setErr('');
-    // On success Stripe redirects the browser to return_url; we only get back here
-    // on an immediate error (card declined / validation) — show it, stay on the sheet.
-    // Una suscripción no tiene compra en escena que consultar: vuelve con su
-    // propia marca (`?sub=success`) y el tier lo pone el webhook.
+    // `redirect: 'if_required'` (2026-08-05): con TARJETA — el caso de casi
+    // todos — el resultado vuelve AQUÍ, en la página, sin recargar. Antes se
+    // dependía siempre del redirect de Stripe, y eso tenía dos costes: el
+    // estado en memoria (p. ej. las fotos del alta) moría en la recarga, y el
+    // `?sub=success` iba FIJO en la URL de vuelta — un pago fallido por un
+    // método con redirección volvía con la marca de éxito puesta. Los métodos
+    // que SÍ redirigen (Cash App, etc.) siguen su camino y la página de vuelta
+    // debe mirar `redirect_status`, que Stripe añade con el resultado REAL.
     const qs = subscription ? '?sub=success' : `?pay=success&pid=${encodeURIComponent(pendingId)}`;
     const return_url = `${window.location.origin}${returnPath}${qs}`;
-    const { error } = await stripe.confirmPayment({ elements, confirmParams: { return_url } });
-    if (error) { setErr(error.message || L('No se pudo procesar el pago. Revisa tus datos.', 'Payment could not be processed. Check your details.')); setBusy(false); }
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url },
+      redirect: 'if_required',
+    });
+    if (error) {
+      setErr(error.message || L('No se pudo procesar el pago. Revisa tus datos.', 'Payment could not be processed. Check your details.'));
+      setBusy(false);
+      return;
+    }
+    if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) {
+      // Pago resuelto sin salir de la página. Quien montó la hoja decide qué
+      // sigue; sin `onSuccess`, se navega a donde Stripe habría redirigido —
+      // mismo destino, mismos parámetros, cero contratos rotos.
+      if (onSuccess) { onSuccess(); return; }
+      window.location.assign(return_url);
+      return;
+    }
+    // Estado raro sin redirect (requires_action sin manejar, etc.): decirlo.
+    setErr(L('El pago no se completó. Intenta de nuevo.', "The payment didn't complete. Try again."));
+    setBusy(false);
   };
 
   return (
@@ -93,7 +117,7 @@ function PayForm({ amount, returnPath, pendingId, subscription, onClose }: {
   );
 }
 
-export function CheckoutSheet({ open, clientSecret, amount, returnPath, pendingId = '', subscription, onClose }: {
+export function CheckoutSheet({ open, clientSecret, amount, returnPath, pendingId = '', subscription, onClose, onSuccess }: {
   open: boolean;
   clientSecret: string | null;
   amount: number;
@@ -103,12 +127,15 @@ export function CheckoutSheet({ open, clientSecret, amount, returnPath, pendingI
   /** Cobro recurrente (Verified): cambia el copy y la vuelta, mismo Element. */
   subscription?: boolean;
   onClose: () => void;
+  /** Pago con tarjeta resuelto EN la página (sin redirect). Si falta, se navega
+   *  a `returnPath` con los mismos parámetros que pondría Stripe. */
+  onSuccess?: () => void;
 }) {
   if (!open || !clientSecret) return null;
   return (
     <Overlay open onClose={onClose} width={460} fullHeightSheet>
       <Elements stripe={getStripe()} options={{ clientSecret, appearance }}>
-        <PayForm amount={amount} returnPath={returnPath} pendingId={pendingId} subscription={subscription} onClose={onClose} />
+        <PayForm amount={amount} returnPath={returnPath} pendingId={pendingId} subscription={subscription} onClose={onClose} onSuccess={onSuccess} />
       </Elements>
     </Overlay>
   );
