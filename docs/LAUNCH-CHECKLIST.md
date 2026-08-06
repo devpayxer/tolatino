@@ -195,6 +195,27 @@
   a mi panel» y exige ver el negocio. Probado con dientes: al revertir el
   arreglo, la prueba falla con el mensaje del fundador.
 
+- [ ] **Handoff «Business Detail v2»: queda pendiente lo que NO se aplicó
+  (2026-08-06).** El fundador mandó un handoff completo porque «en el desktop se
+  ve muy desolado». Se aplicó **el reflujo de escritorio** (§1 hero con rejilla
+  de fotos, §11 riel fijo con acciones / oferta real / horario semanal /
+  ubicación, y las dos columnas), que era la causa de su queja: la ficha entera
+  vivía en `max-w-[680px]` y en un monitor de 1320 sobraba media pantalla.
+  **NO se reconstruyó la pantalla**, y es deliberado: el handoff pide reescribir
+  `BusinessDetail.tsx` a partir de su modelo (una panadería con menú, 6 tabs),
+  pero nuestra ficha tiene **11 tabs** — menú, tienda, servicios, renta,
+  propiedades, vehículos, novedades, relacionados — con carrito, entrega,
+  reservas y cobro propio ya aprobados y funcionando. Reconstruir habría tirado
+  todo eso. Es la regla §8 de la casa: injertar lo que falta, no reemplazar lo
+  aprobado.
+  **Lo del handoff que sigue sin aplicar, por si se quiere después:**
+  «Bueno saber» (2×2: famoso por / espera / asientos / pagos) — no tenemos esos
+  datos y habría que pedirlos en el panel; la fila de 4 acciones en móvil; la
+  hoja de horario con «horas pico»; el visor de galería a pantalla completa; y
+  la tarjeta del dueño («responde en ~20 min») — tampoco tenemos ese dato.
+  Cada uno necesita datos nuevos o pantallas nuevas: no se inventaron.
+  Centinela: `tools/mobile-audit/ficha-escritorio.js`.
+
 - [ ] **Rellenar estado y ZIP de los negocios ya existentes (2026-08-05).** La
   0153 añadió `state`, `postal_code` y `address_line2`, y el alta ya los pide.
   Los negocios creados ANTES los tienen a null: su `address` es una cadena suelta
