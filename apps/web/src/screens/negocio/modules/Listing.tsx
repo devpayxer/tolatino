@@ -46,6 +46,51 @@ type Draft = {
   sameNumber: boolean; // use the main phone for messages
   messagePhone: string; // used only when sameNumber = false
   about: string;
+  /** Lo que la ficha v2 pinta SOLO si el dueño lo declaró aquí (0155):
+   *  «Bueno saber», horas pico, quién atiende, transporte/estacionamiento. */
+  ficha: FichaDraft;
+};
+
+// settings.ficha — cada campo es opcional; lo vacío no se guarda y la ficha
+// pública no lo pinta. `pico` = 14 niveles 0–3 (7 am → 8 pm) de un día típico;
+// todo-en-cero significa «sin declarar».
+export type FichaDraft = {
+  famoso: string;
+  espera: string;
+  lugar: string;
+  transporte: string;
+  estacionamiento: string;
+  duenoNombre: string;
+  duenoRol: string;
+  pico: number[];
+};
+const fichaOf = (settings: Record<string, unknown> | null): FichaDraft => {
+  const f = (settings?.ficha ?? {}) as Record<string, unknown>;
+  const dueno = (f.dueno ?? {}) as Record<string, unknown>;
+  const pico = Array.isArray(f.pico) ? f.pico.map((n) => Math.max(0, Math.min(3, Number(n) || 0))) : [];
+  return {
+    famoso: typeof f.famoso === 'string' ? f.famoso : '',
+    espera: typeof f.espera === 'string' ? f.espera : '',
+    lugar: typeof f.lugar === 'string' ? f.lugar : '',
+    transporte: typeof f.transporte === 'string' ? f.transporte : '',
+    estacionamiento: typeof f.estacionamiento === 'string' ? f.estacionamiento : '',
+    duenoNombre: typeof dueno.nombre === 'string' ? dueno.nombre : '',
+    duenoRol: typeof dueno.rol === 'string' ? dueno.rol : '',
+    pico: pico.length === 14 ? pico : Array(14).fill(0),
+  };
+};
+
+/** El objeto que se persiste: campos vacíos fuera; sin nada → null (la ficha
+ *  pública trata null igual que «nunca configurado»). */
+const fichaAJson = (d: FichaDraft): Record<string, unknown> | null => {
+  const out: Record<string, unknown> = {};
+  for (const k of ['famoso', 'espera', 'lugar', 'transporte', 'estacionamiento'] as const) {
+    const v = d[k].trim();
+    if (v) out[k] = v;
+  }
+  if (d.duenoNombre.trim()) out.dueno = { nombre: d.duenoNombre.trim(), rol: d.duenoRol.trim() || 'dueño' };
+  if (d.pico.some((n) => n > 0)) out.pico = d.pico;
+  return Object.keys(out).length ? out : null;
 };
 
 // Store a clean host (+path): no protocol, no leading www, no trailing slash —
@@ -62,6 +107,7 @@ const draftOf = (b: {
   address_line2?: string | null; city?: string | null; state?: string | null; postal_code?: string | null;
   accepts_messages: boolean; message_channel: string | null; message_phone: string | null;
   subcategories: string[] | null; features: string[] | null; card_features: string[] | null; about_es: string | null;
+  settings: Record<string, unknown> | null;
 }): Draft => ({
   name: b.name ?? '',
   category_id: b.category_id ?? 'FoodDrinks',
@@ -86,6 +132,7 @@ const draftOf = (b: {
   sameNumber: !b.message_phone,
   messagePhone: formatPhone(b.message_phone ?? ''),
   about: b.about_es ?? '',
+  ficha: fichaOf(b.settings),
 });
 
 export function ListingModule({ ctx }: { ctx: PanelCtx }) {
@@ -213,7 +260,8 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       draft.dir.city.trim() !== (real.city ?? '') ||
       draft.dir.state !== (real.state ?? '') ||
       draft.dir.postal.trim() !== (real.postal_code ?? '') ||
-      draft.about.trim() !== (real.about_es ?? ''));
+      draft.about.trim() !== (real.about_es ?? '') ||
+      JSON.stringify(fichaAJson(draft.ficha)) !== JSON.stringify(fichaAJson(fichaOf(real.settings))));
 
   const save = async () => {
     if (!draft || !real || saving || !draft.name.trim()) return;
@@ -227,6 +275,8 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
       phone: draft.phone.trim() || null,
       about_es: draft.about.trim() || null,
       about_en: draft.about.trim() || null,
+      // La ficha v2 (0155): se funde sobre settings para no pisar delivery/tips.
+      settings: { ...(real.settings ?? {}), ficha: fichaAJson(draft.ficha) },
       // Pro-only fields never leave the client on the Free tier.
       ...(!isFree && {
         subcategories: draft.subcategories,
@@ -611,6 +661,79 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
                 placeholder={L('Cuéntale a la comunidad qué ofreces…', 'Tell the community what you offer…')}
               />
             </label>
+
+            {/* ── Bueno saber + detalles de la ficha (0155) ──
+                Todo opcional: lo que quede vacío simplemente NO aparece en la
+                ficha pública — nunca se rellena con texto de muestra. */}
+            <div className="rounded-card-sm border border-hair bg-lilac-3 p-3.5">
+              <div className="text-[12.5px] font-extrabold text-ink">{L('Bueno saber', 'Good to know')}</div>
+              <div className="mt-0.5 text-[11px] font-semibold leading-snug text-muted">
+                {L('Detalles cortos que tu ficha muestra a los clientes. Lo que dejes vacío no aparece.', 'Short details your public listing shows customers. Anything you leave empty is hidden.')}
+              </div>
+              <div className="mt-3 flex flex-col gap-3">
+                {([
+                  ['famoso', L('Famosos por', 'Famous for'), L('Ej. Tacos de birria — se acaban temprano', 'e.g. Birria tacos — they sell out early')],
+                  ['espera', L('Espera típica', 'Typical wait'), L('Ej. Unos 10 min en mostrador', 'e.g. About 10 min at the counter')],
+                  ['lugar', L('Lugar', 'Seating'), L('Ej. 28 lugares adentro + terraza', 'e.g. 28 seats inside + patio')],
+                  ['transporte', L('Transporte', 'Transit'), L('Ej. Bus 40 en la esquina', 'e.g. Bus 40 at the corner')],
+                  ['estacionamiento', L('Estacionamiento', 'Parking'), L('Ej. Estacionamiento propio gratis', 'e.g. Free lot on site')],
+                ] as [keyof FichaDraft, string, string][]).map(([k, lab, ph]) => (
+                  <label key={k} className="block">
+                    {label(<>{lab} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></>)}
+                    <input
+                      value={draft.ficha[k] as string}
+                      onChange={(e) => set('ficha', { ...draft.ficha, [k]: e.target.value.slice(0, 60) })}
+                      className={inputCls}
+                      placeholder={ph}
+                    />
+                  </label>
+                ))}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <label className="block">
+                    {label(<>{L('Quién atiende', 'Who runs it')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></>)}
+                    <input value={draft.ficha.duenoNombre} onChange={(e) => set('ficha', { ...draft.ficha, duenoNombre: e.target.value.slice(0, 40) })} className={inputCls} placeholder={L('Ej. Doña Rosa', 'e.g. Doña Rosa')} />
+                  </label>
+                  <label className="block">
+                    {label(L('Rol', 'Role'))}
+                    <input value={draft.ficha.duenoRol} onChange={(e) => set('ficha', { ...draft.ficha, duenoRol: e.target.value.slice(0, 30) })} className={inputCls} placeholder={L('dueña', 'owner')} />
+                  </label>
+                </div>
+                {/* Horas pico: 14 barras (7 am → 8 pm), toca para subir el nivel.
+                    Es lo que la hoja de Horario pinta como «Lo más lleno». */}
+                <div>
+                  {label(<>{L('Horas pico · un día típico', 'Busy hours · a typical day')} <span className="font-semibold text-muted">· {L('toca las barras', 'tap the bars')}</span></>)}
+                  <div className="rounded-field border-[1.5px] border-lilac-line bg-white p-3">
+                    <div className="flex h-[64px] items-end gap-1">
+                      {draft.ficha.pico.map((lvl, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          aria-label={`${((i + 7) % 12) || 12}${i + 7 < 12 ? 'am' : 'pm'}`}
+                          onClick={() => set('ficha', { ...draft.ficha, pico: draft.ficha.pico.map((v, j) => (j === i ? (v + 1) % 4 : v)) })}
+                          className="flex h-full flex-1 cursor-pointer items-end rounded-[3px]"
+                        >
+                          <span
+                            className={`w-full rounded-[3px] ${lvl === 0 ? 'bg-lilac-line' : lvl === 3 ? 'bg-primary' : 'bg-primary/50'}`}
+                            style={{ height: `${[12, 40, 70, 100][lvl]}%` }}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-1.5 flex justify-between text-[9.5px] font-extrabold text-muted-2">
+                      <span>7a</span><span>11a</span><span>3p</span><span>8p</span>
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <span className="text-[10.5px] font-semibold text-muted">{L('0 = tranquilo · 3 barras = lleno', '0 = quiet · 3 bars = packed')}</span>
+                      {draft.ficha.pico.some((n) => n > 0) && (
+                        <button type="button" onClick={() => set('ficha', { ...draft.ficha, pico: Array(14).fill(0) })} className="cursor-pointer text-[10.5px] font-extrabold text-primary-dark">
+                          {L('Limpiar', 'Clear')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <button
               onClick={save}

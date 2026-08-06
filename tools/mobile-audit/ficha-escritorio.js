@@ -1,40 +1,40 @@
-// La ficha del negocio en ESCRITORIO: dos columnas, riel fijo, y el móvil intacto.
+// La ficha del negocio v2 (handoff «Business Detail v2», 2026-08-06) — en las
+// DOS vistas, con datos reales, y sin que el móvil pague el escritorio.
 //
-// DE DÓNDE SALE (fundador, 2026-08-06): «en el desktop se ve muy desolado».
-// Tenía razón y la causa era de una línea: toda la ficha vivía dentro de
-// `max-w-[680px]`, así que en un monitor de 1320 la mitad de la pantalla era
-// fondo vacío — la ficha de móvil estirada. Mandó un handoff nuevo (Business
-// Detail v2) y de ahí salió el reflujo: hero a lo ancho con rejilla de fotos,
-// contenido a la izquierda, riel fijo a la derecha (§11 del handoff).
+// DE DÓNDE SALE: el fundador mandó el handoff v2 y pidió el diseño IDÉNTICO en
+// escritorio y móvil («si algo ya está hecho se ajusta, si algo no está hecho
+// se crea»). De ahí: status card → hoja de Horario con horas pico, «Bueno
+// saber», fila de acciones, «Lo más pedido», Similares, visor de galería,
+// barra de pedido, migas + columna CTA + franja de estado con tabs-píldora +
+// riel de 4 tarjetas en escritorio.
 //
 // QUÉ VIGILA, y por qué cada cosa:
-//  · A 1320px hay DOS columnas y el riel existe → si alguien vuelve a meter
-//    todo en una columna estrecha, salta aquí.
-//  · El riel trae datos REALES (horario del negocio, su dirección) → un riel
-//    con texto inventado sería peor que no tenerlo (regla #8).
-//  · A 402px el riel NO se pinta y el Horario sigue en el Resumen. Escritorio
-//    se deriva del móvil, nunca al revés.
-//  · En móvil está la FILA DE ACCIONES del handoff §3 (cómo llegar / llamar /
-//    la acción del negocio / guardar), con objetivos táctiles de 44px. Antes
-//    esas dos primeras estaban enterradas tras el «…» de contacto.
-//  · «Lo más pedido» (§5.5) aparece cuando el dueño marcó platillos populares,
-//    y NO aparece cuando no los marcó — nunca se inventa un «más pedido».
-//  · A 1099px (un píxel por debajo del corte) todo vuelve a una columna, sin
-//    romperse a medio camino.
+//  · A 1320px: migas, dos columnas con riel (~356px) FIJO al desplazar, franja
+//    de estado con los tabs como píldoras, columna CTA con teléfono real,
+//    botón «Ver las N fotos», y el riel con horario/dirección REALES.
+//  · El riel del restaurante trae el panel «Pide en línea» y la tarjeta del
+//    dueño («Doña Carmen») — SOLO porque ese negocio declaró su ficha (0155).
+//    La barbería NO la declaró → su riel no puede tenerla (nada inventado).
+//  · A 402px: el riel no se pinta; status card (→ hoja de Horario con las
+//    barras de horas pico del dueño), «Bueno saber» 2×2, fila de acciones
+//    ≥44px, «Lo más pedido» solo con platillos marcados, barra de pedido solo
+//    en negocios que venden su menú, «Similares cerca», y el tab «Fotos» abre
+//    el visor SIN cambiar de pestaña.
+//  · A 1099px (bajo el corte) todo vuelve a una columna.
 //  · Ninguna anchura desborda en horizontal.
 //
-// CÓMO SE EJECUTA — importa, y ya costó una vuelta perdida:
-//   1) el export TIENE que estar construido contra la base de PRUEBAS, que es la
-//      que tiene los 548 negocios sembrados:
+// CÓMO SE EJECUTA — importa, y ya costó DOS vueltas perdidas:
+//   1) construir contra la base de PRUEBAS (la que tiene los 548 negocios):
 //        VERCEL_ENV=preview pnpm -C apps/web build
-//      Con `.env.production` la ficha sale "Sin resultados" y el guardián marca
-//      ocho fallos que NO son del código: es la base vacía.
-//   2) servir `apps/web/out` en 4173 (`npx serve -s out -l 4173`).
-//   3) los dos casos, uno con populares y otro sin ellos:
-//        SHOTS_DIR=<dir> node ficha-escritorio.js                         # hz-food-p4
+//      Con `.env.production` la ficha sale «Sin resultados» y todo falla sin
+//      ser culpa del código.
+//   2) servir SIN modo SPA (skill §9):
+//        npx serve out -l 4173 --no-clipboard      # NUNCA `serve -s`
+//      Con `-s` todas las rutas devuelven la portada y este guardián revienta
+//      con la app perfectamente sana.
+//   3) los dos casos:
+//        SHOTS_DIR=<dir> node ficha-escritorio.js                          # hz-food-p4
 //        SLUG=hz-beauty-p6 SIN_POPULARES=1 SHOTS_DIR=<dir> node ficha-escritorio.js
-//      El caso negativo NO puede pasar en vacío: si la ficha no cargara, la
-//      aserción de la fila de acciones falla y tumba la corrida entera.
 
 const { chromium } = require('playwright');
 const { execFile } = require('child_process');
@@ -42,6 +42,7 @@ const { execFile } = require('child_process');
 const BASE = 'http://127.0.0.1:4173';
 const SHOTS = process.env.SHOTS_DIR || '/tmp';
 const SLUG = process.env.SLUG || 'hz-food-p4';
+const SIN_POPULARES = !!process.env.SIN_POPULARES;
 
 function relay(req) {
   return new Promise((r) => {
@@ -93,24 +94,29 @@ const mal = (m) => { console.log(`  ❌ ${m}`); fallos.push(m); };
     return page;
   };
 
-  // ── 1320px: el caso que motivó todo ───────────────────────────────────────
-  console.log('1320px · escritorio');
+  // ── 1320px: escritorio v2 ─────────────────────────────────────────────────
+  console.log(`1320px · escritorio (${SLUG})`);
   {
     const page = await abrir(1320, 1000);
     const r = await page.evaluate(() => {
       const rail = document.querySelector('aside');
-      const railVisible = !!rail && rail.getBoundingClientRect().width > 100;
-      // Ancho aprovechado: la caja del contenido frente a la ventana. Si la
-      // ficha vuelve a vivir en 680px, esta proporción se desploma.
-      const cajas = Array.from(document.querySelectorAll('main, main > div, body > div'))
-        .map((e) => e.getBoundingClientRect().width);
+      const cajas = Array.from(document.querySelectorAll('main, main > div, body > div')).map((e) => e.getBoundingClientRect().width);
+      const cuerpo = (document.body.innerText || '').replace(/\s+/g, ' ');
+      const pills = Array.from(document.querySelectorAll('button')).filter((b) => /^(Resumen|Menú|Reseñas|Fotos|Ubicación)$/.test((b.innerText || '').trim()));
       return {
-        railVisible,
+        railVisible: !!rail && rail.getBoundingClientRect().width > 100,
         railW: rail ? Math.round(rail.getBoundingClientRect().width) : 0,
         railTexto: rail ? (rail.innerText || '').replace(/\s+/g, ' ') : '',
+        sticky: rail ? getComputedStyle(rail.firstElementChild || rail).position : '',
         maxCaja: Math.round(Math.max(0, ...cajas)),
         desborde: document.documentElement.scrollWidth > window.innerWidth + 1,
-        sticky: rail ? getComputedStyle(rail.firstElementChild || rail).position : '',
+        migas: /Volver a negocios/.test(cuerpo),
+        pillsTabs: pills.length,
+        ctaCol: !!document.querySelector('[data-cta-col]'),
+        verFotos: /Ver las \d+ fotos|Ver la foto/.test(cuerpo),
+        panelPedido: !!document.querySelector('[data-panel-pedido]'),
+        dueno: !!document.querySelector('[data-tarjeta-dueno]'),
+        duenoTexto: (document.querySelector('[data-tarjeta-dueno]')?.innerText || '').replace(/\s+/g, ' '),
       };
     });
     if (!r.railVisible) mal('a 1320px NO hay riel: la ficha sigue en una sola columna');
@@ -118,22 +124,35 @@ const mal = (m) => { console.log(`  ❌ ${m}`); fallos.push(m); };
     if (r.sticky !== 'sticky') mal(`el riel debería quedarse fijo al desplazar (position=${r.sticky})`);
     else ok('el riel se queda fijo al desplazar');
     if (r.maxCaja < 1000) mal(`el contenido sigue estrangulado (caja máxima ${r.maxCaja}px de 1320)`);
-    else ok(`el contenido usa el ancho (${r.maxCaja}px de 1320)`);
     if (r.desborde) mal('desborde horizontal a 1320px');
-
-    // El riel tiene que traer DATOS del negocio, no relleno.
+    if (!r.migas) mal('faltan las migas «Volver a negocios» (handoff, escritorio)');
+    else ok('migas de pan presentes');
+    if (r.pillsTabs < 3) mal(`la franja de estado no trae los tabs como píldoras (${r.pillsTabs})`);
+    else ok(`franja de estado con ${r.pillsTabs} tabs-píldora`);
+    if (!r.ctaCol) mal('falta la columna CTA de la cabecera (handoff §2)');
+    else ok('columna CTA presente');
+    if (!r.verFotos) mal('falta el botón «Ver las N fotos» del hero');
+    else ok('botón «Ver las N fotos» presente');
     if (!/Horario/.test(r.railTexto)) mal('el riel no muestra el horario del negocio');
     else ok('el riel trae el horario real');
-    if (!/Ubicación/.test(r.railTexto)) mal('el riel no muestra la ubicación');
-    else ok('el riel trae la ubicación real');
     if (!/am|pm/i.test(r.railTexto)) mal('el horario del riel no trae horas de verdad');
 
+    // La tarjeta del dueño SOLO donde el dueño la declaró (0155).
+    if (SIN_POPULARES) {
+      if (r.dueno) mal('el riel pinta una tarjeta de dueño que este negocio nunca declaró');
+      else ok('sin ficha declarada, el riel no inventa dueño');
+    } else {
+      if (!r.panelPedido) mal('falta el panel de pedido del riel (§11.1)');
+      else ok('panel de pedido del riel presente');
+      if (!r.dueno) mal('falta la tarjeta del dueño declarada en la ficha (§11.3)');
+      else ok(`tarjeta del dueño: ${r.duenoTexto.slice(0, 40)}…`);
+    }
     await page.screenshot({ path: `${SHOTS}/ficha-1320.png` });
     await page.close();
   }
 
-  // ── 402px: nada de esto puede haber tocado el móvil ───────────────────────
-  console.log('402px · móvil');
+  // ── 402px: móvil v2 ───────────────────────────────────────────────────────
+  console.log(`402px · móvil (${SLUG})`);
   {
     const page = await abrir(402, 880);
     const r = await page.evaluate(() => {
@@ -141,15 +160,20 @@ const mal = (m) => { console.log(`  ❌ ${m}`); fallos.push(m); };
       return {
         railPintado: !!rail && rail.getBoundingClientRect().width > 0,
         cuerpo: (document.body.innerText || '').replace(/\s+/g, ' '),
+        statusCard: !!document.querySelector('[data-status-card]'),
+        buenoSaber: document.querySelectorAll('[data-bueno-saber] > div').length,
+        similares: !!document.querySelector('[data-similares]'),
+        barraPedido: (document.querySelector('[data-barra-pedido]')?.innerText || '').replace(/\s+/g, ' '),
         desborde: document.documentElement.scrollWidth > window.innerWidth + 1,
       };
     });
     if (r.railPintado) mal('el riel de escritorio se está pintando en móvil');
     else ok('el riel no existe en móvil');
-    if (!/Horario/.test(r.cuerpo)) mal('el Horario desapareció del Resumen en móvil');
-    else ok('el Horario sigue en el Resumen del móvil');
-    if (!/Fotos/.test(r.cuerpo)) mal('la sección Fotos desapareció');
-    else ok('la sección Fotos sigue ahí');
+    if (!r.statusCard) mal('falta la status card del Resumen (§5.1)');
+    else ok('status card presente');
+    if (!r.similares) mal('falta «Similares cerca» (§5.9)');
+    else ok('«Similares cerca» presente');
+    if (r.desborde) mal('desborde horizontal a 402px');
 
     // La fila de acciones del handoff §3: existe y se puede tocar de verdad.
     const acc = await page.evaluate(() => {
@@ -167,15 +191,60 @@ const mal = (m) => { console.log(`  ❌ ${m}`); fallos.push(m); };
     else if (acc.altoMin < 44) mal(`las tarjetas de acción miden ${acc.altoMin}px de alto (mínimo táctil 44)`);
     else ok(`fila de acciones con ${acc.n} tarjetas de ${acc.altoMin}px: ${acc.textos.join(' · ')}`);
 
-    // «Lo más pedido»: tiene que salir SOLO si hay platillos marcados.
-    const masPedido = await page.evaluate(() => !!document.querySelector('[data-mas-pedido]'));
-    if (process.env.SIN_POPULARES) {
-      if (masPedido) mal('«Lo más pedido» aparece en un negocio sin platillos populares');
+    // La status card ABRE la hoja de Horario (§5.1 → §10), con las barras de
+    // horas pico SOLO si el dueño las declaró.
+    await page.click('[data-status-card]');
+    await page.waitForTimeout(900);
+    const hoja = await page.evaluate(() => ({
+      abierta: /Horario/.test(document.body.innerText || '') && /Listo/.test(document.body.innerText || ''),
+      pico: !!document.querySelector('[data-horas-pico]'),
+      dias: (document.body.innerText.match(/Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo/g) || []).length,
+    }));
+    if (!hoja.abierta || hoja.dias < 7) mal(`la status card no abre la hoja de Horario completa (días=${hoja.dias})`);
+    else ok('la status card abre la hoja de Horario con la semana entera');
+    if (SIN_POPULARES) {
+      if (hoja.pico) mal('la hoja pinta horas pico que este negocio nunca declaró');
+      else ok('sin horas pico declaradas, la hoja no las inventa');
+    } else if (!hoja.pico) {
+      mal('faltan las barras de horas pico declaradas por el dueño (§10)');
+    } else ok('la hoja trae las barras de horas pico del dueño');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+
+    if (SIN_POPULARES) {
+      if (/data-mas-pedido/.test(await page.content())) mal('«Lo más pedido» aparece en un negocio sin platillos populares');
       else ok('sin populares marcados, «Lo más pedido» no se inventa');
-    } else if (!masPedido) {
-      mal('falta «Lo más pedido» en un negocio que sí tiene platillos populares');
-    } else ok('«Lo más pedido» sale de los platillos que marcó el dueño');
-    if (r.desborde) mal('desborde horizontal a 402px');
+      if (r.buenoSaber > 0) mal('«Bueno saber» aparece sin datos declarados por el dueño');
+      else ok('sin ficha declarada, «Bueno saber» no aparece');
+      if (r.barraPedido) mal('la barra de pedido aparece en un negocio que no vende menú en línea');
+      else ok('sin menú en línea, no hay barra de pedido');
+    } else {
+      if (!/data-mas-pedido/.test(await page.content())) mal('falta «Lo más pedido» en un negocio que sí tiene platillos populares');
+      else ok('«Lo más pedido» sale de los platillos que marcó el dueño');
+      if (r.buenoSaber < 2) mal(`«Bueno saber» debería traer ≥2 cuadros (tiene ${r.buenoSaber})`);
+      else ok(`«Bueno saber» con ${r.buenoSaber} cuadros declarados`);
+      if (!/Pedir/.test(r.barraPedido)) mal('falta la barra de pedido (§8) en un negocio que vende su menú');
+      else ok(`barra de pedido presente: ${r.barraPedido.slice(0, 50)}`);
+    }
+
+    // El tab «Fotos» abre el visor SIN cambiar la pestaña activa (§4) — solo
+    // en negocios con fotos reales subidas.
+    const hayFotos = await page.evaluate(() => Array.from(document.querySelectorAll('button')).some((b) => (b.innerText || '').trim() === 'Fotos'));
+    if (hayFotos) {
+      await page.evaluate(() => { Array.from(document.querySelectorAll('button')).find((b) => (b.innerText || '').trim() === 'Fotos')?.click(); });
+      await page.waitForTimeout(900);
+      const visor = await page.evaluate(() => ({
+        abierto: !!document.querySelector('[data-visor]'),
+        contador: /\d+ de \d+ fotos/.test(document.body.innerText || ''),
+      }));
+      if (!visor.abierto || !visor.contador) mal('el tab «Fotos» no abre el visor de galería (§1/§4)');
+      else ok('el tab «Fotos» abre el visor a pantalla completa');
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+      const sigue = await page.evaluate(() => !document.querySelector('[data-visor]'));
+      if (!sigue) mal('Escape no cierra el visor de galería');
+      else ok('Escape cierra el visor');
+    }
     await page.screenshot({ path: `${SHOTS}/ficha-402.png` });
     await page.close();
   }
@@ -186,17 +255,17 @@ const mal = (m) => { console.log(`  ❌ ${m}`); fallos.push(m); };
     const page = await abrir(1099, 900);
     const r = await page.evaluate(() => ({
       railPintado: !!document.querySelector('aside') && document.querySelector('aside').getBoundingClientRect().width > 0,
-      tieneHorario: /Horario/.test(document.body.innerText || ''),
+      statusCard: !!document.querySelector('[data-status-card]'),
       desborde: document.documentElement.scrollWidth > window.innerWidth + 1,
     }));
     if (r.railPintado) mal('a 1099px ya se pinta el riel (el corte debería ser 1100)');
-    else if (!r.tieneHorario) mal('a 1099px no hay riel NI Horario en el resumen: el contenido se perdió');
-    else ok('a 1099px vuelve a una columna, con su Horario');
+    else if (!r.statusCard) mal('a 1099px no hay riel NI status card: el contenido se perdió');
+    else ok('a 1099px vuelve a una columna, con su status card');
     if (r.desborde) mal('desborde horizontal a 1099px');
     await page.close();
   }
 
   await browser.close();
-  console.log(fallos.length ? `\n❌ ${fallos.length} fallo(s)` : '\n✅ escritorio a dos columnas con riel real, y el móvil sin tocar');
+  console.log(fallos.length ? `\n❌ ${fallos.length} fallo(s)` : '\n✅ la ficha v2 del handoff, con datos reales, en las dos vistas');
   process.exit(fallos.length ? 1 : 0);
 })();

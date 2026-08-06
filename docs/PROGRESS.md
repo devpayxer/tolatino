@@ -3,7 +3,42 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-08-04.
+> Last updated: 2026-08-06.
+
+## Ficha del negocio v2 COMPLETA — móvil y escritorio idénticos al handoff (2026-08-06, migración 0155)
+
+El fundador subió el handoff «Business Detail v2» y pidió el diseño **idéntico
+en las dos vistas**: «si algo ya está hecho se ajusta, si algo no está hecho se
+crea». Quedó construido entero en `BizDetail.tsx`:
+
+- **Móvil (392–402):** status card (→ hoja de Horario con semana completa y
+  barras de horas pico), Acerca con lede, «Bueno saber» 2×2, Lo que ofrece,
+  «Lo más pedido», «Eventos aquí», Reseñas (2 tarjetas + «Las N →»),
+  «Dónde encontrarla» (con minutos a pie derivados de la distancia real),
+  «Similares cerca», fila de acciones §3, **barra de pedido** §8 (invitación
+  solo en negocios que venden su menú; con carrito, total + «Ver pedido»),
+  tabs nuevos **Fotos** (abre el visor SIN cambiar de pestaña) y **Ubicación**,
+  y el **visor de galería** a pantalla completa (contador, miniaturas, Escape).
+- **Escritorio (≥1100):** migas de pan, hero 420px con rejilla 2×2 + pastillas
+  («Verificado por la comunidad»; «★ Favorito del barrio» SOLO con ≥5
+  recomendaciones reales) + «Ver las N fotos», cabecera a lo ancho con columna
+  CTA de 300px, franja de estado con los tabs como píldoras, dos columnas con
+  **riel fijo de 372px**: panel de pedido (horario/dirección + CTA), oferta del
+  barrio (promo real + «Usar oferta»), tarjeta del dueño, horario semanal.
+- **Datos nuevos (0155):** `businesses.settings->'ficha'` — famoso/espera/
+  lugar/transporte/estacionamiento/dueño/horas pico, TODO declarado por el
+  dueño en **Panel → Mi página → «Bueno saber»** (editor nuevo con barras de
+  horas pico tocables). `business_by_slug` devuelve la columna `ficha`. El
+  cuadro «Pagos» se DERIVA del hecho canónico (Stripe → en línea; sin → en el
+  establecimiento). **Lo no declarado NO se pinta — nada inventado.**
+- **Guardián:** `tools/mobile-audit/ficha-escritorio.js` reescrito (23
+  aserciones × 2 negocios, incluido el caso negativo sin ficha). Leer su
+  cabecera antes de correrlo: build `VERCEL_ENV=preview` + servir SIN `-s`.
+- **Sembrado SOLO en pruebas:** `hz-food-p4` tiene ficha completa para poder
+  probar; producción no siembra nada (cada dueño llena la suya).
+- **Deliberadamente NO tocado** (aprobado y más completo que el prototipo):
+  el tab Menú, la hoja de producto y el carrito/checkout reales. Ver
+  LAUNCH-CHECKLIST para los flecos del handoff que quedaron fuera y por qué.
 
 ## Permisos: lo que no debería estar abierto, cerrado (2026-08-04, migración 0148)
 

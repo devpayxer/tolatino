@@ -98,6 +98,21 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
         ...(tips && tips.presets.length ? { tips } : {}),
       };
     })(),
+    // lo que el dueño declaró para su ficha (0155; business_by_slug only) —
+    // solo strings/formas válidas pasan, lo demás se descarta en silencio
+    ficha: (() => {
+      const f = r.ficha as Record<string, unknown> | null | undefined;
+      if (!f || typeof f !== 'object') return undefined;
+      const s = (k: string) => (typeof f[k] === 'string' && (f[k] as string).trim() ? (f[k] as string).trim() : undefined);
+      const dRaw = f.dueno as Record<string, unknown> | null | undefined;
+      const dueno = dRaw && typeof dRaw.nombre === 'string' && dRaw.nombre.trim()
+        ? { nombre: dRaw.nombre.trim(), rol: typeof dRaw.rol === 'string' && dRaw.rol.trim() ? dRaw.rol.trim() : undefined }
+        : undefined;
+      const picoRaw = Array.isArray(f.pico) ? f.pico.map((n) => Math.max(0, Math.min(3, Number(n) || 0))) : [];
+      const pico = picoRaw.length === 14 && picoRaw.some((n) => n > 0) ? picoRaw : undefined;
+      const out = { famoso: s('famoso'), espera: s('espera'), lugar: s('lugar'), transporte: s('transporte'), estacionamiento: s('estacionamiento'), dueno, pico };
+      return Object.values(out).some((v) => v !== undefined) ? out : undefined;
+    })(),
   };
 }
 

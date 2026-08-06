@@ -87,6 +87,20 @@ export type Business = {
     time?: string; // the owner's delivery-time label from their first zone ("2–5 días", "30–45 min")
     tips?: TipPolicy;
   };
+  // Lo que el dueño declaró para su ficha v2 (settings.ficha, migración 0155):
+  // «Bueno saber», horas pico, quién atiende, transporte/estacionamiento.
+  // Todo opcional — la ficha solo pinta lo declarado (business_by_slug only).
+  ficha?: FichaNegocio;
+};
+
+export type FichaNegocio = {
+  famoso?: string;          // «Bueno saber» · Famosos por
+  espera?: string;          // «Bueno saber» · Espera típica
+  lugar?: string;           // «Bueno saber» · Lugar
+  transporte?: string;      // Ubicación (escritorio) · Transporte
+  estacionamiento?: string; // Ubicación (escritorio) · Estacionamiento
+  dueno?: { nombre: string; rol?: string }; // tarjeta del dueño (riel escritorio)
+  pico?: number[];          // 14 niveles 0–3, 7 am → 8 pm, un día típico
 };
 
 // Driver-tip policy each business owner configures. `mode:'percent'` → presets are

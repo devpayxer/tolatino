@@ -1586,6 +1586,36 @@
 
 ## 3. Incomplete / stubbed features
 
+- [ ] **Ficha v2 (handoff 2026-08-06) — flecos que quedaron FUERA a propósito, y
+  por qué.** La ficha del negocio quedó idéntica al handoff en móvil y
+  escritorio (ver PROGRESS 2026-08-06, migración 0155). Lo que el handoff pide
+  y NO se construyó, con su razón — revisar antes del lanzamiento:
+  - **Producción necesita la 0155** (pegar en el SQL Editor del proyecto real) —
+    sin ella la ficha sigue funcionando pero sin «Bueno saber»/horas pico/dueño.
+    Y los dueños reales tienen que llenar su ficha en Panel → Mi página; en
+    producción NO se siembra nada.
+  - **Pie de página del escritorio** (Descubrir/Para negocios/Ayuda…): el
+    prototipo lo trae; no se construyó porque la mitad de esos destinos
+    (Prensa, Guías locales, Centro de ayuda…) no existen como rutas — un
+    footer con enlaces muertos rompe la regla #7. Construirlo cuando esas
+    páginas existan.
+  - **Upsell «PRO» del pedido para el nivel Free** (§12): en nuestro modelo
+    canónico vender se decide por módulo + Stripe a nivel negocio, no por
+    plan, y un cliente no puede pagarle el plan al dueño — se omitió; el
+    negocio que no vende simplemente no enseña superficies de compra.
+  - **Líneas de escasez del menú** («Quedan 12 hoy», «Hornea 11 am y 3 pm»):
+    el menú no lleva inventario diario (la Tienda sí). Cuando el módulo de
+    menú tenga stock/tandas, pintarlas — hoy serían números inventados.
+  - **«Responde en ~20 min» de la tarjeta del dueño**: necesita medir tiempos
+    reales de respuesta del chat; hoy la tarjeta muestra nombre/rol +
+    «Enviar mensaje» (chat real). Añadir la métrica cuando el chat la trackee.
+  - **«5 vecinos que sigues vinieron este mes»** (§2): necesitaría rastrear
+    visitas físicas de gente que sigues — no existe. En su lugar la franja usa
+    las recomendaciones REALES de vecinos (misma forma visual).
+  - **Tab Menú / hoja de producto / carrito**: se quedaron con el diseño ya
+    aprobado (más completo que el prototipo: variantes, stock, promos, envío,
+    propinas). El handoff §6–§9 se consideró cubierto por lo existente.
+
 - [ ] **Rental cart — finer availability + hour mode (2026-07-16).** ~~(a) online
   multi-item payment~~ — **DONE 2026-07-16 (0099)**: `marketplace-checkout`
   (kind=rental + `lines[]`) re-prices every cart line server-side (day/week rate ×

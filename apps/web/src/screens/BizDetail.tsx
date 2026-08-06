@@ -42,8 +42,8 @@ for (const [es, en] of FEATURES_COMMON) FEAT_EN[es] = en;
 for (const arr of Object.values(FEATURES_BY_CAT)) for (const [es, en] of arr) FEAT_EN[es] = en;
 import { DETAIL_PHOTOS, MENU, OPTION_GROUPS, RENTAL, SERVICES, SHOP, WEEK, type Bi, type MenuCat, type MenuItem, type OptionGroup } from '@/data/bizdetail';
 
-type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'props' | 'autos' | 'related' | 'reviews';
-const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'related', 'reviews']);
+type TabKey = 'overview' | 'updates' | 'menu' | 'shop' | 'services' | 'rentals' | 'events' | 'props' | 'autos' | 'related' | 'reviews' | 'fotos' | 'ubicacion';
+const TAB_KEYS = new Set<string>(['overview', 'updates', 'menu', 'shop', 'services', 'rentals', 'events', 'related', 'reviews', 'fotos', 'ubicacion']);
 type RentMode = 'day' | 'hour';
 
 // Delivery-instruction presets (DoorDash-style): one dropoff preference + common
@@ -189,9 +189,16 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const [chatDraft, setChatDraft] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [weekOpen, setWeekOpen] = useState(false);
+  // Lightbox simple de UNA foto — hoy solo para las fotos adjuntas a reseñas.
+  // La galería del negocio usa el visor completo de abajo (galIdx).
   const [photoTile, setPhotoTile] = useState<string | null>(null);
-  useScrollLock(!!photoTile); // full-screen photo viewer is a bespoke overlay (not <Overlay>)
+  useScrollLock(!!photoTile);
+  // Visor de galería del handoff v2 (§1): índice de la foto abierta, null =
+  // cerrado. Pantalla completa, contador «n de N», tira de miniaturas, Escape.
+  const [galIdx, setGalIdx] = useState<number | null>(null);
+  useScrollLock(galIdx != null);
+  // Hoja de Horario (handoff §10): semana completa + horas pico del dueño.
+  const [hoursOpen, setHoursOpen] = useState(false);
 
   // Record a page view — every open counts (0077). Fire-and-forget, once per slug.
   useEffect(() => { trackListingView(b.slug); }, [b.slug]);
@@ -204,6 +211,18 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     fetchBusinessPhotos(b.slug).then((urls) => { if (!cancelled) setPhotos(urls); });
     return () => { cancelled = true; };
   }, [b.slug]);
+  // Teclado del visor de galería: Escape cierra; ← → navegan.
+  useEffect(() => {
+    if (galIdx == null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setGalIdx(null);
+      else if (e.key === 'ArrowRight') setGalIdx((i) => (i == null ? i : Math.min(photos.length - 1, i + 1)));
+      else if (e.key === 'ArrowLeft') setGalIdx((i) => (i == null ? i : Math.max(0, i - 1)));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [galIdx == null, photos.length]);
 
   // Real menu (business_items + menu_config, migration 0045). Null → the Menú
   // tab keeps the sample fixtures so the prototype stays populated.
@@ -1579,6 +1598,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     events: modOn('events') && (realEvents?.length ?? 0) > 0,
     props: modOn('inmuebles') && (realProps?.length ?? 0) > 0,
     autos: modOn('vehiculos') && (realAutos?.length ?? 0) > 0,
+    // Handoff v2 §4: Fotos y Ubicación como pestañas. No son módulos — salen
+    // solo cuando el dato real existe (fotos subidas / dirección publicada).
+    fotos: photos.length > 0,
+    ubicacion: hasAddress,
   };
   const allTabs: [TabKey, string][] = [
     ['overview', L('Resumen', 'Overview')],
@@ -1592,13 +1615,15 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     ['autos', L('Autos', 'Vehicles')],
     ['related', L('Relacionados', 'Related')],
     ['reviews', L('Reseñas', 'Reviews')],
+    ['fotos', L('Fotos', 'Photos')],
+    ['ubicacion', L('Ubicación', 'Location')],
   ];
   const tabs = allTabs.filter(([k]) => tabShown[k]);
   // If the active tab becomes hidden (real data RESOLVED to none), fall back.
   // Each tab waits for ITS data source to finish loading first — demoting while a
   // fetch is still in flight clobbered ?bt= deep links (Volver a pedir → menu).
   const tabResolved: Record<TabKey, boolean> = {
-    overview: true, related: true, reviews: true,
+    overview: true, related: true, reviews: true, fotos: true, ubicacion: true,
     menu: menuFetched, shop: shopFetched, services: svcFetched, rentals: rentFetched,
     updates: updFetched, events: evFetched, props: propsFetched, autos: autosFetched,
   };
@@ -1621,7 +1646,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // Same-tab taps must not set noFade: setTab bails out on identical state, no
   // render commits, and the reset effect below would never clear it — leaving the
   // NEXT legitimate pin fade stripped of its transition.
-  const onTab = (k: TabKey) => { if (k === tab) return; noFadeRef.current = true; setTab(k); };
+  const onTab = (k: TabKey) => {
+    // Handoff §4: «Fotos» abre el visor a pantalla completa y deja la pestaña
+    // activa donde estaba — no es un cambio de contenido.
+    if (k === 'fotos') { if (photos.length > 0) setGalIdx(0); return; }
+    if (k === tab) return; noFadeRef.current = true; setTab(k);
+  };
   useEffect(() => { noFadeRef.current = false; });
 
   // Pin the bar to the REAL app-header height (measured live) so it tucks flush —
@@ -1849,7 +1879,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     // visitante ya está en esa pestaña, el riel ofrece lo siguiente que sí
     // sirve — escribirle al negocio.
     const destino: [TabKey, string, string] | null =
-      tabShown.menu ? ['menu', 'Ver el menú', 'View menu']
+      // Menú que VENDE → «Pedir» (handoff §3); solo-catálogo → «Ver el menú».
+      tabShown.menu ? (menuDisplayOnly ? ['menu', 'Ver el menú', 'View menu'] : ['menu', 'Pedir', 'Order'])
         : tabShown.services ? ['services', 'Reservar', 'Book']
           : tabShown.shop ? ['shop', 'Ver la tienda', 'Shop']
             : tabShown.rentals ? ['rentals', 'Ver la renta', 'View rentals']
@@ -1906,47 +1937,133 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     .filter(({ it }) => !!it.tag)
     .slice(0, 8);
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // DERIVADOS DEL HANDOFF v2 — todo sale de datos reales; lo que falta, no sale
+  // ══════════════════════════════════════════════════════════════════════════
+  // «94% recomienda»: la proporción de reseñas de 4★+ (así lo computa Yelp).
+  // Con menos de 3 reseñas el porcentaje es ruido y no se pinta.
+  const reseñasTodas = [...myReviews.map((r) => ({ stars: r.stars })), ...realReviews.map((r) => ({ stars: r.rating }))];
+  const pctRecomienda = reseñasTodas.length >= 3
+    ? Math.round((reseñasTodas.filter((r) => r.stars >= 4).length / reseñasTodas.length) * 100)
+    : null;
+  // «Favorito del barrio»: solo con respaldo real de vecinos (≥5 recomendaciones).
+  const favoritoBarrio = endo.count >= 5;
+  // «Lo que ofrece»: los features del dueño (bilingües); en escritorio se pintan
+  // como chips de la cabecera (handoff §2), en móvil como sección del Resumen.
+  const ofrece = b.features && b.features.length
+    ? b.features.map((es) => L(es, FEAT_EN[es] ?? es))
+    : L(b.amEs.join('|'), b.amEn.join('|')).split('|').map((s) => s.trim()).filter(Boolean);
+  // «Bueno saber» (§5.3): tres cuadros que el dueño declaró en su panel (0155)
+  // y un cuarto DERIVADO del hecho canónico de cobro (con Stripe → en línea;
+  // sin Stripe → en el establecimiento) — solo para negocios que venden.
+  const vende = (tabShown.menu && !menuDisplayOnly) || (tabShown.shop && !shopDisplayOnly) || tabShown.services || tabShown.rentals;
+  const buenoSaber: { icon: string; label: string; value: string }[] = [
+    ...(b.ficha?.famoso ? [{ icon: '🔥', label: L('Famosos por', 'Famous for'), value: b.ficha.famoso }] : []),
+    ...(b.ficha?.espera ? [{ icon: '⏱️', label: L('Espera típica', 'Typical wait'), value: b.ficha.espera }] : []),
+    ...(b.ficha?.lugar ? [{ icon: '🪑', label: L('Lugar', 'Seating'), value: b.ficha.lugar }] : []),
+    ...(vende ? [{ icon: '💳', label: L('Pagos', 'Payments'), value: payOnline ? L('Tarjeta en línea o al recibir', 'Card online or on pickup') : L('Se paga en el establecimiento', 'Pay at the business') }] : []),
+  ];
+  // «6 min caminando desde ti» — derivado de la distancia real; solo a
+  // distancia caminable (≤1.2 mi a paso de 3 mph).
+  const distMi = parseFloat(b.dist);
+  const caminando = Number.isFinite(distMi) && distMi > 0 && distMi <= 1.2 ? Math.max(1, Math.round((distMi / 3) * 60)) : null;
+  // «Similares cerca» (§5.9): los vínculos reales aprobados primero; si no hay,
+  // otros negocios cargados cerca. Máximo 3.
+  const similares: { slug: string; name: string; meta: string; rating: string; tile: string; verified: boolean }[] = related.length > 0
+    ? related.slice(0, 3).map((r) => ({
+        slug: r.slug, name: r.name, rating: r.rating.toFixed(1), verified: r.tier !== 'free',
+        meta: [CAT[r.categoryId as keyof typeof CAT] ? L(CAT[r.categoryId as keyof typeof CAT].es, CAT[r.categoryId as keyof typeof CAT].en) : r.categoryId, r.city].filter(Boolean).join(' · '),
+        tile: `repeating-linear-gradient(135deg,${r.tileA ?? '#EFEBFF'} 0 11px,${r.tileB ?? '#E5DEF9'} 11px 22px)`,
+      }))
+    : all.filter((x) => x.id !== id).slice(0, 3).map((x) => ({
+        slug: x.slug, name: x.name, rating: x.rating, verified: x.verified,
+        meta: [L(CAT[x.cat].es, CAT[x.cat].en), x.price, x.dist].filter(Boolean).join(' · '),
+        tile: bizTile(x),
+      }));
+  // «Eventos aquí» (§5.6): hasta 2 del módulo real de eventos.
+  const eventosAqui = tabShown.events ? (realEvents ?? []).slice(0, 2) : [];
+  // Horas pico del dueño (0155) → la franja del status card y la hoja de Horario.
+  const pico = b.ficha?.pico ?? null;
+  const picoResumen = (() => {
+    if (!pico) return null;
+    const max = Math.max(...pico);
+    if (max < 2) return null;
+    const iMax = pico.indexOf(max);
+    const h12 = (i: number) => { const h = i + 7; return `${((h + 11) % 12) + 1} ${h < 12 ? 'am' : 'pm'}`; };
+    // primera hora tras el pico donde el nivel baja a ≤1 (se «tranquiliza»)
+    let calma: number | null = null;
+    for (let i = iMax + 1; i < 14; i++) if (pico[i] <= 1) { calma = i; break; }
+    return L(
+      `Lleno cerca de las ${h12(iMax)}${calma != null ? ` · más tranquilo después de las ${h12(calma)}` : ''}`,
+      `Busy around ${h12(iMax)}${calma != null ? ` · quieter after ${h12(calma)}` : ''}`,
+    );
+  })();
+
+  // Título del panel de pedido del riel (handoff §11.1) — nombra lo que el
+  // negocio de verdad ofrece; el CTA de abajo repite la acción (accion.label).
+  const railTitulo = tabShown.menu && !menuDisplayOnly ? L('Pide en línea', 'Order online')
+    : tabShown.services ? L('Reserva tu cita', 'Book your visit')
+      : tabShown.shop && !shopDisplayOnly ? L('Compra en línea', 'Shop online')
+        : tabShown.rentals ? L('Renta en línea', 'Rent online')
+          : tabShown.events ? L('Eventos y boletos', 'Events & tickets')
+            : accion?.label ?? '';
+
   const railCard = 'rounded-card border border-hair bg-white p-4 shadow-card';
   const desktopRail = (
     <aside className="hidden min-[1100px]:block">
-      <div className="sticky top-[110px] flex flex-col gap-4">
+      <div className="sticky top-[214px] flex flex-col gap-4">
 
-        {/* 1 · Acciones. Lo que en móvil vive repartido por la ficha, aquí
-               junto y siempre a la vista mientras se navega el contenido. */}
-        <div className={railCard}>
-          <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 flex-none rounded-full ${status.tone === 'open' ? 'bg-green' : status.tone === 'soon' ? 'bg-amber' : 'bg-muted-faint'}`} />
-            <span className={`text-[13px] font-extrabold ${statusTone}`}>{status.text}</span>
-          </div>
-          {accion && (
-            <button onClick={accion.onClick} className="tap mt-3 w-full cursor-pointer rounded-field bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">
+        {/* 1 · Panel de pedido (handoff §11.1) — solo cuando el negocio tiene
+               una acción real que empezar. Filas con el horario de HOY (Ver →
+               hoja de Horario) y la dirección (Mapa). Nada inventado: la nota
+               de pago sale del hecho canónico (Stripe → en línea; sin Stripe →
+               en el establecimiento). */}
+        {accion && (
+          <div data-panel-pedido className={railCard}>
+            <div className="text-[15px] font-extrabold text-ink">{railTitulo}</div>
+            {vende && (
+              <div className="mt-1 text-[12px] font-semibold leading-snug text-muted">
+                {payOnline
+                  ? L('Pagas en la app con tarjeta, o al recibir.', 'Pay in the app by card, or on pickup.')
+                  : L('Pagas en el establecimiento.', 'Pay at the business.')}
+              </div>
+            )}
+            <div className="mt-3 flex flex-col gap-2.5">
+              {b.hours && now && (
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2">
+                    <Clock size={15} stroke={2.2} className="text-primary-dark" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[12px] font-extrabold text-ink">
+                      {L('Hoy', 'Today')} · {todayExText ?? fmtDayHours(b.hours[now.getDay()], L('Cerrado', 'Closed'))}
+                    </span>
+                    <span className={`block text-[11px] font-bold ${statusTone}`}>{status.text}</span>
+                  </span>
+                  <button onClick={() => setHoursOpen(true)} className="flex-none cursor-pointer text-[12px] font-extrabold text-primary-dark">{L('Ver', 'View')}</button>
+                </div>
+              )}
+              {hasAddress && (
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac-2">
+                    <MapPin size={15} stroke={2.2} className="text-primary-dark" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12px] font-extrabold text-ink">{address}</span>
+                    {b.city && <span className="block truncate text-[11px] font-semibold text-muted">{b.city}</span>}
+                  </span>
+                  <a href={mapsHref} target="_blank" rel="noreferrer" onClick={() => trackListingView(b.slug, 'direction')} className="flex-none cursor-pointer text-[12px] font-extrabold text-primary-dark">{L('Mapa', 'Map')}</a>
+                </div>
+              )}
+            </div>
+            <button onClick={accion.onClick} className="tap mt-3.5 w-full cursor-pointer rounded-field bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">
               {accion.label}
             </button>
-          )}
-          <div className="mt-2 flex flex-col gap-2">
-            {hasAddress && (
-              <a href={mapsHref} target="_blank" rel="noreferrer" onClick={() => trackListingView(b.slug, 'direction')}
-                className="tap flex cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-extrabold text-ink">
-                <Navigation size={15} stroke={2.2} className="flex-none text-primary-dark" />
-                {L('Cómo llegar', 'Directions')}
-              </a>
-            )}
-            {hasPhone && (
-              <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} onClick={() => trackListingView(b.slug, 'call')}
-                className="tap flex cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[12.5px] font-extrabold text-ink">
-                <Phone size={15} stroke={2.2} className="flex-none text-primary-dark" />
-                <span className="truncate">{phone}</span>
-              </a>
-            )}
-            <button onClick={toggleSave}
-              className={`tap flex cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] px-3 py-2.5 text-[12.5px] font-extrabold ${saved ? 'border-pink/40 bg-pink-bg text-pink-dark' : 'border-lilac-line bg-white text-ink'}`}>
-              {saved ? <HeartFilled size={15} className="flex-none text-pink" /> : <Heart size={15} stroke={2.2} className="flex-none text-pink" />}
-              {saved ? L('Guardado', 'Saved') : L('Guardar', 'Save')}
-            </button>
           </div>
-        </div>
+        )}
 
-        {/* 2 · La promo REAL del negocio, si la hay. Nunca una inventada. */}
+        {/* 2 · La promo REAL del negocio, si la hay — con su botón dorado que
+               lleva al menú (handoff §11.2). Nunca una oferta inventada. */}
         {realMenu?.promo && (
           <div className="rounded-card p-4 shadow-card" style={{ background: '#1E1B2E' }}>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F6E05E] px-2.5 py-1 text-[10.5px] font-extrabold text-ink">
@@ -1955,14 +2072,39 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <div className="mt-2.5 text-[14.5px] font-extrabold leading-snug text-white">
               {L(realMenu.promo[0], realMenu.promo[1])}
             </div>
+            {tabShown.menu && (
+              <button onClick={() => onTab('menu')} className="tap mt-3 w-full cursor-pointer rounded-field bg-amber py-2.5 text-[12.5px] font-extrabold text-ink">
+                {L('Usar oferta', 'Use offer')}
+              </button>
+            )}
           </div>
         )}
 
-        {/* 3 · La semana entera. En móvil está plegada tras «Ver toda la
-               semana»; en escritorio sobra sitio para enseñarla completa. */}
+        {/* 3 · Quién atiende (handoff §11.3) — SOLO si el dueño puso su nombre
+               en el panel (0155). «Enviar mensaje» abre el chat real. */}
+        {b.ficha?.dueno && (
+          <div data-tarjeta-dueno className={railCard}>
+            <div className="flex items-center gap-3">
+              <Avatar initials={initials(b.ficha.dueno.nombre)} color="#7B61FF" size={42} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13.5px] font-extrabold text-ink">
+                  {b.ficha.dueno.nombre}{b.ficha.dueno.rol ? ` · ${b.ficha.dueno.rol}` : ''}
+                </span>
+                <span className="block text-[11.5px] font-semibold text-muted">{L('Atiende este negocio', 'Runs this business')}</span>
+              </span>
+            </div>
+            <button onClick={() => void openChat()} className="tap mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white py-2.5 text-[12.5px] font-extrabold text-ink">
+              <MessageCircle size={14} stroke={2.2} className="text-primary-dark" />
+              {L('Enviar mensaje', 'Send a message')}
+            </button>
+          </div>
+        )}
+
+        {/* 4 · La semana entera (handoff §11.4). En móvil vive en la hoja de
+               Horario; en escritorio sobra sitio para enseñarla completa. */}
         {b.hours && (
           <div className={railCard}>
-            <div className="mb-2.5 text-[13.5px] font-extrabold text-ink">{L('Horario', 'Hours')}</div>
+            <div className="mb-2.5 text-[13.5px] font-extrabold text-ink">{L('Horario de la semana', 'This week')}</div>
             <div className="flex flex-col gap-1.5">
               {WEEK.map((d, i) => {
                 const hoursIdx = i === 6 ? 0 : i + 1;
@@ -1978,16 +2120,6 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 );
               })}
             </div>
-          </div>
-        )}
-
-        {/* 4 · Dónde está. El mapa real (`MapaMini`), no un adorno. */}
-        {hasAddress && (
-          <div className={railCard}>
-            <div className="mb-2.5 text-[13.5px] font-extrabold text-ink">{L('Ubicación', 'Location')}</div>
-            <MapaMini lat={b.lat} lng={b.lng} color={CAT[b.cat].dot} alto={124} />
-            <div className="mt-2.5 text-[12.5px] font-semibold leading-snug text-ink-soft">{address}</div>
-            {b.city && <div className="mt-0.5 text-[11.5px] font-semibold text-muted-2">{b.city}</div>}
           </div>
         )}
       </div>
@@ -2251,19 +2383,36 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           above the bar → the bar is locked at the very top and the hero can't be
           revealed. Only Overview shows it. */}
       <div className={focused ? 'hidden' : ''}>
+      {/* migas de pan — solo escritorio (handoff v2, captura de escritorio).
+          Solo migas que LLEVAN a algún sitio son botones; el resto es texto. */}
+      <div className="mb-3.5 hidden items-center gap-2 text-[12.5px] font-semibold text-muted min-[1100px]:flex">
+        <button onClick={onClose} className="flex cursor-pointer items-center gap-1 font-extrabold text-primary-dark">
+          <ChevronLeft size={14} stroke={2.6} />
+          {L('Volver a negocios', 'Back to businesses')}
+        </button>
+        <span className="text-muted-faint">|</span>
+        <button onClick={onClose} className="cursor-pointer hover:text-ink">{L('Negocios', 'Businesses')}</button>
+        {b.city && <><span className="text-muted-faint">›</span><span>{b.city}</span></>}
+        <span className="text-muted-faint">›</span>
+        <span>{catLabel}</span>
+        <span className="text-muted-faint">›</span>
+        <span className="font-extrabold text-ink">{b.name}</span>
+      </div>
       {/* hero — en escritorio la portada comparte fila con una rejilla 2×2 de
           fotos (handoff §1). Solo si HAY fotos suficientes: con una sola foto
           se queda a lo ancho, que es mejor que cuatro huecos rayados. */}
       <div className="min-[1100px]:grid min-[1100px]:grid-cols-[1.55fr_1fr] min-[1100px]:gap-2">
-      <div className="relative mb-4 h-[200px] overflow-hidden rounded-card min-[1100px]:mb-0 min-[1100px]:h-[380px]" style={{ background: bizTile(b) }}>
+      <div className="relative mb-4 h-[268px] overflow-hidden rounded-card min-[1100px]:mb-0 min-[1100px]:h-[420px]" style={{ background: bizTile(b) }}>
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imgUrl(cover, ANCHO.ancha)} alt={b.name} onClick={() => setPhotoTile(cover)} className="absolute inset-0 h-full w-full cursor-pointer object-cover" />
+          <img src={imgUrl(cover, ANCHO.ancha)} alt={b.name} onClick={() => photos.length > 0 && setGalIdx(0)} className="absolute inset-0 h-full w-full cursor-pointer object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A8FC4]">[ foto ]</div>
         )}
+        {/* controles de vidrio: volver (solo móvil — en escritorio están las
+            migas) + compartir/guardar */}
         <div className="absolute left-3 right-3 top-3 flex items-center justify-between">
-          <button onClick={onClose} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Volver', 'Back')}>
+          <button onClick={onClose} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card min-[1100px]:invisible" aria-label={L('Volver', 'Back')}>
             <ChevronLeft size={18} stroke={2.4} className="text-ink" />
           </button>
           <div className="flex gap-2.5">
@@ -2275,6 +2424,21 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             </button>
           </div>
         </div>
+        {/* pastilla de verificación sobre el hero (handoff §1). «Favorito del
+            barrio» SOLO con respaldo real de vecinos (≥5 recomendaciones) —
+            nunca de adorno. En escritorio van como dos pastillas. */}
+        {b.verified && (
+          <span className="absolute left-4 top-[68px] inline-flex items-center gap-1.5 rounded-[10px] bg-primary px-[11px] py-[6px] text-[11px] font-extrabold text-white">
+            <Check size={11} stroke={3.5} />
+            <span className="min-[1100px]:hidden">{favoritoBarrio ? L('Verificado · Favorito del barrio', 'Verified · Neighborhood favorite') : L('Verificado', 'Verified')}</span>
+            <span className="hidden min-[1100px]:inline">{L('Verificado por la comunidad', 'Community verified')}</span>
+          </span>
+        )}
+        {b.verified && favoritoBarrio && (
+          <span className="absolute left-4 top-[104px] hidden items-center gap-1 rounded-[10px] bg-amber px-[11px] py-[6px] text-[11px] font-extrabold text-ink min-[1100px]:inline-flex">
+            ★ {L('Favorito del barrio', 'Neighborhood favorite')}
+          </span>
+        )}
         {/* hero promo badge: only a REAL active promo from the owner's menu — never
             a fabricated one (a fake 'Martes 2x1' on a real listing breaks rule #8). */}
         {realMenu?.promo && (
@@ -2282,16 +2446,24 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             {L(realMenu.promo[0], realMenu.promo[1])}
           </span>
         )}
+        {/* contador (móvil) / «Ver las N fotos» (escritorio) → visor completo */}
         {photos.length > 0 && (
-          <span className="absolute bottom-3 right-3.5 rounded-[10px] bg-[rgba(30,27,46,.6)] px-[11px] py-[5px] text-[11.5px] font-bold text-white">1 / {photos.length}</span>
+          <>
+            <button onClick={() => setGalIdx(0)} className="absolute bottom-3 right-3.5 cursor-pointer rounded-[10px] bg-[rgba(30,27,46,.6)] px-[11px] py-[5px] text-[11.5px] font-bold text-white min-[1100px]:hidden">
+              1 / {photos.length}
+            </button>
+            <button onClick={() => setGalIdx(0)} className="absolute bottom-4 right-4 hidden cursor-pointer items-center gap-1.5 rounded-[10px] bg-white px-3 py-[7px] text-[12px] font-extrabold text-ink shadow-card min-[1100px]:flex">
+              {photos.length === 1 ? L('Ver la foto', 'View the photo') : L(`Ver las ${photos.length} fotos`, `View all ${photos.length} photos`)}
+            </button>
+          </>
         )}
       </div>
       {/* la rejilla 2×2: solo escritorio, solo con fotos de verdad */}
       {photos.length > 1 && (
-        <div className="hidden min-[1100px]:grid min-[1100px]:h-[380px] min-[1100px]:grid-cols-2 min-[1100px]:grid-rows-2 min-[1100px]:gap-2">
-          {photos.slice(1, 5).map((u) => (
+        <div className="hidden min-[1100px]:grid min-[1100px]:h-[420px] min-[1100px]:grid-cols-2 min-[1100px]:grid-rows-2 min-[1100px]:gap-2">
+          {photos.slice(1, 5).map((u, i) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={u} src={imgUrl(u, ANCHO.tarjeta)} alt="" onClick={() => setPhotoTile(u)}
+            <img key={u} src={imgUrl(u, ANCHO.tarjeta)} alt="" onClick={() => setGalIdx(i + 1)}
               className="h-full w-full cursor-pointer rounded-[15px] object-cover" />
           ))}
           {Array.from({ length: Math.max(0, 4 - Math.min(photos.length - 1, 4)) }).map((_, i) => (
@@ -2302,15 +2474,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       </div>
       </div>{/* fin del bloque oculto-en-tabs: solo el hero va a lo ancho */}
 
-      {/* ══ DOS COLUMNAS EN ESCRITORIO ══
-          El hero manda a lo ancho; de aquí abajo, contenido a la izquierda y
-          riel fijo a la derecha. En móvil la rejilla no existe (`min-[1100px]:`
-          y nada más): el marcado queda exactamente como estaba, que es la regla
-          de esta casa — escritorio se DERIVA del móvil, nunca al revés. */}
-      <div className="min-[1100px]:mt-4 min-[1100px]:grid min-[1100px]:grid-cols-[minmax(0,1fr)_356px] min-[1100px]:items-start min-[1100px]:gap-7">
+      {/* cabecera A LO ANCHO (handoff §2): nombre/meta a la izquierda y la
+          columna CTA de 300px a la derecha — la franja de estado y las dos
+          columnas de contenido vienen DESPUÉS, como en el prototipo. */}
+      <div className={focused ? 'hidden' : 'min-[1100px]:mt-5'}>
+      <div className="min-[1100px]:grid min-[1100px]:grid-cols-[minmax(0,1fr)_300px] min-[1100px]:gap-7">
       <div className="min-w-0">
-      <div className={focused ? 'hidden' : ''}>
-
       {/* title + meta */}
       <div className="flex items-center gap-[7px]">
         <span className="text-[22px] font-extrabold tracking-[-.02em] text-ink">{b.name}</span>
@@ -2322,13 +2491,22 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[13px] font-bold text-muted">
         <span className="rounded-lg bg-lilac px-2 py-1 text-[11px] text-primary-dark">{catLabel}</span>
         <span>· {b.price}</span>
-        <span>· {b.dist}</span>
-        <span className={`font-extrabold ${statusTone}`}>· {status.text}</span>
+        {b.dist !== '— mi' && <span>· {b.dist}</span>}
+        <span className={`font-extrabold ${statusTone} min-[1100px]:hidden`}>· {status.text}</span>
       </div>
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <Stars className="text-[14px]" rating={b.reviews ? Number(b.rating) : undefined} />
         <span className="text-[15px] font-extrabold text-ink">{b.reviews ? b.rating : L('Nuevo', 'New')}</span>
-        <span className="text-[13px] font-semibold text-muted-2">({b.reviews})</span>
+        <span className="text-[13px] font-semibold text-muted-2">
+          ({b.reviews === 1 ? L('1 reseña', '1 review') : L(`${b.reviews} reseñas`, `${b.reviews} reviews`)})
+        </span>
+        {/* «94% recomienda» — proporción real de reseñas de 4★+; con menos de
+            3 reseñas no se pinta (sería ruido, no señal). */}
+        {pctRecomienda != null && (
+          <span className="rounded-full bg-green-bg px-2.5 py-1 text-[11px] font-extrabold text-green-dark">
+            {pctRecomienda}% {L('recomienda', 'recommend')}
+          </span>
+        )}
       </div>
       {/* Neighbor recommendations (Nextdoor-style) — real count + faces + the
           Recomendar toggle. Shown for every business; a tap vouches for it. */}
@@ -2355,7 +2533,50 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       {endo.note && (
         <div className="mt-2 text-[12.5px] font-medium italic leading-snug text-ink-3">“{endo.note}”</div>
       )}
+      {/* chips de «Lo que ofrece» envueltos en la cabecera — solo escritorio
+          (handoff §2); en móvil son una sección del Resumen. */}
+      {ofrece.length > 0 && (
+        <div className="mt-3.5 hidden flex-wrap gap-2 min-[1100px]:flex">
+          {ofrece.map((a) => (
+            <span key={a} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-3 py-[7px] text-[12px] font-bold text-ink-soft">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              {a}
+            </span>
+          ))}
+        </div>
+      )}
       {filaAcciones}
+      </div>
+      {/* columna CTA (solo escritorio, handoff §2): la acción principal del
+          negocio + cómo llegar + teléfono + guardar. Cada botón existe solo si
+          su dato existe. */}
+      <div data-cta-col className="hidden min-[1100px]:flex min-[1100px]:flex-col min-[1100px]:gap-2.5">
+        {accion && (
+          <button onClick={accion.onClick} className="tap w-full cursor-pointer rounded-field bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">
+            {accion.label}
+          </button>
+        )}
+        {hasAddress && (
+          <a href={mapsHref} target="_blank" rel="noreferrer" onClick={() => trackListingView(b.slug, 'direction')}
+            className="tap flex cursor-pointer items-center justify-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white py-3 text-[13px] font-extrabold text-ink">
+            <Navigation size={15} stroke={2.2} className="text-primary-dark" />
+            {L('Cómo llegar', 'Directions')}
+          </a>
+        )}
+        {hasPhone && (
+          <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} onClick={() => trackListingView(b.slug, 'call')}
+            className="tap flex cursor-pointer items-center justify-center gap-2 rounded-field border-[1.5px] border-lilac-line bg-white py-3 text-[13px] font-extrabold text-ink">
+            <Phone size={15} stroke={2.2} className="text-primary-dark" />
+            {phone}
+          </a>
+        )}
+        <button onClick={toggleSave}
+          className={`tap flex cursor-pointer items-center justify-center gap-2 rounded-field border-[1.5px] py-3 text-[13px] font-extrabold ${saved ? 'border-pink/40 bg-pink-bg text-pink-dark' : 'border-pink/30 bg-pink-bg/40 text-pink-dark'}`}>
+          {saved ? <HeartFilled size={15} className="text-pink" /> : <Heart size={15} stroke={2.2} className="text-pink" />}
+          {saved ? L('Guardado en mis lugares', 'Saved to my places') : L('Guardar en mis lugares', 'Save to my places')}
+        </button>
+      </div>
+      </div>
       </div>
 
       {/* One sticky header for every tab. On a non-Overview tab the negative top
@@ -2397,49 +2618,139 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {/* tabs row: pointer-events-auto re-enables input under the container's
             unpinned pass-through; the hairline lives HERE (over this row's opaque
             bg-app) so no 1px see-through slit exists while content scrolls under */}
-        <div className="no-scrollbar pointer-events-auto flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-app px-3.5 pt-2.5 md:px-5">{tabButtons}</div>
+        <div className="no-scrollbar pointer-events-auto flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-app px-3.5 pt-2.5 md:px-5 min-[1100px]:hidden">{tabButtons}</div>
+        {/* franja de estado de escritorio (handoff §4): estado real + horas
+            pico del dueño a la izquierda, tabs como píldoras a la derecha */}
+        <div className="pointer-events-auto mx-5 hidden items-center gap-3 rounded-card border border-hair bg-white px-4 py-2 shadow-card min-[1100px]:flex">
+          <span className="flex flex-none items-center gap-2 text-[12.5px] font-extrabold">
+            <span className={`h-2 w-2 flex-none rounded-full ${status.tone === 'open' ? 'bg-green' : status.tone === 'soon' ? 'bg-amber' : 'bg-muted-faint'}`} />
+            <span className={statusTone}>{status.text}</span>
+          </span>
+          {picoResumen && (
+            <span className="flex min-w-0 items-center gap-1.5 border-l border-hair pl-3 text-[12px] font-bold text-muted">
+              <Flame size={13} className="flex-none text-amber-ink" />
+              <span className="truncate">{picoResumen}</span>
+            </span>
+          )}
+          <div className="no-scrollbar ml-auto flex flex-none gap-1.5 overflow-x-auto">
+            {tabs.map(([k, label]) => (
+              <button key={k} onClick={() => onTab(k)}
+                className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12.5px] font-extrabold ${tab === k ? 'bg-ink text-white' : 'text-muted-2 hover:bg-lilac-2 hover:text-ink'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* ============ OVERVIEW ============ */}
+      {/* ══ DOS COLUMNAS EN ESCRITORIO ══
+          La franja de estado manda a lo ancho; de aquí abajo, contenido a la
+          izquierda y riel fijo a la derecha (handoff §11). En móvil la rejilla
+          no existe (`min-[1100px]:` y nada más): escritorio se DERIVA del
+          móvil, nunca al revés. */}
+      <div className="min-[1100px]:mt-2 min-[1100px]:grid min-[1100px]:grid-cols-[minmax(0,1fr)_356px] min-[1100px]:items-start min-[1100px]:gap-7">
+      <div className="min-w-0">
+
+      {/* ============ OVERVIEW (handoff v2 §5 — orden idéntico) ============ */}
       {tab === 'overview' && (
         <div className="pt-5">
-          {/* "Lo que ofrece" = the owner-selected features (bilingual); falls back
-              to the legacy amenities. Hidden when there's nothing to show. */}
+          {/* 1 · Status card — tocarla abre la hoja de Horario (§5.1). Solo
+              móvil: en escritorio el estado vive en la franja junto a los tabs.
+              La franja de abajo es del dueño (horas pico, 0155); sin ella se
+              enseña el horario de HOY — nunca un «lleno de 8 a 10» inventado. */}
+          {b.hours && (
+            <>
+            <div className="min-[1100px]:hidden">
+            <button data-status-card onClick={() => setHoursOpen(true)}
+              className="tap flex w-full cursor-pointer items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+              <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-[12px] ${status.tone === 'open' ? 'bg-green-bg' : 'bg-amber-bg'}`}>
+                <Clock size={18} stroke={2.2} className={status.tone === 'open' ? 'text-green-dark' : 'text-amber-ink'} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className={`block text-[13.5px] font-extrabold ${statusTone}`}>{status.text}</span>
+                <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-muted">
+                  {picoResumen ?? (todayExText ?? (now ? `${L('Hoy', 'Today')} · ${fmtDayHours(b.hours[now.getDay()], L('Cerrado', 'Closed'))}` : ''))}
+                </span>
+              </span>
+              <ChevronRight size={16} stroke={2.4} className="flex-none text-muted-2" />
+            </button>
+            {divider}
+            </div>
+            </>
+          )}
+
+          {/* 2 · Acerca de (§5.2) — con varios párrafos el primero es el lede */}
+          {secTitle(L('Acerca de', 'About'))}
           {(() => {
-            const offers = b.features && b.features.length
-              ? b.features.map((es) => L(es, FEAT_EN[es] ?? es))
-              : L(b.amEs.join('|'), b.amEn.join('|')).split('|').map((s) => s.trim()).filter(Boolean);
-            if (offers.length === 0) return null;
+            const texto = (L(b.descEs || '', b.descEn || '').trim()
+              || L(
+                `Negocio latino de confianza en ${b.city || app.cityShort}. ${b.specEs.replace('Especialidad · ', '')}, hecho con dedicación. Atendido con orgullo por su familia — de la comunidad para la comunidad.`,
+                `Trusted Latino-owned business in ${b.city || app.cityShort}. ${b.specEn.replace('Specialty · ', '')}, made with care. Proudly family-run — from the community for the community.`,
+              ));
+            const partes = texto.split(/\n\s*\n/);
+            if (partes.length < 2) {
+              return <div className="whitespace-pre-line text-[14px] font-medium leading-[1.6] text-ink-soft">{texto}</div>;
+            }
             return (
               <>
-                {secTitle(L('Lo que ofrece', 'What it offers'))}
-                <div className="flex flex-wrap gap-2">
-                  {offers.map((a) => (
-                    <span key={a} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-3 py-[7px] text-[12px] font-bold text-ink-soft">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                      {a}
-                    </span>
-                  ))}
-                </div>
-                {divider}
+                <div className="text-[15.5px] font-bold leading-[1.5] text-ink">{partes[0]}</div>
+                <div className="mt-2 whitespace-pre-line text-[14px] font-medium leading-[1.6] text-ink-soft">{partes.slice(1).join('\n\n')}</div>
               </>
             );
           })()}
-          {/* «Lo más pedido» (handoff §5.5): el camino a la compra desde el
+
+          {/* 3 · Bueno saber (§5.3) — SOLO lo que el dueño declaró en su panel
+              (más el cuadro de Pagos, derivado del hecho canónico de cobro).
+              Con menos de dos cuadros la rejilla no aparece. */}
+          {buenoSaber.length >= 2 && (
+            <>
+              {divider}
+              {secTitle(L('Bueno saber', 'Good to know'))}
+              <div data-bueno-saber className="grid grid-cols-2 gap-2.5 min-[1100px]:grid-cols-4">
+                {buenoSaber.map((t) => (
+                  <div key={t.label} className="rounded-tile border border-hair bg-white p-3 shadow-card">
+                    <span className="text-[15px]">{t.icon}</span>
+                    <span className="mt-1 block text-[11px] font-bold text-muted">{t.label}</span>
+                    <span className="mt-0.5 block text-[12.5px] font-extrabold leading-snug text-ink">{t.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* 4 · Lo que ofrece (§5.4) — sección en móvil; en escritorio estos
+              chips viven envueltos en la cabecera (handoff §2). */}
+          {ofrece.length > 0 && (
+            <div className="min-[1100px]:hidden">
+              {divider}
+              {secTitle(L('Lo que ofrece', 'What it offers'))}
+              <div className="flex flex-wrap gap-2">
+                {ofrece.map((a) => (
+                  <span key={a} className="inline-flex items-center gap-1.5 rounded-full bg-lilac-2 px-3 py-[7px] text-[12px] font-bold text-ink-soft">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    {a}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 5 · «Lo más pedido» (§5.5): el camino a la compra desde el
               Resumen. Solo con platillos que el dueño marcó como populares —
               si no marcó ninguno, este bloque no existe. */}
           {populares.length > 0 && (
             <>
+              {divider}
               <div className="mb-3 flex items-center justify-between">
                 <span data-mas-pedido className="text-[15.5px] font-extrabold text-ink">{L('Lo más pedido', 'Most ordered')}</span>
                 <button onClick={() => onTab(tabShown.menu ? 'menu' : 'shop')} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
-                  {L('Ver todo →', 'See all →')}
+                  {L('Ver el menú completo →', 'See the full menu →')}
                 </button>
               </div>
-              <div className="no-scrollbar -mx-3.5 flex touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain px-3.5 pb-1 md:-mx-5 md:px-5">
+              <div className="no-scrollbar -mx-3.5 flex touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain px-3.5 pb-1 md:-mx-5 md:px-5 min-[1100px]:mx-0 min-[1100px]:grid min-[1100px]:grid-cols-4 min-[1100px]:overflow-visible min-[1100px]:px-0">
                 {populares.map(({ catKey, it }) => (
                   <button key={`${catKey}-${it.n[0]}`} onClick={() => openItem(catKey, it)}
-                    className="tap w-[152px] flex-none cursor-pointer overflow-hidden rounded-tile border border-hair bg-white text-left shadow-card">
+                    className="tap w-[152px] flex-none cursor-pointer overflow-hidden rounded-tile border border-hair bg-white text-left shadow-card min-[1100px]:w-auto">
                     <span className="block h-[96px] w-full" style={{ background: it.bg }}>
                       {it.img && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -2457,157 +2768,195 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   </button>
                 ))}
               </div>
-              {divider}
             </>
           )}
-          {secTitle(L('Acerca de', 'About'))}
-          <div className="whitespace-pre-line text-[14px] font-medium leading-[1.6] text-ink-soft">
-            {/* real owner description when present; otherwise a friendly template
-                using the business's own city (falls back to the app city). */}
-            {L(b.descEs || '', b.descEn || '').trim()
-              || L(
-                `Negocio latino de confianza en ${b.city || app.cityShort}. ${b.specEs.replace('Especialidad · ', '')}, hecho con dedicación. Atendido con orgullo por su familia — de la comunidad para la comunidad.`,
-                `Trusted Latino-owned business in ${b.city || app.cityShort}. ${b.specEn.replace('Specialty · ', '')}, made with care. Proudly family-run — from the community for the community.`,
-              )}
-          </div>
-          {/* Horario y Ubicación se mudan al riel en escritorio (handoff §11):
-              aquí se ocultan para no repetirlos. En móvil siguen igual — y
-              «Fotos», que está EN MEDIO de las dos, se queda fuera del
-              envoltorio a propósito: la primera versión de esto la ocultó sin
-              querer y la galería desapareció del escritorio. */}
-          <div className="min-[1100px]:hidden">
-          {divider}
-          <div className="flex items-center justify-between">
-            <span className="text-[15.5px] font-extrabold text-ink">{L('Horario', 'Hours')}</span>
-            <span className={`text-[12.5px] font-extrabold ${statusTone}`}>{status.text}</span>
-          </div>
-          {/* today's hours — a date override (holiday/vacation) wins over the
-              weekly schedule, with the owner's reason as an amber badge. */}
-          <div className="mt-[11px] flex items-center justify-between gap-2 text-[13.5px] font-semibold text-ink-soft">
-            <span className="font-extrabold text-ink">{L('Hoy', 'Today')}</span>
-            {todayExText != null ? (
-              <span className="flex min-w-0 items-center justify-end gap-1.5">
-                {todayEx?.label && (
-                  <span className="truncate rounded-md bg-amber-bg px-1.5 py-0.5 text-[10px] font-extrabold text-amber-ink">{todayEx.label}</span>
-                )}
-                <span className="flex-none">{todayExText}</span>
-              </span>
-            ) : (
-              <span>{b.hours && now ? fmtDayHours(b.hours[now.getDay()], L('Cerrado', 'Closed')) : '9:00 am – 10:00 pm'}</span>
-            )}
-          </div>
-          <button onClick={() => setWeekOpen(!weekOpen)} className="mt-2 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-extrabold text-primary-dark">
-            {L('Ver toda la semana', 'See full week')}
-            <ChevronDown size={13} stroke={2.6} className={`transition-transform ${weekOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {weekOpen && (
-            <div className="mt-3 flex flex-col gap-2 rounded-[13px] bg-[#F7F6FC] px-3.5 py-3">
-              {WEEK.map((d, i) => {
-                // WEEK is Monday-first; our hours are Sunday-first (0=Sun..6=Sat).
-                const hoursIdx = i === 6 ? 0 : i + 1;
-                const isToday = now != null && now.getDay() === hoursIdx;
-                const label = isToday && todayExText != null
-                  ? todayExText
-                  : b.hours ? fmtDayHours(b.hours[hoursIdx], L('Cerrado', 'Closed')) : i === 6 ? '10:00 am – 6:00 pm' : '9:00 am – 10:00 pm';
-                return (
-                  <div key={d[0]} className="flex items-center justify-between text-[12.5px] font-semibold">
-                    <span className={isToday ? 'font-extrabold text-ink' : 'text-ink-soft'}>{B(d)}</span>
-                    <span className={isToday ? 'font-extrabold text-ink-2' : 'text-ink-2'}>{label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          </div>{/* fin del bloque «Horario» solo-móvil */}
-          {divider}
-          {secTitle(L('Fotos', 'Photos'))}
-          <div className="no-scrollbar flex gap-2 overflow-x-auto">
-            {photos.length > 0
-              ? photos.map((u) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={u} src={imgUrl(u, ANCHO.tarjeta)} alt="" onClick={() => setPhotoTile(u)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px] border border-hair object-cover" />
-                ))
-              : DETAIL_PHOTOS.map((t) => (
-                  <button key={t} onClick={() => setPhotoTile(t)} className="h-[90px] w-[120px] flex-none cursor-pointer rounded-[13px]" style={{ background: t }} />
-                ))}
-          </div>
-          {hasAddress && (
-            <div className="min-[1100px]:hidden">
+
+          {/* 6 · Eventos aquí (§5.6) — hasta 2 del módulo real de eventos */}
+          {eventosAqui.length > 0 && (
+            <>
               {divider}
-              {secTitle(L('Ubicación', 'Location'))}
-              {/* Mapa REAL del negocio. Antes esto era el rayado gris con un
-                  pin dibujado siempre en el centro — parecía un mapa apagado y
-                  no lo era. `MapaMini` cae solo a ese mismo marcador cuando el
-                  negocio no tiene dirección (quien trabaja desde casa no
-                  publica su domicilio; ver la migración 0151). */}
-              <MapaMini lat={b.lat} lng={b.lng} color={CAT[b.cat].dot} alto={130} />
-              <div className="mt-[11px] flex items-center justify-between">
-                <span className="text-[13px] font-semibold text-ink-soft">{address}</span>
-                <button onClick={() => setContactOpen(true)} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
-                  {L('Cómo llegar →', 'Directions →')}
+              <div className="mb-3 flex items-center justify-between">
+                <span data-eventos-aqui className="text-[15.5px] font-extrabold text-ink">{L('Eventos aquí', 'Events here')}</span>
+                <button onClick={() => onTab('events')} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
+                  {L('Todos los eventos →', 'All events →')}
                 </button>
               </div>
-            </div>
+              <div className="flex flex-col gap-2.5 min-[1100px]:grid min-[1100px]:grid-cols-2">
+                {eventosAqui.map((e) => (
+                  <Card key={e.slug ?? e.id} className="flex items-center gap-3.5 p-3.5" onClick={() => e.slug && router.push(`/eventos?e=${e.slug}`)}>
+                    <span className="relative flex h-[64px] w-[64px] flex-none flex-col items-center justify-center overflow-hidden rounded-tile" style={{ background: bizTile(b) }}>
+                      <span className="absolute inset-0 bg-ink/55" />
+                      <span className="relative text-[10px] font-extrabold uppercase tracking-[.06em] text-white">{e.dEs}</span>
+                      <span className="relative text-[21px] font-extrabold leading-none text-white">{e.day}</span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13.5px] font-extrabold text-ink">{L(e.tEs, e.tEn)}</span>
+                      <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-muted">{L(e.timeEs, e.timeEn)} · {e.free ? L('Gratis', 'Free') : e.price}</span>
+                      <span className="mt-0.5 block text-[11.5px] font-bold text-green-dark">{e.going} {L('asisten', 'going')}</span>
+                    </span>
+                    <ChevronRight size={16} stroke={2.4} className="flex-none text-muted-2 min-[1100px]:hidden" />
+                    <span className="hidden flex-none rounded-field bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white min-[1100px]:block">{L('Boletos', 'Tickets')}</span>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
+
+          {/* 7 · Reseñas (§5.7) — dos tarjetas; el desglose por estrellas solo
+              en escritorio, como en el prototipo. Sin reseñas → «sé la primera». */}
           {divider}
-          {secTitle(L('Reseñas', 'Reviews'))}
           {(() => {
-            // Honest, real-only review summary: average, proportional stars, a
-            // computed histogram and the latest review — or an empty state. Never
-            // the old hardcoded 90/7/2 bars, always-5 stars or seed reviews.
             const rows = [
-              ...myReviews.map((r) => ({ stars: r.stars, name: L('Tú', 'You'), ini: 'TÚ', color: '#7B61FF', text: [r.text, r.text] as Bi })),
-              ...realReviews.map((r) => ({ stars: r.rating, name: r.mine ? L('Tú', 'You') : r.name, ini: r.initials, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], text: r.body })),
+              ...myReviews.map((r) => ({ stars: r.stars, name: L('Tú', 'You'), ini: 'TÚ', color: '#7B61FF', text: [r.text, r.text] as Bi, when: null as Bi | null })),
+              ...realReviews.map((r) => ({ stars: r.rating, name: r.mine ? L('Tú', 'You') : r.name, ini: r.initials, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], text: r.body, when: reviewWhen(r.createdAt) })),
             ];
             if (rows.length === 0) {
               return (
-                <div className="rounded-[13px] border border-dashed border-lilac-line bg-lilac-2 p-6 text-center">
-                  <div className="text-[13.5px] font-extrabold text-ink">{L('Aún no hay reseñas', 'No reviews yet')}</div>
-                  <div className="mt-1 text-[12px] font-semibold text-muted">{L('Sé el primero en compartir tu experiencia.', 'Be the first to share your experience.')}</div>
-                  <button onClick={() => onTab('reviews')} className="mt-3 inline-flex cursor-pointer rounded-btn bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white">{L('Escribir reseña', 'Write a review')}</button>
-                </div>
+                <>
+                  {secTitle(L('Reseñas', 'Reviews'))}
+                  <div className="rounded-[13px] border border-dashed border-lilac-line bg-lilac-2 p-6 text-center">
+                    <div className="text-[13.5px] font-extrabold text-ink">{L('Sé la primera persona en reseñar', 'Be the first to review')}</div>
+                    <div className="mt-1 text-[12px] font-semibold text-muted">{L('Comparte tu experiencia con tus vecinos.', 'Share your experience with your neighbors.')}</div>
+                    <button onClick={() => onTab('reviews')} className="mt-3 inline-flex cursor-pointer rounded-btn bg-primary px-4 py-2 text-[12.5px] font-extrabold text-white">{L('Escribir reseña', 'Write a review')}</button>
+                  </div>
+                </>
               );
             }
             const avg = rows.reduce((s, r) => s + r.stars, 0) / rows.length;
-            const featured = rows[0];
+            const tarjeta = (r: (typeof rows)[number], i: number) => (
+              <div key={i} className="rounded-card border border-hair bg-white p-3.5 shadow-card">
+                <div className="flex items-center gap-2.5">
+                  <Avatar initials={r.ini} color={r.color} size={34} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-extrabold text-ink">{r.name}</div>
+                    {r.when && <div className="text-[11px] font-semibold text-muted-2">{B(r.when)}</div>}
+                  </div>
+                  <Stars className="flex-none text-[10.5px]" rating={r.stars} />
+                </div>
+                <div className="mt-2 text-[13px] font-medium leading-[1.55] text-ink-soft">{B(r.text)}</div>
+              </div>
+            );
             return (
               <>
-                <div className="flex items-center gap-4">
-                  <div className="flex-none text-center">
-                    <div className="text-[34px] font-extrabold leading-none text-ink">{avg.toFixed(1)}</div>
-                    <Stars className="mt-1 block text-[11px]" rating={avg} />
-                    <div className="mt-1 text-[11px] font-semibold text-muted-2">{rows.length}</div>
-                  </div>
-                  <div className="flex flex-1 flex-col gap-[5px]">
-                    {[5, 4, 3, 2, 1].map((n) => {
-                      const pct = Math.round((rows.filter((r) => Math.round(r.stars) === n).length / rows.length) * 100);
-                      return (
-                        <div key={n} className="flex items-center gap-2">
-                          <span className="w-2 text-[10px] font-bold text-muted-2">{n}</span>
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-lilac-line">
-                            <div className="h-full bg-amber" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-[15.5px] font-extrabold text-ink">
+                    {L('Reseñas', 'Reviews')}
+                    <span className="text-[13px] font-extrabold text-amber-ink">★ {avg.toFixed(1)}</span>
+                  </span>
+                  <button onClick={() => onTab('reviews')} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
+                    {L(`Las ${rows.length} →`, `All ${rows.length} →`)}
+                  </button>
                 </div>
-                <div className="mt-4">
-                  <div className="flex items-center gap-2">
-                    <Avatar initials={featured.ini} color={featured.color} size={32} />
-                    <div>
-                      <div className="text-[13px] font-extrabold text-ink">{featured.name}</div>
-                      <Stars className="text-[10px]" rating={featured.stars} />
+                <div className="min-[1100px]:grid min-[1100px]:grid-cols-[220px_minmax(0,1fr)] min-[1100px]:gap-4">
+                  {/* desglose — solo escritorio (§5.7) */}
+                  <div className="hidden rounded-card border border-hair bg-white p-4 shadow-card min-[1100px]:block">
+                    <div className="text-center">
+                      <div className="text-[34px] font-extrabold leading-none text-ink">{avg.toFixed(1)}</div>
+                      <Stars className="mt-1 block text-[11px]" rating={avg} />
+                      <div className="mt-1 text-[11px] font-semibold text-muted-2">{rows.length} {rows.length === 1 ? L('reseña', 'review') : L('reseñas', 'reviews')}</div>
                     </div>
+                    <div className="mt-3 flex flex-col gap-[5px]">
+                      {[5, 4, 3, 2, 1].map((n) => {
+                        const pct = Math.round((rows.filter((r) => Math.round(r.stars) === n).length / rows.length) * 100);
+                        return (
+                          <div key={n} className="flex items-center gap-2">
+                            <span className="w-2 text-[10px] font-bold text-muted-2">{n}</span>
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-lilac-line">
+                              <div className="h-full bg-amber" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <button onClick={() => onTab('reviews')} className="tap-y mt-3 w-full cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white py-2 text-[12px] font-extrabold text-primary-dark">
+                      {L('Escribir reseña', 'Write a review')}
+                    </button>
                   </div>
-                  <div className="mt-2 text-[13px] font-medium leading-[1.55] text-ink-soft">{B(featured.text)}</div>
+                  <div className="flex flex-col gap-2.5">{rows.slice(0, 2).map(tarjeta)}</div>
                 </div>
               </>
             );
           })()}
-          <button onClick={() => onTab('reviews')} className="mt-4 w-full cursor-pointer rounded-[13px] border-[1.5px] border-lilac-line bg-white p-[13px] text-[13.5px] font-extrabold text-primary-dark">
-            {L('Ver todas las reseñas', 'See all reviews')}
-          </button>
+
+          {/* 8 · Dónde encontrarla (§5.8) — mapa real + dirección + minutos a
+              pie derivados de la distancia real. En escritorio, los cuadros de
+              transporte/estacionamiento que el dueño declaró (0155). */}
+          {hasAddress && (
+            <>
+              {divider}
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[15.5px] font-extrabold text-ink">{L('Dónde encontrarla', 'Where to find it')}</span>
+                <a href={mapsHref} target="_blank" rel="noreferrer" onClick={() => trackListingView(b.slug, 'direction')}
+                  className="hidden cursor-pointer text-[12.5px] font-extrabold text-primary-dark min-[1100px]:block">
+                  {L('Abrir en Maps →', 'Open in Maps →')}
+                </a>
+              </div>
+              <MapaMini lat={b.lat} lng={b.lng} color={CAT[b.cat].dot} alto={130} />
+              <div className="mt-[11px] flex items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block truncate text-[13px] font-extrabold text-ink">{address}</span>
+                  {(b.dist !== '— mi' || caminando != null) && (
+                    <span className="block text-[11.5px] font-semibold text-muted">
+                      {b.dist !== '— mi' ? b.dist : ''}{caminando != null ? `${b.dist !== '— mi' ? ' · ' : ''}${L(`${caminando} min caminando desde ti`, `${caminando} min walk from you`)}` : ''}
+                    </span>
+                  )}
+                </span>
+                <a href={mapsHref} target="_blank" rel="noreferrer" onClick={() => trackListingView(b.slug, 'direction')}
+                  className="flex-none cursor-pointer text-[12.5px] font-extrabold text-primary-dark min-[1100px]:hidden">
+                  {L('Cómo llegar', 'Directions')}
+                </a>
+              </div>
+              {(b.ficha?.transporte || b.ficha?.estacionamiento) && (
+                <div className="mt-3 hidden gap-2.5 min-[1100px]:grid min-[1100px]:grid-cols-3">
+                  <div className="rounded-tile bg-lilac-3 p-3">
+                    <span className="block text-[11px] font-bold text-muted">{L('Dirección', 'Address')}</span>
+                    <span className="mt-0.5 block text-[12.5px] font-extrabold leading-snug text-ink">{address}</span>
+                  </div>
+                  {b.ficha?.transporte && (
+                    <div className="rounded-tile bg-lilac-3 p-3">
+                      <span className="block text-[11px] font-bold text-muted">{L('Transporte', 'Transit')}</span>
+                      <span className="mt-0.5 block text-[12.5px] font-extrabold leading-snug text-ink">{b.ficha.transporte}</span>
+                    </div>
+                  )}
+                  {b.ficha?.estacionamiento && (
+                    <div className="rounded-tile bg-lilac-3 p-3">
+                      <span className="block text-[11px] font-bold text-muted">{L('Estacionamiento', 'Parking')}</span>
+                      <span className="mt-0.5 block text-[12.5px] font-extrabold leading-snug text-ink">{b.ficha.estacionamiento}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* 9 · Similares cerca (§5.9) — riel en móvil, rejilla en escritorio */}
+          {similares.length > 0 && (
+            <>
+              {divider}
+              <div className="mb-3 flex items-center justify-between">
+                <span data-similares className="text-[15.5px] font-extrabold text-ink">{L('Similares cerca', 'Similar nearby')}</span>
+                <button onClick={() => onTab('related')} className="cursor-pointer text-[12.5px] font-extrabold text-primary-dark">
+                  {L('Ver todos →', 'See all →')}
+                </button>
+              </div>
+              <div className="no-scrollbar -mx-3.5 flex touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain px-3.5 pb-1 md:-mx-5 md:px-5 min-[1100px]:mx-0 min-[1100px]:grid min-[1100px]:grid-cols-3 min-[1100px]:overflow-visible min-[1100px]:px-0">
+                {similares.map((s) => (
+                  <button key={s.slug} onClick={() => void openRelated(s.slug)}
+                    className="tap w-[168px] flex-none cursor-pointer overflow-hidden rounded-tile border border-hair bg-white text-left shadow-card min-[1100px]:w-auto">
+                    <span className="block h-[104px] w-full" style={{ background: s.tile }} />
+                    <span className="block px-3 pb-3 pt-2">
+                      <span className="flex items-center gap-1">
+                        <span className="truncate text-[12.5px] font-extrabold text-ink">{s.name}</span>
+                        {s.verified && <VerifiedBadge size={13} />}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted">{s.meta}</span>
+                      <span className="mt-0.5 block text-[11.5px] font-extrabold text-ink">★ {s.rating}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -3269,17 +3618,51 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       {desktopRail}
       </div>
 
-      {cartCount > 0 && !(tab === 'menu' && menuDisplayOnly) && !(tab === 'shop' && shopDisplayOnly) && (
-        <button
-          onClick={() => { setCartOpen(true); setDoneOrderId(null); }}
-          className="fixed bottom-[86px] left-1/2 z-40 flex w-[calc(100%-28px)] max-w-[640px] -translate-x-1/2 cursor-pointer items-center justify-between rounded-2xl bg-ink px-5 py-3.5 text-white shadow-modal md:bottom-6"
-        >
-          <span className="text-[13px] font-extrabold">
-            {cartCount} {L('artículos', 'items')} · {money(cartTotal)}
-          </span>
-          <span className="text-[13px] font-extrabold text-amber">{L('Ver carrito →', 'View cart →')}</span>
-        </button>
-      )}
+      {/* ══ BARRA DE PEDIDO (handoff §8) — blanca, flotante, persistente ══
+          Con artículos: total + «Ver pedido». Sin artículos: la invitación a
+          pedir, SOLO en negocios que venden su menú en línea (regla canónica:
+          módulo activo + no-catálogo) y fuera de la pestaña Menú, donde ya
+          está el propio menú. Se esconde con el visor de fotos abierto. */}
+      {(() => {
+        if (galIdx != null) return null;
+        const conCarrito = cartCount > 0 && !(tab === 'menu' && menuDisplayOnly) && !(tab === 'shop' && shopDisplayOnly);
+        const invitar = cartCount === 0 && tabShown.menu && !menuDisplayOnly && tab === 'overview';
+        if (!conCarrito && !invitar) return null;
+        // Minutos de preparación REALES (config del dueño); sin config, sin número.
+        const prep = b.delivery?.prep && b.delivery.prep > 0 ? Math.round(b.delivery.prep) : null;
+        return (
+          <button
+            data-barra-pedido
+            onClick={() => { if (conCarrito) { setCartOpen(true); setDoneOrderId(null); } else onTab('menu'); }}
+            className={`fixed bottom-[86px] left-1/2 z-40 flex min-h-[62px] w-[calc(100%-20px)] max-w-[640px] -translate-x-1/2 cursor-pointer items-center justify-between gap-3 rounded-[22px] border border-hair bg-white/90 px-4 py-2.5 text-left shadow-modal backdrop-blur md:bottom-6 ${conCarrito ? '' : 'min-[1100px]:hidden'}`}
+          >
+            {conCarrito ? (
+              <>
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-extrabold text-ink">{money(cartTotal)}</span>
+                  <span className="block text-[11.5px] font-semibold text-muted">
+                    {cartCount === 1 ? L('1 artículo en tu bolsa', '1 item in your bag') : L(`${cartCount} artículos en tu bolsa`, `${cartCount} items in your bag`)}
+                  </span>
+                </span>
+                <span className="flex-none rounded-field bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">{L('Ver pedido', 'View order')}</span>
+              </>
+            ) : (
+              <>
+                <span className="min-w-0">
+                  <span className="block text-[13.5px] font-extrabold text-ink">
+                    {prep != null ? L(`Recoger · listo en ${prep} min`, `Pickup · ready in ${prep} min`) : L('Recoger en el local', 'Pickup at the counter')}
+                  </span>
+                  <span className="block text-[11.5px] font-semibold text-muted">{L('Pide antes y sáltate la fila', 'Order ahead and skip the line')}</span>
+                </span>
+                <span className="flex flex-none items-center gap-1.5 rounded-field bg-primary px-5 py-2.5 text-[13px] font-extrabold text-white shadow-cta-sm">
+                  <Store size={14} stroke={2.4} />
+                  {L('Pedir', 'Order')}
+                </span>
+              </>
+            )}
+          </button>
+        );
+      })()}
 
       {/* Recomendar — optional short reason (Nextdoor-style) */}
       <Overlay open={endoReason !== null} onClose={() => setEndoReason(null)} width={420}>
@@ -3381,6 +3764,101 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           </div>
         </div>
       </Overlay>
+
+      {/* ══ HOJA DE HORARIO (handoff §10) — semana completa + horas pico ══ */}
+      <Overlay open={hoursOpen} onClose={() => setHoursOpen(false)} width={420}>
+        <OverlayTitle title={L('Horario', 'Hours')} onClose={() => setHoursOpen(false)} />
+        <div className={`-mt-1 mb-3 text-[12.5px] font-extrabold ${statusTone}`}>{status.text}</div>
+        <div className="flex flex-col gap-2 rounded-[13px] bg-lilac-3 px-3.5 py-3">
+          {WEEK.map((d, i) => {
+            const hoursIdx = i === 6 ? 0 : i + 1;
+            const isToday = now != null && now.getDay() === hoursIdx;
+            const label = isToday && todayExText != null
+              ? todayExText
+              : b.hours ? fmtDayHours(b.hours[hoursIdx], L('Cerrado', 'Closed')) : '';
+            return (
+              <div key={d[0]} className="flex items-center justify-between text-[12.5px] font-semibold">
+                <span className={isToday ? 'font-extrabold text-primary-dark' : 'text-ink-soft'}>
+                  {B(d)}{isToday ? ` · ${L('Hoy', 'Today')}` : ''}
+                </span>
+                <span className="flex min-w-0 items-center justify-end gap-1.5">
+                  {isToday && todayEx?.label && (
+                    <span className="truncate rounded-md bg-amber-bg px-1.5 py-0.5 text-[10px] font-extrabold text-amber-ink">{todayEx.label}</span>
+                  )}
+                  <span className={isToday ? 'flex-none font-extrabold text-ink' : 'flex-none text-ink-2'}>{label}</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        {/* «Lo más lleno»: SOLO con las horas pico que el dueño declaró (0155).
+            La hora actual se marca en morado sólido, como en el handoff. */}
+        {pico && (
+          <div data-horas-pico className="mt-4">
+            <div className="text-[13px] font-extrabold text-ink">{L('Lo más lleno · un día típico', 'Busiest · a typical day')}</div>
+            <div className="mt-2.5 flex h-[64px] items-end gap-1">
+              {pico.map((lvl, i) => {
+                const esAhora = now != null && now.getHours() === i + 7;
+                return (
+                  <span key={i} className="flex h-full flex-1 items-end">
+                    <span
+                      className={`w-full rounded-[3px] ${esAhora ? 'bg-primary' : lvl === 0 ? 'bg-lilac-line' : lvl === 3 ? 'bg-primary/70' : 'bg-primary/40'}`}
+                      style={{ height: `${[10, 38, 68, 100][lvl]}%` }}
+                    />
+                  </span>
+                );
+              })}
+            </div>
+            <div className="mt-1.5 flex justify-between text-[9.5px] font-extrabold text-muted-2">
+              <span>7a</span><span>11a</span><span>3p</span><span>8p</span>
+            </div>
+            {picoResumen && <div className="mt-2 text-[12px] font-semibold leading-snug text-muted">{picoResumen}.</div>}
+          </div>
+        )}
+        <PrimaryBtn className="mt-4" onClick={() => setHoursOpen(false)}>{L('Listo', 'Done')}</PrimaryBtn>
+      </Overlay>
+
+      {/* ══ VISOR DE GALERÍA (handoff §1) — pantalla completa sobre fondo
+          tinta, contador «n de N», tira de miniaturas, flechas y Escape ══ */}
+      {galIdx != null && photos.length > 0 && (
+        <div data-visor className="fixed inset-0 z-[90] flex flex-col bg-ink">
+          <div className="flex flex-none items-center gap-3 px-4 py-3.5">
+            <button onClick={() => setGalIdx(null)} className="flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full bg-white/10 text-white" aria-label={L('Cerrar', 'Close')}>
+              <X size={18} stroke={2.4} />
+            </button>
+            <span className="min-w-0">
+              <span className="block text-[13.5px] font-extrabold text-white">
+                {L(`${galIdx + 1} de ${photos.length} fotos`, `${galIdx + 1} of ${photos.length} photos`)}
+              </span>
+              <span className="block truncate text-[11.5px] font-semibold text-white/60">{b.name}</span>
+            </span>
+          </div>
+          <div className="relative flex min-h-0 flex-1 items-center justify-center px-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imgUrl(photos[galIdx], ANCHO.original)} alt={`${b.name} ${galIdx + 1}`} className="max-h-full max-w-full rounded-card object-contain" />
+            {galIdx > 0 && (
+              <button onClick={() => setGalIdx(galIdx - 1)} className="absolute left-3 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white" aria-label={L('Anterior', 'Previous')}>
+                <ChevronLeft size={20} stroke={2.4} />
+              </button>
+            )}
+            {galIdx < photos.length - 1 && (
+              <button onClick={() => setGalIdx(galIdx + 1)} className="absolute right-3 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white" aria-label={L('Siguiente', 'Next')}>
+                <ChevronRight size={20} stroke={2.4} />
+              </button>
+            )}
+          </div>
+          {photos.length > 1 && (
+            <div className="no-scrollbar flex flex-none gap-2 overflow-x-auto px-4 py-3.5">
+              {photos.map((u, i) => (
+                <button key={u} onClick={() => setGalIdx(i)} className={`flex-none cursor-pointer overflow-hidden rounded-[10px] ${i === galIdx ? 'ring-2 ring-white' : 'opacity-55'}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imgUrl(u, ANCHO.icono)} alt="" className="h-14 w-14 object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* photo lightbox — a real photo (URL) or a placeholder gradient */}
       {photoTile && (
