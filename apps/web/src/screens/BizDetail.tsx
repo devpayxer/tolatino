@@ -2594,13 +2594,13 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         ref={barRef}
         style={{ ...(headerH != null ? { top: headerH } : undefined), pointerEvents: !focused && !stuck ? 'none' : undefined }}
         className={`sticky top-[150px] z-20 -mx-3.5 md:top-[108px] md:-mx-5 ${
-          focused ? 'bg-app -mt-4 md:-mt-5 lg:-mt-[26px]' : '-mt-[46px]'
+          focused ? 'bg-canvas -mt-4 md:-mt-5 lg:-mt-[26px]' : '-mt-[46px]'
         }`}
       >
         <div className="relative h-[50px] px-3.5 md:px-5" aria-hidden={!showTitle} style={{ pointerEvents: showTitle ? undefined : 'none' }}>
           {/* the title's own backdrop — fades in with the pin so, before it, the
               content above stays visible through the reserved (overlapped) space */}
-          {!focused && <div className={`absolute inset-0 bg-app ${noFadeRef.current ? '' : 'transition-opacity duration-200'} ${stuck ? 'opacity-100' : 'opacity-0'}`} />}
+          {!focused && <div className={`absolute inset-0 bg-canvas ${noFadeRef.current ? '' : 'transition-opacity duration-200'} ${stuck ? 'opacity-100' : 'opacity-0'}`} />}
           <div className={`relative flex h-full items-center gap-2 ${noFadeRef.current ? '' : 'transition-[opacity,transform] duration-200'} ${showTitle ? 'translate-y-0 opacity-100' : 'translate-y-[5px] opacity-0'}`}>
             <button onClick={() => onTab('overview')} tabIndex={showTitle ? 0 : -1} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2" aria-label={L('Volver a Overview', 'Back to Overview')}>
               <ChevronLeft size={16} stroke={2.6} className="text-ink" />
@@ -2620,7 +2620,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {/* tabs row: pointer-events-auto re-enables input under the container's
             unpinned pass-through; the hairline lives HERE (over this row's opaque
             bg-app) so no 1px see-through slit exists while content scrolls under */}
-        <div className="no-scrollbar pointer-events-auto flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-app px-3.5 pt-2.5 md:px-5 min-[1100px]:hidden">{tabButtons}</div>
+        <div className="no-scrollbar pointer-events-auto flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-canvas px-3.5 pt-2.5 md:px-5 min-[1100px]:hidden">{tabButtons}</div>
         {/* franja de estado de escritorio (handoff §4): estado real + horas
             pico del dueño a la izquierda, tabs como píldoras a la derecha */}
         <div className="pointer-events-auto mx-5 hidden items-center gap-3 rounded-card border border-hair bg-white px-4 py-2 shadow-card min-[1100px]:flex">
@@ -3052,7 +3052,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {/* horizontal category rail — pins under the tab bar and the active chip
               tracks the section in view (DoorDash-style scroll-spy). */}
           {menuCats.length > 1 && (
-            <div style={{ top: menuStickyTop }} className="group sticky z-[15] -mx-3.5 mb-4 border-b border-hair bg-app md:-mx-5">
+            <div style={{ top: menuStickyTop }} className="group sticky z-[15] -mx-3.5 mb-4 border-b border-hair bg-canvas md:-mx-5">
               <div ref={menuChipRailRef} className="no-scrollbar flex gap-1.5 overflow-x-auto px-3.5 py-2.5 md:px-5">
                 {reorderItems.length > 0 && (
                   <button data-cat="_reorder" onClick={() => scrollToCat('_reorder')} className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] font-extrabold transition-colors ${activeCat === '_reorder' ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}>

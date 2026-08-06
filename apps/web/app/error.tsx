@@ -4,7 +4,7 @@
 // screen with a retry, instead of a blank white page.
 export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-app px-6 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-pink-bg text-[28px]">⚠️</div>
       <h1 className="mt-4 text-[20px] font-extrabold text-ink">Algo salió mal</h1>
       <p className="mt-1.5 max-w-[320px] text-[13.5px] font-semibold text-muted">

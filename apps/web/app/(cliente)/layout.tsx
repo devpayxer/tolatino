@@ -30,7 +30,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
     <EndorsedProvider>
     <MyActivityProvider>
     <InteractionsProvider>
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen bg-canvas">
       <AppHeader />
       <main className="mx-auto max-w-[1180px] px-3.5 pb-[92px] pt-4 md:px-5 md:pb-[50px] md:pt-5 lg:px-[30px] lg:pb-[60px] lg:pt-[26px]">
         {children}

@@ -524,7 +524,7 @@ export function BizOnboardingScreen() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-app min-[1000px]:items-center min-[1000px]:justify-center min-[1000px]:p-8">
+    <div className="flex min-h-screen flex-col bg-canvas min-[1000px]:items-center min-[1000px]:justify-center min-[1000px]:p-8">
       <div className="flex w-full flex-1 flex-col overflow-hidden min-[1000px]:max-w-[1120px] min-[1000px]:flex-none min-[1000px]:flex-row min-[1000px]:rounded-[26px] min-[1000px]:shadow-pop">
 
         {/* ══ Riel de pasos — solo escritorio (el handoff lo oculta ≤1000px) ══ */}

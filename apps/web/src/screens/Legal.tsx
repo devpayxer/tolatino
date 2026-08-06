@@ -24,7 +24,7 @@ function LegalShell({ title, intro, blocks }: { title: [string, string]; intro: 
   const { L } = useLang();
   const router = useRouter();
   return (
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen bg-canvas">
       {/* sticky nav */}
       <header className="sticky top-0 z-30 border-b border-hair bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-[820px] items-center gap-3 px-4 py-3 md:px-6">

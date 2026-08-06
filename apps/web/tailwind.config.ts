@@ -31,7 +31,15 @@ const config: Config = {
         pink: { DEFAULT: '#F0466E', dark: '#D6336C', bg: '#FDE7EF' }, // like, notif badge, logout
         blue: { DEFAULT: '#2F6FED', bg: '#E5EFFB' }, // "Mi barrio", info links
         lilac: { DEFAULT: '#EFEBFF', 2: '#F1EFFA', 3: '#F3F0FF', line: '#E7E3F4', ring: '#DCD4FA' }, // chips, avatars, soft bg
-        app: '#F4F2F9', // app viewport background
+        // ⚠️ `app` NO es el fondo de la app, por mucho que lo diga el nombre.
+        // Se midió (2026-08-06): de sus 165 usos, solo 7 eran el lienzo de la
+        // página; 104 son el RELLENO de campos de texto y pozos DENTRO de
+        // tarjetas y hojas blancas (buscador, «Escribe tu ciudad…», el editor
+        // de horario, los formularios de publicar). Por eso «poner el fondo
+        // blanco» no es tocar este token: hacerlo borra 104 campos para
+        // arreglar 7 fondos. El lienzo vive en `canvas`, aquí abajo.
+        app: '#F4F2F9', // relleno de campos y pozos sobre blanco (nombre heredado)
+        canvas: '#FBFAFE', // EL FONDO de la app — mismo valor que `page` (la portada)
         dash: '#E7E5EC', // dashboard background
         teal: { DEFAULT: '#0E9384', bg: '#D6F3EF' }, // poll tag
         // ── Landing pública v3 (handoff "ToLatino Home", variante B, 2026-07-29) ──

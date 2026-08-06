@@ -288,6 +288,59 @@ try {
   efectoMsg = `  Efectos: no se pudo comprobar (${e.message})`;
 }
 
+// ── Guardián: el LIENZO y el RELLENO DE CAMPOS no pueden ser el mismo color ──
+// De dónde sale: el 2026-08-06 el fundador pidió cambiar «ese gris del fondo»
+// por blanco. Al medirlo salió que el token `app` hacía DOS trabajos a la vez:
+// era el lienzo de la página (7 usos) y el relleno de los campos de texto y los
+// pozos dentro de tarjetas y hojas blancas (104 usos). Poner `app` en blanco
+// habría borrado 104 campos —el buscador, «Escribe tu ciudad…», el editor de
+// horario, los formularios de publicar quedaban como un contorno sobre blanco—
+// para aclarar 7 fondos. Se separaron: `canvas` es el fondo, `app` el relleno.
+//
+// La regla: si alguien vuelve a igualarlos (o pone el relleno en blanco puro),
+// los campos desaparecen otra vez y no se nota hasta que un usuario intenta
+// escribir. Se comprueba en el CSS SERVIDO, no en la config: lo que importa es
+// lo que se publica.
+const colorFail = [];
+let colorMsg = '';
+try {
+  const css = walk(OUT).filter((f) => f.endsWith('.css')).map((f) => readFileSync(f, 'utf8')).join('\n');
+  const valorDe = (clase) => {
+    const m = css.match(new RegExp(`\\.${clase}\\{[^}]*background-color:([^;}]+)`));
+    return m ? m[1].trim().toLowerCase() : null;
+  };
+  // Tailwind sirve `rgb(255 255 255/var(--tw-bg-opacity,1))`, así que comparar
+  // cadenas no vale: la primera versión de esta comprobación dio "✅" con los
+  // campos en BLANCO PURO porque buscaba el texto "rgb(255 255 255)". Se
+  // extraen los tres números y se compara con ellos. (Probado al revés: sin
+  // esto, el caso que DEBE fallar pasaba.)
+  const rgbDe = (v) => {
+    if (!v) return null;
+    const hex = v.match(/#([0-9a-f]{6}|[0-9a-f]{3})\b/);
+    if (hex) {
+      const h = hex[1].length === 3 ? hex[1].replace(/./g, (c) => c + c) : hex[1];
+      return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+    }
+    const n = v.match(/(\d{1,3})\D+(\d{1,3})\D+(\d{1,3})/);
+    return n ? [+n[1], +n[2], +n[3]] : null;
+  };
+  const lienzo = valorDe('bg-canvas');
+  const campo = valorDe('bg-app');
+  const cRgb = rgbDe(campo);
+  const lRgb = rgbDe(lienzo);
+  if (!lRgb || !cRgb) {
+    colorMsg = `  Fondo: no se pudo leer del CSS servido (canvas=${lienzo ?? '?'} · campos=${campo ?? '?'})`;
+  } else if (lRgb.join() === cRgb.join()) {
+    colorFail.push(`el lienzo y el relleno de campos son el MISMO color (rgb ${lRgb.join(' ')})`);
+  } else if (cRgb.every((n) => n === 255)) {
+    colorFail.push('el relleno de campos (`bg-app`) quedó en BLANCO PURO — sobre una hoja blanca no se ve nada');
+  } else {
+    colorMsg = `  Fondo: lienzo rgb(${lRgb.join(' ')}) y campos rgb(${cRgb.join(' ')}) — distintos, los campos se ven`;
+  }
+} catch (e) {
+  colorMsg = `  Fondo: no se pudo comprobar (${e.message})`;
+}
+
 // ── Reporte ─────────────────────────────────────────────────────────────────
 console.log(`\nverify-build · ${jsFiles.length} archivos JS, ${htmlFiles.length} HTML en ${OUT}`);
 console.log(envMsg);
@@ -295,6 +348,7 @@ console.log(stripeMsg);
 console.log(kindsMsg);
 console.log(demoMsg);
 console.log(efectoMsg);
+console.log(colorMsg);
 for (const { nombre, ruta, faltan } of kindsFail) {
   console.error(`\n  ✖ ${faltan.length} tipo(s) que la base emite y ${nombre} NO sabe dibujar:`);
   console.error(`      ${faltan.join(', ')}`);
@@ -308,12 +362,19 @@ for (const e of efectoFail) {
   console.error('        Guarda el manejador en una ref y sácalo de las dependencias.');
 }
 
+for (const c of colorFail) {
+  console.error(`\n  ✖ ${c}.`);
+  console.error('      → `canvas` es el FONDO de la página; `app` es el relleno de los');
+  console.error('        campos de texto y los pozos sobre blanco. Si se igualan, el');
+  console.error('        buscador y todos los formularios quedan invisibles.');
+}
+
 for (const d of demoFail) {
   console.error(`\n  ✖ ${d.archivo}: useState arranca con \`${d.constante}\` (datos de ejemplo).`);
   console.error('      → el valor inicial debe ser vacío; que el cargador decida si toca demo.');
 }
 
-if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0) {
+if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0 && colorFail.length === 0) {
   console.log('\n✅ Sin datos fabricados, sin secretos y con la base correcta.\n');
   process.exit(0);
 }
