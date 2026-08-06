@@ -359,7 +359,7 @@ export function BienesRaicesScreen() {
         const el = document.createElement('button');
         el.type = 'button';
         el.className = `cursor-pointer whitespace-nowrap rounded-full border px-3 py-2 text-[11px] font-extrabold shadow-pop transition-transform ${
-          sel ? 'z-10 scale-110 border-ink bg-ink text-white' : 'border-hair bg-white text-ink'}`;
+          sel ? 'z-10 scale-110 border-ink bg-ink text-white' : 'border-line bg-white text-ink'}`;
         // Bare figure on the pin (no /mes suffix) — the unit lives on the card.
         el.textContent = fmtPrice(p.price, 'venta', es);
         el.onclick = () => setMapSelId(p.id);
@@ -852,22 +852,22 @@ export function BienesRaicesScreen() {
                 {(d.feats.length > 0 || d.policies.pets || d.policies.noCredit || d.policies.cosigner) && (
                   <div className="mt-3.5 flex flex-wrap gap-2">
                     {d.feats.map((f, i) => (
-                      <span key={i} className="flex items-center gap-1.5 rounded-field border border-hair bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
+                      <span key={i} className="flex items-center gap-1.5 rounded-field border border-line bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
                         <Check size={13} stroke={2.8} className="text-green" /> {L(f.es, f.en || f.es)}
                       </span>
                     ))}
                     {d.policies.pets && (
-                      <span className="flex items-center gap-1.5 rounded-field border border-hair bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
+                      <span className="flex items-center gap-1.5 rounded-field border border-line bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
                         <Check size={13} stroke={2.8} className="text-green" /> {L('Mascotas OK', 'Pets OK')}
                       </span>
                     )}
                     {d.policies.noCredit && (
-                      <span className="flex items-center gap-1.5 rounded-field border border-hair bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
+                      <span className="flex items-center gap-1.5 rounded-field border border-line bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
                         <Check size={13} stroke={2.8} className="text-green" /> {L('Sin verificación de crédito', 'No credit check')}
                       </span>
                     )}
                     {d.policies.cosigner && (
-                      <span className="flex items-center gap-1.5 rounded-field border border-hair bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
+                      <span className="flex items-center gap-1.5 rounded-field border border-line bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
                         <Check size={13} stroke={2.8} className="text-green" /> {L('Acepta aval', 'Co-signer accepted')}
                       </span>
                     )}
@@ -934,7 +934,7 @@ export function BienesRaicesScreen() {
                   {similar == null ? (
                     <div className="py-4 text-center text-[12px] font-semibold text-muted-2">{L('Cargando…', 'Loading…')}</div>
                   ) : similar.length === 0 ? (
-                    <div className="rounded-card-sm border border-dashed border-hair bg-white py-5 text-center text-[12px] font-semibold text-muted-2">
+                    <div className="rounded-card-sm border border-dashed border-line bg-white py-5 text-center text-[12px] font-semibold text-muted-2">
                       {L('No hay propiedades similares por ahora.', 'No similar listings right now.')}
                     </div>
                   ) : (
@@ -969,7 +969,7 @@ export function BienesRaicesScreen() {
             </div>
 
             {/* mobile sticky CTA bar (above the bottom nav; tablet has no nav) */}
-            <div className="fixed inset-x-0 bottom-[62px] z-40 border-t border-hair bg-white px-3.5 py-2.5 md:bottom-0 lg:hidden">
+            <div className="fixed inset-x-0 bottom-[62px] z-40 border-t border-line bg-white px-3.5 py-2.5 md:bottom-0 lg:hidden">
               <div className="mx-auto max-w-[720px]">{detailCtas}</div>
             </div>
           </div>
@@ -988,7 +988,7 @@ export function BienesRaicesScreen() {
 
               {/* search + filters */}
               <div className="mb-3 flex gap-2.5">
-                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-hair bg-white px-3.5 shadow-card">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5 shadow-card">
                   <Search size={16} stroke={2.2} className="flex-none text-muted-2" />
                   <input
                     value={q}
@@ -1189,7 +1189,7 @@ export function BienesRaicesScreen() {
                   </div>
                 </Card>
               ) : (
-                <div className="relative overflow-hidden rounded-card border border-hair shadow-card">
+                <div className="relative overflow-hidden rounded-card border border-line shadow-card">
                   <div ref={mapDiv} className="h-[60vh] w-full lg:h-[68vh]" />
                   {/* deal switch over the map */}
                   <div className="no-scrollbar absolute left-3 right-3 top-3 flex gap-1.5 overflow-x-auto">
@@ -1846,7 +1846,7 @@ export function BienesRaicesScreen() {
           <>
             <OverlayTitle title={L('Mensaje al agente', 'Message agent')} onClose={() => setContact(null)} />
             {d.bizName && (
-              <div className="mb-3 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
+              <div className="mb-3 flex items-center gap-3 rounded-card-sm border border-line bg-white p-3">
                 {d.bizLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={imgUrl(d.bizLogo, ANCHO.icono)} alt="" className="h-10 w-10 flex-none rounded-tile object-cover" />

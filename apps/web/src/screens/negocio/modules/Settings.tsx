@@ -47,7 +47,7 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
     router.push('/comunidad');
   };
 
-  const card = 'rounded-card border border-hair bg-white p-4 shadow-card';
+  const card = 'rounded-card border border-line bg-white p-4 shadow-card';
   const sec = 'mb-2.5 text-[11px] font-extrabold uppercase tracking-[.05em] text-muted';
 
   const navRow = (Icon: typeof Store, c: string, bg: string, title: string, sub: string, onClick: () => void) => (

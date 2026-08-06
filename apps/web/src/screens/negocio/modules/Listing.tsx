@@ -329,7 +329,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   // ── loading ──
   if (admin.loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-hair bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -338,7 +338,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   // ── no business yet ──
   if (!real || !draft) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -388,7 +388,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     <>
       <div className="grid gap-4 [&>*]:min-w-0 lg:grid-cols-[1fr_300px]">
         {/* form */}
-        <div className="rounded-card border border-hair bg-white p-4 shadow-card md:p-5">
+        <div className="rounded-card border border-line bg-white p-4 shadow-card md:p-5">
           <div className="mb-3.5 text-[13px] font-extrabold text-ink">{L('Detalles del negocio', 'Business details')}</div>
 
           {/* Free plan → upgrade band (handoff premium-teaser pattern) */}
@@ -482,7 +482,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
             {/* Destacar en la tarjeta: elige hasta 3 de "Lo que ofrece" para la
                 tarjeta de búsqueda, con una vista previa de cómo se verá. (Pro) */}
             {isFree ? proLock(Star, L('Destacar en la tarjeta', 'Feature on the card'), L('Elige las 3 que la gente ve en tu tarjeta al buscar.', 'Pick the 3 people see on your card in search.'))
-            : <div className="rounded-field border border-hair bg-app p-3.5">
+            : <div className="rounded-field border border-line bg-app p-3.5">
               <div className="flex items-center gap-2">
                 <StarFilled size={14} className="flex-none text-amber" />
                 <span className="min-w-0 flex-1 text-[12.5px] font-extrabold text-ink">{L('Destacar en la tarjeta', 'Feature on the card')}</span>
@@ -517,7 +517,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
                   {/* vista previa de la tarjeta */}
                   {draft.cardFeatures.length > 0 && (
-                    <div className="mt-3 rounded-card-sm border border-hair bg-white p-3">
+                    <div className="mt-3 rounded-card-sm border border-line bg-white p-3">
                       <div className="mb-1.5 text-[9.5px] font-extrabold uppercase tracking-[.05em] text-muted-2">{L('Vista previa en la tarjeta', 'Card preview')}</div>
                       <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
                         {draft.cardFeatures.map((es) => (
@@ -570,7 +570,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
             {/* Contacto por mensaje: opt-in + channel. Uses the phone above. (Pro) */}
             {isFree ? proLock(MessageCircle, L('Contacto por mensaje', 'Contact by message'), L('Botón de WhatsApp o SMS en tu ficha para recibir clientes.', 'A WhatsApp or SMS button on your listing to receive customers.'))
-            : <div className="rounded-field border border-hair bg-app p-3.5">
+            : <div className="rounded-field border border-line bg-app p-3.5">
               <div className="flex items-center gap-3">
                 <span className="min-w-0 flex-1">
                   <span className="block text-[12.5px] font-extrabold text-ink">{L('Contacto por mensaje', 'Contact by message')}</span>
@@ -665,7 +665,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
             {/* ── Bueno saber + detalles de la ficha (0155) ──
                 Todo opcional: lo que quede vacío simplemente NO aparece en la
                 ficha pública — nunca se rellena con texto de muestra. */}
-            <div className="rounded-card-sm border border-hair bg-lilac-3 p-3.5">
+            <div className="rounded-card-sm border border-line bg-lilac-3 p-3.5">
               <div className="text-[12.5px] font-extrabold text-ink">{L('Bueno saber', 'Good to know')}</div>
               <div className="mt-0.5 text-[11px] font-semibold leading-snug text-muted">
                 {L('Detalles cortos que tu ficha muestra a los clientes. Lo que dejes vacío no aparece.', 'Short details your public listing shows customers. Anything you leave empty is hidden.')}
@@ -748,7 +748,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
         {/* side: listing status */}
         <div className="flex flex-col gap-3">
-          <div className="rounded-card border border-hair bg-white p-4 shadow-card">
+          <div className="rounded-card border border-line bg-white p-4 shadow-card">
             <div className="mb-3 text-[12px] font-extrabold text-ink">{L('Estado del listado', 'Listing status')}</div>
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-2.5">

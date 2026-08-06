@@ -589,7 +589,7 @@ export function BizOnboardingScreen() {
         <div className="flex min-h-screen flex-1 flex-col bg-white min-[1000px]:min-h-[660px]">
           {/* Encabezado */}
           {!isTerminal && (
-            <div className="sticky top-0 z-20 border-b border-hair bg-white/95 px-4 pt-3 backdrop-blur-[8px] min-[1000px]:static min-[1000px]:border-0 min-[1000px]:px-8 min-[1000px]:pt-5">
+            <div className="sticky top-0 z-20 border-b border-line bg-white/95 px-4 pt-3 backdrop-blur-[8px] min-[1000px]:static min-[1000px]:border-0 min-[1000px]:px-8 min-[1000px]:pt-5">
               <div className="flex items-center gap-2.5">
                 {BACK[step] ? (
                   <button onClick={back} aria-label={L('Volver', 'Volver')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-[11px] bg-app">
@@ -728,7 +728,7 @@ export function BizOnboardingScreen() {
 
                   <button
                     onClick={() => setNoAddr((v) => !v)}
-                    className={`flex cursor-pointer items-start gap-3 rounded-[12px] border-[1.5px] bg-page p-3 text-left ${noAddr ? 'border-primary' : 'border-hair'}`}
+                    className={`flex cursor-pointer items-start gap-3 rounded-[12px] border-[1.5px] bg-page p-3 text-left ${noAddr ? 'border-primary' : 'border-line'}`}
                   >
                     <span className={`mt-px flex h-5 w-5 flex-none items-center justify-center rounded-[6px] border-[1.5px] ${noAddr ? 'border-primary bg-primary' : 'border-muted-faint bg-white'}`}>
                       {noAddr && <Check size={11} stroke={3.4} className="text-white" />}
@@ -1018,7 +1018,7 @@ export function BizOnboardingScreen() {
                         "This is how your business will look on To'Latino. You can edit anything later.")}</Sub>
 
                 {/* Vista previa del listado */}
-                <div className="mt-5 overflow-hidden rounded-[18px] border border-hair bg-white shadow-card">
+                <div className="mt-5 overflow-hidden rounded-[18px] border border-line bg-white shadow-card">
                   <div className="h-[96px] w-full" style={{ background: gallery[0] ? undefined : tile(catInfo?.bg ?? '#EFEBFF', catInfo?.dot ?? '#7B61FF', 12) }}>
                     {gallery[0] && <img src={imgUrl(gallery[0].url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />}
                   </div>
@@ -1038,7 +1038,7 @@ export function BizOnboardingScreen() {
                 </div>
 
                 {/* Resumen editable */}
-                <div className="mt-4 rounded-[15px] border border-hair bg-page px-3.5">
+                <div className="mt-4 rounded-[15px] border border-line bg-page px-3.5">
                   {([
                     [L('Categoría', 'Category'), catInfo ? L(catInfo.es, catInfo.en) : '—', 'cat'],
                     [L('Tipos', 'Types'), subs.length ? subs.slice(0, 3).join(', ') + (subs.length > 3 ? '…' : '') : '—', 'sub'],
@@ -1168,7 +1168,7 @@ export function BizOnboardingScreen() {
                   {catInfo ? L(catInfo.es, catInfo.en).toLowerCase() : ''} {L('cerca de ti.', 'near you.')}
                 </p>
 
-                <div className="mt-6 w-full rounded-[17px] border border-hair bg-page p-4 text-left">
+                <div className="mt-6 w-full rounded-[17px] border border-line bg-page p-4 text-left">
                   <div className="flex flex-col gap-3">
                     {[
                       tool ? { bg: 'bg-lilac', c: 'text-primary-dark', t: L(tool.es, tool.en), d: L(tool.descEs, tool.descEn) } : null,
@@ -1208,7 +1208,7 @@ export function BizOnboardingScreen() {
 
           {/* CTA */}
           {!isTerminal && (
-            <div className="sticky bottom-0 border-t border-hair bg-white/96 px-4 py-3 backdrop-blur-[8px] min-[1000px]:static min-[1000px]:border-0 min-[1000px]:px-8 min-[1000px]:pb-6">
+            <div className="sticky bottom-0 border-t border-line bg-white/96 px-4 py-3 backdrop-blur-[8px] min-[1000px]:static min-[1000px]:border-0 min-[1000px]:px-8 min-[1000px]:pb-6">
               <PrimaryBtn disabled={busy} className={!canNext ? '!bg-lilac-line !shadow-none' : ''} onClick={next}>
                 {step === 'pay'
                   ? busy ? L('Publicando…', 'Publishing…')

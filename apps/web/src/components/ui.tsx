@@ -92,7 +92,7 @@ export function BizLogo({ name, logoUrl, color = '#7B61FF', size = 84, radius = 
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={imgUrl(logoUrl, ANCHO.icono)} alt=""
-        className={`flex-none border border-hair object-cover ${className}`}
+        className={`flex-none border border-line object-cover ${className}`}
         style={{ width: size, height: size, borderRadius: radius }}
       />
     );
@@ -448,7 +448,7 @@ export function Card({ children, className = '', onClick }: { children: ReactNod
   return (
     <div
       onClick={onClick}
-      className={`rounded-card border border-hair bg-white shadow-card ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`rounded-card border border-line bg-white shadow-card ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
     </div>
@@ -484,7 +484,7 @@ export function EmptyState({ title, sub }: { title: string; sub?: string }) {
  *  (Comunidad). Pass the screen's own grid/stack classes via `className`. */
 function SkeletonCard() {
   return (
-    <div className="overflow-hidden rounded-card border border-hair bg-white shadow-card">
+    <div className="overflow-hidden rounded-card border border-line bg-white shadow-card">
       <div className="aspect-[16/10] w-full animate-pulse bg-lilac-2" />
       <div className="flex flex-col gap-2 p-3.5">
         <div className="h-3.5 w-2/3 animate-pulse rounded bg-lilac-2" />
@@ -496,7 +496,7 @@ function SkeletonCard() {
 }
 function SkeletonPost() {
   return (
-    <div className="rounded-card border border-hair bg-white p-4 shadow-card">
+    <div className="rounded-card border border-line bg-white p-4 shadow-card">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 flex-none animate-pulse rounded-full bg-lilac-2" />
         <div className="flex flex-col gap-1.5">

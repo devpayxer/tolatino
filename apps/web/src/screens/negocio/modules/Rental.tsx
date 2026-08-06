@@ -127,7 +127,7 @@ function rentalToRow(it: Item, businessId: string, sort: number): NewBizItem {
   };
 }
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 const fieldCls =
   'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-faint focus:border-primary';
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
@@ -597,7 +597,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div>
                     <div className={fieldLabel}>{L('Foto', 'Photo')}</div>
                     {draft.photoUrl ? (
-                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
+                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-line">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                         <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
@@ -674,7 +674,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         const on = draft.policies.includes(p.id);
                         const toggle = () => upD({ policies: on ? draft.policies.filter((x) => x !== p.id) : [...draft.policies, p.id] });
                         return (
-                          <div key={p.id} className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
+                          <div key={p.id} className="flex items-center gap-3 rounded-field border border-line bg-app p-3">
                             <button type="button" onClick={toggle} className="min-w-0 flex-1 cursor-pointer text-left"><span className="block text-[12px] font-bold text-ink">{L(p.es, p.en)}</span>{(p.subEs || p.subEn) && <span className="block text-[10px] font-medium text-muted-2">{L(p.subEs ?? '', p.subEn ?? p.subEs ?? '')}</span>}</button>
                             <Toggle on={on} onClick={toggle} />
                           </div>
@@ -707,7 +707,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá disponible para rentar.', "It'll appear available to rent.") : L('Agrega nombre y tarifa diaria antes de continuar.', 'Add a name and daily rate before continuing.')}</div>
                       </div>
                     </div>
-                    <div className="overflow-hidden rounded-btn-lg border border-hair">
+                    <div className="overflow-hidden rounded-btn-lg border border-line">
                       {rows.map((r, i, a) => (
                         <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
                           <span className="w-24 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
@@ -885,7 +885,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {cfg.categories.map((c, i) => {
           const Icon = rentCatIcon(c.icon); const n = countIn(c.id);
           return (
-            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
+            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
               <span className="flex flex-none flex-col">
                 <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
                 <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
@@ -920,7 +920,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.addons.map((a) => {
             const used = addonUsedBy(a.id);
             return (
-              <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+              <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
@@ -950,7 +950,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.policies.map((p) => {
             const used = policyUsedBy(p.id);
             return (
-              <button key={p.id} onClick={() => setPolicySheet({ open: true, initial: p })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+              <button key={p.id} onClick={() => setPolicySheet({ open: true, initial: p })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Shield size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(p.es, p.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{p.default && <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Por defecto', 'Default')}</span>}</span>
@@ -1224,7 +1224,7 @@ function ItemDetail({
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="overflow-hidden rounded-card-sm border border-hair">
+        <div className="overflow-hidden rounded-card-sm border border-line">
           <div className="relative h-[110px]" style={{ background: stripe(tile) }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {item.imageUrl && <img src={imgUrl(item.imageUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
@@ -1332,7 +1332,7 @@ function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
             <>
               <Field label={`${L('Nombre del cliente', 'Renter name')} *`}><input value={name} onChange={(e) => setName(e.target.value)} placeholder={L('Ej. Mariana Vélez', 'e.g. Mariana Velez')} className={fieldCls} /></Field>
               <Field label={L('Teléfono', 'Phone')}><input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(415) 555-0148" className={fieldCls} inputMode="tel" autoComplete="tel" /></Field>
-              <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3"><Shield size={17} stroke={2} className="flex-none text-primary-dark" /><span className="flex-1 text-[11px] font-semibold leading-snug text-ink-soft">{L('Exención de responsabilidad firmada', 'Liability waiver signed')}</span><Toggle on={waiver} onClick={() => setWaiver((v) => !v)} /></div>
+              <div className="flex items-center gap-3 rounded-field border border-line bg-app p-3"><Shield size={17} stroke={2} className="flex-none text-primary-dark" /><span className="flex-1 text-[11px] font-semibold leading-snug text-ink-soft">{L('Exención de responsabilidad firmada', 'Liability waiver signed')}</span><Toggle on={waiver} onClick={() => setWaiver((v) => !v)} /></div>
             </>
           )}
           {step === 1 && (
@@ -1360,7 +1360,7 @@ function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
           {step === 2 && (
             <>
               <div className="flex items-center gap-3 rounded-field border border-green/40 bg-green-bg p-3"><span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-green-dark"><Check size={16} stroke={3} /></span><span className="flex-1"><span className="block text-[12px] font-extrabold text-green-dark">{L('Listo para rentar', 'Ready to rent')}</span><span className="block text-[10.5px] font-semibold leading-snug text-green-dark/80">{L('Se cobra el depósito y se marca como rentado.', 'Deposit is charged and item marked rented.')}</span></span></div>
-              <div className="overflow-hidden rounded-field border border-hair">
+              <div className="overflow-hidden rounded-field border border-line">
                 {([[L('Cliente', 'Renter'), name || '—'], [L('Artículo', 'Item'), L(item.es, item.en)], [L('Periodo', 'Period'), `${qty} × ${periodLabel}`], [L('Total', 'Total'), money(total)]] as [string, string][]).map(([k, v], i, a) => (
                   <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}><span className="w-[80px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span><span className="min-w-0 flex-1 text-[11.5px] font-extrabold text-ink">{v}</span></div>
                 ))}

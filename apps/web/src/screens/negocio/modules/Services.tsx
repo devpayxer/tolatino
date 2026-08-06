@@ -38,7 +38,7 @@ import {
 } from '@/lib/serviceConfig';
 import { ServiceAddonEditor, ServiceCategoryEditor, ServiceProviderEditor, svcCatIcon } from '@/screens/negocio/modules/ServiceEditors';
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 
 type PriceType = 'fijo' | 'persona' | 'cotiza';
@@ -436,7 +436,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   if (isFree) {
     return (
       <div className="mx-auto flex max-w-[560px] flex-col gap-4 pb-8">
-        <div className="flex flex-col items-center rounded-card-sm border border-hair bg-white p-6 text-center shadow-card">
+        <div className="flex flex-col items-center rounded-card-sm border border-line bg-white p-6 text-center shadow-card">
           <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-[16px] bg-lilac-2 text-primary-dark"><Lock size={26} stroke={2.2} /></span>
           <div className="text-[17px] font-extrabold text-ink">{L('Servicios y reservas', 'Services & bookings')}</div>
           <div className="mt-2 max-w-[380px] text-[12.5px] font-medium leading-relaxed text-muted">
@@ -549,7 +549,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div>
                     <div className={fieldLabel}>{L('Foto', 'Photo')}</div>
                     {draft.photoUrl ? (
-                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
+                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-line">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                         <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
@@ -608,7 +608,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
                   {/* Price variants — optional single-choice group that ADDS to the
                       base price (car wash: vehicle type; cleaning: home size…). */}
-                  <div className="rounded-btn-lg border border-hair bg-app p-3.5">
+                  <div className="rounded-btn-lg border border-line bg-app p-3.5">
                     <div className="flex items-center gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="text-[12.5px] font-bold text-ink">{L('Variantes de precio', 'Price variants')} <span className="font-semibold text-muted">· {L('opcional', 'optional')}</span></div>
@@ -712,7 +712,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá en tu listado al instante.', "It'll appear on your listing instantly.") : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
                       </div>
                     </div>
-                    <div className="overflow-hidden rounded-btn-lg border border-hair">
+                    <div className="overflow-hidden rounded-btn-lg border border-line">
                       {rows.map((r, i, a) => (
                         <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
                           <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
@@ -935,7 +935,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {cfg.categories.map((c, i) => {
           const Icon = svcCatIcon(c.icon); const n = countIn(c.id);
           return (
-            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
+            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
               <span className="flex flex-none flex-col">
                 <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
                 <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
@@ -970,7 +970,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.addons.map((a) => {
             const used = addonUsedBy(a.id);
             return (
-              <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+              <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
@@ -1003,7 +1003,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.providers.map((p) => {
             const nSvc = !p.serviceIds || p.serviceIds.length === 0 ? null : p.serviceIds.length;
             return (
-              <div key={p.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${p.active === false ? 'opacity-60' : ''}`}>
+              <div key={p.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card ${p.active === false ? 'opacity-60' : ''}`}>
                 <button onClick={() => setProSheet({ open: true, initial: p })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                   <span className="relative flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full text-[14px] font-extrabold text-white" style={{ background: p.color }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}

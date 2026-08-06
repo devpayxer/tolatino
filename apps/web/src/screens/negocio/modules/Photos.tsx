@@ -153,7 +153,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
 
   if (admin.loading || loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-hair bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -161,7 +161,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
 
   if (!real) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -182,10 +182,10 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
       <input ref={logoInput} type="file" accept="image/*" onChange={onPickLogo} className="hidden" />
 
       {/* logo — the business identity image (cards + dashboard header) */}
-      <div className="mb-4 flex items-center gap-3.5 rounded-card border border-hair bg-white p-4 shadow-card">
+      <div className="mb-4 flex items-center gap-3.5 rounded-card border border-line bg-white p-4 shadow-card">
         {real.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imgUrl(real.logo_url, ANCHO.icono)} alt={L('Logo del negocio', 'Business logo')} className="h-[68px] w-[68px] flex-none rounded-tile border border-hair object-cover" />
+          <img src={imgUrl(real.logo_url, ANCHO.icono)} alt={L('Logo del negocio', 'Business logo')} className="h-[68px] w-[68px] flex-none rounded-tile border border-line object-cover" />
         ) : (
           <button
             onClick={() => logoInput.current?.click()}
@@ -262,7 +262,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {photos.map((p) => (
-            <div key={p.id} className="group relative aspect-square overflow-hidden rounded-tile border border-hair bg-app">
+            <div key={p.id} className="group relative aspect-square overflow-hidden rounded-tile border border-line bg-app">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imgUrl(p.url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
               {p.is_cover && (

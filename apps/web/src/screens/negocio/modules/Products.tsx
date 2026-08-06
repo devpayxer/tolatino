@@ -42,7 +42,7 @@ import {
   CollectionEditor, DiscountEditor, OptionSetEditor, ProductCategoryEditor, prodCatIcon,
 } from '@/screens/negocio/modules/ProductEditors';
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 
 const FALLBACK_CAT: ProductCategory = { id: 'pantry', es: 'Productos', en: 'Products', icon: 'package', tile: '#F3D9C8 0 8px,#E8C3AC 8px 16px', visible: true };
@@ -472,7 +472,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                   <div>
                     <div className={fieldLabel}>{L('Foto', 'Photo')}</div>
                     {draft.photoUrl ? (
-                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
+                      <div className="relative h-[150px] overflow-hidden rounded-tile border border-line">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                         <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
@@ -530,7 +530,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                           <div className={fieldLabel}>{L('Galería de fotos', 'Photo gallery')} <span className="font-semibold text-muted">· {L('hasta 6', 'up to 6')}</span></div>
                           <div className="flex flex-wrap gap-x-2 gap-y-[18px]">
                             {draft.photos.map((u, i) => (
-                              <div key={i} className="relative h-[72px] w-[72px] overflow-hidden rounded-tile border border-hair">
+                              <div key={i} className="relative h-[72px] w-[72px] overflow-hidden rounded-tile border border-line">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={imgUrl(u, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
                                 <button type="button" onClick={() => upD({ photos: draft.photos.filter((_, j) => j !== i) })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-0.5 top-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={11} stroke={2.4} /></button>
@@ -680,7 +680,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                         <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá en tu tienda al instante.', "It'll appear in your shop instantly.") : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
                       </div>
                     </div>
-                    <div className="overflow-hidden rounded-btn-lg border border-hair">
+                    <div className="overflow-hidden rounded-btn-lg border border-line">
                       {rows.map((r, i, a) => (
                         <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
                           <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
@@ -753,7 +753,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       {/* search */}
-      <div className="flex items-center gap-2.5 rounded-field border border-hair bg-white px-3 py-2.5">
+      <div className="flex items-center gap-2.5 rounded-field border border-line bg-white px-3 py-2.5">
         <Search size={15} stroke={2.2} className="flex-none text-muted-2" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L('Buscar productos…', 'Search products…')} className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted-2" />
       </div>
@@ -811,7 +811,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
         {cfg.categories.map((c, i) => {
           const Icon = prodCatIcon(c.icon); const n = countIn(c.id);
           return (
-            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
+            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
               <span className="flex flex-none flex-col">
                 <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
                 <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
@@ -846,7 +846,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.optionSets.map((o) => {
             const used = optUsedBy(o.id); const n = variantCount([o.id], cfg.optionSets);
             return (
-              <button key={o.id} onClick={() => setOptSheet({ open: true, initial: o })} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+              <button key={o.id} onClick={() => setOptSheet({ open: true, initial: o })} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Layers size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(o.es, o.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
@@ -907,7 +907,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
             const val = d.type === 'percent' ? `${d.value ?? 0}%` : d.type === 'amount' ? `$${d.value ?? 0}` : d.type === 'shipping' ? '🚚' : '2×1';
             const paused = d.status === 'paused';
             return (
-              <div key={d.id} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 shadow-card ${paused ? 'opacity-60' : ''}`}>
+              <div key={d.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card ${paused ? 'opacity-60' : ''}`}>
                 <button onClick={() => setDiscSheet({ open: true, initial: d })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-lilac text-[13px] font-extrabold text-primary-dark">{val}</span>
                   <div className="min-w-0 flex-1">
@@ -988,7 +988,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       )}
 
       {/* delivery + shipping live in the shared "Entregas y envíos" module */}
-      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} stroke={2} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[12.5px] font-extrabold text-ink">{L('Entregas y envíos', 'Delivery & shipping')}</span>

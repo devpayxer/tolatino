@@ -31,7 +31,7 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-hair bg-[rgba(255,255,255,.96)] pb-[env(safe-area-inset-bottom)] backdrop-blur-[8px] md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-[rgba(255,255,255,.96)] pb-[env(safe-area-inset-bottom)] backdrop-blur-[8px] md:hidden">
       <div className="flex items-center px-2">
         {item(VIEW_PATH.comunidad, Users, L('Comunidad', 'Community'))}
         {item(VIEW_PATH.negocios, Store, L('Negocios', 'Business'))}

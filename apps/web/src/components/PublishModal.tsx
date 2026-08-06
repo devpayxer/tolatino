@@ -410,7 +410,7 @@ export function PublishModal() {
             <button
               key={o.key}
               onClick={() => app.setPubType(o.key)}
-              className="flex w-full cursor-pointer items-center gap-3.5 rounded-tile border-[1.5px] border-hair bg-white p-3.5 text-left hover:border-primary"
+              className="flex w-full cursor-pointer items-center gap-3.5 rounded-tile border-[1.5px] border-line bg-white p-3.5 text-left hover:border-primary"
             >
               <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn" style={{ background: o.bg }}>
                 <o.Icon size={22} strokeWidth={2.2} style={{ color: o.color }} />
@@ -471,7 +471,7 @@ export function PublishModal() {
                     setStep(2);
                   }}
                   className={`flex w-full cursor-pointer items-center gap-3.5 rounded-tile border-[1.5px] p-3.5 text-left ${
-                    postType === o.key ? 'border-primary bg-[#FAF9FE]' : 'border-hair bg-white'
+                    postType === o.key ? 'border-primary bg-[#FAF9FE]' : 'border-line bg-white'
                   }`}
                 >
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn" style={{ background: o.bg }}>

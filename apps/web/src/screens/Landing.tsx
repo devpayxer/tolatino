@@ -305,7 +305,7 @@ export function LandingScreen() {
                     const on = tab === k;
                     return (
                       <button key={k} onClick={() => setTab(k)} aria-pressed={on}
-                              className={`tl-focus flex flex-none cursor-pointer items-center gap-[7px] whitespace-nowrap rounded-full border px-[15px] py-[9px] text-[12.5px] font-extrabold ${on ? 'border-primary bg-primary text-white' : 'border-hair bg-white text-ink-soft'}`}>
+                              className={`tl-focus flex flex-none cursor-pointer items-center gap-[7px] whitespace-nowrap rounded-full border px-[15px] py-[9px] text-[12.5px] font-extrabold ${on ? 'border-primary bg-primary text-white' : 'border-line bg-white text-ink-soft'}`}>
                         <Icon size={14} stroke={2.2} className={`flex-none ${on ? 'text-white' : 'text-muted'}`} aria-hidden />
                         {L(e, en)}
                       </button>
@@ -324,7 +324,7 @@ export function LandingScreen() {
                     return (
                       <button key={dir} onClick={() => moverRiel(dir)} tabIndex={visible ? 0 : -1}
                               aria-label={dir === -1 ? L('Ver categorías anteriores', 'See previous categories') : L('Ver más categorías', 'See more categories')}
-                              className={`tl-railbtn tl-focus pointer-events-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border border-hair bg-white ${visible ? '' : 'tl-railoff'} ${dir === -1 ? 'ml-[-6px]' : 'mr-[-6px] ml-auto'}`}>
+                              className={`tl-railbtn tl-focus pointer-events-auto flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border border-line bg-white ${visible ? '' : 'tl-railoff'} ${dir === -1 ? 'ml-[-6px]' : 'mr-[-6px] ml-auto'}`}>
                         <Icon size={16} stroke={2.4} className="text-ink-soft" aria-hidden />
                       </button>
                     );
@@ -412,7 +412,7 @@ export function LandingScreen() {
                       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
                       onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}
                       aria-label={L('Ver la siguiente publicación de la comunidad', 'See the next community post')}
-                      className="tl-feed tl-focus mx-auto flex w-full max-w-[460px] cursor-pointer items-center rounded-[16px] border border-hair bg-white px-[14px] py-[13px]"
+                      className="tl-feed tl-focus mx-auto flex w-full max-w-[460px] cursor-pointer items-center rounded-[16px] border border-line bg-white px-[14px] py-[13px]"
                       style={{ marginTop: 'clamp(8px,1.4vw,14px)', minHeight: 92, boxShadow: '0 8px 24px rgba(60,50,110,.07)' }}>
                 <div aria-live="polite" key={idx % FEED_SAMPLE.length}
                      className={`flex w-full items-start gap-[11px] text-left ${idx % 2 === 0 ? 'tl-pa' : 'tl-pb'}`}>

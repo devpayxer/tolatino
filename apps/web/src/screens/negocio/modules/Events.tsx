@@ -27,7 +27,7 @@ import { Qr } from '@/components/Qr';
 import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { QrScanner, useBarcodeSupport } from '@/components/QrScanner';
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 
 type View = 'list' | 'manage' | 'wizard' | 'success';
 type ListTab = 'upcoming' | 'drafts' | 'past' | 'recurring' | 'promoters';
@@ -538,7 +538,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // Honest placeholder for features on the roadmap but not yet built (matches the
   // app's "Muy pronto" pattern) — never fake data dressed up as working.
   const comingSoon = (Icon: typeof RefreshCw, title: string, desc: string) => (
-    <div className="flex flex-col items-center rounded-card-sm border border-hair bg-white px-6 py-12 text-center shadow-card">
+    <div className="flex flex-col items-center rounded-card-sm border border-line bg-white px-6 py-12 text-center shadow-card">
       <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-tile bg-lilac-3"><Icon size={22} strokeWidth={2} className="text-primary-dark" /></span>
       <div className="text-[14px] font-extrabold text-ink">{title}</div>
       <div className="mt-1 max-w-[340px] text-[11.5px] font-medium leading-relaxed text-muted">{desc}</div>
@@ -588,7 +588,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
 
         {upcomingList.length === 0 && (
-          <div className="rounded-card-sm border border-hair bg-white py-12 text-center shadow-card">
+          <div className="rounded-card-sm border border-line bg-white py-12 text-center shadow-card">
             <div className="text-[13.5px] font-extrabold text-ink">{L('Aún no tienes eventos próximos', 'No upcoming events yet')}</div>
             <div className="mt-1 text-[11.5px] font-medium text-muted-2">{L('Crea tu primer evento y ponlo en venta en minutos.', 'Create your first event and put it on sale in minutes.')}</div>
             <button onClick={startWizard} className="tap-y mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
@@ -601,7 +601,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             const pct = Math.round((e.sold / e.cap) * 100);
             const barC = e.sold / e.cap > 0.85 ? '#E8954A' : '#7B61FF';
             return (
-              <div key={e.id} className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
+              <div key={e.id} className="overflow-hidden rounded-card-sm border border-line bg-white shadow-card">
                 <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }}>
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))' }} />
                   <span className="absolute left-2.5 top-2.5 rounded-[9px] bg-white px-2.5 py-1 text-center shadow-cta-sm">
@@ -684,11 +684,11 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---- Pasados ---- real for a signed-in owner; sample when exploring in demo
   const pastView = persistable ? (
     pastList.length === 0 ? (
-      <div className="rounded-card-sm border border-hair bg-white py-12 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Todavía no tienes eventos pasados.', 'No past events yet.')}</div>
+      <div className="rounded-card-sm border border-line bg-white py-12 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Todavía no tienes eventos pasados.', 'No past events yet.')}</div>
     ) : (
       <div className="grid gap-2.5 md:grid-cols-2">
         {pastList.map((e) => (
-          <button key={e.dbId ?? e.id} onClick={() => goManage(e.id)} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left opacity-90 shadow-card hover:opacity-100">
+          <button key={e.dbId ?? e.id} onClick={() => goManage(e.id)} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left opacity-90 shadow-card hover:opacity-100">
             <span className="flex h-12 w-12 flex-none flex-col items-center justify-center rounded-[11px]" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }}>
               <span className="text-[8px] font-extrabold text-pink-dark">{e.mon}</span>
               <span className="text-[15px] font-extrabold leading-none text-ink">{e.day}</span>
@@ -704,7 +704,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ) : (
     <div className="grid gap-2.5 md:grid-cols-2">
       {pastEvents.map((e) => (
-        <div key={e.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 opacity-90 shadow-card">
+        <div key={e.name} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 opacity-90 shadow-card">
           <span className="h-12 w-12 flex-none rounded-[11px]" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }} />
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] font-extrabold text-ink">{e.name}</div>
@@ -773,7 +773,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
 
   const heroCard = (
-    <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
+    <div className="overflow-hidden rounded-card-sm border border-line bg-white shadow-card">
       <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${mgEv.tile})` }}>
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.5))' }} />
         <span className="absolute right-2.5 top-2.5 rounded-[7px] px-2.5 py-1 text-[9px] font-extrabold" style={{ background: mgEv.statusBg, color: mgEv.statusC }}>{L(mgEv.status[0], mgEv.status[1]) || L('Vendiendo', 'Selling')}</span>
@@ -862,14 +862,14 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const filteredAttendees = attendees.filter((a) => a.name.toLowerCase().includes(aq));
   const attendeesView = (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2.5 rounded-btn border border-hair bg-white px-3 py-2.5">
+      <div className="flex items-center gap-2.5 rounded-btn border border-line bg-white px-3 py-2.5">
         <Search size={15} stroke={2.2} className="text-muted-2" />
         <input value={attendeeQuery} onChange={(e) => setAttendeeQuery(e.target.value)} placeholder={L('Buscar por nombre o código…', 'Search by name or code…')} className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-ink outline-none placeholder:text-muted-2" />
       </div>
       {persistable ? (
         <div className="grid gap-2.5 md:grid-cols-2">
           {realAttendees.map((a) => (
-            <div key={a.key} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3">
+            <div key={a.key} className="flex items-center gap-3 rounded-btn-lg border border-line bg-white p-3">
               <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: a.color }}>{initialsOf(a.name)}</span>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12px] font-extrabold text-ink">{a.name}</div>
@@ -878,14 +878,14 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: a.used ? '#E3F5EA' : a.refunded ? '#FDE7EF' : '#F1EFFA', color: a.used ? '#1F8A4C' : a.refunded ? '#D6336C' : '#9A96AE' }}>{a.used ? L('Ingresó', 'Checked in') : a.refunded ? L('Reembolsado', 'Refunded') : L('Confirmado', 'Going')}</span>
             </div>
           ))}
-          {realAttendees.length === 0 && <div className="col-span-full rounded-btn-lg border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{aq ? L('Sin resultados', 'No results') : falloEventos ? L('No pudimos cargar tus asistentes. Revisa tu conexión.', "We couldn't load your attendees. Check your connection.") : L('Aún no hay asistentes. Aparecerán aquí cuando compren boletos.', 'No attendees yet. They show up here once they buy tickets.')}</div>}
+          {realAttendees.length === 0 && <div className="col-span-full rounded-btn-lg border border-line bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{aq ? L('Sin resultados', 'No results') : falloEventos ? L('No pudimos cargar tus asistentes. Revisa tu conexión.', "We couldn't load your attendees. Check your connection.") : L('Aún no hay asistentes. Aparecerán aquí cuando compren boletos.', 'No attendees yet. They show up here once they buy tickets.')}</div>}
         </div>
       ) : (
         <div className="grid gap-2.5 md:grid-cols-2">
           {filteredAttendees.map((a) => {
             const inn = isCheckedIn(a);
             return (
-              <div key={a.name} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3">
+              <div key={a.name} className="flex items-center gap-3 rounded-btn-lg border border-line bg-white p-3">
                 <span className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: a.color }}>{a.initials}</span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[12px] font-extrabold text-ink">{a.name}</div>
@@ -954,14 +954,14 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div>
         <div className="mb-2.5 px-0.5 text-[12px] font-extrabold text-ink">{L('Boletos', 'Tickets')} · {ticketsSold}</div>
         {(ticketRows ?? []).length === 0 ? (
-          <div className="rounded-btn-lg border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{falloEventos ? L('No pudimos cargar tus boletos. Revisa tu conexión.', "We couldn't load your tickets. Check your connection.") : L('Aún no hay boletos vendidos.', 'No tickets sold yet.')}</div>
+          <div className="rounded-btn-lg border border-line bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{falloEventos ? L('No pudimos cargar tus boletos. Revisa tu conexión.', "We couldn't load your tickets. Check your connection.") : L('Aún no hay boletos vendidos.', 'No tickets sold yet.')}</div>
         ) : (
           <div className="flex flex-col gap-2">
             {(ticketRows ?? []).map((t) => {
               const fully = t.admitted >= t.qty;
               const partial = t.admitted > 0 && !fully;
               return (
-                <div key={t.id} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-2.5">
+                <div key={t.id} className="flex items-center gap-3 rounded-btn-lg border border-line bg-white p-2.5">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[12px] font-extrabold text-ink">{t.customer_name || L('Cliente', 'Customer')}</div>
                     <div className="mt-0.5 font-mono text-[10.5px] font-bold tracking-[.1em] text-muted-2">{t.code} · {t.admitted}/{t.qty} {L('ingresaron', 'in')}</div>
@@ -994,7 +994,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {attendees.map((a) => {
             const inn = isCheckedIn(a);
             return (
-              <div key={a.name} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-2.5">
+              <div key={a.name} className="flex items-center gap-3 rounded-btn-lg border border-line bg-white p-2.5">
                 <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ background: a.color }}>{a.initials}</span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[12px] font-extrabold text-ink">{a.name}</div>
@@ -1042,7 +1042,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div className="mt-3 flex gap-2">
         <button onClick={saveTier} disabled={tierBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{tierBusy ? L('Guardando…', 'Saving…') : L('Guardar', 'Save')}</button>
-        <button onClick={() => setTierEdit(null)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+        <button onClick={() => setTierEdit(null)} className="tap-y cursor-pointer rounded-btn border border-line bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
         {tierEdit !== 'new' && tierEdit && <button onClick={() => deleteTier(tierEdit)} className="tap tap-y cursor-pointer rounded-btn bg-pink-bg px-4 py-2.5 text-[12px] font-extrabold text-pink-dark">{L('Eliminar', 'Remove')}</button>}
       </div>
     </div>
@@ -1080,7 +1080,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           if (realTiers && tierEdit === tk.id) return <div key={tk.id}>{tierFormCard}</div>;
           const pct = tk.unlimited ? 0 : Math.round((tk.sold / Math.max(tk.cap, 1)) * 100);
           return (
-            <div key={tk.id} className="rounded-btn-lg border border-hair bg-white p-3.5">
+            <div key={tk.id} className="rounded-btn-lg border border-line bg-white p-3.5">
               <div className="mb-2 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: tk.color }} />
                 <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{tk.label}</span>
@@ -1120,7 +1120,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mb-2.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('“Acceso” desbloquea un nivel oculto (real ya). Los descuentos ajustan el precio apartado; el cobro llega con pagos.', '“Access” unlocks a hidden tier (real now). Discounts adjust the reserved price; charging arrives with payments.')}</div>
           <div className="flex flex-col gap-2">
             {(promoRows ?? []).map((p) => (
-              <div key={p.id} className="flex items-center gap-2.5 rounded-btn-lg border border-hair bg-white p-2.5">
+              <div key={p.id} className="flex items-center gap-2.5 rounded-btn-lg border border-line bg-white p-2.5">
                 <span className="flex-none rounded bg-lilac-2 px-2 py-1 font-mono text-[11px] font-extrabold text-primary-dark">{p.code}</span>
                 <div className="min-w-0 flex-1 text-[10.5px] font-bold text-muted-2">
                   {p.kind === 'access' ? L('Acceso', 'Access') : p.kind === 'percent' ? `${p.value}% ${L('desc.', 'off')}` : `$${p.value} ${L('desc.', 'off')}`}
@@ -1149,7 +1149,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <input value={promoForm.maxUses} onChange={(e) => setPromoForm((f) => ({ ...f, maxUses: e.target.value.replace(/[^0-9]/g, '') }))} inputMode="numeric" placeholder={L('Usos máx · vacío = ilimitado', 'Max uses · blank = unlimited')} className={`${tierInput} mb-2`} />
               <div className="flex gap-2">
                 <button onClick={savePromo} disabled={promoBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{promoBusy ? L('Guardando…', 'Saving…') : L('Crear código', 'Create code')}</button>
-                <button onClick={() => setPromoAdd(false)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+                <button onClick={() => setPromoAdd(false)} className="tap-y cursor-pointer rounded-btn border border-line bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
               </div>
             </div>
           ) : (
@@ -1177,13 +1177,13 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button onClick={notifyWaitlist} disabled={waitBusy || waitlistActive === 0} className="tap-y flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-40">{waitBusy ? L('Avisando…', 'Notifying…') : L('Avisar a la lista', 'Notify the list')}</button>
       </div>
       {(waitRows ?? []).length === 0 ? (
-        <div className="rounded-card-sm border border-hair bg-white py-10 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Nadie en lista de espera todavía.', 'No one on the waitlist yet.')}</div>
+        <div className="rounded-card-sm border border-line bg-white py-10 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Nadie en lista de espera todavía.', 'No one on the waitlist yet.')}</div>
       ) : (
         <div className="grid gap-2.5 md:grid-cols-2">
           {(waitRows ?? []).map((w) => {
             const st = WAIT_STATUS[w.status] ?? WAIT_STATUS.active;
             return (
-              <div key={w.id} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3">
+              <div key={w.id} className="flex items-center gap-3 rounded-btn-lg border border-line bg-white p-3">
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[12px] font-extrabold text-ink">{w.customer_name || L('Cliente', 'Customer')}</div>
                   <div className="mt-0.5 text-[10px] font-medium text-muted-2">{tierName(w.tier_id)}</div>
@@ -1246,7 +1246,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {lay.seating === 'tables' && (
         <div className="mt-2 flex flex-col gap-2">
           {lay.tables.map((t, i) => (
-            <div key={t.id} className="flex items-center gap-2.5 rounded-btn-lg border border-hair bg-white p-2">
+            <div key={t.id} className="flex items-center gap-2.5 rounded-btn-lg border border-line bg-white p-2">
               <button onClick={() => layPhotoRefs.current[t.id]?.click()} className="flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={t.photo ? { backgroundImage: `url(${imgUrl(t.photo, ANCHO.icono)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>{!t.photo && <ImagePlus size={15} stroke={2} className="text-primary-dark" />}</button>
               <input ref={(el) => { layPhotoRefs.current[t.id] = el; }} type="file" accept="image/*" hidden onChange={(e) => uploadLayPhoto(t.id, e.target.files?.[0])} />
               <div className="min-w-0 flex-1"><div className="text-[11px] font-extrabold text-ink">{L('Mesa', 'Table')} {i + 1}</div>
@@ -1262,7 +1262,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {/* packages */}
       <div className="mb-1.5 mt-3 text-[11px] font-extrabold text-muted-2">{L('Paquetes', 'Packages')}</div>
       {lay.addons.map((a) => (
-        <div key={a.id} className="mb-2 rounded-btn-lg border border-hair bg-white p-2.5">
+        <div key={a.id} className="mb-2 rounded-btn-lg border border-line bg-white p-2.5">
           <div className="flex gap-2"><input value={a.es} onChange={(e) => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, es: e.target.value } : x)) })} placeholder={L('Ej. Paquete botella', 'e.g. Bottle package')} className={`${layInput} flex-1`} /><input value={a.price} onChange={(e) => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, price: e.target.value.replace(/[^0-9.]/g, '') } : x)) })} inputMode="decimal" placeholder="$" className={`${layInput} w-20`} /><button onClick={() => setLayF({ addons: lay.addons.filter((x) => x.id !== a.id) })} className="flex-none cursor-pointer text-muted-2 hover:text-pink-dark"><Trash2 size={15} stroke={2} /></button></div>
           <div className="mt-2 flex gap-2"><button onClick={() => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, required: !x.required } : x)) })} className={`tap-y rounded-full px-3 py-1 text-[10px] font-extrabold ${a.required ? 'bg-amber-bg text-amber-ink' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.required ? L('✓ Obligatorio', '✓ Required') : L('Obligatorio', 'Required')}</button><button onClick={() => setLayF({ addons: lay.addons.map((x) => (x.id === a.id ? { ...x, seatedOnly: !x.seatedOnly } : x)) })} className={`tap-y rounded-full px-3 py-1 text-[10px] font-extrabold ${a.seatedOnly ? 'bg-lilac text-primary-dark' : 'border border-lilac-line bg-white text-ink-2'}`}>{a.seatedOnly ? L('✓ Solo mesas', '✓ Seated only') : L('Solo mesas', 'Seated only')}</button></div>
         </div>
@@ -1314,7 +1314,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="rounded-btn-lg border-[1.5px] border-pink-bg bg-white p-3.5">
           <div className="text-[12px] font-bold text-ink">{L('¿Cancelar este evento? Se avisará a quienes ya tienen boleto y dejará de venderse.', 'Cancel this event? Ticket holders will be notified and sales will stop.')}</div>
           <div className="mt-3 flex gap-2">
-            <button onClick={() => setAskCancel(false)} className="tap-y flex-1 cursor-pointer rounded-btn border border-hair bg-white py-2.5 text-[12px] font-extrabold text-ink-soft">{L('No, volver', 'No, go back')}</button>
+            <button onClick={() => setAskCancel(false)} className="tap-y flex-1 cursor-pointer rounded-btn border border-line bg-white py-2.5 text-[12px] font-extrabold text-ink-soft">{L('No, volver', 'No, go back')}</button>
             <button onClick={cancelEvent} disabled={cancelBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-pink-dark py-2.5 text-[12px] font-extrabold text-white disabled:opacity-50">{cancelBusy ? L('Cancelando…', 'Cancelling…') : L('Sí, cancelar', 'Yes, cancel')}</button>
           </div>
         </div>
@@ -1496,7 +1496,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {draft.lat != null && !addrSearching && <Check size={15} stroke={3} className="text-green" />}
           </div>
           {addrResults.length > 0 && (
-            <div className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
+            <div className="absolute z-20 mt-1 max-h-[220px] w-full overflow-y-auto rounded-field border border-line-strong bg-white p-1 shadow-pop">
               {addrResults.map((a, i) => (
                 <button key={`${a.formatted}-${i}`} onClick={() => chooseAddr(a)} className="flex w-full cursor-pointer items-start gap-2 rounded-field p-2.5 text-left hover:bg-app">
                   <MapPin size={14} className="mt-0.5 flex-none text-primary" stroke={2.4} />
@@ -1519,7 +1519,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="flex flex-col gap-3">
       <p className="text-[11px] font-medium leading-relaxed text-muted">{L('Agrega uno o más niveles (General, VIP, Niños…). Precio 0 = gratis. Cupo vacío = sin límite.', 'Add one or more tiers (General, VIP, Kids…). Price 0 = free. Blank capacity = unlimited.')}</p>
       {draft.tiers.map((t, i) => (
-        <div key={t.id} className="rounded-btn-lg border border-hair bg-white p-3">
+        <div key={t.id} className="rounded-btn-lg border border-line bg-white p-3">
           <div className="mb-2 flex items-center gap-2">
             <span className="flex h-6 w-6 flex-none items-center justify-center rounded-lg bg-lilac"><Ticket size={13} stroke={2} className="text-primary-dark" /></span>
             <span className="text-[11px] font-extrabold text-muted-2">{L('Nivel', 'Tier')} {i + 1}</span>
@@ -1565,7 +1565,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {draft.seating === 'tables' && (
           <div className="mt-2.5 flex flex-col gap-2">
             {draft.tables.map((t, i) => (
-              <div key={t.id} className="flex items-center gap-2.5 rounded-btn-lg border border-hair bg-white p-2.5">
+              <div key={t.id} className="flex items-center gap-2.5 rounded-btn-lg border border-line bg-white p-2.5">
                 <button onClick={() => tablePhotoRefs.current[t.id]?.click()} className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-ring bg-lilac-3" style={t.photo ? { backgroundImage: `url(${imgUrl(t.photo, ANCHO.icono)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
                   {!t.photo && <ImagePlus size={16} stroke={2} className="text-primary-dark" />}
                 </button>
@@ -1591,7 +1591,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mb-0.5 text-[12.5px] font-extrabold text-ink">{L('Paquetes', 'Packages')}</div>
         <p className="mb-2 text-[11px] font-medium leading-relaxed text-muted">{L('Complementos como “paquete de botella” para mesas. Márcalo obligatorio si es requisito para reservar.', 'Extras like a “bottle package” for tables. Mark it required if it’s a must to reserve.')}</p>
         {draft.addons.map((a) => (
-          <div key={a.id} className="mb-2 rounded-btn-lg border border-hair bg-white p-3">
+          <div key={a.id} className="mb-2 rounded-btn-lg border border-line bg-white p-3">
             <div className="flex gap-2">
               <input value={a.es} onChange={(e) => setAddon(a.id, { es: e.target.value })} placeholder={L('Ej. Paquete botella', 'e.g. Bottle package')} className={`${fieldCls} flex-1`} />
               <input value={a.price} onChange={(e) => setAddon(a.id, { price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="$" className={`${fieldCls} w-24`} />
@@ -1633,7 +1633,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{eReady ? L('Se pondrá en venta al publicar.', 'It goes on sale when you publish.') : L('Agrega nombre, fecha y al menos un boleto.', 'Add a name, date and at least one ticket.')}</div>
         </div>
       </div>
-      <div className="overflow-hidden rounded-field border border-hair">
+      <div className="overflow-hidden rounded-field border border-line">
         {reviewRows.map(([k, v, ok, step], i) => (
           <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < reviewRows.length - 1 ? 'border-b border-hair' : ''}`}>
             <span className="w-[74px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span>
@@ -1774,7 +1774,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
-        <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card xl:sticky xl:top-0">
+        <div className="overflow-hidden rounded-card-sm border border-line bg-white shadow-card xl:sticky xl:top-0">
           <div className="relative h-24" style={draft.coverUrl ? { backgroundImage: `url(${draft.coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: `repeating-linear-gradient(135deg,${draftTile})` }}>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.55))' }} />
             <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-extrabold text-primary-dark">{wizCatName}</span>
@@ -1809,7 +1809,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo evento', 'New event'))} {L('está activo', 'is live')}</div>
       <div className="mt-2 max-w-[320px] text-[13px] font-medium leading-relaxed text-muted">{L('Los boletos están a la venta y el evento aparece en tu listado.', 'Tickets are on sale and the event is on your listing.')}</div>
 
-      <div className="mt-5 w-full max-w-[420px] overflow-hidden rounded-card-sm border border-hair bg-white text-left shadow-card">
+      <div className="mt-5 w-full max-w-[420px] overflow-hidden rounded-card-sm border border-line bg-white text-left shadow-card">
         <div className="relative h-[104px]" style={{ background: `repeating-linear-gradient(135deg,${draftTile})` }}>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.45))' }} />
           <div className="absolute bottom-2.5 left-3 text-[15px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{draft.name || L('Nuevo evento', 'New event')}</div>

@@ -76,7 +76,7 @@ type OrderStats = {
   status: Record<string, number>; channel_today: Record<string, number>;
 };
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 
 const CH_TILE: Record<Channel, string> = {
   delivery: 'bg-pink-bg text-pink-dark',
@@ -915,7 +915,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 const cxl = o.status === 'cancelled';
                 const ca = cardAction(o);
                 return (
-                  <div key={o.id} onClick={() => setSelOrder(o)} className={`cursor-pointer overflow-hidden rounded-card-sm border bg-white shadow-card transition-shadow hover:shadow-card-lg ${o.urgent && !done && !cxl ? 'border-[rgba(240,70,110,.35)]' : 'border-hair'}`}>
+                  <div key={o.id} onClick={() => setSelOrder(o)} className={`cursor-pointer overflow-hidden rounded-card-sm border bg-white shadow-card transition-shadow hover:shadow-card-lg ${o.urgent && !done && !cxl ? 'border-[rgba(240,70,110,.35)]' : 'border-line'}`}>
                     <div className="p-3.5">
                       <div className="mb-1.5 flex items-center justify-between">
                         <span className="font-mono text-[11.5px] font-extrabold text-primary-dark">{o.id}</span>
@@ -1114,7 +1114,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               const editing = editingId === r.id;
               const draft = replyText[r.id] ?? '';
               return (
-                <div key={r.id} className={`rounded-card-sm border bg-white p-4 shadow-card ${isFlagged ? 'border-[rgba(240,70,110,.3)]' : 'border-hair'}`}>
+                <div key={r.id} className={`rounded-card-sm border bg-white p-4 shadow-card ${isFlagged ? 'border-[rgba(240,70,110,.3)]' : 'border-line'}`}>
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: r.color }}>{r.initials}</span>
                     <div className="min-w-0 flex-1">

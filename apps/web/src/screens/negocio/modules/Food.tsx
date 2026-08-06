@@ -37,7 +37,7 @@ import {
 } from '@/lib/menuConfig';
 import { CategoryEditor, DaypartEditor, ModGroupEditor, PromoEditor, PROMO_TYPES, catIcon } from '@/screens/negocio/modules/FoodEditors';
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 
 // ---------- domain types ----------
 type Stock = 'in' | 'low' | 'out';
@@ -456,7 +456,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               </span>
               <button
                 onClick={() => { patchItem(a.id, { stock: 'in' }); flash(L('Platillo en stock', 'Item back in stock')); }}
-                className="tap-y flex-none cursor-pointer self-center rounded-lg border border-hair-strong bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-ink"
+                className="tap-y flex-none cursor-pointer self-center rounded-lg border border-line-strong bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-ink"
               >
                 {a.action}
               </button>
@@ -506,7 +506,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
 
           {/* search */}
-          <div className="flex items-center gap-2.5 rounded-field border border-hair-strong bg-white px-3 py-2.5">
+          <div className="flex items-center gap-2.5 rounded-field border border-line-strong bg-white px-3 py-2.5">
             <Search size={15} className="text-muted-2" stroke={2.2} />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={L('Buscar platillos, ingredientes…', 'Search items, ingredients…')} className="min-w-0 flex-1 border-none bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-muted-2" />
           </div>
@@ -523,7 +523,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* smart sets */}
           <ChipRow className="-mx-1 px-1">
             {smartSets.map(([Icon, label, n, c]) => (
-              <span key={label} className="flex flex-none items-center gap-1.5 rounded-full border border-hair bg-white px-2.5 py-1.5 text-[11px] font-bold text-ink-2">
+              <span key={label} className="flex flex-none items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1.5 text-[11px] font-bold text-ink-2">
                 <Icon size={12} strokeWidth={2.2} className={c} />{label}<span className="font-extrabold text-ink">{n}</span>
               </span>
             ))}
@@ -551,7 +551,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <button
                   key={i.id}
                   onClick={() => startEdit(i)}
-                  className="flex cursor-pointer gap-3 rounded-tile border border-hair bg-white p-3 text-left"
+                  className="flex cursor-pointer gap-3 rounded-tile border border-line bg-white p-3 text-left"
                   style={{ opacity: i.visible ? 1 : 0.6 }}
                 >
                   <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${c.tile})` }}>
@@ -610,7 +610,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           const Icon = catIcon(c.icon);
           const n = countIn(c.id);
           return (
-            <div key={c.id} className="flex items-center gap-3 rounded-btn-lg border border-hair bg-white p-3" style={{ opacity: c.visible ? 1 : 0.6 }}>
+            <div key={c.id} className="flex items-center gap-3 rounded-btn-lg border border-line bg-white p-3" style={{ opacity: c.visible ? 1 : 0.6 }}>
               <span className="flex flex-none flex-col">
                 <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Move up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
                 <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Move down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
@@ -659,7 +659,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.mods.map((m) => {
             const used = usedBy(m.id);
             return (
-              <button key={m.id} onClick={() => setModSheet({ open: true, initial: m })} className="cursor-pointer rounded-btn-lg border border-hair bg-white p-3.5 text-left">
+              <button key={m.id} onClick={() => setModSheet({ open: true, initial: m })} className="cursor-pointer rounded-btn-lg border border-line bg-white p-3.5 text-left">
                 <div className="mb-2 flex items-center gap-1.5">
                   <span className="truncate text-[13px] font-extrabold text-ink">{L(m.es, m.en)}</span>
                   <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
@@ -668,7 +668,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 </div>
                 <div className="flex flex-wrap gap-x-1 gap-y-[18px].5">
                   {m.options.map((o) => (
-                    <span key={o.es} className="rounded-lg border border-hair bg-app px-2.5 py-1.5 text-[10.5px] font-bold text-ink-soft">
+                    <span key={o.es} className="rounded-lg border border-line bg-app px-2.5 py-1.5 text-[10.5px] font-bold text-ink-soft">
                       {L(o.es, o.en ?? o.es)} <span className={o.price ? 'text-ink' : 'text-muted-2'}>{o.price ? `+$${o.price}` : '+$0'}</span>
                     </span>
                   ))}
@@ -719,7 +719,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         ) : (
           <div className="grid gap-2.5 md:grid-cols-2">
             {cfg.dayparts.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 rounded-tile border border-hair bg-white p-3" style={{ opacity: p.on ? 1 : 0.6 }}>
+              <div key={p.id} className="flex items-center gap-3 rounded-tile border border-line bg-white p-3" style={{ opacity: p.on ? 1 : 0.6 }}>
                 <button onClick={() => setDpSheet({ open: true, initial: p })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                   <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[9px]" style={{ background: p.bg }}><Clock size={16} style={{ color: p.color }} stroke={2.2} /></span>
                   <span className="min-w-0 flex-1">
@@ -777,7 +777,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               {cfg.promos.map((p) => {
                 const st = statusMeta(p.status); const tm = typeMeta(p.type);
                 return (
-                  <div key={p.id} className="overflow-hidden rounded-tile border border-hair bg-white" style={{ opacity: p.status === 'paused' ? 0.7 : 1 }}>
+                  <div key={p.id} className="overflow-hidden rounded-tile border border-line bg-white" style={{ opacity: p.status === 'paused' ? 0.7 : 1 }}>
                     <button onClick={() => setPromoSheet({ open: true, initial: p, createType: p.type })} className="block w-full cursor-pointer text-left">
                       <div className="relative h-16" style={{ background: `repeating-linear-gradient(135deg,${promoTile(p.type)})` }}>
                         <span className="absolute left-2.5 top-2.5 rounded-md bg-white/90 px-2 py-0.5 text-[9px] font-extrabold" style={{ color: tm.c }}>{L(tm.es, tm.en)}</span>
@@ -815,7 +815,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className={`mb-2.5 ${sectionLabel}`}>{L('Crear promoción', 'Create a promotion')}</div>
             <div className="flex flex-col gap-2.5">
               {PROMO_TYPES.map((t) => (
-                <button key={t.type} onClick={() => setPromoSheet({ open: true, initial: null, createType: t.type })} className="flex cursor-pointer items-center gap-3 rounded-btn-lg border border-hair bg-white p-2.5 text-left">
+                <button key={t.type} onClick={() => setPromoSheet({ open: true, initial: null, createType: t.type })} className="flex cursor-pointer items-center gap-3 rounded-btn-lg border border-line bg-white p-2.5 text-left">
                   <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[9px]" style={{ background: t.bg }}><t.Icon size={16} style={{ color: t.c }} strokeWidth={2.2} /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[12px] font-extrabold text-ink">{L(t.es, t.en)}</span>
@@ -932,7 +932,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* in-stock items you can 86 */}
           <div>
             <div className="mb-2 px-0.5 text-[12px] font-extrabold text-ink">{L('Disponibles · toca para 86', 'Available · tap to 86')}</div>
-            <div className="overflow-hidden rounded-tile border border-hair bg-white">
+            <div className="overflow-hidden rounded-tile border border-line bg-white">
               {items.filter((i) => i.stock !== 'out').length === 0 ? (
                 <div className="px-3.5 py-5 text-center text-[12px] font-semibold text-muted">{L('Sin platillos disponibles.', 'No available items.')}</div>
               ) : items.filter((i) => i.stock !== 'out').map((s, i, a) => {
@@ -945,7 +945,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className={`block text-[10px] font-semibold ${s.stock === 'low' ? 'text-amber-ink' : 'text-muted-2'}`}>{s.stock === 'low' ? L('Bajo stock', 'Low stock') : L('En stock', 'In stock')}</span>
                     </span>
                     {s.stock === 'low' && (
-                      <button onClick={() => setStock(s.id, 'in')} className="tap-y flex-none cursor-pointer rounded-[9px] border border-hair-strong bg-white px-3 py-2 text-[10px] font-extrabold text-ink">{L('En stock', 'In stock')}</button>
+                      <button onClick={() => setStock(s.id, 'in')} className="tap-y flex-none cursor-pointer rounded-[9px] border border-line-strong bg-white px-3 py-2 text-[10px] font-extrabold text-ink">{L('En stock', 'In stock')}</button>
                     )}
                     <button onClick={() => setStock(s.id, s.stock === 'low' ? 'out' : 'low')} className="tap-y flex-none cursor-pointer rounded-[9px] border border-amber-bg bg-white px-3 py-2 text-[10px] font-extrabold text-amber-ink">{s.stock === 'low' ? '86' : L('Bajo', 'Low')}</button>
                     {s.stock !== 'low' && (
@@ -962,7 +962,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* low stock */}
           <div>
             <div className="mb-2 px-0.5 text-[12px] font-extrabold text-ink">{L('Bajo stock', 'Low stock')}</div>
-            <div className="overflow-hidden rounded-tile border border-hair bg-white">
+            <div className="overflow-hidden rounded-tile border border-line bg-white">
               {stockLow.length === 0 ? (
                 <div className="px-3.5 py-5 text-center text-[12px] font-semibold text-muted">{L('Nada en bajo stock.', 'Nothing low right now.')}</div>
               ) : stockLow.map((s, i, a) => {
@@ -983,7 +983,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* automation (persisted in menu_config) */}
           <div>
             <div className="mb-2 px-0.5 text-[12px] font-extrabold text-ink">{L('Automatización', 'Automation')}</div>
-            <div className="rounded-tile border border-hair bg-white px-3.5">
+            <div className="rounded-tile border border-line bg-white px-3.5">
               {rules.map((r, i, a) => (
                 <div key={r.key} className={`flex items-center gap-3 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
                   <span className="min-w-0 flex-1">
@@ -1101,7 +1101,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         true;
 
   const previewCard = (
-    <div className="overflow-hidden rounded-tile border border-hair bg-white">
+    <div className="overflow-hidden rounded-tile border border-line bg-white">
       <div className="relative h-[104px]" style={{ background: `repeating-linear-gradient(135deg,${draftCat.tile})` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {draft.photoUrl && <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
@@ -1147,7 +1147,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div>
           <div className={fieldLabel}>{L('Foto', 'Photo')}</div>
           {draft.photoUrl ? (
-            <div className="relative h-[150px] overflow-hidden rounded-tile border border-hair">
+            <div className="relative h-[150px] overflow-hidden rounded-tile border border-line">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
               <button type="button" onClick={() => wizFileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">
@@ -1321,7 +1321,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {([[L('Auto-86 al llegar a cero', 'Auto-86 at zero'), L('Oculta del menú automáticamente.', 'Hide from menu automatically.')], [L('Reiniciar conteo a las 5 AM', 'Reset count at 5 AM'), L('Recarga el límite cada mañana.', 'Refill limit each morning.')], [L('Avisar a cocina en bajo stock', 'Alert kitchen at low stock'), L('Notifica antes de agotarse.', 'Notify before it sells out.')]] as [string, string][]).map(([title, sub], i) => {
               const on = draft.rules[i] ?? false;
               return (
-                <div key={i} className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
+                <div key={i} className="flex items-center gap-3 rounded-field border border-line bg-app p-3">
                   <span className="min-w-0 flex-1">
                     <span className="block text-[12px] font-bold text-ink">{title}</span>
                     <span className="block text-[10px] font-medium text-muted-2">{sub}</span>
@@ -1332,7 +1332,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             })}
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
+        <div className="flex items-center gap-3 rounded-field border border-line bg-app p-3">
           <span className="min-w-0 flex-1">
             <span className="block text-[12.5px] font-bold text-ink">{L('Visible al publicar', 'Visible at publish')}</span>
             <span className="block text-[10px] font-medium leading-snug text-muted-2">{L('Apágalo para publicar oculto y revelar luego.', 'Turn off to publish hidden, reveal later.')}</span>
@@ -1367,7 +1367,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="text-[10.5px] font-medium leading-snug text-ink-3">{ready ? (editing ? L('Los cambios se publican al instante.', 'Changes go live instantly.') : L('Todo en orden. Publicar lo activa al instante.', 'All set. Publishing makes it live instantly.')) : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
           </div>
         </div>
-        <div className="overflow-hidden rounded-btn-lg border border-hair">
+        <div className="overflow-hidden rounded-btn-lg border border-line">
           {reviewRows.map(([k, v, ok, step], i) => (
             <div key={k} className={`flex items-center gap-2.5 px-3 py-2.5 ${i < reviewRows.length - 1 ? 'border-b border-hair' : ''}`}>
               <span className="w-[74px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span>
@@ -1477,7 +1477,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">
           {L(`Ya está en tu menú de ${catLabel(draftCat)} en ${chansSel} canales. Los cambios se publican al instante.`, `It's now on your menu across ${chansSel} channels. Changes go live instantly.`)}
         </div>
-        <div className="mt-5 w-full overflow-hidden rounded-tile border border-hair bg-white text-left">
+        <div className="mt-5 w-full overflow-hidden rounded-tile border border-line bg-white text-left">
           <div className="relative h-[110px]" style={{ background: `repeating-linear-gradient(135deg,${draftCat.tile})` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {draft.photoUrl && <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
@@ -1565,7 +1565,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="relative pb-8">
       {/* Local delivery is configured in the shared "Entregas y envíos" module
           (same zones/drivers a shop uses) — a menu just turns delivery on. */}
-      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left shadow-card">
+      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} stroke={2} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[12.5px] font-extrabold text-ink">{L('Entrega local y envíos', 'Local delivery & shipping')}</span>

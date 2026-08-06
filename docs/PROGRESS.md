@@ -5,6 +5,33 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-08-06.
 
+## La app en BLANCO — tres colores donde antes había uno (2026-08-06)
+
+El fundador: «ese gris no me gusta mucho, no se combina bien». El lienzo es
+blanco puro. Lo que hay que saber para no romperlo:
+
+- **Un color hacía tres trabajos.** `app` (#F4F2F9) era a la vez el fondo de la
+  página (7 usos) y el relleno de campos y pozos sobre blanco (104). `hair`
+  (.08) era a la vez el contorno de las tarjetas (305) y el divisor entre filas
+  (138). Poner «el fondo» en blanco sin separarlos borraba los campos y
+  desvanecía las tarjetas.
+- **Ahora hay un token por papel:**
+  `canvas` #FFFFFF (el fondo · antes `app`, luego #FBFAFE) ·
+  `app` #F4F2F9 (relleno de campos — sin cambio) ·
+  `border-line` .13 (contorno de tarjetas, barras fijas y el sidebar del panel:
+  en blanco es lo ÚNICO que las separa del fondo) ·
+  `border-hair` .08 (divisores dentro de una superficie).
+- **`dash` (#E7E5EC) desapareció:** el panel del negocio y `/admin` comparten
+  lienzo con la app. Su sidebar se delimita con `border-line`.
+- **Dos guardianes nuevos en `verify-build.mjs`**, sobre el CSS SERVIDO: (1) el
+  lienzo y el relleno de campos no pueden igualarse ni el relleno ser blanco
+  puro; (2) el contorno de tarjeta debe quedar a ≥22 puntos de luminancia del
+  lienzo. Los dos probados al revés. En el primero salió un fallo propio: daba
+  «✅» con los campos en blanco porque comparaba el texto `rgb(255 255 255)` y
+  Tailwind sirve `rgb(255 255 255/var(…))`; ahora extrae los números.
+- Si algún día se vuelve a un lienzo con tinte, el contorno puede bajar otra
+  vez — el guardián solo exige que se vea sobre el lienzo que haya.
+
 ## Ficha del negocio v2 COMPLETA — móvil y escritorio idénticos al handoff (2026-08-06, migración 0155)
 
 El fundador subió el handoff «Business Detail v2» y pidió el diseño **idéntico

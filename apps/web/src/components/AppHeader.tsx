@@ -118,7 +118,7 @@ const ATAJOS = [
   { es: 'plomero', en: 'plumber' },
 ];
 
-const CAJA = 'absolute left-1/2 top-[calc(100%+6px)] z-[45] max-h-[min(70svh,420px)] w-[calc(100%-20px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-hair-strong bg-white p-2 shadow-pop md:w-[560px]';
+const CAJA = 'absolute left-1/2 top-[calc(100%+6px)] z-[45] max-h-[min(70svh,420px)] w-[calc(100%-20px)] -translate-x-1/2 overflow-y-auto rounded-2xl border border-line-strong bg-white p-2 shadow-pop md:w-[560px]';
 
 function SearchDropdown() {
   const { L } = useLang();
@@ -406,7 +406,7 @@ export function AppHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-hair bg-[rgba(255,255,255,.94)] backdrop-blur-[8px] backdrop-saturate-[1.4]">
+    <header className="sticky top-0 z-30 border-b border-line bg-[rgba(255,255,255,.94)] backdrop-blur-[8px] backdrop-saturate-[1.4]">
       <div className="relative mx-auto flex w-full max-w-[1180px] items-center gap-2 px-3.5 py-[11px] md:gap-3.5 md:px-[22px] md:py-[13px]">
         <Wordmark onClick={() => router.push(VIEW_PATH.comunidad)} size="sm" />
         <button

@@ -34,7 +34,7 @@ type Job = {
   applied: number; viewed: number; whenEs: string; whenEn: string; tag: 'live' | 'new' | 'paused';
 };
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 
 // role pill (data colors → inline hex, tokens for className where possible)
 const ROLE_PILL: Record<Role, string> = {
@@ -429,7 +429,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div className="flex flex-col gap-2.5">
           {rolesPreview.map((r) => (
-            <div key={r.role} className="rounded-btn-lg border border-hair bg-app p-3">
+            <div key={r.role} className="rounded-btn-lg border border-line bg-app p-3">
               <div className="flex items-center gap-2">
                 <span className={`rounded-md px-2 py-0.5 text-[9.5px] font-extrabold ${ROLE_PILL[r.role]}`}>{roleLabel(r.role)}</span>
                 <span className="text-[10.5px] font-semibold text-muted-2">{peopleN(r.n)}</span>
@@ -453,9 +453,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const scheduleView = (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <button className="tap-y flex cursor-pointer items-center rounded-field border border-hair bg-white px-2.5 py-2 text-ink-soft"><ChevronLeft size={14} stroke={2.4} /></button>
-        <button className="tap-y flex-1 cursor-pointer rounded-field border border-hair bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink">{L('Semana del', 'Week of')} · 13 Oct</button>
-        <button className="tap-y flex cursor-pointer items-center rounded-field border border-hair bg-white px-2.5 py-2 text-ink-soft"><ChevronRight size={14} stroke={2.4} /></button>
+        <button className="tap-y flex cursor-pointer items-center rounded-field border border-line bg-white px-2.5 py-2 text-ink-soft"><ChevronLeft size={14} stroke={2.4} /></button>
+        <button className="tap-y flex-1 cursor-pointer rounded-field border border-line bg-white px-3 py-2 text-[11.5px] font-extrabold text-ink">{L('Semana del', 'Week of')} · 13 Oct</button>
+        <button className="tap-y flex cursor-pointer items-center rounded-field border border-line bg-white px-2.5 py-2 text-ink-soft"><ChevronRight size={14} stroke={2.4} /></button>
       </div>
       <div className={`${cardCls} p-4`}>
         <div className="mb-3 flex items-center justify-between">
@@ -669,7 +669,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             </div>
             <div className="mt-2.5 flex flex-wrap gap-x-1 gap-y-[18px].5">
               {(es ? r.es : r.en).map((c) => (
-                <span key={c} className="rounded-md border border-hair bg-app px-2 py-0.5 text-[10px] font-semibold text-ink-soft">{c}</span>
+                <span key={c} className="rounded-md border border-line bg-app px-2 py-0.5 text-[10px] font-semibold text-ink-soft">{c}</span>
               ))}
             </div>
           </div>
@@ -818,7 +818,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             </div>
             <div className="flex flex-col gap-2">
               {col.cards.map(([nm, c, meta]) => (
-                <div key={nm} className="flex items-center gap-2.5 rounded-[10px] border border-hair bg-white p-2.5">
+                <div key={nm} className="flex items-center gap-2.5 rounded-[10px] border border-line bg-white p-2.5">
                   <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[10px] font-extrabold text-white" style={{ background: c }}>{initialsOf(nm)}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[11.5px] font-extrabold text-ink">{nm}</span>
@@ -850,7 +850,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {visDefs.map(([key, label, sub]) => {
             const on = vis[key];
             return (
-              <div key={key} className="flex items-center justify-between gap-3 rounded-btn-lg border border-hair bg-app p-3">
+              <div key={key} className="flex items-center justify-between gap-3 rounded-btn-lg border border-line bg-app p-3">
                 <div className="min-w-0 flex-1">
                   <div className="text-[11.5px] font-bold text-ink">{label}</div>
                   {sub && <div className="mt-0.5 text-[10px] font-medium text-muted-2">{sub}</div>}
@@ -904,7 +904,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="flex flex-col gap-3.5">
         <div className="flex gap-2.5">
           <button onClick={() => flash(L('Chat abierto', 'Chat opened'))} className="tap-y flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white"><MessageCircle size={14} stroke={2.2} />{L('Mensaje', 'Message')}</button>
-          <button onClick={() => setStabStaff('roles')} className="tap-y flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn border border-hair-strong bg-white py-2.5 text-[12px] font-extrabold text-ink-soft"><Pencil size={14} stroke={2.2} />{L('Editar rol', 'Edit role')}</button>
+          <button onClick={() => setStabStaff('roles')} className="tap-y flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-btn border border-line-strong bg-white py-2.5 text-[12px] font-extrabold text-ink-soft"><Pencil size={14} stroke={2.2} />{L('Editar rol', 'Edit role')}</button>
         </div>
 
         <div className={`${cardCls} p-3.5`}>

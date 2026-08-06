@@ -38,7 +38,7 @@ type Camp = {
   redemptions: number; revenue: number;
 };
 
-const cardCls = 'rounded-card border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card border border-line bg-white shadow-card';
 
 export function Promociones({ ctx }: { ctx: PanelCtx }) {
   const { L, es, mods } = ctx;
@@ -202,14 +202,14 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
               : (
                 <span className="flex gap-1.5">
                   <button onClick={() => setStatus(c, 'active')} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-lilac-line px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{c.status === 'scheduled' ? L('Activar', 'Activate') : L('Reanudar', 'Resume')}</button>
-                  <button onClick={() => setSheet({ open: true, scope: c.scope, edit: c })} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-hair px-2.5 py-1 text-[10.5px] font-extrabold text-muted">{L('Editar', 'Edit')}</button>
+                  <button onClick={() => setSheet({ open: true, scope: c.scope, edit: c })} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-line px-2.5 py-1 text-[10.5px] font-extrabold text-muted">{L('Editar', 'Edit')}</button>
                 </span>
               )}
           </div>
           {c.status === 'active' && (
             <div className="mt-2 flex gap-1.5">
               <button onClick={() => setSheet({ open: true, scope: c.scope, edit: c })} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-lilac-line px-2.5 py-1 text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
-              <button onClick={() => setStatus(c, 'paused')} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-hair px-2.5 py-1 text-[10.5px] font-extrabold text-muted">{L('Pausar', 'Pause')}</button>
+              <button onClick={() => setStatus(c, 'paused')} className="tap-y cursor-pointer rounded-chip border-[1.5px] border-line px-2.5 py-1 text-[10.5px] font-extrabold text-muted">{L('Pausar', 'Pause')}</button>
             </div>
           )}
         </div>
@@ -221,7 +221,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
     <div key={label}>
       <div className="mb-2 mt-4 flex items-center gap-2">
         <span className="text-[11.5px] font-extrabold uppercase tracking-wider text-ink-2">{label}</span>
-        <span className="rounded-full border border-hair bg-white px-2 text-[10.5px] font-extrabold text-muted-2">{list.length}</span>
+        <span className="rounded-full border border-line bg-white px-2 text-[10.5px] font-extrabold text-muted-2">{list.length}</span>
       </div>
       {list.map(card)}
     </div>
@@ -252,7 +252,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
       {/* filter tabs */}
       <div className="-my-1.5 py-1.5 mt-3.5 flex gap-2 overflow-x-auto pb-0.5">
         {FT.map(([k, lbl]) => (
-          <button key={k} onClick={() => setFilter(k)} className={`tap-y flex-none cursor-pointer rounded-chip px-3.5 py-1.5 text-[12px] font-extrabold transition-colors ${filter === k ? 'bg-primary text-white' : 'border border-hair bg-white text-muted'}`}>{lbl}</button>
+          <button key={k} onClick={() => setFilter(k)} className={`tap-y flex-none cursor-pointer rounded-chip px-3.5 py-1.5 text-[12px] font-extrabold transition-colors ${filter === k ? 'bg-primary text-white' : 'border border-line bg-white text-muted'}`}>{lbl}</button>
         ))}
       </div>
 

@@ -864,7 +864,7 @@ export function ComunidadScreen() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="mx-auto mt-1 cursor-pointer rounded-full border border-hair bg-white px-5 py-2.5 text-[13px] font-extrabold text-primary-dark shadow-card disabled:opacity-60"
+                className="mx-auto mt-1 cursor-pointer rounded-full border border-line bg-white px-5 py-2.5 text-[13px] font-extrabold text-primary-dark shadow-card disabled:opacity-60"
               >
                 {loadingMore ? L('Cargando…', 'Loading…') : L('Ver más publicaciones', 'Show more posts')}
               </button>
@@ -971,7 +971,7 @@ export function ComunidadScreen() {
                 </div>
               )}
               {commentBizOpen && (
-                <div className="mb-2 rounded-2xl border border-hair bg-white p-2 shadow-card">
+                <div className="mb-2 rounded-2xl border border-line bg-white p-2 shadow-card">
                   <input
                     value={commentBizQuery}
                     onChange={(e) => setCommentBizQuery(e.target.value)}

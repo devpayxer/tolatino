@@ -173,7 +173,7 @@ export function DireccionForm({
           </span>
         )}
         {abierto && sugerencias.length > 0 && (
-          <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-[13px] border border-hair bg-white shadow-pop">
+          <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-[13px] border border-line bg-white shadow-pop">
             {sugerencias.map((a) => (
               <li key={`${a.formatted}-${a.lat}`}>
                 <button

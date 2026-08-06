@@ -61,7 +61,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
 
   if (admin.loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-hair bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -69,7 +69,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
 
   if (!real) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -129,7 +129,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
   return (
     <>
       <div className="mx-auto max-w-[640px]">
-        <div className="rounded-card border border-hair bg-white p-4 shadow-card md:p-5">
+        <div className="rounded-card border border-line bg-white p-4 shadow-card md:p-5">
           <div className="mb-1 flex items-center gap-2 text-[13px] font-extrabold text-ink">
             <Clock size={16} stroke={2.2} className="text-primary-dark" />
             {L('Horario de atención', 'Opening hours')}
@@ -207,7 +207,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
               ) : (
                 <div className="flex flex-col gap-2">
                   {exceptions.map((e) => (
-                    <div key={e.id} className="flex items-center gap-3 rounded-field border border-hair bg-white p-3">
+                    <div key={e.id} className="flex items-center gap-3 rounded-field border border-line bg-white p-3">
                       <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-btn ${e.closed ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-dark'}`}>
                         <CalendarDays size={16} stroke={2.2} />
                       </span>
@@ -228,7 +228,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
 
               {/* add form / trigger */}
               {adding ? (
-                <div className="mt-3 rounded-field border border-hair bg-app p-3.5">
+                <div className="mt-3 rounded-field border border-line bg-app p-3.5">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-[12.5px] font-extrabold text-ink">{L('Nuevo día especial', 'New special day')}</span>
                     <button onClick={() => setAdding(false)} aria-label={L('Cerrar', 'Close')} className="cursor-pointer text-muted-2"><X size={15} stroke={2.4} /></button>

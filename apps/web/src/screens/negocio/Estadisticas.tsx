@@ -22,7 +22,7 @@ import { useBizAdmin } from '@/lib/bizAdmin';
 import { fetchBusinessMetrics, tzDayKeys } from '@/lib/live';
 import { activeMods, type PanelCtx } from '@/screens/negocio/tabs';
 
-const card = 'rounded-card-sm border border-hair bg-white shadow-card';
+const card = 'rounded-card-sm border border-line bg-white shadow-card';
 const money = (n: number) => '$' + n.toFixed(2);
 const pad = (n: number) => String(n).padStart(2, '0');
 const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

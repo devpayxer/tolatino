@@ -209,7 +209,7 @@ export function CityModal() {
           close();
           app.setAddressOpen(true);
         }}
-        className="mt-3 flex w-full cursor-pointer items-center gap-2.5 rounded-tile border border-hair bg-app p-3 text-left hover:bg-lilac-2"
+        className="mt-3 flex w-full cursor-pointer items-center gap-2.5 rounded-tile border border-line bg-app p-3 text-left hover:bg-lilac-2"
       >
         <MapPin size={16} className="flex-none text-primary" stroke={2.4} />
         <span className="min-w-0 flex-1">

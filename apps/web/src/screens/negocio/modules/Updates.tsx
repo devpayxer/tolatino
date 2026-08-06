@@ -79,7 +79,7 @@ const KIND_BADGE: Record<Kind, string> = {
   news: 'bg-green-bg text-green-dark',
 };
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 
 export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
   const { L, es, isFree, ci } = ctx;
@@ -416,7 +416,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
         </div>
       ) : (
         visible.map((p) => (
-          <div key={p.id} className={`overflow-hidden rounded-card-sm border bg-white shadow-card ${p.pinned ? 'border-[rgba(244,183,64,.4)]' : 'border-hair'}`}>
+          <div key={p.id} className={`overflow-hidden rounded-card-sm border bg-white shadow-card ${p.pinned ? 'border-[rgba(244,183,64,.4)]' : 'border-line'}`}>
             <div className="flex items-start justify-between gap-2 p-3.5 pb-0">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[10px] bg-primary text-[11px] font-extrabold text-white">{ci.initials}</span>

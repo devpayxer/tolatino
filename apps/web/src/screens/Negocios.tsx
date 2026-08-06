@@ -445,7 +445,7 @@ export function NegociosScreen() {
       {openFilter && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpenFilter(null)} />
-          <div className="absolute left-0 z-40 mt-2 w-full rounded-2xl border border-hair bg-white p-4 shadow-pop md:w-[320px]">
+          <div className="absolute left-0 z-40 mt-2 w-full rounded-2xl border border-line bg-white p-4 shadow-pop md:w-[320px]">
             {openFilter === 'dist' && (
               <>
                 <div className="mb-2 flex items-center justify-between">
@@ -552,7 +552,7 @@ export function NegociosScreen() {
 
       <div className="grid items-start gap-[22px] lg:grid-cols-[252px_1fr]">
         {/* filter rail (desktop) */}
-        <aside className="sticky top-[130px] hidden rounded-card-sm border border-hair bg-white p-[18px] shadow-card lg:block">
+        <aside className="sticky top-[130px] hidden rounded-card-sm border border-line bg-white p-[18px] shadow-card lg:block">
           {filterPanel}
         </aside>
 
@@ -576,7 +576,7 @@ export function NegociosScreen() {
           {liveLoading ? (
             <SkeletonList count={6} className="grid grid-cols-1 gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" />
           ) : results.length === 0 ? (
-            <div className="rounded-card border border-hair bg-white p-10 text-center shadow-card">
+            <div className="rounded-card border border-line bg-white p-10 text-center shadow-card">
               {onlySaved ? (
                 <>
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-pink-bg">
@@ -870,7 +870,7 @@ function BizCardBasic({ b, onOpen }: { b: Business; onOpen: () => void }) {
             <SaveBtn b={b} size={16} />
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full border border-hair px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-muted-2">
+            <span className="inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-muted-2">
               <span className="h-1.5 w-1.5 rounded-full bg-muted-faint" />
               {L('Sin verificar', 'Unverified')}
             </span>

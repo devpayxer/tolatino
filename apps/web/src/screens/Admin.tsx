@@ -382,7 +382,7 @@ export function AdminScreen() {
 
       <div className="min-w-0 flex-1">
         {/* header */}
-        <header className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-hair bg-white px-4 py-3 lg:px-6">
+        <header className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-line bg-white px-4 py-3 lg:px-6">
           <button onClick={() => setNavOpen(true)} aria-label={L('Menú', 'Menu')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-btn bg-ink lg:hidden"><Menu size={18} stroke={2.4} className="text-white" /></button>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[17px] font-extrabold tracking-[-.02em] text-ink">{pageTitle}</div>
@@ -469,7 +469,7 @@ export function AdminScreen() {
         {alerts.length > 0 && (
           <div className="flex flex-col gap-2">
             {alerts.map((x) => (
-              <div key={x.k} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3.5 shadow-card" style={{ borderLeftWidth: 4 }}>
+              <div key={x.k} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3.5 shadow-card" style={{ borderLeftWidth: 4 }}>
                 <span className="text-[19px] font-extrabold tabular-nums text-ink">{x.n}</span>
                 <span className="min-w-0 flex-1 text-[12.5px] font-bold text-ink-2">{L(x.es, x.en)}</span>
                 <button onClick={() => setSection(x.go)} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Resolver', 'Resolve')}</button>
@@ -605,7 +605,7 @@ export function AdminScreen() {
             <div className="text-[11px] font-bold text-muted-2"><span className="text-primary-dark">{biz[0]?.total_count ?? 0}</span> {L('negocios', 'businesses')}</div>
             <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
               {biz.map((b) => (
-                <button key={b.id} onClick={() => void openBiz(b.id)} className="flex cursor-pointer flex-col rounded-card-sm border border-hair bg-white p-3.5 text-left shadow-card">
+                <button key={b.id} onClick={() => void openBiz(b.id)} className="flex cursor-pointer flex-col rounded-card-sm border border-line bg-white p-3.5 text-left shadow-card">
                   <div className="flex items-center gap-1.5">
                     <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{b.name}</span>
                     <Pill tone={TIER_TONE[b.tier] ?? 'gray'}>{b.tier}</Pill>
@@ -705,7 +705,7 @@ export function AdminScreen() {
               const st = CLAIM_STATUS[c.status] ?? CLAIM_STATUS.abierto; const kd = CLAIM_KIND[c.kind];
               const late = (c.status === 'abierto' || c.status === 'en_revision') && c.hours_open > 24;
               return (
-                <button key={c.id} onClick={() => { setClaim(c); setCmsg(''); }} className={`flex cursor-pointer flex-col rounded-card-sm border bg-white p-3.5 text-left shadow-card ${late ? 'border-pink-dark' : 'border-hair'}`}>
+                <button key={c.id} onClick={() => { setClaim(c); setCmsg(''); }} className={`flex cursor-pointer flex-col rounded-card-sm border bg-white p-3.5 text-left shadow-card ${late ? 'border-pink-dark' : 'border-line'}`}>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Pill tone={c.status === 'resuelto' ? 'green' : c.status === 'rechazado' ? 'pink' : c.status === 'en_revision' ? 'purple' : 'amber'}>{L(st.es, st.en)}</Pill>
                     {kd && <Pill tone="gray">{L(kd.es, kd.en)}</Pill>}
@@ -732,7 +732,7 @@ export function AdminScreen() {
             <BlockTitle sub={L('Le cobramos al cliente pero la orden no se creó. Reintenta; si no, reembolsa en la tabla de abajo.', "We charged but no order was created. Retry; if not, refund below.")}>{L('Cobrado sin entregar', 'Charged, undelivered')}</BlockTitle>
             <div className="flex flex-col gap-2">
               {stuck.map((s) => (
-                <div key={s.id} className="flex flex-wrap items-center gap-2.5 rounded-field border border-hair px-3 py-2.5">
+                <div key={s.id} className="flex flex-wrap items-center gap-2.5 rounded-field border border-line px-3 py-2.5">
                   <Pill tone="pink">{s.status}</Pill><Pill tone="purple">{s.kind}</Pill>
                   <span className="min-w-0 flex-1 truncate text-[12px] font-extrabold text-ink">{s.business_name ?? '—'}</span>
                   <span className="text-[13px] font-extrabold text-ink">{money(s.amount)}</span>
@@ -977,7 +977,7 @@ export function AdminScreen() {
             </Panel>
             <Panel className="self-start p-4">
               <BlockTitle sub={L('Vista rápida', 'Quick view')}>{L('Cómo se verá', 'How it looks')}</BlockTitle>
-              <div className="rounded-field border border-hair bg-app px-3.5 py-3"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary"><Bell size={15} className="text-white" /></span><span className="text-[11px] font-extrabold text-ink">To&rsquo;Latino</span></div><div className="mt-2 text-[13px] font-extrabold text-ink">{nTitle || L('(título)', '(title)')}</div><div className="mt-0.5 text-[12px] font-medium text-ink-3">{nBody || L('(mensaje)', '(message)')}</div></div>
+              <div className="rounded-field border border-line bg-app px-3.5 py-3"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary"><Bell size={15} className="text-white" /></span><span className="text-[11px] font-extrabold text-ink">To&rsquo;Latino</span></div><div className="mt-2 text-[13px] font-extrabold text-ink">{nTitle || L('(título)', '(title)')}</div><div className="mt-0.5 text-[12px] font-medium text-ink-3">{nBody || L('(mensaje)', '(message)')}</div></div>
               <div className="mt-3 rounded-field bg-amber-bg px-3 py-2.5 text-[11px] font-semibold leading-relaxed text-amber-ink">{L('A gran escala el envío se hace en segundo plano; aquí llega de inmediato hasta un tope seguro.', 'At scale, delivery runs in the background; here it reaches up to a safe cap instantly.')}</div>
             </Panel>
           </div>
@@ -1029,7 +1029,7 @@ export function AdminScreen() {
         {isSuper && (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Panel className="p-4"><BlockTitle>{L('Equipo admin', 'Admin team')}</BlockTitle>
-              <div className="flex flex-col gap-2">{(team ?? []).map((m) => <div key={m.user_id} className="flex flex-wrap items-center gap-2.5 rounded-field border border-hair px-3 py-2.5"><span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary text-[11px] font-extrabold text-white">{(m.email[0] ?? '?').toUpperCase()}</span><div className="min-w-0 flex-1"><div className="truncate text-[12px] font-extrabold text-ink">{m.email}</div></div><Pill tone={m.is_owner ? 'amber' : 'purple'}>{m.is_owner ? L('Dueño', 'Owner') : L(ROLE_LABEL[m.role].es, ROLE_LABEL[m.role].en)}</Pill>{!m.is_owner && <button onClick={() => ask({ title: L('Quitar admin', 'Remove admin'), sub: m.email, tone: 'danger', reasonRequired: true, run: (r) => adminRemoveAdmin(m.user_id, r), after: reloadAnalytics })} className="cursor-pointer rounded-btn border-[1.5px] border-pink-dark bg-white px-2.5 py-1.5 text-[10.5px] font-extrabold text-pink-dark">{L('Quitar', 'Remove')}</button>}</div>)}</div>
+              <div className="flex flex-col gap-2">{(team ?? []).map((m) => <div key={m.user_id} className="flex flex-wrap items-center gap-2.5 rounded-field border border-line px-3 py-2.5"><span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary text-[11px] font-extrabold text-white">{(m.email[0] ?? '?').toUpperCase()}</span><div className="min-w-0 flex-1"><div className="truncate text-[12px] font-extrabold text-ink">{m.email}</div></div><Pill tone={m.is_owner ? 'amber' : 'purple'}>{m.is_owner ? L('Dueño', 'Owner') : L(ROLE_LABEL[m.role].es, ROLE_LABEL[m.role].en)}</Pill>{!m.is_owner && <button onClick={() => ask({ title: L('Quitar admin', 'Remove admin'), sub: m.email, tone: 'danger', reasonRequired: true, run: (r) => adminRemoveAdmin(m.user_id, r), after: reloadAnalytics })} className="cursor-pointer rounded-btn border-[1.5px] border-pink-dark bg-white px-2.5 py-1.5 text-[10.5px] font-extrabold text-pink-dark">{L('Quitar', 'Remove')}</button>}</div>)}</div>
             </Panel>
             <Panel className="p-4"><BlockTitle sub={L('Quién, qué, cuándo y por qué. Inmutable.', 'Who, what, when and why. Immutable.')}>{L('Bitácora', 'Audit log')}</BlockTitle>
               {audit === null ? <SkeletonList count={4} /> : <div className="flex flex-col gap-2">{(audit ?? []).slice(0, 14).map((a) => <div key={a.id} className="border-b border-hair pb-2 last:border-0"><div className="flex items-center gap-1.5"><span className="rounded bg-lilac-2 px-1.5 py-px font-mono text-[9px] font-extrabold text-primary-dark">{a.action}</span><span className="ml-auto text-[9.5px] font-semibold text-muted-2">{timeAgo(a.created_at, es)}</span></div><div className="mt-0.5 truncate text-[11px] font-bold text-ink-2">{a.actor_email ?? '—'}</div>{a.reason && <div className="text-[10.5px] font-medium italic text-muted">“{a.reason}”</div>}</div>)}</div>}

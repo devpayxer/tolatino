@@ -158,7 +158,7 @@ function SeatPicker({
                 <button
                   key={id} onClick={() => onToggle(id)} disabled={isTaken}
                   className={`flex flex-col overflow-hidden rounded-field border-[1.5px] text-left ${
-                    isTaken ? 'cursor-not-allowed border-hair bg-lilac-2/60 opacity-55'
+                    isTaken ? 'cursor-not-allowed border-line bg-lilac-2/60 opacity-55'
                     : isSel ? 'border-primary bg-lilac-3 shadow-cta-sm'
                     : 'cursor-pointer border-lilac-line bg-white hover:border-primary'}`}
                 >
@@ -692,7 +692,7 @@ export function EventosScreen() {
                 <button
                   key={c.id}
                   onClick={() => { setCat(c.id); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                  className="group flex items-center gap-2.5 overflow-hidden rounded-card border border-hair bg-white p-2.5 text-left transition-shadow hover:shadow-card"
+                  className="group flex items-center gap-2.5 overflow-hidden rounded-card border border-line bg-white p-2.5 text-left transition-shadow hover:shadow-card"
                 >
                   <span className="h-11 w-11 flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${c.tile[0]} 0 8px,${c.tile[1]} 8px 16px)` }} />
                   <span className="min-w-0 flex-1">
@@ -898,7 +898,7 @@ export function EventosScreen() {
 
             {/* "Organizado por" — host card with rating + events + follow-through */}
             {pub && (
-              <div className="mt-3 flex items-center gap-3 rounded-card border border-hair bg-white p-3">
+              <div className="mt-3 flex items-center gap-3 rounded-card border border-line bg-white p-3">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-lilac-2 text-[14px] font-extrabold text-primary-dark">
                   {pub.organizer.split(' ').map((w) => w[0]).slice(0, 2).join('')}
                 </span>
@@ -955,7 +955,7 @@ export function EventosScreen() {
                 {evReviews && evReviews.length > 0 ? (
                   <div className="flex flex-col gap-2.5">
                     {evReviews.slice(0, 4).map((rv, i) => (
-                      <div key={rv.id || i} className="rounded-card-sm border border-hair bg-white p-3">
+                      <div key={rv.id || i} className="rounded-card-sm border border-line bg-white p-3">
                         <div className="flex items-center gap-2">
                           <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-lilac-2 text-[10px] font-extrabold text-primary-dark">{rv.initials}</span>
                           <span className="min-w-0 flex-1 truncate text-[12px] font-extrabold text-ink">{rv.name}</span>
@@ -971,7 +971,7 @@ export function EventosScreen() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-card-sm border border-dashed border-hair bg-app/50 py-4 text-center text-[12px] font-semibold text-muted-2">{L('Sé el primero en reseñar este evento.', 'Be the first to review this event.')}</div>
+                  <div className="rounded-card-sm border border-dashed border-line bg-app/50 py-4 text-center text-[12px] font-semibold text-muted-2">{L('Sé el primero en reseñar este evento.', 'Be the first to review this event.')}</div>
                 )}
               </div>
             )}
@@ -989,7 +989,7 @@ export function EventosScreen() {
                     const q = tierQty[t.id] ?? 0;
                     const max = Math.min(10, left === Infinity ? 10 : left);
                     return (
-                      <div key={t.id} className={`rounded-field border-[1.5px] px-3.5 py-2.5 ${soldOut ? 'border-hair bg-lilac-2/40 opacity-70' : 'border-lilac-line bg-white'}`}>
+                      <div key={t.id} className={`rounded-field border-[1.5px] px-3.5 py-2.5 ${soldOut ? 'border-line bg-lilac-2/40 opacity-70' : 'border-lilac-line bg-white'}`}>
                         <div className="flex items-center gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-[13px] font-extrabold text-ink">{B(t.name)}</div>
@@ -1224,7 +1224,7 @@ export function EventosScreen() {
         ) : (
           <div className="flex flex-col gap-2">
             {orgEvents.map((e) => (
-              <button key={e.slug ?? e.id} onClick={() => openOrgEvent(e)} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-2.5 text-left hover:shadow-card">
+              <button key={e.slug ?? e.id} onClick={() => openOrgEvent(e)} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-2.5 text-left hover:shadow-card">
                 <span className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-btn" style={{ background: eventTile(e) }}>
                   <span className="text-[8px] font-extrabold uppercase text-primary-dark">{e.dEs}</span>
                   <span className="text-[14px] font-extrabold leading-none text-ink">{e.day}</span>

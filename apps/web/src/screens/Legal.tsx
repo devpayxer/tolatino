@@ -26,7 +26,7 @@ function LegalShell({ title, intro, blocks }: { title: [string, string]; intro: 
   return (
     <div className="min-h-screen bg-canvas">
       {/* sticky nav */}
-      <header className="sticky top-0 z-30 border-b border-hair bg-white/90 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-[820px] items-center gap-3 px-4 py-3 md:px-6">
           <button onClick={() => router.back()} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-primary-dark" aria-label={L('Volver', 'Back')}>
             <ArrowLeft size={17} stroke={2.2} />
@@ -54,7 +54,7 @@ function LegalShell({ title, intro, blocks }: { title: [string, string]; intro: 
           ))}
         </div>
 
-        <div className="mt-10 rounded-card border border-hair bg-white p-5 shadow-card">
+        <div className="mt-10 rounded-card border border-line bg-white p-5 shadow-card">
           <div className="text-[13.5px] font-extrabold text-ink">{L('¿Preguntas?', 'Questions?')}</div>
           <p className="mt-1.5 text-[12.5px] font-medium leading-relaxed text-muted">
             {L('Escríbenos a ', 'Reach us at ')}<a href={`mailto:${LEGAL_EMAIL}`} className="font-extrabold text-primary-dark">{LEGAL_EMAIL}</a>.

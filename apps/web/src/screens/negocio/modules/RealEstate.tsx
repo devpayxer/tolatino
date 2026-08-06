@@ -34,7 +34,7 @@ import {
   type ReLeadStage, type ReTourStatus,
 } from '@/lib/realestate';
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 
 type View = 'list' | 'detail' | 'wizard' | 'success' | 'leads' | 'lead' | 'tours';
 type MyProp = ReCard & { leadsCount: number; toursCount: number };
@@ -665,7 +665,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button onClick={saveLicense} disabled={licBusy} className="tap-y flex-1 cursor-pointer rounded-btn bg-primary py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">
           {licBusy ? L('Guardando…', 'Saving…') : L('Guardar licencia', 'Save license')}
         </button>
-        <button onClick={() => setLicEdit(false)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+        <button onClick={() => setLicEdit(false)} className="tap-y cursor-pointer rounded-btn border border-line bg-white px-4 py-2.5 text-[12px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
       </div>
     </div>
   );
@@ -698,7 +698,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             {reConfig?.langs ? ` · ${reConfig.langs}` : ''}{reConfig?.zones ? ` · ${reConfig.zones}` : ''}
           </div>
         </div>
-        {!licEdit && <button onClick={openLicForm} className="tap-y flex-none cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>}
+        {!licEdit && <button onClick={openLicForm} className="tap-y flex-none cursor-pointer rounded-btn border border-line bg-white px-3.5 py-2 text-[11.5px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>}
       </div>
       {licEdit && licenseForm}
     </div>
@@ -725,7 +725,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const filteredProps = listFilter === 'all' ? listings : listings.filter((p) => p.status === listFilter);
 
   const propCard = (p: MyProp) => (
-    <button key={p.id} onClick={() => { setDetailId(p.id); setView('detail'); }} className="cursor-pointer overflow-hidden rounded-card-sm border border-hair bg-white text-left shadow-card">
+    <button key={p.id} onClick={() => { setDetailId(p.id); setView('detail'); }} className="cursor-pointer overflow-hidden rounded-card-sm border border-line bg-white text-left shadow-card">
       <div className="flex gap-3 p-3">
         <div className="relative h-[84px] w-[84px] flex-none overflow-hidden rounded-tile" style={thumbStyle(p)}>
           <span className="absolute left-1.5 top-1.5">{statusBadge(p.status)}</span>
@@ -825,7 +825,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             ))}
           </div>
         ) : filteredProps.length === 0 ? (
-          <div className="rounded-card-sm border border-hair bg-white px-6 py-12 text-center shadow-card">
+          <div className="rounded-card-sm border border-line bg-white px-6 py-12 text-center shadow-card">
             <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-tile bg-lilac-3"><Home size={22} stroke={2} className="text-primary-dark" /></span>
             <div className="text-[13.5px] font-extrabold text-ink">
               {listings.length === 0 ? L('Aún no tienes propiedades', 'No listings yet') : L('Nada con este filtro', 'Nothing with this filter')}
@@ -870,11 +870,11 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         onBack={() => setView('list')}
         maxW={760}
         action={
-          <button onClick={() => void startEdit(p)} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>
+          <button onClick={() => void startEdit(p)} className="tap-y cursor-pointer rounded-btn border border-line bg-white px-3.5 py-2 text-[12px] font-extrabold text-ink">{L('Editar', 'Edit')}</button>
         }
       >
         <div className="flex flex-col gap-4">
-          <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
+          <div className="overflow-hidden rounded-card-sm border border-line bg-white shadow-card">
             <div className="relative h-[150px]" style={thumbStyle(p)}>
               <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))' }} />
               <span className="absolute left-2.5 top-2.5">{statusBadge(p.status)}</span>
@@ -986,7 +986,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {persistable && leadRows === null ? (
         <div className="grid gap-2.5">{[0, 1, 2].map((i) => <div key={i} className={`${cardCls} h-[92px] animate-pulse bg-lilac-2`} />)}</div>
       ) : filteredLeads.length === 0 ? (
-        <div className="rounded-card-sm border border-hair bg-white px-6 py-12 text-center shadow-card">
+        <div className="rounded-card-sm border border-line bg-white px-6 py-12 text-center shadow-card">
           <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-tile bg-lilac-3"><Users size={22} stroke={2} className="text-primary-dark" /></span>
           <div className="text-[13.5px] font-extrabold text-ink">{leads.length === 0 ? L('Aún no tienes leads', 'No leads yet') : L('Nada en esta etapa', 'Nothing in this stage')}</div>
           <div className="mt-1 text-[11.5px] font-medium text-muted-2">
@@ -1134,7 +1134,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {persistable && tourRows === null ? (
         <div className="grid gap-2.5">{[0, 1].map((i) => <div key={i} className={`${cardCls} h-[92px] animate-pulse bg-lilac-2`} />)}</div>
       ) : dayTours.length === 0 ? (
-        <div className="rounded-card-sm border border-hair bg-white px-6 py-12 text-center shadow-card">
+        <div className="rounded-card-sm border border-line bg-white px-6 py-12 text-center shadow-card">
           <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-tile bg-lilac-3"><CalendarEvent size={22} stroke={2} className="text-primary-dark" /></span>
           <div className="text-[13.5px] font-extrabold text-ink">{L('Sin visitas este día', 'No tours this day')}</div>
           <div className="mt-1 text-[11.5px] font-medium text-muted-2">{L('Los tours que agenden tus clientes aparecerán aquí.', 'Tours your clients book will show here.')}</div>
@@ -1189,7 +1189,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       >
                         {L('Proponer horario', 'Propose time')}
                       </button>
-                      <button onClick={() => { setReschedId(null); setReschedAt(''); }} className="tap-y cursor-pointer rounded-btn border border-hair bg-white px-4 py-2.5 text-[11.5px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
+                      <button onClick={() => { setReschedId(null); setReschedAt(''); }} className="tap-y cursor-pointer rounded-btn border border-line bg-white px-4 py-2.5 text-[11.5px] font-extrabold text-ink-soft">{L('Cancelar', 'Cancel')}</button>
                     </div>
                   </div>
                 )}
@@ -1255,7 +1255,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="relative">
           <input value={draft.address} onChange={(e) => upD({ address: e.target.value, lat: null, lng: null })} placeholder={L('Calle, número, ciudad', 'Street, number, city')} className={fieldCls} />
           {addrResults.length > 0 && (
-            <div className="absolute z-20 mt-1 max-h-[200px] w-full overflow-y-auto rounded-field border border-hair-strong bg-white p-1 shadow-pop">
+            <div className="absolute z-20 mt-1 max-h-[200px] w-full overflow-y-auto rounded-field border border-line-strong bg-white p-1 shadow-pop">
               {addrResults.map((a, i) => (
                 <button key={`${a.formatted}-${i}`} type="button" onClick={() => chooseAddr(a)} className="w-full cursor-pointer rounded-field p-2.5 text-left text-[12.5px] font-bold text-ink-soft hover:bg-app">
                   {a.formatted}
@@ -1419,7 +1419,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <input ref={photoInputRef} type="file" accept="image/*" multiple hidden onChange={(e) => { const f = e.target.files; void addPhotos(f); e.target.value = ''; }} />
       <div className="grid grid-cols-3 gap-2">
         {draft.photos.map((url, i) => (
-          <div key={url} className="relative aspect-square overflow-hidden rounded-tile border border-hair" style={{ backgroundImage: `url("${imgUrl(url, ANCHO.tarjeta)}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div key={url} className="relative aspect-square overflow-hidden rounded-tile border border-line" style={{ backgroundImage: `url("${imgUrl(url, ANCHO.tarjeta)}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
             {i === 0 && <span className="absolute left-1.5 top-1.5 rounded bg-ink/70 px-1.5 py-0.5 text-[8.5px] font-extrabold text-white">{L('Portada', 'Cover')}</span>}
             <button onClick={() => removePhoto(url)} className="absolute right-1.5 top-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-ink/70 text-white" aria-label={L('Quitar foto', 'Remove photo')}>
               <Trash2 size={12} stroke={2.2} />
@@ -1447,7 +1447,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const wizStep3 = (
     <div className="flex flex-col gap-3.5">
       {/* live preview */}
-      <div className="overflow-hidden rounded-card-sm border border-hair bg-white shadow-card">
+      <div className="overflow-hidden rounded-card-sm border border-line bg-white shadow-card">
         <div className="relative h-[120px]" style={draft.photos[0] ? { backgroundImage: `url("${imgUrl(draft.photos[0], ANCHO.ancha)}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.deal) }}>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))' }} />
           <span className="absolute left-2.5 top-2.5 rounded-[7px] bg-white px-2 py-1 text-[9px] font-extrabold text-primary-dark">{dealLabel(draft.deal)}</span>
@@ -1462,7 +1462,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-field border border-hair bg-white">
+      <div className="overflow-hidden rounded-field border border-line bg-white">
         {reviewRows.map(([k, v, ok], i) => (
           <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < reviewRows.length - 1 ? 'border-b border-hair' : ''}`}>
             <span className="w-[84px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span>
@@ -1561,7 +1561,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {L('Tu propiedad ya es visible para compradores en ToLatino. Te avisaremos de cada lead.', 'Your listing is now visible to buyers on ToLatino. We will notify you of every lead.')}
         </div>
 
-        <div className="mt-5 w-full max-w-[420px] overflow-hidden rounded-card-sm border border-hair bg-white text-left shadow-card">
+        <div className="mt-5 w-full max-w-[420px] overflow-hidden rounded-card-sm border border-line bg-white text-left shadow-card">
           <div className="relative h-[104px]" style={draft.photos[0] ? { backgroundImage: `url("${imgUrl(draft.photos[0], ANCHO.ancha)}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: tileBg(draft.deal) }}>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.45))' }} />
             <div className="absolute bottom-2.5 left-3 text-[15px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{draft.title.trim() || L('Propiedad', 'Listing')}</div>

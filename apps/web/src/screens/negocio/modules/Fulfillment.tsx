@@ -70,7 +70,7 @@ const EXT_DEF = [true, true, false];
 const arrToRec = (a: boolean[]): Record<number, boolean> => { const r: Record<number, boolean> = {}; a.forEach((v, i) => { r[i] = v; }); return r; };
 const recToArr = (r: Record<number, boolean>, n: number): boolean[] => Array.from({ length: n }, (_, i) => !!r[i]);
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 
 // ---- orders / operational model (business_orders + fulfillment jsonb, 0049) ----
 type OrderItem = { name: string; qty: number; price?: number };
@@ -401,7 +401,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
 
                 {/* live-tracking mini map for on-the-way orders */}
                 {onWay && (
-                  <div className="relative mt-2.5 h-[68px] overflow-hidden rounded-field border border-hair" style={{ background: '#EAEEF6' }}>
+                  <div className="relative mt-2.5 h-[68px] overflow-hidden rounded-field border border-line" style={{ background: '#EAEEF6' }}>
                     <div className="absolute left-[-10px] top-[26px] h-[6px] w-[150%] bg-white" style={{ transform: 'rotate(-8deg)' }} />
                     <div className="absolute left-[38%] top-[-10px] h-[150%] w-[6px] bg-white" style={{ transform: 'rotate(9deg)' }} />
                     <span className="absolute left-[18%] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={12} stroke={2.4} /></span>
@@ -427,7 +427,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   // ============================ DELIVERY · ZONES ============================
   const zonesView = (
     <div className="flex flex-col gap-3.5 md:grid md:grid-cols-2 md:items-start md:gap-4 xl:grid-cols-1 2xl:grid-cols-2">
-      <div className="relative h-[190px] overflow-hidden rounded-card-sm border border-hair" style={{ background: '#EAEEF6' }}>
+      <div className="relative h-[190px] overflow-hidden rounded-card-sm border border-line" style={{ background: '#EAEEF6' }}>
         <div className="absolute left-[-10px] top-[30px] h-[9px] w-[150%] bg-white" style={{ transform: 'rotate(-14deg)' }} />
         <div className="absolute bottom-[40px] left-[-10px] h-[8px] w-[150%] bg-white" style={{ transform: 'rotate(7deg)' }} />
         <div className="absolute left-[42%] top-[-10px] h-[150%] w-[9px] bg-white" style={{ transform: 'rotate(10deg)' }} />
@@ -442,7 +442,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
           const dist = z.toMi != null ? (from ? `${from}–${z.toMi} mi` : `${L('Hasta', 'Up to')} ${z.toMi} mi`) : L('Sin límite', 'No limit');
           const feeLbl = z.fee > 0 ? `$${z.fee.toFixed(2)}` : L('Gratis', 'Free');
           return (
-            <button key={zi} onClick={() => setZoneSheet({ idx: zi, initial: z })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left hover:border-primary">
+            <button key={zi} onClick={() => setZoneSheet({ idx: zi, initial: z })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left hover:border-primary">
               <span className="h-3 w-3 flex-none rounded-full" style={{ background: z.color }} />
               <div className="min-w-0 flex-1">
                 <div className="text-[12.5px] font-extrabold text-ink">{L(z.es, z.en)}</div>
@@ -468,7 +468,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   // ============================ DELIVERY · DRIVERS ============================
   const driversView = (
     <div className="flex flex-col gap-3.5">
-      <div className="flex gap-1.5 rounded-btn border border-hair bg-white p-1">
+      <div className="flex gap-1.5 rounded-btn border border-line bg-white p-1">
         {(['own', 'external'] as const).map((d) => (
           <button key={d} onClick={() => setDriverTab(d)} className={`tap-y flex-1 cursor-pointer rounded-[9px] py-2 text-[11.5px] font-extrabold ${driverTab === d ? 'bg-primary text-white' : 'text-ink-2'}`}>{d === 'own' ? L('Propios', 'Own') : L('Apps externas', 'External apps')}</button>
         ))}
@@ -482,7 +482,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
       {driverTab === 'own' ? (
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
           {drivers.map((d, di) => (
-            <button key={d.name + di} onClick={() => setDriverSheet({ idx: di, initial: d })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-hair bg-white p-3 text-left hover:border-primary">
+            <button key={d.name + di} onClick={() => setDriverSheet({ idx: di, initial: d })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left hover:border-primary">
               <span className="relative flex-none">
                 <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-[12px] font-extrabold text-white" style={{ background: d.photo ? '#EAE7F6' : d.color }}>
                   {d.photo ? (
@@ -523,7 +523,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
           {EXT_APPS.map((a, i) => {
             const on = extState[i];
             return (
-              <div key={a.name} className="rounded-card-sm border border-hair bg-white p-3">
+              <div key={a.name} className="rounded-card-sm border border-line bg-white p-3">
                 <div className="flex items-center gap-3">
                   <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn text-[15px] font-extrabold text-white" style={{ background: a.color }}>{a.label}</span>
                   <div className="min-w-0 flex-1"><div className="text-[12.5px] font-extrabold text-ink">{a.name}</div><div className="mt-0.5 text-[10px] font-medium leading-snug text-muted-2">{L(a.dEs, a.dEn)}</div></div>
@@ -732,7 +732,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         <div className="mb-2 px-0.5 text-[12px] font-extrabold text-ink">{L('Puntos de recogida', 'Pickup locations')}</div>
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
           {pickupLocs.map((p) => (
-            <div key={p.name} className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
+            <div key={p.name} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Store size={17} stroke={2} /></span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5"><span className="text-[12.5px] font-extrabold text-ink">{p.name}</span>{p.main && <span className="rounded bg-green-bg px-1.5 py-px text-[8px] font-extrabold text-green-dark">{L('Principal', 'Primary')}</span>}</div>
@@ -759,7 +759,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   // ============================ SHIPPING · CARRIERS ============================
   const carriersView = (
     <div className="flex flex-col gap-3.5">
-      <div className="flex gap-1.5 rounded-btn border border-hair bg-white p-1">
+      <div className="flex gap-1.5 rounded-btn border border-line bg-white p-1">
         {(['own', 'external'] as const).map((n) => (
           <button key={n} onClick={() => setNatTab(n)} className={`tap-y flex-1 cursor-pointer rounded-[9px] py-2 text-[11.5px] font-extrabold ${natTab === n ? 'bg-primary text-white' : 'text-ink-2'}`}>{n === 'own' ? L('Tarifa propia', 'Own rate') : L('Transportistas', 'Carriers')}</button>
         ))}
@@ -767,7 +767,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
       {natTab === 'own' ? (
         <>
           <div className="px-0.5 text-[12px] font-extrabold text-ink">{L('Tus tarifas de envío', 'Your shipping rates')}</div>
-          <div className="flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
+          <div className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3">
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Package size={17} stroke={2} /></span>
             <div className="min-w-0 flex-1"><div className="text-[12.5px] font-extrabold text-ink">{L('Tarifa plana nacional', 'Flat national rate')}</div><div className="mt-0.5 text-[10px] font-medium text-muted-2">{L('Un solo precio a todo EE.UU.', 'One price to all of the US')}</div></div>
             <span className="text-[13px] font-extrabold text-ink">$8.00</span>
@@ -797,7 +797,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             {CARRIERS.map((c, i) => {
               const on = carrierState[i];
               return (
-                <div key={c.name + i} className={`flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3 ${on ? '' : 'opacity-60'}`}>
+                <div key={c.name + i} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 ${on ? '' : 'opacity-60'}`}>
                   <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-blue-bg text-blue"><Truck size={17} stroke={2} /></span>
                   <div className="min-w-0 flex-1"><div className="text-[12.5px] font-extrabold text-ink">{c.name}</div><div className="mt-0.5 text-[10px] font-medium text-muted-2">{L(c.dEs, c.dEn)}</div></div>
                   <span className="text-[13px] font-extrabold text-ink">{c.rate}</span>

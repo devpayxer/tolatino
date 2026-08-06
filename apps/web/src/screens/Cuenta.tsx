@@ -70,7 +70,7 @@ const orderStageKey = (o: MyOrder): string => {
 type Notifs = { posts: boolean; follows: boolean; events: boolean; marketing: boolean };
 const DEFAULT_NOTIFS: Notifs = { posts: true, follows: true, events: true, marketing: false };
 
-const cardCls = 'rounded-card border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card border border-line bg-white shadow-card';
 const inputCls =
   'w-full rounded-field border-[1.5px] border-lilac-line bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary';
 
@@ -258,7 +258,7 @@ export function CuentaScreen() {
       <button
         onClick={act.cargarMas}
         disabled={act.cargandoMas}
-        className="tap-y mx-auto mt-3 cursor-pointer rounded-btn border border-hair bg-white px-5 py-2.5 text-[13px] font-extrabold text-primary-dark shadow-card disabled:opacity-60"
+        className="tap-y mx-auto mt-3 cursor-pointer rounded-btn border border-line bg-white px-5 py-2.5 text-[13px] font-extrabold text-primary-dark shadow-card disabled:opacity-60"
       >
         {act.cargandoMas ? L('Cargando…', 'Loading…') : L('Ver más', 'Show more')}
       </button>
@@ -374,7 +374,7 @@ export function CuentaScreen() {
       {sec === 'home' && (
         <div className="flex flex-col gap-4">
           {guest && (
-            <div className="flex items-center gap-3 rounded-card border border-hair bg-white p-3.5 shadow-card">
+            <div className="flex items-center gap-3 rounded-card border border-line bg-white p-3.5 shadow-card">
               <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-lilac"><LogIn size={18} className="text-primary" stroke={2.2} /></span>
               <span className="min-w-0 flex-1 text-[12.5px] font-semibold text-ink-3">{L('Inicia sesión para editar tu perfil y guardar tu actividad.', 'Sign in to edit your profile and keep your activity.')}</span>
               <button onClick={() => router.push('/entrar/?entrar=1')} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Entrar', 'Sign in')}</button>
@@ -896,7 +896,7 @@ export function CuentaScreen() {
               {opts.map((o) => (
                 <button key={`${o.kind}-${o.refId}`}
                   onClick={() => { setPickPurchase(false); setNewClaim({ kind: o.kind, refId: o.refId, refCode: o.refCode, businessId: o.businessId, bizName: o.bizName }); setClaimReason(null); setClaimDetail(''); }}
-                  className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] border-hair px-3 py-2.5 text-left hover:border-primary">
+                  className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] border-line px-3 py-2.5 text-left hover:border-primary">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[12.5px] font-extrabold text-ink">{o.bizName}{o.refCode ? ` · ${o.refCode}` : ''}</span>
                     <span className="block truncate text-[11px] font-semibold text-muted">{o.sub}</span>
@@ -934,7 +934,7 @@ export function CuentaScreen() {
               ].map(([resEs, resEn]) => (
                 <button key={resEn} onClick={() => setClaimReason(resEs)}
                   className={`min-h-[44px] cursor-pointer rounded-field border-[1.5px] px-3.5 py-2.5 text-left text-[13px] font-bold ${
-                    claimReason === resEs ? 'border-primary bg-lilac-3 text-ink' : 'border-hair text-ink-soft'}`}>
+                    claimReason === resEs ? 'border-primary bg-lilac-3 text-ink' : 'border-line text-ink-soft'}`}>
                   {L(resEs, resEn)}
                 </button>
               ))}
@@ -1056,7 +1056,7 @@ export function CuentaScreen() {
           // Receipt (shared by tracking + the delivered screen). Store orders get
           // Amazon-style item thumbnails.
           const receipt = (
-            <div className="rounded-card border border-hair bg-white p-3.5 shadow-card">
+            <div className="rounded-card border border-line bg-white p-3.5 shadow-card">
               {(o.items ?? []).map((it, i) => (
                 <div key={i} className="flex items-center justify-between gap-3 py-0.5 text-[12.5px] font-semibold text-ink-2">
                   {isStore && (
@@ -1082,7 +1082,7 @@ export function CuentaScreen() {
 
           // Report / message the business (shared).
           const reportBlock = !reportOpen ? (
-            <button onClick={() => setReportOpen(true)} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+            <button onClick={() => setReportOpen(true)} className="flex w-full items-center gap-3 rounded-card border border-line bg-white p-3.5 text-left shadow-card">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-pink-bg"><Flag size={17} stroke={2.2} className="text-pink-dark" /></span>
               <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L('Reportar un problema', 'Report a problem')}</span><span className="block text-[11px] font-semibold text-muted">{L('¿Algo salió mal? Te ayudamos', 'Something wrong? We can help')}</span></span>
               <ChevronRight size={16} className="flex-none text-muted-2" />
@@ -1129,13 +1129,13 @@ export function CuentaScreen() {
                 </div>
 
                 {isDel && (
-                  <div className="relative mt-3 h-[118px] overflow-hidden rounded-card border border-hair" style={{ background: 'repeating-linear-gradient(135deg,#EAE2F8 0 11px,#DCCEF2 11px 22px)' }}>
+                  <div className="relative mt-3 h-[118px] overflow-hidden rounded-card border border-line" style={{ background: 'repeating-linear-gradient(135deg,#EAE2F8 0 11px,#DCCEF2 11px 22px)' }}>
                     <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-muted-2">{L('[ foto de entrega ]', '[ delivery photo ]')}</span>
                     {(f.instructions || f.address_label) && <span className="absolute bottom-2 left-2 max-w-[85%] truncate rounded-md bg-ink/80 px-2 py-1 text-[10px] font-bold text-white">{f.instructions || f.address_label}</span>}
                   </div>
                 )}
 
-                <div className="mt-3 flex items-center justify-between rounded-card border border-hair bg-white p-3.5 shadow-card">
+                <div className="mt-3 flex items-center justify-between rounded-card border border-line bg-white p-3.5 shadow-card">
                   <div className="min-w-0">
                     <div className="text-[13px] font-extrabold text-ink">{o.code ?? L('Pedido', 'Order')}</div>
                     <div className="truncate text-[11px] font-semibold text-muted">{(o.items?.length ?? 0)} {L('artículo(s)', 'item(s)')}{f.driver ? ` · ${L('Entregado por', 'Delivered by')} ${f.driver}` : ''}</div>
@@ -1144,7 +1144,7 @@ export function CuentaScreen() {
                 </div>
 
                 {/* quick rating → posts a real review for the business */}
-                <div className="mt-3 rounded-card border border-hair bg-white p-3.5 text-center shadow-card">
+                <div className="mt-3 rounded-card border border-line bg-white p-3.5 text-center shadow-card">
                   {rated ? (
                     <div className="text-[12.5px] font-extrabold text-green-dark">{L('¡Gracias por tu reseña!', 'Thanks for your review!')}</div>
                   ) : (
@@ -1163,12 +1163,12 @@ export function CuentaScreen() {
 
                 <div className="mt-4 text-[11px] font-extrabold uppercase tracking-wider text-muted-2">{L('¿Qué deseas hacer?', 'What would you like to do?')}</div>
                 <div className="mt-2 flex flex-col gap-2">
-                  <button onClick={() => { closeOrder(); router.push(`/negocios/?b=${o.businesses?.slug ?? ''}&bt=${isStore ? 'shop' : 'menu'}`); }} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+                  <button onClick={() => { closeOrder(); router.push(`/negocios/?b=${o.businesses?.slug ?? ''}&bt=${isStore ? 'shop' : 'menu'}`); }} className="flex w-full items-center gap-3 rounded-card border border-line bg-white p-3.5 text-left shadow-card">
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Repeat size={17} stroke={2.2} className="text-green-dark" /></span>
                     <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{isStore ? L('Volver a comprar', 'Buy again') : L('Volver a pedir', 'Order again')}</span><span className="block text-[11px] font-semibold text-muted">{isStore ? L('Vuelve a la tienda en un toque', 'Back to the store in one tap') : L('Repite este pedido en un toque', 'Reorder in one tap')}</span></span>
                     <ChevronRight size={16} className="flex-none text-muted-2" />
                   </button>
-                  <button onClick={() => setShowReceipt((v) => !v)} className="flex w-full items-center gap-3 rounded-card border border-hair bg-white p-3.5 text-left shadow-card">
+                  <button onClick={() => setShowReceipt((v) => !v)} className="flex w-full items-center gap-3 rounded-card border border-line bg-white p-3.5 text-left shadow-card">
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-lilac-2"><Receipt size={17} stroke={2.2} className="text-primary-dark" /></span>
                     <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{L('Ver recibo', 'View receipt')}</span><span className="block text-[11px] font-semibold text-muted">{o.code ?? ''} · {money(f.paid_total ?? o.total)}</span></span>
                     <ChevronRight size={16} className={`flex-none text-muted-2 transition-transform ${showReceipt ? 'rotate-90' : ''}`} />
@@ -1203,7 +1203,7 @@ export function CuentaScreen() {
 
               {/* map (illustrative) once a driver is on the way */}
               {stage === 'on_the_way' && (
-                <div className="relative mt-3 h-[128px] overflow-hidden rounded-card border border-hair" style={{ background: '#EAEEF6' }}>
+                <div className="relative mt-3 h-[128px] overflow-hidden rounded-card border border-line" style={{ background: '#EAEEF6' }}>
                   <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 128" preserveAspectRatio="none"><path d="M40 96 C 110 96, 120 40, 210 34" fill="none" stroke="#7B61FF" strokeWidth="3" strokeDasharray="6 6" strokeLinecap="round" /></svg>
                   <span className="absolute left-[34px] top-[86px] h-3.5 w-3.5 rounded-full border-2 border-white bg-green shadow-card" />
                   <span className="absolute right-[26px] top-[22px] flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card">{isStore ? <Truck size={15} stroke={2.4} /> : <Bike size={15} stroke={2.4} />}</span>
@@ -1253,7 +1253,7 @@ export function CuentaScreen() {
 
               {/* driver card */}
               {f.driver && (stage === 'on_the_way' || f.dispatch === 'assigned' || f.dispatch === 'picked_up') && (
-                <div className="mt-4 rounded-card border border-hair bg-white p-3 shadow-card">
+                <div className="mt-4 rounded-card border border-line bg-white p-3 shadow-card">
                   <div className="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-muted-2">{L('Tu repartidor', 'Your driver')}</div>
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-lilac-2 text-[13px] font-extrabold text-primary-dark">{driverIni}</span>
@@ -1271,7 +1271,7 @@ export function CuentaScreen() {
 
               {/* from / to (delivery) */}
               {isDel && f.address && (
-                <div className="mt-3 rounded-card border border-hair bg-white p-3.5 text-[12.5px] font-semibold shadow-card">
+                <div className="mt-3 rounded-card border border-line bg-white p-3.5 text-[12.5px] font-semibold shadow-card">
                   <div className="flex items-start gap-2.5">
                     <span className="mt-1 block h-2.5 w-2.5 flex-none rounded-full border-[2.5px] border-primary" />
                     <div className="min-w-0"><div className="text-[9.5px] font-extrabold uppercase tracking-wider text-muted-2">{L('Desde', 'From')}</div><div className="truncate text-ink">{bizName}</div></div>

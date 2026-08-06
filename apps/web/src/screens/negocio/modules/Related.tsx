@@ -148,7 +148,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
 
   if (admin.loading || loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-hair bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -156,7 +156,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
 
   if (!active) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -176,7 +176,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
     const role = r.direction === 'out' ? roleLabel(r) : null; // role describes the target only
     const pending = r.status === 'pending';
     return (
-      <div key={r.relationId} className="flex items-center gap-3 rounded-tile border border-hair bg-white p-3">
+      <div key={r.relationId} className="flex items-center gap-3 rounded-tile border border-line bg-white p-3">
         <span className="h-11 w-11 flex-none rounded-btn" style={{ background: tileBg(r.tileA, r.tileB) }} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
@@ -214,7 +214,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
   return (
     <>
       <div className="mx-auto max-w-[640px]">
-        <div className="rounded-card border border-hair bg-white p-4 shadow-card md:p-5">
+        <div className="rounded-card border border-line bg-white p-4 shadow-card md:p-5">
           <div className="mb-1 flex items-center gap-2 text-[13px] font-extrabold text-ink">
             <Link2 size={16} stroke={2.2} className="text-primary-dark" />
             {L('Listados relacionados', 'Related listings')}
@@ -305,7 +305,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
               </div>
               <div className="flex flex-col gap-2">
                 {ownOthers.map((b) => (
-                  <div key={b.id} className="flex items-center gap-3 rounded-tile border border-hair bg-white p-3">
+                  <div key={b.id} className="flex items-center gap-3 rounded-tile border border-line bg-white p-3">
                     <span className="h-11 w-11 flex-none rounded-btn" style={{ background: tileBg(b.tile_a, b.tile_b) }} />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
@@ -433,7 +433,7 @@ function LinkSheet({
               <button
                 key={c.id}
                 onClick={() => setPicked(c)}
-                className="flex cursor-pointer items-center gap-3 rounded-tile border border-hair bg-white p-3 text-left hover:border-lilac-ring"
+                className="flex cursor-pointer items-center gap-3 rounded-tile border border-line bg-white p-3 text-left hover:border-lilac-ring"
               >
                 <span className="h-10 w-10 flex-none rounded-btn" style={{ background: tileBg(c.tileA, c.tileB) }} />
                 <span className="min-w-0 flex-1">
@@ -453,7 +453,7 @@ function LinkSheet({
       ) : (
         <>
           <OverlayTitle title={L('Relación', 'Link')} onClose={onClose} onBack={() => setPicked(null)} />
-          <div className="flex items-center gap-3 rounded-tile border border-hair bg-app p-3">
+          <div className="flex items-center gap-3 rounded-tile border border-line bg-app p-3">
             <span className="h-11 w-11 flex-none rounded-btn" style={{ background: tileBg(picked.tileA, picked.tileB) }} />
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">

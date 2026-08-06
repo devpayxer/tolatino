@@ -115,7 +115,7 @@ export function ReportSheet({
             {reasons.map(([resEs, resEn]) => (
               <button key={resEn} onClick={() => setReason(resEs)}
                 className={`min-h-[44px] cursor-pointer rounded-field border-[1.5px] px-3.5 py-2.5 text-left text-[13px] font-bold ${
-                  reason === resEs ? 'border-primary bg-lilac-3 text-ink' : 'border-hair text-ink-soft'}`}>
+                  reason === resEs ? 'border-primary bg-lilac-3 text-ink' : 'border-line text-ink-soft'}`}>
                 {L(resEs, resEn)}
               </button>
             ))}

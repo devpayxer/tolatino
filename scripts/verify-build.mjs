@@ -337,6 +337,30 @@ try {
   } else {
     colorMsg = `  Fondo: lienzo rgb(${lRgb.join(' ')}) y campos rgb(${cRgb.join(' ')}) — distintos, los campos se ven`;
   }
+
+  // Con el lienzo en BLANCO, una tarjeta blanca ya no se distingue por su
+  // relleno: la delimita `border-line`, y nada más. Si alguien la devuelve al
+  // tono de los divisores (`hair`), las tarjetas se desvanecen y la app se ve
+  // como un documento plano — es el fallo que este cambio podía dejar servido.
+  // Se compone el borde SOBRE el lienzo y se exige un salto perceptible.
+  const alfaDe = (clase) => {
+    const m = css.match(new RegExp(`\\.${clase}\\{border-color:rgba\\(([\\d.,\\s]+)\\)`));
+    if (!m) return null;
+    const p = m[1].split(',').map((x) => parseFloat(x.trim()));
+    return p.length === 4 ? { rgb: p.slice(0, 3), a: p[3] } : null;
+  };
+  const linea = alfaDe('border-line');
+  if (lRgb && linea) {
+    // luminancia simple; el borde compuesto sobre el lienzo
+    const lum = ([r, g, b]) => 0.299 * r + 0.587 * g + 0.114 * b;
+    const compuesto = linea.rgb.map((c, i) => c * linea.a + lRgb[i] * (1 - linea.a));
+    const salto = Math.round(lum(lRgb) - lum(compuesto));
+    if (salto < 22) {
+      colorFail.push(`el contorno de las tarjetas casi no se ve sobre el lienzo (salto ${salto}, mínimo 22) — en blanco, el borde es lo ÚNICO que separa una tarjeta del fondo`);
+    } else {
+      colorMsg += `\n  Tarjetas: contorno a ${salto} puntos del lienzo — se distinguen sobre blanco`;
+    }
+  }
 } catch (e) {
   colorMsg = `  Fondo: no se pudo comprobar (${e.message})`;
 }

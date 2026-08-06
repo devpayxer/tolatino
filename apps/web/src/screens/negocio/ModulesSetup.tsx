@@ -99,7 +99,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
           const on = !isFree && mods[m.key];
           const rec = m.key === recKey;
           return (
-            <div key={m.key} className={`relative rounded-card-sm border bg-white p-4 shadow-card ${on ? 'border-[rgba(123,97,255,.35)] ring-1 ring-[rgba(123,97,255,.18)]' : rec ? 'border-[rgba(123,97,255,.25)]' : 'border-hair'}`}>
+            <div key={m.key} className={`relative rounded-card-sm border bg-white p-4 shadow-card ${on ? 'border-[rgba(123,97,255,.35)] ring-1 ring-[rgba(123,97,255,.18)]' : rec ? 'border-[rgba(123,97,255,.25)]' : 'border-line'}`}>
               <div className="flex items-start justify-between gap-2">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn" style={{ background: m.bg }}>
                   <m.Icon size={21} strokeWidth={2.2} className="text-primary-dark" />
@@ -125,7 +125,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
 
       {/* what turns on automatically once you sell — removes the "do I need to set
           up Pedidos/Entregas/Pagos too?" confusion */}
-      <div className="rounded-card-sm border border-hair bg-white p-4 shadow-card">
+      <div className="rounded-card-sm border border-line bg-white p-4 shadow-card">
         <div className="text-[12.5px] font-extrabold text-ink">{L('Al activar ventas, To’Latino agrega solo:', 'When you start selling, To’Latino adds automatically:')}</div>
         <div className="mt-2.5 flex flex-wrap gap-x-2 gap-y-[18px]">
           {[
@@ -143,7 +143,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
 
       {/* extra: Novedades (engagement, not selling) */}
       <div className="px-0.5 text-[11px] font-bold uppercase tracking-[.05em] text-muted-2">{L('Extra', 'Extra')}</div>
-      <div className={`flex items-center gap-3 rounded-card-sm border bg-white p-4 shadow-card ${updatesOn ? 'border-[rgba(123,97,255,.35)]' : 'border-hair'}`}>
+      <div className={`flex items-center gap-3 rounded-card-sm border bg-white p-4 shadow-card ${updatesOn ? 'border-[rgba(123,97,255,.35)]' : 'border-line'}`}>
         <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn" style={{ background: '#F1EFFA' }}><Megaphone size={21} strokeWidth={2.2} className="text-primary-dark" /></span>
         <div className="min-w-0 flex-1">
           <div className="text-[14px] font-extrabold text-ink">{L('Novedades', 'Updates')}</div>

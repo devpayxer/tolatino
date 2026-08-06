@@ -131,7 +131,7 @@ export function NotifPanel() {
         <button
           onClick={loadMore}
           disabled={loadingMore}
-          className="mx-auto mt-2 block cursor-pointer rounded-full border border-hair bg-white px-4 py-2 text-[12.5px] font-extrabold text-primary-dark disabled:opacity-60"
+          className="mx-auto mt-2 block cursor-pointer rounded-full border border-line bg-white px-4 py-2 text-[12.5px] font-extrabold text-primary-dark disabled:opacity-60"
         >
           {loadingMore ? L('Cargando…', 'Loading…') : L('Ver avisos anteriores', 'Show earlier alerts')}
         </button>

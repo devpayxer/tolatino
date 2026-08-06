@@ -112,7 +112,7 @@ export function PostCard({
   const pollTotal = pollCounts.reduce((a, b) => a + b, 0);
 
   return (
-    <div className="rounded-card border border-hair bg-white p-[18px] shadow-card">
+    <div className="rounded-card border border-line bg-white p-[18px] shadow-card">
       <div className="flex items-start gap-3">
         {onOpenAuthor && post.authorId && !preview ? (
           <button onClick={() => onOpenAuthor(post.authorId as string)} className="flex-none cursor-pointer" aria-label={post.name}>
@@ -261,7 +261,7 @@ export function PostCard({
             {post.businessSlug && <ChevronRight size={15} stroke={2.4} className="flex-none text-muted-2" aria-hidden />}
           </>
         );
-        const cls = 'mt-[11px] inline-flex max-w-full items-center gap-2 rounded-btn border border-hair bg-app px-3 py-2';
+        const cls = 'mt-[11px] inline-flex max-w-full items-center gap-2 rounded-btn border border-line bg-app px-3 py-2';
         return post.businessSlug && !preview ? (
           <a href={`/negocios/?b=${encodeURIComponent(post.businessSlug)}`} className={`${cls} cursor-pointer hover:border-hair-strong`}>
             {inner}

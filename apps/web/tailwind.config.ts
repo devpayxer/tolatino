@@ -39,8 +39,12 @@ const config: Config = {
         // blanco» no es tocar este token: hacerlo borra 104 campos para
         // arreglar 7 fondos. El lienzo vive en `canvas`, aquí abajo.
         app: '#F4F2F9', // relleno de campos y pozos sobre blanco (nombre heredado)
-        canvas: '#FBFAFE', // EL FONDO de la app — mismo valor que `page` (la portada)
-        dash: '#E7E5EC', // dashboard background
+        // EL FONDO de la app. Blanco por decisión del fundador (2026-08-06):
+        // «ese gris no me gusta, no se combina bien». En blanco puro una tarjeta
+        // blanca ya no se distingue por su relleno, así que la delimita el
+        // BORDE (`border-line`, abajo) — el patrón de Yelp y Google Business.
+        canvas: '#FFFFFF',
+        dash: '#FFFFFF', // el panel comparte lienzo con la app (antes #E7E5EC)
         teal: { DEFAULT: '#0E9384', bg: '#D6F3EF' }, // poll tag
         // ── Landing pública v3 (handoff "ToLatino Home", variante B, 2026-07-29) ──
         // Superficies oscuras e inmersivas que antes no existían en el sistema.
@@ -87,7 +91,15 @@ const config: Config = {
         },
       },
       borderColor: {
-        hair: 'rgba(30,27,46,.08)', // subtle card borders / dividers
+        // DOS papeles distintos, dos tokens — misma lección que `canvas`/`app`:
+        //  · `line`  delimita una SUPERFICIE (tarjeta, chip, campo) contra el
+        //    lienzo. Con el lienzo en blanco es lo ÚNICO que separa una tarjeta
+        //    blanca del fondo, así que tiene que verse: .13 es la zona en la que
+        //    trabajan Yelp (~.15) y Google Business (#DADCE0 ≈ .14).
+        //  · `hair`  separa filas DENTRO de una superficie. Ahí no hay que
+        //    delimitar nada, solo respirar: subirlo llenaría la app de rayas.
+        line: 'rgba(30,27,46,.13)', // contorno de tarjetas y superficies
+        hair: 'rgba(30,27,46,.08)', // divisores internos
         'hair-strong': 'rgba(30,27,46,.12)',
       },
       fontFamily: {

@@ -262,7 +262,7 @@ export function CollectionEditor({
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
+        <div className="flex items-center gap-3 rounded-field border border-line bg-app p-3">
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] font-bold text-ink">{L('Destacar en el listado', 'Feature on listing')}</div>
             <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('Aparece como franja en tu tienda pública.', 'Shows as a strip on your public shop.')}</div>
@@ -384,7 +384,7 @@ export function DiscountEditor({
             <input value={minOrder} onChange={(e) => setMinOrder(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0" inputMode="decimal" className="min-w-0 flex-1 border-none bg-transparent px-1 py-2.5 text-[13px] font-semibold text-ink outline-none" />
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-field border border-hair bg-app p-3">
+        <div className="flex items-center gap-3 rounded-field border border-line bg-app p-3">
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] font-bold text-ink">{L('Aplicar automáticamente', 'Apply automatically')}</div>
             <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-muted-2">{L('Sin que el cliente escriba el código.', 'No code needed at checkout.')}</div>

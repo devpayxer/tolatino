@@ -222,7 +222,7 @@ export function PanelScreen() {
   const bizAvatar = (cls: string) =>
     real?.logo_url ? (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={imgUrl(real.logo_url, ANCHO.icono)} alt="" className={`${cls} flex-none border border-hair object-cover`} />
+      <img src={imgUrl(real.logo_url, ANCHO.icono)} alt="" className={`${cls} flex-none border border-line object-cover`} />
     ) : (
       <span className={`${cls} flex flex-none items-center justify-center font-extrabold text-white`} style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
         {bizInitials}
@@ -316,7 +316,7 @@ export function PanelScreen() {
   const ownPage = real?.slug ? `/negocios?b=${real.slug}` : '/negocios';
 
   const sidebar = (
-    <div className="flex h-full w-[264px] flex-none flex-col border-r border-hair bg-white">
+    <div className="flex h-full w-[264px] flex-none flex-col border-r border-line bg-white">
       {/* business card */}
       <div className="border-b border-hair p-4">
         <div className="h-2 rounded-full" style={{ background: `repeating-linear-gradient(135deg,${catTile})` }} />
@@ -352,7 +352,7 @@ export function PanelScreen() {
             {switcherOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setSwitcherOpen(false)} />
-                <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-40 overflow-hidden rounded-card-sm border border-hair bg-white shadow-modal">
+                <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-40 overflow-hidden rounded-card-sm border border-line bg-white shadow-modal">
                   <div className="max-h-[240px] overflow-y-auto p-1.5">
                     {admin.businesses.map((b) => {
                       const on = b.id === admin.activeId;
@@ -479,7 +479,7 @@ export function PanelScreen() {
   if (!admin.loading && !admin.revalidando && !real) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-dash px-6 py-12">
-        <div className="w-full max-w-[380px] rounded-card border border-hair bg-white p-6 text-center shadow-card">
+        <div className="w-full max-w-[380px] rounded-card border border-line bg-white p-6 text-center shadow-card">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
             <Store size={26} stroke={2.2} className="text-primary" />
           </span>
@@ -549,7 +549,7 @@ export function PanelScreen() {
   return (
     <div className="flex min-h-screen flex-col bg-dash">
       {/* topbar */}
-      <header className={`sticky top-0 z-30 border-b backdrop-blur-[8px] ${isInicio ? 'border-transparent bg-ink lg:border-hair lg:bg-[rgba(255,255,255,.95)]' : 'border-hair bg-[rgba(255,255,255,.95)]'}`}>
+      <header className={`sticky top-0 z-30 border-b backdrop-blur-[8px] ${isInicio ? 'border-transparent bg-ink lg:border-line lg:bg-[rgba(255,255,255,.95)]' : 'border-line bg-[rgba(255,255,255,.95)]'}`}>
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 md:px-5">
           <button
             onClick={() => setDrawer(true)}
@@ -583,7 +583,7 @@ export function PanelScreen() {
               />
             </div>
             {jumpOpen && jumpMatches.length > 0 && (
-              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 overflow-hidden rounded-card-sm border border-hair bg-white p-1.5 shadow-modal">
+              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 overflow-hidden rounded-card-sm border border-line bg-white p-1.5 shadow-modal">
                 {jumpMatches.map((m) => (
                   <button key={m.id} onMouseDown={(e) => e.preventDefault()} onClick={() => { ctx.go(m.id); setJumpQ(''); setJumpOpen(false); }} className="tap-y flex w-full cursor-pointer items-center rounded-btn px-2.5 py-2 text-left hover:bg-app">
                     <span className="text-[12.5px] font-bold text-ink-soft">{m.label}</span>
@@ -615,7 +615,7 @@ export function PanelScreen() {
               {bellOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
-                  <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-[262px] overflow-hidden rounded-card-sm border border-hair bg-white shadow-modal">
+                  <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-[262px] overflow-hidden rounded-card-sm border border-line bg-white shadow-modal">
                     <div className="border-b border-hair px-3.5 py-2.5 text-[12px] font-extrabold text-ink">{L('Avisos', 'Alerts')}</div>
                     {bellRows.length > 0 ? (
                       <div className="p-1.5">
@@ -701,7 +701,7 @@ export function PanelScreen() {
           {/* demo plan switcher inside billing — lets you preview each tier when
               exploring without a real listing; a real business shows its own plan */}
           {tab === 'billing' && !real && (
-            <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-[18px] rounded-card-sm border border-hair bg-white p-3.5 shadow-card">
+            <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-[18px] rounded-card-sm border border-line bg-white p-3.5 shadow-card">
               <span className="text-[12px] font-extrabold text-ink">{L('Vista previa del plan:', 'Preview plan:')}</span>
               {(
                 [
@@ -748,7 +748,7 @@ export function PanelScreen() {
       </div>
 
       {/* mobile bottom tabs — adaptive (see bottomItems): seller vs listing-only */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-hair bg-white pb-[max(env(safe-area-inset-bottom),8px)] pt-1.5 lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-line bg-white pb-[max(env(safe-area-inset-bottom),8px)] pt-1.5 lg:hidden">
         {bottomItems.map(([k, Icon, label, badge]) => {
           const active = tab === k;
           return (

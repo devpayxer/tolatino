@@ -130,7 +130,7 @@ export function PostMenu({ post }: { post: Post }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-9 z-50 w-48 overflow-hidden rounded-2xl border border-hair bg-white p-1 shadow-pop">
+          <div className="absolute right-0 top-9 z-50 w-48 overflow-hidden rounded-2xl border border-line bg-white p-1 shadow-pop">
             {isOwner ? (
               <>
                 <button
@@ -235,7 +235,7 @@ export function PostMenu({ post }: { post: Post }) {
                   key={en}
                   onClick={() => setReason(es)}
                   className={`cursor-pointer rounded-field border-[1.5px] px-3.5 py-2.5 text-left text-[13px] font-bold ${
-                    reason === es ? 'border-primary bg-[#FAF9FE] text-ink' : 'border-hair text-ink-soft'
+                    reason === es ? 'border-primary bg-[#FAF9FE] text-ink' : 'border-line text-ink-soft'
                   }`}
                 >
                   {L(es, en)}

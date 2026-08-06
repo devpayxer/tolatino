@@ -321,7 +321,7 @@ export function AddressModal() {
                           onKeyDown={(e) => e.key === 'Enter' && saveEdit(a.id)}
                           onBlur={() => saveEdit(a.id)}
                           placeholder={L('Etiqueta', 'Label')}
-                          className="mt-1 w-full rounded-[8px] border border-hair-strong bg-white px-2 py-1 text-[12.5px] font-bold outline-none"
+                          className="mt-1 w-full rounded-[8px] border border-line-strong bg-white px-2 py-1 text-[12.5px] font-bold outline-none"
                         />
                       ) : (
                         <span className="mt-0.5 block text-[12.5px] font-bold text-ink-body">{a.formatted}</span>

@@ -115,7 +115,7 @@ export function HoursEditor({
       {week.map((day, d) => {
         const open = day.length > 0;
         return (
-          <div key={d} className="rounded-tile border-[1.5px] border-hair bg-white p-3">
+          <div key={d} className="rounded-tile border-[1.5px] border-line bg-white p-3">
             <div className="flex items-center justify-between gap-3">
               <span className="min-w-0 truncate text-[13px] font-extrabold text-ink">{L(DAY_ES[d], DAY_EN[d])}</span>
               <div className="flex flex-none rounded-full bg-lilac-2 p-0.5">

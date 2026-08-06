@@ -21,7 +21,7 @@ import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { supabase } from '@/lib/supabase';
 import { useScrollLock } from '@/lib/scrollLock';
 
-const cardCls = 'rounded-card-sm border border-hair bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
 
 type Sub = 'plan' | 'compare' | 'methods' | 'invoices';
 type AddonKey = 'featured' | 'boost' | 'seats' | 'sms';
@@ -95,7 +95,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     flash(error === 'no subscription' ? L('No tienes una suscripción activa', 'No active subscription') : L('No se pudo abrir el portal', 'Could not open the portal'));
   };
   const portalCta = (
-    <div className="mx-auto max-w-md rounded-card border border-hair bg-white p-6 text-center shadow-card">
+    <div className="mx-auto max-w-md rounded-card border border-line bg-white p-6 text-center shadow-card">
       <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lilac"><Lock size={22} className="text-primary" stroke={2.2} /></span>
       <div className="mt-3 text-[14px] font-extrabold text-ink">{L('Administra tus pagos en Stripe', 'Manage payments in Stripe')}</div>
       <p className="mt-1.5 text-[12px] font-semibold leading-relaxed text-muted">
@@ -339,7 +339,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {addonDefs.map((a) => {
           const on = addons[a.key];
           return (
-            <div key={a.key} className={`flex items-center gap-2.5 rounded-tile border p-2.5 ${on ? 'border-[rgba(123,97,255,.25)] bg-lilac-3' : 'border-hair bg-white'}`}>
+            <div key={a.key} className={`flex items-center gap-2.5 rounded-tile border p-2.5 ${on ? 'border-[rgba(123,97,255,.25)] bg-lilac-3' : 'border-line bg-white'}`}>
               <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px]" style={{ background: a.bg }}>
                 <a.Icon size={16} strokeWidth={2.2} style={{ color: a.c }} />
               </span>
@@ -576,7 +576,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {planOpts.map((p) => {
           const on = pick === p.key;
           return (
-            <button key={p.key} onClick={() => setPick(p.key)} className={`cursor-pointer rounded-card border-2 p-4 text-left ${on ? 'border-primary bg-lilac-3' : 'border-hair bg-white'}`}>
+            <button key={p.key} onClick={() => setPick(p.key)} className={`cursor-pointer rounded-card border-2 p-4 text-left ${on ? 'border-primary bg-lilac-3' : 'border-line bg-white'}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={`text-[16px] font-extrabold ${p.key === 'premium' ? 'text-ink' : 'text-primary-dark'}`}>{p.name}</span>
@@ -662,7 +662,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 ? L(`Tu plan sigue activo hasta el final del periodo (${renewDate}). Después tu listado pasa a Free.`, `Your plan stays active until the end of the period (${renewDate}). After that your listing reverts to Free.`)
                 : L('Tu plan sigue activo hasta el 14 de noviembre. Después tu listado pasa a Free.', 'Your plan stays active until Nov 14. After that your listing reverts to Free.')}
             </div>
-            <div className="mt-3.5 rounded-tile border border-hair bg-white p-3">
+            <div className="mt-3.5 rounded-tile border border-line bg-white p-3">
               <div className="mb-2 text-[11px] font-extrabold text-amber-ink">{L('PERDERÁS:', "YOU'LL LOSE:")}</div>
               <div className="flex flex-col gap-1.5">
                 {[

@@ -319,7 +319,7 @@ export function AutosScreen() {
         const el = document.createElement('button');
         el.type = 'button';
         el.className = `cursor-pointer whitespace-nowrap rounded-full border px-3 py-2 text-[11px] font-extrabold shadow-pop transition-transform ${
-          sel ? 'z-10 scale-110 border-ink bg-ink text-white' : 'border-hair bg-white text-ink'}`;
+          sel ? 'z-10 scale-110 border-ink bg-ink text-white' : 'border-line bg-white text-ink'}`;
         el.textContent = fmtAuPrice(p.price);
         el.onclick = () => setMapSelId(p.id);
         return new ml.Marker({ element: el }).setLngLat([p.lng, p.lat]).addTo(map);
@@ -761,7 +761,7 @@ export function AutosScreen() {
                 {d.feats.length > 0 && (
                   <div className="mt-3.5 flex flex-wrap gap-2">
                     {d.feats.map((f, i) => (
-                      <span key={i} className="flex items-center gap-1.5 rounded-field border border-hair bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
+                      <span key={i} className="flex items-center gap-1.5 rounded-field border border-line bg-white px-3 py-2 text-[11px] font-bold text-ink-soft">
                         <Check size={13} stroke={2.8} className="text-green" /> {L(f.es, f.en || f.es)}
                       </span>
                     ))}
@@ -808,7 +808,7 @@ export function AutosScreen() {
                   {similar == null ? (
                     <div className="py-4 text-center text-[12px] font-semibold text-muted-2">{L('Cargando…', 'Loading…')}</div>
                   ) : similar.length === 0 ? (
-                    <div className="rounded-card-sm border border-dashed border-hair bg-white py-5 text-center text-[12px] font-semibold text-muted-2">{L('No hay autos similares por ahora.', 'No similar cars right now.')}</div>
+                    <div className="rounded-card-sm border border-dashed border-line bg-white py-5 text-center text-[12px] font-semibold text-muted-2">{L('No hay autos similares por ahora.', 'No similar cars right now.')}</div>
                   ) : (
                     <div className="no-scrollbar -mx-3.5 flex gap-3 overflow-x-auto px-3.5 pb-1">
                       {similar.map((p) => (
@@ -842,7 +842,7 @@ export function AutosScreen() {
             </div>
 
             {/* mobile sticky CTA bar */}
-            <div className="fixed inset-x-0 bottom-[62px] z-40 border-t border-hair bg-white px-3.5 py-2.5 md:bottom-0 lg:hidden">
+            <div className="fixed inset-x-0 bottom-[62px] z-40 border-t border-line bg-white px-3.5 py-2.5 md:bottom-0 lg:hidden">
               <div className="mx-auto max-w-[720px]">{detailCtas}</div>
             </div>
           </div>
@@ -861,7 +861,7 @@ export function AutosScreen() {
 
               {/* search + filters */}
               <div className="mb-3 flex gap-2.5">
-                <button onClick={() => setView('buscar')} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-hair bg-white px-3.5 text-left shadow-card">
+                <button onClick={() => setView('buscar')} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5 text-left shadow-card">
                   <Search size={16} stroke={2.2} className="flex-none text-muted-2" />
                   <span className="min-w-0 flex-1 truncate py-3 text-[13px] font-semibold text-muted-2">{L('Marca, modelo o palabra', 'Make, model or keyword')}</span>
                 </button>
@@ -881,7 +881,7 @@ export function AutosScreen() {
               </div>
 
               {/* BHPH prominent toggle (the Latino hook) */}
-              <button onClick={() => setBhph(!bhph)} className={`mb-4 flex w-full cursor-pointer items-center gap-3 rounded-card border-[1.5px] p-3 text-left transition-colors ${bhph ? 'border-amber bg-amber-bg' : 'border-hair bg-white'}`}>
+              <button onClick={() => setBhph(!bhph)} className={`mb-4 flex w-full cursor-pointer items-center gap-3 rounded-card border-[1.5px] p-3 text-left transition-colors ${bhph ? 'border-amber bg-amber-bg' : 'border-line bg-white'}`}>
                 <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-tile ${bhph ? 'bg-amber' : 'bg-amber-bg'}`}><Coin size={20} stroke={2} className="text-amber-ink" /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-extrabold text-ink">{L('Aquí pagas aquí', 'Buy-here pay-here')}</span>
@@ -942,7 +942,7 @@ export function AutosScreen() {
                   <div className="mb-2.5 text-[14px] font-extrabold text-ink">{L('Marcas populares', 'Popular brands')}</div>
                   <div className="no-scrollbar -mx-3.5 flex gap-2.5 overflow-x-auto px-3.5">
                     {AU_MAKES.map((mk) => (
-                      <button key={mk} onClick={() => { setFilters({ ...EMPTY_FILTERS, make: mk }); setView('buscar'); }} className="flex h-[64px] w-[84px] flex-none cursor-pointer flex-col items-center justify-center gap-1.5 rounded-tile border border-hair bg-white shadow-card">
+                      <button key={mk} onClick={() => { setFilters({ ...EMPTY_FILTERS, make: mk }); setView('buscar'); }} className="flex h-[64px] w-[84px] flex-none cursor-pointer flex-col items-center justify-center gap-1.5 rounded-tile border border-line bg-white shadow-card">
                         <Car size={20} stroke={2} className="text-primary-dark" />
                         <span className="text-[10.5px] font-extrabold text-ink-soft">{mk}</span>
                       </button>
@@ -994,7 +994,7 @@ export function AutosScreen() {
             <div>
               {viewHeader(L('Buscar autos', 'Search cars'), app.cityShort)}
               <div className="mb-3 flex gap-2.5">
-                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-hair bg-white px-3.5 shadow-card">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5 shadow-card">
                   <Search size={16} stroke={2.2} className="flex-none text-muted-2" />
                   {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
                   <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={L('Marca, modelo o palabra', 'Make, model or keyword')} className="min-w-0 flex-1 bg-transparent py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
@@ -1053,7 +1053,7 @@ export function AutosScreen() {
                   <div className="mt-1 text-[12.5px] font-semibold text-muted">{results.length === 0 ? L('No hay autos con estos filtros.', 'No cars match these filters.') : L('Estos autos no tienen ubicación exacta.', 'These cars have no exact location.')}</div>
                 </Card>
               ) : (
-                <div className="relative overflow-hidden rounded-card border border-hair shadow-card">
+                <div className="relative overflow-hidden rounded-card border border-line shadow-card">
                   <div ref={mapDiv} className="h-[60vh] w-full lg:h-[68vh]" />
                   {mapSel && <div className="absolute inset-x-3 bottom-3">{rowH(mapSel)}</div>}
                 </div>
@@ -1086,7 +1086,7 @@ export function AutosScreen() {
                             <div className="mt-0.5 text-[14px] font-extrabold text-ink">{fmtAuPrice(c.price)}</div>
                           </div>
                         </Card>
-                        <div className="mt-2 rounded-card border border-hair bg-white text-[11px] shadow-card">
+                        <div className="mt-2 rounded-card border border-line bg-white text-[11px] shadow-card">
                           {[
                             [L('Enganche', 'Down'), c.down != null ? fmtAuPrice(c.down) : '—'],
                             [L('Mensual', 'Monthly'), `${moStr(c.price, c.down)}`],
@@ -1608,7 +1608,7 @@ export function AutosScreen() {
           <>
             <OverlayTitle title={L('Mensaje al dealer', 'Message dealer')} onClose={() => setContact(null)} />
             {d.bizName && (
-              <div className="mb-3 flex items-center gap-3 rounded-card-sm border border-hair bg-white p-3">
+              <div className="mb-3 flex items-center gap-3 rounded-card-sm border border-line bg-white p-3">
                 {d.bizLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={imgUrl(d.bizLogo, ANCHO.icono)} alt="" className="h-10 w-10 flex-none rounded-tile object-cover" />

@@ -23,7 +23,7 @@ import { useBizAdmin } from '@/lib/bizAdmin';
 import { fetchBusinessMetrics, tzDayKeys } from '@/lib/live';
 import { activeMods, type PanelCtx, type TabKey } from '@/screens/negocio/tabs';
 
-const card = 'rounded-card-sm border border-hair bg-white shadow-card';
+const card = 'rounded-card-sm border border-line bg-white shadow-card';
 
 type OrderRow = { id: string; code: string | null; customer: string | null; items: { name: string; qty: number }[]; total: number; channel: string; status: string; created_at: string };
 type ReviewRow = { id: string; name: string; rating: number; replied: boolean; created_at: string };
