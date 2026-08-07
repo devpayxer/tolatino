@@ -2464,8 +2464,66 @@ backing them with real Supabase tables/RPCs when each feature goes live.
 - [ ] **Frontend host: Vercel → Cloudflare Pages.** Currently auto-deploys on
   **Vercel** (Git integration). `CLAUDE.md` target is **Cloudflare Pages** (free,
   cheap bandwidth). Revisit before scale.
-- [ ] **PWA / app stores.** Wrap with **Capacitor** for native app-store
-  presence later; add offline/install polish.
+- [ ] **App stores (iOS + Android) — plan medido, 2026-08-06.** El fundador
+  preguntó qué pasos hay que dar. Lo estudiado sobre ESTE repo:
+
+  **Lo que ya juega a favor.** El build es `output: 'export'` + `trailingSlash`
+  → la carpeta `apps/web/out` es exactamente lo que Capacitor empaqueta, sin
+  servidor. Ya hay `manifest.ts`, `sw.js`, iconos 192/512/maskable y
+  apple-touch-icon. Y no hay login social (solo OTP y contraseña), así que
+  **Apple NO exige «Sign in with Apple»** — eso solo se dispara si ofreces
+  Google/Facebook.
+
+  **Fase 0 — código, gratis, sin cuentas (se puede hacer YA):**
+  - [ ] Los **12 usos de `window.location.origin`** (auth.tsx ×2, stripe.ts,
+    CheckoutSheet, PostCard, BizDetail, Eventos, Autos ×2, BienesRaices,
+    RealEstate, Events). Dentro del envoltorio el origen es
+    `capacitor://localhost`, así que HOY se romperían: los enlaces mágicos del
+    correo llegarían a `localhost`, los enlaces para compartir también, y el
+    `return_url` de Stripe igual. Se arregla con un `siteUrl()` que devuelva
+    siempre `https://tolatino.com` y se barre en los 12.
+  - [ ] **Enlaces profundos**: servir `/.well-known/apple-app-site-association`
+    y `/.well-known/assetlinks.json` desde tolatino.com para que
+    `tolatino.com/negocios/?b=…` abra la app en vez del navegador.
+  - [ ] Probar el export dentro de un WebView antes de tocar ninguna tienda.
+
+  **Fase 1 — Android primero (barato y sin 30%):** Google Play acepta un
+  **TWA/Bubblewrap** (la PWA empaquetada), $25 una sola vez, sin segundo
+  código. Es el camino corto para tener presencia real en tienda.
+
+  **Fase 2 — iOS con Capacitor:** $99/año, y Apple rechaza envoltorios vacíos
+  (guía 4.2 «funcionalidad mínima»), así que hay que dar de verdad lo nativo:
+  - [ ] **Push nativo (FCM + APNs)**: el Web Push actual NO funciona dentro de
+    un WKWebView. Hay que mandar el token nativo a la misma tabla que ya usa
+    `send-push`.
+  - [ ] **Escáner QR nativo**: hoy usa `BarcodeDetector`, que solo existe en
+    Chromium — en iOS no funciona **ni en el navegador**. Con el plugin nativo
+    funcionaría por primera vez en iPhone. (Ya está en §3 como pendiente.)
+  - [ ] Compartir, cámara y ubicación por plugin; splash e iconos nativos.
+
+  **⚠️ La trampa cara — comisión de las tiendas.** Apple y Google cobran 15–30%
+  de lo que se venda DENTRO de la app, pero **exceptúan bienes físicos y
+  servicios del mundo real**. O sea: Pedidos, Reservas, Renta y Boletos se
+  cobran con Stripe **sin comisión de tienda** — todo el mercado está a salvo.
+  Lo que **NO** está exento es la **suscripción del negocio (Verified/Premium)**:
+  desbloquea funciones dentro de la app, así que Apple exigiría su compra
+  integrada (30%, o 15% en el programa de pequeñas empresas).
+  → **Recomendación: la primera app es la del CLIENTE.** No vende nada digital,
+  así que no toca la comisión. El panel del negocio se queda en la web (donde
+  la suscripción se cobra íntegra) y se valora una app de negocio aparte más
+  tarde, como hacen Yelp, DoorDash y Fresha.
+
+  **⚠️ Orden que no se puede invertir:** los revisores de Apple y Google
+  **usan la app**. Con Stripe en pruebas o con la ciudad vacía de negocios, la
+  rechazan por «app incompleta». Las tiendas van DESPUÉS del lanzamiento web y
+  de tener negocios reales, no antes.
+
+  **Cuentas y costes reales:** Apple Developer $99/año (cuenta individual sirve
+  y es inmediata; la de empresa pide D-U-N-S y la compañía aún no está
+  registrada) · Google Play $25 una vez. Para compilar iOS **no hace falta
+  comprar un Mac**: los ejecutores macOS de GitHub Actions son gratis en
+  repositorios públicos — verificar los minutos de ESTE repo antes de contar
+  con ello.
 - [ ] **Deploy process note.** Work is developed on `claude/new-prompt-xkubrd`
   and released by fast-forward-merging into `claude/tolatino-repo-setup-1efdil`
   (the branch Vercel auto-deploys). Keep DB migrations (`supabase/migrations/`)
