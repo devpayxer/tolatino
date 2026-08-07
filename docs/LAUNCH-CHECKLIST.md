@@ -1183,7 +1183,15 @@
   solo entonces aplicarla. Tampoco se puso `Permissions-Policy`: la app necesita
   geolocalización, cámara (escáner de QR) y notificaciones, y apagarlas por
   descuido daría un fallo silencioso y difícil de diagnosticar.
-- [ ] **🔴 BLOQUEADOR DE LANZAMIENTO: no hay servicio de correo propio (SMTP).**
+- [x] ~~**🔴 BLOQUEADOR DE LANZAMIENTO: no hay servicio de correo propio (SMTP).**~~
+  **RESUELTO** — comprobado contra la API de Supabase el 2026-08-06: producción
+  usa `smtp-relay.brevo.com`, remitente `no-reply@tolatino.com`, límite **30
+  correos/hora**. El registro funciona hoy en producción.
+  **PERO quedan dos cabos:** (1) la llave de Brevo caduca por dos relojes
+  distintos — ver el punto siguiente; (2) **30/hora es poco para el día del
+  lanzamiento**: si 40 personas se registran en una hora, 10 no reciben su
+  código y para ellas la app «no funciona». Subir el límite (o el plan de
+  Brevo) ANTES de abrir. Texto original, para el historial:
   Descubierto 2026-07-29 al hacer el ensayo en producción. El proyecto de prod NO
   tiene SMTP configurado (`smtp_host = null`), así que usa el servicio integrado de
   Supabase: **`rate_limit_email_sent = 2` correos por HORA en todo el proyecto**, sin
