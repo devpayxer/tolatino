@@ -169,7 +169,7 @@ export function PurchaseReturnToast() {
 
               {/* appointment / rental summary card (paid via OUR checkout sheet) */}
               {(row.kind === 'booking' || row.kind === 'rental') && (
-                <div className="mt-3 w-full max-w-[300px] rounded-card-sm border border-line bg-white p-4 text-left shadow-card">
+                <div className="mt-3 w-full max-w-[300px] rounded-card-sm border border-line bg-white p-4 text-left">
                   <div className="text-[14px] font-extrabold text-ink">{row.payload?.service_name ?? row.payload?.item_name ?? ''}</div>
                   {row.kind === 'booking' && row.payload?.staff_name && (
                     <div className="mt-1 text-[12px] font-bold text-ink-soft">{L('con', 'with')} {row.payload.staff_name}{row.payload?.variant ? ` · ${row.payload.variant}` : ''}</div>
@@ -214,7 +214,7 @@ export function PurchaseReturnToast() {
             )}
 
             {/* resumen (los pedidos de tienda llevan miniaturas, como Amazon) */}
-            <div className="mt-3 rounded-card border border-line bg-white p-4 text-[12.5px] font-semibold text-ink-2 shadow-card">
+            <div className="mt-3 rounded-card border border-line bg-white p-4 text-[12.5px] font-semibold text-ink-2">
               {(row.payload?.items ?? []).slice(0, 6).map((it, i) => (
                 <div key={i} className="flex items-center justify-between gap-3 py-0.5">
                   {isStore && (

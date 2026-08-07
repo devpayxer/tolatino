@@ -153,7 +153,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
 
   if (admin.loading || loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -161,7 +161,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
 
   if (!real) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -182,7 +182,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
       <input ref={logoInput} type="file" accept="image/*" onChange={onPickLogo} className="hidden" />
 
       {/* logo — the business identity image (cards + dashboard header) */}
-      <div className="mb-4 flex items-center gap-3.5 rounded-card border border-line bg-white p-4 shadow-card">
+      <div className="mb-4 flex items-center gap-3.5 rounded-card border border-line bg-white p-4">
         {real.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imgUrl(real.logo_url, ANCHO.icono)} alt={L('Logo del negocio', 'Business logo')} className="h-[68px] w-[68px] flex-none rounded-tile border border-line object-cover" />

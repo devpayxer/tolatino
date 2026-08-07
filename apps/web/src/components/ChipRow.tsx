@@ -38,7 +38,7 @@ export function ChipRow({ children, className = '' }: { children: ReactNode; cla
   };
 
   const arrowCls =
-    'absolute top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-white text-ink shadow-card md:flex';
+    'absolute top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-white text-ink shadow-float md:flex';
 
   return (
     <div className="relative min-w-0">

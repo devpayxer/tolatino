@@ -479,7 +479,7 @@ export function PanelScreen() {
   if (!admin.loading && !admin.revalidando && !real) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-dash px-6 py-12">
-        <div className="w-full max-w-[380px] rounded-card border border-line bg-white p-6 text-center shadow-card">
+        <div className="w-full max-w-[380px] rounded-card border border-line bg-white p-6 text-center">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
             <Store size={26} stroke={2.2} className="text-primary" />
           </span>
@@ -650,7 +650,7 @@ export function PanelScreen() {
               {sidebar}
             </div>
             <div className="flex-1 bg-[rgba(30,27,46,.45)]" />
-            <button onClick={() => setDrawer(false)} className="tap absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Cerrar', 'Close')}>
+            <button onClick={() => setDrawer(false)} className="tap absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-float" aria-label={L('Cerrar', 'Close')}>
               <X size={16} stroke={2.6} className="text-ink" />
             </button>
           </div>
@@ -701,7 +701,7 @@ export function PanelScreen() {
           {/* demo plan switcher inside billing — lets you preview each tier when
               exploring without a real listing; a real business shows its own plan */}
           {tab === 'billing' && !real && (
-            <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-[18px] rounded-card-sm border border-line bg-white p-3.5 shadow-card">
+            <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-[18px] rounded-card-sm border border-line bg-white p-3.5">
               <span className="text-[12px] font-extrabold text-ink">{L('Vista previa del plan:', 'Preview plan:')}</span>
               {(
                 [

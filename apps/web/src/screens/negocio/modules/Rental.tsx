@@ -127,7 +127,7 @@ function rentalToRow(it: Item, businessId: string, sort: number): NewBizItem {
   };
 }
 
-const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white ';
 const fieldCls =
   'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-faint focus:border-primary';
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
@@ -600,8 +600,8 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <div className="relative h-[150px] overflow-hidden rounded-tile border border-line">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
-                        <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
-                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} stroke={2.2} /></button>
+                        <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-float">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
+                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-float"><Trash2 size={14} stroke={2.2} /></button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0]); }} disabled={photoBusy} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60">
@@ -885,7 +885,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {cfg.categories.map((c, i) => {
           const Icon = rentCatIcon(c.icon); const n = countIn(c.id);
           return (
-            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
+            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 ${c.visible ? '' : 'opacity-60'}`}>
               <span className="flex flex-none flex-col">
                 <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
                 <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
@@ -920,7 +920,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.addons.map((a) => {
             const used = addonUsedBy(a.id);
             return (
-              <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
+              <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
@@ -950,7 +950,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.policies.map((p) => {
             const used = policyUsedBy(p.id);
             return (
-              <button key={p.id} onClick={() => setPolicySheet({ open: true, initial: p })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
+              <button key={p.id} onClick={() => setPolicySheet({ open: true, initial: p })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Shield size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(p.es, p.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{p.default && <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Por defecto', 'Default')}</span>}</span>

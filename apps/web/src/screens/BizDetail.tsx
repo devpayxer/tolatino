@@ -1848,8 +1848,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       key={k}
       onClick={() => onTab(k)}
       className={`-mb-px flex-none cursor-pointer border-b-[2.5px] pb-[11px] text-[14px] ${
-        tab === k ? 'border-primary font-extrabold text-ink' : 'border-transparent font-bold text-muted-2'
-      }`}
+ tab === k ? 'border-primary font-extrabold text-ink' : 'border-transparent font-bold text-muted-2'
+ }`}
     >
       {label}
     </button>
@@ -2010,7 +2010,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           : tabShown.events ? L('Eventos y boletos', 'Events & tickets')
             : accion?.label ?? '';
 
-  const railCard = 'rounded-card border border-line bg-white p-4 shadow-card';
+  const railCard = 'rounded-card border border-line bg-white p-4 ';
   const desktopRail = (
     <aside className="hidden min-[1100px]:block">
       <div className="sticky top-[214px] flex flex-col gap-4">
@@ -2067,7 +2067,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {/* 2 · La promo REAL del negocio, si la hay — con su botón dorado que
                lleva al menú (handoff §11.2). Nunca una oferta inventada. */}
         {realMenu?.promo && (
-          <div className="rounded-card p-4 shadow-card" style={{ background: '#1E1B2E' }}>
+          <div className="rounded-card p-4" style={{ background: '#1E1B2E' }}>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F6E05E] px-2.5 py-1 text-[10.5px] font-extrabold text-ink">
               ★ {L('Oferta del barrio', 'Neighborhood offer')}
             </span>
@@ -2168,7 +2168,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   // line (price pinned right, so no empty gutter), description below, sale line
   // last. Fills the width on mobile and tiles into a grid on wider screens.
   const catalogCard = (it: MenuItem) => (
-    <div key={B(it.n)} className="flex items-start gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card">
+    <div key={B(it.n)} className="flex items-start gap-3 rounded-card-sm border border-line bg-white p-3">
       <span className="relative h-[60px] w-[60px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {it.img && <img src={imgUrl(it.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
@@ -2232,7 +2232,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       <button
         key={B(it.n)}
         onClick={() => { if (!soldOut) openItem(catKey, it); }}
-        className={`flex w-full items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card ${soldOut ? 'cursor-default opacity-75' : 'cursor-pointer'}`}
+        className={`flex w-full items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left ${soldOut ? 'cursor-default opacity-75' : 'cursor-pointer'}`}
       >
         {itemBody(it)}
         <span className="flex flex-none flex-col items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -2246,12 +2246,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   role="button"
                   aria-label={L('Agregar', 'Add')}
                   onClick={(e) => { e.stopPropagation(); firstAdd(); }}
-                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-lilac text-primary-dark shadow-card transition-transform active:scale-90"
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-lilac text-primary-dark shadow-float transition-transform active:scale-90"
                 >
                   <Plus size={16} stroke={2.8} />
                 </span>
               ) : (
-                <span className="flex items-center gap-0.5 rounded-full border border-lilac-line bg-white p-0.5 shadow-card">
+                <span className="flex items-center gap-0.5 rounded-full border border-lilac-line bg-white p-0.5 shadow-float">
                   <span
                     role="button"
                     aria-label={qty === 1 ? L('Eliminar', 'Remove') : L('Quitar uno', 'Remove one')}
@@ -2288,7 +2288,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
       <div
         key={`${catKey}:${B(it.n)}`}
         onClick={() => { if (!soldOut) openItem(catKey, it); }}
-        className={`flex flex-col overflow-hidden rounded-card-sm border border-line bg-white shadow-card transition-shadow hover:shadow-card-lg ${soldOut ? 'opacity-75' : 'cursor-pointer'}`}
+        className={`flex flex-col overflow-hidden rounded-card-sm border border-line bg-white transition-shadow hover:shadow-card-lg ${soldOut ? 'opacity-75' : 'cursor-pointer'}`}
       >
         <div className="relative aspect-[4/3] w-full" style={{ background: `repeating-linear-gradient(135deg,${it.bg})` }}>
           {it.img && (
@@ -2296,10 +2296,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <img src={imgUrl(it.img, ANCHO.tarjeta)} alt={B(it.n)} className="absolute inset-0 h-full w-full object-cover" />
           )}
           {off > 0 && !soldOut && (
-            <span className="absolute left-2 top-2 rounded-md bg-pink px-1.5 py-0.5 text-[10px] font-extrabold text-white shadow-card">−{off}%</span>
+            <span className="absolute left-2 top-2 rounded-md bg-pink px-1.5 py-0.5 text-[10px] font-extrabold text-white shadow-float">−{off}%</span>
           )}
           {!displayOnly && (soldOut ? (
-            <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-2.5 py-1.5 text-[9.5px] font-extrabold text-muted-2 shadow-card">{L('Agotado', 'Sold out')}</span>
+            <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-2.5 py-1.5 text-[9.5px] font-extrabold text-muted-2 shadow-float">{L('Agotado', 'Sold out')}</span>
           ) : qty === 0 ? (
             <span
               role="button"
@@ -2344,7 +2344,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     const canBook = svcBooking && s.bookable;
     const canInquire = svcBooking && !s.bookable;
     return (
-      <div key={s.id} onClick={() => { setSvcAddOns({}); setSvcInfo(s); }} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card">
+      <div key={s.id} onClick={() => { setSvcAddOns({}); setSvcInfo(s); }} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-line bg-white p-3">
         <span className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${s.tile})` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {s.img && <img src={imgUrl(s.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
@@ -2414,14 +2414,14 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {/* controles de vidrio: volver (solo móvil — en escritorio están las
             migas) + compartir/guardar */}
         <div className="absolute left-3 right-3 top-3 flex items-center justify-between">
-          <button onClick={onClose} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card min-[1100px]:invisible" aria-label={L('Volver', 'Back')}>
+          <button onClick={onClose} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-float min-[1100px]:invisible" aria-label={L('Volver', 'Back')}>
             <ChevronLeft size={18} stroke={2.4} className="text-ink" />
           </button>
           <div className="flex gap-2.5">
-            <button onClick={() => setContactOpen(true)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Compartir', 'Share')}>
+            <button onClick={() => setContactOpen(true)} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-float" aria-label={L('Compartir', 'Share')}>
               <Share size={16} stroke={2.2} className="text-ink" />
             </button>
-            <button onClick={toggleSave} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card" aria-label={L('Guardar', 'Save')}>
+            <button onClick={toggleSave} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-float" aria-label={L('Guardar', 'Save')}>
               {saved ? <HeartFilled size={16} className="text-pink" /> : <Heart size={16} stroke={2.2} className="text-pink" />}
             </button>
           </div>
@@ -2454,7 +2454,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <button onClick={() => setGalIdx(0)} className="absolute bottom-3 right-3.5 cursor-pointer rounded-[10px] bg-[rgba(30,27,46,.6)] px-[11px] py-[5px] text-[11.5px] font-bold text-white min-[1100px]:hidden">
               1 / {photos.length}
             </button>
-            <button onClick={() => setGalIdx(0)} className="absolute bottom-4 right-4 hidden cursor-pointer items-center gap-1.5 rounded-[10px] bg-white px-3 py-[7px] text-[12px] font-extrabold text-ink shadow-card min-[1100px]:flex">
+            <button onClick={() => setGalIdx(0)} className="absolute bottom-4 right-4 hidden cursor-pointer items-center gap-1.5 rounded-[10px] bg-white px-3 py-[7px] text-[12px] font-extrabold text-ink shadow-float min-[1100px]:flex">
               {photos.length === 1 ? L('Ver la foto', 'View the photo') : L(`Ver las ${photos.length} fotos`, `View all ${photos.length} photos`)}
             </button>
           </>
@@ -2594,8 +2594,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         ref={barRef}
         style={{ ...(headerH != null ? { top: headerH } : undefined), pointerEvents: !focused && !stuck ? 'none' : undefined }}
         className={`sticky top-[150px] z-20 -mx-3.5 md:top-[108px] md:-mx-5 ${
-          focused ? 'bg-canvas -mt-4 md:-mt-5 lg:-mt-[26px]' : '-mt-[46px]'
-        }`}
+ focused ? 'bg-canvas -mt-4 md:-mt-5 lg:-mt-[26px]' : '-mt-[46px]'
+ }`}
       >
         <div className="relative h-[50px] px-3.5 md:px-5" aria-hidden={!showTitle} style={{ pointerEvents: showTitle ? undefined : 'none' }}>
           {/* the title's own backdrop — fades in with the pin so, before it, the
@@ -2623,7 +2623,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <div className="no-scrollbar pointer-events-auto flex touch-pan-x gap-5 overflow-x-auto overscroll-x-contain border-b border-hair bg-canvas px-3.5 pt-2.5 md:px-5 min-[1100px]:hidden">{tabButtons}</div>
         {/* franja de estado de escritorio (handoff §4): estado real + horas
             pico del dueño a la izquierda, tabs como píldoras a la derecha */}
-        <div className="pointer-events-auto mx-5 hidden items-center gap-3 rounded-card border border-line bg-white px-4 py-2 shadow-card min-[1100px]:flex">
+        <div className="pointer-events-auto mx-5 hidden items-center gap-3 rounded-card border border-line bg-white px-4 py-2 min-[1100px]:flex">
           <span className="flex flex-none items-center gap-2 text-[12.5px] font-extrabold">
             <span className={`h-2 w-2 flex-none rounded-full ${status.tone === 'open' ? 'bg-green' : status.tone === 'soon' ? 'bg-amber' : 'bg-muted-faint'}`} />
             <span className={statusTone}>{status.text}</span>
@@ -2664,7 +2664,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <>
             <div className="min-[1100px]:hidden">
             <button data-status-card onClick={() => setHoursOpen(true)}
-              className="tap flex w-full cursor-pointer items-center gap-3 rounded-card border border-line bg-white p-3.5 text-left shadow-card">
+              className="tap flex w-full cursor-pointer items-center gap-3 rounded-card border border-line bg-white p-3.5 text-left">
               <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-[12px] ${status.tone === 'open' ? 'bg-green-bg' : 'bg-amber-bg'}`}>
                 <Clock size={18} stroke={2.2} className={status.tone === 'open' ? 'text-green-dark' : 'text-amber-ink'} />
               </span>
@@ -2710,7 +2710,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               {secTitle(L('Bueno saber', 'Good to know'))}
               <div data-bueno-saber className="grid grid-cols-2 gap-2.5 min-[1100px]:grid-cols-4">
                 {buenoSaber.map((t) => (
-                  <div key={t.label} className="rounded-tile border border-line bg-white p-3 shadow-card">
+                  <div key={t.label} className="rounded-tile border border-line bg-white p-3">
                     <span className="text-[15px]">{t.icon}</span>
                     <span className="mt-1 block text-[11px] font-bold text-muted">{t.label}</span>
                     <span className="mt-0.5 block text-[12.5px] font-extrabold leading-snug text-ink">{t.value}</span>
@@ -2752,7 +2752,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <div className="no-scrollbar -mx-3.5 flex touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain px-3.5 pb-1 md:-mx-5 md:px-5 min-[1100px]:mx-0 min-[1100px]:grid min-[1100px]:grid-cols-4 min-[1100px]:overflow-visible min-[1100px]:px-0">
                 {populares.map(({ catKey, it }) => (
                   <button key={`${catKey}-${it.n[0]}`} onClick={() => openItem(catKey, it)}
-                    className="tap w-[152px] flex-none cursor-pointer overflow-hidden rounded-tile border border-line bg-white text-left shadow-card min-[1100px]:w-auto">
+                    className="tap w-[152px] flex-none cursor-pointer overflow-hidden rounded-tile border border-line bg-white text-left min-[1100px]:w-auto">
                     <span className="block h-[96px] w-full" style={{ background: it.bg }}>
                       {it.img && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -2826,7 +2826,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             }
             const avg = rows.reduce((s, r) => s + r.stars, 0) / rows.length;
             const tarjeta = (r: (typeof rows)[number], i: number) => (
-              <div key={i} className="rounded-card border border-line bg-white p-3.5 shadow-card">
+              <div key={i} className="rounded-card border border-line bg-white p-3.5">
                 <div className="flex items-center gap-2.5">
                   <Avatar initials={r.ini} color={r.color} size={34} />
                   <div className="min-w-0 flex-1">
@@ -2851,7 +2851,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 </div>
                 <div className="min-[1100px]:grid min-[1100px]:grid-cols-[220px_minmax(0,1fr)] min-[1100px]:gap-4">
                   {/* desglose — solo escritorio (§5.7) */}
-                  <div className="hidden rounded-card border border-line bg-white p-4 shadow-card min-[1100px]:block">
+                  <div className="hidden rounded-card border border-line bg-white p-4 min-[1100px]:block">
                     <div className="text-center">
                       <div className="text-[34px] font-extrabold leading-none text-ink">{avg.toFixed(1)}</div>
                       <Stars className="mt-1 block text-[11px]" rating={avg} />
@@ -2944,7 +2944,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <div className="no-scrollbar -mx-3.5 flex touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain px-3.5 pb-1 md:-mx-5 md:px-5 min-[1100px]:mx-0 min-[1100px]:grid min-[1100px]:grid-cols-3 min-[1100px]:overflow-visible min-[1100px]:px-0">
                 {similares.map((s) => (
                   <button key={s.slug} onClick={() => void openRelated(s.slug)}
-                    className="tap w-[168px] flex-none cursor-pointer overflow-hidden rounded-tile border border-line bg-white text-left shadow-card min-[1100px]:w-auto">
+                    className="tap w-[168px] flex-none cursor-pointer overflow-hidden rounded-tile border border-line bg-white text-left min-[1100px]:w-auto">
                     <span className="block h-[104px] w-full" style={{ background: s.tile }} />
                     <span className="block px-3 pb-3 pt-2">
                       <span className="flex items-center gap-1">
@@ -3075,7 +3075,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               {railNav.left && (
                 <>
                   <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 hidden w-14 bg-gradient-to-r from-app to-transparent opacity-0 transition-opacity group-hover:opacity-100 md:block" />
-                  <button type="button" aria-label={L('Categorías anteriores', 'Previous categories')} onClick={() => railBy(-240)} className="absolute left-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-white text-ink opacity-0 shadow-card transition-opacity hover:bg-lilac-2 group-hover:opacity-100 md:flex">
+                  <button type="button" aria-label={L('Categorías anteriores', 'Previous categories')} onClick={() => railBy(-240)} className="absolute left-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-white text-ink opacity-0 shadow-float transition-opacity hover:bg-lilac-2 group-hover:opacity-100 md:flex">
                     <ChevronLeft size={17} stroke={2.4} />
                   </button>
                 </>
@@ -3083,7 +3083,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               {railNav.right && (
                 <>
                   <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 hidden w-14 bg-gradient-to-l from-app to-transparent opacity-0 transition-opacity group-hover:opacity-100 md:block" />
-                  <button type="button" aria-label={L('Más categorías', 'More categories')} onClick={() => railBy(240)} className="absolute right-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-white text-ink opacity-0 shadow-card transition-opacity hover:bg-lilac-2 group-hover:opacity-100 md:flex">
+                  <button type="button" aria-label={L('Más categorías', 'More categories')} onClick={() => railBy(240)} className="absolute right-1.5 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-white text-ink opacity-0 shadow-float transition-opacity hover:bg-lilac-2 group-hover:opacity-100 md:flex">
                     <ChevronRight size={17} stroke={2.4} />
                   </button>
                 </>
@@ -3247,7 +3247,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <span className="text-[11.5px] font-bold text-muted">{list.length} {L('productos', 'products')}</span>
             </div>
             {list.length === 0 ? (
-              <div className="rounded-card border border-line bg-white p-8 text-center shadow-card">
+              <div className="rounded-card border border-line bg-white p-8 text-center">
                 <div className="text-[13.5px] font-extrabold text-ink">{L('Sin resultados', 'No results')}</div>
                 <div className="mx-auto mt-1 max-w-[280px] text-[12px] font-semibold text-muted">{L(`No encontramos "${shopQ}" en esta tienda. Prueba otra palabra o categoría.`, `We couldn't find "${shopQ}" in this store. Try another word or category.`)}</div>
               </div>
@@ -3901,7 +3901,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     <div key={i} className={`relative aspect-[4/3] flex-none snap-center overflow-hidden rounded-card ${gallery.length > 1 ? 'w-[86%]' : 'w-full'}`} style={{ background: `repeating-linear-gradient(135deg,${mIt.bg})` }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {u && <img src={imgUrl(u, ANCHO.ancha)} alt={`${B(mIt.n)} ${i + 1}`} className="absolute inset-0 h-full w-full object-cover" />}
-                      {mOff > 0 && i === 0 && <span className="absolute left-2.5 top-2.5 rounded-md bg-pink px-2 py-0.5 text-[11px] font-extrabold text-white shadow-card">−{mOff}%</span>}
+                      {mOff > 0 && i === 0 && <span className="absolute left-2.5 top-2.5 rounded-md bg-pink px-2 py-0.5 text-[11px] font-extrabold text-white shadow-float">−{mOff}%</span>}
                       {gallery.length > 1 && <span className="absolute bottom-2 right-2 rounded-full bg-ink/70 px-2 py-0.5 text-[10px] font-extrabold text-white">{i + 1}/{gallery.length}</span>}
                     </div>
                   ))}
@@ -4168,7 +4168,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
 
               <div className="mt-4"><OrderStepsVertical stageIdx={stageIdx} isDelivery={oDelivery} store={oStore} /></div>
 
-              <div className="mt-3 rounded-card border border-line bg-white p-4 text-[12.5px] font-semibold text-ink-2 shadow-card">
+              <div className="mt-3 rounded-card border border-line bg-white p-4 text-[12.5px] font-semibold text-ink-2">
                 {(o?.items ?? []).slice(0, 6).map((it, i) => (
                   <div key={i} className="flex items-center justify-between gap-3 py-0.5">
                     {oStore && (
@@ -4274,7 +4274,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     const stk = found ? shopStock(found.catKey, found.item) : null;
                     const lowStk = stk != null && stk > 0 && stk <= 5;
                     return (
-                      <div key={k} className="rounded-card-sm border border-line bg-white p-3 shadow-card">
+                      <div key={k} className="rounded-card-sm border border-line bg-white p-3">
                         <div className="flex gap-3">
                           <span className="relative h-16 w-16 flex-none overflow-hidden rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${l.bg})` }}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -4570,7 +4570,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               <div className="relative -mx-4 -mt-4 h-[130px] overflow-hidden rounded-t-panel md:-mx-5 md:-mt-5 md:rounded-t-card" style={{ background: `repeating-linear-gradient(135deg,${s.tile})` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {s.img && <img src={imgUrl(s.img, ANCHO.tarjeta)} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-                <button onClick={() => setSvcInfo(null)} className="absolute left-3 top-3 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-card">
+                <button onClick={() => setSvcInfo(null)} className="absolute left-3 top-3 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-float">
                   <X size={15} stroke={2.6} className="text-ink" />
                 </button>
                 {s.badge && (
@@ -4870,7 +4870,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             )}
             {/* appointment summary card (service · pro · when · total) */}
             {svcDoneInfo && svcSel.bookable && (
-              <div className="mt-4 w-full max-w-[300px] rounded-card-sm border border-line bg-white p-4 text-left shadow-card">
+              <div className="mt-4 w-full max-w-[300px] rounded-card-sm border border-line bg-white p-4 text-left">
                 <div className="text-[14px] font-extrabold text-ink">{svcDoneInfo.name}</div>
                 {svcDoneInfo.staff && (
                   <div className="mt-2.5 flex items-center gap-2">
@@ -5043,7 +5043,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-extrabold ${rentDoneInfo.confirmedNow ? 'bg-green-bg text-green-dark' : 'bg-amber-bg text-amber-ink'}`}>
               <Clock size={12} stroke={2.4} />{rentDoneInfo.confirmedNow ? L('Confirmada', 'Confirmed') : L('Por confirmar', 'Pending')}
             </span>
-            <div className="mt-4 w-full max-w-[300px] rounded-card-sm border border-line bg-white p-4 text-left shadow-card">
+            <div className="mt-4 w-full max-w-[300px] rounded-card-sm border border-line bg-white p-4 text-left">
               <div className="flex items-center justify-between">
                 <span className="text-[12.5px] font-bold text-muted">{L('Fechas', 'Dates')}</span>
                 <span className="text-[12.5px] font-extrabold text-ink">{rentDoneInfo.range}</span>

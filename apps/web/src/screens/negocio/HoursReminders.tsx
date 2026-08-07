@@ -90,7 +90,7 @@ export function HoursReminders({
             ? L('Cerrará ese día', 'Closed that day')
             : `${L('Horario especial', 'Special hours')} · ${fmtLong(ex.open!)} – ${fmtLong(ex.close!)}`;
         return (
-          <div key={it.key} className="flex items-start gap-3 rounded-card-sm border border-amber/40 bg-amber-bg/60 p-3 shadow-card">
+          <div key={it.key} className="flex items-start gap-3 rounded-card-sm border border-amber/40 bg-amber-bg/60 p-3">
             <span className="mt-0.5 flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-amber-bg text-amber-ink">
               <CalendarClock size={17} stroke={2.2} />
             </span>

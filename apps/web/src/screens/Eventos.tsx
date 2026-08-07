@@ -129,9 +129,9 @@ function SeatPicker({
                           <button
                             key={id} onClick={() => onToggle(id)} disabled={isTaken} aria-label={id}
                             className={`h-9 w-9 flex-none rounded-[7px] text-[10px] font-extrabold transition-colors ${
-                              isTaken ? 'cursor-not-allowed bg-lilac-2 text-muted-faint'
-                              : isSel ? 'bg-primary text-white shadow-cta-sm'
-                              : 'cursor-pointer border-[1.5px] border-lilac-line bg-white text-ink-soft hover:border-primary'}`}
+ isTaken ? 'cursor-not-allowed bg-lilac-2 text-muted-faint'
+ : isSel ? 'bg-primary text-white shadow-cta-sm'
+ : 'cursor-pointer border-[1.5px] border-lilac-line bg-white text-ink-soft hover:border-primary'}`}
                           >{c + 1}</button>
                         );
                       })}
@@ -158,9 +158,9 @@ function SeatPicker({
                 <button
                   key={id} onClick={() => onToggle(id)} disabled={isTaken}
                   className={`flex flex-col overflow-hidden rounded-field border-[1.5px] text-left ${
-                    isTaken ? 'cursor-not-allowed border-line bg-lilac-2/60 opacity-55'
-                    : isSel ? 'border-primary bg-lilac-3 shadow-cta-sm'
-                    : 'cursor-pointer border-lilac-line bg-white hover:border-primary'}`}
+ isTaken ? 'cursor-not-allowed border-line bg-lilac-2/60 opacity-55'
+ : isSel ? 'border-primary bg-lilac-3 shadow-cta-sm'
+ : 'cursor-pointer border-lilac-line bg-white hover:border-primary'}`}
                 >
                   {t.photo && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -582,8 +582,8 @@ export function EventosScreen() {
           rsvpToggle(e);
         }}
         className={`flex-none cursor-pointer rounded-full px-4 py-2 text-[12.5px] font-extrabold ${big ? 'px-5' : ''} ${
-          on ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'
-        }`}
+ on ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'
+ }`}
       >
         {on ? L('Voy ✓', 'Going ✓') : L('Voy', 'Going')}
       </button>
@@ -637,8 +637,8 @@ export function EventosScreen() {
             else openDetail(fe);
           }}
           className={`relative flex-none cursor-pointer rounded-[13px] px-6 py-[13px] text-[14px] font-extrabold ${
-            feOn ? 'bg-[rgba(255,255,255,.22)] text-white' : 'bg-white text-primary-press'
-          }`}
+ feOn ? 'bg-[rgba(255,255,255,.22)] text-white' : 'bg-white text-primary-press'
+ }`}
         >
           {feOn ? L('Voy ✓', 'Going ✓') : L('Comprar boleto', 'Get ticket')}
         </button>
@@ -659,8 +659,8 @@ export function EventosScreen() {
         <button
           onClick={() => setDate('all')}
           className={`flex min-w-[54px] flex-none cursor-pointer items-center justify-center rounded-tile px-3 py-[9px] text-[12.5px] font-extrabold ${
-            date === 'all' ? 'bg-primary text-white shadow-cta-sm' : 'bg-white text-ink-soft shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
-          }`}
+ date === 'all' ? 'bg-primary text-white shadow-cta-sm' : 'bg-white text-ink-soft shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
+ }`}
         >
           {L('Todas', 'All')}
         </button>
@@ -669,8 +669,8 @@ export function EventosScreen() {
             key={d.key}
             onClick={() => setDate(d.key)}
             className={`flex min-w-[54px] flex-none cursor-pointer flex-col items-center rounded-tile px-3 py-[7px] ${
-              date === d.key ? 'bg-primary text-white shadow-cta-sm' : 'bg-white text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
-            }`}
+ date === d.key ? 'bg-primary text-white shadow-cta-sm' : 'bg-white text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
+ }`}
           >
             <span className={`text-[9.5px] font-extrabold uppercase ${date === d.key ? 'text-white/80' : 'text-muted'}`}>{d.dEs}</span>
             <span className="text-[15px] font-extrabold leading-tight">{d.day}</span>
@@ -692,7 +692,7 @@ export function EventosScreen() {
                 <button
                   key={c.id}
                   onClick={() => { setCat(c.id); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                  className="group flex items-center gap-2.5 overflow-hidden rounded-card border border-line bg-white p-2.5 text-left transition-shadow hover:shadow-card"
+                  className="group flex items-center gap-2.5 overflow-hidden rounded-card border border-line bg-white p-2.5 text-left transition-shadow hover:"
                 >
                   <span className="h-11 w-11 flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${c.tile[0]} 0 8px,${c.tile[1]} 8px 16px)` }} />
                   <span className="min-w-0 flex-1">
@@ -732,7 +732,7 @@ export function EventosScreen() {
               onClick={() => openDetail(e)}
             >
               <div className="relative h-[110px] bg-cover bg-center" style={{ background: e.cover ? `center/cover url(${e.cover})` : eventTile(e) }}>
-                <span className="absolute left-3 top-3 flex h-[46px] w-[46px] flex-col items-center justify-center rounded-btn bg-white shadow-card">
+                <span className="absolute left-3 top-3 flex h-[46px] w-[46px] flex-col items-center justify-center rounded-btn bg-white shadow-float">
                   <span className="text-[9px] font-extrabold uppercase text-primary-dark">{e.dEs}</span>
                   <span className="text-[17px] font-extrabold leading-none text-ink">{e.day}</span>
                 </span>
@@ -769,7 +769,7 @@ export function EventosScreen() {
         {detail && !orderDone && (
           <>
             <div className="relative -m-4 mb-3 h-[130px] rounded-t-panel md:-m-5 md:mb-3 md:rounded-t-card" style={{ background: pub?.coverUrl ? `center/cover url(${pub.coverUrl})` : eventTile(detail) }}>
-              <span className="absolute left-4 top-4 flex h-[52px] w-[52px] flex-col items-center justify-center rounded-btn bg-white shadow-card">
+              <span className="absolute left-4 top-4 flex h-[52px] w-[52px] flex-col items-center justify-center rounded-btn bg-white shadow-float">
                 <span className="text-[9.5px] font-extrabold uppercase text-primary-dark">{detail.dEs}</span>
                 <span className="text-[19px] font-extrabold leading-none text-ink">{detail.day}</span>
               </span>
@@ -1224,7 +1224,7 @@ export function EventosScreen() {
         ) : (
           <div className="flex flex-col gap-2">
             {orgEvents.map((e) => (
-              <button key={e.slug ?? e.id} onClick={() => openOrgEvent(e)} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-2.5 text-left hover:shadow-card">
+              <button key={e.slug ?? e.id} onClick={() => openOrgEvent(e)} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-2.5 text-left hover:">
                 <span className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-btn" style={{ background: eventTile(e) }}>
                   <span className="text-[8px] font-extrabold uppercase text-primary-dark">{e.dEs}</span>
                   <span className="text-[14px] font-extrabold leading-none text-ink">{e.day}</span>

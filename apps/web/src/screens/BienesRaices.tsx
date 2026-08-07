@@ -491,7 +491,7 @@ export function BienesRaicesScreen() {
       <button
         onClick={(ev) => { ev.stopPropagation(); toggleSave(p); }}
         aria-label={on ? L('Quitar de guardados', 'Remove from saved') : L('Guardar', 'Save')}
-        className={`flex cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,.94)] shadow-card ${cls}`}
+        className={`flex cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,.94)] shadow-float ${cls}`}
       >
         {on ? <HeartFilled size={size} className="text-pink-dark" /> : <Heart size={size} stroke={2.2} className="text-ink-soft" />}
       </button>
@@ -566,7 +566,7 @@ export function BienesRaicesScreen() {
       <button
         onClick={() => setView('descubrir')}
         aria-label={L('Volver', 'Back')}
-        className="flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full bg-white shadow-card"
+        className="flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full bg-white shadow-float"
       >
         <ChevronLeft size={18} stroke={2.4} className="text-ink" />
       </button>
@@ -746,7 +746,7 @@ export function BienesRaicesScreen() {
               <button
                 onClick={closeDetail}
                 aria-label={L('Volver', 'Back')}
-                className="absolute left-3.5 top-3.5 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card"
+                className="absolute left-3.5 top-3.5 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-float"
               >
                 <ChevronLeft size={18} stroke={2.6} className="text-ink" />
               </button>
@@ -754,20 +754,20 @@ export function BienesRaicesScreen() {
                 <button
                   onClick={() => doShare(d.title, d.slug)}
                   aria-label={L('Compartir', 'Share')}
-                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card"
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-float"
                 >
                   <Share2 size={16} stroke={2.2} className="text-ink" />
                 </button>
                 {heartBtn(d, 'h-10 w-10', 17)}
-                <ReportButton type="property" id={d.id} variant="icon" className="h-10 w-10 bg-white text-ink shadow-card hover:bg-white" />
+                <ReportButton type="property" id={d.id} variant="icon" className="h-10 w-10 bg-white text-ink hover:bg-white" />
               </div>
               {/* prev/next arrows + counter (Zillow-style) when there are multiple photos */}
               {d.photos.length > 1 && (
                 <>
-                  <button onClick={() => setGi((i) => (i - 1 + d.photos.length) % d.photos.length)} aria-label={L('Anterior', 'Previous')} className="absolute left-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-card backdrop-blur">
+                  <button onClick={() => setGi((i) => (i - 1 + d.photos.length) % d.photos.length)} aria-label={L('Anterior', 'Previous')} className="absolute left-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-float backdrop-blur">
                     <ChevronLeft size={18} stroke={2.6} className="text-ink" />
                   </button>
-                  <button onClick={() => setGi((i) => (i + 1) % d.photos.length)} aria-label={L('Siguiente', 'Next')} className="absolute right-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-card backdrop-blur">
+                  <button onClick={() => setGi((i) => (i + 1) % d.photos.length)} aria-label={L('Siguiente', 'Next')} className="absolute right-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-float backdrop-blur">
                     <ChevronRight size={18} stroke={2.6} className="text-ink" />
                   </button>
                 </>
@@ -777,7 +777,7 @@ export function BienesRaicesScreen() {
                   <Camera size={12} stroke={2.4} /> {gi + 1} / {d.photos.length}
                 </span>
               ) : (
-                <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-bold text-muted-2 shadow-card backdrop-blur">
+                <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-bold text-muted-2 shadow-float backdrop-blur">
                   <Camera size={13} stroke={2.2} /> {L('Fotos en camino — pídelas al agente', 'Photos coming — ask the agent')}
                 </span>
               )}
@@ -988,7 +988,7 @@ export function BienesRaicesScreen() {
 
               {/* search + filters */}
               <div className="mb-3 flex gap-2.5">
-                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5 shadow-card">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5">
                   <Search size={16} stroke={2.2} className="flex-none text-muted-2" />
                   <input
                     value={q}
@@ -1018,7 +1018,7 @@ export function BienesRaicesScreen() {
                     key={m.id}
                     onClick={() => setDealMode(m.id)}
                     className={`min-h-[38px] flex-1 cursor-pointer rounded-[9px] px-1 text-[11.5px] font-extrabold transition-colors ${
-                      deal === m.id ? 'bg-white text-ink shadow-card' : 'text-muted'}`}
+ deal === m.id ? 'bg-white text-ink ' : 'text-muted'}`}
                   >
                     {L(m.es, m.en)}
                   </button>
@@ -1050,7 +1050,7 @@ export function BienesRaicesScreen() {
                 >
                   <div className="relative h-[200px] md:h-[240px]" style={tileBg(feat.deal, feat.photos[0])}>
                     <span className={`absolute left-3.5 top-3.5 rounded-[9px] px-3 py-1.5 text-[9.5px] font-extrabold uppercase tracking-[.05em] ${
-                      feat.openHouse ? 'bg-green text-white' : 'bg-ink text-white'}`}
+ feat.openHouse ? 'bg-green text-white' : 'bg-ink text-white'}`}
                     >
                       {feat.openHouse ? L('Casa abierta', 'Open house') : L('Destacada', 'Featured')}
                     </span>
@@ -1101,7 +1101,7 @@ export function BienesRaicesScreen() {
                         key={h}
                         onClick={() => setHood(hood === h ? null : h)}
                         className={`relative h-[88px] w-[128px] flex-none cursor-pointer overflow-hidden rounded-tile text-left ${
-                          hood === h ? 'ring-2 ring-primary' : ''}`}
+ hood === h ? 'ring-2 ring-primary' : ''}`}
                         style={tileBg(deal)}
                       >
                         <span className="absolute inset-0 bg-gradient-to-t from-[rgba(30,27,46,.72)] to-transparent" />
@@ -1189,7 +1189,7 @@ export function BienesRaicesScreen() {
                   </div>
                 </Card>
               ) : (
-                <div className="relative overflow-hidden rounded-card border border-line shadow-card">
+                <div className="relative overflow-hidden rounded-card border border-line">
                   <div ref={mapDiv} className="h-[60vh] w-full lg:h-[68vh]" />
                   {/* deal switch over the map */}
                   <div className="no-scrollbar absolute left-3 right-3 top-3 flex gap-1.5 overflow-x-auto">
@@ -1197,8 +1197,8 @@ export function BienesRaicesScreen() {
                       <button
                         key={m.id}
                         onClick={() => { setDealMode(m.id); setMapSelId(null); }}
-                        className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold shadow-card ${
-                          deal === m.id ? 'bg-primary text-white' : 'bg-white text-ink-soft'}`}
+                        className={`flex-none cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold shadow-float ${
+ deal === m.id ? 'bg-primary text-white' : 'bg-white text-ink-soft'}`}
                       >
                         {L(m.es, m.en)}
                       </button>
@@ -1329,7 +1329,7 @@ export function BienesRaicesScreen() {
                   key={String(n)}
                   onClick={() => setFilters({ ...filters, beds: n })}
                   className={`min-h-[40px] flex-1 cursor-pointer rounded-field text-[11.5px] font-extrabold ${
-                    filters.beds === n ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}
+ filters.beds === n ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}
                 >
                   {n == null ? L('Cualq.', 'Any') : `${n}+`}
                 </button>
@@ -1344,7 +1344,7 @@ export function BienesRaicesScreen() {
               key={String(n)}
               onClick={() => setFilters({ ...filters, baths: n })}
               className={`min-h-[40px] flex-1 cursor-pointer rounded-field text-[11.5px] font-extrabold ${
-                filters.baths === n ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}
+ filters.baths === n ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}
             >
               {n == null ? L('Cualq.', 'Any') : `${n}+`}
             </button>
@@ -1359,7 +1359,7 @@ export function BienesRaicesScreen() {
                 key={pr.es}
                 onClick={() => setFilters({ ...filters, min: pr.min, max: pr.max })}
                 className={`flex min-h-[44px] w-full cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] px-3 py-2.5 text-left ${
-                  on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}
+ on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}
               >
                 <span className={`flex h-[19px] w-[19px] flex-none items-center justify-center rounded-full border-2 ${on ? 'border-primary' : 'border-lilac-ring'}`}>
                   {on && <span className="h-[9px] w-[9px] rounded-full bg-primary" />}
@@ -1448,7 +1448,7 @@ export function BienesRaicesScreen() {
                       // (unless the buyer already dragged the rate manually).
                       onClick={() => { const m = marketRateFor(marketRates, y); setCalc({ ...calc, years: y, ...(calc.rateFromMarket && m ? { rate: m.rate } : {}) }); }}
                       className={`min-h-[40px] flex-1 cursor-pointer rounded-field text-[11.5px] font-extrabold ${
-                        calc.years === y ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}
+ calc.years === y ? 'bg-primary text-white shadow-cta-sm' : 'bg-lilac-2 text-ink-soft'}`}
                     >
                       {y} {L('años', 'yrs')}
                     </button>
@@ -1523,7 +1523,7 @@ export function BienesRaicesScreen() {
                     key={i}
                     onClick={() => setSched({ ...sched, day: i })}
                     className={`flex min-w-[52px] flex-none cursor-pointer flex-col items-center rounded-tile border-[1.5px] px-3 py-2 ${
-                      on ? 'border-primary bg-primary' : 'border-lilac-line bg-white'}`}
+ on ? 'border-primary bg-primary' : 'border-lilac-line bg-white'}`}
                   >
                     <span className={`text-[9.5px] font-extrabold uppercase ${on ? 'text-white/80' : 'text-muted-2'}`}>{L(td.wdEs, td.wdEn)}</span>
                     <span className={`text-[16px] font-extrabold leading-tight ${on ? 'text-white' : 'text-ink'}`}>{td.num}</span>
@@ -1541,7 +1541,7 @@ export function BienesRaicesScreen() {
                     key={sl.label}
                     onClick={() => setSched({ ...sched, slot: i })}
                     className={`min-h-[42px] cursor-pointer rounded-field border-[1.5px] text-[11.5px] font-extrabold ${
-                      on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}
+ on ? 'border-primary bg-lilac-3 text-primary-dark' : 'border-lilac-line bg-white text-ink-soft'}`}
                   >
                     {sl.label}
                   </button>
@@ -1629,10 +1629,10 @@ export function BienesRaicesScreen() {
                   <span
                     key={lbl}
                     className={`flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold ${
-                      on ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}
+ on ? 'bg-primary text-white' : done ? 'bg-lilac text-primary-dark' : 'bg-lilac-2 text-muted-2'}`}
                   >
                     <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white ${
-                      on ? 'bg-[rgba(255,255,255,.25)]' : done ? 'bg-primary' : 'bg-muted-faint'}`}
+ on ? 'bg-[rgba(255,255,255,.25)]' : done ? 'bg-primary' : 'bg-muted-faint'}`}
                     >
                       {done ? '✓' : i + 1}
                     </span>
@@ -1708,7 +1708,7 @@ export function BienesRaicesScreen() {
                           key={o.v}
                           onClick={() => setAp({ ...ap, income: o.v })}
                           className={`flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] px-3 py-2.5 text-left ${
-                            on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}
+ on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}
                         >
                           <span className={`flex h-[19px] w-[19px] flex-none items-center justify-center rounded-full border-2 ${on ? 'border-primary' : 'border-lilac-ring'}`}>
                             {on && <span className="h-[9px] w-[9px] rounded-full bg-primary" />}
@@ -1729,7 +1729,7 @@ export function BienesRaicesScreen() {
                           key={o.v}
                           onClick={() => setAp({ ...ap, move: i })}
                           className={`flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-field border-[1.5px] px-3 py-2.5 text-left ${
-                            on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}
+ on ? 'border-primary bg-lilac-3' : 'border-lilac-line bg-white'}`}
                         >
                           <span className={`flex h-[19px] w-[19px] flex-none items-center justify-center rounded-full border-2 ${on ? 'border-primary' : 'border-lilac-ring'}`}>
                             {on && <span className="h-[9px] w-[9px] rounded-full bg-primary" />}
@@ -1742,7 +1742,7 @@ export function BienesRaicesScreen() {
                 </div>
                 <button onClick={() => setAp({ ...ap, consent: !ap.consent })} className="flex cursor-pointer items-start gap-2.5 text-left">
                   <span className={`mt-0.5 flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] border-[1.5px] ${
-                    ap.consent ? 'border-primary bg-primary' : 'border-lilac-ring bg-white'}`}
+ ap.consent ? 'border-primary bg-primary' : 'border-lilac-ring bg-white'}`}
                   >
                     {ap.consent && <Check size={13} stroke={3.4} className="text-white" />}
                   </span>

@@ -173,8 +173,8 @@ export function Paginacion({ page, totalPages, onChange, listaRef, resumen }: {
           onClick={() => ir(n)}
           aria-current={n === page ? 'page' : undefined}
           className={`flex h-[34px] min-w-[34px] cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] px-2 text-[12.5px] font-extrabold ${
-            n === page ? 'border-primary bg-primary text-white shadow-cta-sm' : 'border-lilac-line bg-white text-ink-soft'
-          }`}
+ n === page ? 'border-primary bg-primary text-white shadow-cta-sm' : 'border-lilac-line bg-white text-ink-soft'
+ }`}
         >
           {n}
         </button>
@@ -264,10 +264,10 @@ export function Chip({
       onClick={onClick}
       style={style}
       className={`tap-y flex-none whitespace-nowrap rounded-full px-[15px] py-2 text-[12.5px] font-extrabold transition-colors ${
-        active
-          ? 'bg-primary text-white shadow-cta-sm'
-          : 'bg-white text-ink-soft shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
-      } ${className}`}
+ active
+ ? 'bg-primary text-white shadow-cta-sm'
+ : 'bg-white text-ink-soft shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
+ } ${className}`}
     >
       {children}
     </button>
@@ -408,8 +408,8 @@ export function Overlay({
         onClick={(e) => e.stopPropagation()}
         style={{ ['--w' as string]: `${width}px` }}
         className={`w-full overflow-y-auto rounded-t-panel bg-white p-4 pb-7 shadow-sheet outline-none md:w-[var(--w)] md:max-w-[calc(100%-28px)] md:rounded-card md:p-5 md:shadow-modal ${
-          fullHeightSheet ? 'h-[90%] md:h-auto md:max-h-[min(640px,calc(100%-40px))]' : 'max-h-[88%] md:max-h-[calc(100%-24px)]'
-        }`}
+ fullHeightSheet ? 'h-[90%] md:h-auto md:max-h-[min(640px,calc(100%-40px))]' : 'max-h-[88%] md:max-h-[calc(100%-24px)]'
+ }`}
       >
         {children}
       </div>
@@ -448,7 +448,7 @@ export function Card({ children, className = '', onClick }: { children: ReactNod
   return (
     <div
       onClick={onClick}
-      className={`rounded-card border border-line bg-white shadow-card ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`rounded-card border border-line bg-white ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
     </div>
@@ -484,7 +484,7 @@ export function EmptyState({ title, sub }: { title: string; sub?: string }) {
  *  (Comunidad). Pass the screen's own grid/stack classes via `className`. */
 function SkeletonCard() {
   return (
-    <div className="overflow-hidden rounded-card border border-line bg-white shadow-card">
+    <div className="overflow-hidden rounded-card border border-line bg-white">
       <div className="aspect-[16/10] w-full animate-pulse bg-lilac-2" />
       <div className="flex flex-col gap-2 p-3.5">
         <div className="h-3.5 w-2/3 animate-pulse rounded bg-lilac-2" />
@@ -496,7 +496,7 @@ function SkeletonCard() {
 }
 function SkeletonPost() {
   return (
-    <div className="rounded-card border border-line bg-white p-4 shadow-card">
+    <div className="rounded-card border border-line bg-white p-4">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 flex-none animate-pulse rounded-full bg-lilac-2" />
         <div className="flex flex-col gap-1.5">
@@ -542,8 +542,8 @@ export function PrimaryBtn({
       // un teléfono ese fundido se lee como retraso. Habilitarse es un cambio de
       // ESTADO, no una animación.
       className={`w-full rounded-btn-lg p-[13px] text-[14px] font-extrabold text-white ${
-        disabled ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta hover:bg-primary-dark'
-      } ${className}`}
+ disabled ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta hover:bg-primary-dark'
+ } ${className}`}
     >
       {children}
     </button>

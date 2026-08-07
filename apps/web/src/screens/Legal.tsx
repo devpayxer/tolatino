@@ -54,7 +54,7 @@ function LegalShell({ title, intro, blocks }: { title: [string, string]; intro: 
           ))}
         </div>
 
-        <div className="mt-10 rounded-card border border-line bg-white p-5 shadow-card">
+        <div className="mt-10 rounded-card border border-line bg-white p-5">
           <div className="text-[13.5px] font-extrabold text-ink">{L('¿Preguntas?', 'Questions?')}</div>
           <p className="mt-1.5 text-[12.5px] font-medium leading-relaxed text-muted">
             {L('Escríbenos a ', 'Reach us at ')}<a href={`mailto:${LEGAL_EMAIL}`} className="font-extrabold text-primary-dark">{LEGAL_EMAIL}</a>.

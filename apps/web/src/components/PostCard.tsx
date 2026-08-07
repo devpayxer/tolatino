@@ -112,7 +112,7 @@ export function PostCard({
   const pollTotal = pollCounts.reduce((a, b) => a + b, 0);
 
   return (
-    <div className="rounded-card border border-line bg-white p-[18px] shadow-card">
+    <div className="rounded-card border border-line bg-white p-[18px]">
       <div className="flex items-start gap-3">
         {onOpenAuthor && post.authorId && !preview ? (
           <button onClick={() => onOpenAuthor(post.authorId as string)} className="flex-none cursor-pointer" aria-label={post.name}>
@@ -153,8 +153,8 @@ export function PostCard({
               <button
                 onClick={() => follows.toggleFollow(post.authorId as string)}
                 className={`tap-y inline-flex cursor-pointer items-center rounded-[7px] border px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] ${
-                  following ? 'border-hair-strong text-muted' : 'border-primary text-primary-dark'
-                }`}
+ following ? 'border-hair-strong text-muted' : 'border-primary text-primary-dark'
+ }`}
               >
                 {following ? L('Siguiendo', 'Following') : L('Seguir', 'Follow')}
               </button>
@@ -199,8 +199,8 @@ export function PostCard({
                   <span
                     key={i}
                     className={`h-1.5 rounded-full shadow-[0_0_2px_rgba(0,0,0,.4)] transition-all ${
-                      i === slide ? 'w-4 bg-white' : 'w-1.5 bg-white/60'
-                    }`}
+ i === slide ? 'w-4 bg-white' : 'w-1.5 bg-white/60'
+ }`}
                   />
                 ))}
               </div>
@@ -220,8 +220,8 @@ export function PostCard({
                 disabled={preview || voted}
                 onClick={() => it.votePoll(post.id, i, pollBase)}
                 className={`relative w-full cursor-pointer overflow-hidden rounded-field border-[1.5px] bg-white px-3.5 py-[11px] text-left ${
-                  chosen ? 'border-primary' : 'border-hair-strong'
-                }`}
+ chosen ? 'border-primary' : 'border-hair-strong'
+ }`}
               >
                 <span
                   className="absolute bottom-0 left-0 top-0 transition-[width] duration-300"

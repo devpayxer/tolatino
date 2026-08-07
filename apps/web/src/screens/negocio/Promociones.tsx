@@ -38,7 +38,7 @@ type Camp = {
   redemptions: number; revenue: number;
 };
 
-const cardCls = 'rounded-card border border-line bg-white shadow-card';
+const cardCls = 'rounded-card border border-line bg-white ';
 
 export function Promociones({ ctx }: { ctx: PanelCtx }) {
   const { L, es, mods } = ctx;

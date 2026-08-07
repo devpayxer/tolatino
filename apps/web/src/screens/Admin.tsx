@@ -338,7 +338,7 @@ export function AdminScreen() {
                 <button key={n.id} disabled={locked}
                   onClick={() => { setSection(n.id); if (n.id.startsWith('mod:')) setModTab(MOD_LABEL[n.id].tabs[0][0]); setNavOpen(false); }}
                   className={`flex min-h-[40px] w-full items-center gap-2.5 rounded-btn px-2.5 text-left text-[12.5px] font-extrabold transition-colors ${
-                    on ? 'bg-primary text-white' : locked ? 'cursor-not-allowed text-white/25' : 'cursor-pointer text-white/70 hover:bg-white/10'}`}>
+ on ? 'bg-primary text-white' : locked ? 'cursor-not-allowed text-white/25' : 'cursor-pointer text-white/70 hover:bg-white/10'}`}>
                   <n.Icon size={16} stroke={2.2} className="flex-none" />
                   <span className="flex-1 truncate">{L(n.es, n.en)}</span>
                   {!locked && !!badge && !on && <span className="flex-none rounded-full bg-pink px-1.5 py-0.5 text-[9px] font-extrabold text-white">{badge}</span>}
@@ -469,7 +469,7 @@ export function AdminScreen() {
         {alerts.length > 0 && (
           <div className="flex flex-col gap-2">
             {alerts.map((x) => (
-              <div key={x.k} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3.5 shadow-card" style={{ borderLeftWidth: 4 }}>
+              <div key={x.k} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3.5" style={{ borderLeftWidth: 4 }}>
                 <span className="text-[19px] font-extrabold tabular-nums text-ink">{x.n}</span>
                 <span className="min-w-0 flex-1 text-[12.5px] font-bold text-ink-2">{L(x.es, x.en)}</span>
                 <button onClick={() => setSection(x.go)} className="flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[11.5px] font-extrabold text-white shadow-cta-sm">{L('Resolver', 'Resolve')}</button>
@@ -605,7 +605,7 @@ export function AdminScreen() {
             <div className="text-[11px] font-bold text-muted-2"><span className="text-primary-dark">{biz[0]?.total_count ?? 0}</span> {L('negocios', 'businesses')}</div>
             <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
               {biz.map((b) => (
-                <button key={b.id} onClick={() => void openBiz(b.id)} className="flex cursor-pointer flex-col rounded-card-sm border border-line bg-white p-3.5 text-left shadow-card">
+                <button key={b.id} onClick={() => void openBiz(b.id)} className="flex cursor-pointer flex-col rounded-card-sm border border-line bg-white p-3.5 text-left">
                   <div className="flex items-center gap-1.5">
                     <span className="min-w-0 flex-1 truncate text-[13px] font-extrabold text-ink">{b.name}</span>
                     <Pill tone={TIER_TONE[b.tier] ?? 'gray'}>{b.tier}</Pill>
@@ -705,7 +705,7 @@ export function AdminScreen() {
               const st = CLAIM_STATUS[c.status] ?? CLAIM_STATUS.abierto; const kd = CLAIM_KIND[c.kind];
               const late = (c.status === 'abierto' || c.status === 'en_revision') && c.hours_open > 24;
               return (
-                <button key={c.id} onClick={() => { setClaim(c); setCmsg(''); }} className={`flex cursor-pointer flex-col rounded-card-sm border bg-white p-3.5 text-left shadow-card ${late ? 'border-pink-dark' : 'border-line'}`}>
+                <button key={c.id} onClick={() => { setClaim(c); setCmsg(''); }} className={`flex cursor-pointer flex-col rounded-card-sm border bg-white p-3.5 text-left ${late ? 'border-pink-dark' : 'border-line'}`}>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Pill tone={c.status === 'resuelto' ? 'green' : c.status === 'rechazado' ? 'pink' : c.status === 'en_revision' ? 'purple' : 'amber'}>{L(st.es, st.en)}</Pill>
                     {kd && <Pill tone="gray">{L(kd.es, kd.en)}</Pill>}
@@ -918,7 +918,7 @@ export function AdminScreen() {
         ))}
         {catTab === 'ciudades' && (
           <>
-            <div className="flex max-w-[720px] items-center gap-2 rounded-field bg-white px-3 py-2 shadow-card"><Search size={14} className="text-muted-2" /><input value={cityQ} onChange={(e) => setCityQ(e.target.value)} placeholder={L('Buscar ciudad…', 'Search city…')} className="w-full bg-transparent text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted-2" /></div>
+            <div className="flex max-w-[720px] items-center gap-2 rounded-field bg-white px-3 py-2"><Search size={14} className="text-muted-2" /><input value={cityQ} onChange={(e) => setCityQ(e.target.value)} placeholder={L('Buscar ciudad…', 'Search city…')} className="w-full bg-transparent text-[12.5px] font-semibold text-ink outline-none placeholder:text-muted-2" /></div>
             {cities === null ? <SkeletonList count={5} /> : (
               <Panel className="max-w-[720px] overflow-hidden">
                 {cities.map((c) => (

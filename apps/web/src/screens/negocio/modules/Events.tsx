@@ -27,7 +27,7 @@ import { Qr } from '@/components/Qr';
 import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { QrScanner, useBarcodeSupport } from '@/components/QrScanner';
 
-const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white ';
 
 type View = 'list' | 'manage' | 'wizard' | 'success';
 type ListTab = 'upcoming' | 'drafts' | 'past' | 'recurring' | 'promoters';
@@ -538,7 +538,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // Honest placeholder for features on the roadmap but not yet built (matches the
   // app's "Muy pronto" pattern) — never fake data dressed up as working.
   const comingSoon = (Icon: typeof RefreshCw, title: string, desc: string) => (
-    <div className="flex flex-col items-center rounded-card-sm border border-line bg-white px-6 py-12 text-center shadow-card">
+    <div className="flex flex-col items-center rounded-card-sm border border-line bg-white px-6 py-12 text-center">
       <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-tile bg-lilac-3"><Icon size={22} strokeWidth={2} className="text-primary-dark" /></span>
       <div className="text-[14px] font-extrabold text-ink">{title}</div>
       <div className="mt-1 max-w-[340px] text-[11.5px] font-medium leading-relaxed text-muted">{desc}</div>
@@ -588,7 +588,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
 
         {upcomingList.length === 0 && (
-          <div className="rounded-card-sm border border-line bg-white py-12 text-center shadow-card">
+          <div className="rounded-card-sm border border-line bg-white py-12 text-center">
             <div className="text-[13.5px] font-extrabold text-ink">{L('Aún no tienes eventos próximos', 'No upcoming events yet')}</div>
             <div className="mt-1 text-[11.5px] font-medium text-muted-2">{L('Crea tu primer evento y ponlo en venta en minutos.', 'Create your first event and put it on sale in minutes.')}</div>
             <button onClick={startWizard} className="tap-y mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">
@@ -601,7 +601,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             const pct = Math.round((e.sold / e.cap) * 100);
             const barC = e.sold / e.cap > 0.85 ? '#E8954A' : '#7B61FF';
             return (
-              <div key={e.id} className="overflow-hidden rounded-card-sm border border-line bg-white shadow-card">
+              <div key={e.id} className="overflow-hidden rounded-card-sm border border-line bg-white">
                 <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }}>
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))' }} />
                   <span className="absolute left-2.5 top-2.5 rounded-[9px] bg-white px-2.5 py-1 text-center shadow-cta-sm">
@@ -684,11 +684,11 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---- Pasados ---- real for a signed-in owner; sample when exploring in demo
   const pastView = persistable ? (
     pastList.length === 0 ? (
-      <div className="rounded-card-sm border border-line bg-white py-12 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Todavía no tienes eventos pasados.', 'No past events yet.')}</div>
+      <div className="rounded-card-sm border border-line bg-white py-12 text-center text-[12px] font-semibold text-muted-2">{L('Todavía no tienes eventos pasados.', 'No past events yet.')}</div>
     ) : (
       <div className="grid gap-2.5 md:grid-cols-2">
         {pastList.map((e) => (
-          <button key={e.dbId ?? e.id} onClick={() => goManage(e.id)} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left opacity-90 shadow-card hover:opacity-100">
+          <button key={e.dbId ?? e.id} onClick={() => goManage(e.id)} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left opacity-90 hover:opacity-100">
             <span className="flex h-12 w-12 flex-none flex-col items-center justify-center rounded-[11px]" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }}>
               <span className="text-[8px] font-extrabold text-pink-dark">{e.mon}</span>
               <span className="text-[15px] font-extrabold leading-none text-ink">{e.day}</span>
@@ -704,7 +704,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ) : (
     <div className="grid gap-2.5 md:grid-cols-2">
       {pastEvents.map((e) => (
-        <div key={e.name} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 opacity-90 shadow-card">
+        <div key={e.name} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 opacity-90">
           <span className="h-12 w-12 flex-none rounded-[11px]" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }} />
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] font-extrabold text-ink">{e.name}</div>
@@ -773,7 +773,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
 
   const heroCard = (
-    <div className="overflow-hidden rounded-card-sm border border-line bg-white shadow-card">
+    <div className="overflow-hidden rounded-card-sm border border-line bg-white">
       <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${mgEv.tile})` }}>
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.5))' }} />
         <span className="absolute right-2.5 top-2.5 rounded-[7px] px-2.5 py-1 text-[9px] font-extrabold" style={{ background: mgEv.statusBg, color: mgEv.statusC }}>{L(mgEv.status[0], mgEv.status[1]) || L('Vendiendo', 'Selling')}</span>
@@ -1177,7 +1177,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <button onClick={notifyWaitlist} disabled={waitBusy || waitlistActive === 0} className="tap-y flex-none cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-40">{waitBusy ? L('Avisando…', 'Notifying…') : L('Avisar a la lista', 'Notify the list')}</button>
       </div>
       {(waitRows ?? []).length === 0 ? (
-        <div className="rounded-card-sm border border-line bg-white py-10 text-center text-[12px] font-semibold text-muted-2 shadow-card">{L('Nadie en lista de espera todavía.', 'No one on the waitlist yet.')}</div>
+        <div className="rounded-card-sm border border-line bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{L('Nadie en lista de espera todavía.', 'No one on the waitlist yet.')}</div>
       ) : (
         <div className="grid gap-2.5 md:grid-cols-2">
           {(waitRows ?? []).map((w) => {
@@ -1774,7 +1774,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
-        <div className="overflow-hidden rounded-card-sm border border-line bg-white shadow-card xl:sticky xl:top-0">
+        <div className="overflow-hidden rounded-card-sm border border-line bg-white xl:sticky xl:top-0">
           <div className="relative h-24" style={draft.coverUrl ? { backgroundImage: `url(${draft.coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: `repeating-linear-gradient(135deg,${draftTile})` }}>
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.55))' }} />
             <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-extrabold text-primary-dark">{wizCatName}</span>
@@ -1809,7 +1809,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo evento', 'New event'))} {L('está activo', 'is live')}</div>
       <div className="mt-2 max-w-[320px] text-[13px] font-medium leading-relaxed text-muted">{L('Los boletos están a la venta y el evento aparece en tu listado.', 'Tickets are on sale and the event is on your listing.')}</div>
 
-      <div className="mt-5 w-full max-w-[420px] overflow-hidden rounded-card-sm border border-line bg-white text-left shadow-card">
+      <div className="mt-5 w-full max-w-[420px] overflow-hidden rounded-card-sm border border-line bg-white text-left">
         <div className="relative h-[104px]" style={{ background: `repeating-linear-gradient(135deg,${draftTile})` }}>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,transparent,rgba(0,0,0,.45))' }} />
           <div className="absolute bottom-2.5 left-3 text-[15px] font-extrabold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]">{draft.name || L('Nuevo evento', 'New event')}</div>

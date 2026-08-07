@@ -48,7 +48,7 @@ export function OrderStepsVertical({ stageIdx, isDelivery, store = false }: { st
     ? [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), prep, L('En camino', 'On the way'), L('Entregado', 'Delivered')]
     : [stageIdx > 0 ? L('Confirmado', 'Confirmed') : L('Esperando confirmación', 'Awaiting confirmation'), prep, store ? L('Listo para recoger en tienda', 'Ready for store pickup') : L('Listo para recoger', 'Ready for pickup')];
   return (
-    <div className="flex flex-col gap-0 rounded-card border border-line bg-white p-4 shadow-card">
+    <div className="flex flex-col gap-0 rounded-card border border-line bg-white p-4">
       {labels.map((label, i, arr) => {
         const done = i < stageIdx;
         const active = i === stageIdx;

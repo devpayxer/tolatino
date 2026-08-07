@@ -70,7 +70,7 @@ const EXT_DEF = [true, true, false];
 const arrToRec = (a: boolean[]): Record<number, boolean> => { const r: Record<number, boolean> = {}; a.forEach((v, i) => { r[i] = v; }); return r; };
 const recToArr = (r: Record<number, boolean>, n: number): boolean[] => Array.from({ length: n }, (_, i) => !!r[i]);
 
-const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white ';
 
 // ---- orders / operational model (business_orders + fulfillment jsonb, 0049) ----
 type OrderItem = { name: string; qty: number; price?: number };
@@ -404,9 +404,9 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                   <div className="relative mt-2.5 h-[68px] overflow-hidden rounded-field border border-line" style={{ background: '#EAEEF6' }}>
                     <div className="absolute left-[-10px] top-[26px] h-[6px] w-[150%] bg-white" style={{ transform: 'rotate(-8deg)' }} />
                     <div className="absolute left-[38%] top-[-10px] h-[150%] w-[6px] bg-white" style={{ transform: 'rotate(9deg)' }} />
-                    <span className="absolute left-[18%] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-card"><Bike size={12} stroke={2.4} /></span>
-                    <span className="absolute right-[16%] top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-white bg-green shadow-card" />
-                    <span className="absolute bottom-1.5 right-2 rounded-md bg-white/90 px-2 py-0.5 text-[9px] font-extrabold text-ink shadow-card"><Navigation size={9} stroke={2.6} className="mr-0.5 inline" />{o.fulfillment.eta ? `ETA ${o.fulfillment.eta}` : L('En ruta', 'En route')}</span>
+                    <span className="absolute left-[18%] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-float"><Bike size={12} stroke={2.4} /></span>
+                    <span className="absolute right-[16%] top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-white bg-green shadow-float" />
+                    <span className="absolute bottom-1.5 right-2 rounded-md bg-white/90 px-2 py-0.5 text-[9px] font-extrabold text-ink shadow-float"><Navigation size={9} stroke={2.6} className="mr-0.5 inline" />{o.fulfillment.eta ? `ETA ${o.fulfillment.eta}` : L('En ruta', 'En route')}</span>
                   </div>
                 )}
 
@@ -434,7 +434,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
         <div className="absolute left-1/2 top-1/2 h-[130px] w-[170px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ border: '2px solid rgba(244,183,64,.6)', background: 'rgba(244,183,64,.06)' }} />
         <div className="absolute left-1/2 top-1/2 h-[92px] w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ border: '2px solid rgba(240,70,110,.6)', background: 'rgba(240,70,110,.06)' }} />
         <div className="absolute left-1/2 top-1/2 h-[52px] w-[64px] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ border: '2px solid rgba(123,97,255,.7)', background: 'rgba(123,97,255,.08)' }} />
-        <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary shadow-card" />
+        <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary shadow-float" />
       </div>
       <div className="flex flex-col gap-2.5">
         {zones.map((z, zi) => {

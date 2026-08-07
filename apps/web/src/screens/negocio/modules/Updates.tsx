@@ -79,7 +79,7 @@ const KIND_BADGE: Record<Kind, string> = {
   news: 'bg-green-bg text-green-dark',
 };
 
-const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white ';
 
 export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
   const { L, es, isFree, ci } = ctx;
@@ -322,7 +322,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
             <div className="relative mt-2 w-fit">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imgUrl(photoUrl, ANCHO.tarjeta)} alt="" className="h-20 w-28 rounded-tile object-cover" />
-              <button onClick={() => setPhotoUrl('')} aria-label={L('Quitar foto', 'Remove photo')} className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-ink text-white shadow-card"><X size={12} stroke={2.8} /></button>
+              <button onClick={() => setPhotoUrl('')} aria-label={L('Quitar foto', 'Remove photo')} className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-ink text-white shadow-float"><X size={12} stroke={2.8} /></button>
             </div>
           )}
           <div className="mt-2.5 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
@@ -416,7 +416,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
         </div>
       ) : (
         visible.map((p) => (
-          <div key={p.id} className={`overflow-hidden rounded-card-sm border bg-white shadow-card ${p.pinned ? 'border-[rgba(244,183,64,.4)]' : 'border-line'}`}>
+          <div key={p.id} className={`overflow-hidden rounded-card-sm border bg-white ${p.pinned ? 'border-[rgba(244,183,64,.4)]' : 'border-line'}`}>
             <div className="flex items-start justify-between gap-2 p-3.5 pb-0">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[10px] bg-primary text-[11px] font-extrabold text-white">{ci.initials}</span>

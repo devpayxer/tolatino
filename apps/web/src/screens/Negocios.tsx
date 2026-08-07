@@ -278,8 +278,8 @@ export function NegociosScreen() {
         key={es}
         onClick={() => toggleFeature(es)}
         className={`cursor-pointer rounded-full px-[11px] py-1.5 text-[11.5px] ${
-          on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-3'
-        }`}
+ on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-3'
+ }`}
       >
         {L(es, en)}
       </button>
@@ -308,8 +308,8 @@ export function NegociosScreen() {
           setShowAllFeat(false);
         }}
         className={`flex w-full cursor-pointer items-center justify-between rounded-[10px] px-[11px] py-[9px] text-left text-[13px] ${
-          f.cat === 'all' ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
-        }`}
+ f.cat === 'all' ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
+ }`}
       >
         <span className="flex items-center gap-2.5">
           <span className="h-2 w-2 rounded-full bg-primary" />
@@ -333,8 +333,8 @@ export function NegociosScreen() {
                 patch({ cat: k, subCat: open ? f.subCat : null, features: keepFeatures });
               }}
               className={`flex w-full cursor-pointer items-center justify-between rounded-[10px] px-[11px] py-[9px] text-left text-[13px] ${
-                active || open ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
-              }`}
+ active || open ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
+ }`}
             >
               <span className="flex items-center gap-2.5">
                 <span className="h-2 w-2 rounded-full" style={{ background: CAT[k].dot }} />
@@ -356,8 +356,8 @@ export function NegociosScreen() {
                       key={se}
                       onClick={() => patch({ cat: k, subCat: on ? null : se })}
                       className={`cursor-pointer rounded-full px-[11px] py-1.5 text-[11.5px] ${
-                        on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-3'
-                      }`}
+ on ? 'bg-primary font-extrabold text-white' : 'bg-lilac-2 font-bold text-ink-3'
+ }`}
                     >
                       {L(se, en)}
                     </button>
@@ -519,8 +519,8 @@ export function NegociosScreen() {
           <button
             onClick={() => setMapOpen(!mapOpen)}
             className={`hidden cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-extrabold md:flex ${
-              mapOpen ? 'bg-primary text-white' : 'bg-white text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
-            }`}
+ mapOpen ? 'bg-primary text-white' : 'bg-white text-ink shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
+ }`}
           >
             <MapIcon size={13} stroke={2.4} />
             {L('Mapa', 'Map')}
@@ -552,7 +552,7 @@ export function NegociosScreen() {
 
       <div className="grid items-start gap-[22px] lg:grid-cols-[252px_1fr]">
         {/* filter rail (desktop) */}
-        <aside className="sticky top-[130px] hidden rounded-card-sm border border-line bg-white p-[18px] shadow-card lg:block">
+        <aside className="sticky top-[130px] hidden rounded-card-sm border border-line bg-white p-[18px] lg:block">
           {filterPanel}
         </aside>
 
@@ -576,7 +576,7 @@ export function NegociosScreen() {
           {liveLoading ? (
             <SkeletonList count={6} className="grid grid-cols-1 gap-[15px] md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" />
           ) : results.length === 0 ? (
-            <div className="rounded-card border border-line bg-white p-10 text-center shadow-card">
+            <div className="rounded-card border border-line bg-white p-10 text-center">
               {onlySaved ? (
                 <>
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-pink-bg">
@@ -739,8 +739,8 @@ function EndorseBar({ b }: { b: Business }) {
           disabled={busy}
           aria-pressed={mine}
           className={`flex flex-none cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold transition-colors ${
-            mine ? 'bg-primary text-white' : 'border-[1.5px] border-lilac-line bg-white text-primary-dark'
-          }`}
+ mine ? 'bg-primary text-white' : 'border-[1.5px] border-lilac-line bg-white text-primary-dark'
+ }`}
         >
           {mine ? <ThumbUpFilled size={12} /> : <ThumbUp size={12} stroke={2.4} />}
           {mine ? L('Recomiendas', 'Recommended') : L('Recomendar', 'Recommend')}

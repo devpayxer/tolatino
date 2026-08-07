@@ -34,7 +34,7 @@ type Job = {
   applied: number; viewed: number; whenEs: string; whenEn: string; tag: 'live' | 'new' | 'paused';
 };
 
-const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white ';
 
 // role pill (data colors → inline hex, tokens for className where possible)
 const ROLE_PILL: Record<Role, string> = {

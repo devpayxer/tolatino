@@ -21,7 +21,7 @@ import { CheckoutSheet } from '@/components/CheckoutSheet';
 import { supabase } from '@/lib/supabase';
 import { useScrollLock } from '@/lib/scrollLock';
 
-const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white ';
 
 type Sub = 'plan' | 'compare' | 'methods' | 'invoices';
 type AddonKey = 'featured' | 'boost' | 'seats' | 'sms';
@@ -95,7 +95,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     flash(error === 'no subscription' ? L('No tienes una suscripción activa', 'No active subscription') : L('No se pudo abrir el portal', 'Could not open the portal'));
   };
   const portalCta = (
-    <div className="mx-auto max-w-md rounded-card border border-line bg-white p-6 text-center shadow-card">
+    <div className="mx-auto max-w-md rounded-card border border-line bg-white p-6 text-center">
       <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lilac"><Lock size={22} className="text-primary" stroke={2.2} /></span>
       <div className="mt-3 text-[14px] font-extrabold text-ink">{L('Administra tus pagos en Stripe', 'Manage payments in Stripe')}</div>
       <p className="mt-1.5 text-[12px] font-semibold leading-relaxed text-muted">

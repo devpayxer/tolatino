@@ -5,6 +5,29 @@
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
 > Last updated: 2026-08-06.
 
+## El fondo, y por qué los recuadros ya no llevan sombra (2026-08-06)
+
+Estado FINAL del lienzo, tras tres vueltas con el fundador (gris → casi
+blanco → blanco → **blanco cálido**):
+
+- **`canvas` = `#FCF8F8`** — blanco cálido. Lo eligió él, con un razonamiento
+  correcto: con un tinte, la tarjeta blanca se sostiene sola y **la sombra
+  sobra**. `dash` (el panel) usa el mismo.
+- **Ningún recuadro lleva sombra en reposo.** 170 `shadow-card` retiradas.
+- **Lo que SÍ conserva sombra son los CONTROLES REDONDOS** — 51
+  `shadow-float`: volver/compartir/guardar del hero, flechas de galería,
+  «quitar foto», puntos de estado sobre avatares. No decoran: los hacen
+  legibles sobre una foto cualquiera.
+  **La regla es «cajas planas, controles con sombra», y hay una trampa:** el
+  primer barrido usó «¿la línea dice `absolute`?» y falló, porque los botones
+  del hero llevan el `absolute` en el PADRE — se quedaron sin sombra sobre la
+  foto. Se rehízo con «¿es `rounded-full`?», que sí los caza.
+- `hover:shadow-card-lg` se queda: es el realce al pasar el ratón en
+  escritorio, no la sombra del recuadro en reposo.
+- **Pendiente menor:** la portada usa `page` `#FBFAFE`, que es FRÍO. Al pasar
+  de la portada a la app se nota un salto de tono. No se tocó porque la
+  portada tiene su propio handoff aprobado — decisión del fundador.
+
 ## La app en BLANCO — tres colores donde antes había uno (2026-08-06)
 
 El fundador: «ese gris no me gusta mucho, no se combina bien». El lienzo es

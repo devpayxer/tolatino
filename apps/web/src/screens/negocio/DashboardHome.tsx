@@ -23,7 +23,7 @@ import { useBizAdmin } from '@/lib/bizAdmin';
 import { fetchBusinessMetrics, tzDayKeys } from '@/lib/live';
 import { activeMods, type PanelCtx, type TabKey } from '@/screens/negocio/tabs';
 
-const card = 'rounded-card-sm border border-line bg-white shadow-card';
+const card = 'rounded-card-sm border border-line bg-white ';
 
 type OrderRow = { id: string; code: string | null; customer: string | null; items: { name: string; qty: number }[]; total: number; channel: string; status: string; created_at: string };
 type ReviewRow = { id: string; name: string; rating: number; replied: boolean; created_at: string };
@@ -353,7 +353,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
       {/* activar ventas (listing-only) */}
       {!sells && (
         <div className="mt-1 flex items-center gap-3 rounded-card-sm border border-lilac-line p-3.5" style={{ background: 'linear-gradient(135deg,#efe9ff,#f7f3ff)' }}>
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn bg-white shadow-card"><Cart size={20} stroke={2.2} className="text-primary" /></span>
+          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn bg-white"><Cart size={20} stroke={2.2} className="text-primary" /></span>
           <div className="min-w-0 flex-1"><div className="text-[13px] font-extrabold text-ink">{L('¿Vendes o tomas pedidos?', 'Do you sell or take orders?')}</div><div className="text-[11px] font-semibold text-ink-2">{L('Activa menú, productos, reservas o eventos. Tu página sigue igual.', 'Turn on menu, products, bookings or events. Your page stays the same.')}</div></div>
           <button onClick={() => go('modules')} className="tap-y flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Activar', 'Enable')}</button>
         </div>

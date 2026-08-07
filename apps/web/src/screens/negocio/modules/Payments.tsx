@@ -95,7 +95,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
 
   if (admin.loading || loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -103,7 +103,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
 
   if (!real) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -122,7 +122,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
   const avg = sum.orders ? sum.revenue / sum.orders : 0;
 
   const kpi = (Icon: typeof DollarSign, c: string, bg: string, label: string, value: string) => (
-    <div className="rounded-card border border-line bg-white p-4 shadow-card">
+    <div className="rounded-card border border-line bg-white p-4">
       <span className="flex h-9 w-9 items-center justify-center rounded-btn" style={{ background: bg }}>
         <Icon size={16} strokeWidth={2.2} style={{ color: c }} />
       </span>
@@ -147,7 +147,7 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
         const active = !!connect?.charges_enabled;
         const pending = !!connect?.details_submitted && !connect?.charges_enabled;
         return (
-          <div className="mt-4 rounded-card border border-line bg-white p-5 shadow-card">
+          <div className="mt-4 rounded-card border border-line bg-white p-5">
             <div className="flex items-start gap-3">
               <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-full ${active ? 'bg-green-bg' : 'bg-lilac'}`}>
                 {active ? <Check size={22} className="text-green-dark" stroke={2.6} /> : <DollarSign size={22} className="text-primary" stroke={2.2} />}

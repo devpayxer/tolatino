@@ -126,7 +126,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
 
   if (admin.loading || loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -134,7 +134,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
 
   if (!real) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -152,7 +152,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
   const active = convos.find((c) => c.id === activeId) ?? null;
 
   const list = (
-    <div className="flex flex-col overflow-hidden rounded-card border border-line bg-white shadow-card">
+    <div className="flex flex-col overflow-hidden rounded-card border border-line bg-white">
       {convos.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-4 py-14 text-center text-muted">
           <MessageCircle size={26} stroke={2} className="text-muted-faint" />
@@ -183,7 +183,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
   );
 
   const thread = active && (
-    <div className="flex h-[70vh] flex-col overflow-hidden rounded-card border border-line bg-white shadow-card lg:h-[calc(100vh-220px)]">
+    <div className="flex h-[70vh] flex-col overflow-hidden rounded-card border border-line bg-white lg:h-[calc(100vh-220px)]">
       <div className="flex flex-none items-center gap-2.5 border-b border-hair px-3.5 py-2.5">
         <button onClick={() => setActiveId(null)} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink lg:hidden" aria-label={L('Volver', 'Back')}>
           <ChevronLeft size={17} stroke={2.4} />
@@ -196,7 +196,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-app px-3.5 py-3">
         {msgs.map((m) => (
           <div key={m.id} className={`flex ${m.fromOwner ? 'justify-end' : 'justify-start'}`}>
-            <span className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-[13px] font-medium ${m.fromOwner ? 'bg-primary text-white' : 'bg-white text-ink shadow-card'}`}>
+            <span className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-[13px] font-medium ${m.fromOwner ? 'bg-primary text-white' : 'bg-white text-ink '}`}>
               {m.body}
             </span>
           </div>
@@ -231,7 +231,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
         {active ? (
           thread
         ) : (
-          <div className="hidden h-full items-center justify-center rounded-card border border-line bg-white text-[12.5px] font-semibold text-muted shadow-card lg:flex">
+          <div className="hidden h-full items-center justify-center rounded-card border border-line bg-white text-[12.5px] font-semibold text-muted lg:flex">
             {L('Elige una conversación', 'Pick a conversation')}
           </div>
         )}

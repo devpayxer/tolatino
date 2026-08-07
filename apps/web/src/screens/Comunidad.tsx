@@ -680,8 +680,8 @@ export function ComunidadScreen() {
                     key={k}
                     onClick={() => setHood(k)}
                     className={`flex min-h-11 w-full cursor-pointer items-center justify-between rounded-[9px] px-2.5 py-2 text-left text-[12.5px] ${
-                      hood === k ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
-                    }`}
+ hood === k ? 'bg-lilac-3 font-extrabold text-ink' : 'font-bold text-ink-soft'
+ }`}
                   >
                     <span>{label}</span>
                     {n > 0 && <span className="text-[11px] font-bold text-muted-faint">{n}</span>}
@@ -731,8 +731,8 @@ export function ComunidadScreen() {
                   onClick={() => setHood(k)}
                   aria-pressed={hood === k}
                   className={`tap-y flex-none cursor-pointer whitespace-nowrap rounded-full px-3.5 py-2 text-[12.5px] font-extrabold ${
-                    hood === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'
-                  }`}
+ hood === k ? 'bg-primary text-white' : 'bg-lilac-2 text-ink-2'
+ }`}
                 >
                   {label}
                   {n > 0 && <span className={`ml-1.5 text-[11px] ${hood === k ? 'text-white/70' : 'text-muted'}`}>{n}</span>}
@@ -864,7 +864,7 @@ export function ComunidadScreen() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="mx-auto mt-1 cursor-pointer rounded-full border border-line bg-white px-5 py-2.5 text-[13px] font-extrabold text-primary-dark shadow-card disabled:opacity-60"
+                className="mx-auto mt-1 cursor-pointer rounded-full border border-line bg-white px-5 py-2.5 text-[13px] font-extrabold text-primary-dark shadow-float disabled:opacity-60"
               >
                 {loadingMore ? L('Cargando…', 'Loading…') : L('Ver más publicaciones', 'Show more posts')}
               </button>
@@ -971,7 +971,7 @@ export function ComunidadScreen() {
                 </div>
               )}
               {commentBizOpen && (
-                <div className="mb-2 rounded-2xl border border-line bg-white p-2 shadow-card">
+                <div className="mb-2 rounded-2xl border border-line bg-white p-2">
                   <input
                     value={commentBizQuery}
                     onChange={(e) => setCommentBizQuery(e.target.value)}
@@ -1009,8 +1009,8 @@ export function ComunidadScreen() {
                 <button
                   onClick={() => setCommentBizOpen(!commentBizOpen)}
                   className={`tap flex h-[38px] w-[38px] flex-none cursor-pointer items-center justify-center rounded-full ${
-                    commentBizOpen || commentBiz ? 'bg-green text-white' : 'bg-lilac-2 text-muted'
-                  }`}
+ commentBizOpen || commentBiz ? 'bg-green text-white' : 'bg-lilac-2 text-muted'
+ }`}
                   aria-label={L('Recomendar un negocio', 'Recommend a business')}
                 >
                   <Store size={17} stroke={2.2} />
@@ -1019,8 +1019,8 @@ export function ComunidadScreen() {
                   onClick={sendComment}
                   disabled={!canComment || sending}
                   className={`tap flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-white ${
-                    canComment && !sending ? 'cursor-pointer bg-primary' : 'cursor-not-allowed bg-[#E3DEF2]'
-                  }`}
+ canComment && !sending ? 'cursor-pointer bg-primary' : 'cursor-not-allowed bg-[#E3DEF2]'
+ }`}
                   aria-label={L('Enviar', 'Send')}
                 >
                   <Send size={15} stroke={2.4} />

@@ -550,10 +550,10 @@ export function BizOnboardingScreen() {
                   <div className="flex flex-none flex-col items-center">
                     <span
                       className={`flex h-[26px] w-[26px] items-center justify-center rounded-[9px] border-[1.5px] text-[11px] font-extrabold ${
-                        done ? 'border-primary bg-primary text-white'
-                          : active ? 'border-primary bg-primary/20 text-white'
-                            : 'border-white/10 bg-white/[.06] text-white/50'
-                      }`}
+ done ? 'border-primary bg-primary text-white'
+ : active ? 'border-primary bg-primary/20 text-white'
+ : 'border-white/10 bg-white/[.06] text-white/50'
+ }`}
                     >
                       {done ? <Check size={13} stroke={3.2} /> : i + 1}
                     </span>
@@ -1018,7 +1018,7 @@ export function BizOnboardingScreen() {
                         "This is how your business will look on To'Latino. You can edit anything later.")}</Sub>
 
                 {/* Vista previa del listado */}
-                <div className="mt-5 overflow-hidden rounded-[18px] border border-line bg-white shadow-card">
+                <div className="mt-5 overflow-hidden rounded-[18px] border border-line bg-white">
                   <div className="h-[96px] w-full" style={{ background: gallery[0] ? undefined : tile(catInfo?.bg ?? '#EFEBFF', catInfo?.dot ?? '#7B61FF', 12) }}>
                     {gallery[0] && <img src={imgUrl(gallery[0].url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />}
                   </div>

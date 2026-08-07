@@ -329,7 +329,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   // ── loading ──
   if (admin.loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -338,7 +338,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
   // ── no business yet ──
   if (!real || !draft) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -388,7 +388,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
     <>
       <div className="grid gap-4 [&>*]:min-w-0 lg:grid-cols-[1fr_300px]">
         {/* form */}
-        <div className="rounded-card border border-line bg-white p-4 shadow-card md:p-5">
+        <div className="rounded-card border border-line bg-white p-4 md:p-5">
           <div className="mb-3.5 text-[13px] font-extrabold text-ink">{L('Detalles del negocio', 'Business details')}</div>
 
           {/* Free plan → upgrade band (handoff premium-teaser pattern) */}
@@ -748,7 +748,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
         {/* side: listing status */}
         <div className="flex flex-col gap-3">
-          <div className="rounded-card border border-line bg-white p-4 shadow-card">
+          <div className="rounded-card border border-line bg-white p-4">
             <div className="mb-3 text-[12px] font-extrabold text-ink">{L('Estado del listado', 'Listing status')}</div>
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-2.5">

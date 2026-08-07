@@ -39,12 +39,15 @@ const config: Config = {
         // blanco» no es tocar este token: hacerlo borra 104 campos para
         // arreglar 7 fondos. El lienzo vive en `canvas`, aquí abajo.
         app: '#F4F2F9', // relleno de campos y pozos sobre blanco (nombre heredado)
-        // EL FONDO de la app. Blanco por decisión del fundador (2026-08-06):
-        // «ese gris no me gusta, no se combina bien». En blanco puro una tarjeta
-        // blanca ya no se distingue por su relleno, así que la delimita el
-        // BORDE (`border-line`, abajo) — el patrón de Yelp y Google Business.
-        canvas: '#FFFFFF',
-        dash: '#FFFFFF', // el panel comparte lienzo con la app (antes #E7E5EC)
+        // EL FONDO de la app: un blanco CÁLIDO, elegido por el fundador
+        // (2026-08-06) para que las tarjetas se sostengan sin sombra. Es un
+        // tinte muy leve —6 puntos de luminancia por debajo del blanco— así que
+        // el peso de separar la tarjeta del fondo sigue siendo del BORDE
+        // (`border-line`, abajo), no del relleno. Si algún día se aclara más,
+        // el guardián de verify-build avisa antes de que las tarjetas se
+        // desvanezcan.
+        canvas: '#FCF8F8',
+        dash: '#FCF8F8', // el panel comparte lienzo con la app (antes #E7E5EC)
         teal: { DEFAULT: '#0E9384', bg: '#D6F3EF' }, // poll tag
         // ── Landing pública v3 (handoff "ToLatino Home", variante B, 2026-07-29) ──
         // Superficies oscuras e inmersivas que antes no existían en el sistema.
@@ -115,8 +118,17 @@ const config: Config = {
         field: '11px',
       },
       boxShadow: {
+        // Los RECUADROS ya no llevan sombra (fundador, 2026-08-06): con el
+        // lienzo cálido y `border-line` se distinguen solos, y la app se ve más
+        // limpia. `card` se conserva SOLO porque `card-lg` lo acompaña en el
+        // realce al pasar el ratón; ningún recuadro lo usa en reposo.
         card: '0 6px 20px rgba(60,50,110,.06)',
-        'card-lg': '0 8px 26px rgba(60,50,110,.07)',
+        'card-lg': '0 8px 26px rgba(60,50,110,.07)', // solo `hover:` — realce en escritorio
+        // Lo que SÍ conserva sombra: los controles e insignias que flotan SOBRE
+        // UNA FOTO (volver en el hero, flechas de galería, quitar imagen, la
+        // fecha sobre la portada de un evento). Ahí la sombra no decora: es lo
+        // que los hace legibles sobre una imagen cualquiera.
+        float: '0 6px 20px rgba(60,50,110,.06)',
         cta: '0 14px 28px rgba(123,97,255,.4)',
         'cta-sm': '0 6px 14px rgba(123,97,255,.3)',
         modal: '0 30px 70px rgba(30,27,46,.35)',

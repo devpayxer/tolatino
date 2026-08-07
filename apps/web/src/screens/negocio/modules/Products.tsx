@@ -42,7 +42,7 @@ import {
   CollectionEditor, DiscountEditor, OptionSetEditor, ProductCategoryEditor, prodCatIcon,
 } from '@/screens/negocio/modules/ProductEditors';
 
-const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white ';
 const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 
 const FALLBACK_CAT: ProductCategory = { id: 'pantry', es: 'Productos', en: 'Products', icon: 'package', tile: '#F3D9C8 0 8px,#E8C3AC 8px 16px', visible: true };
@@ -475,8 +475,8 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                       <div className="relative h-[150px] overflow-hidden rounded-tile border border-line">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
-                        <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
-                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={14} stroke={2.2} /></button>
+                        <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-float">{photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}</button>
+                        <button type="button" onClick={() => upD({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-float"><Trash2 size={14} stroke={2.2} /></button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pickPhoto(e.dataTransfer.files?.[0]); }} disabled={photoBusy} className="relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-tile border-[1.5px] border-dashed border-lilac-line bg-app disabled:opacity-60">
@@ -533,7 +533,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                               <div key={i} className="relative h-[72px] w-[72px] overflow-hidden rounded-tile border border-line">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={imgUrl(u, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
-                                <button type="button" onClick={() => upD({ photos: draft.photos.filter((_, j) => j !== i) })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-0.5 top-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card"><Trash2 size={11} stroke={2.4} /></button>
+                                <button type="button" onClick={() => upD({ photos: draft.photos.filter((_, j) => j !== i) })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-0.5 top-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-float"><Trash2 size={11} stroke={2.4} /></button>
                               </div>
                             ))}
                             {draft.photos.length < 6 && (
@@ -811,7 +811,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
         {cfg.categories.map((c, i) => {
           const Icon = prodCatIcon(c.icon); const n = countIn(c.id);
           return (
-            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card ${c.visible ? '' : 'opacity-60'}`}>
+            <div key={c.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 ${c.visible ? '' : 'opacity-60'}`}>
               <span className="flex flex-none flex-col">
                 <button onClick={() => moveCategory(c.id, -1)} disabled={i === 0} aria-label={L('Subir', 'Up')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronUp size={13} stroke={2.6} /></button>
                 <button onClick={() => moveCategory(c.id, 1)} disabled={i === cfg.categories.length - 1} aria-label={L('Bajar', 'Down')} className="cursor-pointer p-0.5 text-muted-2 disabled:opacity-25"><ChevronDown size={13} stroke={2.6} /></button>
@@ -846,7 +846,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
           {cfg.optionSets.map((o) => {
             const used = optUsedBy(o.id); const n = variantCount([o.id], cfg.optionSets);
             return (
-              <button key={o.id} onClick={() => setOptSheet({ open: true, initial: o })} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
+              <button key={o.id} onClick={() => setOptSheet({ open: true, initial: o })} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Layers size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(o.es, o.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
@@ -907,7 +907,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
             const val = d.type === 'percent' ? `${d.value ?? 0}%` : d.type === 'amount' ? `$${d.value ?? 0}` : d.type === 'shipping' ? '🚚' : '2×1';
             const paused = d.status === 'paused';
             return (
-              <div key={d.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 shadow-card ${paused ? 'opacity-60' : ''}`}>
+              <div key={d.id} className={`flex items-center gap-3 rounded-card-sm border border-line bg-white p-3 ${paused ? 'opacity-60' : ''}`}>
                 <button onClick={() => setDiscSheet({ open: true, initial: d })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-lilac text-[13px] font-extrabold text-primary-dark">{val}</span>
                   <div className="min-w-0 flex-1">
@@ -988,7 +988,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
       )}
 
       {/* delivery + shipping live in the shared "Entregas y envíos" module */}
-      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
+      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} stroke={2} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[12.5px] font-extrabold text-ink">{L('Entregas y envíos', 'Delivery & shipping')}</span>

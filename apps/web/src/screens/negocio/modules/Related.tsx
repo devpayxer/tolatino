@@ -148,7 +148,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
 
   if (admin.loading || loading) {
     return (
-      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted shadow-card">
+      <div className="flex items-center justify-center rounded-card border border-line bg-white py-16 text-muted">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -156,7 +156,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
 
   if (!active) {
     return (
-      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center shadow-card">
+      <div className="mx-auto max-w-[440px] rounded-card border border-line bg-white p-6 text-center">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lilac">
           <Store size={24} className="text-primary" stroke={2.2} />
         </span>
@@ -214,7 +214,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
   return (
     <>
       <div className="mx-auto max-w-[640px]">
-        <div className="rounded-card border border-line bg-white p-4 shadow-card md:p-5">
+        <div className="rounded-card border border-line bg-white p-4 md:p-5">
           <div className="mb-1 flex items-center gap-2 text-[13px] font-extrabold text-ink">
             <Link2 size={16} stroke={2.2} className="text-primary-dark" />
             {L('Listados relacionados', 'Related listings')}

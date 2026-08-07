@@ -27,7 +27,7 @@ export function Pill({ tone = 'gray', children }: { tone?: Tone; children: React
 
 // ── Tarjeta blanca base de la consola ────────────────────────────────────────
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-card-sm border border-line bg-white shadow-card ${className}`}>{children}</div>;
+  return <div className={`rounded-card-sm border border-line bg-white ${className}`}>{children}</div>;
 }
 
 // ── KPI / stat ───────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ export function Stat({ value, label, tone }: { value: ReactNode; label: string; 
   const c = tone === 'green' ? 'text-green-dark' : tone === 'amber' ? 'text-amber-ink'
     : tone === 'pink' ? 'text-pink-dark' : tone === 'purple' ? 'text-primary-dark' : 'text-ink';
   return (
-    <div className="rounded-card-sm border border-line bg-white px-4 py-3.5 shadow-card">
+    <div className="rounded-card-sm border border-line bg-white px-4 py-3.5">
       <div className={`text-[21px] font-extrabold tracking-[-.02em] ${c}`}>{value}</div>
       <div className="mt-1 text-[10.5px] font-semibold leading-tight text-muted-2">{label}</div>
     </div>
@@ -47,7 +47,7 @@ export function FilterChip({ active, onClick, children }: { active: boolean; onC
   return (
     <button onClick={onClick}
       className={`min-h-[34px] flex-none cursor-pointer rounded-btn px-3 text-[12px] font-extrabold transition-colors ${
-        active ? 'bg-primary text-white shadow-cta-sm' : 'border-[1.5px] border-lilac-line bg-white text-ink-2 hover:bg-lilac-3'}`}>
+ active ? 'bg-primary text-white shadow-cta-sm' : 'border-[1.5px] border-lilac-line bg-white text-ink-2 hover:bg-lilac-3'}`}>
       {children}
     </button>
   );

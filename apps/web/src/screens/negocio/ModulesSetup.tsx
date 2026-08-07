@@ -76,7 +76,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
             <div className="text-[12px] font-bold text-green-dark">{L('Aceptas pagos con tarjeta (Stripe) y en efectivo. Los pagos con tarjeta se depositan a tu banco.', 'You accept card (Stripe) and cash. Card payments deposit to your bank.')}</div>
           </div>
         ) : (
-          <div className="rounded-card-sm border border-lilac-line bg-white p-4 shadow-card">
+          <div className="rounded-card-sm border border-lilac-line bg-white p-4">
             <div className="flex items-center gap-2 text-[11.5px] font-extrabold text-green-dark">
               <Check size={15} stroke={2.5} className="flex-none text-green-dark" />
               {L('Ventas activas — ya puedes cobrar en efectivo', 'Sales active — you can charge cash now')}
@@ -99,7 +99,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
           const on = !isFree && mods[m.key];
           const rec = m.key === recKey;
           return (
-            <div key={m.key} className={`relative rounded-card-sm border bg-white p-4 shadow-card ${on ? 'border-[rgba(123,97,255,.35)] ring-1 ring-[rgba(123,97,255,.18)]' : rec ? 'border-[rgba(123,97,255,.25)]' : 'border-line'}`}>
+            <div key={m.key} className={`relative rounded-card-sm border bg-white p-4 ${on ? 'border-[rgba(123,97,255,.35)] ring-1 ring-[rgba(123,97,255,.18)]' : rec ? 'border-[rgba(123,97,255,.25)]' : 'border-line'}`}>
               <div className="flex items-start justify-between gap-2">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn" style={{ background: m.bg }}>
                   <m.Icon size={21} strokeWidth={2.2} className="text-primary-dark" />
@@ -125,7 +125,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
 
       {/* what turns on automatically once you sell — removes the "do I need to set
           up Pedidos/Entregas/Pagos too?" confusion */}
-      <div className="rounded-card-sm border border-line bg-white p-4 shadow-card">
+      <div className="rounded-card-sm border border-line bg-white p-4">
         <div className="text-[12.5px] font-extrabold text-ink">{L('Al activar ventas, To’Latino agrega solo:', 'When you start selling, To’Latino adds automatically:')}</div>
         <div className="mt-2.5 flex flex-wrap gap-x-2 gap-y-[18px]">
           {[
@@ -143,7 +143,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
 
       {/* extra: Novedades (engagement, not selling) */}
       <div className="px-0.5 text-[11px] font-bold uppercase tracking-[.05em] text-muted-2">{L('Extra', 'Extra')}</div>
-      <div className={`flex items-center gap-3 rounded-card-sm border bg-white p-4 shadow-card ${updatesOn ? 'border-[rgba(123,97,255,.35)]' : 'border-line'}`}>
+      <div className={`flex items-center gap-3 rounded-card-sm border bg-white p-4 ${updatesOn ? 'border-[rgba(123,97,255,.35)]' : 'border-line'}`}>
         <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn" style={{ background: '#F1EFFA' }}><Megaphone size={21} strokeWidth={2.2} className="text-primary-dark" /></span>
         <div className="min-w-0 flex-1">
           <div className="text-[14px] font-extrabold text-ink">{L('Novedades', 'Updates')}</div>
@@ -157,7 +157,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
       </div>
 
       {isFree && (
-        <div className="rounded-card-sm border border-lilac-line bg-white p-4 text-center shadow-card">
+        <div className="rounded-card-sm border border-lilac-line bg-white p-4 text-center">
           <div className="text-[13px] font-extrabold text-ink">{L('Vender es parte de Verified', 'Selling is part of Verified')}</div>
           <div className="mt-0.5 text-[12px] font-semibold text-muted">{L('Tu página gratis ya te hace visible. Mejora a Verified para activar menú, productos, reservas y más.', 'Your free page already makes you visible. Upgrade to Verified to enable menu, products, bookings and more.')}</div>
           <button onClick={() => ctx.go('billing')} className="tap-y mt-3 cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Ver planes', 'See plans')}</button>

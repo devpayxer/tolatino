@@ -22,7 +22,7 @@ import { useBizAdmin } from '@/lib/bizAdmin';
 import { fetchBusinessMetrics, tzDayKeys } from '@/lib/live';
 import { activeMods, type PanelCtx } from '@/screens/negocio/tabs';
 
-const card = 'rounded-card-sm border border-line bg-white shadow-card';
+const card = 'rounded-card-sm border border-line bg-white ';
 const money = (n: number) => '$' + n.toFixed(2);
 const pad = (n: number) => String(n).padStart(2, '0');
 const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -207,7 +207,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
       {/* range selector */}
       <div className="flex items-center gap-1.5">
         {([7, 30, 90] as const).map((r) => (
-          <button key={r} onClick={() => setRange(r)} className={`tap-y cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${range === r ? 'bg-primary text-white shadow-cta-sm' : 'bg-white text-ink-soft shadow-card'}`}>
+          <button key={r} onClick={() => setRange(r)} className={`tap-y cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] font-extrabold ${range === r ? 'bg-primary text-white shadow-cta-sm' : 'bg-white text-ink-soft shadow-float'}`}>
             {L(`${r} días`, `${r} days`)}
           </button>
         ))}

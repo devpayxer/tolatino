@@ -37,7 +37,7 @@ import {
 } from '@/lib/menuConfig';
 import { CategoryEditor, DaypartEditor, ModGroupEditor, PromoEditor, PROMO_TYPES, catIcon } from '@/screens/negocio/modules/FoodEditors';
 
-const cardCls = 'rounded-card-sm border border-line bg-white shadow-card';
+const cardCls = 'rounded-card-sm border border-line bg-white ';
 
 // ---------- domain types ----------
 type Stock = 'in' | 'low' | 'out';
@@ -1150,10 +1150,10 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="relative h-[150px] overflow-hidden rounded-tile border border-line">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imgUrl(draft.photoUrl, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
-              <button type="button" onClick={() => wizFileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-card">
+              <button type="button" onClick={() => wizFileRef.current?.click()} disabled={photoBusy} className="absolute bottom-2 right-2 cursor-pointer rounded-[9px] bg-white/90 px-2.5 py-1.5 text-[11px] font-extrabold text-ink shadow-float">
                 {photoBusy ? L('Subiendo…', 'Uploading…') : L('Cambiar', 'Change')}
               </button>
-              <button type="button" onClick={() => upDraft({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-card">
+              <button type="button" onClick={() => upDraft({ photoUrl: '' })} aria-label={L('Quitar foto', 'Remove photo')} className="absolute right-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-pink-dark shadow-float">
                 <Trash2 size={14} stroke={2.2} />
               </button>
             </div>
@@ -1565,7 +1565,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="relative pb-8">
       {/* Local delivery is configured in the shared "Entregas y envíos" module
           (same zones/drivers a shop uses) — a menu just turns delivery on. */}
-      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left shadow-card">
+      <button onClick={() => go('fulfillment')} className="mb-3 flex w-full items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Truck size={17} stroke={2} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[12.5px] font-extrabold text-ink">{L('Entrega local y envíos', 'Local delivery & shipping')}</span>

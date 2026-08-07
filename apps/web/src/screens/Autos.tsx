@@ -459,7 +459,7 @@ export function AutosScreen() {
       <button
         onClick={(ev) => { ev.stopPropagation(); toggleSave(p); }}
         aria-label={on ? L('Quitar de guardados', 'Remove from saved') : L('Guardar', 'Save')}
-        className={`flex cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,.94)] shadow-card ${cls}`}
+        className={`flex cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,.94)] shadow-float ${cls}`}
       >
         {on ? <HeartFilled size={size} className="text-pink-dark" /> : <Heart size={size} stroke={2.2} className="text-ink-soft" />}
       </button>
@@ -472,7 +472,7 @@ export function AutosScreen() {
         onClick={(ev) => { ev.stopPropagation(); toggleCompare(p); }}
         aria-label={L('Comparar', 'Compare')}
         className={`flex cursor-pointer items-center justify-center gap-1 rounded-full px-2.5 text-[10px] font-extrabold ${
-          on ? 'bg-primary text-white' : 'bg-[rgba(255,255,255,.94)] text-ink-soft shadow-card'} ${cls}`}
+ on ? 'bg-primary text-white' : 'bg-[rgba(255,255,255,.94)] text-ink-soft '} ${cls}`}
       >
         <Compare size={13} stroke={2.4} /> {on ? L('Quitar', 'Added') : L('Comparar', 'Compare')}
       </button>
@@ -549,7 +549,7 @@ export function AutosScreen() {
 
   const viewHeader = (title: string, sub?: string) => (
     <div className="mb-4 flex items-center gap-3">
-      <button onClick={() => setView('descubrir')} aria-label={L('Volver', 'Back')} className="flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full bg-white shadow-card">
+      <button onClick={() => setView('descubrir')} aria-label={L('Volver', 'Back')} className="flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full bg-white shadow-float">
         <ChevronLeft size={18} stroke={2.4} className="text-ink" />
       </button>
       <div className="min-w-0">
@@ -671,26 +671,26 @@ export function AutosScreen() {
             {/* hero gallery */}
             <div className="relative -mx-3.5 -mt-4 md:mx-0 md:mt-0 md:overflow-hidden md:rounded-card">
               <div className="h-[250px] md:h-[340px]" style={tileBg(d.cond, d.photos[gi] ?? d.photos[0])} />
-              <button onClick={closeDetail} aria-label={L('Volver', 'Back')} className="absolute left-3.5 top-3.5 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card">
+              <button onClick={closeDetail} aria-label={L('Volver', 'Back')} className="absolute left-3.5 top-3.5 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-float">
                 <ChevronLeft size={18} stroke={2.6} className="text-ink" />
               </button>
               <div className="absolute right-3.5 top-3.5 flex gap-2">
-                <button onClick={() => toggleCompare(d)} aria-label={L('Comparar', 'Compare')} className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-card ${compareIds.has(d.id) ? 'bg-primary text-white' : 'bg-white text-ink'}`}>
+                <button onClick={() => toggleCompare(d)} aria-label={L('Comparar', 'Compare')} className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-float ${compareIds.has(d.id) ? 'bg-primary text-white' : 'bg-white text-ink'}`}>
                   <Compare size={16} stroke={2.2} />
                 </button>
-                <button onClick={() => doShare(`${d.year} ${d.make} ${d.model}`, d.slug)} aria-label={L('Compartir', 'Share')} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-card">
+                <button onClick={() => doShare(`${d.year} ${d.make} ${d.model}`, d.slug)} aria-label={L('Compartir', 'Share')} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-float">
                   <Share2 size={16} stroke={2.2} className="text-ink" />
                 </button>
                 {heartBtn(d, 'h-10 w-10', 17)}
-                <ReportButton type="vehicle" id={d.id} variant="icon" className="h-10 w-10 bg-white text-ink shadow-card hover:bg-white" />
+                <ReportButton type="vehicle" id={d.id} variant="icon" className="h-10 w-10 bg-white text-ink hover:bg-white" />
               </div>
               {/* prev/next arrows + counter (CarGurus-style) when there are multiple photos */}
               {d.photos.length > 1 && (
                 <>
-                  <button onClick={() => setGi((i) => (i - 1 + d.photos.length) % d.photos.length)} aria-label={L('Anterior', 'Previous')} className="absolute left-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-card backdrop-blur">
+                  <button onClick={() => setGi((i) => (i - 1 + d.photos.length) % d.photos.length)} aria-label={L('Anterior', 'Previous')} className="absolute left-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-float backdrop-blur">
                     <ChevronLeft size={18} stroke={2.6} className="text-ink" />
                   </button>
-                  <button onClick={() => setGi((i) => (i + 1) % d.photos.length)} aria-label={L('Siguiente', 'Next')} className="absolute right-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-card backdrop-blur">
+                  <button onClick={() => setGi((i) => (i + 1) % d.photos.length)} aria-label={L('Siguiente', 'Next')} className="absolute right-3.5 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/85 shadow-float backdrop-blur">
                     <ChevronRight size={18} stroke={2.6} className="text-ink" />
                   </button>
                 </>
@@ -700,7 +700,7 @@ export function AutosScreen() {
                   <Camera size={12} stroke={2.4} /> {gi + 1} / {d.photos.length}
                 </span>
               ) : (
-                <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-bold text-muted-2 shadow-card backdrop-blur">
+                <span className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-bold text-muted-2 shadow-float backdrop-blur">
                   <Camera size={13} stroke={2.2} /> {L('Fotos en camino — pídelas al vendedor', 'Photos coming — ask the seller')}
                 </span>
               )}
@@ -861,7 +861,7 @@ export function AutosScreen() {
 
               {/* search + filters */}
               <div className="mb-3 flex gap-2.5">
-                <button onClick={() => setView('buscar')} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5 text-left shadow-card">
+                <button onClick={() => setView('buscar')} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5 text-left">
                   <Search size={16} stroke={2.2} className="flex-none text-muted-2" />
                   <span className="min-w-0 flex-1 truncate py-3 text-[13px] font-semibold text-muted-2">{L('Marca, modelo o palabra', 'Make, model or keyword')}</span>
                 </button>
@@ -874,7 +874,7 @@ export function AutosScreen() {
               {/* condition segmented (null = all) */}
               <div className="mb-3 flex gap-1 rounded-btn bg-lilac-2 p-1">
                 {AU_CONDS.map((c) => (
-                  <button key={c.id} onClick={() => setCond(cond === c.id ? null : c.id)} className={`min-h-[38px] flex-1 cursor-pointer rounded-[9px] px-1 text-[11.5px] font-extrabold transition-colors ${cond === c.id ? 'bg-white text-ink shadow-card' : 'text-muted'}`}>
+                  <button key={c.id} onClick={() => setCond(cond === c.id ? null : c.id)} className={`min-h-[38px] flex-1 cursor-pointer rounded-[9px] px-1 text-[11.5px] font-extrabold transition-colors ${cond === c.id ? 'bg-white text-ink ' : 'text-muted'}`}>
                     {L(c.es, c.en)}
                   </button>
                 ))}
@@ -942,7 +942,7 @@ export function AutosScreen() {
                   <div className="mb-2.5 text-[14px] font-extrabold text-ink">{L('Marcas populares', 'Popular brands')}</div>
                   <div className="no-scrollbar -mx-3.5 flex gap-2.5 overflow-x-auto px-3.5">
                     {AU_MAKES.map((mk) => (
-                      <button key={mk} onClick={() => { setFilters({ ...EMPTY_FILTERS, make: mk }); setView('buscar'); }} className="flex h-[64px] w-[84px] flex-none cursor-pointer flex-col items-center justify-center gap-1.5 rounded-tile border border-line bg-white shadow-card">
+                      <button key={mk} onClick={() => { setFilters({ ...EMPTY_FILTERS, make: mk }); setView('buscar'); }} className="flex h-[64px] w-[84px] flex-none cursor-pointer flex-col items-center justify-center gap-1.5 rounded-tile border border-line bg-white">
                         <Car size={20} stroke={2} className="text-primary-dark" />
                         <span className="text-[10.5px] font-extrabold text-ink-soft">{mk}</span>
                       </button>
@@ -994,7 +994,7 @@ export function AutosScreen() {
             <div>
               {viewHeader(L('Buscar autos', 'Search cars'), app.cityShort)}
               <div className="mb-3 flex gap-2.5">
-                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5 shadow-card">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-btn border border-line bg-white px-3.5">
                   <Search size={16} stroke={2.2} className="flex-none text-muted-2" />
                   {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
                   <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={L('Marca, modelo o palabra', 'Make, model or keyword')} className="min-w-0 flex-1 bg-transparent py-3 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
@@ -1053,7 +1053,7 @@ export function AutosScreen() {
                   <div className="mt-1 text-[12.5px] font-semibold text-muted">{results.length === 0 ? L('No hay autos con estos filtros.', 'No cars match these filters.') : L('Estos autos no tienen ubicación exacta.', 'These cars have no exact location.')}</div>
                 </Card>
               ) : (
-                <div className="relative overflow-hidden rounded-card border border-line shadow-card">
+                <div className="relative overflow-hidden rounded-card border border-line">
                   <div ref={mapDiv} className="h-[60vh] w-full lg:h-[68vh]" />
                   {mapSel && <div className="absolute inset-x-3 bottom-3">{rowH(mapSel)}</div>}
                 </div>
@@ -1079,14 +1079,14 @@ export function AutosScreen() {
                       <div key={c.id} className="w-[164px] flex-none">
                         <Card className="overflow-hidden">
                           <div className="relative h-[96px]" style={tileBg(c.cond, c.photos[0])}>
-                            <button onClick={() => toggleCompare(c)} aria-label={L('Quitar', 'Remove')} className="absolute right-1.5 top-1.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,.94)] shadow-card"><XIcon size={13} stroke={2.6} className="text-ink" /></button>
+                            <button onClick={() => toggleCompare(c)} aria-label={L('Quitar', 'Remove')} className="absolute right-1.5 top-1.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-[rgba(255,255,255,.94)] shadow-float"><XIcon size={13} stroke={2.6} className="text-ink" /></button>
                           </div>
                           <div className="p-2.5">
                             <div className="truncate text-[11.5px] font-extrabold text-ink">{c.year} {c.make} {c.model}</div>
                             <div className="mt-0.5 text-[14px] font-extrabold text-ink">{fmtAuPrice(c.price)}</div>
                           </div>
                         </Card>
-                        <div className="mt-2 rounded-card border border-line bg-white text-[11px] shadow-card">
+                        <div className="mt-2 rounded-card border border-line bg-white text-[11px]">
                           {[
                             [L('Enganche', 'Down'), c.down != null ? fmtAuPrice(c.down) : '—'],
                             [L('Mensual', 'Monthly'), `${moStr(c.price, c.down)}`],

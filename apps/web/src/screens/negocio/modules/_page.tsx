@@ -90,7 +90,7 @@ export function FalloCarga({ msg, onReintentar }: { msg: string; onReintentar?: 
     <div role="alert" className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-[18px] rounded-field border border-[#F3C9D6] bg-pink-bg px-3.5 py-2.5 text-[12.5px] font-bold text-pink-dark">
       <span>{msg}</span>
       {onReintentar && (
-        <button onClick={onReintentar} className="tap-y tap-y ml-auto cursor-pointer rounded-btn bg-white px-3 py-1.5 text-[12px] font-extrabold text-ink shadow-card">
+        <button onClick={onReintentar} className="tap-y tap-y ml-auto cursor-pointer rounded-btn bg-white px-3 py-1.5 text-[12px] font-extrabold text-ink">
           {msg.startsWith('We') || msg.startsWith("Couldn") ? 'Retry' : 'Reintentar'}
         </button>
       )}
