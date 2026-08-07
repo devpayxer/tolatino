@@ -1598,10 +1598,12 @@
   por qué.** La ficha del negocio quedó idéntica al handoff en móvil y
   escritorio (ver PROGRESS 2026-08-06, migración 0155). Lo que el handoff pide
   y NO se construyó, con su razón — revisar antes del lanzamiento:
-  - **Producción necesita la 0155** (pegar en el SQL Editor del proyecto real) —
-    sin ella la ficha sigue funcionando pero sin «Bueno saber»/horas pico/dueño.
-    Y los dueños reales tienen que llenar su ficha en Panel → Mi página; en
-    producción NO se siembra nada.
+  - ~~**Producción necesita la 0155**~~ — **APLICADA el 2026-08-06** con
+    `scripts/sbsql.mjs` y verificada en la base real: `business_by_slug`
+    devuelve `ficha`, existe UNA sola versión de la función (la 0153 llegó a
+    dejar dos por descuido) y `verify-permisos` sale limpio. Los dueños reales
+    tienen que llenar su ficha en Panel → Mi página; en producción NO se
+    siembra nada.
   - **Pie de página del escritorio** (Descubrir/Para negocios/Ayuda…): el
     prototipo lo trae; no se construyó porque la mitad de esos destinos
     (Prensa, Guías locales, Centro de ayuda…) no existen como rutas — un
