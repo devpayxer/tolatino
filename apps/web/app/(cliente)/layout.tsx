@@ -4,7 +4,7 @@
 // bottom nav (mobile), and the global overlays (city / notifications / user
 // menu / publish).
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { LiveDataProvider } from '@/lib/live';
 import { InteractionsProvider } from '@/lib/interactions';
 import { FollowsProvider } from '@/lib/follows';
@@ -20,8 +20,14 @@ import { NotifPanel } from '@/components/NotifPanel';
 import { PublishModal } from '@/components/PublishModal';
 import { UserMenu } from '@/components/UserMenu';
 import { PurchaseReturnToast } from '@/components/PurchaseReturnToast';
+import { InstalarApp } from '@/components/InstalarApp';
+import { capturarPrompt } from '@/lib/instalar';
 
 export default function ClienteLayout({ children }: { children: ReactNode }) {
+  // Chrome dispara `beforeinstallprompt` muy pronto, antes de que exista el
+  // componente que lo necesita — hay que capturarlo aquí o se pierde el
+  // instalador nativo de Android y solo quedaría el camino a mano.
+  useEffect(capturarPrompt, []);
   return (
     <LiveDataProvider>
     <FollowsProvider>
@@ -42,6 +48,7 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
       <UserMenu />
       <PublishModal />
       <PurchaseReturnToast />
+      <InstalarApp />
     </div>
     </InteractionsProvider>
     </MyActivityProvider>
