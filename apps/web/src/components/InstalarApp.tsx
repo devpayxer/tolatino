@@ -94,7 +94,10 @@ export function InstalarApp() {
             </span>
           </span>
           <button onClick={alInstalar} className="tap flex-none cursor-pointer rounded-field bg-primary px-4 py-2.5 text-[12.5px] font-extrabold text-white shadow-cta-sm">
-            {L('Instalar', 'Install')}
+            {/* En iPhone este botón NO instala: Apple no da instalador, así que
+                abre las instrucciones. Ponerle «Instalar» era prometer algo que
+                no ocurre — el fundador lo tocó y se quedó esperando. */}
+            {nativo ? L('Instalar', 'Install') : L('Cómo', 'How')}
           </button>
           <button onClick={cerrarBarra} aria-label={L('Ahora no', 'Not now')} className="flex h-7 w-7 flex-none cursor-pointer items-center justify-center rounded-full text-muted-2 hover:bg-lilac-2">
             <X size={15} stroke={2.4} />

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from '@/lib/providers';
+import { RegistrarSW } from '@/components/RegistrarSW';
 import { SITE_URL } from '@/lib/site';
 
 const TITLE = "To'Latino — Tu gente, tu barrio, tu idioma";
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <RegistrarSW />
         {/* La franja amarilla "SITIO DE PRUEBAS" se retiró a petición del
             fundador (2026-08-02): robaba una pantalla que en móvil está medida
             al píxel. Lo que protegía el sitio de pruebas de verdad NO era la
