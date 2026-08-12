@@ -2469,6 +2469,52 @@ backing them with real Supabase tables/RPCs when each feature goes live.
   switcher, and back each module with Supabase tables/RPCs as features launch (so
   `b@b.com` sees the real Hazleton businesses, not the demo restaurant).
 
+## 3c. Lo legal y el dinero — puntos ciegos (2026-08-06)
+
+Salieron al preguntar el fundador «¿qué más necesito saber?». Ninguno es
+urgente HOY (0 negocios, 0 ventas), y todos muerden en cuanto haya dinero.
+
+- [ ] **IMPUESTO SOBRE VENTAS — hay un número que vigilar: $100.000.**
+  Pensilvania tiene ley de *marketplace facilitator*: pasado un umbral de
+  **$100.000 de ventas brutas en 12 meses**, la PLATAFORMA (no el negocio)
+  pasa a ser responsable de cobrar y remitir el impuesto de las ventas que
+  facilita. Cuentan las ventas facilitadas Y las directas, y también las
+  exentas. Por debajo de esa cifra no aplica — hay margen, pero hay que
+  saber la cifra y medirla.
+  Dos hechos comprobados sobre nuestro código (2026-08-06):
+  1. **El cobro real NO cobra ningún impuesto.** `marketplace-checkout` cobra
+     subtotal + 5% de servicio y se queda el 15%; no hay línea de impuesto.
+     Hoy eso es lo seguro (mejor no cobrar que cobrar mal), pero es una
+     decisión que caduca.
+  2. **El diseño sí lo especifica, y con una tasa EQUIVOCADA:**
+     `02-pedidos.md` y `PROMPT.md` fijan **8,25%**, que es la tasa de
+     Houston, Texas — de cuando la ciudad objetivo era Houston. **Hazleton,
+     Pensilvania es 6%.** Si algún día se implementa el impuesto copiando el
+     diseño, se cobraría de más a todo el mundo. Corregir el diseño ANTES de
+     implementarlo.
+  Además, en PA la comida preparada SÍ paga impuesto (la de despensa no), y
+  el cargo de entrega cuenta como parte del precio gravable.
+
+- [ ] **CONTRACARGOS — una disputa se come muchos pedidos.** Con 15% de
+  comisión, un pedido de $40 deja ~$6. Un solo contracargo de ese pedido
+  devuelve los $40 y suele añadir una comisión de disputa (~$15): se van
+  nueve pedidos de ganancia. Decidir ANTES de cobrar de verdad: quién asume
+  el contracargo (según el tipo de cargo de Stripe Connect, por defecto suele
+  ser la plataforma), y si se retiene algo antes de pagar al negocio.
+
+- [ ] **DATOS Y MIEDO — específico de esta comunidad.** Los usuarios son
+  inmigrantes. Pedir dirección exacta, teléfono y ubicación tiene un coste de
+  confianza que no tendría en otro público, y un rumor de «esta app comparte
+  datos» hunde el proyecto sin posibilidad de defensa. Dos consecuencias de
+  diseño: recoger el MÍNIMO (ya se hace: sin dirección no se publica
+  coordenada, y las publicaciones difuminan el punto), y **decirlo en voz
+  alta** donde se pide el dato, no escondido en `/privacidad`.
+
+- [ ] **PUNTO ÚNICO DE FALLO.** Si el fundador enferma una semana, nadie
+  responde mensajes, aprueba negocios ni modera. Antes de tener clientes
+  reales: mensaje automático de ausencia, y que los avisos al dueño del
+  negocio salgan solos (no a través de él).
+
 ## 4. Infra & hosting
 
 - [ ] **Frontend host: Vercel → Cloudflare Pages.** Currently auto-deploys on
