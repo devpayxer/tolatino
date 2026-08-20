@@ -614,7 +614,7 @@ export function ComunidadScreen() {
             </div>
             {(c.es || c.en) && <div className="mt-0.5 text-[12.5px] font-medium leading-[1.45] text-ink-body">{L(c.es, c.en)}</div>}
             {c.biz && (() => {
-              const cls = 'mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-[9px] bg-green-bg px-2 py-1 text-[11px] font-extrabold text-green-dark';
+              const cls = 'mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-[9px] bg-green-bg px-2 py-1 text-[11px] font-extrabold text-green-ink';
               const inner = <><Store size={12} stroke={2.4} className="flex-none" /><span className="truncate">{c.biz!.name}{c.biz!.rating ? ` · ★ ${c.biz!.rating}` : ''}</span></>;
               // Con slug lleva a la ficha; los comentarios viejos (etiquetados
               // solo por nombre) se pintan igual pero sin enlace.
@@ -626,7 +626,7 @@ export function ComunidadScreen() {
           <div className="mt-1 flex items-center gap-3.5 px-1">
             <button
               onClick={() => toggleCommentLike(c)}
-              className={`cursor-pointer text-[11.5px] font-extrabold ${liked ? 'text-pink' : 'text-muted'}`}
+              className={`cursor-pointer text-[11.5px] font-extrabold ${liked ? 'text-pink-dark' : 'text-muted'}`}
             >
               ♥ {likes}
             </button>
@@ -684,7 +684,7 @@ export function ComunidadScreen() {
  }`}
                   >
                     <span>{label}</span>
-                    {n > 0 && <span className="text-[11px] font-bold text-muted-faint">{n}</span>}
+                    {n > 0 && <span className="text-[11px] font-bold text-muted-2">{n}</span>}
                   </button>
                 ),
               )}
@@ -750,7 +750,10 @@ export function ComunidadScreen() {
               : <YouAvatar size={42} />}
             <button
               onClick={() => app.openPub('post')}
-              className="min-w-0 flex-1 cursor-pointer rounded-field bg-app px-3.5 py-3 text-left text-[13.5px] font-medium text-muted hover:bg-[#F1EEFA]"
+              // `text-muted` sobre el relleno del campo daba 3.7 de contraste. Un
+              // marcador de posición no es decoración: es la instrucción de qué
+              // escribir ahí.
+              className="min-w-0 flex-1 cursor-pointer rounded-field bg-app px-3.5 py-3 text-left text-[13.5px] font-medium text-ink-2 hover:bg-lilac-3"
             >
               {L('¿Qué pasa en tu barrio?', "What's up in your hood?")}
             </button>
@@ -763,7 +766,7 @@ export function ComunidadScreen() {
               [
                 { label: L('Pregunta', 'Ask'), color: '#C4144C', bg: '#FFECF2', go: () => app.openPub('post', 'ask') },
                 { label: L('Recomienda', 'Recommend'), color: '#007A57', bg: '#E6FAF3', go: () => app.openPub('post', 'rec') },
-                { label: L('Evento', 'Event'), color: '#007CC1', bg: '#DEF4FF', go: () => app.openPub('evento') },
+                { label: L('Evento', 'Event'), color: '#0072B6', bg: '#DEF4FF', go: () => app.openPub('evento') },
               ] as const
             ).map((c) => (
               <button
@@ -962,7 +965,7 @@ export function ComunidadScreen() {
                 </div>
               )}
               {commentBiz && (
-                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-green-bg px-3 py-1.5 text-[11.5px] font-extrabold text-green-dark">
+                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-green-bg px-3 py-1.5 text-[11.5px] font-extrabold text-green-ink">
                   <Store size={12} stroke={2.4} />
                   {commentBiz.name}
                   <button onClick={() => setCommentBiz(null)} className="cursor-pointer">

@@ -44,17 +44,17 @@ const STATUS: Record<string, { es: string; en: string; bg: string; c: string }> 
   new: { es: 'Nuevo', en: 'New', bg: '#FFECF2', c: '#E11D48' },
   preparing: { es: 'Preparando', en: 'Preparing', bg: '#FFF6E3', c: '#8A5A00' },
   ready: { es: 'Listo', en: 'Ready', bg: '#E6FAF3', c: '#007A57' },
-  completed: { es: 'Completado', en: 'Completed', bg: '#F1EEFA', c: '#7E7798' },
+  completed: { es: 'Completado', en: 'Completed', bg: '#F1EEFA', c: '#6F6889' },
   pending: { es: 'Pendiente', en: 'Pending', bg: '#FFF6E3', c: '#8A5A00' },
   confirmed: { es: 'Confirmada', en: 'Confirmed', bg: '#E6FAF3', c: '#007A57' },
-  seated: { es: 'En sitio', en: 'Seated', bg: '#DEF4FF', c: '#007CC1' },
-  done: { es: 'Completada', en: 'Done', bg: '#F1EEFA', c: '#7E7798' },
-  out: { es: 'En uso', en: 'Out', bg: '#DEF4FF', c: '#007CC1' },
-  returned: { es: 'Devuelto', en: 'Returned', bg: '#F1EEFA', c: '#7E7798' },
-  cancelled: { es: 'Cancelado', en: 'Cancelled', bg: '#F1EEFA', c: '#7E7798' },
-  used: { es: 'Usado', en: 'Used', bg: '#F1EEFA', c: '#7E7798' },
-  refunded: { es: 'Reembolsado', en: 'Refunded', bg: '#F1EEFA', c: '#7E7798' },
-  on_the_way: { es: 'En camino', en: 'On the way', bg: '#DEF4FF', c: '#007CC1' },
+  seated: { es: 'En sitio', en: 'Seated', bg: '#DEF4FF', c: '#0072B6' },
+  done: { es: 'Completada', en: 'Done', bg: '#F1EEFA', c: '#6F6889' },
+  out: { es: 'En uso', en: 'Out', bg: '#DEF4FF', c: '#0072B6' },
+  returned: { es: 'Devuelto', en: 'Returned', bg: '#F1EEFA', c: '#6F6889' },
+  cancelled: { es: 'Cancelado', en: 'Cancelled', bg: '#F1EEFA', c: '#6F6889' },
+  used: { es: 'Usado', en: 'Used', bg: '#F1EEFA', c: '#6F6889' },
+  refunded: { es: 'Reembolsado', en: 'Refunded', bg: '#F1EEFA', c: '#6F6889' },
+  on_the_way: { es: 'En camino', en: 'On the way', bg: '#DEF4FF', c: '#0072B6' },
   delivered: { es: 'Entregado', en: 'Delivered', bg: '#E6FAF3', c: '#007A57' },
   no_show: { es: 'No asistió', en: 'No-show', bg: '#FFECF2', c: '#E11D48' },
 };
@@ -237,7 +237,7 @@ export function CuentaScreen() {
   const dt = (iso: string) => new Date(iso).toLocaleString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
   const money = (n: number | null | undefined) => (n == null ? '' : '$' + Number(n).toFixed(2));
   const pill = (status: string) => {
-    const s = STATUS[status] ?? { es: status, en: status, bg: '#F1EEFA', c: '#7E7798' };
+    const s = STATUS[status] ?? { es: status, en: status, bg: '#F1EEFA', c: '#6F6889' };
     return <span className="flex-none rounded-full px-2 py-0.5 text-[10px] font-extrabold" style={{ background: s.bg, color: s.c }}>{L(s.es, s.en)}</span>;
   };
   // Order pill with the STORE voice: a Tienda order "empaca", it doesn't cook.
@@ -355,7 +355,7 @@ export function CuentaScreen() {
         <span className="block truncate text-[11.5px] font-semibold text-muted">{sub}</span>
       </span>
       {right != null && <span className="flex-none text-[12px] font-extrabold text-muted">{right}</span>}
-      <ChevronRight size={16} className="flex-none text-muted-faint" />
+      <ChevronRight size={16} className="flex-none text-muted-2" />
     </button>
   );
 
@@ -386,7 +386,7 @@ export function CuentaScreen() {
             {row(Bookmark, '#C4144C', '#FFECF2', L('Guardados', 'Saved'), L('Publicaciones que guardaste', 'Posts you saved'), () => goFeed('saved'))}
             {row(Star, '#8A5A00', '#FFF6E3', L('Negocios guardados', 'Saved businesses'), L('Tus lugares favoritos', 'Your favorite places'), () => router.push('/negocios'), String(saved.count))}
             {row(Users, '#007A57', '#E6FAF3', L('Siguiendo', 'Following'), L('Vecinos y negocios que sigues', 'Neighbors & businesses you follow'), () => goFeed('following'), String(follows.followingCount))}
-            {row(Megaphone, '#007CC1', '#DEF4FF', L('Mis publicaciones', 'My posts'), L('Lo que compartiste en la comunidad', 'What you shared in the community'), () => setSec('posts'), String(myPosts.length))}
+            {row(Megaphone, '#0072B6', '#DEF4FF', L('Mis publicaciones', 'My posts'), L('Lo que compartiste en la comunidad', 'What you shared in the community'), () => setSec('posts'), String(myPosts.length))}
           </div>
 
           <div className={`${cardCls} p-2`}>
@@ -395,7 +395,7 @@ export function CuentaScreen() {
             {row(CalendarDays, '#007A57', '#E6FAF3', L('Mis reservas', 'My bookings'), L('Citas y servicios', 'Appointments & services'), () => setSec('reservas'), String(act.bookings.length))}
             {row(Bike, '#8A5A00', '#FFF6E3', L('Mis rentas', 'My rentals'), L('Equipo y artículos rentados', 'Rented equipment & items'), () => setSec('rentas'), String(act.rentals.length))}
             {row(Ticket, '#E11D48', '#FFECF2', L('Mis boletos', 'My tickets'), L('Boletos de eventos', 'Event tickets'), () => setSec('boletos'), String(act.tickets.length))}
-            {row(CalendarCheck, '#007CC1', '#DEF4FF', L('Voy a asistir', "I'm going"), L('Eventos que marcaste "Voy"', 'Events you RSVP\'d'), () => setSec('voy'), String(act.going.length))}
+            {row(CalendarCheck, '#0072B6', '#DEF4FF', L('Voy a asistir', "I'm going"), L('Eventos que marcaste "Voy"', 'Events you RSVP\'d'), () => setSec('voy'), String(act.going.length))}
             {row(Flag, '#E11D48', '#FFECF2', L('Mis reclamos', 'My claims'), L('Casos abiertos con To’Latino', 'Cases open with To’Latino'), () => setSec('reclamos'), openClaims > 0 ? String(openClaims) : String(claims?.length ?? 0))}
           </div>
 
@@ -404,7 +404,7 @@ export function CuentaScreen() {
             {row(User, '#C4144C', '#F1EEFA', L('Mi perfil', 'My profile'), L('Nombre, bio, ciudad', 'Name, bio, city'), openPerfil)}
             {row(MapPin, '#007A57', '#E6FAF3', L('Direcciones', 'Addresses'), L('Tus direcciones guardadas', 'Your saved addresses'), () => setSec('direcciones'), String(addr.addresses.length))}
             {row(Bell, '#8A5A00', '#FFF6E3', L('Notificaciones', 'Notifications'), L('Alertas y avisos', 'Alerts and updates'), () => app.setNotifOpen(true))}
-            {row(Globe, '#008489', '#DAF7F7', L('Configuración', 'Settings'), L('Idioma, notificaciones, cuenta', 'Language, notifications, account'), () => setSec('config'))}
+            {row(Globe, '#007A7E', '#DAF7F7', L('Configuración', 'Settings'), L('Idioma, notificaciones, cuenta', 'Language, notifications, account'), () => setSec('config'))}
             {row(Ban, '#4B4565', '#F1EEFA', L('Vecinos bloqueados', 'Blocked neighbors'), L('A quién dejaste de ver', "Who you've stopped seeing"), () => { loadBlocked(); setSec('bloqueados'); })}
           </div>
 
@@ -499,7 +499,7 @@ export function CuentaScreen() {
             <div className="flex flex-col gap-2.5">
               {blocked.map((b) => (
                 <div key={b.id} className={`${cardCls} flex items-center gap-3 p-3.5`}>
-                  <Avatar initials={(b.name || 'V').slice(0, 2).toUpperCase()} color="#7E7798" src={b.avatar_url} size={38} />
+                  <Avatar initials={(b.name || 'V').slice(0, 2).toUpperCase()} color="#6F6889" src={b.avatar_url} size={38} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13.5px] font-extrabold text-ink">{b.name}</span>
                     <span className="block text-[11.5px] font-semibold text-muted">{L('Bloqueado el ', 'Blocked on ')}{dt(b.blocked_at)}</span>
@@ -528,7 +528,7 @@ export function CuentaScreen() {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[13px] font-extrabold text-ink">{a.label || L('Dirección', 'Address')}</span>
-                    {a.is_default && <span className="rounded-full bg-green-bg px-2 py-0.5 text-[9.5px] font-extrabold text-green-dark">{L('Predet.', 'Default')}</span>}
+                    {a.is_default && <span className="rounded-full bg-green-bg px-2 py-0.5 text-[9.5px] font-extrabold text-green-ink">{L('Predet.', 'Default')}</span>}
                   </span>
                   <span className="block truncate text-[11.5px] font-semibold text-muted">{a.formatted}</span>
                 </span>
@@ -597,7 +597,7 @@ export function CuentaScreen() {
                       <button onClick={turnOnPush} disabled={pushBusy} className="mt-2.5 cursor-pointer rounded-btn bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white shadow-cta-sm disabled:opacity-50">{pushBusy ? L('Activando…', 'Turning on…') : L('Activar notificaciones', 'Turn on notifications')}</button>
                     )}
                   </div>
-                  {push === 'granted' && <span className="flex-none rounded-full bg-green-bg px-2.5 py-1 text-[10px] font-extrabold text-green-dark">{L('Activadas', 'On')}</span>}
+                  {push === 'granted' && <span className="flex-none rounded-full bg-green-bg px-2.5 py-1 text-[10px] font-extrabold text-green-ink">{L('Activadas', 'On')}</span>}
                 </div>
               </div>
             )}
@@ -751,7 +751,7 @@ export function CuentaScreen() {
                       <span className="font-mono text-[15px] font-extrabold tracking-[.14em] text-primary-dark">{t.code}</span>
                       <span className="text-[10.5px] font-semibold text-muted-2">{L('Muestra este código en la entrada', 'Show this at the door')}</span>
                       {t.qty > 1 && t.admitted > 0 && (
-                        <span className="text-[10.5px] font-bold text-green-dark">{t.admitted}/{t.qty} {L('ingresaron', 'checked in')}</span>
+                        <span className="text-[10.5px] font-bold text-green-ink">{t.admitted}/{t.qty} {L('ingresaron', 'checked in')}</span>
                       )}
                     </div>
                   </div>
@@ -852,7 +852,7 @@ export function CuentaScreen() {
                 </div>
                 {closed && claimOpen.resolution && (
                   <div className="rounded-field bg-green-bg px-3 py-2.5">
-                    <div className="text-[10px] font-extrabold uppercase tracking-[.04em] text-green-dark">{L('Cómo se resolvió', 'How it was resolved')}</div>
+                    <div className="text-[10px] font-extrabold uppercase tracking-[.04em] text-green-ink">{L('Cómo se resolvió', 'How it was resolved')}</div>
                     <div className="mt-0.5 text-[12px] font-medium leading-relaxed text-ink-2">{claimOpen.resolution}</div>
                   </div>
                 )}
@@ -1074,7 +1074,7 @@ export function CuentaScreen() {
                 {!!f.delivery_fee && <div className="flex justify-between"><span>{L('Entrega', 'Delivery')}</span><span>{money(f.delivery_fee)}</span></div>}
                 {!!f.service_fee && <div className="flex justify-between"><span>{L('Servicio', 'Service')}</span><span>{money(f.service_fee)}</span></div>}
                 {!!f.tip && <div className="flex justify-between"><span>{L('Propina', 'Tip')}</span><span>{money(f.tip)}</span></div>}
-                {!!f.discount && <div className="flex justify-between text-green-dark"><span>{L('Descuento', 'Discount')}{f.promo ? ` · ${f.promo}` : ''}</span><span>−{money(f.discount)}</span></div>}
+                {!!f.discount && <div className="flex justify-between text-green-ink"><span>{L('Descuento', 'Discount')}{f.promo ? ` · ${f.promo}` : ''}</span><span>−{money(f.discount)}</span></div>}
                 <div className="flex justify-between text-[13.5px] font-extrabold text-ink"><span>{L('Total pagado', 'Total paid')}</span><span>{money(f.paid_total ?? o.total)}</span></div>
               </div>
             </div>
@@ -1146,14 +1146,14 @@ export function CuentaScreen() {
                 {/* quick rating → posts a real review for the business */}
                 <div className="mt-3 rounded-card border border-line bg-white p-3.5 text-center">
                   {rated ? (
-                    <div className="text-[12.5px] font-extrabold text-green-dark">{L('¡Gracias por tu reseña!', 'Thanks for your review!')}</div>
+                    <div className="text-[12.5px] font-extrabold text-green-ink">{L('¡Gracias por tu reseña!', 'Thanks for your review!')}</div>
                   ) : (
                     <>
                       <div className="text-[12.5px] font-extrabold text-ink">{L('¿Cómo estuvo tu pedido?', 'How was your order?')}</div>
                       <div className="mt-2 flex justify-center gap-1.5">
                         {[1, 2, 3, 4, 5].map((n) => (
                           <button key={n} aria-label={`${n}`} onClick={async () => { setRateStars(n); if (!o.businesses?.slug) return; setRated(true); await postReview(o.businesses.slug, n, ''); flash(L('¡Gracias por calificar!', 'Thanks for rating!')); }} className="cursor-pointer">
-                            {n <= rateStars ? <StarFilled size={30} className="text-amber" /> : <Star size={30} stroke={2} className="text-muted-faint" />}
+                            {n <= rateStars ? <StarFilled size={30} className="text-amber" /> : <Star size={30} stroke={2} className="text-muted-2" />}
                           </button>
                         ))}
                       </div>
@@ -1164,7 +1164,7 @@ export function CuentaScreen() {
                 <div className="mt-4 text-[11px] font-extrabold uppercase tracking-wider text-muted-2">{L('¿Qué deseas hacer?', 'What would you like to do?')}</div>
                 <div className="mt-2 flex flex-col gap-2">
                   <button onClick={() => { closeOrder(); router.push(`/negocios/?b=${o.businesses?.slug ?? ''}&bt=${isStore ? 'shop' : 'menu'}`); }} className="flex w-full items-center gap-3 rounded-card border border-line bg-white p-3.5 text-left">
-                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Repeat size={17} stroke={2.2} className="text-green-dark" /></span>
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Repeat size={17} stroke={2.2} className="text-green-ink" /></span>
                     <span className="min-w-0 flex-1"><span className="block text-[13px] font-extrabold text-ink">{isStore ? L('Volver a comprar', 'Buy again') : L('Volver a pedir', 'Order again')}</span><span className="block text-[11px] font-semibold text-muted">{isStore ? L('Vuelve a la tienda en un toque', 'Back to the store in one tap') : L('Repite este pedido en un toque', 'Reorder in one tap')}</span></span>
                     <ChevronRight size={16} className="flex-none text-muted-2" />
                   </button>
@@ -1227,7 +1227,7 @@ export function CuentaScreen() {
                 </div>
               ) : null}
               {isStore && !isDel && s4 === 2 && (
-                <div className="mt-3 rounded-field bg-green-bg px-3.5 py-3 text-[12.5px] font-extrabold text-green-dark">
+                <div className="mt-3 rounded-field bg-green-bg px-3.5 py-3 text-[12.5px] font-extrabold text-green-ink">
                   {L('🛍️ Tu pedido está listo — pasa a recogerlo en tienda.', '🛍️ Your order is ready — come pick it up in store.')}
                 </div>
               )}
@@ -1262,7 +1262,7 @@ export function CuentaScreen() {
                       <div className="truncate text-[11.5px] font-semibold text-muted">{f.driver_vehicle || L('En camino a ti', 'On the way to you')}</div>
                     </div>
                     {f.driver_phone && (
-                      <a href={`tel:${f.driver_phone.replace(/[^\d+]/g, '')}`} aria-label={L('Llamar', 'Call')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg text-green-dark"><Phone size={15} stroke={2.4} /></a>
+                      <a href={`tel:${f.driver_phone.replace(/[^\d+]/g, '')}`} aria-label={L('Llamar', 'Call')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-green-bg text-green-ink"><Phone size={15} stroke={2.4} /></a>
                     )}
                     <button onClick={() => setReportOpen(true)} aria-label={L('Mensaje', 'Message')} className="flex h-9 w-9 flex-none cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-primary-dark"><MessageCircle size={15} stroke={2.4} /></button>
                   </div>
@@ -1278,7 +1278,7 @@ export function CuentaScreen() {
                   </div>
                   <div className="my-1 ml-[4px] h-4 w-[2px] bg-lilac-line" />
                   <div className="flex items-start gap-2.5">
-                    <MapPin size={15} stroke={2.4} className="mt-0.5 flex-none text-green-dark" />
+                    <MapPin size={15} stroke={2.4} className="mt-0.5 flex-none text-green-ink" />
                     <div className="min-w-0"><div className="text-[9.5px] font-extrabold uppercase tracking-wider text-muted-2">{L('Hasta', 'To')}</div><div className="text-ink">{f.address_label ? `${f.address_label} · ` : ''}{f.address}</div>{f.instructions && <div className="mt-0.5 text-[11px] font-medium text-muted">{f.instructions}</div>}</div>
                   </div>
                 </div>

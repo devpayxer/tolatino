@@ -90,9 +90,9 @@ const MOVE_OPTS: { v: string; es: string; en: string }[] = [
 /** Deal → content tag pill (tokens only). */
 const DEAL_TAG: Record<ReDeal, { cls: string; es: string; en: string }> = {
   venta: { cls: 'bg-lilac text-primary-dark', es: 'En venta', en: 'For sale' },
-  renta: { cls: 'bg-green-bg text-green-dark', es: 'En renta', en: 'For rent' },
+  renta: { cls: 'bg-green-bg text-green-ink', es: 'En renta', en: 'For rent' },
   cuarto: { cls: 'bg-pink-bg text-pink-dark', es: 'Cuarto', en: 'Room' },
-  comercial: { cls: 'bg-blue-bg text-blue', es: 'Comercial', en: 'Commercial' },
+  comercial: { cls: 'bg-blue-bg text-blue-ink', es: 'Comercial', en: 'Commercial' },
 };
 
 // ── small helpers (Eventos patterns) ─────────────────────────────────────────
@@ -550,7 +550,7 @@ export function BienesRaicesScreen() {
       </div>
       <div className="min-w-0 flex-1 p-3">
         <div className="flex items-center gap-1.5">{dealPill(p.deal)}
-          {p.openHouse && <span className="rounded-[8px] bg-green-bg px-2 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Casa abierta', 'Open house')}</span>}
+          {p.openHouse && <span className="rounded-[8px] bg-green-bg px-2 py-0.5 text-[9px] font-extrabold text-green-ink">{L('Casa abierta', 'Open house')}</span>}
         </div>
         <div className="mt-1.5 text-[16px] font-extrabold text-ink">{fmtPrice(p.price, p.deal, es)}</div>
         <div className="mt-1.5">{specRow(p, true)}</div>
@@ -802,7 +802,7 @@ export function BienesRaicesScreen() {
                 <div className="flex flex-wrap items-center gap-2">
                   {dealPill(d.deal)}
                   {d.openHouse && (
-                    <span className="rounded-[8px] bg-green-bg px-2.5 py-1 text-[9.5px] font-extrabold text-green-dark">
+                    <span className="rounded-[8px] bg-green-bg px-2.5 py-1 text-[9.5px] font-extrabold text-green-ink">
                       {L('Casa abierta', 'Open house')} · {openHouseText(d.openHouse, es)}
                     </span>
                   )}
@@ -1228,7 +1228,7 @@ export function BienesRaicesScreen() {
               ) : savedList.length === 0 ? (
                 <Card className="p-10 text-center">
                   <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-lilac-2">
-                    <Heart size={26} stroke={2} className="text-muted-faint" />
+                    <Heart size={26} stroke={2} className="text-muted-2" />
                   </span>
                   <div className="mt-3 text-[15px] font-extrabold text-ink">{L('Aún no guardas nada', 'Nothing saved yet')}</div>
                   <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Guarda propiedades con ♥ para compararlas después.', 'Save listings with ♥ to compare them later.')}</div>
@@ -1435,7 +1435,7 @@ export function BienesRaicesScreen() {
                 </div>
                 <input type="range" min={3} max={9} step={0.1} value={calc.rate} onChange={(e) => setCalc({ ...calc, rate: Number(e.target.value), rateFromMarket: false })} className="w-full accent-primary" />
                 {calc.rateFromMarket && marketAsOf && (
-                  <div className="mt-1 text-[9.5px] font-bold text-green-dark">✓ {L('Promedio nacional real', 'Live national average')} · {marketAsOf}</div>
+                  <div className="mt-1 text-[9.5px] font-bold text-green-ink">✓ {L('Promedio nacional real', 'Live national average')} · {marketAsOf}</div>
                 )}
               </div>
               <div>
@@ -1467,7 +1467,7 @@ export function BienesRaicesScreen() {
                 <div key={r.k} className="flex items-center justify-between py-2.5 text-[12.5px]">
                   <span className="flex min-w-0 items-center gap-2 font-semibold text-ink-2">
                     <span className={`h-2 w-2 flex-none rounded-[3px] ${r.dot}`} /> <span className="truncate">{r.k}</span>
-                    {r.tag && <span className={`flex-none rounded px-1.5 py-px text-[8.5px] font-extrabold uppercase ${r.tag === L('real', 'actual') ? 'bg-green-bg text-green-dark' : 'bg-lilac-2 text-muted-2'}`}>{r.tag}</span>}
+                    {r.tag && <span className={`flex-none rounded px-1.5 py-px text-[8.5px] font-extrabold uppercase ${r.tag === L('real', 'actual') ? 'bg-green-bg text-green-ink' : 'bg-lilac-2 text-muted-2'}`}>{r.tag}</span>}
                   </span>
                   <span className="flex-none font-extrabold text-ink">${Math.round(r.v).toLocaleString()}</span>
                 </div>

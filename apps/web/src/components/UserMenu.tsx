@@ -28,7 +28,7 @@ export function UserMenu() {
     ...(loggedIn ? [{ Icon: User, color: '#C4144C', bg: '#FFECF2', label: L('Mi cuenta', 'My account'), act: () => go('/cuenta') }] : []),
     { Icon: LayoutDashboard, color: '#C4144C', bg: '#FFECF2', label: L('Panel de negocio', 'Business dashboard'), act: () => go('/negocio') },
     { Icon: Store, color: '#00A878', bg: '#E6FAF3', label: L('Publicar negocio', 'List a business'), act: () => go('/negocio/publicar') },
-    { Icon: SlidersHorizontal, color: '#7E7798', bg: '#F1EEFA', label: L('Configuración', 'Settings'), act: () => go('/cuenta') },
+    { Icon: SlidersHorizontal, color: '#6F6889', bg: '#F1EEFA', label: L('Configuración', 'Settings'), act: () => go('/cuenta') },
     { Icon: HelpCircle, color: '#8A5A00', bg: '#FFF6E3', label: L('Ayuda y soporte', 'Help & support'), act: close },
   ];
 

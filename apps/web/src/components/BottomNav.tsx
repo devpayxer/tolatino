@@ -25,7 +25,7 @@ export function BottomNav() {
         className="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2"
       >
         <Icon size={22} strokeWidth={2} className={active ? 'text-primary' : 'text-muted-2'} />
-        <span className={`text-[10.5px] font-extrabold ${active ? 'text-primary' : 'text-muted-2'}`}>{label}</span>
+        <span className={`text-[10.5px] font-extrabold ${active ? 'text-primary-dark' : 'text-muted-2'}`}>{label}</span>
       </button>
     );
   };

@@ -35,7 +35,7 @@ export function ComingSoonScreen({ view }: { view: keyof typeof SOON }) {
       </p>
 
       {done ? (
-        <div className="mt-6 flex items-center gap-2.5 rounded-btn-lg bg-green-bg px-5 py-3.5 text-[13.5px] font-extrabold text-green-dark">
+        <div className="mt-6 flex items-center gap-2.5 rounded-btn-lg bg-green-bg px-5 py-3.5 text-[13.5px] font-extrabold text-green-ink">
           <Check size={17} stroke={3} />
           {L('¡Listo! Te avisamos cuando abra.', "Done! We'll let you know when it opens.")}
         </div>

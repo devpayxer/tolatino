@@ -315,7 +315,7 @@ export function NegociosScreen() {
           <span className="h-2 w-2 rounded-full bg-primary" />
           {L('Todos', 'All')}
         </span>
-        <span className="text-[11px] font-bold text-muted-faint">{BUSINESSES.length}</span>
+        <span className="text-[11px] font-bold text-muted-2">{BUSINESSES.length}</span>
       </button>
       {CAT_KEYS.map((k) => {
         const open = catOpen === k;
@@ -341,7 +341,7 @@ export function NegociosScreen() {
                 {L(CAT[k].es, CAT[k].en)}
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="text-[11px] font-bold text-muted-faint">{counts[k] ?? 0}</span>
+                <span className="text-[11px] font-bold text-muted-2">{counts[k] ?? 0}</span>
                 {subs.length > 0 && (
                   <ChevronDown size={13} stroke={2.6} className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
                 )}
@@ -374,7 +374,7 @@ export function NegociosScreen() {
         <div className="mt-5">
           <div className={secLabel}>
             {L('Características', 'Features')}
-            <span className="ml-1.5 font-bold normal-case tracking-normal text-muted-faint">{L(CAT[f.cat as CatKey].es, CAT[f.cat as CatKey].en)}</span>
+            <span className="ml-1.5 font-bold normal-case tracking-normal text-muted-2">{L(CAT[f.cat as CatKey].es, CAT[f.cat as CatKey].en)}</span>
           </div>
           <div className="flex flex-wrap gap-1.5">{shownFeatures.map(featChip)}</div>
           {catFeatures.length > FEAT_PREVIEW && (
@@ -411,7 +411,7 @@ export function NegociosScreen() {
           <SlidersHorizontal size={13} stroke={2.4} />
           {L('Filtros', 'Filters')}
           {activeCount > 0 && (
-            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-extrabold text-primary">
+            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-extrabold text-primary-dark">
               {activeCount}
             </span>
           )}
@@ -435,7 +435,7 @@ export function NegociosScreen() {
           {onlySaved ? <HeartFilled size={13} className="text-white" /> : <Heart size={13} stroke={2.4} />}
           {L('Guardados', 'Saved')}
           {savedBiz.count > 0 && (
-            <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-extrabold ${onlySaved ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
+            <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-extrabold ${onlySaved ? 'bg-white text-primary-dark' : 'bg-primary text-white'}`}>
               {savedBiz.count}
             </span>
           )}
@@ -460,7 +460,7 @@ export function NegociosScreen() {
                   onChange={(e) => patch({ maxDist: parseInt(e.target.value, 10) })}
                   className="w-full accent-primary"
                 />
-                <div className="mt-1 flex justify-between text-[10.5px] font-bold text-muted-faint">
+                <div className="mt-1 flex justify-between text-[10.5px] font-bold text-muted-2">
                   <span>{DIST_MIN} mi</span>
                   <span>{DIST_MAX} mi</span>
                 </div>
@@ -658,7 +658,7 @@ function SaveBtn({ b, size = 17 }: { b: Business; size?: number }) {
       className="ml-auto flex-none cursor-pointer p-1"
       aria-label={savedOn ? L('Quitar de guardados', 'Remove from saved') : L('Guardar', 'Save')}
     >
-      {savedOn ? <HeartFilled size={size} className="text-pink" /> : <Heart size={size} stroke={2.2} className="text-muted-faint" />}
+      {savedOn ? <HeartFilled size={size} className="text-pink" /> : <Heart size={size} stroke={2.2} className="text-muted-2" />}
     </button>
   );
 }
@@ -759,7 +759,7 @@ function EndorseBar({ b }: { b: Business }) {
   );
 }
 
-const TONE_CLASS = { open: 'text-green', soon: 'text-amber-ink', closed: 'text-muted' } as const;
+const TONE_CLASS = { open: 'text-green-ink', soon: 'text-amber-ink', closed: 'text-muted' } as const;
 
 /** Rating · reviews · price · live open/closed status — shared meta row. */
 function BizMeta({ b }: { b: Business }) {
@@ -768,7 +768,7 @@ function BizMeta({ b }: { b: Business }) {
   const st = statusLabel(bizStatus(b.hours, now, b.open, b.hoursExceptions), L);
   return (
     <div className="flex flex-wrap items-center gap-x-1.5 text-[12.5px] font-bold">
-      <span className="text-amber">★</span>
+      <span className="text-amber-ink">★</span>
       <span className="font-extrabold text-ink">{b.rating}</span>
       <span className="text-muted-2">({b.reviews})</span>
       <span className="text-muted-2">· {b.price}</span>

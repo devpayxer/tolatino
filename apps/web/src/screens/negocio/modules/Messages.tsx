@@ -21,7 +21,7 @@ type Msg = { id: string; fromOwner: boolean; body: string; at: string };
 const DEMO_CONVOS: Convo[] = [
   { id: 'd1', name: 'Sofía R.', initials: 'SR', color: '#FF2D6F', last: '¿Hacen catering para 50?', unread: 2, lastAt: '2024-01-01T10:00:00Z' },
   { id: 'd2', name: 'Juan M.', initials: 'JM', color: '#00A878', last: '¿Tienen opción vegana?', unread: 0, lastAt: '2024-01-01T09:00:00Z' },
-  { id: 'd3', name: 'Ana L.', initials: 'AL', color: '#C05702', last: 'Gracias por el pedido 🙏', unread: 0, lastAt: '2024-01-01T08:00:00Z' },
+  { id: 'd3', name: 'Ana L.', initials: 'AL', color: '#B44D00', last: 'Gracias por el pedido 🙏', unread: 0, lastAt: '2024-01-01T08:00:00Z' },
 ];
 const DEMO_MSGS: Record<string, Msg[]> = {
   d1: [
@@ -155,7 +155,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
     <div className="flex flex-col overflow-hidden rounded-card border border-line bg-white">
       {convos.length === 0 ? (
         <div className="flex flex-col items-center gap-2 px-4 py-14 text-center text-muted">
-          <MessageCircle size={26} stroke={2} className="text-muted-faint" />
+          <MessageCircle size={26} stroke={2} className="text-muted-2" />
           <span className="text-[13px] font-extrabold text-ink">{L('Sin mensajes todavía', 'No messages yet')}</span>
           <span className="text-[11.5px] font-semibold">{L('Tus clientes te escribirán desde tu listado.', 'Customers will message you from your listing.')}</span>
         </div>

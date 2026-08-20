@@ -47,8 +47,8 @@ type Sort = 'relevance' | 'price_asc' | 'price_desc' | 'miles_asc' | 'year_desc'
 
 /** Condition → tag-pill styling (tokens only). */
 const COND_TAG: Record<AuCond, string> = {
-  nuevo: 'bg-green-bg text-green-dark',
-  certificado: 'bg-blue-bg text-blue',
+  nuevo: 'bg-green-bg text-green-ink',
+  certificado: 'bg-blue-bg text-blue-ink',
   seminuevo: 'bg-lilac text-primary-dark',
   usado: 'bg-lilac-2 text-ink-soft',
 };
@@ -487,7 +487,7 @@ export function AutosScreen() {
     </span>
   );
   const cleanBadge = (extra = '') => (
-    <span className={`flex items-center gap-1 rounded-[8px] bg-green-bg px-2 py-1 text-[9px] font-extrabold uppercase tracking-[.03em] text-green-dark ${extra}`}>
+    <span className={`flex items-center gap-1 rounded-[8px] bg-green-bg px-2 py-1 text-[9px] font-extrabold uppercase tracking-[.03em] text-green-ink ${extra}`}>
       <ShieldCheck size={11} stroke={2.4} /> {L('Limpio', 'Clean')}
     </span>
   );
@@ -1067,7 +1067,7 @@ export function AutosScreen() {
               {viewHeader(L('Comparar autos', 'Compare cars'), `${compare.length}/3`)}
               {compare.length === 0 ? (
                 <Card className="p-10 text-center">
-                  <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-lilac-2"><Compare size={26} stroke={2} className="text-muted-faint" /></span>
+                  <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-lilac-2"><Compare size={26} stroke={2} className="text-muted-2" /></span>
                   <div className="mt-3 text-[15px] font-extrabold text-ink">{L('Nada que comparar', 'Nothing to compare')}</div>
                   <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Agrega autos con “Comparar” para verlos lado a lado.', 'Add cars with “Compare” to see them side by side.')}</div>
                   <PrimaryBtn className="mx-auto mt-4 max-w-[220px]" onClick={() => setView('descubrir')}>{L('Explorar', 'Browse')}</PrimaryBtn>
@@ -1125,7 +1125,7 @@ export function AutosScreen() {
                 <SkeletonList count={3} className="flex flex-col gap-3" />
               ) : savedList.length === 0 ? (
                 <Card className="p-10 text-center">
-                  <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-lilac-2"><Heart size={26} stroke={2} className="text-muted-faint" /></span>
+                  <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-lilac-2"><Heart size={26} stroke={2} className="text-muted-2" /></span>
                   <div className="mt-3 text-[15px] font-extrabold text-ink">{L('Aún no guardas autos', 'No saved cars yet')}</div>
                   <div className="mt-1 text-[12.5px] font-semibold text-muted">{L('Toca el corazón en un auto para guardarlo.', 'Tap the heart on a car to save it.')}</div>
                   <PrimaryBtn className="mx-auto mt-4 max-w-[220px]" onClick={() => setView('descubrir')}>{L('Explorar', 'Browse')}</PrimaryBtn>
@@ -1313,8 +1313,8 @@ export function AutosScreen() {
           <>
             <OverlayTitle title={L('Pre-calificación', 'Pre-qualification')} onClose={() => setPrequal(null)} onBack={prequal.step > 0 ? () => setPrequal({ ...prequal, step: prequal.step - 1 }) : undefined} />
             <div className="mb-3 flex items-start gap-2 rounded-field bg-green-bg px-3 py-2.5">
-              <ShieldCheck size={16} stroke={2.2} className="mt-0.5 flex-none text-green-dark" />
-              <span className="text-[11px] font-bold leading-snug text-green-dark">{L('No afecta tu crédito · sin número social (ITIN OK)', "Doesn't affect your credit · no SSN (ITIN OK)")}</span>
+              <ShieldCheck size={16} stroke={2.2} className="mt-0.5 flex-none text-green-ink" />
+              <span className="text-[11px] font-bold leading-snug text-green-ink">{L('No afecta tu crédito · sin número social (ITIN OK)', "Doesn't affect your credit · no SSN (ITIN OK)")}</span>
             </div>
             {/* stepper */}
             <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">

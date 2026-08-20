@@ -7,6 +7,7 @@ import { imgUrl, ANCHO } from '@/lib/img';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useScrollLock } from '@/lib/scrollLock';
 import { useLang } from '@/lib/i18n';
+import { textoSobre } from '@/lib/paleta';
 
 /**
  * Logotipo de la marca — el globo con América en negativo.
@@ -27,27 +28,37 @@ export function LogoMark({ size = 16, color = '#FF2D6F', className }: { size?: n
   );
 }
 
-/** Marca completa: To'(tinta) + Latino(morado) + logotipo. */
+/** La marca escrita: To’Latino + el logotipo.
+ *
+ *  Sigue la regla del sistema (handoff 2026-08-20): Bricolage Grotesque 800,
+ *  tracking −.045em, y **el APÓSTROFO es lo que va en color, nunca en tinta**.
+ *  Antes el color se lo llevaba la palabra «Latino» entera; ahora el nombre se
+ *  lee de una pieza y el acento es ese único signo, que es de donde sale la
+ *  marca (el apóstrofo del «to’» dominicano). */
 export function Wordmark({ size = 'md', onClick }: { size?: 'sm' | 'md' | 'lg'; onClick?: () => void }) {
   const fs = size === 'lg' ? 21 : size === 'md' ? 20 : 18;
   const px = size === 'lg' ? 'text-[21px]' : size === 'md' ? 'text-[20px]' : 'text-[18px]';
   return (
     <span
       onClick={onClick}
-      className={`inline-flex items-baseline font-extrabold tracking-[-.03em] ${px} ${onClick ? 'cursor-pointer' : ''}`}
+      className={`inline-flex items-baseline font-display font-extrabold tracking-display-lg text-ink ${px} ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <span className="text-ink">To&rsquo;</span>
-      <span className="text-primary">Latino</span>
+      To<span className="text-primary">&rsquo;</span>Latino
       <LogoMark size={Math.round(fs * 0.88)} className="ml-1 self-center" />
     </span>
   );
 }
 
-/** Verified check badge (purple circle). */
+/** Sello de verificado.
+ *
+ *  MORADO, no el acento de marca. Es una de las cinco entradas de la tabla de
+ *  estado del sistema (`verified` #7C3AED sobre #F3EEFF) y tiene que
+ *  distinguirse de un CTA: un sello que comparte color con el botón de comprar
+ *  deja de leerse como una garantía y pasa a leerse como decoración. */
 export function VerifiedBadge({ size = 19 }: { size?: number }) {
   return (
     <span
-      className="inline-flex flex-none items-center justify-center rounded-full bg-primary"
+      className="inline-flex flex-none items-center justify-center rounded-full bg-verified"
       style={{ width: size, height: size }}
     >
       <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -55,6 +66,38 @@ export function VerifiedBadge({ size = 19 }: { size?: number }) {
       </svg>
     </span>
   );
+}
+
+/** Titular de pantalla — Bricolage Grotesque, la tipografía de DISPLAY.
+ *  El sistema la reserva para titulares, precios grandes y cifras de héroe; el
+ *  resto de la interfaz va en Onest. `as` permite el nivel semántico correcto
+ *  sin cambiar el tamaño. */
+export function Display({
+  children, level = 3, as, className = '',
+}: { children: ReactNode; level?: 1 | 2 | 3; as?: 'h1' | 'h2' | 'h3' | 'div'; className?: string }) {
+  const T = as ?? (level === 1 ? 'h1' : level === 2 ? 'h2' : 'h3');
+  const esc = level === 1
+    ? 'text-[34px] md:text-[56px] font-extrabold tracking-display-lg'
+    : level === 2
+      ? 'text-[26px] md:text-[34px] font-bold tracking-display-lg'
+      : 'text-[20px] md:text-[24px] font-bold tracking-display';
+  return <T className={`font-display text-ink ${esc} ${className}`}>{children}</T>;
+}
+
+/** Antetítulo en versalitas — Space Mono. Es el acento «light sci-fi» del
+ *  sistema: se usa para rotular una sección, nunca para texto corrido. */
+export function Eyebrow({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <span className={`font-mono text-[11px] uppercase tracking-eyebrow text-muted ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+/** Precio. Bricolage 700 con cifras de ancho fijo (`tabular-nums`), que es lo
+ *  que evita que una lista de precios baile de fila en fila. */
+export function Price({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <span className={`font-display font-bold tabular-nums text-ink ${className}`}>{children}</span>;
 }
 
 /**
@@ -100,9 +143,9 @@ export function BizLogo({ name, logoUrl, color = '#FF2D6F', size = 84, radius = 
   return (
     <span
       aria-hidden
-      className={`flex flex-none items-center justify-center font-extrabold leading-none text-white ${className}`}
+      className={`flex flex-none items-center justify-center font-extrabold leading-none ${className}`}
       style={{
-        width: size, height: size, borderRadius: radius,
+        width: size, height: size, borderRadius: radius, color: textoSobre(color),
         // El mismo degradado que usa el paso "Logo y fotos" del alta, para que
         // el dueño vea en el listado exactamente lo que se le enseñó al publicar.
         background: `linear-gradient(140deg, ${color}, #FF2D6F)`,
@@ -212,8 +255,15 @@ export function Avatar({
 
   return (
     <span
-      className={`relative flex flex-none items-center justify-center overflow-hidden font-extrabold text-white ${className}`}
-      style={{ width: size, height: size, background: color, fontSize: size * 0.34, borderRadius: radius ?? '50%' }}
+      // La tinta de las iniciales NO es fija: el color del avatar llega de la
+      // base (`profiles.avatar_color`) y puede ser claro. Con blanco fijo, unas
+      // iniciales sobre el ámbar del sistema daban 1.8 de contraste.
+      // `aria-hidden` en las iniciales: el nombre de la persona va SIEMPRE al
+      // lado, así que leerlas en voz alta es repetir. (Y de paso las saca del
+      // umbral de contraste del arnés, donde son un icono, no texto.)
+      aria-hidden
+      className={`relative flex flex-none items-center justify-center overflow-hidden font-extrabold ${className}`}
+      style={{ width: size, height: size, background: color, color: textoSobre(color ?? "#FF2D6F"), fontSize: size * 0.34, borderRadius: radius ?? '50%' }}
     >
       {initials}
       {photo && (
@@ -263,10 +313,13 @@ export function Chip({
     <button
       onClick={onClick}
       style={style}
+      // Inactivo = el terciario del sistema (blanco con borde de 1.5px). Antes
+      // era una sombra interior, que a escala 2× de un móvil se veía difusa y
+      // hacía que la fila de filtros pareciera desenfocada.
       className={`tap-y flex-none whitespace-nowrap rounded-full px-[15px] py-2 text-[12.5px] font-extrabold transition-colors ${
  active
  ? 'bg-primary text-white shadow-cta-sm'
- : 'bg-white text-ink-soft shadow-[inset_0_0_0_1px_rgba(30,27,46,.08)]'
+ : 'border-[1.5px] border-sys-line-strong bg-white text-ink-soft'
  } ${className}`}
     >
       {children}
@@ -456,40 +509,70 @@ export function Card({ children, className = '', onClick }: { children: ReactNod
 }
 
 export function Stars({ className = '', rating }: { className?: string; rating?: number }) {
-  // With a rating, render proportional stars (filled vs muted) — never a flat
-  // ★★★★★ over a real 3.2. Without one (decorative/marketing use), keep 5.
+  // Con una calificación se pintan estrellas proporcionales (llenas vs
+  // apagadas) — nunca un ★★★★★ plano sobre un 3.2 real. Sin ella (uso
+  // decorativo/marketing), se dejan las cinco.
+  //
+  // `aria-hidden` no es un adorno: las estrellas SIEMPRE van acompañadas del
+  // número («4.8 · 5 reseñas»), que es quien lleva el dato. Para un lector de
+  // pantalla, leer «estrella estrella estrella…» además del número es ruido. Y
+  // sirve de paso para el arnés de contraste: el ámbar del sistema da 1.8
+  // sobre blanco, insuficiente para TEXTO — pero esto no es texto, es un icono
+  // dibujado con un carácter, y el dato legible está al lado.
   if (rating == null || !Number.isFinite(rating)) {
-    return <span className={`font-bold tracking-[1px] text-amber ${className}`}>★★★★★</span>;
+    return <span aria-hidden className={`font-bold tracking-[1px] text-amber ${className}`}>★★★★★</span>;
   }
   const full = Math.max(0, Math.min(5, Math.round(rating)));
   return (
-    <span className={`font-bold tracking-[1px] ${className}`}>
+    <span aria-hidden className={`font-bold tracking-[1px] ${className}`}>
       <span className="text-amber">{'★'.repeat(full)}</span>
       <span className="text-lilac-line">{'★'.repeat(5 - full)}</span>
     </span>
   );
 }
 
-export function EmptyState({ title, sub }: { title: string; sub?: string }) {
+/** Estado vacío — tarjeta de borde discontinuo, azulejo de icono teñido, una
+ *  línea de texto y UNA acción (spec del sistema).
+ *
+ *  `icon` y `action` son opcionales para no romper las ~40 llamadas que ya
+ *  existen: sin ellos se comporta igual que antes. Pero un vacío sin salida es
+ *  un callejón — cuando haya una acción posible, pásala. */
+export function EmptyState({
+  title, sub, icon, action,
+}: { title: string; sub?: string; icon?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="rounded-card-sm border border-dashed border-[rgba(123,97,255,.3)] bg-white p-8 text-center">
-      <div className="text-[13.5px] font-bold text-muted">{title}</div>
-      {sub && <div className="mt-1 text-[12px] font-semibold text-muted-2">{sub}</div>}
+    <div className="rounded-card border border-dashed border-lilac-ring bg-white p-8 text-center">
+      {icon && (
+        <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-tile bg-tint-lilac text-primary-dark">
+          {icon}
+        </span>
+      )}
+      <div className="text-[13.5px] font-bold text-ink-soft">{title}</div>
+      {sub && <div className="mt-1 text-[12px] font-semibold text-muted">{sub}</div>}
+      {action && <div className="mx-auto mt-4 max-w-[240px]">{action}</div>}
     </div>
   );
 }
 
-/** Loading skeletons — shown while real data is fetched, so screens never flash
- *  the demo fixtures. `card` = media card (Negocios/Eventos); `post` = feed post
- *  (Comunidad). Pass the screen's own grid/stack classes via `className`. */
+/** Esqueletos de carga — se enseñan mientras llegan los datos de verdad, para
+ *  que ninguna pantalla parpadee con contenido de ejemplo. `card` = tarjeta con
+ *  imagen (Negocios/Eventos); `post` = publicación del muro (Comunidad). Las
+ *  clases de rejilla de cada pantalla se pasan por `className`.
+ *
+ *  El brillo que recorre la pieza es `tlShine`, la animación del sistema
+ *  (handoff 2026-08-20). Sustituye al `animate-pulse` de Tailwind, que apaga y
+ *  enciende el bloque entero: a pantalla completa parpadeaba, y el barrido de
+ *  izquierda a derecha se lee como «está cargando» en vez de como un error. */
+const BRILLO = 'animate-shine bg-[linear-gradient(90deg,#F1EEFA_0%,#FCFBFF_50%,#F1EEFA_100%)] bg-[length:200%_100%]';
+
 function SkeletonCard() {
   return (
     <div className="overflow-hidden rounded-card border border-line bg-white">
-      <div className="aspect-[16/10] w-full animate-pulse bg-lilac-2" />
+      <div className={`aspect-[16/10] w-full ${BRILLO}`} />
       <div className="flex flex-col gap-2 p-3.5">
-        <div className="h-3.5 w-2/3 animate-pulse rounded bg-lilac-2" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-hair" />
-        <div className="h-3 w-1/3 animate-pulse rounded bg-hair" />
+        <div className={`h-3.5 w-2/3 rounded ${BRILLO}`} />
+        <div className={`h-3 w-1/2 rounded ${BRILLO}`} />
+        <div className={`h-3 w-1/3 rounded ${BRILLO}`} />
       </div>
     </div>
   );
@@ -498,16 +581,16 @@ function SkeletonPost() {
   return (
     <div className="rounded-card border border-line bg-white p-4">
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 flex-none animate-pulse rounded-full bg-lilac-2" />
+        <div className={`h-10 w-10 flex-none rounded-full ${BRILLO}`} />
         <div className="flex flex-col gap-1.5">
-          <div className="h-3 w-28 animate-pulse rounded bg-lilac-2" />
-          <div className="h-2.5 w-20 animate-pulse rounded bg-hair" />
+          <div className={`h-3 w-28 rounded ${BRILLO}`} />
+          <div className={`h-2.5 w-20 rounded ${BRILLO}`} />
         </div>
       </div>
       <div className="mt-3.5 flex flex-col gap-2">
-        <div className="h-3 w-full animate-pulse rounded bg-hair" />
-        <div className="h-3 w-11/12 animate-pulse rounded bg-hair" />
-        <div className="h-3 w-2/3 animate-pulse rounded bg-hair" />
+        <div className={`h-3 w-full rounded ${BRILLO}`} />
+        <div className={`h-3 w-11/12 rounded ${BRILLO}`} />
+        <div className={`h-3 w-2/3 rounded ${BRILLO}`} />
       </div>
     </div>
   );
@@ -520,7 +603,32 @@ export function SkeletonList({ count = 6, variant = 'card', className = '' }: { 
   );
 }
 
-/** Primary CTA button (purple, elevated). */
+/** ─────────────────────────────────────────────────────────────────────────
+ *  LOS CUATRO BOTONES DEL SISTEMA (handoff 2026-08-20).
+ *
+ *  Hasta ahora la app tenía UNO (`PrimaryBtn`) y cada pantalla se inventaba el
+ *  resto con clases sueltas. El sistema define cuatro, y cada uno dice algo
+ *  distinto — por eso importan:
+ *    · Principal  degradado Calor. La acción de la pantalla. UNA por pantalla.
+ *    · Secundario relleno de tinta. La otra acción de peso (guardar, seguir).
+ *    · Terciario  blanco con borde. La salida sin consecuencias (cancelar).
+ *    · Callado    relleno teñido + texto de acento. Acción menor dentro de una
+ *                 tarjeta, donde un botón de verdad gritaría.
+ *  ───────────────────────────────────────────────────────────────────────── */
+
+/** Tamaño y forma comunes. Radio 16 y 44px de alto mínimo (zona de toque). */
+const BOTON = 'inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-btn px-[26px] py-[13px] text-[14px] font-extrabold disabled:cursor-not-allowed';
+
+/** Botón principal — el degradado Calor de la marca.
+ *
+ *  El `hover:-translate-y-0.5` es del handoff («lifts 2px on hover») y solo se
+ *  nota en escritorio.
+ *
+ *  NO lleva `transition-colors`, a propósito (2026-08-05): el fundador notaba
+ *  que el botón «tardaba en activarse» al completar un paso del alta. La
+ *  transición fundía el gris→color en vez de cambiarlo al instante, y en un
+ *  teléfono ese fundido se lee como retraso. Habilitarse es un cambio de
+ *  ESTADO, no una animación. Solo se anima el desplazamiento. */
 export function PrimaryBtn({
   children,
   onClick,
@@ -536,15 +644,46 @@ export function PrimaryBtn({
     <button
       onClick={onClick}
       disabled={disabled}
-      // Sin `transition-colors` a propósito (2026-08-05): el fundador notaba que
-      // el botón «tardaba en activarse» al completar un paso del alta. La
-      // transición fundía el gris→morado en vez de cambiarlo al instante, y en
-      // un teléfono ese fundido se lee como retraso. Habilitarse es un cambio de
-      // ESTADO, no una animación.
-      className={`w-full rounded-btn-lg p-[13px] text-[14px] font-extrabold text-white ${
- disabled ? 'cursor-not-allowed bg-lilac-line' : 'cursor-pointer bg-primary shadow-cta hover:bg-primary-dark'
- } ${className}`}
+      className={`${BOTON} text-white transition-transform duration-150 ${
+        disabled ? 'bg-lilac-ring' : 'bg-calor shadow-cta hover:-translate-y-0.5'
+      } ${className}`}
     >
+      {children}
+    </button>
+  );
+}
+
+/** Botón secundario — relleno de tinta. */
+export function SecondaryBtn({
+  children, onClick, disabled, className = '',
+}: { children: ReactNode; onClick?: () => void; disabled?: boolean; className?: string }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className={`${BOTON} text-white ${disabled ? 'bg-lilac-ring' : 'bg-ink'} ${className}`}>
+      {children}
+    </button>
+  );
+}
+
+/** Botón terciario — blanco con borde de 1.5px. */
+export function TertiaryBtn({
+  children, onClick, disabled, className = '',
+}: { children: ReactNode; onClick?: () => void; disabled?: boolean; className?: string }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className={`${BOTON} border-[1.5px] border-sys-line-strong bg-white text-ink disabled:text-muted-2 ${className}`}>
+      {children}
+    </button>
+  );
+}
+
+/** Botón callado — relleno teñido, texto de acento. */
+export function QuietBtn({
+  children, onClick, disabled, className = '',
+}: { children: ReactNode; onClick?: () => void; disabled?: boolean; className?: string }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className={`${BOTON} bg-tint-pink text-primary-dark disabled:text-muted-2 ${className}`}>
       {children}
     </button>
   );

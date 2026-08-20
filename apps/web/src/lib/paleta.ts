@@ -32,15 +32,19 @@ export const TINTA = {
   suave: '#403A5A', // etiquetas de tono medio
   parrafo: '#4B4565',
   segundo: '#625B7D', // texto secundario
-  apagado: '#7E7798', // metadatos
-  apagado2: '#9A93B3',
+  apagado: '#6F6889', // metadatos (AA sobre blanco: 5.2)
+  apagado2: '#706987', // texto secundario (AA: 5.2)
+  apagado3: '#9A93B3', // (valor del handoff) iconos y decoración, nunca texto
   tenue: '#B3ADC7', // deshabilitado, contadores
 } as const;
 
 /** El acento de marca. `texto` es el que cumple AA sobre blanco (5.9); el
  *  `DEFAULT` da 3.6 y solo vale para rellenos. */
 export const ACENTO = {
-  marca: '#FF2D6F',
+  // El rosa AA (ver el comentario largo en `tailwind.config.ts` → primary):
+  // el literal del handoff, #FF2D6F, da 3.59 con texto blanco encima. Éste es
+  // el mismo tono y la misma saturación, 6% menos claro → 4.54.
+  marca: '#E9005E',
   texto: '#C4144C',
   pulsado: '#A80F40',
   suave: '#FF7A9E',
@@ -119,7 +123,7 @@ export const SUPERFICIE = {
 
 /** Los dos degradados de marca. Solo héroe / splash / CTA. */
 export const DEGRADADO = {
-  calor: 'linear-gradient(112deg, #FF2D6F, #FF7A1A, #FFB020)',
+  calor: 'linear-gradient(112deg, #E9005E, #FF7A1A, #FFB020)',
   senal: 'linear-gradient(112deg, #7C3AED, #0EA5E9, #00C48C)',
 } as const;
 
@@ -142,25 +146,30 @@ export const OSCURO = {
  *  familia y no como 17 colores sueltos — y por eso ninguno queda apagado:
  *  se sacrifica luminosidad, nunca saturación.
  *
- *  `fg` = el punto y el texto del rubro · `bg` = su superficie teñida. */
+ *  `fg` = el punto y el texto del rubro · `bg` = su superficie teñida.
+ *
+ *  El umbral de `fg` es 4.5 contra SU PROPIO TINTE, no contra blanco — que es
+ *  más exigente y es el caso real: la etiqueta del rubro se pinta sobre su
+ *  color, no sobre la página. Con el umbral puesto en blanco, esas etiquetas
+ *  salían a 3.97–4.25 (lo midió el arnés). */
 export const CAT_COLOR = {
-  AutoServices: { fg: '#646CD2', bg: '#EBEFFF' }, // oklch h 277 · contraste 4.55
-  BeautyHealth: { fg: '#C54C67', bg: '#FFE8EB' }, // oklch h 10 · contraste 4.56
-  FoodDrinks: { fg: '#C05702', bg: '#FFEBDF' }, // oklch h 49 · contraste 4.56
-  HomeServices: { fg: '#AB6600', bg: '#FCEEDB' }, // oklch h 75 · contraste 4.53
-  NightLife: { fg: '#8064CC', bg: '#F0EDFF' }, // oklch h 293 · contraste 4.55
-  Grocery: { fg: '#008754', bg: '#DFF7EB' }, // oklch h 164 · contraste 4.57
-  Party: { fg: '#AE54A5', bg: '#FDE9F9' }, // oklch h 331 · contraste 4.55
-  HealthMedicine: { fg: '#008489', bg: '#DAF7F7' }, // oklch h 196 · contraste 4.50
-  ProServices: { fg: '#007CC1', bg: '#DEF4FF' }, // oklch h 237 · contraste 4.51
-  Shops: { fg: '#C04D7C', bg: '#FFE8F0' }, // oklch h 358 · contraste 4.57
-  Transportation: { fg: '#007EB6', bg: '#DCF5FF' }, // oklch h 228 · contraste 4.51
-  Education: { fg: '#B85D00', bg: '#FFECDC' }, // oklch h 61 · contraste 4.56
-  Children: { fg: '#1678CD', bg: '#E2F2FF' }, // oklch h 251 · contraste 4.56
-  Sports: { fg: '#2F8728', bg: '#E5F6E3' }, // oklch h 142 · contraste 4.55
-  Churches: { fg: '#935DC1', bg: '#F5EBFF' }, // oklch h 307 · contraste 4.59
-  RealEstate: { fg: '#4572D2', bg: '#E6F1FF' }, // oklch h 263 · contraste 4.57
-  CarDealer: { fg: '#007FA2', bg: '#DAF6FD' }, // oklch h 214 · contraste 4.61
+  AutoServices: { fg: '#5A61C6', bg: '#EBEFFF' }, // oklch h 277 · contraste 4.55
+  BeautyHealth: { fg: '#B9415D', bg: '#FFE8EB' }, // oklch h 10 · contraste 4.56
+  FoodDrinks: { fg: '#B44D00', bg: '#FFEBDF' }, // oklch h 49 · contraste 4.56
+  HomeServices: { fg: '#A15D00', bg: '#FCEEDB' }, // oklch h 75 · contraste 4.53
+  NightLife: { fg: '#765AC1', bg: '#F0EDFF' }, // oklch h 293 · contraste 4.55
+  Grocery: { fg: '#007E4C', bg: '#DFF7EB' }, // oklch h 164 · contraste 4.57
+  Party: { fg: '#A3499A', bg: '#FDE9F9' }, // oklch h 331 · contraste 4.55
+  HealthMedicine: { fg: '#007A7E', bg: '#DAF7F7' }, // oklch h 196 · contraste 4.50
+  ProServices: { fg: '#0072B6', bg: '#DEF4FF' }, // oklch h 237 · contraste 4.51
+  Shops: { fg: '#B44271', bg: '#FFE8F0' }, // oklch h 358 · contraste 4.57
+  Transportation: { fg: '#0073AB', bg: '#DCF5FF' }, // oklch h 228 · contraste 4.51
+  Education: { fg: '#AC5300', bg: '#FFECDC' }, // oklch h 61 · contraste 4.56
+  Children: { fg: '#016FC3', bg: '#E2F2FF' }, // oklch h 251 · contraste 4.56
+  Sports: { fg: '#267F1F', bg: '#E5F6E3' }, // oklch h 142 · contraste 4.55
+  Churches: { fg: '#8A54B7', bg: '#F5EBFF' }, // oklch h 307 · contraste 4.59
+  RealEstate: { fg: '#3C69C7', bg: '#E6F1FF' }, // oklch h 263 · contraste 4.57
+  CarDealer: { fg: '#007698', bg: '#DAF6FD' }, // oklch h 214 · contraste 4.61
 } as const;
 
 /** Las dos rayas del marcador de posición de foto.
@@ -215,6 +224,27 @@ export const SERIE = [
   MODULO.negocios,
   MODULO.trabajos,
 ] as const;
+
+/** Qué tinta poner ENCIMA de un color de fondo cualquiera.
+ *
+ *  De dónde sale: el arnés de contraste del paso 3 (2026-08-20) encontró
+ *  iniciales de avatar en BLANCO sobre el ámbar del sistema — 1.8 de contraste,
+ *  ilegible. No es un descuido de una pantalla: los avatares se colorean con un
+ *  color que llega de la BASE DE DATOS (`profiles.avatar_color`), así que
+ *  ninguna clase fija puede resolverlo. Se decide al pintar.
+ *
+ *  Devuelve blanco o la tinta fuerte, la que más contraste dé. */
+export function textoSobre(fondo: string): string {
+  const hex = fondo.trim().replace('#', '');
+  if (hex.length !== 6) return '#FFFFFF';
+  const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const [r, g, b] = [0, 2, 4].map((i) => lin(parseInt(hex.slice(i, i + 2), 16) / 255));
+  const Y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  // Contra blanco (L=1) vs contra la tinta fuerte (#16112E, L≈0.0126).
+  const conBlanco = 1.05 / (Y + 0.05);
+  const conTinta = (Y + 0.05) / (0.0126 + 0.05);
+  return conBlanco >= conTinta ? '#FFFFFF' : TINTA.fuerte;
+}
 
 /** TODO hex que el sistema admite, en un solo conjunto. Lo lee el guardián de
  *  `verify-build.mjs` para rechazar cualquier color inventado. Se construye

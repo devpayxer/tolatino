@@ -565,10 +565,10 @@ export type Notif = {
 
 // ---------- coming soon ----------
 export const SOON: Record<string, { icon: 'truck' | 'home' | 'car' | 'briefcase'; bg: string; color: string; titleEs: string; titleEn: string; subEs: string; subEn: string }> = {
-  transporte: { icon: 'truck', bg: '#FFE8EB', color: '#C54C67', titleEs: 'Transporte', titleEn: 'Transport', subEs: 'Mudanzas, viajes al aeropuerto, encomiendas a Latinoamérica y fletes — de gente de confianza de tu comunidad.', subEn: 'Moving, airport rides, parcels to Latin America and hauling — from trusted people in your community.' },
+  transporte: { icon: 'truck', bg: '#FFE8EB', color: '#B9415D', titleEs: 'Transporte', titleEn: 'Transport', subEs: 'Mudanzas, viajes al aeropuerto, encomiendas a Latinoamérica y fletes — de gente de confianza de tu comunidad.', subEn: 'Moving, airport rides, parcels to Latin America and hauling — from trusted people in your community.' },
   inmuebles: { icon: 'home', bg: '#E6FAF3', color: '#00A878', titleEs: 'Bienes Raíces', titleEn: 'Real Estate', subEs: 'Renta y venta de casas, apartamentos, cuartos y locales comerciales publicados por dueños y agentes latinos.', subEn: 'Homes, apartments, rooms and commercial spaces for rent and sale, posted by Latino owners and agents.' },
   autos: { icon: 'car', bg: '#FFECF2', color: '#FF2D6F', titleEs: 'Dealer de carros', titleEn: 'Car Dealers', subEs: 'Autos de dealers y dueños latinos de confianza, con financiamiento y sin complicaciones de idioma.', subEn: 'Cars from trusted Latino dealers and owners, with financing and no language barrier.' },
-  trabajos: { icon: 'briefcase', bg: '#FFF6E3', color: '#AB6600', titleEs: 'Trabajos', titleEn: 'Jobs', subEs: 'Vacantes en negocios latinos cerca de ti — tiempo completo, medio tiempo y bilingües.', subEn: 'Openings at Latino businesses near you — full-time, part-time and bilingual.' },
+  trabajos: { icon: 'briefcase', bg: '#FFF6E3', color: '#A15D00', titleEs: 'Trabajos', titleEn: 'Jobs', subEs: 'Vacantes en negocios latinos cerca de ti — tiempo completo, medio tiempo y bilingües.', subEn: 'Openings at Latino businesses near you — full-time, part-time and bilingual.' },
 };
 
 // ---------- client categories (7-category bar) ----------

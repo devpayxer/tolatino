@@ -534,7 +534,7 @@ export function AdminScreen() {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {zones.map((z) => {
               const st = ZONE_STATE[z.state];
-              const ratioTone = z.ratio > 300 ? 'text-pink-dark' : z.ratio > 150 ? 'text-amber-ink' : 'text-green-dark';
+              const ratioTone = z.ratio > 300 ? 'text-pink-dark' : z.ratio > 150 ? 'text-amber-ink' : 'text-green-ink';
               return (
                 <Panel key={z.zone} className="p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -544,8 +544,8 @@ export function AdminScreen() {
                   <div className="mt-3 grid grid-cols-4 gap-2">
                     <div><div className="text-[14px] font-extrabold text-ink">{z.businesses}</div><div className="text-[9px] font-bold text-muted-2">{L('negocios', 'biz')}</div></div>
                     <div><div className="text-[14px] font-extrabold text-ink">{z.users}</div><div className="text-[9px] font-bold text-muted-2">{L('usuarios', 'users')}</div></div>
-                    <div><div className="text-[14px] font-extrabold text-green-dark">{money(z.gmv30)}</div><div className="text-[9px] font-bold text-muted-2">GMV 30d</div></div>
-                    <div><div className={`text-[14px] font-extrabold ${z.trend7 >= 0 ? 'text-green-dark' : 'text-pink-dark'}`}>{z.trend7 >= 0 ? '+' : ''}{z.trend7}%</div><div className="text-[9px] font-bold text-muted-2">7d</div></div>
+                    <div><div className="text-[14px] font-extrabold text-green-ink">{money(z.gmv30)}</div><div className="text-[9px] font-bold text-muted-2">GMV 30d</div></div>
+                    <div><div className={`text-[14px] font-extrabold ${z.trend7 >= 0 ? 'text-green-ink' : 'text-pink-dark'}`}>{z.trend7 >= 0 ? '+' : ''}{z.trend7}%</div><div className="text-[9px] font-bold text-muted-2">7d</div></div>
                   </div>
                   <div className={`mt-3 border-t border-hair pt-2.5 text-[11px] font-extrabold ${ratioTone}`}>{z.ratio} {L('usuarios por negocio', 'users per business')}</div>
                   <div className="mt-2.5 flex gap-2">
@@ -988,7 +988,7 @@ export function AdminScreen() {
                 <Panel key={h.id} className="flex flex-wrap items-center gap-3 p-4">
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-tile bg-lilac"><Bell size={17} className="text-primary-dark" /></span>
                   <div className="min-w-0 flex-1"><div className="truncate text-[13px] font-extrabold text-ink">{h.title}</div><div className="text-[10.5px] font-semibold text-muted-2">{[String((h.segment as Record<string, unknown>)?.city ?? 'all'), String((h.segment as Record<string, unknown>)?.role ?? 'all')].join(' · ')} · {timeAgo(h.created_at, es)}</div></div>
-                  <div className="text-right flex-none"><div className="text-[13px] font-extrabold text-ink">{compact(h.sent)}</div><div className="text-[10px] font-bold text-green-dark">{h.open_pct}% {L('apertura', 'open')}</div></div>
+                  <div className="text-right flex-none"><div className="text-[13px] font-extrabold text-ink">{compact(h.sent)}</div><div className="text-[10px] font-bold text-green-ink">{h.open_pct}% {L('apertura', 'open')}</div></div>
                 </Panel>
               ))}
             </div>
@@ -1012,7 +1012,7 @@ export function AdminScreen() {
           </Panel>
           <Panel className="p-4"><BlockTitle>{L('Crecimiento por ciudad', 'Growth by city')}</BlockTitle>
             <div className="flex flex-col gap-3">{gCity.length === 0 ? <div className="text-[12px] font-semibold text-muted-2">{L('Cargando…', 'Loading…')}</div> : gCity.map((g) => <Bar key={g.label} label={g.label} pct={g.pct} max={maxPct} tone="green" />)}</div>
-            {topBiz && topBiz.length > 0 && <><div className="mt-4 mb-2 text-[13px] font-extrabold text-ink">{L('Top negocios · 30d', 'Top businesses · 30d')}</div><div className="flex flex-col gap-2">{topBiz.map((b) => <div key={b.id} className="flex items-center gap-2.5"><span className="w-4 text-[11px] font-extrabold text-muted-faint">{b.rank}</span><span className="min-w-0 flex-1 truncate text-[11.5px] font-bold text-ink">{b.name}</span><span className="text-[12px] font-extrabold text-green-dark">{money(b.gmv)}</span></div>)}</div></>}
+            {topBiz && topBiz.length > 0 && <><div className="mt-4 mb-2 text-[13px] font-extrabold text-ink">{L('Top negocios · 30d', 'Top businesses · 30d')}</div><div className="flex flex-col gap-2">{topBiz.map((b) => <div key={b.id} className="flex items-center gap-2.5"><span className="w-4 text-[11px] font-extrabold text-muted-2">{b.rank}</span><span className="min-w-0 flex-1 truncate text-[11.5px] font-bold text-ink">{b.name}</span><span className="text-[12px] font-extrabold text-green-ink">{money(b.gmv)}</span></div>)}</div></>}
           </Panel>
         </div>
         <Panel className="p-4"><BlockTitle sub={L('Con lo que medimos hoy. Los pasos intermedios (menú/carrito) llegan con el tracking de eventos.', 'From what we measure today. Intermediate steps (menu/cart) arrive with event tracking.')}>{L('Embudo de compra · 30d', 'Purchase funnel · 30d')}</BlockTitle>
@@ -1020,7 +1020,7 @@ export function AdminScreen() {
         </Panel>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel className="p-4"><BlockTitle>{L('Salud del sistema', 'System health')}</BlockTitle>
-            <div className="flex flex-col gap-2">{(health ?? []).map((h) => <div key={h.label} className="flex items-center gap-2.5 rounded-field bg-app px-3 py-2.5"><span className={`h-2.5 w-2.5 flex-none rounded-full ${h.ok ? 'bg-green' : 'bg-pink-dark'}`} /><span className="flex-1 text-[12px] font-bold text-ink-soft">{h.label}</span><span className={`text-[11px] font-extrabold ${h.ok ? 'text-green-dark' : 'text-pink-dark'}`}>{h.value}</span></div>)}</div>
+            <div className="flex flex-col gap-2">{(health ?? []).map((h) => <div key={h.label} className="flex items-center gap-2.5 rounded-field bg-app px-3 py-2.5"><span className={`h-2.5 w-2.5 flex-none rounded-full ${h.ok ? 'bg-green' : 'bg-pink-dark'}`} /><span className="flex-1 text-[12px] font-bold text-ink-soft">{h.label}</span><span className={`text-[11px] font-extrabold ${h.ok ? 'text-green-ink' : 'text-pink-dark'}`}>{h.value}</span></div>)}</div>
           </Panel>
           <Panel className="p-4"><BlockTitle sub={isSuper ? L('Efecto real e inmediato en la app pública.', 'Real, immediate effect on the public app.') : L('Solo un superadmin puede cambiar interruptores.', 'Only a superadmin can flip switches.')}>{L('Interruptores', 'Kill switches')}</BlockTitle>
             <div className="flex flex-col gap-2">{(flags ?? []).map((f) => <div key={f.key} className="flex items-center gap-3 rounded-field bg-app px-3 py-2.5"><span className="flex-1 text-[12px] font-bold text-ink-soft">{es ? f.label_es : f.label_en}</span><Pill tone={f.enabled ? 'green' : 'gray'}>{f.enabled ? 'ON' : 'OFF'}</Pill>{isSuper ? <Toggle on={f.enabled} onClick={() => ask({ title: `${es ? f.label_es : f.label_en} → ${f.enabled ? 'OFF' : 'ON'}`, warn: f.key === 'maintenance' || f.key.startsWith('vertical') ? L('Esto cambia lo que ven TODOS los usuarios ahora mismo.', 'This changes what ALL users see right now.') : undefined, tone: f.enabled ? 'danger' : 'primary', reasonRequired: true, run: (r) => adminSetFlag(f.key, !f.enabled, r), after: reloadAnalytics })} /> : null}</div>)}</div>
@@ -1161,7 +1161,7 @@ export function AdminScreen() {
               return <div key={i} className={`max-w-[86%] rounded-card-sm px-3 py-2 ${mine ? 'self-end bg-primary text-white' : m.side === 'negocio' ? 'self-start bg-lilac-2 text-ink' : 'self-start bg-app text-ink'}`}><div className={`text-[9.5px] font-extrabold uppercase tracking-[.04em] ${mine ? 'text-white/70' : 'text-muted-2'}`}>{m.side === 'admin' ? 'To’Latino' : m.side === 'negocio' ? L('Negocio', 'Business') : L('Cliente', 'Customer')} · {timeAgo(m.at, es)}</div><div className={`mt-0.5 whitespace-pre-wrap break-words text-[12.5px] font-medium leading-relaxed ${mine ? 'text-white' : 'text-ink-2'}`}>{m.text}</div></div>;
             })}
           </div>
-          {closed && claim.resolution && <div className="rounded-field bg-green-bg px-3 py-2.5"><div className="text-[10px] font-extrabold uppercase tracking-[.04em] text-green-dark">{L('Resolución', 'Resolution')}</div><div className="mt-0.5 text-[12px] font-medium leading-relaxed text-ink-2">{claim.resolution}</div></div>}
+          {closed && claim.resolution && <div className="rounded-field bg-green-bg px-3 py-2.5"><div className="text-[10px] font-extrabold uppercase tracking-[.04em] text-green-ink">{L('Resolución', 'Resolution')}</div><div className="mt-0.5 text-[12px] font-medium leading-relaxed text-ink-2">{claim.resolution}</div></div>}
           <div className="border-t border-hair pt-3"><textarea value={cmsg} onChange={(e) => setCmsg(e.target.value)} rows={2} placeholder={L('Escribe al cliente y al negocio…', 'Write to the customer and business…')} className="w-full resize-none rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-medium text-ink outline-none focus:border-primary" /><button disabled={busy || !cmsg.trim()} onClick={sendClaimMsg} className="mt-2 min-h-[44px] w-full cursor-pointer rounded-btn-lg bg-primary text-[13px] font-extrabold text-white shadow-cta-sm disabled:opacity-40">{busy ? L('Enviando…', 'Sending…') : L('Enviar mensaje', 'Send message')}</button></div>
           {!closed && (
             <div className="flex flex-wrap gap-2 border-t border-hair pt-3">

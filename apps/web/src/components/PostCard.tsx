@@ -26,11 +26,11 @@ export function postTag(type: PostType, L: (a: string, b: string) => string) {
     case 'rec':
       return { label: L('Recomienda', 'Recommends'), color: '#007A57', bg: '#E6FAF3' };
     case 'sale':
-      return { label: L('Vendo', 'For sale'), color: '#B85D00', bg: '#FFF6E3' };
+      return { label: L('Vendo', 'For sale'), color: '#AC5300', bg: '#FFF6E3' };
     case 'poll':
-      return { label: L('Encuesta', 'Poll'), color: '#008489', bg: '#DAF7F7' };
+      return { label: L('Encuesta', 'Poll'), color: '#007A7E', bg: '#DAF7F7' };
     default:
-      return { label: L('Mi barrio', 'Local'), color: '#007CC1', bg: '#DEF4FF' };
+      return { label: L('Mi barrio', 'Local'), color: '#0072B6', bg: '#DEF4FF' };
   }
 }
 
@@ -253,7 +253,7 @@ export function PostCard({
             <span className="h-8 w-8 flex-none rounded-[9px]" style={{ background: tile('#FFECF2', '#FED2DF', 7) }} />
             <span className="min-w-0 text-left">
               <span className="block truncate text-[12.5px] font-extrabold text-ink">{post.business}</span>
-              <span className="mt-px block text-[10.5px] font-bold text-green-dark">
+              <span className="mt-px block text-[10.5px] font-bold text-green-ink">
                 {post.bizRating ? `★ ${post.bizRating} · ` : ''}
                 {post.businessSlug ? L('Ver el negocio', 'View business') : L('Negocio etiquetado', 'Tagged business')}
               </span>
@@ -281,7 +281,7 @@ export function PostCard({
         <button
           disabled={preview}
           onClick={() => it.gate() && it.toggleLike(post.id, post.recommends)}
-          className={`-mx-2 -my-3 flex cursor-pointer items-center gap-1.5 px-2 py-3 text-[13px] font-extrabold ${recOn ? 'text-pink' : 'text-muted'}`}
+          className={`-mx-2 -my-3 flex cursor-pointer items-center gap-1.5 px-2 py-3 text-[13px] font-extrabold ${recOn ? 'text-pink-dark' : 'text-muted'}`}
         >
           <span className="text-[16px] leading-none">♥</span>
           {recCount}
@@ -305,7 +305,7 @@ export function PostCard({
         <button
           disabled={preview}
           onClick={share}
-          className={`-my-[14px] -ml-[2px] -mr-[14px] flex cursor-pointer items-center gap-1.5 p-[14px] text-[12px] font-extrabold ${copied ? 'text-green-dark' : 'text-muted'}`}
+          className={`-my-[14px] -ml-[2px] -mr-[14px] flex cursor-pointer items-center gap-1.5 p-[14px] text-[12px] font-extrabold ${copied ? 'text-green-ink' : 'text-muted'}`}
           aria-label={L('Compartir', 'Share')}
         >
           <Share size={16} stroke={2.2} />

@@ -474,10 +474,17 @@ export function AppHeader() {
                 key={c.k}
                 onClick={() => { window.dispatchEvent(new CustomEvent('tl:navtab', { detail: VIEW_PATH[c.k] })); router.push(VIEW_PATH[c.k]); }}
                 className={`relative flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap px-[11px] pb-3 pt-[13px] text-[13px] md:px-[13px] md:pb-[13px] md:pt-[15px] md:text-[13.5px] ${
-                  active ? 'font-extrabold text-ink' : c.soon ? 'font-bold text-muted-faint2' : 'font-bold text-muted'
+                  active ? 'font-extrabold text-ink' : 'font-bold text-muted'
                 }`}
               >
-                <Icon size={16} strokeWidth={2} className={active ? 'text-primary' : c.soon ? 'text-muted-faint2' : 'text-muted'} />
+                {/* Los módulos «Pronto» ya NO se apagan a base de gris claro
+                    (`muted-faint2` daba 2.29 de contraste — ilegible). Se ven
+                    como cualquier otra pestaña inactiva y quien los diferencia
+                    es la etiqueta PRONTO, que es lo que el handoff pide:
+                    visibles con su etiqueta, no escondidos ni desvanecidos.
+                    Además NO son controles inactivos: llevan a la lista de
+                    espera, así que la excepción de WCAG no les aplica. */}
+                <Icon size={16} strokeWidth={2} className={active ? 'text-primary' : 'text-muted'} />
                 <span>{L(c.es, c.en)}</span>
                 {c.soon && <SoonTag label={L('Pronto', 'Soon')} />}
                 <span

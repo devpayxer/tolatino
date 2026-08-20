@@ -90,7 +90,7 @@ const FLOW: Record<OStatus, OStatus | null> = {
   new: 'preparing', preparing: 'ready', ready: 'completed', completed: null, cancelled: null,
 };
 const CH_REVIEW: Record<Review['ch'], string> = {
-  Google: 'bg-green-bg text-green-dark',
+  Google: 'bg-green-bg text-green-ink',
   Nearby: 'bg-lilac-2 text-primary-dark',
   Yelp: 'bg-amber-bg text-amber-ink',
 };
@@ -104,7 +104,7 @@ type ReviewRow = {
   body_es: string | null; body_en: string | null; reply_es: string | null;
   reply_en: string | null; replied_at: string | null; created_at: string;
 };
-const RV_COLORS = ['#FF2D6F', '#00A878', '#0369A1', '#E11D48', '#C05702', '#8A5A00', '#8A5A00'];
+const RV_COLORS = ['#FF2D6F', '#00A878', '#0369A1', '#E11D48', '#B44D00', '#8A5A00', '#8A5A00'];
 const relTime = (iso: string, es: boolean) => {
   const then = new Date(iso).getTime();
   if (!Number.isFinite(then)) return '';
@@ -577,7 +577,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   }, [customers, seg, query]);
 
   const tagStyle = (c: Customer) =>
-    c.atRisk ? 'bg-amber-bg text-amber-ink' : c.isNew ? 'bg-green-bg text-green-dark' : c.b2b ? 'bg-lilac text-primary-dark' : c.vip ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted-2';
+    c.atRisk ? 'bg-amber-bg text-amber-ink' : c.isNew ? 'bg-green-bg text-green-ink' : c.b2b ? 'bg-lilac text-primary-dark' : c.vip ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted-2';
 
   const segTotal = custStats?.total || 0;
   const barW = (n: number) => (segTotal > 0 && n > 0 ? Math.max(4, Math.round((n / segTotal) * 100)) : 0);
@@ -659,7 +659,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     <div className="text-[13px] font-extrabold text-ink">{c.spent}</div>
                     <span className={`mt-1 inline-block rounded px-1.5 py-px text-[8.5px] font-extrabold ${tagStyle(c)}`}>{L(c.tag[0], c.tag[1])}</span>
                   </div>
-                  <ChevronRight size={16} stroke={2.2} className="flex-none text-muted-faint" />
+                  <ChevronRight size={16} stroke={2.2} className="flex-none text-muted-2" />
                 </button>
               ))
             )}
@@ -741,7 +741,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const onTheWay = (o: Order) => o.channel === 'delivery' && o.status !== 'completed' && o.status !== 'cancelled' && (o.fulfillment?.dispatch === 'on_the_way' || o.fulfillment?.dispatch === 'picked_up');
   const viewMatch = (o: Order, k: OView) => (k === 'on_the_way' ? onTheWay(o) : o.status === k && !(k === 'ready' && onTheWay(o)));
   const viewMeta = (k: OView): string => (k === 'on_the_way' ? L('En camino', 'On the way') : statusMeta[k][0]);
-  const viewDot = (k: OView): string => (k === 'on_the_way' ? '#007CC1' : STATUS_DOT[k]);
+  const viewDot = (k: OView): string => (k === 'on_the_way' ? '#0072B6' : STATUS_DOT[k]);
   const statusKeys: OView[] = ['new', 'preparing', 'ready', 'on_the_way', 'completed', 'cancelled'];
   const chLabel = (ch: Channel) => ch === 'delivery' ? L('Entrega', 'Delivery') : ch === 'dinein' ? L('Mostrador', 'Dine-in') : L('Recoger', 'Pickup');
 
@@ -929,7 +929,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <div className="mt-2.5 flex items-center justify-between">
                         <span className="flex items-center gap-1.5">
                           <span className={`rounded px-2 py-0.5 text-[9px] font-extrabold ${CH_TILE[o.channel]}`}>{chLabel(o.channel)}</span>
-                          {o.fulfillment?.payment === 'cash' && <span className="rounded bg-green-bg px-2 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Efectivo', 'Cash')}</span>}
+                          {o.fulfillment?.payment === 'cash' && <span className="rounded bg-green-bg px-2 py-0.5 text-[9px] font-extrabold text-green-ink">{L('Efectivo', 'Cash')}</span>}
                         </span>
                         <span className="text-[14px] font-extrabold text-ink">{o.total}</span>
                       </div>
@@ -938,12 +938,12 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       )}
                       {/* NEW: driver line once assigned (was silently absent before) */}
                       {o.fulfillment?.driver && !done && !cxl && (
-                        <div className="mt-2 flex items-center gap-1.5 rounded-md bg-green-bg px-2 py-1 text-[10px] font-extrabold text-green-dark">
+                        <div className="mt-2 flex items-center gap-1.5 rounded-md bg-green-bg px-2 py-1 text-[10px] font-extrabold text-green-ink">
                           <Truck size={11} stroke={2.4} />{o.fulfillment.driver}{o.fulfillment.eta ? ` · ${o.fulfillment.eta}` : ''}
                         </div>
                       )}
                       {done ? (
-                        <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-extrabold text-green-dark">
+                        <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-extrabold text-green-ink">
                           <Check size={12} stroke={3} />{L('Pagado y cerrado', 'Paid & closed')}
                         </div>
                       ) : cxl ? (
@@ -1125,7 +1125,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       </div>
                       <div className="mt-1"><Stars n={r.stars} /></div>
                     </div>
-                    <span className="flex-none text-[9px] font-semibold text-muted-faint">{r.date}</span>
+                    <span className="flex-none text-[9px] font-semibold text-muted-2">{r.date}</span>
                   </div>
 
                   <div className="mt-2.5 text-[12px] font-medium leading-relaxed text-ink-body">{L(r.text[0], r.text[1])}</div>
@@ -1210,7 +1210,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <div key={l} className="rounded-btn-lg bg-app p-3">
                 <div className="text-[10px] font-bold text-muted">{l}</div>
                 <div className="mt-0.5 text-[17px] font-extrabold text-ink">{v}</div>
-                {d && <div className="text-[9.5px] font-extrabold text-green">{d}</div>}
+                {d && <div className="text-[9.5px] font-extrabold text-green-ink">{d}</div>}
               </div>
             ))}
           </div>
@@ -1357,7 +1357,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {/* NEW: assigned-driver card (Cocina) */}
           {selOrder.fulfillment?.driver && (
             <div className="mt-3 flex items-center gap-2.5 rounded-btn-lg bg-green-bg p-3">
-              <Truck size={16} stroke={2.2} className="flex-none text-green-dark" />
+              <Truck size={16} stroke={2.2} className="flex-none text-green-ink" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12px] font-extrabold text-ink">{selOrder.fulfillment.driver}</div>
                 {selOrder.fulfillment.eta && <div className="text-[10.5px] font-semibold text-muted-2">{selOrder.fulfillment.eta}</div>}
@@ -1378,7 +1378,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <div className="mt-1 flex items-center justify-between text-[11.5px] font-bold text-pink-dark"><span>{L("Comisión To'Latino (15%)", "To'Latino commission (15%)")}</span><span>-{money2(commission)}</span></div>
                 <div className="mt-2 flex items-center justify-between border-t border-hair pt-2">
                   <span className="text-[12.5px] font-extrabold text-ink">{L('Tu pago neto', 'Your net payout')}</span>
-                  <span className="text-[15px] font-extrabold text-green-dark">{money2(payout)}</span>
+                  <span className="text-[15px] font-extrabold text-green-ink">{money2(payout)}</span>
                 </div>
               </div>
             );
@@ -1392,7 +1392,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             </div>
           )}
           {selOrder.status === 'completed' && (
-            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-green-bg py-3 text-[12px] font-extrabold text-green-dark"><Check size={14} stroke={3} />{L('Pagado y cerrado', 'Paid & closed')}</div>
+            <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-green-bg py-3 text-[12px] font-extrabold text-green-ink"><Check size={14} stroke={3} />{L('Pagado y cerrado', 'Paid & closed')}</div>
           )}
           {selOrder.status === 'cancelled' && (
             <div className="mt-4 flex items-center justify-center gap-1.5 rounded-field bg-app py-3 text-[12px] font-extrabold text-muted-2"><XCircle size={14} stroke={2.6} />{L('Pedido cancelado', 'Order cancelled')}</div>

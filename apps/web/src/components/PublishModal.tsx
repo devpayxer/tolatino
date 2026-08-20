@@ -237,9 +237,9 @@ export function PublishModal() {
   const typeDefs: { key: PostType; Icon: typeof HelpCircle; color: string; bg: string; labEs: string; labEn: string; dEs: string; dEn: string }[] = [
     { key: 'ask', Icon: HelpCircle, color: '#C4144C', bg: '#FFECF2', labEs: 'Pregunta', labEn: 'Ask', dEs: 'Pide una recomendación o ayuda a tus vecinos.', dEn: 'Ask neighbors for a rec or help.' },
     { key: 'rec', Icon: Heart, color: '#00A878', bg: '#E6FAF3', labEs: 'Recomendación', labEn: 'Recommendation', dEs: 'Comparte un negocio o servicio que te encantó.', dEn: 'Share a business or service you loved.' },
-    { key: 'local', Icon: MessageCircle, color: '#007CC1', bg: '#DEF4FF', labEs: 'Aviso del barrio', labEn: 'Neighborhood update', dEs: 'Cuenta algo que está pasando cerca de ti.', dEn: 'Share something happening nearby.' },
-    { key: 'sale', Icon: Tag, color: '#B85D00', bg: '#FFF6E3', labEs: 'Compra y venta', labEn: 'Buy & sell', dEs: 'Ofrece o busca algo en tu comunidad.', dEn: 'Offer or look for something locally.' },
-    { key: 'poll', Icon: BarChart3, color: '#008489', bg: '#DAF7F7', labEs: 'Encuesta', labEn: 'Poll', dEs: 'Haz una pregunta con opciones para votar.', dEn: 'Ask a question with options to vote on.' },
+    { key: 'local', Icon: MessageCircle, color: '#0072B6', bg: '#DEF4FF', labEs: 'Aviso del barrio', labEn: 'Neighborhood update', dEs: 'Cuenta algo que está pasando cerca de ti.', dEn: 'Share something happening nearby.' },
+    { key: 'sale', Icon: Tag, color: '#AC5300', bg: '#FFF6E3', labEs: 'Compra y venta', labEn: 'Buy & sell', dEs: 'Ofrece o busca algo en tu comunidad.', dEn: 'Offer or look for something locally.' },
+    { key: 'poll', Icon: BarChart3, color: '#007A7E', bg: '#DAF7F7', labEs: 'Encuesta', labEn: 'Poll', dEs: 'Haz una pregunta con opciones para votar.', dEn: 'Ask a question with options to vote on.' },
   ];
 
   // Local fallback: keeps the app working when Supabase is unreachable.
@@ -404,7 +404,7 @@ export function PublishModal() {
             [
               { key: 'post', Icon: MessageCircle, color: '#C4144C', bg: '#FFECF2', lab: L('Crear publicación', 'Create post'), d: L('Pregunta, recomienda o comparte con tu barrio.', 'Ask, recommend or share with your neighborhood.') },
               { key: 'negocio', Icon: Store, color: '#00A878', bg: '#E6FAF3', lab: L('Publicar mi negocio', 'List my business'), d: L('Aparece en el directorio y llega a miles de clientes.', 'Get in the directory and reach thousands of customers.') },
-              { key: 'evento', Icon: Calendar, color: '#007CC1', bg: '#DEF4FF', lab: L('Crear evento', 'Create event'), d: L('Organiza y vende boletos para tu comunidad.', 'Organize and sell tickets for your community.') },
+              { key: 'evento', Icon: Calendar, color: '#0072B6', bg: '#DEF4FF', lab: L('Crear evento', 'Create event'), d: L('Organiza y vende boletos para tu comunidad.', 'Organize and sell tickets for your community.') },
             ] as const
           ).map((o) => (
             <button
@@ -579,7 +579,7 @@ export function PublishModal() {
                       existe. Ahora se ofrecen los del feed real; si aún no hay
                       ninguno cerca, no se ofrece nada (regla #8). */}
                   {taggedBiz ? (
-                    <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-green-bg px-3 py-2 text-[12.5px] font-extrabold text-green-dark">
+                    <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-green-bg px-3 py-2 text-[12.5px] font-extrabold text-green-ink">
                       <Store size={14} stroke={2.4} className="flex-none" />
                       <span className="truncate">{taggedBiz.name}</span>
                       <button onClick={() => setTaggedBiz(null)} className="cursor-pointer" aria-label={L('Quitar', 'Remove')}>
@@ -844,7 +844,7 @@ export function PublishModal() {
       {type === 'evento' && !done && (
         <div className="flex flex-col items-center px-2 py-5 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#DEF4FF]">
-            <Calendar size={24} className="text-[#007CC1]" stroke={2.2} />
+            <Calendar size={24} className="text-[#0072B6]" stroke={2.2} />
           </span>
           <div className="mt-4 text-[18px] font-extrabold tracking-[-.02em] text-ink">
             {L('Los eventos se crean desde tu Panel', 'Events are created from your Panel')}

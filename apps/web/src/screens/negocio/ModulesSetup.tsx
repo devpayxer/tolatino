@@ -51,8 +51,8 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
     <div className="mx-auto flex max-w-[900px] flex-col gap-4 pb-8">
       {/* framing: the listing is already done — this is the optional part */}
       <div className="rounded-card-sm border border-lilac-line p-4" style={{ background: 'linear-gradient(135deg,#FFECF2,#FCFBFF)' }}>
-        <div className="flex items-center gap-2 text-[11.5px] font-extrabold text-green-dark">
-          <Check size={16} stroke={2.4} className="text-green-dark" />
+        <div className="flex items-center gap-2 text-[11.5px] font-extrabold text-green-ink">
+          <Check size={16} stroke={2.4} className="text-green-ink" />
           {L('Tu página ya está publicada y visible en To’Latino', 'Your page is already published and visible on To’Latino')}
         </div>
         <h2 className="mt-1.5 text-[17px] font-extrabold tracking-[-.02em] text-ink md:text-[19px]">{L('Activa lo que quieras vender — es opcional', 'Turn on what you want to sell — it’s optional')}</h2>
@@ -72,13 +72,13 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
       {real && anySell && (
         canCharge ? (
           <div className="flex items-center gap-2.5 rounded-card-sm border border-green/40 bg-green-bg px-4 py-3">
-            <Check size={17} stroke={2.5} className="flex-none text-green-dark" />
-            <div className="text-[12px] font-bold text-green-dark">{L('Aceptas pagos con tarjeta (Stripe) y en efectivo. Los pagos con tarjeta se depositan a tu banco.', 'You accept card (Stripe) and cash. Card payments deposit to your bank.')}</div>
+            <Check size={17} stroke={2.5} className="flex-none text-green-ink" />
+            <div className="text-[12px] font-bold text-green-ink">{L('Aceptas pagos con tarjeta (Stripe) y en efectivo. Los pagos con tarjeta se depositan a tu banco.', 'You accept card (Stripe) and cash. Card payments deposit to your bank.')}</div>
           </div>
         ) : (
           <div className="rounded-card-sm border border-lilac-line bg-white p-4">
-            <div className="flex items-center gap-2 text-[11.5px] font-extrabold text-green-dark">
-              <Check size={15} stroke={2.5} className="flex-none text-green-dark" />
+            <div className="flex items-center gap-2 text-[11.5px] font-extrabold text-green-ink">
+              <Check size={15} stroke={2.5} className="flex-none text-green-ink" />
               {L('Ventas activas — ya puedes cobrar en efectivo', 'Sales active — you can charge cash now')}
             </div>
             <div className="mt-1.5 text-[14px] font-extrabold tracking-[-.01em] text-ink">{L('Cobras en efectivo contra entrega o al recoger', 'Get paid in cash — on delivery or at pickup')}</div>
@@ -115,7 +115,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
                 {rec && <span className="inline-flex items-center gap-1 rounded-full bg-amber-bg px-2 py-0.5 text-[9.5px] font-extrabold text-amber-ink"><StarFilled size={9} />{L('Recomendado', 'Recommended')}</span>}
               </div>
               <div className="mt-0.5 text-[12px] font-semibold leading-snug text-muted">{m.desc}</div>
-              <div className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10.5px] font-extrabold ${on ? 'bg-green-bg text-green-dark' : 'bg-app text-muted-2'}`}>
+              <div className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10.5px] font-extrabold ${on ? 'bg-green-bg text-green-ink' : 'bg-app text-muted-2'}`}>
                 {on ? <Check size={11} stroke={2.6} /> : <span className="text-[12px] leading-none">→</span>}{m.adds}
               </div>
             </div>

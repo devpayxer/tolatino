@@ -392,7 +392,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <th key={h.name} className={`px-1.5 py-2.5 text-center ${h.hi ? 'bg-lilac-2' : 'bg-lilac-3'}`}>
                     <div className={`text-[11px] font-extrabold ${h.hi ? 'text-primary-dark' : 'text-ink'}`}>{h.name}</div>
                     <div className="mt-0.5 text-[8.5px] font-bold text-muted-2">{h.price}</div>
-                    {h.current && <div className="mt-1 inline-block rounded bg-green-bg px-1.5 py-px text-[7.5px] font-extrabold text-green-dark">{L('Actual', 'Current')}</div>}
+                    {h.current && <div className="mt-1 inline-block rounded bg-green-bg px-1.5 py-px text-[7.5px] font-extrabold text-green-ink">{L('Actual', 'Current')}</div>}
                   </th>
                 ))}
               </tr>
@@ -419,7 +419,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </button>
         <button
           onClick={() => openUpgrade('premium')}
-          className="cursor-pointer rounded-btn bg-ink py-3 text-[12.5px] font-extrabold text-amber"
+          className="cursor-pointer rounded-btn bg-ink py-3 text-[12.5px] font-extrabold text-amber-ink"
         >
           {L('Elegir Premium', 'Choose Premium')}
         </button>
@@ -526,7 +526,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {invoices.map((iv, i) => (
           <div key={iv[0]} className={`flex items-center gap-3 py-3 ${i < invoices.length - 1 ? 'border-b border-hair' : ''}`}>
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-green-bg">
-              <FileText size={16} stroke={2.2} className="text-green-dark" />
+              <FileText size={16} stroke={2.2} className="text-green-ink" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-[12px] font-extrabold text-ink">{iv[0]}</div>
@@ -534,7 +534,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             </div>
             <div className="flex-none text-right">
               <div className="text-[12.5px] font-extrabold text-ink">$14.99</div>
-              <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Pagada', 'Paid')}</span>
+              <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-ink">{L('Pagada', 'Paid')}</span>
             </div>
             <button onClick={() => flash(L('Descargando ', 'Downloading ') + iv[0])} className="flex-none cursor-pointer p-1 text-muted-2" aria-label={L('Descargar', 'Download')}>
               <Download size={16} stroke={2.2} />

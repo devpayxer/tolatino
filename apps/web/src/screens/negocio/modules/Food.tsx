@@ -136,13 +136,13 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 const chip = (on: boolean) =>
   `tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[12px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'bg-lilac-2 font-bold text-ink-soft'}`;
 
-const sectionLabel = 'text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-faint';
+const sectionLabel = 'text-[10px] font-extrabold uppercase tracking-[.06em] text-muted-2';
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
 const inputCls = 'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-primary';
 const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12.5px] font-extrabold text-primary-dark';
 
 const STOCK_META: Record<Stock, { es: string; en: string; badge: string; dot: string }> = {
-  in: { es: 'En stock', en: 'In stock', badge: 'bg-green-bg text-green-dark', dot: 'bg-green-dark' },
+  in: { es: 'En stock', en: 'In stock', badge: 'bg-green-bg text-green-ink', dot: 'bg-green-dark' },
   low: { es: 'Bajo', en: 'Low', badge: 'bg-amber-bg text-amber-ink', dot: 'bg-amber-ink' },
   out: { es: 'Agotado', en: 'Sold out', badge: 'bg-pink-bg text-pink-dark', dot: 'bg-pink-dark' },
 };
@@ -414,14 +414,14 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div key={lab} className="min-w-0 rounded-btn-lg bg-app p-2.5">
               <div className="text-[9px] font-bold text-muted-2">{lab}</div>
               <div className="mt-1 truncate text-[14px] font-extrabold leading-tight text-ink">{val}</div>
-              {delta && <div className="mt-0.5 text-[9px] font-extrabold text-green">{delta}</div>}
+              {delta && <div className="mt-0.5 text-[9px] font-extrabold text-green-ink">{delta}</div>}
             </div>
           ))}
         </div>
         <div className={`mb-2 ${sectionLabel}`}>{L('Top 5 por ♥', 'Top 5 by ♥')}</div>
         {top5.map((i, idx) => (
           <div key={i.id} className="flex items-center gap-2.5 py-1.5">
-            <span className="w-4 flex-none text-[11px] font-extrabold text-muted-faint">{idx + 1}</span>
+            <span className="w-4 flex-none text-[11px] font-extrabold text-muted-2">{idx + 1}</span>
             <span className="min-w-0 flex-1">
               <span className="mb-1 flex justify-between text-[11.5px] font-bold text-ink">
                 <span className="truncate">{i.name}</span>
@@ -575,7 +575,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       </span>
                       <span className="rounded-md bg-lilac-2 px-2 py-0.5 text-[9.5px] font-bold text-ink-2">{catLabel(c)}</span>
                       {i.popular && <span className="rounded-md bg-amber-bg px-2 py-0.5 text-[9.5px] font-extrabold text-amber-ink">🔥 {L('Popular', 'Popular')}</span>}
-                      {i.diet.map((d) => <span key={d} className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{d}</span>)}
+                      {i.diet.map((d) => <span key={d} className="rounded-md bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-ink">{d}</span>)}
                       {(i.tags ?? []).map((t) => <span key={t} className="rounded-md bg-lilac-2 px-1.5 py-0.5 text-[9px] font-extrabold text-ink-2">{t}</span>)}
                       {i.mods.length > 0 && <span className="rounded-md bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{i.mods.length} {L('opciones', 'options')}</span>}
                       {!i.visible && <span className="rounded-md bg-lilac-line px-2 py-0.5 text-[9.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}
@@ -622,7 +622,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span>
-                    <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
+                    <Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />
                     {!c.visible && <span className="flex-none rounded bg-lilac-line px-1.5 py-0.5 text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-[18px].5">
@@ -662,7 +662,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button key={m.id} onClick={() => setModSheet({ open: true, initial: m })} className="cursor-pointer rounded-btn-lg border border-line bg-white p-3.5 text-left">
                 <div className="mb-2 flex items-center gap-1.5">
                   <span className="truncate text-[13px] font-extrabold text-ink">{L(m.es, m.en)}</span>
-                  <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
+                  <Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />
                   {m.required && <span className="flex-none rounded bg-lilac px-1.5 py-0.5 text-[8.5px] font-extrabold text-primary-dark">{L('Obligatorio', 'Required')}</span>}
                   <span className="ml-auto flex-none text-[10px] font-semibold text-muted-2">{m.single ? L('Elige uno', 'Choose one') : L('Elige varios', 'Choose multiple')} · {used} {used === 1 ? L('platillo', 'item') : L('platillos', 'items')}</span>
                 </div>
@@ -725,7 +725,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5">
                       <span className="truncate text-[12.5px] font-extrabold text-ink">{L(p.es, p.en)}</span>
-                      <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
+                      <Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />
                     </span>
                     <span className="block text-[10.5px] font-medium text-muted-2">{hourLabel(p.start)}–{hourLabel(p.end)} · {p.days.filter(Boolean).length === 7 ? L('todos los días', 'every day') : `${p.days.filter(Boolean).length} ${L('días', 'days')}`}</span>
                   </span>
@@ -749,7 +749,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       [L('Programadas', 'Scheduled'), String(cfg.promos.filter((p) => p.status === 'scheduled').length)],
     ];
     const statusMeta = (s: Promo['status']) =>
-      s === 'active' ? { lab: L('Activa', 'Active'), cls: 'bg-green-bg text-green-dark' }
+      s === 'active' ? { lab: L('Activa', 'Active'), cls: 'bg-green-bg text-green-ink' }
         : s === 'paused' ? { lab: L('Pausada', 'Paused'), cls: 'bg-lilac-line text-muted-2' }
           : { lab: L('Programada', 'Scheduled'), cls: 'bg-amber-bg text-amber-ink' };
     const typeMeta = (t: PromoType) => PROMO_TYPES.find((x) => x.type === t) ?? PROMO_TYPES[0];
@@ -786,7 +786,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       <div className="p-3 pb-1.5">
                         <div className="flex items-center gap-1.5">
                           <span className="truncate text-[13.5px] font-extrabold text-ink">{L(p.es, p.en)}</span>
-                          <Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />
+                          <Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />
                         </div>
                         <div className="mt-1 text-[11px] font-medium leading-snug text-ink-3">
                           {L(p.descEs, p.descEn) || (p.type === 'percent' && p.value ? `${p.value}% off` : p.type === 'combo' && p.value ? `Combo ${money(p.value)}` : p.type === 'happy' && p.timeStart != null ? `${hourLabel(p.timeStart)}–${hourLabel(p.timeEnd ?? p.timeStart)}` : '')}
@@ -863,7 +863,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div className="min-w-[560px]">
               <div className="grid grid-cols-[1.6fr_repeat(7,1fr)] border-b border-hair bg-app px-3 py-2.5">
                 <span className={sectionLabel}>{L('Platillo', 'Item')}</span>
-                {cols.map((c) => <span key={c} className="text-center text-[8.5px] font-extrabold uppercase text-muted-faint">{c}</span>)}
+                {cols.map((c) => <span key={c} className="text-center text-[8.5px] font-extrabold uppercase text-muted-2">{c}</span>)}
               </div>
               {items.map((r, ri) => (
                 <div key={r.id} className={`grid grid-cols-[1.6fr_repeat(7,1fr)] items-center px-3 py-2 ${ri < items.length - 1 ? 'border-b border-hair' : ''}`}>
@@ -901,7 +901,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="grid items-start gap-4 xl:grid-cols-2">
         <div className="flex flex-col gap-3.5">
           <div className="grid grid-cols-3 gap-2.5">
-            <div className={`${cardCls} p-3`}><div className="text-[9px] font-bold text-muted-2">{L('En stock', 'In stock')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">{inStock}</div><div className="text-[9px] font-extrabold text-green">✓ {L('Disponible', 'Available')}</div></div>
+            <div className={`${cardCls} p-3`}><div className="text-[9px] font-bold text-muted-2">{L('En stock', 'In stock')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">{inStock}</div><div className="text-[9px] font-extrabold text-green-ink">✓ {L('Disponible', 'Available')}</div></div>
             <div className="rounded-card-sm border border-amber-bg bg-amber-bg/40 p-3"><div className="text-[9px] font-bold text-amber-ink">{L('Bajo', 'Low')}</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">{lowCount}</div><div className="text-[9px] font-extrabold text-amber-ink">⚠ {L('Reabastecer', 'Restock')}</div></div>
             <div className="rounded-card-sm border border-pink-bg bg-pink-bg/40 p-3"><div className="text-[9px] font-bold text-pink-dark">86&apos;d</div><div className="mt-0.5 text-[19px] font-extrabold text-ink">{outCount}</div><div className="text-[9px] font-extrabold text-pink-dark">✕ {L('Oculto', 'Hidden')}</div></div>
           </div>
@@ -1112,7 +1112,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
       <div className="p-3.5">
         <div className="flex items-start justify-between gap-2.5">
-          <span className={`text-[15px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del platillo', 'Item name')}</span>
+          <span className={`text-[15px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-2'}`}>{draft.name || L('Nombre del platillo', 'Item name')}</span>
           <span className="flex-none text-[15px] font-extrabold text-ink">{draft.price ? '$' + draft.price : '$0.00'}</span>
         </div>
         <div className="mt-1 text-[11.5px] font-medium leading-relaxed text-ink-3">{(es ? draft.descEs : draft.descEn) || L('La descripción aparece aquí…', 'Description appears here…')}</div>
@@ -1226,8 +1226,8 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
         </div>
         <div className="flex items-center gap-2.5 rounded-field bg-green-bg px-3 py-2.5">
-          <Info size={15} className="flex-none text-green-dark" stroke={2} />
-          <div className="text-[10.5px] font-medium leading-snug text-green-dark">
+          <Info size={15} className="flex-none text-green-ink" stroke={2} />
+          <div className="text-[10.5px] font-medium leading-snug text-green-ink">
             {cfg.ordering
               ? L('Los pedidos por Entrega incluyen 12% de comisión.', 'Delivery orders include a 12% partner fee.')
               : L('Tu menú está en modo Solo mostrar — estos canales son informativos.', 'Your menu is in Display-only mode — these channels are informational.')}
@@ -1284,7 +1284,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               const v = draft.allergens[i];
               const st = v === 2 ? L('Contiene', 'Contains') : v === 1 ? L('Puede contener', 'May contain') : L('Libre de', 'Free of');
               const stC = v === 2 ? 'text-pink-dark' : v === 1 ? 'text-amber-ink' : 'text-muted-2';
-              const swCls = v === 2 ? 'bg-pink-bg text-pink-dark' : v === 1 ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted-faint';
+              const swCls = v === 2 ? 'bg-pink-bg text-pink-dark' : v === 1 ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted-2';
               const border = v === 2 ? 'border-pink-bg' : v === 1 ? 'border-amber-bg' : 'border-lilac-line';
               return (
                 <button key={a} onClick={() => { const na = [...draft.allergens]; na[i] = na[i] === 0 ? 2 : na[i] === 2 ? 1 : 0; upDraft({ allergens: na }); }} className={`tap-y flex items-center gap-2.5 rounded-field border-[1.5px] bg-white px-3 py-2.5 ${border}`}>
@@ -1361,9 +1361,9 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <div className="flex flex-col gap-3.5">
         <div className={`flex items-center gap-3 rounded-btn-lg border p-3 ${ready ? 'border-green-bg bg-green-bg/50' : 'border-amber-bg bg-amber-bg/50'}`}>
-          <span className={`flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-white ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? <Check size={16} stroke={2.8} /> : <AlertTriangle size={15} stroke={2.4} />}</span>
+          <span className={`flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-white ${ready ? 'text-green-ink' : 'text-amber-ink'}`}>{ready ? <Check size={16} stroke={2.8} /> : <AlertTriangle size={15} stroke={2.4} />}</span>
           <div className="min-w-0 flex-1">
-            <div className={`text-[12px] font-extrabold ${ready ? 'text-green-dark' : 'text-amber-ink'}`}>{ready ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos esenciales', 'A few essentials are missing')}</div>
+            <div className={`text-[12px] font-extrabold ${ready ? 'text-green-ink' : 'text-amber-ink'}`}>{ready ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos esenciales', 'A few essentials are missing')}</div>
             <div className="text-[10.5px] font-medium leading-snug text-ink-3">{ready ? (editing ? L('Los cambios se publican al instante.', 'Changes go live instantly.') : L('Todo en orden. Publicar lo activa al instante.', 'All set. Publishing makes it live instantly.')) : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
           </div>
         </div>
@@ -1371,7 +1371,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {reviewRows.map(([k, v, ok, step], i) => (
             <div key={k} className={`flex items-center gap-2.5 px-3 py-2.5 ${i < reviewRows.length - 1 ? 'border-b border-hair' : ''}`}>
               <span className="w-[74px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span>
-              <span className={`min-w-0 flex-1 text-[11.5px] font-bold ${ok ? 'text-ink' : 'text-muted-faint'}`}>{v}</span>
+              <span className={`min-w-0 flex-1 text-[11.5px] font-bold ${ok ? 'text-ink' : 'text-muted-2'}`}>{v}</span>
               <button onClick={() => setWizStep(step)} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
             </div>
           ))}
@@ -1472,7 +1472,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     return (
       <ModulePage title={L('¡Publicado!', 'Published!')} onBack={() => { setView('module'); setSubtab('items'); }}>
       <div className="mx-auto flex max-w-[420px] flex-col items-center pb-4 pt-6 text-center">
-        <div className="mb-3.5 flex h-16 w-16 items-center justify-center rounded-panel bg-green-bg text-green-dark"><Check size={32} stroke={2.6} /></div>
+        <div className="mb-3.5 flex h-16 w-16 items-center justify-center rounded-panel bg-green-bg text-green-ink"><Check size={32} stroke={2.6} /></div>
         <div className="text-[21px] font-extrabold tracking-[-.02em] text-ink">{(draft.name || L('Nuevo platillo', 'New item'))} {L('está activo', 'is live')}</div>
         <div className="mt-2 max-w-[300px] text-[13px] font-medium leading-relaxed text-muted">
           {L(`Ya está en tu menú de ${catLabel(draftCat)} en ${chansSel} canales. Los cambios se publican al instante.`, `It's now on your menu across ${chansSel} channels. Changes go live instantly.`)}
@@ -1487,7 +1487,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo platillo', 'New item')}</div>
               <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{catLabel(draftCat)} · {draft.price ? '$' + draft.price : '$0.00'}</div>
             </div>
-            <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1 text-[10.5px] font-extrabold text-green-dark">{L('Activo', 'Live')}</span>
+            <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1 text-[10.5px] font-extrabold text-green-ink">{L('Activo', 'Live')}</span>
           </div>
         </div>
         <div className="mt-5 flex w-full flex-col gap-2.5">

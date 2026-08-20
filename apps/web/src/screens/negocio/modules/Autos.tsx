@@ -67,7 +67,7 @@ type VehDraft = {
 // Status → badge meta. Only draft/published/pending/sold are settable (the upsert
 // RPC rejects anything else); 'review' is here only for defensive rendering.
 const STATUS_META: Record<AuStatus, { es: string; en: string; cls: string }> = {
-  published: { es: 'Disponible', en: 'Available', cls: 'bg-green-bg text-green-dark' },
+  published: { es: 'Disponible', en: 'Available', cls: 'bg-green-bg text-green-ink' },
   pending:   { es: 'Apartado', en: 'Reserved', cls: 'bg-amber-bg text-amber-ink' },
   sold:      { es: 'Vendido', en: 'Sold', cls: 'bg-lilac text-primary-dark' },
   draft:     { es: 'Borrador', en: 'Draft', cls: 'bg-lilac-2 text-ink-2' },
@@ -77,16 +77,16 @@ const SETTABLE_STATUS: AuStatus[] = ['published', 'pending', 'sold', 'draft'];
 
 const STAGES: { id: AuLeadStage; es: string; en: string; cls: string }[] = [
   { id: 'new', es: 'Nuevo', en: 'New', cls: 'bg-pink-bg text-pink-dark' },
-  { id: 'contacted', es: 'Contactado', en: 'Contacted', cls: 'bg-blue-bg text-blue' },
+  { id: 'contacted', es: 'Contactado', en: 'Contacted', cls: 'bg-blue-bg text-blue-ink' },
   { id: 'test', es: 'Con prueba', en: 'Test drive', cls: 'bg-lilac text-primary-dark' },
   { id: 'financing', es: 'Financiando', en: 'Financing', cls: 'bg-amber-bg text-amber-ink' },
-  { id: 'sold', es: 'Vendido', en: 'Sold', cls: 'bg-green-bg text-green-dark' },
+  { id: 'sold', es: 'Vendido', en: 'Sold', cls: 'bg-green-bg text-green-ink' },
 ];
 const stageMeta = (s: AuLeadStage) => STAGES.find((x) => x.id === s) ?? STAGES[0];
 
 const TEST_STATUS: Record<AuTestStatus, { es: string; en: string; cls: string }> = {
   pendiente: { es: 'Pendiente', en: 'Pending', cls: 'bg-amber-bg text-amber-ink' },
-  confirmada: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
+  confirmada: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-ink' },
   cancelada: { es: 'Cancelada', en: 'Cancelled', cls: 'bg-lilac-2 text-ink-2' },
   completada: { es: 'Completada', en: 'Completed', cls: 'bg-lilac text-primary-dark' },
 };
@@ -104,7 +104,7 @@ const CREDIT_LABEL: Record<string, { es: string; en: string }> = {
 };
 
 // Avatar palette (same set the other people-facing modules use for initials).
-const AV_COLORS = ['#FF2D6F', '#0369A1', '#C05702', '#E11D48', '#00A878'];
+const AV_COLORS = ['#FF2D6F', '#0369A1', '#B44D00', '#E11D48', '#00A878'];
 const avColor = (name: string) => {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
@@ -712,7 +712,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const licenseCard = hasLicense && (
     <div className={`${cardCls} p-3.5`}>
       <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Certificate size={18} stroke={2} className="text-green-dark" /></span>
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Certificate size={18} stroke={2} className="text-green-ink" /></span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink">
             {L('Licencia', 'License')} · {autoConfig?.license}
@@ -762,7 +762,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="mt-0.5 truncate text-[12px] font-bold text-ink-soft">{vehTitle(v)}</div>
           <div className="mt-0.5 flex items-center gap-1 text-[10.5px] font-semibold text-muted-2">
             <Gauge size={12} stroke={2} className="text-muted-2" />{fmtMiles(v.miles, es)}
-            <span className="mx-1 text-muted-faint">·</span>{condLabel(v.cond)}
+            <span className="mx-1 text-muted-2">·</span>{condLabel(v.cond)}
           </div>
         </div>
       </div>
@@ -827,9 +827,9 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {/* quick nav: pipeline / financing / agenda / team */}
       <div className="grid grid-cols-2 gap-2.5">
         {navCard(() => { setLeadFilter('all'); setView('leads'); }, 'bg-lilac', 'text-primary-dark', Users, L('Leads', 'Leads'), `${leads.length} ${L('en tu pipeline', 'in your pipeline')}`)}
-        {navCard(() => setView('financing'), 'bg-blue-bg', 'text-blue', CreditCard, L('Financiamiento', 'Financing'), `${prequalLeads.length} ${L('solicitudes', 'applications')}`)}
+        {navCard(() => setView('financing'), 'bg-blue-bg', 'text-blue-ink', CreditCard, L('Financiamiento', 'Financing'), `${prequalLeads.length} ${L('solicitudes', 'applications')}`)}
         {navCard(() => setView('tests'), 'bg-amber-bg', 'text-amber-ink', CalendarEvent, L('Pruebas', 'Test drives'), `${tests.length} ${L('agendadas', 'scheduled')}`)}
-        {navCard(() => setView('team'), 'bg-green-bg', 'text-green-dark', Users, L('Equipo', 'Team'), `${team.length} ${team.length === 1 ? L('miembro', 'member') : L('miembros', 'members')}`)}
+        {navCard(() => setView('team'), 'bg-green-bg', 'text-green-ink', Users, L('Equipo', 'Team'), `${team.length} ${team.length === 1 ? L('miembro', 'member') : L('miembros', 'members')}`)}
       </div>
 
       {/* Inventory */}
@@ -884,8 +884,8 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const perf = [
       { Icon: Eye, label: L('Vistas', 'Views'), value: v.views.toLocaleString(), bg: 'bg-lilac', c: 'text-primary-dark' },
       { Icon: Heart, label: L('Guardados', 'Saves'), value: String(v.saves), bg: 'bg-pink-bg', c: 'text-pink-dark' },
-      { Icon: Users, label: L('Leads', 'Leads'), value: String(v.leadsCount || vLeads.length), bg: 'bg-green-bg', c: 'text-green-dark' },
-      { Icon: CalendarEvent, label: L('Pruebas', 'Tests'), value: String(v.testsCount || vTests.length), bg: 'bg-blue-bg', c: 'text-blue' },
+      { Icon: Users, label: L('Leads', 'Leads'), value: String(v.leadsCount || vLeads.length), bg: 'bg-green-bg', c: 'text-green-ink' },
+      { Icon: CalendarEvent, label: L('Pruebas', 'Tests'), value: String(v.testsCount || vTests.length), bg: 'bg-blue-bg', c: 'text-blue-ink' },
     ];
     const specs: [string, string][] = [
       [L('Millaje', 'Mileage'), fmtMiles(v.miles, es)],
@@ -1011,9 +1011,9 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       l.kind === 'oferta'
         ? [`${L('Oferta', 'Offer')} · $${(l.offerAmount ?? 0).toLocaleString()}`, 'bg-amber-bg text-amber-ink']
         : l.kind === 'prueba'
-          ? [L('Prueba', 'Test drive'), 'bg-blue-bg text-blue']
+          ? [L('Prueba', 'Test drive'), 'bg-blue-bg text-blue-ink']
           : l.kind === 'prequal'
-            ? [L('Pre-calificación', 'Pre-qual'), 'bg-green-bg text-green-dark']
+            ? [L('Pre-calificación', 'Pre-qual'), 'bg-green-bg text-green-ink']
             : [L('Mensaje', 'Message'), 'bg-lilac-2 text-ink-2'];
     return <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${cls}`}>{label}</span>;
   };
@@ -1054,7 +1054,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     </span>
                     <span className="mt-1 block truncate text-[10.5px] font-semibold text-muted-2">{l.vehicleTitle}</span>
                     {l.kind === 'prequal' && (l.credit || l.down != null) && (
-                      <span className="mt-0.5 block truncate text-[10.5px] font-bold text-green-dark">
+                      <span className="mt-0.5 block truncate text-[10.5px] font-bold text-green-ink">
                         {l.credit ? `${L('Crédito', 'Credit')} ${L(CREDIT_LABEL[l.credit]?.es ?? l.credit, CREDIT_LABEL[l.credit]?.en ?? l.credit)}` : ''}{l.credit && l.down != null ? ' · ' : ''}{l.down != null ? `${L('Enganche', 'Down')} $${l.down.toLocaleString()}` : ''}
                       </span>
                     )}
@@ -1158,8 +1158,8 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // FINANCING pipeline (pre-qual leads)
   // ==================================================================
   const appStatus = (stage: AuLeadStage) =>
-    stage === 'sold' ? { es: 'Aprobado', en: 'Approved', cls: 'bg-green-bg text-green-dark' }
-      : stage === 'financing' ? { es: 'En trámite', en: 'In progress', cls: 'bg-blue-bg text-blue' }
+    stage === 'sold' ? { es: 'Aprobado', en: 'Approved', cls: 'bg-green-bg text-green-ink' }
+      : stage === 'financing' ? { es: 'En trámite', en: 'In progress', cls: 'bg-blue-bg text-blue-ink' }
         : { es: 'En revisión', en: 'Under review', cls: 'bg-amber-bg text-amber-ink' };
   const approvedCount = prequalLeads.filter((l) => l.stage === 'sold').length;
   const reviewCount = prequalLeads.filter((l) => l.stage !== 'sold').length;
@@ -1169,7 +1169,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       <div className="mb-4 grid grid-cols-2 gap-2.5">
         <div className={`${cardCls} p-3`}>
           <div className="text-[9.5px] font-bold text-muted-2">{L('Aprobadas', 'Approved')}</div>
-          <div className="mt-0.5 text-[19px] font-extrabold text-green-dark">{loading ? '…' : approvedCount}</div>
+          <div className="mt-0.5 text-[19px] font-extrabold text-green-ink">{loading ? '…' : approvedCount}</div>
         </div>
         <div className={`${cardCls} p-3`}>
           <div className="text-[9.5px] font-bold text-muted-2">{L('En revisión', 'Under review')}</div>
@@ -1427,7 +1427,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <label className={labelCls}>{L('Precio', 'Price')} *</label>
         <div className="flex items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
           <span className="text-[18px] font-extrabold text-muted-2">$</span>
-          <input value={draft.price} onChange={(e) => upD({ price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="21,900" className="min-w-0 flex-1 bg-transparent py-3 text-[19px] font-extrabold text-ink outline-none placeholder:text-muted-faint" />
+          <input value={draft.price} onChange={(e) => upD({ price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder="21,900" className="min-w-0 flex-1 bg-transparent py-3 text-[19px] font-extrabold text-ink outline-none placeholder:text-muted-2" />
         </div>
       </div>
       <div className="flex gap-2.5">
@@ -1546,8 +1546,8 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="p-3">
           <div className="flex items-center gap-1 text-[10.5px] font-semibold text-muted-2">
             <Gauge size={12} stroke={2} className="text-muted-2" />{draft.miles ? fmtMiles(Number(draft.miles), es) : L('Millaje s/d', 'Mileage n/a')}
-            <span className="mx-1 text-muted-faint">·</span>{transLabel(draft.trans)}
-            <span className="mx-1 text-muted-faint">·</span>{fuelLabel(draft.fuel)}
+            <span className="mx-1 text-muted-2">·</span>{transLabel(draft.trans)}
+            <span className="mx-1 text-muted-2">·</span>{fuelLabel(draft.fuel)}
           </div>
         </div>
       </div>
@@ -1556,7 +1556,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {reviewRows.map(([k, val, ok], i) => (
           <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < reviewRows.length - 1 ? 'border-b border-hair' : ''}`}>
             <span className="w-[92px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span>
-            <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${ok ? 'text-ink' : 'text-muted-faint'}`}>{val}</span>
+            <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${ok ? 'text-ink' : 'text-muted-2'}`}>{val}</span>
             {ok && <Check size={13} stroke={3} className="flex-none text-green" />}
           </div>
         ))}
@@ -1658,7 +1658,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div className="flex items-center justify-between p-3.5">
             <div className="text-[12.5px] font-extrabold text-ink">{Number(draft.price) > 0 ? fmtAuPrice(Number(draft.price)) : ''}</div>
-            <span className="flex-none rounded-lg bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Disponible', 'Available')}</span>
+            <span className="flex-none rounded-lg bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-ink">{L('Disponible', 'Available')}</span>
           </div>
         </div>
 

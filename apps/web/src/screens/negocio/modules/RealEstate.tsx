@@ -69,7 +69,7 @@ const PTYPE_FOR_DEAL: Record<ReDeal, RePtype[]> = {
 };
 
 const STATUS_META: Record<ReStatus, { es: string; en: string; cls: string }> = {
-  published: { es: 'Publicado', en: 'Published', cls: 'bg-green-bg text-green-dark' },
+  published: { es: 'Publicado', en: 'Published', cls: 'bg-green-bg text-green-ink' },
   pending:   { es: 'En trámite', en: 'Pending', cls: 'bg-amber-bg text-amber-ink' },
   rented:    { es: 'Rentado', en: 'Rented', cls: 'bg-lilac text-primary-dark' },
   sold:      { es: 'Vendido', en: 'Sold', cls: 'bg-lilac text-primary-dark' },
@@ -81,16 +81,16 @@ const SETTABLE_STATUS: ReStatus[] = ['published', 'pending', 'rented', 'sold', '
 
 const STAGES: { id: ReLeadStage; es: string; en: string; cls: string }[] = [
   { id: 'new', es: 'Nuevo', en: 'New', cls: 'bg-pink-bg text-pink-dark' },
-  { id: 'contacted', es: 'Contactado', en: 'Contacted', cls: 'bg-blue-bg text-blue' },
+  { id: 'contacted', es: 'Contactado', en: 'Contacted', cls: 'bg-blue-bg text-blue-ink' },
   { id: 'tour', es: 'Con visita', en: 'Tour', cls: 'bg-lilac text-primary-dark' },
   { id: 'offer', es: 'Oferta', en: 'Offer', cls: 'bg-amber-bg text-amber-ink' },
-  { id: 'closed', es: 'Cerrado', en: 'Closed', cls: 'bg-green-bg text-green-dark' },
+  { id: 'closed', es: 'Cerrado', en: 'Closed', cls: 'bg-green-bg text-green-ink' },
 ];
 const stageMeta = (s: ReLeadStage) => STAGES.find((x) => x.id === s) ?? STAGES[0];
 
 const TOUR_STATUS: Record<ReTourStatus, { es: string; en: string; cls: string }> = {
   pendiente: { es: 'Pendiente', en: 'Pending', cls: 'bg-amber-bg text-amber-ink' },
-  confirmada: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
+  confirmada: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-ink' },
   cancelada: { es: 'Cancelada', en: 'Cancelled', cls: 'bg-lilac-2 text-ink-2' },
   completada: { es: 'Completada', en: 'Completed', cls: 'bg-lilac text-primary-dark' },
 };
@@ -102,7 +102,7 @@ const SPECIALTIES: { id: string; es: string; en: string }[] = [
 ];
 
 // Avatar palette (same set the Events module uses for people initials).
-const AV_COLORS = ['#FF2D6F', '#0369A1', '#C05702', '#E11D48', '#00A878'];
+const AV_COLORS = ['#FF2D6F', '#0369A1', '#B44D00', '#E11D48', '#00A878'];
 const avColor = (name: string) => {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
@@ -687,7 +687,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const licenseCard = hasLicense && (
     <div className={`${cardCls} p-3.5`}>
       <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Certificate size={18} stroke={2} className="text-green-dark" /></span>
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-tile bg-green-bg"><Certificate size={18} stroke={2} className="text-green-ink" /></span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink">
             {L('Licencia', 'License')} · {reConfig?.license}
@@ -860,8 +860,8 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const perf = [
       { Icon: Eye, label: L('Vistas', 'Views'), value: p.views.toLocaleString(), bg: 'bg-lilac', c: 'text-primary-dark' },
       { Icon: Heart, label: L('Guardados', 'Saves'), value: String(p.saves), bg: 'bg-pink-bg', c: 'text-pink-dark' },
-      { Icon: Users, label: L('Leads', 'Leads'), value: String(p.leadsCount || pLeads.length), bg: 'bg-green-bg', c: 'text-green-dark' },
-      { Icon: CalendarEvent, label: L('Visitas', 'Tours'), value: String(p.toursCount || pTours.length), bg: 'bg-blue-bg', c: 'text-blue' },
+      { Icon: Users, label: L('Leads', 'Leads'), value: String(p.leadsCount || pLeads.length), bg: 'bg-green-bg', c: 'text-green-ink' },
+      { Icon: CalendarEvent, label: L('Visitas', 'Tours'), value: String(p.toursCount || pTours.length), bg: 'bg-blue-bg', c: 'text-blue-ink' },
     ];
     return (
       <ModulePage
@@ -973,7 +973,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       l.kind === 'oferta'
         ? [`${L('Oferta', 'Offer')} · $${(l.offerAmount ?? 0).toLocaleString()}`, 'bg-amber-bg text-amber-ink']
         : l.kind === 'solicitud'
-          ? [L('Solicitud', 'Application'), 'bg-blue-bg text-blue']
+          ? [L('Solicitud', 'Application'), 'bg-blue-bg text-blue-ink']
           : [L('Mensaje', 'Message'), 'bg-lilac-2 text-ink-2'];
     return <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${cls}`}>{label}</span>;
   };
@@ -1157,7 +1157,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     </div>
                     <div className="mt-0.5 truncate text-[10.5px] font-semibold text-muted-2">{t.propertyTitle}</div>
                     <div className="mt-1.5 flex items-center gap-1.5">
-                      <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[9.5px] font-extrabold ${t.mode === 'video' ? 'bg-blue-bg text-blue' : 'bg-lilac text-primary-dark'}`}>
+                      <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[9.5px] font-extrabold ${t.mode === 'video' ? 'bg-blue-bg text-blue-ink' : 'bg-lilac text-primary-dark'}`}>
                         {t.mode === 'video' ? <Video size={11} stroke={2.4} /> : <MapPin size={11} stroke={2.4} />}
                         {t.mode === 'video' ? L('Video', 'Video') : L('Presencial', 'In person')}
                       </span>
@@ -1259,7 +1259,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               {addrResults.map((a, i) => (
                 <button key={`${a.formatted}-${i}`} type="button" onClick={() => chooseAddr(a)} className="w-full cursor-pointer rounded-field p-2.5 text-left text-[12.5px] font-bold text-ink-soft hover:bg-app">
                   {a.formatted}
-                  {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
+                  {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-ink">✓ {L('Verificada', 'Verified')}</span>}
                 </button>
               ))}
             </div>
@@ -1290,7 +1290,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <label className={labelCls}>{draft.deal === 'venta' ? L('Precio de venta', 'Sale price') : L('Renta mensual', 'Monthly rent')} *</label>
         <div className="flex items-center gap-1.5 rounded-field border-[1.5px] border-lilac-line bg-white px-3.5 focus-within:border-primary">
           <span className="text-[18px] font-extrabold text-muted-2">$</span>
-          <input value={draft.price} onChange={(e) => upD({ price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder={draft.deal === 'venta' ? '450,000' : '1,350'} className="min-w-0 flex-1 bg-transparent py-3 text-[19px] font-extrabold text-ink outline-none placeholder:text-muted-faint" />
+          <input value={draft.price} onChange={(e) => upD({ price: e.target.value.replace(/[^0-9.]/g, '') })} inputMode="decimal" placeholder={draft.deal === 'venta' ? '450,000' : '1,350'} className="min-w-0 flex-1 bg-transparent py-3 text-[19px] font-extrabold text-ink outline-none placeholder:text-muted-2" />
           {draft.deal !== 'venta' && <span className="flex-none text-[12px] font-extrabold text-muted-2">{L('/mes', '/mo')}</span>}
         </div>
       </div>
@@ -1466,7 +1466,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {reviewRows.map(([k, v, ok], i) => (
           <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < reviewRows.length - 1 ? 'border-b border-hair' : ''}`}>
             <span className="w-[84px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span>
-            <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${ok ? 'text-ink' : 'text-muted-faint'}`}>{v}</span>
+            <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${ok ? 'text-ink' : 'text-muted-2'}`}>{v}</span>
             {ok && <Check size={13} stroke={3} className="flex-none text-green" />}
           </div>
         ))}
@@ -1568,7 +1568,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div className="flex items-center justify-between p-3.5">
             <div className="text-[12.5px] font-extrabold text-ink">{Number(draft.price) > 0 ? fmtPriceFull(Number(draft.price), draft.deal, es) : ''}</div>
-            <span className="flex-none rounded-lg bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Publicado', 'Published')}</span>
+            <span className="flex-none rounded-lg bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-ink">{L('Publicado', 'Published')}</span>
           </div>
         </div>
 

@@ -129,7 +129,7 @@ function SeatPicker({
                           <button
                             key={id} onClick={() => onToggle(id)} disabled={isTaken} aria-label={id}
                             className={`h-9 w-9 flex-none rounded-[7px] text-[10px] font-extrabold transition-colors ${
- isTaken ? 'cursor-not-allowed bg-lilac-2 text-muted-faint'
+ isTaken ? 'cursor-not-allowed bg-lilac-2 text-muted-2'
  : isSel ? 'bg-primary text-white shadow-cta-sm'
  : 'cursor-pointer border-[1.5px] border-lilac-line bg-white text-ink-soft hover:border-primary'}`}
                           >{c + 1}</button>
@@ -582,7 +582,7 @@ export function EventosScreen() {
           rsvpToggle(e);
         }}
         className={`flex-none cursor-pointer rounded-full px-4 py-2 text-[12.5px] font-extrabold ${big ? 'px-5' : ''} ${
- on ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'
+ on ? 'bg-green-bg text-green-ink' : 'bg-primary text-white shadow-cta-sm'
  }`}
       >
         {on ? L('Voy ✓', 'Going ✓') : L('Voy', 'Going')}
@@ -937,7 +937,7 @@ export function EventosScreen() {
                     <div className="mb-2 flex items-center gap-1.5">
                       {Array.from({ length: 5 }, (_, s) => (
                         <button key={s} type="button" aria-label={`${s + 1}`} onClick={() => setRevRating(s + 1)} className="cursor-pointer p-0.5">
-                          {s < revRating ? <StarFilled size={24} className="text-amber" /> : <Star size={24} stroke={2} className="text-muted-faint" />}
+                          {s < revRating ? <StarFilled size={24} className="text-amber" /> : <Star size={24} stroke={2} className="text-muted-2" />}
                         </button>
                       ))}
                     </div>
@@ -962,7 +962,7 @@ export function EventosScreen() {
                           <span className="flex flex-none gap-0.5">
                             {Array.from({ length: 5 }, (_, s) => s < rv.rating
                               ? <StarFilled key={s} size={11} className="text-amber" />
-                              : <Star key={s} size={11} stroke={2} className="text-muted-faint" />)}
+                              : <Star key={s} size={11} stroke={2} className="text-muted-2" />)}
                           </span>
                         </div>
                         {L(rv.body[0], rv.body[1]).trim() && <div className="mt-1.5 text-[12px] font-medium leading-snug text-ink-soft">{L(rv.body[0], rv.body[1])}</div>}
@@ -1001,7 +1001,7 @@ export function EventosScreen() {
                           {soldOut ? (
                             <button
                               onClick={() => toggleWaitlist(t)}
-                              className={`flex-none cursor-pointer rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${act.waitlistTierIds.has(t.id) ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'}`}
+                              className={`flex-none cursor-pointer rounded-full px-3 py-1.5 text-[10.5px] font-extrabold ${act.waitlistTierIds.has(t.id) ? 'bg-green-bg text-green-ink' : 'bg-primary text-white shadow-cta-sm'}`}
                             >
                               {act.waitlistTierIds.has(t.id) ? L('En espera ✓', 'Waiting ✓') : L('Avísame', 'Notify me')}
                             </button>
@@ -1042,7 +1042,7 @@ export function EventosScreen() {
                     </button>
                   </div>
                   {promoMsg && (
-                    <div className={`mt-1 text-[10.5px] font-bold ${promoMsg.ok ? 'text-green-dark' : 'text-pink-dark'}`}>{promoMsg.ok ? '✓ ' : ''}{promoMsg.text}</div>
+                    <div className={`mt-1 text-[10.5px] font-bold ${promoMsg.ok ? 'text-green-ink' : 'text-pink-dark'}`}>{promoMsg.ok ? '✓ ' : ''}{promoMsg.text}</div>
                   )}
                 </div>
 
@@ -1065,7 +1065,7 @@ export function EventosScreen() {
                         <span>${a.price.toFixed(2)}</span>
                       </div>
                     ))}
-                    {discountAmount > 0 && <div className="text-[10.5px] font-bold text-green-dark">{L('Descuento aplicado', 'Discount applied')} · −${discountAmount.toFixed(2)}</div>}
+                    {discountAmount > 0 && <div className="text-[10.5px] font-bold text-green-ink">{L('Descuento aplicado', 'Discount applied')} · −${discountAmount.toFixed(2)}</div>}
                   </div>
                 )}
 
@@ -1100,7 +1100,7 @@ export function EventosScreen() {
                     onClick={() => setSeatOpen(true)}
                     className={`mt-2.5 flex w-full items-center gap-2.5 rounded-field border-[1.5px] px-3.5 py-2.5 text-left ${seatsOk ? 'border-green bg-green-bg' : 'border-lilac-ring bg-lilac-3'}`}
                   >
-                    <Armchair size={17} stroke={2.2} className={`flex-none ${seatsOk ? 'text-green-dark' : 'text-primary'}`} />
+                    <Armchair size={17} stroke={2.2} className={`flex-none ${seatsOk ? 'text-green-ink' : 'text-primary'}`} />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[12.5px] font-extrabold text-ink">
                         {seatingType === 'tables' ? L('Elige tu mesa', 'Pick your table') : L('Elige tus asientos', 'Pick your seats')}
@@ -1111,7 +1111,7 @@ export function EventosScreen() {
                           : (seatingType === 'tables' ? L('Toca para elegir', 'Tap to choose') : L(`Faltan ${seatedQty - seatSel.length} de ${seatedQty}`, `${seatedQty - seatSel.length} of ${seatedQty} left`))}
                       </span>
                     </span>
-                    {seatsOk ? <Check size={16} stroke={3} className="flex-none text-green-dark" /> : <ChevronRight size={16} stroke={2.4} className="flex-none text-primary" />}
+                    {seatsOk ? <Check size={16} stroke={3} className="flex-none text-green-ink" /> : <ChevronRight size={16} stroke={2.4} className="flex-none text-primary" />}
                   </button>
                 )}
 
@@ -1132,7 +1132,7 @@ export function EventosScreen() {
               <>
                 {detail.slug && pubLoading && <div className="mt-4 text-center text-[12px] font-semibold text-muted-2">{L('Cargando boletos…', 'Loading tickets…')}</div>}
                 <PrimaryBtn
-                  className={`mt-4 ${detailOn ? '!bg-green-bg !text-green-dark !shadow-none' : ''}`}
+                  className={`mt-4 ${detailOn ? '!bg-green-bg !text-green-ink !shadow-none' : ''}`}
                   disabled={cancelled || eventPast}
                   onClick={() => rsvpToggle(detail)}
                 >

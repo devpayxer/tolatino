@@ -143,7 +143,7 @@ export function PostMenu({ post }: { post: Post }) {
                 >
                   <Pencil size={15} stroke={2.2} /> {L('Editar', 'Edit')}
                 </button>
-                <button onClick={() => { setOpen(false); setAction('delete'); }} className={`${itemCls} text-pink hover:bg-pink-bg`}>
+                <button onClick={() => { setOpen(false); setAction('delete'); }} className={`${itemCls} text-pink-dark hover:bg-pink-bg`}>
                   <Trash2 size={15} stroke={2.2} /> {L('Eliminar', 'Delete')}
                 </button>
               </>

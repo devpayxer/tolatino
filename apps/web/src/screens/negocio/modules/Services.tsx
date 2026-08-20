@@ -108,7 +108,7 @@ type BookingRow = {
 };
 const BK_STATUS: Record<BkStatus, { es: string; en: string; cls: string }> = {
   pending: { es: 'Por confirmar', en: 'Pending', cls: 'bg-pink-bg text-pink-dark' },
-  confirmed: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
+  confirmed: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-ink' },
   seated: { es: 'En curso', en: 'In progress', cls: 'bg-lilac-2 text-primary-dark' },
   done: { es: 'Completada', en: 'Done', cls: 'bg-lilac-2 text-ink-2' },
   cancelled: { es: 'Cancelada', en: 'Cancelled', cls: 'bg-lilac-2 text-muted-2' },
@@ -468,7 +468,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo servicio', 'New service')}</div>
                   <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{catLabel(dc)} · {draft.dur} · {priceLabelOf(draft)}</div>
                 </div>
-                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-dark">{draft.bookable ? L('Reservable', 'Bookable') : L('Consulta', 'Inquiry')}</span>
+                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-ink">{draft.bookable ? L('Reservable', 'Bookable') : L('Consulta', 'Inquiry')}</span>
               </div>
             </div>
             <div className="mt-5 flex w-full flex-col gap-2.5">
@@ -493,7 +493,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div className="flex items-start justify-between gap-2.5 p-3.5">
           <div className="min-w-0">
-            <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del servicio', 'Service name')}</div>
+            <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-2'}`}>{draft.name || L('Nombre del servicio', 'Service name')}</div>
             <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{catLabel(dc)} · {draft.dur}</div>
           </div>
           <span className="whitespace-nowrap text-[14px] font-extrabold text-ink">{priceLabelOf(draft)}</span>
@@ -706,9 +706,9 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 return (
                   <div className="flex flex-col gap-4">
                     <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#C1EBD6] bg-green-bg' : 'border-[#F4DBBA] bg-amber-bg'}`}>
-                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
+                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-ink' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
                       <div className="min-w-0">
-                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
+                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-ink' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
                         <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá en tu listado al instante.', "It'll appear on your listing instantly.") : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
                       </div>
                     </div>
@@ -716,7 +716,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       {rows.map((r, i, a) => (
                         <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
                           <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
-                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-faint'}`}>{r[1]}</span>
+                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-2'}`}>{r[1]}</span>
                           <button onClick={() => setWizStep(r[3])} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
                         </div>
                       ))}
@@ -907,7 +907,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-start justify-between gap-2">
-                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{s.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
+                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{s.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" /></span>
                       <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{priceLabelOf(s)}</span>
                     </span>
                     <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{s.dur} · {s.bookable ? L('reservable', 'bookable') : L('solo consulta', 'inquiry only')}</span>
@@ -943,7 +943,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('servicio', 'service') : L('servicios', 'services')}</div>
                 </div>
               </button>
@@ -973,7 +973,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" /></span>
                   <span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{used} {used === 1 ? L('servicio', 'service') : L('servicios', 'services')}</span>
                 </span>
                 <span className="flex-none text-[13px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
@@ -1010,7 +1010,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     {p.photo ? <img src={imgUrl(p.photo, ANCHO.icono)} alt="" className="absolute inset-0 h-full w-full object-cover" /> : p.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{p.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{p.active === false && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</span>
+                    <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{p.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />{p.active === false && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</span>
                     <span className="mt-0.5 block truncate text-[10px] font-semibold text-muted-2">{L(p.tagEs, p.tagEn ?? p.tagEs)}{nSvc != null ? ` · ${nSvc} ${nSvc === 1 ? L('servicio', 'service') : L('servicios', 'services')}` : ` · ${L('todos los servicios', 'all services')}`}</span>
                   </span>
                 </button>
@@ -1138,7 +1138,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                         </span>
                       )}
                       {Array.isArray(b.addons) && b.addons.length > 0 && <span className="rounded bg-lilac px-1.5 py-0.5 text-[9px] font-extrabold text-primary-dark">{b.addons.map((a) => a.n).join(' · ')}</span>}
-                      {b.deposit ? <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Pagado', 'Paid')} ${b.deposit}</span>
+                      {b.deposit ? <span className="rounded bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-ink">{L('Pagado', 'Paid')} ${b.deposit}</span>
                         : b.total ? <span className="rounded bg-amber-bg px-1.5 py-0.5 text-[9px] font-extrabold text-amber-ink">{L('Cobra en sitio', 'Collect on site')} ${b.total}</span> : null}
                     </div>
                     {b.notes && <div className="mt-1.5 rounded-r-md border-l-2 border-lilac-line bg-app px-2 py-1.5 text-[10px] font-medium italic leading-snug text-muted-2">&ldquo;{b.notes}&rdquo;</div>}

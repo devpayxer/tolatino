@@ -10,11 +10,11 @@ import type { ReactNode } from 'react';
 // ── Píldora de estado (consistente en toda la consola) ───────────────────────
 export type Tone = 'green' | 'amber' | 'pink' | 'purple' | 'blue' | 'gray';
 const TONE: Record<Tone, string> = {
-  green: 'bg-green-bg text-green-dark',
+  green: 'bg-green-bg text-green-ink',
   amber: 'bg-amber-bg text-amber-ink',
   pink: 'bg-pink-bg text-pink-dark',
   purple: 'bg-lilac text-primary-dark',
-  blue: 'bg-blue-bg text-blue',
+  blue: 'bg-blue-bg text-blue-ink',
   gray: 'bg-lilac-2 text-ink-2',
 };
 export function Pill({ tone = 'gray', children }: { tone?: Tone; children: ReactNode }) {
@@ -32,7 +32,7 @@ export function Panel({ children, className = '' }: { children: ReactNode; class
 
 // ── KPI / stat ───────────────────────────────────────────────────────────────
 export function Stat({ value, label, tone }: { value: ReactNode; label: string; tone?: 'ink' | 'green' | 'amber' | 'pink' | 'purple' }) {
-  const c = tone === 'green' ? 'text-green-dark' : tone === 'amber' ? 'text-amber-ink'
+  const c = tone === 'green' ? 'text-green-ink' : tone === 'amber' ? 'text-amber-ink'
     : tone === 'pink' ? 'text-pink-dark' : tone === 'purple' ? 'text-primary-dark' : 'text-ink';
   return (
     <div className="rounded-card-sm border border-line bg-white px-4 py-3.5">

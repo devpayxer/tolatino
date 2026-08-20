@@ -57,7 +57,7 @@ type RentalReq = {
 };
 const REQ_STATUS: Record<string, { es: string; en: string; cls: string }> = {
   pending:   { es: 'Pendiente',  en: 'Pending',   cls: 'bg-amber-bg text-amber-ink' },
-  confirmed: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
+  confirmed: { es: 'Confirmada', en: 'Confirmed', cls: 'bg-green-bg text-green-ink' },
   out:       { es: 'En uso',     en: 'Out',       cls: 'bg-lilac text-primary-dark' },
   returned:  { es: 'Devuelto',   en: 'Returned',  cls: 'bg-lilac-2 text-ink-2' },
   cancelled: { es: 'Cancelado',  en: 'Cancelled', cls: 'bg-lilac-2 text-ink-2' },
@@ -129,7 +129,7 @@ function rentalToRow(it: Item, businessId: string, sort: number): NewBizItem {
 
 const cardCls = 'rounded-card-sm border border-line bg-white ';
 const fieldCls =
-  'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-faint focus:border-primary';
+  'w-full rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2 focus:border-primary';
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';
 const addBtn = 'mt-3.5 w-full cursor-pointer rounded-field border-[1.5px] border-dashed border-lilac-line bg-app py-3 text-[12.5px] font-extrabold text-primary-dark';
 const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
@@ -408,7 +408,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       ? { cls: 'bg-pink-bg text-pink-dark', dot: '#E11D48', label: L('Reservado', 'Booked') }
       : a <= 1
         ? { cls: 'bg-amber-bg text-amber-ink', dot: '#8A5A00', label: L('Limitado', 'Limited') }
-        : { cls: 'bg-green-bg text-green-dark', dot: '#007A57', label: L('Disponible', 'Available') };
+        : { cls: 'bg-green-bg text-green-ink', dot: '#007A57', label: L('Disponible', 'Available') };
   };
 
   const startAdd = () => {
@@ -514,7 +514,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo artículo', 'New item')}</div>
                   <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{L(dc.es, dc.en)} · {draft.day ? `${money(Number(draft.day))}/${L('día', 'day')}` : '$0'}</div>
                 </div>
-                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Disponible', 'Available')}</span>
+                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-ink">{L('Disponible', 'Available')}</span>
               </div>
             </div>
             <div className="mt-5 flex w-full flex-col gap-2.5">
@@ -539,7 +539,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div className="flex items-start justify-between gap-2.5 p-3.5">
           <div className="min-w-0">
-            <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del artículo', 'Item name')}</div>
+            <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-2'}`}>{draft.name || L('Nombre del artículo', 'Item name')}</div>
             <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{L(dc.es, dc.en)}</div>
           </div>
           <span className="whitespace-nowrap text-[14px] font-extrabold text-ink">{draft.day ? `${money(Number(draft.day))}/${L('día', 'day')}` : '$0'}</span>
@@ -701,9 +701,9 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 return (
                   <div className="flex flex-col gap-4">
                     <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#C1EBD6] bg-green-bg' : 'border-[#F4DBBA] bg-amber-bg'}`}>
-                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
+                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-ink' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
                       <div className="min-w-0">
-                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
+                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-ink' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
                         <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá disponible para rentar.', "It'll appear available to rent.") : L('Agrega nombre y tarifa diaria antes de continuar.', 'Add a name and daily rate before continuing.')}</div>
                       </div>
                     </div>
@@ -711,7 +711,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                       {rows.map((r, i, a) => (
                         <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
                           <span className="w-24 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
-                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-faint'}`}>{r[1]}</span>
+                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-2'}`}>{r[1]}</span>
                           <button onClick={() => setWizStep(r[3])} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
                         </div>
                       ))}
@@ -854,7 +854,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
-                        <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{L(it.es, it.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
+                        <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{L(it.es, it.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" /></span>
                         <span className="whitespace-nowrap text-[13.5px] font-extrabold text-ink">{money(it.day)}/{L('día', 'day')}</span>
                       </span>
                       <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{L(it.availEs, it.availEn)} · {availOf(it)}/{it.stock} {L(it.unitEs, it.unitEn)}</span>
@@ -893,7 +893,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('artículo', 'item') : L('artículos', 'items')}</div>
                 </div>
               </button>
@@ -923,7 +923,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button key={a.id} onClick={() => setAddonSheet({ open: true, initial: a })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Zap size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(a.es, a.en ?? a.es)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" /></span>
                   <span className="mt-0.5 block text-[10px] font-semibold text-muted-2">{used} {used === 1 ? L('artículo', 'item') : L('artículos', 'items')}</span>
                 </span>
                 <span className="flex-none text-[13px] font-extrabold text-ink">{a.price ? `+$${a.price}` : L('Gratis', 'Free')}</span>
@@ -953,7 +953,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <button key={p.id} onClick={() => setPolicySheet({ open: true, initial: p })} className="flex cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Shield size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(p.es, p.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{p.default && <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-dark">{L('Por defecto', 'Default')}</span>}</span>
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(p.es, p.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />{p.default && <span className="rounded bg-green-bg px-1.5 py-px text-[8.5px] font-extrabold text-green-ink">{L('Por defecto', 'Default')}</span>}</span>
                   <span className="mt-0.5 block truncate text-[10px] font-semibold text-muted-2">{(p.subEs || p.subEn) ? L(p.subEs ?? '', p.subEn ?? p.subEs ?? '') : `${used} ${used === 1 ? L('artículo', 'item') : L('artículos', 'items')}`}</span>
                 </span>
               </button>
@@ -986,7 +986,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 {[{ l: L('Hora', 'Hour'), v: it.hour, on: it.hour != null }, { l: L('Día', 'Day'), v: it.day, on: true }, { l: L('Semana', 'Week'), v: it.week, on: it.week > 0 }].map((r) => (
                   <div key={r.l} className={`flex-1 rounded-[9px] py-2 text-center ${r.on ? 'bg-app' : 'bg-lilac-3'}`}>
                     <div className="text-[8.5px] font-semibold text-muted-2">{r.l}</div>
-                    <div className={`mt-0.5 text-[12px] font-extrabold ${r.on ? 'text-ink' : 'text-muted-faint'}`}>{r.v != null && r.on ? money(r.v) : '—'}</div>
+                    <div className={`mt-0.5 text-[12px] font-extrabold ${r.on ? 'text-ink' : 'text-muted-2'}`}>{r.v != null && r.on ? money(r.v) : '—'}</div>
                   </div>
                 ))}
               </div>
@@ -1024,7 +1024,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </span>
           <span className="flex flex-none flex-col items-end gap-1">
             <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${st.cls}`}>{L(st.es, st.en)}</span>
-            {r.paid && <span className="rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Pagada', 'Paid')}</span>}
+            {r.paid && <span className="rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-ink">{L('Pagada', 'Paid')}</span>}
           </span>
         </div>
         <div className="mt-2.5 flex items-center gap-2 border-t border-hair pt-2.5 text-[10.5px] font-semibold text-muted-2">
@@ -1036,7 +1036,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <span>{L('Depósito', 'Deposit')} {money(Number(r.deposit))}</span>
             {/* Real hold state (0101) vs cash-at-pickup */}
             {r.depositStatus === 'held' && <span className="rounded bg-amber-bg px-1.5 py-0.5 font-extrabold text-amber-ink">{L('Retenido en tarjeta', 'Held on card')}</span>}
-            {r.depositStatus === 'released' && <span className="rounded bg-green-bg px-1.5 py-0.5 font-extrabold text-green-dark">{L('Liberado', 'Released')}</span>}
+            {r.depositStatus === 'released' && <span className="rounded bg-green-bg px-1.5 py-0.5 font-extrabold text-green-ink">{L('Liberado', 'Released')}</span>}
             {r.depositStatus === 'captured' && <span className="rounded bg-pink-bg px-1.5 py-0.5 font-extrabold text-pink-dark">{L(`Cobrado ${money(r.depositCaptured)}`, `Charged ${money(r.depositCaptured)}`)}</span>}
             {r.depositStatus === 'failed' && <span className="rounded bg-lilac-2 px-1.5 py-0.5 font-extrabold text-ink-2">{L('Cobra en efectivo al recoger', 'Collect cash at pickup')}</span>}
             {r.depositStatus === 'none' && r.paid && <span>· {L('cóbralo al entregar', 'collect at handout')}</span>}
@@ -1251,13 +1251,13 @@ function ItemDetail({
               const out = i < item.out; const unit = L(item.unitEs, item.unitEn);
               return (
                 <div key={i} className={`${cardCls} flex items-center gap-3 p-2.5`}>
-                  <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-[11px] font-extrabold ${out ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-dark'}`}>#{i + 1}</span>
+                  <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-[11px] font-extrabold ${out ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-ink'}`}>#{i + 1}</span>
                   <span className="min-w-0 flex-1"><span className="block text-[12px] font-extrabold capitalize text-ink">{unit} {i + 1}</span><span className="block text-[10px] font-medium text-muted-2">{out ? L('Rentado', 'Rented') : L('Disponible ahora', 'Available now')}</span></span>
                   {out
                     ? (walkIn
                         ? (<button onClick={onReturn} className="tap-y flex-none cursor-pointer rounded-field border-[1.5px] border-lilac-line bg-white px-3 py-1.5 text-[10.5px] font-extrabold text-ink">{L('Devolver', 'Return')}</button>)
                         : (<span className="flex-none rounded-md bg-pink-bg px-2 py-1 text-[9px] font-extrabold text-pink-dark">{L('Rentado', 'Rented')}</span>))
-                    : (<span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Libre', 'Free')}</span>)}
+                    : (<span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-ink">{L('Libre', 'Free')}</span>)}
                 </div>
               );
             })}
@@ -1272,7 +1272,7 @@ function ItemDetail({
               {policyList.map((p) => (
                 <div key={p.id} className="flex items-center justify-between gap-3 border-b border-hair py-3 last:border-0">
                   <span className="min-w-0"><span className="block text-[12px] font-semibold text-ink">{L(p.es, p.en)}</span>{(p.subEs || p.subEn) && <span className="block text-[10px] font-medium text-muted-2">{L(p.subEs ?? '', p.subEn ?? p.subEs ?? '')}</span>}</span>
-                  <span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Activo', 'On')}</span>
+                  <span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-ink">{L('Activo', 'On')}</span>
                 </div>
               ))}
             </div>
@@ -1359,7 +1359,7 @@ function RentOutFlow({ item, ctx, tile, onBackToDetail, onDone }: {
           )}
           {step === 2 && (
             <>
-              <div className="flex items-center gap-3 rounded-field border border-green/40 bg-green-bg p-3"><span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-green-dark"><Check size={16} stroke={3} /></span><span className="flex-1"><span className="block text-[12px] font-extrabold text-green-dark">{L('Listo para rentar', 'Ready to rent')}</span><span className="block text-[10.5px] font-semibold leading-snug text-green-dark/80">{L('Se cobra el depósito y se marca como rentado.', 'Deposit is charged and item marked rented.')}</span></span></div>
+              <div className="flex items-center gap-3 rounded-field border border-green/40 bg-green-bg p-3"><span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-green-ink"><Check size={16} stroke={3} /></span><span className="flex-1"><span className="block text-[12px] font-extrabold text-green-ink">{L('Listo para rentar', 'Ready to rent')}</span><span className="block text-[10.5px] font-semibold leading-snug text-green-ink/80">{L('Se cobra el depósito y se marca como rentado.', 'Deposit is charged and item marked rented.')}</span></span></div>
               <div className="overflow-hidden rounded-field border border-line">
                 {([[L('Cliente', 'Renter'), name || '—'], [L('Artículo', 'Item'), L(item.es, item.en)], [L('Periodo', 'Period'), `${qty} × ${periodLabel}`], [L('Total', 'Total'), money(total)]] as [string, string][]).map(([k, v], i, a) => (
                   <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}><span className="w-[80px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span><span className="min-w-0 flex-1 text-[11.5px] font-extrabold text-ink">{v}</span></div>
@@ -1381,7 +1381,7 @@ function ReturnFlow({ item, ctx, tile, onClose, onDone }: { item: Item; ctx: Pan
   const deduction = condition === 'minor' ? 45 : condition === 'major' ? item.dep : 0;
   const refund = Math.max(0, item.dep - deduction);
   const conds: { key: Condition; label: string; sub: string; icon: string; iconCls: string }[] = [
-    { key: 'perfect', label: L('Perfecto', 'Perfect'), sub: L('Sin daños · reembolso completo', 'No damage · full refund'), icon: '✓', iconCls: 'bg-green-bg text-green-dark' },
+    { key: 'perfect', label: L('Perfecto', 'Perfect'), sub: L('Sin daños · reembolso completo', 'No damage · full refund'), icon: '✓', iconCls: 'bg-green-bg text-green-ink' },
     { key: 'minor', label: L('Daño menor', 'Minor damage'), sub: L('Deduce parte del depósito', 'Deduct part of deposit'), icon: '~', iconCls: 'bg-amber-bg text-amber-ink' },
     { key: 'major', label: L('Daño mayor', 'Major damage'), sub: L('Deduce o retén el depósito', 'Deduct or hold deposit'), icon: '!', iconCls: 'bg-pink-bg text-pink-dark' },
   ];
@@ -1408,7 +1408,7 @@ function ReturnFlow({ item, ctx, tile, onClose, onDone }: { item: Item; ctx: Pan
         <div className={`${cardCls} p-4`}>
           <Line l={L('Depósito retenido', 'Deposit held')} v={money(item.dep)} />
           {deduction > 0 && (<div className="mt-1.5 flex items-center justify-between"><span className="text-[11px] font-semibold text-pink-dark">{L('Deducción por daño', 'Damage deduction')}</span><span className="text-[12px] font-bold text-pink-dark">−{money(deduction)}</span></div>)}
-          <div className="mt-2 flex items-center justify-between border-t border-hair pt-2.5"><span className="text-[12px] font-extrabold text-ink">{L('Reembolso al cliente', 'Refund to renter')}</span><span className="text-[16px] font-extrabold text-green">{money(refund)}</span></div>
+          <div className="mt-2 flex items-center justify-between border-t border-hair pt-2.5"><span className="text-[12px] font-extrabold text-ink">{L('Reembolso al cliente', 'Refund to renter')}</span><span className="text-[16px] font-extrabold text-green-ink">{money(refund)}</span></div>
         </div>
       </div>
     </ModulePage>
@@ -1421,7 +1421,7 @@ function SuccessSheet({ ctx, title, sub, onClose }: { ctx: PanelCtx; title: stri
   return (
     <ModulePage title={title} onBack={onClose} footer={<button onClick={onClose} className="w-full cursor-pointer rounded-btn bg-primary py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">{L('Listo', 'Done')}</button>}>
       <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-bg text-green-dark"><Check size={28} stroke={3} /></span>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-bg text-green-ink"><Check size={28} stroke={3} /></span>
         <div className="text-[16px] font-extrabold text-ink">{title}</div>
         <div className="max-w-[320px] text-[12.5px] font-semibold leading-relaxed text-muted">{sub}</div>
       </div>
@@ -1465,7 +1465,7 @@ function MoneyInput({ value, onChange, placeholder }: { value: string; onChange:
   return (
     <div className="flex items-center rounded-field border-[1.5px] border-lilac-line px-3 focus-within:border-primary">
       <span className="text-[12px] font-bold text-muted-2">$</span>
-      <input value={value} onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder={placeholder} className="w-full bg-transparent px-1.5 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-faint" />
+      <input value={value} onChange={(e) => onChange(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder={placeholder} className="w-full bg-transparent px-1.5 py-2.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted-2" />
     </div>
   );
 }

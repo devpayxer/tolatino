@@ -163,14 +163,14 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
   }[k] ?? { es: 'Promo', en: 'Promo', Icon: IconPercentage, c: '#4F46E5', bg: '#FFECF2' });
 
   const scopeMeta = (s: Scope) => ({
-    menu: { es: 'Menú', en: 'Menu', cls: 'bg-[#E6FAF3] text-green-dark' },
+    menu: { es: 'Menú', en: 'Menu', cls: 'bg-[#E6FAF3] text-green-ink' },
     service: { es: 'Servicios', en: 'Services', cls: 'bg-lilac-2 text-primary-dark' },
     rental: { es: 'Renta', en: 'Rental', cls: 'bg-pink-bg text-pink-dark' },
     shop: { es: 'Tienda', en: 'Shop', cls: 'bg-[#FFF6E3] text-amber-ink' },
   }[s]);
 
   const statusPill = (s: Status) => s === 'active'
-    ? <span className="flex-none rounded-full bg-green-bg px-2.5 py-1 text-[10px] font-extrabold text-green-dark">{L('Activa', 'Active')}</span>
+    ? <span className="flex-none rounded-full bg-green-bg px-2.5 py-1 text-[10px] font-extrabold text-green-ink">{L('Activa', 'Active')}</span>
     : s === 'scheduled'
       ? <span className="flex-none rounded-full bg-amber-bg px-2.5 py-1 text-[10px] font-extrabold text-amber-ink">{L('Programada', 'Scheduled')}</span>
       : <span className="flex-none rounded-full bg-lilac-2 px-2.5 py-1 text-[10px] font-extrabold text-muted">{L('Pausada', 'Paused')}</span>;
@@ -243,7 +243,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
       <div className="grid grid-cols-4 gap-2">
         {([[kpi.active, L('Activas', 'Active'), false], [kpi.scheduled, L('Programadas', 'Scheduled'), false], [kpi.paused, L('Pausadas', 'Paused'), false], [kpi.redemptions, L('Canjes · 7d', 'Redeemed · 7d'), true]] as [number, string, boolean][]).map(([n, l, hot], i) => (
           <div key={i} className={`${cardCls} px-2 py-3 text-center`}>
-            <div className={`text-[20px] font-extrabold leading-none ${hot ? 'text-green-dark' : 'text-ink'}`}>{n}</div>
+            <div className={`text-[20px] font-extrabold leading-none ${hot ? 'text-green-ink' : 'text-ink'}`}>{n}</div>
             <div className="mt-1.5 text-[9.5px] font-bold text-muted">{l}</div>
           </div>
         ))}

@@ -235,12 +235,12 @@ export function PanelScreen() {
   const livePill = real
     ? real.is_open
       ? { bg: '#E6FAF3', c: '#007A57', dot: '#00A878', text: L('Abierto', 'Open') }
-      : { bg: '#FFF6E3', c: '#8A5A00', dot: '#C05702', text: L('Cerrado', 'Closed') }
+      : { bg: '#FFF6E3', c: '#8A5A00', dot: '#B44D00', text: L('Cerrado', 'Closed') }
     : isFree
-      ? { bg: '#FFF6E3', c: '#8A5A00', dot: '#C05702', text: L('Sin verificar', 'Unverified') }
+      ? { bg: '#FFF6E3', c: '#8A5A00', dot: '#B44D00', text: L('Sin verificar', 'Unverified') }
       : { bg: '#E6FAF3', c: '#007A57', dot: '#00A878', text: L('Abierto · hasta 10 PM', 'Open · until 10 PM') };
   const planPill = isFree
-    ? { bg: '#F1EEFA', c: '#7E7798', text: 'Free' }
+    ? { bg: '#F1EEFA', c: '#6F6889', text: 'Free' }
     : isPremium
       ? { bg: '#16112E', c: '#FFB020', text: '✦ Premium' }
       : { bg: '#F1EEFA', c: '#C4144C', text: 'Verified' };
@@ -431,12 +431,12 @@ export function PanelScreen() {
                   className={`flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-[9px] text-left ${active ? 'bg-[#F3EEFF]' : ''} ${n.locked ? 'cursor-default' : 'cursor-pointer hover:bg-app'} ${n.indent ? 'pl-[30px]' : ''}`}
                 >
                   <n.Icon size={15} strokeWidth={2.2} className={active ? 'text-primary-press' : n.locked ? 'text-[#B3ADC7]' : 'text-muted'} />
-                  <span className={`flex-1 text-[13px] ${active ? 'font-extrabold text-primary-press' : n.locked ? 'font-semibold text-muted-faint' : 'font-semibold text-ink-soft'}`}>
+                  <span className={`flex-1 text-[13px] ${active ? 'font-extrabold text-primary-press' : n.locked ? 'font-semibold text-muted-2' : 'font-semibold text-ink-soft'}`}>
                     {n.label}
                   </span>
                   {n.sub && <Check size={12} stroke={3} className="text-green" />}
                   {!n.locked && n.count != null && (
-                    <span className={`rounded-[7px] px-[7px] py-0.5 text-[10px] font-extrabold ${n.live ? 'bg-green-bg text-green-dark' : n.warn ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted'}`}>
+                    <span className={`rounded-[7px] px-[7px] py-0.5 text-[10px] font-extrabold ${n.live ? 'bg-green-bg text-green-ink' : n.warn ? 'bg-amber-bg text-amber-ink' : 'bg-lilac-2 text-muted'}`}>
                       {n.count}
                     </span>
                   )}
@@ -754,7 +754,7 @@ export function PanelScreen() {
           return (
             <button key={k} onClick={() => (isFree && k === 'orders' ? ctx.go('billing') : ctx.go(k))} className="relative flex min-h-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5">
               <Icon size={19} strokeWidth={2.2} className={active ? 'text-primary' : 'text-muted-2'} />
-              <span className={`text-[9px] font-extrabold ${active ? 'text-primary' : 'text-muted-2'}`}>{label}</span>
+              <span className={`text-[9px] font-extrabold ${active ? 'text-primary-dark' : 'text-muted-2'}`}>{label}</span>
               {badge && (
                 <span className="absolute right-[calc(50%-20px)] top-0 flex h-[14px] min-w-[14px] items-center justify-center rounded-[7px] border-[1.5px] border-white bg-pink px-[3px] text-[8px] font-extrabold text-white">
                   {badge}
@@ -765,7 +765,7 @@ export function PanelScreen() {
         })}
         <button onClick={() => setDrawer(true)} className="flex min-h-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5">
           <Menu size={19} stroke={2.2} className={drawer ? 'text-primary' : 'text-muted-2'} />
-          <span className={`text-[9px] font-extrabold ${drawer ? 'text-primary' : 'text-muted-2'}`}>{L('Más', 'More')}</span>
+          <span className={`text-[9px] font-extrabold ${drawer ? 'text-primary-dark' : 'text-muted-2'}`}>{L('Más', 'More')}</span>
         </button>
       </nav>
     </div>

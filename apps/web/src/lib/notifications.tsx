@@ -46,11 +46,11 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   rsvp_new: { icon: 'user', color: '#C4144C', bg: '#FFECF2' },
   event_cancelled: { icon: 'calendar', color: '#E11D48', bg: '#FFECF2' },
   waitlist_open: { icon: 'calendar', color: '#007A57', bg: '#E6FAF3' },
-  message: { icon: 'message', color: '#007CC1', bg: '#DEF4FF' },
+  message: { icon: 'message', color: '#0072B6', bg: '#DEF4FF' },
   // Comunidad (migración 0136). Hasta 2026-08-03 la sección era muda: te
   // comentaban o te seguían y nadie te avisaba.
   comment_new: { icon: 'message', color: '#C4144C', bg: '#FFECF2' },
-  reply_new: { icon: 'message', color: '#007CC1', bg: '#DEF4FF' },
+  reply_new: { icon: 'message', color: '#0072B6', bg: '#DEF4FF' },
   post_like: { icon: 'heart', color: '#E11D48', bg: '#FFECF2' },
   follow_new: { icon: 'user', color: '#007A57', bg: '#E6FAF3' },
   // Cuenta, plan, reclamos y dinero (0121/0122). La base los emitía desde hacía
@@ -58,11 +58,11 @@ const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
   account_suspended: { icon: 'user', color: '#E11D48', bg: '#FFECF2' },
   account_restored: { icon: 'user', color: '#007A57', bg: '#E6FAF3' },
   business_tier_changed: { icon: 'store', color: '#8A5A00', bg: '#FFF6E3' },
-  order_status_admin: { icon: 'store', color: '#007CC1', bg: '#DEF4FF' },
+  order_status_admin: { icon: 'store', color: '#0072B6', bg: '#DEF4FF' },
   purchase_fulfilled: { icon: 'store', color: '#007A57', bg: '#E6FAF3' },
   purchase_refunded: { icon: 'tag', color: '#8A5A00', bg: '#FFF6E3' },
   claim_opened: { icon: 'message', color: '#E11D48', bg: '#FFECF2' },
-  claim_message: { icon: 'message', color: '#007CC1', bg: '#DEF4FF' },
+  claim_message: { icon: 'message', color: '#0072B6', bg: '#DEF4FF' },
   claim_resuelto: { icon: 'message', color: '#007A57', bg: '#E6FAF3' },
   claim_rechazado: { icon: 'message', color: '#E11D48', bg: '#FFECF2' },
   // Dealer de carros (0119) y Bienes raíces (0117) — avisos para el dueño.

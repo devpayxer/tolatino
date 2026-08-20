@@ -290,7 +290,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
   const toggleDiscount = (id: string) => saveCfg({ ...cfg, discounts: cfg.discounts.map((d) => (d.id === id ? { ...d, status: d.status === 'active' ? 'paused' : 'active' } : d)) });
 
   const stockPill = (s: number): [string, string] =>
-    s === 0 ? [L('Agotado', 'Out'), 'bg-pink-bg text-pink-dark'] : s <= 8 ? [L('Bajo', 'Low'), 'bg-amber-bg text-amber-ink'] : [L('En stock', 'In stock'), 'bg-green-bg text-green-dark'];
+    s === 0 ? [L('Agotado', 'Out'), 'bg-pink-bg text-pink-dark'] : s <= 8 ? [L('Bajo', 'Low'), 'bg-amber-bg text-amber-ink'] : [L('En stock', 'In stock'), 'bg-green-bg text-green-ink'];
 
   // ── wizard: draft ⇄ product ─────────────────────────────────────────────────
   const wizSteps: [string, string][] = [
@@ -392,7 +392,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                   <div className="text-[14px] font-extrabold text-ink">{draft.name || L('Nuevo producto', 'New product')}</div>
                   <div className="mt-0.5 text-[11.5px] font-medium text-muted-2">{catLabel(dc)} · {draft.price ? money(Number(draft.price)) : '$0.00'}</div>
                 </div>
-                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('Activo', 'Live')}</span>
+                <span className="flex-none rounded-lg bg-green-bg px-2.5 py-1.5 text-[10.5px] font-extrabold text-green-ink">{L('Activo', 'Live')}</span>
               </div>
             </div>
             <div className="mt-5 flex w-full flex-col gap-2.5">
@@ -417,7 +417,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div className="flex items-start justify-between gap-2.5 p-3.5">
           <div className="min-w-0">
-            <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-faint'}`}>{draft.name || L('Nombre del producto', 'Product name')}</div>
+            <div className={`text-[14px] font-extrabold ${draft.name ? 'text-ink' : 'text-muted-2'}`}>{draft.name || L('Nombre del producto', 'Product name')}</div>
             <div className="mt-0.5 text-[10.5px] font-medium text-muted-2">{catLabel(dc)}{draft.sku ? ` · ${draft.sku}` : ''}</div>
           </div>
           <span className="whitespace-nowrap text-[14px] font-extrabold text-ink">{draft.price ? money(Number(draft.price)) : '$0.00'}</span>
@@ -674,9 +674,9 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                 return (
                   <div className="flex flex-col gap-4">
                     <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#C1EBD6] bg-green-bg' : 'border-[#F4DBBA] bg-amber-bg'}`}>
-                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
+                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-ink' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
                       <div className="min-w-0">
-                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
+                        <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-ink' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
                         <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{draftReady ? L('Aparecerá en tu tienda al instante.', "It'll appear in your shop instantly.") : L('Agrega nombre y precio antes de continuar.', 'Add a name and price before continuing.')}</div>
                       </div>
                     </div>
@@ -684,7 +684,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                       {rows.map((r, i, a) => (
                         <div key={r[0]} className={`flex items-center gap-3 px-3.5 py-3 ${i < a.length - 1 ? 'border-b border-hair' : ''}`}>
                           <span className="w-20 flex-none text-[10.5px] font-semibold text-muted-2">{r[0]}</span>
-                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-faint'}`}>{r[1]}</span>
+                          <span className={`min-w-0 flex-1 truncate text-[11.5px] font-bold ${r[2] ? 'text-ink' : 'text-muted-2'}`}>{r[1]}</span>
                           <button onClick={() => setWizStep(r[3])} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
                         </div>
                       ))}
@@ -779,10 +779,10 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-start justify-between gap-2">
-                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{p.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
+                      <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{p.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" /></span>
                       <span className="flex flex-none items-center gap-1.5">
                         {p.compareAt && p.compareAt > p.price && <span className="text-[11px] font-bold text-muted line-through">{money(p.compareAt)}</span>}
-                        <span className={`whitespace-nowrap text-[13.5px] font-extrabold ${p.compareAt && p.compareAt > p.price ? 'text-[#C54C67]' : 'text-ink'}`}>{money(p.price)}</span>
+                        <span className={`whitespace-nowrap text-[13.5px] font-extrabold ${p.compareAt && p.compareAt > p.price ? 'text-[#B9415D]' : 'text-ink'}`}>{money(p.price)}</span>
                       </span>
                     </span>
                     <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{catLabel(catOf(p.cat))}{p.sku ? ` · ${p.sku}` : ''}</span>
@@ -819,7 +819,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
               <button onClick={() => setCatSheet({ open: true, initial: c })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white" style={{ background: stripe(c.tile) }}><Icon size={18} strokeWidth={2.2} /></span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{catLabel(c)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" />{!c.visible && <span className="rounded bg-lilac-2 px-1.5 py-px text-[8.5px] font-extrabold text-muted-2">{L('Oculto', 'Hidden')}</span>}</div>
                   <div className="mt-0.5 text-[10px] font-semibold text-muted-2">{n} {n === 1 ? L('producto', 'product') : L('productos', 'products')}</div>
                 </div>
               </button>
@@ -849,7 +849,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
               <button key={o.id} onClick={() => setOptSheet({ open: true, initial: o })} className="flex cursor-pointer items-start gap-3 rounded-card-sm border border-line bg-white p-3 text-left">
                 <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-lilac"><Layers size={16} className="text-primary-dark" stroke={2.2} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(o.es, o.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
+                  <span className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(o.es, o.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" /></span>
                   <span className="mt-0.5 block truncate text-[10.5px] font-semibold text-ink-3">{o.values.map((v) => L(v.es, v.en ?? v.es)).join(' · ')}</span>
                   <span className="mt-1 block text-[10px] font-semibold text-muted-2">{o.single ? `${n} ${L('variantes', 'variants')}` : L('extras', 'add-ons')} · {used} {used === 1 ? L('producto', 'product') : L('productos', 'products')}</span>
                 </span>
@@ -878,7 +878,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
               </div>
               <div className="flex items-center gap-2.5 p-3">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></div>
+                  <div className="flex items-center gap-1.5"><span className="truncate text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-2" /></div>
                   {(c.descEs || c.descEn) && <div className="mt-0.5 truncate text-[10.5px] font-medium text-muted-2">{L(c.descEs ?? '', c.descEn ?? '')}</div>}
                 </div>
               </div>
@@ -911,11 +911,11 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                 <button onClick={() => setDiscSheet({ open: true, initial: d })} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-lilac text-[13px] font-extrabold text-primary-dark">{val}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5"><span className="truncate font-mono text-[12.5px] font-extrabold text-ink">{d.code}</span>{d.auto && <span className="rounded bg-lilac px-1.5 py-px text-[8px] font-extrabold text-primary-dark">{L('Auto', 'Auto')}</span>}<Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></div>
+                    <div className="flex items-center gap-1.5"><span className="truncate font-mono text-[12.5px] font-extrabold text-ink">{d.code}</span>{d.auto && <span className="rounded bg-lilac px-1.5 py-px text-[8px] font-extrabold text-primary-dark">{L('Auto', 'Auto')}</span>}<Pencil size={11} stroke={2.4} className="flex-none text-muted-2" /></div>
                     <div className="mt-0.5 truncate text-[10px] font-medium text-muted-2">{L(d.descEs, d.descEn)}</div>
                   </div>
                 </button>
-                <button onClick={() => toggleDiscount(d.id)} className={`tap-y flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${paused ? 'bg-lilac-2 text-muted-2' : 'bg-green-bg text-green-dark'}`}>{paused ? L('Pausado', 'Paused') : L('Activo', 'Active')}</button>
+                <button onClick={() => toggleDiscount(d.id)} className={`tap-y flex-none rounded-md px-2 py-1 text-[9px] font-extrabold ${paused ? 'bg-lilac-2 text-muted-2' : 'bg-green-bg text-green-ink'}`}>{paused ? L('Pausado', 'Paused') : L('Activo', 'Active')}</button>
               </div>
             );
           })}

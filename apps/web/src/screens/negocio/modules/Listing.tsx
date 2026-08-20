@@ -753,7 +753,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn" style={{ background: real.tier === 'free' ? '#FFF6E3' : '#E6FAF3' }}>
-                  <Shield size={16} stroke={2.2} className={real.tier === 'free' ? 'text-amber-ink' : 'text-green-dark'} />
+                  <Shield size={16} stroke={2.2} className={real.tier === 'free' ? 'text-amber-ink' : 'text-green-ink'} />
                 </span>
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink">

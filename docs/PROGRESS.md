@@ -25,7 +25,7 @@ verificable en `pruebas`:
 |---|---|---|
 | 1 | **Tokens + tipografías** | ✅ hecho (2026-08-20) |
 | 2 | **Hex crudos → paleta del sistema + guardián** | ✅ hecho (2026-08-20) |
-| 3 | Primitivas (`ui.tsx`): botones, chips, tarjeta, vacío, skeleton | pendiente |
+| 3 | **Primitivas (`ui.tsx`) + contraste AA en toda la app** | ✅ hecho (2026-08-20) |
 | 4 | Chrome: header, barra inferior glass, footer, cajón de módulos | pendiente |
 | 5 | Iconos (set de 28) + retirar los 278 emoji | pendiente |
 | 6 | Pantallas por módulo: Negocios → Comunidad → Eventos → paneles | pendiente |
@@ -41,10 +41,12 @@ verificable en `pruebas`:
    paso 6. Es la que la lámina recomendaba como base, y es la única de las diez
    que ninguna app de directorio puede copiar, porque necesita la Comunidad
    debajo.
-3. **Barra inferior: SIN DECIDIR.** ¿La del handoff (*Muro · Barrios · ⊕ ·
-   Alertas · Más*) o la nuestra (*Comunidad · Negocios · ＋ · Eventos ·
-   Alertas*, que además está escrita en `CLAUDE.md`)? Bloquea el paso 4, no
-   antes.
+3. **Barra inferior: la NUESTRA** (*Comunidad · Negocios · ＋ · Eventos ·
+   Alertas*). ✅ Decidido — «la actual es mejor». La del handoff (*Muro ·
+   Barrios · ⊕ · Alertas · Más*) **no se adopta**: sus slots 2 y 4 son
+   marcadores de posición a la espera de que Negocios y Eventos existan, y
+   aquí ya existen. `CLAUDE.md` se queda como está. Del handoff sí se toma el
+   ASPECTO de la barra (cristal, FAB central), no sus destinos.
 
 **Lo que el handoff NO cubre**, y habrá que derivar de las primitivas en el paso
 7: comida y pedidos (Cocina, Menú Builder), tienda/productos, renta, boletos de
@@ -145,6 +147,62 @@ color a mano — que es lo que los había dejado así.
 **Si algún día hace falta repetirlo:** el barrido vive en
 `scripts/migrar-hex.mjs` con `--dry` para simular. Su mapa explícito (167
 entradas) documenta, línea a línea, qué papel hacía cada color viejo.
+
+### Paso 3 — hecho: primitivas del sistema y contraste AA (2026-08-20)
+
+**Las primitivas** (`components/ui.tsx`), que es donde un cambio llega a todas
+las pantallas sin tocarlas:
+- **Cuatro botones donde había uno.** `PrimaryBtn` (degradado Calor, se eleva
+  2px al pasar el ratón), y nuevos `SecondaryBtn` (tinta), `TertiaryBtn`
+  (blanco con borde de 1.5px) y `QuietBtn` (relleno teñido). Cada uno dice algo
+  distinto; antes cada pantalla se inventaba las variantes con clases sueltas.
+- **`Display`, `Eyebrow`, `Price`** — los tres papeles tipográficos del sistema.
+  Son los que por fin hacen que Bricolage Grotesque y Space Mono aparezcan en
+  el CSS servido (el guardián lo reporta: «en uso dentro del CSS: Onest,
+  Bricolage Grotesque, Space Mono»).
+- **El sello «verificado» es MORADO**, no el acento de marca. Un sello del mismo
+  color que el botón de comprar deja de leerse como garantía.
+- **El logotipo escrito** sigue la regla del handoff: todo en tinta y **el
+  apóstrofo en color**. Antes el color se lo llevaba «Latino» entero.
+- **Chips** inactivos con borde de 1.5px en vez de sombra interior (a 2× se veía
+  difusa). **Estado vacío** con azulejo de icono y una acción. **Esqueletos**
+  con el brillo `tlShine` del sistema en vez del parpadeo de Tailwind.
+
+**Y lo que más encontró: el arnés de CONTRASTE** (`tools/mobile-audit/sistema-paso1.js`).
+Mide el texto **pintado** —compone el fondo real subiendo por los padres— y lo
+compara con el umbral AA. **~60 fallos en la primera pasada.** Por qué no se
+audita por clases: `text-amber` es perfecto en una estrella y ilegible en una
+línea sobre blanco; la clase no lo dice, el píxel sí.
+
+Lo que destapó, por orden de importancia:
+1. **El rosa del handoff con texto blanco encima da 3.59** — y es el relleno de
+   casi todos los botones. Se sustituyó por **`#E9005E`**: el MISMO tono y la
+   MISMA saturación en OKLCH, un 6% menos claro → **4.54**. La marca no cambia
+   de color, cambia de intensidad. El literal del handoff sigue vivo en
+   `mod.comunidad`, para lo que no lleva texto encima.
+2. **`muted-2` (el `ink-3` del handoff, #9A93B3) daba 3.0** y se usa 720 veces
+   como texto. Oscurecido a `#706987` (5.2). El literal del handoff queda en
+   `muted-3`, para iconos.
+3. **Los 17 colores de rubro se regeneraron** con el umbral puesto contra su
+   PROPIO tinte —que es el caso real, la etiqueta se pinta sobre su color— y no
+   contra blanco. Con el umbral en blanco salían a 3.97–4.25.
+4. Iniciales de avatar en blanco sobre colores claros (1.8). Se arregló en la
+   primitiva con `textoSobre()`: la tinta la decide el fondo, porque el color
+   del avatar llega de la BASE y ninguna clase fija puede resolverlo.
+5. Los módulos «Pronto» estaban apagados a 2.29 de contraste. Ya no se
+   desvanecen: se ven como cualquier pestaña inactiva y los diferencia su
+   etiqueta PRONTO, que es lo que el handoff pide. (Y no son controles
+   inactivos: llevan a la lista de espera, así que la excepción de WCAG no les
+   aplicaba.)
+6. `text-green-dark`, `text-muted-faint` y 49 tokens base usados como texto →
+   a sus variantes oscuras.
+
+**Estado final: las 8 pantallas × 2 anchos, todo el texto llega a AA.**
+
+Las excepciones del arnés son **tres y están escritas**: `aria-hidden` (las
+estrellas, las iniciales — el dato va al lado), controles deshabilitados (WCAG
+1.4.3), y `data-decorativo`, que obliga a escribir el motivo. La lista es corta
+a propósito: una regla con muchas excepciones deja de ser una regla.
 
 ## El fondo, y por qué los recuadros ya no llevan sombra (2026-08-06)
 

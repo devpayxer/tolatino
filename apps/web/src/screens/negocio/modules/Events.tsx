@@ -58,7 +58,7 @@ type EventTier = {
   id: string; name_es: string; name_en: string; price: number; capacity: number | null; sold: number; sort: number; visible: boolean; seat?: boolean;
 };
 const TICKET_STATUS: Record<string, { es: string; en: string; cls: string }> = {
-  confirmed: { es: 'Confirmado', en: 'Confirmed', cls: 'bg-green-bg text-green-dark' },
+  confirmed: { es: 'Confirmado', en: 'Confirmed', cls: 'bg-green-bg text-green-ink' },
   used:      { es: 'Usado',      en: 'Used',      cls: 'bg-lilac-2 text-ink-2' },
   refunded:  { es: 'Reembolsado', en: 'Refunded', cls: 'bg-lilac-2 text-ink-2' },
 };
@@ -256,7 +256,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const attendees = useMemo<Attendee[]>(() => [
     { initials: 'ML', color: '#FF2D6F', name: 'Maria Lopez', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Vegetariano', 'Vegetarian'), base: true },
     { initials: 'JT', color: '#0369A1', name: 'James Tate', tier: L('Pareja', 'Pair'), tierBg: '#E6FAF3', tierC: '#007A57', diet: '', base: true },
-    { initials: 'AF', color: '#C05702', name: 'Anna Fischer', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Sin gluten', 'Gluten-free'), base: true },
+    { initials: 'AF', color: '#B44D00', name: 'Anna Fischer', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Sin gluten', 'Gluten-free'), base: true },
     { initials: 'DK', color: '#E11D48', name: 'Daniel Kim', tier: 'VIP', tierBg: '#FFECF2', tierC: '#E11D48', diet: '', base: false },
     { initials: 'SR', color: '#00A878', name: 'Sofia Romano', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Alergia nuez', 'Nut allergy'), base: false },
     { initials: 'PN', color: '#FF2D6F', name: 'Priya Nair', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Vegano', 'Vegan'), base: false },
@@ -519,7 +519,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   };
 
   // Tiers to render: real ones for a signed-in owner, else the sample design.
-  const TIER_COLORS = ['#FF2D6F', '#00A878', '#E11D48', '#007CC1', '#8A5A00'];
+  const TIER_COLORS = ['#FF2D6F', '#00A878', '#E11D48', '#0072B6', '#8A5A00'];
   const realTiers = persistable && tierList != null;
   const displayTiers = realTiers
     ? tierList!.map((t, i) => ({ id: t.id, label: L(t.name_es, t.name_en), priceN: Number(t.price), color: TIER_COLORS[i % TIER_COLORS.length], sold: t.sold, cap: t.capacity ?? Math.max(t.sold, 1), unlimited: t.capacity == null, tier: t }))
@@ -582,7 +582,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             <div key={k.label} className={`${cardCls} p-3`}>
               <div className="text-[9.5px] font-bold text-muted-2">{k.label}</div>
               <div className="mt-0.5 text-[18px] font-extrabold text-ink sm:text-[20px]">{k.value}</div>
-              {k.delta && <div className="text-[9.5px] font-extrabold text-green">{k.delta}</div>}
+              {k.delta && <div className="text-[9.5px] font-extrabold text-green-ink">{k.delta}</div>}
             </div>
           ))}
         </div>
@@ -599,7 +599,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
           {upcomingList.map((e) => {
             const pct = Math.round((e.sold / e.cap) * 100);
-            const barC = e.sold / e.cap > 0.85 ? '#C05702' : '#FF2D6F';
+            const barC = e.sold / e.cap > 0.85 ? '#B44D00' : '#FF2D6F';
             return (
               <div key={e.id} className="overflow-hidden rounded-card-sm border border-line bg-white">
                 <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }}>
@@ -617,7 +617,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <div className="p-3.5">
                   <div className="mb-1.5 flex items-center justify-between">
                     <span className="text-[10.5px] font-bold text-ink-2">{e.sold}/{e.cap} {L('vendidos', 'sold')}</span>
-                    <span className="text-[10.5px] font-extrabold text-primary">{pct}%</span>
+                    <span className="text-[10.5px] font-extrabold text-primary-dark">{pct}%</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-lilac-line">
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barC }} />
@@ -712,7 +712,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           </div>
           <div className="flex-none text-right">
             <div className="text-[13px] font-extrabold text-ink">{e.rev}</div>
-            <div className="text-[9px] font-bold text-green">{e.rating} ★</div>
+            <div className="text-[9px] font-bold text-green-ink">{e.rating} ★</div>
           </div>
         </div>
       ))}
@@ -853,7 +853,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---- Asistentes ----
   const aq = attendeeQuery.trim().toLowerCase();
   const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || 'C';
-  const ATT_COLORS = ['#FF2D6F', '#00A878', '#C05702', '#E11D48', '#0369A1'];
+  const ATT_COLORS = ['#FF2D6F', '#00A878', '#B44D00', '#E11D48', '#0369A1'];
   // Real owner → the actual buyers from event_tickets; demo → the sample roster.
   const realAttendees = (ticketRows ?? []).map((t, i) => ({
     key: t.id, name: t.customer_name || L('Cliente', 'Customer'), color: ATT_COLORS[i % ATT_COLORS.length],
@@ -908,7 +908,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const remaining = checkinRes && checkinRes.admitted != null && checkinRes.qty != null ? checkinRes.qty - checkinRes.admitted : 0;
   const checkinBanner = checkinRes && (
     <div className={`mt-3 rounded-btn-lg px-3 py-2.5 text-left ${checkinRes.ok ? 'bg-[#003825]' : checkinRes.already ? 'bg-[#432601]' : 'bg-[#491F21]'}`}>
-      <div className={`text-[13px] font-extrabold ${checkinRes.ok ? 'text-[#00C48C]' : checkinRes.already ? 'text-amber' : 'text-pink'}`}>
+      <div className={`text-[13px] font-extrabold ${checkinRes.ok ? 'text-[#00C48C]' : checkinRes.already ? 'text-amber-ink' : 'text-pink-dark'}`}>
         {checkinRes.ok ? L('✓ Admitido', '✓ Admitted') : checkinRes.already ? L('Ya había ingresado', 'Already checked in') : checkinRes.msg === 'reembolsado' ? L('Boleto reembolsado', 'Ticket refunded') : L('Código no válido', 'Invalid code')}
         {checkinRes.admitted != null && checkinRes.qty != null && checkinRes.qty > 1 ? ` · ${checkinRes.admitted}/${checkinRes.qty}` : ''}
       </div>
@@ -948,7 +948,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mt-4 flex justify-center gap-6 border-t border-white/10 pt-4">
           <div className="text-center"><div className="text-[18px] font-extrabold text-[#00C48C]">{admittedQty}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Ingresaron', 'Checked in')}</div></div>
           <div className="text-center"><div className="text-[18px] font-extrabold text-white">{ticketsSold}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Vendidos', 'Sold')}</div></div>
-          <div className="text-center"><div className="text-[18px] font-extrabold text-amber">{Math.max(0, ticketsSold - admittedQty)}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Faltan', 'Remaining')}</div></div>
+          <div className="text-center"><div className="text-[18px] font-extrabold text-amber-ink">{Math.max(0, ticketsSold - admittedQty)}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Faltan', 'Remaining')}</div></div>
         </div>
       </div>
       <div>
@@ -969,7 +969,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   {t.status === 'refunded' ? (
                     <span className="flex-none rounded-md bg-lilac-2 px-2 py-1 text-[9px] font-extrabold text-ink-2">{L('Reembolsado', 'Refunded')}</span>
                   ) : fully ? (
-                    <span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-dark">{L('Ingresó', 'In')}</span>
+                    <span className="flex-none rounded-md bg-green-bg px-2 py-1 text-[9px] font-extrabold text-green-ink">{L('Ingresó', 'In')}</span>
                   ) : (
                     <button onClick={() => runCheckin(t.code, 1)} disabled={checkinBusy} className={`tap-y flex-none cursor-pointer rounded-md px-2.5 py-1 text-[9px] font-extrabold disabled:opacity-50 ${partial ? 'bg-amber-bg text-amber-ink' : 'bg-primary text-white'}`}>+1 {L('admitir', 'admit')}</button>
                   )}
@@ -1164,7 +1164,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const tierName = (id: string | null) => { const t = (tierList ?? []).find((x) => x.id === id); return t ? L(t.name_es, t.name_en) : L('Cualquiera', 'Any'); };
   const WAIT_STATUS: Record<string, [string, string, string]> = {
     active: ['En espera', 'Waiting', 'bg-amber-bg text-amber-ink'],
-    notified: ['Avisado', 'Notified', 'bg-green-bg text-green-dark'],
+    notified: ['Avisado', 'Notified', 'bg-green-bg text-green-ink'],
     converted: ['Compró', 'Bought', 'bg-lilac-2 text-ink-2'],
   };
   const waitlistView = persistable ? (
@@ -1502,7 +1502,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                   <MapPin size={14} className="mt-0.5 flex-none text-primary" stroke={2.4} />
                   <span className="min-w-0 text-[12.5px] font-bold text-ink-soft">
                     {a.formatted}
-                    {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-dark">✓ {L('Verificada', 'Verified')}</span>}
+                    {a.verified && <span className="ml-1.5 rounded bg-green-bg px-1.5 py-px text-[9px] font-extrabold text-green-ink">✓ {L('Verificada', 'Verified')}</span>}
                   </span>
                 </button>
               ))}
@@ -1816,7 +1816,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div className="flex items-center justify-between p-3.5">
           <div className="text-[11.5px] font-medium text-muted-2">{(draft.date || L('Fecha por definir', 'Date TBD'))}{wizTimeLabel ? ` · ${wizTimeLabel}` : ''}</div>
-          <span className="flex-none rounded-lg bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-dark">{L('En venta', 'On sale')}</span>
+          <span className="flex-none rounded-lg bg-green-bg px-3 py-1.5 text-[10.5px] font-extrabold text-green-ink">{L('En venta', 'On sale')}</span>
         </div>
       </div>
 

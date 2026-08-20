@@ -140,7 +140,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   const actions: { icon: typeof Heart; label: string; n: number; bg: string; c: string }[] = [
     { icon: Heart, label: L('Guardados', 'Saves'), n: saves7, bg: 'bg-pink-bg', c: 'text-pink-dark' },
     { icon: Navigation, label: L('Cómo llegar', 'Directions'), n: dirs7, bg: 'bg-amber-bg', c: 'text-amber-ink' },
-    { icon: Phone, label: L('Llamadas', 'Calls'), n: calls7, bg: 'bg-green-bg', c: 'text-green-dark' },
+    { icon: Phone, label: L('Llamadas', 'Calls'), n: calls7, bg: 'bg-green-bg', c: 'text-green-ink' },
   ];
 
   const dateStr = mounted ? new Date().toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday: 'long', day: 'numeric', month: 'short' }) : '';
@@ -157,18 +157,18 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
   type Grow = { icon: typeof Photo; bg: string; c: string; title: string; sub: string; tab: TabKey };
   const grows: Grow[] = [];
   // Sells but only cash → nudge (not alarm) to accept card payments online.
-  if (sells && real && !canCharge) grows.push({ icon: CreditCard, bg: 'bg-blue-bg', c: 'text-blue', title: L('Acepta pagos con tarjeta', 'Accept card payments'), sub: L('Hoy cobras en efectivo · conecta Stripe para vender en línea', 'You take cash today · connect Stripe to sell online'), tab: 'payments' });
-  if ((photoCount ?? 0) < 5) grows.push({ icon: Photo, bg: 'bg-blue-bg', c: 'text-blue', title: L('Agrega más fotos', 'Add more photos'), sub: L('Los negocios con 5+ fotos reciben 2× visitas', 'Listings with 5+ photos get 2× visits'), tab: 'photos' });
+  if (sells && real && !canCharge) grows.push({ icon: CreditCard, bg: 'bg-blue-bg', c: 'text-blue-ink', title: L('Acepta pagos con tarjeta', 'Accept card payments'), sub: L('Hoy cobras en efectivo · conecta Stripe para vender en línea', 'You take cash today · connect Stripe to sell online'), tab: 'payments' });
+  if ((photoCount ?? 0) < 5) grows.push({ icon: Photo, bg: 'bg-blue-bg', c: 'text-blue-ink', title: L('Agrega más fotos', 'Add more photos'), sub: L('Los negocios con 5+ fotos reciben 2× visitas', 'Listings with 5+ photos get 2× visits'), tab: 'photos' });
   if (real && !real.about_es) grows.push({ icon: Sparkles, bg: 'bg-lilac', c: 'text-primary-dark', title: L('Escribe tu descripción', 'Write your description'), sub: L('Cuenta tu historia a la comunidad', 'Tell the community your story'), tab: 'listing' });
-  if (real && !(Array.isArray(real.hours) && real.hours.some((d) => d && d.length > 0))) grows.push({ icon: Clock, bg: 'bg-green-bg', c: 'text-green-dark', title: L('Configura tu horario', 'Set your hours'), sub: L('Que no lleguen cuando estás cerrado', 'So no one arrives when you’re closed'), tab: 'hours' });
+  if (real && !(Array.isArray(real.hours) && real.hours.some((d) => d && d.length > 0))) grows.push({ icon: Clock, bg: 'bg-green-bg', c: 'text-green-ink', title: L('Configura tu horario', 'Set your hours'), sub: L('Que no lleguen cuando estás cerrado', 'So no one arrives when you’re closed'), tab: 'hours' });
   grows.push({ icon: Megaphone, bg: 'bg-amber-bg', c: 'text-amber-ink', title: L('Publica una novedad', 'Post an update'), sub: L('Mantente fresco en el feed de la comunidad', 'Stay fresh in the community feed'), tab: 'updates' });
   const growList = grows.slice(0, 3);
 
   // ── quick actions ─────────────────────────────────────────────────────────
   const catalog: [TabKey, typeof Utensils, string] = am.menu ? ['menu', Utensils, L('Nuevo platillo', 'New item')] : am.products ? ['products', Package, L('Nuevo producto', 'New product')] : am.services ? ['services', Utensils, L('Nuevo servicio', 'New service')] : ['photos', Photo, L('Subir foto', 'Upload photo')];
   const quick: [TabKey, typeof Utensils, string, string][] = sells
-    ? [[catalog[0], catalog[1], catalog[2], 'bg-amber-bg text-amber-ink'], ['updates', Megaphone, L('Novedad', 'Update'), 'bg-lilac text-primary-dark'], am.events ? ['events', Ticket, L('Crear evento', 'New event'), 'bg-green-bg text-green-dark'] : ['photos', Photo, L('Subir fotos', 'Add photos'), 'bg-green-bg text-green-dark'], ['listing', Link2, L('Mi página', 'My page'), 'bg-blue-bg text-blue']]
-    : [['photos', Photo, L('Subir fotos', 'Add photos'), 'bg-blue-bg text-blue'], ['updates', Megaphone, L('Novedad', 'Update'), 'bg-lilac text-primary-dark'], ['hours', Clock, L('Horario', 'Hours'), 'bg-green-bg text-green-dark'], ['listing', Link2, L('Mi página', 'My page'), 'bg-amber-bg text-amber-ink']];
+    ? [[catalog[0], catalog[1], catalog[2], 'bg-amber-bg text-amber-ink'], ['updates', Megaphone, L('Novedad', 'Update'), 'bg-lilac text-primary-dark'], am.events ? ['events', Ticket, L('Crear evento', 'New event'), 'bg-green-bg text-green-ink'] : ['photos', Photo, L('Subir fotos', 'Add photos'), 'bg-green-bg text-green-ink'], ['listing', Link2, L('Mi página', 'My page'), 'bg-blue-bg text-blue-ink']]
+    : [['photos', Photo, L('Subir fotos', 'Add photos'), 'bg-blue-bg text-blue-ink'], ['updates', Megaphone, L('Novedad', 'Update'), 'bg-lilac text-primary-dark'], ['hours', Clock, L('Horario', 'Hours'), 'bg-green-bg text-green-ink'], ['listing', Link2, L('Mi página', 'My page'), 'bg-amber-bg text-amber-ink']];
 
   // recent activity (real)
   const recent = orders.slice(0, 4);
@@ -199,7 +199,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
       {/* status */}
       <div className={`${card} flex items-center gap-3 p-3.5`}>
         <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-btn ${real ? (real.is_open ? 'bg-green-bg' : 'bg-amber-bg') : 'bg-green-bg'}`}>
-          {sells ? <span className={`h-3.5 w-3.5 rounded-full ${real && !real.is_open ? 'bg-amber' : 'bg-green'}`} /> : <MapPin size={19} stroke={2.2} className="text-green-dark" />}
+          {sells ? <span className={`h-3.5 w-3.5 rounded-full ${real && !real.is_open ? 'bg-amber' : 'bg-green'}`} /> : <MapPin size={19} stroke={2.2} className="text-green-ink" />}
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-extrabold text-ink">{real ? (real.is_open ? L('Abierto · recibiendo clientes', 'Open · receiving customers') : L('Cerrado ahora', 'Closed now')) : L('Publicado y visible en To’Latino', 'Published & visible on To’Latino')}</div>
@@ -222,7 +222,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
           ))}
         </div>
       ) : (
-        <div className={`${card} flex items-center gap-3 p-3.5`}><span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-green-bg"><CircleCheck size={17} stroke={2.2} className="text-green-dark" /></span><div><div className="text-[12.5px] font-extrabold text-ink">{L('Todo al día', 'All caught up')}</div><div className="text-[10.5px] font-semibold text-muted">{L('Sin pendientes por ahora', 'Nothing pending right now')}</div></div></div>
+        <div className={`${card} flex items-center gap-3 p-3.5`}><span className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-green-bg"><CircleCheck size={17} stroke={2.2} className="text-green-ink" /></span><div><div className="text-[12.5px] font-extrabold text-ink">{L('Todo al día', 'All caught up')}</div><div className="text-[10.5px] font-semibold text-muted">{L('Sin pendientes por ahora', 'Nothing pending right now')}</div></div></div>
       )}
 
       {/* KPIs */}
@@ -242,7 +242,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
             <Kpi label={L('Vistas · 7 días', 'Views · 7 days')} value={views7.toLocaleString()} sub={views7 > 0 ? L(`${viewsToday} hoy`, `${viewsToday} today`) : L('comparte tu página', 'share your page')} subC="text-primary-dark" />
             <Kpi label={L('Calificación', 'Rating')} value={`${rating}★`} sub={L(`${reviewsCount} reseñas`, `${reviewsCount} reviews`)} />
             <Kpi label={L('Fotos', 'Photos')} value={String(photoCount ?? 0)} />
-            <Kpi label={L('Perfil', 'Profile')} value={`${completeness}%`} sub={completeness < 100 ? L('completa el resto', 'finish it') : L('completo', 'complete')} subC="text-green-dark" />
+            <Kpi label={L('Perfil', 'Profile')} value={`${completeness}%`} sub={completeness < 100 ? L('completa el resto', 'finish it') : L('completo', 'complete')} subC="text-green-ink" />
           </>
         )}
       </div>
@@ -285,7 +285,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
           <div className={`${card} p-3.5`}>
             {active.slice(0, 4).map((o, i) => (
               <div key={o.id} className={`flex items-center gap-2.5 py-2.5 ${i < Math.min(active.length, 4) - 1 ? 'border-b border-dashed border-hair' : ''}`}>
-                <span className={`flex-none rounded-[7px] px-2 py-1 text-[8.5px] font-extrabold ${o.status === 'new' ? 'bg-pink-bg text-pink-dark' : o.status === 'preparing' ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{o.status === 'new' ? L('NUEVO', 'NEW') : o.status === 'preparing' ? L('PREP', 'PREP') : L('LISTO', 'READY')}</span>
+                <span className={`flex-none rounded-[7px] px-2 py-1 text-[8.5px] font-extrabold ${o.status === 'new' ? 'bg-pink-bg text-pink-dark' : o.status === 'preparing' ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-ink'}`}>{o.status === 'new' ? L('NUEVO', 'NEW') : o.status === 'preparing' ? L('PREP', 'PREP') : L('LISTO', 'READY')}</span>
                 <div className="min-w-0 flex-1"><div className="truncate text-[12px] font-extrabold text-ink">{o.code} · {o.customer || L('Cliente', 'Customer')}</div><div className="truncate text-[10px] font-semibold text-muted">{o.items.map((it) => `${it.qty}× ${it.name}`).join(', ')}</div></div>
                 <span className="flex-none text-[12.5px] font-extrabold text-ink">{money(o.total)}</span>
               </div>
@@ -343,7 +343,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
               <div key={o.id} className={`flex items-center gap-3 py-3 ${i < recent.length - 1 ? 'border-b border-hair' : ''}`}>
                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-lilac"><ShoppingBag size={14} stroke={2.2} className="text-primary-dark" /></span>
                 <div className="min-w-0 flex-1"><div className="truncate text-[11.5px] font-bold text-ink-2">{(o.customer || L('Cliente', 'Customer'))} · {o.items.map((it) => `${it.qty}× ${it.name}`).join(', ')}</div><div className="text-[9.5px] font-semibold text-muted-2">{o.code}</div></div>
-                <span className="flex-none text-[11px] font-extrabold text-green-dark">{money(o.total)}</span>
+                <span className="flex-none text-[11px] font-extrabold text-green-ink">{money(o.total)}</span>
               </div>
             ))}
           </div>

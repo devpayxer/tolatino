@@ -59,7 +59,7 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
         <span className="block text-[13px] font-extrabold text-ink">{title}</span>
         <span className="block truncate text-[11.5px] font-semibold text-muted">{sub}</span>
       </span>
-      <ChevronRight size={16} className="flex-none text-muted-faint" />
+      <ChevronRight size={16} className="flex-none text-muted-2" />
     </button>
   );
 
@@ -118,7 +118,7 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
           </div>
           <div className="flex items-center gap-3 py-2">
             <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-green-bg">
-              <Shield size={16} stroke={2.2} className="text-green-dark" />
+              <Shield size={16} stroke={2.2} className="text-green-ink" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-extrabold text-ink">{L('Plan', 'Plan')}</span>

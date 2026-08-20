@@ -99,8 +99,8 @@ export const DAYPART_COLORS: { color: string; bg: string }[] = [
   { color: '#00C48C', bg: '#DFF7EB' },
   { color: '#FF2D6F', bg: '#FFECF2' },
   { color: '#E11D48', bg: '#FFECF2' },
-  { color: '#007CC1', bg: '#DEF4FF' },
-  { color: '#008489', bg: '#DAF7F7' },
+  { color: '#0072B6', bg: '#DEF4FF' },
+  { color: '#007A7E', bg: '#DAF7F7' },
 ];
 
 const EVERY_DAY = [1, 1, 1, 1, 1, 1, 1];

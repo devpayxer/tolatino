@@ -32,7 +32,7 @@
 // visibles, feed con `aria-live` que se pausa al pasar el ratón o al enfocar,
 // selector de ciudad como `<button>` con nombre accesible, marquesina y capas
 // decorativas con `aria-hidden`, blancos de toque de 44px, y el texto más tenue
-// subido de #9A93B3 a #7E7798 como recomienda el propio documento.
+// subido de #9A93B3 a #6F6889 (AA 5.2) como recomienda el propio documento.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -59,10 +59,10 @@ type Vertical = 'all' | 'food' | 'serv' | 'evt' | 'rent' | 're' | 'auto' | 'job'
 const A = {
   rose: '#E11D48', roseBg: '#FFECF2',
   purple: '#C4144C', purpleBg: '#FFECF2',
-  jade: '#008489', jadeBg: 'rgba(14,148,136,.1)',
+  jade: '#007A7E', jadeBg: 'rgba(14,148,136,.1)',
   clay: '#FF7A1A', clayBg: '#FFF1E5',
   green: '#00A878', greenBg: '#E6FAF3',
-  ocean: '#007FA2', oceanBg: '#DAF6FD',
+  ocean: '#007698', oceanBg: '#DAF6FD',
 } as const;
 
 const FEED_MS = 4200; // el handoff fija 4.2 s por publicación
@@ -218,7 +218,7 @@ export function LandingScreen() {
     <span className="tl-brand flex flex-none items-baseline"
           style={{ letterSpacing: '-.03em', ['--bs' as string]: `${size}px` }}>
       <span className="font-extrabold text-ink" style={{ fontSize: 'var(--bs)' }}>To&rsquo;</span>
-      <span className="font-extrabold text-primary" style={{ fontSize: 'var(--bs)' }}>Latino</span>
+      <span className="font-extrabold text-ink" style={{ fontSize: 'var(--bs)' }}>Latino</span>
       <span className="tl-logo self-center" style={{ marginLeft: 'calc(var(--bs) * .25)' }}>
         <LogoMark size={Math.round(size * 0.88)} />
       </span>
@@ -469,7 +469,7 @@ export function LandingScreen() {
       <section id="conoce" className={`relative bg-page pt-[clamp(56px,9vw,110px)] ${gutter}`}>
         <div className="mx-auto max-w-[1000px]">
           <div className="mx-auto max-w-[560px] text-center">
-            <p className="text-[10px] font-extrabold uppercase text-primary" style={{ letterSpacing: '.16em' }}>
+            <p className="text-[10px] font-extrabold uppercase text-primary-dark" style={{ letterSpacing: '.16em' }}>
               {L('¿Por qué To’Latino?', 'Why To’Latino?')}
             </p>
             <h2 className="font-extrabold text-ink"
@@ -516,7 +516,7 @@ export function LandingScreen() {
       {/* ═════════════ PARA NEGOCIOS ═════════════ */}
       <section id="negocios" className={`relative bg-page pt-[clamp(116px,17vw,216px)] ${gutter}`}>
         <div className="relative mx-auto max-w-[1080px] overflow-hidden p-[clamp(26px,4.4vw,52px)]"
-             style={{ background: 'linear-gradient(150deg,#4F46E5,#FF2D6F 46%,#AE54A5)', borderRadius: 'clamp(22px,3vw,30px)' }}>
+             style={{ background: 'linear-gradient(150deg,#4F46E5,#FF2D6F 46%,#A3499A)', borderRadius: 'clamp(22px,3vw,30px)' }}>
           <span aria-hidden className="pointer-events-none absolute rounded-full"
                 style={{ top: '-30%', right: '-14%', width: 'min(460px,70%)', height: 'min(460px,120%)', background: 'rgba(255,255,255,.1)' }} />
           <span aria-hidden className="pointer-events-none absolute rounded-full"

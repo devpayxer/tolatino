@@ -76,7 +76,7 @@ const KIND_TILE: Record<Kind, string> = {
 const KIND_BADGE: Record<Kind, string> = {
   offer: 'bg-pink-bg text-pink-dark',
   event: 'bg-lilac-2 text-primary-dark',
-  news: 'bg-green-bg text-green-dark',
+  news: 'bg-green-bg text-green-ink',
 };
 
 const cardCls = 'rounded-card-sm border border-line bg-white ';

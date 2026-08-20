@@ -192,7 +192,7 @@ export function RelatedModule({ ctx }: { ctx: PanelCtx }) {
                 {L('Pendiente de aprobación', 'Pending approval')}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-bg px-1.5 py-0.5 text-[10px] font-extrabold text-green-dark">
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-bg px-1.5 py-0.5 text-[10px] font-extrabold text-green-ink">
                 <Check size={10} stroke={3} />
                 {r.sameOwner ? L('Tuyo · activo', 'Yours · active') : L('Activo', 'Active')}
               </span>
@@ -443,7 +443,7 @@ function LinkSheet({
                   </span>
                   <span className="block truncate text-[11px] font-semibold text-muted">{catLabel(c.categoryId)}{c.city ? ` · ${c.city}` : ''}</span>
                 </span>
-                <span className={`flex-none rounded-full px-2 py-0.5 text-[9.5px] font-extrabold ${c.sameOwner ? 'bg-green-bg text-green-dark' : 'bg-lilac-2 text-primary-dark'}`}>
+                <span className={`flex-none rounded-full px-2 py-0.5 text-[9.5px] font-extrabold ${c.sameOwner ? 'bg-green-bg text-green-ink' : 'bg-lilac-2 text-primary-dark'}`}>
                   {c.sameOwner ? L('Tuyo · al instante', 'Yours · instant') : L('Requiere aprobación', 'Needs approval')}
                 </span>
               </button>
@@ -489,7 +489,7 @@ function LinkSheet({
             />
           </div>
 
-          <div className={`mt-3.5 rounded-field px-3.5 py-2.5 text-[11.5px] font-semibold ${picked.sameOwner ? 'bg-green-bg text-green-dark' : 'bg-amber-bg text-amber-ink'}`}>
+          <div className={`mt-3.5 rounded-field px-3.5 py-2.5 text-[11.5px] font-semibold ${picked.sameOwner ? 'bg-green-bg text-green-ink' : 'bg-amber-bg text-amber-ink'}`}>
             {picked.sameOwner
               ? L('Es tuyo — se relaciona al instante.', 'It’s yours — links instantly.')
               : L('Es de otra persona — le enviaremos la solicitud y aparecerá cuando la apruebe.', 'It belongs to someone else — we’ll send the request and it appears once they approve.')}

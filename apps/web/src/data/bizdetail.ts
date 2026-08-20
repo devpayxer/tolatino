@@ -112,7 +112,7 @@ export const OPTION_GROUPS: Record<string, OptionGroup[]> = {
 
 export const SHOP_PROMOS: { t: Bi; sub: Bi; bg: string; c: string }[] = [
   { t: ['Envío gratis', 'Free delivery'], sub: ['En pedidos +$25', 'On orders $25+'], bg: '#FFECF2 0 12px,#FED2DF 12px 24px', c: '#4F46E5' },
-  { t: ['2x1 en salsas', '2-for-1 salsas'], sub: ['Solo esta semana', 'This week only'], bg: '#FFEBDF 0 12px,#FAD9BD 12px 24px', c: '#B85D00' },
+  { t: ['2x1 en salsas', '2-for-1 salsas'], sub: ['Solo esta semana', 'This week only'], bg: '#FFEBDF 0 12px,#FAD9BD 12px 24px', c: '#AC5300' },
   { t: ['Nuevo: mercancía', 'New: merch'], sub: ['Playeras y tazas', 'Tees & mugs'], bg: '#E6FAF3 0 12px,#C1EBD6 12px 24px', c: '#007A57' },
 ];
 

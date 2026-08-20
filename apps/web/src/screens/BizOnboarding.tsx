@@ -513,7 +513,7 @@ export function BizOnboardingScreen() {
     <label className="block">
       <span className="mb-1.5 block text-[11.5px] font-extrabold text-home-ink">{label}</span>
       {input}
-      {hint && <span className="mt-1.5 block text-[10.5px] font-semibold text-muted-faint">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-[10.5px] font-semibold text-muted-2">{hint}</span>}
     </label>
   );
   const H1 = ({ children }: { children: React.ReactNode }) => (
@@ -609,7 +609,7 @@ export function BizOnboardingScreen() {
                 </div>
               </div>
               <div className="mt-3 h-[5px] overflow-hidden rounded-full bg-lilac-line">
-                <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#FF2D6F,#AE54A5)' }} />
+                <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#FF2D6F,#A3499A)' }} />
               </div>
             </div>
           )}
@@ -792,7 +792,7 @@ export function BizOnboardingScreen() {
                   <span className="text-[11.5px] font-extrabold text-home-ink">
                     {topeFotos === 1 ? L('Foto de portada', 'Cover photo') : L('Fotos', 'Photos')}
                   </span>
-                  <span data-fotos-contador className={`text-[11px] font-extrabold ${gallery.length >= topeFotos ? 'text-green-dark' : 'text-muted-2'}`}>{gallery.length}/{topeFotos}</span>
+                  <span data-fotos-contador className={`text-[11px] font-extrabold ${gallery.length >= topeFotos ? 'text-green-ink' : 'text-muted-2'}`}>{gallery.length}/{topeFotos}</span>
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {gallery.map((p, i) => (
@@ -940,7 +940,7 @@ export function BizOnboardingScreen() {
                         L('Identidad y negocio revisados por nuestro equipo', 'Identity and business reviewed by our team'),
                         L('Respondes reseñas como dueño verificado', 'Reply to reviews as a verified owner'),
                       ] },
-                      { t: L('Más clientes', 'More customers'), c: 'text-green', bg: 'bg-green-bg', Icon: TrendingUp, items: [
+                      { t: L('Más clientes', 'More customers'), c: 'text-green-ink', bg: 'bg-green-bg', Icon: TrendingUp, items: [
                         L('Prioridad arriba de los negocios sin verificar', 'Priority above unverified businesses'),
                         L('Apareces en el mapa y en «cerca de ti»', 'You appear on the map and in "near you"'),
                         L('Hasta 6 fotos en tu galería y varias franjas de horario', 'Up to 6 gallery photos and multiple hour slots'),
@@ -1173,7 +1173,7 @@ export function BizOnboardingScreen() {
                     {[
                       tool ? { bg: 'bg-lilac', c: 'text-primary-dark', t: L(tool.es, tool.en), d: L(tool.descEs, tool.descEn) } : null,
                       // A quien acaba de PAGAR Verified no se le vende Verified.
-                      paid ? null : { bg: 'bg-green-bg', c: 'text-green', t: L('Sube a Verified cuando quieras', 'Upgrade to Verified anytime'),
+                      paid ? null : { bg: 'bg-green-bg', c: 'text-green-ink', t: L('Sube a Verified cuando quieras', 'Upgrade to Verified anytime'),
                         d: L('$14.99 al mes: insignia, prioridad en búsqueda y analíticas.', '$14.99/mo: badge, search priority and analytics.') },
                       { bg: 'bg-clay-bg', c: 'text-clay', t: L('Publica tu primera oferta', 'Post your first offer'),
                         d: L('Aparece en el feed de tu colonia, gratis.', 'Show up in your neighborhood feed, free.') },

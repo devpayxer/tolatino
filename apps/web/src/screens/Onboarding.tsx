@@ -88,14 +88,14 @@ function esVueltaDeRecuperacion(): boolean {
 /** Las 10 del handoff. La CLAVE es lo que se guarda; la etiqueta solo se pinta. */
 const INTERESTS: { k: string; es: string; en: string; c: string; bg: string; Icon: typeof Search }[] = [
   { k: 'food', es: 'Comida y pedidos', en: 'Food & orders', c: '#E11D48', bg: '#FFECF2', Icon: Utensils },
-  { k: 'serv', es: 'Servicios y citas', en: 'Services & booking', c: '#008489', bg: '#DAF7F7', Icon: Wrench },
+  { k: 'serv', es: 'Servicios y citas', en: 'Services & booking', c: '#007A7E', bg: '#DAF7F7', Icon: Wrench },
   { k: 'evt', es: 'Eventos y boletos', en: 'Events & tickets', c: '#8A5A00', bg: '#FFF6E3', Icon: Calendar },
-  { k: 'rent', es: 'Renta de artículos', en: 'Rentals', c: '#C05702', bg: '#FFF1E5', Icon: Package },
-  { k: 're', es: 'Bienes raíces', en: 'Real estate', c: '#007FA2', bg: '#DAF6FD', Icon: HomeIcon },
+  { k: 'rent', es: 'Renta de artículos', en: 'Rentals', c: '#B44D00', bg: '#FFF1E5', Icon: Package },
+  { k: 're', es: 'Bienes raíces', en: 'Real estate', c: '#007698', bg: '#DAF6FD', Icon: HomeIcon },
   { k: 'auto', es: 'Autos y dealers', en: 'Autos & dealers', c: '#00A878', bg: '#E6FAF3', Icon: Car },
   { k: 'job', es: 'Empleos', en: 'Jobs', c: '#C4144C', bg: '#FFECF2', Icon: Briefcase },
-  { k: 'trans', es: 'Transporte', en: 'Transportation', c: '#AE54A5', bg: '#FFE8F0', Icon: Truck },
-  { k: 'health', es: 'Salud y bienestar', en: 'Health & wellness', c: '#008489', bg: '#DAF7F7', Icon: Heartbeat },
+  { k: 'trans', es: 'Transporte', en: 'Transportation', c: '#A3499A', bg: '#FFE8F0', Icon: Truck },
+  { k: 'health', es: 'Salud y bienestar', en: 'Health & wellness', c: '#007A7E', bg: '#DAF7F7', Icon: Heartbeat },
   { k: 'com', es: 'Comunidad', en: 'Community', c: '#FF2D6F', bg: '#FFECF2', Icon: MessageSquare },
 ];
 
@@ -532,7 +532,7 @@ export function OnboardingScreen() {
                 <span className="text-[10px] font-extrabold text-primary-dark">{pct}%</span>
               </div>
               <div className="h-[5px] overflow-hidden rounded-full bg-auth-track">
-                <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#FF2D6F,#AE54A5)' }} />
+                <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#FF2D6F,#A3499A)' }} />
               </div>
             </div>
           )}
@@ -705,7 +705,7 @@ export function OnboardingScreen() {
                   <Sub>{L('Así te ven los negocios cuando pides, reservas o preguntas.', 'This is how businesses see you when you order, book or ask.')}</Sub>
                   <div className="mt-[22px] flex items-center gap-[14px]">
                     <span aria-hidden className="relative flex-none">
-                      <Avatar initials={initials} color="linear-gradient(140deg,#FF2D6F,#AE54A5)" src={photo.shown} size={64} radius={20} />
+                      <Avatar initials={initials} color="linear-gradient(140deg,#FF2D6F,#A3499A)" src={photo.shown} size={64} radius={20} />
                       {photo.busy && (
                         <span className="absolute inset-0 flex items-center justify-center rounded-[20px]" style={{ background: 'rgba(30,27,46,.5)' }}>
                           <span className="tl-spin block h-[18px] w-[18px] rounded-full border-2 border-white" style={{ borderTopColor: 'transparent' }} />
@@ -787,7 +787,7 @@ export function OnboardingScreen() {
                         {[
                           { Icon: MessageSquare, bg: '#FFECF2', c: '#C4144C', t: ['Tu comunidad local', 'Your local community'], d: ['El feed y el chat de tu colonia', 'Your neighborhood feed and chat'] },
                           { Icon: MapPin, bg: '#E6FAF3', c: '#00A878', t: ['Solo lo que está cerca', 'Only what is nearby'], d: ['Negocios y empleos a minutos de ti', 'Businesses and jobs minutes away'] },
-                          { Icon: Wrench, bg: '#DAF6FD', c: '#007FA2', t: ['Entregas y citas reales', 'Real delivery and booking'], d: ['Sabemos si te pueden entregar', 'We know if they can deliver to you'] },
+                          { Icon: Wrench, bg: '#DAF6FD', c: '#007698', t: ['Entregas y citas reales', 'Real delivery and booking'], d: ['Sabemos si te pueden entregar', 'We know if they can deliver to you'] },
                         ].map((r) => (
                           <li key={r.t[0]} className="flex items-center gap-[11px] rounded-btn-lg border border-auth-line p-[12px]">
                             <span aria-hidden className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[11px]" style={{ background: r.bg }}>
@@ -913,7 +913,7 @@ export function OnboardingScreen() {
                     })}
                   </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className={`text-[12px] font-extrabold ${pickedKeys.length >= 3 ? 'text-green-dark' : 'text-amber-ink'}`}>
+                    <span className={`text-[12px] font-extrabold ${pickedKeys.length >= 3 ? 'text-green-ink' : 'text-amber-ink'}`}>
                       {pickedKeys.length}{L(' de 3 mínimo', ' of 3 minimum')}
                     </span>
                     <span className="text-[11px] font-semibold text-muted-2">{L('Mientras más elijas, mejor tu inicio', 'The more you pick, the better your feed')}</span>

@@ -56,7 +56,7 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-const AVATAR_COLORS = ['#FF2D6F', '#00A878', '#C05702', '#C54C67', '#007CC1', '#008489'];
+const AVATAR_COLORS = ['#FF2D6F', '#00A878', '#B44D00', '#B9415D', '#0072B6', '#007A7E'];
 
 function initialsOf(name: string): string {
   return name.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'TÚ';

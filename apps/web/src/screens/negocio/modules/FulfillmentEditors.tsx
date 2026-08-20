@@ -51,7 +51,7 @@ export function normalizeZone(z: Record<string, unknown>): Zone {
 }
 
 export const ZONE_COLORS = ['#FF2D6F', '#FF2D6F', '#FFB020'];
-export const DRIVER_COLORS = ['#FF2D6F', '#0369A1', '#C05702', '#00A878', '#E11D48', '#9A93B3'];
+export const DRIVER_COLORS = ['#FF2D6F', '#0369A1', '#B44D00', '#00A878', '#E11D48', '#9A93B3'];
 
 // driver status → the derived label/dot stored on the row
 export const DRIVER_STATUS = [

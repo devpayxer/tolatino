@@ -40,11 +40,11 @@ const cardCls = 'rounded-card-sm border border-line bg-white ';
 const ROLE_PILL: Record<Role, string> = {
   owner: 'bg-ink text-white',
   manager: 'bg-lilac text-primary-dark',
-  staff: 'bg-green-bg text-green-dark',
+  staff: 'bg-green-bg text-green-ink',
   driver: 'bg-pink-bg text-pink-dark',
 };
 const TAG_PILL: Record<Job['tag'], string> = {
-  live: 'bg-green-bg text-green-dark',
+  live: 'bg-green-bg text-green-ink',
   new: 'bg-pink-bg text-pink-dark',
   paused: 'bg-lilac-2 text-ink-2',
 };
@@ -66,7 +66,7 @@ type JobRow = {
 
 // Display-only fields the roster card needs, derived from role exactly the way
 // the seed builds them (avatar color, permissions blurb, bilingual title fallback).
-const ROLE_COLOR: Record<Role, string> = { owner: '#FF2D6F', manager: '#00A878', staff: '#E11D48', driver: '#C05702' };
+const ROLE_COLOR: Record<Role, string> = { owner: '#FF2D6F', manager: '#00A878', staff: '#E11D48', driver: '#B44D00' };
 const ROLE_PERMS: Record<Role, [string, string]> = {
   owner: ['Acceso total', 'All access'],
   manager: ['Todo menos pagos', 'All but billing'],
@@ -274,7 +274,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const filterChip = (on: boolean) =>
     `tap-y tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'border border-lilac-line bg-white font-bold text-ink-soft'}`;
 
-  const dotColor = (dot: string) => (dot === '#00A878' ? 'text-green-dark' : dot === '#FFB020' ? 'text-amber-ink' : 'text-muted-2');
+  const dotColor = (dot: string) => (dot === '#00A878' ? 'text-green-ink' : dot === '#FFB020' ? 'text-amber-ink' : 'text-muted-2');
 
   // ============================ PERSONAL ============================
   const staffKpis = isReal
@@ -294,7 +294,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     : [
         { Icon: Users, c: '#C4144C', bg: '#F1EEFA', label: L('Total', 'Total staff'), value: '14', delta: L('3 gerentes · 11 staff', '3 mgrs · 11 staff'), dCls: 'text-muted-2' },
         { Icon: User, c: '#007A57', bg: '#E6FAF3', label: L('En turno', 'On shift now'), value: '5', delta: L('2 en descanso', '2 on break'), dCls: 'text-muted-2' },
-        { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', label: L('Horas · sem', 'Hours · wk'), value: '428', delta: '▲ 12%', dCls: 'text-green-dark' },
+        { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', label: L('Horas · sem', 'Hours · wk'), value: '428', delta: '▲ 12%', dCls: 'text-green-ink' },
         { Icon: DollarSign, c: '#E11D48', bg: '#FFECF2', label: L('Costo · 30d', 'Labor · 30d'), value: '$22.8k', delta: L('28% de ingresos', '28% of revenue'), dCls: 'text-muted-2' },
       ];
 
@@ -480,7 +480,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         </div>
         <div className="mt-2.5 grid grid-cols-[86px_1fr] gap-2 md:grid-cols-[120px_1fr]">
           <span />
-          <div className="flex justify-between text-[8.5px] font-bold text-muted-faint">
+          <div className="flex justify-between text-[8.5px] font-bold text-muted-2">
             <span>12a</span><span>6a</span><span>12p</span><span className="text-pink-dark">2p</span><span>6p</span><span>12a</span>
           </div>
         </div>
@@ -582,8 +582,8 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <Check size={16} stroke={2.8} className="text-green" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[12.5px] font-extrabold text-green-dark">{payrollDone ? L('Nómina corrida · 7–13 Oct', 'Payroll run · Oct 7–13') : L('Nómina lista · 7–13 Oct', 'Payroll ready · Oct 7–13')}</div>
-              <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-green-dark/80">{L('Horas sincronizadas del reloj. Revisa y corre — depósito en 2 días.', 'Hours synced from the clock. Review, then run — deposit in 2 days.')}</div>
+              <div className="text-[12.5px] font-extrabold text-green-ink">{payrollDone ? L('Nómina corrida · 7–13 Oct', 'Payroll run · Oct 7–13') : L('Nómina lista · 7–13 Oct', 'Payroll ready · Oct 7–13')}</div>
+              <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-green-ink/80">{L('Horas sincronizadas del reloj. Revisa y corre — depósito en 2 días.', 'Hours synced from the clock. Review, then run — deposit in 2 days.')}</div>
             </div>
           </div>
           <button
@@ -650,7 +650,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const permModules = [L('Anuncio e info', 'Listing & info'), L('Menú y precios', 'Menu & pricing'), L('Pedidos', 'Orders'), L('Reservas', 'Bookings'), L('Clientes', 'Customers'), L('Pagos', 'Payouts'), L('Personal', 'Staff'), L('Facturación', 'Billing')];
   const permData = [[2, 2, 1, 0], [2, 2, 0, 0], [2, 2, 2, 1], [2, 2, 2, 0], [2, 2, 1, 0], [2, 1, 0, 0], [2, 2, 0, 0], [2, 0, 0, 0]];
   const permCell = (v: number) => {
-    if (v === 2) return <span className="inline-flex h-[19px] w-[19px] items-center justify-center rounded-md bg-green-bg"><Check size={10} stroke={3} className="text-green-dark" /></span>;
+    if (v === 2) return <span className="inline-flex h-[19px] w-[19px] items-center justify-center rounded-md bg-green-bg"><Check size={10} stroke={3} className="text-green-ink" /></span>;
     if (v === 1) return <span className="inline-flex h-[19px] w-[19px] items-center justify-center rounded-md" style={{ background: '#DEF4FF' }}><Eye size={10} stroke={2.6} style={{ color: '#0369A1' }} /></span>;
     return <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-faint" />;
   };
@@ -680,16 +680,16 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-[18px]">
           <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink"><Lock size={14} stroke={2.2} className="text-primary-dark" />{L('Matriz de permisos', 'Permission matrix')}</span>
           <span className="flex gap-3">
-            <span className="flex items-center gap-1 text-[9px] font-bold text-green-dark"><Pencil size={9} stroke={2.4} />{L('Editar', 'Edit')}</span>
+            <span className="flex items-center gap-1 text-[9px] font-bold text-green-ink"><Pencil size={9} stroke={2.4} />{L('Editar', 'Edit')}</span>
             <span className="flex items-center gap-1 text-[9px] font-bold" style={{ color: '#0369A1' }}><Eye size={9} stroke={2.4} />{L('Ver', 'View')}</span>
           </span>
         </div>
         <div className="no-scrollbar min-w-0 overflow-x-auto">
           <div className="min-w-[360px]">
             <div className="grid grid-cols-[1.5fr_repeat(4,1fr)] border-b border-hair pb-2.5">
-              <span className="text-[8.5px] font-extrabold uppercase tracking-[.04em] text-muted-faint">{L('Módulo', 'Module')}</span>
+              <span className="text-[8.5px] font-extrabold uppercase tracking-[.04em] text-muted-2">{L('Módulo', 'Module')}</span>
               {[L('Dueño', 'Owner'), L('Gte', 'Mgr'), 'Staff', L('Repart', 'Driver')].map((h) => (
-                <span key={h} className="text-center text-[8.5px] font-extrabold uppercase tracking-[.02em] text-muted-faint">{h}</span>
+                <span key={h} className="text-center text-[8.5px] font-extrabold uppercase tracking-[.02em] text-muted-2">{h}</span>
               ))}
             </div>
             {permModules.map((m, i) => (
@@ -780,9 +780,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---- pipeline ----
   const pipeline = [
-    { label: L('Nuevos', 'New'), dot: '#E11D48', n: '4', cards: [['Ana F.', '#FF2D6F', L('3 años exp.', '3 yrs exp')], ['Marcus T.', '#00A878', L('Disponible ya', 'Available now')], ['Sofía R.', '#C05702', L('Recomendada', 'Referred')], ['Daniel K.', '#0369A1', L('Medio tiempo', 'Part-time')]] },
-    { label: L('Entrevista', 'Phone screen'), dot: '#FFB020', n: '3', cards: [['Jordan L.', '#008754', L('Mar/Jue 11–4', 'Tue/Thu 11–4')], ['María E.', '#C4144C', L('5 años exp.', '5 yrs exp')], ['Carlos D.', '#C4144C', L('Bilingüe', 'Bilingual')]] },
-    { label: L('Prueba final', 'Trail · final'), dot: '#00A878', n: '2', cards: [['Sara P.', '#E11D48', L('Prueba vie 5p', 'Trail Fri 5p')], ['James K.', '#C05702', L('Referencias OK', 'Refs cleared')]] },
+    { label: L('Nuevos', 'New'), dot: '#E11D48', n: '4', cards: [['Ana F.', '#FF2D6F', L('3 años exp.', '3 yrs exp')], ['Marcus T.', '#00A878', L('Disponible ya', 'Available now')], ['Sofía R.', '#B44D00', L('Recomendada', 'Referred')], ['Daniel K.', '#0369A1', L('Medio tiempo', 'Part-time')]] },
+    { label: L('Entrevista', 'Phone screen'), dot: '#FFB020', n: '3', cards: [['Jordan L.', '#007E4C', L('Mar/Jue 11–4', 'Tue/Thu 11–4')], ['María E.', '#C4144C', L('5 años exp.', '5 yrs exp')], ['Carlos D.', '#C4144C', L('Bilingüe', 'Bilingual')]] },
+    { label: L('Prueba final', 'Trail · final'), dot: '#00A878', n: '2', cards: [['Sara P.', '#E11D48', L('Prueba vie 5p', 'Trail Fri 5p')], ['James K.', '#B44D00', L('Referencias OK', 'Refs cleared')]] },
   ];
 
   const pipelineView = (
@@ -946,7 +946,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
               <div key={day} className="grid grid-cols-[40px_1fr] items-center gap-2.5">
                 <span className="text-[10.5px] font-bold text-muted-2">{day}</span>
                 {hrs === 'OFF'
-                  ? <span className="text-[10px] font-bold text-muted-faint">OFF</span>
+                  ? <span className="text-[10px] font-bold text-muted-2">OFF</span>
                   : <span className="justify-self-start rounded-md px-2.5 py-1 text-[10px] font-extrabold text-white" style={{ background: vm.c }}>{hrs}</span>}
               </div>
             ))}
@@ -1031,7 +1031,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           return (
             <button key={k} onClick={() => setMode(k)} className={modeBtn(on)}>
               {label}
-              <span className={`rounded px-1.5 py-px text-[9px] font-extrabold ${on ? 'bg-white/20 text-white' : kind === 'warn' ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-dark'}`}>{n}</span>
+              <span className={`rounded px-1.5 py-px text-[9px] font-extrabold ${on ? 'bg-white/20 text-white' : kind === 'warn' ? 'bg-amber-bg text-amber-ink' : 'bg-green-bg text-green-ink'}`}>{n}</span>
             </button>
           );
         })}

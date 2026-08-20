@@ -149,7 +149,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
     if (d === 0) return <span className="text-[10px] font-extrabold text-muted-2">0%</span>;
     const up = d > 0;
     return (
-      <span className={`inline-flex items-center gap-0.5 text-[10px] font-extrabold ${up ? 'text-green-dark' : 'text-pink-dark'}`}>
+      <span className={`inline-flex items-center gap-0.5 text-[10px] font-extrabold ${up ? 'text-green-ink' : 'text-pink-dark'}`}>
         {up ? <TrendingUp size={11} stroke={2.6} /> : <TrendingDown size={11} stroke={2.6} />}{Math.abs(d)}%
       </span>
     );
@@ -178,7 +178,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
   type Metp = { icon: typeof Eye; label: string; kind: string; color: string; bg: string };
   // Alcance (impressions — top of funnel): search appearances + page views.
   const reach: Metp[] = [
-    { icon: Search, label: L('Búsquedas', 'Searches'), kind: 'search', color: '#646CD2', bg: 'bg-blue-bg' },
+    { icon: Search, label: L('Búsquedas', 'Searches'), kind: 'search', color: '#5A61C6', bg: 'bg-blue-bg' },
     { icon: Eye, label: L('Vistas', 'Views'), kind: 'view', color: '#FF2D6F', bg: 'bg-lilac' },
   ];
   // Acciones del cliente (what they DO after finding you).
@@ -276,7 +276,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
           <div className={`${card} p-4`}>
             <div className="flex items-start justify-between">
               <div>
-                <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-muted-2"><ShoppingBag size={13} stroke={2.4} className="text-green-dark" />{L('Ingresos', 'Revenue')} · {rangeLabel}</div>
+                <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-muted-2"><ShoppingBag size={13} stroke={2.4} className="text-green-ink" />{L('Ingresos', 'Revenue')} · {rangeLabel}</div>
                 <div className="mt-1 flex items-end gap-2">
                   <span className="text-[26px] font-extrabold leading-none tracking-[-.03em] text-ink">{money(revCur)}</span>
                   <span className="mb-0.5"><Trend d={delta(revCur, revPrev)} /></span>

@@ -52,7 +52,7 @@ const zonesRadiusMi = (zs: Zone[]): string => {
 const DRIVER_SEED: OwnDriver[] = [
   { initials: 'MP', color: '#FF2D6F', dot: '#00A878', name: 'Marco P.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2487 → Z2', orderEn: '#2487 → Z2', km: '1.8 mi', eta: 'ETA 5 min' },
   { initials: 'DR', color: '#0369A1', dot: '#00A878', name: 'Diego R.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2484 → Z1', orderEn: '#2484 → Z1', km: '0.9 mi', eta: 'ETA 2 min' },
-  { initials: 'AV', color: '#C05702', dot: '#C4144C', name: 'Andrea V.', sEs: 'Disponible', sEn: 'Available', orderEs: 'Lista', orderEn: 'Ready next', km: '—', eta: '—' },
+  { initials: 'AV', color: '#B44D00', dot: '#C4144C', name: 'Andrea V.', sEs: 'Disponible', sEn: 'Available', orderEs: 'Lista', orderEn: 'Ready next', km: '—', eta: '—' },
   { initials: 'LM', color: '#9A93B3', dot: '#9A93B3', name: 'Lucía M.', sEs: 'Libre hoy', sEn: 'Off today', orderEs: 'Mar–Jue', orderEn: 'Mar–Jue', km: '—', eta: '—' },
 ];
 const EXT_APPS = [
@@ -334,7 +334,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     new: { es: 'Nuevo', en: 'New', cls: 'bg-pink-bg text-pink-dark' },
     preparing: { es: 'Preparando', en: 'Preparing', cls: 'bg-amber-bg text-amber-ink' },
     ready: { es: 'Listo', en: 'Ready', cls: 'bg-lilac-2 text-primary-dark' },
-    en_route: { es: 'En camino', en: 'On the way', cls: 'bg-green-bg text-green-dark' },
+    en_route: { es: 'En camino', en: 'On the way', cls: 'bg-green-bg text-green-ink' },
     delivered: { es: 'Entregado', en: 'Delivered', cls: 'bg-lilac-2 text-ink-2' },
     cancelled: { es: 'Cancelado', en: 'Cancelled', cls: 'bg-lilac-2 text-muted-2' },
   };
@@ -384,7 +384,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                   <div className="flex flex-none flex-col items-end gap-1">
                     <span className={`rounded-md px-2 py-1 text-[9px] font-extrabold ${bd.cls}`}>{L(bd.es, bd.en)}</span>
                     <span className="text-[13px] font-extrabold text-ink">{money(o.total)}</span>
-                    {!!o.fulfillment.tip && <span className="rounded-full bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-dark">{L('Propina', 'Tip')} {money(o.fulfillment.tip)}</span>}
+                    {!!o.fulfillment.tip && <span className="rounded-full bg-green-bg px-1.5 py-0.5 text-[9px] font-extrabold text-green-ink">{L('Propina', 'Tip')} {money(o.fulfillment.tip)}</span>}
                   </div>
                 </div>
                 {o.fulfillment.instructions && (
@@ -397,7 +397,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                   <div className="mt-2.5 flex items-center gap-2 rounded-field bg-lilac-2 px-2.5 py-1.5">
                     <HardHat size={13} stroke={2.2} className="flex-none text-primary-dark" />
                     <span className="min-w-0 flex-1 truncate text-[10.5px] font-extrabold text-ink-2">{o.fulfillment.driver}</span>
-                    {o.fulfillment.eta && <span className="flex-none text-[10px] font-bold text-green-dark">ETA {o.fulfillment.eta}</span>}
+                    {o.fulfillment.eta && <span className="flex-none text-[10px] font-bold text-green-ink">ETA {o.fulfillment.eta}</span>}
                   </div>
                 )}
 
@@ -450,7 +450,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
                 <div className="text-[12.5px] font-extrabold text-ink">{L(z.es, z.en)}</div>
                 <div className="mt-0.5 text-[10px] font-medium text-muted-2">{dist}{z.time && z.time !== '—' ? ` · ETA ${z.time}` : ''}</div>
               </div>
-              <span className={`flex-none text-[13px] font-extrabold ${z.fee > 0 ? 'text-ink' : 'text-green-dark'}`}>{feeLbl}</span>
+              <span className={`flex-none text-[13px] font-extrabold ${z.fee > 0 ? 'text-ink' : 'text-green-ink'}`}>{feeLbl}</span>
               <span className="flex-none text-[13px] font-extrabold text-muted-2">›</span>
             </button>
           );
@@ -651,8 +651,8 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     to_pack: { es: 'Por empacar', en: 'To pack', cls: 'bg-pink-bg text-pink-dark' },
     labeled: { es: 'Etiqueta lista', en: 'Labeled', cls: 'bg-amber-bg text-amber-ink' },
     shipped: { es: 'Enviado', en: 'Shipped', cls: 'bg-lilac-2 text-primary-dark' },
-    in_transit: { es: 'En tránsito', en: 'In transit', cls: 'bg-blue-bg text-blue' },
-    delivered: { es: 'Entregado', en: 'Delivered', cls: 'bg-green-bg text-green-dark' },
+    in_transit: { es: 'En tránsito', en: 'In transit', cls: 'bg-blue-bg text-blue-ink' },
+    delivered: { es: 'Entregado', en: 'Delivered', cls: 'bg-green-bg text-green-ink' },
     cancelled: { es: 'Cancelado', en: 'Cancelled', cls: 'bg-lilac-2 text-muted-2' },
   };
   const shipKpis: { Icon: LucideIcon; c: string; bg: string; label: string; value: string }[] = [
@@ -737,7 +737,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             <div key={p.name} className="flex items-center gap-3 rounded-card-sm border border-line bg-white p-3">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-lilac text-primary-dark"><Store size={17} stroke={2} /></span>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5"><span className="text-[12.5px] font-extrabold text-ink">{p.name}</span>{p.main && <span className="rounded bg-green-bg px-1.5 py-px text-[8px] font-extrabold text-green-dark">{L('Principal', 'Primary')}</span>}</div>
+                <div className="flex items-center gap-1.5"><span className="text-[12.5px] font-extrabold text-ink">{p.name}</span>{p.main && <span className="rounded bg-green-bg px-1.5 py-px text-[8px] font-extrabold text-green-ink">{L('Principal', 'Primary')}</span>}</div>
                 <div className="mt-0.5 text-[10px] font-medium text-muted-2">{p.hours} · {p.window}</div>
               </div>
             </div>
@@ -775,8 +775,8 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
             <span className="text-[13px] font-extrabold text-ink">$8.00</span>
           </div>
           <div className="flex items-center gap-3 rounded-card-sm border border-green/20 bg-green-bg p-3">
-            <Package size={16} stroke={2} className="flex-none text-green-dark" />
-            <div><div className="text-[11.5px] font-extrabold text-green-dark">{L(`Envío gratis sobre $${shipOps.freeOver}`, `Free shipping over $${shipOps.freeOver}`)}</div><div className="mt-0.5 text-[10px] font-medium text-green-dark/80">{L('Se aplica automáticamente · solo EE.UU.', 'Applied automatically · US only')}</div></div>
+            <Package size={16} stroke={2} className="flex-none text-green-ink" />
+            <div><div className="text-[11.5px] font-extrabold text-green-ink">{L(`Envío gratis sobre $${shipOps.freeOver}`, `Free shipping over $${shipOps.freeOver}`)}</div><div className="mt-0.5 text-[10px] font-medium text-green-ink/80">{L('Se aplica automáticamente · solo EE.UU.', 'Applied automatically · US only')}</div></div>
           </div>
         </>
       ) : (
@@ -849,7 +849,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   const railLinks: { Icon: typeof Route; cls: string; title: string; sub: string; onClick: () => void }[] = [
     { Icon: Route, cls: 'bg-lilac text-primary-dark', title: L('Todos los pedidos', 'All orders'), sub: L('Lista completa · Pedidos', 'Full list · Orders'), onClick: () => go('orders') },
     ...(am.menu ? [{ Icon: Utensils as typeof Route, cls: 'bg-amber-bg text-amber-ink', title: L('Menú de comida', 'Food menu'), sub: L('Activa la entrega local', 'Enables local delivery'), onClick: () => go('menu') }] : []),
-    ...(am.products ? [{ Icon: Boxes as typeof Route, cls: 'bg-blue-bg text-blue', title: L('Productos', 'Products'), sub: L('Catálogo e inventario', 'Catalog & inventory'), onClick: () => go('products') }] : []),
+    ...(am.products ? [{ Icon: Boxes as typeof Route, cls: 'bg-blue-bg text-blue-ink', title: L('Productos', 'Products'), sub: L('Catálogo e inventario', 'Catalog & inventory'), onClick: () => go('products') }] : []),
   ];
   const rail = (
     <div className="flex flex-col gap-4 xl:sticky xl:top-[74px] xl:self-start">

@@ -29,7 +29,7 @@ export const catIcon = (key: string): LucideIcon => CAT_ICONS[key] ?? Utensils;
 export const PROMO_TYPES: { type: PromoType; Icon: LucideIcon; es: string; en: string; subEs: string; subEn: string; c: string; bg: string }[] = [
   { type: 'percent', Icon: Tag, es: '% descuento', en: '% off', subEs: 'Descuento porcentual', subEn: 'Percentage discount', c: '#4F46E5', bg: '#FFECF2' },
   { type: 'combo', Icon: ShoppingBag, es: 'Combo', en: 'Combo', subEs: 'Agrupa a un precio', subEn: 'Group at one price', c: '#007A57', bg: '#E6FAF3' },
-  { type: 'bogo', Icon: Gift, es: 'BOGO', en: 'BOGO', subEs: 'Compra uno, lleva uno', subEn: 'Buy one, get one', c: '#B85D00', bg: '#FFF6E3' },
+  { type: 'bogo', Icon: Gift, es: 'BOGO', en: 'BOGO', subEs: 'Compra uno, lleva uno', subEn: 'Buy one, get one', c: '#AC5300', bg: '#FFF6E3' },
   { type: 'happy', Icon: Clock, es: 'Happy hour', en: 'Happy hour', subEs: 'Precio por horario', subEn: 'Time-based pricing', c: '#C4144C', bg: '#FFECF2' },
 ];
 

@@ -71,7 +71,19 @@ const config: Config = {
         // `primary` apunta al color que encabeza la marca: el rosa del
         // apóstrofo del logotipo y de la sombra del CTA.
         primary: {
-          DEFAULT: '#FF2D6F', // rellenos y acentos
+          // MEDIDO, no elegido a ojo. El rosa del handoff (#FF2D6F) con texto
+          // BLANCO encima da **3.59** de contraste, por debajo del 4.5 que
+          // exige AA — y es el relleno de casi todos los botones de la app
+          // («Ver perfil», «Pedir», «Escribir reseña», los chips activos, la
+          // barra inferior). El arnés `sistema-paso1.js` lo encontró midiendo
+          // lo pintado, no leyendo clases.
+          //
+          // Éste es EL MISMO rosa con el mismo tono y la misma saturación en
+          // OKLCH, un 6% menos claro: 4.54, cumple. La marca no cambia de
+          // color, cambia de intensidad — y todas las etiquetas blancas pasan
+          // a leerse. El literal del handoff sigue vivo en `mod.comunidad`,
+          // para lo que NO lleva texto encima (iconos, puntos, tintes).
+          DEFAULT: '#E9005E', // rellenos y acentos
           // Ojo: #FF2D6F sobre blanco da contraste 3.6 — vale para un relleno,
           // NO para texto (`text-primary-dark` se usa 574 veces como texto de
           // acento). Estos dos son las versiones que sí cumplen AA.
@@ -92,8 +104,22 @@ const config: Config = {
           soft: '#403A5A', // etiquetas de tono medio
         },
         muted: {
-          DEFAULT: '#7E7798', // metadatos, marcadores de posición
-          2: '#9A93B3', // (valor del handoff: su `ink-3`)
+          // Los dos primeros escalones son TEXTO y los dos cumplen AA sobre
+          // blanco (5.2 y 4.6). `muted` sigue siendo el más oscuro de los dos,
+          // como siempre — el orden de la escala no se rompe.
+          DEFAULT: '#6F6889', // metadatos, marcadores de posición
+          // DIVERGENCIA DEL HANDOFF, medida y deliberada: su `ink-3` es
+          // #9A93B3, que sobre blanco da 3.0 de contraste. Este token se usa
+          // 720 veces como TEXTO (contadores de reseñas, etiquetas del menú
+          // inferior, subtítulos), y a 10–12px eso no se lee. Se oscurece hasta
+          // 4.6, el mínimo AA. El valor literal del handoff queda en `3`, para
+          // iconos y decoración, donde el umbral es otro.
+          // 5.2 sobre blanco y 4.55 sobre los tintes. Queda a un punto de
+          // `muted`: la franja de gris que se lee de verdad es estrecha, y no
+          // se va a fingir una jerarquía con dos grises casi iguales — quien
+          // marca jerarquía en esta app es el tamaño y el grosor, no el tono.
+          2: '#706987',
+          3: '#9A93B3', // (valor del handoff) iconos y decoración, nunca texto
           faint: '#B3ADC7', // deshabilitado, contadores
           faint2: '#ADA7C2',
         },
@@ -111,9 +137,11 @@ const config: Config = {
         verified: { DEFAULT: '#7C3AED', bg: '#F3EEFF' },
 
         amber: { DEFAULT: '#FFB020', ink: '#8A5A00', bg: '#FFF6E3' }, // estrellas, aviso, "pronto"
-        green: { DEFAULT: '#00A878', dark: '#00916A', bg: '#E6FAF3', bg2: '#EFFCF7', ink: '#007A57' }, // abierto, verificado, éxito
+        green: { DEFAULT: '#00A878', dark: '#00805E', bg: '#E6FAF3', bg2: '#EFFCF7', ink: '#007A57' }, // abierto, verificado, éxito
         pink: { DEFAULT: '#FF2D6F', dark: '#C4144C', bg: '#FFECF2' }, // me gusta, insignia de avisos
-        blue: { DEFAULT: '#0284C7', bg: '#E8F5FF' }, // "Mi barrio", enlaces de información
+        // `DEFAULT` es para rellenos e iconos (4.1 sobre blanco, insuficiente
+        // para texto pequeño); `ink` es el que va en TEXTO.
+        blue: { DEFAULT: '#0284C7', ink: '#0369A1', bg: '#E8F5FF' }, // "Mi barrio", información
         // `lilac` es el neutro suave de la app (chips, avatares, pozos): 638
         // usos. Se reapunta a los tintes NEUTROS del sistema, no a los de
         // color — si no, la app se ahoga en rosa.
@@ -162,7 +190,7 @@ const config: Config = {
         home: {
           deep: '#5B3FD6',      // inicio del degradado morado de la banda de negocios
           ink: '#56506E',       // subtítulo del hero
-          mute: '#7E7A92',       // texto apagado (fila de cuenta, notas)
+          mute: '#6F6889',       // texto apagado (fila de cuenta, notas) — AA 5.2
           ph: '#A9A4BD',        // marcador de posición del buscador
           idx: '#B7B0CE',       // índices 01–06 y marquesina
           badge: '#4A3B8A',     // texto de la insignia "Nuevo · Llegando a…"
@@ -266,7 +294,9 @@ const config: Config = {
       backgroundImage: {
         // Los dos degradados de marca. Solo héroe / splash / CTA — el handoff
         // prohíbe usarlos como fondo de página.
-        calor: 'linear-gradient(112deg, #FF2D6F, #FF7A1A, #FFB020)', // marca
+        // Arranca en el rosa AA (ver `primary`): el botón principal lleva texto
+        // blanco encima, y en un degradado 6 puntos de luminosidad no se ven.
+        calor: 'linear-gradient(112deg, #E9005E, #FF7A1A, #FFB020)', // marca
         senal: 'linear-gradient(112deg, #7C3AED, #0EA5E9, #00C48C)', // sistema
       },
       letterSpacing: {

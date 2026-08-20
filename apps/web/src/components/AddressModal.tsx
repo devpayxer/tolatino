@@ -268,7 +268,7 @@ export function AddressModal() {
               <span className="min-w-0 text-[13px] font-bold text-ink-soft">
                 {a.formatted}
                 {a.verified && (
-                  <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-[6px] bg-green-bg px-1.5 py-0.5 align-middle text-[9.5px] font-extrabold uppercase tracking-[.03em] text-green-dark">
+                  <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-[6px] bg-green-bg px-1.5 py-0.5 align-middle text-[9.5px] font-extrabold uppercase tracking-[.03em] text-green-ink">
                     <Check size={9} stroke={3.4} />
                     {L('Verificada', 'Verified')}
                   </span>
@@ -309,7 +309,7 @@ export function AddressModal() {
                           <span className="rounded-[6px] bg-lilac-2 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[.03em] text-primary-dark">{a.label}</span>
                         )}
                         {a.is_default && (
-                          <span className="text-[10px] font-extrabold uppercase tracking-[.03em] text-green-dark">{L('Predet.', 'Default')}</span>
+                          <span className="text-[10px] font-extrabold uppercase tracking-[.03em] text-green-ink">{L('Predet.', 'Default')}</span>
                         )}
                       </span>
                       {editId === a.id ? (
@@ -329,7 +329,7 @@ export function AddressModal() {
                     </button>
                     <div className="flex flex-none items-center gap-0.5">
                       {!a.is_default && (
-                        <button onClick={() => store.setDefault(a.id)} className="cursor-pointer p-1.5 text-muted hover:text-amber" aria-label={L('Predeterminada', 'Set default')}>
+                        <button onClick={() => store.setDefault(a.id)} className="cursor-pointer p-1.5 text-muted hover:text-amber-ink" aria-label={L('Predeterminada', 'Set default')}>
                           <Star size={15} stroke={2.2} />
                         </button>
                       )}
@@ -338,12 +338,12 @@ export function AddressModal() {
                           setEditId(a.id);
                           setEditText(a.label ?? '');
                         }}
-                        className="cursor-pointer p-1.5 text-muted hover:text-primary"
+                        className="cursor-pointer p-1.5 text-muted hover:text-primary-dark"
                         aria-label={L('Editar etiqueta', 'Edit label')}
                       >
                         <Pencil size={14} stroke={2.2} />
                       </button>
-                      <button onClick={() => del(a.id)} className="cursor-pointer p-1.5 text-muted hover:text-pink" aria-label={L('Eliminar', 'Delete')}>
+                      <button onClick={() => del(a.id)} className="cursor-pointer p-1.5 text-muted hover:text-pink-dark" aria-label={L('Eliminar', 'Delete')}>
                         <Trash2 size={14} stroke={2.2} />
                       </button>
                     </div>

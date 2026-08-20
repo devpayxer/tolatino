@@ -594,7 +594,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const toggleSave = () => { if (!saved) trackListingView(b.slug, 'save'); savedBiz.toggle(b.slug); };
   const now = useNow();
   const status = statusLabel(bizStatus(b.hours, now, b.open, b.hoursExceptions), L);
-  const statusTone = status.tone === 'open' ? 'text-green' : status.tone === 'soon' ? 'text-amber-ink' : 'text-muted';
+  const statusTone = status.tone === 'open' ? 'text-green-ink' : status.tone === 'soon' ? 'text-amber-ink' : 'text-muted';
   // A date-specific override active today (holiday / vacation / weather) — shown
   // on the "Hoy" line so the special hours (or closure + reason) are explicit.
   const todayEx = now ? activeException(b.hoursExceptions, now) : null;
@@ -1472,7 +1472,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <button onClick={() => shiftMonth(1)} aria-label={L('Mes siguiente', 'Next month')} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-lilac-2 text-ink"><ChevronRight size={16} stroke={2.4} /></button>
           </div>
         </div>
-        <div className="mb-1.5 grid grid-cols-7 gap-1">{WD_MON1.map((w, i) => <span key={i} className="text-center text-[10px] font-extrabold text-muted-faint">{L(w[0], w[1])}</span>)}</div>
+        <div className="mb-1.5 grid grid-cols-7 gap-1">{WD_MON1.map((w, i) => <span key={i} className="text-center text-[10px] font-extrabold text-muted-2">{L(w[0], w[1])}</span>)}</div>
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: totalCells }, (_, i) => {
             const dnum = i - lead + 1;
@@ -1483,7 +1483,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             const inRange = !!rentStart && !!rentEnd && dISO > rentStart && dISO < rentEnd;
             return (
               <button key={i} disabled={!enabled} onClick={() => rentPick(dISO)}
-                className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-faint'}`}>{dnum}</button>
+                className={`flex aspect-square items-center justify-center rounded-lg text-[12px] font-extrabold transition-colors ${isEnd ? 'bg-primary text-white' : inRange ? 'bg-lilac text-primary-dark' : enabled ? 'cursor-pointer bg-app text-ink hover:bg-lilac-2' : 'cursor-not-allowed text-muted-2'}`}>{dnum}</button>
             );
           })}
         </div>
@@ -2152,7 +2152,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         </span>
         <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-muted">{B(it.d)}</span>
         <span className="mt-1 flex items-center gap-1.5 text-[13px] font-extrabold">
-          <span className={it.orig ? 'text-[#C54C67]' : 'text-ink'}>{money(it.price)}</span>
+          <span className={it.orig ? 'text-[#B9415D]' : 'text-ink'}>{money(it.price)}</span>
           {it.orig && <span className="text-[11px] font-bold text-muted line-through">{money(it.orig)}</span>}
           {it.orig && (
             <span className="rounded-md bg-pink-bg px-1.5 py-0.5 text-[9.5px] font-extrabold text-pink-dark">
@@ -2183,7 +2183,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </span>
             )}
           </span>
-          <span className={`flex-none text-[14px] font-extrabold ${it.orig ? 'text-[#C54C67]' : 'text-ink'}`}>{money(it.price)}</span>
+          <span className={`flex-none text-[14px] font-extrabold ${it.orig ? 'text-[#B9415D]' : 'text-ink'}`}>{money(it.price)}</span>
         </span>
         <span className="mt-0.5 line-clamp-2 text-[11.5px] font-semibold leading-snug text-muted">{B(it.d)}</span>
         {it.orig && (
@@ -2392,12 +2392,12 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           <ChevronLeft size={14} stroke={2.6} />
           {L('Volver a negocios', 'Back to businesses')}
         </button>
-        <span className="text-muted-faint">|</span>
+        <span className="text-muted-2">|</span>
         <button onClick={onClose} className="cursor-pointer hover:text-ink">{L('Negocios', 'Businesses')}</button>
-        {b.city && <><span className="text-muted-faint">›</span><span>{b.city}</span></>}
-        <span className="text-muted-faint">›</span>
+        {b.city && <><span className="text-muted-2">›</span><span>{b.city}</span></>}
+        <span className="text-muted-2">›</span>
         <span>{catLabel}</span>
-        <span className="text-muted-faint">›</span>
+        <span className="text-muted-2">›</span>
         <span className="font-extrabold text-ink">{b.name}</span>
       </div>
       {/* hero — en escritorio la portada comparte fila con una rejilla 2×2 de
@@ -2505,7 +2505,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {/* «94% recomienda» — proporción real de reseñas de 4★+; con menos de
             3 reseñas no se pinta (sería ruido, no señal). */}
         {pctRecomienda != null && (
-          <span className="rounded-full bg-green-bg px-2.5 py-1 text-[11px] font-extrabold text-green-dark">
+          <span className="rounded-full bg-green-bg px-2.5 py-1 text-[11px] font-extrabold text-green-ink">
             {pctRecomienda}% {L('recomienda', 'recommend')}
           </span>
         )}
@@ -2666,7 +2666,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             <button data-status-card onClick={() => setHoursOpen(true)}
               className="tap flex w-full cursor-pointer items-center gap-3 rounded-card border border-line bg-white p-3.5 text-left">
               <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-[12px] ${status.tone === 'open' ? 'bg-green-bg' : 'bg-amber-bg'}`}>
-                <Clock size={18} stroke={2.2} className={status.tone === 'open' ? 'text-green-dark' : 'text-amber-ink'} />
+                <Clock size={18} stroke={2.2} className={status.tone === 'open' ? 'text-green-ink' : 'text-amber-ink'} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className={`block text-[13.5px] font-extrabold ${statusTone}`}>{status.text}</span>
@@ -2794,7 +2794,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13.5px] font-extrabold text-ink">{L(e.tEs, e.tEn)}</span>
                       <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-muted">{L(e.timeEs, e.timeEn)} · {e.free ? L('Gratis', 'Free') : e.price}</span>
-                      <span className="mt-0.5 block text-[11.5px] font-bold text-green-dark">{e.going} {L('asisten', 'going')}</span>
+                      <span className="mt-0.5 block text-[11.5px] font-bold text-green-ink">{e.going} {L('asisten', 'going')}</span>
                     </span>
                     <ChevronRight size={16} stroke={2.4} className="flex-none text-muted-2 min-[1100px]:hidden" />
                     <span className="hidden flex-none rounded-field bg-primary px-3.5 py-2 text-[12px] font-extrabold text-white min-[1100px]:block">{L('Boletos', 'Tickets')}</span>
@@ -2970,7 +2970,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             const kindChip: Record<PubUpdate['kind'], [string, string, string]> = {
               offer: ['Oferta', 'Offer', 'bg-pink-bg text-pink-dark'],
               event: ['Evento', 'Event', 'bg-lilac-2 text-primary-dark'],
-              news: ['Aviso', 'News', 'bg-green-bg text-green-dark'],
+              news: ['Aviso', 'News', 'bg-green-bg text-green-ink'],
             };
             const [chipEs, chipEn, chipCls] = kindChip[u.kind];
             return (
@@ -2990,7 +2990,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   <img src={imgUrl(u.img, ANCHO.ancha)} alt="" className="mt-[11px] max-h-[260px] w-full rounded-[13px] object-cover" />
                 )}
                 <div className="mt-3 flex items-center gap-5 border-t border-hair pt-[11px]">
-                  <button onClick={() => void toggleUpd(u)} className={`flex cursor-pointer items-center gap-1.5 text-[12.5px] font-bold ${liked ? 'text-pink' : 'text-muted-2'}`}>
+                  <button onClick={() => void toggleUpd(u)} className={`flex cursor-pointer items-center gap-1.5 text-[12.5px] font-bold ${liked ? 'text-pink-dark' : 'text-muted-2'}`}>
                     <span className="text-[16px] leading-none">{liked ? '♥' : '♡'}</span>
                     {u.likes}
                   </button>
@@ -3034,7 +3034,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {!menuDisplayOnly && payOnline && (
             <div className="mb-3 flex flex-wrap gap-1.5">
               {deliveryAvailable && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-bg px-2.5 py-1 text-[10.5px] font-extrabold text-green-dark">
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-bg px-2.5 py-1 text-[10.5px] font-extrabold text-green-ink">
                   🛵 {L('Entrega', 'Delivery')} {money(del?.fee ?? 0)} · {del?.prep ? `${del.prep + 10}–${del.prep + 25} min` : '30–45 min'}
                 </span>
               )}
@@ -3333,9 +3333,9 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               {/* 3-step guide so the process is obvious. */}
               <div className="flex items-center gap-1 px-0.5 text-[10.5px] font-bold text-muted">
                 <span className={rentStart ? 'text-primary-dark' : 'text-ink'}>1 {L('Fechas', 'Dates')}</span>
-                <ChevronRight size={12} stroke={2.4} className="text-muted-faint" />
+                <ChevronRight size={12} stroke={2.4} className="text-muted-2" />
                 <span className={rentCartCount > 0 ? 'text-primary-dark' : ''}>2 {L('Artículos', 'Items')}</span>
-                <ChevronRight size={12} stroke={2.4} className="text-muted-faint" />
+                <ChevronRight size={12} stroke={2.4} className="text-muted-2" />
                 <span>3 {L('Extras y solicitar', 'Extras & request')}</span>
               </div>
             </>
@@ -3423,7 +3423,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     ev.stopPropagation();
                     toggleEv(e);
                   }}
-                  className={`flex-none cursor-pointer rounded-field px-4 py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-green-bg text-green-dark' : 'bg-primary text-white shadow-cta-sm'}`}
+                  className={`flex-none cursor-pointer rounded-field px-4 py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-green-bg text-green-ink' : 'bg-primary text-white shadow-cta-sm'}`}
                 >
                   {on ? L('Voy ✓', 'Going ✓') : L('Asistir', 'Attend')}
                 </button>
@@ -3601,7 +3601,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                     <div className="mt-2.5 flex items-center gap-3">
                       <button
                         onClick={() => setReviewHelpful((m) => ({ ...m, [r.id]: !m[r.id] }))}
-                        className={`cursor-pointer text-[11.5px] font-extrabold ${on ? 'text-primary' : 'text-muted-2'}`}
+                        className={`cursor-pointer text-[11.5px] font-extrabold ${on ? 'text-primary-dark' : 'text-muted-2'}`}
                       >
                         👍 {L('Útil', 'Helpful')} · {r.base + (on ? 1 : 0)}
                       </button>
@@ -3699,10 +3699,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             // WhatsApp/SMS only when the owner opted in.
             ...(msgOn ? [{ Icon: Send, label: msgIsSms ? L('Mensaje de texto', 'Text message') : 'WhatsApp', sub: phone, color: '#00A878', bg: '#E6FAF3', href: msgHref }] : []),
             // Sitio web only shows when the owner set one; opens the real site.
-            ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#007CC1', bg: '#DEF4FF', href: `https://${b.website}` }] : []),
+            ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#0072B6', bg: '#DEF4FF', href: `https://${b.website}` }] : []),
             // Cómo llegar only when the owner set a real address.
-            ...(hasAddress ? [{ Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#C05702', bg: '#FFEBDF', href: mapsHref, onClick: () => trackListingView(b.slug, 'direction') }] : []),
-            { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#7E7798', bg: '#F1EEFA' },
+            ...(hasAddress ? [{ Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#B44D00', bg: '#FFEBDF', href: mapsHref, onClick: () => trackListingView(b.slug, 'direction') }] : []),
+            { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#6F6889', bg: '#F1EEFA' },
           ] as { Icon: typeof Phone; label: string; sub: string; color: string; bg: string; href?: string; onClick?: () => void }[]).map(({ Icon, label, sub, color, bg, href, onClick }) => {
             const inner = (
               <>
@@ -4246,7 +4246,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             ) : (
               <>
                 {storeCart && cartSavings > 0 && (
-                  <div className="mb-2.5 flex items-center gap-2 rounded-field bg-green-bg px-3 py-2 text-[11.5px] font-extrabold text-green-dark">
+                  <div className="mb-2.5 flex items-center gap-2 rounded-field bg-green-bg px-3 py-2 text-[11.5px] font-extrabold text-green-ink">
                     <Check size={13} stroke={3} />{L(`Estás ahorrando ${money(cartSavings)} en ofertas`, `You're saving ${money(cartSavings)} on deals`)}
                   </div>
                 )}
@@ -4441,10 +4441,10 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   {promo ? (
                     <div className="flex items-center justify-between gap-2 rounded-field bg-green-bg px-3 py-2">
                       <div className="min-w-0">
-                        <div className="text-[12px] font-extrabold text-green-dark">{L('Código', 'Code')} {promo.code} · −{money(discount)}</div>
-                        {promo.label && <div className="truncate text-[10.5px] font-semibold text-green-dark/80">{promo.label}</div>}
+                        <div className="text-[12px] font-extrabold text-green-ink">{L('Código', 'Code')} {promo.code} · −{money(discount)}</div>
+                        {promo.label && <div className="truncate text-[10.5px] font-semibold text-green-ink/80">{promo.label}</div>}
                       </div>
-                      <button onClick={clearPromo} className="flex-none cursor-pointer text-[11px] font-extrabold text-green-dark underline">{L('Quitar', 'Remove')}</button>
+                      <button onClick={clearPromo} className="flex-none cursor-pointer text-[11px] font-extrabold text-green-ink underline">{L('Quitar', 'Remove')}</button>
                     </div>
                   ) : (
                     <>
@@ -4467,7 +4467,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   {isDelivery && <div className="flex justify-between"><span>{L('Tarifa de entrega', 'Delivery fee')}</span><span>{money(deliveryFee)}</span></div>}
                   {payOnline && <div className="flex justify-between"><span>{L('Tarifa de servicio', 'Service fee')}</span><span>{money(serviceFee)}</span></div>}
                   {tip > 0 && <div className="flex justify-between"><span>{L('Propina', 'Tip')}</span><span>{money(tip)}</span></div>}
-                  {discount > 0 && <div className="flex justify-between text-green-dark"><span>{L('Descuento', 'Discount')}{promo ? ` · ${promo.code}` : ''}</span><span>−{money(discount)}</span></div>}
+                  {discount > 0 && <div className="flex justify-between text-green-ink"><span>{L('Descuento', 'Discount')}{promo ? ` · ${promo.code}` : ''}</span><span>−{money(discount)}</span></div>}
                   <div className="flex justify-between text-[14px] font-extrabold text-ink"><span>{L('Total', 'Total')}</span><span>{money(grandTotal)}</span></div>
                   <div className="mt-1 text-[11px] font-semibold text-muted">
                     {payOnline
@@ -4814,7 +4814,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                   {svcOnlinePay
                     ? <>
                         <div className="mt-0.5 flex justify-between text-[11.5px]"><span>{L('Tarifa de servicio', 'Service fee')}</span><span className="font-extrabold text-ink">{money(+(total * 0.05).toFixed(2))}</span></div>
-                        {svcDiscount > 0 && <div className="mt-0.5 flex justify-between text-[11.5px] text-green-dark"><span>{L('Descuento', 'Discount')}{svcPromo ? ` · ${svcPromo.code}` : ''}</span><span className="font-extrabold">−{money(svcDiscount)}</span></div>}
+                        {svcDiscount > 0 && <div className="mt-0.5 flex justify-between text-[11.5px] text-green-ink"><span>{L('Descuento', 'Discount')}{svcPromo ? ` · ${svcPromo.code}` : ''}</span><span className="font-extrabold">−{money(svcDiscount)}</span></div>}
                         <div className="mt-1 flex justify-between border-t border-lilac-line pt-1 text-[11.5px]"><span>{L('Pagas ahora con tarjeta', 'You pay now by card')}</span><span className="font-extrabold text-primary-dark">{money(svcPayToday)}</span></div>
                       </>
                     : (
@@ -4863,7 +4863,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             </div>
             {/* status chip mirrors the real booking state (server-enforced) */}
             {svcSel.bookable && (
-              <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-extrabold ${svcDoneInfo?.confirmedNow && !svcDoneInfo?.resched ? 'bg-green-bg text-green-dark' : 'bg-amber-bg text-amber-ink'}`}>
+              <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-extrabold ${svcDoneInfo?.confirmedNow && !svcDoneInfo?.resched ? 'bg-green-bg text-green-ink' : 'bg-amber-bg text-amber-ink'}`}>
                 <Clock size={12} stroke={2.4} />
                 {svcDoneInfo?.confirmedNow && !svcDoneInfo?.resched ? L('Confirmada', 'Confirmed') : L('Por confirmar', 'Pending')}
               </span>
@@ -5040,7 +5040,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 ? L('Tu renta está confirmada. Paga y deja el depósito al recoger.', 'Your rental is confirmed. Pay and leave the deposit at pickup.')
                 : L('El negocio confirmará disponibilidad — te avisamos. Míralo en Mi cuenta.', 'The business will confirm availability — we’ll notify you. See it in My account.')}
             </div>
-            <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-extrabold ${rentDoneInfo.confirmedNow ? 'bg-green-bg text-green-dark' : 'bg-amber-bg text-amber-ink'}`}>
+            <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-extrabold ${rentDoneInfo.confirmedNow ? 'bg-green-bg text-green-ink' : 'bg-amber-bg text-amber-ink'}`}>
               <Clock size={12} stroke={2.4} />{rentDoneInfo.confirmedNow ? L('Confirmada', 'Confirmed') : L('Por confirmar', 'Pending')}
             </span>
             <div className="mt-4 w-full max-w-[300px] rounded-card-sm border border-line bg-white p-4 text-left">
@@ -5069,7 +5069,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <OverlayTitle title={L('Tu reseña', 'Your review')} onClose={() => setWriteOpen(false)} />
         <div className="flex justify-center gap-1 py-2 text-[30px]">
           {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} onClick={() => setMyStars(n)} className={`flex h-11 w-11 cursor-pointer items-center justify-center ${n <= myStars ? 'text-amber' : 'text-muted-faint'}`}>
+            <button key={n} onClick={() => setMyStars(n)} className={`flex h-11 w-11 cursor-pointer items-center justify-center ${n <= myStars ? 'text-amber-ink' : 'text-muted-2'}`}>
               {n <= myStars ? '★' : '☆'}
             </button>
           ))}
@@ -5167,10 +5167,10 @@ function PromoField({ slug, scope, subtotal, applied, onApply, onClear, L, money
       {applied ? (
         <div className="flex items-center justify-between gap-2 rounded-field bg-green-bg px-3 py-2">
           <div className="min-w-0">
-            <div className="text-[12px] font-extrabold text-green-dark">{L('Código', 'Code')} {applied.code} · −{money(discount)}</div>
-            {applied.label && <div className="truncate text-[10.5px] font-semibold text-green-dark/80">{applied.label}</div>}
+            <div className="text-[12px] font-extrabold text-green-ink">{L('Código', 'Code')} {applied.code} · −{money(discount)}</div>
+            {applied.label && <div className="truncate text-[10.5px] font-semibold text-green-ink/80">{applied.label}</div>}
           </div>
-          <button onClick={() => { onClear(); setInput(''); setErr(''); }} className="flex-none cursor-pointer text-[11px] font-extrabold text-green-dark underline">{L('Quitar', 'Remove')}</button>
+          <button onClick={() => { onClear(); setInput(''); setErr(''); }} className="flex-none cursor-pointer text-[11px] font-extrabold text-green-ink underline">{L('Quitar', 'Remove')}</button>
         </div>
       ) : (
         <>

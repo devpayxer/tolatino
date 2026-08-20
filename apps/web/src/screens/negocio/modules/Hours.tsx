@@ -208,7 +208,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                 <div className="flex flex-col gap-2">
                   {exceptions.map((e) => (
                     <div key={e.id} className="flex items-center gap-3 rounded-field border border-line bg-white p-3">
-                      <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-btn ${e.closed ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-dark'}`}>
+                      <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-btn ${e.closed ? 'bg-pink-bg text-pink-dark' : 'bg-green-bg text-green-ink'}`}>
                         <CalendarDays size={16} stroke={2.2} />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -216,7 +216,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
                           {exWhen(e)}
                           {e.label && <span className="rounded bg-lilac-2 px-1.5 py-0.5 text-[10px] font-bold text-ink-2">{e.label}</span>}
                         </span>
-                        <span className={`mt-0.5 block text-[11.5px] font-bold ${e.closed ? 'text-pink-dark' : 'text-green-dark'}`}>{exWhat(e)}</span>
+                        <span className={`mt-0.5 block text-[11.5px] font-bold ${e.closed ? 'text-pink-dark' : 'text-green-ink'}`}>{exWhat(e)}</span>
                       </span>
                       <button onClick={() => removeException(e.id)} aria-label={L('Eliminar', 'Delete')} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-btn text-pink-dark">
                         <Trash2 size={14} stroke={2.2} />

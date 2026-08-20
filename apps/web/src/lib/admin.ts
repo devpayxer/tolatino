@@ -383,9 +383,9 @@ export type ZoneRow = {
 export const ZONE_STATE: Record<string, { es: string; en: string; bg: string; c: string }> = {
   hot: { es: 'Caliente', en: 'Hot', bg: '#FFECF2', c: '#E11D48' },
   growing: { es: 'Creciendo', en: 'Growing', bg: '#E6FAF3', c: '#007A57' },
-  cooling: { es: 'Enfriándose', en: 'Cooling', bg: '#DEF4FF', c: '#007CC1' },
+  cooling: { es: 'Enfriándose', en: 'Cooling', bg: '#DEF4FF', c: '#0072B6' },
   dormant: { es: 'Dormida', en: 'Dormant', bg: '#FFF6E3', c: '#8A5A00' },
-  uncovered: { es: 'Sin cobertura', en: 'Uncovered', bg: '#F1EEFA', c: '#7E7798' },
+  uncovered: { es: 'Sin cobertura', en: 'Uncovered', bg: '#F1EEFA', c: '#6F6889' },
 };
 export async function fetchZones(sort = 'gmv', city?: string): Promise<ZoneRow[]> {
   if (!supabase) return [];
