@@ -260,7 +260,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
         </div>
         {views7 > 0 ? (
           <div className="mt-2.5 flex h-[40px] items-end gap-1.5">
-            {viewsSeries.map((v, i) => <span key={i} className="flex-1 rounded-t-[3px]" style={{ height: `${Math.max(6, (v / maxV) * 100)}%`, background: i === 6 ? '#7B61FF' : '#E2DEF4' }} />)}
+            {viewsSeries.map((v, i) => <span key={i} className="flex-1 rounded-t-[3px]" style={{ height: `${Math.max(6, (v / maxV) * 100)}%`, background: i === 6 ? '#FF2D6F' : '#EAE6F5' }} />)}
           </div>
         ) : (
           <div className="mt-1 text-[11px] font-semibold text-muted">{L('Aún sin vistas esta semana. Comparte tu página para que te descubran.', 'No views yet this week. Share your page so people discover you.')}</div>
@@ -299,12 +299,12 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
         <div className={`${card} p-3.5`}>
           <div className="flex items-center justify-between"><h2 className="text-[13px] font-extrabold text-ink">{L('Ventas · 7 días', 'Sales · 7 days')}</h2><span className="text-[13px] font-extrabold text-ink">{money(week)}</span></div>
           <svg viewBox="0 0 320 90" preserveAspectRatio="none" className="mt-2 block h-[84px] w-full">
-            <defs><linearGradient id="dhg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7B61FF" stopOpacity=".26" /><stop offset="1" stopColor="#7B61FF" stopOpacity="0" /></linearGradient></defs>
+            <defs><linearGradient id="dhg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FF2D6F" stopOpacity=".26" /><stop offset="1" stopColor="#FF2D6F" stopOpacity="0" /></linearGradient></defs>
             {(() => {
               const max = Math.max(...series, 1);
               const pts = series.map((v, i) => [8 + (i * 304) / 6, 82 - (v / max) * 72]);
               const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-              return (<><path d={`${line} L312,90 L8,90 Z`} fill="url(#dhg)" /><path d={line} fill="none" stroke="#7B61FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /><circle cx={pts[6][0]} cy={pts[6][1]} r="3.5" fill="#7B61FF" stroke="#fff" strokeWidth="2" /></>);
+              return (<><path d={`${line} L312,90 L8,90 Z`} fill="url(#dhg)" /><path d={line} fill="none" stroke="#FF2D6F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /><circle cx={pts[6][0]} cy={pts[6][1]} r="3.5" fill="#FF2D6F" stroke="#fff" strokeWidth="2" /></>);
             })()}
           </svg>
           <div className="mt-1 flex justify-between px-0.5 text-[9px] font-bold text-muted-2">{(es ? ['6d', '5d', '4d', '3d', '2d', 'ayer', 'hoy'] : ['6d', '5d', '4d', '3d', '2d', 'yest', 'today']).map((d) => <span key={d}>{d}</span>)}</div>
@@ -352,7 +352,7 @@ export function DashboardHome({ ctx }: { ctx: PanelCtx }) {
 
       {/* activar ventas (listing-only) */}
       {!sells && (
-        <div className="mt-1 flex items-center gap-3 rounded-card-sm border border-lilac-line p-3.5" style={{ background: 'linear-gradient(135deg,#efe9ff,#f7f3ff)' }}>
+        <div className="mt-1 flex items-center gap-3 rounded-card-sm border border-lilac-line p-3.5" style={{ background: 'linear-gradient(135deg,#FFECF2,#FCFBFF)' }}>
           <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn bg-white"><Cart size={20} stroke={2.2} className="text-primary" /></span>
           <div className="min-w-0 flex-1"><div className="text-[13px] font-extrabold text-ink">{L('¿Vendes o tomas pedidos?', 'Do you sell or take orders?')}</div><div className="text-[11px] font-semibold text-ink-2">{L('Activa menú, productos, reservas o eventos. Tu página sigue igual.', 'Turn on menu, products, bookings or events. Your page stays the same.')}</div></div>
           <button onClick={() => go('modules')} className="tap-y flex-none cursor-pointer rounded-btn bg-primary px-4 py-2.5 text-[12px] font-extrabold text-white shadow-cta-sm">{L('Activar', 'Enable')}</button>

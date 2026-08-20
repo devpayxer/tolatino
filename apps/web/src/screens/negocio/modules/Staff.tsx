@@ -66,7 +66,7 @@ type JobRow = {
 
 // Display-only fields the roster card needs, derived from role exactly the way
 // the seed builds them (avatar color, permissions blurb, bilingual title fallback).
-const ROLE_COLOR: Record<Role, string> = { owner: '#7B61FF', manager: '#1F9D57', staff: '#D6336C', driver: '#E8954A' };
+const ROLE_COLOR: Record<Role, string> = { owner: '#FF2D6F', manager: '#00A878', staff: '#E11D48', driver: '#C05702' };
 const ROLE_PERMS: Record<Role, [string, string]> = {
   owner: ['Acceso total', 'All access'],
   manager: ['Todo menos pagos', 'All but billing'],
@@ -94,7 +94,7 @@ function rowToMember(r: StaffRow, idx: number): Member {
     titleEs: r.title_es ?? tEs,
     titleEn: r.title_en ?? r.title_es ?? tEn,
     hours: invited ? 'Part-time' : 'Full-time',
-    dot: invited ? '#C0BBD0' : '#1F9D57',
+    dot: invited ? '#B3ADC7' : '#00A878',
     stEs: invited ? 'Invitado' : 'En turno',
     stEn: invited ? 'Invited' : 'On shift',
     permsEs: invited ? '—' : pEs,
@@ -274,28 +274,28 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const filterChip = (on: boolean) =>
     `tap-y tap-y flex-none cursor-pointer rounded-full px-3.5 py-2 text-[11.5px] ${on ? 'bg-primary font-extrabold text-white shadow-cta-sm' : 'border border-lilac-line bg-white font-bold text-ink-soft'}`;
 
-  const dotColor = (dot: string) => (dot === '#1F9D57' ? 'text-green-dark' : dot === '#F4B740' ? 'text-amber-ink' : 'text-muted-2');
+  const dotColor = (dot: string) => (dot === '#00A878' ? 'text-green-dark' : dot === '#FFB020' ? 'text-amber-ink' : 'text-muted-2');
 
   // ============================ PERSONAL ============================
   const staffKpis = isReal
     ? [
-        { Icon: Users, c: '#6D4DF6', bg: '#F1EFFA', label: L('Equipo', 'Team'), value: String(roster.length), delta: L(`${roleCount('manager')} gerentes · ${roleCount('staff')} staff`, `${roleCount('manager')} mgrs · ${roleCount('staff')} staff`), dCls: 'text-muted-2' },
-        { Icon: User, c: '#1F8A4C', bg: '#E3F5EA', label: L('Activos', 'Active'), value: String(activeCount), delta: L(`${roster.length - activeCount} invitados`, `${roster.length - activeCount} invited`), dCls: 'text-muted-2' },
-        { Icon: Clock, c: '#B5791A', bg: '#FCEFD6', label: L('Reloj', 'Time clock'), value: '—', delta: L('Pronto', 'Soon'), dCls: 'text-amber-ink' },
-        { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Nómina', 'Payroll'), value: '—', delta: L('Pronto', 'Soon'), dCls: 'text-amber-ink' },
+        { Icon: Users, c: '#C4144C', bg: '#F1EEFA', label: L('Equipo', 'Team'), value: String(roster.length), delta: L(`${roleCount('manager')} gerentes · ${roleCount('staff')} staff`, `${roleCount('manager')} mgrs · ${roleCount('staff')} staff`), dCls: 'text-muted-2' },
+        { Icon: User, c: '#007A57', bg: '#E6FAF3', label: L('Activos', 'Active'), value: String(activeCount), delta: L(`${roster.length - activeCount} invitados`, `${roster.length - activeCount} invited`), dCls: 'text-muted-2' },
+        { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', label: L('Reloj', 'Time clock'), value: '—', delta: L('Pronto', 'Soon'), dCls: 'text-amber-ink' },
+        { Icon: DollarSign, c: '#E11D48', bg: '#FFECF2', label: L('Nómina', 'Payroll'), value: '—', delta: L('Pronto', 'Soon'), dCls: 'text-amber-ink' },
       ]
     : isFree
     ? [
-        { Icon: Users, c: '#6D4DF6', bg: '#F1EFFA', label: L('Equipo', 'Team'), value: '2', delta: L('límite Free', 'Free limit'), dCls: 'text-amber-ink' },
-        { Icon: User, c: '#1F8A4C', bg: '#E3F5EA', label: L('Activos', 'Active'), value: '2', delta: '—', dCls: 'text-muted-2' },
-        { Icon: Clock, c: '#B5791A', bg: '#FCEFD6', label: L('Reloj', 'Time clock'), value: '—', delta: 'Verified', dCls: 'text-amber-ink' },
-        { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Nómina', 'Payroll'), value: '—', delta: 'Verified', dCls: 'text-amber-ink' },
+        { Icon: Users, c: '#C4144C', bg: '#F1EEFA', label: L('Equipo', 'Team'), value: '2', delta: L('límite Free', 'Free limit'), dCls: 'text-amber-ink' },
+        { Icon: User, c: '#007A57', bg: '#E6FAF3', label: L('Activos', 'Active'), value: '2', delta: '—', dCls: 'text-muted-2' },
+        { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', label: L('Reloj', 'Time clock'), value: '—', delta: 'Verified', dCls: 'text-amber-ink' },
+        { Icon: DollarSign, c: '#E11D48', bg: '#FFECF2', label: L('Nómina', 'Payroll'), value: '—', delta: 'Verified', dCls: 'text-amber-ink' },
       ]
     : [
-        { Icon: Users, c: '#6D4DF6', bg: '#F1EFFA', label: L('Total', 'Total staff'), value: '14', delta: L('3 gerentes · 11 staff', '3 mgrs · 11 staff'), dCls: 'text-muted-2' },
-        { Icon: User, c: '#1F8A4C', bg: '#E3F5EA', label: L('En turno', 'On shift now'), value: '5', delta: L('2 en descanso', '2 on break'), dCls: 'text-muted-2' },
-        { Icon: Clock, c: '#B5791A', bg: '#FCEFD6', label: L('Horas · sem', 'Hours · wk'), value: '428', delta: '▲ 12%', dCls: 'text-green-dark' },
-        { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Costo · 30d', 'Labor · 30d'), value: '$22.8k', delta: L('28% de ingresos', '28% of revenue'), dCls: 'text-muted-2' },
+        { Icon: Users, c: '#C4144C', bg: '#F1EEFA', label: L('Total', 'Total staff'), value: '14', delta: L('3 gerentes · 11 staff', '3 mgrs · 11 staff'), dCls: 'text-muted-2' },
+        { Icon: User, c: '#007A57', bg: '#E6FAF3', label: L('En turno', 'On shift now'), value: '5', delta: L('2 en descanso', '2 on break'), dCls: 'text-muted-2' },
+        { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', label: L('Horas · sem', 'Hours · wk'), value: '428', delta: '▲ 12%', dCls: 'text-green-dark' },
+        { Icon: DollarSign, c: '#E11D48', bg: '#FFECF2', label: L('Costo · 30d', 'Labor · 30d'), value: '$22.8k', delta: L('28% de ingresos', '28% of revenue'), dCls: 'text-muted-2' },
       ];
 
   const kpiRow = (
@@ -466,14 +466,14 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           {schedRaw.map(([nm, role, a, b, c]) => (
             <div key={nm} className="grid grid-cols-[86px_1fr] items-center gap-2 md:grid-cols-[120px_1fr]">
               <div className="truncate text-[11px] font-bold text-ink">{nm}<span className="font-medium text-muted-2"> · {role}</span></div>
-              <div className="relative h-[22px] overflow-hidden rounded-md" style={{ background: '#ECE8F4' }}>
+              <div className="relative h-[22px] overflow-hidden rounded-md" style={{ background: '#EAE6F5' }}>
                 <div
                   className="absolute inset-y-0 flex items-center overflow-hidden rounded-md px-1.5 text-[8.5px] font-extrabold text-white"
                   style={{ left: `${(a / 24) * 100}%`, width: `${((b - a) / 24) * 100}%`, background: c }}
                 >
                   {a}–{b}
                 </div>
-                <div className="absolute -inset-y-0.5" style={{ left: `${nowLeft}%`, width: '2px', background: '#D6336C' }} />
+                <div className="absolute -inset-y-0.5" style={{ left: `${nowLeft}%`, width: '2px', background: '#E11D48' }} />
               </div>
             </div>
           ))}
@@ -548,9 +548,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mb-3 text-[12.5px] font-extrabold text-ink">{L('Resumen del día', "Today's summary")}</div>
         <div className="flex flex-col gap-2.5">
           {[
-            { Icon: User, c: '#1F8A4C', bg: '#E3F5EA', t: L('En turno ahora', 'On shift now'), r: '5' },
-            { Icon: Clock, c: '#B5791A', bg: '#FCEFD6', t: L('En descanso', 'On break'), r: '2' },
-            { Icon: Award, c: '#6D4DF6', bg: '#F1EFFA', t: L('Puntualidad', 'On-time rate'), r: '96%' },
+            { Icon: User, c: '#007A57', bg: '#E6FAF3', t: L('En turno ahora', 'On shift now'), r: '5' },
+            { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', t: L('En descanso', 'On break'), r: '2' },
+            { Icon: Award, c: '#C4144C', bg: '#F1EEFA', t: L('Puntualidad', 'On-time rate'), r: '96%' },
           ].map((s) => (
             <div key={s.t} className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[9px]" style={{ background: s.bg }}>
@@ -623,9 +623,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mb-3 text-[12.5px] font-extrabold text-ink">{L('Depósito', 'Deposit')}</div>
         <div className="flex flex-col gap-2.5">
           {[
-            { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', t: L('Neto a pagar', 'Net to pay'), r: '$4,918' },
-            { Icon: Calendar, c: '#6D4DF6', bg: '#F1EFFA', t: L('Fecha de depósito', 'Deposit date'), r: '15 Oct' },
-            { Icon: Users, c: '#B5791A', bg: '#FCEFD6', t: L('Empleados', 'Employees'), r: '5' },
+            { Icon: DollarSign, c: '#007A57', bg: '#E6FAF3', t: L('Neto a pagar', 'Net to pay'), r: '$4,918' },
+            { Icon: Calendar, c: '#C4144C', bg: '#F1EEFA', t: L('Fecha de depósito', 'Deposit date'), r: '15 Oct' },
+            { Icon: Users, c: '#8A5A00', bg: '#FFF6E3', t: L('Empleados', 'Employees'), r: '5' },
           ].map((s) => (
             <div key={s.t} className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[9px]" style={{ background: s.bg }}>
@@ -651,7 +651,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const permData = [[2, 2, 1, 0], [2, 2, 0, 0], [2, 2, 2, 1], [2, 2, 2, 0], [2, 2, 1, 0], [2, 1, 0, 0], [2, 2, 0, 0], [2, 0, 0, 0]];
   const permCell = (v: number) => {
     if (v === 2) return <span className="inline-flex h-[19px] w-[19px] items-center justify-center rounded-md bg-green-bg"><Check size={10} stroke={3} className="text-green-dark" /></span>;
-    if (v === 1) return <span className="inline-flex h-[19px] w-[19px] items-center justify-center rounded-md" style={{ background: '#E4ECFB' }}><Eye size={10} stroke={2.6} style={{ color: '#2A5C8A' }} /></span>;
+    if (v === 1) return <span className="inline-flex h-[19px] w-[19px] items-center justify-center rounded-md" style={{ background: '#DEF4FF' }}><Eye size={10} stroke={2.6} style={{ color: '#0369A1' }} /></span>;
     return <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-faint" />;
   };
 
@@ -681,7 +681,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-ink"><Lock size={14} stroke={2.2} className="text-primary-dark" />{L('Matriz de permisos', 'Permission matrix')}</span>
           <span className="flex gap-3">
             <span className="flex items-center gap-1 text-[9px] font-bold text-green-dark"><Pencil size={9} stroke={2.4} />{L('Editar', 'Edit')}</span>
-            <span className="flex items-center gap-1 text-[9px] font-bold" style={{ color: '#2A5C8A' }}><Eye size={9} stroke={2.4} />{L('Ver', 'View')}</span>
+            <span className="flex items-center gap-1 text-[9px] font-bold" style={{ color: '#0369A1' }}><Eye size={9} stroke={2.4} />{L('Ver', 'View')}</span>
           </span>
         </div>
         <div className="no-scrollbar min-w-0 overflow-x-auto">
@@ -759,9 +759,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mb-3 text-[12.5px] font-extrabold text-ink">{L('Consejos para contratar', 'Hiring tips')}</div>
         <div className="flex flex-col gap-2.5">
           {[
-            { Icon: Award, c: '#6D4DF6', bg: '#F1EFFA', t: L('Publica el rango de pago', 'Post a pay range'), s: L('3× más solicitudes', '3× more applicants') },
-            { Icon: MapPin, c: '#1F8A4C', bg: '#E3F5EA', t: L('Local primero', 'Local first'), s: L('Aparece en Comunidad', 'Shows in Community') },
-            { Icon: Inbox, c: '#B5791A', bg: '#FCEFD6', t: L('Responde en 24h', 'Reply within 24h'), s: L('Mejores candidatos', 'Keeps top talent') },
+            { Icon: Award, c: '#C4144C', bg: '#F1EEFA', t: L('Publica el rango de pago', 'Post a pay range'), s: L('3× más solicitudes', '3× more applicants') },
+            { Icon: MapPin, c: '#007A57', bg: '#E6FAF3', t: L('Local primero', 'Local first'), s: L('Aparece en Comunidad', 'Shows in Community') },
+            { Icon: Inbox, c: '#8A5A00', bg: '#FFF6E3', t: L('Responde en 24h', 'Reply within 24h'), s: L('Mejores candidatos', 'Keeps top talent') },
           ].map((s) => (
             <div key={s.t} className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-[9px]" style={{ background: s.bg }}>
@@ -780,9 +780,9 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---- pipeline ----
   const pipeline = [
-    { label: L('Nuevos', 'New'), dot: '#D6336C', n: '4', cards: [['Ana F.', '#7B61FF', L('3 años exp.', '3 yrs exp')], ['Marcus T.', '#1F9D57', L('Disponible ya', 'Available now')], ['Sofía R.', '#E8954A', L('Recomendada', 'Referred')], ['Daniel K.', '#2A5C8A', L('Medio tiempo', 'Part-time')]] },
-    { label: L('Entrevista', 'Phone screen'), dot: '#F4B740', n: '3', cards: [['Jordan L.', '#138A72', L('Mar/Jue 11–4', 'Tue/Thu 11–4')], ['María E.', '#9F1239', L('5 años exp.', '5 yrs exp')], ['Carlos D.', '#6D4DF6', L('Bilingüe', 'Bilingual')]] },
-    { label: L('Prueba final', 'Trail · final'), dot: '#1F9D57', n: '2', cards: [['Sara P.', '#D6336C', L('Prueba vie 5p', 'Trail Fri 5p')], ['James K.', '#E8954A', L('Referencias OK', 'Refs cleared')]] },
+    { label: L('Nuevos', 'New'), dot: '#E11D48', n: '4', cards: [['Ana F.', '#FF2D6F', L('3 años exp.', '3 yrs exp')], ['Marcus T.', '#00A878', L('Disponible ya', 'Available now')], ['Sofía R.', '#C05702', L('Recomendada', 'Referred')], ['Daniel K.', '#0369A1', L('Medio tiempo', 'Part-time')]] },
+    { label: L('Entrevista', 'Phone screen'), dot: '#FFB020', n: '3', cards: [['Jordan L.', '#008754', L('Mar/Jue 11–4', 'Tue/Thu 11–4')], ['María E.', '#C4144C', L('5 años exp.', '5 yrs exp')], ['Carlos D.', '#C4144C', L('Bilingüe', 'Bilingual')]] },
+    { label: L('Prueba final', 'Trail · final'), dot: '#00A878', n: '2', cards: [['Sara P.', '#E11D48', L('Prueba vie 5p', 'Trail Fri 5p')], ['James K.', '#C05702', L('Referencias OK', 'Refs cleared')]] },
   ];
 
   const pipelineView = (
@@ -791,7 +791,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           todavía. Sin este aviso, un dueño con una vacante creía que 9 personas
           se habían postulado de verdad. (Auditoría de Negocios, 2026-08-04.) */}
       {isReal && (
-        <div role="note" className="flex items-start gap-2 rounded-field border border-[#F2E3BF] bg-amber-bg px-3 py-2.5">
+        <div role="note" className="flex items-start gap-2 rounded-field border border-[#F4DBBA] bg-amber-bg px-3 py-2.5">
           <span className="mt-px flex-none rounded-full bg-amber-ink/10 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-amber-ink">
             {L('Ejemplo', 'Sample')}
           </span>
@@ -916,14 +916,14 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
         <div className={`${cardCls} px-3.5 py-1.5`}>
           {([
-            { Icon: Briefcase, c: '#6D4DF6', bg: '#F1EFFA', label: L('Empleo', 'Employment'), value: vm.hours },
-            { Icon: Shield, c: '#1F8A4C', bg: '#E3F5EA', label: L('Permisos', 'Permissions'), value: L(vm.permsEs, vm.permsEn) },
+            { Icon: Briefcase, c: '#C4144C', bg: '#F1EEFA', label: L('Empleo', 'Employment'), value: vm.hours },
+            { Icon: Shield, c: '#007A57', bg: '#E6FAF3', label: L('Permisos', 'Permissions'), value: L(vm.permsEs, vm.permsEn) },
             // Phone isn't stored — show it only in showcase/demo, never invent one for a real member.
-            ...(isReal ? [] : [{ Icon: Phone, c: '#B5791A', bg: '#FCEFD6', label: L('Contacto', 'Contact'), value: `(415) 555-0${vm.id}24` }]),
+            ...(isReal ? [] : [{ Icon: Phone, c: '#8A5A00', bg: '#FFF6E3', label: L('Contacto', 'Contact'), value: `(415) 555-0${vm.id}24` }]),
             // Real members show their real invite email (if any); demo shows the fixture.
             ...(isReal
-              ? (vm.email ? [{ Icon: Mail, c: '#D6336C', bg: '#FDE7EF', label: 'Email', value: vm.email }] : [])
-              : [{ Icon: Mail, c: '#D6336C', bg: '#FDE7EF', label: 'Email', value: `${vm.nm.split(' ')[0].toLowerCase()}@mail.com` }]),
+              ? (vm.email ? [{ Icon: Mail, c: '#E11D48', bg: '#FFECF2', label: 'Email', value: vm.email }] : [])
+              : [{ Icon: Mail, c: '#E11D48', bg: '#FFECF2', label: 'Email', value: `${vm.nm.split(' ')[0].toLowerCase()}@mail.com` }]),
           ]).map((r, i, arr) => (
             <div key={r.label} className={`flex items-center gap-3 py-2.5 ${i < arr.length - 1 ? 'border-b border-hair' : ''}`}>
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg" style={{ background: r.bg }}>
@@ -968,7 +968,7 @@ export function StaffModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           onClick={() => {
             const nm = { manager: L('Nuevo Gerente', 'New Manager'), staff: L('Nuevo Staff', 'New Staff'), driver: L('Nuevo Repartidor', 'New Driver') }[inviteRole];
             const id = (members.length ? Math.max(...members.map((m) => m.id)) : 0) + 1;
-            const member: Member = { id, nm, c: '#7B61FF', role: inviteRole, titleEs: roleLabel(inviteRole), titleEn: roleLabel(inviteRole), hours: 'Part-time', dot: '#C0BBD0', stEs: 'Invitado', stEn: 'Invited', permsEs: '—', permsEn: '—', since: '2025', invited: true, email: inviteEmail.trim() || null };
+            const member: Member = { id, nm, c: '#FF2D6F', role: inviteRole, titleEs: roleLabel(inviteRole), titleEn: roleLabel(inviteRole), hours: 'Part-time', dot: '#B3ADC7', stEs: 'Invitado', stEn: 'Invited', permsEs: '—', permsEn: '—', since: '2025', invited: true, email: inviteEmail.trim() || null };
             setMembers((e) => [member, ...e]);
             persistNewMember(member, inviteEmail.trim() || null);
             setInviteOpen(false);

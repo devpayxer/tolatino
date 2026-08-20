@@ -28,7 +28,7 @@ const ROLE_PRESETS: [string, string][] = [
 
 const newId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `x${Date.now()}${Math.round(Math.random() * 1e6)}`);
 const tileBg = (a: string | null, b: string | null) =>
-  `repeating-linear-gradient(135deg,${a ?? '#EFEBFF'} 0 9px,${b ?? '#7B61FF'} 9px 18px)`;
+  `repeating-linear-gradient(135deg,${a ?? '#FFECF2'} 0 9px,${b ?? '#FF2D6F'} 9px 18px)`;
 
 // A BizRow (owner's own listing) → a link candidate (always same-owner).
 const rowToCandidate = (b: BizRow): LinkCandidate => ({

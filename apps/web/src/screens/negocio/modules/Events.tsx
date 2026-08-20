@@ -74,7 +74,7 @@ const fmtTime = (d: Date) => {
 };
 const EMPTY_EVENT: EventRow = {
   id: 0, name: '', mon: '', day: '', time: '', price: '', priceN: 0, sold: 0, cap: 1,
-  tile: '#EFEBFF 0 9px,#E5DEF9 9px 18px', status: ['', ''], statusBg: '#E3F5EA', statusC: '#1F8A4C',
+  tile: '#FFECF2 0 9px,#FED2DF 9px 18px', status: ['', ''], statusBg: '#E6FAF3', statusC: '#007A57',
 };
 type Attendee = { initials: string; color: string; name: string; tier: string; tierBg: string; tierC: string; diet: string; base: boolean };
 type EventTierDraft = { id: string; name: string; price: string; capacity: string; seat?: boolean };
@@ -146,10 +146,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- seed data (DEMO sample events) ----------
   const seedEvents = useMemo<EventRow[]>(() => [
-    { id: 1, name: L('Cena de Halloween', 'Halloween Dinner'), mon: 'OCT', day: '31', time: '7 PM', price: '$140', priceN: 140, sold: 32, cap: 48, tile: '#FCE3DC 0 9px,#F6CEC2 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E3F5EA', statusC: '#1F8A4C' },
-    { id: 2, name: 'Sourdough 101', mon: 'NOV', day: '08', time: '10 AM', price: '$85', priceN: 85, sold: 14, cap: 16, tile: '#F3E2CE 0 9px,#ECD3B4 9px 18px', status: [es ? 'Casi lleno' : 'Almost full', 'Almost full'], statusBg: '#FCEFD6', statusC: '#9A6A12' },
-    { id: 3, name: L('Cata de vinos', 'Wine Tasting'), mon: 'NOV', day: '15', time: '6 PM', price: '$45', priceN: 45, sold: 22, cap: 30, tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E3F5EA', statusC: '#1F8A4C' },
-    { id: 4, name: L('Noche de Lotería', 'Lotería Night'), mon: 'NOV', day: '22', time: '5 PM', price: '$10', priceN: 10, sold: 14, cap: 16, tile: '#EAE2F8 0 9px,#DCCEF2 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E3F5EA', statusC: '#1F8A4C' },
+    { id: 1, name: L('Cena de Halloween', 'Halloween Dinner'), mon: 'OCT', day: '31', time: '7 PM', price: '$140', priceN: 140, sold: 32, cap: 48, tile: '#FFEBDF 0 9px,#FED6C2 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E6FAF3', statusC: '#007A57' },
+    { id: 2, name: 'Sourdough 101', mon: 'NOV', day: '08', time: '10 AM', price: '$85', priceN: 85, sold: 14, cap: 16, tile: '#FAD9BD 0 9px,#FAD9BD 9px 18px', status: [es ? 'Casi lleno' : 'Almost full', 'Almost full'], statusBg: '#FFF6E3', statusC: '#8A5A00' },
+    { id: 3, name: L('Cata de vinos', 'Wine Tasting'), mon: 'NOV', day: '15', time: '6 PM', price: '$45', priceN: 45, sold: 22, cap: 30, tile: '#FED2DF 0 9px,#FED2DF 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E6FAF3', statusC: '#007A57' },
+    { id: 4, name: L('Noche de Lotería', 'Lotería Night'), mon: 'NOV', day: '22', time: '5 PM', price: '$10', priceN: 10, sold: 14, cap: 16, tile: '#F0EDFF 0 9px,#E0DAFF 9px 18px', status: [es ? 'Vendiendo' : 'Selling', 'Selling'], statusBg: '#E6FAF3', statusC: '#007A57' },
   ], [es, L]);
 
     // El estado inicial NO puede ser de ejemplo: se pinta antes de saber si
@@ -171,10 +171,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     const life = r.status ?? 'published';
     // Badge reflects the real lifecycle: cancelled / draft override the sold-through state.
     const badge: [[string, string], string, string] =
-      life === 'cancelled' ? [['Cancelado', 'Cancelled'], '#FDE7EF', '#D6336C']
-      : life === 'draft'   ? [['Borrador', 'Draft'], '#FCEFD6', '#9A6A12']
-      : almost             ? [['Casi lleno', 'Almost full'], '#FCEFD6', '#9A6A12']
-      :                      [['Vendiendo', 'Selling'], '#E3F5EA', '#1F8A4C'];
+      life === 'cancelled' ? [['Cancelado', 'Cancelled'], '#FFECF2', '#E11D48']
+      : life === 'draft'   ? [['Borrador', 'Draft'], '#FFF6E3', '#8A5A00']
+      : almost             ? [['Casi lleno', 'Almost full'], '#FFF6E3', '#8A5A00']
+      :                      [['Vendiendo', 'Selling'], '#E6FAF3', '#007A57'];
     return {
       id: idx + 1,
       dbId: r.id,
@@ -186,7 +186,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       priceN,
       sold,
       cap,
-      tile: `${r.tile_a ?? '#EFEBFF'} 0 9px,${r.tile_b ?? '#E5DEF9'} 9px 18px`,
+      tile: `${r.tile_a ?? '#FFECF2'} 0 9px,${r.tile_b ?? '#FED2DF'} 9px 18px`,
       status: badge[0],
       statusBg: badge[1],
       statusC: badge[2],
@@ -248,18 +248,18 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // Demo-only sample past events (a signed-in owner sees their real pastList).
   const pastEvents = useMemo(() => [
-    { name: L('Mercado Navideño', 'Holiday Market'), date: L('14 Dic 2024', 'Dec 14, 2024'), sold: 142, rev: '$3,840', rating: '4.9', tile: '#F3D9E2 0 9px,#E8BFCD 9px 18px' },
-    { name: L('Clase de tamales', 'Tamales Class'), date: L('8 Dic 2024', 'Dec 8, 2024'), sold: 24, rev: '$1,200', rating: '5.0', tile: '#FCE3DC 0 9px,#F6CEC2 9px 18px' },
-    { name: L('Noche de jazz', 'Jazz Night'), date: L('23 Nov 2024', 'Nov 23, 2024'), sold: 86, rev: '$2,580', rating: '4.7', tile: '#E4ECFB 0 9px,#D7E3F6 9px 18px' },
+    { name: L('Mercado Navideño', 'Holiday Market'), date: L('14 Dic 2024', 'Dec 14, 2024'), sold: 142, rev: '$3,840', rating: '4.9', tile: '#FED2DF 0 9px,#FED2DF 9px 18px' },
+    { name: L('Clase de tamales', 'Tamales Class'), date: L('8 Dic 2024', 'Dec 8, 2024'), sold: 24, rev: '$1,200', rating: '5.0', tile: '#FFEBDF 0 9px,#FED6C2 9px 18px' },
+    { name: L('Noche de jazz', 'Jazz Night'), date: L('23 Nov 2024', 'Nov 23, 2024'), sold: 86, rev: '$2,580', rating: '4.7', tile: '#DEF4FF 0 9px,#C0E6FF 9px 18px' },
   ], [L]);
 
   const attendees = useMemo<Attendee[]>(() => [
-    { initials: 'ML', color: '#7B61FF', name: 'Maria Lopez', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: L('Vegetariano', 'Vegetarian'), base: true },
-    { initials: 'JT', color: '#2A5C8A', name: 'James Tate', tier: L('Pareja', 'Pair'), tierBg: '#E3F5EA', tierC: '#1F8A4C', diet: '', base: true },
-    { initials: 'AF', color: '#E8954A', name: 'Anna Fischer', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: L('Sin gluten', 'Gluten-free'), base: true },
-    { initials: 'DK', color: '#D6336C', name: 'Daniel Kim', tier: 'VIP', tierBg: '#FDE7EF', tierC: '#D6336C', diet: '', base: false },
-    { initials: 'SR', color: '#1F9D57', name: 'Sofia Romano', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: L('Alergia nuez', 'Nut allergy'), base: false },
-    { initials: 'PN', color: '#7B61FF', name: 'Priya Nair', tier: 'GA', tierBg: '#EFEBFF', tierC: '#6D4DF6', diet: L('Vegano', 'Vegan'), base: false },
+    { initials: 'ML', color: '#FF2D6F', name: 'Maria Lopez', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Vegetariano', 'Vegetarian'), base: true },
+    { initials: 'JT', color: '#0369A1', name: 'James Tate', tier: L('Pareja', 'Pair'), tierBg: '#E6FAF3', tierC: '#007A57', diet: '', base: true },
+    { initials: 'AF', color: '#C05702', name: 'Anna Fischer', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Sin gluten', 'Gluten-free'), base: true },
+    { initials: 'DK', color: '#E11D48', name: 'Daniel Kim', tier: 'VIP', tierBg: '#FFECF2', tierC: '#E11D48', diet: '', base: false },
+    { initials: 'SR', color: '#00A878', name: 'Sofia Romano', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Alergia nuez', 'Nut allergy'), base: false },
+    { initials: 'PN', color: '#FF2D6F', name: 'Priya Nair', tier: 'GA', tierBg: '#FFECF2', tierC: '#C4144C', diet: L('Vegano', 'Vegan'), base: false },
   ], [L]);
 
   // ---------- derived: current managed event ----------
@@ -519,14 +519,14 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   };
 
   // Tiers to render: real ones for a signed-in owner, else the sample design.
-  const TIER_COLORS = ['#7B61FF', '#1F9D57', '#D6336C', '#2F6FED', '#9A6A12'];
+  const TIER_COLORS = ['#FF2D6F', '#00A878', '#E11D48', '#007CC1', '#8A5A00'];
   const realTiers = persistable && tierList != null;
   const displayTiers = realTiers
     ? tierList!.map((t, i) => ({ id: t.id, label: L(t.name_es, t.name_en), priceN: Number(t.price), color: TIER_COLORS[i % TIER_COLORS.length], sold: t.sold, cap: t.capacity ?? Math.max(t.sold, 1), unlimited: t.capacity == null, tier: t }))
     : [
-        { id: 'g', label: 'General', priceN: 85, color: '#7B61FF', sold: Math.round(mgEv.sold * 0.6), cap: Math.round(mgEv.cap * 0.6), unlimited: false, tier: null as EventTier | null },
-        { id: 'p', label: L('Pareja', 'Pair'), priceN: 160, color: '#1F9D57', sold: Math.round(mgEv.sold * 0.25), cap: Math.round(mgEv.cap * 0.25), unlimited: false, tier: null as EventTier | null },
-        { id: 'v', label: 'VIP', priceN: 250, color: '#D6336C', sold: Math.round(mgEv.sold * 0.15), cap: Math.max(1, Math.round(mgEv.cap * 0.15)), unlimited: false, tier: null as EventTier | null },
+        { id: 'g', label: 'General', priceN: 85, color: '#FF2D6F', sold: Math.round(mgEv.sold * 0.6), cap: Math.round(mgEv.cap * 0.6), unlimited: false, tier: null as EventTier | null },
+        { id: 'p', label: L('Pareja', 'Pair'), priceN: 160, color: '#00A878', sold: Math.round(mgEv.sold * 0.25), cap: Math.round(mgEv.cap * 0.25), unlimited: false, tier: null as EventTier | null },
+        { id: 'v', label: 'VIP', priceN: 250, color: '#E11D48', sold: Math.round(mgEv.sold * 0.15), cap: Math.max(1, Math.round(mgEv.cap * 0.15)), unlimited: false, tier: null as EventTier | null },
       ];
   const maxTierSold = Math.max(...displayTiers.map((x) => x.sold), 1);
 
@@ -599,7 +599,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
           {upcomingList.map((e) => {
             const pct = Math.round((e.sold / e.cap) * 100);
-            const barC = e.sold / e.cap > 0.85 ? '#E8954A' : '#7B61FF';
+            const barC = e.sold / e.cap > 0.85 ? '#C05702' : '#FF2D6F';
             return (
               <div key={e.id} className="overflow-hidden rounded-card-sm border border-line bg-white">
                 <div className="relative h-24" style={{ background: `repeating-linear-gradient(135deg,${e.tile})` }}>
@@ -642,15 +642,15 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <div className="flex flex-col gap-2.5">
             {(persistable
               ? [
-                  { Icon: Ticket, c: '#6D4DF6', bg: '#F1EFFA', t: L('Boletos vendidos', 'Tickets sold'), r: String(summary?.ticketsSold ?? 0) },
-                  { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', t: L('Ingresos', 'Revenue'), r: `$${(summary?.revenue ?? 0).toLocaleString()}` },
-                  { Icon: Users, c: '#2A5C8A', bg: '#E4ECFB', t: L('Asistentes', 'Attendees'), r: String(summary?.attendees ?? 0) },
+                  { Icon: Ticket, c: '#C4144C', bg: '#F1EEFA', t: L('Boletos vendidos', 'Tickets sold'), r: String(summary?.ticketsSold ?? 0) },
+                  { Icon: DollarSign, c: '#007A57', bg: '#E6FAF3', t: L('Ingresos', 'Revenue'), r: `$${(summary?.revenue ?? 0).toLocaleString()}` },
+                  { Icon: Users, c: '#0369A1', bg: '#DEF4FF', t: L('Asistentes', 'Attendees'), r: String(summary?.attendees ?? 0) },
                 ]
               : [
-                  { Icon: Ticket, c: '#6D4DF6', bg: '#F1EFFA', t: L('Boletos vendidos', 'Tickets sold'), r: '186' },
-                  { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', t: L('Ingresos', 'Revenue'), r: '$14.2k' },
-                  { Icon: Users, c: '#2A5C8A', bg: '#E4ECFB', t: L('Asistentes', 'Attendees'), r: '212' },
-                  { Icon: RefreshCw, c: '#9A6A12', bg: '#FCEFD6', t: L('Recurrentes', 'Recurring'), r: '2' },
+                  { Icon: Ticket, c: '#C4144C', bg: '#F1EEFA', t: L('Boletos vendidos', 'Tickets sold'), r: '186' },
+                  { Icon: DollarSign, c: '#007A57', bg: '#E6FAF3', t: L('Ingresos', 'Revenue'), r: '$14.2k' },
+                  { Icon: Users, c: '#0369A1', bg: '#DEF4FF', t: L('Asistentes', 'Attendees'), r: '212' },
+                  { Icon: RefreshCw, c: '#8A5A00', bg: '#FFF6E3', t: L('Recurrentes', 'Recurring'), r: '2' },
                 ]
             ).map((s) => (
               <div key={s.t} className="flex items-center gap-2.5">
@@ -663,7 +663,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
             ))}
           </div>
         </div>
-        <div className="rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#6743E2,#8268FF)' }}>
+        <div className="rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#A80F40,#FF7A9E)' }}>
           <div className="text-[13px] font-extrabold">💡 {L('Consejo', 'Tip')}</div>
           <div className="mt-1 text-[11.5px] font-semibold leading-snug text-white/85">
             {L('Pronto podrás invitar promotores con un código: comparten tu evento y ganan comisión por boleto.', 'Soon you\'ll invite promoters with a code: they share your event and earn commission per ticket.')}
@@ -840,7 +840,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           <>
             <div className="flex h-[70px] items-end gap-[5px]">
               {salesBars.map((v, i) => (
-                <div key={i} className="flex-1 rounded-t-[4px]" style={{ height: `${Math.round((v / maxBar) * 60) + 6}px`, background: i === salesBars.length - 1 ? '#7B61FF' : '#D9CFF6' }} />
+                <div key={i} className="flex-1 rounded-t-[4px]" style={{ height: `${Math.round((v / maxBar) * 60) + 6}px`, background: i === salesBars.length - 1 ? '#FF2D6F' : '#E0DAFF' }} />
               ))}
             </div>
             <div className="mt-2 text-[9.5px] font-semibold text-muted-2">{persistable ? L('Boletos vendidos por día.', 'Tickets sold per day.') : L('Pico de ventas hace 2 días tras el email.', 'Sales peaked 2 days ago after the email.')}</div>
@@ -853,7 +853,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---- Asistentes ----
   const aq = attendeeQuery.trim().toLowerCase();
   const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || 'C';
-  const ATT_COLORS = ['#7B61FF', '#1F9D57', '#E8954A', '#D6336C', '#2A5C8A'];
+  const ATT_COLORS = ['#FF2D6F', '#00A878', '#C05702', '#E11D48', '#0369A1'];
   // Real owner → the actual buyers from event_tickets; demo → the sample roster.
   const realAttendees = (ticketRows ?? []).map((t, i) => ({
     key: t.id, name: t.customer_name || L('Cliente', 'Customer'), color: ATT_COLORS[i % ATT_COLORS.length],
@@ -875,7 +875,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 <div className="truncate text-[12px] font-extrabold text-ink">{a.name}</div>
                 <div className="mt-0.5 font-mono text-[9.5px] font-bold tracking-[.08em] text-muted-2">{a.code} · {a.qty} {a.qty === 1 ? L('boleto', 'ticket') : L('boletos', 'tickets')}</div>
               </div>
-              <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: a.used ? '#E3F5EA' : a.refunded ? '#FDE7EF' : '#F1EFFA', color: a.used ? '#1F8A4C' : a.refunded ? '#D6336C' : '#9A96AE' }}>{a.used ? L('Ingresó', 'Checked in') : a.refunded ? L('Reembolsado', 'Refunded') : L('Confirmado', 'Going')}</span>
+              <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: a.used ? '#E6FAF3' : a.refunded ? '#FFECF2' : '#F1EEFA', color: a.used ? '#007A57' : a.refunded ? '#E11D48' : '#9A93B3' }}>{a.used ? L('Ingresó', 'Checked in') : a.refunded ? L('Reembolsado', 'Refunded') : L('Confirmado', 'Going')}</span>
             </div>
           ))}
           {realAttendees.length === 0 && <div className="col-span-full rounded-btn-lg border border-line bg-white py-10 text-center text-[12px] font-semibold text-muted-2">{aq ? L('Sin resultados', 'No results') : falloEventos ? L('No pudimos cargar tus asistentes. Revisa tu conexión.', "We couldn't load your attendees. Check your connection.") : L('Aún no hay asistentes. Aparecerán aquí cuando compren boletos.', 'No attendees yet. They show up here once they buy tickets.')}</div>}
@@ -894,7 +894,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                     {a.diet && <span className="text-[9px] font-semibold text-muted-2">{a.diet}</span>}
                   </div>
                 </div>
-                <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: inn ? '#E3F5EA' : '#F1EFFA', color: inn ? '#1F8A4C' : '#9A96AE' }}>{inn ? L('Ingresó', 'Checked in') : L('Confirmado', 'Going')}</span>
+                <span className="flex-none rounded-md px-2 py-1 text-[9px] font-extrabold" style={{ background: inn ? '#E6FAF3' : '#F1EEFA', color: inn ? '#007A57' : '#9A93B3' }}>{inn ? L('Ingresó', 'Checked in') : L('Confirmado', 'Going')}</span>
               </div>
             );
           })}
@@ -907,8 +907,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---- Check-in ----
   const remaining = checkinRes && checkinRes.admitted != null && checkinRes.qty != null ? checkinRes.qty - checkinRes.admitted : 0;
   const checkinBanner = checkinRes && (
-    <div className={`mt-3 rounded-btn-lg px-3 py-2.5 text-left ${checkinRes.ok ? 'bg-[#123a26]' : checkinRes.already ? 'bg-[#3a3212]' : 'bg-[#3a1420]'}`}>
-      <div className={`text-[13px] font-extrabold ${checkinRes.ok ? 'text-[#7BE0A8]' : checkinRes.already ? 'text-amber' : 'text-pink'}`}>
+    <div className={`mt-3 rounded-btn-lg px-3 py-2.5 text-left ${checkinRes.ok ? 'bg-[#003825]' : checkinRes.already ? 'bg-[#432601]' : 'bg-[#491F21]'}`}>
+      <div className={`text-[13px] font-extrabold ${checkinRes.ok ? 'text-[#00C48C]' : checkinRes.already ? 'text-amber' : 'text-pink'}`}>
         {checkinRes.ok ? L('✓ Admitido', '✓ Admitted') : checkinRes.already ? L('Ya había ingresado', 'Already checked in') : checkinRes.msg === 'reembolsado' ? L('Boleto reembolsado', 'Ticket refunded') : L('Código no válido', 'Invalid code')}
         {checkinRes.admitted != null && checkinRes.qty != null && checkinRes.qty > 1 ? ` · ${checkinRes.admitted}/${checkinRes.qty}` : ''}
       </div>
@@ -922,7 +922,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   );
   const checkinView = persistable ? (
     <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[320px_1fr]">
-      <div className="rounded-card p-5" style={{ background: '#1E1B2E' }}>
+      <div className="rounded-card p-5" style={{ background: '#16112E' }}>
         <div className="text-center text-[11px] font-extrabold uppercase tracking-[.06em] text-white/60">{L('Validar boleto', 'Validate ticket')}</div>
         <div className="mt-3 flex gap-2">
           <input
@@ -946,7 +946,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {checkinBanner}
         <div className="mt-3 text-center text-[10.5px] font-semibold text-white/50">{L('El invitado muestra el código de su boleto (Mi cuenta → Mis boletos).', 'The guest shows the code from their ticket (My account → My tickets).')}</div>
         <div className="mt-4 flex justify-center gap-6 border-t border-white/10 pt-4">
-          <div className="text-center"><div className="text-[18px] font-extrabold text-[#7BE0A8]">{admittedQty}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Ingresaron', 'Checked in')}</div></div>
+          <div className="text-center"><div className="text-[18px] font-extrabold text-[#00C48C]">{admittedQty}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Ingresaron', 'Checked in')}</div></div>
           <div className="text-center"><div className="text-[18px] font-extrabold text-white">{ticketsSold}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Vendidos', 'Sold')}</div></div>
           <div className="text-center"><div className="text-[18px] font-extrabold text-amber">{Math.max(0, ticketsSold - admittedQty)}</div><div className="mt-0.5 text-[9px] font-semibold text-white/55">{L('Faltan', 'Remaining')}</div></div>
         </div>
@@ -983,7 +983,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ) : (
     // demo (not signed in): the sample scan design stays explorable
     <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[300px_1fr]">
-      <div className="rounded-card p-5 text-center" style={{ background: '#1E1B2E' }}>
+      <div className="rounded-card p-5 text-center" style={{ background: '#16112E' }}>
         <div className="text-[11px] font-extrabold uppercase tracking-[.06em] text-white/60">{L('Validar boleto', 'Validate ticket')}</div>
         <div className="mx-auto my-4 flex h-[180px] w-[180px] items-center justify-center rounded-tile bg-white p-3.5"><Qr value="TOLATINO" size={150} /></div>
         <div className="text-[12px] font-bold text-white/80">{L('Inicia sesión con tu negocio para validar boletos reales.', 'Sign in with your business to validate real tickets.')}</div>
@@ -1216,7 +1216,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       setCancelBusy(false);
       if (error) { flash(L('No se pudo cancelar', "Couldn't cancel")); return; }
       // Soft-cancel: keep the row (tickets preserved), reflect the new status locally.
-      setEvents((xs) => xs.map((x) => (x.id === mgEv.id ? { ...x, lifecycle: 'cancelled', status: ['Cancelado', 'Cancelled'], statusBg: '#FDE7EF', statusC: '#D6336C' } : x)));
+      setEvents((xs) => xs.map((x) => (x.id === mgEv.id ? { ...x, lifecycle: 'cancelled', status: ['Cancelado', 'Cancelled'], statusBg: '#FFECF2', statusC: '#E11D48' } : x)));
       flash(L('Evento cancelado — se avisó a los asistentes', 'Event cancelled — attendees notified'));
     } else {
       flash(L('Evento cancelado', 'Event cancelled'));
@@ -1626,10 +1626,10 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   ];
   const wizStep3 = (
     <div className="flex flex-col gap-3.5">
-      <div className="flex items-center gap-3 rounded-field border p-3" style={{ background: eReady ? '#E3F5EA' : '#FCEFD6', borderColor: eReady ? '#A7E3C0' : '#FDE68A' }}>
-        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-white text-[14px] font-extrabold" style={{ color: eReady ? '#176B3A' : '#9A6A12' }}>{eReady ? '✓' : '⚠'}</span>
+      <div className="flex items-center gap-3 rounded-field border p-3" style={{ background: eReady ? '#E6FAF3' : '#FFF6E3', borderColor: eReady ? '#C1EBD6' : '#F4DBBA' }}>
+        <span className="flex h-[30px] w-[30px] flex-none items-center justify-center rounded-[9px] bg-white text-[14px] font-extrabold" style={{ color: eReady ? '#007A57' : '#8A5A00' }}>{eReady ? '✓' : '⚠'}</span>
         <div className="flex-1">
-          <div className="text-[12px] font-extrabold" style={{ color: eReady ? '#176B3A' : '#9A6A12' }}>{eReady ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing')}</div>
+          <div className="text-[12px] font-extrabold" style={{ color: eReady ? '#007A57' : '#8A5A00' }}>{eReady ? L('Listo para publicar', 'Ready to publish') : L('Faltan datos', 'A few essentials missing')}</div>
           <div className="mt-0.5 text-[10.5px] font-medium leading-snug text-ink-3">{eReady ? L('Se pondrá en venta al publicar.', 'It goes on sale when you publish.') : L('Agrega nombre, fecha y al menos un boleto.', 'Add a name, date and at least one ticket.')}</div>
         </div>
       </div>
@@ -1637,7 +1637,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {reviewRows.map(([k, v, ok, step], i) => (
           <div key={k} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${i < reviewRows.length - 1 ? 'border-b border-hair' : ''}`}>
             <span className="w-[74px] flex-none text-[10.5px] font-semibold text-muted-2">{k}</span>
-            <span className="min-w-0 flex-1 truncate text-[11.5px] font-bold" style={{ color: ok ? '#1E1B2E' : '#C0BBD0' }}>{v}</span>
+            <span className="min-w-0 flex-1 truncate text-[11.5px] font-bold" style={{ color: ok ? '#16112E' : '#B3ADC7' }}>{v}</span>
             <button onClick={() => setWizStep(step)} className="flex-none cursor-pointer text-[10.5px] font-extrabold text-primary-dark">{L('Editar', 'Edit')}</button>
           </div>
         ))}
@@ -1692,8 +1692,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       cap: 48,
       tile: draftTile,
       status: ['Vendiendo', 'Selling'],
-      statusBg: '#E3F5EA',
-      statusC: '#1F8A4C',
+      statusBg: '#E6FAF3',
+      statusC: '#007A57',
     };
     // Demo mode: local only, always "succeeds".
     if (!(persistable && real && user && supabase)) { setEvents((xs) => [local, ...xs]); return true; }
@@ -1765,8 +1765,8 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         {wizStepDefs.map(([, label], i) => {
           const active = wizStep === i, done = i < wizStep || (i <= wizMax && i !== wizStep);
           return (
-            <button key={i} onClick={() => { if (i <= wizMax) setWizStep(i); }} className="flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold" style={{ background: active ? '#7B61FF' : done ? '#EFEBFF' : '#F1EFFA', color: active ? '#fff' : done ? '#6D4DF6' : '#9A96AE' }}>
-              <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white" style={{ background: active ? 'rgba(255,255,255,.25)' : done ? '#7B61FF' : '#D8D2E6' }}>{done ? '✓' : i + 1}</span>
+            <button key={i} onClick={() => { if (i <= wizMax) setWizStep(i); }} className="flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold" style={{ background: active ? '#FF2D6F' : done ? '#FFECF2' : '#F1EEFA', color: active ? '#fff' : done ? '#C4144C' : '#9A93B3' }}>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-extrabold text-white" style={{ background: active ? 'rgba(255,255,255,.25)' : done ? '#FF2D6F' : '#D6DDFF' }}>{done ? '✓' : i + 1}</span>
               {label}
             </button>
           );
@@ -1853,7 +1853,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {listBody}
 
       {isPremium && listTab === 'upcoming' && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#16112E,#241C46)' }}>
           <TrendingUp size={20} className="flex-none text-amber" />
           <span className="min-w-0 flex-1 text-[12px] font-semibold leading-snug text-white/80">{L('Tus eventos aparecen destacados en el feed de descubrimiento con Premium.', 'Your events get featured placement in the discovery feed with Premium.')}</span>
         </div>

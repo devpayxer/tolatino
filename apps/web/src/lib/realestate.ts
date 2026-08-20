@@ -30,10 +30,10 @@ export const RE_TYPES: { id: RePtype; es: string; en: string }[] = [
 ];
 /** Striped placeholder tile per deal (design-system placeholder pattern). */
 export const RE_TILE: Record<ReDeal, [string, string]> = {
-  venta: ['#E5DEF9', '#D9CEF3'],
-  renta: ['#E3F5EA', '#D6E7D0'],
-  cuarto: ['#FCEBD6', '#F6DCBF'],
-  comercial: ['#E4EEFB', '#DAE5F6'],
+  venta: ['#FED2DF', '#E0DAFF'],
+  renta: ['#E6FAF3', '#CDE9C9'],
+  cuarto: ['#FFEBDF', '#FED6C2'],
+  comercial: ['#DAF6FD', '#C0E6FF'],
 };
 
 export type ReCard = {

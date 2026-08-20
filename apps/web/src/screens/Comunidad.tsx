@@ -532,7 +532,7 @@ export function ComunidadScreen() {
     const base: Comment = {
       id: `u${commentSeq}`,
       initials: auth.profile?.initials ?? 'TÚ',
-      color: auth.profile?.avatar_color ?? '#7B61FF',
+      color: auth.profile?.avatar_color ?? '#FF2D6F',
       name: auth.profile?.display_name ?? L('Tú', 'You'),
       timeEs: 'ahora',
       timeEn: 'now',
@@ -600,7 +600,7 @@ export function ComunidadScreen() {
           <CommentAvatar c={c} size={isReply ? 26 : 30} />
         )}
         <div className="min-w-0 flex-1">
-          <div className="rounded-[13px] bg-[#F5F3FB] px-3 py-[9px]">
+          <div className="rounded-[13px] bg-[#F6F4FF] px-3 py-[9px]">
             <div className="flex items-baseline justify-between gap-2">
               {c.authorId ? (
                 <button onClick={() => setVecino(c.authorId!)} className="cursor-pointer text-[12px] font-extrabold text-ink hover:underline">{c.name}</button>
@@ -750,7 +750,7 @@ export function ComunidadScreen() {
               : <YouAvatar size={42} />}
             <button
               onClick={() => app.openPub('post')}
-              className="min-w-0 flex-1 cursor-pointer rounded-field bg-app px-3.5 py-3 text-left text-[13.5px] font-medium text-muted hover:bg-[#ECE9F6]"
+              className="min-w-0 flex-1 cursor-pointer rounded-field bg-app px-3.5 py-3 text-left text-[13.5px] font-medium text-muted hover:bg-[#F1EEFA]"
             >
               {L('¿Qué pasa en tu barrio?', "What's up in your hood?")}
             </button>
@@ -761,9 +761,9 @@ export function ComunidadScreen() {
           <div className="mt-3 flex flex-wrap gap-x-[7px] gap-y-[13px] border-t border-hair pt-3">
             {(
               [
-                { label: L('Pregunta', 'Ask'), color: '#6D4DF6', bg: '#EFEBFF', go: () => app.openPub('post', 'ask') },
-                { label: L('Recomienda', 'Recommend'), color: '#1F8A4C', bg: '#E3F5EA', go: () => app.openPub('post', 'rec') },
-                { label: L('Evento', 'Event'), color: '#2F6FED', bg: '#E5EFFB', go: () => app.openPub('evento') },
+                { label: L('Pregunta', 'Ask'), color: '#C4144C', bg: '#FFECF2', go: () => app.openPub('post', 'ask') },
+                { label: L('Recomienda', 'Recommend'), color: '#007A57', bg: '#E6FAF3', go: () => app.openPub('post', 'rec') },
+                { label: L('Evento', 'Event'), color: '#007CC1', bg: '#DEF4FF', go: () => app.openPub('evento') },
               ] as const
             ).map((c) => (
               <button
@@ -1019,7 +1019,7 @@ export function ComunidadScreen() {
                   onClick={sendComment}
                   disabled={!canComment || sending}
                   className={`tap flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full text-white ${
- canComment && !sending ? 'cursor-pointer bg-primary' : 'cursor-not-allowed bg-[#E3DEF2]'
+ canComment && !sending ? 'cursor-pointer bg-primary' : 'cursor-not-allowed bg-[#E4DFF2]'
  }`}
                   aria-label={L('Enviar', 'Send')}
                 >

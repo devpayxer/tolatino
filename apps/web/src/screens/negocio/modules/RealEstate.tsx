@@ -102,7 +102,7 @@ const SPECIALTIES: { id: string; es: string; en: string }[] = [
 ];
 
 // Avatar palette (same set the Events module uses for people initials).
-const AV_COLORS = ['#7B61FF', '#2A5C8A', '#E8954A', '#D6336C', '#1F9D57'];
+const AV_COLORS = ['#FF2D6F', '#0369A1', '#C05702', '#E11D48', '#00A878'];
 const avColor = (name: string) => {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
@@ -640,7 +640,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     <div className="mt-3 flex flex-col gap-3 border-t border-hair pt-3">
       <div>
         <label className={labelCls}>{L('Número de licencia (TREC)', 'License number (TREC)')} *</label>
-        <input value={licForm.license} onChange={(e) => setLicForm((f) => ({ ...f, license: e.target.value }))} placeholder="TREC #745210" className={fieldCls} />
+        <input value={licForm.license} onChange={(e) => setLicForm((f) => ({ ...f, license: e.target.value }))} placeholder="TREC #8A5A00" className={fieldCls} />
       </div>
       <div>
         <label className={labelCls}>{L('Especialidad', 'Specialty')}</label>

@@ -25,13 +25,13 @@ export type Lx = (es: string, en: string) => string;
 export type CatInfo = { es: string; en: string; name: string; initials: string; area: string; tile: string; svc: LucideIcon };
 
 export const CAT_INFO: Record<Rubro, CatInfo> = {
-  restaurant: { es: 'Restaurante · Taquería', en: 'Restaurant · Taco shop', name: '', initials: '', area: '', tile: '#ECE3F8 0 9px,#E3D7F4 9px 18px', svc: Utensils },
-  beauty: { es: 'Belleza · Salón', en: 'Beauty · Hair Salon', name: '', initials: '', area: '', tile: '#FCE3EC 0 9px,#F6CEDD 9px 18px', svc: Scissors },
-  auto: { es: 'Auto · Taller', en: 'Auto Repair · Shop', name: '', initials: '', area: '', tile: '#E4ECFB 0 9px,#D7E3F6 9px 18px', svc: Wrench },
-  retail: { es: 'Boutique · Ropa', en: 'Boutique · Apparel', name: '', initials: '', area: '', tile: '#EAE2F8 0 9px,#DCCEF2 9px 18px', svc: Store },
-  rental: { es: 'Renta · Equipo', en: 'Rental · Equipment', name: '', initials: '', area: '', tile: '#E3F5EA 0 9px,#D6E7D0 9px 18px', svc: Bike },
-  realestate: { es: 'Bienes Raíces · Agencia', en: 'Real Estate · Agency', name: '', initials: '', area: '', tile: '#E5DEF9 0 9px,#D9CEF3 9px 18px', svc: HomeIcon },
-  cardealer: { es: 'Dealer · Autos', en: 'Car Dealer', name: '', initials: '', area: '', tile: '#E4EEFB 0 9px,#DAE5F6 9px 18px', svc: CarIcon },
+  restaurant: { es: 'Restaurante · Taquería', en: 'Restaurant · Taco shop', name: '', initials: '', area: '', tile: '#F0EDFF 0 9px,#E9D7FB 9px 18px', svc: Utensils },
+  beauty: { es: 'Belleza · Salón', en: 'Beauty · Hair Salon', name: '', initials: '', area: '', tile: '#FFE8F0 0 9px,#FED2DF 9px 18px', svc: Scissors },
+  auto: { es: 'Auto · Taller', en: 'Auto Repair · Shop', name: '', initials: '', area: '', tile: '#DEF4FF 0 9px,#C0E6FF 9px 18px', svc: Wrench },
+  retail: { es: 'Boutique · Ropa', en: 'Boutique · Apparel', name: '', initials: '', area: '', tile: '#F0EDFF 0 9px,#E0DAFF 9px 18px', svc: Store },
+  rental: { es: 'Renta · Equipo', en: 'Rental · Equipment', name: '', initials: '', area: '', tile: '#E6FAF3 0 9px,#CDE9C9 9px 18px', svc: Bike },
+  realestate: { es: 'Bienes Raíces · Agencia', en: 'Real Estate · Agency', name: '', initials: '', area: '', tile: '#FED2DF 0 9px,#E0DAFF 9px 18px', svc: HomeIcon },
+  cardealer: { es: 'Dealer · Autos', en: 'Car Dealer', name: '', initials: '', area: '', tile: '#DAF6FD 0 9px,#C0E6FF 9px 18px', svc: CarIcon },
 };
 
 export type Mods = Record<'menu' | 'services' | 'bookings' | 'products' | 'rental' | 'events' | 'inmuebles' | 'vehiculos' | 'updates' | 'staff', boolean>;
@@ -124,7 +124,7 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
     { label: '', items: [it('insights', L('Inicio', 'Home'), BarChart3)] },
     {
       label: L('Tu página', 'Your page'),
-      add: { label: L('así te encuentran', 'how you’re found'), color: '#B7B3C6' },
+      add: { label: L('así te encuentran', 'how you’re found'), color: '#B3ADC7' },
       items: [
         it('listing', L('Información general', 'General info'), Building2, { sub: isFree ? null : 'OK' }),
         it('photos', L('Fotos y media', 'Photos & media'), ImageIcon, { count: photoBadge }),
@@ -149,7 +149,7 @@ export function buildNav(ctx: PanelCtx): NavGroup[] {
     },
     {
       label: L('Vender en To’Latino', 'Sell on To’Latino'),
-      add: { label: L('opcional', 'optional'), color: '#9A96AE', onAdd: sells ? () => go('modules') : undefined },
+      add: { label: L('opcional', 'optional'), color: '#9A93B3', onAdd: sells ? () => go('modules') : undefined },
       items: sellItems,
     },
     {

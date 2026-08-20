@@ -61,14 +61,14 @@ export const rentId = () =>
 
 // Striped-tile palette for category imagery placeholders.
 export const RENTAL_TILES: string[] = [
-  '#EAE2F8 0 8px,#DCCEF2 8px 16px', // lilac
-  '#F3E2CE 0 8px,#ECD3B4 8px 16px', // tan
-  '#FBEFD3 0 8px,#F5E1B0 8px 16px', // amber
-  '#EDE0D4 0 8px,#DFCBB6 8px 16px', // coffee
-  '#E3F5EA 0 8px,#D6E7D0 8px 16px', // green
-  '#FCE3DC 0 8px,#F6CEC2 8px 16px', // peach
-  '#E4ECFB 0 8px,#D7E3F6 8px 16px', // blue
-  '#F3D9E2 0 8px,#E8BFCD 8px 16px', // rose
+  '#F0EDFF 0 8px,#E0DAFF 8px 16px', // lilac
+  '#FAD9BD 0 8px,#FAD9BD 8px 16px', // tan
+  '#FFF6E3 0 8px,#F4DBBA 8px 16px', // amber
+  '#FFECDC 0 8px,#FAD9BD 8px 16px', // coffee
+  '#E6FAF3 0 8px,#CDE9C9 8px 16px', // green
+  '#FFEBDF 0 8px,#FED6C2 8px 16px', // peach
+  '#DEF4FF 0 8px,#C0E6FF 8px 16px', // blue
+  '#FED2DF 0 8px,#FED2DF 8px 16px', // rose
 ];
 
 // Generic default categories (rentals vary by business; the owner renames/adds).

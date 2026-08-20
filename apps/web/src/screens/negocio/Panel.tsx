@@ -224,26 +224,26 @@ export function PanelScreen() {
       // eslint-disable-next-line @next/next/no-img-element
       <img src={imgUrl(real.logo_url, ANCHO.icono)} alt="" className={`${cls} flex-none border border-line object-cover`} />
     ) : (
-      <span className={`${cls} flex flex-none items-center justify-center font-extrabold text-white`} style={{ background: isFree ? '#9F1239' : '#7B61FF' }}>
+      <span className={`${cls} flex flex-none items-center justify-center font-extrabold text-white`} style={{ background: isFree ? '#C4144C' : '#FF2D6F' }}>
         {bizInitials}
       </span>
     );
   const bizCategory = real ? catLabel(real.category_id) : L(ci.es, ci.en); // etiqueta del rubro (legítima), nunca un nombre inventado
   const bizArea = real ? (real.address || real.city || '') : '';
-  const catTile = real ? `${real.tile_a ?? '#EFEBFF'} 0 9px,${real.tile_b ?? '#E5DEF9'} 9px 18px` : isFree ? '#FCE3EC 0 9px,#F6CEDD 9px 18px' : ci.tile;
+  const catTile = real ? `${real.tile_a ?? '#FFECF2'} 0 9px,${real.tile_b ?? '#FED2DF'} 9px 18px` : isFree ? '#FFE8F0 0 9px,#FED2DF 9px 18px' : ci.tile;
 
   const livePill = real
     ? real.is_open
-      ? { bg: '#E3F5EA', c: '#1F8A4C', dot: '#1F9D57', text: L('Abierto', 'Open') }
-      : { bg: '#FCEFD6', c: '#9A6A12', dot: '#E8954A', text: L('Cerrado', 'Closed') }
+      ? { bg: '#E6FAF3', c: '#007A57', dot: '#00A878', text: L('Abierto', 'Open') }
+      : { bg: '#FFF6E3', c: '#8A5A00', dot: '#C05702', text: L('Cerrado', 'Closed') }
     : isFree
-      ? { bg: '#FCEFD6', c: '#9A6A12', dot: '#E8954A', text: L('Sin verificar', 'Unverified') }
-      : { bg: '#E3F5EA', c: '#1F8A4C', dot: '#1F9D57', text: L('Abierto · hasta 10 PM', 'Open · until 10 PM') };
+      ? { bg: '#FFF6E3', c: '#8A5A00', dot: '#C05702', text: L('Sin verificar', 'Unverified') }
+      : { bg: '#E6FAF3', c: '#007A57', dot: '#00A878', text: L('Abierto · hasta 10 PM', 'Open · until 10 PM') };
   const planPill = isFree
-    ? { bg: '#F1EFFA', c: '#8A86A0', text: 'Free' }
+    ? { bg: '#F1EEFA', c: '#7E7798', text: 'Free' }
     : isPremium
-      ? { bg: '#1E1B2E', c: '#F4B740', text: '✦ Premium' }
-      : { bg: '#F1EFFA', c: '#6D4DF6', text: 'Verified' };
+      ? { bg: '#16112E', c: '#FFB020', text: '✦ Premium' }
+      : { bg: '#F1EEFA', c: '#C4144C', text: 'Verified' };
 
   // A real business shows its REAL rating + reviews (and '—' for untracked stats
   // like weekly views) — never the demo showcase numbers. Demo keeps the sample.
@@ -362,7 +362,7 @@ export function PanelScreen() {
                           onClick={() => { admin.setActive(b.id); setSwitcherOpen(false); }}
                           className={`tap-y flex w-full cursor-pointer items-center gap-2.5 rounded-btn px-2 py-2 text-left ${on ? 'bg-lilac-2' : 'hover:bg-app'}`}
                         >
-                          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-[11px] font-extrabold text-white" style={{ background: b.tier === 'free' ? '#9F1239' : '#7B61FF' }}>
+                          <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] text-[11px] font-extrabold text-white" style={{ background: b.tier === 'free' ? '#C4144C' : '#FF2D6F' }}>
                             {initialsOf(b.name)}
                           </span>
                           <span className="min-w-0 flex-1">
@@ -428,9 +428,9 @@ export function PanelScreen() {
                 <button
                   key={n.id}
                   onClick={() => !n.locked && ctx.go(n.id)}
-                  className={`flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-[9px] text-left ${active ? 'bg-[#F1EEFE]' : ''} ${n.locked ? 'cursor-default' : 'cursor-pointer hover:bg-app'} ${n.indent ? 'pl-[30px]' : ''}`}
+                  className={`flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-[9px] text-left ${active ? 'bg-[#F3EEFF]' : ''} ${n.locked ? 'cursor-default' : 'cursor-pointer hover:bg-app'} ${n.indent ? 'pl-[30px]' : ''}`}
                 >
-                  <n.Icon size={15} strokeWidth={2.2} className={active ? 'text-primary-press' : n.locked ? 'text-[#C0BBD0]' : 'text-muted'} />
+                  <n.Icon size={15} strokeWidth={2.2} className={active ? 'text-primary-press' : n.locked ? 'text-[#B3ADC7]' : 'text-muted'} />
                   <span className={`flex-1 text-[13px] ${active ? 'font-extrabold text-primary-press' : n.locked ? 'font-semibold text-muted-faint' : 'font-semibold text-ink-soft'}`}>
                     {n.label}
                   </span>
@@ -447,7 +447,7 @@ export function PanelScreen() {
         ))}
 
         {isFree && (
-          <div className="mt-2 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#6743E2,#8268FF)' }}>
+          <div className="mt-2 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#A80F40,#FF7A9E)' }}>
             <div className="text-[12.5px] font-extrabold">{L('Desbloquea todo el kit', 'Unlock the full toolkit')}</div>
             <div className="mt-0.5 text-[10.5px] font-semibold leading-snug text-[rgba(255,255,255,.85)]">
               {L('Activa menú, reservas, productos y más. Insignia verificada y 5× más visibilidad.', 'Activate menu, bookings, products & more. Verified badge and 5× visibility.')}
@@ -563,7 +563,7 @@ export function PanelScreen() {
             <span className={`text-[18px] font-extrabold tracking-[-.03em] ${isInicio ? 'text-amber lg:text-primary' : 'text-primary'}`}>Latino</span>
             {/* En la pantalla de Inicio la cabecera es oscura en móvil y clara en
                 escritorio, así que el logotipo cambia de tono con ella. */}
-            <LogoMark size={16} color={isInicio ? '#F4B740' : '#7B61FF'} className="ml-1 self-center lg:hidden" />
+            <LogoMark size={16} color={isInicio ? '#FFB020' : '#FF2D6F'} className="ml-1 self-center lg:hidden" />
             <LogoMark size={16} className="ml-1 hidden self-center lg:block" />
             <span className={`ml-1.5 text-[10.5px] font-bold md:hidden ${isInicio ? 'text-[rgba(255,255,255,.55)]' : 'text-muted'}`}>{L('Negocios', 'Business')}</span>
           </button>

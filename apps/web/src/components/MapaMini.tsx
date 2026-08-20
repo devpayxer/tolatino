@@ -27,7 +27,7 @@ import { useEffect, useRef, useState } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { crearMapa } from '@/lib/mapa';
 
-export function MapaMini({ lat, lng, color = '#7B61FF', alto = 130, className = '' }: {
+export function MapaMini({ lat, lng, color = '#FF2D6F', alto = 130, className = '' }: {
   lat?: number | null;
   lng?: number | null;
   /** Color del pin (el del rubro del negocio). */
@@ -88,7 +88,7 @@ export function MapaMini({ lat, lng, color = '#7B61FF', alto = 130, className = 
       <div
         data-mapa={sinMapa ? 'respaldo' : 'sin-coords'}
         className={`relative overflow-hidden rounded-[15px] ${className}`}
-        style={{ height: alto, background: 'repeating-linear-gradient(135deg,#E7ECF3 0 14px,#DCE3EC 14px 28px)' }}
+        style={{ height: alto, background: 'repeating-linear-gradient(135deg,#EAE6F5 0 14px,#E4DFF2 14px 28px)' }}
       />
     );
   }
@@ -98,7 +98,7 @@ export function MapaMini({ lat, lng, color = '#7B61FF', alto = 130, className = 
       ref={div}
       data-mapa="vivo"
       className={`relative overflow-hidden rounded-[15px] ${className}`}
-      style={{ height: alto, background: '#F7F5FB' }}
+      style={{ height: alto, background: '#F1EEFA' }}
     />
   );
 }

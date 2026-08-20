@@ -435,6 +435,56 @@ try {
   fuenteMsg = `  Tipografía: no se pudo comprobar (${e.message})`;
 }
 
+// ── Guardián: ningún color inventado fuera de la paleta ─────────────────────
+// De dónde sale: el paso 2 de la migración (2026-08-20) llevó 1.243 hex crudos
+// repartidos por 67 archivos a los colores del sistema. Sin un guardián, ese
+// trabajo dura hasta el próximo `style={{ background: '#8B5CF6' }}` que alguien
+// escriba de memoria — que es exactamente cómo se habían acumulado los 1.243.
+//
+// Por qué NO se prohíbe el hex a secas: hay sitios donde es inevitable y
+// legítimo —los atributos de un SVG, la apariencia de Stripe (que pinta dentro
+// de un iframe suyo, fuera de nuestro CSS)— y una regla imposible de cumplir se
+// termina desactivando. Lo que se exige es más útil y sí se puede sostener:
+// **todo hex que aparezca tiene que ser uno de los del sistema.** El conjunto
+// se lee de `lib/paleta.ts`, así que la regla no puede desincronizarse de la
+// paleta. Incluye las marcas ajenas (Apple, Visa, DoorDash), que se declaran
+// allí a propósito: cambiarle el azul a una tarjeta Visa la haría parecer falsa.
+const paletaFail = [];
+let paletaMsg = '';
+try {
+  // La ruta se resuelve desde ESTE archivo, no desde el directorio de trabajo:
+  // el guardián corre en `postbuild` con el cwd en `apps/web`.
+  const SRC = join(new URL('..', import.meta.url).pathname, 'apps/web/src');
+  const rutaPaleta = join(SRC, 'lib/paleta.ts');
+  const sistema = new Set(
+    (readFileSync(rutaPaleta, 'utf8').match(/'#[0-9A-Fa-f]{6}'/g) ?? []).map((s) => s.slice(1, -1).toUpperCase()),
+  );
+  const fuentes = walk(SRC).filter((f) => /\.tsx?$/.test(f) && !f.endsWith('paleta.ts'));
+  const intrusos = new Map();
+  for (const f of fuentes) {
+    const txt = readFileSync(f, 'utf8');
+    txt.split('\n').forEach((linea, i) => {
+      for (const h of linea.match(/#[0-9A-Fa-f]{6}\b/g) ?? []) {
+        const H = h.toUpperCase();
+        if (sistema.has(H)) continue;
+        if (!intrusos.has(H)) intrusos.set(H, []);
+        intrusos.get(H).push(`${f}:${i + 1}`);
+      }
+    });
+  }
+  if (sistema.size < 40) {
+    paletaFail.push(`solo se leyeron ${sistema.size} colores de \`lib/paleta.ts\` — la comprobación se habría quedado sin referencia`);
+  } else if (intrusos.size) {
+    for (const [h, donde] of intrusos) {
+      paletaFail.push(`${h} no es un color del sistema (${donde.length} uso(s), p. ej. ${donde[0]})`);
+    }
+  } else {
+    paletaMsg = `  Paleta: ${fuentes.length} archivos revisados, ningún color fuera de los ${sistema.size} del sistema`;
+  }
+} catch (e) {
+  paletaMsg = `  Paleta: no se pudo comprobar (${e.message})`;
+}
+
 // ── Reporte ─────────────────────────────────────────────────────────────────
 console.log(`\nverify-build · ${jsFiles.length} archivos JS, ${htmlFiles.length} HTML en ${OUT}`);
 console.log(envMsg);
@@ -444,6 +494,7 @@ console.log(demoMsg);
 console.log(efectoMsg);
 console.log(colorMsg);
 console.log(fuenteMsg);
+console.log(paletaMsg);
 for (const { nombre, ruta, faltan } of kindsFail) {
   console.error(`\n  ✖ ${faltan.length} tipo(s) que la base emite y ${nombre} NO sabe dibujar:`);
   console.error(`      ${faltan.join(', ')}`);
@@ -464,6 +515,14 @@ for (const c of colorFail) {
   console.error('        buscador y todos los formularios quedan invisibles.');
 }
 
+for (const p of paletaFail) {
+  console.error(`\n  ✖ ${p}.`);
+  console.error('      → los colores del sistema viven en apps/web/src/lib/paleta.ts.');
+  console.error('        Si hace falta un tono que no está, NO se inventa: se genera');
+  console.error('        armonizado en OKLCH sobre los acentos del sistema (es lo que');
+  console.error('        manda el handoff) y se añade allí con su razón escrita.');
+}
+
 for (const f of fuenteFail) {
   console.error(`\n  ✖ ${f}.`);
   console.error('      → el sistema son TRES familias con papeles distintos: Onest (interfaz),');
@@ -478,7 +537,7 @@ for (const d of demoFail) {
   console.error('      → el valor inicial debe ser vacío; que el cargador decida si toca demo.');
 }
 
-if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0 && colorFail.length === 0 && fuenteFail.length === 0) {
+if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0 && colorFail.length === 0 && fuenteFail.length === 0 && paletaFail.length === 0) {
   console.log('\n✅ Sin datos fabricados, sin secretos y con la base correcta.\n');
   process.exit(0);
 }

@@ -54,7 +54,7 @@ export function ComingSoonScreen({ view }: { view: keyof typeof SOON }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={L('Tu correo electrónico', 'Your email')}
-              className="min-w-0 flex-1 rounded-btn-lg border-[1.5px] border-[#ECE9F6] bg-white px-4 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary"
+              className="min-w-0 flex-1 rounded-btn-lg border-[1.5px] border-[#F1EEFA] bg-white px-4 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary"
             />
             <button type="submit" className="flex-none cursor-pointer rounded-btn-lg bg-primary px-5 py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">
               {L('¡Avísame!', 'Notify me')}

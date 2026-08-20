@@ -33,28 +33,28 @@ export const MENU: MenuCat[] = [
     key: 'tacos',
     name: ['Tacos', 'Tacos'],
     items: [
-      { n: ['Taco al Pastor', 'Al Pastor Taco'], d: ['Cerdo marinado, piña y cilantro', 'Marinated pork, pineapple & cilantro'], price: 2.5, tag: ['Popular', 'Popular'], tagBg: '#EFEBFF', tagC: '#6D4DF6', bg: '#EFEBFF 0 8px,#E5DEF9 8px 16px' },
-      { n: ['Taco de Carne Asada', 'Carne Asada Taco'], d: ['Res a la parrilla con cebollita', 'Grilled beef with onion'], price: 3.0, bg: '#FCEBD6 0 8px,#F6DEC0 8px 16px' },
-      { n: ['Taco de Suadero', 'Suadero Taco'], d: ['Corte suave, doble tortilla de maíz', 'Tender cut, double corn tortilla'], price: 2.75, bg: '#E3F5EA 0 8px,#D6EFDF 8px 16px' },
-      { n: ['Taco de Pollo', 'Chicken Taco'], d: ['Pollo asado con guacamole', 'Grilled chicken with guacamole'], price: 2.5, bg: '#FBE9F0 0 8px,#F5D8E6 8px 16px' },
+      { n: ['Taco al Pastor', 'Al Pastor Taco'], d: ['Cerdo marinado, piña y cilantro', 'Marinated pork, pineapple & cilantro'], price: 2.5, tag: ['Popular', 'Popular'], tagBg: '#FFECF2', tagC: '#C4144C', bg: '#FFECF2 0 8px,#FED2DF 8px 16px' },
+      { n: ['Taco de Carne Asada', 'Carne Asada Taco'], d: ['Res a la parrilla con cebollita', 'Grilled beef with onion'], price: 3.0, bg: '#FFEBDF 0 8px,#FAD9BD 8px 16px' },
+      { n: ['Taco de Suadero', 'Suadero Taco'], d: ['Corte suave, doble tortilla de maíz', 'Tender cut, double corn tortilla'], price: 2.75, bg: '#E6FAF3 0 8px,#C1EBD6 8px 16px' },
+      { n: ['Taco de Pollo', 'Chicken Taco'], d: ['Pollo asado con guacamole', 'Grilled chicken with guacamole'], price: 2.5, bg: '#FFE8EB 0 8px,#FED2DF 8px 16px' },
     ],
   },
   {
     key: 'esp',
     name: ['Especialidades', 'Specialties'],
     items: [
-      { n: ['Quesabirria (3)', 'Quesabirria (3)'], d: ['Con consomé para remojar 🔥', 'With consommé to dip 🔥'], price: 12.0, tag: ['Recomendado', 'Recommended'], tagBg: '#E3F5EA', tagC: '#1F8A4C', bg: '#EFEBFF 0 8px,#E5DEF9 8px 16px' },
-      { n: ['Torta Ahogada', 'Torta Ahogada'], d: ['Bañada en salsa de chile de árbol', 'Drowned in chile de árbol sauce'], price: 9.5, bg: '#FCEBD6 0 8px,#F6DEC0 8px 16px' },
-      { n: ['Gringa', 'Gringa'], d: ['Tortilla de harina con queso', 'Flour tortilla with cheese'], price: 7.0, bg: '#FCF1C7 0 8px,#F6E8AE 8px 16px' },
+      { n: ['Quesabirria (3)', 'Quesabirria (3)'], d: ['Con consomé para remojar 🔥', 'With consommé to dip 🔥'], price: 12.0, tag: ['Recomendado', 'Recommended'], tagBg: '#E6FAF3', tagC: '#007A57', bg: '#FFECF2 0 8px,#FED2DF 8px 16px' },
+      { n: ['Torta Ahogada', 'Torta Ahogada'], d: ['Bañada en salsa de chile de árbol', 'Drowned in chile de árbol sauce'], price: 9.5, bg: '#FFEBDF 0 8px,#FAD9BD 8px 16px' },
+      { n: ['Gringa', 'Gringa'], d: ['Tortilla de harina con queso', 'Flour tortilla with cheese'], price: 7.0, bg: '#FFF6E3 0 8px,#F4DBBA 8px 16px' },
     ],
   },
   {
     key: 'beb',
     name: ['Bebidas', 'Drinks'],
     items: [
-      { n: ['Agua de Horchata', 'Horchata'], d: ['Hecha en casa', 'House-made'], price: 3.0, bg: '#F1EFFA 0 8px,#E5DEF9 8px 16px' },
-      { n: ['Agua de Jamaica', 'Jamaica'], d: ['Refrescante', 'Refreshing'], price: 3.0, bg: '#FBE9F0 0 8px,#F5D8E6 8px 16px' },
-      { n: ['Refresco', 'Mexican Soda'], d: ['De vidrio', 'Glass bottle'], price: 2.5, bg: '#E5EFFB 0 8px,#D7E5F6 8px 16px' },
+      { n: ['Agua de Horchata', 'Horchata'], d: ['Hecha en casa', 'House-made'], price: 3.0, bg: '#F1EEFA 0 8px,#FED2DF 8px 16px' },
+      { n: ['Agua de Jamaica', 'Jamaica'], d: ['Refrescante', 'Refreshing'], price: 3.0, bg: '#FFE8EB 0 8px,#FED2DF 8px 16px' },
+      { n: ['Refresco', 'Mexican Soda'], d: ['De vidrio', 'Glass bottle'], price: 2.5, bg: '#DEF4FF 0 8px,#C0E6FF 8px 16px' },
     ],
   },
 ];
@@ -64,26 +64,26 @@ export const SHOP: MenuCat[] = [
     key: 'salsas',
     name: ['Salsas y conservas', 'Salsas & preserves'],
     items: [
-      { n: ['Salsa Roja Tatemada', 'Roasted Red Salsa'], d: ['Frasco 8oz · picante', '8oz jar · spicy'], price: 4.5, orig: 6, bg: '#FBE9F0 0 8px,#F5D8E6 8px 16px' },
-      { n: ['Salsa Verde', 'Green Salsa'], d: ['Frasco 8oz', '8oz jar'], price: 4.5, bg: '#E3F5EA 0 8px,#D6EFDF 8px 16px' },
-      { n: ['Chiles en escabeche', 'Pickled chiles'], d: ['Frasco 12oz', '12oz jar'], price: 5.5, bg: '#FCF1C7 0 8px,#F6E8AE 8px 16px' },
+      { n: ['Salsa Roja Tatemada', 'Roasted Red Salsa'], d: ['Frasco 8oz · picante', '8oz jar · spicy'], price: 4.5, orig: 6, bg: '#FFE8EB 0 8px,#FED2DF 8px 16px' },
+      { n: ['Salsa Verde', 'Green Salsa'], d: ['Frasco 8oz', '8oz jar'], price: 4.5, bg: '#E6FAF3 0 8px,#C1EBD6 8px 16px' },
+      { n: ['Chiles en escabeche', 'Pickled chiles'], d: ['Frasco 12oz', '12oz jar'], price: 5.5, bg: '#FFF6E3 0 8px,#F4DBBA 8px 16px' },
     ],
   },
   {
     key: 'despensa',
     name: ['Despensa', 'Pantry'],
     items: [
-      { n: ['Tortillas hechas a mano', 'Handmade tortillas'], d: ['Docena · maíz', 'Dozen · corn'], price: 3.5, bg: '#FCF1C7 0 8px,#F6E8AE 8px 16px' },
-      { n: ['Chips caseros', 'House chips'], d: ['Bolsa grande', 'Large bag'], price: 2.5, orig: 3.5, bg: '#FCEBD6 0 8px,#F6DEC0 8px 16px' },
-      { n: ['Frijoles de la casa', 'House beans'], d: ['1 lb', '1 lb'], price: 4.0, bg: '#EFEBFF 0 8px,#E5DEF9 8px 16px' },
+      { n: ['Tortillas hechas a mano', 'Handmade tortillas'], d: ['Docena · maíz', 'Dozen · corn'], price: 3.5, bg: '#FFF6E3 0 8px,#F4DBBA 8px 16px' },
+      { n: ['Chips caseros', 'House chips'], d: ['Bolsa grande', 'Large bag'], price: 2.5, orig: 3.5, bg: '#FFEBDF 0 8px,#FAD9BD 8px 16px' },
+      { n: ['Frijoles de la casa', 'House beans'], d: ['1 lb', '1 lb'], price: 4.0, bg: '#FFECF2 0 8px,#FED2DF 8px 16px' },
     ],
   },
   {
     key: 'mercancia',
     name: ['Mercancía', 'Merch'],
     items: [
-      { n: ['Playera La Esperanza', 'La Esperanza tee'], d: ['Algodón · S–XXL', 'Cotton · S–XXL'], price: 15.0, bg: '#EFEBFF 0 8px,#E5DEF9 8px 16px' },
-      { n: ['Taza de cerámica', 'Ceramic mug'], d: ['12oz', '12oz'], price: 9.0, bg: '#E5EFFB 0 8px,#D7E5F6 8px 16px' },
+      { n: ['Playera La Esperanza', 'La Esperanza tee'], d: ['Algodón · S–XXL', 'Cotton · S–XXL'], price: 15.0, bg: '#FFECF2 0 8px,#FED2DF 8px 16px' },
+      { n: ['Taza de cerámica', 'Ceramic mug'], d: ['12oz', '12oz'], price: 9.0, bg: '#DEF4FF 0 8px,#C0E6FF 8px 16px' },
     ],
   },
 ];
@@ -111,9 +111,9 @@ export const OPTION_GROUPS: Record<string, OptionGroup[]> = {
 };
 
 export const SHOP_PROMOS: { t: Bi; sub: Bi; bg: string; c: string }[] = [
-  { t: ['Envío gratis', 'Free delivery'], sub: ['En pedidos +$25', 'On orders $25+'], bg: '#EFEBFF 0 12px,#E5DEF9 12px 24px', c: '#5B3FD6' },
-  { t: ['2x1 en salsas', '2-for-1 salsas'], sub: ['Solo esta semana', 'This week only'], bg: '#FCEBD6 0 12px,#F6DEC0 12px 24px', c: '#B26A00' },
-  { t: ['Nuevo: mercancía', 'New: merch'], sub: ['Playeras y tazas', 'Tees & mugs'], bg: '#E3F5EA 0 12px,#D6EFDF 12px 24px', c: '#1F8A4C' },
+  { t: ['Envío gratis', 'Free delivery'], sub: ['En pedidos +$25', 'On orders $25+'], bg: '#FFECF2 0 12px,#FED2DF 12px 24px', c: '#4F46E5' },
+  { t: ['2x1 en salsas', '2-for-1 salsas'], sub: ['Solo esta semana', 'This week only'], bg: '#FFEBDF 0 12px,#FAD9BD 12px 24px', c: '#B85D00' },
+  { t: ['Nuevo: mercancía', 'New: merch'], sub: ['Playeras y tazas', 'Tees & mugs'], bg: '#E6FAF3 0 12px,#C1EBD6 12px 24px', c: '#007A57' },
 ];
 
 export const SERVICES: { n: Bi; d: Bi; price: Bi }[] = [
@@ -137,10 +137,10 @@ export const SVC_TIMES = ['9:00 am', '12:00 pm', '3:00 pm', '6:00 pm'];
 // Rented by hour / day / week with a refundable deposit — drives the Renta tab.
 export type RentItem = { n: Bi; d: Bi; tile: string; hour: number | null; day: number; week: number; dep: number };
 export const RENTAL: RentItem[] = [
-  { n: ['Salón de eventos', 'Event hall'], d: ['Quinces, bodas y fiestas · hasta 120', 'Quinces, weddings & parties · up to 120'], tile: '#EAE2F8 0 11px,#DCCEF2 11px 22px', hour: 60, day: 350, week: 1400, dep: 150 },
-  { n: ['Mesa larga · 8 lugares', 'Long table · 8 seats'], d: ['Mesa de banquete con sillas', 'Banquet table with chairs'], tile: '#F3E2CE 0 11px,#ECD3B4 11px 22px', hour: null, day: 45, week: 180, dep: 40 },
-  { n: ['Vajilla de fiesta · 100', 'Party tableware · 100'], d: ['Platos, copas y cubiertos completos', 'Full plates, glasses & cutlery'], tile: '#FBEFD3 0 11px,#F5E1B0 11px 22px', hour: null, day: 120, week: 480, dep: 200 },
-  { n: ['Bocina y micrófono', 'Speaker & microphone'], d: ['Sonido profesional para tu evento', 'Pro sound for your event'], tile: '#E3F5EA 0 11px,#D6E7D0 11px 22px', hour: 25, day: 90, week: 360, dep: 80 },
+  { n: ['Salón de eventos', 'Event hall'], d: ['Quinces, bodas y fiestas · hasta 120', 'Quinces, weddings & parties · up to 120'], tile: '#F0EDFF 0 11px,#E0DAFF 11px 22px', hour: 60, day: 350, week: 1400, dep: 150 },
+  { n: ['Mesa larga · 8 lugares', 'Long table · 8 seats'], d: ['Mesa de banquete con sillas', 'Banquet table with chairs'], tile: '#FAD9BD 0 11px,#FAD9BD 11px 22px', hour: null, day: 45, week: 180, dep: 40 },
+  { n: ['Vajilla de fiesta · 100', 'Party tableware · 100'], d: ['Platos, copas y cubiertos completos', 'Full plates, glasses & cutlery'], tile: '#FFF6E3 0 11px,#F4DBBA 11px 22px', hour: null, day: 120, week: 480, dep: 200 },
+  { n: ['Bocina y micrófono', 'Speaker & microphone'], d: ['Sonido profesional para tu evento', 'Pro sound for your event'], tile: '#E6FAF3 0 11px,#CDE9C9 11px 22px', hour: 25, day: 90, week: 360, dep: 80 },
 ];
 
 export const DETAIL_EVENTS: { d: Bi; day: string; title: Bi; loc: Bi; base: number; desc: Bi }[] = [
@@ -156,16 +156,16 @@ export const DETAIL_EVENTS: { d: Bi; day: string; title: Bi; loc: Bi; base: numb
 
 
 export const UPDATE_POSTS: { tag?: Bi; tagBg?: string; tagC?: string; when: Bi; textEs: (biz: string) => string; textEn: (biz: string) => string; tile: string | null; base: number }[] = [
-  { tag: ['Promoción', 'Promo'], tagBg: '#EFEBFF', tagC: '#6D4DF6', when: ['hace 2 días', '2d'], textEs: (b) => `📢 Promoción de la semana en ${b}. ¡Aprovecha y pásate con la familia!`, textEn: (b) => `📢 This week's promo at ${b}. Come by with the family!`, tile: 'repeating-linear-gradient(135deg,#ECE3F8 0 12px,#E2D6F3 12px 24px)', base: 84 },
-  { when: ['hace 5 días', '5d'], textEs: () => '¡Gracias a la comunidad por tanto apoyo! 🙌 Seguimos creciendo juntos.', textEn: () => 'Thank you to the community for all the support! 🙌 Growing together.', tile: 'repeating-linear-gradient(135deg,#FCEBD6 0 12px,#F6DEC0 12px 24px)', base: 52 },
-  { tag: ['Aviso', 'Notice'], tagBg: '#FCE7EA', tagC: '#D7263D', when: ['hace 1 semana', '1w'], textEs: () => 'Horario especial este feriado — cerramos a las 6pm. ¡Feliz día a toda la comunidad! 🎉', textEn: () => 'Special holiday hours — closing at 6pm. Happy holiday, community! 🎉', tile: null, base: 31 },
+  { tag: ['Promoción', 'Promo'], tagBg: '#FFECF2', tagC: '#C4144C', when: ['hace 2 días', '2d'], textEs: (b) => `📢 Promoción de la semana en ${b}. ¡Aprovecha y pásate con la familia!`, textEn: (b) => `📢 This week's promo at ${b}. Come by with the family!`, tile: 'repeating-linear-gradient(135deg,#F0EDFF 0 12px,#E0DAFF 12px 24px)', base: 84 },
+  { when: ['hace 5 días', '5d'], textEs: () => '¡Gracias a la comunidad por tanto apoyo! 🙌 Seguimos creciendo juntos.', textEn: () => 'Thank you to the community for all the support! 🙌 Growing together.', tile: 'repeating-linear-gradient(135deg,#FFEBDF 0 12px,#FAD9BD 12px 24px)', base: 52 },
+  { tag: ['Aviso', 'Notice'], tagBg: '#FFE8EB', tagC: '#E11D48', when: ['hace 1 semana', '1w'], textEs: () => 'Horario especial este feriado — cerramos a las 6pm. ¡Feliz día a toda la comunidad! 🎉', textEn: () => 'Special holiday hours — closing at 6pm. Happy holiday, community! 🎉', tile: null, base: 31 },
 ];
 
 export const DETAIL_PHOTOS = [
-  'repeating-linear-gradient(135deg,#ECE3F8 0 10px,#E2D6F3 10px 20px)',
-  'repeating-linear-gradient(135deg,#E4ECFB 0 10px,#D7E3F6 10px 20px)',
-  'repeating-linear-gradient(135deg,#FCEBD6 0 10px,#F6DEC0 10px 20px)',
-  'repeating-linear-gradient(135deg,#E3F5EA 0 10px,#D6EFDF 10px 20px)',
+  'repeating-linear-gradient(135deg,#F0EDFF 0 10px,#E0DAFF 10px 20px)',
+  'repeating-linear-gradient(135deg,#DEF4FF 0 10px,#C0E6FF 10px 20px)',
+  'repeating-linear-gradient(135deg,#FFEBDF 0 10px,#FAD9BD 10px 20px)',
+  'repeating-linear-gradient(135deg,#E6FAF3 0 10px,#C1EBD6 10px 20px)',
 ];
 
 export const WEEK: Bi[] = [

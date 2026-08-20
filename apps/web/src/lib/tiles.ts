@@ -1,6 +1,17 @@
-// Image placeholders + category palette (Handoff v2 → Design Tokens).
-// These hex values are design-system data (like the token table), consumed by
-// components through this module — never inline hex in JSX.
+// Marcadores de foto + paleta de rubros.
+//
+// LOS COLORES YA NO VIVEN AQUÍ (paso 2 de la migración, 2026-08-20): salen de
+// `lib/paleta.ts`, que es la única fuente. Este módulo solo los junta con los
+// nombres en los dos idiomas.
+//
+// POR QUÉ SE CAMBIÓ: cuando los 17 rubros tenían su color escrito a mano aquí,
+// el barrido automático del paso 2 —que reasigna por SIGNIFICADO— mandó dos
+// rubros distintos al mismo sitio: «Servicios de Auto» y «Tiendas» acabaron
+// los dos en el rosa de marca, y con ellos se perdía justo lo que el color
+// hace en esta lista, que es distinguir. Con una sola fuente eso no puede
+// volver a pasar: los 17 se generan repartidos por el círculo de tono.
+
+import { CAT_COLOR, TIRA, AVATAR } from '@/lib/paleta';
 
 /** Striped gradient placeholder for photos (handoff spec). */
 export const tile = (a: string, b: string, w = 11) =>
@@ -25,27 +36,39 @@ export type CatKey =
   | 'RealEstate'
   | 'CarDealer';
 
-export const CAT: Record<CatKey, { bg: string; dot: string; es: string; en: string }> = {
-  AutoServices: { bg: '#EFEBFF', dot: '#7B61FF', es: 'Servicios de Auto', en: 'Auto Services' },
-  BeautyHealth: { bg: '#FBE9F0', dot: '#E0568F', es: 'Belleza y Salud', en: 'Beauty & Health' },
-  FoodDrinks: { bg: '#FCEBD6', dot: '#E8954A', es: 'Comida y Bebida', en: 'Food & Drinks' },
-  HomeServices: { bg: '#FCF1C7', dot: '#D6A22A', es: 'Servicios del Hogar', en: 'Home Services' },
-  NightLife: { bg: '#E8E4FB', dot: '#6D4DF6', es: 'Vida Nocturna', en: 'Night Life' },
-  Grocery: { bg: '#E3F5EA', dot: '#1F9D57', es: 'Supermercado', en: 'Grocery & Market' },
-  Party: { bg: '#F7E6F4', dot: '#C24D9E', es: 'Fiestas y Celebraciones', en: 'Party & Celebrations' },
-  HealthMedicine: { bg: '#D6F3EF', dot: '#0E9384', es: 'Salud y Medicina', en: 'Health & Medicine' },
-  ProServices: { bg: '#E5EFFB', dot: '#2F6FED', es: 'Servicios Profesionales', en: 'Professional Services' },
-  Shops: { bg: '#FDE7EF', dot: '#F0466E', es: 'Tiendas', en: 'Shops & Stores' },
-  Transportation: { bg: '#E4EDF9', dot: '#4E7CC4', es: 'Transporte', en: 'Transportation' },
-  Education: { bg: '#FCEFD6', dot: '#B26A00', es: 'Cursos y Educación', en: 'Courses & Education' },
-  Children: { bg: '#DEF1FA', dot: '#34A5D6', es: 'Niños', en: 'Children' },
-  Sports: { bg: '#EAF6E0', dot: '#4FA02C', es: 'Vida Activa y Deportes', en: 'Active Life & Sports' },
-  Churches: { bg: '#EDE7FC', dot: '#8A5CF0', es: 'Iglesias y Religión', en: 'Churches & Religion' },
-  RealEstate: { bg: '#EFE9FB', dot: '#5B3FD6', es: 'Bienes Raíces', en: 'Real Estate' },
-  CarDealer: { bg: '#E4EEFB', dot: '#2A6CB0', es: 'Dealer de carros', en: 'Car Dealers' },
+/** Nombres de los 17 rubros. El COLOR sale de `CAT_COLOR` (paleta.ts). */
+const NOMBRE: Record<CatKey, [string, string]> = {
+  AutoServices: ['Servicios de Auto', 'Auto Services'],
+  BeautyHealth: ['Belleza y Salud', 'Beauty & Health'],
+  FoodDrinks: ['Comida y Bebida', 'Food & Drinks'],
+  HomeServices: ['Servicios del Hogar', 'Home Services'],
+  NightLife: ['Vida Nocturna', 'Night Life'],
+  Grocery: ['Supermercado', 'Grocery & Market'],
+  Party: ['Fiestas y Celebraciones', 'Party & Celebrations'],
+  HealthMedicine: ['Salud y Medicina', 'Health & Medicine'],
+  ProServices: ['Servicios Profesionales', 'Professional Services'],
+  Shops: ['Tiendas', 'Shops & Stores'],
+  Transportation: ['Transporte', 'Transportation'],
+  Education: ['Cursos y Educación', 'Courses & Education'],
+  Children: ['Niños', 'Children'],
+  Sports: ['Vida Activa y Deportes', 'Active Life & Sports'],
+  Churches: ['Iglesias y Religión', 'Churches & Religion'],
+  RealEstate: ['Bienes Raíces', 'Real Estate'],
+  CarDealer: ['Dealer de carros', 'Car Dealers'],
 };
+
+export const CAT: Record<CatKey, { bg: string; dot: string; es: string; en: string }> =
+  Object.fromEntries(
+    (Object.keys(NOMBRE) as CatKey[]).map((k) => [
+      k,
+      { bg: CAT_COLOR[k].bg, dot: CAT_COLOR[k].fg, es: NOMBRE[k][0], en: NOMBRE[k][1] },
+    ]),
+  ) as Record<CatKey, { bg: string; dot: string; es: string; en: string }>;
 
 export const CAT_KEYS = Object.keys(CAT) as CatKey[];
 
-/** Avatar palette rotation used across reviewers / staff / comments. */
-export const AVATAR_PALETTE = ['#1F9D57', '#2F6FED', '#E8954A', '#E0568F', '#6D4DF6'];
+/** Las dos rayas del marcador de foto, por rubro. */
+export const CAT_TIRA = TIRA;
+
+/** Rotación de avatares (reseñas, equipo, comentarios). */
+export const AVATAR_PALETTE: readonly string[] = AVATAR;

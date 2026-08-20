@@ -1,5 +1,6 @@
 'use client';
 import type { Promo } from '@/lib/menuConfig';
+import { TIRA, AVATAR } from '@/lib/paleta';
 
 // Service structure for the Servicios module (business dashboard): categories +
 // reusable add-ons + booking mode. Stored as ONE jsonb blob in
@@ -66,20 +67,16 @@ export type ServiceConfig = {
 export const svcId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID().slice(0, 8) : `s${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
 
-// Striped-tile palette for category imagery placeholders.
-export const SERVICE_TILES: string[] = [
-  '#EFE3D0 0 8px,#E2CFB2 8px 16px', // tan
-  '#F3D9E2 0 8px,#E8BFCD 8px 16px', // rose
-  '#E3F5EA 0 8px,#D6E7D0 8px 16px', // green
-  '#FCE3DC 0 8px,#F6CEC2 8px 16px', // peach
-  '#E4ECFB 0 8px,#D7E3F6 8px 16px', // blue
-  '#EFEBFF 0 8px,#E5DEF9 8px 16px', // lilac
-  '#FBEFD3 0 8px,#F5E1B0 8px 16px', // amber
-  '#EDE0D4 0 8px,#DFCBB6 8px 16px', // coffee
-];
+// Rayas del marcador de foto por categoría de servicio. Salen de `TIRA`
+// (paleta.ts) porque tienen que ser OCHO DISTINTAS: es lo que separa una
+// categoría de la siguiente en la lista. El barrido del paso 2 (2026-08-20)
+// dejó dos idénticas y una con las dos rayas del mismo tono —o sea, sin rayas.
+export const SERVICE_TILES: string[] = (
+  ['BeautyHealth', 'Grocery', 'ProServices', 'FoodDrinks', 'Party', 'HomeServices', 'HealthMedicine', 'AutoServices'] as const
+).map((k) => `${TIRA[k].a} 0 8px,${TIRA[k].b} 8px 16px`);
 
-// Avatar palette for professionals without a photo (initials on a colored circle).
-export const PROVIDER_COLORS: string[] = ['#7B61FF', '#E0568F', '#2F6FED', '#1F9D57', '#D6A22A', '#6D4DF6', '#E8954A', '#26252B'];
+// Avatar de profesionales sin foto (iniciales sobre un círculo de color).
+export const PROVIDER_COLORS: readonly string[] = AVATAR;
 
 // Generic default categories (services vary by trade; the owner renames/adds).
 export const DEFAULT_SERVICE_CATEGORIES: ServiceCategory[] = [

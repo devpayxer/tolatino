@@ -67,7 +67,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
       onSubmit={(e) => { e.preventDefault(); commit(); }}
       role="search"
       data-buscador
-      className={`flex min-w-0 items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-[13px] ${
+      className={`flex min-w-0 items-center gap-2 rounded-btn border-[1.5px] border-[#F1EEFA] bg-app px-[13px] ${
         mobile ? 'py-[10px]' : 'w-full max-w-[520px] py-[9px]'
       }`}
     >
@@ -305,7 +305,7 @@ function SearchDropdown() {
   const groups: { label: string; count: number; items: { name: string; meta: string; tile: string; view: 'comunidad' | 'negocios' | 'eventos' }[] }[] = [
     { label: L('Negocios', 'Business'), count: bizHits.length, items: bizHits.slice(0, 3).map((b) => ({ name: b.name, meta: `${L(CAT[b.cat].es, CAT[b.cat].en)} · ★ ${b.rating}`, tile: bizTile(b), view: 'negocios' })) },
     { label: L('Eventos', 'Events'), count: evHits.length, items: evHits.slice(0, 3).map((e) => ({ name: L(e.tEs, e.tEn), meta: L(e.lEs, e.lEn), tile: eventTile(e), view: 'eventos' })) },
-    { label: L('Comunidad', 'Community'), count: postHits.length, items: postHits.slice(0, 3).map((p) => ({ name: p.name, meta: L(p.es, p.en).slice(0, 54), tile: tile('#EFEBFF', '#E5DEF9', 8), view: 'comunidad' })) },
+    { label: L('Comunidad', 'Community'), count: postHits.length, items: postHits.slice(0, 3).map((p) => ({ name: p.name, meta: L(p.es, p.en).slice(0, 54), tile: tile('#FFECF2', '#FED2DF', 8), view: 'comunidad' })) },
   ];
 
   return (

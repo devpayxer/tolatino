@@ -176,21 +176,21 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         bg: '#fff', blob: 'rgba(123,97,255,.06)', badge: '○', name: 'Free', price: '· $0/mes',
         renew: L('Sin tarjeta', 'No card'),
         line: L('Listado básico. Mejora para desbloquear módulos e insignia.', 'Basic listing. Upgrade to unlock modules and the badge.'),
-        upgrade: { label: L('Mejorar a Verified · $14.99/mes', 'Upgrade to Verified · $14.99/mo'), bg: '#7B61FF', c: '#fff', to: 'verified' as const },
+        upgrade: { label: L('Mejorar a Verified · $14.99/mes', 'Upgrade to Verified · $14.99/mo'), bg: '#FF2D6F', c: '#fff', to: 'verified' as const },
         showChange: false,
       }
     : isPremium
       ? {
-          bg: 'linear-gradient(150deg,#2A2440,#1E1B2E)', blob: 'rgba(244,183,64,.16)', badge: '✦', name: 'Premium', price: '· $49/mes',
+          bg: 'linear-gradient(150deg,#241C46,#16112E)', blob: 'rgba(244,183,64,.16)', badge: '✦', name: 'Premium', price: '· $49/mes',
           renew: L('Renueva 14 Nov', 'Renews Nov 14'),
           line: L('Insights AI, posición destacada y soporte prioritario.', 'Insights AI, featured placement and priority support.'),
           upgrade: null, showChange: true,
         }
       : {
-          bg: 'linear-gradient(150deg,#7B61FF,#6743E2)', blob: 'rgba(255,255,255,.14)', badge: '✓', name: 'Verified', price: '· $14.99/mes',
+          bg: 'linear-gradient(150deg,#FF2D6F,#A80F40)', blob: 'rgba(255,255,255,.14)', badge: '✓', name: 'Verified', price: '· $14.99/mes',
           renew: L('Renueva 14 Nov', 'Renews Nov 14'),
           line: L('Insignia verificada, todos los módulos y 5× visibilidad.', 'Verified badge, all modules and 5× visibility.'),
-          upgrade: { label: L('Mejorar a Premium · $49/mes', 'Upgrade to Premium · $49/mo'), bg: '#F4B740', c: '#1E1B2E', to: 'premium' as const },
+          upgrade: { label: L('Mejorar a Premium · $49/mes', 'Upgrade to Premium · $49/mo'), bg: '#FFB020', c: '#16112E', to: 'premium' as const },
           showChange: true,
         };
 
@@ -250,7 +250,7 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         { Icon: ImageIcon, label: L('Fotos', 'Photos'), value: '34', max: '∞', pct: 8 },
         { Icon: Users, label: L('Miembros', 'Staff seats'), value: '14', max: '20', pct: 70 },
       ];
-  const barColor = (pct: number) => (pct >= 90 ? '#D6336C' : pct >= 75 ? '#F4B740' : '#7B61FF');
+  const barColor = (pct: number) => (pct >= 90 ? '#E11D48' : pct >= 75 ? '#FFB020' : '#FF2D6F');
 
   const usageEl = (
     <div className={`${cardCls} p-4`}>
@@ -324,10 +324,10 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
   // ---------- add-ons ----------
   const addonDefs: { key: AddonKey; Icon: typeof Star; bg: string; c: string; label: string; price: string }[] = [
-    { key: 'featured', Icon: Star, bg: '#FCEFD6', c: '#B5791A', label: L('Posición destacada', 'Featured placement'), price: `$15/${L('mes', 'mo')}` },
-    { key: 'boost', Icon: Zap, bg: '#F1EFFA', c: '#6D4DF6', label: L('Impulso patrocinado', 'Sponsored boost'), price: `$20/${L('sem', 'wk')}` },
-    { key: 'seats', Icon: Users, bg: '#E4ECFB', c: '#2A5C8A', label: L('5 asientos extra', '5 extra staff seats'), price: `$8/${L('mes', 'mo')}` },
-    { key: 'sms', Icon: MessageSquare, bg: '#E3F5EA', c: '#1F8A4C', label: L('500 créditos SMS', '500 SMS credits'), price: `$5/${L('mes', 'mo')}` },
+    { key: 'featured', Icon: Star, bg: '#FFF6E3', c: '#8A5A00', label: L('Posición destacada', 'Featured placement'), price: `$15/${L('mes', 'mo')}` },
+    { key: 'boost', Icon: Zap, bg: '#F1EEFA', c: '#C4144C', label: L('Impulso patrocinado', 'Sponsored boost'), price: `$20/${L('sem', 'wk')}` },
+    { key: 'seats', Icon: Users, bg: '#DEF4FF', c: '#0369A1', label: L('5 asientos extra', '5 extra staff seats'), price: `$8/${L('mes', 'mo')}` },
+    { key: 'sms', Icon: MessageSquare, bg: '#E6FAF3', c: '#007A57', label: L('500 créditos SMS', '500 SMS credits'), price: `$5/${L('mes', 'mo')}` },
   ];
   const addonsEl = (
     <div className={`${cardCls} p-4`}>
@@ -439,12 +439,12 @@ export function BillingModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   // ---------- payment methods ----------
   const cards = [
     { brand: 'VISA', brandBg: 'linear-gradient(135deg,#1A1F71,#3B4F9F)', label: 'Visa ••4421', exp: L('Vence 03/27 · Elisabeth R.', 'Exp 03/27 · Elisabeth R.'), isDefault: true },
-    { brand: 'MC', brandBg: 'linear-gradient(135deg,#EB001B,#F79E1B)', label: 'Mastercard ••8821', exp: L('Vence 11/26 · Respaldo', 'Exp 11/26 · Backup'), isDefault: false },
+    { brand: 'MC', brandBg: 'linear-gradient(135deg,#E11D48,#FFB020)', label: 'Mastercard ••8821', exp: L('Vence 11/26 · Respaldo', 'Exp 11/26 · Backup'), isDefault: false },
   ];
   const billingInfo = [
-    { Icon: Mail, bg: '#F1EFFA', c: '#6D4DF6', label: L('Correo de facturación', 'Billing email'), value: 'pagos@lupitas.com' },
-    { Icon: MapPin, bg: '#FCEFD6', c: '#B5791A', label: L('Dirección', 'Billing address'), value: '5821 Bellaire Blvd, Houston' },
-    { Icon: FileText, bg: '#E3F5EA', c: '#1F8A4C', label: L('RFC / EIN', 'Tax ID / EIN'), value: 'XX-XXX2487' },
+    { Icon: Mail, bg: '#F1EEFA', c: '#C4144C', label: L('Correo de facturación', 'Billing email'), value: 'pagos@lupitas.com' },
+    { Icon: MapPin, bg: '#FFF6E3', c: '#8A5A00', label: L('Dirección', 'Billing address'), value: '5821 Bellaire Blvd, Houston' },
+    { Icon: FileText, bg: '#E6FAF3', c: '#007A57', label: L('RFC / EIN', 'Tax ID / EIN'), value: 'XX-XXX2487' },
   ];
 
   const methodsEl = (

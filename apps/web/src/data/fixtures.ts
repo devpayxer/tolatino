@@ -3,6 +3,7 @@
 // the shapes below are the contract the UI is built against.
 
 import { tile, type CatKey } from '@/lib/tiles';
+import { TIRA } from '@/lib/paleta';
 import type { WeekHours, HoursException } from '@/lib/hours';
 
 // hours helpers — minutes from midnight; build a week as [Sun..Sat].
@@ -487,20 +488,26 @@ export function hoodsForCity(cityShort: string): string[] {
 // Professional event category taxonomy (Eventbrite-grade). Stable ids drive the DB
 // `events.cat` (migration 0062) + the striped-tile placeholder; both the consumer
 // filters and the create wizard read this single source.
+// El par de rayas de cada categoría sale de `TIRA` (paleta.ts), UNO POR TONO.
+// Antes estaban escritos a mano y el barrido del paso 2 (2026-08-20) mandó
+// varios al mismo color: «vida nocturna», «negocios» y «otro» quedaron
+// idénticos, y «arte» y «talleres» con las dos rayas del mismo tono, o sea sin
+// rayas. Con la paleta como fuente eso no se puede repetir.
+const T = (k: keyof typeof TIRA): [string, string] => [TIRA[k].a, TIRA[k].b];
 export const EVENT_CATS: { id: string; es: string; en: string; tile: [string, string] }[] = [
-  { id: 'musica', es: 'Música', en: 'Music', tile: ['#E5DEF9', '#D9CEF3'] },
-  { id: 'nightlife', es: 'Vida nocturna', en: 'Nightlife', tile: ['#E8E4FB', '#DCD6F6'] },
-  { id: 'comida', es: 'Comida y bebida', en: 'Food & drink', tile: ['#FCEBD6', '#F6DCBF'] },
-  { id: 'familia', es: 'Familia y niños', en: 'Family & kids', tile: ['#FBE9F0', '#F5D8E6'] },
-  { id: 'comunidad', es: 'Comunidad', en: 'Community', tile: ['#E3F5EA', '#D6E7D0'] },
-  { id: 'arte', es: 'Arte y cultura', en: 'Arts & culture', tile: ['#F3E2CE', '#ECD3B4'] },
-  { id: 'deportes', es: 'Deportes', en: 'Sports & fitness', tile: ['#E7EEFB', '#DAE5F6'] },
-  { id: 'negocios', es: 'Negocios', en: 'Business', tile: ['#ECE3F8', '#E2D6F3'] },
-  { id: 'salud', es: 'Salud y bienestar', en: 'Health & wellness', tile: ['#D6F3EF', '#C3E9E3'] },
-  { id: 'mercado', es: 'Mercado y bazar', en: 'Market & bazaar', tile: ['#FCF1C7', '#F6E8AE'] },
-  { id: 'fe', es: 'Religión y fe', en: 'Faith', tile: ['#EFEBFF', '#E5DEF9'] },
-  { id: 'taller', es: 'Talleres y clases', en: 'Workshops & classes', tile: ['#F3D9E2', '#E8BFCD'] },
-  { id: 'otro', es: 'Otro', en: 'Other', tile: ['#EAE2F8', '#DCCEF2'] },
+  { id: 'musica', es: 'Música', en: 'Music', tile: T('Churches') },
+  { id: 'nightlife', es: 'Vida nocturna', en: 'Nightlife', tile: T('NightLife') },
+  { id: 'comida', es: 'Comida y bebida', en: 'Food & drink', tile: T('FoodDrinks') },
+  { id: 'familia', es: 'Familia y niños', en: 'Family & kids', tile: T('Children') },
+  { id: 'comunidad', es: 'Comunidad', en: 'Community', tile: T('BeautyHealth') },
+  { id: 'arte', es: 'Arte y cultura', en: 'Arts & culture', tile: T('Party') },
+  { id: 'deportes', es: 'Deportes', en: 'Sports & fitness', tile: T('Sports') },
+  { id: 'negocios', es: 'Negocios', en: 'Business', tile: T('Education') },
+  { id: 'salud', es: 'Salud y bienestar', en: 'Health & wellness', tile: T('HealthMedicine') },
+  { id: 'mercado', es: 'Mercado y bazar', en: 'Market & bazaar', tile: T('Grocery') },
+  { id: 'fe', es: 'Religión y fe', en: 'Faith', tile: T('RealEstate') },
+  { id: 'taller', es: 'Talleres y clases', en: 'Workshops & classes', tile: T('AutoServices') },
+  { id: 'otro', es: 'Otro', en: 'Other', tile: T('Transportation') },
 ];
 export const EVENT_CAT_BY_ID: Record<string, { es: string; en: string; tile: [string, string] }> =
   Object.fromEntries(EVENT_CATS.map((c) => [c.id, { es: c.es, en: c.en, tile: c.tile }]));
@@ -558,10 +565,10 @@ export type Notif = {
 
 // ---------- coming soon ----------
 export const SOON: Record<string, { icon: 'truck' | 'home' | 'car' | 'briefcase'; bg: string; color: string; titleEs: string; titleEn: string; subEs: string; subEn: string }> = {
-  transporte: { icon: 'truck', bg: '#FBE9F0', color: '#E0568F', titleEs: 'Transporte', titleEn: 'Transport', subEs: 'Mudanzas, viajes al aeropuerto, encomiendas a Latinoamérica y fletes — de gente de confianza de tu comunidad.', subEn: 'Moving, airport rides, parcels to Latin America and hauling — from trusted people in your community.' },
-  inmuebles: { icon: 'home', bg: '#E3F5EA', color: '#1F9D57', titleEs: 'Bienes Raíces', titleEn: 'Real Estate', subEs: 'Renta y venta de casas, apartamentos, cuartos y locales comerciales publicados por dueños y agentes latinos.', subEn: 'Homes, apartments, rooms and commercial spaces for rent and sale, posted by Latino owners and agents.' },
-  autos: { icon: 'car', bg: '#EFEBFF', color: '#7B61FF', titleEs: 'Dealer de carros', titleEn: 'Car Dealers', subEs: 'Autos de dealers y dueños latinos de confianza, con financiamiento y sin complicaciones de idioma.', subEn: 'Cars from trusted Latino dealers and owners, with financing and no language barrier.' },
-  trabajos: { icon: 'briefcase', bg: '#FCF1C7', color: '#D6A22A', titleEs: 'Trabajos', titleEn: 'Jobs', subEs: 'Vacantes en negocios latinos cerca de ti — tiempo completo, medio tiempo y bilingües.', subEn: 'Openings at Latino businesses near you — full-time, part-time and bilingual.' },
+  transporte: { icon: 'truck', bg: '#FFE8EB', color: '#C54C67', titleEs: 'Transporte', titleEn: 'Transport', subEs: 'Mudanzas, viajes al aeropuerto, encomiendas a Latinoamérica y fletes — de gente de confianza de tu comunidad.', subEn: 'Moving, airport rides, parcels to Latin America and hauling — from trusted people in your community.' },
+  inmuebles: { icon: 'home', bg: '#E6FAF3', color: '#00A878', titleEs: 'Bienes Raíces', titleEn: 'Real Estate', subEs: 'Renta y venta de casas, apartamentos, cuartos y locales comerciales publicados por dueños y agentes latinos.', subEn: 'Homes, apartments, rooms and commercial spaces for rent and sale, posted by Latino owners and agents.' },
+  autos: { icon: 'car', bg: '#FFECF2', color: '#FF2D6F', titleEs: 'Dealer de carros', titleEn: 'Car Dealers', subEs: 'Autos de dealers y dueños latinos de confianza, con financiamiento y sin complicaciones de idioma.', subEn: 'Cars from trusted Latino dealers and owners, with financing and no language barrier.' },
+  trabajos: { icon: 'briefcase', bg: '#FFF6E3', color: '#AB6600', titleEs: 'Trabajos', titleEn: 'Jobs', subEs: 'Vacantes en negocios latinos cerca de ti — tiempo completo, medio tiempo y bilingües.', subEn: 'Openings at Latino businesses near you — full-time, part-time and bilingual.' },
 };
 
 // ---------- client categories (7-category bar) ----------

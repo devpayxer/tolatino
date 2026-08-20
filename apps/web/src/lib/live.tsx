@@ -38,7 +38,7 @@ export function mapBusinessRow(r: Record<string, unknown>, i: number, distM: num
     hoursExceptions: (r.hours_exceptions as Business['hoursExceptions']) ?? undefined,
     verified: r.tier !== 'free',
     endorse: Number(r.endorse_count ?? 0),
-    t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
+    t: [String(r.tile_a ?? '#FFECF2'), String(r.tile_b ?? '#FED2DF')],
     specEs: String(r.specialty_es ?? ''),
     specEn: String(r.specialty_en ?? ''),
     subcats: (r.subcategories as string[]) ?? [],
@@ -298,8 +298,8 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
       kcal: a.kcal != null ? Number(a.kcal) : undefined,
       orig: a.compareAt != null ? Number(a.compareAt) : undefined,
       tag: a.popular ? ['Popular', 'Popular'] : a.isNew ? ['Nuevo', 'New'] : undefined,
-      tagBg: a.popular ? '#EFEBFF' : a.isNew ? '#FCEFD6' : undefined,
-      tagC: a.popular ? '#6D4DF6' : a.isNew ? '#9A6A12' : undefined,
+      tagBg: a.popular ? '#FFECF2' : a.isNew ? '#FFF6E3' : undefined,
+      tagC: a.popular ? '#C4144C' : a.isNew ? '#8A5A00' : undefined,
       bg: tile,
       img: r.image_url != null ? String(r.image_url) : undefined,
     };
@@ -328,7 +328,7 @@ export async function fetchBusinessMenu(slug: string): Promise<PublicMenu | null
     if (inCat.length) cats.push({ key: c.id, name: [c.es, c.en], items: inCat.map((r) => toMenuItem(r, c.tile, c.id)) });
   }
   const rest = live.filter((r) => !used.has(r));
-  if (rest.length) cats.push({ key: '_rest', name: ['Menú', 'Menu'], items: rest.map((r) => toMenuItem(r, '#EFEBFF 0 8px,#E5DEF9 8px 16px', '_rest')) });
+  if (rest.length) cats.push({ key: '_rest', name: ['Menú', 'Menu'], items: rest.map((r) => toMenuItem(r, '#FFECF2 0 8px,#FED2DF 8px 16px', '_rest')) });
   if (cats.length === 0) return null;
 
   const active = cfg.promos.find((p) => p.status === 'active');
@@ -422,7 +422,7 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
     if (inCat.length) cats.push({ key: c.id, name: [c.es, c.en], items: inCat.map((r) => toSvc(r, c.tile)) });
   }
   const rest = rows.filter((r) => !used.has(r));
-  if (rest.length) cats.push({ key: '_rest', name: ['Servicios', 'Services'], items: rest.map((r) => toSvc(r, '#EFE3D0 0 8px,#E2CFB2 8px 16px')) });
+  if (rest.length) cats.push({ key: '_rest', name: ['Servicios', 'Services'], items: rest.map((r) => toSvc(r, '#FFECDC 0 8px,#FAD9BD 8px 16px')) });
   if (cats.length === 0) return null;
 
   const providers: PubProvider[] = cfg.providers
@@ -431,7 +431,7 @@ export async function fetchBusinessServices(slug: string): Promise<PublicService
       id: p.id,
       name: p.name,
       tag: [p.tagEs ?? '', p.tagEn ?? p.tagEs ?? ''],
-      color: p.color || '#7B61FF',
+      color: p.color || '#FF2D6F',
       photo: p.photo || undefined,
       serviceIds: Array.isArray(p.serviceIds) ? p.serviceIds.map(String) : [],
     }));
@@ -560,8 +560,8 @@ export async function fetchBusinessProducts(slug: string): Promise<PublicShop | 
       price,
       orig: compareAt && compareAt > price ? compareAt : undefined,
       tag,
-      tagBg: tag ? '#EFEBFF' : undefined,
-      tagC: tag ? '#6D4DF6' : undefined,
+      tagBg: tag ? '#FFECF2' : undefined,
+      tagC: tag ? '#C4144C' : undefined,
       bg: tile,
       img: r.image_url != null ? String(r.image_url) : undefined,
       stock: a.stock != null ? Number(a.stock) : undefined,
@@ -602,7 +602,7 @@ export async function fetchBusinessProducts(slug: string): Promise<PublicShop | 
     if (inCat.length) cats.push({ key, name: [c.es, c.en], items: inCat.map((r) => toItem(r, c.tile, key)) });
   }
   const rest = rows.filter((r) => !used.has(r));
-  if (rest.length) cats.push({ key: 'sh:_rest', name: ['Tienda', 'Shop'], items: rest.map((r) => toItem(r, '#F3D9C8 0 8px,#E8C3AC 8px 16px', 'sh:_rest')) });
+  if (rest.length) cats.push({ key: 'sh:_rest', name: ['Tienda', 'Shop'], items: rest.map((r) => toItem(r, '#FFEBDF 0 8px,#FED6C2 8px 16px', 'sh:_rest')) });
   if (cats.length === 0) return null;
 
   const collections = cfg.collections.filter((c) => c.featured).map((c) => ({ es: c.es, en: c.en, tile: c.tile }));
@@ -647,7 +647,7 @@ export async function fetchBusinessRentals(slug: string): Promise<PublicRentals 
   const addons: PubRentalAddon[] = cfg.addons.map((a) => ({ id: a.id, name: [a.es, a.en ?? a.es], price: a.price }));
   const addonById = new Map(addons.map((a) => [a.id, a]));
   const catById = new Map(cfg.categories.map((c) => [c.id, c]));
-  const FALLBACK_TILE = '#EAE2F8 0 11px,#DCCEF2 11px 22px';
+  const FALLBACK_TILE = '#F0EDFF 0 11px,#E0DAFF 11px 22px';
 
   const toRental = (r: Record<string, unknown>): PubRental => {
     const a = (r.attrs ?? {}) as Record<string, unknown>;
@@ -841,7 +841,7 @@ export async function fetchEventBySlug(slug: string): Promise<PubEvent | null> {
     timeLabel: [String(r.time_label_es ?? ''), String(r.time_label_en ?? '')],
     priceLabel: r.price_label != null ? String(r.price_label) : null,
     desc: [String(r.desc_es ?? ''), String(r.desc_en ?? r.desc_es ?? '')],
-    tile: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
+    tile: [String(r.tile_a ?? '#FFECF2'), String(r.tile_b ?? '#FED2DF')],
     coverUrl: r.cover_url != null ? String(r.cover_url) : null,
     status: String(r.status ?? 'published'), going: Number(r.going_count ?? 0),
     lat: r.lat != null ? Number(r.lat) : null, lng: r.lng != null ? Number(r.lng) : null,
@@ -933,7 +933,7 @@ export function mapEventRow(r: Record<string, unknown>, i: number): EventItem {
     going: Number(r.going_count ?? 0),
     free: r.price_label == null,
     price: (r.price_label as string) ?? undefined,
-    t: [String(r.tile_a ?? '#EFEBFF'), String(r.tile_b ?? '#E5DEF9')],
+    t: [String(r.tile_a ?? '#FFECF2'), String(r.tile_b ?? '#FED2DF')],
     timeEs: String(r.time_label_es ?? ''),
     timeEn: String(r.time_label_en ?? ''),
     descEs: String(r.desc_es ?? ''),

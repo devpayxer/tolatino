@@ -17,7 +17,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#FAFAFA', // = token `canvas`; la pantalla de arranque de
+    background_color: '#F6F4FF', // = token `canvas`; la pantalla de arranque de
                                  // la PWA tiene que ser el fondo de la app, o se
                                  // ve un salto de gris a casi blanco al abrir.
     theme_color: '#FF2D6F', // = token `primary` del sistema nuevo (2026-08-20)

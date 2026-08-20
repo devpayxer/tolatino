@@ -69,9 +69,9 @@ function schedLabel(iso: string | null | undefined, es: boolean, L: (a: string, 
 }
 
 const KIND_TILE: Record<Kind, string> = {
-  offer: '#F3E2CE 0 8px,#ECD3B4 8px 16px',
-  event: '#F3D9E2 0 8px,#E8BFCD 8px 16px',
-  news: '#FBEFD3 0 8px,#F5E1B0 8px 16px',
+  offer: '#FAD9BD 0 8px,#FAD9BD 8px 16px',
+  event: '#FED2DF 0 8px,#FED2DF 8px 16px',
+  news: '#FFF6E3 0 8px,#F4DBBA 8px 16px',
 };
 const KIND_BADGE: Record<Kind, string> = {
   offer: 'bg-pink-bg text-pink-dark',
@@ -572,7 +572,7 @@ export function UpdatesModule({ ctx }: { ctx: PanelCtx }) {
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} stroke={2.6} className="text-[#7BE0A8]" />
+          <Check size={14} stroke={2.6} className="text-[#00C48C]" />
           {toast}
         </div>
       )}

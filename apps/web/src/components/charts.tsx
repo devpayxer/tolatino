@@ -5,6 +5,7 @@
 // and busy-hours bar.
 
 import { useId } from 'react';
+import { SERIE } from '@/lib/paleta';
 
 export function Spark({ pts, color }: { pts: number[]; color: string }) {
   const gid = useId();
@@ -50,9 +51,9 @@ export function BigChart({ thisW, lastW, days, color }: { thisW: number[]; lastW
         </linearGradient>
       </defs>
       {[0, 1, 2, 3].map((i) => (
-        <line key={i} x1={0} x2={W} y1={(H * i) / 4} y2={(H * i) / 4} stroke="#ECE8F4" strokeDasharray="2 4" />
+        <line key={i} x1={0} x2={W} y1={(H * i) / 4} y2={(H * i) / 4} stroke="#EAE6F5" strokeDasharray="2 4" />
       ))}
-      <path d={ln(l)} stroke="#C7C2D6" strokeWidth={1.8} fill="none" strokeDasharray="4 4" />
+      <path d={ln(l)} stroke="#B3ADC7" strokeWidth={1.8} fill="none" strokeDasharray="4 4" />
       <path d={`${ln(t)} L ${W} ${H} L 0 ${H} Z`} fill={`url(#${gid})`} />
       <path d={ln(t)} stroke={color} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
       {t.map((p, i) => (
@@ -64,7 +65,7 @@ export function BigChart({ thisW, lastW, days, color }: { thisW: number[]; lastW
           x={i * step}
           y={H + 16}
           fontSize={10}
-          fill="#9A96AE"
+          fill="#9A93B3"
           fontWeight={700}
           fontFamily="'Onest'"
           textAnchor={i === 0 ? 'start' : i === days.length - 1 ? 'end' : 'middle'}
@@ -77,17 +78,19 @@ export function BigChart({ thisW, lastW, days, color }: { thisW: number[]; lastW
 }
 
 export function Donut({ centerLabel, subLabel }: { centerLabel: string; subLabel: string }) {
+  // Cuatro porciones, cuatro colores DISTINTOS de la serie del sistema: en un
+  // anillo el color es la leyenda. El barrido del paso 2 dejó dos iguales.
   const segs: [string, number][] = [
-    ['#7B61FF', 42],
-    ['#F0466E', 24],
-    ['#1F9D57', 22],
-    ['#F4B740', 12],
+    [SERIE[0], 42],
+    [SERIE[1], 24],
+    [SERIE[2], 22],
+    [SERIE[3], 12],
   ];
   const C = 2 * Math.PI * 40;
   let acc = 0;
   return (
     <svg width={116} height={116} viewBox="0 0 120 120">
-      <circle cx={60} cy={60} r={40} stroke="#F1EFF6" strokeWidth={15} fill="none" />
+      <circle cx={60} cy={60} r={40} stroke="#F1EEFA" strokeWidth={15} fill="none" />
       {segs.map(([color, pct], i) => {
         const len = (pct / 100) * C;
         const off = -acc;
@@ -107,10 +110,10 @@ export function Donut({ centerLabel, subLabel }: { centerLabel: string; subLabel
           />
         );
       })}
-      <text x={60} y={58} textAnchor="middle" fontSize={18} fontWeight={800} fill="#1E1B2E" fontFamily="'Onest'">
+      <text x={60} y={58} textAnchor="middle" fontSize={18} fontWeight={800} fill="#16112E" fontFamily="'Onest'">
         {centerLabel}
       </text>
-      <text x={60} y={74} textAnchor="middle" fontSize={9} fontWeight={700} fill="#9A96AE" fontFamily="'Onest'">
+      <text x={60} y={74} textAnchor="middle" fontSize={9} fontWeight={700} fill="#9A93B3" fontFamily="'Onest'">
         {subLabel}
       </text>
     </svg>
@@ -120,7 +123,7 @@ export function Donut({ centerLabel, subLabel }: { centerLabel: string; subLabel
 export function HourBar() {
   const cells = [];
   for (let h = 0; h < 24; h++) {
-    let bg = '#3A3552';
+    let bg = '#403A5A';
     let hh = 8;
     if (h >= 7 && h <= 21) {
       bg = 'rgba(123,97,255,.45)';
@@ -130,11 +133,11 @@ export function HourBar() {
         hh = 24;
       }
       if (h === 13 || h === 19) {
-        bg = '#7B61FF';
+        bg = '#FF2D6F';
         hh = 34;
       }
     }
-    if (h === 14) bg = '#F4B740';
+    if (h === 14) bg = '#FFB020';
     cells.push(<span key={h} style={{ flex: 1, height: hh, borderRadius: 2, background: bg }} />);
   }
   return <div className="flex items-end gap-[2px]">{cells}</div>;

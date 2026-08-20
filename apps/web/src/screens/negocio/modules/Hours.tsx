@@ -140,7 +140,7 @@ export function HoursModule({ ctx }: { ctx: PanelCtx }) {
 
           {/* Free plan → upgrade band: split slots + Feriados y más are Pro */}
           {isFree && (
-            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#16112E,#241C46)' }}>
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[15px]">✦</span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[12.5px] font-extrabold">{L('Horario en el plan Gratis', 'Hours on the Free plan')}</span>

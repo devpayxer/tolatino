@@ -83,24 +83,24 @@ export const menuId = () =>
 
 // Striped-tile palette (category imagery placeholders, from the app's tiles).
 export const MENU_TILES: string[] = [
-  '#F3E2CE 0 8px,#ECD3B4 8px 16px', // tan / bread
-  '#FBEFD3 0 8px,#F5E1B0 8px 16px', // amber / pastry
-  '#FCE3DC 0 8px,#F6CEC2 8px 16px', // peach / pizza
-  '#E3F5EA 0 8px,#D6E7D0 8px 16px', // green / salads
-  '#EDE0D4 0 8px,#DFCBB6 8px 16px', // coffee
-  '#F3D9E2 0 8px,#E8BFCD 8px 16px', // rose / wine
-  '#EFEBFF 0 8px,#E5DEF9 8px 16px', // lilac
-  '#E4ECFB 0 8px,#D7E3F6 8px 16px', // blue
+  '#FAD9BD 0 8px,#FAD9BD 8px 16px', // tan / bread
+  '#FFF6E3 0 8px,#F4DBBA 8px 16px', // amber / pastry
+  '#FFEBDF 0 8px,#FED6C2 8px 16px', // peach / pizza
+  '#E6FAF3 0 8px,#CDE9C9 8px 16px', // green / salads
+  '#FFECDC 0 8px,#FAD9BD 8px 16px', // coffee
+  '#FED2DF 0 8px,#FED2DF 8px 16px', // rose / wine
+  '#FFECF2 0 8px,#FED2DF 8px 16px', // lilac
+  '#DEF4FF 0 8px,#C0E6FF 8px 16px', // blue
 ];
 
 // Daypart color pairs (dot + soft bg).
 export const DAYPART_COLORS: { color: string; bg: string }[] = [
-  { color: '#F59E0B', bg: '#FEF3C7' },
-  { color: '#22C55E', bg: '#DCFCE7' },
-  { color: '#7B61FF', bg: '#EFEBFF' },
-  { color: '#D6336C', bg: '#FDE7EF' },
-  { color: '#2F6FED', bg: '#E5EFFB' },
-  { color: '#0D9488', bg: '#CCFBF1' },
+  { color: '#FFB020', bg: '#FCEEDB' },
+  { color: '#00C48C', bg: '#DFF7EB' },
+  { color: '#FF2D6F', bg: '#FFECF2' },
+  { color: '#E11D48', bg: '#FFECF2' },
+  { color: '#007CC1', bg: '#DEF4FF' },
+  { color: '#008489', bg: '#DAF7F7' },
 ];
 
 const EVERY_DAY = [1, 1, 1, 1, 1, 1, 1];

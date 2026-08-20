@@ -891,7 +891,7 @@ export function AutosScreen() {
               </button>
 
               {/* financing banner */}
-              <button onClick={() => openPrequal(null)} className="mb-4 flex w-full cursor-pointer items-center gap-3.5 rounded-card p-4 text-left shadow-band" style={{ background: 'linear-gradient(150deg,#6743E2,#8268FF)' }}>
+              <button onClick={() => openPrequal(null)} className="mb-4 flex w-full cursor-pointer items-center gap-3.5 rounded-card p-4 text-left shadow-band" style={{ background: 'linear-gradient(150deg,#A80F40,#FF7A9E)' }}>
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-tile bg-[rgba(255,255,255,.18)]"><CreditCard size={22} stroke={2} className="text-white" /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[14px] font-extrabold text-white">{L('¿Sin crédito? ¡No hay problema!', 'No credit? No problem!')}</span>
@@ -1140,7 +1140,7 @@ export function AutosScreen() {
           {view === 'dealers' && (
             <div>
               {viewHeader(L('Dealers y vendedores', 'Dealers & sellers'), L(`Los mejores de ${app.cityShort}`, `The best in ${app.cityShort}`))}
-              <button onClick={() => router.push('/negocio/publicar')} className="mb-4 flex w-full items-center gap-3.5 rounded-card p-4 text-left shadow-band" style={{ background: 'linear-gradient(150deg,#6743E2,#8268FF)' }}>
+              <button onClick={() => router.push('/negocio/publicar')} className="mb-4 flex w-full items-center gap-3.5 rounded-card p-4 text-left shadow-band" style={{ background: 'linear-gradient(150deg,#A80F40,#FF7A9E)' }}>
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-tile bg-[rgba(255,255,255,.18)]"><Car size={22} stroke={2} className="text-white" /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13.5px] font-extrabold text-white">{L('¿Eres dealer o vendes tu carro?', 'A dealer or selling your car?')}</span>
@@ -1262,7 +1262,7 @@ export function AutosScreen() {
         {calc && calcOut && (
           <>
             <OverlayTitle title={L('Calculadora de pago', 'Payment calculator')} onClose={() => setCalc(null)} />
-            <div className="rounded-card p-5 text-center shadow-cta-sm" style={{ background: 'linear-gradient(135deg,#6D4DF6,#7B61FF)' }}>
+            <div className="rounded-card p-5 text-center shadow-cta-sm" style={{ background: 'linear-gradient(135deg,#C4144C,#FF2D6F)' }}>
               <div className="text-[10.5px] font-bold text-white/80">{L('Pago mensual estimado', 'Estimated monthly payment')}</div>
               <div className="mt-1 text-[36px] font-extrabold tracking-[-.02em] text-white">${Math.round(calcOut.monthly).toLocaleString()}</div>
               <div className="text-[10.5px] font-semibold text-white/80">{L('por', 'for')} {calc.months} {L('meses', 'months')} · APR {calc.apr.toFixed(1)}%</div>
@@ -1403,7 +1403,7 @@ export function AutosScreen() {
         )}
         {prequal && prequal.done && prequal.result && (
           <div className="flex flex-col items-center px-1 py-4 text-center">
-            <div className="w-full rounded-card p-6 text-center shadow-cta-sm" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E63)' }}>
+            <div className="w-full rounded-card p-6 text-center shadow-cta-sm" style={{ background: 'linear-gradient(140deg,#16112E,#342F4E)' }}>
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(255,255,255,.12)]"><Check size={28} stroke={3} className="text-green" /></span>
               <div className="mt-3 text-[18px] font-extrabold text-white">{L('¡Estás pre-aprobado!', "You're pre-approved!")}</div>
               <div className="mt-3 text-[11px] font-bold uppercase tracking-[.05em] text-white/70">{L('Aprobado hasta', 'Approved up to')}</div>
@@ -1514,7 +1514,7 @@ export function AutosScreen() {
         {tradein && tradein.result && (
           <div className="flex flex-col items-center px-1 py-2 text-center">
             <OverlayTitle title={L('Valor estimado de trade-in', 'Estimated trade-in value')} onClose={() => setTradein(null)} />
-            <div className="w-full rounded-card p-6 text-center shadow-cta-sm" style={{ background: 'linear-gradient(140deg,#0E7A44,#1F9D57)' }}>
+            <div className="w-full rounded-card p-6 text-center shadow-cta-sm" style={{ background: 'linear-gradient(140deg,#007A57,#00A878)' }}>
               <div className="text-[10.5px] font-bold uppercase tracking-[.05em] text-white/80">{L('Estimado para tu', 'Estimate for your')} {tradein.year} {tradein.make} {tradein.model}</div>
               <div className="mt-1 text-[34px] font-extrabold tracking-[-.02em] text-white">{fmtAuPrice(tradein.result[1])}</div>
               <div className="text-[12px] font-bold text-white/85">{fmtAuPrice(tradein.result[0])} – {fmtAuPrice(tradein.result[2])}</div>

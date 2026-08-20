@@ -24,23 +24,27 @@ verificable en `pruebas`:
 | # | Paso | Estado |
 |---|---|---|
 | 1 | **Tokens + tipografías** | ✅ hecho (2026-08-20) |
-| 2 | Cazar los 965 hex crudos + guardián anti-hex | pendiente |
+| 2 | **Hex crudos → paleta del sistema + guardián** | ✅ hecho (2026-08-20) |
 | 3 | Primitivas (`ui.tsx`): botones, chips, tarjeta, vacío, skeleton | pendiente |
 | 4 | Chrome: header, barra inferior glass, footer, cajón de módulos | pendiente |
 | 5 | Iconos (set de 28) + retirar los 278 emoji | pendiente |
 | 6 | Pantallas por módulo: Negocios → Comunidad → Eventos → paneles | pendiente |
 | 7 | Derivadas sin lámina: pedidos, tienda, renta, checkout, admin | pendiente |
 
-**TRES DECISIONES DEL FUNDADOR SIGUEN ABIERTAS** — bloquean el paso 3:
-1. **Lienzo:** ¿`paper` #F6F4FF del handoff, o su `#FAFAFA` aprobado el 08-06?
-   Ahora mismo manda el suyo; el del handoff está declarado al lado y cambiarlo
-   es mover UNA línea.
-2. **Tarjeta de negocio:** la lámina 09–12 NO es una especificación, es un
-   tablero de decisión con **diez** anatomías y la frase «dime el número y lo
-   aplico». Su recomendación: **4a** base · **4b** servicios · **4h** sin foto.
-3. **Barra inferior:** ¿la del handoff (*Muro · Barrios · ⊕ · Alertas · Más*) o
-   la nuestra (*Comunidad · Negocios · ＋ · Eventos · Alertas*, que además está
-   escrita en `CLAUDE.md`)?
+**DECISIONES DEL FUNDADOR (2026-08-20):**
+1. **Lienzo: el del handoff, `#F6F4FF`.** ✅ Decidido y aplicado. Anula el
+   `#FAFAFA` que él mismo eligió el 08-06. `canvas`, `dash` y `page` (la
+   portada) apuntan los tres ahí — con eso desaparece además el salto de tono
+   portada→app que quedó anotado aquel día.
+2. **Tarjeta de negocio: anatomía 4a** («Lo dicen tus vecinos»: la
+   recomendación del vecino ENCIMA del nombre). ✅ Decidido, se aplica en el
+   paso 6. Es la que la lámina recomendaba como base, y es la única de las diez
+   que ninguna app de directorio puede copiar, porque necesita la Comunidad
+   debajo.
+3. **Barra inferior: SIN DECIDIR.** ¿La del handoff (*Muro · Barrios · ⊕ ·
+   Alertas · Más*) o la nuestra (*Comunidad · Negocios · ＋ · Eventos ·
+   Alertas*, que además está escrita en `CLAUDE.md`)? Bloquea el paso 4, no
+   antes.
 
 **Lo que el handoff NO cubre**, y habrá que derivar de las primitivas en el paso
 7: comida y pedidos (Cocina, Menú Builder), tienda/productos, renta, boletos de
@@ -95,6 +99,52 @@ revirtiendo el arreglo, y los tres muerden):
 Prueba visual: `tools/mobile-audit/sistema-paso1.js` (402px y 1320px, cuatro
 pantallas, comprueba con `document.fonts.check` que las familias están CARGADAS
 de verdad, no solo pedidas).
+
+### Paso 2 — hecho: 1.243 hex crudos → la paleta del sistema (2026-08-20)
+
+**El archivo que hay que conocer: `apps/web/src/lib/paleta.ts`.** Es la paleta
+en JavaScript: todo color que se escriba en JS —porque viaja hasta un
+`style={{…}}` o un atributo de SVG, donde los tokens de Tailwind no llegan—
+vive ahí y se importa.
+
+**El guardián no prohíbe el hex; exige que sea del sistema.** Prohibirlo a secas
+sería imposible de cumplir (SVG, Stripe) y una regla imposible se termina
+desactivando. Lo que `verify-build.mjs` comprueba es que **todo hex que aparezca
+en `apps/web/src` sea uno de los ~105 de `paleta.ts`**, leyendo el conjunto del
+propio archivo para que no puedan desincronizarse. Probado al revés con un
+`#8B5CF6`: rompe el build y dice dónde.
+
+**Los 17 colores de rubro se GENERAN, no se eligen.** El sistema define 7
+acentos de módulo y nosotros tenemos 17 categorías de negocio. Se repartieron
+por el círculo de tono en OKLCH, anclados a esos 7, con **croma fijo (0.155)** y
+bajando la luminosidad de cada uno solo lo justo para cumplir AA sobre blanco
+— por eso ninguno queda apagado: se sacrifica luminosidad, nunca saturación.
+Es exactamente lo que manda el handoff («new colors only via oklch harmonized
+to this palette»). Igual con `TIRA`, los pares de rayas del marcador de foto.
+
+**Lo que casi se cuela, y cómo se cazó.** El barrido reasigna por SIGNIFICADO
+(el morado de marca pasa a rosa aunque su vecino más cercano sea otro morado).
+Eso es correcto casi siempre, pero en las listas donde el color existe para
+DISTINGUIR unos elementos de otros, mandó varios al mismo sitio. Se detectó
+comparando, archivo por archivo, cuántos colores distintos había ANTES y
+cuántos DESPUÉS dentro de cada bloque de líneas hermanas. Salieron seis:
+- `tiles.ts`: «Servicios de Auto» y «Tiendas» los dos en el rosa de marca.
+- `fixtures.ts` (categorías de evento): «vida nocturna», «negocios» y «otro»
+  idénticos; «arte» y «talleres» con las DOS rayas del mismo tono, o sea sin
+  rayas.
+- `mapa.ts`: tierra = vía rápida, y edificio = borde de calle. El mapa se
+  habría quedado plano.
+- `serviceConfig.ts`: dos de las ocho rayas iguales y una sin rayas.
+- `charts.tsx`: dos porciones del anillo del mismo color — en un anillo el
+  color ES la leyenda.
+- `Fulfillment.tsx`: dos de las tres zonas de reparto iguales, siendo anillos
+  sobre un mapa.
+Los seis se arreglaron llevándolos a la paleta como fuente, no reescribiendo el
+color a mano — que es lo que los había dejado así.
+
+**Si algún día hace falta repetirlo:** el barrido vive en
+`scripts/migrar-hex.mjs` con `--dry` para simular. Su mapa explícito (167
+entradas) documenta, línea a línea, qué papel hacía cada color viejo.
 
 ## El fondo, y por qué los recuadros ya no llevan sombra (2026-08-06)
 

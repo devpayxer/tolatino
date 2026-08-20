@@ -77,14 +77,14 @@ export const prodId = () =>
 
 // Striped-tile palette for category / collection imagery placeholders.
 export const PRODUCT_TILES: string[] = [
-  '#F3D9C8 0 8px,#E8C3AC 8px 16px', // clay / pantry
-  '#EAE2F8 0 8px,#DCCEF2 8px 16px', // lilac / merch
-  '#F3E2CE 0 8px,#ECD3B4 8px 16px', // tan / baking
-  '#EDE0D4 0 8px,#DFCBB6 8px 16px', // coffee
-  '#E4ECFB 0 8px,#D7E3F6 8px 16px', // blue / books
-  '#F3D9E2 0 8px,#E8BFCD 8px 16px', // rose
-  '#E3F5EA 0 8px,#D6E7D0 8px 16px', // green
-  '#FBEFD3 0 8px,#F5E1B0 8px 16px', // amber
+  '#FFEBDF 0 8px,#FED6C2 8px 16px', // clay / pantry
+  '#F0EDFF 0 8px,#E0DAFF 8px 16px', // lilac / merch
+  '#FAD9BD 0 8px,#FAD9BD 8px 16px', // tan / baking
+  '#FFECDC 0 8px,#FAD9BD 8px 16px', // coffee
+  '#DEF4FF 0 8px,#C0E6FF 8px 16px', // blue / books
+  '#FED2DF 0 8px,#FED2DF 8px 16px', // rose
+  '#E6FAF3 0 8px,#CDE9C9 8px 16px', // green
+  '#FFF6E3 0 8px,#F4DBBA 8px 16px', // amber
 ];
 
 // Default categories. IDs are FROZEN — existing product items already store these

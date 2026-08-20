@@ -84,7 +84,7 @@ const CH_TILE: Record<Channel, string> = {
   pickup: 'bg-amber-bg text-amber-ink',
 };
 const STATUS_DOT: Record<OStatus, string> = {
-  new: '#F0466E', preparing: '#F4B740', ready: '#7B61FF', completed: '#1F9D57', cancelled: '#9A96AE',
+  new: '#FF2D6F', preparing: '#FFB020', ready: '#FF2D6F', completed: '#00A878', cancelled: '#9A93B3',
 };
 const FLOW: Record<OStatus, OStatus | null> = {
   new: 'preparing', preparing: 'ready', ready: 'completed', completed: null, cancelled: null,
@@ -104,7 +104,7 @@ type ReviewRow = {
   body_es: string | null; body_en: string | null; reply_es: string | null;
   reply_en: string | null; replied_at: string | null; created_at: string;
 };
-const RV_COLORS = ['#7B61FF', '#1F9D57', '#2A5C8A', '#D6336C', '#E8954A', '#9A6A12', '#B5791A'];
+const RV_COLORS = ['#FF2D6F', '#00A878', '#0369A1', '#E11D48', '#C05702', '#8A5A00', '#8A5A00'];
 const relTime = (iso: string, es: boolean) => {
   const then = new Date(iso).getTime();
   if (!Number.isFinite(then)) return '';
@@ -469,7 +469,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </span>
       <div className="mt-2.5 text-[10.5px] font-bold text-muted">{label}</div>
       <div className="mt-0.5 text-[19px] font-extrabold text-ink">{value}</div>
-      <div className="text-[9.5px] font-extrabold" style={{ color: dC ?? '#1F9D57' }}>{delta}</div>
+      <div className="text-[9.5px] font-extrabold" style={{ color: dC ?? '#00A878' }}>{delta}</div>
     </div>
   );
 
@@ -545,16 +545,16 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const nf = (n: number) => (Number(n) || 0).toLocaleString('en-US');
   const custKpis = custStats
     ? [
-        { Icon: Users, c: '#6D4DF6', bg: '#EFEBFF', label: L('Total', 'Total'), value: nf(custStats.total), delta: '' },
-        { Icon: UserPlus, c: '#D6336C', bg: '#FDE7EF', label: L('Nuevos 30d', 'New 30d'), value: nf(custStats.new_30d), delta: '' },
-        { Icon: RefreshCw, c: '#1F8A4C', bg: '#E3F5EA', label: L('Recurrencia', 'Return rate'), value: `${custStats.total ? Math.round((custStats.returning_n / custStats.total) * 100) : 0}%`, delta: '' },
-        { Icon: DollarSign, c: '#9A6A12', bg: '#FCEFD6', label: L('LTV prom.', 'Avg LTV'), value: money0(custStats.avg_ltv), delta: '' },
+        { Icon: Users, c: '#C4144C', bg: '#FFECF2', label: L('Total', 'Total'), value: nf(custStats.total), delta: '' },
+        { Icon: UserPlus, c: '#E11D48', bg: '#FFECF2', label: L('Nuevos 30d', 'New 30d'), value: nf(custStats.new_30d), delta: '' },
+        { Icon: RefreshCw, c: '#007A57', bg: '#E6FAF3', label: L('Recurrencia', 'Return rate'), value: `${custStats.total ? Math.round((custStats.returning_n / custStats.total) * 100) : 0}%`, delta: '' },
+        { Icon: DollarSign, c: '#8A5A00', bg: '#FFF6E3', label: L('LTV prom.', 'Avg LTV'), value: money0(custStats.avg_ltv), delta: '' },
       ]
     : [
-        { Icon: Users, c: '#6D4DF6', bg: '#EFEBFF', label: L('Total', 'Total'), value: '4,284', delta: '▲ 6%' },
-        { Icon: UserPlus, c: '#D6336C', bg: '#FDE7EF', label: L('Nuevos 30d', 'New 30d'), value: '62', delta: '▲ 28%' },
-        { Icon: RefreshCw, c: '#1F8A4C', bg: '#E3F5EA', label: L('Recurrencia', 'Return rate'), value: '72%', delta: '▲ 4pp' },
-        { Icon: DollarSign, c: '#9A6A12', bg: '#FCEFD6', label: L('LTV prom.', 'Avg LTV'), value: '$184', delta: '▲ 9%' },
+        { Icon: Users, c: '#C4144C', bg: '#FFECF2', label: L('Total', 'Total'), value: '4,284', delta: '▲ 6%' },
+        { Icon: UserPlus, c: '#E11D48', bg: '#FFECF2', label: L('Nuevos 30d', 'New 30d'), value: '62', delta: '▲ 28%' },
+        { Icon: RefreshCw, c: '#007A57', bg: '#E6FAF3', label: L('Recurrencia', 'Return rate'), value: '72%', delta: '▲ 4pp' },
+        { Icon: DollarSign, c: '#8A5A00', bg: '#FFF6E3', label: L('LTV prom.', 'Avg LTV'), value: '$184', delta: '▲ 9%' },
       ];
 
   const segTabs: [Seg, string][] = [
@@ -584,16 +584,16 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const segments: [string, string, string, string, number][] = custStats
     ? [
         [L('VIP · top 10%', 'VIP · top 10%'), nf(custStats.vip_n), `${money0(custStats.vip_ltv)}`, '#4F46E5', barW(custStats.vip_n)],
-        [L('Recurrentes', 'Regulars'), nf(custStats.reg_n), `${money0(custStats.reg_ltv)}`, '#7C6BFF', barW(custStats.reg_n)],
-        [L('Ocasionales', 'Occasional'), nf(custStats.occ_n), `${money0(custStats.occ_ltv)}`, '#A78BFA', barW(custStats.occ_n)],
-        [L('Nuevos', 'New'), nf(custStats.new_seg_n), `${money0(custStats.new_ltv)}`, '#34D399', barW(custStats.new_seg_n)],
-        [L('En riesgo', 'At risk'), nf(custStats.risk_n), `${money0(custStats.risk_ltv)}`, '#F4B740', barW(custStats.risk_n)],
+        [L('Recurrentes', 'Regulars'), nf(custStats.reg_n), `${money0(custStats.reg_ltv)}`, '#FF7A9E', barW(custStats.reg_n)],
+        [L('Ocasionales', 'Occasional'), nf(custStats.occ_n), `${money0(custStats.occ_ltv)}`, '#FFC2D3', barW(custStats.occ_n)],
+        [L('Nuevos', 'New'), nf(custStats.new_seg_n), `${money0(custStats.new_ltv)}`, '#00A878', barW(custStats.new_seg_n)],
+        [L('En riesgo', 'At risk'), nf(custStats.risk_n), `${money0(custStats.risk_ltv)}`, '#FFB020', barW(custStats.risk_n)],
       ]
     : [
         [L('VIP · top 10%', 'VIP · top 10%'), '428', '$840', '#4F46E5', 86],
-        [L('Recurrentes', 'Regulars'), '1,284', '$184', '#7C6BFF', 64],
-        [L('Ocasionales', 'Occasional'), '2,104', '$58', '#A78BFA', 42],
-        [L('Nuevos', 'New'), '184', '$24', '#34D399', 12],
+        [L('Recurrentes', 'Regulars'), '1,284', '$184', '#FF7A9E', 64],
+        [L('Ocasionales', 'Occasional'), '2,104', '$58', '#FFC2D3', 42],
+        [L('Nuevos', 'New'), '184', '$24', '#00A878', 12],
       ];
 
   const rewardDefs: [string, string][] = [
@@ -721,16 +721,16 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const urgentN = orders.filter((o) => o.urgent && o.status === 'new').length;
   const orderKpis = orderStats
     ? [
-        { Icon: ShoppingBag, c: '#D6336C', bg: '#FDE7EF', label: L('Pedidos hoy', 'Orders today'), value: nf(orderStats.today_count), delta: '', dC: '#1F9D57' },
-        { Icon: Clock, c: '#9A6A12', bg: '#FCEFD6', label: L('En curso', 'In flight'), value: nf(orderStats.in_flight), delta: urgentN ? L(`${urgentN} urgente${urgentN === 1 ? '' : 's'}`, `${urgentN} urgent`) : '', dC: '#9A96AE' },
-        { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', label: L('Ingresos hoy', 'Revenue today'), value: money0(orderStats.today_revenue), delta: '', dC: '#1F9D57' },
-        { Icon: Check, c: '#6D4DF6', bg: '#EFEBFF', label: L('Completados', 'Completed'), value: nf(orderStats.status?.completed ?? 0), delta: '', dC: '#1F9D57' },
+        { Icon: ShoppingBag, c: '#E11D48', bg: '#FFECF2', label: L('Pedidos hoy', 'Orders today'), value: nf(orderStats.today_count), delta: '', dC: '#00A878' },
+        { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', label: L('En curso', 'In flight'), value: nf(orderStats.in_flight), delta: urgentN ? L(`${urgentN} urgente${urgentN === 1 ? '' : 's'}`, `${urgentN} urgent`) : '', dC: '#9A93B3' },
+        { Icon: DollarSign, c: '#007A57', bg: '#E6FAF3', label: L('Ingresos hoy', 'Revenue today'), value: money0(orderStats.today_revenue), delta: '', dC: '#00A878' },
+        { Icon: Check, c: '#C4144C', bg: '#FFECF2', label: L('Completados', 'Completed'), value: nf(orderStats.status?.completed ?? 0), delta: '', dC: '#00A878' },
       ]
     : [
-        { Icon: ShoppingBag, c: '#D6336C', bg: '#FDE7EF', label: L('Pedidos hoy', 'Orders today'), value: '38', delta: '▲ 18%', dC: '#1F9D57' },
-        { Icon: Clock, c: '#9A6A12', bg: '#FCEFD6', label: L('En curso', 'In flight'), value: String(inFlight), delta: L('1 urgente', '1 urgent'), dC: '#9A96AE' },
-        { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', label: L('Ingresos', 'Revenue'), value: '$1,847', delta: '▲ 12%', dC: '#1F9D57' },
-        { Icon: Clock, c: '#6D4DF6', bg: '#EFEBFF', label: L('Prep prom.', 'Avg prep'), value: '18m', delta: '▼ 2m', dC: '#1F9D57' },
+        { Icon: ShoppingBag, c: '#E11D48', bg: '#FFECF2', label: L('Pedidos hoy', 'Orders today'), value: '38', delta: '▲ 18%', dC: '#00A878' },
+        { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', label: L('En curso', 'In flight'), value: String(inFlight), delta: L('1 urgente', '1 urgent'), dC: '#9A93B3' },
+        { Icon: DollarSign, c: '#007A57', bg: '#E6FAF3', label: L('Ingresos', 'Revenue'), value: '$1,847', delta: '▲ 12%', dC: '#00A878' },
+        { Icon: Clock, c: '#C4144C', bg: '#FFECF2', label: L('Prep prom.', 'Avg prep'), value: '18m', delta: '▼ 2m', dC: '#00A878' },
       ];
 
   const statusMeta: Record<OStatus, [string, string]> = {
@@ -741,7 +741,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const onTheWay = (o: Order) => o.channel === 'delivery' && o.status !== 'completed' && o.status !== 'cancelled' && (o.fulfillment?.dispatch === 'on_the_way' || o.fulfillment?.dispatch === 'picked_up');
   const viewMatch = (o: Order, k: OView) => (k === 'on_the_way' ? onTheWay(o) : o.status === k && !(k === 'ready' && onTheWay(o)));
   const viewMeta = (k: OView): string => (k === 'on_the_way' ? L('En camino', 'On the way') : statusMeta[k][0]);
-  const viewDot = (k: OView): string => (k === 'on_the_way' ? '#2F6FED' : STATUS_DOT[k]);
+  const viewDot = (k: OView): string => (k === 'on_the_way' ? '#007CC1' : STATUS_DOT[k]);
   const statusKeys: OView[] = ['new', 'preparing', 'ready', 'on_the_way', 'completed', 'cancelled'];
   const chLabel = (ch: Channel) => ch === 'delivery' ? L('Entrega', 'Delivery') : ch === 'dinein' ? L('Mostrador', 'Dine-in') : L('Recoger', 'Pickup');
 
@@ -872,14 +872,14 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const chPct = (ch: Channel) => (chTotal > 0 ? `${Math.round((Number(chToday[ch] ?? 0) / chTotal) * 100)}%` : '0%');
   const channelMix: [string, Channel, string, string][] = orderStats
     ? [
-        ['#6D4DF6', 'dinein', L('Mostrador', 'Dine-in'), chPct('dinein')],
-        ['#D6336C', 'delivery', L('Entrega', 'Delivery'), chPct('delivery')],
-        ['#9A6A12', 'pickup', L('Recoger', 'Pickup'), chPct('pickup')],
+        ['#C4144C', 'dinein', L('Mostrador', 'Dine-in'), chPct('dinein')],
+        ['#E11D48', 'delivery', L('Entrega', 'Delivery'), chPct('delivery')],
+        ['#8A5A00', 'pickup', L('Recoger', 'Pickup'), chPct('pickup')],
       ]
     : [
-        ['#6D4DF6', 'dinein', L('Mostrador', 'Dine-in'), '42%'],
-        ['#D6336C', 'delivery', L('Entrega', 'Delivery'), '34%'],
-        ['#9A6A12', 'pickup', L('Recoger', 'Pickup'), '24%'],
+        ['#C4144C', 'dinein', L('Mostrador', 'Dine-in'), '42%'],
+        ['#E11D48', 'delivery', L('Entrega', 'Delivery'), '34%'],
+        ['#8A5A00', 'pickup', L('Recoger', 'Pickup'), '24%'],
       ];
 
   const ordersView = (
@@ -1004,7 +1004,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const rvAvg = rvCount ? reviews.reduce((s, r) => s + r.stars, 0) / rvCount : 0;
   const repliedN = reviews.filter((r) => posted[r.id]).length;
   const repliedPct = rvCount ? Math.round((repliedN / rvCount) * 100) : 0;
-  const barColor = (star: number) => (star >= 4 ? '#1F9D57' : star === 3 ? '#F4B740' : '#D6336C');
+  const barColor = (star: number) => (star >= 4 ? '#00A878' : star === 3 ? '#FFB020' : '#E11D48');
   const ratingBars: [number, number, string][] = [5, 4, 3, 2, 1].map((star) => {
     const n = reviews.filter((r) => r.stars === star).length;
     return [star, rvCount ? Math.round((n / rvCount) * 100) : 0, barColor(star)] as [number, number, string];
@@ -1255,7 +1255,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {mode === 'reviews' && reviewsView}
 
       {!isPremium && mode === 'reviews' && (
-        <div className="flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+        <div className="flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#16112E,#241C46)' }}>
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)]"><Sparkles size={18} className="text-amber" /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-[13.5px] font-extrabold">{L('Respuestas con IA en un toque', 'One-tap AI replies')}</span>
@@ -1483,7 +1483,7 @@ export function CustomersModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-          <Check size={14} stroke={2.6} className="text-[#7BE0A8]" />
+          <Check size={14} stroke={2.6} className="text-[#00C48C]" />
           {toast}
         </div>
       )}

@@ -155,7 +155,7 @@ export function CityModal() {
         <div className="mt-2 rounded-btn bg-pink-bg px-3 py-2 text-[11.5px] font-semibold text-pink-dark">{geoError}</div>
       )}
 
-      <div className="mt-3 flex items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px]">
+      <div className="mt-3 flex items-center gap-2 rounded-btn border-[1.5px] border-[#F1EEFA] bg-app px-3 py-[10px]">
         <Search size={15} className="flex-none text-primary" stroke={2.2} />
         <input
           value={q}

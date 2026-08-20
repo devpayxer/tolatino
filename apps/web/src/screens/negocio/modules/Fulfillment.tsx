@@ -36,9 +36,11 @@ import type { TipPolicy } from '@/data/fixtures';
 // ---- setup persistence model (businesses.settings jsonb; Zone/OwnDriver types
 // live in FulfillmentEditors as the single source) ----
 const ZONE_SEED: Zone[] = [
-  { color: '#7B61FF', es: 'Zona 1 · Centro', en: 'Zone 1 · Core', toMi: 1.2, time: '30–45 min', fee: 0 },
-  { color: '#F0466E', es: 'Zona 2 · Ampliada', en: 'Zone 2 · Greater', toMi: 3, time: '45–60 min', fee: 5 },
-  { color: '#F4B740', es: 'Zona 3 · Exterior', en: 'Zone 3 · Outer', toMi: 8, time: '60–90 min', fee: 12 },
+  // Tres colores DISTINTOS y en rampa de cerca→lejos: son anillos sobre un
+  // mapa, y si dos coinciden no se sabe dónde acaba una zona y empieza la otra.
+  { color: '#00C48C', es: 'Zona 1 · Centro', en: 'Zone 1 · Core', toMi: 1.2, time: '30–45 min', fee: 0 },
+  { color: '#FFB020', es: 'Zona 2 · Ampliada', en: 'Zone 2 · Greater', toMi: 3, time: '45–60 min', fee: 5 },
+  { color: '#FF7A1A', es: 'Zona 3 · Exterior', en: 'Zone 3 · Outer', toMi: 8, time: '60–90 min', fee: 12 },
 ];
 // The delivery limit the cart enforces = the OUTERMOST zone's radius. Deriving it
 // from the zones (rather than a separate field) means the reach the owner sees in
@@ -48,10 +50,10 @@ const zonesRadiusMi = (zs: Zone[]): string => {
   return b.length ? String(Math.max(...b)) : '';
 };
 const DRIVER_SEED: OwnDriver[] = [
-  { initials: 'MP', color: '#7B61FF', dot: '#1F9D57', name: 'Marco P.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2487 → Z2', orderEn: '#2487 → Z2', km: '1.8 mi', eta: 'ETA 5 min' },
-  { initials: 'DR', color: '#2A5C8A', dot: '#1F9D57', name: 'Diego R.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2484 → Z1', orderEn: '#2484 → Z1', km: '0.9 mi', eta: 'ETA 2 min' },
-  { initials: 'AV', color: '#E8954A', dot: '#6D4DF6', name: 'Andrea V.', sEs: 'Disponible', sEn: 'Available', orderEs: 'Lista', orderEn: 'Ready next', km: '—', eta: '—' },
-  { initials: 'LM', color: '#9A96AE', dot: '#9A96AE', name: 'Lucía M.', sEs: 'Libre hoy', sEn: 'Off today', orderEs: 'Mar–Jue', orderEn: 'Mar–Jue', km: '—', eta: '—' },
+  { initials: 'MP', color: '#FF2D6F', dot: '#00A878', name: 'Marco P.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2487 → Z2', orderEn: '#2487 → Z2', km: '1.8 mi', eta: 'ETA 5 min' },
+  { initials: 'DR', color: '#0369A1', dot: '#00A878', name: 'Diego R.', sEs: 'En ruta', sEn: 'On delivery', orderEs: '#2484 → Z1', orderEn: '#2484 → Z1', km: '0.9 mi', eta: 'ETA 2 min' },
+  { initials: 'AV', color: '#C05702', dot: '#C4144C', name: 'Andrea V.', sEs: 'Disponible', sEn: 'Available', orderEs: 'Lista', orderEn: 'Ready next', km: '—', eta: '—' },
+  { initials: 'LM', color: '#9A93B3', dot: '#9A93B3', name: 'Lucía M.', sEs: 'Libre hoy', sEn: 'Off today', orderEs: 'Mar–Jue', orderEn: 'Mar–Jue', km: '—', eta: '—' },
 ];
 const EXT_APPS = [
   { label: 'U', color: '#000', name: 'Uber Direct', dEs: 'Conductores bajo demanda cuando los tuyos están ocupados.', dEn: 'On-demand drivers when yours are busy.', rate: '$8.50' },
@@ -337,10 +339,10 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     cancelled: { es: 'Cancelado', en: 'Cancelled', cls: 'bg-lilac-2 text-muted-2' },
   };
   const delKpis: { Icon: LucideIcon; c: string; bg: string; label: string; value: string }[] = [
-    { Icon: Zap, c: '#D6336C', bg: '#FDE7EF', label: L('Nuevos', 'New'), value: String(deliveryOrders.filter((o) => o.status === 'new').length) },
-    { Icon: Clock, c: '#9A6A12', bg: '#FCEFD6', label: L('Preparando', 'Preparing'), value: String(deliveryOrders.filter((o) => o.status === 'preparing').length) },
-    { Icon: Bike, c: '#1F8A4C', bg: '#E3F5EA', label: L('En camino', 'On the way'), value: String(deliveryOrders.filter((o) => delStage(o) === 'en_route').length) },
-    { Icon: CheckCircle2, c: '#6D4DF6', bg: '#EFEBFF', label: L('Entregados', 'Delivered'), value: String(deliveryOrders.filter((o) => delStage(o) === 'delivered').length) },
+    { Icon: Zap, c: '#E11D48', bg: '#FFECF2', label: L('Nuevos', 'New'), value: String(deliveryOrders.filter((o) => o.status === 'new').length) },
+    { Icon: Clock, c: '#8A5A00', bg: '#FFF6E3', label: L('Preparando', 'Preparing'), value: String(deliveryOrders.filter((o) => o.status === 'preparing').length) },
+    { Icon: Bike, c: '#007A57', bg: '#E6FAF3', label: L('En camino', 'On the way'), value: String(deliveryOrders.filter((o) => delStage(o) === 'en_route').length) },
+    { Icon: CheckCircle2, c: '#C4144C', bg: '#FFECF2', label: L('Entregados', 'Delivered'), value: String(deliveryOrders.filter((o) => delStage(o) === 'delivered').length) },
   ];
   const delList = deliveryOrders.filter((o) => delFilter === 'all' || delStage(o) === delFilter);
 
@@ -401,7 +403,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
 
                 {/* live-tracking mini map for on-the-way orders */}
                 {onWay && (
-                  <div className="relative mt-2.5 h-[68px] overflow-hidden rounded-field border border-line" style={{ background: '#EAEEF6' }}>
+                  <div className="relative mt-2.5 h-[68px] overflow-hidden rounded-field border border-line" style={{ background: '#EAE6F5' }}>
                     <div className="absolute left-[-10px] top-[26px] h-[6px] w-[150%] bg-white" style={{ transform: 'rotate(-8deg)' }} />
                     <div className="absolute left-[38%] top-[-10px] h-[150%] w-[6px] bg-white" style={{ transform: 'rotate(9deg)' }} />
                     <span className="absolute left-[18%] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-float"><Bike size={12} stroke={2.4} /></span>
@@ -427,7 +429,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
   // ============================ DELIVERY · ZONES ============================
   const zonesView = (
     <div className="flex flex-col gap-3.5 md:grid md:grid-cols-2 md:items-start md:gap-4 xl:grid-cols-1 2xl:grid-cols-2">
-      <div className="relative h-[190px] overflow-hidden rounded-card-sm border border-line" style={{ background: '#EAEEF6' }}>
+      <div className="relative h-[190px] overflow-hidden rounded-card-sm border border-line" style={{ background: '#EAE6F5' }}>
         <div className="absolute left-[-10px] top-[30px] h-[9px] w-[150%] bg-white" style={{ transform: 'rotate(-14deg)' }} />
         <div className="absolute bottom-[40px] left-[-10px] h-[8px] w-[150%] bg-white" style={{ transform: 'rotate(7deg)' }} />
         <div className="absolute left-[42%] top-[-10px] h-[150%] w-[9px] bg-white" style={{ transform: 'rotate(10deg)' }} />
@@ -484,7 +486,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
           {drivers.map((d, di) => (
             <button key={d.name + di} onClick={() => setDriverSheet({ idx: di, initial: d })} className="flex w-full cursor-pointer items-center gap-3 rounded-card-sm border border-line bg-white p-3 text-left hover:border-primary">
               <span className="relative flex-none">
-                <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-[12px] font-extrabold text-white" style={{ background: d.photo ? '#EAE7F6' : d.color }}>
+                <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-[12px] font-extrabold text-white" style={{ background: d.photo ? '#EAE6F5' : d.color }}>
                   {d.photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={imgUrl(d.photo, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />
@@ -511,7 +513,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
           {/* Mismo caso que los transportistas: Uber Direct, DoorDash Drive y
               Rappi no están conectados, pero se ofrecían con tarifa concreta.
               (Auditoría de Negocios, 2026-08-04 — regla #8.) */}
-          <div role="note" className="flex items-start gap-2 rounded-field border border-[#F2E3BF] bg-amber-bg px-3 py-2.5 md:col-span-2 xl:col-span-1 2xl:col-span-2">
+          <div role="note" className="flex items-start gap-2 rounded-field border border-[#F4DBBA] bg-amber-bg px-3 py-2.5 md:col-span-2 xl:col-span-1 2xl:col-span-2">
             <span className="mt-px flex-none rounded-full bg-amber-ink/10 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-amber-ink">
               {L('Aún no conectado', 'Not connected yet')}
             </span>
@@ -654,10 +656,10 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
     cancelled: { es: 'Cancelado', en: 'Cancelled', cls: 'bg-lilac-2 text-muted-2' },
   };
   const shipKpis: { Icon: LucideIcon; c: string; bg: string; label: string; value: string }[] = [
-    { Icon: Package, c: '#D6336C', bg: '#FDE7EF', label: L('Por enviar', 'To ship'), value: String(shipOrders.filter((o) => shipStage(o) === 'to_pack' || shipStage(o) === 'labeled').length) },
-    { Icon: Tag, c: '#9A6A12', bg: '#FCEFD6', label: L('Etiquetas', 'Labels'), value: String(shipOrders.filter((o) => shipStage(o) === 'labeled').length) },
-    { Icon: Truck, c: '#2A5C8A', bg: '#E4ECFB', label: L('En tránsito', 'In transit'), value: String(shipOrders.filter((o) => shipStage(o) === 'shipped' || shipStage(o) === 'in_transit').length) },
-    { Icon: PackageCheck, c: '#1F8A4C', bg: '#E3F5EA', label: L('Entregados', 'Delivered'), value: String(shipOrders.filter((o) => shipStage(o) === 'delivered').length) },
+    { Icon: Package, c: '#E11D48', bg: '#FFECF2', label: L('Por enviar', 'To ship'), value: String(shipOrders.filter((o) => shipStage(o) === 'to_pack' || shipStage(o) === 'labeled').length) },
+    { Icon: Tag, c: '#8A5A00', bg: '#FFF6E3', label: L('Etiquetas', 'Labels'), value: String(shipOrders.filter((o) => shipStage(o) === 'labeled').length) },
+    { Icon: Truck, c: '#0369A1', bg: '#DEF4FF', label: L('En tránsito', 'In transit'), value: String(shipOrders.filter((o) => shipStage(o) === 'shipped' || shipStage(o) === 'in_transit').length) },
+    { Icon: PackageCheck, c: '#007A57', bg: '#E6FAF3', label: L('Entregados', 'Delivered'), value: String(shipOrders.filter((o) => shipStage(o) === 'delivered').length) },
   ];
   const shipList = shipOrders.filter((o) => shipFilter === 'all' || shipStage(o) === shipFilter);
 
@@ -784,7 +786,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               se conecten sus APIs. Sin este aviso, un dueño configuraba envíos
               creyendo que $8.00 era el precio real que le iban a cobrar.
               (Auditoría de Negocios, 2026-08-04 — regla #8.) */}
-          <div role="note" className="flex items-start gap-2 rounded-field border border-[#F2E3BF] bg-amber-bg px-3 py-2.5">
+          <div role="note" className="flex items-start gap-2 rounded-field border border-[#F4DBBA] bg-amber-bg px-3 py-2.5">
             <span className="mt-px flex-none rounded-full bg-amber-ink/10 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[.04em] text-amber-ink">
               {L('Aún no conectado', 'Not connected yet')}
             </span>
@@ -931,7 +933,7 @@ export function FulfillmentModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) 
               <div className="flex flex-col gap-2">
                 {drivers.map((d) => (
                   <button key={d.name} onClick={() => assignDriver(d.name, d.phone, d.vehicle)} className="flex items-center gap-3 rounded-field border-[1.5px] border-lilac-line bg-white p-2.5 text-left hover:border-primary">
-                    <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full text-[11px] font-extrabold text-white" style={{ background: d.photo ? '#EAE7F6' : d.color }}>
+                    <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full text-[11px] font-extrabold text-white" style={{ background: d.photo ? '#EAE6F5' : d.color }}>
                       {d.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={imgUrl(d.photo, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />

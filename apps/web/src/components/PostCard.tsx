@@ -22,15 +22,15 @@ export type FeedPost = Post;
 export function postTag(type: PostType, L: (a: string, b: string) => string) {
   switch (type) {
     case 'ask':
-      return { label: L('Pregunta', 'Asking'), color: '#6D4DF6', bg: '#EFEBFF' };
+      return { label: L('Pregunta', 'Asking'), color: '#C4144C', bg: '#FFECF2' };
     case 'rec':
-      return { label: L('Recomienda', 'Recommends'), color: '#1F8A4C', bg: '#E3F5EA' };
+      return { label: L('Recomienda', 'Recommends'), color: '#007A57', bg: '#E6FAF3' };
     case 'sale':
-      return { label: L('Vendo', 'For sale'), color: '#B26A00', bg: '#FCEFD6' };
+      return { label: L('Vendo', 'For sale'), color: '#B85D00', bg: '#FFF6E3' };
     case 'poll':
-      return { label: L('Encuesta', 'Poll'), color: '#0E9384', bg: '#D6F3EF' };
+      return { label: L('Encuesta', 'Poll'), color: '#008489', bg: '#DAF7F7' };
     default:
-      return { label: L('Mi barrio', 'Local'), color: '#2F6FED', bg: '#E5EFFB' };
+      return { label: L('Mi barrio', 'Local'), color: '#007CC1', bg: '#DEF4FF' };
   }
 }
 
@@ -225,7 +225,7 @@ export function PostCard({
               >
                 <span
                   className="absolute bottom-0 left-0 top-0 transition-[width] duration-300"
-                  style={{ width: voted ? `${pct}%` : '0%', background: chosen ? '#E0D7F8' : '#F1EFFA' }}
+                  style={{ width: voted ? `${pct}%` : '0%', background: chosen ? '#E0DAFF' : '#F1EEFA' }}
                 />
                 <span className="relative flex items-center justify-between gap-2.5">
                   <span className="flex items-center gap-[7px] text-[13px] font-extrabold text-ink">
@@ -250,7 +250,7 @@ export function PostCard({
       {post.business && (() => {
         const inner = (
           <>
-            <span className="h-8 w-8 flex-none rounded-[9px]" style={{ background: tile('#EFEBFF', '#E5DEF9', 7) }} />
+            <span className="h-8 w-8 flex-none rounded-[9px]" style={{ background: tile('#FFECF2', '#FED2DF', 7) }} />
             <span className="min-w-0 text-left">
               <span className="block truncate text-[12.5px] font-extrabold text-ink">{post.business}</span>
               <span className="mt-px block text-[10.5px] font-bold text-green-dark">

@@ -154,7 +154,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
       </span>
     );
   };
-  const Area = ({ data, color = '#7B61FF' }: { data: number[]; color?: string }) => {
+  const Area = ({ data, color = '#FF2D6F' }: { data: number[]; color?: string }) => {
     const w = 320, h = 90, n = data.length, max = Math.max(...data, 1);
     const pts = data.map((v, i) => [n === 1 ? w / 2 : (i * (w - 16)) / (n - 1) + 8, 82 - (v / max) * 70] as const);
     const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
@@ -178,14 +178,14 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
   type Metp = { icon: typeof Eye; label: string; kind: string; color: string; bg: string };
   // Alcance (impressions — top of funnel): search appearances + page views.
   const reach: Metp[] = [
-    { icon: Search, label: L('Búsquedas', 'Searches'), kind: 'search', color: '#5B6BE1', bg: 'bg-blue-bg' },
-    { icon: Eye, label: L('Vistas', 'Views'), kind: 'view', color: '#7B61FF', bg: 'bg-lilac' },
+    { icon: Search, label: L('Búsquedas', 'Searches'), kind: 'search', color: '#646CD2', bg: 'bg-blue-bg' },
+    { icon: Eye, label: L('Vistas', 'Views'), kind: 'view', color: '#FF2D6F', bg: 'bg-lilac' },
   ];
   // Acciones del cliente (what they DO after finding you).
   const acts: Metp[] = [
-    { icon: Heart, label: L('Guardados', 'Saves'), kind: 'save', color: '#E14E8A', bg: 'bg-pink-bg' },
-    { icon: Navigation, label: L('Cómo llegar', 'Directions'), kind: 'direction', color: '#C77B2B', bg: 'bg-amber-bg' },
-    { icon: Phone, label: L('Llamadas', 'Calls'), kind: 'call', color: '#1F9D57', bg: 'bg-green-bg' },
+    { icon: Heart, label: L('Guardados', 'Saves'), kind: 'save', color: '#FF2D6F', bg: 'bg-pink-bg' },
+    { icon: Navigation, label: L('Cómo llegar', 'Directions'), kind: 'direction', color: '#FFB020', bg: 'bg-amber-bg' },
+    { icon: Phone, label: L('Llamadas', 'Calls'), kind: 'call', color: '#00A878', bg: 'bg-green-bg' },
   ];
   const MetCard = ({ a }: { a: Metp }) => {
     const cur = curSum(a.kind); const prev = prevSum(a.kind); const s = seriesOf(a.kind);
@@ -285,7 +285,7 @@ export function Estadisticas({ ctx }: { ctx: PanelCtx }) {
               </div>
               <button onClick={() => go('orders')} className="tap-y cursor-pointer rounded-[10px] bg-lilac px-3 py-2 text-[10.5px] font-extrabold text-primary-dark">{L('Ver pedidos', 'View orders')}</button>
             </div>
-            {revCur > 0 && <div className="mt-3"><Area data={revSeries} color="#1F9D57" /></div>}
+            {revCur > 0 && <div className="mt-3"><Area data={revSeries} color="#00A878" /></div>}
           </div>
         </>
       )}

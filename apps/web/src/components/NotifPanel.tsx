@@ -103,7 +103,7 @@ export function NotifPanel() {
                   <button
                     key={n.id}
                     onClick={() => open(n)}
-                    className={`flex w-full cursor-pointer items-center gap-[11px] rounded-btn px-2 py-2.5 text-left ${unread ? 'bg-[#F6F4FC]' : ''}`}
+                    className={`flex w-full cursor-pointer items-center gap-[11px] rounded-btn px-2 py-2.5 text-left ${unread ? 'bg-[#F6F4FF]' : ''}`}
                   >
                     <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full" style={{ background: n.bg }}>
                       <Icon size={16} strokeWidth={2.2} style={{ color: n.color }} />

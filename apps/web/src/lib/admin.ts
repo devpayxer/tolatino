@@ -381,11 +381,11 @@ export type ZoneRow = {
   trend7: number; ratio: number; state: 'hot' | 'growing' | 'cooling' | 'dormant' | 'uncovered'; opportunity: number;
 };
 export const ZONE_STATE: Record<string, { es: string; en: string; bg: string; c: string }> = {
-  hot: { es: 'Caliente', en: 'Hot', bg: '#FDE7EF', c: '#D6336C' },
-  growing: { es: 'Creciendo', en: 'Growing', bg: '#E3F5EA', c: '#1F8A4C' },
-  cooling: { es: 'Enfriándose', en: 'Cooling', bg: '#E5EFFB', c: '#2F6FED' },
-  dormant: { es: 'Dormida', en: 'Dormant', bg: '#FCEFD6', c: '#9A6A12' },
-  uncovered: { es: 'Sin cobertura', en: 'Uncovered', bg: '#F1EFFA', c: '#8A86A0' },
+  hot: { es: 'Caliente', en: 'Hot', bg: '#FFECF2', c: '#E11D48' },
+  growing: { es: 'Creciendo', en: 'Growing', bg: '#E6FAF3', c: '#007A57' },
+  cooling: { es: 'Enfriándose', en: 'Cooling', bg: '#DEF4FF', c: '#007CC1' },
+  dormant: { es: 'Dormida', en: 'Dormant', bg: '#FFF6E3', c: '#8A5A00' },
+  uncovered: { es: 'Sin cobertura', en: 'Uncovered', bg: '#F1EEFA', c: '#7E7798' },
 };
 export async function fetchZones(sort = 'gmv', city?: string): Promise<ZoneRow[]> {
   if (!supabase) return [];

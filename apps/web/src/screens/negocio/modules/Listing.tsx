@@ -393,7 +393,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
 
           {/* Free plan → upgrade band (handoff premium-teaser pattern) */}
           {isFree && (
-            <div className="mb-3.5 flex flex-wrap items-center gap-3 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+            <div className="mb-3.5 flex flex-wrap items-center gap-3 rounded-card-sm p-3.5 text-white" style={{ background: 'linear-gradient(140deg,#16112E,#241C46)' }}>
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[15px]">✦</span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[12.5px] font-extrabold">{L('Tu listado está en el plan Gratis', 'Your listing is on the Free plan')}</span>
@@ -752,7 +752,7 @@ export function ListingModule({ ctx }: { ctx: PanelCtx }) {
             <div className="mb-3 text-[12px] font-extrabold text-ink">{L('Estado del listado', 'Listing status')}</div>
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn" style={{ background: real.tier === 'free' ? '#FCEFD6' : '#E3F5EA' }}>
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn" style={{ background: real.tier === 'free' ? '#FFF6E3' : '#E6FAF3' }}>
                   <Shield size={16} stroke={2.2} className={real.tier === 'free' ? 'text-amber-ink' : 'text-green-dark'} />
                 </span>
                 <span className="min-w-0">

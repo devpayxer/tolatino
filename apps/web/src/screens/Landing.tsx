@@ -32,7 +32,7 @@
 // visibles, feed con `aria-live` que se pausa al pasar el ratón o al enfocar,
 // selector de ciudad como `<button>` con nombre accesible, marquesina y capas
 // decorativas con `aria-hidden`, blancos de toque de 44px, y el texto más tenue
-// subido de #9A96AE a #8A86A0 como recomienda el propio documento.
+// subido de #9A93B3 a #7E7798 como recomienda el propio documento.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -57,12 +57,12 @@ type Vertical = 'all' | 'food' | 'serv' | 'evt' | 'rent' | 're' | 'auto' | 'job'
 // Espejo de los tokens `home`/`clay`/`ocean`/`jade` de tailwind.config.ts, para
 // las filas cuyo color cambia por elemento (Tailwind no admite clases dinámicas).
 const A = {
-  rose: '#D6336C', roseBg: '#FDE7EF',
-  purple: '#6D4DF6', purpleBg: '#EFEBFF',
-  jade: '#0E9488', jadeBg: 'rgba(14,148,136,.1)',
-  clay: '#C26A1A', clayBg: '#FCE9D6',
-  green: '#1F9D57', greenBg: '#E3F5EA',
-  ocean: '#2A6CB0', oceanBg: '#E4EEFB',
+  rose: '#E11D48', roseBg: '#FFECF2',
+  purple: '#C4144C', purpleBg: '#FFECF2',
+  jade: '#008489', jadeBg: 'rgba(14,148,136,.1)',
+  clay: '#FF7A1A', clayBg: '#FFF1E5',
+  green: '#00A878', greenBg: '#E6FAF3',
+  ocean: '#007FA2', oceanBg: '#DAF6FD',
 } as const;
 
 const FEED_MS = 4200; // el handoff fija 4.2 s por publicación
@@ -280,7 +280,7 @@ export function LandingScreen() {
               {L('To’lo Latino de', 'Everything Latino in')}{' '}
               <button onClick={() => app.setCityOpen(true)} aria-label={L('Cambiar ciudad', 'Change city')}
                       className="tl-focus inline-flex cursor-pointer items-center gap-[.13em]">
-                <span style={{ background: 'linear-gradient(96deg,#7B61FF,#D6336C 55%,#F4B740)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
+                <span style={{ background: 'linear-gradient(96deg,#FF2D6F,#E11D48 55%,#FFB020)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
                   {cityShort}
                 </span>
                 <ChevronDown stroke={2.8} className="flex-none text-primary-dark" style={{ width: '.4em', height: '.4em', marginTop: '.14em' }} aria-hidden />
@@ -516,7 +516,7 @@ export function LandingScreen() {
       {/* ═════════════ PARA NEGOCIOS ═════════════ */}
       <section id="negocios" className={`relative bg-page pt-[clamp(116px,17vw,216px)] ${gutter}`}>
         <div className="relative mx-auto max-w-[1080px] overflow-hidden p-[clamp(26px,4.4vw,52px)]"
-             style={{ background: 'linear-gradient(150deg,#5B3FD6,#7B61FF 46%,#B0357E)', borderRadius: 'clamp(22px,3vw,30px)' }}>
+             style={{ background: 'linear-gradient(150deg,#4F46E5,#FF2D6F 46%,#AE54A5)', borderRadius: 'clamp(22px,3vw,30px)' }}>
           <span aria-hidden className="pointer-events-none absolute rounded-full"
                 style={{ top: '-30%', right: '-14%', width: 'min(460px,70%)', height: 'min(460px,120%)', background: 'rgba(255,255,255,.1)' }} />
           <span aria-hidden className="pointer-events-none absolute rounded-full"
@@ -526,7 +526,7 @@ export function LandingScreen() {
             <div>
               <span className="inline-flex items-center gap-[7px] rounded-full px-3 py-[6px]"
                     style={{ background: 'rgba(244,183,64,.2)', border: '1px solid rgba(244,183,64,.34)' }}>
-                <span className="text-[9.5px] font-extrabold uppercase" style={{ color: '#FFD37A', letterSpacing: '.13em' }}>
+                <span className="text-[9.5px] font-extrabold uppercase" style={{ color: '#FFB020', letterSpacing: '.13em' }}>
                   {L('Para negocios', 'For business')}
                 </span>
               </span>
@@ -593,9 +593,9 @@ export function LandingScreen() {
 
       <style jsx global>{`
         html { scroll-behavior: smooth; }
-        body { background: #FBFAFE; } /* el rebote del scroll no debe enseñar el gris de la app */
+        body { background: #F6F4FF; } /* el rebote del scroll no debe enseñar el gris de la app */
 
-        .tl-focus:focus-visible { outline: 2px solid #7B61FF; outline-offset: 2px; border-radius: 10px; }
+        .tl-focus:focus-visible { outline: 2px solid #FF2D6F; outline-offset: 2px; border-radius: 10px; }
 
         /* Bloque central del hero */
         .tl-hero-inner { display: flex; flex-direction: column; align-items: center; width: 100%; padding: clamp(14px,3vw,28px) 0; }
@@ -659,7 +659,7 @@ export function LandingScreen() {
           .tl-chips[data-fade="l"] { -webkit-mask-image: linear-gradient(90deg,transparent 0,#000 46px,#000 100%); mask-image: linear-gradient(90deg,transparent 0,#000 46px,#000 100%); }
           .tl-chips[data-fade="lr"] { -webkit-mask-image: linear-gradient(90deg,transparent 0,#000 46px,#000 calc(100% - 46px),transparent 100%); mask-image: linear-gradient(90deg,transparent 0,#000 46px,#000 calc(100% - 46px),transparent 100%); }
         }
-        .tl-join:hover { background: #F5F2FE; }
+        .tl-join:hover { background: #FCFBFF; }
         .tl-btn-biz { transition: border-color .18s ease; }
         .tl-btn-biz:hover { border-color: rgba(123,97,255,.4); }
         .tl-feed { transition: border-color .18s ease; }

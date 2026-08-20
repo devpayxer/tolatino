@@ -241,10 +241,10 @@ export function AddressModal() {
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
           placeholder={L('Etiqueta: Casa, Trabajo… (opcional)', 'Label: Home, Work… (optional)')}
-          className="mt-3 w-full rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px] text-[13px] font-medium text-ink outline-none placeholder:text-muted"
+          className="mt-3 w-full rounded-btn border-[1.5px] border-[#F1EEFA] bg-app px-3 py-[10px] text-[13px] font-medium text-ink outline-none placeholder:text-muted"
         />
       )}
-      <div className="mt-2 flex items-center gap-2 rounded-btn border-[1.5px] border-[#ECE9F6] bg-app px-3 py-[10px]">
+      <div className="mt-2 flex items-center gap-2 rounded-btn border-[1.5px] border-[#F1EEFA] bg-app px-3 py-[10px]">
         <Search size={15} className="flex-none text-primary" stroke={2.2} />
         <input
           value={q}
@@ -299,7 +299,7 @@ export function AddressModal() {
                 return (
                   <div key={a.id} className="flex items-start gap-2.5 rounded-tile px-1 py-2">
                     <button onClick={() => selectSaved(a)} className="mt-0.5 flex-none cursor-pointer" aria-label={L('Seleccionar', 'Select')}>
-                      <span className={`flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 ${active ? 'border-primary' : 'border-[#CFC8E6]'}`}>
+                      <span className={`flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 ${active ? 'border-primary' : 'border-[#E4DFF2]'}`}>
                         {active && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
                       </span>
                     </button>

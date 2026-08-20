@@ -1247,7 +1247,7 @@ export function BienesRaicesScreen() {
               {/* join CTA */}
               <div
                 className="mb-4 flex items-center gap-3.5 rounded-card p-4 shadow-band"
-                style={{ background: 'linear-gradient(150deg,#6743E2,#8268FF)' }}
+                style={{ background: 'linear-gradient(150deg,#A80F40,#FF7A9E)' }}
               >
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-tile bg-[rgba(255,255,255,.18)]">
                   <BuildingEstate size={22} stroke={2} className="text-white" />
@@ -1407,7 +1407,7 @@ export function BienesRaicesScreen() {
             <OverlayTitle title={L('Calculadora de hipoteca', 'Mortgage calculator')} onClose={() => setCalc(null)} />
             <div
               className="rounded-card p-5 text-center shadow-cta-sm"
-              style={{ background: 'linear-gradient(135deg,#6D4DF6,#7B61FF)' }}
+              style={{ background: 'linear-gradient(135deg,#C4144C,#FF2D6F)' }}
             >
               <div className="text-[10.5px] font-bold text-white/80">{L('Pago mensual estimado', 'Estimated monthly payment')}</div>
               <div className="mt-1 text-[36px] font-extrabold tracking-[-.02em] text-white">${Math.round(calcOut.total).toLocaleString()}</div>

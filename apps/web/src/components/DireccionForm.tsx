@@ -183,7 +183,7 @@ export function DireccionForm({
                   onMouseDown={(e) => { e.preventDefault(); elegir(a); }}
                   className="tap flex w-full items-start gap-2 px-3.5 py-2.5 text-left hover:bg-lilac-3"
                 >
-                  <span className="mt-[3px] h-2 w-2 flex-none rounded-full" style={{ background: a.verified ? '#2E9E5B' : '#B9B2D6' }} />
+                  <span className="mt-[3px] h-2 w-2 flex-none rounded-full" style={{ background: a.verified ? '#00A878' : '#B3ADC7' }} />
                   <span className="text-[13px] font-semibold leading-snug text-ink">{a.formatted}</span>
                 </button>
               </li>

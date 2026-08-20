@@ -41,14 +41,18 @@ export const MAPA_RASTER = {
 };
 
 // ── La paleta: tokens del sistema de diseño, no colores nuevos ──────────────
-const TIERRA = '#F7F5FB';   // fondo, un pelo más claro que `app` para que las tarjetas floten
-const AGUA = '#DDD6F5';     // lila (parientes de `lilac.ring`)
-const VERDE = '#E7F3EC';    // parques (`green.bg` aclarado)
-const EDIFICIO = '#ECE8F4'; // `lilac.line`
+// Los siete tienen que ser DISTINTOS entre sí: en un mapa el color no decora,
+// es lo único que separa un parque de un edificio o una vía rápida de una
+// calle. El barrido del paso 2 (2026-08-20) igualó tres pares —tierra con vía
+// rápida, edificio con borde de calle— y el mapa se habría quedado plano.
+const TIERRA = '#F1EEFA';       // fondo (= `tint.lilac`)
+const AGUA = '#C0E6FF';         // agua (paso oscuro del azul del sistema)
+const VERDE = '#DFF7EB';        // parques (tinte verde)
+const EDIFICIO = '#E4DFF2';     // edificios, por encima de la tierra
 const CALLE = '#FFFFFF';
-const CALLE_BORDE = '#E7E3F4';
-const VIA_RAPIDA = '#F1EFFA';
-const TEXTO = '#6E6A85';    // `ink.2`
+const CALLE_BORDE = '#EAE6F5';  // contorno del sistema
+const VIA_RAPIDA = '#FCFBFF';   // vía rápida: más clara que la tierra
+const TEXTO = '#625B7D';    // `ink.2`
 const TEXTO_HALO = '#FFFFFF';
 
 type Capa = { id: string; type: string; paint?: Record<string, unknown> };
@@ -95,9 +99,9 @@ export function aplicarPaletaToLatino(map: MapaLike): void {
 
     if (type === 'line') {
       if (esDe(id, 'water', 'river', 'stream', 'canal')) { set(id, 'line-color', AGUA); continue; }
-      if (esDe(id, 'boundary', 'admin')) { set(id, 'line-color', '#D8D2EC'); continue; }
+      if (esDe(id, 'boundary', 'admin')) { set(id, 'line-color', '#E4DFF2'); continue; }
       if (esDe(id, 'motorway', 'trunk', 'highway')) { set(id, 'line-color', VIA_RAPIDA); continue; }
-      if (esDe(id, 'rail', 'transit')) { set(id, 'line-color', '#E4E0F0'); continue; }
+      if (esDe(id, 'rail', 'transit')) { set(id, 'line-color', '#E4DFF2'); continue; }
       // el resto de calles: blancas con un borde lila muy suave
       set(id, 'line-color', esDe(id, 'casing', 'outline') ? CALLE_BORDE : CALLE);
       continue;

@@ -44,7 +44,7 @@ import { RentalAddonEditor, RentalCategoryEditor, RentalPolicyEditor, rentCatIco
 type Period = 'hour' | 'day' | 'week';
 type Condition = 'perfect' | 'minor' | 'major';
 
-const FALLBACK_CAT: RentalCategory = { id: '_', es: 'Artículos', en: 'Items', icon: 'boxes', tile: '#EAE2F8 0 8px,#DCCEF2 8px 16px', visible: true };
+const FALLBACK_CAT: RentalCategory = { id: '_', es: 'Artículos', en: 'Items', icon: 'boxes', tile: '#F0EDFF 0 8px,#E0DAFF 8px 16px', visible: true };
 
 // An incoming customer rental ORDER (business_rental_orders, 0097) — the other
 // side of the consumer's rental cart. Carries its line items for the expand.
@@ -405,10 +405,10 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const statusOf = (it: Item) => {
     const a = availOf(it);
     return a <= 0
-      ? { cls: 'bg-pink-bg text-pink-dark', dot: '#D6336C', label: L('Reservado', 'Booked') }
+      ? { cls: 'bg-pink-bg text-pink-dark', dot: '#E11D48', label: L('Reservado', 'Booked') }
       : a <= 1
-        ? { cls: 'bg-amber-bg text-amber-ink', dot: '#9A6A12', label: L('Limitado', 'Limited') }
-        : { cls: 'bg-green-bg text-green-dark', dot: '#1F8A4C', label: L('Disponible', 'Available') };
+        ? { cls: 'bg-amber-bg text-amber-ink', dot: '#8A5A00', label: L('Limitado', 'Limited') }
+        : { cls: 'bg-green-bg text-green-dark', dot: '#007A57', label: L('Disponible', 'Available') };
   };
 
   const startAdd = () => {
@@ -700,7 +700,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 ];
                 return (
                   <div className="flex flex-col gap-4">
-                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#A7E3C0] bg-green-bg' : 'border-[#FDE68A] bg-amber-bg'}`}>
+                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#C1EBD6] bg-green-bg' : 'border-[#F4DBBA] bg-amber-bg'}`}>
                       <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
                       <div className="min-w-0">
                         <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
@@ -771,10 +771,10 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const modeBtn = (on: boolean) => `tap-y flex flex-1 items-center justify-center gap-2 rounded-btn py-2.5 text-[12.5px] font-extrabold ${on ? 'bg-ink text-white' : 'bg-lilac-2 text-ink-2'}`;
 
   const kpis = [
-    { Icon: Boxes, c: '#6D4DF6', bg: '#EFEBFF', label: L('Artículos', 'Items'), value: String(items.length) },
-    { Icon: CalendarDays, c: '#D6336C', bg: '#FDE7EF', label: L('Unidades libres', 'Units free'), value: String(items.reduce((a, it) => a + availOf(it), 0)) },
-    { Icon: Package, c: '#2A5C8A', bg: '#E4ECFB', label: L('Rentadas', 'Units out'), value: String(items.reduce((a, it) => a + it.out, 0)) },
-    { Icon: DollarSign, c: '#1F8A4C', bg: '#E3F5EA', label: L('Rentas/mes', 'Rentals/mo'), value: String(items.reduce((a, it) => a + it.booked, 0)) },
+    { Icon: Boxes, c: '#C4144C', bg: '#FFECF2', label: L('Artículos', 'Items'), value: String(items.length) },
+    { Icon: CalendarDays, c: '#E11D48', bg: '#FFECF2', label: L('Unidades libres', 'Units free'), value: String(items.reduce((a, it) => a + availOf(it), 0)) },
+    { Icon: Package, c: '#0369A1', bg: '#DEF4FF', label: L('Rentadas', 'Units out'), value: String(items.reduce((a, it) => a + it.out, 0)) },
+    { Icon: DollarSign, c: '#007A57', bg: '#E6FAF3', label: L('Rentas/mes', 'Rentals/mo'), value: String(items.reduce((a, it) => a + it.booked, 0)) },
   ];
 
   const groups = cfg.categories.filter((c) => c.visible).map((c) => ({ cat: c, list: items.filter((s) => s.cat === c.id) }))
@@ -1155,7 +1155,7 @@ export function RentalModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         : opsPane}
 
       {!isPremium && mode === 'items' && itemSub === 'catalog' && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#16112E,#241C46)' }}>
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[18px]">✦</span>
           <span className="min-w-0 flex-1">
             <span className="block text-[13.5px] font-extrabold">{L('Renta con seguro y verificación de ID', 'Rentals with insurance & ID checks')}</span>

@@ -70,7 +70,7 @@ export function Toast({ msg }: { msg: string }) {
   if (!msg) return null;
   return (
     <div className="fixed bottom-6 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-ink px-4 py-3 text-[12.5px] font-bold text-white shadow-modal">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7BE0A8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00C48C" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
       {msg}
     </div>
   );
@@ -87,7 +87,7 @@ export function Toast({ msg }: { msg: string }) {
  */
 export function FalloCarga({ msg, onReintentar }: { msg: string; onReintentar?: () => void }) {
   return (
-    <div role="alert" className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-[18px] rounded-field border border-[#F3C9D6] bg-pink-bg px-3.5 py-2.5 text-[12.5px] font-bold text-pink-dark">
+    <div role="alert" className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-[18px] rounded-field border border-[#FFC2D3] bg-pink-bg px-3.5 py-2.5 text-[12.5px] font-bold text-pink-dark">
       <span>{msg}</span>
       {onReintentar && (
         <button onClick={onReintentar} className="tap-y tap-y ml-auto cursor-pointer rounded-btn bg-white px-3 py-1.5 text-[12px] font-extrabold text-ink">

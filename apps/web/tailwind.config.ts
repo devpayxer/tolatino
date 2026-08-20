@@ -57,10 +57,10 @@ const config: Config = {
           lilac: '#F1EEFA',
           white: '#FCFBFF',
         },
-        // DECISIÓN PENDIENTE (fondo): el sistema nuevo pide `paper` #F6F4FF
-        // —blanco con tinte lila— como lienzo. El fundador aprobó #FAFAFA el
-        // 2026-08-06 tras cuatro rondas. Se deja el suyo puesto en `canvas` y
-        // se declara el del handoff aquí: cambiarlo es mover UNA línea.
+        // El lienzo del sistema nuevo. DECIDIDO por el fundador el 2026-08-20:
+        // «lienzo como el handoff nuevo». Sustituye al #FAFAFA que él mismo
+        // había elegido el 08-06 — aquella decisión queda anulada por ésta.
+        // `canvas`, `dash` y `page` apuntan aquí abajo al mismo valor.
         paper: '#F6F4FF',
         surface: '#FFFFFF',
 
@@ -126,15 +126,18 @@ const config: Config = {
         // blanco» no es tocar este token: hacerlo borra 104 campos para
         // arreglar 7 fondos. El lienzo vive en `canvas`, aquí abajo.
         app: '#F1EEFA', // relleno de campos y pozos sobre blanco (= `tint.lilac` del sistema)
-        // EL FONDO de la app. Neutro, sin tinte de color (fundador, 2026-08-06,
-        // tras probar gris lila, casi blanco, blanco puro y blanco cálido). Su
-        // tinte es de apenas 5 puntos de luminancia, así que el peso de separar
-        // la tarjeta del fondo lo lleva el BORDE (`border-line`, abajo), no el
-        // relleno — y los recuadros no llevan sombra. Si se aclara más, el
-        // guardián de verify-build avisa antes de que las tarjetas se
-        // desvanezcan.
-        canvas: '#FAFAFA',
-        dash: '#FAFAFA', // el panel comparte lienzo con la app (antes #E7E5EC)
+        // EL FONDO de la app = `paper` del sistema nuevo (fundador, 2026-08-20:
+        // «lienzo como el handoff nuevo»). Blanco con tinte lila, no neutro.
+        // Historial, porque se pidió cuatro veces: gris lila → casi blanco →
+        // blanco puro → blanco cálido (#FCF8F8) → neutro (#FAFAFA) → ESTE.
+        //
+        // La tarjeta blanca se separa del lienzo por el BORDE (`border-line`),
+        // no por el relleno: 29 puntos de luminancia sobre este tono, y el
+        // guardián de verify-build lo vigila. Los recuadros siguen SIN sombra
+        // (decisión del 08-06); el handoff sí se la pone, y eso se revisa en el
+        // paso 3 junto con las primitivas.
+        canvas: '#F6F4FF',
+        dash: '#F6F4FF', // el panel comparte lienzo con la app
         teal: { DEFAULT: '#00C48C', bg: '#E6FAF3' }, // etiqueta de encuesta (→ acento de Bienes raíces)
         // ── Landing pública v3 (handoff "ToLatino Home", variante B, 2026-07-29) ──
         // Superficies oscuras e inmersivas que antes no existían en el sistema.
@@ -146,7 +149,11 @@ const config: Config = {
         'primary-on-dark': '#A48CFF', // wordmark sobre fondo oscuro
         'primary-pale': '#C9B6FF',    // inicio del degradado del titular, iconos en oscuro
         rose: { DEFAULT: '#E11D48', deep: '#C4144C', ink: '#A80F40' }, // restaurantes, fecha, error
-        page: '#FBFAFE',   // fondo de la landing (más claro que `app`)
+        // Fondo de la portada. Era #FBFAFE, un blanco FRÍO, y se dejó anotado
+        // el 08-06 que al pasar de la portada a la app se notaba un salto de
+        // tono. Con el lienzo ahora en `paper` el salto desaparece igualando
+        // los dos: la portada y la app son el mismo papel.
+        page: '#F6F4FF',
         mint: '#7BE0A8',   // ticks y precios "Gratis" sobre oscuro
         sky: '#8FC5F5',    // icono bilingüe del hero
         // ── Home OFICIAL (handoff "To'Latino — Official Home Page", 2026-08-02) ──

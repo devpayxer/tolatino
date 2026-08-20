@@ -237,7 +237,7 @@ export function PhotosModule({ ctx }: { ctx: PanelCtx }) {
         <button
           onClick={() => go('billing')}
           className="mb-4 flex w-full flex-wrap items-center gap-3 rounded-card-sm p-3.5 text-left text-white"
-          style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}
+          style={{ background: 'linear-gradient(140deg,#16112E,#241C46)' }}
         >
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-[15px]">✦</span>
           <span className="min-w-0 flex-1">

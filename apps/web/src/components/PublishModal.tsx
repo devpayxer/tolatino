@@ -235,11 +235,11 @@ export function PublishModal() {
   const canPost = isPoll ? text.trim().length > 0 && pollFilled >= 2 : text.trim().length > 0;
 
   const typeDefs: { key: PostType; Icon: typeof HelpCircle; color: string; bg: string; labEs: string; labEn: string; dEs: string; dEn: string }[] = [
-    { key: 'ask', Icon: HelpCircle, color: '#6D4DF6', bg: '#EFEBFF', labEs: 'Pregunta', labEn: 'Ask', dEs: 'Pide una recomendación o ayuda a tus vecinos.', dEn: 'Ask neighbors for a rec or help.' },
-    { key: 'rec', Icon: Heart, color: '#1F9D57', bg: '#E3F5EA', labEs: 'Recomendación', labEn: 'Recommendation', dEs: 'Comparte un negocio o servicio que te encantó.', dEn: 'Share a business or service you loved.' },
-    { key: 'local', Icon: MessageCircle, color: '#2F6FED', bg: '#E5EFFB', labEs: 'Aviso del barrio', labEn: 'Neighborhood update', dEs: 'Cuenta algo que está pasando cerca de ti.', dEn: 'Share something happening nearby.' },
-    { key: 'sale', Icon: Tag, color: '#B26A00', bg: '#FCEFD6', labEs: 'Compra y venta', labEn: 'Buy & sell', dEs: 'Ofrece o busca algo en tu comunidad.', dEn: 'Offer or look for something locally.' },
-    { key: 'poll', Icon: BarChart3, color: '#0E9384', bg: '#D6F3EF', labEs: 'Encuesta', labEn: 'Poll', dEs: 'Haz una pregunta con opciones para votar.', dEn: 'Ask a question with options to vote on.' },
+    { key: 'ask', Icon: HelpCircle, color: '#C4144C', bg: '#FFECF2', labEs: 'Pregunta', labEn: 'Ask', dEs: 'Pide una recomendación o ayuda a tus vecinos.', dEn: 'Ask neighbors for a rec or help.' },
+    { key: 'rec', Icon: Heart, color: '#00A878', bg: '#E6FAF3', labEs: 'Recomendación', labEn: 'Recommendation', dEs: 'Comparte un negocio o servicio que te encantó.', dEn: 'Share a business or service you loved.' },
+    { key: 'local', Icon: MessageCircle, color: '#007CC1', bg: '#DEF4FF', labEs: 'Aviso del barrio', labEn: 'Neighborhood update', dEs: 'Cuenta algo que está pasando cerca de ti.', dEn: 'Share something happening nearby.' },
+    { key: 'sale', Icon: Tag, color: '#B85D00', bg: '#FFF6E3', labEs: 'Compra y venta', labEn: 'Buy & sell', dEs: 'Ofrece o busca algo en tu comunidad.', dEn: 'Offer or look for something locally.' },
+    { key: 'poll', Icon: BarChart3, color: '#008489', bg: '#DAF7F7', labEs: 'Encuesta', labEn: 'Poll', dEs: 'Haz una pregunta con opciones para votar.', dEn: 'Ask a question with options to vote on.' },
   ];
 
   // Local fallback: keeps the app working when Supabase is unreachable.
@@ -247,7 +247,7 @@ export function PublishModal() {
     app.addPost({
       type: postType,
       initials: auth.profile?.initials ?? 'TÚ',
-      color: auth.profile?.avatar_color ?? '#7B61FF',
+      color: auth.profile?.avatar_color ?? '#FF2D6F',
       name: auth.profile?.display_name ?? L('Tú', 'You'),
       authorId: auth.user?.id,
       hoodEs: hood,
@@ -361,13 +361,13 @@ export function PublishModal() {
     </label>
   );
   const inputCls =
-    'w-full rounded-field border-[1.5px] border-[#ECE9F6] bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary';
+    'w-full rounded-field border-[1.5px] border-[#F1EEFA] bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary';
 
   const previewPost: FeedPost = {
     id: 'preview',
     type: postType,
     initials: auth.profile?.initials ?? 'TÚ',
-    color: auth.profile?.avatar_color ?? '#7B61FF',
+    color: auth.profile?.avatar_color ?? '#FF2D6F',
     name: auth.profile?.display_name ?? L('Tú', 'You'),
     authorId: auth.user?.id,
     hoodEs: hood,
@@ -402,9 +402,9 @@ export function PublishModal() {
         <div className="flex flex-col gap-2.5">
           {(
             [
-              { key: 'post', Icon: MessageCircle, color: '#6D4DF6', bg: '#EFEBFF', lab: L('Crear publicación', 'Create post'), d: L('Pregunta, recomienda o comparte con tu barrio.', 'Ask, recommend or share with your neighborhood.') },
-              { key: 'negocio', Icon: Store, color: '#1F9D57', bg: '#E3F5EA', lab: L('Publicar mi negocio', 'List my business'), d: L('Aparece en el directorio y llega a miles de clientes.', 'Get in the directory and reach thousands of customers.') },
-              { key: 'evento', Icon: Calendar, color: '#2F6FED', bg: '#E5EFFB', lab: L('Crear evento', 'Create event'), d: L('Organiza y vende boletos para tu comunidad.', 'Organize and sell tickets for your community.') },
+              { key: 'post', Icon: MessageCircle, color: '#C4144C', bg: '#FFECF2', lab: L('Crear publicación', 'Create post'), d: L('Pregunta, recomienda o comparte con tu barrio.', 'Ask, recommend or share with your neighborhood.') },
+              { key: 'negocio', Icon: Store, color: '#00A878', bg: '#E6FAF3', lab: L('Publicar mi negocio', 'List my business'), d: L('Aparece en el directorio y llega a miles de clientes.', 'Get in the directory and reach thousands of customers.') },
+              { key: 'evento', Icon: Calendar, color: '#007CC1', bg: '#DEF4FF', lab: L('Crear evento', 'Create event'), d: L('Organiza y vende boletos para tu comunidad.', 'Organize and sell tickets for your community.') },
             ] as const
           ).map((o) => (
             <button
@@ -471,7 +471,7 @@ export function PublishModal() {
                     setStep(2);
                   }}
                   className={`flex w-full cursor-pointer items-center gap-3.5 rounded-tile border-[1.5px] p-3.5 text-left ${
-                    postType === o.key ? 'border-primary bg-[#FAF9FE]' : 'border-line bg-white'
+                    postType === o.key ? 'border-primary bg-[#FCFBFF]' : 'border-line bg-white'
                   }`}
                 >
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn" style={{ background: o.bg }}>
@@ -843,8 +843,8 @@ export function PublishModal() {
           QR check-in). A consumer publishes a business first. */}
       {type === 'evento' && !done && (
         <div className="flex flex-col items-center px-2 py-5 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#E5EFFB]">
-            <Calendar size={24} className="text-[#2F6FED]" stroke={2.2} />
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#DEF4FF]">
+            <Calendar size={24} className="text-[#007CC1]" stroke={2.2} />
           </span>
           <div className="mt-4 text-[18px] font-extrabold tracking-[-.02em] text-ink">
             {L('Los eventos se crean desde tu Panel', 'Events are created from your Panel')}

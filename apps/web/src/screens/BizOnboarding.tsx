@@ -530,7 +530,7 @@ export function BizOnboardingScreen() {
         {/* ══ Riel de pasos — solo escritorio (el handoff lo oculta ≤1000px) ══ */}
         <aside
           className="hidden flex-col p-8 min-[1000px]:flex min-[1000px]:w-[360px] min-[1000px]:flex-none"
-          style={{ background: 'linear-gradient(158deg,#2A2440,#171426 62%,#1E1B2E)' }}
+          style={{ background: 'linear-gradient(158deg,#241C46,#16112E 62%,#16112E)' }}
         >
           <div className="flex items-center gap-1.5">
             <span className="text-[22px] font-extrabold tracking-[-.03em] text-white">To&rsquo;</span>
@@ -609,7 +609,7 @@ export function BizOnboardingScreen() {
                 </div>
               </div>
               <div className="mt-3 h-[5px] overflow-hidden rounded-full bg-lilac-line">
-                <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#7B61FF,#B0357E)' }} />
+                <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#FF2D6F,#AE54A5)' }} />
               </div>
             </div>
           )}
@@ -633,7 +633,7 @@ export function BizOnboardingScreen() {
                         className={`flex cursor-pointer items-center gap-3 rounded-tile border-[1.5px] p-3.5 text-left ${sel ? 'border-primary bg-home-tint' : 'border-lilac-line bg-white'}`}
                       >
                         <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[13px]" style={{ background: sel ? c.bg : undefined }}>
-                          <span className="h-4 w-4 rounded-full" style={{ background: sel ? c.dot : '#C9C2E6' }} />
+                          <span className="h-4 w-4 rounded-full" style={{ background: sel ? c.dot : '#E4DFF2' }} />
                         </span>
                         <span className="min-w-0 flex-1 text-[13px] font-extrabold text-ink">{L(c.es, c.en)}</span>
                         {sel && (
@@ -774,7 +774,7 @@ export function BizOnboardingScreen() {
                 <div className="mt-2 flex items-center gap-3">
                   <span
                     className="flex h-[74px] w-[74px] flex-none items-center justify-center overflow-hidden rounded-[20px] text-[22px] font-extrabold text-white"
-                    style={{ background: `linear-gradient(140deg, ${catInfo?.dot ?? '#7B61FF'}, #7B61FF)` }}
+                    style={{ background: `linear-gradient(140deg, ${catInfo?.dot ?? '#FF2D6F'}, #FF2D6F)` }}
                   >
                     {logo ? <img src={imgUrl(logo.url, ANCHO.icono)} alt="" className="h-full w-full object-cover" /> : initials}
                   </span>
@@ -1019,12 +1019,12 @@ export function BizOnboardingScreen() {
 
                 {/* Vista previa del listado */}
                 <div className="mt-5 overflow-hidden rounded-[18px] border border-line bg-white">
-                  <div className="h-[96px] w-full" style={{ background: gallery[0] ? undefined : tile(catInfo?.bg ?? '#EFEBFF', catInfo?.dot ?? '#7B61FF', 12) }}>
+                  <div className="h-[96px] w-full" style={{ background: gallery[0] ? undefined : tile(catInfo?.bg ?? '#FFECF2', catInfo?.dot ?? '#FF2D6F', 12) }}>
                     {gallery[0] && <img src={imgUrl(gallery[0].url, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />}
                   </div>
                   <div className="px-4 pb-4">
                     <span className="-mt-7 mb-2 flex h-14 w-14 items-center justify-center overflow-hidden rounded-[16px] border-[3px] border-white text-[16px] font-extrabold text-white"
-                      style={{ background: `linear-gradient(140deg, ${catInfo?.dot ?? '#7B61FF'}, #7B61FF)` }}>
+                      style={{ background: `linear-gradient(140deg, ${catInfo?.dot ?? '#FF2D6F'}, #FF2D6F)` }}>
                       {logo ? <img src={imgUrl(logo.url, ANCHO.icono)} alt="" className="h-full w-full object-cover" /> : initials}
                     </span>
                     <div className="flex items-center gap-1.5">

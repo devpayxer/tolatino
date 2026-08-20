@@ -79,8 +79,8 @@ export function SettingsModule({ ctx }: { ctx: PanelCtx }) {
         {/* profile */}
         <div className={card}>
           <div className={sec}>{L('Negocio', 'Business')}</div>
-          {navRow(Store, '#6D4DF6', '#F1EFFA', L('Perfil del negocio', 'Business profile'), L('Nombre, categoría, contacto', 'Name, category, contact'), () => go('listing'))}
-          {navRow(ImageIcon, '#B5791A', '#FCEFD6', L('Fotos y media', 'Photos & media'), L('Portada y galería', 'Cover & gallery'), () => go('photos'))}
+          {navRow(Store, '#C4144C', '#F1EEFA', L('Perfil del negocio', 'Business profile'), L('Nombre, categoría, contacto', 'Name, category, contact'), () => go('listing'))}
+          {navRow(ImageIcon, '#8A5A00', '#FFF6E3', L('Fotos y media', 'Photos & media'), L('Portada y galería', 'Cover & gallery'), () => go('photos'))}
         </div>
 
         {/* language */}

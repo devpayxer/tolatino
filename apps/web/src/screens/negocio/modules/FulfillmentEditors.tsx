@@ -50,14 +50,14 @@ export function normalizeZone(z: Record<string, unknown>): Zone {
   };
 }
 
-export const ZONE_COLORS = ['#7B61FF', '#F0466E', '#F4B740'];
-export const DRIVER_COLORS = ['#7B61FF', '#2A5C8A', '#E8954A', '#1F9D57', '#D6336C', '#9A96AE'];
+export const ZONE_COLORS = ['#FF2D6F', '#FF2D6F', '#FFB020'];
+export const DRIVER_COLORS = ['#FF2D6F', '#0369A1', '#C05702', '#00A878', '#E11D48', '#9A93B3'];
 
 // driver status → the derived label/dot stored on the row
 export const DRIVER_STATUS = [
-  { key: 'available', dot: '#1F9D57', sEs: 'Disponible', sEn: 'Available', orderEs: 'Lista', orderEn: 'Ready next' },
-  { key: 'on_delivery', dot: '#6D4DF6', sEs: 'En ruta', sEn: 'On delivery', orderEs: 'En ruta', orderEn: 'On route' },
-  { key: 'off', dot: '#9A96AE', sEs: 'Libre hoy', sEn: 'Off today', orderEs: '—', orderEn: '—' },
+  { key: 'available', dot: '#00A878', sEs: 'Disponible', sEn: 'Available', orderEs: 'Lista', orderEn: 'Ready next' },
+  { key: 'on_delivery', dot: '#C4144C', sEs: 'En ruta', sEn: 'On delivery', orderEs: 'En ruta', orderEn: 'On route' },
+  { key: 'off', dot: '#9A93B3', sEs: 'Libre hoy', sEn: 'Off today', orderEs: '—', orderEn: '—' },
 ] as const;
 export const driverInitials = (name: string): string =>
   (name || '?').split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
@@ -271,7 +271,7 @@ export function DriverEditor({
         <div className="flex items-center gap-3.5">
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickPhoto} />
           <button type="button" onClick={() => fileRef.current?.click()} aria-label={L('Subir foto', 'Upload photo')} className="relative flex-none cursor-pointer">
-            <span className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full border-[1.5px] border-lilac-line" style={{ background: photo ? '#EAE7F6' : color }}>
+            <span className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full border-[1.5px] border-lilac-line" style={{ background: photo ? '#EAE6F5' : color }}>
               {photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imgUrl(photo, ANCHO.tarjeta)} alt="" className="h-full w-full object-cover" />

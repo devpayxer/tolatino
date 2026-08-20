@@ -633,7 +633,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     setContactOpen(false);
     if (!user) { router.push('/entrar'); return; }
     setChatOpen(true); setChatBusy(true); setChatMsgs([]);
-    const id = await startConversation(b.slug, custName, custInitials, '#7B61FF');
+    const id = await startConversation(b.slug, custName, custInitials, '#FF2D6F');
     setChatConvId(id);
     if (id) { const m = await fetchChatMessages(id); setChatMsgs(m); markConversationRead(id, 'customer'); }
     setChatBusy(false);
@@ -1216,7 +1216,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
   const fixtureToTarget = (f: (typeof SERVICES)[number]): SvcTarget => ({
     name: B(f.n), descEs: f.d[0], descEn: f.d[1], price: null, priceType: 'cotiza',
     priceLabel: f.price, dur: '', bookable: true, addons: [], id: null, capMax: 0,
-    tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', days: [], variant: null,
+    tile: '#FFECDC 0 8px,#FAD9BD 8px 16px', days: [], variant: null,
   });
   // Consumer price label for a real service card.
   const svcPriceLabel = (s: PubSvc): string =>
@@ -1973,7 +1973,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     ? related.slice(0, 3).map((r) => ({
         slug: r.slug, name: r.name, rating: r.rating.toFixed(1), verified: r.tier !== 'free',
         meta: [CAT[r.categoryId as keyof typeof CAT] ? L(CAT[r.categoryId as keyof typeof CAT].es, CAT[r.categoryId as keyof typeof CAT].en) : r.categoryId, r.city].filter(Boolean).join(' · '),
-        tile: `repeating-linear-gradient(135deg,${r.tileA ?? '#EFEBFF'} 0 11px,${r.tileB ?? '#E5DEF9'} 11px 22px)`,
+        tile: `repeating-linear-gradient(135deg,${r.tileA ?? '#FFECF2'} 0 11px,${r.tileB ?? '#FED2DF'} 11px 22px)`,
       }))
     : all.filter((x) => x.id !== id).slice(0, 3).map((x) => ({
         slug: x.slug, name: x.name, rating: x.rating, verified: x.verified,
@@ -2067,8 +2067,8 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {/* 2 · La promo REAL del negocio, si la hay — con su botón dorado que
                lleva al menú (handoff §11.2). Nunca una oferta inventada. */}
         {realMenu?.promo && (
-          <div className="rounded-card p-4" style={{ background: '#1E1B2E' }}>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F6E05E] px-2.5 py-1 text-[10.5px] font-extrabold text-ink">
+          <div className="rounded-card p-4" style={{ background: '#16112E' }}>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFB020] px-2.5 py-1 text-[10.5px] font-extrabold text-ink">
               ★ {L('Oferta del barrio', 'Neighborhood offer')}
             </span>
             <div className="mt-2.5 text-[14.5px] font-extrabold leading-snug text-white">
@@ -2087,7 +2087,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {b.ficha?.dueno && (
           <div data-tarjeta-dueno className={railCard}>
             <div className="flex items-center gap-3">
-              <Avatar initials={initials(b.ficha.dueno.nombre)} color="#7B61FF" size={42} />
+              <Avatar initials={initials(b.ficha.dueno.nombre)} color="#FF2D6F" size={42} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13.5px] font-extrabold text-ink">
                   {b.ficha.dueno.nombre}{b.ficha.dueno.rol ? ` · ${b.ficha.dueno.rol}` : ''}
@@ -2152,7 +2152,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         </span>
         <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-muted">{B(it.d)}</span>
         <span className="mt-1 flex items-center gap-1.5 text-[13px] font-extrabold">
-          <span className={it.orig ? 'text-[#E0568F]' : 'text-ink'}>{money(it.price)}</span>
+          <span className={it.orig ? 'text-[#C54C67]' : 'text-ink'}>{money(it.price)}</span>
           {it.orig && <span className="text-[11px] font-bold text-muted line-through">{money(it.orig)}</span>}
           {it.orig && (
             <span className="rounded-md bg-pink-bg px-1.5 py-0.5 text-[9.5px] font-extrabold text-pink-dark">
@@ -2183,7 +2183,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
               </span>
             )}
           </span>
-          <span className={`flex-none text-[14px] font-extrabold ${it.orig ? 'text-[#E0568F]' : 'text-ink'}`}>{money(it.price)}</span>
+          <span className={`flex-none text-[14px] font-extrabold ${it.orig ? 'text-[#C54C67]' : 'text-ink'}`}>{money(it.price)}</span>
         </span>
         <span className="mt-0.5 line-clamp-2 text-[11.5px] font-semibold leading-snug text-muted">{B(it.d)}</span>
         {it.orig && (
@@ -2409,7 +2409,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imgUrl(cover, ANCHO.ancha)} alt={b.name} onClick={() => photos.length > 0 && setGalIdx(0)} className="absolute inset-0 h-full w-full cursor-pointer object-cover" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A8FC4]">[ foto ]</div>
+          <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] tracking-[.1em] text-[#9A93B3]">[ foto ]</div>
         )}
         {/* controles de vidrio: volver (solo móvil — en escritorio están las
             migas) + compartir/guardar */}
@@ -2444,7 +2444,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         {/* hero promo badge: only a REAL active promo from the owner's menu — never
             a fabricated one (a fake 'Martes 2x1' on a real listing breaks rule #8). */}
         {realMenu?.promo && (
-          <span className="absolute bottom-3 left-3.5 max-w-[70%] truncate rounded-[10px] bg-[#F6E05E] px-[11px] py-[5px] text-[11.5px] font-extrabold text-ink">
+          <span className="absolute bottom-3 left-3.5 max-w-[70%] truncate rounded-[10px] bg-[#FFB020] px-[11px] py-[5px] text-[11.5px] font-extrabold text-ink">
             {L(realMenu.promo[0], realMenu.promo[1])}
           </span>
         )}
@@ -2809,7 +2809,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           {divider}
           {(() => {
             const rows = [
-              ...myReviews.map((r) => ({ stars: r.stars, name: L('Tú', 'You'), ini: 'TÚ', color: '#7B61FF', text: [r.text, r.text] as Bi, when: null as Bi | null })),
+              ...myReviews.map((r) => ({ stars: r.stars, name: L('Tú', 'You'), ini: 'TÚ', color: '#FF2D6F', text: [r.text, r.text] as Bi, when: null as Bi | null })),
               ...realReviews.map((r) => ({ stars: r.rating, name: r.mine ? L('Tú', 'You') : r.name, ini: r.initials, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], text: r.body, when: reviewWhen(r.createdAt) })),
             ];
             if (rows.length === 0) {
@@ -2976,7 +2976,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
             return (
               <Card key={u.id} className="p-[15px]">
                 <div className="flex items-center gap-2.5">
-                  <Avatar initials={initials(b.name)} color="#7B61FF" size={38} />
+                  <Avatar initials={initials(b.name)} color="#FF2D6F" size={38} />
                   <div className="min-w-0 flex-1">
                     <div className="text-[13.5px] font-extrabold text-ink">{b.name}</div>
                     <div className="text-[11.5px] font-semibold text-muted-2">{B(reviewWhen(u.createdAt))}</div>
@@ -3499,7 +3499,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 const catInfo = CAT[r.categoryId as keyof typeof CAT];
                 return (
                   <Card key={r.slug} className="flex items-center gap-3 p-3.5" onClick={() => openRelated(r.slug)}>
-                    <span className="h-[56px] w-[56px] flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${r.tileA ?? '#EFEBFF'} 0 11px,${r.tileB ?? '#E5DEF9'} 11px 22px)` }} />
+                    <span className="h-[56px] w-[56px] flex-none rounded-tile" style={{ background: `repeating-linear-gradient(135deg,${r.tileA ?? '#FFECF2'} 0 11px,${r.tileB ?? '#FED2DF'} 11px 22px)` }} />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
                         <span className="truncate text-[13.5px] font-extrabold text-ink">{r.name}</span>
@@ -3551,7 +3551,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           <div className="flex flex-col gap-3">
             {(() => {
               const rows = [
-                ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#7B61FF', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0, reply: null as Bi | null, repliedAt: null as string | null, photos: r.photos })),
+                ...myReviews.map((r) => ({ id: r.id, ini: 'TÚ', name: L('Tú', 'You'), color: '#FF2D6F', stars: r.stars, when: [L('ahora', 'now'), 'now'] as Bi, text: [r.text, r.text] as Bi, base: 0, reply: null as Bi | null, repliedAt: null as string | null, photos: r.photos })),
                 ...realReviews.map((r) => ({ id: r.id, ini: r.initials, name: r.mine ? L('Tú', 'You') : r.name, color: AVATAR_PALETTE[r.id.charCodeAt(0) % AVATAR_PALETTE.length], stars: r.rating, when: reviewWhen(r.createdAt), text: r.body, base: 0, reply: r.reply, repliedAt: r.repliedAt, photos: r.photos })),
               ].filter((r) => reviewFilter === 'all' || r.stars === +reviewFilter);
               if (rows.length === 0) {
@@ -3693,16 +3693,16 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
         <div className="flex flex-col">
           {([
             // In-app chat — always available; the message lands in the owner's inbox.
-            { Icon: MessageCircle, label: L('Enviar mensaje', 'Send a message'), sub: L('Chatea en la app', 'Chat in the app'), color: '#7B61FF', bg: '#EFEBFF', onClick: openChat },
+            { Icon: MessageCircle, label: L('Enviar mensaje', 'Send a message'), sub: L('Chatea en la app', 'Chat in the app'), color: '#FF2D6F', bg: '#FFECF2', onClick: openChat },
             // Llamar only when the owner set a real phone (never a sample number).
-            ...(hasPhone ? [{ Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#1F9D57', bg: '#E3F5EA', href: `tel:${phone.replace(/[^\d+]/g, '')}`, onClick: () => trackListingView(b.slug, 'call') }] : []),
+            ...(hasPhone ? [{ Icon: Phone, label: L('Llamar', 'Call'), sub: phone, color: '#00A878', bg: '#E6FAF3', href: `tel:${phone.replace(/[^\d+]/g, '')}`, onClick: () => trackListingView(b.slug, 'call') }] : []),
             // WhatsApp/SMS only when the owner opted in.
-            ...(msgOn ? [{ Icon: Send, label: msgIsSms ? L('Mensaje de texto', 'Text message') : 'WhatsApp', sub: phone, color: '#1F9D57', bg: '#E3F5EA', href: msgHref }] : []),
+            ...(msgOn ? [{ Icon: Send, label: msgIsSms ? L('Mensaje de texto', 'Text message') : 'WhatsApp', sub: phone, color: '#00A878', bg: '#E6FAF3', href: msgHref }] : []),
             // Sitio web only shows when the owner set one; opens the real site.
-            ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#2F6FED', bg: '#E5EFFB', href: `https://${b.website}` }] : []),
+            ...(b.website ? [{ Icon: Globe, label: L('Sitio web', 'Website'), sub: b.website, color: '#007CC1', bg: '#DEF4FF', href: `https://${b.website}` }] : []),
             // Cómo llegar only when the owner set a real address.
-            ...(hasAddress ? [{ Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#E8954A', bg: '#FCEBD6', href: mapsHref, onClick: () => trackListingView(b.slug, 'direction') }] : []),
-            { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#8A86A0', bg: '#F1EFFA' },
+            ...(hasAddress ? [{ Icon: Navigation, label: L('Cómo llegar', 'Directions'), sub: address, color: '#C05702', bg: '#FFEBDF', href: mapsHref, onClick: () => trackListingView(b.slug, 'direction') }] : []),
+            { Icon: Share, label: L('Compartir', 'Share'), sub: '', color: '#7E7798', bg: '#F1EEFA' },
           ] as { Icon: typeof Phone; label: string; sub: string; color: string; bg: string; href?: string; onClick?: () => void }[]).map(({ Icon, label, sub, color, bg, href, onClick }) => {
             const inner = (
               <>
@@ -3953,11 +3953,11 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                         className={`flex w-full items-center gap-3 rounded-field border px-3 py-2.5 text-left ${vSoldOut ? 'cursor-not-allowed border-line bg-lilac-2/50 opacity-60' : 'cursor-pointer border-line bg-white'}`}
                       >
                         {g.type === 'multi' ? (
-                          <span className={`flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] ${sel ? 'bg-primary text-white' : 'border-2 border-[#D9D5E6]'}`}>
+                          <span className={`flex h-[22px] w-[22px] flex-none items-center justify-center rounded-[7px] ${sel ? 'bg-primary text-white' : 'border-2 border-[#E4DFF2]'}`}>
                             {sel && <Check size={13} stroke={3.4} />}
                           </span>
                         ) : (
-                          <span className={`h-[22px] w-[22px] flex-none rounded-full ${sel && !vSoldOut ? 'border-[7px] border-primary' : 'border-2 border-[#D9D5E6]'}`} />
+                          <span className={`h-[22px] w-[22px] flex-none rounded-full ${sel && !vSoldOut ? 'border-[7px] border-primary' : 'border-2 border-[#E4DFF2]'}`} />
                         )}
                         <span className={`flex-1 text-[13px] font-bold ${vSoldOut ? 'text-muted-2 line-through' : 'text-ink'}`}>{B(ch.label)}</span>
                         {vSoldOut ? <span className="text-[10.5px] font-extrabold text-pink-dark">{L('Agotado', 'Sold out')}</span>
@@ -4650,7 +4650,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
                 <>
                   <div className="mb-2 mt-4 text-[13px] font-extrabold text-ink">{L('Elige tu profesional', 'Pick your professional')}</div>
                   <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
-                    {[{ id: 'any', name: L('Cualquiera', 'Anyone'), tag: L('Primer disponible', 'First available'), color: '#9A8FB0', photo: undefined as string | undefined },
+                    {[{ id: 'any', name: L('Cualquiera', 'Anyone'), tag: L('Primer disponible', 'First available'), color: '#9A93B3', photo: undefined as string | undefined },
                       ...svcProviders.map((p) => ({ id: p.id, name: p.name, tag: B(p.tag), color: p.color, photo: p.photo }))].map((p) => {
                       const on = svcStaff === p.id;
                       return (
@@ -5079,7 +5079,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
           onChange={(e) => setMyText(e.target.value)}
           rows={4}
           placeholder={L('Cuéntale a la comunidad tu experiencia…', 'Tell the community about your experience…')}
-          className="w-full resize-none rounded-field border-[1.5px] border-[#ECE9F6] bg-app px-3.5 py-3 text-[13.5px] font-medium outline-none placeholder:text-muted focus:border-primary"
+          className="w-full resize-none rounded-field border-[1.5px] border-[#F1EEFA] bg-app px-3.5 py-3 text-[13.5px] font-medium outline-none placeholder:text-muted focus:border-primary"
         />
 
         {/* photo picker — reviewers upload to their own uid folder (lib/image) */}

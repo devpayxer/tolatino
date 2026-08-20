@@ -18,7 +18,7 @@ import { useLang } from '@/lib/i18n';
  *
  * Sustituye al rombo ámbar que se usaba de marcador mientras no había logotipo.
  */
-export function LogoMark({ size = 16, color = '#7B61FF', className }: { size?: number; color?: string; className?: string }) {
+export function LogoMark({ size = 16, color = '#FF2D6F', className }: { size?: number; color?: string; className?: string }) {
   return (
     <svg viewBox="0 0 482 482" fill="none" aria-hidden focusable="false" className={className}
          style={{ width: size, height: size, flex: 'none' }}>
@@ -76,7 +76,7 @@ export function VerifiedBadge({ size = 19 }: { size?: number }) {
  * El panel del dueño tiene su propia versión (`bizAvatar` en `Panel.tsx`), que
  * colorea por PLAN en vez de por rubro — es intencional allí y no se toca.
  */
-export function BizLogo({ name, logoUrl, color = '#7B61FF', size = 84, radius = 14, className = '' }: {
+export function BizLogo({ name, logoUrl, color = '#FF2D6F', size = 84, radius = 14, className = '' }: {
   name: string;
   logoUrl?: string | null;
   /** Color del rubro (`tile_b` del negocio). */
@@ -105,7 +105,7 @@ export function BizLogo({ name, logoUrl, color = '#7B61FF', size = 84, radius = 
         width: size, height: size, borderRadius: radius,
         // El mismo degradado que usa el paso "Logo y fotos" del alta, para que
         // el dueño vea en el listado exactamente lo que se le enseñó al publicar.
-        background: `linear-gradient(140deg, ${color}, #7B61FF)`,
+        background: `linear-gradient(140deg, ${color}, #FF2D6F)`,
         fontSize: Math.round(size * 0.34),
         letterSpacing: '-.02em',
       }}

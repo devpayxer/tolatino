@@ -33,13 +33,13 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
 
   // the sellable channels — what the owner OFFERS (pick any).
   const sell = [
-    { key: 'menu' as const, Icon: Utensils, bg: '#FCEFD6', label: L('Menú de comida', 'Food menu'), desc: L('Publica tus platillos y recibe pedidos a domicilio o para recoger.', 'Publish dishes and take delivery/pickup orders.'), adds: L('Añade Pedidos y Entregas a tu panel', 'Adds Orders and Delivery') },
-    { key: 'products' as const, Icon: Package, bg: '#E4ECFB', label: L('Productos', 'Products'), desc: L('Vende productos con inventario, variantes y envío.', 'Sell products with inventory, variants and shipping.'), adds: L('Añade Pedidos y Envíos a tu panel', 'Adds Orders and Shipping') },
-    { key: 'services' as const, Icon: ci.svc, bg: '#F1EFFA', label: L('Servicios', 'Services'), desc: L('Ofrece servicios con precios; agenda citas con reservas.', 'Offer priced services; take appointments with bookings.'), adds: L('Puedes activar Reservas con cita', 'Enables appointment Bookings') },
-    { key: 'rental' as const, Icon: Bike, bg: '#E3F5EA', label: L('Renta', 'Rental'), desc: L('Renta equipo, mobiliario o vehículos por hora o día.', 'Rent equipment, furniture or vehicles by hour/day.'), adds: L('Calendario de disponibilidad', 'Availability calendar') },
-    { key: 'events' as const, Icon: Ticket, bg: '#FDE7EF', label: L('Eventos y boletos', 'Events & tickets'), desc: L('Crea eventos y vende boletos con cupos.', 'Create events and sell tickets with capacity.'), adds: L('Control de cupos y check-in', 'Capacity control and check-in') },
-    { key: 'inmuebles' as const, Icon: HomeIcon, bg: '#E5DEF9', label: L('Bienes Raíces', 'Real Estate'), desc: L('Publica propiedades en venta o renta y gestiona leads y visitas.', 'List properties for sale or rent and manage leads and tours.'), adds: L('Leads, visitas y ofertas en tu panel', 'Leads, tours and offers in your panel') },
-    { key: 'vehiculos' as const, Icon: CarIcon, bg: '#E4EEFB', label: L('Autos', 'Vehicles'), desc: L('Publica tu inventario de autos y gestiona leads, pruebas y financiamiento.', 'List your vehicle inventory and manage leads, test drives and financing.'), adds: L('Leads, pruebas y financiamiento en tu panel', 'Leads, test drives and financing in your panel') },
+    { key: 'menu' as const, Icon: Utensils, bg: '#FFF6E3', label: L('Menú de comida', 'Food menu'), desc: L('Publica tus platillos y recibe pedidos a domicilio o para recoger.', 'Publish dishes and take delivery/pickup orders.'), adds: L('Añade Pedidos y Entregas a tu panel', 'Adds Orders and Delivery') },
+    { key: 'products' as const, Icon: Package, bg: '#DEF4FF', label: L('Productos', 'Products'), desc: L('Vende productos con inventario, variantes y envío.', 'Sell products with inventory, variants and shipping.'), adds: L('Añade Pedidos y Envíos a tu panel', 'Adds Orders and Shipping') },
+    { key: 'services' as const, Icon: ci.svc, bg: '#F1EEFA', label: L('Servicios', 'Services'), desc: L('Ofrece servicios con precios; agenda citas con reservas.', 'Offer priced services; take appointments with bookings.'), adds: L('Puedes activar Reservas con cita', 'Enables appointment Bookings') },
+    { key: 'rental' as const, Icon: Bike, bg: '#E6FAF3', label: L('Renta', 'Rental'), desc: L('Renta equipo, mobiliario o vehículos por hora o día.', 'Rent equipment, furniture or vehicles by hour/day.'), adds: L('Calendario de disponibilidad', 'Availability calendar') },
+    { key: 'events' as const, Icon: Ticket, bg: '#FFECF2', label: L('Eventos y boletos', 'Events & tickets'), desc: L('Crea eventos y vende boletos con cupos.', 'Create events and sell tickets with capacity.'), adds: L('Control de cupos y check-in', 'Capacity control and check-in') },
+    { key: 'inmuebles' as const, Icon: HomeIcon, bg: '#FED2DF', label: L('Bienes Raíces', 'Real Estate'), desc: L('Publica propiedades en venta o renta y gestiona leads y visitas.', 'List properties for sale or rent and manage leads and tours.'), adds: L('Leads, visitas y ofertas en tu panel', 'Leads, tours and offers in your panel') },
+    { key: 'vehiculos' as const, Icon: CarIcon, bg: '#DAF6FD', label: L('Autos', 'Vehicles'), desc: L('Publica tu inventario de autos y gestiona leads, pruebas y financiamiento.', 'List your vehicle inventory and manage leads, test drives and financing.'), adds: L('Leads, pruebas y financiamiento en tu panel', 'Leads, test drives and financing in your panel') },
   ];
   // recommended channel first
   const ordered = [...sell].sort((a, b) => (a.key === recKey ? -1 : b.key === recKey ? 1 : 0));
@@ -50,7 +50,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
   return (
     <div className="mx-auto flex max-w-[900px] flex-col gap-4 pb-8">
       {/* framing: the listing is already done — this is the optional part */}
-      <div className="rounded-card-sm border border-lilac-line p-4" style={{ background: 'linear-gradient(135deg,#efe9ff,#f7f3ff)' }}>
+      <div className="rounded-card-sm border border-lilac-line p-4" style={{ background: 'linear-gradient(135deg,#FFECF2,#FCFBFF)' }}>
         <div className="flex items-center gap-2 text-[11.5px] font-extrabold text-green-dark">
           <Check size={16} stroke={2.4} className="text-green-dark" />
           {L('Tu página ya está publicada y visible en To’Latino', 'Your page is already published and visible on To’Latino')}
@@ -144,7 +144,7 @@ export function ModulesSetup({ ctx, onToggle }: { ctx: PanelCtx; onToggle: (k: k
       {/* extra: Novedades (engagement, not selling) */}
       <div className="px-0.5 text-[11px] font-bold uppercase tracking-[.05em] text-muted-2">{L('Extra', 'Extra')}</div>
       <div className={`flex items-center gap-3 rounded-card-sm border bg-white p-4 ${updatesOn ? 'border-[rgba(123,97,255,.35)]' : 'border-line'}`}>
-        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn" style={{ background: '#F1EFFA' }}><Megaphone size={21} strokeWidth={2.2} className="text-primary-dark" /></span>
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-btn" style={{ background: '#F1EEFA' }}><Megaphone size={21} strokeWidth={2.2} className="text-primary-dark" /></span>
         <div className="min-w-0 flex-1">
           <div className="text-[14px] font-extrabold text-ink">{L('Novedades', 'Updates')}</div>
           <div className="mt-0.5 text-[12px] font-semibold leading-snug text-muted">{L('Publica ofertas y avisos en el feed de la comunidad. No es para vender — es para que te sigan.', 'Post offers and news to the community feed. Not for selling — it keeps you top of mind.')}</div>

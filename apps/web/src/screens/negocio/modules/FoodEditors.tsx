@@ -27,10 +27,10 @@ export const CAT_ICONS: Record<string, LucideIcon> = {
 export const catIcon = (key: string): LucideIcon => CAT_ICONS[key] ?? Utensils;
 
 export const PROMO_TYPES: { type: PromoType; Icon: LucideIcon; es: string; en: string; subEs: string; subEn: string; c: string; bg: string }[] = [
-  { type: 'percent', Icon: Tag, es: '% descuento', en: '% off', subEs: 'Descuento porcentual', subEn: 'Percentage discount', c: '#4338CA', bg: '#EFEBFF' },
-  { type: 'combo', Icon: ShoppingBag, es: 'Combo', en: 'Combo', subEs: 'Agrupa a un precio', subEn: 'Group at one price', c: '#065F46', bg: '#E3F5EA' },
-  { type: 'bogo', Icon: Gift, es: 'BOGO', en: 'BOGO', subEs: 'Compra uno, lleva uno', subEn: 'Buy one, get one', c: '#9A3412', bg: '#FCEFD6' },
-  { type: 'happy', Icon: Clock, es: 'Happy hour', en: 'Happy hour', subEs: 'Precio por horario', subEn: 'Time-based pricing', c: '#9F1239', bg: '#FDE7EF' },
+  { type: 'percent', Icon: Tag, es: '% descuento', en: '% off', subEs: 'Descuento porcentual', subEn: 'Percentage discount', c: '#4F46E5', bg: '#FFECF2' },
+  { type: 'combo', Icon: ShoppingBag, es: 'Combo', en: 'Combo', subEs: 'Agrupa a un precio', subEn: 'Group at one price', c: '#007A57', bg: '#E6FAF3' },
+  { type: 'bogo', Icon: Gift, es: 'BOGO', en: 'BOGO', subEs: 'Compra uno, lleva uno', subEn: 'Buy one, get one', c: '#B85D00', bg: '#FFF6E3' },
+  { type: 'happy', Icon: Clock, es: 'Happy hour', en: 'Happy hour', subEs: 'Precio por horario', subEn: 'Time-based pricing', c: '#C4144C', bg: '#FFECF2' },
 ];
 
 const fieldLabel = 'mb-1.5 text-[11px] font-extrabold text-ink-soft';

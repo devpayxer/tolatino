@@ -558,7 +558,7 @@ export function NegociosScreen() {
 
         <div className="min-w-0">
           {mapOpen && (
-            <div className="relative mb-4 hidden h-[180px] overflow-hidden rounded-card-sm md:block" style={{ background: tile('#E7ECF3', '#DCE3EC', 14) }}>
+            <div className="relative mb-4 hidden h-[180px] overflow-hidden rounded-card-sm md:block" style={{ background: tile('#EAE6F5', '#E4DFF2', 14) }}>
               {[
                 { l: '22%', t: '38%' },
                 { l: '47%', t: '58%' },

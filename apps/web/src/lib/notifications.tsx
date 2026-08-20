@@ -30,46 +30,46 @@ export type NotifItem = {
 type RawRow = { id: string; kind: string; data: Record<string, unknown>; link: string | null; read: boolean; created_at: string };
 
 const META: Record<string, { icon: NotifIcon; color: string; bg: string }> = {
-  order_new: { icon: 'store', color: '#6D4DF6', bg: '#EFEBFF' },
-  order_status: { icon: 'store', color: '#1F8A4C', bg: '#E3F5EA' },
-  booking_new: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
-  booking_status: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
-  booking_cancelled: { icon: 'calendar', color: '#D6336C', bg: '#FDE7EF' },
-  booking_resched: { icon: 'calendar', color: '#B8860B', bg: '#FCF1C7' },
-  rental_new: { icon: 'tag', color: '#6D4DF6', bg: '#EFEBFF' },
-  rental_status: { icon: 'tag', color: '#1F8A4C', bg: '#E3F5EA' },
-  ticket_new: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
-  ticket_status: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
-  review_new: { icon: 'star', color: '#B8860B', bg: '#FCF1C7' },
-  review_reply: { icon: 'message', color: '#1F8A4C', bg: '#E3F5EA' },
-  endorse_new: { icon: 'heart', color: '#7B61FF', bg: '#EFEBFF' },
-  rsvp_new: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
-  event_cancelled: { icon: 'calendar', color: '#D6336C', bg: '#FDE7EF' },
-  waitlist_open: { icon: 'calendar', color: '#1F8A4C', bg: '#E3F5EA' },
-  message: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
+  order_new: { icon: 'store', color: '#C4144C', bg: '#FFECF2' },
+  order_status: { icon: 'store', color: '#007A57', bg: '#E6FAF3' },
+  booking_new: { icon: 'calendar', color: '#C4144C', bg: '#FFECF2' },
+  booking_status: { icon: 'calendar', color: '#007A57', bg: '#E6FAF3' },
+  booking_cancelled: { icon: 'calendar', color: '#E11D48', bg: '#FFECF2' },
+  booking_resched: { icon: 'calendar', color: '#8A5A00', bg: '#FFF6E3' },
+  rental_new: { icon: 'tag', color: '#C4144C', bg: '#FFECF2' },
+  rental_status: { icon: 'tag', color: '#007A57', bg: '#E6FAF3' },
+  ticket_new: { icon: 'calendar', color: '#C4144C', bg: '#FFECF2' },
+  ticket_status: { icon: 'calendar', color: '#007A57', bg: '#E6FAF3' },
+  review_new: { icon: 'star', color: '#8A5A00', bg: '#FFF6E3' },
+  review_reply: { icon: 'message', color: '#007A57', bg: '#E6FAF3' },
+  endorse_new: { icon: 'heart', color: '#FF2D6F', bg: '#FFECF2' },
+  rsvp_new: { icon: 'user', color: '#C4144C', bg: '#FFECF2' },
+  event_cancelled: { icon: 'calendar', color: '#E11D48', bg: '#FFECF2' },
+  waitlist_open: { icon: 'calendar', color: '#007A57', bg: '#E6FAF3' },
+  message: { icon: 'message', color: '#007CC1', bg: '#DEF4FF' },
   // Comunidad (migración 0136). Hasta 2026-08-03 la sección era muda: te
   // comentaban o te seguían y nadie te avisaba.
-  comment_new: { icon: 'message', color: '#6D4DF6', bg: '#EFEBFF' },
-  reply_new: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
-  post_like: { icon: 'heart', color: '#D6336C', bg: '#FDE7EF' },
-  follow_new: { icon: 'user', color: '#1F8A4C', bg: '#E3F5EA' },
+  comment_new: { icon: 'message', color: '#C4144C', bg: '#FFECF2' },
+  reply_new: { icon: 'message', color: '#007CC1', bg: '#DEF4FF' },
+  post_like: { icon: 'heart', color: '#E11D48', bg: '#FFECF2' },
+  follow_new: { icon: 'user', color: '#007A57', bg: '#E6FAF3' },
   // Cuenta, plan, reclamos y dinero (0121/0122). La base los emitía desde hacía
   // meses y la campana los pintaba como «Notificación» sin una línea de texto.
-  account_suspended: { icon: 'user', color: '#D6336C', bg: '#FDE7EF' },
-  account_restored: { icon: 'user', color: '#1F8A4C', bg: '#E3F5EA' },
-  business_tier_changed: { icon: 'store', color: '#B8860B', bg: '#FCF1C7' },
-  order_status_admin: { icon: 'store', color: '#2F6FED', bg: '#E5EFFB' },
-  purchase_fulfilled: { icon: 'store', color: '#1F8A4C', bg: '#E3F5EA' },
-  purchase_refunded: { icon: 'tag', color: '#B8860B', bg: '#FCF1C7' },
-  claim_opened: { icon: 'message', color: '#D6336C', bg: '#FDE7EF' },
-  claim_message: { icon: 'message', color: '#2F6FED', bg: '#E5EFFB' },
-  claim_resuelto: { icon: 'message', color: '#1F8A4C', bg: '#E3F5EA' },
-  claim_rechazado: { icon: 'message', color: '#D6336C', bg: '#FDE7EF' },
+  account_suspended: { icon: 'user', color: '#E11D48', bg: '#FFECF2' },
+  account_restored: { icon: 'user', color: '#007A57', bg: '#E6FAF3' },
+  business_tier_changed: { icon: 'store', color: '#8A5A00', bg: '#FFF6E3' },
+  order_status_admin: { icon: 'store', color: '#007CC1', bg: '#DEF4FF' },
+  purchase_fulfilled: { icon: 'store', color: '#007A57', bg: '#E6FAF3' },
+  purchase_refunded: { icon: 'tag', color: '#8A5A00', bg: '#FFF6E3' },
+  claim_opened: { icon: 'message', color: '#E11D48', bg: '#FFECF2' },
+  claim_message: { icon: 'message', color: '#007CC1', bg: '#DEF4FF' },
+  claim_resuelto: { icon: 'message', color: '#007A57', bg: '#E6FAF3' },
+  claim_rechazado: { icon: 'message', color: '#E11D48', bg: '#FFECF2' },
   // Dealer de carros (0119) y Bienes raíces (0117) — avisos para el dueño.
-  auto_lead: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
-  auto_test: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
-  re_lead: { icon: 'user', color: '#6D4DF6', bg: '#EFEBFF' },
-  re_tour: { icon: 'calendar', color: '#6D4DF6', bg: '#EFEBFF' },
+  auto_lead: { icon: 'user', color: '#C4144C', bg: '#FFECF2' },
+  auto_test: { icon: 'calendar', color: '#C4144C', bg: '#FFECF2' },
+  re_lead: { icon: 'user', color: '#C4144C', bg: '#FFECF2' },
+  re_tour: { icon: 'calendar', color: '#C4144C', bg: '#FFECF2' },
 };
 // Qué cosa se compró / se reclama, en palabras. La base manda claves distintas
 // según de dónde venga (`payments.kind` en inglés, los reclamos en español).
@@ -269,7 +269,7 @@ function groupOf(iso: string): 'hoy' | 'semana' | 'antes' {
 // cada uno de los 33 textos (y vale para los que vengan).
 const pegarEmoji = (s: string) => s.replace(/\s+(\p{Extended_Pictographic}\uFE0F?)$/u, '\u00A0$1');
 const rowToItem = (r: RawRow, read: boolean): NotifItem => {
-  const m = META[r.kind] ?? { icon: 'store', color: '#6D4DF6', bg: '#EFEBFF' };
+  const m = META[r.kind] ?? { icon: 'store', color: '#C4144C', bg: '#FFECF2' };
   const t = kindText(r.kind, r.data ?? {});
   return {
     id: r.id, icon: m.icon, color: m.color, bg: m.bg,

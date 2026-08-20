@@ -371,7 +371,7 @@ export function AdminScreen() {
           <span className="text-[19px] font-extrabold tracking-[-.02em] text-primary-soft">Latino</span>
           {/* Sobre la barra oscura el morado de marca no contrasta: el logotipo
               va en el mismo tono claro que la palabra. */}
-          <LogoMark size={17} color="#9B85FF" className="ml-1 self-center" />
+          <LogoMark size={17} color="#FF7A9E" className="ml-1 self-center" />
         </div>
         <div className="no-scrollbar flex-1 overflow-y-auto">{nav}</div>
         <div className="flex items-center gap-2.5 border-t border-white/10 px-4 py-3">
@@ -411,7 +411,7 @@ export function AdminScreen() {
           <button aria-label={L('Cerrar', 'Close')} onClick={() => setNavOpen(false)} className="absolute inset-0 cursor-pointer bg-[rgba(20,15,40,.55)]" />
           <div className="absolute left-0 top-0 flex h-full w-[262px] flex-col bg-ink shadow-pop">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
-              <div className="flex items-baseline gap-1"><span className="text-[16px] font-extrabold text-white">To&rsquo;</span><span className="text-[16px] font-extrabold text-primary-soft">Latino</span><LogoMark size={14} color="#9B85FF" className="ml-0.5 self-center" /></div>
+              <div className="flex items-baseline gap-1"><span className="text-[16px] font-extrabold text-white">To&rsquo;</span><span className="text-[16px] font-extrabold text-primary-soft">Latino</span><LogoMark size={14} color="#FF7A9E" className="ml-0.5 self-center" /></div>
               <button onClick={() => setNavOpen(false)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/10"><X size={15} stroke={2.4} className="text-white" /></button>
             </div>
             <div className="no-scrollbar flex-1 overflow-y-auto">{nav}</div>
@@ -576,7 +576,7 @@ export function AdminScreen() {
                 return (
                   <div key={u.id} className="grid grid-cols-1 items-center gap-2 border-b border-hair px-4 py-2.5 last:border-0 md:grid-cols-[2fr_1fr_1fr_90px_90px] md:gap-3">
                     <button onClick={() => void openUser(u.id)} className="flex min-w-0 cursor-pointer items-center gap-2.5 text-left">
-                      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[10.5px] font-extrabold text-white" style={{ background: u.avatar_color ?? '#7B61FF' }}>{u.initials ?? (u.email[0] ?? '?').toUpperCase()}</span>
+                      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[10.5px] font-extrabold text-white" style={{ background: u.avatar_color ?? '#FF2D6F' }}>{u.initials ?? (u.email[0] ?? '?').toUpperCase()}</span>
                       <span className="min-w-0"><span className="block truncate text-[12.5px] font-extrabold text-ink">{u.display_name ?? L('Sin nombre', 'No name')}</span><span className="block truncate text-[10.5px] font-semibold text-muted-2">{u.email}</span></span>
                     </button>
                     <span className="text-[11.5px] font-semibold text-ink-soft">{u.city_label ?? '—'}</span>
@@ -827,7 +827,7 @@ export function AdminScreen() {
             {stream.map((p) => (
               <Panel key={p.id} className={`p-4 ${p.hidden ? 'border-l-4 border-l-amber' : p.pinned ? 'border-l-4 border-l-primary' : ''}`}>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: p.color || '#7B61FF' }}>{p.initials}</span>
+                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12px] font-extrabold text-white" style={{ background: p.color || '#FF2D6F' }}>{p.initials}</span>
                   <div className="min-w-0 flex-1"><div className="flex items-center gap-1.5"><span className="text-[13px] font-extrabold text-ink">{p.author}</span>{p.pinned && <Pill tone="purple">★</Pill>}</div><div className="text-[10px] font-semibold text-muted-2">{[p.hood, p.city].filter(Boolean).join(' · ')} · {timeAgo(p.created_at, es)}</div></div>
                   <Pill tone="gray">{p.ptype}</Pill>
                   {p.hidden && <Pill tone="amber">{L('Oculto', 'Hidden')}</Pill>}
@@ -1185,7 +1185,7 @@ export function AdminScreen() {
           return (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-[15px] font-extrabold text-white" style={{ background: String(p.avatar_color ?? '#7B61FF') }}>{String(p.initials ?? uDetail.email[0] ?? '?').toUpperCase()}</span>
+                <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full text-[15px] font-extrabold text-white" style={{ background: String(p.avatar_color ?? '#FF2D6F') }}>{String(p.initials ?? uDetail.email[0] ?? '?').toUpperCase()}</span>
                 <div className="min-w-0 flex-1"><div className="truncate text-[15px] font-extrabold text-ink">{String(p.display_name ?? L('Sin nombre', 'No name'))}</div><div className="truncate text-[11.5px] font-semibold text-muted-2">{uDetail.email}</div></div>
                 {uDetail.admin_role && <Pill tone="purple">{uDetail.admin_role}</Pill>}
               </div>

@@ -41,22 +41,22 @@ const SEC_VALUES = new Set<string>(['home', 'perfil', 'direcciones', 'posts', 'c
 
 // Status → bilingual label + pill colors, shared across the activity lists.
 const STATUS: Record<string, { es: string; en: string; bg: string; c: string }> = {
-  new: { es: 'Nuevo', en: 'New', bg: '#FDE7EF', c: '#D6336C' },
-  preparing: { es: 'Preparando', en: 'Preparing', bg: '#FCEFD6', c: '#9A6A12' },
-  ready: { es: 'Listo', en: 'Ready', bg: '#E3F5EA', c: '#1F8A4C' },
-  completed: { es: 'Completado', en: 'Completed', bg: '#F1EFFA', c: '#8A86A0' },
-  pending: { es: 'Pendiente', en: 'Pending', bg: '#FCEFD6', c: '#9A6A12' },
-  confirmed: { es: 'Confirmada', en: 'Confirmed', bg: '#E3F5EA', c: '#1F8A4C' },
-  seated: { es: 'En sitio', en: 'Seated', bg: '#E5EFFB', c: '#2F6FED' },
-  done: { es: 'Completada', en: 'Done', bg: '#F1EFFA', c: '#8A86A0' },
-  out: { es: 'En uso', en: 'Out', bg: '#E5EFFB', c: '#2F6FED' },
-  returned: { es: 'Devuelto', en: 'Returned', bg: '#F1EFFA', c: '#8A86A0' },
-  cancelled: { es: 'Cancelado', en: 'Cancelled', bg: '#F1EFFA', c: '#8A86A0' },
-  used: { es: 'Usado', en: 'Used', bg: '#F1EFFA', c: '#8A86A0' },
-  refunded: { es: 'Reembolsado', en: 'Refunded', bg: '#F1EFFA', c: '#8A86A0' },
-  on_the_way: { es: 'En camino', en: 'On the way', bg: '#E5EFFB', c: '#2F6FED' },
-  delivered: { es: 'Entregado', en: 'Delivered', bg: '#E3F5EA', c: '#1F8A4C' },
-  no_show: { es: 'No asistió', en: 'No-show', bg: '#FDE7EF', c: '#D6336C' },
+  new: { es: 'Nuevo', en: 'New', bg: '#FFECF2', c: '#E11D48' },
+  preparing: { es: 'Preparando', en: 'Preparing', bg: '#FFF6E3', c: '#8A5A00' },
+  ready: { es: 'Listo', en: 'Ready', bg: '#E6FAF3', c: '#007A57' },
+  completed: { es: 'Completado', en: 'Completed', bg: '#F1EEFA', c: '#7E7798' },
+  pending: { es: 'Pendiente', en: 'Pending', bg: '#FFF6E3', c: '#8A5A00' },
+  confirmed: { es: 'Confirmada', en: 'Confirmed', bg: '#E6FAF3', c: '#007A57' },
+  seated: { es: 'En sitio', en: 'Seated', bg: '#DEF4FF', c: '#007CC1' },
+  done: { es: 'Completada', en: 'Done', bg: '#F1EEFA', c: '#7E7798' },
+  out: { es: 'En uso', en: 'Out', bg: '#DEF4FF', c: '#007CC1' },
+  returned: { es: 'Devuelto', en: 'Returned', bg: '#F1EEFA', c: '#7E7798' },
+  cancelled: { es: 'Cancelado', en: 'Cancelled', bg: '#F1EEFA', c: '#7E7798' },
+  used: { es: 'Usado', en: 'Used', bg: '#F1EEFA', c: '#7E7798' },
+  refunded: { es: 'Reembolsado', en: 'Refunded', bg: '#F1EEFA', c: '#7E7798' },
+  on_the_way: { es: 'En camino', en: 'On the way', bg: '#DEF4FF', c: '#007CC1' },
+  delivered: { es: 'Entregado', en: 'Delivered', bg: '#E6FAF3', c: '#007A57' },
+  no_show: { es: 'No asistió', en: 'No-show', bg: '#FFECF2', c: '#E11D48' },
 };
 
 // DoorDash-style client stage: fold order status + dispatch into ONE stage key.
@@ -237,7 +237,7 @@ export function CuentaScreen() {
   const dt = (iso: string) => new Date(iso).toLocaleString(es ? 'es-US' : 'en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
   const money = (n: number | null | undefined) => (n == null ? '' : '$' + Number(n).toFixed(2));
   const pill = (status: string) => {
-    const s = STATUS[status] ?? { es: status, en: status, bg: '#F1EFFA', c: '#8A86A0' };
+    const s = STATUS[status] ?? { es: status, en: status, bg: '#F1EEFA', c: '#7E7798' };
     return <span className="flex-none rounded-full px-2 py-0.5 text-[10px] font-extrabold" style={{ background: s.bg, color: s.c }}>{L(s.es, s.en)}</span>;
   };
   // Order pill with the STORE voice: a Tienda order "empaca", it doesn't cook.
@@ -383,34 +383,34 @@ export function CuentaScreen() {
           {header}
           <div className={`${cardCls} p-2`}>
             <div className="px-2 pb-1 pt-2 text-[10.5px] font-extrabold uppercase tracking-[.05em] text-muted-2">{L('Tu actividad', 'Your activity')}</div>
-            {row(Bookmark, '#6D4DF6', '#EFEBFF', L('Guardados', 'Saved'), L('Publicaciones que guardaste', 'Posts you saved'), () => goFeed('saved'))}
-            {row(Star, '#B5791A', '#FCEFD6', L('Negocios guardados', 'Saved businesses'), L('Tus lugares favoritos', 'Your favorite places'), () => router.push('/negocios'), String(saved.count))}
-            {row(Users, '#1F8A4C', '#E3F5EA', L('Siguiendo', 'Following'), L('Vecinos y negocios que sigues', 'Neighbors & businesses you follow'), () => goFeed('following'), String(follows.followingCount))}
-            {row(Megaphone, '#2F6FED', '#E5EFFB', L('Mis publicaciones', 'My posts'), L('Lo que compartiste en la comunidad', 'What you shared in the community'), () => setSec('posts'), String(myPosts.length))}
+            {row(Bookmark, '#C4144C', '#FFECF2', L('Guardados', 'Saved'), L('Publicaciones que guardaste', 'Posts you saved'), () => goFeed('saved'))}
+            {row(Star, '#8A5A00', '#FFF6E3', L('Negocios guardados', 'Saved businesses'), L('Tus lugares favoritos', 'Your favorite places'), () => router.push('/negocios'), String(saved.count))}
+            {row(Users, '#007A57', '#E6FAF3', L('Siguiendo', 'Following'), L('Vecinos y negocios que sigues', 'Neighbors & businesses you follow'), () => goFeed('following'), String(follows.followingCount))}
+            {row(Megaphone, '#007CC1', '#DEF4FF', L('Mis publicaciones', 'My posts'), L('Lo que compartiste en la comunidad', 'What you shared in the community'), () => setSec('posts'), String(myPosts.length))}
           </div>
 
           <div className={`${cardCls} p-2`}>
             <div className="px-2 pb-1 pt-2 text-[10.5px] font-extrabold uppercase tracking-[.05em] text-muted-2">{L('Mis transacciones', 'My transactions')}</div>
-            {row(ShoppingBag, '#6D4DF6', '#EFEBFF', L('Mis pedidos', 'My orders'), L('Comida y productos', 'Food & products'), () => setSec('pedidos'), String(act.orders.length))}
-            {row(CalendarDays, '#1F8A4C', '#E3F5EA', L('Mis reservas', 'My bookings'), L('Citas y servicios', 'Appointments & services'), () => setSec('reservas'), String(act.bookings.length))}
-            {row(Bike, '#B5791A', '#FCEFD6', L('Mis rentas', 'My rentals'), L('Equipo y artículos rentados', 'Rented equipment & items'), () => setSec('rentas'), String(act.rentals.length))}
-            {row(Ticket, '#D6336C', '#FDE7EF', L('Mis boletos', 'My tickets'), L('Boletos de eventos', 'Event tickets'), () => setSec('boletos'), String(act.tickets.length))}
-            {row(CalendarCheck, '#2F6FED', '#E5EFFB', L('Voy a asistir', "I'm going"), L('Eventos que marcaste "Voy"', 'Events you RSVP\'d'), () => setSec('voy'), String(act.going.length))}
-            {row(Flag, '#D6336C', '#FDE7EF', L('Mis reclamos', 'My claims'), L('Casos abiertos con To’Latino', 'Cases open with To’Latino'), () => setSec('reclamos'), openClaims > 0 ? String(openClaims) : String(claims?.length ?? 0))}
+            {row(ShoppingBag, '#C4144C', '#FFECF2', L('Mis pedidos', 'My orders'), L('Comida y productos', 'Food & products'), () => setSec('pedidos'), String(act.orders.length))}
+            {row(CalendarDays, '#007A57', '#E6FAF3', L('Mis reservas', 'My bookings'), L('Citas y servicios', 'Appointments & services'), () => setSec('reservas'), String(act.bookings.length))}
+            {row(Bike, '#8A5A00', '#FFF6E3', L('Mis rentas', 'My rentals'), L('Equipo y artículos rentados', 'Rented equipment & items'), () => setSec('rentas'), String(act.rentals.length))}
+            {row(Ticket, '#E11D48', '#FFECF2', L('Mis boletos', 'My tickets'), L('Boletos de eventos', 'Event tickets'), () => setSec('boletos'), String(act.tickets.length))}
+            {row(CalendarCheck, '#007CC1', '#DEF4FF', L('Voy a asistir', "I'm going"), L('Eventos que marcaste "Voy"', 'Events you RSVP\'d'), () => setSec('voy'), String(act.going.length))}
+            {row(Flag, '#E11D48', '#FFECF2', L('Mis reclamos', 'My claims'), L('Casos abiertos con To’Latino', 'Cases open with To’Latino'), () => setSec('reclamos'), openClaims > 0 ? String(openClaims) : String(claims?.length ?? 0))}
           </div>
 
           <div className={`${cardCls} p-2`}>
             <div className="px-2 pb-1 pt-2 text-[10.5px] font-extrabold uppercase tracking-[.05em] text-muted-2">{L('Cuenta', 'Account')}</div>
-            {row(User, '#6D4DF6', '#F1EFFA', L('Mi perfil', 'My profile'), L('Nombre, bio, ciudad', 'Name, bio, city'), openPerfil)}
-            {row(MapPin, '#1F8A4C', '#E3F5EA', L('Direcciones', 'Addresses'), L('Tus direcciones guardadas', 'Your saved addresses'), () => setSec('direcciones'), String(addr.addresses.length))}
-            {row(Bell, '#B5791A', '#FCEFD6', L('Notificaciones', 'Notifications'), L('Alertas y avisos', 'Alerts and updates'), () => app.setNotifOpen(true))}
-            {row(Globe, '#0E9384', '#D6F3EF', L('Configuración', 'Settings'), L('Idioma, notificaciones, cuenta', 'Language, notifications, account'), () => setSec('config'))}
-            {row(Ban, '#5A5570', '#F1EFFA', L('Vecinos bloqueados', 'Blocked neighbors'), L('A quién dejaste de ver', "Who you've stopped seeing"), () => { loadBlocked(); setSec('bloqueados'); })}
+            {row(User, '#C4144C', '#F1EEFA', L('Mi perfil', 'My profile'), L('Nombre, bio, ciudad', 'Name, bio, city'), openPerfil)}
+            {row(MapPin, '#007A57', '#E6FAF3', L('Direcciones', 'Addresses'), L('Tus direcciones guardadas', 'Your saved addresses'), () => setSec('direcciones'), String(addr.addresses.length))}
+            {row(Bell, '#8A5A00', '#FFF6E3', L('Notificaciones', 'Notifications'), L('Alertas y avisos', 'Alerts and updates'), () => app.setNotifOpen(true))}
+            {row(Globe, '#008489', '#DAF7F7', L('Configuración', 'Settings'), L('Idioma, notificaciones, cuenta', 'Language, notifications, account'), () => setSec('config'))}
+            {row(Ban, '#4B4565', '#F1EEFA', L('Vecinos bloqueados', 'Blocked neighbors'), L('A quién dejaste de ver', "Who you've stopped seeing"), () => { loadBlocked(); setSec('bloqueados'); })}
           </div>
 
           <div className={`${cardCls} p-2`}>
-            {row(LayoutDashboard, '#6D4DF6', '#EFEBFF', L('Panel de negocio', 'Business dashboard'), L('Administra tu negocio', 'Manage your business'), () => router.push('/negocio'))}
-            {row(HelpCircle, '#9A6A12', '#FCEFD6', L('Ayuda y soporte', 'Help & support'), L('Preguntas frecuentes', 'FAQ'), () => flash(L('Ayuda: pronto', 'Help: coming soon')))}
+            {row(LayoutDashboard, '#C4144C', '#FFECF2', L('Panel de negocio', 'Business dashboard'), L('Administra tu negocio', 'Manage your business'), () => router.push('/negocio'))}
+            {row(HelpCircle, '#8A5A00', '#FFF6E3', L('Ayuda y soporte', 'Help & support'), L('Preguntas frecuentes', 'FAQ'), () => flash(L('Ayuda: pronto', 'Help: coming soon')))}
           </div>
 
           {auth.user && (
@@ -499,7 +499,7 @@ export function CuentaScreen() {
             <div className="flex flex-col gap-2.5">
               {blocked.map((b) => (
                 <div key={b.id} className={`${cardCls} flex items-center gap-3 p-3.5`}>
-                  <Avatar initials={(b.name || 'V').slice(0, 2).toUpperCase()} color="#8A86A0" src={b.avatar_url} size={38} />
+                  <Avatar initials={(b.name || 'V').slice(0, 2).toUpperCase()} color="#7E7798" src={b.avatar_url} size={38} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13.5px] font-extrabold text-ink">{b.name}</span>
                     <span className="block text-[11.5px] font-semibold text-muted">{L('Bloqueado el ', 'Blocked on ')}{dt(b.blocked_at)}</span>
@@ -1100,7 +1100,7 @@ export function CuentaScreen() {
                   setReportBusy(true);
                   const nm = p?.display_name?.trim() || 'Cliente';
                   const ini = (nm.split(/\s+/).map((w) => w[0]).join('').slice(0, 2) || 'CL').toUpperCase();
-                  const convId = await startConversation(o.businesses.slug, nm, ini, '#7B61FF');
+                  const convId = await startConversation(o.businesses.slug, nm, ini, '#FF2D6F');
                   const ok = convId ? await sendChatMessage(convId, false, `⚠️ ${L('Sobre mi pedido', 'About my order')} ${o.code ?? ''}: ${reportText.trim()}`) : null;
                   setReportBusy(false);
                   if (ok) { setReportOpen(false); setReportText(''); flash(L('Mensaje enviado — el negocio te responderá', 'Message sent — the business will reply')); }
@@ -1122,14 +1122,14 @@ export function CuentaScreen() {
             return (
               <>
                 <OverlayTitle title={bizName} onClose={() => closeOrder()} />
-                <div className="rounded-card px-5 py-6 text-center text-white shadow-cta" style={{ background: 'linear-gradient(155deg,#22A55C,#137A44)' }}>
+                <div className="rounded-card px-5 py-6 text-center text-white shadow-cta" style={{ background: 'linear-gradient(155deg,#00A878,#007A57)' }}>
                   <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/20"><Check size={28} stroke={3} /></span>
                   <div className="mt-3 text-[19px] font-extrabold">{isDel ? L('¡Pedido entregado!', 'Order delivered!') : L('¡Pedido completado!', 'Order completed!')}</div>
                   <div className="mt-1 text-[12.5px] font-semibold text-white/85">{isDel ? L(`Tu pedido de ${bizName} ya llegó.`, `Your order from ${bizName} has arrived.`) : L(`Recogiste tu pedido de ${bizName}.`, `You picked up your order from ${bizName}.`)}</div>
                 </div>
 
                 {isDel && (
-                  <div className="relative mt-3 h-[118px] overflow-hidden rounded-card border border-line" style={{ background: 'repeating-linear-gradient(135deg,#EAE2F8 0 11px,#DCCEF2 11px 22px)' }}>
+                  <div className="relative mt-3 h-[118px] overflow-hidden rounded-card border border-line" style={{ background: 'repeating-linear-gradient(135deg,#F0EDFF 0 11px,#E0DAFF 11px 22px)' }}>
                     <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-muted-2">{L('[ foto de entrega ]', '[ delivery photo ]')}</span>
                     {(f.instructions || f.address_label) && <span className="absolute bottom-2 left-2 max-w-[85%] truncate rounded-md bg-ink/80 px-2 py-1 text-[10px] font-bold text-white">{f.instructions || f.address_label}</span>}
                   </div>
@@ -1203,8 +1203,8 @@ export function CuentaScreen() {
 
               {/* map (illustrative) once a driver is on the way */}
               {stage === 'on_the_way' && (
-                <div className="relative mt-3 h-[128px] overflow-hidden rounded-card border border-line" style={{ background: '#EAEEF6' }}>
-                  <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 128" preserveAspectRatio="none"><path d="M40 96 C 110 96, 120 40, 210 34" fill="none" stroke="#7B61FF" strokeWidth="3" strokeDasharray="6 6" strokeLinecap="round" /></svg>
+                <div className="relative mt-3 h-[128px] overflow-hidden rounded-card border border-line" style={{ background: '#EAE6F5' }}>
+                  <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 128" preserveAspectRatio="none"><path d="M40 96 C 110 96, 120 40, 210 34" fill="none" stroke="#FF2D6F" strokeWidth="3" strokeDasharray="6 6" strokeLinecap="round" /></svg>
                   <span className="absolute left-[34px] top-[86px] h-3.5 w-3.5 rounded-full border-2 border-white bg-green shadow-float" />
                   <span className="absolute right-[26px] top-[22px] flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-float">{isStore ? <Truck size={15} stroke={2.4} /> : <Bike size={15} stroke={2.4} />}</span>
                   <span className="absolute right-2 top-2 rounded-md bg-ink/85 px-2 py-1 text-[10px] font-extrabold text-white">{f.eta ? `${f.eta} · ${L('a ti', 'to you')}` : L('En ruta', 'En route')}</span>

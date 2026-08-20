@@ -25,11 +25,11 @@ export function UserMenu() {
   const loggedIn = !!auth.user;
 
   const items = [
-    ...(loggedIn ? [{ Icon: User, color: '#6D4DF6', bg: '#EFEBFF', label: L('Mi cuenta', 'My account'), act: () => go('/cuenta') }] : []),
-    { Icon: LayoutDashboard, color: '#6D4DF6', bg: '#EFEBFF', label: L('Panel de negocio', 'Business dashboard'), act: () => go('/negocio') },
-    { Icon: Store, color: '#1F9D57', bg: '#E3F5EA', label: L('Publicar negocio', 'List a business'), act: () => go('/negocio/publicar') },
-    { Icon: SlidersHorizontal, color: '#8A86A0', bg: '#F1EFFA', label: L('Configuración', 'Settings'), act: () => go('/cuenta') },
-    { Icon: HelpCircle, color: '#9A6A12', bg: '#FCEFD6', label: L('Ayuda y soporte', 'Help & support'), act: close },
+    ...(loggedIn ? [{ Icon: User, color: '#C4144C', bg: '#FFECF2', label: L('Mi cuenta', 'My account'), act: () => go('/cuenta') }] : []),
+    { Icon: LayoutDashboard, color: '#C4144C', bg: '#FFECF2', label: L('Panel de negocio', 'Business dashboard'), act: () => go('/negocio') },
+    { Icon: Store, color: '#00A878', bg: '#E6FAF3', label: L('Publicar negocio', 'List a business'), act: () => go('/negocio/publicar') },
+    { Icon: SlidersHorizontal, color: '#7E7798', bg: '#F1EEFA', label: L('Configuración', 'Settings'), act: () => go('/cuenta') },
+    { Icon: HelpCircle, color: '#8A5A00', bg: '#FFF6E3', label: L('Ayuda y soporte', 'Help & support'), act: close },
   ];
 
   return (

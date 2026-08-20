@@ -104,7 +104,7 @@ const CREDIT_LABEL: Record<string, { es: string; en: string }> = {
 };
 
 // Avatar palette (same set the other people-facing modules use for initials).
-const AV_COLORS = ['#7B61FF', '#2A5C8A', '#E8954A', '#D6336C', '#1F9D57'];
+const AV_COLORS = ['#FF2D6F', '#0369A1', '#C05702', '#E11D48', '#00A878'];
 const avColor = (name: string) => {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;

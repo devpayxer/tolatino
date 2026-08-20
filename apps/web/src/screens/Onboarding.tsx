@@ -87,16 +87,16 @@ function esVueltaDeRecuperacion(): boolean {
 
 /** Las 10 del handoff. La CLAVE es lo que se guarda; la etiqueta solo se pinta. */
 const INTERESTS: { k: string; es: string; en: string; c: string; bg: string; Icon: typeof Search }[] = [
-  { k: 'food', es: 'Comida y pedidos', en: 'Food & orders', c: '#D6336C', bg: '#FDE7EF', Icon: Utensils },
-  { k: 'serv', es: 'Servicios y citas', en: 'Services & booking', c: '#0E9488', bg: '#DCF3F0', Icon: Wrench },
-  { k: 'evt', es: 'Eventos y boletos', en: 'Events & tickets', c: '#9A6A12', bg: '#FCEFD6', Icon: Calendar },
-  { k: 'rent', es: 'Renta de artículos', en: 'Rentals', c: '#E8954A', bg: '#FCE9D6', Icon: Package },
-  { k: 're', es: 'Bienes raíces', en: 'Real estate', c: '#2A6CB0', bg: '#E4EEFB', Icon: HomeIcon },
-  { k: 'auto', es: 'Autos y dealers', en: 'Autos & dealers', c: '#1F9D57', bg: '#E3F5EA', Icon: Car },
-  { k: 'job', es: 'Empleos', en: 'Jobs', c: '#6D4DF6', bg: '#EFEBFF', Icon: Briefcase },
-  { k: 'trans', es: 'Transporte', en: 'Transportation', c: '#B0357E', bg: '#F7E6F1', Icon: Truck },
-  { k: 'health', es: 'Salud y bienestar', en: 'Health & wellness', c: '#0E9488', bg: '#DCF3F0', Icon: Heartbeat },
-  { k: 'com', es: 'Comunidad', en: 'Community', c: '#7B61FF', bg: '#EFEBFF', Icon: MessageSquare },
+  { k: 'food', es: 'Comida y pedidos', en: 'Food & orders', c: '#E11D48', bg: '#FFECF2', Icon: Utensils },
+  { k: 'serv', es: 'Servicios y citas', en: 'Services & booking', c: '#008489', bg: '#DAF7F7', Icon: Wrench },
+  { k: 'evt', es: 'Eventos y boletos', en: 'Events & tickets', c: '#8A5A00', bg: '#FFF6E3', Icon: Calendar },
+  { k: 'rent', es: 'Renta de artículos', en: 'Rentals', c: '#C05702', bg: '#FFF1E5', Icon: Package },
+  { k: 're', es: 'Bienes raíces', en: 'Real estate', c: '#007FA2', bg: '#DAF6FD', Icon: HomeIcon },
+  { k: 'auto', es: 'Autos y dealers', en: 'Autos & dealers', c: '#00A878', bg: '#E6FAF3', Icon: Car },
+  { k: 'job', es: 'Empleos', en: 'Jobs', c: '#C4144C', bg: '#FFECF2', Icon: Briefcase },
+  { k: 'trans', es: 'Transporte', en: 'Transportation', c: '#AE54A5', bg: '#FFE8F0', Icon: Truck },
+  { k: 'health', es: 'Salud y bienestar', en: 'Health & wellness', c: '#008489', bg: '#DAF7F7', Icon: Heartbeat },
+  { k: 'com', es: 'Comunidad', en: 'Community', c: '#FF2D6F', bg: '#FFECF2', Icon: MessageSquare },
 ];
 
 type Stats = { businesses: number; events: number; neighbors: number };
@@ -448,13 +448,13 @@ export function OnboardingScreen() {
 
         {/* ══════ PANEL DE MARCA (solo escritorio) ══════ */}
         <aside className="tl-brandpanel relative hidden min-w-0 flex-col overflow-hidden p-[38px_38px] min-[1001px]:flex"
-               style={{ flex: '1 1 44%', background: 'linear-gradient(155deg,#2A2440,#171426 60%,#1E1B2E)' }}>
+               style={{ flex: '1 1 44%', background: 'linear-gradient(155deg,#241C46,#16112E 60%,#16112E)' }}>
           <span aria-hidden className="pointer-events-none absolute" style={{ top: -120, right: -90, width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle, rgba(123,97,255,.34), transparent 68%)' }} />
           <span aria-hidden className="pointer-events-none absolute" style={{ bottom: -140, left: -70, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(214,51,108,.22), transparent 70%)' }} />
           <div className="relative flex items-baseline">
             <span className="text-[24px] font-extrabold tracking-[-.03em] text-white">To&rsquo;</span>
             <span className="text-[24px] font-extrabold tracking-[-.03em] text-auth-soft">Latino</span>
-            <LogoMark size={21} color="#8B6BFF" className="ml-1.5 self-center" />
+            <LogoMark size={21} color="#FF7A9E" className="ml-1.5 self-center" />
           </div>
           <div className="relative mt-auto">
             <p className="text-[30px] font-extrabold leading-[1.2] tracking-[-.03em] text-white" style={{ textWrap: 'balance' }}>
@@ -532,7 +532,7 @@ export function OnboardingScreen() {
                 <span className="text-[10px] font-extrabold text-primary-dark">{pct}%</span>
               </div>
               <div className="h-[5px] overflow-hidden rounded-full bg-auth-track">
-                <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#7B61FF,#B0357E)' }} />
+                <div className="h-full rounded-full transition-[width] duration-300" style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#FF2D6F,#AE54A5)' }} />
               </div>
             </div>
           )}
@@ -705,7 +705,7 @@ export function OnboardingScreen() {
                   <Sub>{L('Así te ven los negocios cuando pides, reservas o preguntas.', 'This is how businesses see you when you order, book or ask.')}</Sub>
                   <div className="mt-[22px] flex items-center gap-[14px]">
                     <span aria-hidden className="relative flex-none">
-                      <Avatar initials={initials} color="linear-gradient(140deg,#7B61FF,#B0357E)" src={photo.shown} size={64} radius={20} />
+                      <Avatar initials={initials} color="linear-gradient(140deg,#FF2D6F,#AE54A5)" src={photo.shown} size={64} radius={20} />
                       {photo.busy && (
                         <span className="absolute inset-0 flex items-center justify-center rounded-[20px]" style={{ background: 'rgba(30,27,46,.5)' }}>
                           <span className="tl-spin block h-[18px] w-[18px] rounded-full border-2 border-white" style={{ borderTopColor: 'transparent' }} />
@@ -785,9 +785,9 @@ export function OnboardingScreen() {
                               'We need your area to show you only businesses, events and jobs nearby — and to give you access to your community.')}</Sub>
                       <ul className="mt-[22px] flex flex-col gap-[10px]">
                         {[
-                          { Icon: MessageSquare, bg: '#EFEBFF', c: '#6D4DF6', t: ['Tu comunidad local', 'Your local community'], d: ['El feed y el chat de tu colonia', 'Your neighborhood feed and chat'] },
-                          { Icon: MapPin, bg: '#E3F5EA', c: '#1F9D57', t: ['Solo lo que está cerca', 'Only what is nearby'], d: ['Negocios y empleos a minutos de ti', 'Businesses and jobs minutes away'] },
-                          { Icon: Wrench, bg: '#E4EEFB', c: '#2A6CB0', t: ['Entregas y citas reales', 'Real delivery and booking'], d: ['Sabemos si te pueden entregar', 'We know if they can deliver to you'] },
+                          { Icon: MessageSquare, bg: '#FFECF2', c: '#C4144C', t: ['Tu comunidad local', 'Your local community'], d: ['El feed y el chat de tu colonia', 'Your neighborhood feed and chat'] },
+                          { Icon: MapPin, bg: '#E6FAF3', c: '#00A878', t: ['Solo lo que está cerca', 'Only what is nearby'], d: ['Negocios y empleos a minutos de ti', 'Businesses and jobs minutes away'] },
+                          { Icon: Wrench, bg: '#DAF6FD', c: '#007FA2', t: ['Entregas y citas reales', 'Real delivery and booking'], d: ['Sabemos si te pueden entregar', 'We know if they can deliver to you'] },
                         ].map((r) => (
                           <li key={r.t[0]} className="flex items-center gap-[11px] rounded-btn-lg border border-auth-line p-[12px]">
                             <span aria-hidden className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[11px]" style={{ background: r.bg }}>
@@ -813,7 +813,7 @@ export function OnboardingScreen() {
 
                   {geo === 'detecting' && (
                     <div className="flex flex-col items-center py-10 text-center">
-                      <span aria-hidden className="tl-spin h-10 w-10 rounded-full border-[3px] border-lilac" style={{ borderTopColor: '#7B61FF' }} />
+                      <span aria-hidden className="tl-spin h-10 w-10 rounded-full border-[3px] border-lilac" style={{ borderTopColor: '#FF2D6F' }} />
                       <p className="mt-5 text-[16px] font-extrabold text-ink">{L('Buscando tu zona…', 'Finding your area…')}</p>
                       <p className="mt-1 text-[12.5px] font-medium text-home-mute">{L('Esto toma un segundo', 'This takes a second')}</p>
                     </div>
@@ -938,9 +938,9 @@ export function OnboardingScreen() {
                     : L('Tu cuenta está lista y tu comunidad ya está activa en tu zona.', 'Your account is ready and your community is already active in your area.')}</Sub>
                   <div className="mt-[22px] flex flex-col gap-2 text-left">
                     {[
-                      { Icon: UserIcon, bg: '#EFEBFF', c: '#6D4DF6', k: ['Tu cuenta', 'Your account'], v: `${`${first} ${last}`.trim() || auth.profile?.display_name || '—'} · ${targetLabel}` },
-                      { Icon: MapPin, bg: '#E3F5EA', c: '#1F9D57', k: ['Tu comunidad', 'Your community'], v: place?.label ?? app.city },
-                      { Icon: MessageSquare, bg: '#FCEFD6', c: '#9A6A12', k: ['Tu inicio', 'Your feed'], v: `${pickedKeys.length} ${L('intereses', 'interests')}${stats && stats.businesses > 0 ? ` · ${stats.businesses} ${L('negocios cerca', 'businesses nearby')}` : ''}` },
+                      { Icon: UserIcon, bg: '#FFECF2', c: '#C4144C', k: ['Tu cuenta', 'Your account'], v: `${`${first} ${last}`.trim() || auth.profile?.display_name || '—'} · ${targetLabel}` },
+                      { Icon: MapPin, bg: '#E6FAF3', c: '#00A878', k: ['Tu comunidad', 'Your community'], v: place?.label ?? app.city },
+                      { Icon: MessageSquare, bg: '#FFF6E3', c: '#8A5A00', k: ['Tu inicio', 'Your feed'], v: `${pickedKeys.length} ${L('intereses', 'interests')}${stats && stats.businesses > 0 ? ` · ${stats.businesses} ${L('negocios cerca', 'businesses nearby')}` : ''}` },
                     ].map((r) => (
                       <div key={r.k[0]} className="flex items-center gap-[11px] rounded-[17px] border border-auth-line p-[13px]">
                         <span aria-hidden className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[11px]" style={{ background: r.bg }}>
@@ -1094,7 +1094,7 @@ export function OnboardingScreen() {
       </div>
 
       <style jsx global>{`
-        .tl-focus:focus-visible { outline: 2px solid #7B61FF; outline-offset: 2px; border-radius: 10px; }
+        .tl-focus:focus-visible { outline: 2px solid #FF2D6F; outline-offset: 2px; border-radius: 10px; }
         @keyframes tlpop { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
         @keyframes tlp { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
         @keyframes tlring { 0% { transform: scale(.9); opacity: .55 } 70%,100% { transform: scale(1.5); opacity: 0 } }

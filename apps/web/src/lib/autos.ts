@@ -43,10 +43,10 @@ export const AU_FUELS: { id: string; es: string; en: string }[] = [
 export const AU_MAKES = ['Toyota', 'Honda', 'Nissan', 'Ford', 'Chevrolet', 'Hyundai', 'Kia', 'Jeep', 'RAM', 'GMC', 'Mazda', 'Volkswagen'];
 /** Striped placeholder tile per condition (design-system placeholder pattern). */
 export const AU_TILE: Record<AuCond, [string, string]> = {
-  nuevo: ['#E3F5EA', '#D6E7D0'],
-  certificado: ['#E4EEFB', '#DAE5F6'],
-  seminuevo: ['#E5DEF9', '#D9CEF3'],
-  usado: ['#F1EFFA', '#E6E1F5'],
+  nuevo: ['#E6FAF3', '#CDE9C9'],
+  certificado: ['#DAF6FD', '#C0E6FF'],
+  seminuevo: ['#FED2DF', '#E0DAFF'],
+  usado: ['#F1EEFA', '#E4DFF2'],
 };
 
 export type AuCard = {

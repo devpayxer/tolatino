@@ -55,7 +55,7 @@ const ALLERGENS_EN = ['Gluten', 'Dairy', 'Eggs', 'Nuts', 'Soy', 'Shellfish', 'Se
 const blankAllergens = () => [0, 0, 0, 0, 0, 0, 0];
 
 // Neutral category shown for items whose category was deleted.
-const FALLBACK_CAT: MenuCategory = { id: '_', es: 'Menú', en: 'Menu', icon: 'utensils', tile: '#EFEBFF 0 8px,#E5DEF9 8px 16px', visible: true };
+const FALLBACK_CAT: MenuCategory = { id: '_', es: 'Menú', en: 'Menu', icon: 'utensils', tile: '#FFECF2 0 8px,#FED2DF 8px 16px', visible: true };
 
 // Map a business_items row (kind='menu') ⇄ the module's rich Item.
 const KNOWN_ATTRS = new Set(['en', 'diet', 'allergens', 'mods', 'stock', 'popular', 'isNew', 'loves', 'compareAt', 'dailyLimit', 'tags']);
@@ -386,7 +386,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
 
     const sorted = [...items].sort((a, b) => b.loves - a.loves);
     const maxLoves = sorted[0]?.loves || 1;
-    const barCs = ['#4F46E5', '#7C6BFF', '#A78BFA', '#F4B740', '#10B981'];
+    const barCs = ['#4F46E5', '#FF7A9E', '#FFC2D3', '#FFB020', '#00C48C'];
     const top5 = sorted.slice(0, 5);
 
     const attention = [
@@ -754,7 +754,7 @@ export function FoodModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
           : { lab: L('Programada', 'Scheduled'), cls: 'bg-amber-bg text-amber-ink' };
     const typeMeta = (t: PromoType) => PROMO_TYPES.find((x) => x.type === t) ?? PROMO_TYPES[0];
     const promoTile = (t: PromoType) =>
-      t === 'percent' ? '#F3E2CE 0 8px,#ECD3B4 8px 16px' : t === 'combo' ? '#E3F5EA 0 8px,#D6E7D0 8px 16px' : t === 'bogo' ? '#FCE3DC 0 8px,#F6CEC2 8px 16px' : '#F3D9E2 0 8px,#E8BFCD 8px 16px';
+      t === 'percent' ? '#FAD9BD 0 8px,#FAD9BD 8px 16px' : t === 'combo' ? '#E6FAF3 0 8px,#CDE9C9 8px 16px' : t === 'bogo' ? '#FFEBDF 0 8px,#FED6C2 8px 16px' : '#FED2DF 0 8px,#FED2DF 8px 16px';
 
     return (
       <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-[1fr_320px]">

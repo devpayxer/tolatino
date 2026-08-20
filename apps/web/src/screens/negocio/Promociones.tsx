@@ -154,19 +154,19 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
   };
 
   const typeMeta = (k: string): { es: string; en: string; Icon: typeof IconTag; c: string; bg: string } => ({
-    percent: { es: '% descuento', en: '% off', Icon: IconTag, c: '#4338CA', bg: '#EFEBFF' },
-    amount: { es: '$ descuento', en: '$ off', Icon: IconDiscount2, c: '#4338CA', bg: '#EFEBFF' },
-    combo: { es: 'Combo', en: 'Combo', Icon: IconLayoutGrid, c: '#6D4DF6', bg: '#EFEBFF' },
-    bogo: { es: '2x1', en: 'BOGO', Icon: IconGift, c: '#D6336C', bg: '#FDE7EF' },
-    happy: { es: 'Happy hour', en: 'Happy hour', Icon: IconClock, c: '#9A6A12', bg: '#FCEFD6' },
-    shipping: { es: 'Envío gratis', en: 'Free shipping', Icon: IconTruck, c: '#1F8A4C', bg: '#E3F5EA' },
-  }[k] ?? { es: 'Promo', en: 'Promo', Icon: IconPercentage, c: '#4338CA', bg: '#EFEBFF' });
+    percent: { es: '% descuento', en: '% off', Icon: IconTag, c: '#4F46E5', bg: '#FFECF2' },
+    amount: { es: '$ descuento', en: '$ off', Icon: IconDiscount2, c: '#4F46E5', bg: '#FFECF2' },
+    combo: { es: 'Combo', en: 'Combo', Icon: IconLayoutGrid, c: '#C4144C', bg: '#FFECF2' },
+    bogo: { es: '2x1', en: 'BOGO', Icon: IconGift, c: '#E11D48', bg: '#FFECF2' },
+    happy: { es: 'Happy hour', en: 'Happy hour', Icon: IconClock, c: '#8A5A00', bg: '#FFF6E3' },
+    shipping: { es: 'Envío gratis', en: 'Free shipping', Icon: IconTruck, c: '#007A57', bg: '#E6FAF3' },
+  }[k] ?? { es: 'Promo', en: 'Promo', Icon: IconPercentage, c: '#4F46E5', bg: '#FFECF2' });
 
   const scopeMeta = (s: Scope) => ({
-    menu: { es: 'Menú', en: 'Menu', cls: 'bg-[#F2FBF5] text-green-dark' },
+    menu: { es: 'Menú', en: 'Menu', cls: 'bg-[#E6FAF3] text-green-dark' },
     service: { es: 'Servicios', en: 'Services', cls: 'bg-lilac-2 text-primary-dark' },
     rental: { es: 'Renta', en: 'Rental', cls: 'bg-pink-bg text-pink-dark' },
-    shop: { es: 'Tienda', en: 'Shop', cls: 'bg-[#FFF6EC] text-amber-ink' },
+    shop: { es: 'Tienda', en: 'Shop', cls: 'bg-[#FFF6E3] text-amber-ink' },
   }[s]);
 
   const statusPill = (s: Status) => s === 'active'
@@ -193,7 +193,7 @@ export function Promociones({ ctx }: { ctx: PanelCtx }) {
           <div className="mt-1.5 flex flex-wrap gap-x-1 gap-y-[18px].5">
             <span className="rounded-chip bg-lilac-2 px-2 py-0.5 text-[10.5px] font-bold text-ink-2">{valLabel}</span>
             {(() => { const sm = scopeMeta(c.scope); return <span className={`rounded-chip px-2 py-0.5 text-[10.5px] font-bold ${sm.cls}`}>{es ? sm.es : sm.en}</span>; })()}
-            {c.code && <span className="rounded-chip bg-[#F1F5FF] px-2 py-0.5 font-mono text-[10.5px] font-extrabold tracking-wider text-[#4338CA]">{c.code}</span>}
+            {c.code && <span className="rounded-chip bg-[#F6F4FF] px-2 py-0.5 font-mono text-[10.5px] font-extrabold tracking-wider text-[#4F46E5]">{c.code}</span>}
           </div>
           <div className="mt-2.5 flex items-center justify-between border-t border-hair pt-2.5">
             <span className="text-[10.5px] font-semibold text-muted">{c.schedule}</span>

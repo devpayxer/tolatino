@@ -54,7 +54,7 @@ type Svc = {
   extra?: Record<string, unknown>;
 };
 
-const FALLBACK_CAT: ServiceCategory = { id: '_', es: 'Servicios', en: 'Services', icon: 'sparkles', tile: '#EFE3D0 0 8px,#E2CFB2 8px 16px', visible: true };
+const FALLBACK_CAT: ServiceCategory = { id: '_', es: 'Servicios', en: 'Services', icon: 'sparkles', tile: '#FFECDC 0 8px,#FAD9BD 8px 16px', visible: true };
 const DAY_KEYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 const KNOWN_ATTRS = new Set(['en', 'priceType', 'dur', 'bookable', 'deposit', 'addons', 'tags', 'days', 'capacity', 'variants']);
@@ -350,7 +350,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [es]);
   const walkServices = services.filter((s) => s.bookable);
-  const providerColor = (id: string | null) => cfg.providers.find((p) => p.id === id)?.color ?? '#7B61FF';
+  const providerColor = (id: string | null) => cfg.providers.find((p) => p.id === id)?.color ?? '#FF2D6F';
   const upsertAddon = (a: ServiceAddon) => {
     const exists = cfg.addons.some((x) => x.id === a.id);
     saveCfg({ ...cfg, addons: exists ? cfg.addons.map((x) => (x.id === a.id ? a : x)) : [...cfg.addons, a] });
@@ -705,7 +705,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
                 ];
                 return (
                   <div className="flex flex-col gap-4">
-                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#A7E3C0] bg-green-bg' : 'border-[#FDE68A] bg-amber-bg'}`}>
+                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#C1EBD6] bg-green-bg' : 'border-[#F4DBBA] bg-amber-bg'}`}>
                       <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
                       <div className="min-w-0">
                         <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
@@ -1044,10 +1044,10 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
   const depositsHeld = allBk.filter((b) => b.status !== 'cancelled').reduce((n, b) => n + (b.deposit ?? 0), 0);
 
   const kpis: { Icon: LucideIcon; c: string; bg: string; label: string; value: string }[] = [
-    { Icon: CalendarCheck, c: '#1F8A4C', bg: '#E3F5EA', label: L('Hoy', 'Today'), value: String(todayCount) },
-    { Icon: MessageSquare, c: '#9A6A12', bg: '#FCEFD6', label: L('Por confirmar', 'Pending'), value: String(pending) },
-    { Icon: CalendarDays, c: '#6D4DF6', bg: '#EFEBFF', label: L('Próximas', 'Upcoming'), value: String(upcoming) },
-    { Icon: DollarSign, c: '#D6336C', bg: '#FDE7EF', label: L('Cobrado en línea', 'Paid online'), value: `$${depositsHeld}` },
+    { Icon: CalendarCheck, c: '#007A57', bg: '#E6FAF3', label: L('Hoy', 'Today'), value: String(todayCount) },
+    { Icon: MessageSquare, c: '#8A5A00', bg: '#FFF6E3', label: L('Por confirmar', 'Pending'), value: String(pending) },
+    { Icon: CalendarDays, c: '#C4144C', bg: '#FFECF2', label: L('Próximas', 'Upcoming'), value: String(upcoming) },
+    { Icon: DollarSign, c: '#E11D48', bg: '#FFECF2', label: L('Cobrado en línea', 'Paid online'), value: `$${depositsHeld}` },
   ];
   const bkFilterChip = (on: boolean) => `tap-y flex-none cursor-pointer rounded-lg px-2.5 py-1.5 text-[10.5px] font-extrabold ${on ? 'bg-primary text-white' : 'bg-lilac-2 text-muted-2'}`;
 
@@ -1186,7 +1186,7 @@ export function ServicesModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       {mode === 'services' ? (svcSub === 'catalog' ? catalog : svcSub === 'cats' ? categoriesTab : svcSub === 'addons' ? addonsTab : prosTab) : bookings}
 
       {!isPremium && (
-        <div className="mt-4 flex flex-wrap items-center gap-3.5 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#1E1B2E,#3A2E6E)' }}>
+        <div className="mt-4 flex flex-wrap items-center gap-3.5 rounded-card-sm p-4 text-white shadow-band" style={{ background: 'linear-gradient(140deg,#16112E,#241C46)' }}>
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-btn bg-[rgba(244,183,64,.2)] text-amber"><Sparkles size={18} stroke={2.2} /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-[13.5px] font-extrabold">{L('Recordatorios SMS automáticos', 'Automatic SMS reminders')}</span>

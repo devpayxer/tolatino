@@ -134,9 +134,9 @@ export function PaymentsModule({ ctx }: { ctx: PanelCtx }) {
   return (
     <div className="mx-auto max-w-[640px]">
       <div className="grid grid-cols-3 gap-3">
-        {kpi(DollarSign, '#1F8A4C', '#E3F5EA', L('Ingresos', 'Revenue'), money(sum.revenue))}
-        {kpi(ShoppingBag, '#6D4DF6', '#F1EFFA', L('Pedidos', 'Orders'), String(sum.orders))}
-        {kpi(Receipt, '#B5791A', '#FCEFD6', L('Ticket prom.', 'Avg ticket'), money(avg))}
+        {kpi(DollarSign, '#007A57', '#E6FAF3', L('Ingresos', 'Revenue'), money(sum.revenue))}
+        {kpi(ShoppingBag, '#C4144C', '#F1EEFA', L('Pedidos', 'Orders'), String(sum.orders))}
+        {kpi(Receipt, '#8A5A00', '#FFF6E3', L('Ticket prom.', 'Avg ticket'), money(avg))}
       </div>
       <div className="mt-3 text-[11px] font-semibold text-muted">
         {L('Ingresos de pedidos completados en To’Latino.', 'Revenue from completed To’Latino orders.')}

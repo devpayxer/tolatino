@@ -170,7 +170,7 @@ export function PostMenu({ post }: { post: Post }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={4}
-          className="mt-3 w-full resize-none rounded-field border-[1.5px] border-[#ECE9F6] bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none focus:border-primary"
+          className="mt-3 w-full resize-none rounded-field border-[1.5px] border-[#F1EEFA] bg-app px-3.5 py-3 text-[13.5px] font-medium text-ink outline-none focus:border-primary"
         />
         {err && <div className="mt-2 text-[12px] font-semibold text-pink-dark">{err}</div>}
         <PrimaryBtn className="mt-4" disabled={busy || !text.trim()} onClick={saveEdit}>
@@ -235,7 +235,7 @@ export function PostMenu({ post }: { post: Post }) {
                   key={en}
                   onClick={() => setReason(es)}
                   className={`cursor-pointer rounded-field border-[1.5px] px-3.5 py-2.5 text-left text-[13px] font-bold ${
-                    reason === es ? 'border-primary bg-[#FAF9FE] text-ink' : 'border-line text-ink-soft'
+                    reason === es ? 'border-primary bg-[#FCFBFF] text-ink' : 'border-line text-ink-soft'
                   }`}
                 >
                   {L(es, en)}

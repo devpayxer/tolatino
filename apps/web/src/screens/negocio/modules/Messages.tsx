@@ -19,9 +19,9 @@ type Msg = { id: string; fromOwner: boolean; body: string; at: string };
 
 // Demo inbox (not signed in) — mirrors the old fixture, now interactive.
 const DEMO_CONVOS: Convo[] = [
-  { id: 'd1', name: 'Sofía R.', initials: 'SR', color: '#7B61FF', last: '¿Hacen catering para 50?', unread: 2, lastAt: '2024-01-01T10:00:00Z' },
-  { id: 'd2', name: 'Juan M.', initials: 'JM', color: '#1F9D57', last: '¿Tienen opción vegana?', unread: 0, lastAt: '2024-01-01T09:00:00Z' },
-  { id: 'd3', name: 'Ana L.', initials: 'AL', color: '#E8954A', last: 'Gracias por el pedido 🙏', unread: 0, lastAt: '2024-01-01T08:00:00Z' },
+  { id: 'd1', name: 'Sofía R.', initials: 'SR', color: '#FF2D6F', last: '¿Hacen catering para 50?', unread: 2, lastAt: '2024-01-01T10:00:00Z' },
+  { id: 'd2', name: 'Juan M.', initials: 'JM', color: '#00A878', last: '¿Tienen opción vegana?', unread: 0, lastAt: '2024-01-01T09:00:00Z' },
+  { id: 'd3', name: 'Ana L.', initials: 'AL', color: '#C05702', last: 'Gracias por el pedido 🙏', unread: 0, lastAt: '2024-01-01T08:00:00Z' },
 ];
 const DEMO_MSGS: Record<string, Msg[]> = {
   d1: [
@@ -58,7 +58,7 @@ export function MessagesModule({ ctx }: { ctx: PanelCtx }) {
       .order('last_at', { ascending: false });
     setConvos(((data as Record<string, unknown>[]) ?? []).map((r) => ({
       id: String(r.id), name: String(r.customer_name), initials: String(r.customer_initials ?? ''),
-      color: String(r.customer_color ?? '#7B61FF'), last: '', unread: Number(r.unread ?? 0), lastAt: String(r.last_at),
+      color: String(r.customer_color ?? '#FF2D6F'), last: '', unread: Number(r.unread ?? 0), lastAt: String(r.last_at),
     })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real?.id, persistable, admin.demo]);

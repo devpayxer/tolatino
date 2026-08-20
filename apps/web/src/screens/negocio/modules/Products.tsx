@@ -45,7 +45,7 @@ import {
 const cardCls = 'rounded-card-sm border border-line bg-white ';
 const stripe = (stops: string) => `repeating-linear-gradient(135deg,${stops})`;
 
-const FALLBACK_CAT: ProductCategory = { id: 'pantry', es: 'Productos', en: 'Products', icon: 'package', tile: '#F3D9C8 0 8px,#E8C3AC 8px 16px', visible: true };
+const FALLBACK_CAT: ProductCategory = { id: 'pantry', es: 'Productos', en: 'Products', icon: 'package', tile: '#FFEBDF 0 8px,#FED6C2 8px 16px', visible: true };
 
 type Prod = {
   id: number; dbId?: string; name: string; cat: string;
@@ -673,7 +673,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                 ];
                 return (
                   <div className="flex flex-col gap-4">
-                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#A7E3C0] bg-green-bg' : 'border-[#FDE68A] bg-amber-bg'}`}>
+                    <div className={`flex items-center gap-3 rounded-btn-lg border p-3.5 ${draftReady ? 'border-[#C1EBD6] bg-green-bg' : 'border-[#F4DBBA] bg-amber-bg'}`}>
                       <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-white text-[15px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? '✓' : '⚠'}</span>
                       <div className="min-w-0">
                         <div className={`text-[12px] font-extrabold ${draftReady ? 'text-green-dark' : 'text-amber-ink'}`}>{draftReady ? (editing ? L('Listo para guardar', 'Ready to save') : L('Listo para publicar', 'Ready to publish')) : L('Faltan datos', 'A few essentials missing')}</div>
@@ -782,7 +782,7 @@ export function ProductsModule({ ctx }: { ctx: PanelCtx; tab: TabKey }) {
                       <span className="flex min-w-0 items-center gap-1.5"><span className="truncate text-[13.5px] font-extrabold text-ink">{p.name}</span><Pencil size={11} stroke={2.4} className="flex-none text-muted-faint" /></span>
                       <span className="flex flex-none items-center gap-1.5">
                         {p.compareAt && p.compareAt > p.price && <span className="text-[11px] font-bold text-muted line-through">{money(p.compareAt)}</span>}
-                        <span className={`whitespace-nowrap text-[13.5px] font-extrabold ${p.compareAt && p.compareAt > p.price ? 'text-[#E0568F]' : 'text-ink'}`}>{money(p.price)}</span>
+                        <span className={`whitespace-nowrap text-[13.5px] font-extrabold ${p.compareAt && p.compareAt > p.price ? 'text-[#C54C67]' : 'text-ink'}`}>{money(p.price)}</span>
                       </span>
                     </span>
                     <span className="mt-0.5 block text-[10.5px] font-semibold text-muted-2">{catLabel(catOf(p.cat))}{p.sku ? ` · ${p.sku}` : ''}</span>

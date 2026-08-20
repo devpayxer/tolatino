@@ -612,7 +612,7 @@ export function EventosScreen() {
         style={{
           background: fe.cover
             ? `linear-gradient(150deg,rgba(103,67,226,.84),rgba(130,104,255,.68)), center/cover url(${fe.cover})`
-            : 'linear-gradient(150deg,#6743E2,#8268FF)',
+            : 'linear-gradient(150deg,#A80F40,#FF7A9E)',
         }}
         onClick={() => openDetail(fe)}
       >
@@ -738,7 +738,7 @@ export function EventosScreen() {
                 </span>
                 <span
                   className="absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10.5px] font-extrabold"
-                  style={{ background: e.free ? '#E3F5EA' : '#FCEFD6', color: e.free ? '#1F8A4C' : '#9A6A12' }}
+                  style={{ background: e.free ? '#E6FAF3' : '#FFF6E3', color: e.free ? '#007A57' : '#8A5A00' }}
                 >
                   {e.free ? L('Gratis', 'Free') : e.price}
                 </span>
