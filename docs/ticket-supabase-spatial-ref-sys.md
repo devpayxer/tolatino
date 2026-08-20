@@ -50,7 +50,17 @@ nombre.
   **APLICADA el 2026-08-06 en PRUEBAS y en PRODUCCIÓN.** Verificado en las dos:
   0 funciones sin `extensions`, `verify-permisos` limpio, y la búsqueda geo
   respondiendo (en pruebas, 5 negocios con distancias correctas).
-- [ ] **2. Pedirles el traslado SOLO en PRUEBAS** (`zpkaxojonufdwgahiqjh`).
+- [x] **1b. Guardián `scripts/verify-geo.mjs`** — comprueba las 12 funciones
+  geo que un usuario toca de verdad, en cualquiera de los dos proyectos.
+  Probado al revés en PRUEBAS (rompiendo a propósito el `search_path` de
+  `search_businesses`): cazó el fallo y lo diagnosticó solo —
+  *«type "geography" does not exist ← PostGIS movido sin extensions en el
+  camino»*. Foto de referencia tomada en las dos bases, ambas limpias.
+  **Correrlo justo después de que ellos toquen cada proyecto.**
+- [x] **2. Mensaje enviado a soporte** (2026-08-16) pidiendo el traslado SOLO
+  en pruebas primero.
+- [ ] **2b. Esperando que Supabase lo ejecute en PRUEBAS**
+  (`zpkaxojonufdwgahiqjh`).
 - [ ] **3. Verificar allí**: `search_businesses`, `business_by_slug` con
   coordenada, `delivery_range_check`, el mapa de la ficha y los guardianes.
 - [ ] **4. Solo entonces, pedirlo en PRODUCCIÓN** (`vurqsebgsacickxsxfeh`).
