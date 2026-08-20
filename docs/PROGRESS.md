@@ -3,7 +3,98 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-08-06.
+> Last updated: 2026-08-20.
+
+## EN CURSO — migración al «Sistema To'Latino» (handoff 2026-08-20)
+
+El fundador trajo un sistema de diseño NUEVO hecho en Claude Design
+(`ToLatino_Superapp_Design.zip`: `DESIGN_SYSTEM.md` + `tokens.css` + 9 láminas
+`.dc.html` + 11 capturas). Objetivo suyo: **que la app se vea más juvenil**, sin
+tocar la programación.
+
+**Qué se midió antes de aceptar** (por si alguien lo pregunta otra vez):
+6.700 clases con token nombrado en 90 archivos → un cambio de tokens mueve la
+app entera. Pero quedan **965 hex crudos** en componentes, **278 emoji/símbolos**
+(el sistema nuevo los prohíbe) y **tres familias tipográficas** donde había una:
+eso NO lo arregla un token.
+
+**Orden acordado** (el del propio README del handoff), un paso = un commit
+verificable en `pruebas`:
+
+| # | Paso | Estado |
+|---|---|---|
+| 1 | **Tokens + tipografías** | ✅ hecho (2026-08-20) |
+| 2 | Cazar los 965 hex crudos + guardián anti-hex | pendiente |
+| 3 | Primitivas (`ui.tsx`): botones, chips, tarjeta, vacío, skeleton | pendiente |
+| 4 | Chrome: header, barra inferior glass, footer, cajón de módulos | pendiente |
+| 5 | Iconos (set de 28) + retirar los 278 emoji | pendiente |
+| 6 | Pantallas por módulo: Negocios → Comunidad → Eventos → paneles | pendiente |
+| 7 | Derivadas sin lámina: pedidos, tienda, renta, checkout, admin | pendiente |
+
+**TRES DECISIONES DEL FUNDADOR SIGUEN ABIERTAS** — bloquean el paso 3:
+1. **Lienzo:** ¿`paper` #F6F4FF del handoff, o su `#FAFAFA` aprobado el 08-06?
+   Ahora mismo manda el suyo; el del handoff está declarado al lado y cambiarlo
+   es mover UNA línea.
+2. **Tarjeta de negocio:** la lámina 09–12 NO es una especificación, es un
+   tablero de decisión con **diez** anatomías y la frase «dime el número y lo
+   aplico». Su recomendación: **4a** base · **4b** servicios · **4h** sin foto.
+3. **Barra inferior:** ¿la del handoff (*Muro · Barrios · ⊕ · Alertas · Más*) o
+   la nuestra (*Comunidad · Negocios · ＋ · Eventos · Alertas*, que además está
+   escrita en `CLAUDE.md`)?
+
+**Lo que el handoff NO cubre**, y habrá que derivar de las primitivas en el paso
+7: comida y pedidos (Cocina, Menú Builder), tienda/productos, renta, boletos de
+eventos, checkout y el admin. Su propio «build order» las deja como trabajo
+futuro. Es ~40% de nuestras pantallas.
+
+**Nota de proceso:** esto rompe la §8 del skill (nunca rehacer una pantalla ya
+aprobada) **a propósito y por petición explícita del fundador**. No es un
+descuido; si una sesión futura ve una pantalla aprobada siendo rehecha, es por
+esto y solo dentro de esta migración.
+
+### Paso 1 — hecho: tokens + tipografías (2026-08-20)
+
+Un solo commit, reversible. Tocó `tailwind.config.ts`, `app/layout.tsx`,
+`app/globals.css`, `app/manifest.ts`, `CheckoutSheet.tsx` (apariencia de Stripe,
+que va con hex porque vive en un iframe suyo) y `charts.tsx`.
+
+- **Tipografía:** Plus Jakarta Sans → **Onest** (toda la interfaz, la hereda el
+  `body`) + **Bricolage Grotesque** (`font-display`: titulares y precios) +
+  **Space Mono** (`font-mono`: códigos, horas, antetítulos). Las dos últimas
+  todavía no las usa ninguna pantalla — eso es el paso 3.
+- **Acento:** el morado `#7B61FF` → rosa **`#FF2D6F`**. Ojo con el contraste:
+  ese rosa sobre blanco da 3.6, así que `primary-dark` (#C4144C, 5.9) es el que
+  vale para TEXTO — se usa 574 veces.
+- **Acentos por módulo declarados pero SIN cablear** (`mod.comunidad` … `mod.trabajos`).
+  El cambio conceptual del sistema es que el color es de la SECCIÓN, no del
+  botón; las primitivas lo recibirán por contexto en el paso 3.
+- **Tinta:** `#1E1B2E` → `#16112E`, y los 8 escalones de gris de la app
+  reinterpolados dentro de la familia violeta-gris del handoff (#16112E ·
+  #625B7D · #9A93B3) para que no convivan dos grises distintos.
+- **Divergencia deliberada:** el handoff trae `line: #EAE6F5`, que sobre nuestro
+  lienzo salta solo **17** puntos de luminancia y el guardián exige 22. Funciona
+  en SU maqueta porque allí las tarjetas llevan sombra, y el fundador las quitó
+  el 08-06. Se conserva el alfa que sí delimita, con la tinta nueva. Cuando el
+  paso 3 devuelva la sombra, se puede bajar a #EAE6F5.
+- **Sello «verificado»:** en el sistema es MORADO (#7C3AED), no el acento de
+  marca. Al reapuntar `primary` a rosa, todo lo que decía «verificado» salió
+  rosa. El token `verified` ya existe; cambiar esas clases es paso 3.
+
+**Dos guardianes nuevos en `verify-build.mjs`** (los tres probados al revés,
+revirtiendo el arreglo, y los tres muerden):
+1. **Tipografías.** Una fuente que no carga NO rompe nada: cae a `system-ui` y
+   la app sigue andando, solo se ve genérica. Se exige que el `<link>` pida las
+   tres (¡en la URL van con `+`, no con espacio — la primera versión falló por
+   eso), que el `body` aplique Onest y que no quede `Plus Jakarta Sans`.
+2. **Agujero del borde cerrado.** La comprobación del contorno de las tarjetas
+   solo sabía leer `rgba(...)`. El handoff trae el borde como HEX, así que en
+   cuanto alguien lo copiara tal cual la comprobación devolvía `null` y **se
+   saltaba en silencio** — el peor fallo en un guardián. Ahora lee las dos
+   formas y falla si no consigue leer el borde.
+
+Prueba visual: `tools/mobile-audit/sistema-paso1.js` (402px y 1320px, cuatro
+pantallas, comprueba con `document.fonts.check` que las familias están CARGADAS
+de verdad, no solo pedidas).
 
 ## El fondo, y por qué los recuadros ya no llevan sombra (2026-08-06)
 

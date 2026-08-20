@@ -22,11 +22,15 @@ body {
 
 body {
   margin: 0;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Onest = la tipografía de INTERFAZ del sistema (handoff 2026-08-20).
+     Bricolage Grotesque y Space Mono NO se heredan: se piden a mano con
+     `font-display` / `font-mono` donde el sistema las permite (titulares y
+     precios · códigos y antetítulos). */
+  font-family: 'Onest', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  background: #f4f2f9;
-  color: #1e1b2e;
+  background: #fafafa; /* = token `canvas` */
+  color: #16112e; /* = token `ink` */
 }
 
 button,

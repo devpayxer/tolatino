@@ -15,24 +15,27 @@ import { getStripe } from '@/lib/stripe';
 import { useLang } from '@/lib/i18n';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 
-// Stripe Elements appearance mapped to the To'Latino design tokens (primary #7B61FF,
-// ink #1E1B2E, pink danger, Plus Jakarta Sans, 12px radius).
+// Apariencia de Stripe Elements calcada de nuestros tokens. Va con hex porque
+// Stripe pinta los campos de tarjeta dentro de un iframe suyo, donde nuestro
+// CSS no llega — es la ÚNICA razón admitida para escribir hex aquí, y por eso
+// hay que actualizarla a mano cada vez que cambian los tokens.
+// Sistema To'Latino (2026-08-20): primary #FF2D6F · ink #16112E · Onest · r14.
 const appearance = {
   theme: 'stripe' as const,
   variables: {
-    colorPrimary: '#7B61FF',
-    colorText: '#1E1B2E',
-    colorTextSecondary: '#6B6880',
-    colorDanger: '#D6336C',
-    fontFamily: '"Plus Jakarta Sans", system-ui, -apple-system, sans-serif',
-    borderRadius: '12px',
+    colorPrimary: '#FF2D6F',
+    colorText: '#16112E',
+    colorTextSecondary: '#625B7D',
+    colorDanger: '#E11D48',
+    fontFamily: '"Onest", system-ui, -apple-system, sans-serif',
+    borderRadius: '14px',
     spacingUnit: '4px',
     fontSizeBase: '15px',
   },
   rules: {
-    '.Input': { borderColor: '#E4E0F0', boxShadow: 'none' },
-    '.Input:focus': { borderColor: '#7B61FF', boxShadow: '0 0 0 1px #7B61FF' },
-    '.Label': { fontWeight: '700', color: '#4A4763' },
+    '.Input': { borderColor: '#E4DFF2', boxShadow: 'none' },
+    '.Input:focus': { borderColor: '#FF2D6F', boxShadow: '0 0 0 1px #FF2D6F' },
+    '.Label': { fontWeight: '700', color: '#403A5A' },
   },
 };
 

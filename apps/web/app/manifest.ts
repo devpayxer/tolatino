@@ -20,7 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#FAFAFA', // = token `canvas`; la pantalla de arranque de
                                  // la PWA tiene que ser el fondo de la app, o se
                                  // ve un salto de gris a casi blanco al abrir.
-    theme_color: '#7B61FF',
+    theme_color: '#FF2D6F', // = token `primary` del sistema nuevo (2026-08-20)
     categories: ['shopping', 'food', 'lifestyle', 'social'],
     icons: [
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

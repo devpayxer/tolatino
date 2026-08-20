@@ -66,7 +66,7 @@ export function BigChart({ thisW, lastW, days, color }: { thisW: number[]; lastW
           fontSize={10}
           fill="#9A96AE"
           fontWeight={700}
-          fontFamily="'Plus Jakarta Sans'"
+          fontFamily="'Onest'"
           textAnchor={i === 0 ? 'start' : i === days.length - 1 ? 'end' : 'middle'}
         >
           {d}
@@ -107,10 +107,10 @@ export function Donut({ centerLabel, subLabel }: { centerLabel: string; subLabel
           />
         );
       })}
-      <text x={60} y={58} textAnchor="middle" fontSize={18} fontWeight={800} fill="#1E1B2E" fontFamily="'Plus Jakarta Sans'">
+      <text x={60} y={58} textAnchor="middle" fontSize={18} fontWeight={800} fill="#1E1B2E" fontFamily="'Onest'">
         {centerLabel}
       </text>
-      <text x={60} y={74} textAnchor="middle" fontSize={9} fontWeight={700} fill="#9A96AE" fontFamily="'Plus Jakarta Sans'">
+      <text x={60} y={74} textAnchor="middle" fontSize={9} fontWeight={700} fill="#9A96AE" fontFamily="'Onest'">
         {subLabel}
       </text>
     </svg>

@@ -1,36 +1,123 @@
 import type { Config } from 'tailwindcss';
 
-// To'Latino design tokens — from docs/design-system/HANDOFF.md → "Design Tokens".
-// Components must consume these named tokens; never raw hex in JSX.
+// To'Latino design tokens.
+//
+// ════════════════════════════════════════════════════════════════════════════
+// PASO 1 DE LA MIGRACIÓN AL «Sistema To'Latino» (handoff 2026-08-20).
+// ════════════════════════════════════════════════════════════════════════════
+// El fundador trajo un sistema de diseño nuevo hecho en Claude Design
+// (`design_handoff_tolatino/`: DESIGN_SYSTEM.md + tokens.css + 9 láminas). Su
+// orden de migración es: TOKENS → primitivas → chrome → iconos → pantallas.
+// Este archivo es el paso 1 entero.
+//
+// POR QUÉ ESTE PASO SOLO MUEVE ESTE ARCHIVO: se midieron 6.700 usos de clases
+// con token (`text-ink`, `bg-primary`, `border-line`…) en 90 archivos. Todos
+// son tokens NOMBRADOS, no hex — así que reapuntar los tokens aquí cambia la
+// app entera sin tocar una sola pantalla. Eso es lo que hace viable la
+// migración: el trabajo ya estaba hecho por haber prohibido el hex en JSX.
+//
+// LO QUE ESTE PASO **NO** ARREGLA, y se ve: quedan 965 hex crudos dentro de
+// componentes (80 × #7B61FF, 61 × #6D4DF6, 60 × #EFEBFF…) que un cambio de
+// token no alcanza — colores de avatar, iconos de aviso, degradados de la
+// portada, series de gráficas. Ésos son el PASO 2. Hasta entonces convive
+// morado viejo con rosa nuevo en algunos sitios; es esperado, no un fallo.
+//
+// TRES DECISIONES DEL FUNDADOR SIGUEN PENDIENTES y están marcadas abajo con
+// «DECISIÓN PENDIENTE»: el color del lienzo, la anatomía de la tarjeta de
+// negocio y los slots de la barra inferior.
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        primary: {
-          DEFAULT: '#7B61FF', // brand purple — CTAs, active states, accents
-          dark: '#6D4DF6', // hover / text on lilac
-          press: '#6743E2', // pressed / text on white-over-purple
-          soft: '#9B85FF', // lighter purple — logo/text on the dark admin sidebar
+        // ── Acentos POR MÓDULO (sistema nuevo) ──────────────────────────────
+        // El cambio conceptual más grande: el color ya no es del botón, es de
+        // la SECCIÓN. Un CTA en Comunidad es rosa; el mismo CTA en Negocios es
+        // naranja. Hoy nadie los consume todavía — se cablean en el paso 3,
+        // cuando las primitivas reciban el módulo por contexto. Se declaran ya
+        // para que las pantallas nuevas no inventen su propio color.
+        mod: {
+          comunidad: '#FF2D6F',
+          negocios: '#FF7A1A',
+          eventos: '#7C3AED',
+          transporte: '#0EA5E9',
+          bienes: '#00C48C',
+          autos: '#FFB020',
+          trabajos: '#4F46E5',
         },
+        // Superficies teñidas del sistema (fondos suaves de chips, tarjetas
+        // de estado, tiles). Máximo 1–2 por pantalla, dice el handoff.
+        tint: {
+          pink: '#FFECF2',
+          orange: '#FFF1E5',
+          purple: '#F3EEFF',
+          blue: '#E8F5FF',
+          green: '#E6FAF3',
+          indigo: '#EEEDFC',
+          lilac: '#F1EEFA',
+          white: '#FCFBFF',
+        },
+        // DECISIÓN PENDIENTE (fondo): el sistema nuevo pide `paper` #F6F4FF
+        // —blanco con tinte lila— como lienzo. El fundador aprobó #FAFAFA el
+        // 2026-08-06 tras cuatro rondas. Se deja el suyo puesto en `canvas` y
+        // se declara el del handoff aquí: cambiarlo es mover UNA línea.
+        paper: '#F6F4FF',
+        surface: '#FFFFFF',
+
+        // ── Acento principal ────────────────────────────────────────────────
+        // El sistema nuevo NO tiene un morado único: el botón principal es el
+        // degradado «Calor» (`bg-calor`, abajo) y el acento sale del módulo.
+        // Mientras las primitivas no sepan en qué módulo están (paso 3),
+        // `primary` apunta al color que encabeza la marca: el rosa del
+        // apóstrofo del logotipo y de la sombra del CTA.
+        primary: {
+          DEFAULT: '#FF2D6F', // rellenos y acentos
+          // Ojo: #FF2D6F sobre blanco da contraste 3.6 — vale para un relleno,
+          // NO para texto (`text-primary-dark` se usa 574 veces como texto de
+          // acento). Estos dos son las versiones que sí cumplen AA.
+          dark: '#C4144C', // 5.9 sobre blanco — texto de acento
+          press: '#A80F40', // pulsado
+          soft: '#FF7A9E', // acento sobre superficies oscuras
+        },
+        // ── Tintas ──────────────────────────────────────────────────────────
+        // El handoff trae 3 escalones (#16112E · #625B7D · #9A93B3); la app
+        // tiene 8 en uso. Los intermedios se interpolan DENTRO de esa familia
+        // (violeta-gris) para que todo el texto se lea como un solo sistema en
+        // vez de como dos grises distintos conviviendo.
         ink: {
-          DEFAULT: '#1E1B2E', // headlines, strong text, dark buttons
-          2: '#6E6A85', // secondary text
-          3: '#5A5570', // paragraphs
-          body: '#3A3650', // post body text
-          soft: '#4A4660', // mid-tone labels
+          DEFAULT: '#16112E', // titulares, texto fuerte, botones oscuros
+          2: '#625B7D', // texto secundario (valor del handoff)
+          3: '#4B4565', // párrafos
+          body: '#342F4E', // cuerpo de publicación
+          soft: '#403A5A', // etiquetas de tono medio
         },
         muted: {
-          DEFAULT: '#8A86A0', // metadata, placeholders
-          2: '#9A96AE',
-          faint: '#B7B3C6', // disabled, counters
-          faint2: '#B0ACC0',
+          DEFAULT: '#7E7798', // metadatos, marcadores de posición
+          2: '#9A93B3', // (valor del handoff: su `ink-3`)
+          faint: '#B3ADC7', // deshabilitado, contadores
+          faint2: '#ADA7C2',
         },
-        amber: { DEFAULT: '#F4B740', ink: '#9A6A12', bg: '#FCEFD6' }, // brand diamond, stars, price/soon badges
-        green: { DEFAULT: '#1F9D57', dark: '#1F8A4C', bg: '#E3F5EA', bg2: '#EAF6EF', ink: '#176B3A' }, // open, verified, success
-        pink: { DEFAULT: '#F0466E', dark: '#D6336C', bg: '#FDE7EF' }, // like, notif badge, logout
-        blue: { DEFAULT: '#2F6FED', bg: '#E5EFFB' }, // "Mi barrio", info links
-        lilac: { DEFAULT: '#EFEBFF', 2: '#F1EFFA', 3: '#F3F0FF', line: '#E7E3F4', ring: '#DCD4FA' }, // chips, avatars, soft bg
+        // ── Estado (tabla «Status» del handoff), con sus nombres propios ────
+        // Los alias viejos (green/amber/blue/pink/rose) siguen justo debajo
+        // porque los consumen ~500 clases, pero lo NUEVO se escribe con estos.
+        // `verified` importa especialmente: en el sistema el sello de
+        // verificado es MORADO, no el acento de marca. Al reapuntar `primary`
+        // a rosa, todo lo que decía «verificado» con el morado viejo salió
+        // rosa — se corrige en el paso 3 cambiando esas clases a `verified`.
+        success: { DEFAULT: '#00A878', bg: '#E6FAF3' },
+        warning: { DEFAULT: '#E08A00', bg: '#FFF6E3' },
+        error: { DEFAULT: '#E11D48', bg: '#FFECEF' },
+        info: { DEFAULT: '#0284C7', bg: '#E8F5FF' },
+        verified: { DEFAULT: '#7C3AED', bg: '#F3EEFF' },
+
+        amber: { DEFAULT: '#FFB020', ink: '#8A5A00', bg: '#FFF6E3' }, // estrellas, aviso, "pronto"
+        green: { DEFAULT: '#00A878', dark: '#00916A', bg: '#E6FAF3', bg2: '#EFFCF7', ink: '#007A57' }, // abierto, verificado, éxito
+        pink: { DEFAULT: '#FF2D6F', dark: '#C4144C', bg: '#FFECF2' }, // me gusta, insignia de avisos
+        blue: { DEFAULT: '#0284C7', bg: '#E8F5FF' }, // "Mi barrio", enlaces de información
+        // `lilac` es el neutro suave de la app (chips, avatares, pozos): 638
+        // usos. Se reapunta a los tintes NEUTROS del sistema, no a los de
+        // color — si no, la app se ahoga en rosa.
+        lilac: { DEFAULT: '#EEEDFC', 2: '#F1EEFA', 3: '#F3EEFF', line: '#EAE6F5', ring: '#E4DFF2' },
         // ⚠️ `app` NO es el fondo de la app, por mucho que lo diga el nombre.
         // Se midió (2026-08-06): de sus 165 usos, solo 7 eran el lienzo de la
         // página; 104 son el RELLENO de campos de texto y pozos DENTRO de
@@ -38,7 +125,7 @@ const config: Config = {
         // de horario, los formularios de publicar). Por eso «poner el fondo
         // blanco» no es tocar este token: hacerlo borra 104 campos para
         // arreglar 7 fondos. El lienzo vive en `canvas`, aquí abajo.
-        app: '#F4F2F9', // relleno de campos y pozos sobre blanco (nombre heredado)
+        app: '#F1EEFA', // relleno de campos y pozos sobre blanco (= `tint.lilac` del sistema)
         // EL FONDO de la app. Neutro, sin tinte de color (fundador, 2026-08-06,
         // tras probar gris lila, casi blanco, blanco puro y blanco cálido). Su
         // tinte es de apenas 5 puntos de luminancia, así que el peso de separar
@@ -48,7 +135,7 @@ const config: Config = {
         // desvanezcan.
         canvas: '#FAFAFA',
         dash: '#FAFAFA', // el panel comparte lienzo con la app (antes #E7E5EC)
-        teal: { DEFAULT: '#0E9384', bg: '#D6F3EF' }, // poll tag
+        teal: { DEFAULT: '#00C48C', bg: '#E6FAF3' }, // etiqueta de encuesta (→ acento de Bienes raíces)
         // ── Landing pública v3 (handoff "ToLatino Home", variante B, 2026-07-29) ──
         // Superficies oscuras e inmersivas que antes no existían en el sistema.
         night: {
@@ -58,7 +145,7 @@ const config: Config = {
         // Morados para leer SOBRE oscuro (los de `primary` no contrastan ahí).
         'primary-on-dark': '#A48CFF', // wordmark sobre fondo oscuro
         'primary-pale': '#C9B6FF',    // inicio del degradado del titular, iconos en oscuro
-        rose: { DEFAULT: '#D6336C', deep: '#B0357E', ink: '#A81E4D' }, // restaurantes, fecha, fin del degradado
+        rose: { DEFAULT: '#E11D48', deep: '#C4144C', ink: '#A80F40' }, // restaurantes, fecha, error
         page: '#FBFAFE',   // fondo de la landing (más claro que `app`)
         mint: '#7BE0A8',   // ticks y precios "Gratis" sobre oscuro
         sky: '#8FC5F5',    // icono bilingüe del hero
@@ -76,10 +163,10 @@ const config: Config = {
           line2: '#E9E5F5',     // borde de la pastilla ES/EN
           tint: '#F5F2FE',      // fondo al pasar el ratón sobre Entrar/Regístrate
         },
-        clay: { DEFAULT: '#C26A1A', bg: '#FCE9D6' }, // renta / eventos con boletos
-        ocean: { DEFAULT: '#2A6CB0', bg: '#E4EEFB' }, // idioma / "vende"
-        jade: '#0E9488',   // comunidad (fila 03)
-        slate: '#5B5570',  // avatares neutros del feed
+        clay: { DEFAULT: '#FF7A1A', bg: '#FFF1E5' }, // renta / boletos (→ acento de Negocios)
+        ocean: { DEFAULT: '#0284C7', bg: '#E8F5FF' }, // idioma / "vende"
+        jade: '#00C48C',   // comunidad (fila 03)
+        slate: '#625B7D',  // avatares neutros del feed
         // ── Alta de usuario (handoff "Onboarding & Auth Flow", 2026-08-02) ──
         auth: {
           panel: '#2A2440',   // degradado del panel de marca (inicio)
@@ -101,41 +188,90 @@ const config: Config = {
         //    trabajan Yelp (~.15) y Google Business (#DADCE0 ≈ .14).
         //  · `hair`  separa filas DENTRO de una superficie. Ahí no hay que
         //    delimitar nada, solo respirar: subirlo llenaría la app de rayas.
-        line: 'rgba(30,27,46,.13)', // contorno de tarjetas y superficies
-        hair: 'rgba(30,27,46,.08)', // divisores internos
-        'hair-strong': 'rgba(30,27,46,.12)',
+        //
+        // MIGRACIÓN — DIVERGENCIA DELIBERADA DEL HANDOFF, anotada para no
+        // «arreglarla» sin querer: el sistema nuevo trae `line: #EAE6F5`, que
+        // sobre nuestro lienzo salta solo 17 puntos de luminancia (el guardián
+        // exige 22). Funciona en SU maqueta porque allí las tarjetas SÍ llevan
+        // sombra (`shadow-card`, abajo) y el fundador las quitó aquí el
+        // 2026-08-06. Se conserva el alfa que sí delimita y se adopta la TINTA
+        // nueva (22,17,46). Cuando el paso 3 devuelva la sombra a las tarjetas,
+        // se puede bajar a #EAE6F5 — y el guardián lo permitirá entonces.
+        line: 'rgba(22,17,46,.13)', // contorno de tarjetas y superficies
+        hair: 'rgba(22,17,46,.08)', // divisores internos
+        'hair-strong': 'rgba(22,17,46,.12)',
+        // Valores literales del handoff, para lo que sí quepa usarlos ya.
+        'sys-line': '#EAE6F5',
+        'sys-line-strong': '#E4DFF2',
       },
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", 'system-ui', 'sans-serif'],
+        // Tres familias, tres papeles (regla dura del handoff):
+        //  · `font-sans`    Onest — TODA la interfaz: cuerpo, formularios,
+        //                   botones, etiquetas. Es la que hereda el `body`.
+        //  · `font-display` Bricolage Grotesque — SOLO titulares, precios
+        //                   grandes y cifras de héroe. 700–800, tracking −.03em.
+        //  · `font-mono`    Space Mono — SOLO metadatos: códigos, IDs, horas,
+        //                   antetítulos en versalitas. Es el acento «sci-fi».
+        // El handoff prohíbe explícitamente Inter / Roboto / Arial, así que la
+        // cadena de reserva va a `system-ui` y no a una de ésas.
+        sans: ["'Onest'", 'system-ui', 'sans-serif'],
+        display: ["'Bricolage Grotesque'", "'Onest'", 'system-ui', 'sans-serif'],
+        mono: ["'Space Mono'", 'ui-monospace', 'monospace'],
       },
       borderRadius: {
-        btn: '12px',
-        'btn-lg': '14px',
-        card: '20px',
+        // Escala del handoff: 12 / 18 / 26 / 999, entradas 14, tarjetas 20–22,
+        // planchas 34. Los nombres de la app se conservan (los consumen ~1.500
+        // clases) y se reapuntan a esa escala.
+        btn: '16px', // botón principal del sistema
+        'btn-lg': '18px',
+        card: '22px',
         'card-sm': '18px',
-        panel: '24px',
+        panel: '26px',
         tile: '14px',
-        field: '11px',
+        field: '14px', // entradas
+        plate: '34px', // planchas / hojas grandes
+        fab: '20px', // FAB 60px
+        icon: '16px', // botón de icono 48px
       },
       boxShadow: {
         // Los RECUADROS ya no llevan sombra (fundador, 2026-08-06): con el
         // tinte del lienzo y `border-line` se distinguen solos, y la app se ve
         // más limpia. `card` se conserva SOLO porque `card-lg` lo acompaña en el
         // realce al pasar el ratón; ningún recuadro lo usa en reposo.
-        card: '0 6px 20px rgba(60,50,110,.06)',
-        'card-lg': '0 8px 26px rgba(60,50,110,.07)', // solo `hover:` — realce en escritorio
+        // Valores del handoff (dos capas: un pelo de contacto + una difusa).
+        card: '0 1px 3px rgba(22,17,46,.04), 0 10px 24px -16px rgba(22,17,46,.2)',
+        'card-lg': '0 2px 5px rgba(22,17,46,.05), 0 16px 32px -18px rgba(22,17,46,.24)', // solo `hover:`
+        plate: '0 2px 4px rgba(22,17,46,.04), 0 24px 56px -28px rgba(22,17,46,.18)',
         // Lo que SÍ conserva sombra: los controles e insignias que flotan SOBRE
         // UNA FOTO (volver en el hero, flechas de galería, quitar imagen, la
         // fecha sobre la portada de un evento). Ahí la sombra no decora: es lo
         // que los hace legibles sobre una imagen cualquiera.
-        float: '0 6px 20px rgba(60,50,110,.06)',
-        cta: '0 14px 28px rgba(123,97,255,.4)',
-        'cta-sm': '0 6px 14px rgba(123,97,255,.3)',
-        modal: '0 30px 70px rgba(30,27,46,.35)',
-        sheet: '0 -20px 50px rgba(30,27,46,.3)',
-        pop: '0 20px 50px rgba(30,27,46,.22)',
-        band: '0 18px 44px rgba(95,67,214,.26)',
+        float: '0 6px 20px rgba(22,17,46,.10)',
+        // La sombra del CTA lleva el COLOR del acento, no gris — es lo que da
+        // el aire de app cara. Se tiñe al módulo cuando el paso 3 lo cablee.
+        cta: '0 10px 24px -8px rgba(255,45,111,.62)',
+        'cta-sm': '0 6px 14px -6px rgba(255,45,111,.55)',
+        modal: '0 30px 70px rgba(22,17,46,.35)',
+        sheet: '0 -20px 50px rgba(22,17,46,.3)',
+        pop: '0 20px 50px rgba(22,17,46,.22)',
+        band: '0 18px 44px rgba(255,122,26,.26)',
       },
+      backgroundImage: {
+        // Los dos degradados de marca. Solo héroe / splash / CTA — el handoff
+        // prohíbe usarlos como fondo de página.
+        calor: 'linear-gradient(112deg, #FF2D6F, #FF7A1A, #FFB020)', // marca
+        senal: 'linear-gradient(112deg, #7C3AED, #0EA5E9, #00C48C)', // sistema
+      },
+      letterSpacing: {
+        display: '-.03em',
+        'display-lg': '-.045em',
+        eyebrow: '.18em', // antetítulos en Space Mono, versalitas
+      },
+      keyframes: {
+        // Esqueletos de carga del sistema.
+        tlShine: { from: { backgroundPosition: '-200% 0' }, to: { backgroundPosition: '200% 0' } },
+      },
+      animation: { shine: 'tlShine 1.4s linear infinite' },
       screens: {
         // Handoff breakpoints: móvil ≤767, tablet 768–1023, escritorio ≥1024
         md: '768px',

@@ -343,14 +343,29 @@ try {
   // tono de los divisores (`hair`), las tarjetas se desvanecen y la app se ve
   // como un documento plano — es el fallo que este cambio podía dejar servido.
   // Se compone el borde SOBRE el lienzo y se exige un salto perceptible.
-  const alfaDe = (clase) => {
-    const m = css.match(new RegExp(`\\.${clase}\\{border-color:rgba\\(([\\d.,\\s]+)\\)`));
+  //
+  // AGUJERO CERRADO (2026-08-20, migración al sistema nuevo): la primera
+  // versión de esto SOLO sabía leer `rgba(...)`. El handoff nuevo trae el borde
+  // como HEX (`line: #EAE6F5`), así que en cuanto alguien lo copiara tal cual
+  // esta comprobación devolvía `null` y se saltaba **en silencio** — el peor
+  // fallo posible en un guardián: no avisa de que dejó de mirar. Ahora lee las
+  // dos formas, y si NO consigue leer el borde, lo dice como fallo.
+  const bordeDe = (clase) => {
+    const m = css.match(new RegExp(`\\.${clase}\\{border-color:([^;}]+)`));
     if (!m) return null;
-    const p = m[1].split(',').map((x) => parseFloat(x.trim()));
-    return p.length === 4 ? { rgb: p.slice(0, 3), a: p[3] } : null;
+    const v = m[1].trim().toLowerCase();
+    const rgba = v.match(/rgba?\(([\d.,\s/]+)\)/);
+    if (rgba) {
+      const p = rgba[1].split(/[,/]/).map((x) => parseFloat(x.trim()));
+      if (p.length >= 3) return { rgb: p.slice(0, 3), a: p.length >= 4 ? p[3] : 1 };
+    }
+    const rgb = rgbDe(v);
+    return rgb ? { rgb, a: 1 } : null;
   };
-  const linea = alfaDe('border-line');
-  if (lRgb && linea) {
+  const linea = bordeDe('border-line');
+  if (lRgb && !linea) {
+    colorFail.push('no se pudo leer `border-line` del CSS servido — la comprobación del contorno de las tarjetas se habría saltado sin avisar');
+  } else if (lRgb && linea) {
     // luminancia simple; el borde compuesto sobre el lienzo
     const lum = ([r, g, b]) => 0.299 * r + 0.587 * g + 0.114 * b;
     const compuesto = linea.rgb.map((c, i) => c * linea.a + lRgb[i] * (1 - linea.a));
@@ -365,6 +380,61 @@ try {
   colorMsg = `  Fondo: no se pudo comprobar (${e.message})`;
 }
 
+// ── Guardián: las TRES tipografías del sistema llegan de verdad ──────────────
+// De dónde sale: el paso 1 de la migración al «Sistema To'Latino» (2026-08-20)
+// cambia Plus Jakarta Sans por Onest (interfaz) + Bricolage Grotesque
+// (titulares y precios) + Space Mono (códigos y antetítulos).
+//
+// Por qué necesita guardián: una fuente que no carga NO rompe nada. El
+// navegador cae a `system-ui` y la app sigue funcionando — solo se ve distinta,
+// y en una captura de móvil pequeña ni se nota. Es exactamente la clase de
+// regresión que se cuela: basta con que alguien revierta el `<link>` del layout
+// o se equivoque en un nombre de familia. Se comprueba sobre lo SERVIDO.
+const fuenteFail = [];
+let fuenteMsg = '';
+try {
+  const html = htmlFiles.map((f) => readFileSync(f, 'utf8')).join('\n');
+  const css = walk(OUT).filter((f) => f.endsWith('.css')).map((f) => readFileSync(f, 'utf8')).join('\n');
+  const familias = [
+    ['Onest', 'la interfaz entera (cuerpo, botones, formularios)'],
+    ['Bricolage Grotesque', 'titulares y precios'],
+    ['Space Mono', 'códigos, horas y antetítulos'],
+  ];
+
+  // 1 · EL ENLACE. Es lo único que hace que las fuentes se DESCARGUEN, así que
+  //     es lo que se exige siempre. Ojo: en la URL van con `+` en vez de
+  //     espacio (`Bricolage+Grotesque`) — la primera versión de este guardián
+  //     buscaba el nombre con espacio y falló pidiendo algo que sí estaba.
+  const link = (html.match(/https:\/\/fonts\.googleapis\.com\/css2\?[^"']+/) ?? [''])[0].replace(/\+/g, ' ');
+  for (const [f, papel] of familias) {
+    if (!link.includes(f)) fuenteFail.push(`el \`<link>\` a Google Fonts no pide \`${f}\` (${papel}) — no se descarga`);
+  }
+  if (!link) fuenteFail.push('no hay `<link>` a Google Fonts en el HTML servido — ninguna familia del sistema se descarga');
+
+  // 2 · LA INTERFAZ. Onest es la que se hereda del `body`: si esa falta, la app
+  //     entera cae a system-ui y se ve genérica. Las otras dos se piden a mano
+  //     (`font-display`/`font-mono`) donde el sistema las permite.
+  if (!/font-family:\s*['"]?Onest/i.test(css) && !/font-family:\s*['"]?Onest/i.test(html)) {
+    fuenteFail.push('el `body` no aplica `Onest` — la interfaz cae a la tipografía del sistema operativo');
+  }
+
+  // 3 · NADA DE LA ANTERIOR. Un solo sitio sin migrar canta a kilómetros.
+  if ((html + css).includes('Plus Jakarta Sans')) {
+    fuenteFail.push('sigue servida `Plus Jakarta Sans` (la tipografía del sistema ANTERIOR) — quedó un sitio sin migrar');
+  }
+
+  // Informativo, NO fallo: cuántas familias han llegado ya al CSS emitido.
+  // Tailwind solo emite `font-display`/`font-mono` cuando alguna pantalla las
+  // usa, y eso ocurre en el paso 3 de la migración. Esta línea es el marcador
+  // para ver ese paso aterrizar.
+  const enCss = familias.filter(([f]) => css.includes(f)).map(([f]) => f);
+  if (!fuenteFail.length) {
+    fuenteMsg = `  Tipografía: las 3 familias enlazadas · en uso dentro del CSS: ${enCss.join(', ') || 'ninguna todavía'}`;
+  }
+} catch (e) {
+  fuenteMsg = `  Tipografía: no se pudo comprobar (${e.message})`;
+}
+
 // ── Reporte ─────────────────────────────────────────────────────────────────
 console.log(`\nverify-build · ${jsFiles.length} archivos JS, ${htmlFiles.length} HTML en ${OUT}`);
 console.log(envMsg);
@@ -373,6 +443,7 @@ console.log(kindsMsg);
 console.log(demoMsg);
 console.log(efectoMsg);
 console.log(colorMsg);
+console.log(fuenteMsg);
 for (const { nombre, ruta, faltan } of kindsFail) {
   console.error(`\n  ✖ ${faltan.length} tipo(s) que la base emite y ${nombre} NO sabe dibujar:`);
   console.error(`      ${faltan.join(', ')}`);
@@ -393,12 +464,21 @@ for (const c of colorFail) {
   console.error('        buscador y todos los formularios quedan invisibles.');
 }
 
+for (const f of fuenteFail) {
+  console.error(`\n  ✖ ${f}.`);
+  console.error('      → el sistema son TRES familias con papeles distintos: Onest (interfaz),');
+  console.error('        Bricolage Grotesque (titulares y precios), Space Mono (códigos). Se');
+  console.error('        piden en el `<link>` de apps/web/app/layout.tsx y se declaran en');
+  console.error('        tailwind.config.ts → fontFamily. Una que no carga NO rompe la app:');
+  console.error('        cae a system-ui y solo se ve distinta, por eso se comprueba aquí.');
+}
+
 for (const d of demoFail) {
   console.error(`\n  ✖ ${d.archivo}: useState arranca con \`${d.constante}\` (datos de ejemplo).`);
   console.error('      → el valor inicial debe ser vacío; que el cargador decida si toca demo.');
 }
 
-if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0 && colorFail.length === 0) {
+if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0 && colorFail.length === 0 && fuenteFail.length === 0) {
   console.log('\n✅ Sin datos fabricados, sin secretos y con la base correcta.\n');
   process.exit(0);
 }

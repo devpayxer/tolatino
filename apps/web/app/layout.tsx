@@ -51,7 +51,9 @@ export const viewport: Viewport = {
   // which blew fixed bottom-sheets past the screen edges. Since iOS 10, user
   // pinch-zoom still works — Safari ignores the cap for user gestures.
   maximumScale: 1,
-  themeColor: '#7B61FF',
+  // Color de la barra del navegador / de la app instalada. Sigue al acento de
+  // marca del sistema nuevo (el rosa del apóstrofo del logotipo).
+  themeColor: '#FF2D6F',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -60,8 +62,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Las TRES familias del «Sistema To'Latino» (handoff 2026-08-20), en
+            una sola petición: Onest para toda la interfaz, Bricolage Grotesque
+            para titulares y precios, Space Mono para códigos y antetítulos.
+            Sustituyen a Plus Jakarta Sans. `display=swap` evita el texto
+            invisible mientras cargan. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Onest:wght@300..800&family=Space+Mono:wght@400;700&display=swap"
           rel="stylesheet"
         />
       </head>
