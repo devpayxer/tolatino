@@ -1,5 +1,65 @@
 # Ticket para Supabase — `spatial_ref_sys` sin RLS y con escritura abierta
 
+## ✅ RESPONDIERON (2026-08-16) — y qué hacer con su respuesta
+
+John Pena, de soporte, confirma el diagnóstico y **se ofrece a mover PostGIS**
+del esquema `public` al esquema `extensions` con este SQL, previa autorización:
+
+```sql
+BEGIN;
+UPDATE pg_extension SET extrelocatable = true WHERE extname = 'postgis';
+ALTER EXTENSION postgis SET SCHEMA extensions;
+ALTER EXTENSION postgis UPDATE TO "3.3.7next";
+ALTER EXTENSION postgis UPDATE;
+UPDATE pg_extension SET extrelocatable = false WHERE extname = 'postgis';
+COMMIT;
+```
+
+**Su arreglo es correcto y el problema es real.** Comprobado en producción el
+2026-08-06: `anon` puede SELECT, **DELETE e INSERT** sobre
+`public.spatial_ref_sys` (8.500 filas), y la llave `anon` viaja en el paquete
+del navegador por diseño. Cualquiera puede vaciar esa tabla y tumbar toda la
+geolocalización.
+
+**PERO SI LO EJECUTAN HOY, LA APP SE ROMPE ENTERA.** Medido antes de responder:
+
+| | |
+|---|---|
+| Funciones nuestras que usan PostGIS | **89** |
+| Funciones con `search_path` fijado **sin** `extensions` | **226** |
+| Columnas `geography`/`geometry` | 8 |
+| Índices GIST | 6 |
+| Vistas que usan PostGIS | 2 |
+
+El cuerpo de una función `AS $$ … $$` se resuelve **cada vez que se ejecuta**,
+con su `search_path`. La migración `0147` los fijó todos a `public` (buen
+refuerzo entonces, y justo lo que ahora los vuelve frágiles): si PostGIS sale
+de `public`, `st_dwithin` deja de existir para esas 89 funciones y se caen
+«negocios cerca de ti», el mapa, el radio de entrega y la búsqueda por
+distancia.
+
+Lo que **no** se rompe, y por eso no hay que tocarlo: columnas, índices y
+vistas se enlazan por OID al crearse. Solo los cuerpos de función resuelven por
+nombre.
+
+### El orden correcto — no se puede alterar
+
+- [x] **1. Migración `0156`** — añade `extensions` al camino de todas nuestras
+  funciones. Hoy es inofensiva (PostGIS sigue en `public`, que va primero en el
+  camino); el día del traslado es lo único que evita la caída.
+  **APLICADA el 2026-08-06 en PRUEBAS y en PRODUCCIÓN.** Verificado en las dos:
+  0 funciones sin `extensions`, `verify-permisos` limpio, y la búsqueda geo
+  respondiendo (en pruebas, 5 negocios con distancias correctas).
+- [ ] **2. Pedirles el traslado SOLO en PRUEBAS** (`zpkaxojonufdwgahiqjh`).
+- [ ] **3. Verificar allí**: `search_businesses`, `business_by_slug` con
+  coordenada, `delivery_range_check`, el mapa de la ficha y los guardianes.
+- [ ] **4. Solo entonces, pedirlo en PRODUCCIÓN** (`vurqsebgsacickxsxfeh`).
+- [ ] **5. Repetir el ejercicio con `pg_trgm`, `unaccent` y `pg_net`**, que
+  siguen en `public`. Ojo con `pg_trgm`: la búsqueda usa el operador `<%` y el
+  ajuste `pg_trgm.word_similarity_threshold`; hay que comprobarlo aparte.
+
+---
+
 > **Cómo enviarlo:** entra a
 > [supabase.com/dashboard/support/new](https://supabase.com/dashboard/support/new)
 > y rellena así:
