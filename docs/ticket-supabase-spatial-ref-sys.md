@@ -87,7 +87,16 @@ nombre.
   añade `restaurar_srs()`, que repone lo que falte.
   **Probada con dientes en PRUEBAS:** se borraron 5 sistemas de coordenadas,
   se restauraron los 5, y `verify-geo` salió limpio después.
-  Aplicada en PRUEBAS; **falta aplicarla en PRODUCCIÓN**.
+  **Aplicada en las DOS bases el 2026-08-27**, con autorización expresa del
+  fundador («haz la migración»). Verificado en producción: respaldo con 8.500
+  filas incluida la 4326, RLS activo, `anon` y `authenticated` sin ver la tabla
+  ni poder llamar a la función, y `restaurar_srs()` con `security definer` y
+  `search_path = public, extensions, pg_temp`.
+  **Ensayo del rescate hecho contra los datos reales de producción**, dentro de
+  un bloque que termina en excepción (y una excepción deshace la transacción
+  entera, así que no queda rastro): 8.500 → borradas 5 → repuestas 5 → 8.500,
+  `4326` intacto. Comprobado después que las 5 seguían ahí y `verify-geo` salió
+  limpio en producción. En producción no se borra nada «a ver qué pasa».
 - [ ] **3. Verificar allí**: `search_businesses`, `business_by_slug` con
   coordenada, `delivery_range_check`, el mapa de la ficha y los guardianes.
 - [ ] **4. Solo entonces, pedirlo en PRODUCCIÓN** (`vurqsebgsacickxsxfeh`).
