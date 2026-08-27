@@ -60,7 +60,34 @@ nombre.
 - [x] **2. Mensaje enviado a soporte** (2026-08-16) pidiendo el traslado SOLO
   en pruebas primero.
 - [ ] **2b. Esperando que Supabase lo ejecute en PRUEBAS**
-  (`zpkaxojonufdwgahiqjh`).
+  (`zpkaxojonufdwgahiqjh`). ← **AQUÍ SEGUIMOS.**
+- [x] **2c. Su aviso automático volvió a señalarlo** (23-08-2026, correo
+  «These issues require your immediate attention», regla `rls_disabled_in_public`,
+  los DOS proyectos). Es el mismo problema del ticket, no uno nuevo.
+  **Y se comprobó que ni nosotros ni el botón «Resolve issue» pueden
+  arreglarlo** — esto es lo que conviene mandarles para desatascar el ticket:
+
+  ```
+  owner de public.spatial_ref_sys ... supabase_admin   (nosotros: postgres)
+  grantor de los permisos de anon .. supabase_admin, is_grantable = NO
+
+  REVOKE insert,update,delete ON public.spatial_ref_sys FROM anon;
+    → no da error y NO cambia nada (solo quien concede puede revocar)
+
+  ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;
+    → ERROR 42501: must be owner of table spatial_ref_sys
+  ```
+
+  O sea: su propio aviso pide una acción que su propio modelo de permisos nos
+  prohíbe. El arreglo tiene que salir de ellos, y ya nos dijeron cuál es.
+- [x] **2d. Red de seguridad mientras tanto — migración `0157`.** No cierra el
+  agujero (no podemos), pero convierte «nos vaciaron la tabla y la geo está
+  caída» en un `select restaurar_srs();`. Copia las 8.500 filas a
+  `public.srs_respaldo` (tabla nuestra, con RLS y sin permisos para nadie) y
+  añade `restaurar_srs()`, que repone lo que falte.
+  **Probada con dientes en PRUEBAS:** se borraron 5 sistemas de coordenadas,
+  se restauraron los 5, y `verify-geo` salió limpio después.
+  Aplicada en PRUEBAS; **falta aplicarla en PRODUCCIÓN**.
 - [ ] **3. Verificar allí**: `search_businesses`, `business_by_slug` con
   coordenada, `delivery_range_check`, el mapa de la ficha y los guardianes.
 - [ ] **4. Solo entonces, pedirlo en PRODUCCIÓN** (`vurqsebgsacickxsxfeh`).
