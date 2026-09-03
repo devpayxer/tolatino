@@ -1,0 +1,110 @@
+# Mantener despierta la base de datos.
+#
+# ════════════════════════════════════════════════════════════════════════════
+# ESTO ES UN PARCHE TEMPORAL. NO SE LANZA SOBRE ESTO.
+# ════════════════════════════════════════════════════════════════════════════
+# DE DÓNDE SALE: el 2026-09-03 Supabase pausó `tolatino-prod`. El plan gratuito
+# pausa un proyecto tras 7 días sin actividad, y los síntomas engañan mucho:
+#   · la API de gestión responde «Connection terminated due to connection timeout»
+#   · el host REST del proyecto deja de aceptar conexiones (HTTP 000)
+# Parece una caída del servicio. Es una pausa.
+#
+# POR QUÉ ES GRAVE SIN ESTO: en las primeras semanas el tráfico va a ráfagas.
+# Siete días de calma y el sitio se apaga solo — justo el día que un dueño de
+# negocio abre el enlace que le diste. Esa primera impresión no se recupera.
+#
+# POR QUÉ ESTO **NO** BASTA PARA LANZAR: si este trabajo falla una semana (una
+# clave rotada, GitHub desactivando los cron por inactividad del repo, un fallo
+# de red repetido), el sitio se apaga y no se entera nadie hasta que alguien
+# entra y no ve nada. El arreglo de verdad es el plan **Pro en producción**
+# ($25/mes), que además trae copias diarias con recuperación a un punto en el
+# tiempo. Anotado como bloqueante en `docs/LAUNCH-CHECKLIST.md` §4.
+# Cuando Pro esté activo en producción, este archivo se puede borrar.
+#
+# CÓMO DESPIERTA: no basta con tocar la puerta. Un 401 del portal puede no
+# llegar a la base. Se llama a una función REAL (`nearest_city`) que consulta
+# Postgres de verdad, y se exige que devuelva datos.
+#
+# NO NECESITA SECRETOS: las llaves `anon` son públicas por diseño (viajan en el
+# paquete del navegador) y ya están versionadas en `apps/web/.env.*`. Se leen de
+# ahí, así que no hay nada que configurar ni nada que se pueda desincronizar.
+
+name: Mantener despierta la base
+
+on:
+  schedule:
+    # Diario. La ventana de pausa es de 7 días, así que sobra margen: puede
+    # fallar seis días seguidos y aún así llegar a tiempo.
+    # 09:10 UTC ≈ 04:10 en Houston — fuera de horas, y a un minuto raro a
+    # propósito (los cron a en punto compiten con medio GitHub y se retrasan).
+    - cron: '10 9 * * *'
+  workflow_dispatch: # botón «Run workflow», para despertarla a mano
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mantener-despierta
+  cancel-in-progress: false
+
+jobs:
+  despertar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Llamar a las dos bases
+        run: |
+          set -uo pipefail
+
+          # Lee una variable de un .env versionado.
+          leer() { grep -m1 "^$2=" "$1" | cut -d= -f2- | tr -d '\r'; }
+
+          fallos=0
+
+          tocar() {
+            local etiqueta="$1" archivo="$2"
+            local url key http cuerpo
+            url=$(leer "$archivo" NEXT_PUBLIC_SUPABASE_URL)
+            key=$(leer "$archivo" NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+            if [ -z "$url" ] || [ -z "$key" ]; then
+              echo "::error::$etiqueta — no se pudieron leer la URL o la llave de $archivo."
+              fallos=$((fallos+1)); return
+            fi
+
+            # `nearest_city` consulta Postgres de verdad (PostGIS + la tabla de
+            # ciudades). Si responde con datos, la base está despierta de veras.
+            cuerpo=$(curl -s --max-time 45 -w $'\n%{http_code}' \
+              -X POST "$url/rest/v1/rpc/nearest_city" \
+              -H "apikey: $key" -H "authorization: Bearer $key" \
+              -H 'content-type: application/json' \
+              --data-binary '{"user_lat":40.9584,"user_lng":-75.9746}' || true)
+
+            http=$(printf '%s' "$cuerpo" | tail -n1)
+            cuerpo=$(printf '%s' "$cuerpo" | sed '$d')
+
+            if [ "$http" != "200" ]; then
+              echo "::error::$etiqueta — la base NO respondió (HTTP ${http:-sin respuesta}) en $url"
+              echo "::error::Un 000 o un tiempo de espera agotado casi siempre significa que el proyecto está PAUSADO."
+              echo "::error::Se despausa desde supabase.com/dashboard — busca el proyecto y pulsa «Restore»."
+              fallos=$((fallos+1)); return
+            fi
+
+            # Un 200 con cuerpo vacío significaría que responde el portal pero no
+            # la consulta. Se exige contenido.
+            case "$cuerpo" in
+              *label*) echo "✅ $etiqueta despierta — $cuerpo" ;;
+              *) echo "::error::$etiqueta — respondió 200 pero sin datos: $cuerpo"; fallos=$((fallos+1)) ;;
+            esac
+          }
+
+          tocar "PRODUCCIÓN (tolatino-prod)" apps/web/.env.production
+          tocar "PRUEBAS (tolatino)"         apps/web/.env.staging
+
+          if [ "$fallos" -gt 0 ]; then
+            echo "::error::$fallos base(s) no respondieron. GitHub te manda un correo por este fallo — no lo ignores: si es producción, el sitio está caído."
+            exit 1
+          fi
+          echo "Las dos bases responden."
