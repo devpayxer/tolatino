@@ -59,8 +59,9 @@ nombre.
   **Correrlo justo después de que ellos toquen cada proyecto.**
 - [x] **2. Mensaje enviado a soporte** (2026-08-16) pidiendo el traslado SOLO
   en pruebas primero.
-- [ ] **2b. Esperando que Supabase lo ejecute en PRUEBAS**
-  (`zpkaxojonufdwgahiqjh`). ← **AQUÍ SEGUIMOS.**
+- [x] **2b. HECHO EN PRUEBAS (2026-08-31).** John Pena: *«I have moved your
+  PostGIS extension to extensions schema»*. Confirmado: PostGIS 3.3.7 vive
+  ahora en `extensions` en `zpkaxojonufdwgahiqjh`.
 - [x] **2c. Su aviso automático volvió a señalarlo** (23-08-2026, correo
   «These issues require your immediate attention», regla `rls_disabled_in_public`,
   los DOS proyectos). Es el mismo problema del ticket, no uno nuevo.
@@ -97,9 +98,30 @@ nombre.
   entera, así que no queda rastro): 8.500 → borradas 5 → repuestas 5 → 8.500,
   `4326` intacto. Comprobado después que las 5 seguían ahí y `verify-geo` salió
   limpio en producción. En producción no se borra nada «a ver qué pasa».
-- [ ] **3. Verificar allí**: `search_businesses`, `business_by_slug` con
-  coordenada, `delivery_range_check`, el mapa de la ficha y los guardianes.
-- [ ] **4. Solo entonces, pedirlo en PRODUCCIÓN** (`vurqsebgsacickxsxfeh`).
+- [x] **3. VERIFICADO EN PRUEBAS (2026-09-03) — la preparación funcionó.**
+  `verify-geo` en verde entero, las 12 comprobaciones:
+  `search_businesses` con 5 negocios y **distancia calculada (0.24 mi)**,
+  `business_by_slug` devolviendo **coordenada real** (40.9648, -75.9873),
+  `delivery_range_check`, eventos, publicaciones cerca, propiedades y
+  vehículos. **Ni una función se rompió**, que es exactamente lo que la `0156`
+  existía para evitar: sin ella, esas 89 funciones habrían perdido
+  `st_dwithin` en el momento del traslado.
+
+  **Y el agujero quedó CERRADO.** Lo que importa no es el permiso, es la
+  puerta: la llave `anon` solo llega a la base a través de PostgREST, y
+  PostgREST solo publica el esquema `public`. Medido:
+
+  ```
+  GET    /rest/v1/spatial_ref_sys?select=srid&limit=1  → 404
+  DELETE /rest/v1/spatial_ref_sys?srid=eq.-999         → 404
+  ```
+
+  (Antes: 200 y 204.) El privilegio de `anon` sobre la tabla sigue existiendo
+  en el catálogo, pero ya no hay forma de alcanzarla desde fuera.
+- [ ] **4. Pedirlo en PRODUCCIÓN** (`vurqsebgsacickxsxfeh`). **Bloqueado hasta
+  despausar el proyecto**: el plan gratuito lo pausó el 2026-09-03 tras 7 días
+  sin actividad (ver `LAUNCH-CHECKLIST.md` §4). Al despausar, pedirle a John
+  Pena el mismo traslado y correr `verify-geo` justo después.
 - [ ] **5. Repetir el ejercicio con `pg_trgm`, `unaccent` y `pg_net`**, que
   siguen en `public`. Ojo con `pg_trgm`: la búsqueda usa el operador `<%` y el
   ajuste `pg_trgm.word_similarity_threshold`; hay que comprobarlo aparte.

@@ -2517,6 +2517,37 @@ urgente HOY (0 negocios, 0 ventas), y todos muerden en cuanto haya dinero.
 
 ## 4. Infra & hosting
 
+- [ ] **🔴 BLOQUEANTE — Supabase Pro en PRODUCCIÓN antes de dar la URL a nadie
+  (2026-09-03).** El plan gratuito **pausa el proyecto tras 7 días sin
+  actividad**, y ya pasó: `tolatino-prod` (`vurqsebgsacickxsxfeh`) apareció
+  pausado el 3 de septiembre. Los síntomas engañan y conviene reconocerlos:
+  la API de gestión responde `Connection terminated due to connection timeout`
+  y el host REST del proyecto deja de aceptar conexiones — parece una caída,
+  es una pausa.
+
+  **Por qué es bloqueante y no un detalle:** en las primeras semanas el tráfico
+  es a ráfagas. Siete días de calma y el sitio se apaga solo. El día que un
+  dueño de negocio abra el enlace que le diste, se encuentra la nada — y esa
+  primera impresión no se recupera. No es un riesgo teórico: ya ocurrió una vez
+  sin haber lanzado.
+
+  **Qué cuesta:** Supabase Pro son **$25/mes** por proyecto. Es la primera
+  dependencia de pago genuinamente necesaria de este proyecto (regla #3 de
+  `CLAUDE.md`: se nombra explícitamente y se elige la opción más barata).
+  Además del no-pausar, trae copias de seguridad diarias con recuperación a un
+  punto en el tiempo — que para una base con dinero de terceros dentro no es un
+  lujo. **Solo hace falta en PRODUCCIÓN**; pruebas puede seguir gratis y
+  pausarse sin consecuencias.
+
+  **Mientras tanto (aún sin lanzar), gratis:** un ping programado cada pocos
+  días mantiene el proyecto despierto. Sirve para desarrollar, **no** para
+  lanzar: si el ping falla una semana, el sitio se apaga y nadie se entera.
+  No se lanza sobre un truco de mantener-vivo.
+
+  **Si vuelve a pasar:** se despausa desde el panel
+  (`supabase.com/dashboard/project/vurqsebgsacickxsxfeh`), tarda un par de
+  minutos y **no se pierde nada** — Supabase guarda los datos y da 90 días.
+
 - [ ] **Frontend host: Vercel → Cloudflare Pages.** Currently auto-deploys on
   **Vercel** (Git integration). `CLAUDE.md` target is **Cloudflare Pages** (free,
   cheap bandwidth). Revisit before scale.
