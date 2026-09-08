@@ -4,7 +4,8 @@
 // Escritorio: barrios / feed / negocios destacados + eventos. Móvil: una columna.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { IconSend as Send, IconBuildingStore as Store, IconX as X } from '@tabler/icons-react';
+import { IconSend as Send, IconBuildingStore as Store, IconX as X, IconChevronRight as ChevronRight } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
 import { ReportButton } from '@/components/ReportButton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { NeighborSheet } from '@/components/NeighborSheet';
@@ -88,6 +89,7 @@ function dedupeById(list: Post[]): Post[] {
 
 export function ComunidadScreen() {
   const { L } = useLang();
+  const router = useRouter();
   const app = useApp();
   const auth = useAuth();
   const it = useInteractions();
@@ -741,6 +743,29 @@ export function ComunidadScreen() {
             )}
           </div>
         )}
+
+        {/* Entrada a la sala de juegos. Va bajo el compositor a propósito: es lo
+            segundo que se hace al abrir Comunidad —publicar o entretenerse— y
+            no compite con el muro por el primer golpe de vista. */}
+        <button
+          onClick={() => router.push('/comunidad/juegos/')}
+          className="tap mb-4 flex w-full cursor-pointer items-center gap-3 rounded-card border border-line bg-white p-3.5 text-left"
+        >
+          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-tile bg-tint-pink text-ink">
+            <svg width="21" height="21" viewBox="0 0 48 48" fill="none" aria-hidden>
+              <rect x="10" y="4" width="28" height="40" rx="5" fill="#fff" stroke="currentColor" strokeWidth="3" />
+              <line x1="10" y1="24" x2="38" y2="24" stroke="currentColor" strokeWidth="3" />
+              <circle cx="24" cy="14" r="3.4" fill="currentColor" /><circle cx="24" cy="34" r="3.4" fill="currentColor" />
+            </svg>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13.5px] font-extrabold text-ink">{L('Sala de juegos', 'Game room')}</span>
+            <span className="mt-0.5 block text-[12px] font-semibold text-muted">
+              {L('Dominó y parchís con tu barrio · tu nivel y el ranking', 'Dominoes and parcheesi with your block · your level and ranking')}
+            </span>
+          </span>
+          <ChevronRight size={17} stroke={2.4} className="flex-none text-muted-2" />
+        </button>
 
         {/* composer */}
         <Card className="mb-4 p-[15px]">

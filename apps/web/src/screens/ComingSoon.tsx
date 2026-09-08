@@ -1,12 +1,21 @@
 'use client';
 
-// "Muy pronto" placeholder (Handoff v2): icon, badge, title, description and
-// a working "¡Avísame!" waitlist form with success state.
+// «Muy pronto» (Handoff v2): icono, insignia, título, descripción y el
+// formulario de «¡Avísame!».
+//
+// ARREGLADO EL 2026-09-08: hasta hoy este formulario **no guardaba nada**.
+// Pedía el correo, enseñaba «¡Listo! Te avisamos cuando abra» y solo cambiaba
+// una variable del navegador — al recargar, el correo había desaparecido.
+// Cuatro pantallas llevaban meses recogiendo interés que nadie recibía, que es
+// justo el estado falso que la regla #7 del proyecto prohíbe.
+// Ahora escribe en `lista_espera` (migración 0159) y el aviso de éxito solo
+// sale si el servidor confirmó.
 
 import { useState } from 'react';
 import { IconBriefcase as Briefcase, IconCar as Car, IconCheck as Check, IconHome as Home, IconTruck as Truck } from '@tabler/icons-react';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
+import { apuntarmeLista } from '@/lib/juegos';
 import { SOON } from '@/data/fixtures';
 
 const ICONS = { truck: Truck, home: Home, car: Car, briefcase: Briefcase };
@@ -15,6 +24,8 @@ export function ComingSoonScreen({ view }: { view: keyof typeof SOON }) {
   const { L } = useLang();
   const app = useApp();
   const [email, setEmail] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState('');
   const info = SOON[view];
   const Icon = ICONS[info.icon];
   const done = !!app.waitDone[view];
@@ -42,9 +53,18 @@ export function ComingSoonScreen({ view }: { view: keyof typeof SOON }) {
       ) : (
         <>
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              app.markWaitDone(view);
+              if (enviando) return;
+              setEnviando(true);
+              setError('');
+              // El éxito lo decide el SERVIDOR. Antes se marcaba como hecho
+              // pasara lo que pasara — por eso nunca se notó que no guardaba.
+              const ok = await apuntarmeLista(view, email, app.city);
+              setEnviando(false);
+              if (ok) app.markWaitDone(view);
+              else setError(L('No pudimos guardarlo. Revisa el correo e inténtalo otra vez.',
+                              'We couldn’t save it. Check the email and try again.'));
             }}
             className="mt-6 flex w-full max-w-[400px] gap-2"
           >
@@ -56,13 +76,17 @@ export function ComingSoonScreen({ view }: { view: keyof typeof SOON }) {
               placeholder={L('Tu correo electrónico', 'Your email')}
               className="min-w-0 flex-1 rounded-btn-lg border-[1.5px] border-[#F1EEFA] bg-white px-4 py-3 text-[13.5px] font-medium text-ink outline-none placeholder:text-muted focus:border-primary"
             />
-            <button type="submit" className="flex-none cursor-pointer rounded-btn-lg bg-primary px-5 py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm">
-              {L('¡Avísame!', 'Notify me')}
+            <button type="submit" disabled={enviando} className="flex-none cursor-pointer rounded-btn-lg bg-primary px-5 py-3 text-[13.5px] font-extrabold text-white shadow-cta-sm disabled:cursor-not-allowed disabled:bg-lilac-ring">
+              {enviando ? L('Guardando…', 'Saving…') : L('¡Avísame!', 'Notify me')}
             </button>
           </form>
-          <div className="mt-3 text-[11.5px] font-semibold text-muted-2">
-            {L('Sé de los primeros en tu ciudad. Sin spam.', 'Be among the first in your city. No spam.')}
-          </div>
+          {error ? (
+            <div className="mt-3 rounded-field bg-error-bg px-3.5 py-2.5 text-[12px] font-bold text-error">{error}</div>
+          ) : (
+            <div className="mt-3 text-[11.5px] font-semibold text-muted-2">
+              {L('Sé de los primeros en tu ciudad. Sin spam.', 'Be among the first in your city. No spam.')}
+            </div>
+          )}
         </>
       )}
     </div>

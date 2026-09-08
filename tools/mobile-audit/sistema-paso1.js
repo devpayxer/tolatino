@@ -143,6 +143,7 @@ const RUTAS = [
   ['comunidad', '/comunidad/'],
   ['negocios', '/negocios/'],
   ['ficha', '/negocios/?b=hz-food-p4'],
+  ['juegos', '/comunidad/juegos/'],
   ['portada', '/'],
 ];
 
