@@ -68,6 +68,33 @@ export function VerifiedBadge({ size = 19 }: { size?: number }) {
   );
 }
 
+/** Insignia de nivel — Space Mono en versalitas sobre tinta.
+ *
+ *  El sistema es explícito: «la insignia de nivel es el ÚNICO adorno permitido
+ *  junto a un nombre». Por eso es una primitiva y no unas clases sueltas: si
+ *  cada pantalla la dibuja a su manera, en tres semanas hay cuatro insignias
+ *  distintas y la regla deja de significar nada.
+ *
+ *  Los cinco niveles salen de `public.niveles` (migración 0158), no de aquí —
+ *  los umbrales se van a ajustar con datos reales y no deben vivir en el
+ *  código. Este componente solo sabe pintarlos. */
+export function NivelChip({ nivel, size = 'md', className = '' }: {
+  /** El nombre ya traducido: «Guía», «Voz del barrio»… */
+  nivel: string;
+  size?: 'sm' | 'md';
+  className?: string;
+}) {
+  if (!nivel) return null;
+  const esc = size === 'sm'
+    ? 'px-1.5 py-[2px] text-[8.5px]'
+    : 'px-2 py-[3px] text-[9.5px]';
+  return (
+    <span className={`flex-none rounded-full bg-ink font-mono uppercase tracking-eyebrow text-white ${esc} ${className}`}>
+      {nivel}
+    </span>
+  );
+}
+
 /** Titular de pantalla — Bricolage Grotesque, la tipografía de DISPLAY.
  *  El sistema la reserva para titulares, precios grandes y cifras de héroe; el
  *  resto de la interfaz va en Onest. `as` permite el nivel semántico correcto
