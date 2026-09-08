@@ -68,6 +68,22 @@ let raw = false;
 const rest = [];
 for (const a of argv) { if (a === '--raw') raw = true; else rest.push(a); }
 
+// Un flag mal escrito NO puede pasar por SQL. `--sql "delete ..."` parece
+// funcionar — sale 0, imprime `[]` — pero en Postgres `--` abre un COMENTARIO:
+// la orden entera se ignora y el script dice que todo fue bien. Se perdió una
+// tarde de pruebas de dominó por esto (2026-09-08): tres «limpiezas» seguidas
+// que no borraron nada, y unas partidas viejas que parecían un fallo del
+// reparto. Los únicos flags que existen son --raw, --file/-f y -.
+const conocidos = new Set(['--raw', '--file', '-f', '-']);
+for (const a of rest) {
+  if (a.startsWith('-') && !conocidos.has(a)) {
+    die(`flag desconocido: ${a}\n` +
+        '  El SQL en línea va SIN flag:  node scripts/sbsql.mjs "select 1;"\n' +
+        '  Un archivo:                   node scripts/sbsql.mjs --file ruta.sql\n' +
+        `  (Si pasara como SQL, «${a}» abriría un comentario y no se ejecutaría nada.)`);
+  }
+}
+
 let sql;
 if (rest[0] === '--file' || rest[0] === '-f') {
   if (!rest[1]) die('--file needs a path');

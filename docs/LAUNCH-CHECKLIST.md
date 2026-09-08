@@ -281,6 +281,20 @@
   distintos, no se notaría hasta el día de abrir. El punto 2 lo resuelve porque
   reescribe la secreta; y el punto 7 lo comprueba de verdad.
 
+- [ ] **🟠 La sala de juegos vive SOLO en pruebas — cinco migraciones sin
+  aplicar en producción (2026-09-08).** `0158` (puntos y niveles), `0159` (lista
+  de espera), `0160` (reglas del dominó), `0161` (reloj de 60 s y tiempo real) y
+  `0162` (identidad del rival en la mesa) están ejecutadas en **pruebas**
+  (`zpkaxojonufdwgahiqjh`) y **no** en producción — no por olvido: `tolatino-prod`
+  está **pausado**, así que no se puede ni conectar (ver el bloqueante de Supabase
+  Pro más abajo). Van EN ORDEN y después `node scripts/verify-bases.mjs`, que es
+  quien de verdad comprueba que llegaron. Ojo con dos:
+  · la `0161` hace `alter publication supabase_realtime add table
+    public.domino_partidas` — sin eso la mesa no se actualiza sola y el juego
+    parece congelado;
+  · la `0162` reemplaza `domino_estado`, así que si producción divergiera,
+    `create or replace` escribiría encima de otra cosa: comparar antes.
+
 - [ ] **🟠 Las migraciones se aplican a mano y NADIE lleva la cuenta — dos
   llevaban meses sin ejecutarse en producción (2026-08-05).** Al preguntar el
   fundador si quedaba algo pendiente para producción, salió que la **0131**

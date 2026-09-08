@@ -10,19 +10,23 @@
 // QUÉ ES REAL Y QUÉ NO, porque importa (regla #7 — nada fabricado como final):
 //   · Tu progreso y el ranking del barrio salen de la base (migración 0158).
 //     Si no has hecho nada todavía, sale un cero honesto, no un número bonito.
-//   · Dominó y parchís **aún no existen**. Se enseñan con la etiqueta PRONTO y
-//     un «Avísame» que SÍ guarda (migración 0159) — que es exactamente lo que
-//     manda el sistema de diseño: los módulos que no abren se ven, con su
-//     etiqueta, nunca escondidos.
-//   · NO hay sección de «mesas abiertas». Sin juego no hay mesas, y una lista
-//     de mesas inventadas sería mentir sobre lo único que la pantalla promete.
+//   · **Dominó ya se juega** (migraciones 0160 y 0161). «Jugar» te sienta en una
+//     mesa que espere en tu ciudad o abre una — un botón, no dos, porque nadie
+//     quiere elegir entre «crear» y «unirse»: quiere jugar.
+//   · **Parchís aún no existe.** Sale con la etiqueta PRONTO y un «Avísame» que
+//     SÍ guarda (migración 0159), que es lo que manda el sistema de diseño: los
+//     módulos que no abren se ven con su etiqueta, nunca escondidos.
+//   · NO hay sección de «mesas abiertas». Sin gente jugando no hay mesas, y una
+//     lista inventada sería mentir sobre lo único que la pantalla promete.
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { Avatar, Display, Eyebrow, NivelChip, SkeletonList } from '@/components/ui';
 import { miProgreso, rankingBarrio, apuntarmeLista, esperaConteo, puntosFmt, type Progreso, type FilaRanking } from '@/lib/juegos';
+import { jugarYa } from '@/lib/domino';
 
 /** Las dos fichas de dominó del icono. Dibujadas, no emoji: el sistema de
  *  diseño los prohíbe y además un emoji se ve distinto en cada teléfono. */
@@ -56,6 +60,8 @@ type Juego = {
   subEs: string; subEn: string;
   tinte: string; tinta: string; raya: string;
   Icono: (p: { size?: number }) => React.ReactElement;
+  /** false mientras el juego no exista: sale con etiqueta PRONTO y «Avísame». */
+  listo?: boolean;
 };
 
 const JUEGOS: Juego[] = [
@@ -64,7 +70,7 @@ const JUEGOS: Juego[] = [
     subEs: 'Parejas o uno contra uno', subEn: 'Pairs or one on one',
     tinte: 'bg-tint-pink', tinta: 'text-ink',
     raya: 'linear-gradient(135deg,#FFECF2 0 9px,#FED2DF 9px 18px)',
-    Icono: IconoDomino,
+    Icono: IconoDomino, listo: true,
   },
   {
     clave: 'parchis', es: 'Parchís', en: 'Parcheesi',
@@ -241,6 +247,8 @@ function TarjetaJuego({ juego }: { juego: Juego }) {
   const { L } = useLang();
   const app = useApp();
   const auth = useAuth();
+  const router = useRouter();
+  const [buscando, setBuscando] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [email, setEmail] = useState('');
   const [listo, setListo] = useState(false);
@@ -248,7 +256,10 @@ function TarjetaJuego({ juego }: { juego: Juego }) {
   const [error, setError] = useState('');
   const [cuantos, setCuantos] = useState(0);
 
-  useEffect(() => { void esperaConteo(juego.clave).then(setCuantos); }, [juego.clave, listo]);
+  useEffect(() => {
+    if (juego.listo) return;
+    void esperaConteo(juego.clave).then(setCuantos);
+  }, [juego.clave, juego.listo, listo]);
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,14 +271,25 @@ function TarjetaJuego({ juego }: { juego: Juego }) {
     else setError(L('Revisa el correo.', 'Check the email.'));
   };
 
+  const entrar = async () => {
+    if (buscando) return;
+    if (!auth.user) { router.push('/entrar/'); return; }
+    setBuscando(true);
+    const p = await jugarYa(app.city);
+    setBuscando(false);
+    if (p) router.push(`/comunidad/juegos/mesa/?p=${p}`);
+  };
+
   const { Icono } = juego;
   return (
     <article className="overflow-hidden rounded-card border border-line bg-white">
       <div className={`relative flex h-[104px] items-center justify-center ${juego.tinta}`} style={{ background: juego.raya }}>
         <Icono />
-        <span className="absolute right-2 top-2 rounded-full bg-amber-bg px-2 py-0.5 font-mono text-[9px] uppercase tracking-eyebrow text-amber-ink">
-          {L('Pronto', 'Soon')}
-        </span>
+        {!juego.listo && (
+          <span className="absolute right-2 top-2 rounded-full bg-amber-bg px-2 py-0.5 font-mono text-[9px] uppercase tracking-eyebrow text-amber-ink">
+            {L('Pronto', 'Soon')}
+          </span>
+        )}
       </div>
       <div className="p-3">
         <h3 className="font-display text-[16px] font-bold tracking-display text-ink">{L(juego.es, juego.en)}</h3>
@@ -278,7 +300,12 @@ function TarjetaJuego({ juego }: { juego: Juego }) {
           </p>
         )}
 
-        {listo ? (
+        {juego.listo ? (
+          <button onClick={entrar} disabled={buscando}
+            className="tap mt-2.5 w-full cursor-pointer rounded-btn bg-calor px-4 py-2.5 text-[13px] font-extrabold text-white shadow-cta disabled:bg-lilac-ring">
+            {buscando ? L('Buscando…', 'Finding…') : L('Jugar', 'Play')}
+          </button>
+        ) : listo ? (
           <div className="mt-2.5 rounded-field bg-green-bg px-3 py-2.5 text-center text-[12px] font-extrabold text-green-ink">
             {L('Te avisamos', 'We’ll tell you')}
           </div>
