@@ -4,7 +4,7 @@
 //
 // QUÉ DECIDE ESTA PANTALLA: nada. Pinta lo que devuelve `domino_estado()` y
 // manda intenciones. Las reglas, el reparto, el turno y el reloj viven en la
-// base (migraciones 0160 y 0161) — si vivieran aquí, se cambiarían desde las
+// base (migraciones 0160, 0161 y 0163) — si vivieran aquí, se cambiarían desde las
 // herramientas del navegador.
 //
 // LO QUE NO SE PUEDE VER: la mano del rival. No es que no se pinte; es que no
@@ -125,7 +125,8 @@ export function DominoMesaScreen() {
     const gane = st.ganador === auth.user?.id;
     const motivo = st.motivoFin === 'domino' ? L('¡Dominó!', 'Dominoes!')
       : st.motivoFin === 'tranque' ? L('Se trancó', 'Blocked game')
-      : L('El otro no volvió', 'The other player didn’t come back');
+      : gane ? L('El otro no volvió', 'The other player didn’t come back')
+      : L('Se cerró la mesa', 'The table closed');
     return (
       <div className="px-3.5 py-6">
         <Volver router={router} />
@@ -225,6 +226,53 @@ export function DominoMesaScreen() {
           </span>
         </div>
       </div>
+
+      {/* Se jugó solo.
+          Sin este aviso el cambio es invisible y desconcierta: vuelves de una
+          llamada, tienes una ficha menos y nadie te ha dicho por qué. Se le
+          cuenta a los DOS — el que estaba también tiene derecho a saber que la
+          jugada del otro la hizo el reloj y no él. */}
+      {st.auto && (
+        <div className="px-3 pt-2.5">
+          <div className="rounded-card border border-line bg-app px-3.5 py-2.5">
+            <p className="text-[12.5px] font-extrabold leading-snug text-ink">
+              {st.auto.mia
+                ? (st.auto.accion === 'puso' && st.auto.ficha
+                    ? L(`Se te fue el tiempo — se jugó la ${st.auto.ficha[0]}-${st.auto.ficha[1]} por ti`,
+                        `Time ran out — the ${st.auto.ficha[0]}-${st.auto.ficha[1]} was played for you`)
+                    : L('Se te fue el tiempo — se pasó por ti', 'Time ran out — you were passed'))
+                : (st.auto.accion === 'puso' && st.auto.ficha
+                    ? L(`A ${st.rivalNombre || 'tu rival'} se le fue el tiempo — se jugó la ${st.auto.ficha[0]}-${st.auto.ficha[1]}`,
+                        `${st.rivalNombre || 'Your rival'} ran out of time — the ${st.auto.ficha[0]}-${st.auto.ficha[1]} was played`)
+                    : L(`A ${st.rivalNombre || 'tu rival'} se le fue el tiempo — se pasó`,
+                        `${st.rivalNombre || 'Your rival'} ran out of time — passed`))}
+            </p>
+            <p className="mt-1 text-[11.5px] font-semibold leading-snug text-muted">
+              {L('La partida sigue. Si se te va el tiempo se juega por ti, no pierdes.',
+                 'The game goes on. If your time runs out, a move is made for you — you don’t lose.')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Aviso antes de perder la mesa por no aparecer. */}
+      {st.misPlantones > 0 && st.misPlantones < st.plantonesLimite && st.estado === 'jugando' && (
+        <div className="px-3 pt-2.5">
+          <div className="rounded-card border-[1.5px] border-warning bg-warning-bg px-3.5 py-2.5">
+            <p className="text-[12.5px] font-extrabold leading-snug text-ink">
+              {/* «Te quedan 2 turnos» decía otra cosa: suena a que la mesa se
+                  cierra sola en dos jugadas. Lo que se cierra es por NO
+                  aparecer, y jugando no se pierde nada — la condición tiene que
+                  estar en la frase. */}
+              {st.plantonesLimite - st.misPlantones === 1
+                ? L('Si se te va el tiempo otra vez, se cierra la mesa',
+                    'If your time runs out once more, the table closes')
+                : L(`Si se te va el tiempo ${st.plantonesLimite - st.misPlantones} veces más, se cierra la mesa`,
+                    `If your time runs out ${st.plantonesLimite - st.misPlantones} more times, the table closes`)}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Elegir extremo — solo cuando la ficha encaja en los dos */}
       {elegida && lados.length > 1 && (

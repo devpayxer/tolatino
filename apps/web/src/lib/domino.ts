@@ -37,6 +37,13 @@ export type EstadoMesa = {
   rivalNombre: string | null;
   rivalIniciales: string | null;
   rivalColor: string | null;
+  /** La última jugada que hizo el reloj por alguien, mientras sea la última
+   *  jugada de la mesa. `mia` = fue por ti. */
+  auto: { mia: boolean; accion: 'puso' | 'robo' | 'paso'; ficha: Ficha | null } | null;
+  /** Cuántas veces SEGUIDAS se te ha ido el tiempo, y a las cuántas se cierra
+   *  la mesa. Sirve para avisar antes de perderla. */
+  misPlantones: number;
+  plantonesLimite: number;
   /** true si estás mirando una partida en la que no juegas. */
   mirando: boolean;
 };
@@ -61,6 +68,17 @@ function normaliza(d: Record<string, unknown> | null): EstadoMesa | null {
     rivalNombre: (d.rival_nombre as string) ?? null,
     rivalIniciales: (d.rival_iniciales as string) ?? null,
     rivalColor: (d.rival_color as string) ?? null,
+    auto: (() => {
+      const a = d.auto as Record<string, unknown> | null | undefined;
+      if (!a) return null;
+      return {
+        mia: a.mia === true,
+        accion: (a.accion as 'puso' | 'robo' | 'paso') ?? 'paso',
+        ficha: (a.ficha as Ficha) ?? null,
+      };
+    })(),
+    misPlantones: Number(d.mis_plantones ?? 0),
+    plantonesLimite: Number(d.plantones_limite ?? 3),
     mirando: d.mirando === true,
   };
 }

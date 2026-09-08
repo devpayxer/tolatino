@@ -13,6 +13,7 @@
 //      herramientas del navegador aunque no se dibuje.
 //   4. Se juega una ficha y le llega al otro SIN recargar (tiempo real).
 //   5. El turno alterna.
+//   6. Si se vence el tiempo, se juega SOLA la ficha y la partida NO se cierra.
 //
 // CÓMO SE EJECUTA:
 //   VERCEL_ENV=preview pnpm -C apps/web build
@@ -40,8 +41,22 @@ const mal = (m) => { console.log(`  ❌ ${m}`); fallos.push(m); };
 // reanuda. Eso se vio el 2026-09-08 como «B recibió 8 fichas» y «B se sentó en
 // otra mesa», y ninguna de las dos era un fallo del juego. Depender de acordarse
 // de borrar a mano no es una garantía; hacerlo aquí sí.
+/** SQL contra la base de PRUEBAS. Revienta si falla: una limpieza que no
+ *  limpia en silencio ya costó una tarde. */
+function sql(texto) {
+  const r = spawnSync('node', [`${__dirname}/../../scripts/sbsql.mjs`, texto], {
+    encoding: 'utf8',
+    env: { ...process.env, SUPABASE_PROJECT_REF: 'zpkaxojonufdwgahiqjh' },
+  });
+  if (r.status !== 0) {
+    console.error(`  ✖ la base no aceptó la orden:\n${(r.stderr || r.stdout || '').trim()}`);
+    process.exit(1);
+  }
+  return r.stdout;
+}
+
 function limpiarMesas() {
-  const sql = `
+  const consulta = `
     with mias as (
       select p.id from domino_partidas p
       where p.estado <> 'terminada'
@@ -52,15 +67,7 @@ function limpiarMesas() {
     z as (delete from domino_pozo  where partida_id in (select id from mias))
     delete from domino_partidas where id in (select id from mias)
     returning id;`;
-  const r = spawnSync('node', [`${__dirname}/../../scripts/sbsql.mjs`, sql], {
-    encoding: 'utf8',
-    env: { ...process.env, SUPABASE_PROJECT_REF: 'zpkaxojonufdwgahiqjh' },
-  });
-  if (r.status !== 0) {
-    console.error(`  ✖ no se pudo dejar la mesa limpia:\n${(r.stderr || r.stdout || '').trim()}`);
-    process.exit(1);
-  }
-  const borradas = (r.stdout.match(/"id"/g) || []).length;
+  const borradas = (sql(consulta).match(/"id"/g) || []).length;
   console.log(`  · mesa limpia (${borradas} partida(s) a medias retirada(s))`);
 }
 
@@ -211,6 +218,33 @@ const enMesa = (page) => fichasEn(page, '#cadena-mesa');
 
     await A.page.screenshot({ path: `${SHOTS}/domino-A.png`, fullPage: true });
     await B.page.screenshot({ path: `${SHOTS}/domino-B.png`, fullPage: true });
+
+    // ── 6 · se acaba el tiempo: SE JUEGA POR TI, no se pierde ───────────────
+    // Decisión del fundador (2026-09-08). Lo que hay que ver en pantalla es que
+    // la mesa NO se cierra y que la ficha se puso sola. Se envejece `movida_at`
+    // en la base en vez de esperar 60 s de reloj real.
+    const mesaAntes = (await enMesa(otro.page)).length;
+    sql(`update domino_partidas set movida_at = now() - interval '61 seconds'
+          where id = '${pA}' and estado = 'jugando';`);
+
+    let auto = false;
+    for (let i = 0; i < 14; i++) {
+      await otro.page.waitForTimeout(1500);
+      if ((await enMesa(otro.page)).length > mesaAntes) { auto = true; break; }
+    }
+    if (auto) ok('vencido el tiempo, la ficha se puso SOLA');
+    else mal('vencido el tiempo no se jugó nada — la jugada automática no llegó a la pantalla');
+
+    const cerrada = (await otro.page.getByText(/Ganaste|Perdiste/).count()) > 0
+                 || (await quien.page.getByText(/Ganaste|Perdiste/).count()) > 0;
+    if (cerrada) mal('la mesa SE CERRÓ al vencer el tiempo — debía seguir la partida');
+    else ok('la partida siguió abierta (no se pierde por una interrupción)');
+
+    const aviso = await otro.page.getByText(/se le fue el tiempo|Se te fue el tiempo/).count();
+    if (aviso) ok('la pantalla explica que se jugó automático');
+    else mal('no se avisa de que la jugada fue automática — el jugador no entiende qué pasó');
+
+    await otro.page.screenshot({ path: `${SHOTS}/domino-auto.png`, fullPage: true });
   } catch (e) {
     mal(`excepción: ${String(e).slice(0, 200)}`);
     await A.page.screenshot({ path: `${SHOTS}/domino-FALLO.png`, fullPage: true }).catch(() => {});
