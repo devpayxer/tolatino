@@ -1,5 +1,6 @@
 "use server";
 import { claveAmenidad } from "@/lib/amenidades";
+import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
@@ -184,5 +185,80 @@ export async function selloCancelar(id: string): Promise<Res> {
     for (const x of v) await c.query(`update queue_items set status = 'decided', decision = 'canceled', reason = 'El dueño canceló la solicitud', decided_at = now() where queue = 'sello' and subject_id = $1 and status = 'open'`, [x.id]);
   });
   await auditar(a, "panel.sello_cancelar", null, null);
+  return { ok: true };
+}
+
+/* ── Tus licencias (Trámites y profesionales) ── Agregar una del catálogo (en revisión + caso en la cola Licencias),
+   ponerle el número (vuelve a revisión), quitarla (retirada, nada se borra; queda al menos una) y «lo que no hago». */
+export async function licenciaAgregar(id: string, kind: string): Promise<Res> {
+  const a = await entrar(id, "cat");
+  if (!a) return SIN_ACCESO;
+  if (typeof kind !== "string" || !/^[a-z]{2,12}$/.test(kind)) return no("Esa licencia no existe.", "That license doesn’t exist.");
+  const r = await tx(async (c) => {
+    const n = (await c.query<{ n: number }>(`select count(*)::int as n from licenses where business_id = $1 and created_at > now() - interval '1 day'`, [a.negocio.id])).rows[0]!.n;
+    if (n >= 10) return "muchas";
+    const ins = (await c.query<{ id: string }>(
+      `insert into licenses (business_id, city_id, kind, title, can, cannot, issuer, registry_url, status, source, sort)
+       select $1, $2, k.key, k.title, k.can, coalesce(k.cannot, '[]'::jsonb), k.issuer->>'es', k.registry_url, 'review', 'panel',
+              (select coalesce(max(sort), 0) + 1 from licenses where business_id = $1)
+         from license_kinds k where k.key = $3 and k.category_id = $4
+       on conflict do nothing returning id::text`, [a.negocio.id, a.negocio.city_id, kind, a.negocio.category_id])).rows[0];
+    if (!ins) return "ya";
+    await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('lic', 'license', $1, $2, $3)`, [ins.id, a.negocio.id, a.negocio.city_id]);
+    return null;
+  });
+  if (r === "ya") return no("Ya tienes esa licencia.", "You already have that license.");
+  if (r === "muchas") return no("Agregaste muchas licencias hoy. Prueba mañana.", "You added many licenses today. Try tomorrow.");
+  await auditar(a, "panel.licencia_agregar", null, { kind });
+  return { ok: true };
+}
+export async function licenciaNumero(id: string, licId: string, numero: string): Promise<Res> {
+  const a = await entrar(id, "cat");
+  if (!a) return SIN_ACCESO;
+  const n = typeof numero === "string" ? numero.trim().slice(0, 40) : "";
+  if (!/^\d{1,18}$/.test(String(licId))) return no("Esa licencia no existe.", "That license doesn’t exist.");
+  if (!n || !/^[A-Za-z0-9 #./-]+$/.test(n)) return no("Escribe el número como sale en tu licencia.", "Type the number as it appears on your license.");
+  const r = await tx(async (c) => {
+    const l = (await c.query<{ id: string; number: string | null }>(`select id::text, number from licenses where id = $1::bigint and business_id = $2 and status <> 'withdrawn' for update`, [licId, a.negocio.id])).rows[0];
+    if (!l) return "no";
+    if (l.number === n) return null;
+    // Un número nuevo se vuelve a revisar: sale «en revisión» hasta que el equipo lo confirme en el registro.
+    await c.query(`update licenses set number = $2, status = 'review', updated_at = now() where id = $1::bigint`, [licId, n]);
+    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]);
+    await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('lic', 'license', $1, $2, $3) on conflict do nothing`, [l.id, a.negocio.id, a.negocio.city_id]);
+    return null;
+  });
+  if (r) return no("Esa licencia no existe.", "That license doesn’t exist.");
+  await auditar(a, "panel.licencia_numero", null, { licencia: licId });
+  return { ok: true };
+}
+export async function licenciaQuitar(id: string, licId: string): Promise<Res> {
+  const a = await entrar(id, "cat");
+  if (!a) return SIN_ACCESO;
+  if (!/^\d{1,18}$/.test(String(licId))) return no("Esa licencia no existe.", "That license doesn’t exist.");
+  const r = await tx(async (c) => {
+    const vivas = (await c.query<{ n: number }>(`select count(*)::int as n from licenses where business_id = $1 and status <> 'withdrawn'`, [a.negocio.id])).rows[0]!.n;
+    if (vivas <= 1) return "una";
+    const u = await c.query(`update licenses set status = 'withdrawn', updated_at = now() where id = $1::bigint and business_id = $2 and status <> 'withdrawn'`, [licId, a.negocio.id]);
+    if (!u.rowCount) return "no";
+    await c.query(`update queue_items set status = 'decided', decision = 'withdrawn', reason = 'El dueño la quitó', decided_at = now() where queue = 'lic' and subject_id = $1 and status = 'open'`, [String(licId)]);
+    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]);
+    return null;
+  });
+  if (r === "una") return no("Tu página necesita al menos una licencia aquí.", "Your page needs at least one license here.");
+  if (r) return no("Esa licencia no existe.", "That license doesn’t exist.");
+  await auditar(a, "panel.licencia_quitar", { licencia: licId }, null);
+  return { ok: true };
+}
+export async function noHago(id: string, i: number): Promise<Res> {
+  const a = await entrar(id, "cat");
+  if (!a) return SIN_ACCESO;
+  const x = NO_HAGO[Number(i)];
+  if (!x) return no("Elige una opción.", "Pick an option.");
+  const legal = (await db().query(`select 1 from licenses where business_id = $1 and status <> 'withdrawn' and kind = any($2::text[]) limit 1`, [a.negocio.id, LIC_LEGAL])).rowCount;
+  if (!legal) return no("Esto es para negocios con licencia legal.", "This is for businesses with a legal license.");
+  const antes = (await db().query(`select category_attrs->'cant' as cant from businesses where id = $1`, [a.negocio.id])).rows[0]?.cant ?? null;
+  await db().query(`update businesses set category_attrs = jsonb_set(category_attrs, '{cant}', $2::jsonb), updated_at = now() where id = $1`, [a.negocio.id, JSON.stringify(x)]);
+  await auditar(a, "panel.no_hace", antes, x);
   return { ok: true };
 }

@@ -1,13 +1,14 @@
 /* Colas del Super Admin (ADM-COLAS, adm-data.js QUEUES): las de la Fase 1. Plazo en horas (SLA) y roles que ven cada
-   cola; además del rol, la matriz de permisos (colas:ver / colas:aprobar) decide. Las licencias llegan con su ficha. */
-export type Cola = "sello" | "nuevo" | "medios" | "rec";
+   cola; además del rol, la matriz de permisos (colas:ver / colas:aprobar) decide. */
+export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec";
 export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: number; roles: string[]; regla?: [string, string] }> = {
   sello: { es: "Sello de verificación", en: "Verification badge", icon: "shield", sla: 48, roles: ["admin", "verificador", "lectura"], regla: ["Nunca se piden documentos de identidad.", "Identity documents are never requested."] },
   nuevo: { es: "Negocios nuevos", en: "New businesses", icon: "store", sla: 24, roles: ["admin", "ciudad", "verificador", "lectura"] },
+  lic: { es: "Licencias", en: "Licenses", icon: "law", sla: 72, roles: ["admin", "verificador", "lectura"], regla: ["Lo que decidas se ve en la ficha Licencia.", "Your decision shows on the License page."] },
   medios: { es: "Medios marcados", en: "Flagged media", icon: "image", sla: 4, roles: ["admin", "moderador", "ciudad", "lectura"] },
   rec: { es: "Recomendaciones de vecinos", en: "Neighbor recommendations", icon: "like", sla: 168, roles: ["admin", "ciudad", "lectura"], regla: ["Semilla = negocio no reclamado que el dueño puede reclamar.", "Seed = unclaimed business the owner can claim."] },
 };
-export const ORDEN_COLAS: Cola[] = ["sello", "nuevo", "medios", "rec"];
+export const ORDEN_COLAS: Cola[] = ["sello", "nuevo", "lic", "medios", "rec"];
 export const colasDelRol = (rol: string) => ORDEN_COLAS.filter((k) => COLAS[k].roles.includes(rol));
 /* Envejecimiento contra el plazo (qCard / wait del prototipo). */
 export function espera(abierto: string | Date, sla: number, ahora = Date.now()) {

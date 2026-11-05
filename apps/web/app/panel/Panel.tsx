@@ -12,7 +12,8 @@ import { aBase, fmtHora, type DiaPanel } from "@/lib/panel-reglas";
 import { FOTOS_FREE, ITEMS_FREE, PRECIO_PRO, dinero } from "@/lib/plan";
 import { subirFoto } from "@/lib/subir-foto";
 import { estado } from "@/lib/tarjeta";
-import { aboutGuardar, cerrarPorHoy, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, logoPoner, selloCancelar, selloPedir, type Res } from "./acciones";
+import { aboutGuardar, cerrarPorHoy, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, licenciaAgregar, licenciaNumero, licenciaQuitar, logoPoner, noHago, selloCancelar, selloPedir, type Res } from "./acciones";
+import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { equipoBloques, equipoDetalle } from "./Equipo";
 
 const Icon = UI.Icon as ComponentType<any>;
@@ -28,8 +29,11 @@ export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
   { k: "about", icon: "quote", l: ["Quiénes somos", "About us"], s: ["Tus palabras y lo que hay en tu negocio.", "Your words and what your place offers."] },
   { k: "equipo", icon: "users", l: ["Equipo", "Team"], s: ["Las personas que salen en tu página.", "The people who show on your page."] },
   { k: "ver", icon: "shield", l: ["Verificación y sello", "Verification and badge"], s: ["Teléfono, correo y el sello Verificado.", "Phone, email and the Verified badge."] },
+  { k: "lic", icon: "law", l: ["Tus licencias", "Your licenses"], s: ["Lo que puedes hacer por ley y lo que no haces.", "What you may do by law and what you do not do."] },
 ];
 const HECHOS = new Set(PARTS.map((p) => p.k));
+/* «Tus licencias» solo existe para Trámites y profesionales (las que tienen catálogo de licencias). */
+const partesDe = (d: DatosPanel) => PARTS.filter((p) => p.k !== "lic" || !!d.lic);
 const MES: Bi[] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 const DIA_L: Bi[] = [["DOMINGO", "SUNDAY"], ["LUNES", "MONDAY"], ["MARTES", "TUESDAY"], ["MIÉRCOLES", "WEDNESDAY"], ["JUEVES", "THURSDAY"], ["VIERNES", "FRIDAY"], ["SÁBADO", "SATURDAY"]];
 const DIAS: Bi[] = [["Lunes", "Monday"], ["Martes", "Tuesday"], ["Miércoles", "Wednesday"], ["Jueves", "Thursday"], ["Viernes", "Friday"], ["Sábado", "Saturday"], ["Domingo", "Sunday"]];
@@ -233,9 +237,9 @@ function secciones(c: Ctx): Sec {
   const head: Bloque[] = [
     { type: "head", eye: E2("TU PÁGINA", "YOUR PAGE"), t: E2(...p.l), s: E2(...p.s), onBack: () => c.go("pag"),
       act: p.k === "equipo" ? { l: E2("Invitar", "Invite"), icon: "plus", onClick: () => c.det("stf:new") } : undefined },
-    { type: "tabs", items: PARTS.map((z) => ({ l: E2(...z.l), on: z.k === p.k, onClick: () => c.go("pag", z.k) })) },
+    { type: "tabs", items: partesDe(c.d).map((z) => ({ l: E2(...z.l), on: z.k === p.k, onClick: () => c.go("pag", z.k) })) },
   ];
-  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : { blocks: equipoBloques(c), ed: null };
+  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : { blocks: equipoBloques(c), ed: null };
   return { blocks: [...head, ...r.blocks], ed: r.ed };
 }
 
@@ -273,6 +277,7 @@ function resumen(c: Ctx, k: string) {
   if (k === "fotos") return `${d.fotos.length} ${E2("fotos", "photos")} · ${d.logo ? "logo" : E2("sin logo", "no logo")}`;
   if (k === "about") { const a = d.about?.es ?? ""; return a ? (a.length > 56 ? `${a.slice(0, 56)}…` : a) : E2("Sin escribir", "Not written"); }
   if (k === "ver") return selloL(c).t;
+  if (k === "lic") { const f = d.lic?.filas ?? [], ok = f.filter((x) => x.status === "valid").length, rev = f.filter((x) => x.status === "review").length; return f.length ? `${ok} ${ok === 1 ? E2("licencia verificada", "verified license") : E2("licencias verificadas", "verified licenses")}${rev ? E2(` · ${rev} en revisión`, ` · ${rev} in review`) : ""}` : E2("Sin licencias", "No licenses"); }
   const ok = d.equipo.filter((p) => p.st === "ok").length, inv = d.equipo.filter((p) => p.st === "inv").length;
   return `${ok} ${E2("en tu página", "on your page")}${inv ? (inv === 1 ? E2(" · 1 invitación", " · 1 invite") : E2(` · ${inv} invitaciones`, ` · ${inv} invites`)) : ""}`;
 }
@@ -309,7 +314,7 @@ function pagina(c: Ctx): (Bloque | null)[] {
   }
   const cols2 = c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined;
   const grp = (k: string, keys: string[]): Bloque => ({ type: "rows", k, cols: cols2, items: keys.map((p) => { const P = PARTS.find((x) => x.k === p)!; return { icon: P.icon, t: E2(...P.l), s: resumen(c, p), onClick: () => c.go("pag", p) }; }) });
-  out.push(grp(E2("LO QUE VEN LOS CLIENTES", "WHAT CLIENTS SEE"), ["hor", "fotos", "about"]), grp(E2("CONTENIDO", "CONTENT"), ["equipo"]), grp(E2("CONFIANZA Y NÚMEROS", "TRUST AND NUMBERS"), ["ver"]));
+  out.push(grp(E2("LO QUE VEN LOS CLIENTES", "WHAT CLIENTS SEE"), ["hor", "fotos", "about"]), grp(E2("CONTENIDO", "CONTENT"), ["equipo"]), grp(E2("CONFIANZA Y NÚMEROS", "TRUST AND NUMBERS"), d.lic ? ["lic", "ver"] : ["ver"]));
   if (!d.pro && !d.trialUsed) out.push({ type: "note", tone: "warn", icon: "star", t: E2(`Con Free tu página es una sola, sin pestañas, y se ven ${FOTOS_FREE} fotos y ${ITEMS_FREE} ${d.itemsW[0]}. Nada se borra.`, `On Free your page is a single page, no tabs, showing ${FOTOS_FREE} photos and ${ITEMS_FREE} ${d.itemsW[1]}. Nothing is deleted.`) });
   return out;
 }
@@ -488,4 +493,25 @@ function verificacion(c: Ctx): (Bloque | null)[] {
     acts,
   }] });
   return out;
+}
+
+/* Tus licencias (Panel v2 · Lo que vendes › Tu herramienta, dash2-cat.js DC:332-364): cada licencia con su estado, su
+   número (lo pide el verificador; un número nuevo vuelve a revisión), agregar del catálogo y «lo que no haces». */
+function licencias(c: Ctx): Sec {
+  const { d, E2 } = c, L = d.lic!, out: (Bloque | null)[] = [], vivas = L.filas;
+  const F = c.form<{ nums: Record<string, string> }>(`lic:${d.id}`, { nums: Object.fromEntries(vivas.map((x) => [x.id, x.number ?? ""])) });
+  out.push({ type: "rows", k: E2("TUS LICENCIAS", "YOUR LICENSES"), items: vivas.map((x) => {
+    const st = x.status === "valid" ? { s: E2("Verificada por To’Latino · sale en tu página", "Verified by To’Latino · shows on your page"), tag: E2("VERIFICADA", "VERIFIED"), tone: "signal", ibg: "rgba(0,229,196,.14)", ifg: "var(--tl-open-text)" }
+      : x.status === "review" ? { s: E2("En revisión · To’Latino la verifica en 72 h", "In review · To’Latino verifies it within 72 h"), tag: E2("EN REVISIÓN", "IN REVIEW"), tone: "action", ibg: "rgba(255,176,32,.14)", ifg: "var(--tl-pro-ink)" }
+      : { s: E2("No se pudo verificar · revisa el número", "Could not be verified · check the number"), tag: E2("NO VERIFICADA", "NOT VERIFIED"), tone: "danger", ibg: "rgba(192,57,43,.08)", ifg: "var(--tl-danger)" };
+    return { key: x.id, icon: "law", ibg: st.ibg, ifg: st.ifg, t: c.es ? x.title.es : x.title.en || x.title.es, s: st.s, tag: st.tag, tone: st.tone,
+      acts: vivas.length > 1 ? [{ l: E2("Quitar", "Remove"), v: "secondary", off: c.pending, onClick: () => c.run(() => licenciaQuitar(d.id, x.id), E2("Licencia quitada.", "License removed.")) }] : undefined };
+  }) });
+  for (const x of vivas) out.push({ type: "field", k: `${E2("NÚMERO", "NUMBER")} · ${(c.es ? x.title.es : x.title.en || x.title.es).toUpperCase()}`, val: F.d.nums[x.id] ?? "", max: 40, pre: x.label, ph: E2("Como sale en tu licencia", "As it appears on your license"), onChange: (v) => F.set({ nums: { ...F.d.nums, [x.id]: v.replace(/[^A-Za-z0-9 #./-]/g, "") } }), help: E2("Con el número, el equipo la busca en el registro oficial.", "With the number, the team looks it up in the official registry.") });
+  const tengo = new Set(vivas.map((x) => x.kind)), libres = L.catalogo.filter((k) => !tengo.has(k.key));
+  if (libres.length) out.push({ type: "chips", k: E2("AGREGAR UNA LICENCIA", "ADD A LICENSE"), help: E2("se verifica antes de salir", "verified before it shows"), items: libres.map((k) => ({ l: k.l, v: "filter", onClick: () => c.run(() => licenciaAgregar(d.id, k.key), E2("Enviada. To’Latino la verifica en 72 h.", "Sent. To’Latino verifies it within 72 h.")) })) });
+  if (vivas.some((x) => LIC_LEGAL.includes(x.kind))) out.push({ type: "chips", k: E2("LO QUE NO HACES · SALE EN TU PÁGINA", "WHAT YOU DO NOT DO · SHOWN ON YOUR PAGE"), items: NO_HAGO.map((x, i) => ({ l: c.es ? x[0] : x[1], v: L.cant === (c.es ? x[0] : x[1]) ? "selected" : "filter", onClick: () => c.run(() => noHago(d.id, i), E2("Guardado · ya se ve en tu página", "Saved · it shows on your page now")) })) });
+  out.push({ type: "note", tone: "ink", icon: "law", t: E2("Nadie te garantiza un resultado. En EE. UU. un notario no es abogado: tu página lo dice.", "No one can guarantee a result. In the U.S. a notary is not a lawyer: your page says so.") });
+  return { blocks: out, ed: { F, l: E2("Guardar", "Save"), valid: true, toast: E2("Enviado. To’Latino lo revisa en 72 h.", "Sent. To’Latino checks it within 72 h."),
+    apply: async (z: { nums: Record<string, string> }) => { for (const x of vivas) { const v = (z.nums[x.id] ?? "").trim(); if (v && v !== (x.number ?? "")) { const r = await licenciaNumero(d.id, x.id, v); if (!r.ok) return r; } } return { ok: true } as Res; } } };
 }

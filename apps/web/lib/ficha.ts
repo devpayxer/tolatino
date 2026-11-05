@@ -5,6 +5,7 @@ import { foto } from "./directorio";
 import type { Lang } from "./idioma";
 import { estado, hora12 } from "./tarjeta";
 import { FOTOS_FREE, FOTOS_PRO } from "./plan";
+import { licenciasDe, tarjetaLey } from "./licencias";
 
 /* Ficha del negocio (APP-NEG-LISTING), base de la Fase 1: encabezado, Resumen, horario, fotos, cómo llegar,
    preguntas y Relacionados. Todo lo calcula el servidor; los módulos (menú, servicios, reseñas…) llegan en sus fases. */
@@ -66,7 +67,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   const b = r.rows[0];
   if (!b) return null;
 
-  const [fotos, horas, subs, faqs, enlaces, gente, amen] = await Promise.all([
+  const [fotos, horas, subs, faqs, enlaces, gente, amen, lic] = await Promise.all([
     db().query<{ url: string }>(`select url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit $2`, [id, b.plan === "pro" ? FOTOS_PRO : FOTOS_FREE]),
     db().query<Dia>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
     db().query<{ n: string }>(`select name->>$2 as n from subcategories where id = any($1::text[]) order by array_position($1::text[], id)`, [b.subs, lang]),
@@ -81,6 +82,8 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     // En el local (Quiénes somos · EN TU NEGOCIO): claves del catálogo.
     db().query<{ icon: string | null; l: string }>(
       `select a.icon, a.label->>$2 as l from businesses b cross join unnest(b.amenities) with ordinality u(k, o) join amenities a on a.key = u.k where b.id = $1 order by u.o`, [id, lang]),
+    // ¿Puede hacerlo por ley? (Trámites y profesionales): sus licencias con su estado real.
+    b.cat === "NEG-PRO" ? licenciasDe(id) : Promise.resolve([]),
   ]);
   const pro = b.plan === "pro", n = b.reviews, dias = horas.rows, ahora = { dow: b.dow, hm: b.hm };
   const urls = fotos.rows.map((x) => x.url);
@@ -175,6 +178,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     quien: pro ? quienDetras(gente.rows, b.about?.[lang] || b.about?.es || null, b.founded, b.ciudad, b.verified, lang) : null,
     amen: pro ? amen.rows.map((a) => ({ icon: a.icon ?? "check", l: a.l })) : [],
     amenK: enCasa ? L("CÓMO TRABAJA", "HOW THEY WORK") : L("EN EL LOCAL", "AT THE PLACE"),
+    ley: pro && b.cat === "NEG-PRO" ? tarjetaLey(lic, Array.isArray(b.attrs.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null, lang) : null,
   };
 }
 

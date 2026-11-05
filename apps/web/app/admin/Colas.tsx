@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { COLAS, type Cola } from "@/lib/colas";
-import { decidirMedios, decidirNuevo, decidirRec, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
+import { decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -91,7 +91,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -122,6 +122,16 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ver como cliente", icon: "search", onClick: () => window.open(`/n/${n.id}`, "_blank") },
         { l: "Todo bien", v: "action", icon: "check", onClick: () => run(() => decidirNuevo(k.id, "ok", ""), () => ir({ caso: null })) },
         { l: "Ocultar", v: "danger", icon: "ban", onClick: () => setConf({ titulo: "¿Por qué se oculta?", plantillas: PLANT.biz, peligro: true, hacer: (m) => decidirNuevo(k.id, "ocultar", m) }) },
+      ];
+    }
+    if (k.queue === "lic" && "licencia" in k && k.licencia && n) {
+      const l = k.licencia, est = ({ valid: ["Verificada", "var(--tl-open-text)"], expired: ["Vencida", "var(--tl-danger)"], not_found: ["No aparece", "var(--tl-danger)"], revoked: ["No aparece", "var(--tl-danger)"] } as Record<string, [string, string]>)[l.status] ?? ["Por verificar", "var(--tl-pro-ink)"];
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LICENCIA", v: l.title }, { k: "PUEDE", v: l.can }, { k: "NÚMERO", v: l.number ? `${l.label} ${l.number}` : "No lo dio" }, { k: "ESTADO HOY", v: est[0], fg: est[1] }, { k: "ÚLTIMA REVISIÓN", v: l.checked ? new Date(l.checked).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—" }, { k: "REGISTRO", v: l.site }] });
+      cuerpoB.push({ type: "note", tone: "info", t: "Verifícala en el registro oficial del estado. Lo que decidas se ve en la ficha «Licencia» del negocio.", cta: "Abrir registro", onCta: () => window.open(l.url, "_blank", "noopener") });
+      acts = [
+        { l: "Verificada", v: "action", icon: "verified", onClick: () => run(() => decidirLicencia(k.id, "valid", ""), () => ir({ caso: null })) },
+        { l: "Vencida", icon: "clock", onClick: () => setConf({ titulo: "¿Qué dice el registro?", hacer: (m) => decidirLicencia(k.id, "expired", m) }) },
+        { l: "No aparece", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Qué buscaste y dónde?", peligro: true, hacer: (m) => decidirLicencia(k.id, "not_found", m) }) },
       ];
     }
     if (k.queue === "medios" && "foto" in k && n) {

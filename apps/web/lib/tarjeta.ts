@@ -81,7 +81,8 @@ export function chipsTarjeta(cat: string, pro: boolean, tags: string[], attrs: R
   const v = (label: string) => out.push({ variant: "verified", label });
   if (cat === "NEG-SALUD" && tags.includes("medesp")) v(es ? "El médico habla español" : "Doctor speaks Spanish");
   const licL = attrs.licL as [string, string] | undefined;
-  if (cat === "NEG-PRO" && licL) v(licL[es ? 0 : 1]);
+  // Solo con una licencia VERIFICADA (la marca «lic» la pone el servidor al verificarla: licencias_refrescar).
+  if (cat === "NEG-PRO" && licL && tags.includes("lic")) v(licL[es ? 0 : 1]);
   const nt = attrs.nt as { edad?: number; dress?: [string, string] } | undefined;
   if (cat === "NEG-NOCHE" && nt) v(`${es ? "Edad " : "Age "}${nt.edad}+${nt.dress ? " · " + nt.dress[es ? 0 : 1] : ""}`);
   if (cat === "NEG-MERC" && tags.includes("pesa")) v(es ? "Pesan delante de ti" : "Weighed in front of you");

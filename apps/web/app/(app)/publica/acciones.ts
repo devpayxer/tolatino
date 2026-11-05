@@ -130,6 +130,18 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
     await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, mias.length]);
     // Revisión ligera del equipo (Super Admin › Colas › Negocios nuevos). El negocio ya sale; esto no lo detiene.
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('nuevo', 'business', $1, $1, $2) on conflict do nothing`, [slug, loc.ciudad]);
+    // Licencias que marcó (Trámites y profesionales): «en revisión» en su ficha Licencia y un caso en la cola Licencias.
+    const lics = Array.isArray(dv.cx?.lic) ? (dv.cx.lic as unknown[]).filter((k): k is string => typeof k === "string" && /^[a-z]{2,12}$/.test(k)).slice(0, 10) : [];
+    if (lics.length) {
+      await c.query(
+        `with ins as (
+           insert into licenses (business_id, city_id, kind, title, can, cannot, issuer, registry_url, status, source, sort)
+           select $1, $2, k.key, k.title, k.can, coalesce(k.cannot, '[]'::jsonb), k.issuer->>'es', k.registry_url, 'review', 'publica', o.n
+             from unnest($3::text[]) with ordinality o(key, n) join license_kinds k on k.key = o.key and k.category_id = $4
+           on conflict do nothing returning id, business_id, city_id)
+         insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) select 'lic', 'license', id::text, business_id, city_id from ins`,
+        [slug, loc.ciudad, lics, d.cat]);
+    }
     await c.query(`insert into business_members (business_id, user_id, kind, display_name, phone, panel_access) values ($1, $2, 'owner', $3, $4, '{all}')`, [slug, me.id, nombreYo, tel]);
     const D = daysOf(d);
     for (let i = 0; i < 7; i++) {

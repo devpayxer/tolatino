@@ -22,7 +22,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   if (!colas.length) return { casos: [] as CasoLista[], conteo: {} as Record<string, number>, vencidos: 0, total: 0 };
   const r = await db().query<{
     id: string; queue: Cola; opened_at: string; priority: string; assigned_to: string | null; assignee: string | null;
-    bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number;
+    bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee,
             b.name as bname,
@@ -30,7 +30,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             rc.business_name as rname, c.name->>'es' as rcat,
             (select pr.note from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open' order by pr.created_at limit 1) as mnote,
             (select pr.reason from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open' order by pr.created_at limit 1) as mreason,
-            (select count(*)::int from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open') as nrep
+            (select count(*)::int from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open') as nrep,
+            (select coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' from licenses l join license_kinds k on k.key = l.kind where q.queue = 'lic' and l.id::text = q.subject_id) as ltitle
        from queue_items q
        left join businesses b on b.id = q.business_id
        left join users u on u.id = q.assigned_to
@@ -49,6 +50,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     const b = x.bname ?? "";
     const t = x.queue === "sello" ? { title: `Sello · ${b}`, sub: "Pidió el sello de verificación" }
       : x.queue === "nuevo" ? { title: b, sub: "Publicado desde la app · revisión ligera" }
+      : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
     return {
@@ -85,6 +87,13 @@ export async function caso(s: Staff, id: string) {
   if (q.queue === "sello") {
     const v = (await db().query<{ status: string; checks: Record<string, boolean>; note: string | null }>(`select status, checks, note from verification_requests where id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, sello: v ?? null };
+  }
+  if (q.queue === "lic") {
+    const l = (await db().query<{ id: string; status: string; title: string; can: string; number: string | null; label: string; checked: string | null; url: string; site: string }>(
+      `select l.id::text, l.status, coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' as title, k.can->>'es' as can, l.number, k.number_label as label,
+              l.checked_at as checked, k.registry_url as url, k.registry_site as site
+         from licenses l join license_kinds k on k.key = l.kind where l.id = $1::bigint`, [q.subject_id])).rows[0];
+    return { ...base, negocio, licencia: l ?? null };
   }
   if (q.queue === "medios") {
     const m = (await db().query<{ url: string; status: string; visibles: number }>(

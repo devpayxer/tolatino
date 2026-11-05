@@ -3,6 +3,7 @@ import type { Staff } from "./admin";
 import { db } from "./db";
 import { aPanel, fuerza, prueba } from "./panel-reglas";
 import { TLOnbNeg } from "./onb/datos";
+import { licenciasDe } from "./licencias";
 import { telefonoBonito } from "./panel";
 
 /* ADM-NEG · Negocios: lista con filtros y el 360° de un negocio. Todo acotado a las ciudades de la persona
@@ -102,7 +103,7 @@ export async function negocio360(s: Staff, id: string) {
        left join business_stats_cache s on s.business_id = b.id left join users u on u.id = b.owner_user_id
       where b.id = $1 and (cardinality($2::text[]) = 0 or b.city_id = any($2::text[]))`, [id, s.cities])).rows[0];
   if (!b) return null;
-  const [fotos, horas, equipo, notas, historial, casos, sello, cifras] = await Promise.all([
+  const [fotos, horas, equipo, notas, historial, casos, sello, cifras, lic] = await Promise.all([
     db().query<{ id: string; url: string; status: string; removed_reason: string | null; removed_note: string | null; sort: number }>(
       `select id, url, status, removed_reason, removed_note, sort from media where owner_kind = 'business' and owner_id = $1
          and (status = 'visible' or removed_reason = 'admin') order by status = 'visible' desc, sort, created_at`, [id]),
@@ -122,6 +123,7 @@ export async function negocio360(s: Staff, id: string) {
     db().query<{ v30: number; c30: number }>(
       `select (select coalesce(sum(n),0)::int from business_views_daily where business_id = $1 and day > current_date - 30) as v30,
               (select count(*)::int from contact_taps where business_id = $1 and at > now() - interval '30 days') as c30`, [id]),
+    licenciasDe(id),
   ]);
   const tr = prueba(b.trial_until, b.trial_days);
   const dias = aPanel(horas.rows), visibles = fotos.rows.filter((x) => x.status === "visible").length;
@@ -134,7 +136,7 @@ export async function negocio360(s: Staff, id: string) {
     fuerza: fz,
     ...b, phone: telefonoBonito(b.phone), owner_phone: telefonoBonito(b.owner_phone), trial: tr && tr.on ? tr : null,
     fotos: fotos.rows, horas: dias, equipo: equipo.rows.map((m) => ({ ...m, phone: telefonoBonito(m.phone) })), notas: notas.rows, historial: historial.rows,
-    casos: casos.rows, sello: sello.rows[0] ?? null, cifras: cifras.rows[0] ?? { v30: 0, c30: 0 },
+    casos: casos.rows, sello: sello.rows[0] ?? null, licencias: lic, cifras: cifras.rows[0] ?? { v30: 0, c30: 0 },
     puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin" },
   };
 }

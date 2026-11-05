@@ -4,7 +4,7 @@ import { negocio360 } from "@/lib/admin-negocios";
 import { N360 } from "../../N360";
 
 /* ADM-NEG · 360° de un negocio (pantalla completa, como el prototipo por defecto en Negocios). ?tab= la pestaña. */
-const TABS = new Set(["resumen", "ficha", "equipo", "confianza"]);
+const TABS = new Set(["resumen", "ficha", "vende", "equipo", "confianza"]);
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   const s = await requerir("neg", "ver");
   const [{ id }, sp] = await Promise.all([params, searchParams]);

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
-import { cambiarEstado, cierreTemporal, editarCampo, foto, nota, reabrir, restaurar, sello, staffPagina } from "./acciones-negocios";
+import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, nota, reabrir, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -23,7 +23,7 @@ const VERBO: Record<string, string> = {
   "negocio.reabrir": "reabrió", "negocio.sello.dar": "dio el sello a", "negocio.sello.quitar": "quitó el sello a", "negocio.sello.aprobar": "aprobó el sello de",
   "negocio.sello.pedir_dato": "pidió un dato a", "negocio.sello.rechazar": "no aprobó el sello de", "negocio.editar": "editó", "negocio.foto.quitar": "quitó una foto de",
   "negocio.foto.restaurar": "restauró una foto de", "negocio.staff.quitar": "quitó de la página a alguien de", "negocio.staff.mostrar": "volvió a mostrar a alguien de",
-  "negocio.nota": "agregó una nota a", "negocio.revisado": "revisó",
+  "negocio.nota": "agregó una nota a", "negocio.revisado": "revisó", "licencia.verificar": "verificó la licencia de", "licencia.vencida": "marcó vencida la licencia de", "licencia.no_aparece": "no encontró la licencia de",
 };
 const DIAS = [["Lunes", 1], ["Martes", 2], ["Miércoles", 3], ["Jueves", 4], ["Viernes", 5], ["Sábado", 6], ["Domingo", 0]] as const;
 const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—");
@@ -56,7 +56,9 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
     {`${n.estado === "cerrado" ? "Cerrado" : n.estado === "susp" ? "Suspendido" : "Oculto"}: ${n.status_reason ?? "sin motivo"} · No sale en búsquedas ni en la categoría; el dueño ve el motivo en su panel.`}</A.AdminNote>);
   else if (n.temp_until && new Date(n.temp_until).getTime() > Date.now()) notasEstado.push(<A.AdminNote key="t" tone="warn" icon="clock" cta={P.editar ? "Reabrir" : undefined} onCta={() => setConf({ titulo: "¿Por qué se reabre?", hacer: (m) => reabrir(n.id, m) })}>
     {`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`}</A.AdminNote>);
-  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ["equipo", "Equipo"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
+  const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
+  const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
+  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(n.cat_id === "NEG-PRO" ? [["vende", "Lo que vende"]] : []), ["equipo", "Equipo"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
@@ -85,6 +87,19 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
         <A.AdminList label="LO QUE VE EL CLIENTE" rows={[campo("name", "Nombre", n.name), campo("about", "Quiénes somos", n.about?.es ?? "", true), { icon: "grid", title: "Categoría y subcategorías", sub: `${n.cat}${n.subs ? ` · ${n.subs}` : ""}` }, campo("phone", "Teléfono", n.phone), campo("address", "Dirección", n.address ?? "")]} />
         <PanelBloques bloques={[{ type: "group", k: "HORARIO" }, { type: "kv", cols: 2, items: DIAS.map(([d], i) => { const x = n.horas[i]!; return { k: d.toUpperCase(), v: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : "Cerrado", fg: x.on ? undefined : "rgba(11,14,18,.45)" }; }) }]} />
       </>);
+  } else if (tab === "vende") {
+    cuerpo = (
+      <>
+        {n.licencias.length ? <A.AdminList label={`SU HERRAMIENTA · LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
+          const [sub, tag, tone] = LIC_ST[l.status] ?? LIC_ST.review!;
+          return { icon: "law", title: l.title.es, sub: `${sub}${l.number ? ` · ${l.label} ${l.number}` : " · sin número"}`, tag, tone,
+            actions: P.editar && l.status !== "valid" ? [
+              { label: "Verificar", variant: "secondary", onClick: () => setConf({ titulo: `Verificar la licencia: ${l.title.es}`, sub: "Confirma que el número existe en el registro oficial del estado.", plantillas: ["Coincide con el registro oficial"], hacer: (m) => licencia(n.id, l.id, "valid", m) }) },
+              ...(l.status === "review" ? [{ label: "No se pudo", variant: "secondary", onClick: () => setConf({ titulo: `No se pudo verificar: ${l.title.es}`, peligro: true, hacer: (m) => licencia(n.id, l.id, "not_found", m) }) }] : []),
+            ] : undefined };
+        })} /> : <A.AdminNote tone="info" icon="law">No declaró licencias.</A.AdminNote>}
+        <A.AdminNote tone="info">Menú, servicios y lo demás que vende llegan con sus módulos.</A.AdminNote>
+      </>);
   } else if (tab === "equipo") {
     const dueño = n.equipo.find((m) => m.kind === "owner"), staff = n.equipo.filter((m) => m.kind !== "owner");
     cuerpo = (
@@ -108,7 +123,7 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
         {casosAbiertos.length ? <A.AdminList label={`REPORTES Y CASOS ABIERTOS · ${casosAbiertos.length}`} rows={casosAbiertos.map((c) => ({ icon: "bell", title: COL[c.queue] ?? c.queue, sub: `${hace(c.opened_at)}`, tag: "ABIERTO", tone: "action", chevron: true, onClick: () => router.push(`/admin/colas?caso=${c.id}`) }))} />
           : <PanelBloques bloques={[{ type: "group", k: "REPORTES ABIERTOS · 0", first: true }]} />}
         {!casosAbiertos.length ? <A.AdminNote tone="ok">Ninguno.</A.AdminNote> : null}
-        <PanelBloques bloques={[{ type: "group", k: "SELLO Y LICENCIA" }, { type: "kv", cols: 2, items: [{ k: "SELLO", v: selloL, fg: n.verified ? "var(--tl-open-text)" : undefined }, { k: "LICENCIA", v: "Llega con la ficha Licencia" }] }, { type: "group", k: "ESTADO Y SANCIONES" }]} />
+        <PanelBloques bloques={[{ type: "group", k: "SELLO Y LICENCIA" }, { type: "kv", cols: 2, items: [{ k: "SELLO", v: selloL, fg: n.verified ? "var(--tl-open-text)" : undefined }, { k: "LICENCIA", v: licPeor ? (LIC_ST[licPeor.status] ?? LIC_ST.review!)[0] : "No la necesita", fg: licPeor ? (licPeor.status === "valid" ? "var(--tl-open-text)" : "var(--tl-danger)") : undefined }] }, { type: "group", k: "ESTADO Y SANCIONES" }]} />
         {historial((a) => /ocultar|suspender|cerrar|restaurar|sello|cierre|reabrir/.test(a))}
       </>);
   } else {

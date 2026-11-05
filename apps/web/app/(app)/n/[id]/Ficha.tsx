@@ -135,6 +135,20 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
       )}
     </div>
   );
+  /* ¿PUEDE HACERLO POR LEY? (Prototipo L781 / L1577, bundle-3 V.ax.veh): lleva a la ficha Licencia. */
+  const ley = f.ley && (
+    <div data-screen-label="Resumen · puede hacerlo por ley" role={f.ley.enlace ? "link" : undefined} onClick={f.ley.enlace ? () => router.push(`/n/${f.id}/licencia`) : undefined}
+      className="flex items-center gap-3 rounded-[17px] border border-line bg-white px-3.5 py-[13px]" style={{ cursor: f.ley.enlace ? "pointer" : "default" }}>
+      <span className="grid size-[42px] flex-none place-items-center rounded-xl bg-ink"><Icon name={f.ley.enlace ? "verified" : "ban"} size={20} color="var(--tl-white)" /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{f.ley.enlace ? t.leyK : t.leyNoK}</span>
+        <span className="mt-1 block text-[14px] font-bold leading-[1.3]">{f.ley.titulo}</span>
+        {f.ley.texto ? <span className="mt-0.5 block text-[12px] font-medium leading-[1.45] text-ink/60">{f.ley.texto}</span> : null}
+        {f.ley.cant ? <span className="mt-1 flex items-center gap-1.5 text-[12px] font-semibold text-pro-ink"><Icon name="warning" size={13} color="var(--tl-pro-ink)" />{`${t.leyNo} ${f.ley.cant}`}</span> : null}
+      </span>
+      {f.ley.enlace ? <span className="flex-none text-[12.5px] font-bold text-action">{t.leyCta}</span> : null}
+    </div>
+  );
   const quien = (desk: boolean) => f.quien && (
     <div data-screen-label={desk ? "Resumen desktop · quién está detrás" : "Resumen · quién está detrás"} className="grid">
       <OwnerCard {...f.quien} teamCta="" desktop={desk} />
@@ -321,6 +335,7 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
               {f.quien && <div className="px-5 pt-[18px] lg:hidden">{quien(false)}</div>}
               {f.quien && <div className="hidden lg:block">{quien(true)}</div>}
               <div className="px-5 pt-3.5 lg:hidden">{hoy(false)}</div>
+              {ley && <div className="mx-5 mt-3.5 lg:mx-0 lg:mt-0">{ley}</div>}
               <div className="hidden lg:block">{hoy(true)}</div>
               {oferta && <div className="mx-5 mt-3.5 lg:mx-0 lg:mt-0">{oferta}</div>}
               {fotos && <div className="pt-[26px] lg:pt-0">{fotos}</div>}

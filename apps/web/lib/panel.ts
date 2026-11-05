@@ -6,6 +6,7 @@ import { TLOnbNeg } from "./onb/datos";
 import { aPanel, fuerza, prueba, seDuerme, type DiaPanel } from "./panel-reglas";
 import { EQUIPO_FREE, ITEMS_FREE, TOPE_FREE } from "./plan";
 import { estado } from "./tarjeta";
+import { licenciasDe } from "./licencias";
 
 /* Panel del negocio: quién entra. El servidor decide en cada lectura y cada cambio: la persona tiene que ser miembro
    activo del negocio (dueño, o equipo con acceso a esa parte del panel). Nunca se confía en lo que diga la pantalla. */
@@ -80,7 +81,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   if (!b) return null;
   const tr = prueba(b.attrs?.onb?.trial?.until, b.attrs?.onb?.trial?.days);
   const desde = tr ? tr.start : new Date(0).toISOString();
-  const [fotos, horas, miembros, cifras, faqs, amen, negocios] = await Promise.all([
+  const [fotos, horas, miembros, cifras, faqs, amen, negocios, lic, licCat] = await Promise.all([
     db().query<{ id: string; url: string }>(`select id, url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort, created_at`, [id]),
     db().query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
     db().query<{
@@ -100,6 +101,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     db().query<{ n: number }>(`select count(*)::int as n from faqs where business_id = $1`, [id]),
     db().query<{ key: string; icon: string; label: Bi }>(`select key, icon, label from amenities where categories = '{}' or $1 = any(categories) order by (categories = '{}'), sort`, [b.cat]),
     misNegocios(acc.yo.id),
+    b.cat === "NEG-PRO" ? licenciasDe(id) : Promise.resolve([]),
+    db().query<{ key: string; title: Bi }>(`select key, title from license_kinds where category_id = $1 order by sort`, [b.cat]),
   ]);
 
   const pro = b.plan === "pro", c = cfg(b.cat), itemsW = (c.items ?? ["servicios", "services"]) as [string, string];
@@ -138,6 +141,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     fotos: fotos.rows, horas: dias, about: b.about, amen: b.amen, amenAll: amen.rows.map((a) => ({ key: a.key, l: a.label[lang] })),
     owner: b.owner, equipo, equipoFree: EQUIPO_FREE, tope: TOPE_FREE, usadosMes: 0,
     hoy: { fecha: b.hoy, tz: b.tz, dow: b.dow, hm: b.hm, saludo: ahoraHora < 12 ? (es ? "Buenos días" : "Good morning") : ahoraHora < 19 ? (es ? "Buenas tardes" : "Good afternoon") : es ? "Buenas noches" : "Good evening" },
+    // Tus licencias (Trámites y profesionales): las del negocio con su estado y las del catálogo que puede agregar.
+    lic: b.cat === "NEG-PRO" ? { filas: lic, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })), cant: Array.isArray(b.attrs?.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null } : null,
     negocios: negocios.map((n) => ({ id: n.id, name: n.name, plan: n.plan, foto: n.foto, trial: prueba(n.until, n.days) })),
   };
 }

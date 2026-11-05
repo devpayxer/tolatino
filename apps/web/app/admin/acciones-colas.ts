@@ -169,3 +169,33 @@ export async function decidirRec(id: string, accion: "existe" | "descartar", mot
   listo();
   return { ok: true, mensaje: "Listo. Quedó en la auditoría." };
 }
+
+/* Licencias: verificada (coincide con el registro), vencida o no aparece. La ficha Licencia muestra el estado real; la
+   tarjeta, el chip y el filtro «Licencia verificada» solo cuentan las verificadas (licencias_refrescar). */
+export async function decidirLicencia(id: string, accion: "valid" | "expired" | "not_found", motivo: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  if (!["valid", "expired", "not_found"].includes(accion)) return no("Esa decisión no existe.");
+  const m = accion === "valid" ? "Coincide con el registro oficial" : motivoOk(motivo);
+  if (!m) return no("Escribe el motivo.");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "lic") return "Ese caso no es de esta cola.";
+    const l = (await c.query<{ status: string; kind: string }>(`select status, kind from licenses where id = $1::bigint for update`, [q.subject_id])).rows[0];
+    if (!l || l.status === "withdrawn") return "El negocio retiró esa licencia.";
+    await c.query(
+      `update licenses set status = $2, status_reason = $3, checked_at = now(), checked_by = $4, updated_at = now(),
+              verified_at = case when $2 = 'valid' then now() else verified_at end, verified_by = case when $2 = 'valid' then $4 else verified_by end,
+              next_review = case when $2 = 'valid' then (now() + interval '3 months')::date else next_review end
+        where id = $1::bigint`, [q.subject_id, accion, m, s.id]);
+    await c.query(`select licencias_refrescar($1)`, [q.business_id]);
+    await cerrar(c, q, s, accion, m);
+    const L: Record<string, string> = { valid: "verificada", expired: "vencida", not_found: "no se pudo verificar" };
+    await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : accion === "expired" ? "licencia.vencida" : "licencia.no_aparece", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { licencia: l.kind, estado: "por verificar" }, after: { licencia: l.kind, estado: L[accion] }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: "Listo. Quedó en la auditoría." };
+}

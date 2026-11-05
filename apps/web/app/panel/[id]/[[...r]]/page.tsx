@@ -6,7 +6,7 @@ import { Panel, type Ruta } from "../../Panel";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
-const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver"]);
+const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic"]);
 const DET = /^(stf:(new|[0-9a-f-]{36}))$/;
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string }> }) {
