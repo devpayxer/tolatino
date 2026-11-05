@@ -26,7 +26,7 @@ _Actualizado: 5 nov 2026._
 - El token de la API vive en los secretos del entorno de Claude Code (solo pruebas).
 
 ## Pendiente inmediato
-1. El fundador abre `http://2.31.196.167/` y confirma que ve «To'Latino · servidor de pruebas».
+1. ~~Verificado por el fundador (5 nov 00:08 EST): la página de estado carga, sync en commit 430e46a.~~ **Defecto conocido:** en el primer arranque `tolatino-sync` corrió dos veces a la vez (runcmd + timer) y chocó el clone; se autocorrigió al minuto. **Corregir en Fase 0:** `deploy.sh` reemplaza `/usr/local/bin/tolatino-sync` con una versión con `flock`.
 2. Terminar de cuadrar el plan (decisiones A, E, F, G, I, K) y reescribir `docs/PLAN.md`.
 3. Crear la rama `pruebas` nueva (hoy apunta al código v1) con `infra/pruebas/deploy.sh`
    cuando empiece la Fase 0.
