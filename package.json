@@ -1,0 +1,19 @@
+{
+  "name": "tolatino",
+  "private": true,
+  "version": "2.0.0",
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "guardianes": "node guardianes/run.mjs",
+    "verificar": "pnpm typecheck && pnpm build && pnpm guardianes"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0"
+  }
+}

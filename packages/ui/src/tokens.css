@@ -1,0 +1,136 @@
+/* Tokens del To'Latino Design System — copia 1:1 de docs/diseno/design-system/tokens (colors + typography + shape). Las fuentes las carga next/font (self-hosted); no se usa fonts.css. */
+:root {
+  /* Core */
+  --tl-ink: #0B0E12;
+  --tl-brand: #7B61FF;      /* identidad solamente: logo, apóstrofe. Nunca botón */
+  --tl-action: #4B37F5;     /* todo lo interactivo */
+  --tl-action-hover: #2E1FD1;
+  --tl-signal: #00E5C4;
+  --tl-paper: #F7F6F3;
+  --tl-white: #FFFFFF;
+  --tl-pro: #FFB020;
+  --tl-desk: #EDEBE6;       /* fondo detrás del dispositivo */
+
+  /* Estados */
+  --tl-open: #00A88F;       /* punto "abierto", verificado */
+  --tl-open-text: #00695B;
+  --tl-danger: #C0392B;
+
+  /* Tonos de módulo */
+  --tl-mod-community: #4B37F5;
+  --tl-mod-business: #00A88F;
+  --tl-mod-events: #FF2D7A;
+  --tl-mod-transport: #1E7BFF;
+  --tl-mod-realestate: #0FA958;
+  --tl-mod-autos: #FF8A1F;
+  --tl-mod-jobs: #C2410C;
+
+  /* Superficie oscura (noche, conductor) */
+  --tl-dark-1: #0B0E12;
+  --tl-dark-2: #14181F;
+  --tl-dark-3: #1C222B;
+  --tl-dark-line: rgba(255,255,255,.14);
+
+  /* Texto sobre claro (ink con alfa) */
+  --tl-text: #0B0E12;
+  --tl-text-2: rgba(11,14,18,.75);
+  --tl-text-3: rgba(11,14,18,.6);
+  --tl-text-muted: rgba(11,14,18,.5);
+  --tl-text-faint: rgba(11,14,18,.42);
+
+  /* Líneas y rellenos */
+  --tl-line: rgba(11,14,18,.08);
+  --tl-line-strong: rgba(11,14,18,.14);
+  --tl-fill: rgba(11,14,18,.05);
+  --tl-fill-soft: rgba(11,14,18,.035);
+
+  /* Tintes */
+  --tl-action-tint: rgba(75,55,245,.09);
+  --tl-signal-tint: rgba(0,229,196,.2);
+  --tl-danger-tint: rgba(192,57,43,.1);
+
+  /* Neutros de imagen y apoyo (usados en pantallas) */
+  --tl-photo-bg: #E4E1DA;       /* fondo de foto mientras carga */
+  --tl-photo-bg-2: #DDD9D1;     /* avatar / miniatura sin foto */
+  --tl-paper-2: #F6F7F5;        /* fila alterna / superficie hundida */
+  --tl-mint-soft: #E8EDE9;      /* fondo suave de verificado */
+  --tl-pro-ink: #8A5A00;        /* texto sobre tinte Pro */
+  --tl-signal-ink: #04120F;     /* texto sobre Signal */
+
+
+  /* Semánticos */
+  --surface-page: var(--tl-white);
+  --surface-card: var(--tl-white);
+  --surface-sunken: var(--tl-paper);
+  --text-body: var(--tl-text-2);
+  --text-heading: var(--tl-ink);
+  --border-card: var(--tl-line);
+  --button-primary-bg: var(--tl-ink);
+  --button-action-bg: var(--tl-action);
+  --link: var(--tl-action);
+}
+:root {
+  --font-display: "Sora", sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --type-display: 800 34px/1.05 var(--font-display);   /* -0.035em */
+  --type-h1: 800 24px/1.08 var(--font-display);        /* -0.04em */
+  --type-section: 800 17px/1 var(--font-display);      /* -0.02em */
+  --type-card-title: 700 19px/1.25 var(--font-body);
+  --type-body: 400 13.5px/1.62 var(--font-body);
+  --type-ui: 700 13px var(--font-body);
+  --type-button: 700 14.5px var(--font-body);
+  --type-small: 600 12px var(--font-body);
+  --type-meta: 600 11px var(--font-mono);              /* 0.06em, MAYÚSCULAS */
+  --type-label: 800 10px var(--font-mono);             /* 0.12em, MAYÚSCULAS */
+  --type-tab: 800 12px var(--font-mono);               /* 0.06em */
+
+  /* Escala real usada en pantallas (más frecuentes primero) */
+  --size-ui-xs: 10.5px;  --size-ui-sm: 11.5px;  --size-ui: 12px;  --size-ui-md: 12.5px;  --size-ui-lg: 13px;  --size-body: 13.5px;  --size-ui-xl: 14px;
+  --size-mono-xxs: 8.5px; --size-mono-xs: 9px;  --size-mono-sm: 9.5px;  --size-mono: 10px;  --size-mono-md: 11px;  --size-mono-lg: 12px;
+  --size-title-sm: 15px; --size-title: 16px;  --size-title-md: 17px;  --size-title-lg: 18px;  --size-price: 20px;  --size-h2: 22px;  --size-h1: 24px;
+
+  --track-display: -0.04em;
+  --track-section: -0.02em;
+  --track-mono: 0.06em;
+  --track-label: 0.12em;
+}
+:root {
+  --radius-tag: 5px;
+  --radius-6: 6px;
+  --radius-7: 7px;
+  --radius-chip-sq: 8px;
+  --radius-9: 9px;
+  --radius-10: 10px;            /* botón chico, chip de conductor */
+  --radius-11: 11px;            /* botón sm */
+  --radius-sm: 12px;
+  --radius-13: 13px;            /* botón md, tile de ícono */
+  --radius-14: 14px;            /* input, fila de negocio, CTA de barra (el más usado) */
+  --radius-button: 15px;
+  --radius-16: 16px;            /* buscador, bloque interno */
+  --radius-card: 17px;
+  --radius-18: 18px;            /* tile de módulo, fila de viaje */
+  --radius-20: 20px;            /* tarjeta de evento, card desktop */
+  --radius-card-lg: 22px;
+  --radius-24: 24px;
+  --radius-sheet: 26px;
+  --radius-pill: 999px;
+  --radius-device: 43px;
+
+  --shadow-card: 0 12px 26px -22px rgba(11,14,18,.45);
+  --shadow-float: 0 24px 48px -34px rgba(11,14,18,.45);
+  --shadow-action: 0 8px 20px -8px rgba(75,55,245,.7);
+  --shadow-device: 0 40px 80px -30px rgba(11,14,18,.55);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --gutter-mobile: 20px;
+
+  --blur-bar: blur(14px); /* @kind other */
+  --ease-sheet: cubic-bezier(.2,.8,.2,1); /* @kind other */
+}

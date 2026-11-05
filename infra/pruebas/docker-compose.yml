@@ -1,0 +1,60 @@
+# Sandbox To'Latino (proyecto de pruebas). Lo levanta deploy.sh con /etc/tolatino/pruebas.env.
+name: tolatino-pruebas
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/pruebas/Dockerfile
+      args:
+        TOLATINO_COMMIT: ${TOLATINO_COMMIT:-desconocido}
+    image: tolatino/web:pruebas
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      TOLATINO_ENTORNO: pruebas
+      TOLATINO_COMMIT: ${TOLATINO_COMMIT:-desconocido}
+      DATABASE_URL: postgres://tolatino:${POSTGRES_PASSWORD}@db:5432/tolatino
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  db:
+    image: postgis/postgis:16-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tolatino
+      POSTGRES_USER: tolatino
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: America/New_York
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tolatino -d tolatino"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
+volumes:
+  db-data:
+  minio-data:

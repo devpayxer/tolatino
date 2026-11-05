@@ -1,0 +1,74 @@
+@import "tailwindcss";
+@import "@tolatino/ui/tokens.css";
+
+
+/* Los tokens del sistema (docs/diseno/design-system/tokens) expuestos a Tailwind.
+   Regla: ningún componente usa hex a pelo; solo estos nombres. */
+@theme {
+  --color-ink: var(--tl-ink);
+  --color-brand: var(--tl-brand);
+  --color-action: var(--tl-action);
+  --color-action-hover: var(--tl-action-hover);
+  --color-signal: var(--tl-signal);
+  --color-paper: var(--tl-paper);
+  --color-paper-2: var(--tl-paper-2);
+  --color-white: var(--tl-white);
+  --color-pro: var(--tl-pro);
+  --color-pro-ink: var(--tl-pro-ink);
+  --color-open: var(--tl-open);
+  --color-open-text: var(--tl-open-text);
+  --color-danger: var(--tl-danger);
+  --color-dark-1: var(--tl-dark-1);
+  --color-dark-2: var(--tl-dark-2);
+  --color-dark-3: var(--tl-dark-3);
+  --color-text-2: var(--tl-text-2);
+  --color-text-3: var(--tl-text-3);
+  --color-text-muted: var(--tl-text-muted);
+  --color-text-faint: var(--tl-text-faint);
+  --color-line: var(--tl-line);
+  --color-line-strong: var(--tl-line-strong);
+  --color-fill: var(--tl-fill);
+  --color-fill-soft: var(--tl-fill-soft);
+  --color-action-tint: var(--tl-action-tint);
+  --color-signal-tint: var(--tl-signal-tint);
+  --color-danger-tint: var(--tl-danger-tint);
+  --color-photo-bg: var(--tl-photo-bg);
+  --color-photo-bg-2: var(--tl-photo-bg-2);
+  --color-mint-soft: var(--tl-mint-soft);
+
+  /* next/font carga Sora / Manrope / JetBrains Mono (self-hosted) y los expone como --font-sora/-manrope/-jetbrains;
+     aquí toman el nombre del sistema. (No usar var(--font-display) aquí: sería un ciclo y la fuente se perdería.) */
+  --font-display: var(--font-sora), "Sora", sans-serif;
+  --font-body: var(--font-manrope), "Manrope", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", monospace;
+
+  --radius-tag: var(--radius-tag);
+  --radius-chip: var(--radius-chip-sq);
+  --radius-sm: var(--radius-sm);
+  --radius-input: var(--radius-14);
+  --radius-button: var(--radius-button);
+  --radius-card: var(--radius-card);
+  --radius-card-lg: var(--radius-card-lg);
+  --radius-sheet: var(--radius-sheet);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-float: var(--shadow-float);
+  --shadow-action: var(--shadow-action);
+}
+
+/* Base en @layer base para que las utilidades (text-white, etc.) ganen siempre. */
+@layer base {
+  html {
+    background: var(--tl-paper);
+    color: var(--tl-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    margin: 0;
+    font: var(--type-body);
+    font-family: var(--font-body);
+  }
+  a { color: var(--tl-action); text-decoration: none; }
+  a:hover { color: var(--tl-action-hover); }
+}

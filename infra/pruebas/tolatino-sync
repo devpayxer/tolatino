@@ -1,0 +1,46 @@
+#!/bin/bash
+# Sincroniza el servidor de pruebas con la rama `pruebas` y despliega si cambió.
+# Versión 2 (con candado): nunca corren dos a la vez. deploy.sh la instala en /usr/local/bin.
+set -u
+exec 9>/var/lock/tolatino-sync.lock
+flock -n 9 || exit 0
+
+REPO=https://github.com/devpayxer/tolatino.git
+BR=pruebas
+DIR=/opt/tolatino
+LOG=/var/log/tolatino-sync.log
+STATE=/var/lib/tolatino
+mkdir -p "$STATE" /var/www/estado
+
+if [ ! -d "$DIR/.git" ]; then
+  rm -rf "$DIR"
+  git clone -q --depth 50 --branch "$BR" "$REPO" "$DIR" 2>>"$LOG" || { echo "$(date -Is) clone falló" >>"$LOG"; exit 0; }
+  echo "$(date -Is) clon inicial $(git -C "$DIR" rev-parse --short HEAD)" >>"$LOG"
+fi
+cd "$DIR" || exit 0
+git fetch -q --depth 50 origin "$BR" 2>>"$LOG" || { echo "$(date -Is) fetch falló" >>"$LOG"; exit 0; }
+LOCAL=$(git rev-parse HEAD); REMOTE=$(git rev-parse "origin/$BR")
+if [ "$LOCAL" != "$REMOTE" ] || [ ! -f "$STATE/last-deploy" ] || [ "$(cat "$STATE/last-deploy")" != "$(git rev-parse --short "$REMOTE")" ]; then
+  git reset -q --hard "origin/$BR"
+  git clean -qfd
+  echo "$(date -Is) actualizado a $(git rev-parse --short HEAD)" >>"$LOG"
+  if [ -f infra/pruebas/deploy.sh ]; then
+    echo "$(date -Is) deploy.sh inicio" >>"$LOG"
+    if bash infra/pruebas/deploy.sh >>"$LOG" 2>&1; then
+      echo "$(date -Is) deploy.sh OK" >>"$LOG"; echo OK > "$STATE/last-result"
+    else
+      echo "$(date -Is) deploy.sh FALLÓ" >>"$LOG"; echo FALLO > "$STATE/last-result"
+    fi
+  else
+    echo "$(date -Is) sin infra/pruebas/deploy.sh" >>"$LOG"; echo SIN-DEPLOY > "$STATE/last-result"
+  fi
+  git rev-parse --short HEAD > "$STATE/last-deploy"
+fi
+
+# Página de estado del servidor (/estado/)
+RES=$(cat "$STATE/last-result" 2>/dev/null || echo -)
+{ echo "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>To'Latino · pruebas</title>"
+  echo "<body style='font-family:system-ui;padding:24px;max-width:640px;margin:auto'><h1>To'Latino · servidor de pruebas</h1>"
+  echo "<p><b>Último despliegue:</b> $RES · <b>commit:</b> $(cat "$STATE/last-deploy" 2>/dev/null || echo -) · <b>hora:</b> $(date '+%Y-%m-%d %H:%M %Z')</p>"
+  echo "<p><a href='/'>Abrir la app</a> · <a href='/api/salud'>Salud</a></p><h3>Últimas líneas</h3><pre style='white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px'>"
+  tail -n 25 "$LOG" | sed 's/&/\&amp;/g;s/</\&lt;/g'; echo "</pre></body>"; } > /var/www/estado/index.html

@@ -23,7 +23,20 @@ _Actualizado: 5 nov 2026._
 - **Plan APROBADO (5 nov 2026). Sigue: Fase 0 — Cimientos.** Todas las decisiones
   (A–Z) están en `docs/DECISIONES.md`; `docs/PLAN.md` v2 y `CLAUDE.md` las integran.
   No hay código de la app todavía.
-- **Cómo arrancar la Fase 0 (sesión nueva, `/model opus`, `/effort high`):**
+- **Fase 0 · bloque 1 HECHO (5 nov):** monorepo pnpm + Turborepo; `apps/web` (Next.js 15,
+  App Router, Tailwind v4, `output: standalone`, fuentes self-hosted con next/font);
+  `packages/ui` (tokens.css 1:1 del sistema + `Wordmark`); `/api/salud` (app + PostGIS +
+  commit); `guardianes/run.mjs` (secretos · tokens · semilla · idioma; probados al revés);
+  CI en GitHub Actions; `infra/pruebas/` (Dockerfile multi-etapa, compose con web + Postgres/
+  PostGIS 16 + MinIO, `deploy.sh` idempotente, nginx con `/` → app y `/estado/`,
+  `tolatino-sync` v2 con `flock`). Captura `capturas/fase0-bloque1-iphone15.png`
+  (fondo Paper, Sora/Manrope/Mono comprobados por `getComputedStyle`).
+  **Lección:** para probar el standalone en local hay que copiar `.next/static` y `public`
+  dentro de `.next/standalone/apps/web/` (el Dockerfile ya lo hace).
+- **Sigue · bloque 2:** puerto del sistema de diseño (132 componentes de
+  `docs/diseno/design-system/components-web/` → `packages/ui/src/**`, TSX con tokens, sin hex),
+  página `/sistema` con el catálogo, captura por componente, guardián visual.
+- **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama
      `pruebas` nueva con `infra/pruebas/deploy.sh` (que además reemplaza

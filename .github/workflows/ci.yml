@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+    branches: [main, pruebas, "claude/**"]
+  pull_request:
+
+jobs:
+  verificar:
+    name: tipos · build · guardianes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm guardianes
+      - name: Imagen del sandbox se construye
+        run: docker build -f infra/pruebas/Dockerfile -t tolatino/web:ci .
