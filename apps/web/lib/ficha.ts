@@ -1,4 +1,5 @@
 import "server-only";
+import { centroSQL, type Punto } from "./punto";
 import { db } from "./db";
 import { foto } from "./directorio";
 import type { Lang } from "./idioma";
@@ -37,7 +38,9 @@ const min = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number); 
 const rango = ([a, b]: Rango, lang: Lang) => (a === b ? (lang === "es" ? "24 horas" : "24 hours") : `${hora12(a)} – ${hora12(b)}`);
 const duracion = (m: number) => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h} h${r ? ` ${r} min` : ""}` : `${r} min`; };
 
-export async function ficha(id: string, lang: Lang) {
+/* p = desde dónde mide la persona (APP-CIUDAD); sin él, desde el centro de la ciudad del negocio. */
+export async function ficha(id: string, lang: Lang, p?: Punto) {
+  const desde = p ? centroSQL(p) : "c.center";
   if (!ID_NEGOCIO.test(id) || id.length > 80) return null;
   const es = lang === "es", L = (a: string, b: string) => (es ? a : b);
   const r = await db().query<{
@@ -50,7 +53,7 @@ export async function ficha(id: string, lang: Lang) {
             b.subcategory_ids as subs, b.filter_values as tags, b.category_attrs as attrs, b.about, b.founded_year as founded, b.phone,
             b.address, b.service_radius_mi as radius, b.works_from_home as from_home,
             st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
-            case when b.geo is null then null else round((st_distance(b.geo, c.center) / 1609.34)::numeric, 1)::float end as mi,
+            case when b.geo is null then null else round((st_distance(b.geo, ${desde}) / 1609.34)::numeric, 1)::float end as mi,
             negocio_abierto(b.id, now() at time zone c.timezone) as open,
             c.name as ciudad, c.state as estado,
             extract(dow from now() at time zone c.timezone)::int as dow, to_char(now() at time zone c.timezone, 'HH24:MI') as hm,
@@ -68,7 +71,7 @@ export async function ficha(id: string, lang: Lang) {
     db().query<Dia>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
     db().query<{ n: string }>(`select name->>$2 as n from subcategories where id = any($1::text[]) order by array_position($1::text[], id)`, [b.subs, lang]),
     db().query<{ q: string; a: string }>(`select question->>$2 as q, answer->>$2 as a from faqs where business_id = $1 order by sort`, [id, lang]),
-    relacionados(id, lang),
+    relacionados(id, lang, desde),
   ]);
   const pro = b.plan === "pro", n = b.reviews, dias = horas.rows, ahora = { dow: b.dow, hm: b.hm };
   const urls = fotos.rows.map((x) => x.url);
@@ -184,10 +187,10 @@ function proximoCambio(dias: Dia[], dow: number, t: number, abierto: boolean): {
 
 /* Relacionados: sucursales y negocios del mismo dueño que los DOS confirmaron (business_links.status = 'ok'),
    con la nota que este negocio escribió del otro. */
-async function relacionados(id: string, lang: Lang) {
+async function relacionados(id: string, lang: Lang, desde: string) {
   const r = await db().query<{ id: string; kind: string; nota: string | null; name: string; verified: boolean; rating: number | null; reviews: number; mi: number | null; address: string | null; open: boolean; foto: string | null; tags: string[]; subs: string | null; radius: number | null; from_home: boolean; lat: number | null; lng: number | null; phone: string | null }>(
     `select o.id, l.kind, case when l.a_id = $1 then l.note_a->>$2 else l.note_b->>$2 end as nota, o.name, s.verified, s.rating_avg::float as rating,
-            s.review_count as reviews, case when o.geo is null then null else round((st_distance(o.geo, c.center) / 1609.34)::numeric, 1)::float end as mi,
+            s.review_count as reviews, case when o.geo is null then null else round((st_distance(o.geo, ${desde}) / 1609.34)::numeric, 1)::float end as mi,
             o.address, negocio_abierto(o.id, now() at time zone c.timezone) as open, o.filter_values as tags,
             (select m.url from media m where m.owner_kind = 'business' and m.owner_id = o.id and m.status = 'visible' order by m.sort limit 1) as foto,
             (select string_agg(sc.name->>$2, ' · ' order by array_position(o.subcategory_ids, sc.id)) from subcategories sc where sc.id = any(o.subcategory_ids[1:2])) as subs,

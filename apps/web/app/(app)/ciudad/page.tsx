@@ -1,5 +1,7 @@
-import { Pronto } from "../Pronto";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <Pronto titulo="Elegir ciudad" bloque="Fase 1 · bloque 1f" />;
+/* /ciudad abre el selector de ciudad (APP-CIUDAD) sobre Inicio; /ciudad?pedir abre «Avísame cuando llegue a mi zona». */
+export default async function Page({ searchParams }: { searchParams: Promise<{ pedir?: string }> }) {
+  const sp = await searchParams;
+  redirect(sp.pedir !== undefined ? "/?ciudad=pedir" : "/?ciudad");
 }

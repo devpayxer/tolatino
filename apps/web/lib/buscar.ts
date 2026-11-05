@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { CTE, COLUMNAS, DESDE, FOTO, conFoto, POR_PAGINA, type Resultado } from "./categoria";
+import type { Punto } from "./punto";
 import { slugCat } from "./directorio";
 import type { Lang } from "./idioma";
 import DATOS from "./busqueda-datos.json";
@@ -111,7 +112,7 @@ const FILTRO: Record<string, string> = {
   free: `b.filter_values && array['gratis','sincover','gratis1','diagfree','presfree']`,
 };
 
-export type Opciones = { ciudad: string; cat?: string | null; quitar?: string[]; orden?: "rel" | "near" | "best"; pagina?: number; limite?: number; vivo?: boolean };
+export type Opciones = { punto: Punto; cat?: string | null; quitar?: string[]; orden?: "rel" | "near" | "best"; pagina?: number; limite?: number; vivo?: boolean };
 export type Hallado = Resultado & { score: number };
 
 /* Negocios que encajan. Pro primero; dentro, por puntaje (o distancia / calificación). */
@@ -121,7 +122,7 @@ export async function negocios(E: Entendido, o: Opciones): Promise<{ items: Hall
   const ord = orden === "near" ? "mi asc nulls last" : orden === "best" ? "(case when reviews >= 5 then rating else 0 end) desc, reviews desc" : "score_q desc";
   const limite = o.limite ?? POR_PAGINA, off = Math.max(0, Math.min(o.pagina ?? 0, 99)) * limite;
   const correr = async (y: boolean) => {
-    const params: unknown[] = [o.ciudad];
+    const params: unknown[] = [o.punto.ciudad];
     const add = (v: unknown) => { params.push(v); return `$${params.length}`; };
     const conTexto = E.grupos.length > 0;
     const q = conTexto ? add(tsq(E.grupos, y, o.vivo)) : null;
@@ -131,7 +132,7 @@ export async function negocios(E: Entendido, o: Opciones): Promise<{ items: Hall
       ? `ts_rank('{0.15, 0.3, 0.7, 1.0}', b.search_doc, to_tsquery('simple', ${q}), 1) * 100 + (case when lower(unaccent(b.name)) like ${pre} then 3 else 0 end) + (case when negocio_abierto(b.id, t.t) then 0.5 else 0 end)`
       : `1 + (case when negocio_abierto(b.id, t.t) then 0.5 else 0 end)`;
     const r = await db().query<Hallado & { total: string; score_q: number }>(
-      `${CTE}, base as (select ${COLUMNAS}, ${score} as score_q ${DESDE}${w.length ? " and " + w.join(" and ") : ""})
+      `${CTE(o.punto)}, base as (select ${COLUMNAS}, ${score} as score_q ${DESDE}${w.length ? " and " + w.join(" and ") : ""})
        select base.*, count(*) over () as total, ${FOTO("base")} from base
         order by pro desc, ${ord}, id limit ${limite} offset ${off}`, params);
     return { items: r.rows.map(({ total: _t, score_q, ...x }) => conFoto({ ...x, score: Number(score_q) }) as Hallado), total: Number(r.rows[0]?.total ?? 0) };

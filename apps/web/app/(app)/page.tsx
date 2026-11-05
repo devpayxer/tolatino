@@ -1,4 +1,7 @@
+import { yo } from "@/lib/cuenta";
 import { abiertoAhora, categorias, HOME_CATS } from "@/lib/directorio";
+import { ubicacion } from "@/lib/ubicacion";
+import { PantallaPronto } from "./PantallaPronto";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { Inicio } from "./Inicio";
@@ -6,8 +9,10 @@ import { Inicio } from "./Inicio";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const lang = await idioma();
-  const [cats, abierto] = await Promise.all([categorias(lang), abiertoAhora("hzl", lang, 4)]);
+  const [lang, u] = await Promise.all([idioma(), yo()]);
+  const loc = await ubicacion(u);
+  if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
+  const [cats, abierto] = await Promise.all([categorias(lang), abiertoAhora(loc, lang, 4)]);
   const t = T[lang];
   return (
     <Inicio cats={cats} inicio={HOME_CATS} abierto={abierto}

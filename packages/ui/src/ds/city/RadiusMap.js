@@ -53,7 +53,7 @@ const Credit = ({
     font: '500 9px Manrope,sans-serif',
     color: 'rgba(11,14,18,.6)'
   }
-}, "\xA9 Esri \xB7 OpenStreetMap");
+}, "\xA9 OpenMapTiles \xB7 \xA9 OpenStreetMap");
 
 /* 2ag · Hasta dónde buscar: el mapa con tu punto, el círculo real y los negocios (tinta = Pro, Action = Free, gris = fuera), 2 · 5 · 10 · 30 mi y qué entra (cuántos negocios, qué pueblos). desk = columna del popup desktop. */
 function RadiusMap({

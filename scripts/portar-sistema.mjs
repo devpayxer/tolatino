@@ -77,6 +77,14 @@ for (const src of archivos) {
       throw new Error("parche HoursPro: el origen cambió, revisar");
   }
 
+  // RadiusMap: las teselas son propias (OpenStreetMap con el esquema OpenMapTiles), ya no de Esri. El crédito que la
+  // licencia de los datos exige (ODbL y CC-BY) es el de OpenMapTiles y OpenStreetMap.
+  if (rel.endsWith("city/RadiusMap.js")) {
+    const antes = t;
+    t = t.replace('"\\xA9 Esri \\xB7 OpenStreetMap"', '"\\xA9 OpenMapTiles \\xB7 \\xA9 OpenStreetMap"');
+    if (t === antes) throw new Error("parche RadiusMap: el origen cambió, revisar");
+  }
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();

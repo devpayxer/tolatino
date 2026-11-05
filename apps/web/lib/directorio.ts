@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import type { Lang } from "./idioma";
+import { centroSQL, DENTRO, radioSQL, type Punto } from "./punto";
 
 /* Directorio: lecturas públicas. Todo con ciudad; derivados de business_stats_cache; «abierto ahora» con la hora local
    de la ciudad (no la del servidor). */
@@ -23,9 +24,9 @@ export const foto = (url: string | null, h = 350) => (url && url.includes("image
 export type Fila = { id: string; name: string; meta: string; verified: boolean; slot: string | null; image: string | null };
 
 /* Abierto ahora: Pro, con foto, abierto en este momento; el más cercano de cada categoría en el orden del diseño. */
-export async function abiertoAhora(ciudad: string, lang: Lang, n: number): Promise<Fila[]> {
+export async function abiertoAhora(p: Punto, lang: Lang, n: number): Promise<Fila[]> {
   const r = await db().query<{ id: string; name: string; cat: string; r: string | null; mi: number; sub: string | null; verified: boolean; eta: string | null; url: string | null }>(
-    `with c as (select id, center, timezone from cities where id = $1),
+    `with c as (select id, ${centroSQL(p)} as center, timezone from cities where id = $1),
           ahora as (select (now() at time zone c.timezone) as t from c)
      select b.id, b.name, b.category_id as cat, s.rating_avg::text as r,
             round((st_distance(b.geo, c.center) / 1609.34)::numeric, 1)::float as mi,
@@ -34,14 +35,14 @@ export async function abiertoAhora(ciudad: string, lang: Lang, n: number): Promi
             (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as url
        from businesses b join business_stats_cache s on s.business_id = b.id, c, ahora
        join business_hours h on true
-      where b.city_id = $1 and b.status = 'active' and s.plan = 'pro'
+      where b.city_id = $1 and b.status = 'active' and s.plan = 'pro' and ${DENTRO(radioSQL(p))}
         and h.business_id = b.id and h.module = '' and h.weekday = extract(dow from ahora.t)::int and h.open
         and exists (select 1 from jsonb_array_elements(h.ranges) g
                      where (g->>0)::time <= ahora.t::time
                        and ((g->>1)::time > ahora.t::time or (g->>1)::time <= (g->>0)::time))
         and exists (select 1 from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible')
       order by b.category_id, mi`,
-    [ciudad, lang],
+    [p.ciudad, lang],
   );
   const out: Fila[] = [];
   for (const cat of ORDEN_ABIERTO) {

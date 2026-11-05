@@ -32,7 +32,7 @@ export function normalizarTelefono(entrada: string): string | null {
 const huellaCodigo = (tel: string, codigo: string) => createHmac("sha256", secretoAuth()).update(`${tel}:${codigo}`).digest("hex");
 const huellaToken = (t: string) => createHash("sha256").update(t).digest("hex");
 
-async function ipCliente(): Promise<string | null> {
+export async function ipCliente(): Promise<string | null> {
   const h = await headers();
   const ip = h.get("x-real-ip") || h.get("x-forwarded-for")?.split(",")[0]?.trim();
   return ip && /^[0-9a-fA-F:.]+$/.test(ip) ? ip : null;

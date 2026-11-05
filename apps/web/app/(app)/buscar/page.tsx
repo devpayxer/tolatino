@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { yo } from "@/lib/cuenta";
-import { db } from "@/lib/db";
 import { idioma } from "@/lib/idioma";
 import { categorias } from "@/lib/directorio";
 import { nombresSub } from "@/lib/categoria";
@@ -8,10 +7,11 @@ import { armarTarjetas } from "@/lib/tarjetas";
 import { dominante, ejemplos, entender, negocios, N, registrar, resaltar, sugerirCatalogo, tendencias, type Entendido } from "@/lib/buscar";
 import { Buscar, type VistaBuscar } from "./Buscar";
 import DATOS from "@/lib/busqueda-datos.json";
+import { ubicacion } from "@/lib/ubicacion";
+import { PantallaPronto } from "../PantallaPronto";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Buscar · To'Latino" };
-const CIUDAD = "hzl"; // selector de ciudad: bloque 1f-2
 const FILTRABLES = new Set(["open", "near", "ver", "dlv", "pk", "walk", "casa", "h24", "esp", "medicaid", "medicare", "chip", "sinseg", "sinssn", "free"]);
 // Filtros rápidos según la categoría dominante (prototipo QK).
 const RAPIDOS: Record<string, string[]> = { "NEG-FOOD": ["dlv", "pk"], "NEG-BELL": ["walk", "casa"], "NEG-SALUD": ["medicaid", "medicare", "sinseg", "esp"], "NEG-HOGAR": ["h24", "casa"], "NEG-AUTO": ["walk", "h24"], "NEG-NOCHE": ["free"], "NEG-PRO": ["esp"], "NEG-INMUEBLE": ["sinssn"], "NEG-MERC": ["dlv", "pk"] };
@@ -30,9 +30,11 @@ function sinFrase(q: string, frase: string) {
 export default async function Page({ searchParams }: { searchParams: Promise<SP> }) {
   const [sp, lang, u] = await Promise.all([searchParams, idioma(), yo()]);
   const es = lang === "es", L = (a: string, b: string) => (es ? a : b);
+  const loc = await ubicacion(u);
+  if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
+  const CIUDAD = loc.ciudad;
   const cats = await categorias(lang);
-  const ciudad = (await db().query<{ name: string; state: string }>("select name, state from cities where id = $1", [CIUDAD])).rows[0];
-  const nomCiudad = ciudad?.name ?? "";
+  const nomCiudad = loc.c.name;
   const q = String(sp.q ?? "").slice(0, 120).trim();
   const catSel = cats.find((c) => c.slug === sp.cat) ?? null;
   const extra = String(sp.f ?? "").split(",").filter((k) => FILTRABLES.has(k));
@@ -64,7 +66,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   }
   const limite = tab === "biz" ? 10 : 5;
   const [r, C] = await Promise.all([
-    negocios(E, { ciudad: CIUDAD, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite }),
+    negocios(E, { punto: loc, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite }),
     sugerirCatalogo(E, CIUDAD, catSel?.id ?? null),
   ]);
   const vaciaPrimero = !!C.vacias[0] && (!C.subs[0] || C.vacias[0].score > C.subs[0].score);

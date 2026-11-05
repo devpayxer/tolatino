@@ -42,6 +42,17 @@ bash "$REPO/packages/db/migrar.sh" docker compose --env-file "$ENV_FILE" -f "$RE
 # 3c) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
 SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml"
 
+# 3d) Mapa: teselas propias de Pensilvania. Generarlas tarda minutos: si faltan, se hacen aparte (systemd-run) y al
+#     terminar se enciende el servidor de teselas. El despliegue de la app nunca espera por el mapa.
+MAPA=/var/lib/tolatino/mapa
+COMPOSE_MAPA=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" --profile mapa)
+if [ -f "$MAPA/pennsylvania.mbtiles" ]; then
+  "${COMPOSE_MAPA[@]}" up -d mapa
+elif ! systemctl is-active --quiet tolatino-mapa; then
+  log "teselas: no existen todavía, se generan aparte"
+  systemd-run --unit tolatino-mapa --collect bash -c "bash '$REPO/infra/mapa/generar.sh' '$MAPA' && ${COMPOSE_MAPA[*]} up -d mapa" || true
+fi
+
 # 4) nginx: la app en /, la página de estado del servidor en /estado.
 install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" /etc/nginx/sites-available/tolatino-pruebas
 ln -sf /etc/nginx/sites-available/tolatino-pruebas /etc/nginx/sites-enabled/tolatino-pruebas

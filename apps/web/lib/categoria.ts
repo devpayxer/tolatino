@@ -1,4 +1,5 @@
 import "server-only";
+import { centroSQL, DENTRO, radioSQL, type Punto } from "./punto";
 import { db } from "./db";
 import { foto, slugCat } from "./directorio";
 import type { Lang } from "./idioma";
@@ -46,7 +47,7 @@ export function mosaicos(p: Pagina): Map<string, Regla> {
   return m;
 }
 
-export type Pedido = { ciudad: string; cat: string; sub: Regla | null; filtros: string[]; orden: Orden; pagina: number };
+export type Pedido = { punto: Punto; cat: string; sub: Regla | null; filtros: string[]; orden: Orden; pagina: number };
 export type Resultado = {
   id: string; cat: string; name: string; pro: boolean; verified: boolean; rating: number | null; reviews: number; mi: number | null;
   radius: number | null; fromHome: boolean; phone: string | null; lat: number | null; lng: number | null;
@@ -74,7 +75,8 @@ function condiciones(p: Pedido, params: unknown[]) {
 }
 
 /* Columnas de un negocio en una lista (todas derivadas del servidor; la tarjeta no calcula nada). */
-export const CTE = `with c as (select center, timezone, default_radius from cities where id = $1),
+/* c = el punto desde donde se mide y el radio que eligió la persona (APP-CIUDAD); t = la hora local de la ciudad. */
+export const CTE = (p: Punto) => `with c as (select ${centroSQL(p)} as center, timezone, ${radioSQL(p)} as default_radius from cities where id = $1),
           t as (select (now() at time zone c.timezone) as t from c)`;
 export const COLUMNAS = `b.id, b.category_id as cat, b.name, s.plan = 'pro' as pro, s.verified, s.rating_avg::float as rating,
                    s.review_count as reviews,
@@ -87,13 +89,13 @@ export const COLUMNAS = `b.id, b.category_id as cat, b.name, s.plan = 'pro' as p
                    extract(day from t.t)::int as dia`;
 export const DESDE = `from businesses b join business_stats_cache s on s.business_id = b.id, c, t
              where b.city_id = $1 and b.status = 'active'
-               and (b.geo is null or st_dwithin(b.geo, c.center, c.default_radius * 1609.34))`;
+               and ${DENTRO("c.default_radius")}`;
 export const FOTO = (x: string) =>
   `(select m.url from media m where m.owner_kind = 'business' and m.owner_id = ${x}.id and m.status = 'visible' order by m.sort limit 1) as photo`;
 export const conFoto = <X extends { photo: string | null }>(x: X) => ({ ...x, photo: foto(x.photo) });
 
 export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total: number; pagina: number; paginas: number }> {
-  const params: unknown[] = [p.ciudad, p.cat];
+  const params: unknown[] = [p.punto.ciudad, p.cat];
   const extra = condiciones(p, params);
   const pagina = Math.max(0, Math.min(p.pagina, PAGINA_MAX - 1));
   params.push(pagina * POR_PAGINA);
@@ -106,7 +108,7 @@ export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total
     rev: `reviews desc, id`,
   }[p.orden];
   const r = await db().query<Resultado & { total: string }>(
-    `${CTE},
+    `${CTE(p.punto)},
           base as (select ${COLUMNAS} ${DESDE} and b.category_id = $2${extra}),
           r as (
             select *, (row_number() over (partition by pro order by score desc, id) - 1)::int as rn,
@@ -122,44 +124,45 @@ export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total
 }
 
 /* Destacados de la ciudad (APP-NEG-HOME): Pro, con foto y abiertos ahora; la vitrina rota cada día. */
-export async function destacados(ciudad: string, n: number): Promise<Resultado[]> {
+export async function destacados(p: Punto, n: number): Promise<Resultado[]> {
   const r = await db().query<Resultado>(
-    `${CTE},
+    `${CTE(p)},
           base as (select ${COLUMNAS} ${DESDE} and s.plan = 'pro' and negocio_abierto(b.id, t.t)
                      and exists (select 1 from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible')),
           r as (select *, (row_number() over (order by id) - 1)::int as rn, count(*) over ()::int as npro from base)
      select r.*, ${FOTO("r")} from r order by mod(rn - mod(dia, greatest(npro, 1)) + npro, greatest(npro, 1)) limit $2`,
-    [ciudad, n],
+    [p.ciudad, n],
   );
   return r.rows.map(conFoto);
 }
 
 /* Nuevos en el barrio: los que se unieron en los últimos 60 días, el más reciente primero. */
-export async function nuevos(ciudad: string, n: number): Promise<Resultado[]> {
+export async function nuevos(p: Punto, n: number): Promise<Resultado[]> {
   const r = await db().query<Resultado>(
-    `${CTE}
+    `${CTE(p)}
      select ${COLUMNAS}, ${FOTO("b")} ${DESDE} and b.created_at > now() - interval '60 days'
       order by b.created_at desc, s.plan = 'pro' desc, b.id limit $2`,
-    [ciudad, n],
+    [p.ciudad, n],
   );
   return r.rows.map(conFoto);
 }
 
-/* Cuántos negocios activos tiene cada categoría en la ciudad (tarjetas de Negocios). */
-export async function conteos(ciudad: string): Promise<Map<string, number>> {
+/* Cuántos negocios activos tiene cada categoría desde el punto y radio elegidos (tarjetas de Negocios). */
+export async function conteos(p: Punto): Promise<Map<string, number>> {
   const r = await db().query<{ cat: string; n: number }>(
-    `select category_id as cat, count(*)::int as n from businesses where city_id = $1 and status = 'active' group by category_id`, [ciudad]);
+    `${CTE(p)} select b.category_id as cat, count(*)::int as n from businesses b, c
+      where b.city_id = $1 and b.status = 'active' and ${DENTRO("c.default_radius")} group by b.category_id`, [p.ciudad]);
   return new Map(r.rows.map((x) => [x.cat, x.n]));
 }
 
 /* Línea de la portada: cuántos hay, cuántos abiertos y cuántos con el atributo estrella de la categoría. */
-export async function cifras(ciudad: string, cat: string, tag: string) {
+export async function cifras(p: Punto, cat: string, tag: string) {
   const r = await db().query<{ total: number; abiertos: number; con: number }>(
-    `with c as (select timezone from cities where id = $1), t as (select (now() at time zone c.timezone) as t from c)
+    `${CTE(p)}
      select count(*)::int as total, (count(*) filter (where negocio_abierto(b.id, t.t)))::int as abiertos,
             (count(*) filter (where b.filter_values @> array[$3]::text[]))::int as con
-       from businesses b, t where b.city_id = $1 and b.category_id = $2 and b.status = 'active'`,
-    [ciudad, cat, tag],
+       from businesses b, c, t where b.city_id = $1 and b.category_id = $2 and b.status = 'active' and ${DENTRO("c.default_radius")}`,
+    [p.ciudad, cat, tag],
   );
   return r.rows[0] ?? { total: 0, abiertos: 0, con: 0 };
 }

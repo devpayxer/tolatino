@@ -2,6 +2,7 @@
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { yo } from "@/lib/cuenta";
+import { ubicacion } from "@/lib/ubicacion";
 
 export async function cambiarIdioma(lang: "es" | "en") {
   (await cookies()).set("tl_lang", lang === "en" ? "en" : "es", { path: "/", maxAge: 365 * 86400, sameSite: "lax" });
@@ -82,11 +83,12 @@ export async function avisameBusqueda(q: string, catSlug: string | null): Promis
   const texto = typeof q === "string" ? q.replace(/\s+/g, " ").trim().slice(0, 120) : "";
   if (!texto) return { ok: false };
   const slug = typeof catSlug === "string" && /^[a-z-]{2,30}$/.test(catSlug) ? catSlug : null;
+  const loc = await ubicacion(u);
   await db().query(
     `insert into search_alerts (user_id, city_id, query, filters)
-     select $1, 'hzl', $2, $3::jsonb
-      where not exists (select 1 from search_alerts where user_id = $1 and city_id = 'hzl' and lower(query) = lower($2) and removed_at is null)`,
-    [u.id, texto, JSON.stringify({ cat: slug })],
+     select $1, $4, $2, $3::jsonb
+      where not exists (select 1 from search_alerts where user_id = $1 and city_id = $4 and lower(query) = lower($2) and removed_at is null)`,
+    [u.id, texto, JSON.stringify({ cat: slug }), loc.ciudad],
   );
   return { ok: true, on: true };
 }

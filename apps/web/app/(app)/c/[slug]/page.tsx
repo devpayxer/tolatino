@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { yo } from "@/lib/cuenta";
-import { db } from "@/lib/db";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { foto } from "@/lib/directorio";
 import { categoriaPorSlug, cifras, filtros, mosaicos, ORDENES, resultados, type Orden } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
+import { ubicacion } from "@/lib/ubicacion";
+import { PantallaPronto } from "../../PantallaPronto";
 import { Categoria, type Vista } from "./Categoria";
 
 export const dynamic = "force-dynamic";
-const CIUDAD = "hzl"; // el selector de ciudad llega en el bloque 1f; hoy todo es Hazleton (como el prototipo)
 
 type SP = { sub?: string; f?: string; orden?: string; p?: string };
 
@@ -21,9 +21,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function Page({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<SP> }) {
-  const [{ slug }, sp, lang] = await Promise.all([params, searchParams, idioma()]);
+  const [{ slug }, sp, lang, u] = await Promise.all([params, searchParams, idioma(), yo()]);
   const c = await categoriaPorSlug(slug);
   if (!c) notFound();
+  const loc = await ubicacion(u);
+  if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
+  const CIUDAD = loc.ciudad, ciudad = loc.c;
   const t = T[lang], P = c.page, L = (b: { es: string; en: string }) => b[lang];
 
   // Lo que pide la URL, validado contra lo que la categoría ofrece de verdad.
@@ -35,11 +38,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const orden: Orden = (ORDENES as readonly string[]).includes(sp.orden ?? "") ? (sp.orden as Orden) : "rel";
   const pagina = Math.max(0, (parseInt(String(sp.p ?? "1"), 10) || 1) - 1);
 
-  const [res, cf, ciudad, u] = await Promise.all([
-    resultados({ ciudad: CIUDAD, cat: c.id, sub: sub ? reglas.get(sub)! : null, filtros: elegidos, orden, pagina }),
-    cifras(CIUDAD, c.id, P.stats_tag),
-    db().query<{ name: string; state: string }>("select name, state from cities where id = $1", [CIUDAD]).then((r) => r.rows[0]),
-    yo(),
+  const [res, cf] = await Promise.all([
+    resultados({ punto: loc, cat: c.id, sub: sub ? reglas.get(sub)! : null, filtros: elegidos, orden, pagina }),
+    cifras(loc, c.id, P.stats_tag),
   ]);
   const tarjetas = await armarTarjetas(CIUDAD, res.items, lang, u?.id ?? null);
   const lugar = ciudad ? `${ciudad.name.toUpperCase()}, ${ciudad.state}` : "";

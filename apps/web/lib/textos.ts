@@ -2,7 +2,7 @@
    (editables desde el Super Admin › Textos) cuando exista esa sección (Fase 9). */
 export const T = {
   es: {
-    search: "¿Qué necesitas hoy?", searchIn: "Buscar en Hazleton", searchDesk: "Buscar negocios, eventos y más en Hazleton",
+    search: "¿Qué necesitas hoy?", searchIn: "Buscar en {c}", searchDesk: "Buscar negocios, eventos y más en {c}",
     allCats: "Todas (17)", catsTitle: "CATEGORÍAS (17)", today: "Hoy en el barrio", seeAll: "Ver todo", openNow: "Abierto ahora",
     events: "Esta semana", community: "Comunidad", forBiz: "PARA NEGOCIOS", publishTitle: "Publica tu negocio gratis",
     publishBody: "Sin importar el nivel de tu emprendimiento: si ya estás establecido, si estás iniciando, o si solo es un hobby.",
@@ -61,7 +61,7 @@ export const T = {
     },
   },
   en: {
-    search: "What do you need today?", searchIn: "Search Hazleton", searchDesk: "Search businesses, events and more in Hazleton",
+    search: "What do you need today?", searchIn: "Search {c}", searchDesk: "Search businesses, events and more in {c}",
     allCats: "All (17)", catsTitle: "CATEGORIES (17)", today: "Today nearby", seeAll: "See all", openNow: "Open now",
     events: "This week", community: "Community", forBiz: "FOR BUSINESSES", publishTitle: "List your business for free",
     publishBody: "Whatever stage you are at: established, just starting, or it is only a hobby.",

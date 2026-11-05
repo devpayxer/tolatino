@@ -5,6 +5,7 @@ import { guardados } from "@/lib/categoria";
 import { ficha } from "@/lib/ficha";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
+import { ubicacion } from "@/lib/ubicacion";
 import { Ficha } from "./Ficha";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, lang, u] = await Promise.all([params, idioma(), yo()]);
-  const f = await ficha(id, lang);
+  const f = await ficha(id, lang, await ubicacion(u));
   if (!f) notFound();
   const fav = await guardados(u?.id ?? null, [f.id]);
   const t = T[lang].ficha;

@@ -6,21 +6,23 @@ import { T } from "@/lib/textos";
 import { categorias } from "@/lib/directorio";
 import { conteos, destacados, nuevos } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
+import { ubicacion } from "@/lib/ubicacion";
+import { PantallaPronto } from "../PantallaPronto";
 import { Negocios } from "./Negocios";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Negocios · To'Latino" };
-const CIUDAD = "hzl"; // el selector de ciudad llega en el bloque 1f
 
 /* APP-NEG-HOME. «Hoy en el barrio» (novedades) y «Recomendados por vecinos» no salen hasta tener datos reales:
    las novedades llegan con su módulo y las recomendaciones con las reseñas (el prototipo las inventaba). */
 export default async function Page() {
-  const lang = await idioma();
+  const [lang, u] = await Promise.all([idioma(), yo()]);
   const t = T[lang];
-  const [cats, n, dest, nue, ciudad, u, lineas] = await Promise.all([
-    categorias(lang), conteos(CIUDAD), destacados(CIUDAD, 6), nuevos(CIUDAD, 6),
-    db().query<{ name: string; state: string }>("select name, state from cities where id = $1", [CIUDAD]).then((r) => r.rows[0]),
-    yo(),
+  const loc = await ubicacion(u);
+  if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
+  const CIUDAD = loc.ciudad, ciudad = loc.c;
+  const [cats, n, dest, nue, lineas] = await Promise.all([
+    categorias(lang), conteos(loc), destacados(loc, 6), nuevos(loc, 6),
     db().query<{ id: string; l: string | null }>("select id, page->'subs_line'->>$1 as l from categories", [lang]).then((r) => new Map(r.rows.map((x) => [x.id, x.l]))),
   ]);
   const [tDest, tNue] = await Promise.all([armarTarjetas(CIUDAD, dest, lang, u?.id ?? null), armarTarjetas(CIUDAD, nue, lang, u?.id ?? null)]);
