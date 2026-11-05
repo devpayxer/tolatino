@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { IconLock as Lock } from '@tabler/icons-react';
 import { getStripe } from '@/lib/stripe';
+import { siteUrl } from '@/lib/site';
 import { useLang } from '@/lib/i18n';
 import { Overlay, OverlayTitle, PrimaryBtn } from '@/components/ui';
 
@@ -64,7 +65,7 @@ function PayForm({ amount, returnPath, pendingId, subscription, onClose, onSucce
     // que SÍ redirigen (Cash App, etc.) siguen su camino y la página de vuelta
     // debe mirar `redirect_status`, que Stripe añade con el resultado REAL.
     const qs = subscription ? '?sub=success' : `?pay=success&pid=${encodeURIComponent(pendingId)}`;
-    const return_url = `${window.location.origin}${returnPath}${qs}`;
+    const return_url = siteUrl(`${returnPath}${qs}`);
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: { return_url },

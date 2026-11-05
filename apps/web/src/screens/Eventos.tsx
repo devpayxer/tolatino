@@ -19,6 +19,7 @@ import { Card, Chip, Overlay, OverlayTitle, Paginacion, PrimaryBtn, SkeletonList
 import { SearchChip } from '@/components/AppHeader';
 import { eventTile, EVENT_CATS, EVENT_CAT_BY_ID, type EventItem } from '@/data/fixtures';
 import { ReportButton } from '@/components/ReportButton';
+import { currentPageUrl } from '@/lib/site';
 import { useLiveData, fetchEventBySlug, searchEvents, eventItemFromPub, fetchEventsByOwner, validatePromo, fetchSeatClaims, fetchEventReviews, postEventReview, type PubEvent, type PubTier, type EventReview } from '@/lib/live';
 
 const PAGE_SIZE = 9;
@@ -563,7 +564,7 @@ export function EventosScreen() {
   const doShare = async (title: string, slug?: string) => {
     let url = '';
     if (typeof window !== 'undefined') {
-      const base = `${window.location.origin}${window.location.pathname}`;
+      const base = currentPageUrl();
       url = slug ? `${base}?e=${encodeURIComponent(slug)}` : base;
     }
     const text = L('Mira este evento en To’Latino', 'Check out this event on To’Latino');

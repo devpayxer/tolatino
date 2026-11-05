@@ -1,12 +1,17 @@
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/supabase';
+import { siteUrl } from '@/lib/site';
 
 // Client helpers for the Stripe Edge Functions. Checkout + portal run server-side
 // (secret key never touches the browser); these just fetch the hosted URL to
 // redirect to. The user's Supabase session JWT is attached automatically by
 // supabase.functions.invoke → the function verifies ownership before charging.
 
-const origin = () => (typeof window !== 'undefined' ? window.location.origin : undefined);
+// El origen que las Edge Functions convierten en `return_url`/`refresh_url` de
+// Stripe. Dentro del envoltorio nativo tiene que ser el dominio público: con
+// `capacitor://localhost` el comprador no vuelve a ninguna parte tras pagar
+// (y `safeOrigin()` del servidor lo descartaría por no ser http/https).
+const origin = () => (typeof window !== 'undefined' ? siteUrl() : undefined);
 
 // Stripe.js singleton (publishable key is public by design). Used by the on-site
 // Payment Element checkout. Resolves to null if the key isn't configured.

@@ -43,6 +43,38 @@ prueba en vacío: aborta si la ficha del negocio no llegó a abrirse, y aborta s
 no pudo pinchar al menos dos pestañas. Corrida limpia: `25 RPC distintas, 0
 denegadas`.
 
+## `webview-fase0.js` — el export DENTRO del envoltorio de la app
+
+No mide layout: mide **las URLs que salen de la app**. Dentro del envoltorio
+nativo el origen no es `tolatino.com`, es local del teléfono
+(`capacitor://localhost` en iOS, `http://localhost` en Android), así que una URL
+construida con el origen del navegador nace rota — el enlace mágico del correo
+llevaría a «localhost» y el `return_url` de Stripe dejaría al comprador en el
+vacío. Eso no se ve probando en el navegador, que es justo por lo que existe
+esta prueba.
+
+Corre el **mismo build** en tres contextos: envoltorio **Android** (servido en
+`http://localhost`, sin puerto, el origen real de un WebView/TWA), envoltorio
+**iOS** (`Capacitor.isNativePlatform() = true`) y **web normal** como control.
+En cada uno: que el export arranque y se vea (portada, Comunidad, Negocios,
+Entrar), que el `emailRedirectTo` que la app pide de verdad a Supabase lleve el
+dominio público, y que el enlace de «Compartir» del portapapeles también. El
+**tercer contexto es el que hace válida la prueba**: la web tiene que seguir
+usando su origen local, o habríamos arreglado la app rompiendo el sitio de
+pruebas.
+
+No manda ningún correo ni crea ningún usuario: la llamada de Supabase se
+intercepta y se responde aquí. Trae su propio servidor estático (sin reescritura
+tipo SPA, igual que el servidor interno de Capacitor), así que **el puerto 80
+necesita root**. Si la red no alcanza Supabase, lo detecta, sirve una
+publicación de prueba local para poder pulsar «Compartir» y lo anuncia en el
+informe.
+
+```
+cd apps/web && VERCEL_ENV=preview pnpm build
+cd ../../tools/mobile-audit && SHOTS_DIR=/tmp/shots node webview-fase0.js
+```
+
 ## `reset-contrasena.js` — «olvidé mi contraseña», de punta a punta
 
 La contraseña es la **puerta de servicio** de To'Latino: el camino normal es el

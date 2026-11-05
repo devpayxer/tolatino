@@ -30,6 +30,7 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useUrlDetail } from '@/lib/urlView';
+import { currentPageUrl } from '@/lib/site';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, Switch, VerifiedBadge } from '@/components/ui';
 import {
   AU_CONDS, AU_TYPES, AU_TRANS, AU_FUELS, AU_MAKES, AU_TILE,
@@ -283,7 +284,7 @@ export function AutosScreen() {
   // Native share with clipboard fallback — deep link ?v=<slug>.
   const doShare = async (title: string, slug: string) => {
     let url = '';
-    if (typeof window !== 'undefined') url = `${window.location.origin}${window.location.pathname}?v=${encodeURIComponent(slug)}`;
+    if (typeof window !== 'undefined') url = `${currentPageUrl()}?v=${encodeURIComponent(slug)}`;
     const text = L('Mira este auto en To’Latino', 'Check out this car on To’Latino');
     try {
       if (typeof navigator !== 'undefined' && navigator.share) { await navigator.share({ title, text, url }); return; }

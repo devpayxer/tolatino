@@ -28,6 +28,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
 import { searchAddress, type Address } from '@/lib/geo';
+import { siteUrl } from '@/lib/site';
 import {
   upsertVehicle, fetchMyVehicles, fetchMyVehicleLeads, setVehicleLeadStage,
   fetchMyVehicleTests, setVehicleTestStatus,
@@ -1665,7 +1666,7 @@ export function AutosModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mt-5 flex w-full max-w-[420px] flex-col gap-2.5">
           <button
             onClick={() => {
-              const url = typeof window !== 'undefined' ? `${window.location.origin}/autos` : '';
+              const url = typeof window !== 'undefined' ? siteUrl('/autos') : '';
               if (typeof navigator !== 'undefined' && navigator.clipboard && url) void navigator.clipboard.writeText(url);
               flash(L('Enlace copiado', 'Link copied'));
             }}

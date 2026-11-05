@@ -16,6 +16,7 @@ import { useAvatar } from '@/lib/avatars';
 import { PostMenu } from '@/components/PostMenu';
 import type { Post, PostType } from '@/data/fixtures';
 import { tile } from '@/lib/tiles';
+import { siteUrl } from '@/lib/site';
 
 export type FeedPost = Post;
 
@@ -90,7 +91,7 @@ export function PostCard({
     // no se estaba usando al compartir, así que quien recibía el mensaje caía en
     // el feed y no encontraba de qué le hablaban.
     const url = typeof window !== 'undefined'
-      ? `${window.location.origin}/comunidad/?post=${encodeURIComponent(post.id)}`
+      ? siteUrl(`/comunidad/?post=${encodeURIComponent(post.id)}`)
       : '';
     const text = `${post.name} · To'Latino: ${L(post.es, post.en)}`;
     try {

@@ -34,6 +34,7 @@ import { activeException, bizStatus, bookingSlots, fmtDayHours, fmtLong, fmtShor
 import { fetchPropertiesByBizSlug, fmtPrice as reFmtPrice, RE_TILE, type ReCard } from '@/lib/realestate';
 import { fetchVehiclesByBizSlug, fmtAuPrice, AU_TILE, type AuCard } from '@/lib/autos';
 import { CAT, AVATAR_PALETTE } from '@/lib/tiles';
+import { siteUrl } from '@/lib/site';
 
 // es → en lookup for feature labels ("Lo que ofrece"), so the owner-selected
 // `features` render bilingually; custom (approved) labels fall back to es.
@@ -662,7 +663,7 @@ export function BizDetail({ b: bProp, all, onClose, onOpenOther }: { b: Business
     }
   };
   const shareUpdate = async (u: PubUpdate) => {
-    const url = `${window.location.origin}/negocios/?b=${encodeURIComponent(b.slug)}&bt=updates`;
+    const url = siteUrl(`/negocios/?b=${encodeURIComponent(b.slug)}&bt=updates`);
     const text = `${b.name}: ${B(u.body)}`;
     try {
       if (navigator.share) { await navigator.share({ title: b.name, text, url }); return; }

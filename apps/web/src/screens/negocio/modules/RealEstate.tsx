@@ -27,6 +27,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { uploadImage } from '@/lib/image';
 import { searchAddress, type Address } from '@/lib/geo';
+import { siteUrl } from '@/lib/site';
 import {
   upsertProperty, fetchMyProperties, fetchMyLeads, setLeadStage, fetchMyTours, setTourStatus,
   RE_DEALS, RE_TYPES, RE_TILE, fmtPrice, fmtPriceFull,
@@ -1575,7 +1576,7 @@ export function RealEstateModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
         <div className="mt-5 flex w-full max-w-[420px] flex-col gap-2.5">
           <button
             onClick={() => {
-              const url = typeof window !== 'undefined' ? `${window.location.origin}/bienes-raices` : '';
+              const url = typeof window !== 'undefined' ? siteUrl('/bienes-raices') : '';
               if (typeof navigator !== 'undefined' && navigator.clipboard && url) void navigator.clipboard.writeText(url);
               flash(L('Enlace copiado', 'Link copied'));
             }}
