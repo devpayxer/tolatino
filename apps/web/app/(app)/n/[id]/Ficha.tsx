@@ -24,7 +24,7 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
   const [faq, setFaq] = useState<number | null>(null);
   const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
   const conTabs = f.pro && tabs.length > 1;
-  const verFotos = () => router.push(`/n/${f.id}/fotos`);
+  const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
   const llamar = () => { if (!f.telefono) return; void registrarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; };
   const llegar = () => {
@@ -81,11 +81,11 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
     <div>
       <div className="flex items-baseline justify-between gap-3 px-5 lg:px-0">
         <span className={h2}>{t.photos}</span>
-        <button type="button" onClick={verFotos} className="flex-none text-[12.5px] font-bold text-action lg:text-[13.5px]">{t.photosAll}</button>
+        <button type="button" onClick={() => verFotos()} className="flex-none text-[12.5px] font-bold text-action lg:text-[13.5px]">{t.photosAll}</button>
       </div>
       <div className="hs mt-3 flex gap-[9px] overflow-x-auto px-5 lg:px-0">
         {f.fotos.slice(0, 12).map((u, i) => (
-          <button key={i} type="button" aria-label={`${t.photos} ${i + 1}`} onClick={verFotos} className="h-[106px] w-[150px] flex-none rounded-[15px] bg-photo-bg lg:h-[140px] lg:w-[200px]" style={fondo(u)} />
+          <button key={i} type="button" aria-label={`${t.photos} ${i + 1}`} onClick={() => verFotos(i)} className="h-[106px] w-[150px] flex-none rounded-[15px] bg-photo-bg lg:h-[140px] lg:w-[200px]" style={fondo(u)} />
         ))}
       </div>
     </div>
@@ -204,9 +204,9 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
         </button>
         {f.pro ? (
           <div className="relative mt-4 grid h-[440px] grid-cols-[2fr_1fr] grid-rows-2 gap-2 overflow-hidden rounded-[24px]">
-            <button type="button" aria-label={t.photosAll} onClick={verFotos} className="row-span-2 bg-photo-bg-2" style={fondo(f.hero)} />
-            {f.mosaico.map((u, i) => <button key={i} type="button" aria-label={t.photosAll} onClick={verFotos} className="bg-photo-bg" style={fondo(u)} />)}
-            <button type="button" onClick={verFotos} className="absolute bottom-[18px] right-[18px] flex h-10 items-center gap-2 rounded-xl bg-white px-[15px] text-[13px] font-bold text-ink shadow-[0_10px_24px_-12px_rgba(11,14,18,.6)]">
+            <button type="button" aria-label={t.photosAll} onClick={() => verFotos(0)} className="row-span-2 bg-photo-bg-2" style={fondo(f.hero)} />
+            {f.mosaico.map((u, i) => <button key={i} type="button" aria-label={t.photosAll} onClick={() => verFotos(Math.min(i + 1, f.nFotos - 1))} className="bg-photo-bg" style={fondo(u)} />)}
+            <button type="button" onClick={() => verFotos()} className="absolute bottom-[18px] right-[18px] flex h-10 items-center gap-2 rounded-xl bg-white px-[15px] text-[13px] font-bold text-ink shadow-[0_10px_24px_-12px_rgba(11,14,18,.6)]">
               <Icon name="image" size={15} />{t.photosAll}
             </button>
           </div>
@@ -251,7 +251,7 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
             <Icon name="chevronLeft" size={18} strokeWidth={2} />
           </button>
           {f.nFotos > 0 && (
-            <button type="button" onClick={verFotos} className="absolute bottom-10 right-4 flex items-center gap-[7px] rounded-[10px] bg-ink/70 px-[11px] py-[7px] font-mono text-[10px] font-bold tracking-[0.1em] text-white">
+            <button type="button" onClick={() => verFotos()} className="absolute bottom-10 right-4 flex items-center gap-[7px] rounded-[10px] bg-ink/70 px-[11px] py-[7px] font-mono text-[10px] font-bold tracking-[0.1em] text-white">
               <Icon name="image" size={13} color="var(--tl-white)" />{t.photoCount}
             </button>
           )}

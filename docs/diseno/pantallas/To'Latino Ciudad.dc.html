@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <script src="prototype/bundle-1.js"></script>
+  <script src="prototype/bundle-2.js"></script>
+  <script src="prototype/bundle-3.js"></script>
+  <script src="prototype/bundle-4.js"></script>
+  <script src="prototype/evt-data.js"></script>
+  <script src="prototype/city-data.js"></script>
+  <style>
+    body{margin:0;background:#EDEBE6;font-family:Manrope,system-ui,sans-serif;color:#0B0E12}
+    a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}
+    input::placeholder{color:rgba(11,14,18,.42)}
+    @keyframes cFade{from{opacity:0}to{opacity:1}}
+    @keyframes cUp{from{transform:translateY(64px);opacity:0}to{transform:none;opacity:1}}
+    @keyframes cDrop{from{transform:translateY(-6px);opacity:0}to{transform:none;opacity:1}}
+    @keyframes cSpin{to{transform:rotate(360deg)}}
+    @keyframes cPulse{0%{transform:scale(.5);opacity:.8}100%{transform:scale(2.2);opacity:0}}
+  </style>
+</helmet>
+
+<sc-if value="{{ isSheet }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="APP-CIUDAD · móvil" style="position:absolute;inset:0;z-index:80;display:flex;flex-direction:column;justify-content:flex-end">
+  <div onClick="{{ onClose }}" style="position:absolute;inset:0;background:rgba(11,14,18,.45);animation:cFade .2s ease-out"></div>
+  <div style="position:relative;height:calc(100% - 54px);background:#fff;border-radius:26px 26px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:cUp .26s ease-out">
+    <div style="flex:none;padding:10px 20px 12px;border-bottom:1px solid rgba(11,14,18,.07)">
+      <div style="width:38px;height:5px;border-radius:99px;background:rgba(11,14,18,.15);margin:0 auto 12px"></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <sc-if value="{{ inAsk }}" hint-placeholder-val="{{ false }}"><span onClick="{{ ask.onBack }}" style="width:36px;height:36px;margin-left:-8px;display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 20 }}" stroke-width="{{ 2 }}" hint-size="20px,20px"></x-import></span></sc-if>
+        <span style="flex:1;min-width:0;font:800 22px/1.15 Sora,sans-serif;letter-spacing:-.035em">{{ head.t }}</span>
+        <span onClick="{{ onClose }}" style="width:36px;height:36px;border-radius:12px;background:#F7F6F3;display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 15 }}" stroke-width="{{ 2.2 }}" hint-size="15px,15px"></x-import></span>
+      </div>
+      <span style="display:block;margin-top:4px;font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ head.s }}</span>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none">
+    <sc-if value="{{ inMain }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:16px 20px 24px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="height:46px;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:0 6px 0 13px;border-radius:14px;background:#F7F6F3;border:1.5px solid {{ q.bd }}">
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 17 }}" color="rgba(11,14,18,.45)" hint-size="17px,17px"></x-import>
+          <input value="{{ q.v }}" onChange="{{ q.onChange }}" onFocus="{{ q.onFocus }}" onBlur="{{ q.onBlur }}" placeholder="{{ L.qPh }}" autoComplete="off" style="flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;padding:0;font:600 14.5px Manrope,sans-serif;color:#0B0E12">
+          <sc-if value="{{ q.has }}" hint-placeholder-val="{{ false }}"><span onClick="{{ q.onClear }}" style="width:30px;height:30px;border-radius:99px;display:grid;place-items:center;background:rgba(11,14,18,.07);cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 12 }}" stroke-width="{{ 2.2 }}" hint-size="12px,12px"></x-import></span></sc-if>
+        </div>
+        <sc-if value="{{ q.has }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:2px"><sc-for list="{{ q.rows }}" as="r" hint-placeholder-count="3"><div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid rgba(11,14,18,.06);cursor:pointer"><span style="width:38px;height:38px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ r.icon }}" size="{{ 17 }}" hint-size="17px,17px"></x-import></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:700 14px Manrope,sans-serif">{{ r.t }}</span><span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:{{ r.mc }}">{{ r.m }}</span></span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 15 }}" stroke-width="{{ 2 }}" color="rgba(11,14,18,.35)" hint-size="15px,15px"></x-import></div></sc-for></div></sc-if>
+      </div>
+
+      <sc-if value="{{ q.none }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <div onClick="{{ gps.onClick }}" style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:16px;background:{{ gps.bg }};border:1.5px solid {{ gps.bd }};cursor:pointer">
+          <span style="position:relative;width:40px;height:40px;border-radius:12px;background:rgba(75,55,245,.1);display:grid;place-items:center;flex:none">{{ gps.ring }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 19 }}" color="#4B37F5" hint-size="19px,19px"></x-import></span>
+          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:700 14.5px Manrope,sans-serif;color:{{ gps.fg }}">{{ gps.t }}</span><span style="font:500 12.5px/1.4 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ gps.s }}</span></span>
+          <sc-if value="{{ gps.on }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 18 }}" stroke-width="{{ 2.4 }}" color="#4B37F5" hint-size="18px,18px"></x-import></sc-if>
+        </div>
+
+        <sc-if value="{{ hzl }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.from }}</span>
+          <div style="border-radius:17px;border:1px solid rgba(11,14,18,.08);overflow:hidden">
+            <sc-for list="{{ ctrs }}" as="c" hint-placeholder-count="3"><div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:{{ c.bt }};background:{{ c.bg }};cursor:pointer"><span style="width:20px;height:20px;border-radius:99px;box-sizing:border-box;border:{{ c.ring }};flex:none"></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:700 14px Manrope,sans-serif">{{ c.t }}</span><span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.s }}</span></span></div></sc-for>
+            <sc-if value="{{ guest }}" hint-placeholder-val="{{ false }}"><div onClick="{{ onLogin }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid rgba(11,14,18,.07);cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="home" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import><span style="flex:1;font:700 13.5px Manrope,sans-serif;color:#4B37F5">{{ L.loginAddr }}</span></div></sc-if>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ zones }}" as="z" hint-placeholder-count="5"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ z.v }}" on-click="{{ z.onClick }}" hint-size="90px,34px">{{ z.l }}</x-import></sc-for></div>
+        </div>
+        </sc-if>
+
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.RadiusMap" dc-props="{{ rmM }}" hint-size="100%,440px"></x-import>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.city }}</span>
+          <div style="border-radius:17px;border:1px solid rgba(11,14,18,.08);overflow:hidden">
+            <sc-for list="{{ cities }}" as="c" hint-placeholder-count="3"><div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:{{ c.bt }};background:{{ c.bg }};cursor:pointer"><span style="width:20px;height:20px;border-radius:99px;box-sizing:border-box;border:{{ c.ring }};flex:none"></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="display:flex;align-items:center;gap:7px"><span style="font:700 14px Manrope,sans-serif">{{ c.t }}</span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.tone }}" hint-size="60px,16px">{{ c.tag }}</x-import></span><span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ c.s }}</span></span></div></sc-for>
+            <div onClick="{{ ask.onOpen }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid rgba(11,14,18,.07);cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="plus" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import><span style="flex:1;font:700 13.5px Manrope,sans-serif;color:#4B37F5">{{ L.askRow }}</span></div>
+          </div>
+          <span style="display:flex;align-items:center;gap:7px;padding:2px 2px 0;font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="globe" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ L.nw }}</span>
+        </div>
+
+        <div style="padding:14px;border-radius:16px;background:#F7F6F3;display:flex;gap:12px;align-items:flex-start">
+          <span style="display:grid;flex:none;padding-top:2px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="users" size="{{ 17 }}" color="rgba(11,14,18,.6)" hint-size="17px,17px"></x-import></span>
+          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font:700 13px Manrope,sans-serif">{{ my.t }}</span><span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.62);text-wrap:pretty">{{ my.s }}</span><span onClick="{{ my.onClick }}" style="font:700 12.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ my.a }}</span></span>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ inAsk }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:18px 20px 24px;display:flex;flex-direction:column;gap:16px">
+      <sc-if value="{{ ask.form }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.askCity }}</span><input value="{{ ask.v }}" onChange="{{ ask.onChange }}" placeholder="{{ L.askPh }}" autoComplete="off" style="height:48px;box-sizing:border-box;padding:0 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;background:#fff"></div>
+      <sc-if value="{{ ask.hasSug }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ask.sug }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="100px,34px">{{ c.l }}</x-import></sc-for></div></sc-if>
+      <sc-if value="{{ ask.near }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border-radius:14px;background:rgba(0,229,196,.12);display:flex;flex-direction:column;gap:8px"><span style="font:700 13px/1.45 Manrope,sans-serif;color:#00695B;text-wrap:pretty">{{ ask.nearT }}</span><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="sm" variant="secondary" on-click="{{ ask.onWiden }}" hint-size="120px,34px">{{ ask.widenL }}</x-import></div></div></sc-if>
+      <sc-if value="{{ guest }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:6px"><span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.askPhone }}</span><input value="{{ ask.ph }}" onChange="{{ ask.onPhone }}" placeholder="(570) 555-0142" inputMode="tel" autoComplete="off" style="height:48px;box-sizing:border-box;padding:0 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;background:#fff"></div></sc-if>
+      <sc-if value="{{ ask.isUser }}" hint-placeholder-val="{{ false }}"><span style="font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ ask.userT }}</span></sc-if>
+      <span style="font:500 12.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.55);text-wrap:pretty">{{ L.askWhy }}</span>
+      </sc-if>
+      <sc-if value="{{ ask.done }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:22px 18px;border-radius:20px;background:#F7F6F3;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;animation:cFade .25s">
+        <span style="width:54px;height:54px;border-radius:99px;background:#00A88F;display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 24 }}" stroke-width="{{ 2.6 }}" color="#fff" hint-size="24px,24px"></x-import></span>
+        <span style="font:800 20px/1.2 Sora,sans-serif;letter-spacing:-.03em">{{ ask.doneT }}</span>
+        <span style="font:500 13px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.62);text-wrap:pretty">{{ ask.doneS }}</span>
+      </div>
+      </sc-if>
+      <sc-if value="{{ ask.hasMine }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:8px"><span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.askMine }}</span><sc-for list="{{ ask.mine }}" as="m" hint-placeholder-count="1"><div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:13px;border:1px solid rgba(11,14,18,.08)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="bell" size="{{ 15 }}" color="#4B37F5" hint-size="15px,15px"></x-import><span style="flex:1;font:700 13px Manrope,sans-serif">{{ m.t }}</span><span onClick="{{ m.onX }}" style="font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.55);cursor:pointer">{{ L.remove }}</span></div></sc-for></div></sc-if>
+    </div>
+    </sc-if>
+    </div>
+
+    <div style="flex:none;padding:12px 20px 22px;border-top:1px solid rgba(11,14,18,.08);background:rgba(247,246,243,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" disabled="{{ foot.dis }}" icon="{{ foot.icon }}" on-click="{{ foot.onClick }}" hint-size="100%,50px">{{ foot.l }}</x-import></div>
+      <sc-if value="{{ foot.reset }}" hint-placeholder-val="{{ false }}"><span onClick="{{ foot.onReset }}" style="text-align:center;font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6);cursor:pointer">{{ L.reset }}</span></sc-if>
+    </div>
+  </div>
+  <sc-if value="{{ perm.open }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(11,14,18,.35);animation:cFade .15s">
+    <div style="width:270px;border-radius:16px;background:rgba(247,246,243,.98);overflow:hidden;text-align:center;box-shadow:0 20px 50px -20px rgba(11,14,18,.5)">
+      <div style="padding:18px 16px 14px;display:flex;flex-direction:column;gap:6px"><span style="font:700 15px/1.3 Manrope,sans-serif">{{ L.permT }}</span><span style="font:500 12.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.65)">{{ L.permS }}</span></div>
+      <sc-for list="{{ perm.opts }}" as="o" hint-placeholder-count="3"><div onClick="{{ o.onClick }}" style="padding:12px;border-top:1px solid rgba(11,14,18,.1);font:{{ o.f }};color:{{ o.c }};cursor:pointer">{{ o.l }}</div></sc-for>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPop }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="APP-CIUDAD · desktop" style="width:780px;background:#fff;border-radius:22px;border:1px solid rgba(11,14,18,.08);box-shadow:0 30px 70px -24px rgba(11,14,18,.45);overflow:hidden;animation:cDrop .18s ease-out;cursor:default">
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 360px">
+    <div style="padding:20px 22px;display:flex;flex-direction:column;gap:18px;max-height:560px;overflow-y:auto;scrollbar-width:thin">
+      <div style="display:flex;flex-direction:column;gap:3px"><span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ head.t }}</span><span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ head.s }}</span></div>
+      <sc-if value="{{ inMain }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="height:44px;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:0 6px 0 13px;border-radius:13px;background:#F7F6F3;border:1.5px solid {{ q.bd }}">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 16 }}" color="rgba(11,14,18,.45)" hint-size="16px,16px"></x-import>
+            <input value="{{ q.v }}" onChange="{{ q.onChange }}" onFocus="{{ q.onFocus }}" onBlur="{{ q.onBlur }}" placeholder="{{ L.qPh }}" autoComplete="off" style="flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;padding:0;font:600 14px Manrope,sans-serif;color:#0B0E12">
+            <sc-if value="{{ q.has }}" hint-placeholder-val="{{ false }}"><span onClick="{{ q.onClear }}" style="width:28px;height:28px;border-radius:99px;display:grid;place-items:center;background:rgba(11,14,18,.07);cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 11 }}" stroke-width="{{ 2.2 }}" hint-size="11px,11px"></x-import></span></sc-if>
+          </div>
+          <sc-if value="{{ q.has }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column"><sc-for list="{{ q.rows }}" as="r" hint-placeholder-count="3"><div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;cursor:pointer" style-hover="background:#F7F6F3"><span style="width:34px;height:34px;border-radius:10px;background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ r.icon }}" size="{{ 16 }}" hint-size="16px,16px"></x-import></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:700 13.5px Manrope,sans-serif">{{ r.t }}</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.04em;color:{{ r.mc }}">{{ r.m }}</span></span></div></sc-for></div></sc-if>
+        </div>
+        <sc-if value="{{ q.none }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div onClick="{{ gps.onClick }}" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:14px;background:{{ gps.bg }};border:1.5px solid {{ gps.bd }};cursor:pointer">
+            <span style="position:relative;width:36px;height:36px;border-radius:11px;background:rgba(75,55,245,.1);display:grid;place-items:center;flex:none">{{ gps.ring }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 17 }}" color="#4B37F5" hint-size="17px,17px"></x-import></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:700 13.5px Manrope,sans-serif;color:{{ gps.fg }}">{{ gps.t }}</span><span style="font:500 12px/1.4 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ gps.s }}</span></span>
+            <sc-if value="{{ gps.on }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 17 }}" stroke-width="{{ 2.4 }}" color="#4B37F5" hint-size="17px,17px"></x-import></sc-if>
+          </div>
+          <sc-if value="{{ hzl }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.from }}</span>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px"><sc-for list="{{ ctrs }}" as="c" hint-placeholder-count="3"><div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:13px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};cursor:pointer"><span style="width:16px;height:16px;border-radius:99px;box-sizing:border-box;border:{{ c.ring }};flex:none"></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font:700 13px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.t }}</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.s }}</span></span></div></sc-for></div>
+            <sc-if value="{{ guest }}" hint-placeholder-val="{{ false }}"><span onClick="{{ onLogin }}" style="font:700 12.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ L.loginAddr }}</span></sc-if>
+            <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ zones }}" as="z" hint-placeholder-count="5"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ z.v }}" on-click="{{ z.onClick }}" hint-size="90px,34px">{{ z.l }}</x-import></sc-for></div>
+          </div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.city }}</span>
+            <div style="border-radius:15px;border:1px solid rgba(11,14,18,.08);overflow:hidden">
+              <sc-for list="{{ cities }}" as="c" hint-placeholder-count="3"><div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:{{ c.bt }};background:{{ c.bg }};cursor:pointer"><span style="width:16px;height:16px;border-radius:99px;box-sizing:border-box;border:{{ c.ring }};flex:none"></span><span style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font:700 13.5px Manrope,sans-serif">{{ c.t }}</span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.tone }}" hint-size="60px,16px">{{ c.tag }}</x-import></span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);white-space:nowrap">{{ c.s }}</span></div></sc-for>
+              <div onClick="{{ ask.onOpen }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid rgba(11,14,18,.07);cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="plus" size="{{ 16 }}" color="#4B37F5" hint-size="16px,16px"></x-import><span style="font:700 13px Manrope,sans-serif;color:#4B37F5">{{ L.askRow }}</span></div>
+            </div>
+          <span style="display:flex;align-items:center;gap:7px;padding:2px 2px 0;font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="globe" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ L.nw }}</span>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+      <sc-if value="{{ inAsk }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <span onClick="{{ ask.onBack }}" style="display:flex;align-items:center;gap:6px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import>{{ L.back }}</span>
+        <sc-if value="{{ ask.form }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value="{{ ask.v }}" onChange="{{ ask.onChange }}" placeholder="{{ L.askPh }}" autoComplete="off" style="height:46px;box-sizing:border-box;padding:0 14px;border-radius:13px;border:1.5px solid rgba(11,14,18,.14);outline:none;font:600 14.5px Manrope,sans-serif;color:#0B0E12;background:#fff">
+          <sc-if value="{{ ask.hasSug }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ask.sug }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="100px,34px">{{ c.l }}</x-import></sc-for></div></sc-if>
+          <sc-if value="{{ ask.near }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border-radius:14px;background:rgba(0,229,196,.12);display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="flex:1;min-width:200px;font:700 12.5px/1.45 Manrope,sans-serif;color:#00695B">{{ ask.nearT }}</span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="sm" variant="secondary" on-click="{{ ask.onWiden }}" hint-size="120px,34px">{{ ask.widenL }}</x-import></div></sc-if>
+          <sc-if value="{{ guest }}" hint-placeholder-val="{{ true }}"><input value="{{ ask.ph }}" onChange="{{ ask.onPhone }}" placeholder="{{ L.askPhone2 }}" inputMode="tel" autoComplete="off" style="height:46px;box-sizing:border-box;padding:0 14px;border-radius:13px;border:1.5px solid rgba(11,14,18,.14);outline:none;font:600 14.5px Manrope,sans-serif;color:#0B0E12;background:#fff"></sc-if>
+          <sc-if value="{{ ask.isUser }}" hint-placeholder-val="{{ false }}"><span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ ask.userT }}</span></sc-if>
+          <span style="font:500 12px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ L.askWhy }}</span>
+          <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="md" icon="bell" disabled="{{ ask.dis }}" on-click="{{ ask.onSend }}" hint-size="160px,40px">{{ ask.sendL }}</x-import></div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ ask.done }}" hint-placeholder-val="{{ false }}"><div style="padding:18px;border-radius:18px;background:#F7F6F3;display:flex;gap:12px;align-items:flex-start;animation:cFade .25s"><span style="width:36px;height:36px;border-radius:99px;background:#00A88F;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 17 }}" stroke-width="{{ 2.6 }}" color="#fff" hint-size="17px,17px"></x-import></span><span style="display:flex;flex-direction:column;gap:4px"><span style="font:800 16px Sora,sans-serif;letter-spacing:-.02em">{{ ask.doneT }}</span><span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ ask.doneS }}</span></span></div></sc-if>
+        <sc-if value="{{ ask.hasMine }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.askMine }}</span><sc-for list="{{ ask.mine }}" as="m" hint-placeholder-count="1"><div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;border:1px solid rgba(11,14,18,.08)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="bell" size="{{ 14 }}" color="#4B37F5" hint-size="14px,14px"></x-import><span style="flex:1;font:700 12.5px Manrope,sans-serif">{{ m.t }}</span><span onClick="{{ m.onX }}" style="font:700 11.5px Manrope,sans-serif;color:rgba(11,14,18,.55);cursor:pointer">{{ L.remove }}</span></div></sc-for></div></sc-if>
+      </div>
+      </sc-if>
+    </div>
+    <div style="border-left:1px solid rgba(11,14,18,.07);background:#FCFBF9;padding:18px;display:flex;flex-direction:column;gap:12px">
+      <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.RadiusMap" dc-props="{{ rmD }}" hint-size="100%,420px"></x-import>
+      <sc-if value="{{ soonSel }}" hint-placeholder-val="{{ false }}"><span style="font:500 12.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.65)">{{ sum.soon }}</span></sc-if>
+      <div style="flex:1"></div>
+      <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" size="md" disabled="{{ foot.dis }}" icon="{{ foot.icon }}" on-click="{{ foot.onClick }}" hint-size="100%,40px">{{ foot.l }}</x-import></div>
+      <sc-if value="{{ foot.reset }}" hint-placeholder-val="{{ false }}"><span onClick="{{ foot.onReset }}" style="text-align:center;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.6);cursor:pointer">{{ L.reset }}</span></sc-if>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;padding:10px 20px;border-top:1px solid rgba(11,14,18,.07);font:500 12px Manrope,sans-serif;color:rgba(11,14,18,.6)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="users" size="{{ 15 }}" color="rgba(11,14,18,.5)" hint-size="15px,15px"></x-import><span style="flex:1;min-width:0">{{ my.short }}</span><span onClick="{{ my.onClick }}" style="font:700 12px Manrope,sans-serif;color:#4B37F5;cursor:pointer;white-space:nowrap">{{ my.a }}</span><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.42)">{{ L.esc }}</span></div>
+  <sc-if value="{{ perm.open }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(11,14,18,.25);border-radius:22px;animation:cFade .15s">
+    <div style="width:300px;border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 20px 50px -20px rgba(11,14,18,.5)">
+      <div style="padding:16px 18px 12px;display:flex;flex-direction:column;gap:6px"><span style="font:700 14.5px/1.3 Manrope,sans-serif">{{ L.permTd }}</span><span style="font:500 12.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.65)">{{ L.permS }}</span></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:0 14px 14px"><sc-for list="{{ perm.optsD }}" as="o" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="sm" variant="{{ o.v }}" on-click="{{ o.onClick }}" hint-size="90px,34px">{{ o.l }}</x-import></sc-for></div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPronto }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="APP-CIUDAD-PRONTO" style="background:#F7F6F3;animation:cFade .2s ease-out">
+  <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CitySoon" dc-props="{{ soon }}" hint-size="100%,640px"></x-import>
+  <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}"><div style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:70;padding:14px 18px;border-radius:15px;background:#0B0E12;color:#fff;font:700 13px Manrope,sans-serif;animation:cUp .25s ease-out;max-width:340px">{{ toastT }}</div></sc-if>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:393,&quot;height&quot;:852},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sheet&quot;,&quot;pop&quot;,&quot;pronto&quot;],&quot;default&quot;:&quot;sheet&quot;,&quot;tsType&quot;:&quot;'sheet'|'pop'|'pronto'&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;es&quot;,&quot;en&quot;],&quot;default&quot;:&quot;es&quot;,&quot;tsType&quot;:&quot;'es'|'en'&quot;},&quot;desk&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;dw&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1280,&quot;tsType&quot;:&quot;number&quot;},&quot;loc&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{city:string,ctr:string,rad:number}&quot;},&quot;pre&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;user&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;api&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
+const AK = 'tl-city-ask-v1', WK = 'tl-city-wait-v1';
+class Component extends DCLogic {
+  constructor(p) {
+    super(p); let ask = [], wait = {}; try { ask = JSON.parse(localStorage.getItem(AK) || '[]'); wait = JSON.parse(localStorage.getItem(WK) || '{}'); } catch (e) {}
+    const l = Object.assign({ city: 'hzl', ctr: 'centro', rad: 5 }, p.loc || {});
+    this.state = { dr: p.pre ? Object.assign({}, l, { city: p.pre }) : l, q: '', qf: false, gps: l.ctr === 'gps' ? 'ok' : 'idle', view: p.ask0 ? 'ask' : 'main', askV: '', askPh: '', askDone: null, ask, wait, toast: null, ready: !!window.TLCity };
+  }
+  componentDidMount() { if (!this.state.ready) { let n = 0; this._w = setInterval(() => { n++; if (window.TLCity || n > 80) { clearInterval(this._w); this.setState({ ready: true }); } }, 100); }
+    this._kd = e => { if (e.key === 'Escape' && this.props.mode !== 'pronto') this.close(); }; document.addEventListener('keydown', this._kd); }
+  componentWillUnmount() { clearInterval(this._w); clearTimeout(this._gt); clearTimeout(this._tt); document.removeEventListener('keydown', this._kd); }
+  componentDidUpdate(pp) { if (pp.pre !== this.props.pre && this.props.pre) this.setState(s => ({ dr: Object.assign({}, s.dr, { city: this.props.pre }) })); }
+  api() { return this.props.api || { apply: l => this.toast('→ ' + JSON.stringify(l)), close: () => {}, login: () => this.toast('→ Entrar'), encargo: c => this.toast('→ ' + c), nav: r => this.toast('→ ' + r.code) }; }
+  close() { const a = this.api(); if (a.close) a.close(); }
+  es() { return (this.props.lang || 'es') === 'es'; }
+  E2(a, b) { return this.es() ? a : b; }
+  toast(t) { clearTimeout(this._tt); this.setState({ toast: t }); this._tt = setTimeout(() => this.setState({ toast: null }), 2600); }
+  set(p) { this.setState(s => ({ dr: Object.assign({}, s.dr, p) })); }
+  num(n) { return n >= 1000 ? Math.floor(n / 1000) + ',' + String(n % 1000).padStart(3, '0') : String(n); }
+  ctrName(k) { const C = window.TLCity, es = this.es(), u = this.props.user; if (k === 'gps') return this.E2('Tu ubicación', 'Your location'); const z = C.ZONES.find(x => x.k === k); if (z) return z.n[es ? 0 : 1]; const a = this.addrs().find(x => x.id === k); return a ? a.t : this.E2('Centro de Hazleton', 'Downtown Hazleton'); }
+  addrs() { const U = window.TLUsr, u = this.props.user; if (!u) return []; const A = (U && U.ADDR) || [{ id: 'a1', lab: 'casa', st: '58 W Oak St', zip: '18201' }, { id: 'a2', lab: 'trabajo', st: '125 Commerce Dr', zip: '18202' }, { id: 'a3', lab: 'otra', name: 'Casa de mami', st: '402 Alter St', zip: '18201' }];
+    return A.filter(a => window.TLCity.ADDR_LL[a.id]).map(a => ({ id: a.id, t: a.name || ({ casa: this.E2('Casa', 'Home'), trabajo: this.E2('Trabajo', 'Work') }[a.lab] || a.lab), s: (a.st + ' · ' + a.zip).toUpperCase() })); }
+  askSend() { const s = this.state, v = (s.askV || '').trim(); if (!v) return; const C = window.TLCity, near = C.TOWNS.find(t => v.toLowerCase().startsWith(t[0].toLowerCase()));
+    const ask = [v].concat(s.ask.filter(x => x.toLowerCase() !== v.toLowerCase())).slice(0, 5); try { localStorage.setItem(AK, JSON.stringify(ask)); } catch (e) {}
+    const h = v.split('').reduce((a, c) => a + c.charCodeAt(0), 0); this.setState({ ask, askDone: { c: v, n: 40 + h % 260 }, askV: '' }); }
+  vals() {
+    const C = window.TLCity, es = this.es(), s = this.state, dr = s.dr, mode = this.props.mode || 'sheet', u = this.props.user, cur = Object.assign({ city: 'hzl', ctr: 'centro', rad: 5 }, this.props.loc || {});
+    const hzl = dr.city === 'hzl', cityO = C.city(dr.city), ctrLL = C.center(dr);
+    const L = {
+      qPh: this.E2('Dirección, barrio, ciudad o código postal', 'Address, neighborhood, city or ZIP code'), from: this.E2('DESDE DÓNDE MEDIMOS', 'MEASURED FROM'), how: this.E2('QUÉ TAN LEJOS', 'HOW FAR'), city: this.E2('DÓNDE YA ESTAMOS Y LO QUE SIGUE', 'WHERE WE ARE AND WHAT’S NEXT'),
+      loginAddr: this.E2('Entra para medir desde tu casa o tu trabajo', 'Sign in to measure from home or work'), casaNote: this.E2('Los que van a domicilio salen si llegan hasta tu zona, aunque estén más lejos.', 'Businesses that come to you show up if they reach your area, even if they are farther away.'),
+      askRow: this.E2('Avísame cuando llegue a mi zona', 'Tell me when it reaches my area'), nw: this.E2('MUY PRONTO EN TODO EE. UU.', 'COMING SOON NATIONWIDE'), askCity: this.E2('¿DÓNDE ESTÁS?', 'WHERE ARE YOU?'), askPh: this.E2('Ej. Bethlehem, PA', 'E.g. Bethlehem, PA'), askPhone: this.E2('TU TELÉFONO PARA AVISARTE', 'YOUR PHONE SO WE CAN TELL YOU'), askPhone2: this.E2('Tu teléfono para avisarte', 'Your phone so we can tell you'),
+      askWhy: this.E2('Ciudad o código postal. Abrimos cada zona cuando ya hay vecinos pidiéndola y negocios listos. Solo te escribimos para avisarte que llegó.', 'City or ZIP code. We open each area once neighbors ask for it and businesses are ready. We only text you when it arrives.'),
+      askMine: this.E2('YA PEDISTE', 'YOU ASKED FOR'), remove: this.E2('Quitar', 'Remove'), reset: this.E2('Volver a Hazleton · centro · 5 mi', 'Back to Hazleton · downtown · 5 mi'), back: this.E2('Volver', 'Back'),
+      permT: this.E2('¿Permitir que “To’Latino” use tu ubicación?', 'Allow “To’Latino” to use your location?'), permTd: this.E2('To’Latino quiere saber tu ubicación', 'To’Latino wants to know your location'), permS: this.E2('Para medir la distancia a los negocios desde donde estás. No la guardamos ni la ve nadie.', 'To measure distance to businesses from where you are. We don’t store it and nobody sees it.'),
+      esc: this.E2('ESC PARA CERRAR', 'ESC TO CLOSE'), soonTag: this.E2('PRÓXIMAMENTE', 'COMING SOON'), meanwhile: this.E2('MIENTRAS TANTO', 'IN THE MEANTIME'),
+      proB: this.E2('To’Latino va a estar en todo Estados Unidos y siempre buscas alrededor de donde estés. Abrimos cada zona cuando ya tiene suficientes negocios para que valga la pena buscar; puedes ayudar a que llegue antes.', 'To’Latino is going nationwide and you always search around wherever you are. We open each area once it has enough businesses to make searching worth it; you can help it arrive sooner.'),
+      waitL: this.E2('EN LA LISTA DE ESPERA', 'ON THE WAITLIST'), distL: this.E2('DE HAZLETON', 'FROM HAZLETON'),
+    };
+    const q = (s.q || '').trim(), F = q ? C.find(q) : [];
+    const qRows = F.map(r => r.k === 'city' ? { icon: 'building', t: r.c.n, m: r.c.st === 'on' ? this.E2('CIUDAD ACTIVA', 'ACTIVE CITY') : this.E2('PRÓXIMAMENTE · ', 'COMING SOON · ') + this.num(r.c.wait) + this.E2(' EN LA LISTA', ' ON THE LIST'), mc: r.c.st === 'on' ? '#00695B' : 'rgba(11,14,18,.5)', onClick: () => this.setState({ q: '', dr: Object.assign({}, dr, { city: r.c.k }) }) }
+      : r.k === 'zone' ? { icon: 'pin', t: r.z.n[es ? 0 : 1], m: this.E2('BARRIO DE HAZLETON · ', 'HAZLETON NEIGHBORHOOD · ') + r.z.s[es ? 0 : 1].toUpperCase(), mc: 'rgba(11,14,18,.5)', onClick: () => this.setState({ q: '', dr: Object.assign({}, dr, { city: 'hzl', ctr: r.z.k }) }) }
+      : r.k === 'town' ? (() => { const need = C.RADII.find(x => x >= r.d) || 30, fits = r.d <= 30; return { icon: 'pin', t: r.t + ', PA', m: (fits ? C.r1(r.d) + this.E2(' MI DE HAZLETON · SE VE CON ', ' MI FROM HAZLETON · SHOWN WITHIN ') + need + ' MI' : C.r1(r.d) + this.E2(' MI DE HAZLETON', ' MI FROM HAZLETON')), mc: '#4B37F5', onClick: () => { this.setState({ q: '', dr: Object.assign({}, dr, { city: 'hzl', rad: need }) }); this.toast(this.E2(r.t + ' queda a ' + C.r1(r.d) + ' mi: ampliamos a ' + need + ' mi.', r.t + ' is ' + C.r1(r.d) + ' mi away: we widened to ' + need + ' mi.')); } }; })()
+      : { icon: 'plus', t: this.E2('Pedir ', 'Request ') + r.a, m: this.E2('AÚN NO ESTAMOS AHÍ · TE AVISAMOS', 'NOT THERE YET · WE WILL LET YOU KNOW'), mc: 'rgba(11,14,18,.5)', onClick: () => this.setState({ q: '', view: 'ask', askV: r.a, askDone: null }) });
+    const gp = s.gps, gOn = hzl && dr.ctr === 'gps';
+    const gps = { on: gOn, bg: gOn ? 'rgba(75,55,245,.06)' : '#fff', bd: gOn ? '#4B37F5' : 'rgba(11,14,18,.1)', fg: '#4B37F5',
+      t: gp === 'loc' ? this.E2('Buscando dónde estás…', 'Finding where you are…') : gp === 'ok' ? this.E2('Tu ubicación', 'Your location') : this.E2('Usar mi ubicación', 'Use my location'),
+      s: gp === 'ok' ? this.E2('North End, Hazleton · a ' + C.r1(C.mi(C.GPS.ll, C.C0)) + ' mi del centro', 'North End, Hazleton · ' + C.r1(C.mi(C.GPS.ll, C.C0)) + ' mi from downtown') : gp === 'no' ? this.E2('Sin permiso. Elige un barrio o una dirección.', 'No permission. Pick a neighborhood or an address.') : this.E2('Medimos desde donde estás. Nunca cambiamos la ciudad sola.', 'We measure from where you are. We never switch your city on our own.'),
+      ring: gp === 'loc' ? React.createElement('span', { style: { position: 'absolute', inset: 0, borderRadius: 12, background: 'rgba(75,55,245,.25)', animation: 'cPulse 1.2s ease-out infinite' } }) : null,
+      onClick: () => { if (gp === 'ok') { this.set({ city: 'hzl', ctr: 'gps' }); return; } this.setState({ perm: true }); } };
+    const pick = k => () => this.set({ city: 'hzl', ctr: k });
+    const ctrList = [{ k: 'centro', t: this.E2('Centro de Hazleton', 'Downtown Hazleton'), s: 'BROAD ST Y WYOMING ST' }].concat(gp === 'ok' ? [{ k: 'gps', t: this.E2('Tu ubicación', 'Your location'), s: 'NORTH END · ' + this.E2('AHORA', 'NOW') }] : []).concat(this.addrs().map(a => ({ k: a.id, t: a.t, s: a.s })))
+      .concat(C.ZONES.some(z => z.k === dr.ctr && z.k !== 'centro') ? [{ k: dr.ctr, t: C.ZONES.find(z => z.k === dr.ctr).n[es ? 0 : 1], s: C.ZONES.find(z => z.k === dr.ctr).s[es ? 0 : 1].toUpperCase() }] : []);
+    const ctrs = ctrList.map((c, i) => { const on = hzl && dr.ctr === c.k; return { t: c.t, s: c.s, bt: i ? '1px solid rgba(11,14,18,.07)' : 'none', bg: on ? 'rgba(75,55,245,.05)' : '#fff', bd: on ? '#4B37F5' : 'rgba(11,14,18,.1)', ring: on ? '6px solid #4B37F5' : '1.5px solid rgba(11,14,18,.25)', onClick: pick(c.k) }; });
+    const zones = C.ZONES.filter(z => z.k !== 'centro').map(z => ({ l: z.n[es ? 0 : 1], v: hzl && dr.ctr === z.k ? 'selected' : 'filter', onClick: pick(z.k) }));
+    const cnt = C.counts(dr), idx = C.RADII.indexOf(dr.rad), prev = idx > 0 ? C.counts(Object.assign({}, dr, { rad: C.RADII[idx - 1] })) : null;
+    const tw = C.towns(dr).map(t => t.n), twL = tw.length <= 1 ? (tw[0] || 'Hazleton') : tw.length <= 4 ? tw.slice(0, -1).join(', ') + this.E2(' y ', ' and ') + tw[tw.length - 1] : tw.slice(0, 4).join(', ') + this.E2(' y ' + (tw.length - 4) + ' pueblos más', ' and ' + (tw.length - 4) + ' more towns');
+    const sum = { rad: dr.rad + ' mi', cnt: cnt.biz + this.E2(cnt.biz === 1 ? ' negocio' : ' negocios', cnt.biz === 1 ? ' business' : ' businesses') + ' · ' + cnt.evt + this.E2(cnt.evt === 1 ? ' evento' : ' eventos', cnt.evt === 1 ? ' event' : ' events'), towns: this.E2('Incluye ', 'Includes ') + twL + '.',
+      hasNote: !!prev && prev.biz === cnt.biz, note: prev ? this.E2('Entre ' + C.RADII[idx - 1] + ' y ' + dr.rad + ' mi todavía no hay negocios en To’Latino. Se ven los mismos.', 'Between ' + C.RADII[idx - 1] + ' and ' + dr.rad + ' mi there are no businesses on To’Latino yet. You see the same ones.') : '',
+      soon: !hzl ? this.E2(cityO.n + ' aún no tiene negocios publicados. Al elegirla ves lo que falta para abrir y puedes anotarte.', cityO.n + ' has no listed businesses yet. Choosing it shows what’s left to open and lets you join the list.') : '' };
+    const radii = C.RADII.map(r => { const on = dr.rad === r; return { l: r + ' mi', bg: on ? '#fff' : 'transparent', fg: on ? '#0B0E12' : 'rgba(11,14,18,.55)', sh: on ? '0 1px 3px rgba(11,14,18,.15)' : 'none', onClick: () => this.set({ rad: r }) }; });
+    const cities = C.CITIES.map((c, i) => { const on = dr.city === c.k, d = C.mi(c.ll, C.C0); return { t: c.n, tag: c.st === 'on' ? this.E2('YA ESTAMOS', 'LIVE') : this.E2('LA SIGUIENTE', 'UP NEXT'), tone: c.st === 'on' ? 'signal' : 'neutral', s: c.st === 'on' ? C.counts({ city: 'hzl', ctr: 'centro', rad: 30 }).biz + this.E2(' NEGOCIOS', ' BUSINESSES') : Math.round(d) + ' MI · ' + this.num(c.wait) + this.E2(' EN LA LISTA', ' WAITING'), bt: i ? '1px solid rgba(11,14,18,.07)' : 'none', bg: on ? 'rgba(75,55,245,.05)' : '#fff', ring: on ? '6px solid #4B37F5' : '1.5px solid rgba(11,14,18,.25)', onClick: () => this.set({ city: c.k }) }; });
+    const W = mode === 'pop' ? 324 : 353, H = mode === 'pop' ? 220 : 200, RP = hzl ? 74 : 58, V = C.view(ctrLL, hzl ? dr.rad : 5, RP), cpx = C.proj(ctrLL, V.z);
+    const map = { sc: V.sc, d: RP * 2, m: -RP, lbl: hzl ? this.ctrName(dr.ctr).toUpperCase() : cityO.n.toUpperCase(), tiles: C.tiles(ctrLL, V.z, W, H, V.sc).map(t => ({ src: t.src, left: t.left, top: t.top })),
+      dots: hzl ? C.dots(dr).map(x => { const p = C.proj(x.p, V.z), dx = (p[0] - cpx[0]) * V.sc, dy = (p[1] - cpx[1]) * V.sc, inn = C.mi(x.p, ctrLL) <= dr.rad; return { x: Math.round(dx), y: Math.round(dy), c: inn ? (x.b.pro ? '#0B0E12' : '#4B37F5') : 'rgba(11,14,18,.28)' }; }).filter(d => Math.abs(d.x) < W / 2 + 6 && Math.abs(d.y) < H / 2 + 6) : [] };
+    const same = dr.city === cur.city && dr.ctr === cur.ctr && dr.rad === cur.rad, isDef = dr.city === 'hzl' && dr.ctr === 'centro' && dr.rad === 5;
+    const apply = () => { const a = this.api(); if (a.apply) a.apply(Object.assign({}, dr)); };
+    const foot = { dis: false, icon: hzl ? 'search' : 'right', l: hzl ? (same ? this.E2('Listo · ', 'Done · ') : this.E2('Ver ', 'See ')) + cnt.biz + this.E2(' negocios a ', ' businesses within ') + dr.rad + ' mi' : this.E2('Ver ' + cityO.n.split(',')[0], 'See ' + cityO.n.split(',')[0]), onClick: same ? () => this.close() : apply, reset: !isDef, onReset: () => this.setState({ dr: { city: 'hzl', ctr: 'centro', rad: 5 } }) };
+    const askV = s.askV || '', aN = askV.toLowerCase(), nearT = C.TOWNS.find(t => aN && aN.startsWith(t[0].toLowerCase()) && t[0] !== 'Hazleton'), nd = nearT ? C.mi(nearT[1], C.C0) : 0;
+    const askSug = (window.TLCity.ASK || []).filter(a => !aN || a.toLowerCase().includes(aN)).filter(a => a !== askV).slice(0, 6);
+    const ask = { hasSug: askSug.length > 0 && !nearT, form: !s.askDone, done: !!s.askDone, v: askV, ph: s.askPh, onChange: e => this.setState({ askV: e.target.value }), onPhone: e => this.setState({ askPh: e.target.value }),
+      sug: askSug.map(a => ({ l: a, v: 'filter', onClick: () => this.setState({ askV: a }) })),
+      near: !!nearT && nd <= 30, nearT: nearT ? this.E2(nearT[0] + ' queda a ' + C.r1(nd) + ' mi de Hazleton: ya la ves si amplías la distancia.', nearT[0] + ' is ' + C.r1(nd) + ' mi from Hazleton: you already see it if you widen the distance.') : '', widenL: this.E2('Ampliar a ' + (C.RADII.find(x => x >= nd) || 30) + ' mi', 'Widen to ' + (C.RADII.find(x => x >= nd) || 30) + ' mi'), onWiden: () => this.setState({ view: 'main', dr: Object.assign({}, dr, { city: 'hzl', rad: C.RADII.find(x => x >= nd) || 30 }) }),
+      isUser: !!u, userT: u ? this.E2('Te avisamos por SMS al ' + (u.phone || '(570) 555-0142') + '.', 'We will text ' + (u.phone || '(570) 555-0142') + '.') : '',
+      dis: !askV.trim() || (!u && (s.askPh || '').replace(/\D/g, '').length < 10), sendL: this.E2('Avísame', 'Notify me'), onSend: () => this.askSend(),
+      doneT: s.askDone ? this.E2('Anotamos ' + s.askDone.c, s.askDone.c + ' is on the list') : '', doneS: s.askDone ? this.E2('Eres el vecino N.º ' + s.askDone.n + ' en pedirla. Te escribimos solo cuando abra.', 'You are neighbor #' + s.askDone.n + ' to ask. We only text you when it opens.') : '',
+      hasMine: s.ask.length > 0, mine: s.ask.map(c => ({ t: c, onX: () => { const ask2 = this.state.ask.filter(x => x !== c); this.setState({ ask: ask2 }); try { localStorage.setItem(AK, JSON.stringify(ask2)); } catch (e) {} } })),
+      onOpen: () => this.setState({ view: 'ask', askDone: null }), onBack: () => this.setState({ view: 'main', askDone: null }) };
+    if (s.view === 'ask') foot.l = s.askDone ? this.E2('Listo', 'Done') : ask.sendL, foot.icon = s.askDone ? 'check' : 'bell', foot.dis = s.askDone ? false : ask.dis, foot.onClick = s.askDone ? () => this.setState({ view: 'main', askDone: null }) : () => this.askSend(), foot.reset = false;
+    const myC = (u && u.city) || 'Hazleton, PA', unl = this.E2('28 oct', 'Oct 28');
+    const my = { t: this.E2('Esto no cambia Mi ciudad', 'This doesn’t change My city'), s: this.E2('Aquí eliges lo que ves en Negocios, Eventos y Buscar. Tus publicaciones, votos y la Tabla del Barrio siguen en ' + myC + (u ? ' (puedes cambiarla el ' + unl + ').' : '.'), 'Here you choose what you see in Businesses, Events and Search. Your posts, votes and Neighborhood Board stay in ' + myC + (u ? ' (you can change it on ' + unl + ').' : '.')),
+      short: this.E2('Esto no cambia Mi ciudad: tus publicaciones y la Tabla del Barrio siguen en ' + myC + '.', 'This doesn’t change My city: your posts and board stay in ' + myC + '.'), a: u ? this.E2('Mi ciudad', 'My city') : this.E2('Qué es Mi ciudad', 'What is My city'), onClick: () => { this.close(); this.api().encargo(u ? 'USR-CIUDAD' : 'WEB-FAQ', 'APP-CIUDAD · Mi ciudad', null, this.E2('Mi ciudad', 'My city')); },
+      prS: this.E2('Elegir ' + cityO.n + ' para ver no cambia Mi ciudad en la comunidad: sigue en ' + myC + '.', 'Viewing ' + cityO.n + ' doesn’t change your community city: it stays ' + myC + '.') };
+    const permDo = ok => () => { this.setState({ perm: false, gps: ok ? 'loc' : 'no' }); if (ok) { clearTimeout(this._gt); this._gt = setTimeout(() => { this.setState({ gps: 'ok' }); this.set({ city: 'hzl', ctr: 'gps' }); }, 1300); } };
+    const perm = { open: !!s.perm, opts: [[this.E2('Permitir una vez', 'Allow once'), true], [this.E2('Permitir al usar la app', 'Allow while using the app'), true], [this.E2('No permitir', 'Don’t allow'), false]].map(([l, ok], i) => ({ l, f: (i === 2 ? '500' : '600') + ' 14px Manrope,sans-serif', c: i === 2 ? '#C0392B' : '#4B37F5', onClick: permDo(ok) })),
+      optsD: [[this.E2('Bloquear', 'Block'), false, 'secondary'], [this.E2('Permitir', 'Allow'), true, 'primary']].map(([l, ok, v]) => ({ l, v, onClick: permDo(ok) })) };
+    let pr = {}, pmap = { tiles: [] };
+    if (mode === 'pronto') { const pc = C.city(cur.city), desk = !!this.props.desk, dw = this.props.dw || 1280, two = desk && dw >= 960, joined = !!s.wait[pc.k], wait = (pc.wait || 0) + (joined ? 1 : 0);
+      const mw = two ? Math.min(560, (Math.min(dw, 1180) - 64 - 40) / 2) : desk ? Math.min(dw - 64, 760) : 353, mh = two ? 420 : desk ? 300 : 220, pv = C.view(pc.ll, 5, 70);
+      pmap = { sc: pv.sc, d: 140, m: -70, tiles: C.tiles(pc.ll, pv.z, mw, mh, pv.sc).map(t => ({ src: t.src, left: t.left, top: t.top })) };
+      const nm = pc.n.split(',')[0], hz = C.counts({ city: 'hzl', ctr: 'centro', rad: 30 });
+      pr = { max: desk ? '1180px' : 'none', pad: desk ? '36px 32px 56px' : '20px 20px 40px', cols: two ? 'minmax(0,1fr) minmax(0,1fr)' : 'minmax(0,1fr)', gap: two ? '36px' : '20px', mapH: mh, h1: desk ? 40 : 30, deskMeanwhile: two, mobMeanwhile: !two,
+        eb: pc.n.toUpperCase() + this.E2(' · LA SIGUIENTE ZONA', ' · THE NEXT AREA'), t: this.E2('Todavía no hay negocios alrededor de ' + nm, 'No businesses around ' + nm + ' yet'),
+        readyT: (pc.ready || 0) + this.E2(' de ' + pc.goal + ' negocios para abrir esta zona', ' of ' + pc.goal + ' businesses to open this area'), pct: Math.round((pc.ready || 0) / (pc.goal || 50) * 100) + '%', wait: this.num(wait), dist: Math.round(C.mi(pc.ll, C.C0)) + ' mi',
+        joinL: joined ? this.E2('Te avisamos cuando llegue · quitar', 'We will tell you when it arrives · remove') : this.E2('Avísame cuando llegue a ' + nm, 'Tell me when it reaches ' + nm), joinV: joined ? 'secondary' : 'primary',
+        onJoin: () => { if (!u) { this.api().login({ code: 'APP-HOME' }); return; } const wait2 = Object.assign({}, this.state.wait); if (wait2[pc.k]) delete wait2[pc.k]; else wait2[pc.k] = 1; this.setState({ wait: wait2 }); try { localStorage.setItem(WK, JSON.stringify(wait2)); } catch (e) {} this.toast(wait2[pc.k] ? this.E2('Listo. Te escribimos solo cuando ' + nm + ' abra.', 'Done. We will only text you when ' + nm + ' opens.') : this.E2('Te quitamos de la lista.', 'Removed from the list.')); },
+        pubL: this.E2('Publica tu negocio gratis', 'List your business free'), onPub: () => this.api().nav({ code: 'ONB-NEG-A1' }),
+        recL: this.E2('Recomienda un negocio de ' + nm, 'Recommend a business in ' + nm), onRec: () => this.api().encargo('APP-NEG-RECOMENDAR', 'APP-CIUDAD-PRONTO · ' + nm, nm, this.E2('Recomendar un negocio', 'Recommend a business')),
+        asksT: this.E2('LO QUE MÁS BUSCAN LOS VECINOS DE ', 'WHAT NEIGHBORS IN ') + nm.toUpperCase() + this.E2('', ' LOOK FOR MOST'), asks: (pc.asks || []).map(a => ({ l: a[es ? 0 : 1] })),
+        hzlT: 'Hazleton, PA', hzlS: hz.biz + this.E2(' negocios · a ', ' businesses · ') + Math.round(C.mi(pc.ll, C.C0)) + this.E2(' mi', ' mi away'), hzlCta: this.E2('Ver Hazleton', 'See Hazleton'), onHzl: () => { const a = this.api(); if (a.apply) a.apply({ city: 'hzl', ctr: 'centro', rad: 5 }); } }; }
+    const nwW = mode === 'pop' ? 376 : mode === 'pronto' ? Math.round((pr.mapH ? Math.min(560, ((Math.min(this.props.dw || 1280, 1180) - 104) / 2)) : 353) * .55) : 353, nwH = mode === 'pronto' ? 190 : 150, US = [39.4, -90.6];
+    const nv = C.view(US, mode === 'pronto' ? 1250 : 1350, nwW / 2), nc = C.proj(US, nv.z), np = C.proj(C.C0, nv.z);
+    const nw = { h: nwH, sc: nv.sc, tiles: C.tiles(US, nv.z, nwW, nwH, nv.sc).map(t => ({ src: t.src, left: t.left, top: t.top })), px: Math.round((np[0] - nc[0]) * nv.sc), py: Math.round((np[1] - nc[1]) * nv.sc),
+      pin: this.E2('AQUÍ EMPEZAMOS', 'WE START HERE'), eb: this.E2('MUY PRONTO · TODO EE. UU.', 'COMING SOON · NATIONWIDE'),
+      t: this.E2('To’Latino llega a todo Estados Unidos', 'To’Latino is going nationwide'),
+      s: this.E2('No eliges ciudad: buscas alrededor de donde estés, en cualquier parte del país. Empezamos en Hazleton, PA, y cada zona se abre cuando ya tiene negocios publicados.', 'You don’t pick a city: you search around wherever you are, anywhere in the country. We start in Hazleton, PA, and each area opens once it has businesses listed.'),
+      pulse: React.createElement(React.Fragment, null, React.createElement('span', { key: 'a', style: { position: 'absolute', left: -14, top: -14, width: 28, height: 28, borderRadius: 999, background: 'rgba(0,229,196,.35)', animation: 'cPulse 1.8s ease-out infinite' } }), React.createElement('span', { key: 'b', style: { position: 'absolute', left: -14, top: -14, width: 28, height: 28, borderRadius: 999, background: 'rgba(0,229,196,.25)', animation: 'cPulse 1.8s ease-out .6s infinite' } })) };
+    const inAsk = s.view === 'ask';
+    return { L, isSheet: mode === 'sheet', isPop: mode === 'pop', isPronto: mode === 'pronto', inMain: !inAsk, inAsk, hzl, soonSel: !hzl, guest: !u,
+      head: inAsk ? { t: this.E2('Avísame cuando llegue a mi zona', 'Tell me when it reaches my area'), s: this.E2('To’Latino llega a todo EE. UU.; te avisamos cuando tu zona tenga negocios.', 'To’Latino is going nationwide; we will tell you when your area has businesses.') } : { t: this.E2('¿Dónde buscas?', 'Where are you looking?'), s: this.E2('Buscamos alrededor de ti. Elige desde dónde y qué tan lejos.', 'We search around you. Choose from where and how far.') },
+      q: { v: s.q, has: !!q, none: !q, bd: s.qf ? '#4B37F5' : 'transparent', rows: qRows, onChange: e => this.setState({ q: e.target.value }), onFocus: () => this.setState({ qf: true }), onBlur: () => this.setState({ qf: false }), onClear: () => this.setState({ q: '' }) },
+      nw, gps, ctrs, zones, radii, sum, cities, map, foot, ask, my, perm, pr, pmap, onClose: () => this.close(), onLogin: () => { this.close(); this.api().login(); },
+      toastShow: !!s.toast, toastT: s.toast || '' };
+  }
+  /* E1d · componentes del sistema: 2ag RadiusMap, 2ah CitySoon */
+  e1(v) { if (!v) return v; const m = v.map || {}, S = v.sum || {}, L = v.L || {}, hz = !!v.hzl;
+    const base = { label: L.how, radius: hz ? S.rad : undefined, scale: m.sc, tiles: m.tiles || [], dots: (m.dots || []).map(d => ({ x: d.x, y: d.y, color: d.c })), circle: m.d || 0, place: m.lbl,
+      radii: hz ? (v.radii || []).map(r => ({ label: r.l, on: r.bg === '#fff', onClick: r.onClick })) : [], count: hz ? S.cnt : undefined, towns: hz ? S.towns : undefined, note: hz && S.hasNote ? S.note : undefined };
+    v.rmM = Object.assign({}, base, { foot: hz ? L.casaNote : undefined }); v.rmD = Object.assign({ desk: true }, base);
+    const pr = v.pr, pm = v.pmap; if (pr && pm) v.soon = { maxWidth: pr.max, padding: pr.pad, columns: pr.cols, gap: pr.gap, mapHeight: pr.mapH, map: { scale: pm.sc, tiles: pm.tiles || [], circle: pm.d || 0 }, soonTag: L.soonTag, eyebrow: pr.eb, title: pr.t, titleSize: pr.h1, body: L.proB,
+      ready: { title: pr.readyT, pct: pr.pct }, stats: [{ value: pr.wait, label: L.waitL }, { value: pr.dist, label: L.distL }], join: { label: pr.joinL, variant: pr.joinV, onClick: pr.onJoin }, publish: { label: pr.pubL, onClick: pr.onPub }, recommend: { label: pr.recL, onClick: pr.onRec },
+      asksLabel: pr.asksT, asks: (pr.asks || []).map(a => a.l), meanwhile: { kicker: L.meanwhile, title: pr.hzlT, sub: pr.hzlS, cta: pr.hzlCta, onClick: pr.onHzl }, meanwhileAt: pr.deskMeanwhile ? 'desk' : pr.mobMeanwhile ? 'mob' : null, foot: v.my && v.my.prS };
+    return v; }
+  renderVals() { return this.e1(this.renderVals0()); }
+  renderVals0() {
+    if (!window.TLCity) return { isSheet: false, isPop: false, isPronto: false, L: {}, head: {}, q: { rows: [] }, gps: {}, ctrs: [], zones: [], radii: [], sum: {}, cities: [], map: { tiles: [], dots: [] }, foot: {}, ask: { sug: [], mine: [] }, my: {}, perm: { opts: [], optsD: [] }, pr: { asks: [] }, pmap: { tiles: [] } };
+    try { return this.vals(); } catch (e) { console.error('[Ciudad]', e); return { isSheet: false, isPop: false, isPronto: false, L: {}, head: {}, q: { rows: [] }, gps: {}, ctrs: [], zones: [], radii: [], sum: {}, cities: [], map: { tiles: [], dots: [] }, foot: {}, ask: { sug: [], mine: [] }, my: {}, perm: { opts: [], optsD: [] }, pr: { asks: [] }, pmap: { tiles: [] } }; }
+  }
+}
+</script>
+</body>
+</html>

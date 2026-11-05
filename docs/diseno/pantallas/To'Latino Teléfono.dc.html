@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <script src="prototype/biz-contact.js"></script>
+  <style>
+    a { color: #4B37F5; text-decoration: none; }
+    a:hover { color: #2E1FD1; }
+    @keyframes tlPhFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes tlPhUp { from { transform: translateY(64px); opacity: .5; } to { transform: none; opacity: 1; } }
+    @keyframes tlPhPop { from { transform: translate(-50%,-50%) scale(1.1); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
+  </style>
+</helmet>
+<div data-tl-phone="1" style="position:absolute;inset:0;pointer-events:none">
+
+  <sc-if value="{{ m.sheet }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="{{ m.label }}" style="position:absolute;inset:0;pointer-events:auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;-webkit-font-smoothing:antialiased">
+      <div onClick="{{ close }}" style="position:absolute;inset:0;background:rgba(0,0,0,.32);animation:tlPhFade .2s ease-out"></div>
+      <div style="position:absolute;left:8px;right:8px;bottom:28px;display:flex;flex-direction:column;gap:8px;animation:tlPhUp .3s cubic-bezier(.2,.8,.2,1)">
+        <div style="border-radius:14px;overflow:hidden;background:rgba(243,243,246,.97);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)">
+          <div style="padding:15px 20px 14px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center">
+            <span style="font-weight:600;font-size:13px;line-height:1.3;color:#8A8A8E;text-wrap:balance">{{ m.title }}</span>
+            <sc-if value="{{ m.hasMsg }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;line-height:1.38;color:#8A8A8E;text-wrap:pretty">{{ m.msg }}</span></sc-if>
+          </div>
+          <sc-for list="{{ m.acts }}" as="a" hint-placeholder-count="3">
+            <div onClick="{{ a.on }}" style="height:57px;border-top:1px solid rgba(60,60,67,.2);display:flex;align-items:center;justify-content:center;padding:0 16px;font-size:20px;color:#007AFF;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.l }}</div>
+          </sc-for>
+        </div>
+        <div onClick="{{ close }}" style="height:57px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:20px;color:#007AFF;cursor:pointer">{{ m.cancel }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ m.cal }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Teléfono · Nuevo evento" style="position:absolute;inset:0;pointer-events:auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#000">
+      <div onClick="{{ close }}" style="position:absolute;inset:0;background:rgba(0,0,0,.32);animation:tlPhFade .2s ease-out"></div>
+      <div style="position:absolute;left:0;right:0;top:54px;bottom:0;border-radius:12px 12px 0 0;background:#F2F2F7;display:flex;flex-direction:column;overflow:hidden;animation:tlPhUp .32s cubic-bezier(.2,.8,.2,1)">
+        <div style="flex:none;height:54px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:0 16px">
+          <span onClick="{{ close }}" style="justify-self:start;font-size:17px;color:#007AFF;cursor:pointer">{{ c.cancel }}</span>
+          <span style="font-weight:600;font-size:17px">{{ c.head }}</span>
+          <span onClick="{{ c.onAdd }}" style="justify-self:end;font-weight:600;font-size:17px;color:#007AFF;cursor:pointer">{{ c.add }}</span>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:6px 16px 34px;display:flex;flex-direction:column;gap:22px">
+          <div style="border-radius:10px;background:#fff;overflow:hidden">
+            <div style="padding:12px 16px;font-size:17px;line-height:1.3;text-wrap:pretty">{{ c.title }}</div>
+            <div style="margin-left:16px;border-top:1px solid rgba(60,60,67,.14);padding:11px 16px 11px 0;display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:17px;line-height:1.3">{{ c.place }}</span>
+              <sc-if value="{{ c.hasAddr }}" hint-placeholder-val="{{ true }}"><span style="font-size:15px;line-height:1.35;color:#8A8A8E">{{ c.addr }}</span></sc-if>
+            </div>
+          </div>
+          <div style="border-radius:10px;background:#fff;overflow:hidden">
+            <div style="padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:17px">
+              <span>{{ c.allDay }}</span>
+              <span style="width:51px;height:31px;border-radius:99px;background:#E9E9EB;position:relative;flex:none"><span style="position:absolute;left:2px;top:2px;width:27px;height:27px;border-radius:99px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.18)"></span></span>
+            </div>
+            <div style="margin-left:16px;border-top:1px solid rgba(60,60,67,.14);padding:7px 16px 7px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:17px">
+              <span>{{ c.starts }}</span>
+              <span style="display:flex;gap:6px"><span style="padding:6px 10px;border-radius:7px;background:rgba(118,118,128,.12)">{{ c.d0 }}</span><span style="padding:6px 10px;border-radius:7px;background:rgba(118,118,128,.12)">{{ c.t0 }}</span></span>
+            </div>
+            <div style="margin-left:16px;border-top:1px solid rgba(60,60,67,.14);padding:7px 16px 7px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:17px">
+              <span>{{ c.ends }}</span>
+              <span style="display:flex;gap:6px"><span style="padding:6px 10px;border-radius:7px;background:rgba(118,118,128,.12)">{{ c.d1 }}</span><span style="padding:6px 10px;border-radius:7px;background:rgba(118,118,128,.12)">{{ c.t1 }}</span></span>
+            </div>
+            <div style="margin-left:16px;border-top:1px solid rgba(60,60,67,.14);padding:11px 16px 11px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:17px">
+              <span>{{ c.repeat }}</span>
+              <span style="display:flex;align-items:center;gap:6px;color:#8A8A8E">{{ c.never }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 14 }}" color="#C4C4C7" hint-size="14px,14px"></x-import></span>
+            </div>
+          </div>
+          <div style="border-radius:10px;background:#fff;overflow:hidden">
+            <div style="padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:17px">
+              <span>{{ c.calK }}</span>
+              <span style="display:flex;align-items:center;gap:6px;color:#8A8A8E">{{ c.calV }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 14 }}" color="#C4C4C7" hint-size="14px,14px"></x-import></span>
+            </div>
+            <div style="margin-left:16px;border-top:1px solid rgba(60,60,67,.14);padding:11px 16px 11px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:17px">
+              <span>{{ c.alertK }}</span>
+              <span style="display:flex;align-items:center;gap:6px;color:#8A8A8E">{{ c.alertV }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 14 }}" color="#C4C4C7" hint-size="14px,14px"></x-import></span>
+            </div>
+          </div>
+          <div style="border-radius:10px;background:#fff;overflow:hidden">
+            <sc-if value="{{ c.hasUrl }}" hint-placeholder-val="{{ true }}"><div style="padding:12px 16px;font-size:17px;line-height:1.3;word-break:break-all">{{ c.url }}</div></sc-if>
+            <sc-if value="{{ c.hasNotes }}" hint-placeholder-val="{{ true }}"><div style="margin-left:16px;border-top:1px solid rgba(60,60,67,.14);padding:12px 16px 14px 0;font-size:17px;line-height:1.35;text-wrap:pretty">{{ c.notes }}</div></sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ m.dup }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Teléfono · Ya en tu calendario" style="position:absolute;inset:0;pointer-events:auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#000">
+      <div onClick="{{ close }}" style="position:absolute;inset:0;background:rgba(0,0,0,.32);animation:tlPhFade .2s ease-out"></div>
+      <div style="position:absolute;left:50%;top:50%;width:270px;transform:translate(-50%,-50%);border-radius:14px;overflow:hidden;background:rgba(242,242,247,.97);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);text-align:center;animation:tlPhPop .22s ease-out">
+        <div style="padding:19px 16px 17px;display:flex;flex-direction:column;gap:4px">
+          <span style="font-weight:600;font-size:17px;line-height:1.3">{{ u.t }}</span>
+          <span style="font-size:13px;line-height:1.38;text-wrap:pretty">{{ u.s }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid rgba(60,60,67,.2)">
+          <span onClick="{{ u.onAgain }}" style="height:44px;display:flex;align-items:center;justify-content:center;font-size:17px;color:#007AFF;border-right:1px solid rgba(60,60,67,.2);cursor:pointer">{{ u.again }}</span>
+          <span onClick="{{ close }}" style="height:44px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:17px;color:#007AFF;cursor:pointer">OK</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ m.toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:16px;right:16px;top:58px;padding:11px 14px;border-radius:13px;background:#0B0E12;color:#fff;font:700 12.5px Manrope,sans-serif;display:flex;align-items:center;gap:9px;animation:tlPhFade .2s ease-out">
+      <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 15 }}" color="#00E5C4" stroke-width="{{ 2.4 }}" hint-size="15px,15px"></x-import>
+      <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ toastT }}</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ d.win }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="{{ d.label }}" onClick="{{ close }}" style="position:absolute;inset:0;pointer-events:auto;background:rgba(11,14,18,.45);animation:tlPhFade .2s ease-out">
+      <div onClick="{{ stop }}" style="position:absolute;left:50%;top:{{ d.top }};transform:translateX(-50%);width:480px;max-width:calc(100% - 48px);box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:var(--shadow-float);padding:18px 24px 24px;display:flex;flex-direction:column;gap:16px;font-family:Manrope,sans-serif;color:#0B0E12">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="flex:1;min-width:0;font:800 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ d.eye }}</span>
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="close" size="{{ 36 }}" on-click="{{ close }}" hint-size="36px,36px"></x-import>
+        </div>
+        <sc-if value="{{ d.hasCard }}" hint-placeholder-val="{{ false }}">
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessRow" name="{{ d.card.name }}" meta="{{ d.card.meta }}" verified="{{ d.card.verified }}" image="{{ d.card.image }}" hint-size="100%,78px"></x-import>
+        </sc-if>
+        <sc-if value="{{ d.hasTitle }}" hint-placeholder-val="{{ false }}">
+          <span style="font:800 22px/1.2 Sora,sans-serif;letter-spacing:-.03em;text-wrap:pretty">{{ d.title }}</span>
+        </sc-if>
+        <sc-if value="{{ d.hasBig }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <span style="font:800 28px/1.1 Sora,sans-serif;letter-spacing:-.035em;text-wrap:pretty">{{ d.big }}</span>
+            <sc-if value="{{ d.hasSub }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;align-items:center;gap:8px;font:700 13px/1.4 Manrope,sans-serif;color:{{ d.subFg }}">
+                <sc-if value="{{ d.subDot }}" hint-placeholder-val="{{ false }}"><span style="width:7px;height:7px;border-radius:99px;background:{{ d.subFg }};flex:none"></span></sc-if>
+                {{ d.sub }}
+              </span>
+            </sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.hasEv }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 16px;border-radius:14px;background:#F7F6F3;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:10px;align-items:center;font:700 14px/1.4 Manrope,sans-serif">
+              <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="calendar" size="{{ 16 }}" color="rgba(11,14,18,.6)" hint-size="16px,16px"></x-import>{{ d.ev.when }}
+            </div>
+            <sc-if value="{{ d.ev.hasPlace }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;gap:10px;align-items:flex-start;font:600 13.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.75)">
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 16 }}" color="rgba(11,14,18,.6)" hint-size="16px,16px"></x-import><span style="flex:1;min-width:0;text-wrap:pretty">{{ d.ev.place }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ d.ev.hasNotes }}" hint-placeholder-val="{{ true }}">
+              <span style="font:500 13px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ d.ev.notes }}</span>
+            </sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.hasMsg }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 16px;border-radius:14px;background:#F7F6F3;display:flex;flex-direction:column;gap:6px">
+            <span style="font:500 14px/1.55 Manrope,sans-serif;text-wrap:pretty">{{ d.msgT }}</span>
+            <span style="font:700 13px/1.4 Manrope,sans-serif;color:#4B37F5;word-break:break-all">{{ d.msgU }}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ d.hasNote }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:12px 14px;border-radius:14px;border:1px solid rgba(11,14,18,.08);display:flex;gap:10px;align-items:flex-start">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ d.noteIc }}" size="{{ 16 }}" color="rgba(11,14,18,.6)" hint-size="16px,16px"></x-import>
+            <span style="flex:1;min-width:0;font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.75);text-wrap:pretty">{{ d.note }}</span>
+          </div>
+        </sc-if>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+          <sc-for list="{{ d.btns }}" as="x" hint-placeholder-count="4">
+            <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="{{ x.v }}" size="md" block="{{ true }}" icon="{{ x.ic }}" on-click="{{ x.on }}" hint-size="100%,40px">{{ x.l }}</x-import></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ d.toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:50%;top:{{ d.top }};transform:translateX(-50%);padding:11px 16px;border-radius:13px;background:#0B0E12;color:#fff;font:700 13px Manrope,sans-serif;display:flex;align-items:center;gap:9px;white-space:nowrap;animation:tlPhFade .2s ease-out">
+      <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 15 }}" color="#00E5C4" stroke-width="{{ 2.4 }}" hint-size="15px,15px"></x-import>{{ toastT }}
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;req&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object | null&quot;}, &quot;desk&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;lang&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;es&quot;, &quot;en&quot;], &quot;default&quot;: &quot;es&quot;, &quot;tsType&quot;: &quot;'es' | 'en'&quot;}, &quot;api&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;{ close: () =&gt; void, encargo: (code: string, from: string, extra: any, title: string) =&gt; void }&quot;}}">
+class Component extends DCLogic {
+  state = { n: 0, toast: '', step: '' };
+  componentDidMount() { this._key = e => { if (e.key === 'Escape' && this.props.req) this.close(); }; window.addEventListener('keydown', this._key); this.sync(); }
+  componentDidUpdate() { this.sync(); }
+  componentWillUnmount() { window.removeEventListener('keydown', this._key); clearTimeout(this._t); }
+  sync() { const q = this.props.req, n = q ? q.n || 1 : 0; if (n === this.state.n) return; clearTimeout(this._t); const C = window.TLContact; this.setState({ n, toast: '', step: q && q.k === 'cal' && C && C.calAdded(q.key) ? 'dup' : '' }); }
+  E2(a, b) { return (this.props.lang || 'es') === 'es' ? a : b; }
+  close() { clearTimeout(this._t); const a = this.props.api; if (a && a.close) a.close(); }
+  done(msg) { clearTimeout(this._t); this.setState({ toast: msg }); this._t = setTimeout(() => this.close(), 2400); }
+  tap(k) { const q = this.props.req, C = window.TLContact; if (C && q && q.biz) C.tap(q.biz, k); }
+  copy(t) { const fb = () => { try { const x = document.createElement('textarea'); x.value = t; x.setAttribute('readonly', ''); x.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(x); x.select(); document.execCommand('copy'); x.remove(); } catch (e) {} }; try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).catch(fb); else fb(); } catch (e) { fb(); } }
+  open(u) { try { window.open(u, '_blank', 'noopener'); } catch (e) {} }
+  mail(subject, body) { try { const a = document.createElement('a'); a.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body); a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) {} }
+  stamp(d) { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + 'T' + p(d.getHours()) + p(d.getMinutes()) + '00'; }
+  iso(d) { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':00'; }
+  body(q) { return (q.notes || '') + (q.url ? '\n\nhttps://' + q.url : ''); }
+  gcal(q) { const C = window.TLContact, e = encodeURIComponent; return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + e(q.title) + '&dates=' + this.stamp(C.dateOf(q.day, q.h0)) + '/' + this.stamp(C.dateOf(q.day, q.h1)) + '&ctz=America/New_York&location=' + e(q.addr || '') + '&details=' + e(this.body(q)); }
+  outlook(q) { const C = window.TLContact, e = encodeURIComponent; return 'https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=' + e(q.title) + '&startdt=' + e(this.iso(C.dateOf(q.day, q.h0))) + '&enddt=' + e(this.iso(C.dateOf(q.day, q.h1))) + '&location=' + e(q.addr || '') + '&body=' + e(this.body(q)); }
+  ics(q) { const C = window.TLContact, esc = t => String(t || '').replace(/[\\,;]/g, m => '\\' + m).replace(/\n/g, '\\n'), id = String(q.key || 'evento').replace(/[^\w-]/g, '-');
+    const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', "PRODID:-//To'Latino//Hazleton//ES", 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT', 'UID:' + id + '@tolatino.app', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, ''), 'DTSTART:' + this.stamp(C.dateOf(q.day, q.h0)), 'DTEND:' + this.stamp(C.dateOf(q.day, q.h1)), 'SUMMARY:' + esc(q.title), 'LOCATION:' + esc(q.addr), 'DESCRIPTION:' + esc(this.body(q)), q.url ? 'URL:https://' + q.url : '', 'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(q.title), 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+    try { const u = URL.createObjectURL(new Blob([L], { type: 'text/calendar;charset=utf-8' })), a = document.createElement('a'); a.href = u; a.download = 'tolatino-' + id + '.ics'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 3000); } catch (e) {} }
+  renderVals() {
+    const q = this.props.req, C = window.TLContact, desk = !!this.props.desk, st = this.state, E2 = this.E2.bind(this), es = (this.props.lang || 'es') === 'es';
+    const close = () => this.close(), stop = e => { if (e && e.stopPropagation) e.stopPropagation(); };
+    const OFF = { close, stop, toastT: st.toast, m: { sheet: false, cal: false, dup: false, toast: false, acts: [] }, c: {}, u: {}, d: { win: false, toast: false, btns: [], card: {}, ev: {} } };
+    if (!q || !C || (q.n || 1) !== st.n) return OFF;
+    const T = !!st.toast, api = this.props.api || {};
+    const label = { call: E2('Teléfono · Llamar', 'Phone · Call'), drv: E2('Teléfono · Repartidor', 'Phone · Driver'), map: E2('Teléfono · Cómo llegar', 'Phone · Directions'), cal: E2('Teléfono · Nuevo evento', 'Phone · New event'), share: E2('Teléfono · Compartir', 'Phone · Share') }[q.k] || E2('Teléfono', 'Phone');
+    const when = ts => { const dt = new Date(ts || Date.now()), h = dt.getHours() + dt.getMinutes() / 60; return dt.toLocaleDateString(es ? 'es' : 'en', { day: 'numeric', month: 'short' }).replace(/\./g, '') + ' ' + C.aLas(h, es) + C.fT(h); };
+    const drvNote = E2("Número temporal de To'Latino: ninguno ve el número del otro. Deja de funcionar " + q.mins + ' min después de la entrega.', "Temporary To'Latino number: neither of you sees the other's number. It stops working " + q.mins + ' min after delivery.');
+    const callBiz = () => { if (api.encargo) api.encargo('APP-NEG-CONTACTO', 'Repartidor', q.biz, E2('Llamar', 'Call')); };
+    if (!desk) {
+      if (q.k === 'cal') {
+        const d0 = C.dateOf(q.day, q.h0), d1 = C.dateOf(q.day, q.h1), dL = x => x.toLocaleDateString(es ? 'es' : 'en', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\./g, ''), tL = x => C.fT(x.getHours() + x.getMinutes() / 60);
+        const c = { head: E2('Nuevo evento', 'New Event'), cancel: E2('Cancelar', 'Cancel'), add: E2('Agregar', 'Add'), title: q.title, place: q.place || q.addr || E2('Ubicación', 'Location'), addr: q.place ? q.addr : '', hasAddr: !!(q.place && q.addr), allDay: E2('Todo el día', 'All-day'), starts: E2('Empieza', 'Starts'), ends: E2('Termina', 'Ends'), d0: dL(d0), t0: tL(d0), d1: dL(d1), t1: tL(d1), repeat: E2('Repetir', 'Repeat'), never: E2('Nunca', 'Never'), calK: E2('Calendario', 'Calendar'), calV: E2('Casa', 'Home'), alertK: E2('Alerta', 'Alert'), alertV: E2('2 horas antes', '2 hours before'), url: q.url ? 'https://' + q.url : '', hasUrl: !!q.url, notes: q.notes || '', hasNotes: !!q.notes,
+          onAdd: () => { C.calAdd(q.key); this.tap('cal'); this.done(E2('Agregado a tu calendario', 'Added to your calendar')); } };
+        const u = { t: E2('Ya está en tu calendario', 'Already in your calendar'), s: E2('Lo agregaste el ', 'You added it on ') + when(C.calAdded(q.key)) + '.', again: E2('Agregar otra vez', 'Add again'), onAgain: () => this.setState({ step: '' }) };
+        return { ...OFF, c, u, m: { ...OFF.m, cal: !T && st.step !== 'dup', dup: !T && st.step === 'dup', toast: T } };
+      }
+      let title = '', msg = '', acts = [], cancel = E2('Cancelar', 'Cancel');
+      const say = (t, k) => () => { if (k) this.tap(k); this.done(t); };
+      if (q.k === 'call') { title = q.name; msg = q.st || '';
+        acts = [{ l: E2('Llamar al ', 'Call ') + q.tel, on: say(E2('Llamando a ', 'Calling ') + q.name, 'call') }].concat(q.wa ? [{ l: 'WhatsApp', on: say(E2('Abriendo WhatsApp', 'Opening WhatsApp'), 'wa') }] : []).concat([{ l: E2('Copiar número', 'Copy number'), on: () => { this.copy(q.tel); this.tap('call'); this.done(E2('Número copiado', 'Number copied')); } }]); }
+      if (q.k === 'drv') {
+        if (q.on) { title = q.name + E2(' · tu repartidor', ' · your driver'); msg = drvNote; acts = [{ l: E2('Llamar al ', 'Call ') + q.tel, on: say(E2('Llamando a ', 'Calling ') + q.name.split(' ')[0]) }, { l: E2('Mensaje de texto', 'Text message'), on: say(E2('Abriendo Mensajes', 'Opening Messages')) }]; }
+        else { title = E2('Todavía no hay repartidor', 'No driver yet'); msg = E2('Te avisamos cuando salga con tu pedido.', 'We will let you know when your order leaves.'); acts = q.biz ? [{ l: E2('Llamar a ', 'Call ') + q.bizName, on: callBiz }] : []; } }
+      if (q.k === 'map') {
+        if (q.home) { title = q.name + E2(' va a tu casa', ' comes to you'); msg = E2('No tiene local. Atiende hasta ' + q.zone + ' mi de Hazleton.', 'No storefront. Serves up to ' + q.zone + ' mi from Hazleton.'); cancel = 'OK'; }
+        else { title = E2('Cómo llegar a ', 'Directions to ') + q.name; msg = q.addr + (q.dist != null ? ' · ' + q.dist + ' mi' : '') + (q.zoneOnly ? E2('. La dirección exacta te llega cuando confirmen tu cita.', '. You get the exact address once your booking is confirmed.') : '');
+          const go = n => say(E2('Abriendo ', 'Opening ') + n, 'map');
+          acts = [{ l: E2('Mapas', 'Maps'), on: go(E2('Mapas', 'Maps')) }, { l: 'Google Maps', on: go('Google Maps') }, { l: 'Waze', on: go('Waze') }, { l: E2('Copiar dirección', 'Copy address'), on: () => { this.copy(q.addr); this.tap('map'); this.done(E2('Dirección copiada', 'Address copied')); } }]; } }
+      if (q.k === 'share') { title = E2('Compartir · ', 'Share · ') + q.title; msg = q.text + ' ' + q.url;
+        const go = n => say(E2('Abriendo ', 'Opening ') + n, 'share');
+        acts = [{ l: 'WhatsApp', on: go('WhatsApp') }, { l: E2('Mensajes', 'Messages'), on: go(E2('Mensajes', 'Messages')) }, { l: E2('Correo', 'Mail'), on: go(E2('Correo', 'Mail')) }, { l: E2('Copiar enlace', 'Copy link'), on: () => { this.copy('https://' + q.url); this.tap('share'); this.done(E2('Enlace copiado', 'Link copied')); } }]; }
+      return { ...OFF, m: { sheet: !T, cal: false, dup: false, toast: T, label, title, msg, hasMsg: !!msg, acts, cancel } };
+    }
+    const btn = (l, v, on, ic) => ({ l, v, on, ic: ic || '' });
+    const tab = n => n + E2(' se abrió en otra pestaña', ' opened in a new tab');
+    const d = { win: !T, toast: T, label: label + ' · desktop', top: (q.top || 80) + 'px', eye: '', hasCard: false, card: {}, hasTitle: false, title: '', hasBig: false, big: '', hasSub: false, sub: '', subFg: 'rgba(11,14,18,.6)', subDot: false, hasNote: false, note: '', noteIc: 'info', hasEv: false, ev: {}, hasMsg: false, msgT: '', msgU: '', btns: [] };
+    if (q.k === 'call') { const open = /^(Abierto|Open)/.test(q.st || '');
+      Object.assign(d, { eye: E2('LLAMAR', 'CALL'), hasCard: !!q.card, card: q.card || {}, hasTitle: !q.card, title: q.name, hasBig: true, big: q.tel, hasSub: !!q.st, sub: q.st || '', subFg: open ? '#00695B' : '#C0392B', subDot: true,
+        btns: [btn(E2('Copiar número', 'Copy number'), 'primary', () => { this.copy(q.tel); this.tap('call'); this.done(E2('Número copiado', 'Number copied')); })]
+          .concat(q.wa ? [btn('WhatsApp', 'secondary', () => { this.tap('wa'); this.open('https://wa.me/' + q.telH.replace('+', '')); this.done(tab('WhatsApp')); })] : [])
+          .concat([btn(E2('Mensaje', 'Message'), 'secondary', () => { this.close(); if (api.encargo) api.encargo('APP-NEG-MENSAJE', 'Llamar · desktop', q.biz, E2('Mensaje', 'Message')); }, 'chat')]) }); }
+    if (q.k === 'drv') {
+      Object.assign(d, { eye: E2('LLAMAR AL REPARTIDOR', 'CALL THE DRIVER'), hasTitle: true, title: q.on ? q.name : E2('Todavía no hay repartidor', 'No driver yet'), hasNote: true });
+      if (q.on) Object.assign(d, { hasBig: true, big: q.tel, noteIc: 'lock', note: drvNote, btns: [btn(E2('Copiar número', 'Copy number'), 'primary', () => { this.copy(q.tel); this.done(E2('Número copiado', 'Number copied')); })] });
+      else Object.assign(d, { noteIc: 'truck', note: E2('Te avisamos cuando salga con tu pedido.', 'We will let you know when your order leaves.'), btns: q.biz ? [btn(E2('Llamar a ', 'Call ') + q.bizName, 'secondary', callBiz, 'phone')] : [] }); }
+    if (q.k === 'map') {
+      Object.assign(d, { eye: E2('CÓMO LLEGAR', 'DIRECTIONS'), hasCard: !!q.card, card: q.card || {}, hasTitle: !q.card, title: q.name });
+      if (q.home) Object.assign(d, { hasNote: true, noteIc: 'home', note: E2('No tiene local: va a tu casa. Atiende hasta ' + q.zone + ' mi de Hazleton.', 'No storefront: they come to you. Serves up to ' + q.zone + ' mi from Hazleton.'), btns: [btn('OK', 'secondary', close)] });
+      else { const e = encodeURIComponent(q.addr), go = (n, url) => () => { this.tap('map'); this.open(url); this.done(tab(n)); };
+        Object.assign(d, { hasBig: true, big: C.short(q.addr), hasSub: true, sub: (q.dist != null ? q.dist + ' mi · ' : '') + 'Hazleton, PA', hasNote: !!q.zoneOnly, noteIc: 'lock', note: E2('Atiende en su casa. La dirección exacta te llega cuando confirmen tu cita.', 'Works from home. You get the exact address once your booking is confirmed.'),
+          btns: [btn('Google Maps', 'primary', go('Google Maps', 'https://www.google.com/maps/dir/?api=1&destination=' + e)), btn('Apple Maps', 'secondary', go('Apple Maps', 'https://maps.apple.com/?daddr=' + e)), btn('Waze', 'secondary', go('Waze', 'https://www.waze.com/ul?q=' + e + '&navigate=yes')), btn(E2('Copiar dirección', 'Copy address'), 'secondary', () => { this.copy(q.addr); this.tap('map'); this.done(E2('Dirección copiada', 'Address copied')); })] }); } }
+    if (q.k === 'cal') { const d0 = C.dateOf(q.day, q.h0), d1 = C.dateOf(q.day, q.h1), h0 = d0.getHours() + d0.getMinutes() / 60, h1 = d1.getHours() + d1.getMinutes() / 60, at = C.calAdded(q.key);
+      const add = (n, fn) => () => { fn(); C.calAdd(q.key); this.tap('cal'); this.done(n); };
+      Object.assign(d, { eye: E2('AGREGAR AL CALENDARIO', 'ADD TO CALENDAR'), hasTitle: true, title: q.title, hasEv: true, ev: { when: C.dayL(q.day, es).replace(/^./, x => x.toUpperCase()) + ' · ' + C.fT(h0) + ' – ' + C.fT(h1), place: [q.place, C.short(q.addr)].filter(Boolean).join(' · '), hasPlace: !!(q.place || q.addr), notes: q.notes || '', hasNotes: !!q.notes },
+        hasNote: !!at, noteIc: 'check', note: at ? E2('Ya lo agregaste el ', 'You already added it on ') + when(at) + '.' : '',
+        btns: [btn('Google Calendar', 'primary', add(tab('Google Calendar'), () => this.open(this.gcal(q)))), btn('Outlook', 'secondary', add(tab('Outlook'), () => this.open(this.outlook(q)))), btn(E2('Apple o .ics', 'Apple or .ics'), 'secondary', add(E2('Descargaste el evento (.ics)', 'Event downloaded (.ics)'), () => this.ics(q)))] }); }
+    if (q.k === 'share') { const url = 'https://' + q.url, msg = q.text + ' ' + url, go = (n, u) => () => { this.tap('share'); this.open(u); this.done(tab(n)); };
+      Object.assign(d, { eye: E2('COMPARTIR', 'SHARE'), hasCard: !!q.card, card: q.card || {}, hasTitle: !q.card || q.title !== q.card.name, title: q.title, hasMsg: true, msgT: q.text, msgU: q.url,
+        btns: [btn('WhatsApp', 'primary', go('WhatsApp', 'https://wa.me/?text=' + encodeURIComponent(msg))), btn('Facebook', 'secondary', go('Facebook', 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url))), btn(E2('Correo', 'Email'), 'secondary', () => { this.tap('share'); this.mail(q.title, msg); this.done(E2('Se abrió tu correo', 'Your email opened')); }), btn(E2('Copiar enlace', 'Copy link'), 'secondary', () => { this.copy(url); this.tap('share'); this.done(E2('Enlace copiado', 'Link copied')); })] }); }
+    return { ...OFF, d };
+  }
+}
+</script>
+</body>
+</html>

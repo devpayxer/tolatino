@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+<script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+<script src="prototype/adm-data.js"></script>
+<style>body{margin:0}a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}</style>
+</helmet>
+<div data-screen-label="{{ scr }}" style="min-height:100%;background:#F7F6F3;color:#0B0E12;font-family:Manrope,sans-serif">
+<sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}">
+<div style="position:sticky;top:0;z-index:20;padding:12px 16px;background:#fff;border-bottom:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:12px">
+  <span onClick="{{ onBack }}" style="width:34px;height:34px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span>
+  <div style="flex:1;min-width:0"><div style="font:800 15px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ l.title }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ bizK }}</div></div>
+</div>
+</sc-if>
+<div style="max-width:{{ lay.max }};margin:0 auto;padding:{{ lay.pad }};display:flex;flex-direction:column;gap:14px">
+  <sc-if value="{{ dsk }}" hint-placeholder-val="{{ false }}"><div onClick="{{ onBack }}" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import>{{ l.back }}</div></sc-if>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.45)">{{ bizK }}</span>
+    <h1 style="margin:0;font:800 {{ lay.h1 }}/1.08 Sora,sans-serif;letter-spacing:-.04em;text-wrap:balance">{{ l.h1 }}</h1>
+    <p style="margin:0;font:500 14px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ l.sub }}</p>
+  </div>
+
+  <div data-screen-label="Licencia · línea fija" style="padding:16px 18px;border-radius:18px;background:#0B0E12;color:#fff;display:flex;flex-direction:column;gap:6px">
+    <span style="font:800 17px/1.25 Sora,sans-serif;letter-spacing:-.02em">{{ l.line }}</span>
+    <span style="font:500 13px/1.5 Manrope,sans-serif;color:rgba(255,255,255,.75)">{{ l.lineS }}</span>
+  </div>
+
+  <sc-for list="{{ lics }}" as="c" hint-placeholder-count="1">
+    <div data-screen-label="Licencia · tarjeta" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:12px;align-items:center"><span style="width:40px;height:40px;border-radius:13px;background:{{ c.okBg }};display:grid;place-items:center;flex:none;color:#fff"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ c.okIcon }}" size="{{ 20 }}" stroke-width="{{ 2.2 }}" color="#fff" hint-size="20px,20px"></x-import></span><span style="flex:1;min-width:0"><span style="display:block;font:800 16px/1.25 Sora,sans-serif;letter-spacing:-.02em">{{ c.t }}</span><span style="display:block;margin-top:3px;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:{{ c.okFg }}">{{ c.ok }}</span></span></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.canK }}</span><span style="font:500 13.5px/1.55 Manrope,sans-serif">{{ c.can }}</span></div>
+      <sc-if value="{{ c.hasNo }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border-radius:14px;background:rgba(255,176,32,.14);display:flex;flex-direction:column;gap:4px"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8A5A00">{{ l.noK }}</span><span style="font:600 13.5px/1.5 Manrope,sans-serif;color:#0B0E12">{{ c.no }}</span></div></sc-if>
+      <div style="border-top:1px solid rgba(11,14,18,.07)"><sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid rgba(11,14,18,.06)"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5);padding-top:2px">{{ r.k }}</span><span style="font:600 13px/1.4 Manrope,sans-serif;text-align:right;min-width:0">{{ r.v }}</span></div></sc-for></div>
+      <a href="{{ c.url }}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);color:#0B0E12"><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font:700 13.5px Manrope,sans-serif">{{ l.selfL }}</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.04em;color:#4B37F5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.site }}</span></span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></a>
+    </div>
+  </sc-for>
+
+  <sc-if value="{{ hasPeople }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Licencia · quién" style="padding:6px 16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+    <div style="padding:10px 0 4px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.whoK }}</div>
+    <sc-for list="{{ people }}" as="p" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid rgba(11,14,18,.06)"><span style="width:40px;height:40px;border-radius:99px;background:{{ p.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><span style="flex:1;min-width:0"><span style="display:block;font:700 13.5px Manrope,sans-serif">{{ p.n }}</span><span style="display:block;margin-top:2px;font:500 12px/1.4 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ p.c }}</span></span><span style="flex:none;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ p.fg }};text-align:right">{{ p.exp }}</span></div></sc-for>
+  </div>
+  </sc-if>
+
+  <div style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.howK }}</span>
+    <sc-for list="{{ how }}" as="h" hint-placeholder-count="3"><div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:22px;height:22px;border-radius:99px;background:#0B0E12;color:#fff;display:grid;place-items:center;font:800 10px 'JetBrains Mono',monospace">{{ h.n }}</span><span style="font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.75)">{{ h.t }}</span></div></sc-for>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SRC = {
+  abogado: ['Disciplinary Board · Corte Suprema de PA', 'Disciplinary Board · PA Supreme Court', 'padisciplinaryboard.org', 'https://www.padisciplinaryboard.org/for-the-public/find-attorney', 'PA ID #'],
+  acreditado: ['Departamento de Justicia (EOIR)', 'Department of Justice (EOIR)', 'justice.gov/eoir', 'https://www.justice.gov/eoir/recognized-organizations-and-accredited-representatives-roster-state-and-city', 'DOJ #'],
+  notario: ['Departamento de Estado de PA', 'PA Department of State', 'notaries.pa.gov', 'https://www.notaries.pa.gov', 'Comisión #'],
+  ata: ['American Translators Association', 'American Translators Association', 'atanet.org', 'https://www.atanet.org/directory', 'ATA #'],
+  cpa: ['Junta Estatal de Contadores de PA', 'PA State Board of Accountancy', 'pals.pa.gov', 'https://www.pals.pa.gov', 'CPA #'],
+  ptin: ['IRS · directorio de preparadores', 'IRS · preparer directory', 'irs.treasury.gov/rpo', 'https://irs.treasury.gov/rpo/rpo.jsf', 'PTIN P'],
+  caa: ['IRS · agentes certificadores de ITIN', 'IRS · ITIN acceptance agents', 'irs.gov', 'https://www.irs.gov/individuals/itin-acceptance-agent-program', 'CAA #'],
+  agente: ['Departamento de Seguros de PA', 'PA Insurance Department', 'pa.gov/insurance', 'https://www.pa.gov/agencies/insurance', 'Licencia #']
+};
+const NO = { notario: ['No es abogado: no da consejo legal ni llena formularios de inmigración.', 'Not a lawyer: no legal advice or immigration forms.'], ptin: ['No te representa ante el IRS en una auditoría.', 'Does not represent you before the IRS in an audit.'], ata: ['No da consejo legal sobre lo que traduce.', 'Gives no legal advice about what it translates.'], acreditado: ['Solo trabaja a través de su organización reconocida.', 'Only works through its recognized organization.'] };
+class Component extends DCLogic {
+  get es() { return (this.props.lang || 'es') === 'es'; }
+  E2(a, b) { return this.es ? a : b; }
+  num(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 999983; return String(100000 + h % 900000); }
+  renderVals() {
+    const es = this.es, E2 = this.E2.bind(this), D = !!this.props.desk, A = (window.TLAll && window.TLAll.B) || [], b = A.find(x => x.id === this.props.biz) || {}, PR = window.TLPro || { LIC: {} }, X = window.TLListing || { STAFF: {} };
+    const keys = (b.lic || []).filter(k => PR.LIC[k]), cant = b.cant ? b.cant[es ? 0 : 1] : '';
+    const AD = window.TLAdm, LS = AD && b.id ? AD.lic(b.id) : { st: 'ok', at: new Date(2026, 8, 1).getTime() }, lDate = AD ? AD.fdate(LS.at, es) + (es ? ' 2026' : ', 2026') : (es ? '1 sep 2026' : 'Sep 1, 2026');
+    const okL = LS.st === 'ok' ? E2('VERIFICADA POR TO\u2019LATINO · ', 'VERIFIED BY TO\u2019LATINO · ') + lDate.toUpperCase() : LS.st === 'exp' ? E2('VENCIDA · TO\u2019LATINO LA REVISA', 'EXPIRED · TO\u2019LATINO IS CHECKING') : LS.st === 'no' ? E2('NO SE PUDO VERIFICAR · PREGÚNTALE AL NEGOCIO', 'COULD NOT BE VERIFIED · ASK THE BUSINESS') : E2('POR VERIFICAR · TO\u2019LATINO LA REVISA EN 72 H', 'PENDING · TO\u2019LATINO CHECKS IT WITHIN 72 H');
+    const stL = LS.st === 'ok' ? E2('Activa · sin sanciones', 'Active · no sanctions') : LS.st === 'exp' ? E2('Vencida según el registro', 'Expired per the registry') : LS.st === 'no' ? E2('No aparece en el registro', 'Not found in the registry') : E2('En revisión', 'Under review');
+    const lics = keys.map((k, i) => { const L = PR.LIC[k], S = SRC[k] || ['Estado de Pensilvania', 'State of Pennsylvania', 'pa.gov', 'https://www.pa.gov', '#'], no = [i === 0 ? cant : '', NO[k] ? NO[k][es ? 0 : 1] : ''].filter(Boolean).join(' ');
+      return { t: (i === 0 && b.licL ? b.licL[es ? 0 : 1] : L[es ? 0 : 1]), ok: okL, okFg: LS.st === 'ok' ? '#00695B' : LS.st === 'rev' ? '#8A5A00' : '#C0392B', okBg: LS.st === 'ok' ? '#4B37F5' : LS.st === 'rev' ? '#8A5A00' : '#C0392B', okIcon: LS.st === 'ok' ? 'verified' : LS.st === 'rev' ? 'clock' : 'warning', can: L[es ? 2 : 3], no, hasNo: !!no,
+        rows: [[E2('EMITIDA POR', 'ISSUED BY'), S[es ? 0 : 1]], [E2('NÚMERO', 'NUMBER'), S[4] + this.num((b.id || '') + k)], [E2('ESTADO', 'STATUS'), stL], [E2('PRÓXIMA REVISIÓN', 'NEXT CHECK'), E2('1 dic 2026', 'Dec 1, 2026')]].map(([k2, v]) => ({ k: k2, v })), site: S[2], url: S[3] }; });
+    const people = (X.STAFF[b.id] || []).filter(p => p[9] && p[9].ok).map(p => ({ n: p[0], ph: 'url(https://images.pexels.com/photos/' + p[4] + '/pexels-photo-' + p[4] + '.jpeg?auto=compress&cs=tinysrgb&h=120)', c: p[9][es ? 'es' : 'en'], exp: (p[9].exp ? p[9].exp[es ? 0 : 1] : '').toUpperCase(), fg: '#00695B' }));
+    return {
+      scr: 'APP-NEG-LICENCIA · ' + (b.id || '') + (D ? ' · desktop' : ' · móvil'), mob: !D, dsk: D,
+      lay: D ? { max: '760px', pad: '28px 32px 70px', h1: '32px' } : { max: '100%', pad: '16px 16px 0', h1: '26px' },
+      bizK: (b.name || '').toUpperCase(),
+      l: { title: E2('Licencia verificada', 'Verified license'), back: E2('Volver a la ficha', 'Back to the page'), h1: E2('¿Puede hacerlo por ley?', 'Are they allowed by law?'), sub: E2('Lo que su licencia le permite, quién la emitió y cómo la verificas tú mismo.', 'What their license allows, who issued it and how to check it yourself.'),
+        line: E2('Nadie te garantiza un resultado.', 'No one can guarantee you a result.'), lineS: E2('Si alguien te promete que aprueban tu caso o que te devuelven más impuestos, desconfía. La licencia dice lo que puede hacer, no cómo va a salir.', 'If someone promises your case will be approved or a bigger tax refund, be wary. A license says what they can do, not how it will turn out.'),
+        canK: E2('LO QUE PUEDE HACER', 'WHAT THEY CAN DO'), noK: E2('LO QUE NO PUEDE', 'WHAT THEY CANNOT DO'), selfL: E2('Verifícala tú en el registro oficial', 'Check it yourself in the official registry'), whoK: E2('QUIÉN TIENE LICENCIA AQUÍ', 'WHO IS LICENSED HERE'), howK: E2('CÓMO LA VERIFICAMOS', 'HOW WE VERIFY IT') },
+      lics, people, hasPeople: people.length > 0,
+      how: [E2('Al publicar, revisamos el número en el registro oficial que la emite.', 'When they list, we check the number in the official registry that issues it.'), E2('La volvemos a revisar cada 3 meses. Si vence o tiene una sanción, el sello se quita de su ficha.', 'We check again every 3 months. If it expires or is sanctioned, the badge comes off their page.'), E2('Cada persona tiene su propia licencia: mira quién te va a atender.', 'Each person has their own license: check who will help you.')].map((t, i) => ({ n: String(i + 1), t })),
+      onBack: () => this.props.api && this.props.api.back()
+    };
+  }
+}
+</script>
+</body>
+</html>

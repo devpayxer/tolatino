@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+<script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+<style>body{margin:0}a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}@keyframes rFade{from{opacity:0}to{opacity:1}}@keyframes rPop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}input::placeholder,textarea::placeholder{color:rgba(11,14,18,.38)}</style>
+</helmet>
+<div data-screen-label="{{ scr }}" style="min-height:100%;background:#F7F6F3;color:#0B0E12;font-family:Manrope,sans-serif">
+
+<sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}">
+<div style="position:sticky;top:0;z-index:20;padding:12px 16px;background:#fff;border-bottom:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:12px">
+  <span onClick="{{ onBack }}" style="width:34px;height:34px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span>
+  <div style="flex:1;min-width:0"><div style="font:800 15px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ l.title }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ l.cityK }}</div></div>
+</div>
+</sc-if>
+
+<div style="max-width:{{ lay.max }};margin:0 auto;padding:{{ lay.pad }};display:grid;grid-template-columns:{{ lay.cols }};gap:{{ lay.gap }};align-items:start">
+
+<div style="min-width:0;display:flex;flex-direction:column;gap:14px">
+  <sc-if value="{{ dsk }}" hint-placeholder-val="{{ false }}"><div onClick="{{ onBack }}" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import>{{ l.back }}</div></sc-if>
+
+  <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.45)">{{ l.cityK }}</span>
+    <h1 style="margin:0;font:800 {{ lay.h1 }}/1.08 Sora,sans-serif;letter-spacing:-.04em;text-wrap:balance">{{ l.h1 }}</h1>
+    <p style="margin:0;font:500 14px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ l.sub }}</p>
+    <sc-if value="{{ hasQ }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-start;padding:7px 11px;border-radius:10px;background:rgba(75,55,245,.08);color:#332599;font:700 12px Manrope,sans-serif">{{ qL }}</div></sc-if>
+  </div>
+
+  <div data-screen-label="Recomendar · el negocio" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:14px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.bizK }}</span>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font:700 13px Manrope,sans-serif">{{ l.nameL }}</span><input value="{{ f.name }}" onChange="{{ onName }}" placeholder="{{ l.namePh }}" style="height:48px;padding:0 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);font:600 15px Manrope,sans-serif;color:#0B0E12;outline:none;background:#fff;box-sizing:border-box;width:100%"></label>
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font:700 13px Manrope,sans-serif">{{ l.catL }}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ cats }}" as="c" hint-placeholder-count="17"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="110px,32px">{{ c.l }}</x-import></sc-for></div>
+    </div>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font:700 13px Manrope,sans-serif">{{ l.whereL }}</span><input value="{{ f.where }}" onChange="{{ onWhere }}" placeholder="{{ l.wherePh }}" style="height:48px;padding:0 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);font:600 15px Manrope,sans-serif;color:#0B0E12;outline:none;background:#fff;box-sizing:border-box;width:100%"></label>
+    <div onClick="{{ onCasa }}" style="display:flex;align-items:center;gap:12px;cursor:pointer"><span style="flex:1;min-width:0;font:600 13px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.75)">{{ l.casaL }}</span><span style="flex:none;width:42px;height:24px;border-radius:99px;background:{{ casaBg }};position:relative"><span style="position:absolute;top:2px;left:{{ casaX }};width:20px;height:20px;border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(11,14,18,.25)"></span></span></div>
+  </div>
+
+  <div data-screen-label="Recomendar · contacto" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.conK }}</span>
+    <input value="{{ f.con }}" onChange="{{ onCon }}" placeholder="{{ l.conPh }}" style="height:48px;padding:0 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);font:600 15px Manrope,sans-serif;color:#0B0E12;outline:none;background:#fff;box-sizing:border-box;width:100%">
+    <span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ l.conS }}</span>
+  </div>
+
+  <div data-screen-label="Recomendar · tú" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:14px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.youK }}</span>
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font:700 13px Manrope,sans-serif">{{ l.knowL }}</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ knows }}" as="k" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ k.v }}" on-click="{{ k.onClick }}" hint-size="130px,32px">{{ k.l }}</x-import></sc-for></div></div>
+    <sc-if value="{{ isMine }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;border-radius:15px;background:rgba(75,55,245,.07);display:flex;flex-direction:column;gap:10px"><span style="font:700 13.5px/1.45 Manrope,sans-serif;color:#332599">{{ l.mineT }}</span><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="action" size="md" on-click="{{ onPublish }}" hint-size="190px,40px">{{ l.mineCta }}</x-import></div></div></sc-if>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="display:flex;justify-content:space-between;gap:10px;font:700 13px Manrope,sans-serif"><span>{{ l.whyL }}</span><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(11,14,18,.42)">{{ whyN }}</span></span><textarea value="{{ f.why }}" onChange="{{ onWhy }}" placeholder="{{ l.whyPh }}" rows="3" style="padding:12px 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);font:500 14px/1.5 Manrope,sans-serif;color:#0B0E12;outline:none;resize:none;box-sizing:border-box;width:100%"></textarea></label>
+    <div onClick="{{ onShow }}" style="display:flex;align-items:center;gap:12px;cursor:pointer"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:700 13.5px Manrope,sans-serif">{{ l.showL }}</span><span style="font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ showS }}</span></span><span style="flex:none;width:42px;height:24px;border-radius:99px;background:{{ showBg }};position:relative"><span style="position:absolute;top:2px;left:{{ showX }};width:20px;height:20px;border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(11,14,18,.25)"></span></span></div>
+  </div>
+
+  <sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}">
+  <div style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.howK }}</span>
+    <sc-for list="{{ how }}" as="h" hint-placeholder-count="3"><div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:22px;height:22px;border-radius:99px;background:#0B0E12;color:#fff;display:grid;place-items:center;font:800 10px 'JetBrains Mono',monospace">{{ h.n }}</span><span style="font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.75)">{{ h.t }}</span></div></sc-for>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ hasMiss }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border-radius:14px;background:rgba(11,14,18,.04);display:flex;flex-direction:column;gap:4px"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.missK }}</span><sc-for list="{{ miss }}" as="m" hint-placeholder-count="2"><span style="font:600 13px Manrope,sans-serif;color:rgba(11,14,18,.7)">· {{ m.t }}</span></sc-for></div></sc-if>
+  <sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}"><div style="display:flex;padding-bottom:24px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" on-click="{{ onSend }}" hint-size="100%,52px">{{ ctaL }}</x-import></div></sc-if>
+  </sc-if>
+
+  <sc-if value="{{ isSent }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Recomendar · enviada" style="display:flex;flex-direction:column;gap:14px;animation:rPop .3s ease-out">
+    <span style="width:54px;height:54px;border-radius:18px;background:#00E5C4;display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 26 }}" stroke-width="{{ 2.2 }}" hint-size="26px,26px"></x-import></span>
+    <h1 style="margin:0;font:800 {{ lay.h1 }}/1.08 Sora,sans-serif;letter-spacing:-.04em;text-wrap:balance">{{ sent.t }}</h1>
+    <p style="margin:0;font:500 14px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ sent.s }}</p>
+    <div style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OrderTracker" steps="{{ sent.steps }}" hint-size="100%,150px"></x-import></div>
+    <div style="padding:6px 16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)"><sc-for list="{{ sent.rows }}" as="r" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid rgba(11,14,18,.06)"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5);padding-top:2px">{{ r.k }}</span><span style="font:600 13.5px/1.4 Manrope,sans-serif;text-align:right;min-width:0">{{ r.v }}</span></div></sc-for></div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-bottom:24px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" block="{{ true }}" on-click="{{ onAgain }}" hint-size="100%,44px">{{ l.again }}</x-import><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="md" block="{{ true }}" on-click="{{ onBack }}" hint-size="100%,44px">{{ l.done }}</x-import></div>
+  </div>
+  </sc-if>
+</div>
+
+<sc-if value="{{ dsk }}" hint-placeholder-val="{{ false }}">
+<div style="align-self:stretch"><div data-sticky-rail="1" style="display:flex;flex-direction:column;gap:14px">
+  <div data-screen-label="Recomendar · lo que recibe" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.smsK }}</span>
+    <div style="align-self:flex-start;max-width:100%;padding:12px 14px;border-radius:16px 16px 16px 5px;background:#F7F6F3;font:500 13.5px/1.5 Manrope,sans-serif;color:#0B0E12;text-wrap:pretty">{{ sms }}</div>
+    <span style="font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ l.smsS }}</span>
+  </div>
+  <div style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.howK }}</span>
+    <sc-for list="{{ how }}" as="h" hint-placeholder-count="3"><div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:22px;height:22px;border-radius:99px;background:#0B0E12;color:#fff;display:grid;place-items:center;font:800 10px 'JetBrains Mono',monospace">{{ h.n }}</span><span style="font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.75)">{{ h.t }}</span></div></sc-for>
+  </div>
+  <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" on-click="{{ onSend }}" hint-size="100%,52px">{{ ctaL }}</x-import></div></sc-if>
+</div></div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DK = 'tl-rec-draft-v1', LK = 'tl-rec-v1';
+const CATS = [['NEG-FOOD', 'Comida y Bebidas', 'Food and Drinks'], ['NEG-BELL', 'Belleza y Salud', 'Beauty and Health'], ['NEG-AUTO', 'Servicios de Auto', 'Auto Services'], ['NEG-HOGAR', 'Servicios del Hogar', 'Home Services'], ['NEG-SALUD', 'Doctores y Medicina', 'Doctors and Medicine'], ['NEG-PRO', 'Servicios Profesionales', 'Professional Services'], ['NEG-FIESTA', 'Fiestas y Celebraciones', 'Party and Celebrations'], ['NEG-MERC', 'Mercados y Bodegas', 'Markets and Bodegas'], ['NEG-NOCHE', 'Vida Nocturna', 'Night Life'], ['NEG-TIENDA', 'Tiendas', 'Shops & Stores'], ['NEG-TRANS', 'Transporte', 'Transportation'], ['NEG-EDU', 'Cursos y Educación', 'Courses & Education'], ['NEG-NINOS', 'Niños', 'Children'], ['NEG-DEPORTE', 'Vida Activa y Deporte', 'Active Life & Sport'], ['NEG-FE', 'Iglesias y Religión', 'Churches & Religion'], ['NEG-INMUEBLE', 'Bienes Raíces', 'Real Estate'], ['NEG-DEALER', 'Venta de Autos', 'Car Dealers']];
+const F0 = { name: '', cat: null, where: '', casa: false, con: '', know: null, why: '', show: true };
+const rd = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } };
+class Component extends DCLogic {
+  state = { f: { ...F0, ...rd(DK, {}) }, sent: null, tried: false };
+  componentDidMount() { this.prefill(); }
+  componentDidUpdate(pp) { if (pp.pre !== this.props.pre) this.prefill(); }
+  prefill() { const p = String(this.props.pre || ''), N = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); if (!p) return; const c = CATS.find(x => x[0] === p || N(x[1]) === N(p)); if (c && !this.state.f.cat) this.up({ cat: c[0] }); }
+  get es() { return (this.props.lang || 'es') === 'es'; }
+  E2(a, b) { return this.es ? a : b; }
+  api() { return this.props.api || { nav: () => {}, login: () => {}, back: () => {} }; }
+  city() { const c = String(this.props.city || ''); return c && !/hazleton/i.test(c) ? c.replace(/, PA$/, '') : 'Hazleton'; }
+  up(o) { const f = { ...this.state.f, ...o }; try { localStorage.setItem(DK, JSON.stringify(f)); } catch (e) {} this.setState({ f }); }
+  miss() { const f = this.state.f, E2 = this.E2.bind(this), m = []; if (f.name.trim().length < 2) m.push(E2('Escribe el nombre del negocio', 'Enter the business name')); if (!f.cat) m.push(E2('Elige la categoría', 'Pick the category')); if (!f.casa && f.where.trim().length < 3) m.push(E2('Dinos dónde está, o marca que no tiene local', 'Tell us where it is, or mark it has no storefront')); if (!f.know) m.push(E2('Dinos cómo lo conoces', 'Tell us how you know it')); return m; }
+  send() { const u = this.props.user; if (this.miss().length) { this.setState({ tried: true }); return; } if (!u) { this.api().login({ code: 'APP-NEG-RECOMENDAR', pre: this.props.pre || '' }); return; }
+    const f = this.state.f, id = 'R-' + (3100 + Math.floor(Math.random() * 800)), x = { id, ...f, city: this.city(), at: '12:34 PM' }; try { localStorage.setItem(LK, JSON.stringify(rd(LK, []).concat(x))); localStorage.removeItem(DK); } catch (e) {} this.setState({ sent: x, f: { ...F0 }, tried: false }); }
+  renderVals() {
+    const es = this.es, E2 = this.E2.bind(this), D = !!this.props.desk, f = this.state.f, u = this.props.user, first = u ? String(u.short || u.name || '').split(' ')[0] : '', who = u ? (u.short || u.name) : E2('Un vecino', 'A neighbor'), city = this.city(), dw = this.props.dw || 1280;
+    const nm = f.name.trim() || E2('tu negocio', 'your business'), miss = this.state.tried ? this.miss() : [];
+    const sms = E2('Hola, ' + (f.show ? who : 'un vecino') + ' recomendó ' + nm + " en To'Latino" + (f.why.trim() ? ': «' + f.why.trim() + '»' : '.') + ' Publicar es gratis: tolatino.com/publica', 'Hi, ' + (f.show ? who : 'a neighbor') + ' recommended ' + nm + " on To'Latino" + (f.why.trim() ? ': "' + f.why.trim() + '"' : '.') + ' Listing is free: tolatino.com/publica');
+    const how = [E2('Lo buscamos y revisamos que exista y esté en ' + city + '.', 'We look it up and check it exists and is in ' + city + '.'), E2('Si dejaste su teléfono, le mandamos un SMS de tu parte, una sola vez. Publicar es gratis para el negocio.', 'If you left their phone, we text them once on your behalf. Listing is free for the business.'), E2('Nada se publica sin que el negocio diga que sí. Te avisamos cuando publique.', 'Nothing goes live until the business says yes. We tell you when it does.')].map((t, i) => ({ n: String(i + 1), t }));
+    const sx = this.state.sent, cat = c => { const z = CATS.find(y => y[0] === c); return z ? z[es ? 1 : 2] : '—'; };
+    const sent = sx ? { t: E2('Recomendación enviada', 'Recommendation sent'), s: E2('Gracias' + (first ? ', ' + first : '') + '. Te avisamos cuando ' + sx.name + ' publique en To\'Latino.', 'Thanks' + (first ? ', ' + first : '') + '. We will tell you when ' + sx.name + ' joins To\'Latino.'),
+      steps: [[E2('Enviada', 'Sent'), sx.at, 'done'], [sx.con.trim() ? E2('Le escribimos al negocio', 'We text the business') : E2('Lo buscamos nosotros', 'We look it up'), E2('Hoy', 'Today'), 'current'], [E2('Publicó en To\'Latino', 'Joined To\'Latino'), '', 'next']].map(([label, time, state]) => ({ label, time, state })),
+      rows: [[E2('NEGOCIO', 'BUSINESS'), sx.name], [E2('CATEGORÍA', 'CATEGORY'), cat(sx.cat)], [E2('DÓNDE', 'WHERE'), sx.casa ? E2('Sin local · ', 'No storefront · ') + sx.city : sx.where + ' · ' + sx.city], [E2('CONTACTO', 'CONTACT'), sx.con.trim() || E2('No lo dejaste', 'Not given')], [E2('SALE COMO', 'SHOWS AS'), sx.show ? who : E2('Un vecino', 'A neighbor')]].map(([k, v]) => ({ k, v })) } : { steps: [], rows: [] };
+    const q = String(this.props.pre || ''), isCat = CATS.some(x => x[0] === q || x[1] === q);
+    return {
+      scr: 'APP-NEG-RECOMENDAR' + (sx ? ' · enviada' : '') + (D ? ' · desktop' : ' · móvil'), mob: !D, dsk: D, isForm: !sx, isSent: !!sx,
+      lay: D ? { max: '1080px', pad: '28px 32px 70px', cols: dw >= 960 ? 'minmax(0,1fr) 360px' : 'minmax(0,1fr)', gap: '28px 48px', h1: '32px' } : { max: '100%', pad: '16px 16px 0', cols: 'minmax(0,1fr)', gap: '14px', h1: '26px' },
+      l: { title: E2('Recomienda un negocio', 'Recommend a business'), cityK: (E2('EN ', 'IN ') + city).toUpperCase(), back: E2('Volver', 'Back'), h1: E2('¿Conoces un negocio que no está aquí?', 'Know a business that isn\u2019t here?'), sub: E2('Cuéntanos cuál es y le escribimos de tu parte para que publique gratis.', 'Tell us which one and we will reach out on your behalf so it can list for free.'),
+        bizK: E2('EL NEGOCIO', 'THE BUSINESS'), nameL: E2('¿Cómo se llama?', 'What is it called?'), namePh: E2('Ej.: Pica Pollo La Vieja Fefa', 'E.g. Pica Pollo La Vieja Fefa'), catL: E2('¿Qué es?', 'What is it?'), whereL: E2('¿Dónde está?', 'Where is it?'), wherePh: E2('Calle o dirección', 'Street or address'), casaL: E2('No tiene local: va a domicilio o trabaja desde su casa', 'No storefront: goes to you or works from home'),
+        conK: E2('SU TELÉFONO O INSTAGRAM · OPCIONAL', 'THEIR PHONE OR INSTAGRAM · OPTIONAL'), conPh: E2('(570) 555-0100 o @negocio', '(570) 555-0100 or @business'), conS: E2('Si lo dejas, le mandamos un SMS de tu parte, una sola vez. Nunca lo mostramos.', 'If you leave it, we text them once on your behalf. We never show it.'),
+        youK: E2('TÚ', 'YOU'), knowL: E2('¿Cómo lo conoces?', 'How do you know it?'), mineT: E2('Si es tuyo, publícalo tú mismo: es gratis y toma unos minutos.', 'If it\u2019s yours, list it yourself: it\u2019s free and takes a few minutes.'), mineCta: E2('Publica tu negocio', 'List your business'), whyL: E2('¿Por qué lo recomiendas? · Opcional', 'Why do you recommend it? · Optional'), whyPh: E2('Ej.: el mejor sancocho del barrio, siempre a tiempo…', 'E.g. best sancocho around, always on time…'), showL: E2('Decirle que fuiste tú', 'Tell them it was you'),
+        howK: E2('CÓMO FUNCIONA', 'HOW IT WORKS'), missK: E2('TE FALTA', 'STILL NEEDED'), smsK: E2('LO QUE RECIBE EL NEGOCIO', 'WHAT THE BUSINESS GETS'), smsS: E2('Solo si dejaste su teléfono. Un solo mensaje.', 'Only if you left their phone. One message only.'), again: E2('Recomendar otro', 'Recommend another'), done: E2('Listo', 'Done') },
+      hasQ: !!q && !isCat, qL: E2('Buscabas: ', 'You searched: ') + q,
+      f, onName: e => this.up({ name: e.target.value.slice(0, 80) }), onWhere: e => this.up({ where: e.target.value.slice(0, 120) }), onCon: e => this.up({ con: e.target.value.slice(0, 60) }), onWhy: e => this.up({ why: e.target.value.slice(0, 280) }), whyN: f.why.length + ' / 280',
+      onCasa: () => this.up({ casa: !f.casa }), casaBg: f.casa ? '#0B0E12' : 'rgba(11,14,18,.18)', casaX: f.casa ? '20px' : '2px',
+      onShow: () => this.up({ show: !f.show }), showBg: f.show ? '#0B0E12' : 'rgba(11,14,18,.18)', showX: f.show ? '20px' : '2px', showS: f.show ? E2('El mensaje dice «' + who + ' te recomendó».', 'The message says "' + who + ' recommended you".') : E2('El mensaje dice «un vecino te recomendó».', 'The message says "a neighbor recommended you".'),
+      cats: CATS.map(([k, a, b]) => ({ l: es ? a : b, v: f.cat === k ? 'selected' : 'filter', onClick: () => this.up({ cat: f.cat === k ? null : k }) })),
+      knows: [['cli', 'Soy cliente', 'I\u2019m a customer'], ['fam', 'Es de un familiar o amigo', 'A friend or family member\u2019s'], ['mio', 'Es mío', 'It\u2019s mine']].map(([k, a, b]) => ({ l: es ? a : b, v: f.know === k ? 'selected' : 'filter', onClick: () => this.up({ know: f.know === k ? null : k }) })),
+      isMine: f.know === 'mio', onPublish: () => this.api().nav({ code: 'ONB-NEG-A1' }),
+      how, sms, miss: miss.map(t => ({ t })), hasMiss: miss.length > 0, ctaL: u ? E2('Enviar recomendación', 'Send recommendation') : E2('Entra para enviar', 'Sign in to send'), onSend: () => this.send(),
+      sent, onAgain: () => this.setState({ sent: null }), onBack: () => this.api().back()
+    };
+  }
+}
+</script>
+</body>
+</html>

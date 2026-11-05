@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <script src="prototype/bundle-1.js"></script>
+  <script src="prototype/bundle-2.js"></script>
+  <script src="prototype/bundle-3.js"></script>
+  <script src="prototype/bundle-4.js"></script>
+  <script src="prototype/evt-data.js"></script>
+  <script src="prototype/com-data.js"></script>
+  <script src="prototype/search-engine.js"></script>
+  <style>
+    body{margin:0;background:#F7F6F3;font-family:Manrope,system-ui,sans-serif;color:#0B0E12}
+    a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}
+    input::placeholder{color:rgba(11,14,18,.42)}
+    @keyframes sFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    @keyframes sUp{from{transform:translateY(64px);opacity:0}to{transform:none;opacity:1}}
+    @keyframes sPulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+  </style>
+</helmet>
+
+<sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="APP-BUSCAR · móvil" style="min-height:780px;background:#F7F6F3;display:flex;flex-direction:column">
+  <div style="position:sticky;top:0;z-index:15;background:#fff;border-bottom:1px solid rgba(11,14,18,.07)">
+    <div style="padding:10px 16px 8px 8px;display:flex;align-items:center;gap:4px">
+      <span onClick="{{ onBack }}" style="width:40px;height:44px;display:grid;place-items:center;flex:none;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 22 }}" stroke-width="{{ 2 }}" hint-size="22px,22px"></x-import></span>
+      <div style="flex:1;min-width:0;height:46px;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:0 6px 0 13px;border-radius:14px;background:{{ inp.bg }};border:1.5px solid {{ inp.bd }}">
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 18 }}" color="rgba(11,14,18,.45)" hint-size="18px,18px"></x-import>
+        <input ref="{{ inRef }}" value="{{ inp.v }}" onChange="{{ inp.onChange }}" onKeyDown="{{ inp.onKey }}" onFocus="{{ inp.onFocus }}" onBlur="{{ inp.onBlur }}" placeholder="{{ inp.ph }}" enterKeyHint="search" autoComplete="off" style="flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;padding:0;font:600 15px Manrope,sans-serif;color:#0B0E12">
+        <sc-if value="{{ inp.hasQ }}" hint-placeholder-val="{{ false }}"><span onClick="{{ inp.onClear }}" style="width:30px;height:30px;border-radius:99px;display:grid;place-items:center;background:rgba(11,14,18,.07);cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 13 }}" stroke-width="{{ 2.2 }}" hint-size="13px,13px"></x-import></span></sc-if>
+        <sc-if value="{{ inp.noQ }}" hint-placeholder-val="{{ true }}"><span onClick="{{ onMic }}" style="width:34px;height:34px;border-radius:10px;display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="mic" size="{{ 19 }}" color="#4B37F5" hint-size="19px,19px"></x-import></span></sc-if>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;padding:0 16px 10px 52px;overflow-x:auto;scrollbar-width:none">
+      <span onClick="{{ sc.onCity }}" style="flex:none;display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:9px;background:#F7F6F3;font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:#4B37F5;cursor:pointer;white-space:nowrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 13 }}" color="#4B37F5" hint-size="13px,13px"></x-import>{{ locL }}</span>
+      <sc-if value="{{ sc.has }}" hint-placeholder-val="{{ false }}"><span onClick="{{ sc.onX }}" style="flex:none;display:flex;align-items:center;gap:6px;padding:6px 8px 6px 10px;border-radius:9px;background:#0B0E12;color:#fff;font:700 11.5px Manrope,sans-serif;cursor:pointer;white-space:nowrap">{{ sc.l }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 12 }}" stroke-width="{{ 2.4 }}" color="#fff" hint-size="12px,12px"></x-import></span></sc-if>
+    </div>
+    <sc-if value="{{ vRes }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tabs" items="{{ rs.tabs }}" active="{{ rs.tab }}" on-change="{{ rs.onTab }}" hint-size="100%,44px"></x-import></sc-if>
+  </div>
+
+  <sc-if value="{{ vSug }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-BUSCAR · sugerencias" style="background:#fff;padding:6px 8px 24px;flex:1">
+    <sc-if value="{{ sug.hasInt }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 12px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span style="font:800 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45);margin-right:2px">{{ L.und }}</span><sc-for list="{{ sug.ints }}" as="c" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="signal" hint-size="60px,18px">{{ c.l }}</x-import></sc-for></div></sc-if>
+    <div onClick="{{ sug.go.onClick }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;cursor:pointer">
+      <span style="width:44px;height:44px;border-radius:12px;background:rgba(75,55,245,.09);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 19 }}" color="#4B37F5" hint-size="19px,19px"></x-import></span>
+      <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font:700 14.5px/1.3 Manrope,sans-serif;color:#4B37F5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sug.go.t }}</span><span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sug.go.meta }}</span></span>
+      <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 16 }}" stroke-width="{{ 2 }}" color="rgba(11,14,18,.35)" hint-size="16px,16px"></x-import>
+    </div>
+    <sc-for list="{{ sug.secs }}" as="sec" hint-placeholder-count="2">
+      <div style="padding:16px 12px 6px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ sec.t }}</div>
+      <sc-for list="{{ sec.rows }}" as="r" hint-placeholder-count="3"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.SearchResultRow" dc-props="{{ r.dsp }}" hint-size="100%,60px"></x-import></div></sc-for>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ vExp }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="APP-BUSCAR · explorar" style="padding:20px 20px 48px;display:flex;flex-direction:column;gap:28px;animation:sFade .2s ease-out">
+    <sc-if value="{{ ex.hasLine }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border-radius:14px;background:rgba(0,229,196,.12);display:flex;gap:10px;align-items:flex-start"><span style="display:grid;flex:none;padding-top:1px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="shield" size="{{ 16 }}" color="#00695B" hint-size="16px,16px"></x-import></span><span style="font:800 13px/1.35 Manrope,sans-serif;color:#00695B;text-wrap:pretty">{{ ex.line }}</span></div></sc-if>
+    <sc-if value="{{ ex.hasRecent }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.recent }}</span><span onClick="{{ ex.onClear }}" style="font:700 12.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ L.clear }}</span></div>
+      <div style="background:#fff;border-radius:17px;border:1px solid rgba(11,14,18,.08);overflow:hidden">
+        <sc-for list="{{ ex.recent }}" as="r" hint-placeholder-count="3">
+          <div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:{{ r.bt }};cursor:pointer">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="clock" size="{{ 17 }}" color="rgba(11,14,18,.42)" hint-size="17px,17px"></x-import>
+            <span style="flex:1;min-width:0;font:600 14px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span>
+            <span onClick="{{ r.onX }}" style="width:28px;height:28px;display:grid;place-items:center;flex:none;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 13 }}" stroke-width="{{ 2 }}" color="rgba(11,14,18,.4)" hint-size="13px,13px"></x-import></span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+    <sc-if value="{{ ex.hasSubs }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ ex.subsT }}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ ex.subs }}" as="c" hint-placeholder-count="6"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div>
+    </div>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:4px"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.talk }}</span><span style="font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ L.talkSub }}</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ ex.examples }}" as="x" hint-placeholder-count="4">
+          <div onClick="{{ x.onClick }}" style="padding:13px 14px;border-radius:16px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;align-items:center;gap:12px;cursor:pointer">
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+              <span style="font:700 14.5px/1.3 Manrope,sans-serif">“{{ x.t }}”</span>
+              <span style="display:flex;flex-wrap:wrap;gap:5px"><sc-for list="{{ x.chips }}" as="c" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.tone }}" hint-size="60px,18px">{{ c.l }}</x-import></sc-for></span>
+            </span>
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 16 }}" stroke-width="{{ 2 }}" color="rgba(11,14,18,.35)" hint-size="16px,16px"></x-import>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.trend }}</span><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.45)">{{ L.week }}</span></div>
+      <div style="background:#fff;border-radius:17px;border:1px solid rgba(11,14,18,.08);overflow:hidden">
+        <sc-for list="{{ ex.trend }}" as="r" hint-placeholder-count="6">
+          <div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:{{ r.bt }};cursor:pointer">
+            <span style="width:22px;flex:none;font:800 15px Sora,sans-serif;color:rgba(11,14,18,.3)">{{ r.n }}</span>
+            <span style="flex:1;min-width:0;font:600 14px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span>
+            <span style="flex:none;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.45)">{{ r.c }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.cats }}</span>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 8px">
+        <sc-for list="{{ ex.cats }}" as="c" hint-placeholder-count="8">
+          <div onClick="{{ c.onClick }}" style="display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer">
+            <span style="width:54px;height:54px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ c.icon }}" size="{{ 22 }}" hint-size="22px,22px"></x-import></span>
+            <span style="font:700 11.5px Manrope,sans-serif;text-align:center">{{ c.l }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ vRes }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-BUSCAR · resultados" style="display:flex;flex-direction:column;animation:sFade .2s ease-out">
+    <sc-if value="{{ rs.hasTop }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fff;padding:12px 20px 14px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid rgba(11,14,18,.07)">
+      <sc-if value="{{ rs.hasUnd }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.UnderstoodBar" dc-props="{{ rs.undP }}" hint-size="100%,34px"></x-import></sc-if>
+      <sc-if value="{{ rs.hasLine }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border-radius:14px;background:rgba(0,229,196,.12);display:flex;gap:10px;align-items:flex-start"><span style="display:grid;flex:none;padding-top:1px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="shield" size="{{ 16 }}" color="#00695B" hint-size="16px,16px"></x-import></span><span style="display:flex;flex-direction:column;gap:2px;color:#00695B;text-wrap:pretty"><span style="font:800 13px/1.35 Manrope,sans-serif">{{ rs.line }}</span><span style="font:500 12.5px/1.5 Manrope,sans-serif">{{ rs.lineSub }}</span></span></div></sc-if>
+      <sc-if value="{{ rs.showQuick }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px"><span onClick="{{ rs.onSort }}" style="flex:none;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid rgba(11,14,18,.12);font:700 12.5px Manrope,sans-serif;cursor:pointer;white-space:nowrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="filter" size="{{ 14 }}" hint-size="14px,14px"></x-import>{{ rs.sortL }}</span><sc-if value="{{ rs.hasMap }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.onMap }}" style="flex:none;display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid rgba(11,14,18,.12);font:700 12.5px Manrope,sans-serif;cursor:pointer;white-space:nowrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 14 }}" color="#4B37F5" hint-size="14px,14px"></x-import>{{ rs.mapL }}</span></sc-if><sc-for list="{{ rs.quick }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="100px,34px">{{ c.l }}</x-import></sc-for></div></sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ rs.partial }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;padding:12px 14px;border-radius:14px;background:rgba(255,176,32,.14);font:600 12.5px/1.5 Manrope,sans-serif;color:#8A5A00;text-wrap:pretty">{{ L.partial }}</div></sc-if>
+
+    <sc-if value="{{ rs.none }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="APP-BUSCAR · sin resultados" style="padding:36px 24px 48px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">
+      <span style="width:64px;height:64px;border-radius:22px;background:#fff;border:1px solid rgba(11,14,18,.08);display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 26 }}" color="rgba(11,14,18,.5)" hint-size="26px,26px"></x-import></span>
+      <span style="font:800 22px/1.2 Sora,sans-serif;letter-spacing:-.035em;text-wrap:balance">{{ rs.noneT }}</span>
+      <span style="font:500 13.5px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.62);text-wrap:pretty;max-width:320px">{{ L.noneB }}</span>
+      <sc-if value="{{ rs.hasDym }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.onDym }}" style="font:700 14px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ rs.dymT }}</span></sc-if>
+      <div style="width:100%;display:flex;flex-direction:column;gap:8px;margin-top:6px">
+        <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" icon="bell" variant="{{ rs.alertV }}" on-click="{{ rs.onAlert }}" hint-size="100%,50px">{{ rs.alertL }}</x-import></div>
+        <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" variant="secondary" icon="store" on-click="{{ rs.onRec }}" hint-size="100%,50px">{{ L.rec }}</x-import></div>
+        <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" variant="soft" icon="users" on-click="{{ rs.onAsk }}" hint-size="100%,50px">{{ L.ask }}</x-import></div>
+      </div>
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:14px;text-align:left"><span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.tryCats }}</span><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ rs.tryCats }}" as="c" hint-placeholder-count="6"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div></div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ rs.isAll }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:18px 20px 48px;display:flex;flex-direction:column;gap:26px">
+      <sc-if value="{{ rs.top.has }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ rs.top.onClick }}" style="position:relative;height:128px;border-radius:20px;overflow:hidden;background-color:#0B0E12;background-size:cover;background-position:center;background-image:{{ rs.top.img }};cursor:pointer">
+        <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,14,18,.82),rgba(11,14,18,.25))"></div>
+        <div style="position:absolute;left:16px;right:60px;bottom:14px;display:flex;flex-direction:column;gap:4px;color:#fff">
+          <span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.75)">{{ rs.top.eb }}</span>
+          <span style="font:800 22px/1.1 Sora,sans-serif;letter-spacing:-.035em">{{ rs.top.t }}</span>
+          <span style="font:600 12.5px Manrope,sans-serif;color:rgba(255,255,255,.85)">{{ rs.top.meta }}</span>
+        </div>
+        <span style="position:absolute;right:14px;bottom:14px;width:38px;height:38px;border-radius:99px;background:#fff;display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 17 }}" stroke-width="{{ 2.2 }}" hint-size="17px,17px"></x-import></span>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.bz.has }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.biz }}</span><sc-if value="{{ rs.bz.more }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.bz.onMore }}" style="font:700 12.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer;white-space:nowrap">{{ rs.bz.moreL }}</span></sc-if></div>
+        <sc-if value="{{ rs.bz.hasCard }}" hint-placeholder-val="{{ false }}"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ rs.bz.card }}" hint-size="100%,380px"></x-import></div></sc-if>
+        <sc-for list="{{ rs.bz.rows }}" as="r" hint-placeholder-count="3"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.SearchResultRow" dc-props="{{ r.dsp }}" hint-size="100%,84px"></x-import></div></sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.emptyTop }}" hint-placeholder-val="{{ false }}"><div style="order:-1;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.NotYetCard" dc-props="{{ rs.notYetP }}" hint-size="100%,170px"></x-import></div></sc-if>
+
+      <sc-if value="{{ rs.it.has }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.items }}</span><sc-if value="{{ rs.it.more }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.it.onMore }}" style="font:700 12.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer;white-space:nowrap">{{ rs.it.moreL }}</span></sc-if></div>
+        <sc-for list="{{ rs.it.rows }}" as="r" hint-placeholder-count="3">
+          <div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);cursor:pointer">
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+              <span style="font:500 14.5px/1.3 Manrope,sans-serif">{{ r.h0 }}<span style="font-weight:800">{{ r.h1 }}</span>{{ r.h2 }}</span>
+              <span style="font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.biz }}</span>
+              <span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:{{ r.metaC }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</span>
+              <span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em;margin-top:2px">{{ r.price }}</span>
+            </span>
+            <span style="width:84px;height:84px;border-radius:14px;flex:none;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ r.img }}"></span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.ev.has }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.evts }}</span><sc-if value="{{ rs.ev.more }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.ev.onMore }}" style="font:700 12.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer;white-space:nowrap">{{ rs.ev.moreL }}</span></sc-if></div>
+        <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px 4px;scroll-snap-type:x mandatory">
+          <sc-for list="{{ rs.ev.cards }}" as="c" hint-placeholder-count="2"><div style="flex:none;scroll-snap-align:start;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" dc-props="{{ c }}" hint-size="212px,190px"></x-import></div></sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.po.has }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.posts }}</span><sc-if value="{{ rs.po.more }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.po.onMore }}" style="font:700 12.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer;white-space:nowrap">{{ rs.po.moreL }}</span></sc-if></div>
+        <sc-for list="{{ rs.po.rows }}" as="p" hint-placeholder-count="2">
+          <div onClick="{{ p.onClick }}" style="padding:14px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px;cursor:pointer">
+            <div style="display:flex;align-items:center;gap:9px"><span style="width:28px;height:28px;border-radius:99px;flex:none;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ p.av }}"></span><span style="font:700 13px Manrope,sans-serif">{{ p.who }}</span><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(11,14,18,.45)">{{ p.when }}</span></div>
+            <span style="font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.82);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">{{ p.h0 }}<span style="font-weight:800;color:#0B0E12">{{ p.h1 }}</span>{{ p.h2 }}</span>
+            <div style="display:flex;gap:14px;font:700 11px 'JetBrains Mono',monospace;color:rgba(11,14,18,.5)"><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ p.votes }}</span><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chat" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ p.cm }}</span></div>
+          </div>
+        </sc-for>
+        <span style="font:600 11.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.5)">{{ L.comLine }}</span>
+      </div>
+      </sc-if>
+
+      <div style="padding:16px;border-radius:20px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:12px">
+        <span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ L.notFound }}</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="sm" icon="bell" variant="{{ rs.alertV }}" on-click="{{ rs.onAlert }}" hint-size="120px,34px">{{ rs.alertL }}</x-import><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="sm" variant="soft" icon="users" on-click="{{ rs.onAsk }}" hint-size="140px,34px">{{ L.ask }}</x-import></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ rs.isBiz }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:16px 20px 48px;display:flex;flex-direction:column;gap:12px">
+      <span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.5)">{{ rs.bl.count }}</span>
+      <sc-for list="{{ rs.bl.pro }}" as="c" hint-placeholder-count="2"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ c }}" hint-size="100%,380px"></x-import></div></sc-for>
+      <sc-if value="{{ rs.bl.hasFree }}" hint-placeholder-val="{{ false }}"><span style="margin-top:10px;font:800 16px Sora,sans-serif;letter-spacing:-.03em">{{ L.also }}</span></sc-if>
+      <sc-for list="{{ rs.bl.free }}" as="c" hint-placeholder-count="2"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ c }}" hint-size="100%,90px"></x-import></div></sc-for>
+      <sc-if value="{{ rs.bl.hasPages }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap"><sc-for list="{{ rs.bl.pages }}" as="p" hint-placeholder-count="3"><span onClick="{{ p.onClick }}" style="min-width:40px;height:40px;padding:0 10px;box-sizing:border-box;border-radius:12px;display:grid;place-items:center;background:{{ p.bg }};color:{{ p.fg }};border:1px solid rgba(11,14,18,.1);font:700 13px Manrope,sans-serif;cursor:pointer">{{ p.l }}</span></sc-for></div></sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ rs.isItm }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:16px 20px 48px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px 4px;padding:0 20px"><sc-for list="{{ rs.il.chips }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div>
+      <sc-for list="{{ rs.il.rows }}" as="r" hint-placeholder-count="4">
+        <div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);cursor:pointer">
+          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+            <span style="font:500 14.5px/1.3 Manrope,sans-serif">{{ r.h0 }}<span style="font-weight:800">{{ r.h1 }}</span>{{ r.h2 }}</span>
+            <span style="font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.biz }}</span>
+            <span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:{{ r.metaC }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</span>
+            <span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em;margin-top:2px">{{ r.price }}</span>
+          </span>
+          <span style="width:84px;height:84px;border-radius:14px;flex:none;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ r.img }}"></span>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ rs.isEvt }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:16px 20px 48px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px"><sc-for list="{{ rs.el.chips }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px"><sc-for list="{{ rs.el.cards }}" as="c" hint-placeholder-count="4"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" dc-props="{{ c }}" hint-size="100%,190px"></x-import></div></sc-for></div>
+      <sc-if value="{{ rs.el.none }}" hint-placeholder-val="{{ false }}"><span style="padding:20px 0;text-align:center;font:600 13px Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ L.evNone }}</span></sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ rs.isPost }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:16px 20px 48px;display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ rs.pl.rows }}" as="p" hint-placeholder-count="3">
+        <div onClick="{{ p.onClick }}" style="padding:14px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px;cursor:pointer">
+          <div style="display:flex;align-items:center;gap:9px"><span style="width:28px;height:28px;border-radius:99px;flex:none;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ p.av }}"></span><span style="font:700 13px Manrope,sans-serif">{{ p.who }}</span><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(11,14,18,.45)">{{ p.when }}</span></div>
+          <span style="font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.82);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">{{ p.h0 }}<span style="font-weight:800;color:#0B0E12">{{ p.h1 }}</span>{{ p.h2 }}</span>
+          <div style="display:flex;gap:14px;font:700 11px 'JetBrains Mono',monospace;color:rgba(11,14,18,.5)"><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ p.votes }}</span><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chat" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ p.cm }}</span></div>
+        </div>
+      </sc-for>
+      <span style="font:600 11.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.5)">{{ L.comLine }}</span>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ voice.open }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end">
+    <div onClick="{{ voice.onX }}" style="position:absolute;inset:0;background:rgba(11,14,18,.45);animation:sFade .2s"></div>
+    <div style="position:relative;background:#fff;border-radius:26px 26px 0 0;padding:28px 24px 34px;display:flex;flex-direction:column;align-items:center;gap:16px;animation:sUp .25s ease-out">
+      <span style="position:relative;width:92px;height:92px;display:grid;place-items:center">{{ voice.pulse }}<span style="position:relative;width:64px;height:64px;border-radius:99px;background:#4B37F5;display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="mic" size="{{ 26 }}" color="#fff" hint-size="26px,26px"></x-import></span></span>
+      <span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em;text-align:center">{{ voice.t }}</span>
+      <span style="font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-align:center;min-height:20px">{{ voice.s }}</span>
+      <div style="display:flex;width:100%"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" variant="secondary" on-click="{{ voice.onX }}" hint-size="100%,50px">{{ L.cancel }}</x-import></div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ sortSh.open }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end">
+    <div onClick="{{ sortSh.onX }}" style="position:absolute;inset:0;background:rgba(11,14,18,.45);animation:sFade .2s"></div>
+    <div style="position:relative;background:#fff;border-radius:26px 26px 0 0;padding:22px 20px 30px;display:flex;flex-direction:column;gap:6px;animation:sUp .25s ease-out">
+      <span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em;margin-bottom:6px">{{ L.sortT }}</span>
+      <sc-for list="{{ sortSh.opts }}" as="o" hint-placeholder-count="3"><div onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid rgba(11,14,18,.07);cursor:pointer"><span style="width:20px;height:20px;border-radius:99px;box-sizing:border-box;border:{{ o.ring }};flex:none"></span><span style="flex:1;font:700 14.5px Manrope,sans-serif">{{ o.l }}</span></div></sc-for>
+      <span style="margin-top:8px;font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.55);text-wrap:pretty">{{ L.proNote }}</span>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}"><div style="position:fixed;left:16px;right:16px;bottom:24px;z-index:70;padding:14px 16px;border-radius:15px;background:#0B0E12;color:#fff;font:700 13px/1.4 Manrope,sans-serif;animation:sUp .25s ease-out">{{ toastT }}</div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ drop }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="APP-BUSCAR · desplegable desktop" style="position:relative">
+  <div style="height:54px;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;border-radius:16px;background:#fff;border:1.5px solid #4B37F5;box-shadow:0 0 0 4px rgba(75,55,245,.12)">
+    <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import>
+    <sc-if value="{{ sc.has }}" hint-placeholder-val="{{ false }}"><span onClick="{{ sc.onX }}" style="flex:none;display:flex;align-items:center;gap:6px;padding:6px 8px 6px 10px;border-radius:9px;background:#0B0E12;color:#fff;font:700 12px Manrope,sans-serif;cursor:pointer;white-space:nowrap">{{ sc.l }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 12 }}" stroke-width="{{ 2.4 }}" color="#fff" hint-size="12px,12px"></x-import></span></sc-if>
+    <input ref="{{ inRef }}" value="{{ inp.v }}" onChange="{{ inp.onChange }}" onKeyDown="{{ inp.onKey }}" onFocus="{{ inp.onFocus }}" placeholder="{{ inp.ph }}" autoComplete="off" style="flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;padding:0;font:600 15px Manrope,sans-serif;color:#0B0E12">
+    <sc-if value="{{ inp.hasQ }}" hint-placeholder-val="{{ false }}"><span onClick="{{ inp.onClear }}" style="width:30px;height:30px;border-radius:99px;display:grid;place-items:center;background:rgba(11,14,18,.07);cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 13 }}" stroke-width="{{ 2.2 }}" hint-size="13px,13px"></x-import></span></sc-if>
+    <span onClick="{{ onMic }}" style="width:36px;height:36px;border-radius:10px;display:grid;place-items:center;cursor:pointer;flex:none;background:rgba(75,55,245,.08)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="mic" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import></span>
+    <span onClick="{{ sc.onCity }}" style="display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:10px;background:#F7F6F3;font:700 12.5px Manrope,sans-serif;flex:none;white-space:nowrap;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 15 }}" color="#4B37F5" hint-size="15px,15px"></x-import>{{ locLd }}</span>
+  </div>
+  <div style="position:absolute;top:62px;left:0;right:0">
+  <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.SearchPanel" width="{{ 780 }}" hint="{{ L.kHint }}" esc="{{ L.kEsc }}" hint-size="100%,420px">
+    <sc-if value="{{ voice.open }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:34px 24px;display:flex;flex-direction:column;align-items:center;gap:14px">
+      <span style="position:relative;width:92px;height:92px;display:grid;place-items:center">{{ voice.pulse }}<span style="position:relative;width:64px;height:64px;border-radius:99px;background:#4B37F5;display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="mic" size="{{ 26 }}" color="#fff" hint-size="26px,26px"></x-import></span></span>
+      <span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ voice.t }}</span>
+      <span style="font:500 13px Manrope,sans-serif;color:rgba(11,14,18,.6);min-height:20px">{{ voice.s }}</span>
+      <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="md" on-click="{{ voice.onX }}" hint-size="100px,40px">{{ L.cancel }}</x-import>
+    </div>
+    </sc-if>
+    <sc-if value="{{ dExp }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:0">
+      <div style="padding:20px 22px;display:flex;flex-direction:column;gap:18px;border-right:1px solid rgba(11,14,18,.07)">
+        <sc-if value="{{ ex.hasRecent }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 8px 4px"><span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.recentU }}</span><span onClick="{{ ex.onClear }}" style="font:700 12px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ L.clear }}</span></div>
+          <sc-for list="{{ ex.recent }}" as="r" hint-placeholder-count="3"><div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:11px;cursor:pointer" style-hover="background:#F7F6F3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="clock" size="{{ 16 }}" color="rgba(11,14,18,.42)" hint-size="16px,16px"></x-import><span style="flex:1;min-width:0;font:600 13.5px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span><span onClick="{{ r.onX }}" style="display:grid;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 12 }}" stroke-width="{{ 2 }}" color="rgba(11,14,18,.4)" hint-size="12px,12px"></x-import></span></div></sc-for>
+        </div>
+        </sc-if>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="padding:0 8px 2px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.talkU }}</span>
+          <sc-for list="{{ ex.examples }}" as="x" hint-placeholder-count="4"><div onClick="{{ x.onClick }}" style="display:flex;flex-direction:column;gap:6px;padding:9px 8px;border-radius:12px;cursor:pointer" style-hover="background:#F7F6F3"><span style="font:700 13.5px Manrope,sans-serif">“{{ x.t }}”</span><span style="display:flex;flex-wrap:wrap;gap:5px"><sc-for list="{{ x.chips }}" as="c" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.tone }}" hint-size="60px,18px">{{ c.l }}</x-import></sc-for></span></div></sc-for>
+        </div>
+      </div>
+      <div style="padding:20px 22px;display:flex;flex-direction:column;gap:18px;background:#FCFBF9">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="padding:0 8px 6px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.trendU }}</span>
+          <sc-for list="{{ ex.trend }}" as="r" hint-placeholder-count="6"><div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:11px;cursor:pointer" style-hover="background:#F1EFEA"><span style="width:18px;flex:none;font:800 13px Sora,sans-serif;color:rgba(11,14,18,.3)">{{ r.n }}</span><span style="flex:1;min-width:0;font:600 13.5px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span><span style="flex:none;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.42)">{{ r.c }}</span></div></sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="padding:0 8px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.catsU }}</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 4px"><sc-for list="{{ ex.cats }}" as="c" hint-placeholder-count="8"><span onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid rgba(11,14,18,.1);font:700 12px Manrope,sans-serif;cursor:pointer;white-space:nowrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ c.icon }}" size="{{ 14 }}" hint-size="14px,14px"></x-import>{{ c.l }}</span></sc-for></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+    <sc-if value="{{ dSug }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) 316px">
+      <div style="padding:10px 10px 14px;max-height:520px;overflow-y:auto">
+        <sc-if value="{{ sug.hasInt }}" hint-placeholder-val="{{ false }}"><div style="padding:8px 10px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span style="font:800 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45);margin-right:2px">{{ L.und }}</span><sc-for list="{{ sug.ints }}" as="c" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="signal" hint-size="60px,18px">{{ c.l }}</x-import></sc-for></div></sc-if>
+        <div onClick="{{ sug.go.onClick }}" onMouseEnter="{{ sug.go.onEnter }}" style="display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:13px;background:{{ sug.go.bg }};cursor:pointer">
+          <span style="width:40px;height:40px;border-radius:11px;background:rgba(75,55,245,.09);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 17 }}" color="#4B37F5" hint-size="17px,17px"></x-import></span>
+          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font:700 14px Manrope,sans-serif;color:#4B37F5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sug.go.t }}</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sug.go.meta }}</span></span>
+          <span style="flex:none;padding:3px 7px;border-radius:6px;border:1px solid rgba(11,14,18,.14);font:700 9.5px 'JetBrains Mono',monospace;color:rgba(11,14,18,.5)">ENTER</span>
+        </div>
+        <sc-for list="{{ sug.secs }}" as="sec" hint-placeholder-count="2">
+          <div style="padding:14px 10px 4px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ sec.t }}</div>
+          <sc-for list="{{ sec.rows }}" as="r" hint-placeholder-count="3"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.SearchResultRow" dc-props="{{ r.dsp }}" hint-size="100%,58px"></x-import></div></sc-for>
+        </sc-for>
+      </div>
+      <div style="border-left:1px solid rgba(11,14,18,.07);background:#FCFBF9;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.preview }}</span>
+        <sc-if value="{{ pv.biz }}" hint-placeholder-val="{{ false }}"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ pv.card }}" hint-size="100%,360px"></x-import></div></sc-if>
+        <sc-if value="{{ pv.it }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ pv.onClick }}" style="border-radius:20px;overflow:hidden;background:#fff;border:1px solid rgba(11,14,18,.08);cursor:pointer">
+          <div style="height:160px;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ pv.img }}"></div>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:6px">
+            <span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.45)">{{ pv.eb }}</span>
+            <span style="font:800 17px/1.25 Sora,sans-serif;letter-spacing:-.03em">{{ pv.t }}</span>
+            <span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.65);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ pv.d }}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.02em">{{ pv.price }}</span><span style="font:700 12px Manrope,sans-serif;color:{{ pv.stC }}">{{ pv.st }}</span></div>
+            <span style="font:700 12.5px Manrope,sans-serif">{{ pv.biz2 }}</span>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ pv.sub }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ pv.onClick }}" style="border-radius:20px;overflow:hidden;background:#fff;border:1px solid rgba(11,14,18,.08);cursor:pointer">
+          <div style="height:140px;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ pv.img }}"></div>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
+            <span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.45)">{{ pv.eb }}</span>
+            <span style="font:800 18px/1.2 Sora,sans-serif;letter-spacing:-.03em">{{ pv.t }}</span>
+            <span style="font:700 12.5px Manrope,sans-serif;color:#00695B">{{ pv.n }}</span>
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:2px"><sc-for list="{{ pv.names }}" as="n" hint-placeholder-count="3"><span style="font:600 12.5px Manrope,sans-serif;color:rgba(11,14,18,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· {{ n.l }}</span></sc-for></div>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ pv.ev }}" hint-placeholder-val="{{ false }}"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" dc-props="{{ pv.evc }}" hint-size="100%,200px"></x-import></div></sc-if>
+        <sc-if value="{{ pv.go }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ pv.counts }}" as="c" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:13px;background:#fff;border:1px solid rgba(11,14,18,.07)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ c.icon }}" size="{{ 16 }}" hint-size="16px,16px"></x-import><span style="flex:1;font:700 13px Manrope,sans-serif">{{ c.l }}</span><span style="font:800 15px Sora,sans-serif">{{ c.n }}</span></div></sc-for>
+          <span style="font:500 12px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ L.enterAll }}</span>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+  </x-import>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dpage }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="APP-BUSCAR · desktop" style="background:#F7F6F3;min-height:700px">
+  <sc-if value="{{ vExp }}" hint-placeholder-val="{{ true }}">
+  <div style="background:#fff;border-bottom:1px solid rgba(11,14,18,.08);padding:48px 32px 36px">
+    <div style="max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:14px">
+      <span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.ebCity }}</span>
+      <span style="font:800 44px/1.05 Sora,sans-serif;letter-spacing:-.045em">{{ L.hero }}</span>
+      <span style="font:500 15px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.62);max-width:620px;text-wrap:pretty">{{ L.heroSub }}</span>
+      <div onClick="{{ onOpenDrop }}" style="margin-top:8px;height:62px;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:0 8px 0 20px;border-radius:18px;background:#F7F6F3;border:1px solid rgba(11,14,18,.1);cursor:text">
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 20 }}" color="rgba(11,14,18,.45)" hint-size="20px,20px"></x-import>
+        <span style="flex:1;min-width:0;font:500 16px Manrope,sans-serif;color:rgba(11,14,18,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ inp.ph }}</span>
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="md" hint-size="90px,40px">{{ L.search }}</x-import>
+      </div>
+      <sc-if value="{{ ex.hasLine }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 16px;border-radius:14px;background:rgba(0,229,196,.12);display:flex;gap:10px;align-items:flex-start"><span style="display:grid;flex:none;padding-top:1px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="shield" size="{{ 16 }}" color="#00695B" hint-size="16px,16px"></x-import></span><span style="font:800 13px/1.35 Manrope,sans-serif;color:#00695B">{{ ex.line }}</span></div></sc-if>
+    </div>
+  </div>
+  <div style="max-width:1100px;margin:0 auto;padding:30px 32px 56px;display:grid;grid-template-columns:{{ dk.exCols }};gap:36px">
+    <div style="display:flex;flex-direction:column;gap:28px">
+      <sc-if value="{{ ex.hasRecent }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ L.recent }}</span><span onClick="{{ ex.onClear }}" style="font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ L.clear }}</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ ex.recent }}" as="r" hint-placeholder-count="3"><span onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:8px;padding:8px 10px 8px 12px;border-radius:999px;background:#fff;border:1px solid rgba(11,14,18,.1);font:600 13px Manrope,sans-serif;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="clock" size="{{ 14 }}" color="rgba(11,14,18,.42)" hint-size="14px,14px"></x-import>{{ r.t }}<span onClick="{{ r.onX }}" style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 11 }}" stroke-width="{{ 2.2 }}" color="rgba(11,14,18,.4)" hint-size="11px,11px"></x-import></span></span></sc-for></div>
+      </div>
+      </sc-if>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ L.talk }}</span><span style="font:500 13.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ L.talkSub }}</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">
+          <sc-for list="{{ ex.examples }}" as="x" hint-placeholder-count="4"><div onClick="{{ x.onClick }}" style="padding:14px 16px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:9px;cursor:pointer"><span style="font:700 14.5px/1.3 Manrope,sans-serif">“{{ x.t }}”</span><span style="display:flex;flex-wrap:wrap;gap:5px"><sc-for list="{{ x.chips }}" as="c" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.tone }}" hint-size="60px,18px">{{ c.l }}</x-import></sc-for></span></div></sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ L.cats }}</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+          <sc-for list="{{ ex.cats }}" as="c" hint-placeholder-count="8"><div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:15px;background:#fff;border:1px solid rgba(11,14,18,.08);cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ c.icon }}" size="{{ 20 }}" hint-size="20px,20px"></x-import><span style="font:700 13px Manrope,sans-serif">{{ c.full }}</span></div></sc-for>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ L.trend }}</span><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.45)">{{ L.week }}</span></div>
+      <div style="background:#fff;border-radius:17px;border:1px solid rgba(11,14,18,.08);overflow:hidden">
+        <sc-for list="{{ ex.trend }}" as="r" hint-placeholder-count="6"><div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:{{ r.bt }};cursor:pointer"><span style="width:22px;flex:none;font:800 15px Sora,sans-serif;color:rgba(11,14,18,.3)">{{ r.n }}</span><span style="flex:1;min-width:0;font:600 14px Manrope,sans-serif">{{ r.t }}</span><span style="flex:none;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.45)">{{ r.c }}</span></div></sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ vRes }}" hint-placeholder-val="{{ false }}">
+  <div style="display:grid;grid-template-columns:{{ dk.cols }};align-items:start">
+    <sc-if value="{{ dk.nav }}" hint-placeholder-val="{{ true }}">
+    <div style="align-self:stretch;background:#fff;border-right:1px solid rgba(11,14,18,.08);padding:24px 16px">
+      <div data-sticky-rail="1" style="position:sticky;top:16px;display:flex;flex-direction:column;gap:22px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="padding:0 10px 8px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.resU }}</span>
+          <sc-for list="{{ rs.side }}" as="t" hint-placeholder-count="4"><div onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:{{ t.bg }};cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ t.icon }}" size="{{ 17 }}" color="{{ t.fg }}" hint-size="17px,17px"></x-import><span style="flex:1;font:700 13.5px Manrope,sans-serif;color:{{ t.fg }}">{{ t.l }}</span><span style="font:700 11px 'JetBrains Mono',monospace;color:rgba(11,14,18,.45)">{{ t.n }}</span></div></sc-for>
+        </div>
+        <sc-if value="{{ rs.hasSideCats }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="padding:0 10px 8px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.catsU }}</span>
+          <sc-for list="{{ rs.sideCats }}" as="c" hint-placeholder-count="3"><div onClick="{{ c.onClick }}" style="display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:12px;cursor:pointer" style-hover="background:#F7F6F3"><span style="font:700 13px Manrope,sans-serif">{{ c.l }}</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.45)">{{ c.m }}</span></div></sc-for>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="min-width:0;padding:28px 32px 56px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.45)">{{ rs.eb }}</span>
+        <span style="font:800 34px/1.1 Sora,sans-serif;letter-spacing:-.045em;text-wrap:balance">{{ rs.title }}</span>
+        <sc-if value="{{ rs.hasUnd }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.UnderstoodBar" dc-props="{{ rs.undP }}" hint-size="100%,34px"></x-import></sc-if>
+        <sc-if value="{{ rs.hasLine }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 16px;border-radius:14px;background:rgba(0,229,196,.12);display:flex;gap:10px;align-items:flex-start"><span style="display:grid;flex:none;padding-top:1px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="shield" size="{{ 16 }}" color="#00695B" hint-size="16px,16px"></x-import></span><span style="display:flex;flex-direction:column;gap:2px;color:#00695B"><span style="font:800 13px/1.35 Manrope,sans-serif">{{ rs.line }}</span><span style="font:500 12.5px/1.5 Manrope,sans-serif">{{ rs.lineSub }}</span></span></div></sc-if>
+      </div>
+      <sc-if value="{{ dk.tabs }}" hint-placeholder-val="{{ false }}"><div style="margin:0 -32px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tabs" items="{{ rs.tabs }}" active="{{ rs.tab }}" on-change="{{ rs.onTab }}" hint-size="100%,44px"></x-import></div></sc-if>
+      <sc-if value="{{ rs.showQuick }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <div style="position:relative"><span onClick="{{ rs.onSort }}" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid rgba(11,14,18,.12);background:#fff;font:700 12.5px Manrope,sans-serif;cursor:pointer;white-space:nowrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="filter" size="{{ 14 }}" hint-size="14px,14px"></x-import>{{ rs.sortL }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronDown" size="{{ 13 }}" stroke-width="{{ 2 }}" hint-size="13px,13px"></x-import></span>
+          <sc-if value="{{ sortSh.open }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:42px;left:0;z-index:20;width:280px;padding:8px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);box-shadow:0 20px 40px -18px rgba(11,14,18,.35);animation:sFade .15s"><sc-for list="{{ sortSh.opts }}" as="o" hint-placeholder-count="3"><div onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:11px;cursor:pointer" style-hover="background:#F7F6F3"><span style="width:16px;height:16px;border-radius:99px;box-sizing:border-box;border:{{ o.ring }};flex:none"></span><span style="font:700 13.5px Manrope,sans-serif">{{ o.l }}</span></div></sc-for><div style="padding:8px 10px 4px;font:500 11.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ L.proNote }}</div></div></sc-if>
+        </div>
+        <sc-for list="{{ rs.quick }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="100px,34px">{{ c.l }}</x-import></sc-for>
+      </div>
+      </sc-if>
+      <sc-if value="{{ rs.partial }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 16px;border-radius:14px;background:rgba(255,176,32,.14);font:600 13px/1.5 Manrope,sans-serif;color:#8A5A00">{{ L.partial }}</div></sc-if>
+
+      <sc-if value="{{ rs.none }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:40px 32px;border-radius:22px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;align-items:flex-start;gap:12px;max-width:640px">
+        <span style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.04em;text-wrap:balance">{{ rs.noneT }}</span>
+        <span style="font:500 14px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ L.noneB }}</span>
+        <sc-if value="{{ rs.hasDym }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.onDym }}" style="font:700 14.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ rs.dymT }}</span></sc-if>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="md" icon="bell" variant="{{ rs.alertV }}" on-click="{{ rs.onAlert }}" hint-size="160px,40px">{{ rs.alertL }}</x-import><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="md" variant="secondary" icon="store" on-click="{{ rs.onRec }}" hint-size="180px,40px">{{ L.rec }}</x-import><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="md" variant="soft" icon="users" on-click="{{ rs.onAsk }}" hint-size="170px,40px">{{ L.ask }}</x-import></div>
+        <span style="margin-top:12px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.tryCats }}</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ rs.tryCats }}" as="c" hint-placeholder-count="6"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.isAll }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:30px">
+        <sc-if value="{{ rs.bz.has }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ L.biz }}</span><sc-if value="{{ rs.bz.more }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.bz.onMore }}" style="font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ rs.bz.moreL }}</span></sc-if></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;align-items:start"><sc-for list="{{ rs.bz.cards }}" as="c" hint-placeholder-count="3"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ c }}" hint-size="100%,380px"></x-import></div></sc-for></div>
+          <sc-if value="{{ rs.bz.hasFreeD }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px"><sc-for list="{{ rs.bz.freeD }}" as="c" hint-placeholder-count="2"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ c }}" hint-size="100%,90px"></x-import></div></sc-for></div></sc-if>
+        </div>
+        </sc-if>
+        <sc-if value="{{ rs.emptyTop }}" hint-placeholder-val="{{ false }}"><div style="order:-1;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.NotYetCard" dc-props="{{ rs.notYetRowP }}" hint-size="100%,110px"></x-import></div></sc-if>
+        <sc-if value="{{ rs.it.has }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ L.items }}</span><sc-if value="{{ rs.it.more }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.it.onMore }}" style="font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ rs.it.moreL }}</span></sc-if></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px">
+            <sc-for list="{{ rs.it.rows }}" as="r" hint-placeholder-count="4"><div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);cursor:pointer"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font:500 14.5px/1.3 Manrope,sans-serif">{{ r.h0 }}<span style="font-weight:800">{{ r.h1 }}</span>{{ r.h2 }}</span><span style="font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.biz }}</span><span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:{{ r.metaC }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</span><span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em;margin-top:2px">{{ r.price }}</span></span><span style="width:84px;height:84px;border-radius:14px;flex:none;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ r.img }}"></span></div></sc-for>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ rs.ev.has }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ L.evts }}</span><sc-if value="{{ rs.ev.more }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.ev.onMore }}" style="font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ rs.ev.moreL }}</span></sc-if></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"><sc-for list="{{ rs.ev.cardsD }}" as="c" hint-placeholder-count="3"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" dc-props="{{ c }}" hint-size="100%,190px"></x-import></div></sc-for></div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ rs.po.has }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 20px Sora,sans-serif;letter-spacing:-.03em">{{ L.posts }}</span><sc-if value="{{ rs.po.more }}" hint-placeholder-val="{{ false }}"><span onClick="{{ rs.po.onMore }}" style="font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ rs.po.moreL }}</span></sc-if></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px"><sc-for list="{{ rs.po.rows }}" as="p" hint-placeholder-count="2"><div onClick="{{ p.onClick }}" style="padding:14px 16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px;cursor:pointer"><div style="display:flex;align-items:center;gap:9px"><span style="width:28px;height:28px;border-radius:99px;flex:none;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ p.av }}"></span><span style="font:700 13px Manrope,sans-serif">{{ p.who }}</span><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(11,14,18,.45)">{{ p.when }}</span></div><span style="font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.82);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">{{ p.h0 }}<span style="font-weight:800;color:#0B0E12">{{ p.h1 }}</span>{{ p.h2 }}</span><div style="display:flex;gap:14px;font:700 11px 'JetBrains Mono',monospace;color:rgba(11,14,18,.5)"><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ p.votes }}</span><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chat" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ p.cm }}</span></div></div></sc-for></div>
+          <span style="font:600 12px Manrope,sans-serif;color:rgba(11,14,18,.5)">{{ L.comLine }}</span>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.isBiz }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.5)">{{ rs.bl.count }}</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;align-items:start"><sc-for list="{{ rs.bl.pro }}" as="c" hint-placeholder-count="3"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ c }}" hint-size="100%,380px"></x-import></div></sc-for></div>
+        <sc-if value="{{ rs.bl.hasFree }}" hint-placeholder-val="{{ false }}"><span style="margin-top:12px;font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ L.also }}</span></sc-if>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px"><sc-for list="{{ rs.bl.free }}" as="c" hint-placeholder-count="2"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessCard" dc-props="{{ c }}" hint-size="100%,90px"></x-import></div></sc-for></div>
+        <sc-if value="{{ rs.bl.hasPages }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ rs.bl.pages }}" as="p" hint-placeholder-count="3"><span onClick="{{ p.onClick }}" style="min-width:40px;height:40px;padding:0 12px;box-sizing:border-box;border-radius:12px;display:grid;place-items:center;background:{{ p.bg }};color:{{ p.fg }};border:1px solid rgba(11,14,18,.1);font:700 13px Manrope,sans-serif;cursor:pointer">{{ p.l }}</span></sc-for></div></sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.isItm }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ rs.il.chips }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px"><sc-for list="{{ rs.il.rows }}" as="r" hint-placeholder-count="4"><div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);cursor:pointer"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="font:500 14.5px/1.3 Manrope,sans-serif">{{ r.h0 }}<span style="font-weight:800">{{ r.h1 }}</span>{{ r.h2 }}</span><span style="font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.biz }}</span><span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:{{ r.metaC }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</span><span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em;margin-top:2px">{{ r.price }}</span></span><span style="width:84px;height:84px;border-radius:14px;flex:none;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ r.img }}"></span></div></sc-for></div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.isEvt }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ rs.el.chips }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"><sc-for list="{{ rs.el.cards }}" as="c" hint-placeholder-count="4"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" dc-props="{{ c }}" hint-size="100%,190px"></x-import></div></sc-for></div>
+        <sc-if value="{{ rs.el.none }}" hint-placeholder-val="{{ false }}"><span style="font:600 13px Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ L.evNone }}</span></sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ rs.isPost }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px"><sc-for list="{{ rs.pl.rows }}" as="p" hint-placeholder-count="3"><div onClick="{{ p.onClick }}" style="padding:14px 16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px;cursor:pointer"><div style="display:flex;align-items:center;gap:9px"><span style="width:28px;height:28px;border-radius:99px;flex:none;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ p.av }}"></span><span style="font:700 13px Manrope,sans-serif">{{ p.who }}</span><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(11,14,18,.45)">{{ p.when }}</span></div><span style="font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.82);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">{{ p.h0 }}<span style="font-weight:800;color:#0B0E12">{{ p.h1 }}</span>{{ p.h2 }}</span><div style="display:flex;gap:14px;font:700 11px 'JetBrains Mono',monospace;color:rgba(11,14,18,.5)"><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ p.votes }}</span><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chat" size="{{ 14 }}" color="rgba(11,14,18,.5)" hint-size="14px,14px"></x-import>{{ p.cm }}</span></div></div></sc-for></div>
+        <span style="font:600 12px Manrope,sans-serif;color:rgba(11,14,18,.5)">{{ L.comLine }}</span>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ dk.railBelow }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:10px"><sc-for list="{{ rs.rail }}" as="k" hint-placeholder-count="2"><div style="padding:18px;border-radius:20px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:10px"><span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ k.t }}</span><span style="font:500 13px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ k.b }}</span><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" size="md" icon="{{ k.icon }}" variant="{{ k.v }}" on-click="{{ k.onClick }}" hint-size="160px,40px">{{ k.cta }}</x-import></div></div></sc-for></div></sc-if>
+    </div>
+
+    <sc-if value="{{ dk.rail }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:28px 24px 40px 0;align-self:stretch">
+      <div data-sticky-rail="1" style="position:sticky;top:16px;display:flex;flex-direction:column;gap:14px">
+        <sc-if value="{{ rs.top.has }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ rs.top.onClick }}" style="border-radius:20px;overflow:hidden;background:#fff;border:1px solid rgba(11,14,18,.08);cursor:pointer">
+          <div style="height:130px;background-color:#E4E1DA;background-size:cover;background-position:center;background-image:{{ rs.top.img }}"></div>
+          <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ rs.top.eb }}</span><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ rs.top.t }}</span><span style="font:600 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ rs.top.meta }}</span><span style="margin-top:4px;font:700 13px Manrope,sans-serif;color:#4B37F5">{{ L.seeCat }}</span></div>
+        </div>
+        </sc-if>
+        <sc-for list="{{ rs.rail }}" as="k" hint-placeholder-count="2"><div style="padding:16px;border-radius:20px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:10px"><span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ k.t }}</span><span style="font:500 12.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ k.b }}</span><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" size="md" icon="{{ k.icon }}" variant="{{ k.v }}" on-click="{{ k.onClick }}" hint-size="100%,40px">{{ k.cta }}</x-import></div></div></sc-for>
+        <div style="padding:16px;border-radius:20px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:4px">
+          <span style="padding-bottom:6px;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ L.trendU }}</span>
+          <sc-for list="{{ ex.trend5 }}" as="r" hint-placeholder-count="5"><div onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer"><span style="width:16px;font:800 13px Sora,sans-serif;color:rgba(11,14,18,.3)">{{ r.n }}</span><span style="flex:1;min-width:0;font:600 13px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span></div></sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+  <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}"><div style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:70;padding:14px 18px;border-radius:15px;background:#0B0E12;color:#fff;font:700 13px Manrope,sans-serif;animation:sUp .25s ease-out">{{ toastT }}</div></sc-if>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:393,&quot;height&quot;:820},&quot;route&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{code:string,q?:string,cat?:string}&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;es&quot;,&quot;en&quot;],&quot;default&quot;:&quot;es&quot;,&quot;tsType&quot;:&quot;'es'|'en'&quot;},&quot;user&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;desk&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;dw&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1280,&quot;tsType&quot;:&quot;number&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;page&quot;,&quot;drop&quot;],&quot;default&quot;:&quot;page&quot;,&quot;tsType&quot;:&quot;'page'|'drop'&quot;},&quot;q0&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;cat0&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;saved&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;api&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
+const LS = 'tl-search-v1';
+class Component extends DCLogic {
+  constructor(p) {
+    super(p); let sv = {}; try { sv = JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) {}
+    const r = p.route || {};
+    this.state = { q: p.mode === 'drop' ? (p.q0 || '') : (r.q || ''), foc: p.mode === 'drop', tab: 'all', sort: 'rel', qf: [], page: 0, hl: -1, voice: null, vtxt: '', toast: null, recent: sv.recent || [], alerts: sv.alerts || {}, sheet: null, evF: 'all', itC: 'all', itSort: 'rel', ready: this.ok(), lr: null };
+    this.inRef = React.createRef(); this.stack = [];
+  }
+  ok() { return !!(window.TLSearch && window.TLAll && window.TLAll.B && window.TLAll.B.length && window.TLMenu && window.TLEvt && window.TLCom && window.TLEduL); }
+  reg() { (window.TLReg || []).forEach(f => { try { f(); } catch (e) {} }); }
+  componentDidMount() {
+    this._prevR = this.route();
+    if (!this.state.ready) { let n = 0; this._w = setInterval(() => { n++; if (this.ok() || n > 80) { clearInterval(this._w); this.reg(); this.setState({ ready: true }); } }, 120); } else this.reg();
+    if (this.props.mode === 'drop' || (!this.props.desk && !this.route().q)) this.focusIn();
+    this._kd = e => { if (e.key === 'Escape' && this.props.mode === 'drop') this.api().close(); };
+    document.addEventListener('keydown', this._kd);
+  }
+  componentWillUnmount() { clearInterval(this._w); clearTimeout(this._tt); clearTimeout(this._vt); clearTimeout(this._bt); document.removeEventListener('keydown', this._kd); }
+  componentDidUpdate(pp) {
+    const r = this.route(), o = this._prevR || {}; this._prevR = r;
+    if (this.props.mode !== 'drop' && (r.q !== o.q || r.cat !== o.cat || r.code !== o.code)) { this.setState({ q: r.q || '', tab: 'all', page: 0, qf: [], hl: -1, sort: 'rel', evF: 'all', itC: 'all', itSort: 'rel', sheet: null, voice: null }); if (!r.q && !this.props.desk) this.focusIn(); }
+    if (this.props.mode === 'drop' && (pp.q0 !== this.props.q0 || pp.cat0 !== this.props.cat0)) { this.setState({ q: this.props.q0 || '' }); this.focusIn(); }
+  }
+  route() { return this.props.route || this.state.lr || { code: 'APP-BUSCAR' }; }
+  api() {
+    if (this.props.api) return this.props.api;
+    const t = m => this.toast(m);
+    return { nav: r => { if (r && r.code === 'APP-BUSCAR') this.setState({ lr: r }); else t('→ ' + (r && r.code)); }, openBiz: id => t('→ ficha · ' + id), openCat: (c, s) => t('→ ' + c + (s ? ' · ' + s : '')), login: () => t('→ Entrar'), encargo: c => t('→ ' + c), exit: () => this.setState({ lr: null }), close: () => {}, openDrop: () => this.focusIn(), toggleSave: () => {} };
+  }
+  focusIn() { setTimeout(() => { const el = this.inRef.current; if (el) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } } }, 80); }
+  es() { return (this.props.lang || 'es') === 'es'; }
+  locTxt() { const l = window.TLLoc || { rad: 5 }; return 'Hazleton, PA · ' + (l.rad || 5) + ' mi'; }
+  E2(a, b) { return this.es() ? a : b; }
+  save(p) { const s = { ...this.state, ...p }; try { localStorage.setItem(LS, JSON.stringify({ recent: s.recent, alerts: s.alerts })); } catch (e) {} }
+  toast(t) { clearTimeout(this._tt); this.setState({ toast: t }); this._tt = setTimeout(() => this.setState({ toast: null }), 2600); }
+  cat() { return this.props.mode === 'drop' ? (this.props.cat0 || null) : (this.route().cat || null); }
+  commit(q, cat) {
+    const TS = window.TLSearch; q = String(q == null ? this.state.q : q).trim(); const c = cat === undefined ? this.cat() : cat;
+    if (!q && !c) return;
+    const r = this.route(); let recent = this.state.recent;
+    if (q && TS) { recent = [q].concat(recent.filter(x => TS.N(x) !== TS.N(q))).slice(0, 8); this.save({ recent }); }
+    if (this.props.mode !== 'drop' && r.code === 'APP-BUSCAR' && (r.q || r.cat)) this.stack.push({ code: 'APP-BUSCAR', q: r.q, cat: r.cat });
+    this.setState({ recent, foc: false, q, hl: -1 }); const el = this.inRef.current; if (el) el.blur();
+    this.api().nav({ code: 'APP-BUSCAR', q: q || undefined, cat: c || undefined });
+  }
+  back() { const r = this.route(); if (r.q && this.state.q !== r.q) { this.setState({ q: r.q, foc: false }); const el = this.inRef.current; if (el) el.blur(); return; } if (this.stack.length) { this.api().nav(this.stack.pop()); return; } const a = this.api(); if (a.exit) a.exit(); else a.nav({ code: 'APP-HOME' }); }
+  from() { return 'APP-BUSCAR · «' + (this.route().q || this.state.q || '') + '»'; }
+  oBiz(e) { return () => this.api().openBiz(e.id, this.from()); }
+  oItem(it) { return () => this.api().openBiz(it.biz.id, this.from(), it.kind === 'dish' ? { tab: 'menu', dish: it.dish } : { tab: it.biz.b.pro ? 'svc' : 'res' }); }
+  oSub(x) { return () => this.api().openCat(x.cat, x.s); }
+  oCat(k) { return () => this.api().openCat(k); }
+  oEvt(e) { return () => this.api().nav({ code: 'APP-EVT-LISTING', id: e.id }); }
+  oPost(p) { return () => this.api().nav({ code: 'APP-COM-POST', post: p.id }); }
+  money(n) { return '$' + (n % 1 ? n.toFixed(2) : n); }
+  price(it) { if (it.p == null) return ''; if (it.p === 0) return this.E2('Gratis', 'Free'); const sx = { lb: '/lb', mes: this.E2('/mes', '/mo'), hora: '/h' }[it.k] || ''; return this.money(it.p) + sx; }
+  dist(b) { const es = this.es(); return b.d != null ? b.d + ' MI' : b.zone ? (es ? 'A DOMICILIO · ' : 'COMES TO YOU · ') + b.zone + ' MI' : ''; }
+  stat(b) { const es = this.es(); return (b.open ? this.E2('Abierto', 'Open') : this.E2('Cerrado', 'Closed')) + (b.st ? ' · ' + (es ? b.st : b.stEn || b.st) : ''); }
+  seat(e) { const es = this.es(), b = e.b; if (!e.parent) return ''; return ({ silla: es ? 'SILLA EN ' : 'CHAIR AT ', bahia: es ? 'BAHÍA EN ' : 'BAY AT ', tec: es ? 'TÉCNICO DE ' : 'TECH AT ' }[b.m] || (es ? 'EN ' : 'AT ')) + e.parent.b.name.toUpperCase(); }
+  img(b) { return (b.photos && b.photos[0]) || ''; }
+  itImg(it) { return it.ph ? 'url(' + window.TLSearch.PH(it.ph, 220) + ')' : this.img(it.biz.b); }
+  cta(b, k) { const es = this.es(), T = x => (b.tags || []).includes(x);
+    if (k === 'NEG-FOOD') return [this.E2('Ordenar', 'Order'), 'bag'];
+    if (k === 'NEG-NOCHE') return T('lista') || T('mesas') ? [this.E2('Lista y mesas', 'List & tables'), 'drink'] : [this.E2('Cómo llegar', 'Directions'), 'pin'];
+    if (k === 'NEG-MERC') return T('pickup') || T('envio') ? [this.E2('Ordenar', 'Order'), 'bag'] : [this.E2('Cómo llegar', 'Directions'), 'pin'];
+    if (k === 'NEG-TIENDA') return T('apartado') ? [this.E2('Apartar', 'Hold'), 'bag'] : [this.E2('Cómo llegar', 'Directions'), 'pin'];
+    if (k === 'NEG-TRANS') return [this.E2('Reservar', 'Book'), 'calendar'];
+    if (k === 'NEG-DEALER') return [this.E2('Prueba de manejo', 'Test drive'), 'calendar'];
+    if (k === 'NEG-INMUEBLE') return [this.E2('Pedir visita', 'Request a visit'), 'calendar'];
+    if (k === 'NEG-EDU' || k === 'NEG-NINOS' || k === 'NEG-DEPORTE' || k === 'NEG-FE') return [this.E2('Inscribirme', 'Enroll'), 'calendar'];
+    if ((k === 'NEG-SALUD' || k === 'NEG-PRO' || k === 'NEG-FIESTA') && !T('cita')) return [this.E2('Cómo llegar', 'Directions'), 'pin'];
+    return ['Booking', 'calendar']; }
+  card(x) {
+    const es = this.es(), e = x.e, b = e.b, w = x.why, saved = this.props.saved || {}, from = this.from();
+    const chips = [];
+    if (w && w.k === 'item') chips.push({ label: this.E2('Tiene ', 'Has ') + w.it.name + (w.it.p ? ' · ' + this.price(w.it) : ''), variant: 'verified' });
+    if (b.eta) chips.push({ label: es ? b.eta : b.etaEn || b.eta, variant: 'slot' });
+    if (b.fee) chips.push({ label: es ? b.fee : b.feeEn || b.fee, variant: 'feature' });
+    const c = this.cta(b, e.cat);
+    const meta = (this.seat(e) || (b.subs || []).slice(0, 2).join(' · ').toUpperCase()) + (this.dist(b) ? ' · ' + this.dist(b) : '');
+    return { plan: b.pro ? 'pro' : 'free', name: b.name, verified: !!b.verified, meta, rating: b.n ? b.r : '–', reviews: b.n || 0, status: this.stat(b), open: !!b.open, photos: [window.TLSearch.unurl(this.img(b))], chips: chips.slice(0, 3), offer: (es ? b.offer : b.offerEn || b.offer) || null, offerTag: this.E2('HOY', 'TODAY'), cta: c[0], ctaIcon: c[1], contactLabel: this.E2('Llamar', 'Call'), contactIcon: 'phone', saved: !!saved[b.id],
+      onOpen: this.oBiz(e), onCta: () => this.api().openBiz(e.id, from, { tab: e.cat === 'NEG-FOOD' ? 'menu' : 'svc' }), onSave: () => { const a = this.api(); if (a.toggleSave) a.toggleSave(b.id); }, onContact: () => this.api().encargo('APP-NEG-CONTACTO', from + ' · Llamar', b.name, this.E2('Contactar al negocio', 'Contact the business')) };
+  }
+  bizRow(x, G) {
+    const TS = window.TLSearch, b = x.e.b, w = x.why, [h0, h1, h2] = TS.hl(b.name, G);
+    let wt = ''; if (w && w.k === 'item') wt = this.E2('Tiene ', 'Has ') + w.it.name + (w.it.p ? ' · ' + this.price(w.it) : ''); else if (w && w.k === 'x' && b.offer) wt = this.es() ? b.offer : b.offerEn || b.offer;
+    const [w0, w1, w2] = wt ? TS.hl(wt, G) : ['', '', ''];
+    const meta = ((this.seat(x.e) || (w && w.k === 'sub' ? w.s : (b.subs || [])[0] || '')) + (this.dist(b) ? ' · ' + this.dist(b) : '')).toUpperCase();
+    return { dsp: { size: 'row', parts: [h0, h1, h2], pro: !!b.pro, image: this.img(b), meta, status: this.stat(b), statusColor: b.open ? '#00695B' : '#C0392B', why: wt ? [w0, w1, w2] : null, onClick: this.oBiz(x.e) } };
+  }
+  itRow(x, G) { const TS = window.TLSearch, it = x.it, b = it.biz.b, es = this.es(), nm = es ? it.name : it.nameEn || it.name, [h0, h1, h2] = TS.hl(nm, G);
+    return { h0, h1, h2, biz: b.name, meta: ((it.sec ? it.sec[es ? 0 : 1] + ' · ' : '') + (this.dist(b) ? this.dist(b) + ' · ' : '') + (b.open ? this.E2('ABIERTO', 'OPEN') : this.E2('CERRADO', 'CLOSED'))).toUpperCase(), metaC: b.open ? '#00695B' : 'rgba(11,14,18,.5)', price: this.price(it) || this.E2('Precio en la ficha', 'Price on listing'), img: this.itImg(it), onClick: this.oItem(it) }; }
+  evDay(d) { const es = this.es(); if (d === 0) return this.E2('HOY', 'TODAY'); if (d === 1) return this.E2('MAÑANA', 'TOMORROW'); return new Date(2026, 8, 24 + d).toLocaleDateString(es ? 'es' : 'en', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '').replace(/,/g, '').toUpperCase(); }
+  evCard(v, width) { const e = v.e, es = this.es(), X = window.TLEvt, free = !!e.free || !(e.tks || []).some(t => t.p > 0), min = (e.tks || []).length ? Math.min.apply(null, e.tks.map(t => t.p)) : 0;
+    return { title: e.ti[es ? 0 : 1], meta: this.evDay(e.d) + ' · ' + e.t0 + ' · ' + (free ? this.E2('GRATIS', 'FREE') : this.E2('DESDE ', 'FROM ') + this.money(min)), tag: e.d === 0 ? (e.type === 'noche' ? this.E2('ESTA NOCHE', 'TONIGHT') : this.E2('HOY', 'TODAY')) : free ? this.E2('GRATIS', 'FREE') : null, dark: e.type === 'noche', image: X && X.P ? X.P(e.ph, 500) : '', width: width || 212, onClick: this.oEvt(e) }; }
+  postRow(v, G) { const TS = window.TLSearch, p = v.p, es = this.es(), U = (window.TLCom && window.TLCom.U) || {}, u = U[p.u] || {}; let [h0, h1, h2] = TS.hl(es ? p.es : p.en, G); if (h0.length > 60) h0 = '…' + h0.slice(-44);
+    return { h0, h1, h2, who: u.s || u.n || this.E2('Vecino', 'Neighbor'), av: u.ph ? 'url(' + TS.PH(u.ph, 80) + ')' : '', when: (p.h < 24 ? this.E2('HACE ' + p.h + ' H', p.h + ' H AGO') : this.E2('HACE ' + Math.floor(p.h / 24) + ' D', Math.floor(p.h / 24) + ' D AGO')), votes: String((p.up || 0) - (p.dn || 0)), cm: String((p.cm || []).length), onClick: this.oPost(p) }; }
+  lineOf(k) { const c = k && window.TLSearch.CAT[k], D = c && window[c.d]; if (!D || !D.line) return null; const es = this.es(); return { l: D.line[es ? 0 : 1], s: D.lineSub ? (Array.isArray(D.lineSub) ? D.lineSub[es ? 0 : 1] : D.lineSub) : '' }; }
+  alertVals() { const es = this.es(), r = this.route(), TS = window.TLSearch, key = (TS ? TS.N(r.q || '') : r.q) + '|' + (r.cat || ''), on = !!this.state.alerts[key];
+    return { on, l: on ? this.E2('Te avisamos · quitar', 'Alert on · remove') : this.E2('Avísame cuando haya', 'Alert me when there is one'), v: on ? 'secondary' : 'primary', onClick: () => { if (!this.props.user && this.props.api) { this.api().login({ code: 'APP-BUSCAR', q: r.q, cat: r.cat }); return; } const alerts = { ...this.state.alerts }; if (on) delete alerts[key]; else alerts[key] = 1; this.setState({ alerts }); this.save({ alerts }); this.toast(on ? this.E2('Quitamos el aviso.', 'Alert removed.') : this.E2('Te avisamos por SMS cuando se publique en Hazleton.', 'We will text you when one is listed in Hazleton.')); } }; }
+
+  exVals() {
+    const TS = window.TLSearch, es = this.es(), cat = this.cat(), c = cat && TS.CAT[cat], D = c && window[c.d];
+    const ex = TS.EXAMPLES.map(x => { const t = x[es ? 0 : 1], P = TS.parse(t); return { t, chips: P.groups.map(g => ({ l: (TS.hl(t, [{ w: g.w, a: [g.w] }])[1] || g.w).toUpperCase(), tone: 'neutral' })).concat(P.intents.map(i => ({ l: i.l[es ? 0 : 1].toUpperCase(), tone: 'signal' }))), onClick: () => this.commit(t, null) }; });
+    const trend = TS.TREND.map((x, i) => ({ n: String(i + 1), t: x[es ? 0 : 1], c: TS.CAT[x[2]][es ? 's' : 'se'].toUpperCase(), bt: i ? '1px solid rgba(11,14,18,.07)' : 'none', onClick: () => this.commit(x[es ? 0 : 1], null) }));
+    const ln = cat ? this.lineOf(cat) : null;
+    return {
+      hasRecent: this.state.recent.length > 0, recent: this.state.recent.slice(0, 6).map((t, i) => ({ t, bt: i ? '1px solid rgba(11,14,18,.07)' : 'none', onClick: () => this.commit(t), onX: e => { if (e && e.stopPropagation) e.stopPropagation(); const recent = this.state.recent.filter(x => x !== t); this.setState({ recent }); this.save({ recent }); } })),
+      onClear: () => { this.setState({ recent: [] }); this.save({ recent: [] }); },
+      examples: ex, trend, trend5: trend.slice(0, 5),
+      cats: TS.CATS.map(k => ({ l: es ? k.s : k.se, full: es ? k.es : k.en, icon: k.icon, onClick: this.oCat(k.k) })),
+      hasSubs: !!(D && D.SUBS), subsT: c ? this.E2('En ' + c.es, 'In ' + c.en) : '', subs: D && D.SUBS ? (D.TOP || D.SUBS).slice(0, 12).map(s => ({ l: s, onClick: () => this.commit(s) })) : [],
+      hasLine: !!ln, line: ln ? ln.l : '',
+    };
+  }
+  sugVals() {
+    const TS = window.TLSearch, es = this.es(), q = this.state.q, R = TS.run(q, { cat: this.cat(), live: true }); if (!R) return { go: {}, secs: [], ints: [] };
+    const G = R.P.groups, rows = [], secs = [], hl = this.state.hl, tint = 'rgba(75,55,245,.07)';
+    const go = { kind: 'go', go: () => this.commit(q) }; rows.push(go);
+    const add = (t, list) => { if (!list.length) return; list.forEach(x => { x.i = rows.length; rows.push(x); }); secs.push({ t, rows: list }); };
+    const cl = (x, kind) => Object.assign(x, { kind, hasImg: !!x.img, hasIc: !x.img, hasRight: !!x.right });
+    const subRows = R.subs.slice(0, 3).map(s => cl({ src: s, img: s.x.ph ? 'url(' + s.x.ph + ')' : '', icon: s.x.c.icon, ...(([a, b, c2]) => ({ h0: a, h1: b, h2: c2 }))(TS.hl(s.x.s, G)), meta: (es ? s.x.c.es : s.x.c.en).toUpperCase() + ' · ' + s.x.n + this.E2(s.x.n === 1 ? ' NEGOCIO' : ' NEGOCIOS', s.x.n === 1 ? ' BUSINESS' : ' BUSINESSES'), go: this.oSub(s.x) }, 'sub'))
+      .concat(R.cats.slice(0, 1).map(k => cl({ src: { cat: k }, img: '', icon: k.icon, ...(([a, b, c2]) => ({ h0: a, h1: b, h2: c2 }))(TS.hl(es ? k.es : k.en, G)), meta: this.E2('CATEGORÍA', 'CATEGORY'), go: this.oCat(k.k) }, 'cat')))
+      .concat(R.subs.length ? [] : R.emptySubs.slice(0, 1).map(s => cl({ src: s, img: '', icon: s.x.c.icon, ...(([a, b, c2]) => ({ h0: a, h1: b, h2: c2 }))(TS.hl(s.x.s, G)), meta: this.E2('AÚN NO HAY EN HAZLETON', 'NONE IN HAZLETON YET'), go: () => this.commit(q) }, 'none')));
+    add(this.E2('CATEGORÍAS', 'CATEGORIES'), subRows);
+    add(this.E2('NEGOCIOS', 'BUSINESSES'), R.biz.slice(0, 4).map(x => { const b = x.e.b, w = x.why, [a, bb, c2] = TS.hl(b.name, G); return cl({ src: x, img: this.img(b), h0: a, h1: bb, h2: c2, meta: ((this.seat(x.e) || (w && w.k === 'item' ? this.E2('TIENE ', 'HAS ') + w.it.name : w && w.k === 'sub' ? w.s : (b.subs || [])[0] || '')) + (this.dist(b) ? ' · ' + this.dist(b) : '')).toUpperCase(), right: b.open ? this.E2('Abierto', 'Open') : this.E2('Cerrado', 'Closed'), rightC: b.open ? '#00695B' : '#C0392B', go: this.oBiz(x.e) }, 'biz'); }));
+    add(this.E2('PLATOS Y SERVICIOS', 'DISHES & SERVICES'), R.items.slice(0, 3).map(x => { const it = x.it, [a, bb, c2] = TS.hl(es ? it.name : it.nameEn || it.name, G); return cl({ src: x, img: this.itImg(it), h0: a, h1: bb, h2: c2, meta: (it.biz.b.name + (this.dist(it.biz.b) ? ' · ' + this.dist(it.biz.b) : '')).toUpperCase(), right: this.price(it), rightC: '#0B0E12', go: this.oItem(it) }, 'item'); }));
+    add(this.E2('EVENTOS', 'EVENTS'), R.events.slice(0, 2).map(v => { const e = v.v.e, [a, bb, c2] = TS.hl(e.ti[es ? 0 : 1], G); return cl({ src: v, img: window.TLEvt ? 'url(' + window.TLEvt.P(e.ph, 160) + ')' : '', h0: a, h1: bb, h2: c2, meta: this.evDay(e.d) + ' · ' + e.t0 + ' · ' + e.venue.toUpperCase(), go: this.oEvt(e) }, 'evt'); }));
+    rows.forEach((x, i) => { x.bg = i === hl ? tint : 'transparent'; x.onClick = () => x.go(); x.onEnter = () => { if (this.state.hl !== i) this.setState({ hl: i }); };
+      x.dsp = { size: 'sug', parts: [x.h0, x.h1, x.h2], image: x.img || null, icon: x.icon, meta: x.meta, right: x.right || null, rightColor: x.rightC, active: i === hl, onClick: x.onClick, onHover: x.onEnter }; });
+    this._rows = rows; this._R = R;
+    const cnt = [[R.biz.length, this.E2(' NEGOCIO', ' BUSINESS'), this.E2(' NEGOCIOS', ' BUSINESSES')], [R.items.length, this.E2(' PLATO O SERVICIO', ' DISH OR SERVICE'), this.E2(' PLATOS Y SERVICIOS', ' DISHES & SERVICES')], [R.events.length, this.E2(' EVENTO', ' EVENT'), this.E2(' EVENTOS', ' EVENTS')]].filter(x => x[0]).map(x => x[0] + (x[0] === 1 ? x[1] : x[2])).join(' · ');
+    Object.assign(go, { t: this.E2('Buscar «' + q.trim() + '»', 'Search “' + q.trim() + '”') + (this.cat() ? this.E2(' en ', ' in ') + TS.CAT[this.cat()][es ? 's' : 'se'] : ''), meta: cnt || this.E2('VER RESULTADOS Y SUGERENCIAS', 'SEE RESULTS AND SUGGESTIONS') });
+    return { go, secs, hasInt: R.P.intents.length > 0, ints: R.P.intents.map(i => ({ l: i.l[es ? 0 : 1].toUpperCase() })), R };
+  }
+  pvVals(sug) {
+    const TS = window.TLSearch, es = this.es(), rows = this._rows || [], hl = this.state.hl, r = hl > 0 ? rows[hl] : (rows[1] || rows[0]); const out = { biz: false, it: false, sub: false, ev: false, go: false };
+    if (!r || r.kind === 'go' || r.kind === 'none' || r.kind === 'cat') { const R = sug.R || {}; return { ...out, go: true, counts: [['store', this.E2('Negocios', 'Businesses'), (R.biz || []).length], ['restaurant', this.E2('Platos y servicios', 'Dishes & services'), (R.items || []).length], ['ticket', this.E2('Eventos', 'Events'), (R.events || []).length], ['users', this.E2('Vecinos', 'Neighbors'), (R.posts || []).length]].map(([icon, l, n]) => ({ icon, l, n: String(n) })) }; }
+    if (r.kind === 'biz') return { ...out, biz: true, card: this.card(r.src) };
+    if (r.kind === 'item') { const it = r.src.it, b = it.biz.b; return { ...out, it: true, img: this.itImg(it), eb: (it.sec ? it.sec[es ? 0 : 1] : '').toUpperCase(), t: es ? it.name : it.nameEn || it.name, d: (es ? it.desc : it.descEn || it.desc) || '', price: this.price(it), st: this.stat(b), stC: b.open ? '#00695B' : '#C0392B', biz2: b.name + (this.dist(b) ? ' · ' + this.dist(b).toLowerCase() : ''), onClick: this.oItem(it) }; }
+    if (r.kind === 'sub') { const x = r.src.x, X = TS.idx(), names = X.biz.filter(e => e.cat === x.cat && (e.b.subs || []).includes(x.s)).sort((a, b) => (b.b.pro - a.b.pro) || (b.b.r - a.b.r)).slice(0, 3).map(e => ({ l: e.b.name })); return { ...out, sub: true, img: x.ph ? 'url(' + x.ph + ')' : '', eb: (es ? x.c.es : x.c.en).toUpperCase(), t: x.s, n: x.n + this.E2(x.n === 1 ? ' negocio en Hazleton' : ' negocios en Hazleton', x.n === 1 ? ' business in Hazleton' : ' businesses in Hazleton'), names, onClick: this.oSub(x) }; }
+    if (r.kind === 'evt') return { ...out, ev: true, evc: this.evCard(r.src.v, '100%') };
+    return { ...out, go: true, counts: [] };
+  }
+  resVals() {
+    const TS = window.TLSearch, es = this.es(), r = this.route(), st = this.state, q = r.q || '';
+    const R = TS.run(q, { cat: r.cat, qf: st.qf, sort: st.sort }); if (!R) return { tabs: [], quick: [], words: [], ints: [], top: {}, bz: {}, it: {}, ev: {}, po: {}, bl: {}, il: {}, el: {}, pl: {}, empty: {}, side: [], sideCats: [], rail: [], tryCats: [] };
+    const G = R.P.groups, nb = R.biz.length, ni = R.items.length, ne = R.events.length, np = R.posts.length, none = !nb && !ni && !ne && !np;
+    const T0 = [['all', this.E2('Todo', 'All'), 'search', null], ['biz', this.E2('Negocios', 'Businesses'), 'store', nb], ['itm', this.E2('Platos y servicios', 'Dishes & services'), 'restaurant', ni], ['evt', this.E2('Eventos', 'Events'), 'ticket', ne], ['post', this.E2('Vecinos', 'Neighbors'), 'users', np]].filter(t => t[0] === 'all' || t[3] > 0);
+    const tab = T0.some(t => t[0] === st.tab) ? st.tab : 'all', setTab = id => { this.setState({ tab: id, page: 0, sheet: null }); if (this.api().vTop) this.api().vTop(); };
+    const alert = this.alertVals();
+    const und = G.map(g => ({ l: '«' + (TS.hl(q, [{ w: g.w, a: [g.w] }])[1] || g.w) + '»' })), ints = R.P.intents.map(i => ({ l: i.l[es ? 0 : 1], onX: () => this.commit(TS.strip(q, i.phrase)) }));
+    const dom = R.dom, ln = this.lineOf(dom);
+    const QK = ['open', 'near', 'ver'].concat({ 'NEG-FOOD': ['dlv', 'pk'], 'NEG-BELL': ['walk', 'casa'], 'NEG-SALUD': ['medicaid', 'medicare', 'sinseg', 'esp'], 'NEG-HOGAR': ['h24', 'casa'], 'NEG-AUTO': ['walk', 'h24'], 'NEG-NOCHE': ['free'], 'NEG-PRO': ['esp'], 'NEG-INMUEBLE': ['sinssn'], 'NEG-MERC': ['dlv', 'pk'] }[dom] || []);
+    const quick = QK.map(k => { const pi = R.P.intents.find(i => i.k === k), on = R.keys.includes(k); return { l: TS.ILBL[k][es ? 0 : 1], v: on ? 'selected' : 'filter', onClick: () => { if (pi) this.commit(TS.strip(q, pi.phrase)); else this.setState(s => ({ qf: s.qf.includes(k) ? s.qf.filter(x => x !== k) : s.qf.concat([k]), page: 0 })); } }; });
+    const sortL = { rel: this.E2('Relevancia', 'Relevance'), near: this.E2('Más cerca', 'Nearest'), best: this.E2('Mejor calificados', 'Top rated') }[R.sort];
+    let top = { has: false };
+    if (R.subs[0] && G.length) { const x = R.subs[0].x; top = { has: true, img: x.ph ? 'url(' + x.ph + ')' : '', eb: this.E2('CATEGORÍA · ', 'CATEGORY · ') + (es ? x.c.es : x.c.en).toUpperCase(), t: x.s, meta: x.n + this.E2(x.n === 1 ? ' negocio en Hazleton' : ' negocios en Hazleton', x.n === 1 ? ' business in Hazleton' : ' businesses in Hazleton'), onClick: this.oSub(x) }; }
+    else if (R.cats[0]) { const k = R.cats[0], X = TS.idx(), n = X.catB[k.k].length, b0 = X.catB[k.k].find(b => b.pro) || X.catB[k.k][0]; top = { has: true, img: b0 ? this.img(b0) : '', eb: this.E2('CATEGORÍA', 'CATEGORY'), t: es ? k.es : k.en, meta: n + this.E2(' negocios en Hazleton', ' businesses in Hazleton'), onClick: this.oCat(k.k) }; }
+    const first = R.biz[0] && R.biz[0].e.b.pro ? R.biz[0] : null, restB = R.biz.slice(first ? 1 : 0, first ? 5 : 4);
+    const PER = 10, pages = Math.ceil(nb / PER), pg = Math.min(st.page, Math.max(0, pages - 1)), slice = R.biz.slice(pg * PER, pg * PER + PER);
+    const goPg = n => () => { this.setState({ page: n }); if (this.api().vTop) this.api().vTop(); };
+    const icats = []; R.items.forEach(x => { const k = x.it.biz.cat; const f = icats.find(y => y[0] === k); if (f) f[1]++; else icats.push([k, 1]); });
+    let items = R.items.filter(x => st.itC === 'all' || x.it.biz.cat === st.itC); if (st.itSort === 'price') items = items.slice().sort((a, b) => (a.it.p == null ? 1e6 : a.it.p) - (b.it.p == null ? 1e6 : b.it.p));
+    const EVF = [['all', this.E2('Todos', 'All')], ['d0', this.E2('Hoy', 'Today')], ['wk', this.E2('Este fin de semana', 'This weekend')], ['free', this.E2('Gratis', 'Free')]];
+    const evs = R.events.filter(v => { const e = v.v.e; return st.evF === 'all' || (st.evF === 'd0' && e.d === 0) || (st.evF === 'wk' && (e.d === 2 || e.d === 3)) || (st.evF === 'free' && (e.free || !(e.tks || []).some(t => t.p > 0))); });
+    const desk = !!this.props.desk;
+    const rail = [{ t: this.E2('¿No es lo que buscas?', 'Not what you need?'), b: this.E2('Pregúntale al barrio: los vecinos recomiendan y el orden lo ponen sus votos.', 'Ask the neighborhood: neighbors recommend and their votes set the order.'), cta: this.E2('Pregúntale al barrio', 'Ask the neighborhood'), icon: 'users', v: 'soft', onClick: () => this.api().nav({ code: 'APP-COM-NUEVO' }) }, { t: this.E2('Te avisamos', 'We will let you know'), b: this.E2('Si se publica algo nuevo con «' + q + '» en Hazleton, te llega un SMS.', 'If something new matching “' + q + '” is listed in Hazleton, you get a text.'), cta: alert.l, icon: 'bell', v: alert.v, onClick: alert.onClick }];
+    return {
+      tabs: T0.map(t => ({ id: t[0], label: (t[1] + (t[3] != null ? ' ' + t[3] : '')).toUpperCase(), icon: t[2] })), tab, onTab: setTab,
+      side: T0.map(t => ({ l: t[1], icon: t[2], n: t[3] != null ? String(t[3]) : '', bg: tab === t[0] ? 'rgba(11,14,18,.06)' : 'transparent', fg: tab === t[0] ? '#0B0E12' : 'rgba(11,14,18,.65)', onClick: () => setTab(t[0]) })),
+      sideCats: R.subs.slice(0, 6).map(s => ({ l: s.x.s, m: (es ? s.x.c.s : s.x.c.se).toUpperCase() + ' · ' + s.x.n, onClick: this.oSub(s.x) })), hasSideCats: R.subs.length > 0,
+      eb: this.E2('BÚSQUEDA · ', 'SEARCH · ') + this.locTxt().toUpperCase() + (r.cat ? ' · ' + TS.CAT[r.cat][es ? 's' : 'se'].toUpperCase() : ''),
+      title: G.length ? '«' + q + '»' : R.P.intents.map(i => i.l[es ? 0 : 1]).join(' · ') || (r.cat ? TS.CAT[r.cat][es ? 'es' : 'en'] : q),
+      hasTop: !none || ints.length > 0, hasUnd: und.length + ints.length > 0 && (ints.length > 0 || G.some(g => g.a.length > 1)), words: und, ints,
+      hasLine: !!ln && !none, line: ln ? ln.l : '', lineSub: ln ? ln.s : '',
+      showQuick: (tab === 'all' || tab === 'biz') && (nb > 0 || st.qf.length > 0), quick, sortL, hasMap: nb > 0 && !!(this.props.api && this.props.api.map), mapL: this.E2('Mapa', 'Map'), onMap: () => this.api().map(R.biz.map(x => x && x.e ? (x.e.b ? x.e.b.id : x.e.id) : x && x.b ? x.b.id : null).filter(Boolean), G.length ? '«' + q + '»' : (r.cat ? TS.CAT[r.cat][es ? 'es' : 'en'] : q)), onSort: () => this.setState(s => ({ sheet: s.sheet === 'sort' ? null : 'sort' })),
+      partial: R.partial, none, noneT: R.emptySubs[0] ? this.E2('Aún no hay ' + R.emptySubs[0].x.s + ' en Hazleton', 'No ' + R.emptySubs[0].x.s + ' in Hazleton yet') : this.E2('No encontramos «' + q + '» en Hazleton', 'We found nothing for “' + q + '” in Hazleton'),
+      hasDym: !!R.dym, dymT: R.dym ? this.E2('¿Quisiste decir «' + R.dym + '»?', 'Did you mean “' + R.dym + '”?') : '', onDym: () => this.commit(R.dym),
+      alertL: alert.l, alertV: alert.v, onAlert: alert.onClick,
+      onRec: () => this.api().encargo('APP-NEG-RECOMENDAR', this.from(), q, this.E2('Recomendar un negocio', 'Recommend a business')), onAsk: () => this.api().nav({ code: 'APP-COM-NUEVO' }),
+      tryCats: TS.CATS.slice(0, 8).map(k => ({ l: es ? k.s : k.se, onClick: this.oCat(k.k) })),
+      isAll: tab === 'all' && !none, isBiz: tab === 'biz', isItm: tab === 'itm', isEvt: tab === 'evt', isPost: tab === 'post',
+      undP: { label: this.E2('ENTENDIMOS', 'WE UNDERSTOOD'), words: und.map(w => w.l.replace(/[«»]/g, '')), filters: ints.map(i => ({ label: i.l, onRemove: i.onX })) },
+      notYetP: { layout: 'stack', kicker: this.E2('AÚN NO HAY', 'NONE YET'), title: R.emptySubs[0] ? this.E2(R.emptySubs[0].x.s + ' en Hazleton', R.emptySubs[0].x.s + ' in Hazleton') : '', body: this.E2('Te avisamos cuando se publique uno. ¿Conoces uno? Invítalo a publicar gratis.', 'We will let you know when one is listed. Know one? Invite them to list for free.'), alertLabel: alert.l, alertVariant: alert.v, onAlert: alert.onClick, recLabel: this.E2('Recomienda un negocio', 'Recommend a business'), onRec: () => this.api().encargo('APP-NEG-RECOMENDAR', this.from(), q, this.E2('Recomendar un negocio', 'Recommend a business')) },
+      get notYetRowP() { return Object.assign({}, this.notYetP, { layout: 'row' }); },
+      top, emptyTop: !!R.emptyFirst && !none, emptyLow: !R.emptyFirst && !!R.emptySubs[0] && !none, empty: { has: !!R.emptySubs[0] && !none, t: R.emptySubs[0] ? this.E2(R.emptySubs[0].x.s + ' en Hazleton', R.emptySubs[0].x.s + ' in Hazleton') : '' },
+      bz: { has: nb > 0, hasCard: !!first, card: first ? this.card(first) : {}, rows: restB.map(x => this.bizRow(x, G)), more: nb > (first ? 5 : 4) || desk, moreL: this.E2('Ver los ' + nb, 'See all ' + nb), onMore: () => setTab('biz'),
+        cards: R.biz.filter(x => x.e.b.pro).slice(0, 3).map(x => this.card(x)), freeD: R.biz.filter(x => !x.e.b.pro).slice(0, 2).map(x => this.card(x)), hasFreeD: R.biz.some(x => !x.e.b.pro) },
+      it: { has: ni > 0, rows: R.items.slice(0, 4).map(x => this.itRow(x, G)), more: ni > 4, moreL: this.E2('Ver los ' + ni, 'See all ' + ni), onMore: () => setTab('itm') },
+      ev: { has: ne > 0, cards: R.events.slice(0, 4).map(v => this.evCard(v.v)), cardsD: R.events.slice(0, 4).map(v => this.evCard(v.v, '100%')), more: ne > 4, moreL: this.E2('Ver los ' + ne, 'See all ' + ne), onMore: () => setTab('evt') },
+      po: { has: np > 0, rows: R.posts.slice(0, 2).map(v => this.postRow(v.v, G)), more: np > 2, moreL: this.E2('Ver las ' + np, 'See all ' + np), onMore: () => setTab('post') },
+      bl: { count: (nb + this.E2(nb === 1 ? ' NEGOCIO' : ' NEGOCIOS', nb === 1 ? ' BUSINESS' : ' BUSINESSES') + (pages > 1 ? this.E2(' · PÁGINA ', ' · PAGE ') + (pg + 1) + this.E2(' DE ', ' OF ') + pages : '')), pro: slice.filter(x => x.e.b.pro).map(x => this.card(x)), free: slice.filter(x => !x.e.b.pro).map(x => this.card(x)), hasFree: slice.some(x => !x.e.b.pro) && slice.some(x => x.e.b.pro),
+        hasPages: pages > 1, pages: (pg > 0 ? [{ l: '←', n: pg - 1 }] : []).concat(Array.from({ length: pages }, (_, i) => ({ l: String(i + 1), n: i }))).concat(pg < pages - 1 ? [{ l: '→', n: pg + 1 }] : []).map(p => ({ l: p.l, bg: p.n === pg && /\d/.test(p.l) ? '#0B0E12' : '#fff', fg: p.n === pg && /\d/.test(p.l) ? '#fff' : '#0B0E12', onClick: goPg(p.n) })) },
+      il: { chips: [{ k: 'all', l: this.E2('Todos', 'All') + ' ' + ni }].concat(icats.map(([k, n]) => ({ k, l: TS.CAT[k][es ? 's' : 'se'] + ' ' + n }))).map(c => ({ l: c.l, v: st.itC === c.k ? 'selected' : 'filter', onClick: () => this.setState({ itC: c.k }) })).concat([{ l: this.E2('Precio más bajo', 'Lowest price'), v: st.itSort === 'price' ? 'selected' : 'feature', onClick: () => this.setState(s => ({ itSort: s.itSort === 'price' ? 'rel' : 'price' })) }]), rows: items.slice(0, 40).map(x => this.itRow(x, G)) },
+      el: { chips: EVF.map(([k, l]) => ({ l, v: st.evF === k ? 'selected' : 'filter', onClick: () => this.setState({ evF: k }) })), cards: evs.map(v => this.evCard(v.v, '100%')), none: !evs.length },
+      pl: { rows: R.posts.map(v => this.postRow(v.v, G)) },
+      rail: none ? [] : rail, R,
+    };
+  }
+  renderVals() {
+    const TS = window.TLSearch, es = this.es(), st = this.state, r = this.route(), mode = this.props.mode || 'page', desk = !!this.props.desk, drop = mode === 'drop';
+    const L = {
+      und: this.E2('ENTENDIMOS', 'WE UNDERSTOOD'), recent: this.E2('Recientes', 'Recent'), recentU: this.E2('RECIENTES', 'RECENT'), clear: this.E2('Borrar', 'Clear'),
+      talk: this.E2('Escribe como hablas', 'Type like you talk'), talkU: this.E2('ESCRIBE COMO HABLAS', 'TYPE LIKE YOU TALK'), talkSub: this.E2('Entendemos lo que importa: si está abierto, si es sin cita, si acepta tu seguro o si es esta noche.', 'We get what matters: open now, walk-in, takes your insurance or tonight.'),
+      trend: this.E2('Lo más buscado en Hazleton', 'Most searched in Hazleton'), trendU: this.E2('LO MÁS BUSCADO EN HAZLETON', 'MOST SEARCHED IN HAZLETON'), week: this.E2('ESTA SEMANA', 'THIS WEEK'),
+      cats: this.E2('Explora por categoría', 'Browse by category'), catsU: this.E2('CATEGORÍAS', 'CATEGORIES'),
+      biz: this.E2('Negocios', 'Businesses'), items: this.E2('Platos y servicios', 'Dishes & services'), evts: this.E2('Eventos', 'Events'), posts: this.E2('Lo que dicen los vecinos', 'What neighbors say'),
+      also: this.E2('También en Hazleton', 'Also in Hazleton'), comLine: this.E2('Aquí nada se compra: el orden lo ponen los votos de los vecinos.', 'Nothing here is bought: neighbors’ votes set the order.'),
+      notYet: this.E2('AÚN NO HAY', 'NONE YET'), notYetB: this.E2('Te avisamos cuando se publique uno. ¿Conoces uno? Invítalo a publicar gratis.', 'We will let you know when one is listed. Know one? Invite them to list for free.'),
+      notFound: this.E2('¿No encontraste lo que buscabas?', 'Didn’t find what you need?'), rec: this.E2('Recomienda un negocio', 'Recommend a business'), ask: this.E2('Pregúntale al barrio', 'Ask the neighborhood'),
+      noneB: this.E2('Revisa cómo lo escribiste o prueba con otra palabra. Esta búsqueda nos ayuda a saber qué negocios faltan en Hazleton.', 'Check the spelling or try another word. This search helps us know which businesses Hazleton is missing.'),
+      tryCats: this.E2('PRUEBA CON UNA CATEGORÍA', 'TRY A CATEGORY'), partial: this.E2('Nada tiene todas las palabras que escribiste. Esto es lo que más se parece.', 'Nothing has every word you typed. This is the closest match.'),
+      evNone: this.E2('No hay eventos con ese filtro.', 'No events with that filter.'), sortT: this.E2('Ordenar', 'Sort'), proNote: this.E2('Los negocios Pro van primero; dentro de cada grupo se ordena como elijas.', 'Pro businesses come first; within each group, results follow your choice.'),
+      cancel: this.E2('Cancelar', 'Cancel'), preview: this.E2('VISTA PREVIA', 'PREVIEW'), enterAll: this.E2('Pulsa Enter para ver todo, o pasa el cursor por un resultado.', 'Press Enter to see everything, or hover a result.'),
+      kHint: this.E2('↑ ↓ PARA MOVERTE · ENTER PARA ABRIR', '↑ ↓ TO MOVE · ENTER TO OPEN'), kEsc: this.E2('ESC PARA CERRAR', 'ESC TO CLOSE'),
+      ebCity: this.E2('BUSCAR EN HAZLETON, PA', 'SEARCH IN HAZLETON, PA'), hero: this.E2('¿Qué necesitas hoy?', 'What do you need today?'), heroSub: this.E2('Negocios, platos, servicios, eventos y lo que dicen los vecinos, en un solo lugar.', 'Businesses, dishes, services, events and what neighbors say, in one place.'), search: this.E2('Buscar', 'Search'),
+      resU: this.E2('RESULTADOS', 'RESULTS'), seeCat: this.E2('Ver la categoría →', 'See the category →'),
+    };
+    const ready = st.ready && TS && TS.idx();
+    const cq = r.q || '', has = !!(cq || r.cat) && !drop, typed = st.q.trim() !== '';
+    const vSug = !!ready && typed && (drop || st.q !== cq);
+    const vRes = !!ready && !drop && !vSug && !!cq && typed;
+    const vExp = !vSug && !vRes;
+    const cat = this.cat(), C = cat && TS ? TS.CAT[cat] : null;
+    const ph = C ? this.E2('Buscar en ' + C.es + '…', 'Search in ' + C.en + '…') : this.E2('¿Qué necesitas hoy?', 'What do you need today?');
+    const sug = vSug ? this.sugVals() : { go: {}, secs: [], ints: [] };
+    const ex = ready ? this.exVals() : { recent: [], examples: [], trend: [], trend5: [], cats: [], subs: [] };
+    const rs = vRes || (desk && !drop && cq) ? this.resVals() : { tabs: [], quick: [], words: [], ints: [], top: {}, bz: {}, it: {}, ev: {}, po: {}, bl: {}, il: {}, el: {}, pl: {}, empty: {}, side: [], sideCats: [], rail: [], tryCats: [] };
+    const dw = this.props.dw || 1280;
+    const voiceOpen = !!st.voice;
+    return {
+      L, locL: this.locTxt().toUpperCase(), locLd: this.locTxt(), mob: !desk, drop: desk && drop, dpage: desk && !drop, inRef: this.inRef,
+      vSug: vSug && !(desk && !drop), vExp: desk && !drop ? !cq : vExp, vRes: desk && !drop ? !!cq && !!ready : vRes,
+      dExp: drop && !vSug && !voiceOpen, dSug: drop && vSug && !voiceOpen,
+      inp: { v: st.q, ph, hasQ: st.q.length > 0, noQ: st.q.length === 0, bg: st.foc ? '#fff' : '#F7F6F3', bd: st.foc ? '#4B37F5' : 'transparent',
+        onChange: e => this.setState({ q: e.target.value, hl: -1, foc: true }),
+        onFocus: () => { clearTimeout(this._bt); if (!this.state.foc) this.setState({ foc: true }); },
+        onBlur: () => { this._bt = setTimeout(() => this.setState({ foc: false }), 200); },
+        onClear: () => { this.setState({ q: '', hl: -1 }); this.focusIn(); },
+        onKey: e => { const rows = this._rows || []; if (e.key === 'ArrowDown') { e.preventDefault(); this.setState(s => ({ hl: Math.min(rows.length - 1, s.hl + 1) })); } else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState(s => ({ hl: Math.max(-1, s.hl - 1) })); } else if (e.key === 'Enter') { e.preventDefault(); const rw = rows[this.state.hl]; if (rw && this.state.hl > 0) rw.go(); else this.commit(); } else if (e.key === 'Escape' && !drop) { this.setState({ q: cq, foc: false }); e.target.blur(); } } },
+      sc: { has: !!C, l: C ? this.E2('En ', 'In ') + C[es ? 's' : 'se'] : '', onX: e => { if (e && e.stopPropagation) e.stopPropagation(); if (drop) { if (this.api().scope) this.api().scope(null); this.focusIn(); } else this.commit(cq, null); }, onCity: () => this.api().encargo('APP-CIUDAD', 'APP-BUSCAR · ciudad') },
+      onBack: () => this.back(), onOpenDrop: () => { const a = this.api(); if (a.openDrop) a.openDrop(); },
+      onMic: () => { const exs = TS.EXAMPLES, i = (this._vi = ((this._vi || 0) + 1) % exs.length), t = exs[i][es ? 0 : 1]; this.setState({ voice: 'on', vtxt: '' }); clearTimeout(this._vt); this._vt = setTimeout(() => { this.setState({ voice: 'got', vtxt: t, q: t }); this._vt = setTimeout(() => { this.setState({ voice: null }); this.commit(t); }, 1100); }, 1900); },
+      voice: { open: voiceOpen, t: st.voice === 'got' ? '“' + st.vtxt + '”' : this.E2('Te escucho…', 'Listening…'), s: st.voice === 'got' ? this.E2('Buscando…', 'Searching…') : this.E2('Habla en español o en inglés.', 'Speak in Spanish or English.'), onX: () => { clearTimeout(this._vt); this.setState({ voice: null }); },
+        pulse: voiceOpen ? React.createElement(React.Fragment, null, React.createElement('span', { key: 'a', style: { position: 'absolute', inset: 0, borderRadius: 999, background: 'rgba(75,55,245,.22)', animation: 'sPulse 1.5s ease-out infinite' } }), React.createElement('span', { key: 'b', style: { position: 'absolute', inset: 0, borderRadius: 999, background: 'rgba(75,55,245,.16)', animation: 'sPulse 1.5s ease-out .5s infinite' } })) : null },
+      sug, pv: drop && vSug ? this.pvVals(sug) : { go: true, counts: [] }, ex, rs,
+      sortSh: { open: st.sheet === 'sort', onX: () => this.setState({ sheet: null }), opts: [['rel', this.E2('Relevancia', 'Relevance')], ['near', this.E2('Más cerca', 'Nearest')], ['best', this.E2('Mejor calificados', 'Top rated')]].map(([k, l]) => ({ l, ring: (rs.R ? rs.R.sort : st.sort) === k ? '6px solid #0B0E12' : '1.5px solid rgba(11,14,18,.25)', onClick: () => this.setState({ sort: k, sheet: null, page: 0 }) })) },
+      dk: { cols: dw >= 1200 ? '240px minmax(0,1fr) 320px' : dw >= 960 ? '240px minmax(0,1fr)' : 'minmax(0,1fr)', nav: dw >= 960, rail: dw >= 1200, railBelow: dw < 1200, tabs: dw < 960, exCols: dw >= 1100 ? 'minmax(0,1.5fr) minmax(0,1fr)' : 'minmax(0,1fr)' },
+      toastShow: !!st.toast, toastT: st.toast || '',
+    };
+  }
+}
+</script>
+</body>
+</html>

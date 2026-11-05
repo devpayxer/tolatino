@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <script src="prototype/bundle-1.js"></script>
+  <script src="prototype/bundle-2.js"></script>
+  <script src="prototype/bundle-3.js"></script>
+  <script src="prototype/bundle-4.js"></script>
+  <script src="prototype/adm-data.js"></script>
+  <style>
+    body { margin: 0; background: #F7F6F3; font-family: Manrope, system-ui, sans-serif; color: #0B0E12; }
+    a { color: #4B37F5; } a:hover { color: #2E1FD1; }
+    @keyframes mpFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  </style>
+</helmet>
+
+<div data-screen-label="{{ scr }}" style="min-height:100%;background:#F7F6F3;display:flex;flex-direction:column;padding:{{ L.pad }};box-sizing:border-box;gap:{{ L.gap }}">
+  <div style="display:flex;flex-direction:column;gap:12px;background:{{ L.topBg }};padding:{{ L.topPad }};border-bottom:{{ L.topBd }}">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span onClick="{{ onBack }}" style="width:38px;height:38px;border-radius:12px;background:#fff;border:1px solid rgba(11,14,18,.1);display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 18 }}" stroke-width="{{ 2 }}" hint-size="18px,18px"></x-import></span>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+        <span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ eye }}</span>
+        <h1 style="margin:0;font:800 {{ L.h1 }}/1.12 Sora,sans-serif;letter-spacing:-.035em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</h1>
+      </div>
+      <span onClick="{{ onRadius }}" style="flex:none;height:36px;padding:0 12px;border-radius:12px;background:#fff;border:1px solid rgba(11,14,18,.12);display:flex;align-items:center;gap:7px;font:700 12.5px Manrope,sans-serif;cursor:pointer;white-space:nowrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 15 }}" color="#4B37F5" hint-size="15px,15px"></x-import>{{ radL }}</span>
+    </div>
+    <div style="display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:{{ L.chipsM }};padding:{{ L.chipsP }}">
+      <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5"><span style="flex:none;display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="96px,34px">{{ c.l }}</x-import></span></sc-for>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:{{ L.cols }};gap:{{ L.colGap }};align-items:start;padding:{{ L.bodyPad }}">
+    <div style="order:{{ L.mapOrder }};min-width:0;position:{{ L.mapPos }};top:{{ L.mapTop }}">
+      <div data-screen-label="Mapa · pines" onPointerDown="{{ onDown }}" onPointerMove="{{ onMove }}" onPointerUp="{{ onUp }}" onPointerLeave="{{ onUp }}" onClick="{{ onMapClick }}" style="position:relative;height:{{ L.mapH }}px;border-radius:{{ L.mapR }};overflow:hidden;background:#E4E1DA;border:1px solid rgba(11,14,18,.08);touch-action:none;cursor:{{ cur }};user-select:none">
+        <div style="position:absolute;left:50%;top:50%;width:0;height:0;transform:scale({{ map.sc }})"><sc-for list="{{ map.tiles }}" as="t" hint-placeholder-count="0"><span style="position:absolute;left:{{ t.left }}px;top:{{ t.top }}px;width:256px;height:256px;display:block;pointer-events:none;background-image:url({{ t.src }});background-size:256px 256px"></span></sc-for></div>
+        <div style="position:absolute;left:calc(50% + {{ map.rx }}px);top:calc(50% + {{ map.ry }}px);width:{{ map.rd }}px;height:{{ map.rd }}px;transform:translate(-50%,-50%);border-radius:999px;border:2px solid #4B37F5;background:rgba(75,55,245,.07);box-sizing:border-box;pointer-events:none"></div>
+        <div style="position:absolute;left:calc(50% + {{ map.rx }}px);top:calc(50% + {{ map.ry }}px);width:12px;height:12px;transform:translate(-50%,-50%);border-radius:99px;background:#4B37F5;border:3px solid #fff;box-shadow:0 0 0 6px rgba(75,55,245,.18);pointer-events:none"></div>
+        <sc-for list="{{ map.pins }}" as="p" hint-placeholder-count="0">
+          <div onClick="{{ p.onClick }}" style="position:absolute;left:calc(50% + {{ p.x }}px);top:calc(50% + {{ p.y }}px);width:{{ p.s }}px;height:{{ p.s }}px;transform:translate(-50%,-50%);border-radius:99px;background:{{ p.bg }};border:{{ p.bd }};box-sizing:border-box;box-shadow:{{ p.sh }};z-index:{{ p.z }};cursor:pointer">
+            <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);padding:6px 10px;border-radius:10px;background:#0B0E12;color:#fff;font:700 12px Manrope,sans-serif;white-space:nowrap;box-shadow:0 10px 22px -12px rgba(11,14,18,.6)">{{ p.name }}</span></sc-if>
+          </div>
+        </sc-for>
+        <div style="position:absolute;left:12px;top:12px;z-index:35;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.94);font:700 10px 'JetBrains Mono',monospace;letter-spacing:.08em;pointer-events:none">{{ map.count }}</div>
+        <div style="position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px;z-index:35">
+          <span onClick="{{ zIn }}" style="width:38px;height:38px;border-radius:12px;background:#fff;border:1px solid rgba(11,14,18,.1);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="plus" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span>
+          <span onClick="{{ zOut }}" style="width:38px;height:38px;border-radius:12px;background:#fff;border:1px solid rgba(11,14,18,.1);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="minus" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span>
+          <span onClick="{{ zReset }}" style="width:38px;height:38px;border-radius:12px;background:#fff;border:1px solid rgba(11,14,18,.1);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 16 }}" color="#4B37F5" hint-size="16px,16px"></x-import></span>
+        </div>
+        <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ stop }}" onPointerDown="{{ stop }}" style="position:absolute;z-index:40;left:12px;right:{{ L.cardR }};width:{{ L.cardW }};bottom:12px;padding:12px;border-radius:17px;background:#fff;box-shadow:0 18px 40px -20px rgba(11,14,18,.55);display:flex;flex-direction:column;gap:10px;animation:mpFade .2s ease-out;cursor:default">
+            <div style="display:flex;align-items:flex-start;gap:8px">
+              <div style="flex:1;min-width:0;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessRow" name="{{ sel.name }}" meta="{{ sel.meta }}" verified="{{ sel.verified }}" slot="{{ sel.slot }}" image="{{ sel.image }}" on-click="{{ sel.onOpen }}" hint-size="100%,78px"></x-import></div>
+              <span onClick="{{ closeSel }}" style="width:30px;height:30px;border-radius:10px;background:rgba(11,14,18,.06);display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 13 }}" stroke-width="{{ 2.2 }}" hint-size="13px,13px"></x-import></span>
+            </div>
+            <sc-if value="{{ sel.approx }}" hint-placeholder-val="{{ false }}"><span style="font:600 12px/1.4 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ sel.approxL }}</span></sc-if>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="sm" on-click="{{ sel.onOpen }}" hint-size="120px,36px">{{ sel.openL }}</x-import><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="sm" icon="pin" on-click="{{ sel.onDir }}" hint-size="130px,36px">{{ sel.dirL }}</x-import></div>
+          </div>
+        </sc-if>
+      </div>
+      <span style="display:block;margin-top:8px;font:600 11px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.5)">{{ legend }}</span>
+    </div>
+
+    <div style="order:{{ L.listOrder }};min-width:0;display:flex;flex-direction:column;gap:10px;max-height:{{ L.listMax }};overflow-y:{{ L.listOv }};padding:{{ L.listPad }}">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ listK }}</span><sc-if value="{{ hasClear }}" hint-placeholder-val="{{ false }}"><span onClick="{{ onClear }}" style="font:700 12.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ clearL }}</span></sc-if></div>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:22px 18px;border-radius:18px;background:#fff;border:1px dashed rgba(11,14,18,.16);display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center"><span style="font:800 15px/1.3 Sora,sans-serif;letter-spacing:-.02em">{{ emptyT }}</span><span style="font:500 12.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ emptyS }}</span></div>
+      </sc-if>
+      <sc-for list="{{ rows }}" as="o" hint-placeholder-count="5">
+        <div onMouseEnter="{{ o.onHover }}" style="border-radius:17px;box-shadow:{{ o.ring }};display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessRow" name="{{ o.name }}" meta="{{ o.meta }}" verified="{{ o.verified }}" slot="{{ o.slot }}" image="{{ o.image }}" on-click="{{ o.onClick }}" hint-size="100%,78px"></x-import></div>
+      </sc-for>
+      <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ false }}"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="md" block="{{ true }}" on-click="{{ onMore }}" hint-size="100%,44px">{{ moreL }}</x-import></div></sc-if>
+      <sc-if value="{{ hasNoPin }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border-radius:14px;background:rgba(75,55,245,.07);display:flex;gap:10px;align-items:flex-start;color:#332A6B"><span style="display:grid;flex:none;padding-top:1px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="info" size="{{ 16 }}" color="#332A6B" hint-size="16px,16px"></x-import></span><span style="font:600 12.5px/1.5 Manrope,sans-serif;text-wrap:pretty">{{ noPinL }}</span></div></sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 393, &quot;height&quot;: 852}}">
+/* APP-NEG-MAPA (P12): mapa de negocios con pines + lista, con los mismos filtros de donde vienes (categoría, Buscar o Inicio).
+   Radio del patrón 2ag (centro + radio de TLCity, se cambia en la hoja de ciudad). Quien trabaja desde casa sale como zona aproximada;
+   quien solo va a domicilio no tiene pin (sale en la lista). Teselas reales (ArcGIS World Street Map), las mismas de Ciudad. */
+const TILE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/';
+class Component extends DCLogic {
+  state = { f: 'all', cat: 'all', sel: null, hov: null, cen: null, dz: null, n: 20 };
+  componentDidMount() { this._rp = setInterval(() => { if (window.TLCity && window.TLAll && window.TLAll.B && window.TLAll.B.length) { clearInterval(this._rp); this.forceUpdate(); } }, 120); }
+  componentWillUnmount() { clearInterval(this._rp); }
+  es() { return (this.props.lang || 'es') === 'es'; }
+  E2(a, b) { return this.es() ? a : b; }
+  api() { return this.props.api || { back: () => {}, openBiz: () => {}, directions: () => {}, radius: () => {} }; }
+  unproj(x, y, z) { const n = Math.pow(2, z) * 256, lng = x / n * 360 - 180, lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI; return [lat, lng]; }
+  PH(v) { if (v == null) return ''; if (typeof v === 'number' || /^\d+$/.test(String(v))) return 'https://images.pexels.com/photos/' + v + '/pexels-photo-' + v + '.jpeg?auto=compress&cs=tinysrgb&h=200'; return String(v).replace(/^url\((.*)\)$/, '$1'); }
+  renderVals() {
+    const es = this.es(), E2 = this.E2.bind(this), s = this.state, desk = !!this.props.desk, dw = this.props.dw || 1280, C = window.TLCity, ADM = window.TLAdm, all = (window.TLAll && window.TLAll.B) || [];
+    const wide = desk && dw >= 960, W = wide ? Math.max(480, Math.min(dw, 1440) - 60 - 400 - 28) : desk ? dw - 60 : 393, H = wide ? 680 : desk ? 440 : 380;
+    const L = desk ? { pad: '22px 30px 48px', gap: '18px', topBg: 'transparent', topPad: '0', topBd: 'none', h1: '28px', chipsM: '0', chipsP: '0', cols: wide ? '400px minmax(0,1fr)' : 'minmax(0,1fr)', colGap: wide ? '28px' : '18px', bodyPad: '0', mapOrder: wide ? 2 : 1, listOrder: wide ? 1 : 2, mapPos: wide ? 'sticky' : 'relative', mapTop: '16px', mapH: H, mapR: '22px', cardR: 'auto', cardW: '380px', listMax: wide ? (H + 30) + 'px' : 'none', listOv: wide ? 'auto' : 'visible', listPad: '2px 4px 2px 2px' }
+      : { pad: '0 0 32px', gap: '0', topBg: '#fff', topPad: '12px 16px 12px', topBd: '1px solid rgba(11,14,18,.07)', h1: '20px', chipsM: '0 -16px', chipsP: '0 16px', cols: 'minmax(0,1fr)', colGap: '16px', bodyPad: '0', mapOrder: 1, listOrder: 2, mapPos: 'relative', mapTop: '0', mapH: H, mapR: '0', cardR: '12px', cardW: 'auto', listMax: 'none', listOv: 'visible', listPad: '0 16px' };
+    const base = { scr: 'APP-NEG-MAPA · ' + (desk ? 'desktop' : 'móvil'), L, onBack: () => this.api().back(), stop: e => { if (e && e.stopPropagation) e.stopPropagation(); } };
+    if (!C || !all.length) return Object.assign(base, { eye: E2('MAPA', 'MAP'), title: E2('Mapa de negocios', 'Business map'), radL: '', chips: [], map: { sc: 1, tiles: [], pins: [], rx: 0, ry: 0, rd: 0, count: '' }, rows: [], listK: '', legend: '', cur: 'default' });
+    const loc = Object.assign({ city: 'hzl', ctr: 'centro', rad: 5 }, this.props.loc || {}), ctr = C.center(loc), rad = loc.rad || 5;
+    const ids = Array.isArray(this.props.ids) ? this.props.ids : null, label = this.props.label || '';
+    const ok = b => b && !b.admHidden && !b.at;
+    let set = ids ? ids.map(id => all.find(b => b.id === id)).filter(ok) : all.filter(ok);
+    const catOf = b => ADM && ADM.bizCat ? ADM.bizCat(b) : null;
+    if (!ids && s.cat !== 'all') set = set.filter(b => catOf(b) === s.cat);
+    if (s.f === 'open') set = set.filter(b => b.open); if (s.f === 'ver') set = set.filter(b => b.verified); if (s.f === 'pro') set = set.filter(b => b.pro);
+    const hasPos = b => typeof b.d === 'number' && b._d0 !== 0 && !!C.pos(b), dist = b => (hasPos(b) ? b.d : 99), approx = b => !!b.casa;
+    const L2 = set.slice().sort((a, b) => dist(a) - dist(b)), inR = b => hasPos(b) && C.mi(C.pos(b), ctr) <= rad + .05;
+    const dz0 = desk ? 0 : .5, dz = s.dz == null ? dz0 : s.dz, V = C.view(ctr, rad, Math.min(W, H) / 2 - 26), zf = Math.max(3, Math.min(18, V.zf + dz)), z = Math.max(3, Math.min(17, Math.floor(zf))), sc = Math.pow(2, zf - z);
+    const cen = s.cen || ctr, cw = C.proj(cen, z), hw = W / 2 / sc + 256, hh = H / 2 / sc + 256, tiles = [];
+    for (let x = Math.floor((cw[0] - hw) / 256); x <= Math.floor((cw[0] + hw) / 256); x++) for (let y = Math.floor((cw[1] - hh) / 256); y <= Math.floor((cw[1] + hh) / 256); y++) tiles.push({ src: TILE + z + '/' + y + '/' + x, left: Math.round(x * 256 - cw[0]), top: Math.round(y * 256 - cw[1]) });
+    const scr = ll => { const p = C.proj(ll, z); return [(p[0] - cw[0]) * sc, (p[1] - cw[1]) * sc]; }, rc = scr(ctr), mpp = 156543.03392 * Math.cos(ctr[0] * Math.PI / 180) / Math.pow(2, zf), rd = Math.round(rad * 1609.34 / mpp * 2);
+    const sel = s.sel ? all.find(b => b.id === s.sel) : null, hot = s.hov || s.sel;
+    const pick = b => () => { if (this._moved) return; this.setState({ sel: b.id }); };
+    const pins = L2.filter(hasPos).map(b => { const [x, y] = scr(C.pos(b)), on = hot === b.id, inside = inR(b), ap = approx(b); if (Math.abs(x) > W / 2 + 30 || Math.abs(y) > H / 2 + 30) return null;
+      const k = dz < .5 ? .85 : 1, sz = on ? 22 : ap ? 20 : Math.round((b.pro ? 15 : 11) * k), bg = !inside ? 'rgba(11,14,18,.3)' : ap ? 'rgba(75,55,245,.14)' : b.pro ? '#0B0E12' : '#4B37F5';
+      return { x: Math.round(x), y: Math.round(y), s: sz, bg: on ? (ap ? 'rgba(75,55,245,.3)' : '#0B0E12') : bg, bd: ap ? '1.5px dashed #4B37F5' : on ? '3px solid #fff' : '2px solid #fff', sh: on ? '0 0 0 5px rgba(11,14,18,.18)' : '0 2px 6px -2px rgba(11,14,18,.45)', z: on ? 30 : b.pro ? 12 : 10, sel: on, name: b.name, onClick: e => { if (e && e.stopPropagation) e.stopPropagation(); pick(b)(); } }; }).filter(Boolean);
+    const sub = b => String((b.subs || [])[0] || '').toUpperCase(), meta = b => [b.n >= 5 && b.r ? '★ ' + b.r : '', hasPos(b) ? dist(b) + ' MI' : (b.tags || []).includes('domicilio') ? E2('A DOMICILIO', 'COMES TO YOU') : E2('SIN LOCAL', 'NO VENUE'), sub(b)].filter(Boolean).join(' · ');
+    const row = b => ({ name: b.name, meta: meta(b), verified: !!b.verified, slot: (es ? b.eta : (b.etaEn || b.eta)) || '', image: this.PH((b.ph || [])[0]) });
+    const open = id => this.api().openBiz(id);
+    const rows = L2.slice(0, s.n).map(b => Object.assign(row(b), { ring: hot === b.id ? '0 0 0 2px #0B0E12' : 'none', onHover: wide ? () => { if (this.state.hov !== b.id) this.setState({ hov: b.id }); } : () => {}, onClick: wide ? () => this.setState({ sel: b.id, cen: hasPos(b) ? C.pos(b) : this.state.cen }) : () => open(b.id) }));
+    const CATS = ADM && ADM.CATS ? ADM.CATS : [], cnt = k => all.filter(b => ok(b) && catOf(b) === k).length;
+    const chips = [['all', E2('Todos', 'All')], ['open', E2('Abierto ahora', 'Open now')], ['ver', E2('Verificados', 'Verified')], ['pro', E2('Destacados', 'Featured')]].map(([k, l]) => ({ l, v: s.f === k ? 'selected' : 'filter', onClick: () => this.setState({ f: k, sel: null, n: 20 }) }))
+      .concat(ids ? [] : CATS.filter(c => cnt(c.k) > 0).map(c => ({ l: es ? c.s : c.se, v: s.cat === c.k ? 'selected' : 'filter', onClick: () => this.setState({ cat: s.cat === c.k ? 'all' : c.k, sel: null, n: 20 }) })));
+    const catL = !ids && s.cat !== 'all' ? ((CATS.find(c => c.k === s.cat) || {})[es ? 'es' : 'en'] || '') : '';
+    const cityN = (C.city(loc.city) || {}).n || 'Hazleton, PA', noPin = L2.filter(b => !hasPos(b)).length, nIn = L2.filter(inR).length;
+    const drag = this._drag;
+    return Object.assign(base, {
+      eye: (E2('MAPA · ', 'MAP · ') + cityN.split(',')[0] + ' · ' + rad + ' MI').toUpperCase(), title: label || catL || E2('Negocios cerca de ti', 'Businesses near you'), radL: desk ? rad + ' mi · ' + E2('Cambiar', 'Change') : rad + ' mi', onRadius: () => this.api().radius(),
+      chips, cur: drag ? 'grabbing' : 'grab',
+      map: { sc, tiles, pins, rx: Math.round(rc[0]), ry: Math.round(rc[1]), rd, count: (nIn + E2(' A ' + rad + ' MI', ' WITHIN ' + rad + ' MI')) },
+      legend: E2('Negro: destacados · morado: Free · círculo punteado: trabaja desde casa, zona aproximada.', 'Black: featured · purple: Free · dotted circle: works from home, approximate area.'),
+      zIn: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState(z0 => ({ dz: Math.min(4, (z0.dz == null ? dz0 : z0.dz) + 1) })); }, zOut: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState(z0 => ({ dz: Math.max(-2, (z0.dz == null ? dz0 : z0.dz) - 1) })); }, zReset: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ dz: null, cen: null }); },
+      onDown: e => { this._moved = false; this._drag = { x: e.clientX, y: e.clientY, c: C.proj(cen, z), z, sc }; },
+      onMove: e => { const d = this._drag; if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (!this._moved && Math.abs(dx) + Math.abs(dy) < 5) return; this._moved = true; this.setState({ cen: this.unproj(d.c[0] - dx / d.sc, d.c[1] - dy / d.sc, d.z) }); },
+      onUp: () => { if (this._drag) { this._drag = null; this.forceUpdate(); } },
+      onMapClick: () => { if (this._moved) { this._moved = false; return; } if (this.state.sel) this.setState({ sel: null }); },
+      hasSel: !!sel, sel: sel ? Object.assign(row(sel), { approx: approx(sel), approxL: E2('Trabaja desde casa: el pin es la zona. La dirección exacta te llega al confirmar.', 'Works from home: the pin is the area. The exact address arrives on confirmation.'), openL: E2('Ver negocio', 'See business'), dirL: E2('Cómo llegar', 'Directions'), onOpen: () => open(sel.id), onDir: () => this.api().directions(sel.id) }) : { approx: false },
+      closeSel: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ sel: null }); },
+      listK: (L2.length + ' ' + E2(L2.length === 1 ? 'NEGOCIO' : 'NEGOCIOS', L2.length === 1 ? 'BUSINESS' : 'BUSINESSES') + E2(' · EL MÁS CERCA PRIMERO', ' · NEAREST FIRST')) + (ids ? E2(' · TUS FILTROS', ' · YOUR FILTERS') : ''),
+      rows, hasMore: L2.length > s.n, moreL: E2('Ver ' + Math.min(20, L2.length - s.n) + ' más', 'See ' + Math.min(20, L2.length - s.n) + ' more'), onMore: () => this.setState(z0 => ({ n: z0.n + 20 })),
+      empty: !L2.length, emptyT: E2('Nada con ese filtro', 'Nothing with that filter'), emptyS: E2('Quita un filtro o amplía el radio.', 'Remove a filter or widen the radius.'),
+      hasClear: s.f !== 'all' || s.cat !== 'all', clearL: E2('Quitar filtros', 'Clear filters'), onClear: () => this.setState({ f: 'all', cat: 'all', sel: null }),
+      hasNoPin: noPin > 0, noPinL: noPin === 1 ? E2('1 negocio no tiene local (va a domicilio o atiende por teléfono): sale en la lista, no en el mapa.', '1 business has no venue (comes to you or works by phone): it is listed, not pinned.') : E2(noPin + ' negocios no tienen local (van a domicilio o atienden por teléfono): salen en la lista, no en el mapa.', noPin + ' businesses have no venue (they come to you or work by phone): they are listed, not pinned.')
+    });
+  }
+}
+</script>
+</body>
+</html>

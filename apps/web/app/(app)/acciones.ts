@@ -57,3 +57,20 @@ export async function avisame(ciudad: string, cat: string, sub: string, filtros:
   );
   return { ok: true, on: true };
 }
+
+/* Reportar una foto (PhotoReport). La foto sigue visible mientras To'Latino la revisa. Una vez por persona y foto. */
+const MOTIVOS = new Set(["no_es", "inapropiado", "datos", "spam", "otro"]);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export async function reportarFoto(mediaId: string, motivo: string, nota: string): Promise<Respuesta> {
+  if (typeof mediaId !== "string" || !UUID.test(mediaId) || !MOTIVOS.has(motivo)) return { ok: false };
+  const u = await yo();
+  if (!u) return { ok: false, entrar: true };
+  const n = typeof nota === "string" ? nota.replace(/\s+/g, " ").trim().slice(0, 200) : "";
+  await db().query(
+    `insert into photo_reports (media_id, reporter_user_id, reason, note)
+     select m.id, $2, $3, nullif($4, '') from media m where m.id = $1 and m.status = 'visible' and m.owner_kind = 'business'
+     on conflict (media_id, reporter_user_id) do nothing`,
+    [mediaId, u.id, motivo, n],
+  );
+  return { ok: true, on: true };
+}

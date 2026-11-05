@@ -12,6 +12,23 @@ type Rango = [string, string];
 type Dia = { weekday: number; open: boolean; ranges: Rango[] };
 
 export const ID_NEGOCIO = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+/* Modelo de datos (Media): un Free muestra hasta 6 fotos; un Pro, las que suba (tope de lectura 60). */
+const FOTOS_FREE = 6, FOTOS_PRO = 60;
+
+/* Galería (APP-NEG-GALERIA): las fotos visibles del negocio con su id (para reportarlas) y cuáles ya reportó la persona. */
+export async function galeria(id: string, userId: string | null) {
+  if (!ID_NEGOCIO.test(id) || id.length > 80) return null;
+  const b = (await db().query<{ name: string; plan: string }>(
+    `select b.name, s.plan from businesses b join business_stats_cache s on s.business_id = b.id where b.id = $1 and b.status = 'active'`, [id])).rows[0];
+  if (!b) return null;
+  const fotos = (await db().query<{ id: string; url: string }>(
+    `select id, url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit $2`,
+    [id, b.plan === "pro" ? FOTOS_PRO : FOTOS_FREE])).rows;
+  const rep = userId && fotos.length
+    ? new Set((await db().query<{ id: string }>(`select media_id as id from photo_reports where reporter_user_id = $1 and media_id = any($2::uuid[])`, [userId, fotos.map((f) => f.id)])).rows.map((r) => r.id))
+    : new Set<string>();
+  return { id, nombre: b.name, fotos: fotos.map((f) => ({ id: f.id, chica: foto(f.url, 420)!, grande: foto(f.url, 1400)!, reportada: rep.has(f.id) })) };
+}
 
 const DIA_CORTO = { es: ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"], en: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] };
 const DIA_LARGO = { es: ["DOMINGO", "LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO"], en: ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"] };
@@ -47,7 +64,7 @@ export async function ficha(id: string, lang: Lang) {
   if (!b) return null;
 
   const [fotos, horas, subs, faqs, enlaces] = await Promise.all([
-    db().query<{ url: string }>(`select url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit 60`, [id]),
+    db().query<{ url: string }>(`select url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit $2`, [id, b.plan === "pro" ? FOTOS_PRO : FOTOS_FREE]),
     db().query<Dia>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
     db().query<{ n: string }>(`select name->>$2 as n from subcategories where id = any($1::text[]) order by array_position($1::text[], id)`, [b.subs, lang]),
     db().query<{ q: string; a: string }>(`select question->>$2 as q, answer->>$2 as a from faqs where business_id = $1 order by sort`, [id, lang]),

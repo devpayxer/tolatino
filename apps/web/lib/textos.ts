@@ -32,6 +32,16 @@ export const T = {
       tabRes: "Resumen", tabRel: "Relacionados", relSub: "Negocios conectados con {n}. Los dos negocios confirmaron la relación.",
       open: "Abierto", closed: "Cerrado", today: "HOY",
     },
+    // Galería (APP-NEG-GALERIA)
+    gal: {
+      fotos: "{n} FOTOS", foto: "1 FOTO", titulo: "Fotos de {n}", seccion: "DEL NEGOCIO · {n}", seccionSub: "Las sube {n}.",
+      delNegocio: "DEL NEGOCIO", reportar: "Reportar foto", reportada: "Ya la reportaste · To'Latino la revisa en 48 h",
+      pista: "← → PARA MOVERTE · ESC PARA CERRAR", cerrar: "Cerrar", anterior: "Foto anterior", siguiente: "Foto siguiente",
+      rpTitulo: "Reportar esta foto", rpSub: "Sigue visible mientras una persona de To'Latino la revisa.",
+      motivos: { no_es: "No es de este negocio", inapropiado: "Contenido inapropiado", datos: "Muestra datos personales", spam: "Es publicidad o spam", otro: "Otro motivo" },
+      notaK: "CUÉNTANOS MÁS · OPCIONAL", notaPh: "Qué viste en la foto…", enviar: "Enviar reporte", cancelar: "Cancelar",
+      enviadoT: "Recibimos tu reporte", enviadoS: "To'Latino la revisa en 48 h. Mientras tanto sigue visible. Te avisamos el resultado por SMS.", listo: "Listo",
+    },
   },
   en: {
     search: "What do you need today?", searchIn: "Search Hazleton", searchDesk: "Search businesses, events and more in Hazleton",
@@ -60,6 +70,15 @@ export const T = {
       hours: "Hours", hoursCaps: "HOURS", faq: "FAQ", now: "NOW", changes: "UPCOMING CHANGES", week: "This week",
       tabRes: "Overview", tabRel: "Related", relSub: "Businesses connected with {n}. Both businesses confirmed the connection.",
       open: "Open", closed: "Closed", today: "TODAY",
+    },
+    gal: {
+      fotos: "{n} PHOTOS", foto: "1 PHOTO", titulo: "Photos of {n}", seccion: "FROM THE BUSINESS · {n}", seccionSub: "Uploaded by {n}.",
+      delNegocio: "FROM THE BUSINESS", reportar: "Report photo", reportada: "You reported it · To'Latino reviews it within 48 h",
+      pista: "← → TO MOVE · ESC TO CLOSE", cerrar: "Close", anterior: "Previous photo", siguiente: "Next photo",
+      rpTitulo: "Report this photo", rpSub: "It stays visible while a person at To'Latino reviews it.",
+      motivos: { no_es: "It is not from this business", inapropiado: "Inappropriate content", datos: "Shows personal information", spam: "It is an ad or spam", otro: "Another reason" },
+      notaK: "TELL US MORE · OPTIONAL", notaPh: "What you saw in the photo…", enviar: "Send report", cancelar: "Cancel",
+      enviadoT: "We got your report", enviadoS: "To'Latino reviews it within 48 h. Meanwhile it stays visible. We will text you the result.", listo: "Done",
     },
   },
 } as const;

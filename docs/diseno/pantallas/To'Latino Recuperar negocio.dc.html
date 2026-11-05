@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <script src="prototype/biz-contact.js"></script>
+  <style>
+    a { color: #4B37F5; text-decoration: none; }
+    a:hover { color: #2E1FD1; }
+    @keyframes tlRcFade { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</helmet>
+<div data-screen-label="{{ label }}" style="min-height:100%;background:#F7F6F3;font-family:Manrope,sans-serif;color:#0B0E12;animation:tlRcFade .2s ease-out">
+  <input type="file" accept="image/*" ref="{{ fileRef }}" onChange="{{ onFile }}" style="display:none">
+  <div style="max-width:{{ maxW }};margin:0 auto;padding:{{ pad }};display:grid;grid-template-columns:{{ cols }};gap:48px;align-items:start">
+    <div style="min-width:0;display:flex;flex-direction:column;gap:20px">
+      <sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+        <div style="padding-top:14px;display:flex;align-items:center;gap:12px">
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="chevronLeft" size="{{ 38 }}" on-click="{{ onBackStep }}" hint-size="38px,38px"></x-import>
+          <div style="flex:1;min-width:0"><div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ eye }}</div><div style="margin-top:3px;font:800 21px/1.15 Sora,sans-serif;letter-spacing:-.035em;text-wrap:pretty">{{ title }}</div></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ d }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span onClick="{{ onBackStep }}" style="align-self:flex-start;display:flex;align-items:center;gap:6px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" color="#4B37F5" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import>{{ backL }}</span>
+          <span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ eye }}</span>
+          <h1 style="margin:0;font:800 30px/1.1 Sora,sans-serif;letter-spacing:-.035em;text-wrap:balance">{{ title }}</h1>
+        </div>
+      </sc-if>
+      <sc-if value="{{ hasIntro }}" hint-placeholder-val="{{ true }}"><p style="margin:0;max-width:640px;font:500 14px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ intro }}</p></sc-if>
+
+      <sc-if value="{{ isNone }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ cands }}" as="o" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessRow" name="{{ o.name }}" meta="{{ o.meta }}" verified="{{ o.ver }}" image="{{ o.img }}" on-click="{{ o.on }}" hint-size="100%,78px"></x-import></sc-for>
+          <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" block="{{ true }}" on-click="{{ onSupport }}" hint-size="100%,50px">{{ supportL }}</x-import></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasBiz }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ m }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:6px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessRow" name="{{ biz.name }}" meta="{{ biz.meta }}" verified="{{ biz.ver }}" image="{{ biz.img }}" hint-size="100%,78px"></x-import><span style="padding-left:4px;font:600 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ biz.addr }}</span></div></sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ owned }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 16px;border-radius:17px;background:rgba(255,176,32,.14);display:flex;gap:10px;align-items:flex-start"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="info" size="{{ 17 }}" color="#8A5A00" hint-size="17px,17px"></x-import><span style="flex:1;min-width:0;font:600 13px/1.5 Manrope,sans-serif;color:#8A5A00;text-wrap:pretty">{{ ownedT }}</span></div>
+        </sc-if>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.roleK }}</span>
+          <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ roles }}" as="c" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.on }}" hint-size="96px,34px">{{ c.l }}</x-import></sc-for></div>
+          <sc-if value="{{ hasRoleS }}" hint-placeholder-val="{{ false }}"><span style="font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ roleS }}</span></sc-if>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.howK }}</span>
+          <div style="border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:0 16px">
+            <sc-for list="{{ hows }}" as="x" hint-placeholder-count="2"><div onClick="{{ x.on }}" style="display:flex;gap:12px;align-items:center;padding:13px 0;border-top:{{ x.bt }};cursor:pointer"><span style="width:20px;height:20px;box-sizing:border-box;border-radius:99px;border:{{ x.ring }};flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 14px/1.35 Manrope,sans-serif">{{ x.t }}</div><div style="margin-top:2px;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55);text-wrap:pretty">{{ x.s }}</div></div></div></sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ isDoc }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.docK }}</span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ docs }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.on }}" hint-size="120px,34px">{{ c.l }}</x-import></sc-for></div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <sc-if value="{{ hasPh }}" hint-placeholder-val="{{ false }}"><span style="width:64px;height:64px;border-radius:12px;background:{{ ph }} center/cover;background-color:#E4E1DA;flex:none"></span></sc-if>
+              <span onClick="{{ onPh }}" style="display:flex;align-items:center;gap:8px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="image" size="{{ 16 }}" color="#4B37F5" hint-size="16px,16px"></x-import>{{ phL }}</span>
+            </div>
+            <span style="font:500 12px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ L.docS }}</span>
+          </div>
+        </sc-if>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.noteK }}</span>
+          <textarea value="{{ note }}" onChange="{{ onNote }}" placeholder="{{ L.notePh }}" rows="3" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);background:#fff;font:500 14px/1.5 Manrope,sans-serif;color:#0B0E12;resize:none;outline:none"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="shield" size="{{ 16 }}" color="rgba(11,14,18,.55)" hint-size="16px,16px"></x-import><span style="flex:1;min-width:0;font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.62);text-wrap:pretty">{{ L.never }}</span></div>
+      </sc-if>
+
+      <sc-if value="{{ isCall }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px;border-radius:20px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:12px;align-items:center"><span style="width:44px;height:44px;border-radius:14px;background:rgba(0,229,196,.16);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="phone" size="{{ 20 }}" color="#00695B" hint-size="20px,20px"></x-import></span><div style="flex:1;min-width:0"><div style="font:800 16px/1.3 Sora,sans-serif;letter-spacing:-.02em">{{ call.t }}</div><div style="margin-top:3px;font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.62);text-wrap:pretty">{{ call.s }}</div></div></div>
+          <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.2em;color:rgba(11,14,18,.42)">{{ call.k }}</span>
+          <input value="{{ code }}" onChange="{{ onCode }}" inputMode="numeric" maxLength="6" placeholder="000000" style="height:56px;box-sizing:border-box;width:100%;padding:0 16px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);font:800 24px 'JetBrains Mono',monospace;letter-spacing:.4em;text-align:center;color:#0B0E12;outline:none;background:#fff">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span onClick="{{ call.onAgain }}" style="font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ call.again }}</span><span onClick="{{ call.onDoc }}" style="font:700 13px Manrope,sans-serif;color:rgba(11,14,18,.6);cursor:pointer">{{ call.noPhone }}</span></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSt }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ tagTone }}" hint-size="120px,18px">{{ tagL }}</x-import><span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ num }}</span></div>
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OrderTracker" steps="{{ steps }}" horizontal="{{ d }}" hint-size="100%,150px"></x-import>
+        <sc-if value="{{ hasStNote }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 16px;border-radius:17px;background:{{ stBg }};display:flex;gap:10px;align-items:flex-start"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ stIc }}" size="{{ 17 }}" color="{{ stFg }}" stroke-width="{{ 2 }}" hint-size="17px,17px"></x-import><span style="flex:1;min-width:0;font:600 13.5px/1.5 Manrope,sans-serif;color:{{ stFg }};text-wrap:pretty">{{ stNote }}</span></div></sc-if>
+        <div style="display:grid;grid-template-columns:{{ actCols }};gap:8px"><sc-for list="{{ acts }}" as="a" hint-placeholder-count="2"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="{{ a.v }}" block="{{ true }}" icon="{{ a.ic }}" on-click="{{ a.on }}" hint-size="100%,50px">{{ a.l }}</x-import></div></sc-for></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.sentK }}</span>
+          <div style="border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:4px 16px"><sc-for list="{{ kv }}" as="r" hint-placeholder-count="3"><div style="display:flex;gap:14px;padding:11px 0;border-top:{{ r.bt }}"><span style="flex:none;width:100px;font:700 9.5px/1.6 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ r.k }}</span><span style="flex:1;min-width:0;font:600 13.5px/1.45 Manrope,sans-serif;text-wrap:pretty">{{ r.v }}</span></div></sc-for></div>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ d }}" hint-placeholder-val="{{ false }}">
+      <div data-sticky-rail="1" style="display:flex;flex-direction:column;gap:14px">
+        <sc-if value="{{ hasBiz }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessRow" name="{{ biz.name }}" meta="{{ biz.meta }}" verified="{{ biz.ver }}" image="{{ biz.img }}" hint-size="100%,78px"></x-import><span style="margin-top:-6px;padding-left:4px;font:600 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ biz.addr }}</span></sc-if>
+        <div style="padding:16px 18px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:10px">
+          <span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ L.whatK }}</span>
+          <sc-for list="{{ what }}" as="r" hint-placeholder-count="3"><div style="display:flex;gap:10px;align-items:flex-start;font:600 13px/1.45 Manrope,sans-serif"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ r.ic }}" size="{{ 15 }}" color="rgba(11,14,18,.55)" hint-size="15px,15px"></x-import><span style="flex:1;min-width:0;text-wrap:pretty">{{ r.t }}</span></div></sc-for>
+        </div>
+        <sc-if value="{{ hasCta }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ hasErr }}" hint-placeholder-val="{{ false }}"><span style="font:600 12.5px/1.45 Manrope,sans-serif;color:#C0392B">{{ err }}</span></sc-if>
+          <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" disabled="{{ ctaDis }}" on-click="{{ onCta }}" hint-size="100%,50px">{{ ctaL }}</x-import></div>
+        </sc-if>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ mBar }}" hint-placeholder-val="{{ true }}">
+    <div style="position:sticky;bottom:0;padding:12px 20px 24px;background:rgba(247,246,243,.96);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:8px">
+      <sc-if value="{{ hasErr }}" hint-placeholder-val="{{ false }}"><span style="font:600 12px/1.45 Manrope,sans-serif;color:#C0392B">{{ err }}</span></sc-if>
+      <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" disabled="{{ ctaDis }}" on-click="{{ onCta }}" hint-size="100%,50px">{{ ctaL }}</x-import></div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;biz&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;fritura-dona-carmen&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;desk&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;lang&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;es&quot;, &quot;en&quot;], &quot;default&quot;: &quot;es&quot;, &quot;tsType&quot;: &quot;'es' | 'en'&quot;}, &quot;q&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;n&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;dw&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;user&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object | null&quot;}, &quot;api&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;{ back, login, pick, toBiz, toPanel, support, top }&quot;}}">
+const CK = 'tl-claim-v1';
+class Component extends DCLogic {
+  state = { role: 'dueno', how: 'tel', doc: 'lic', ph: null, note: '', code: '', step: 'form', err: '', tick: 0 };
+  fileRef = React.createRef();
+  componentDidMount() { this._st = () => this.setState({ tick: Date.now() }); window.addEventListener('storage', this._st); this._iv = setInterval(() => this.setState({ tick: Date.now() }), 5000); }
+  componentWillUnmount() { window.removeEventListener('storage', this._st); clearInterval(this._iv); }
+  componentDidUpdate(pp) { if (pp.biz !== this.props.biz || pp.n !== this.props.n) this.setState({ step: 'form', code: '', err: '', ph: null, note: '', how: 'tel' }); }
+  E2(a, b) { return (this.props.lang || 'es') === 'es' ? a : b; }
+  api() { return this.props.api || {}; }
+  rd() { try { return JSON.parse(localStorage.getItem(CK) || '[]') || []; } catch (e) { return []; } }
+  adm() { try { return JSON.parse(localStorage.getItem('tl-adm-v1') || '{}') || {}; } catch (e) { return {}; } }
+  biz() { const A = (window.TLAll && window.TLAll.B) || []; return A.find(x => x.id === this.props.biz) || null; }
+  meta(b) { return (b.r ? '★ ' + b.r + ' · ' : '') + (b.d != null ? b.d + ' MI · ' : '') + String((b.subs || [])[0] || '').toUpperCase(); }
+  img(b) { const p = (b.ph || [])[0]; return p ? 'https://images.pexels.com/photos/' + p + '/pexels-photo-' + p + '.jpeg?auto=compress&cs=tinysrgb&h=350' : ''; }
+  mask(t) { const d = String(t || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? '(' + d.slice(0, 3) + ') ' + d[3] + '••-••' + d.slice(8) : t; }
+  onFile(e) { const f = e && e.target && e.target.files && e.target.files[0]; if (!f || !/^image\//.test(f.type)) return; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const k = Math.min(1, 1000 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); this.setState({ ph: c.toDataURL('image/jpeg', .85), err: '' }); }; im.src = r.result; }; r.readAsDataURL(f); if (e.target) e.target.value = ''; }
+  save(b, how) { const L = this.rd(), u = this.props.user || {}, st = this.state, id = 'CL-' + (7103 + L.length * 3);
+    L.unshift({ id, biz: b.id, how, role: st.role, doc: how === 'doc' ? st.doc : '', ph: how === 'doc' ? st.ph : null, note: (st.note || '').trim(), telOk: how === 'tel', at: Date.now(), by: { name: u.name || '', phone: u.phone || '' } });
+    try { localStorage.setItem(CK, JSON.stringify(L.slice(0, 40))); } catch (e) {} this.setState({ step: 'form', code: '', err: '', tick: Date.now() }); const a = this.api(); if (a.top) a.top(); }
+  renderVals() {
+    const E2 = this.E2.bind(this), es = (this.props.lang || 'es') === 'es', desk = !!this.props.desk, api = this.api(), st = this.state, u = this.props.user, b = this.biz();
+    const L = { roleK: E2('¿QUÉ ERES DEL NEGOCIO?', 'WHAT IS YOUR ROLE?'), howK: E2('¿CÓMO LO COMPROBAMOS?', 'HOW DO WE CHECK IT?'), docK: E2('¿QUÉ DOCUMENTO?', 'WHICH DOCUMENT?'), docS: E2('Tapa los números de cuenta. Solo necesitamos ver el nombre del negocio y la dirección.', 'Cover account numbers. We only need to see the business name and address.'), noteK: E2('ALGO QUE DEBAMOS SABER · OPCIONAL', 'ANYTHING WE SHOULD KNOW · OPTIONAL'), notePh: E2('Ej. Lo abrí en 2019; alguien lo puso en la app sin preguntarme.', 'e.g. I opened it in 2019; someone listed it without asking me.'), never: E2('Nunca te pedimos documentos de identidad ni tu estatus migratorio.', 'We never ask for ID documents or your immigration status.'), sentK: E2('LO QUE MANDASTE', 'WHAT YOU SENT'), whatK: E2('AL RECUPERARLO', 'WHEN YOU RECOVER IT') };
+    const lay = { m: !desk, d: desk, maxW: desk ? '1180px' : 'none', pad: desk ? '22px 30px 64px' : '0 20px 28px', cols: desk ? 'minmax(0,1fr) 372px' : 'minmax(0,1fr)', actCols: desk ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)', fileRef: this.fileRef, onFile: e => this.onFile(e), backL: E2('Volver', 'Back'), L, eye: E2('RECUPERAR TU NEGOCIO', 'RECOVER YOUR BUSINESS') };
+    const what = [{ ic: 'store', t: E2('Manejas su página, sus fotos y las respuestas a reseñas.', 'You manage its page, photos and review replies.') }, { ic: 'star', t: E2('Las reseñas y los seguidores se quedan.', 'Reviews and followers stay.') }, { ic: 'clock', t: E2("Mientras To'Latino revisa, la página sigue igual.", "While To'Latino reviews, the page stays the same.") }];
+    const supportPre = { cat: 'negocio', ref: b ? b.id : '', refL: b ? b.name : '', biz: b ? b.id : '' };
+    const base = Object.assign({}, lay, { label: 'ONB-NEG-RECUPERAR · ' + (desk ? 'desktop' : 'móvil'), what, roles: [], hows: [], docs: [], cands: [], steps: [], acts: [], kv: [], biz: {}, call: {}, onBackStep: () => api.back && api.back(), onSupport: () => api.support && api.support(supportPre), supportL: E2("Escríbele a To'Latino", "Write to To'Latino"), hasIntro: true });
+    if (!b) { const q = String(this.props.q || ''), W = q.toLowerCase().split(/\s+/).filter(w => w.length >= 3), A = (window.TLAll && window.TLAll.B) || [];
+      const cands = W.length ? A.filter(x => !x.at && W.some(w => x.name.toLowerCase().includes(w))).slice(0, 4) : [];
+      return Object.assign(base, { isNone: true, hasBiz: false, isForm: false, title: E2('¿Cuál es tu negocio?', 'Which one is your business?'), intro: cands.length ? E2('Encontramos estos con un nombre parecido. Toca el tuyo.', 'We found these with a similar name. Tap yours.') : E2('No encontramos ese negocio en Hazleton. Escríbenos y lo buscamos contigo.', 'We could not find that business in Hazleton. Write to us and we will look with you.'), cands: cands.map(x => ({ name: x.name, meta: this.meta(x), ver: !!x.verified, img: this.img(x), on: () => api.pick && api.pick(x.id) })), mBar: false, hasCta: false }); }
+    const TC = window.TLContact, tel = TC ? TC.tel(b) : '', ow = window.TLAdm && window.TLAdm.bizOwner ? window.TLAdm.bizOwner(b.id) : null, owned = !!(ow && ow.id !== 'live');
+    const bizV = { name: b.name, meta: this.meta(b), ver: !!b.verified, img: this.img(b), addr: TC ? TC.short(TC.addr(b)) + ' · Hazleton' : 'Hazleton' };
+    Object.assign(base, { hasBiz: true, biz: bizV });
+    const mine = this.rd().filter(c => c.biz === b.id)[0] || null, dec = mine ? (this.adm().dec || {})[mine.id] : null;
+    if (mine && !(st.step === 'redo')) {
+      const s = dec ? (dec.act === 'reject' ? 'no' : 'ok') : 'pend', TAG = { pend: [E2('EN REVISIÓN', 'IN REVIEW'), 'action'], ok: [E2('APROBADO', 'APPROVED'), 'signal'], no: [E2('NO APROBADO', 'NOT APPROVED'), 'danger'] }[s];
+      const hrs = mine.how === 'tel' ? 24 : 48, t0 = TC ? TC.fT(12.5 + 1 / 60) : '12:31 PM', docL = { lic: E2('Licencia del negocio', 'Business license'), luz: E2('Factura de luz o agua', 'Utility bill'), irs: E2('Carta del IRS con el EIN', 'IRS EIN letter'), otro: E2('Otro documento', 'Other document') }[mine.doc] || '';
+      const steps = [{ label: E2('Lo pediste', 'You asked'), time: t0, state: 'done' }, { label: mine.how === 'tel' ? E2('Código correcto', 'Code correct') : E2('Documento recibido', 'Document received'), time: mine.how === 'tel' ? E2('POR LLAMADA', 'BY CALL') : docL.toUpperCase(), state: 'done' }, { label: E2("Lo revisa To'Latino", "To'Latino reviews it"), time: s === 'pend' ? E2('EN ' + hrs + ' H', 'WITHIN ' + hrs + ' H') : '', state: s === 'pend' ? 'current' : 'done' }, { label: s === 'no' ? E2('No aprobado', 'Not approved') : E2('Ya es tuyo', 'It is yours'), time: '', state: s === 'pend' ? 'next' : 'current' }];
+      const roleL = { dueno: E2('Dueño', 'Owner'), socio: E2('Socio', 'Partner'), enc: E2('Encargado', 'Manager') }[mine.role];
+      const kv = [[E2('CÓMO', 'HOW'), mine.how === 'tel' ? E2('Llamada al ', 'Call to ') + this.mask(tel) : docL], [E2('ERES', 'ROLE'), roleL], mine.note ? [E2('NOTA', 'NOTE'), mine.note] : null, [E2('A NOMBRE DE', 'NAME'), (mine.by.name || '') + (mine.by.phone ? ' · ' + mine.by.phone : '')]].filter(Boolean).map((r, i) => ({ k: r[0], v: r[1], bt: i ? '1px solid rgba(11,14,18,.07)' : 'none' }));
+      const A = (l, v, on, ic) => ({ l, v, on, ic: ic || '' }), panel = !!(window.TLDash2 && window.TLDash2.BIZ && window.TLDash2.BIZ[b.id]);
+      const acts = s === 'ok' ? [A(E2('Ver tu página', 'See your page'), 'primary', () => api.toBiz && api.toBiz(b.id), 'store')].concat(panel ? [A(E2('Abrir tu panel', 'Open your dashboard'), 'secondary', () => api.toPanel && api.toPanel(b.id), 'grid')] : []) : s === 'no' ? [A(E2('Probar con un documento', 'Try with a document'), 'primary', () => this.setState({ step: 'redo', how: 'doc', err: '' }), 'folder'), A(E2('Hablar con soporte', 'Talk to support'), 'secondary', () => api.support && api.support(supportPre), 'chat')] : [A(E2('Hablar con soporte', 'Talk to support'), 'secondary', () => api.support && api.support(supportPre), 'chat')];
+      const notes = { pend: [E2('Una persona de To\'Latino lo revisa en ' + hrs + ' h. La página de ' + b.name + ' sigue igual mientras tanto. Te avisamos por SMS.', 'A person at To\'Latino reviews it within ' + hrs + ' h. ' + b.name + '\'s page stays the same meanwhile. We will text you.'), 'rgba(255,176,32,.14)', '#8A5A00', 'clock'], ok: [E2('Ahora manejas la página de ' + b.name + ': fotos, horario, respuestas y ' + (panel ? 'tu panel' : 'lo que vendes') + '. Entras con este mismo teléfono.', 'You now manage ' + b.name + '\'s page: photos, hours, replies and ' + (panel ? 'your dashboard' : 'what you sell') + '. You sign in with this same phone.'), 'rgba(0,229,196,.16)', '#00695B', 'check'], no: [(dec && dec.why ? dec.why + '. ' : '') + E2('Si es tuyo, prueba con un documento con el nombre y la dirección del negocio.', 'If it is yours, try with a document showing the business name and address.'), 'rgba(192,57,43,.08)', '#C0392B', 'warning'] }[s];
+      return Object.assign(base, { isSt: true, isForm: false, title: s === 'ok' ? E2('Ya es tuyo', 'It is yours') : s === 'no' ? E2('No pudimos aprobarlo', 'We could not approve it') : E2('Lo estamos revisando', 'We are reviewing it'), hasIntro: false, tagL: TAG[0], tagTone: TAG[1], num: E2('RECLAMO #', 'CLAIM #') + mine.id, steps, kv, acts, hasStNote: true, stNote: notes[0], stBg: notes[1], stFg: notes[2], stIc: notes[3], mBar: false, hasCta: false }); }
+    const how = owned ? 'doc' : st.how, M = this.mask(tel), isDoc = how === 'doc';
+    if (st.step === 'call') { const ok = /^\d{6}$/.test(st.code);
+      return Object.assign(base, { isCall: true, isForm: false, title: E2('Te estamos llamando', 'We are calling you'), hasIntro: false, onBackStep: () => this.setState({ step: 'form', code: '', err: '' }),
+        call: { t: E2('Contesta el ', 'Answer ') + M, s: E2("Una voz de To'Latino te dice un código de 6 números. Escríbelo aquí.", "A To'Latino voice tells you a 6-digit code. Type it here."), k: E2('CÓDIGO', 'CODE'), again: E2('Volver a llamar', 'Call again'), onAgain: () => this.setState({ code: '', err: '' }), noPhone: E2('Ya no tengo ese teléfono', 'I no longer have that phone'), onDoc: () => this.setState({ step: 'form', how: 'doc', code: '', err: '' }) },
+        code: st.code, onCode: e => this.setState({ code: String(e.target.value || '').replace(/\D/g, '').slice(0, 6), err: '' }), ctaL: E2('Verificar', 'Verify'), ctaDis: !ok, onCta: () => { if (ok) this.save(b, 'tel'); }, mBar: !desk, hasCta: true, hasErr: false }); }
+    const go = () => { if (!u) { if (api.login) api.login(); return; } if (isDoc) { if (!st.ph) { this.setState({ err: E2('Sube una foto del documento.', 'Upload a photo of the document.') }); return; } this.save(b, 'doc'); return; } this.setState({ step: 'call', code: '', err: '' }); if (api.top) api.top(); };
+    const ring = on => on ? '6px solid #0B0E12' : '1.5px solid rgba(11,14,18,.25)';
+    return Object.assign(base, { isForm: true, title: E2('¿Es tuyo ', 'Is ') + b.name + E2('?', ' yours?'), intro: E2('Si es tuyo, lo manejas tú desde hoy. Comprobamos que eres del negocio y una persona de To\'Latino lo aprueba.', 'If it is yours, you manage it from today. We check that you are with the business and a person at To\'Latino approves it.'),
+      owned, ownedT: E2("Este negocio ya tiene una cuenta a cargo. Si es tuyo, lo revisamos con un documento y le avisamos a esa cuenta antes de cambiar nada.", 'This business already has an account in charge. If it is yours, we review it with a document and notify that account before changing anything.'),
+      roles: [['dueno', E2('Dueño', 'Owner')], ['socio', E2('Socio', 'Partner')], ['enc', E2('Encargado', 'Manager')]].map(([k, l]) => ({ l, v: st.role === k ? 'selected' : 'filter', on: () => this.setState({ role: k }) })), hasRoleS: st.role === 'enc', roleS: E2('Si eres encargado, el dueño recibe un aviso.', 'If you are the manager, the owner gets a notice.'),
+      hows: (owned ? [] : [['tel', E2('Una llamada al teléfono del negocio', 'A call to the business phone'), E2('Llamamos al ' + M + ' y te decimos un código. Es lo más rápido.', 'We call ' + M + ' and tell you a code. It is the fastest.')]]).concat([['doc', E2('Un documento', 'A document'), E2('Licencia del negocio, factura de luz o agua, o la carta del IRS con el EIN. Lo revisamos en 48 h.', 'Business license, utility bill, or the IRS letter with the EIN. We review it within 48 h.')]]).map(([k, t, s], i) => ({ t, s, bt: i ? '1px solid rgba(11,14,18,.08)' : 'none', ring: ring(how === k), on: () => this.setState({ how: k, err: '' }) })),
+      isDoc, docs: [['lic', E2('Licencia del negocio', 'Business license')], ['luz', E2('Factura de luz o agua', 'Utility bill')], ['irs', E2('Carta del IRS (EIN)', 'IRS letter (EIN)')], ['otro', E2('Otro', 'Other')]].map(([k, l]) => ({ l, v: st.doc === k ? 'selected' : 'filter', on: () => this.setState({ doc: k }) })),
+      hasPh: !!st.ph, ph: st.ph ? 'url("' + st.ph + '")' : 'none', phL: st.ph ? E2('Cambiar foto', 'Change photo') : E2('Subir foto del documento', 'Upload a photo of the document'), onPh: () => { const el = this.fileRef.current; if (el) el.click(); },
+      note: st.note, onNote: e => this.setState({ note: String(e.target.value || '').slice(0, 300) }),
+      ctaL: !u ? E2('Entrar y continuar', 'Sign in and continue') : isDoc ? E2('Enviar', 'Send') : E2('Llamarme ahora', 'Call me now'), ctaDis: false, onCta: go, hasErr: !!st.err, err: st.err, mBar: !desk, hasCta: true });
+  }
+}
+</script>
+</body>
+</html>

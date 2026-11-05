@@ -127,6 +127,10 @@ export function Categoria({ v }: { v: Vista }) {
                     <span className="relative size-[66px] flex-none lg:size-[84px]">
                       <span className="block size-full rounded-full bg-photo-bg outline-offset-2"
                         style={{ ...fondo(c.photo), outline: (v.sub ?? "") === c.key ? "2px solid var(--tl-ink)" : "none" }} />
+                      {c.flag && (
+                        <span aria-hidden className="absolute -right-0.5 bottom-[3px] h-[15px] w-[22px] rounded-[4px] shadow-[0_0_0_2px_var(--tl-white)] lg:h-[17px] lg:w-[26px]"
+                          style={fondo(`/assets/flags/${c.flag}.png`)} />
+                      )}
                     </span>
                     <span className={`text-center text-[11px] leading-[1.2] lg:text-[12.5px] ${(v.sub ?? "") === c.key ? "font-extrabold" : "font-bold"}`}>{c.label}</span>
                   </button>

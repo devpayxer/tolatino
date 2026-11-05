@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <script src="prototype/biz-photos.js"></script>
+  <style>
+    a { color: #4B37F5; text-decoration: none; }
+    a:hover { color: #2E1FD1; }
+    @keyframes tlGalFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes tlGalUp { from { transform: translateY(64px); opacity: .5; } to { transform: none; opacity: 1; } }
+  </style>
+</helmet>
+<div data-tl-gal="1" style="background:#fff;min-height:100%;font-family:Manrope,sans-serif;color:#0B0E12">
+
+  <sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="APP-NEG-GALERIA · móvil" style="padding-bottom:40px;animation:tlGalFade .2s ease-out">
+      <div style="padding:14px 20px 0;display:flex;align-items:center;gap:12px">
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="chevronLeft" size="{{ 38 }}" on-click="{{ onBack }}" hint-size="38px,38px"></x-import>
+        <div style="flex:1;min-width:0">
+          <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ eye }}</div>
+          <div style="margin-top:3px;font:800 20px/1.15 Sora,sans-serif;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ name }}</div>
+        </div>
+      </div>
+      <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:14px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 20px">
+          <sc-for list="{{ chips }}" as="c" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.on }}" hint-size="110px,34px">{{ c.l }}</x-import></sc-for>
+        </div>
+      </sc-if>
+      <sc-for list="{{ secs }}" as="sc" hint-placeholder-count="2">
+        <div style="padding:22px 20px 9px;display:flex;flex-direction:column;gap:3px">
+          <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ sc.k }}</span>
+          <span style="font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ sc.s }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px">
+          <sc-for list="{{ sc.items }}" as="p" hint-placeholder-count="6"><div onClick="{{ p.on }}" style="aspect-ratio:1/1;background:{{ p.bg }} center/cover;background-color:#E4E1DA;cursor:pointer"></div></sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ d }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="APP-NEG-GALERIA · desktop" style="padding:22px 30px 64px;animation:tlGalFade .2s ease-out">
+      <div style="max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+        <span onClick="{{ onBack }}" style="align-self:flex-start;display:flex;align-items:center;gap:6px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" color="#4B37F5" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import>{{ backL }}
+        </span>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div style="min-width:0">
+            <div style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ eye }}</div>
+            <h1 style="margin:6px 0 0;font:800 30px/1.1 Sora,sans-serif;letter-spacing:-.035em;text-wrap:balance">{{ titleD }}</h1>
+          </div>
+          <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ chips }}" as="c" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.on }}" hint-size="120px,34px">{{ c.l }}</x-import></sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <sc-for list="{{ secs }}" as="sc" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;gap:12px;padding-top:6px">
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+              <span style="font:800 11px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ sc.k }}</span>
+              <span style="font:500 13px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ sc.s }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+              <sc-for list="{{ sc.items }}" as="p" hint-placeholder-count="8"><div onClick="{{ p.on }}" style="aspect-ratio:1/1;border-radius:14px;background:{{ p.bg }} center/cover;background-color:#E4E1DA;cursor:pointer"></div></sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pv.m }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Galería · foto" style="position:fixed;inset:0;z-index:96;background:#0B0E12;display:flex;flex-direction:column;animation:tlGalFade .2s ease-out">
+      <div style="padding:56px 16px 12px;display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font:700 13.5px/1.3 Manrope,sans-serif;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ pv.cap }}</div>
+          <div style="margin-top:4px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.62)">{{ pv.meta }}</div>
+        </div>
+        <span onClick="{{ pv.onClose }}" style="width:38px;height:38px;border-radius:13px;background:rgba(255,255,255,.12);display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 16 }}" color="#fff" stroke-width="{{ 2.2 }}" hint-size="16px,16px"></x-import></span>
+      </div>
+      <div onPointerDown="{{ pv.onDown }}" onPointerUp="{{ pv.onUp }}" style="flex:1;min-height:0;background:{{ pv.bg }} center/contain no-repeat;touch-action:pan-y;user-select:none"></div>
+      <div style="padding:14px 16px 30px;display:grid;grid-template-columns:46px minmax(0,1fr) 46px;align-items:center;gap:10px">
+        <sc-if value="{{ pv.hasNav }}" hint-placeholder-val="{{ true }}"><span onClick="{{ pv.onPrev }}" style="width:46px;height:46px;border-radius:15px;background:rgba(255,255,255,.12);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 18 }}" color="#fff" stroke-width="{{ 2 }}" hint-size="18px,18px"></x-import></span></sc-if>
+        <sc-if value="{{ pv.noNav }}" hint-placeholder-val="{{ false }}"><span></span></sc-if>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0">
+          <span style="font:700 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.62)">{{ pv.idx }}</span>
+          <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
+            <sc-if value="{{ pv.hasRev }}" hint-placeholder-val="{{ false }}"><span onClick="{{ pv.onRev }}" style="font:700 13px Manrope,sans-serif;color:#fff;cursor:pointer">{{ pv.revL }}</span></sc-if>
+            <sc-if value="{{ pv.canRep }}" hint-placeholder-val="{{ false }}"><span onClick="{{ pv.onRep }}" style="font:700 13px Manrope,sans-serif;color:rgba(255,255,255,.75);cursor:pointer">{{ pv.repL }}</span></sc-if>
+            <sc-if value="{{ pv.repDone }}" hint-placeholder-val="{{ false }}"><span style="font:600 12px Manrope,sans-serif;color:rgba(255,255,255,.55)">{{ pv.repL }}</span></sc-if>
+          </div>
+        </div>
+        <sc-if value="{{ pv.hasNav }}" hint-placeholder-val="{{ true }}"><span onClick="{{ pv.onNext }}" style="width:46px;height:46px;border-radius:15px;background:rgba(255,255,255,.12);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 18 }}" color="#fff" stroke-width="{{ 2 }}" hint-size="18px,18px"></x-import></span></sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pv.d }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Galería · foto · desktop" onClick="{{ pv.onClose }}" style="position:fixed;inset:0;z-index:96;background:rgba(11,14,18,.9);animation:tlGalFade .2s ease-out">
+      <div onClick="{{ stop }}" style="position:absolute;left:50%;top:{{ pv.top }};transform:translateX(-50%);width:980px;max-width:calc(100% - 80px);display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="font:700 15px/1.3 Manrope,sans-serif;color:#fff">{{ pv.cap }}</div>
+            <div style="margin-top:4px;font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.62)">{{ pv.meta }} · {{ pv.idx }}</div>
+          </div>
+          <span onClick="{{ pv.onClose }}" style="width:40px;height:40px;border-radius:13px;background:rgba(255,255,255,.12);display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 17 }}" color="#fff" stroke-width="{{ 2.2 }}" hint-size="17px,17px"></x-import></span>
+        </div>
+        <div style="position:relative;height:620px;border-radius:16px;background:{{ pv.bg }} center/contain no-repeat;background-color:#0B0E12">
+          <sc-if value="{{ pv.hasNav }}" hint-placeholder-val="{{ true }}">
+            <span onClick="{{ pv.onPrev }}" style="position:absolute;left:14px;top:50%;margin-top:-24px;width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,.14);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 20 }}" color="#fff" stroke-width="{{ 2 }}" hint-size="20px,20px"></x-import></span>
+            <span onClick="{{ pv.onNext }}" style="position:absolute;right:14px;top:50%;margin-top:-24px;width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,.14);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 20 }}" color="#fff" stroke-width="{{ 2 }}" hint-size="20px,20px"></x-import></span>
+          </sc-if>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <sc-if value="{{ pv.hasRev }}" hint-placeholder-val="{{ false }}"><span onClick="{{ pv.onRev }}" style="font:700 13.5px Manrope,sans-serif;color:#fff;cursor:pointer">{{ pv.revL }}</span></sc-if>
+          <sc-if value="{{ pv.canRep }}" hint-placeholder-val="{{ false }}"><span onClick="{{ pv.onRep }}" style="font:700 13.5px Manrope,sans-serif;color:rgba(255,255,255,.75);cursor:pointer">{{ pv.repL }}</span></sc-if>
+          <sc-if value="{{ pv.repDone }}" hint-placeholder-val="{{ false }}"><span style="font:600 12.5px Manrope,sans-serif;color:rgba(255,255,255,.55)">{{ pv.repL }}</span></sc-if>
+          <span style="margin-left:auto;font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.5)">{{ pv.hint }}</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ rp.open }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="{{ rp.label }}" style="position:fixed;inset:0;z-index:97">
+      <div onClick="{{ rp.onCancel }}" style="position:absolute;inset:0;background:rgba(11,14,18,.55);animation:tlGalFade .2s ease-out"></div>
+      <div onClick="{{ stop }}" style="position:absolute;left:{{ rp.l }};right:{{ rp.r }};top:{{ rp.t }};bottom:{{ rp.b }};width:{{ rp.w }};margin-left:{{ rp.ml }};box-sizing:border-box;background:#fff;border-radius:{{ rp.rad }};padding:{{ rp.pad }};display:flex;flex-direction:column;gap:14px;animation:tlGalUp .26s cubic-bezier(.2,.8,.2,1)">
+        <sc-if value="{{ rp.form }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font:800 20px/1.2 Sora,sans-serif;letter-spacing:-.03em">{{ rp.title }}</span>
+            <span style="font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.62);text-wrap:pretty">{{ rp.sub }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ rp.rows }}" as="x" hint-placeholder-count="5"><div onClick="{{ x.on }}" style="display:flex;gap:12px;align-items:center;padding:12px 0;border-top:{{ x.bt }};cursor:pointer"><span style="width:20px;height:20px;box-sizing:border-box;border-radius:99px;border:{{ x.ring }};flex:none"></span><span style="font:700 14px/1.35 Manrope,sans-serif">{{ x.t }}</span></div></sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.2em;color:rgba(11,14,18,.42)">{{ rp.noteK }}</span>
+            <textarea value="{{ rp.note }}" onChange="{{ rp.onNote }}" placeholder="{{ rp.notePh }}" rows="3" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:13px;border:1.5px solid rgba(11,14,18,.14);font:500 14px/1.45 Manrope,sans-serif;color:#0B0E12;resize:none;outline:none"></textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" disabled="{{ rp.sendDis }}" on-click="{{ rp.onSend }}" hint-size="100%,50px">{{ rp.send }}</x-import></div>
+            <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" block="{{ true }}" on-click="{{ rp.onCancel }}" hint-size="100%,50px">{{ rp.cancel }}</x-import></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ rp.sent }}" hint-placeholder-val="{{ false }}">
+          <span style="width:48px;height:48px;border-radius:15px;background:rgba(0,229,196,.16);display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 22 }}" color="#00695B" stroke-width="{{ 2.2 }}" hint-size="22px,22px"></x-import></span>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font:800 20px/1.2 Sora,sans-serif;letter-spacing:-.03em">{{ rp.sentT }}</span>
+            <span style="font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ rp.sentS }}</span>
+          </div>
+          <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" on-click="{{ rp.onCancel }}" hint-size="100%,50px">{{ rp.done }}</x-import></div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;biz&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;sabor-dominicano&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;desk&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;lang&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;es&quot;, &quot;en&quot;], &quot;default&quot;: &quot;es&quot;, &quot;tsType&quot;: &quot;'es' | 'en'&quot;}, &quot;at&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;n&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;dw&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;user&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object | null&quot;}, &quot;mine&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object | null&quot;}, &quot;api&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;{ back, login, toRev, vTop }&quot;}}">
+const PXU = (id, h) => typeof id === 'string' && /^(data:|https?:|blob:)/.test(id) ? id : 'https://images.pexels.com/photos/' + id + '/pexels-photo-' + id + '.jpeg?auto=compress&cs=tinysrgb&h=' + h;
+const BG = (id, h) => 'url("' + PXU(id, h) + '")';
+class Component extends DCLogic {
+  state = { f: 'all', vi: -1, top: 80, rp: null };
+  componentDidMount() { this._key = e => this.key(e); window.addEventListener('keydown', this._key); this.syncAt(); }
+  componentDidUpdate() { this.syncAt(); }
+  componentWillUnmount() { window.removeEventListener('keydown', this._key); }
+  E2(a, b) { return (this.props.lang || 'es') === 'es' ? a : b; }
+  api() { return this.props.api || {}; }
+  vTop() { const a = this.api(); return a.vTop ? a.vTop() : 80; }
+  syncAt() { const k = (this.props.biz || '') + '|' + (this.props.n || ''); if (k === this._k) return; this._k = k; const at = this.props.at; this.setState({ f: 'all', vi: at != null && at >= 0 ? +at : -1, top: this.vTop(), rp: null }); }
+  key(e) { const st = this.state; if (st.rp) { if (e.key === 'Escape') this.setState({ rp: null }); return; } if (st.vi < 0) return; if (e.key === 'ArrowLeft') this.go(-1); else if (e.key === 'ArrowRight') this.go(1); else if (e.key === 'Escape') this.setState({ vi: -1 }); }
+  data() { const C = window.TLPhotos, A = (window.TLAll && window.TLAll.B) || [], b = A.find(x => x.id === this.props.biz); if (!b || !C) return null;
+    return { b, bz: C.biz(b).map(p => ({ ph: p, kind: 'biz' })), rv: C.rev(b, this.props.mine || null).map(r => Object.assign({ kind: 'rev' }, r)) }; }
+  list(D) { const f = this.state.f; return f === 'biz' ? D.bz : f === 'rev' ? D.rv : D.bz.concat(D.rv); }
+  go(dlt) { const D = this.data(); if (!D) return; const n = this.list(D).length; if (n < 2) return; this.setState(z => ({ vi: ((z.vi + dlt) % n + n) % n })); }
+  when(d) { const E2 = this.E2.bind(this); return d <= 0 ? E2('HOY', 'TODAY') : d === 1 ? E2('AYER', 'YESTERDAY') : d < 7 ? E2('HACE ' + d + ' DÍAS', d + ' DAYS AGO') : d < 30 ? E2('HACE ' + Math.max(1, Math.round(d / 7)) + ' SEM', Math.max(1, Math.round(d / 7)) + ' WK AGO') : E2('HACE ' + Math.round(d / 30) + ' MESES', Math.round(d / 30) + ' MO AGO'); }
+  renderVals() {
+    const E2 = this.E2.bind(this), desk = !!this.props.desk, D = this.data(), st = this.state, api = this.api(), stop = e => { if (e && e.stopPropagation) e.stopPropagation(); };
+    const empty = { m: !desk, d: desk, eye: '', name: '', titleD: '', backL: '', chips: [], hasChips: false, secs: [], pv: { m: false, d: false }, rp: { open: false, rows: [] }, stop, onBack: () => { if (api.back) api.back(); } };
+    if (!D) return empty;
+    const b = D.b, L = this.list(D), tot = D.bz.length + D.rv.length, open = i => () => this.setState({ vi: i, top: this.vTop() });
+    const both = D.bz.length > 0 && D.rv.length > 0, f = both ? st.f : 'all';
+    const chips = both ? [['all', E2('Todas', 'All') + ' · ' + tot], ['biz', E2('Del negocio', 'From the business') + ' · ' + D.bz.length], ['rev', E2('De los vecinos', 'From neighbors') + ' · ' + D.rv.length]].map(([k, l]) => ({ l, v: f === k ? 'selected' : 'filter', on: () => this.setState({ f: k, vi: -1 }) })) : [];
+    const items = (arr, off) => arr.map((x, j) => ({ bg: BG(x.ph, desk ? 420 : 300), on: open(off + j) }));
+    const SB = [E2('DEL NEGOCIO · ', 'FROM THE BUSINESS · ') + D.bz.length, E2('Las sube ' + b.name + '.', 'Uploaded by ' + b.name + '.')], SR = [E2('DE LOS VECINOS · ', 'FROM NEIGHBORS · ') + D.rv.length, E2("De sus reseñas en To'Latino.", "From their reviews on To'Latino.")];
+    const secs = f === 'biz' ? [{ k: SB[0], s: SB[1], items: items(D.bz, 0) }] : f === 'rev' ? [{ k: SR[0], s: SR[1], items: items(D.rv, 0) }] : [D.bz.length ? { k: SB[0], s: SB[1], items: items(D.bz, 0) } : null, D.rv.length ? { k: SR[0], s: SR[1], items: items(D.rv, D.bz.length) } : null].filter(Boolean);
+    const out = { m: !desk, d: desk, eye: (tot + E2(tot === 1 ? ' FOTO' : ' FOTOS', tot === 1 ? ' PHOTO' : ' PHOTOS')).toUpperCase(), name: b.name, titleD: E2('Fotos de ', 'Photos of ') + b.name, backL: b.name, chips, hasChips: both, secs, stop, onBack: () => { if (api.back) api.back(); }, pv: { m: false, d: false }, rp: { open: false, rows: [] } };
+    const n = L.length, vi = st.vi >= 0 && n ? Math.min(st.vi, n - 1) : -1;
+    if (vi >= 0) { const x = L[vi], C = window.TLPhotos, rev = x.kind === 'rev', rep = C && C.reported(b.id, x.ph), u = this.props.user;
+      out.pv = { m: !desk, d: desk, top: (st.top || 80) + 'px', bg: BG(x.ph, 1400), idx: (vi + 1) + ' / ' + n, hasNav: n > 1, noNav: n <= 1,
+        cap: rev ? x.name + (x.mine ? E2(' · tú', ' · you') : '') : b.name,
+        meta: rev ? ('★'.repeat(Math.max(1, x.stars)) + ' · ' + this.when(x.d) + (x.vis ? E2(' · VISITANTE', ' · VISITOR') : '')) : E2('DEL NEGOCIO', 'FROM THE BUSINESS'),
+        onPrev: e => { stop(e); this.go(-1); }, onNext: e => { stop(e); this.go(1); }, onClose: () => this.setState({ vi: -1 }),
+        onDown: e => { this._px = e.clientX; }, onUp: e => { const dx = e.clientX - (this._px == null ? e.clientX : this._px); this._px = null; if (Math.abs(dx) > 40) this.go(dx < 0 ? 1 : -1); },
+        hasRev: rev && !!api.toRev, revL: x.mine ? E2('Ver tu reseña', 'See your review') : E2('Ver su reseña', 'See their review'), onRev: () => { this.setState({ vi: -1 }); api.toRev(x.rid); },
+        canRep: !x.mine && !rep, repDone: !x.mine && !!rep, repL: rep ? E2("Ya la reportaste · To'Latino la revisa en 48 h", "You reported it · To'Latino reviews it within 48 h") : E2('Reportar foto', 'Report photo'),
+        onRep: () => { if (!u) { if (api.login) api.login(); return; } this.setState({ rp: { why: '', note: '', sent: false, ph: x.ph, kind: x.kind, rid: x.rid || null } }); },
+        hint: E2('← → PARA MOVERTE · ESC PARA CERRAR', '← → TO MOVE · ESC TO CLOSE') }; }
+    if (st.rp) { const R = st.rp, M = !desk, WH = [E2('No es de este negocio', 'It is not from this business'), E2('Contenido inapropiado', 'Inappropriate content'), E2('Muestra datos personales', 'Shows personal information'), E2('Es publicidad o spam', 'It is an ad or spam'), E2('Otro motivo', 'Another reason')], set = o => this.setState(z => ({ rp: Object.assign({}, z.rp, o) }));
+      out.rp = { open: true, label: E2('Galería · reportar foto', 'Gallery · report photo') + (M ? '' : ' · desktop'), l: M ? '0' : '50%', r: M ? '0' : 'auto', t: M ? 'auto' : ((st.top || 80) + 40) + 'px', b: M ? '0' : 'auto', w: M ? 'auto' : '480px', ml: M ? '0' : '-240px', rad: M ? '26px 26px 0 0' : '22px', pad: M ? '20px 20px 30px' : '24px 26px 26px',
+        form: !R.sent, sent: !!R.sent, title: E2('Reportar esta foto', 'Report this photo'), sub: E2("Sigue visible mientras una persona de To'Latino la revisa.", "It stays visible while a person at To'Latino reviews it."),
+        rows: WH.map((t, i) => ({ t, bt: i ? '1px solid rgba(11,14,18,.08)' : 'none', ring: R.why === t ? '6px solid #0B0E12' : '1.5px solid rgba(11,14,18,.25)', on: () => set({ why: t }) })),
+        noteK: E2('CUÉNTANOS MÁS · OPCIONAL', 'TELL US MORE · OPTIONAL'), note: R.note || '', notePh: E2('Qué viste en la foto…', 'What you saw in the photo…'), onNote: e => set({ note: String(e.target.value || '').slice(0, 200) }),
+        send: E2('Enviar reporte', 'Send report'), sendDis: !R.why, onSend: () => { if (!R.why) return; const u = this.props.user || {}; if (window.TLPhotos) window.TLPhotos.report({ biz: b.id, ph: R.ph, kind: R.kind, rid: R.rid, why: R.why, note: (R.note || '').trim(), by: u.phone || u.name || '' }); set({ sent: true }); },
+        cancel: E2('Cancelar', 'Cancel'), onCancel: () => this.setState({ rp: null }), sentT: E2('Recibimos tu reporte', 'We got your report'), sentS: E2("To'Latino la revisa en 48 h. Mientras tanto sigue visible. Te avisamos el resultado por SMS.", "To'Latino reviews it within 48 h. Meanwhile it stays visible. We will text you the result."), done: E2('Listo', 'Done') }; }
+    return out;
+  }
+}
+</script>
+</body>
+</html>

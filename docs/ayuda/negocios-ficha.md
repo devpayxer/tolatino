@@ -18,6 +18,13 @@ Los negocios **Pro** tienen portada grande, logo, el horario completo con lo que
 4. **Relacionados** (si existe la pestaña): sucursales y negocios del mismo dueño, con lo que el negocio dice de
    cada uno. **Ver sucursal** abre su página.
 
+## Las fotos
+Toca cualquier foto (o «Ver las N fotos») para abrir la **galería**: todas las fotos del negocio en cuadrícula. Toca
+una para verla en grande; pasa con las flechas, deslizando el dedo o con las teclas ← → en computadora (Esc cierra).
+Si una foto no es del negocio, es inapropiada, muestra datos personales o es spam, toca **Reportar foto**, elige el
+motivo y envía. La foto sigue visible mientras una persona de To'Latino la revisa (48 h). Un negocio Free muestra
+hasta 6 fotos.
+
 ## Qué pasa en cada caso
 | Caso | Qué ve la persona | Qué hacer |
 |---|---|---|
@@ -26,6 +33,8 @@ Los negocios **Pro** tienen portada grande, logo, el horario completo con lo que
 | Toca el corazón sin haber entrado | Le lleva a **Entra** y luego vuelve a la página | Entrar con su teléfono. |
 | Toca **Compartir** | El teléfono abre su hoja para compartir; en computadora se copia el enlace («Enlace copiado») | — |
 | El enlace del negocio no existe o el negocio no está activo | Página «no encontrada» | Buscarlo por su nombre. |
+| Reporta una foto sin haber entrado | Le lleva a **Entra** y vuelve a la misma foto | Entrar y enviar el reporte. |
+| Ya reportó esa foto | «Ya la reportaste · To'Latino la revisa en 48 h» | Esperar la revisión. |
 | Tiene menos de 5 reseñas | «Nuevo · en To'Latino» o «3 reseñas» en vez de estrellas | Normal. |
 
 ## Preguntas frecuentes
@@ -47,4 +56,5 @@ serves today (delivery, pickup, dine-in), weekly hours, the address and, when av
 businesses (branches or same owner, confirmed by both). Pro pages have a big cover, logo, full hours with upcoming
 changes and tabs; Free pages are simpler. Top actions: Call, Save (heart; signed-out users sign in and come back)
 and Share (phone share sheet, or the link is copied on a computer). «Open in maps» opens the phone's maps. Menu,
-services and reviews arrive in later phases.
+services and reviews arrive in later phases. The photo gallery opens any photo full screen (arrows, swipe, ← → keys,
+Esc) and lets signed-in users report a photo once; it stays visible while To'Latino reviews it within 48 h.

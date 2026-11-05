@@ -43,9 +43,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (eventos, Fase 6), Comunidad (Fase 5) y el mini mapa de la columna derecha (mapa propio). Cada una se
   enciende en el Inicio cuando su módulo exista; el prototipo manda en su forma.
 - [ ] **Pantallas `Pronto` (sandbox):** toda ruta que aún muestra «En construcción» debe llegar a 0 antes de la
-  fase 9 (hoy: n/[id]/fotos, buscar, ciudad, mapa, abierto, publica, recomendar, comunidad, eventos).
-- [ ] **Banderas de «Por país» (Comida):** el prototipo usa `assets/flags/*.png`, que no vinieron en el export.
-  Los mosaicos salen sin la banderita hasta tener los archivos (o una fuente abierta que apruebe el fundador).
+  fase 9 (hoy: buscar, ciudad, mapa, abierto, publica, recomendar, comunidad, eventos).
 - [ ] **Banda de emergencia de Hogar:** oculta hasta que exista el flujo «Pedir ayuda ahora»
   (APP-NEG-HOGAR-EMERGENCIA). Las de Doctores y Profesionales sí están (filtran la lista).
 - [ ] **Negocios — secciones ocultas hasta tener datos reales:** «Hoy en el barrio» (módulo Novedades) y
@@ -60,13 +58,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Toques de contacto sin límite:** «Llamar» y «Cómo llegar» registran `contact_taps` también sin sesión; falta un
   límite por IP/dispositivo para que nadie infle las estadísticas de un negocio. Antes de que el panel muestre esos
   números (bloque 1h).
-- [ ] **Archivos de diseño que faltan en el repo (bloquean pantallas de la Fase 1):** el prototipo importa 20 archivos
-  de Claude Design y solo llegó «Onboarding vecino». Faltan: Galería, Buscar, Ciudad, Mapa, Recomendar, Publica tu
-  negocio v2, Panel negocio v2, Super Admin, Licencia, Recuperar negocio, Página, Mi cuenta, Teléfono, Comunidad,
-  Eventos, Publica tu evento, Evento privado, Soporte, Compa. Galería → 1e; Buscar/Ciudad/Mapa → 1f; Recomendar y
-  Publica v2 → 1g; Panel → 1h; Super Admin, Licencia, Recuperar → 1i.
 - [ ] **Ficha — lo que se ve cuando exista su dato o módulo:** tarjeta «Quién está detrás» + «sobre nosotros» (Equipo,
   1h), reseñas y «N vecinos lo recomiendan» (Fase 2), menú/servicios/tienda/reservaciones/staff/eventos/jobs (sus
-  fases), mini mapa con la zona (mapa propio), galería (archivo «Galería»), botón principal por módulo (hoy:
+  fases), mini mapa con la zona (mapa propio), botón principal por módulo (hoy:
   «Llamar»). En el prototipo la tarjeta «Hoy» y la del dueño inventaban cifras (35–45 min por defecto, pedidos =
   reseñas × 0,7, rango por reseñas): no se copian.
+- [ ] **Reporte de foto — el aviso por SMS:** la hoja dice «Te avisamos el resultado por SMS» (texto del diseño). El
+  aviso se construye con las notificaciones (Fase 2) y la cola «Medios marcados» del Super Admin (bloque 1i). Sin eso
+  no pasa a producción.

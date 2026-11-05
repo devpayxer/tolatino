@@ -45,7 +45,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const lugar = ciudad ? `${ciudad.name.toUpperCase()}, ${ciudad.state}` : "";
   const nombreCiudad = ciudad?.name ?? "";
 
-  const tile = (x: { key: string; label: { es: string; en: string }; photo: string | null; flag: string | null }) => ({ key: x.key, label: L(x.label), photo: foto(x.photo, 200), flag: x.flag });
+  const tile = (x: { key: string; label: { es: string; en: string }; photo: string | null; flag: string | null }) => ({ key: x.key, label: L(x.label), photo: foto(x.photo, 200), flag: x.flag && /^[a-z]{2}$/.test(x.flag) ? x.flag : null });
   const nombreSub = (k: string | null) => {
     if (!k) return null;
     for (const r of P.rows) for (const x of [...r.items, ...r.more]) if (x.key === k) return L(x.label);

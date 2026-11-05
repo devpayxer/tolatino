@@ -1,0 +1,166 @@
+/* Revisión V1 · A4 (10 oct): lo que Belleza y Auto no tenían, reusando lo que ya existe.
+   - Ayuda con la cita: Belleza (APP-NEG-CITA-AYUDA, TLHogarExt.bhelp, s.citas) y Auto (APP-NEG-AUTO-AYUDA, TLHogarExt.ahelp, s.acitas).
+     Mismas vistas pe/ps que Hogar y Educación. Regla A7: el negocio responde en 24 h; si no, o no estás de acuerdo, To'Latino revisa en 48 h.
+   - Reseña de Auto (TLAutoRev): mismos ganchos que TLHogarRev en revWVals. Estimado aprobado vs. cobrado sale de la cita (no se edita).
+   - Apartar (TLApartar.hold): los productos de las tiendas de Belleza, Auto, Hogar y Salud usan el apartado de Tiendas (TLTiendaFlow). */
+(function boot() {
+  const X = window.TLListing, ALL = window.TLAll, HP = window.TLHogarPre, AF = window.TLAutoFlow;
+  if (!X || !ALL || !HP || !AF) return setTimeout(boot, 40);
+  const biz = id => ALL.B.find(b => b.id === id), money = n => '$' + (Math.round(n * 100) % 100 ? (Math.round(n * 100) / 100).toFixed(2) : Math.round(n).toLocaleString('en-US'));
+  const PX = (id, h) => 'url(https://images.pexels.com/photos/' + id + '/pexels-photo-' + id + '.jpeg?auto=compress&cs=tinysrgb&h=' + (h || 200) + ')';
+  const upP = (C, id, o) => C.setState(z => ({ hpres: (z.hpres || []).map(p => p.id === id ? { ...p, ...(typeof o === 'function' ? o(p) : o) } : p) }));
+  const radio = on => ({ bd: on ? '1.5px solid #0B0E12' : '1px solid rgba(11,14,18,.1)', ring: on ? '6px solid #0B0E12' : '1.5px solid rgba(11,14,18,.25)' });
+  const autoPaid = x => { const T = AF.totals ? AF.totals(x) : { final: x.tot || 0, hold: x.tot || 0 }; return T; };
+
+  const CFG = {
+    bhelp: { list: 'citas', route: 'APP-NEG-CITA-AYUDA', back: 'APP-NEG-CITA', num: ['Cita', 'Appointment'], help: ['Ayuda con la cita', 'Appointment help'], who: ['el salón', 'the salon'],
+      svc: (x, es) => x.svc, sub: x => x.withL || '', paid: x => x.total || 0, line: ['Lo que pagas es el precio publicado.', 'You pay the posted price.'],
+      RSN: [['cobro', 'Cobraron más del precio publicado', 'Charged more than the posted price', 1], ['quien', 'No me atendió quien reservé', 'Not the person I booked', 0], ['quedo', 'No quedó como lo pedí', 'It did not turn out as I asked', 1], ['espera', 'Esperé mucho a pesar de la cita', 'Long wait despite the booking', 0], ['dep', 'No me devolvieron el depósito', 'Deposit not returned', 0], ['otro', 'Otra cosa', 'Something else', 0]],
+      SOL: [['corr', 'Que me lo arreglen sin cargo', 'Fix it at no charge', 'Te dan otra cita para arreglarlo', 'They give you a new booking to fix it'], ['rev', 'Que me devuelvan', 'Refund me', 'Lo cobrado de más o el depósito', 'The overcharge or the deposit']],
+      notePh: ['Ej.: pedí un fade bajo y me lo dejaron alto…', 'E.g. I asked for a low fade and it came out high…'], phS: ['De cómo quedó, o del recibo si es un cobro.', 'Of how it turned out, or of the receipt for a charge.'],
+      noT: ['Hicimos el servicio que reservaste. Si quieres, ven y lo vemos juntos.', 'We did the service you booked. Come by and we can look at it together.'] },
+    ahelp: { list: 'acitas', route: 'APP-NEG-AUTO-AYUDA', back: 'APP-NEG-AUTO-CITA', num: ['Cita', 'Appointment'], help: ['Ayuda con la cita', 'Appointment help'], who: ['el taller', 'the shop'],
+      svc: (x, es) => es ? x.svc : x.svcEn, sub: x => x.veh ? [x.veh.y, x.veh.mk, x.veh.model].filter(Boolean).join(' ') : '', paid: x => autoPaid(x).final, line: ['Nada se hace ni se cobra sin tu OK.', 'Nothing is done or charged without your OK.'],
+      RSN: [['cobro', 'Cobraron más del estimado sin mi OK', 'Charged more than the estimate without my OK', 1], ['tarde', 'No estuvo listo cuando prometieron', 'Not ready when promised', 0], ['igual', 'Sigue el mismo problema', 'Same problem is back', 0], ['dano', 'Dañaron algo del carro', 'They damaged something on the car', 1], ['piezas', 'No me dieron las piezas viejas', 'They did not give me the old parts', 0], ['otro', 'Otra cosa', 'Something else', 0]],
+      SOL: [['corr', 'Que lo revisen otra vez sin cargo', 'Check it again at no charge', 'Por la garantía del trabajo', 'Under the work warranty'], ['rev', 'Que me devuelvan', 'Refund me', 'Lo cobrado de más', 'The overcharge']],
+      notePh: ['Ej.: me cobraron $80 de más por una pieza que no aprobé…', 'E.g. they charged $80 more for a part I did not approve…'], phS: ['Del recibo, del estimado o del daño.', 'Of the receipt, the estimate or the damage.'],
+      noT: ['Todo lo cobrado tiene tu OK en la app. Si quieres, lo revisamos juntos en el taller.', 'Everything charged has your OK in the app. We can go over it together at the shop.'] } };
+  const solOf = (cf, es) => cf.SOL.concat([['avis', 'Solo quiero avisar', 'I just want to let them know', 'Lo lee ' + cf.who[0] + " y To'Latino", 'Read by ' + cf.who[1] + " and To'Latino"]]);
+  const findX = (C, cf, cid) => (C.state[cf.list] || []).find(y => y.id === cid);
+
+  function startHelp(C, mode, cid) { const cf = CFG[mode], x = findX(C, cf, cid); if (!x) return false;
+    const open = (C.state.hpres || []).find(p => p.mode === mode && p.cid === cid && p.st !== 'done');
+    if (open) { C.nav({ code: cf.route + '-ESTADO', biz: x.own, pid: open.id, from: cf.back }); C.scrollTop(); return true; }
+    C.setState({ hpe: { mode, cid, biz: x.biz, own: x.own, r: null, note: '', phs: [], sol: 'corr', amt: '', code: '', areas: [] } }); C.nav({ code: cf.route, biz: x.own, cid, from: cf.back }); C.scrollTop(); return true; }
+
+  function mk(mode) { const cf = CFG[mode];
+    const isPh = r => { const z = cf.RSN.find(y => y[0] === r); return !!(z && z[3]); };
+    function form(C, s, es) { const q = s.hpe, E2 = (a, b) => es ? a : b, x = (s[cf.list] || []).find(y => y.id === q.cid); if (!x) return { has: false };
+      const ob = biz(x.own), upF = o => C.setState(z => ({ hpe: { ...z.hpe, ...o } })), ph = isPh(q.r), SOL = solOf(cf, es), bill = q.r === 'cobro';
+      const miss = [!q.r ? E2('Elige qué pasó', 'Pick what happened') : null, q.note.trim().length < 15 ? E2('Cuéntanos qué pasó (15 letras o más)', 'Tell us what happened (15+ characters)') : null, ph && !q.phs.length ? E2('Agrega una foto', 'Add a photo') : null].filter(Boolean);
+      const send = () => { if (miss.length) return; const id = 'L-' + (2100 + Math.floor(Math.random() * 800)); const p = { id, mode, cid: x.id, biz: x.biz, own: x.own, r: q.r, note: q.note, phs: q.phs, sol: q.sol, amt: q.amt, st: 'sent', at: '5:40 PM', svc: cf.svc(x, true), svcEn: cf.svc(x, false), price: money(cf.paid(x)) };
+        C.setState(z => ({ hpres: (z.hpres || []).concat(p), hpe: null })); C.nav({ code: cf.route + '-ESTADO', biz: x.own, pid: id, from: cf.route }); C.scrollTop(); respond(C, id); };
+      return { has: true, scr: cf.route, hasVid: false, showPh: true, showNote: true, showCode: bill && q.sol === 'rev', title: cf.help[es ? 0 : 1], sub: (cf.num[es ? 0 : 1] + ' #' + x.id + ' · ' + ob.name).toUpperCase(),
+        veh: { ic: 'verified', k: E2('TU CITA', 'YOUR APPOINTMENT'), t: cf.svc(x, es), s: cf.sub(x).toUpperCase(), hasOk: true, okT: E2('Pagaste: ', 'You paid: ') + money(cf.paid(x)), okFg: '#00695B', okIc: 'check', cta: E2('Ver', 'See'), onClick: () => C.nav({ code: cf.back, biz: x.biz, cid: x.id, from: cf.route }) },
+        lights: cf.RSN.map(([k, l1, l2]) => ({ l: es ? l1 : l2, v: q.r === k ? 'selected' : 'filter', onClick: () => upF({ r: q.r === k ? null : k }) })), note: q.note, onNote: e => upF({ note: e.target.value.slice(0, 500) }), noteN: q.note.length + ' / 500',
+        code: q.amt, onCode: e => upF({ amt: e.target.value.replace(/[^\d.]/g, '').slice(0, 7) }),
+        phs: q.phs.map((p, i) => ({ bg: PX(p.ph), vid: false, onDel: () => upF({ phs: q.phs.filter((_, j) => j !== i) }) })), canPh: q.phs.length < 4, onPh: () => upF({ phs: q.phs.concat([{ ph: [7111490, 7926666, 7688191][q.phs.length % 3], vid: false }]) }), onVid: () => {}, phN: q.phs.length + ' / 4',
+        whens: SOL.map(([k, l1, l2, s1, s2]) => ({ l: es ? l1 : l2, s: es ? s1 : s2, hasS: true, ...radio(q.sol === k), onClick: () => upF({ sol: k }) })),
+        how: [E2(ob.name + ' recibe tu solicitud y responde en 24 h.', ob.name + ' gets your request and replies within 24 h.'), E2("Si no responde o no estás de acuerdo, To'Latino la revisa en 48 h.", "If they do not reply or you disagree, To'Latino reviews it within 48 h."), E2('Nada se da por resuelto hasta que respondan.', 'Nothing is resolved until they reply.')].map((z, i) => ({ n: String(i + 1), t: z })),
+        miss: miss.map(z => ({ t: z })), hasMiss: miss.length > 0, dis: miss.length > 0, onSend: send, cta: E2('Enviar solicitud', 'Send request'), free: E2('RESPONDE EN 24 H', 'REPLIES WITHIN 24 H'),
+        onBack: () => C.nav({ code: cf.back, biz: x.biz, cid: x.id, from: cf.route }),
+        lbl: { back: E2('Volver', 'Back'), vehT: E2('Tu cita', 'Your appointment'), symT: E2('¿Qué pasó?', 'What happened?'), symS: E2('Cuéntalo con calma: qué pediste y qué pasó.', 'Take your time: what you asked for and what happened.'), lightsK: E2('MOTIVO', 'REASON'), notePh: cf.notePh[es ? 0 : 1],
+          codeK: E2('¿CUÁNTO? · OPCIONAL', 'HOW MUCH? · OPTIONAL'), codePh: E2('Ej.: 40', 'E.g. 40'), phT: ph ? E2('Fotos · obligatorias', 'Photos · required') : E2('Fotos · opcional', 'Photos · optional'), phS: cf.phS[es ? 0 : 1], addPh: E2('Foto', 'Photo'), addVid: '', vidTag: '',
+          whenT: E2('¿Qué quieres?', 'What would you like?'), howK: E2('CÓMO FUNCIONA', 'HOW IT WORKS'), missK: E2('TE FALTA', 'STILL NEEDED'), honest: cf.line[es ? 0 : 1] } }; }
+    function reply(p, sc) { const amt = p.amt ? +p.amt : 40; return sc === 'rechaza' ? { st: 'no', repAt: '6:20 PM' } : sc === 'cambio' ? { st: 'alt', repAt: '6:20 PM', altAmt: Math.round(amt * .5) } : { st: 'ok', repAt: '6:20 PM', okAmt: p.sol === 'rev' ? amt : 0 }; }
+    function respond(C, id) { clearTimeout(C['_' + mode + 'T']); const sc = C.state.scen || 'ok'; if (sc === 'nada' || sc === 'panel') return; C['_' + mode + 'T'] = setTimeout(() => upP(C, id, p => p.st === 'sent' ? reply(p, sc) : {}), 4000); }
+    function status(C, s, es, p) { const E2 = (a, b) => es ? a : b, ob = biz(p.own), st = p.st, rsn = cf.RSN.find(z => z[0] === p.r), SOL = solOf(cf, es), sol = SOL.find(z => z[0] === p.sol);
+      const okT = p.sol === 'rev' ? E2('Te devolvemos ', 'Refunding ') + money(p.okAmt || 0) : p.sol === 'corr' ? (sol ? sol[es ? 1 : 2] : '') : E2('Gracias por avisar', 'Thanks for letting us know');
+      const H = { sent: ['clock', 'rgba(75,55,245,.1)', '#4B37F5', E2('PENDIENTE', 'PENDING'), E2('Esperando a ', 'Waiting for ') + ob.name, E2("Responde en 24 h. Si no, To'Latino la revisa en 48 h.", "Replies within 24 h. Otherwise, To'Latino reviews it within 48 h.")],
+        ok: ['check', 'rgba(0,229,196,.18)', '#00695B', E2('ACEPTÓ', 'ACCEPTED'), okT, p.sol === 'rev' ? E2('Devuelto a tu tarjeta en 3–5 días hábiles.', 'Back to your card in 3–5 business days.') : p.sol === 'corr' && sol ? sol[es ? 3 : 4] + '.' : ''],
+        alt: ['dollar', 'rgba(255,176,32,.2)', '#8A5A00', E2('TE PROPONEN UN CAMBIO', 'THEY PROPOSE A CHANGE'), E2('Devolverte ', 'Refund ') + money(p.altAmt || 0), E2("Tú decides. Si no te sirve, pide revisión a To'Latino.", "You decide. If it does not work for you, ask To'Latino to review.")],
+        no: ['warning', 'rgba(192,57,43,.1)', '#C0392B', E2('NO PUDO', 'COULD NOT'), ob.name + E2(' dice que cumplió lo acordado', ' says they did what was agreed'), E2("Si no estás de acuerdo, To'Latino revisa la cita y tus fotos en 48 h.", "If you disagree, To'Latino reviews the booking and your photos within 48 h.")],
+        rev: ['shield', 'rgba(75,55,245,.1)', '#4B37F5', E2("EN REVISIÓN DE TO'LATINO", "UNDER TO'LATINO REVIEW"), E2('Revisamos en 48 h', 'We review within 48 h'), E2('Miramos lo publicado, lo que aprobaste, lo cobrado y tus fotos. Te escribimos por SMS.', 'We check the listing, what you approved, what was charged and your photos. We will text you.')],
+        done: ['check', 'rgba(0,229,196,.18)', '#00695B', E2('TERMINADA', 'FINISHED'), p.doneT || '', E2('Gracias por avisarnos.', 'Thanks for letting us know.')] }[st];
+      const acts = st === 'ok' ? [['check', E2('Entendido', 'Got it'), () => upP(C, p.id, { st: 'done', doneT: okT })]] : st === 'alt' ? [['dollar', E2('Aceptar ', 'Accept ') + money(p.altAmt || 0), () => upP(C, p.id, { st: 'done', doneT: E2('Devuelto ', 'Refunded ') + money(p.altAmt || 0) })], ['shield', E2("Pedir revisión a To'Latino", "Ask To'Latino to review"), () => upP(C, p.id, { st: 'rev' })]] : st === 'no' ? [['shield', E2("Pedir revisión a To'Latino", "Ask To'Latino to review"), () => upP(C, p.id, { st: 'rev' })]] : [];
+      return { has: true, title: cf.help[es ? 0 : 1], num: (E2('SOLICITUD #', 'REQUEST #') + p.id + ' · ' + cf.num[es ? 0 : 1] + ' #' + p.cid).toUpperCase(), hdr: { ic: H[0], bg: H[1], fg: H[2], k: H[3], t: H[4], s: H[5] }, big: false, small: true,
+        steps: [[E2('Enviada', 'Sent'), p.at, 1], [E2('Respuesta de ', 'Reply from ') + ob.name, p.repAt || '', st !== 'sent'], [E2('Terminada', 'Finished'), '', st === 'done']].map(([label, time, d], i, a) => ({ label, time, state: d ? 'done' : (i === 0 || a[i - 1][2]) ? 'current' : 'next' })),
+        rep: { has: ['ok', 'alt', 'no'].includes(st), who: ob.name, ph: PX(ob.ph[0], 120), at: p.repAt, t: st === 'ok' ? E2('Revisamos y tienes razón. Disculpa.', 'We checked and you are right. Sorry.') : st === 'alt' ? E2('Tienes razón en parte. Podemos devolverte ' + money(p.altAmt || 0) + '.', 'You are partly right. We can refund ' + money(p.altAmt || 0) + '.') : cf.noT[es ? 0 : 1],
+          hasInc: false, inc: [], chg: [], valid: '', time: '', cta: E2('Llamar a ', 'Call ') + cf.who[es ? 0 : 1], onCta: () => C.encargo('APP-NEG-CONTACTO', cf.route + '-ESTADO', ob.name, E2('Llamar', 'Call')) },
+        req: { rows: [[E2('MOTIVO', 'REASON'), rsn ? rsn[es ? 1 : 2] : '—'], [E2('QUIERES', 'YOU WANT'), sol ? sol[es ? 1 : 2] : '—']].concat(p.amt ? [[E2('MONTO', 'AMOUNT'), money(+p.amt)]] : []).concat([[E2('LES CONTASTE', 'YOU SAID'), '«' + p.note + '»']]).map(([k, v]) => ({ k, v })), phs: (p.phs || []).map(z => ({ bg: PX(z.ph), vid: false })) },
+        hasOthers: false, others: [], acts: acts.map(([icon, l, onClick]) => ({ icon, l, onClick })), hasActs: acts.length > 0,
+        onBack: () => C.nav({ code: cf.back, biz: p.biz, cid: p.cid, from: cf.route + '-ESTADO' }),
+        lbl: { back: E2('Volver a la cita', 'Back to the appointment'), repK: E2('RESPUESTA DE ', 'REPLY FROM ') + ob.name.toUpperCase(), incK: '', chgK: '', reqK: E2('LO QUE MANDASTE', 'WHAT YOU SENT'), othersK: '', vidTag: '', honest: cf.line[es ? 0 : 1] } }; }
+    const sim = (C, s, p) => { const es = (s.lang || 'es') === 'es', sc = s.scen || 'ok';
+      if (p.st === 'sent') return { has: true, l: sc === 'nada' ? (es ? 'Pasan 24 h' : '24 h pass') : (es ? 'El negocio responde' : 'Business replies'), on: () => { clearTimeout(C['_' + mode + 'T']); upP(C, p.id, sc === 'nada' ? { st: 'rev' } : reply(p, sc === 'panel' ? 'ok' : sc)); } };
+      if (p.st === 'rev') return { has: true, l: es ? "To'Latino decide" : "To'Latino decides", on: () => upP(C, p.id, { st: 'done', doneT: (es ? 'Te devolvemos ' : 'Refunding ') + money(p.amt ? +p.amt : 30) }) };
+      return null; };
+    return { form, status, sim }; }
+  const EXT = window.TLHogarExt = window.TLHogarExt || {};
+  EXT.bhelp = mk('bhelp'); EXT.ahelp = mk('ahelp');
+  window.TLCitaHelp = { start: startHelp, CFG };
+
+  /* ---------- Reseña de Auto ---------- */
+  const whoA = x => { const ob = biz(x.own), SF = X.STAFF[x.own] || []; return x.stf != null && x.stf !== 'any' && SF[x.stf] ? SF[x.stf][0] : ob ? ob.name : ''; };
+  const citaA = (s, bid, cid) => { const L = (s.acitas || []).filter(x => x.own === bid && x.st === 'done'), x = (cid && L.find(y => y.id === cid)) || L[L.length - 1] || null; if (!x) return null; const T = autoPaid(x); return { ...x, withL: whoA(x), total: T.final, approved: T.hold }; };
+  window.TLAutoRev = {
+    cita: citaA,
+    srcs(ctA, es) { const E2 = (a, b) => es ? a : b; return (ctA ? [['cita', E2('Cita #', 'Appointment #') + ctA.id + ' · ' + (es ? ctA.svc : ctA.svcEn), E2('Terminada', 'Finished'), E2('VERIFICADA', 'VERIFIED'), 'signal']] : []).concat([['vis', E2("Fui sin reservar por To'Latino", "I went without a To'Latino booking"), E2('Sale como visitante', 'Shows as a visitor'), E2('VISITANTE', 'VISITOR'), 'neutral']]); },
+    groups(G, isCita, ctA, es) { const E2 = (a, b) => es ? a : b;
+      return (isCita ? [] : [G(E2('¿COBRARON LO DEL ESTIMADO?', 'CHARGED WHAT THE ESTIMATE SAID?'), 'price', [[1, E2('Sí', 'Yes')], [0, E2('Cobraron más', 'Charged more')]]), G(E2('¿ESTUVO LISTO CUANDO PROMETIERON?', 'READY WHEN PROMISED?'), 'wait', [['a', E2('Sí', 'Yes')], ['b', E2('Un poco tarde', 'A bit late')], ['c', E2('Mucho más tarde', 'Much later')]])])
+        .concat([G(E2('¿QUEDÓ ARREGLADO A LA PRIMERA?', 'FIXED THE FIRST TIME?'), 'asked', [[1, E2('Sí', 'Yes')], [0, E2('Tuve que volver', 'Had to go back')], [-1, E2('Sigue igual', 'Still broken')]]), G(E2('¿PIDIERON TU OK ANTES DE ALGO EXTRA?', 'ASKED YOUR OK BEFORE EXTRA WORK?'), 'whoOk', [[1, E2('Sí', 'Yes')], [0, E2('No', 'No')]]),
+          G(E2('¿TE ENSEÑARON LA PIEZA VIEJA?', 'SHOWED YOU THE OLD PART?'), 'clean', [[1, E2('Sí', 'Yes')], [0, E2('No hizo falta', 'Not needed')], [-1, E2('No', 'No')]]), G(E2('¿TE DEVOLVIERON EL CARRO LIMPIO?', 'CAR RETURNED CLEAN?'), 'care', [[1, E2('Sí', 'Yes')], [-1, E2('No', 'No')]]),
+          G(E2('TRATO Y EXPLICACIÓN', 'CARE AND EXPLANATION'), 'trato', [[1, E2('Te explicaron sin enredos', 'Explained clearly')], [0, E2('Normal', 'Okay')], [-1, E2('Mal trato', 'Treated badly')]])]); },
+    tm(ctA, es) { const E2 = (a, b) => es ? a : b, okP = ctA.total <= ctA.approved + .5; return [[E2('SERVICIO', 'SERVICE'), es ? ctA.svc : ctA.svcEn, '#0B0E12']].concat(ctA.veh ? [[E2('VEHÍCULO', 'VEHICLE'), [ctA.veh.y, ctA.veh.mk, ctA.veh.model].filter(Boolean).join(' '), '#0B0E12']] : [])
+      .concat([[E2('APROBASTE', 'YOU APPROVED'), money(ctA.approved), '#0B0E12'], [E2('COBRADO', 'CHARGED'), money(ctA.total) + (okP ? E2(' · lo del estimado', ' · as estimated') : ''), okP ? '#00695B' : '#C0392B']]).map(([k, v, fg]) => ({ k, v, fg })); },
+    pool(b, ctA, isCita, es) { const SV = (window.TLAutoL && window.TLAutoL.SVC && window.TLAutoL.SVC[b.id]) || []; const L = [].concat(...SV.map(g => g[2] || [])); return (isCita && ctA ? [es ? ctA.svc : ctA.svcEn] : []).concat(L.map(it => es ? it.n : it.ne || it.n)).filter((k, i, a) => k && a.indexOf(k) === i).slice(0, 6); },
+    draft(F, isCita, ctA) { return { src: isCita ? 'cita' : 'vis', hot: null, val: null, taste: null, late: null, wait: '', lateK: '', asked: null, price: null, clean: null, trato: F.trato, whoOk: null, pro: isCita && ctA ? ctA.withL : '', cid: isCita && ctA ? ctA.id : '',
+      svc: isCita && ctA ? ctA.svc : '', est: isCita ? (ctA && ctA.total > ctA.approved + .5 ? Math.round(ctA.total - ctA.approved) : 0) : F.price === 1 ? 0 : F.price === 0 ? 40 : null, first: F.asked == null ? null : F.asked === 1 ? 1 : 0, ask: F.whoOk == null ? null : F.whoOk, part: F.clean == null ? null : F.clean === -1 ? 0 : 1, care: F.care == null ? null : F.care === -1 ? 0 : 1 }; },
+    fix(V, C, s, es, b, isCita, ctA) { const E2 = (a, c) => es ? a : c;
+      return { ...V, tmK: E2('TU CITA · DATO DE LA CITA', 'YOUR APPOINTMENT · FROM THE BOOKING'), tmNote: E2("Lo aprobado contra lo cobrado sale de tu cita en To'Latino. No se edita.", "Approved vs. charged comes from your To'Latino booking. It cannot be edited."),
+        meta: (b.name + (isCita && ctA ? E2(' · CITA #', ' · APPOINTMENT #') + ctA.id : '')).toUpperCase(),
+        lowT: E2('La reseña no devuelve dinero ni pide que lo revisen. Si algo quedó mal, pídelo en Ayuda con la cita: ' + b.name + ' responde en 24 h.', 'A review does not refund money or request a recheck. If something is wrong, ask in Appointment help: ' + b.name + ' replies within 24 h.'),
+        onHelpOrd: () => { if (!(ctA && startHelp(C, 'ahelp', ctA.id))) C.encargo('APP-NEG-AUTO-AYUDA', 'APP-NEG-RESENA', b.name, E2('Ayuda con la cita', 'Appointment help')); },
+        lbl: { ...V.lbl, srcNote: E2("Solo sale verificada si la cita fue por To'Latino.", "It only shows as verified if the booking was through To'Latino."), aspK: E2('LO QUE IMPORTA EN AUTOS', 'WHAT MATTERS WITH CARS'), recK: E2('¿QUÉ SERVICIO RECOMIENDAS?', 'WHICH SERVICE DO YOU RECOMMEND?'), recS: E2('Sale en tu reseña.', 'Shows in your review.'),
+          textPh: E2('Qué le hicieron, cómo quedó, si lo volverías a llevar…', 'What they did, how it came out, whether you would go back…'), helpOrd: E2('Ir a Ayuda con la cita', 'Go to Appointment help') } }; } };
+
+  /* ---------- Apartar con el flujo de Tiendas ---------- */
+  const SHOPS = () => [window.TLBellL, window.TLAutoL, window.TLHogarL, window.TLSaludL].filter(m => m && m.SHOP);
+  const norm = r => Array.isArray(r) ? { n: r[0], ne: r[0], d: r[1], de: r[1], p: r[2], ph: r[3], k: 'unid' } : { n: r.n, ne: r.ne || r.n, d: r.d || '', de: r.de || r.d || '', p: r.p, ph: r.ph, k: 'unid' };
+  function hold(C, bid, name) { const TI = window.TLTienda, TF = window.TLTiendaFlow; if (!TI || !TI.SVC || !TF) return false;
+    let raw = null; SHOPS().some(m => { const L = m.SHOP[bid] || []; raw = L.find(r => (Array.isArray(r) ? r[0] : r.n) === name) || null; return !!raw; }); if (!raw || raw.rent) return false;
+    const it = norm(raw); TI.SVC[bid] = TI.SVC[bid] || [['Tienda', 'Shop', []]]; const L = TI.SVC[bid][0][2]; let ii = L.findIndex(x => x.n === it.n); if (ii < 0) { L.push(it); ii = L.length - 1; }
+    C.setState({ tcart: { biz: bid, lines: [{ key: '0:' + ii, q: 1, t: null }] } }); setTimeout(() => TF.start(C, bid), 0); return true; }
+  window.TLApartar = { hold };
+
+  /* Revisión V1 · A9: Free recibe hasta 10 pedidos o citas en línea al mes; después, solo contacto (Llamar). Demo: lo usado sale del id. */
+  const used = id => { let n = 0; for (let i = 0; i < id.length; i++) n = (n * 31 + id.charCodeAt(i)) % 997; return n % 8; };
+  /* El techo mensual y Pro de cortesía los decide el Super Admin (tl-adm-v1.plan.cap · tl-adm-v1.biz[id].pro) */
+  const admPlan = () => { let o = null; try { o = JSON.parse(localStorage.getItem('tl-adm-v1') || 'null'); } catch (e) {} return (o && o.plan) || {}; };
+  const admPro = b => { let o = null; try { o = JSON.parse(localStorage.getItem('tl-adm-v1') || 'null'); } catch (e) {} const x = o && o.biz && o.biz[b.id]; return !!(x && x.pro === 'cortesia'); };
+  window.TLFreeCap = () => { const c = +admPlan().cap; return c > 0 ? c : 10; };
+  window.TLFreeLeft = b => !b || b.pro || admPro(b) ? null : Math.max(0, window.TLFreeCap() - (b.freeUsed != null ? b.freeUsed : used(b.id)));
+  window.TLFreeOn = b => !!b && !b.pro && window.TLFreeLeft(b) > 0;
+/* ---------- Ayuda con el pago de un evento (APP-NEG-EVT-AYUDA · mode ehelp). Pagos = To'Latino: revisa en 48 h. ---------- */
+  (function () {
+    const RSN = [['doble', 'Me cobraron dos veces', 'I was charged twice', 1], ['sinbol', 'Me cobraron y no tengo boletos', 'I was charged but have no tickets', 0], ['dev', 'No me llegó la devolución', 'My refund has not arrived', 0], ['canc', 'Cancelaron el evento y no me devolvieron', 'The event was canceled and I was not refunded', 0], ['cargo', 'Me cobraron algo que no vi', 'I was charged something I did not see', 1], ['otro', 'Otra cosa', 'Something else', 0]];
+    const SOL = [['rev', 'Que me devuelvan', 'Refund me', 'Lo cobrado de más', 'What was overcharged'], ['avis', 'Solo quiero avisar', 'I just want to let you know', "Lo lee To'Latino", "Read by To'Latino"]];
+    const start = (C, o) => { if (!o || !o.id) return false; const open = (C.state.hpres || []).find(p => p.mode === 'ehelp' && p.cid === o.id && p.st !== 'done'); if (open) { C.nav({ code: 'APP-NEG-EVT-AYUDA-ESTADO', biz: o.orgBiz || '', pid: open.id }); C.scrollTop(); return true; }
+      C.setState({ hpe: { mode: 'ehelp', ord: o, cid: o.id, r: null, note: '', phs: [], sol: 'rev', amt: '' } }); C.nav({ code: 'APP-NEG-EVT-AYUDA', biz: o.orgBiz || '', cid: o.id }); C.scrollTop(); return true; };
+    const back = (C, o) => C.nav({ code: 'APP-EVT-ORDEN', o: o.id });
+    const reply = (p, sc) => { const amt = p.amt ? +p.amt : Math.min(p.ord.total || 20, 20); return sc === 'rechaza' ? { st: 'no', repAt: '6:20 PM' } : sc === 'cambio' ? { st: 'alt', repAt: '6:20 PM', altAmt: Math.round(amt * .5) } : { st: 'ok', repAt: '6:20 PM', okAmt: p.sol === 'rev' ? amt : 0 }; };
+    const respond = (C, id) => { clearTimeout(C._ehT); const sc = C.state.scen || 'ok'; if (sc === 'nada' || sc === 'panel') return; C._ehT = setTimeout(() => upP(C, id, p => p.st === 'sent' ? reply(p, sc) : {}), 4000); };
+    function form(C, s, es) { const q = s.hpe, o = q.ord, E2 = (a, b) => es ? a : b, upF = z => C.setState(y => ({ hpe: { ...y.hpe, ...z } })), ph = !!(RSN.find(z => z[0] === q.r) || [])[3];
+      const miss = [!q.r ? E2('Elige qué pasó', 'Pick what happened') : null, q.note.trim().length < 15 ? E2('Cuéntanos qué pasó (15 letras o más)', 'Tell us what happened (15+ characters)') : null, ph && !q.phs.length ? E2('Agrega una captura del cobro', 'Add a screenshot of the charge') : null].filter(Boolean);
+      const send = () => { if (miss.length) return; const id = 'L-' + (2100 + Math.floor(Math.random() * 800)); const p = { id, mode: 'ehelp', cid: o.id, ord: o, biz: o.orgBiz || '', own: o.orgBiz || '', r: q.r, note: q.note, phs: q.phs, sol: q.sol, amt: q.amt, st: 'sent', at: '5:40 PM' };
+        C.setState(z => ({ hpres: (z.hpres || []).concat(p), hpe: null })); C.nav({ code: 'APP-NEG-EVT-AYUDA-ESTADO', biz: o.orgBiz || '', pid: id }); C.scrollTop(); respond(C, id); };
+      return { has: true, scr: 'APP-NEG-EVT-AYUDA', hasVid: false, showPh: true, showNote: true, showCode: q.sol === 'rev', title: E2('Ayuda con el pago', 'Payment help'), sub: (E2('ORDEN #', 'ORDER #') + o.id + ' · ' + (es ? o.ev : o.evEn || o.ev)).toUpperCase(),
+        veh: { ic: 'ticket', k: E2('TU ORDEN', 'YOUR ORDER'), t: es ? o.ev : o.evEn || o.ev, s: (o.when || '').toUpperCase(), hasOk: true, okT: o.method === 'door' ? E2('Pagas en la puerta', 'Pay at the door') : E2('Pagaste: ', 'You paid: ') + money(o.total || 0), okFg: '#00695B', okIc: 'check', cta: E2('Ver', 'See'), onClick: () => back(C, o) },
+        lights: RSN.map(([k, l1, l2]) => ({ l: es ? l1 : l2, v: q.r === k ? 'selected' : 'filter', onClick: () => upF({ r: q.r === k ? null : k }) })), note: q.note, onNote: e => upF({ note: e.target.value.slice(0, 500) }), noteN: q.note.length + ' / 500',
+        code: q.amt, onCode: e => upF({ amt: e.target.value.replace(/[^\d.]/g, '').slice(0, 7) }),
+        phs: q.phs.map((z, i) => ({ bg: PX(z.ph), vid: false, onDel: () => upF({ phs: q.phs.filter((_, j) => j !== i) }) })), canPh: q.phs.length < 4, onPh: () => upF({ phs: q.phs.concat([{ ph: [5926382, 4386431][q.phs.length % 2], vid: false }]) }), onVid: () => {}, phN: q.phs.length + ' / 4',
+        whens: SOL.map(([k, l1, l2, s1, s2]) => ({ l: es ? l1 : l2, s: es ? s1 : s2, hasS: true, ...radio(q.sol === k), onClick: () => upF({ sol: k }) })),
+        how: [E2("Los pagos los revisa To'Latino, no el organizador.", "Payments are reviewed by To'Latino, not the organizer."), E2('Te respondemos en 48 h, por aquí y por SMS.', 'We reply within 48 h, here and by SMS.'), E2('Si te devolvemos, vuelve a tu tarjeta en 3–5 días hábiles o al Wallet al instante.', 'If we refund you, it goes back to your card in 3–5 business days or to your Wallet instantly.')].map((z, i) => ({ n: String(i + 1), t: z })),
+        miss: miss.map(z => ({ t: z })), hasMiss: miss.length > 0, dis: miss.length > 0, onSend: send, cta: E2('Enviar solicitud', 'Send request'), free: E2("TO'LATINO RESPONDE EN 48 H", "TO'LATINO REPLIES WITHIN 48 H"), onBack: () => back(C, o),
+        lbl: { back: E2('Volver', 'Back'), vehT: E2('Tu orden', 'Your order'), symT: E2('¿Qué pasó?', 'What happened?'), symS: E2('Con la fecha y el monto del cobro, si los tienes.', 'With the date and amount of the charge, if you have them.'), lightsK: E2('MOTIVO', 'REASON'), notePh: E2('Ej.: me salen dos cobros de $32 el 24 de sep…', 'E.g. I see two $32 charges on Sep 24…'),
+          codeK: E2('¿CUÁNTO? · OPCIONAL', 'HOW MUCH? · OPTIONAL'), codePh: E2('Ej.: 32', 'E.g. 32'), phT: ph ? E2('Captura · obligatoria', 'Screenshot · required') : E2('Captura · opcional', 'Screenshot · optional'), phS: E2('Del estado de cuenta o del mensaje del banco.', 'Of your statement or the bank message.'), addPh: E2('Captura', 'Screenshot'), addVid: '', vidTag: '',
+          whenT: E2('¿Qué quieres?', 'What would you like?'), howK: E2('CÓMO FUNCIONA', 'HOW IT WORKS'), missK: E2('TE FALTA', 'STILL NEEDED'), honest: E2("El precio que viste es el que se cobra: cargos incluidos.", 'The price you saw is what is charged: fees included.') } }; }
+    function status(C, s, es, p) { const E2 = (a, b) => es ? a : b, o = p.ord, st = p.st, rsn = RSN.find(z => z[0] === p.r), sol = SOL.find(z => z[0] === p.sol);
+      const okT = p.sol === 'rev' ? E2('Te devolvemos ', 'Refunding ') + money(p.okAmt || 0) : E2('Gracias por avisar', 'Thanks for letting us know');
+      const H = { sent: ['clock', 'rgba(75,55,245,.1)', '#4B37F5', E2('PENDIENTE', 'PENDING'), E2("Esperando a To'Latino", "Waiting for To'Latino"), E2('Te respondemos en 48 h.', 'We reply within 48 h.')],
+        ok: ['check', 'rgba(0,229,196,.18)', '#00695B', E2('CONFIRMADA', 'CONFIRMED'), okT, p.sol === 'rev' ? E2('Devuelto a tu tarjeta en 3–5 días hábiles.', 'Back to your card in 3–5 business days.') : ''],
+        alt: ['dollar', 'rgba(255,176,32,.2)', '#8A5A00', E2('TE PROPONEN UN CAMBIO', 'THEY PROPOSE A CHANGE'), E2('Devolverte ', 'Refund ') + money(p.altAmt || 0), E2('Encontramos un cobro de más, no dos. Tú decides.', 'We found one extra charge, not two. You decide.')],
+        no: ['warning', 'rgba(192,57,43,.1)', '#C0392B', E2('NO PUDO', 'COULD NOT'), E2('El cobro está bien', 'The charge is correct'), E2('Coincide con tu orden. Si tu banco muestra otra cosa, escríbenos por aquí.', 'It matches your order. If your bank shows something else, write to us here.')],
+        done: ['check', 'rgba(0,229,196,.18)', '#00695B', E2('TERMINADA', 'FINISHED'), p.doneT || '', E2('Gracias por avisarnos.', 'Thanks for letting us know.')] }[st] || [];
+      const acts = st === 'ok' ? [['check', E2('Entendido', 'Got it'), () => upP(C, p.id, { st: 'done', doneT: okT })]] : st === 'alt' ? [['dollar', E2('Aceptar ', 'Accept ') + money(p.altAmt || 0), () => upP(C, p.id, { st: 'done', doneT: E2('Devuelto ', 'Refunded ') + money(p.altAmt || 0) })]] : [];
+      return { has: true, title: E2('Ayuda con el pago', 'Payment help'), num: (E2('SOLICITUD #', 'REQUEST #') + p.id + ' · ' + E2('ORDEN #', 'ORDER #') + p.cid).toUpperCase(), hdr: { ic: H[0], bg: H[1], fg: H[2], k: H[3], t: H[4], s: H[5] }, big: false, small: true,
+        steps: [[E2('Enviada', 'Sent'), p.at, 1], [E2("Respuesta de To'Latino", "Reply from To'Latino"), p.repAt || '', st !== 'sent'], [E2('Terminada', 'Finished'), '', st === 'done']].map(([label, time, d], i, a) => ({ label, time, state: d ? 'done' : (i === 0 || a[i - 1][2]) ? 'current' : 'next' })),
+        rep: { has: ['ok', 'alt', 'no'].includes(st), who: "To'Latino", ph: 'url(assets/logo-tolatino.svg)', at: p.repAt, t: st === 'ok' ? E2('Revisamos tu orden y tienes razón. Ya lo devolvimos.', 'We checked your order and you are right. It is refunded.') : st === 'alt' ? E2('Vimos un cobro de más. Podemos devolverte ' + money(p.altAmt || 0) + '.', 'We found one extra charge. We can refund ' + money(p.altAmt || 0) + '.') : E2('Revisamos tu orden: el cobro coincide con lo que compraste.', 'We checked your order: the charge matches what you bought.'),
+          hasInc: false, inc: [], chg: [], valid: '', time: '', cta: E2('Ver mi orden', 'See my order'), onCta: () => back(C, o) },
+        req: { rows: [[E2('MOTIVO', 'REASON'), rsn ? rsn[es ? 1 : 2] : '—'], [E2('QUIERES', 'YOU WANT'), sol ? sol[es ? 1 : 2] : '—']].concat(p.amt ? [[E2('MONTO', 'AMOUNT'), money(+p.amt)]] : []).concat([[E2('NOS CONTASTE', 'YOU SAID'), '«' + p.note + '»']]).map(([k, v]) => ({ k, v })), phs: (p.phs || []).map(z => ({ bg: PX(z.ph), vid: false })) },
+        hasOthers: false, others: [], acts: acts.map(([icon, l, onClick]) => ({ icon, l, onClick })), hasActs: acts.length > 0, onBack: () => back(C, o),
+        lbl: { back: E2('Volver a la orden', 'Back to the order'), repK: E2("RESPUESTA DE TO'LATINO", "REPLY FROM TO'LATINO"), incK: '', chgK: '', reqK: E2('LO QUE MANDASTE', 'WHAT YOU SENT'), othersK: '', vidTag: '', honest: E2('El precio que viste es el que se cobra: cargos incluidos.', 'The price you saw is what is charged: fees included.') } }; }
+    const sim = (C, s, p) => { const es = (s.lang || 'es') === 'es', sc = s.scen || 'ok'; if (p.st === 'sent') return { has: true, l: es ? "To'Latino responde" : "To'Latino replies", on: () => { clearTimeout(C._ehT); upP(C, p.id, reply(p, sc === 'panel' || sc === 'nada' ? 'ok' : sc)); } }; return null; };
+    EXT.ehelp = { form, status, sim }; window.TLCitaHelp.startEvt = start;
+  })();
+})();
