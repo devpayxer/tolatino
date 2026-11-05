@@ -3,8 +3,9 @@
 _Actualizado: 5 nov 2026._
 
 ## Estado
-- **Etapa: planificación.** No hay código de la app. Se están cerrando las decisiones
-  (`docs/DECISIONES.md`) y luego se reescribe `docs/PLAN.md` con todas.
+- **Etapa: plan versión 2 escrito, esperando el OK del fundador.** Las 20 decisiones
+  están cerradas en `docs/DECISIONES.md`; `docs/PLAN.md` v2 y el `CLAUDE.md`
+  definitivo las integran. No hay código de la app todavía.
 - El fundador trabaja desde el teléfono y solo da el OK (decisión U).
 
 ## Infraestructura de PRUEBAS (sandbox) — creada el 5 nov
@@ -27,6 +28,8 @@ _Actualizado: 5 nov 2026._
 
 ## Pendiente inmediato
 1. ~~Verificado por el fundador (5 nov 00:08 EST): la página de estado carga, sync en commit 430e46a.~~ **Defecto conocido:** en el primer arranque `tolatino-sync` corrió dos veces a la vez (runcmd + timer) y chocó el clone; se autocorrigió al minuto. **Corregir en Fase 0:** `deploy.sh` reemplaza `/usr/local/bin/tolatino-sync` con una versión con `flock`.
-2. Terminar de cuadrar el plan (decisiones A, E, F, G, I, K) y reescribir `docs/PLAN.md`.
-3. Crear la rama `pruebas` nueva (hoy apunta al código v1) con `infra/pruebas/deploy.sh`
+2. OK del fundador a `docs/PLAN.md` v2 → empieza la Fase 0.
+3. Pexels: el fundador genera una clave nueva y la guarda como Network secret
+   (`api.pexels.com`, header `Authorization`, sin prefijo).
+4. Crear la rama `pruebas` nueva (hoy apunta al código v1) con `infra/pruebas/deploy.sh`
    cuando empiece la Fase 0.
