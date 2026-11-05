@@ -198,6 +198,11 @@ _Actualizado: 5 nov 2026._
   por `portar-sistema`). `/abierto` = Buscar «abierto ahora» (prototipo searchFrom). Planetiler fijada por huella
   (0.10.3). Semilla del sandbox: los negocios con d = 0 del prototipo quedan sin local (45, la regla del Mapa: _d0 = 0) y las fotos de la semilla
   tienen id fijo (se actualizan, no se borran: un reporte de foto ya no rompe la semilla). Ayuda: `docs/ayuda/mapa.md`.
+- **Fase 1 · bloque 1g-1 Recomendar ✓ (5 nov):** `/recomendar` (diseño «Recomendar»): el negocio, contacto opcional,
+  tú (cómo lo conoces, por qué, decirle que fuiste tú), «te falta», enviada con su seguimiento. Borrador en el teléfono;
+  enviar pide entrar y vuelve. `recommendations` (0013: `note`, `contact_kind`, sin duplicados por persona y ciudad;
+  tope 20/día). Teléfono normalizado o @Instagram. Desde Buscar (?q), categoría (?cat) y Próximamente (?ciudad).
+  Ayuda: `docs/ayuda/recomendar.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
   1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Publica tu negocio v2 · 1h panel base · 1i admin Negocios + colas.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**

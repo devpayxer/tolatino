@@ -55,6 +55,7 @@
   --tl-paper-2: #F6F7F5;        /* fila alterna / superficie hundida */
   --tl-paper-3: #FCFBF9;        /* columna del mapa en APP-CIUDAD (escritorio) */
   --tl-action-ink: #332A6B;      /* texto sobre fondo Action suave (nota de APP-NEG-MAPA) */
+  --tl-action-ink-2: #332599;    /* texto sobre fondo Action suave (avisos de APP-NEG-RECOMENDAR) */
   --tl-mint-soft: #E8EDE9;      /* fondo suave de verificado */
   --tl-pro-ink: #8A5A00;        /* texto sobre tinte Pro */
   --tl-signal-ink: #04120F;     /* texto sobre Signal */

@@ -43,7 +43,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (eventos, Fase 6), Comunidad (Fase 5) y el mini mapa de la columna derecha (mapa propio). Cada una se
   enciende en el Inicio cuando su módulo exista; el prototipo manda en su forma.
 - [ ] **Pantallas `Pronto` (sandbox):** toda ruta que aún muestra «En construcción» debe llegar a 0 antes de la
-  fase 9 (hoy: publica, recomendar, comunidad, eventos).
+  fase 9 (hoy: publica, comunidad, eventos).
+- [ ] **Recomendar — lo que falta:** el SMS al negocio («X te recomendó…», una vez) y el aviso «ya publicó» al vecino
+  (Fase 2, notificaciones); la cola «Recomendaciones» del Super Admin para revisarlas, marcarlas y unirlas al negocio
+  cuando publique (bloque 1i).
 - [ ] **Mapa — tope de 400 negocios:** el mapa trae los 400 más cercanos al punto (pines y lista). Cuando una ciudad pase
   de eso dentro de 2,6× el radio, pedir los pines por el recuadro visible al arrastrar. Mini mapas del Inicio y de la
   ficha («Cómo llegar» con el mapa propio) siguen pendientes; «Cómo llegar» abre el mapa del teléfono.

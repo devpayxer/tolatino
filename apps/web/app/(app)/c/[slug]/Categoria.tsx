@@ -209,7 +209,7 @@ export function Categoria({ v }: { v: Vista }) {
             <div className="mt-2 text-[13.5px] leading-[1.6] text-ink/75">{T.vacioBody}</div>
             <div className="mt-3.5 flex flex-wrap gap-2">
               <Button size="md" variant={avisado ? "secondary" : "primary"} icon="bell" onClick={avisado ? undefined : pedirAviso}>{avisado ? T.avisado : T.avisame}</Button>
-              <Button size="md" variant="secondary" onClick={() => router.push("/recomendar")}>{T.invitar}</Button>
+              <Button size="md" variant="secondary" onClick={() => router.push(`/recomendar?cat=${v.cat}`)}>{T.invitar}</Button>
               {(v.filtros.length > 0 || v.sub) && <Button size="md" variant="soft" onClick={limpiar}>{T.limpiar}</Button>}
             </div>
           </InfoCard>

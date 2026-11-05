@@ -231,7 +231,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                 {R.dym && <button type="button" onClick={() => buscar(R.dym!)} className="text-[14px] font-bold text-action">{f(t.dym, { x: R.dym })}</button>}
                 <div className="mt-1.5 flex w-full flex-col gap-2 lg:w-auto lg:flex-row">
                   <div className="flex"><Button block icon="bell" variant={alerta ? "secondary" : "primary"} onClick={alerta ? undefined : pedirAlerta}>{alerta ? t.alertaOn : t.alerta}</Button></div>
-                  <div className="flex"><Button block variant="secondary" icon="store" onClick={() => router.push("/recomendar")}>{t.rec}</Button></div>
+                  <div className="flex"><Button block variant="secondary" icon="store" onClick={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)}>{t.rec}</Button></div>
                 </div>
                 <div className="mt-3.5 flex w-full flex-col gap-2.5 text-left">
                   <span className="font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.tryCats}</span>
@@ -254,7 +254,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
               </div>
             ) : (
               <div className="flex flex-col gap-[26px] px-5 pb-12 pt-[18px] lg:px-0">
-                {R.notYet?.primero && <div className="grid"><NotYetCard layout="stack" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push("/recomendar")} /></div>}
+                {R.notYet?.primero && <div className="grid"><NotYetCard layout="stack" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)} /></div>}
                 {R.top && (
                   <button type="button" onClick={() => router.push(R.top!.href)} className="relative h-32 overflow-hidden rounded-[20px] bg-ink bg-cover bg-center text-left" style={R.top.img ? { backgroundImage: `url(${R.top.img})` } : undefined}>
                     <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,14,18,.82),rgba(11,14,18,.25))]" />
@@ -278,12 +278,12 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                     </div>
                   ))}
                 </div>
-                {R.notYet && !R.notYet.primero && <div className="grid"><NotYetCard layout="row" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push("/recomendar")} /></div>}
+                {R.notYet && !R.notYet.primero && <div className="grid"><NotYetCard layout="row" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)} /></div>}
                 <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-white p-4">
                   <span className="font-display text-[15px] font-extrabold tracking-[-0.02em]">{t.notFound}</span>
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" icon="bell" variant={alerta ? "secondary" : "primary"} onClick={alerta ? undefined : pedirAlerta}>{alerta ? t.alertaOn : t.alerta}</Button>
-                    <Button size="sm" variant="soft" icon="store" onClick={() => router.push("/recomendar")}>{t.rec}</Button>
+                    <Button size="sm" variant="soft" icon="store" onClick={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)}>{t.rec}</Button>
                   </div>
                 </div>
               </div>
