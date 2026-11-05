@@ -71,7 +71,19 @@ _Actualizado: 5 nov 2026._
   Probado de punta a punta en iPhone 15 contra PostGIS real + 5 ataques (CSRF, número inválido,
   reenvío rápido, fuerza bruta, huellas). Ayuda para El Compa: `docs/ayuda/cuenta-entrar.md`.
   Pendientes en LAUNCH-CHECKLIST (proveedor SMS, passkeys con HTTPS, pasos 3–5, Button accesible).
-- **Luego · bloque 3c:** Super Admin esqueleto (equipo, roles, matriz, auditoría, ciudades, catálogo).
+- **Fase 0 · bloque 3c HECHO (5 nov) · Super Admin:** migración 0007 (staff_roles 7, staff_members,
+  admin_sections 18, role_permissions con la matriz del plan §5); `lib/admin.ts` (permiso SIEMPRE en el
+  servidor; sin permiso → redirige con aviso; `auditar` en cada acción); acciones con motivo
+  (`app/admin/acciones.ts`: arranque, cerrar/bloquear sesión, cambiar permiso, agregar/quitar miembro);
+  pantallas `/admin` (KPIs reales, últimas acciones), `/admin/usuarios` (+ 360° con sesiones),
+  `/admin/ciudades`, `/admin/catalogo`, `/admin/sistema` (equipo, matriz 2am, auditoría 2al) y
+  `/admin/pendiente/[sección]` (lo que no existe dice su fase; nada de botones muertos).
+  **Primer Admin:** código de arranque de un solo uso (huella en `lib/admin.ts`), entregado al fundador por
+  el chat. Probado de punta a punta (10 comprobaciones: código malo rechazado, arranque, sin acceso, agregar
+  rol Solo lectura, lectura sin botones de editar ni Sistema, cerrar sesión con motivo, expulsión real,
+  auditoría de las 3 acciones). Guardián nuevo `servidorCliente` (error React #130 del 5 nov).
+  Logo real del sistema (antes era un círculo inventado) en `Wordmark` y `public/assets/`.
+- **Sigue:** cerrar la Fase 0 → revisión del fundador en el sandbox; luego Fase 1 (Directorio).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

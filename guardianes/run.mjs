@@ -61,6 +61,17 @@ const guardianes = {
     if (!/ENTORNO === "produccion" && MODO_SMS === "pruebas"[\s\S]{0,40}throw/.test(ent)) falla("modoPruebas", "apps/web/lib/entorno.ts", 0, "falta el candado de tiempo de ejecución");
   },
 
+  /* 3c. Un componente de servidor no puede usar piezas del sistema a través de un objeto del navegador
+     (p. ej. <A.KpiRow>): en el servidor llegan vacías y React falla (error #130, 5 nov). Importarlas directo. */
+  servidorCliente() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(f)) continue;
+      const t = readFileSync(f, "utf8");
+      if (/^\s*["']use client["']/.test(t)) continue;
+      t.split("\n").forEach((l, i) => { if (/<[A-Z][A-Za-z]*\.[A-Z]/.test(l)) falla("servidorCliente", f, i + 1, "componente de servidor usando <Objeto.Pieza>: importa la pieza directo de @tolatino/ui"); });
+    }
+  },
+
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
   idioma() {
     for (const f of codigo) {
