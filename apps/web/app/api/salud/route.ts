@@ -13,12 +13,21 @@ function db(): Pool | null {
 
 export async function GET() {
   const inicio = Date.now();
-  let base: { ok: boolean; postgis?: string; error?: string } = { ok: false, error: "sin DATABASE_URL" };
+  let base: { ok: boolean; postgis?: string; migraciones?: number; ciudades?: number; categorias?: number; error?: string } = {
+    ok: false,
+    error: "sin DATABASE_URL",
+  };
   const p = db();
   if (p) {
     try {
-      const r = await p.query<{ v: string }>("select postgis_version() as v");
-      base = { ok: true, postgis: r.rows[0]?.v };
+      const r = await p.query<{ v: string; m: number; c: number; k: number }>(
+        `select postgis_version() as v,
+                (select count(*)::int from schema_migrations) as m,
+                (select count(*)::int from cities) as c,
+                (select count(*)::int from categories) as k`,
+      );
+      const x = r.rows[0];
+      base = { ok: true, postgis: x?.v, migraciones: x?.m, ciudades: x?.c, categorias: x?.k };
     } catch (e) {
       base = { ok: false, error: e instanceof Error ? e.message : "error" };
     }
