@@ -74,6 +74,12 @@ accesibilidad, velocidad, build) → `pruebas` avanza → el sandbox se actualiz
 (60 s) → captura + «qué mirar y en qué condiciones» al fundador → OK → `produccion`
 avanza → producción se actualiza; vuelta atrás automática si suben los errores.
 
+## Ramas
+`main` = trabajo v2 y rama por defecto · `pruebas` = sandbox (mismo contenido que
+`main` + despliegue) · `produccion` = fase 9 · `archivo/v1-*` = solo referencia.
+**Si al arrancar ves `apps/web` con Supabase y migraciones 01xx, estás en la v1:
+`git checkout main` antes de hacer nada.**
+
 ## Infraestructura
 - Sandbox: Hetzner Falkenstein `tolatino-pruebas-1` (id 174559637, IP 2.31.196.167),
   se sincroniza con `pruebas` y corre `infra/pruebas/deploy.sh`. Token en los

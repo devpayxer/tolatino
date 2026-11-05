@@ -2,6 +2,22 @@
 
 _Actualizado: 5 nov 2026._
 
+## Ramas (léelo antes de nada)
+- **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
+  repo (toda sesión nueva arranca de ahí). Si una sesión arranca y ve código de
+  Next.js + Supabase de la v1 (`apps/web`, `supabase/migrations/0157…`), está en
+  la rama equivocada: hacer `git checkout main` y seguir.
+- **`pruebas`** = lo que corre en el sandbox; debe apuntar al mismo contenido que
+  `main` (más `infra/pruebas/deploy.sh` cuando exista).
+- **`produccion`** = no existe todavía (fase 9).
+- `archivo/v1-*` = el código viejo, solo referencia. `archivo/v1-pruebas-sesion-5nov`
+  = lo que una sesión hizo por error sobre la v1 el 5 nov (descartado).
+- **Incidente 5 nov:** una sesión nueva arrancó desde la rama por defecto vieja
+  (`claude/tolatino-repo-setup-1efdil` = v1), leyó el `CLAUDE.md` de la v1 e hizo
+  una «Fase 0» de la v1 sobre `pruebas`. Causa: no se había cambiado la rama por
+  defecto a la v2. Corrección: `main` creada; el fundador cambia la rama por
+  defecto en GitHub y `pruebas` se reapunta a `main`.
+
 ## Estado
 - **Plan APROBADO (5 nov 2026). Sigue: Fase 0 — Cimientos.** Todas las decisiones
   (A–Z) están en `docs/DECISIONES.md`; `docs/PLAN.md` v2 y `CLAUDE.md` las integran.
