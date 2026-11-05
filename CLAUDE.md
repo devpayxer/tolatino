@@ -24,8 +24,11 @@ comportamiento de pantalla.
 
 ## Reglas que ya aplican en esta etapa
 - **Español primero** en todo lo que ve el fundador y el usuario.
-- **Pegar en el chat todo lo que el fundador deba correr** (SQL, comandos,
-  variables, ajustes de paneles), completo, nunca «está en el repo».
+- **El fundador trabaja desde el teléfono y solo da el OK (decisión U).**
+  Todo proceso es automático: Claude ejecuta migraciones, despliegues y
+  configuraciones con las credenciales del entorno; nunca se le pide copiar y
+  pegar. Lo que un tercero exija en persona se agrupa y se explica para el
+  teléfono.
 - **Lo diferido se anota en `docs/LAUNCH-CHECKLIST.md`** en el momento.
 - **Nada se da por hecho sin verlo**: build + navegador real + captura.
 - **Mock → captura → OK del fundador → conectar** para toda pantalla nueva.
