@@ -83,7 +83,17 @@ _Actualizado: 5 nov 2026._
   rol Solo lectura, lectura sin botones de editar ni Sistema, cerrar sesión con motivo, expulsión real,
   auditoría de las 3 acciones). Guardián nuevo `servidorCliente` (error React #130 del 5 nov).
   Logo real del sistema (antes era un círculo inventado) en `Wordmark` y `public/assets/`.
-- **Sigue:** cerrar la Fase 0 → revisión del fundador en el sandbox; luego Fase 1 (Directorio).
+- **Fase 0 cerrada (5 nov).** El fundador pidió seguir con la Fase 1.
+- **Fase 1 · bloque 1a (5 nov) · modelo de negocios:** migración 0008 (businesses con búsqueda ES/EN sin
+  acentos por trigger y GIST geo; caché de derivados `business_stats_cache`; horarios, feriados, enlaces,
+  equipo, licencias, sello, media, FAQ, reclamos, borrador de onboarding, toques de contacto, guardados,
+  seguir, búsquedas, avísame, recomendaciones). Probado: «barberia» encuentra «Barbería»; radio 5 mi.
+- **Bloqueado:** los datos de ejemplo del prototipo viven en `project/prototype/*.js` del artifact
+  `tolatino-master+` y la herramienta no deja leer esa ruta (nombre reservado «prototype»). Se pidió al
+  fundador el zip completo del proyecto de diseño.
+- **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo · 1c shell (SiteHeader,
+  BottomNav) + Inicio (APP-HOME, estructura ya leída) · 1d página de categoría · 1e ficha Pro/Free ·
+  1f Buscar · 1g Publica tu negocio v2 · 1h panel base · 1i admin Negocios + colas.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama
