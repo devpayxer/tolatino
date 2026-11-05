@@ -32,7 +32,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tolatino -d tolatino"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U tolatino -d tolatino"]
       interval: 10s
       timeout: 5s
       retries: 10

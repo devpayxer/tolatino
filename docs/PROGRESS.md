@@ -44,8 +44,24 @@ _Actualizado: 5 nov 2026._
   **Pendiente honesto:** los componentes portados son JS sin tipos (`@ts-nocheck`); cada uno pasa
   a TSX tipado cuando una pantalla lo usa por primera vez. `ChangeProposal` necesita datos.
   Ejemplos de `ReviewCard`/`OwnerCard` con forma de datos incompleta (no muestran facts/trust).
-- **Sigue · bloque 3:** cuenta (teléfono verificado + passkeys + sesión), ciudad (5 ciudades),
-  taxonomía como datos, Super Admin esqueleto, `docs/ayuda/` inicial.
+- **Fase 0 · bloque 3a HECHO (5 nov) · base de datos:** migraciones en `packages/db/migrations/`
+  aplicadas solas en cada despliegue por `packages/db/migrar.sh` (una vez cada una, con huella;
+  si alguien edita una ya aplicada, el despliegue se detiene). 0001 base (PostGIS, pg_trgm,
+  `audit_entries` solo inserción con trigger, `cms_strings`, `feature_flags`, `platform_config`) ·
+  0002 ciudades/barrios/lista de espera · 0003 catálogo (categorías, subcategorías, módulos,
+  filtros, sinónimos, comodidades) · 0004 datos del catálogo (generado por `scripts/taxonomia.mjs`
+  desde la taxonomía: 17 categorías, **757 subcategorías**; corregidos los dos defectos que traía
+  el diseño: «corner store» al revés y 5 reglas metidas como subcategorías en Venta de Autos) ·
+  0005 las 5 ciudades (todas «próximamente», impuesto 6 %). Probado en PostGIS real: dos pasadas,
+  auditoría inborrable, migración editada detenida. CI corre lo mismo en cada cambio.
+  **Lección:** la imagen de PostGIS se reinicia en su primer arranque; esperar y migrar por TCP
+  (`-h 127.0.0.1`), nunca por el socket.
+  **Pendiente:** búsqueda trigram «barberia» también trae «Bar» (umbral 0.3): se afina con Buscar.
+  Nombres cortos provisionales (no estaban en el prototipo): Tiendas, Transporte, Cursos, Niños,
+  Deporte, Iglesias, Casas, Autos — editables en el Super Admin.
+- **Sigue · bloque 3b:** cuenta (teléfono verificado + passkeys + sesión). Necesita proveedor de
+  SMS/WhatsApp (decisión E) para mandar códigos reales; ver LAUNCH-CHECKLIST.
+- **Luego · bloque 3c:** Super Admin esqueleto (equipo, roles, matriz, auditoría, ciudades, catálogo).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

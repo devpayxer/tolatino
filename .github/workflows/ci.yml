@@ -21,3 +21,13 @@ jobs:
       - run: pnpm guardianes
       - name: Imagen del sandbox se construye
         run: docker build -f infra/pruebas/Dockerfile -t tolatino/web:ci .
+      - name: Migraciones en una base real (dos veces, la segunda no cambia nada)
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          $C up -d db
+          for i in $(seq 1 60); do $C exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino && break; sleep 2; done
+          bash packages/db/migrar.sh $C
+          bash packages/db/migrar.sh $C
+          test "$($C exec -T db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c 'select count(*) from categories')" = "17"
+          test "$($C exec -T db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c 'select count(*) from cities')" = "5"

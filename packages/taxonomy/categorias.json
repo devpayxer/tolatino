@@ -1,0 +1,5010 @@
+[
+  {
+    "id": "NEG-AUTO",
+    "orden": 1,
+    "es": "Servicios de Auto",
+    "en": "Auto Services",
+    "corto": {
+      "es": "Auto",
+      "en": "Auto",
+      "provisional": false
+    },
+    "icono": "car",
+    "filtros": [
+      "F-CITA",
+      "F-OBRA"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "cot",
+      "shop",
+      "renta",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-AUTO-01",
+        "orden": 1,
+        "es": "Mecánico general",
+        "en": "Mechanic – general repair"
+      },
+      {
+        "id": "NEG-AUTO-02",
+        "orden": 2,
+        "es": "Mecánico a domicilio",
+        "en": "Mobile mechanic"
+      },
+      {
+        "id": "NEG-AUTO-03",
+        "orden": 3,
+        "es": "Cambio de aceite",
+        "en": "Oil change & lube"
+      },
+      {
+        "id": "NEG-AUTO-04",
+        "orden": 4,
+        "es": "Diagnóstico y escáner",
+        "en": "Diagnostics & check engine"
+      },
+      {
+        "id": "NEG-AUTO-05",
+        "orden": 5,
+        "es": "Frenos",
+        "en": "Brakes"
+      },
+      {
+        "id": "NEG-AUTO-06",
+        "orden": 6,
+        "es": "Suspensión y alineación",
+        "en": "Suspension & alignment"
+      },
+      {
+        "id": "NEG-AUTO-07",
+        "orden": 7,
+        "es": "Transmisión",
+        "en": "Transmission"
+      },
+      {
+        "id": "NEG-AUTO-08",
+        "orden": 8,
+        "es": "Motor y reconstrucción",
+        "en": "Engine repair & rebuild"
+      },
+      {
+        "id": "NEG-AUTO-09",
+        "orden": 9,
+        "es": "Eléctrico automotriz",
+        "en": "Electrical & wiring"
+      },
+      {
+        "id": "NEG-AUTO-10",
+        "orden": 10,
+        "es": "Aire acondicionado y calefacción",
+        "en": "AC & heating"
+      },
+      {
+        "id": "NEG-AUTO-11",
+        "orden": 11,
+        "es": "Radiadores",
+        "en": "Radiator & cooling"
+      },
+      {
+        "id": "NEG-AUTO-12",
+        "orden": 12,
+        "es": "Escape y mofles",
+        "en": "Exhaust & mufflers"
+      },
+      {
+        "id": "NEG-AUTO-13",
+        "orden": 13,
+        "es": "Llantas y rines",
+        "en": "Tires & wheels"
+      },
+      {
+        "id": "NEG-AUTO-14",
+        "orden": 14,
+        "es": "Reparación de rines",
+        "en": "Rim repair"
+      },
+      {
+        "id": "NEG-AUTO-15",
+        "orden": 15,
+        "es": "Baterías y paso de corriente",
+        "en": "Batteries & jumpstart"
+      },
+      {
+        "id": "NEG-AUTO-16",
+        "orden": 16,
+        "es": "Hojalatería y choques",
+        "en": "Body shop & collision"
+      },
+      {
+        "id": "NEG-AUTO-17",
+        "orden": 17,
+        "es": "Pintura automotriz",
+        "en": "Paint & touch-up"
+      },
+      {
+        "id": "NEG-AUTO-18",
+        "orden": 18,
+        "es": "Reparación de golpes sin pintura",
+        "en": "Dent removal"
+      },
+      {
+        "id": "NEG-AUTO-19",
+        "orden": 19,
+        "es": "Cristales y parabrisas",
+        "en": "Auto glass & windshield"
+      },
+      {
+        "id": "NEG-AUTO-20",
+        "orden": 20,
+        "es": "Papel ahumado",
+        "en": "Window tinting"
+      },
+      {
+        "id": "NEG-AUTO-21",
+        "orden": 21,
+        "es": "Vinilos y rotulado",
+        "en": "Wraps & vinyl"
+      },
+      {
+        "id": "NEG-AUTO-22",
+        "orden": 22,
+        "es": "Detallado y cerámico",
+        "en": "Detailing & ceramic coating"
+      },
+      {
+        "id": "NEG-AUTO-23",
+        "orden": 23,
+        "es": "Lavado de autos",
+        "en": "Car wash"
+      },
+      {
+        "id": "NEG-AUTO-24",
+        "orden": 24,
+        "es": "Lavado a domicilio",
+        "en": "Mobile car wash"
+      },
+      {
+        "id": "NEG-AUTO-25",
+        "orden": 25,
+        "es": "Tapicería automotriz",
+        "en": "Upholstery & interiors"
+      },
+      {
+        "id": "NEG-AUTO-26",
+        "orden": 26,
+        "es": "Audio, alarmas y accesorios",
+        "en": "Audio, alarms & accessories"
+      },
+      {
+        "id": "NEG-AUTO-27",
+        "orden": 27,
+        "es": "Preparación y tuning",
+        "en": "Performance & tuning"
+      },
+      {
+        "id": "NEG-AUTO-28",
+        "orden": 28,
+        "es": "Levantamiento y off-road",
+        "en": "Lift kits & off-road"
+      },
+      {
+        "id": "NEG-AUTO-29",
+        "orden": 29,
+        "es": "Diésel y camión pesado",
+        "en": "Diesel & heavy truck repair"
+      },
+      {
+        "id": "NEG-AUTO-30",
+        "orden": 30,
+        "es": "Mantenimiento de flotas",
+        "en": "Fleet maintenance"
+      },
+      {
+        "id": "NEG-AUTO-31",
+        "orden": 31,
+        "es": "Motos y cuatrimotos",
+        "en": "Motorcycle & ATV repair"
+      },
+      {
+        "id": "NEG-AUTO-32",
+        "orden": 32,
+        "es": "Casas rodantes y tráileres",
+        "en": "RV & trailer repair"
+      },
+      {
+        "id": "NEG-AUTO-33",
+        "orden": 33,
+        "es": "Cerrajero y llaves de auto",
+        "en": "Auto locksmith & keys"
+      },
+      {
+        "id": "NEG-AUTO-34",
+        "orden": 34,
+        "es": "Grúas",
+        "en": "Towing"
+      },
+      {
+        "id": "NEG-AUTO-35",
+        "orden": 35,
+        "es": "Auxilio en carretera",
+        "en": "Roadside assistance"
+      },
+      {
+        "id": "NEG-AUTO-36",
+        "orden": 36,
+        "es": "Inspección estatal y emisiones",
+        "en": "State inspection & emissions"
+      },
+      {
+        "id": "NEG-AUTO-37",
+        "orden": 37,
+        "es": "Repuestos y autopartes",
+        "en": "Auto parts"
+      },
+      {
+        "id": "NEG-AUTO-38",
+        "orden": 38,
+        "es": "deshuesadero",
+        "en": "Salvage yard / Yonke"
+      },
+      {
+        "id": "NEG-AUTO-39",
+        "orden": 39,
+        "es": "Traslado de vehículos",
+        "en": "Auto transport"
+      },
+      {
+        "id": "NEG-AUTO-40",
+        "orden": 40,
+        "es": "Revisión antes de comprar",
+        "en": "Pre-purchase inspection"
+      }
+    ]
+  },
+  {
+    "id": "NEG-BELL",
+    "orden": 2,
+    "es": "Belleza y Salud",
+    "en": "Beauty and Health",
+    "corto": {
+      "es": "Belleza",
+      "en": "Beauty",
+      "provisional": false
+    },
+    "icono": "scissors",
+    "filtros": [
+      "F-CITA"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "shop",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-BELL-01",
+        "orden": 1,
+        "es": "Barbería",
+        "en": "Barbershop"
+      },
+      {
+        "id": "NEG-BELL-02",
+        "orden": 2,
+        "es": "Barbero a domicilio",
+        "en": "Mobile barber"
+      },
+      {
+        "id": "NEG-BELL-03",
+        "orden": 3,
+        "es": "Cortes para niños",
+        "en": "Kids haircuts"
+      },
+      {
+        "id": "NEG-BELL-04",
+        "orden": 4,
+        "es": "Barba y arreglo masculino",
+        "en": "Beard & grooming"
+      },
+      {
+        "id": "NEG-BELL-05",
+        "orden": 5,
+        "es": "Salón de belleza",
+        "en": "Hair salon"
+      },
+      {
+        "id": "NEG-BELL-06",
+        "orden": 6,
+        "es": "Tinte y mechas",
+        "en": "Hair coloring & highlights"
+      },
+      {
+        "id": "NEG-BELL-07",
+        "orden": 7,
+        "es": "Trenzas y extensiones",
+        "en": "Braids & extensions"
+      },
+      {
+        "id": "NEG-BELL-08",
+        "orden": 8,
+        "es": "Keratina y alisados",
+        "en": "Keratin & blowouts"
+      },
+      {
+        "id": "NEG-BELL-09",
+        "orden": 9,
+        "es": "Especialista en rizos",
+        "en": "Curly hair specialist"
+      },
+      {
+        "id": "NEG-BELL-10",
+        "orden": 10,
+        "es": "Tratamiento de caída de cabello",
+        "en": "Hair loss treatment"
+      },
+      {
+        "id": "NEG-BELL-11",
+        "orden": 11,
+        "es": "Pelucas",
+        "en": "Wigs & hairpieces"
+      },
+      {
+        "id": "NEG-BELL-12",
+        "orden": 12,
+        "es": "Peinado de novia y quinceañera",
+        "en": "Bridal & quinceañera styling"
+      },
+      {
+        "id": "NEG-BELL-13",
+        "orden": 13,
+        "es": "Maquillista",
+        "en": "Makeup artist"
+      },
+      {
+        "id": "NEG-BELL-14",
+        "orden": 14,
+        "es": "Uñas, manicura y pedicura",
+        "en": "Nails – manicure & pedicure"
+      },
+      {
+        "id": "NEG-BELL-15",
+        "orden": 15,
+        "es": "Acrílico y gel",
+        "en": "Acrylics & gel"
+      },
+      {
+        "id": "NEG-BELL-16",
+        "orden": 16,
+        "es": "Diseño de uñas",
+        "en": "Nail art"
+      },
+      {
+        "id": "NEG-BELL-17",
+        "orden": 17,
+        "es": "Extensiones de pestañas",
+        "en": "Eyelash extensions"
+      },
+      {
+        "id": "NEG-BELL-18",
+        "orden": 18,
+        "es": "Lifting de pestañas",
+        "en": "Lash lift"
+      },
+      {
+        "id": "NEG-BELL-19",
+        "orden": 19,
+        "es": "Cejas y microblading",
+        "en": "Eyebrows & microblading"
+      },
+      {
+        "id": "NEG-BELL-20",
+        "orden": 20,
+        "es": "Hilo",
+        "en": "Threading"
+      },
+      {
+        "id": "NEG-BELL-21",
+        "orden": 21,
+        "es": "Depilación con cera",
+        "en": "Waxing"
+      },
+      {
+        "id": "NEG-BELL-22",
+        "orden": 22,
+        "es": "Depilación láser",
+        "en": "Laser hair removal"
+      },
+      {
+        "id": "NEG-BELL-23",
+        "orden": 23,
+        "es": "Faciales y estética",
+        "en": "Facials & esthetician"
+      },
+      {
+        "id": "NEG-BELL-24",
+        "orden": 24,
+        "es": "Tratamiento de acné y piel",
+        "en": "Acne & skin treatment"
+      },
+      {
+        "id": "NEG-BELL-25",
+        "orden": 25,
+        "es": "Masajes",
+        "en": "Massage therapy"
+      },
+      {
+        "id": "NEG-BELL-26",
+        "orden": 26,
+        "es": "Masaje relajante y en pareja",
+        "en": "Relaxing & couples massage"
+      },
+      {
+        "id": "NEG-BELL-27",
+        "orden": 27,
+        "es": "Masaje deportivo y profundo",
+        "en": "Sports & deep tissue"
+      },
+      {
+        "id": "NEG-BELL-28",
+        "orden": 28,
+        "es": "Drenaje linfático y post-operatorio",
+        "en": "Lymphatic & post-op massage"
+      },
+      {
+        "id": "NEG-BELL-29",
+        "orden": 29,
+        "es": "Spa y sauna",
+        "en": "Spa & sauna"
+      },
+      {
+        "id": "NEG-BELL-30",
+        "orden": 30,
+        "es": "Moldeamiento corporal",
+        "en": "Body contouring"
+      },
+      {
+        "id": "NEG-BELL-31",
+        "orden": 31,
+        "es": "Blanqueamiento dental cosmético",
+        "en": "Cosmetic teeth whitening"
+      },
+      {
+        "id": "NEG-BELL-32",
+        "orden": 32,
+        "es": "Tatuajes",
+        "en": "Tattoo"
+      },
+      {
+        "id": "NEG-BELL-33",
+        "orden": 33,
+        "es": "Borrado de tatuajes",
+        "en": "Tattoo removal"
+      },
+      {
+        "id": "NEG-BELL-34",
+        "orden": 34,
+        "es": "Perforaciones",
+        "en": "Piercing"
+      },
+      {
+        "id": "NEG-BELL-35",
+        "orden": 35,
+        "es": "Maquillaje permanente",
+        "en": "Permanent makeup"
+      },
+      {
+        "id": "NEG-BELL-36",
+        "orden": 36,
+        "es": "Nutrición y control de peso",
+        "en": "Nutrition & weight coaching"
+      },
+      {
+        "id": "NEG-BELL-37",
+        "orden": 37,
+        "es": "Vitaminas y suplementos",
+        "en": "Vitamins & supplements"
+      },
+      {
+        "id": "NEG-BELL-38",
+        "orden": 38,
+        "es": "Productos naturales y herbales",
+        "en": "Natural & herbal products"
+      },
+      {
+        "id": "NEG-BELL-39",
+        "orden": 39,
+        "es": "Tienda de productos de belleza",
+        "en": "Beauty supply store"
+      },
+      {
+        "id": "NEG-BELL-40",
+        "orden": 40,
+        "es": "Belleza a domicilio",
+        "en": "Mobile beauty service"
+      }
+    ]
+  },
+  {
+    "id": "NEG-FOOD",
+    "orden": 3,
+    "es": "Comida y Bebidas",
+    "en": "Food and Drinks",
+    "corto": {
+      "es": "Comida",
+      "en": "Food",
+      "provisional": false
+    },
+    "icono": "restaurant",
+    "filtros": [
+      "F-COMIDA"
+    ],
+    "modulos": [
+      "menu",
+      "pedidos",
+      "rsv",
+      "cot",
+      "shop",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "menu",
+    "subcategorias": [
+      {
+        "id": "NEG-FOOD-01",
+        "orden": 1,
+        "es": "Comida casera",
+        "en": "Homemade food"
+      },
+      {
+        "id": "NEG-FOOD-02",
+        "orden": 2,
+        "es": "Cocina de fin de semana",
+        "en": "Weekend-only cook"
+      },
+      {
+        "id": "NEG-FOOD-03",
+        "orden": 3,
+        "es": "Comida preparada por semana",
+        "en": "Meal prep"
+      },
+      {
+        "id": "NEG-FOOD-04",
+        "orden": 4,
+        "es": "Chef privado",
+        "en": "Personal chef"
+      },
+      {
+        "id": "NEG-FOOD-05",
+        "orden": 5,
+        "es": "Catering y banquetes",
+        "en": "Catering"
+      },
+      {
+        "id": "NEG-FOOD-06",
+        "orden": 6,
+        "es": "Camión de comida",
+        "en": "Food truck"
+      },
+      {
+        "id": "NEG-FOOD-07",
+        "orden": 7,
+        "es": "Vendedor ambulante",
+        "en": "Street vendor"
+      },
+      {
+        "id": "NEG-FOOD-08",
+        "orden": 8,
+        "es": "Cocina solo para entrega",
+        "en": "Delivery-only kitchen"
+      },
+      {
+        "id": "NEG-FOOD-09",
+        "orden": 9,
+        "es": "Mexicana",
+        "en": "Mexican"
+      },
+      {
+        "id": "NEG-FOOD-10",
+        "orden": 10,
+        "es": "Dominicana",
+        "en": "Dominican"
+      },
+      {
+        "id": "NEG-FOOD-11",
+        "orden": 11,
+        "es": "Puertorriqueña",
+        "en": "Puerto Rican"
+      },
+      {
+        "id": "NEG-FOOD-12",
+        "orden": 12,
+        "es": "Cubana",
+        "en": "Cuban"
+      },
+      {
+        "id": "NEG-FOOD-13",
+        "orden": 13,
+        "es": "Colombiana",
+        "en": "Colombian"
+      },
+      {
+        "id": "NEG-FOOD-14",
+        "orden": 14,
+        "es": "Venezolana",
+        "en": "Venezuelan"
+      },
+      {
+        "id": "NEG-FOOD-15",
+        "orden": 15,
+        "es": "Peruana",
+        "en": "Peruvian"
+      },
+      {
+        "id": "NEG-FOOD-16",
+        "orden": 16,
+        "es": "Ecuatoriana",
+        "en": "Ecuadorian"
+      },
+      {
+        "id": "NEG-FOOD-17",
+        "orden": 17,
+        "es": "Salvadoreña",
+        "en": "Salvadoran"
+      },
+      {
+        "id": "NEG-FOOD-18",
+        "orden": 18,
+        "es": "Guatemalteca",
+        "en": "Guatemalan"
+      },
+      {
+        "id": "NEG-FOOD-19",
+        "orden": 19,
+        "es": "Hondureña",
+        "en": "Honduran"
+      },
+      {
+        "id": "NEG-FOOD-20",
+        "orden": 20,
+        "es": "Argentina",
+        "en": "Argentinian"
+      },
+      {
+        "id": "NEG-FOOD-21",
+        "orden": 21,
+        "es": "Brasileña",
+        "en": "Brazilian"
+      },
+      {
+        "id": "NEG-FOOD-22",
+        "orden": 22,
+        "es": "Española",
+        "en": "Spanish"
+      },
+      {
+        "id": "NEG-FOOD-23",
+        "orden": 23,
+        "es": "Fusión latina",
+        "en": "Latin fusion"
+      },
+      {
+        "id": "NEG-FOOD-24",
+        "orden": 24,
+        "es": "Americana",
+        "en": "American & diner"
+      },
+      {
+        "id": "NEG-FOOD-25",
+        "orden": 25,
+        "es": "China y asiática",
+        "en": "Chinese & Asian"
+      },
+      {
+        "id": "NEG-FOOD-26",
+        "orden": 26,
+        "es": "Italiana y pizza",
+        "en": "Italian & pizza"
+      },
+      {
+        "id": "NEG-FOOD-27",
+        "orden": 27,
+        "es": "Tacos",
+        "en": "Taquería"
+      },
+      {
+        "id": "NEG-FOOD-28",
+        "orden": 28,
+        "es": "Pupusas",
+        "en": "Pupusería"
+      },
+      {
+        "id": "NEG-FOOD-29",
+        "orden": 29,
+        "es": "Arepas",
+        "en": "Arepas"
+      },
+      {
+        "id": "NEG-FOOD-30",
+        "orden": 30,
+        "es": "Empanadas",
+        "en": "Empanadas"
+      },
+      {
+        "id": "NEG-FOOD-31",
+        "orden": 31,
+        "es": "Tamales",
+        "en": "Tamales"
+      },
+      {
+        "id": "NEG-FOOD-32",
+        "orden": 32,
+        "es": "Mariscos",
+        "en": "Seafood"
+      },
+      {
+        "id": "NEG-FOOD-33",
+        "orden": 33,
+        "es": "Parrilla y carnes",
+        "en": "Grill & steakhouse"
+      },
+      {
+        "id": "NEG-FOOD-34",
+        "orden": 34,
+        "es": "BBQ & asados",
+        "en": "BBQ & asados"
+      },
+      {
+        "id": "NEG-FOOD-35",
+        "orden": 35,
+        "es": "Pollo asado",
+        "en": "Rotisserie chicken"
+      },
+      {
+        "id": "NEG-FOOD-36",
+        "orden": 36,
+        "es": "Pollo frito y alitas",
+        "en": "Fried chicken & wings"
+      },
+      {
+        "id": "NEG-FOOD-37",
+        "orden": 37,
+        "es": "Sandwiches & tortas",
+        "en": "Sandwiches & tortas"
+      },
+      {
+        "id": "NEG-FOOD-38",
+        "orden": 38,
+        "es": "Hamburguesas",
+        "en": "Burgers"
+      },
+      {
+        "id": "NEG-FOOD-39",
+        "orden": 39,
+        "es": "Desayunos",
+        "en": "Breakfast"
+      },
+      {
+        "id": "NEG-FOOD-40",
+        "orden": 40,
+        "es": "Buffet",
+        "en": "Buffet"
+      },
+      {
+        "id": "NEG-FOOD-41",
+        "orden": 41,
+        "es": "Vegetariana y vegana",
+        "en": "Vegetarian & vegan"
+      },
+      {
+        "id": "NEG-FOOD-42",
+        "orden": 42,
+        "es": "Panadería",
+        "en": "Bakery"
+      },
+      {
+        "id": "NEG-FOOD-43",
+        "orden": 43,
+        "es": "Repostería y pasteles",
+        "en": "Cakes & pastry"
+      },
+      {
+        "id": "NEG-FOOD-44",
+        "orden": 44,
+        "es": "Decoración de pasteles",
+        "en": "Cake decorator"
+      },
+      {
+        "id": "NEG-FOOD-45",
+        "orden": 45,
+        "es": "Postres",
+        "en": "Desserts"
+      },
+      {
+        "id": "NEG-FOOD-46",
+        "orden": 46,
+        "es": "Heladería y paletería",
+        "en": "Ice cream & paletas"
+      },
+      {
+        "id": "NEG-FOOD-47",
+        "orden": 47,
+        "es": "Antojitos y dulces",
+        "en": "Snacks & candy"
+      },
+      {
+        "id": "NEG-FOOD-48",
+        "orden": 48,
+        "es": "Jugos y batidos",
+        "en": "Juices & smoothies"
+      },
+      {
+        "id": "NEG-FOOD-49",
+        "orden": 49,
+        "es": "Cafetería",
+        "en": "Coffee shop"
+      },
+      {
+        "id": "NEG-FOOD-50",
+        "orden": 50,
+        "es": "Bebidas especiales",
+        "en": "Bubble tea & specialty drinks"
+      },
+      {
+        "id": "NEG-FOOD-51",
+        "orden": 51,
+        "es": "Aguas frescas & raspados",
+        "en": "Aguas frescas & raspados"
+      },
+      {
+        "id": "NEG-FOOD-52",
+        "orden": 52,
+        "es": "Bartender y barra móvil",
+        "en": "Bartender & mobile bar"
+      },
+      {
+        "id": "NEG-FOOD-53",
+        "orden": 53,
+        "es": "Hielo y agua",
+        "en": "Ice & bottled water"
+      }
+    ]
+  },
+  {
+    "id": "NEG-HOGAR",
+    "orden": 4,
+    "es": "Servicios del Hogar",
+    "en": "Home Services",
+    "corto": {
+      "es": "Hogar",
+      "en": "Home",
+      "provisional": false
+    },
+    "icono": "wrench",
+    "filtros": [
+      "F-OBRA"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "cot",
+      "shop",
+      "renta",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-HOGAR-01",
+        "orden": 1,
+        "es": "Multiservicios",
+        "en": "Handyman"
+      },
+      {
+        "id": "NEG-HOGAR-02",
+        "orden": 2,
+        "es": "Plomería",
+        "en": "Plumbing"
+      },
+      {
+        "id": "NEG-HOGAR-03",
+        "orden": 3,
+        "es": "Destape de drenajes",
+        "en": "Drain & sewer"
+      },
+      {
+        "id": "NEG-HOGAR-04",
+        "orden": 4,
+        "es": "Calentadores de agua",
+        "en": "Water heater"
+      },
+      {
+        "id": "NEG-HOGAR-05",
+        "orden": 5,
+        "es": "Electricista",
+        "en": "Electrician"
+      },
+      {
+        "id": "NEG-HOGAR-06",
+        "orden": 6,
+        "es": "Aire acondicionado y calefacción",
+        "en": "HVAC – AC & heating"
+      },
+      {
+        "id": "NEG-HOGAR-07",
+        "orden": 7,
+        "es": "Calderas y hornos",
+        "en": "Boiler & furnace"
+      },
+      {
+        "id": "NEG-HOGAR-08",
+        "orden": 8,
+        "es": "Reparación de electrodomésticos",
+        "en": "Appliance repair"
+      },
+      {
+        "id": "NEG-HOGAR-09",
+        "orden": 9,
+        "es": "Carpintería",
+        "en": "Carpentry"
+      },
+      {
+        "id": "NEG-HOGAR-10",
+        "orden": 10,
+        "es": "Gabinetes y cubiertas",
+        "en": "Cabinets & countertops"
+      },
+      {
+        "id": "NEG-HOGAR-11",
+        "orden": 11,
+        "es": "Pisos de cerámica",
+        "en": "Flooring – tile"
+      },
+      {
+        "id": "NEG-HOGAR-12",
+        "orden": 12,
+        "es": "Pisos de madera y vinil",
+        "en": "Flooring – wood & vinyl"
+      },
+      {
+        "id": "NEG-HOGAR-13",
+        "orden": 13,
+        "es": "Alfombra: instalación y limpieza",
+        "en": "Carpet install & cleaning"
+      },
+      {
+        "id": "NEG-HOGAR-14",
+        "orden": 14,
+        "es": "Pintura interior",
+        "en": "Interior painting"
+      },
+      {
+        "id": "NEG-HOGAR-15",
+        "orden": 15,
+        "es": "Pintura exterior",
+        "en": "Exterior painting"
+      },
+      {
+        "id": "NEG-HOGAR-16",
+        "orden": 16,
+        "es": "Tablaroca y yeso",
+        "en": "Drywall & plaster"
+      },
+      {
+        "id": "NEG-HOGAR-17",
+        "orden": 17,
+        "es": "Albañilería y concreto",
+        "en": "Masonry & concrete"
+      },
+      {
+        "id": "NEG-HOGAR-18",
+        "orden": 18,
+        "es": "Estructura y armazón",
+        "en": "Framing & structural"
+      },
+      {
+        "id": "NEG-HOGAR-19",
+        "orden": 19,
+        "es": "Remodelación completa",
+        "en": "Full remodeling"
+      },
+      {
+        "id": "NEG-HOGAR-20",
+        "orden": 20,
+        "es": "Remodelación de cocina",
+        "en": "Kitchen remodel"
+      },
+      {
+        "id": "NEG-HOGAR-21",
+        "orden": 21,
+        "es": "Remodelación de baño",
+        "en": "Bathroom remodel"
+      },
+      {
+        "id": "NEG-HOGAR-22",
+        "orden": 22,
+        "es": "Terminado de sótano",
+        "en": "Basement finishing"
+      },
+      {
+        "id": "NEG-HOGAR-23",
+        "orden": 23,
+        "es": "Techos",
+        "en": "Roofing"
+      },
+      {
+        "id": "NEG-HOGAR-24",
+        "orden": 24,
+        "es": "Canaletas",
+        "en": "Gutters"
+      },
+      {
+        "id": "NEG-HOGAR-25",
+        "orden": 25,
+        "es": "Recubrimiento exterior",
+        "en": "Siding"
+      },
+      {
+        "id": "NEG-HOGAR-26",
+        "orden": 26,
+        "es": "Ventanas y puertas",
+        "en": "Windows & doors"
+      },
+      {
+        "id": "NEG-HOGAR-27",
+        "orden": 27,
+        "es": "Aislamiento",
+        "en": "Insulation"
+      },
+      {
+        "id": "NEG-HOGAR-28",
+        "orden": 28,
+        "es": "Cimientos e impermeabilización",
+        "en": "Foundation & waterproofing"
+      },
+      {
+        "id": "NEG-HOGAR-29",
+        "orden": 29,
+        "es": "Chimeneas",
+        "en": "Chimney service"
+      },
+      {
+        "id": "NEG-HOGAR-30",
+        "orden": 30,
+        "es": "Soldadura y herrería",
+        "en": "Welding & metal work"
+      },
+      {
+        "id": "NEG-HOGAR-31",
+        "orden": 31,
+        "es": "Cercas",
+        "en": "Fencing"
+      },
+      {
+        "id": "NEG-HOGAR-32",
+        "orden": 32,
+        "es": "Terrazas y patios",
+        "en": "Decks & patios"
+      },
+      {
+        "id": "NEG-HOGAR-33",
+        "orden": 33,
+        "es": "Entradas de concreto",
+        "en": "Concrete driveways"
+      },
+      {
+        "id": "NEG-HOGAR-34",
+        "orden": 34,
+        "es": "Jardinería y paisajismo",
+        "en": "Landscaping"
+      },
+      {
+        "id": "NEG-HOGAR-35",
+        "orden": 35,
+        "es": "Corte de césped",
+        "en": "Lawn care & mowing"
+      },
+      {
+        "id": "NEG-HOGAR-36",
+        "orden": 36,
+        "es": "Poda y remoción de árboles",
+        "en": "Tree service"
+      },
+      {
+        "id": "NEG-HOGAR-37",
+        "orden": 37,
+        "es": "Remoción de nieve",
+        "en": "Snow removal"
+      },
+      {
+        "id": "NEG-HOGAR-38",
+        "orden": 38,
+        "es": "Riego",
+        "en": "Sprinklers & irrigation"
+      },
+      {
+        "id": "NEG-HOGAR-39",
+        "orden": 39,
+        "es": "Piscinas y jacuzzis",
+        "en": "Pools & spas"
+      },
+      {
+        "id": "NEG-HOGAR-40",
+        "orden": 40,
+        "es": "Control de plagas",
+        "en": "Pest control"
+      },
+      {
+        "id": "NEG-HOGAR-41",
+        "orden": 41,
+        "es": "Limpieza de casas",
+        "en": "House cleaning"
+      },
+      {
+        "id": "NEG-HOGAR-42",
+        "orden": 42,
+        "es": "Limpieza profunda y de salida",
+        "en": "Deep & move-out cleaning"
+      },
+      {
+        "id": "NEG-HOGAR-43",
+        "orden": 43,
+        "es": "Limpieza comercial",
+        "en": "Commercial cleaning"
+      },
+      {
+        "id": "NEG-HOGAR-44",
+        "orden": 44,
+        "es": "Limpieza de ventanas",
+        "en": "Window cleaning"
+      },
+      {
+        "id": "NEG-HOGAR-45",
+        "orden": 45,
+        "es": "Lavado a presión",
+        "en": "Pressure washing"
+      },
+      {
+        "id": "NEG-HOGAR-46",
+        "orden": 46,
+        "es": "Retiro de escombros y basura",
+        "en": "Junk removal"
+      },
+      {
+        "id": "NEG-HOGAR-47",
+        "orden": 47,
+        "es": "Mudanzas",
+        "en": "Moving"
+      },
+      {
+        "id": "NEG-HOGAR-48",
+        "orden": 48,
+        "es": "Servicio de empaque",
+        "en": "Packing service"
+      },
+      {
+        "id": "NEG-HOGAR-49",
+        "orden": 49,
+        "es": "Armado de muebles",
+        "en": "Furniture assembly"
+      },
+      {
+        "id": "NEG-HOGAR-50",
+        "orden": 50,
+        "es": "Tapicería y reparación de muebles",
+        "en": "Upholstery & furniture repair"
+      },
+      {
+        "id": "NEG-HOGAR-51",
+        "orden": 51,
+        "es": "Puertas de garaje",
+        "en": "Garage doors"
+      },
+      {
+        "id": "NEG-HOGAR-52",
+        "orden": 52,
+        "es": "Cerrajero",
+        "en": "Locksmith"
+      },
+      {
+        "id": "NEG-HOGAR-53",
+        "orden": 53,
+        "es": "Cámaras y alarmas",
+        "en": "Security cameras & alarms"
+      },
+      {
+        "id": "NEG-HOGAR-54",
+        "orden": 54,
+        "es": "Instalación de TV y casa inteligente",
+        "en": "TV mounting & smart home"
+      },
+      {
+        "id": "NEG-HOGAR-55",
+        "orden": 55,
+        "es": "Instalación de internet y satélite",
+        "en": "Internet & satellite install"
+      },
+      {
+        "id": "NEG-HOGAR-56",
+        "orden": 56,
+        "es": "Paneles solares",
+        "en": "Solar panels"
+      },
+      {
+        "id": "NEG-HOGAR-57",
+        "orden": 57,
+        "es": "Generadores",
+        "en": "Generators"
+      },
+      {
+        "id": "NEG-HOGAR-58",
+        "orden": 58,
+        "es": "Reparaciones para inspección",
+        "en": "Home inspection prep & repairs"
+      }
+    ]
+  },
+  {
+    "id": "NEG-NOCHE",
+    "orden": 5,
+    "es": "Vida Nocturna",
+    "en": "Night Life",
+    "corto": {
+      "es": "Noche",
+      "en": "Nightlife",
+      "provisional": false
+    },
+    "icono": "drink",
+    "filtros": [
+      "F-NOCHE"
+    ],
+    "modulos": [
+      "svc",
+      "rsv",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-NOCHE-01",
+        "orden": 1,
+        "es": "Bar",
+        "en": "Bar"
+      },
+      {
+        "id": "NEG-NOCHE-02",
+        "orden": 2,
+        "es": "Bar deportivo",
+        "en": "Sports bar"
+      },
+      {
+        "id": "NEG-NOCHE-03",
+        "orden": 3,
+        "es": "Cantina",
+        "en": "Cantina"
+      },
+      {
+        "id": "NEG-NOCHE-04",
+        "orden": 4,
+        "es": "Lounge",
+        "en": "Lounge"
+      },
+      {
+        "id": "NEG-NOCHE-05",
+        "orden": 5,
+        "es": "Discoteca",
+        "en": "Nightclub"
+      },
+      {
+        "id": "NEG-NOCHE-06",
+        "orden": 6,
+        "es": "Club de salsa y bachata",
+        "en": "Latin dance club"
+      },
+      {
+        "id": "NEG-NOCHE-07",
+        "orden": 7,
+        "es": "Noche de banda y norteño",
+        "en": "Banda & norteño night"
+      },
+      {
+        "id": "NEG-NOCHE-08",
+        "orden": 8,
+        "es": "Noche urbana",
+        "en": "Reggaetón & urbano night"
+      },
+      {
+        "id": "NEG-NOCHE-09",
+        "orden": 9,
+        "es": "Local de música en vivo",
+        "en": "Live music venue"
+      },
+      {
+        "id": "NEG-NOCHE-10",
+        "orden": 10,
+        "es": "Sala de conciertos",
+        "en": "Concert venue"
+      },
+      {
+        "id": "NEG-NOCHE-11",
+        "orden": 11,
+        "es": "Karaoke",
+        "en": "Karaoke"
+      },
+      {
+        "id": "NEG-NOCHE-12",
+        "orden": 12,
+        "es": "Salón de hookah",
+        "en": "Hookah lounge"
+      },
+      {
+        "id": "NEG-NOCHE-13",
+        "orden": 13,
+        "es": "Billar",
+        "en": "Billiards & pool hall"
+      },
+      {
+        "id": "NEG-NOCHE-14",
+        "orden": 14,
+        "es": "Bar de juegos",
+        "en": "Darts & games bar"
+      },
+      {
+        "id": "NEG-NOCHE-15",
+        "orden": 15,
+        "es": "Cervecería",
+        "en": "Brewery & taproom"
+      },
+      {
+        "id": "NEG-NOCHE-16",
+        "orden": 16,
+        "es": "Bar de vinos",
+        "en": "Wine bar"
+      },
+      {
+        "id": "NEG-NOCHE-17",
+        "orden": 17,
+        "es": "Coctelería",
+        "en": "Cocktail bar"
+      },
+      {
+        "id": "NEG-NOCHE-18",
+        "orden": 18,
+        "es": "Terraza",
+        "en": "Rooftop & terrace"
+      },
+      {
+        "id": "NEG-NOCHE-19",
+        "orden": 19,
+        "es": "Comedia y espectáculos",
+        "en": "Comedy & show"
+      },
+      {
+        "id": "NEG-NOCHE-20",
+        "orden": 20,
+        "es": "Noches temáticas",
+        "en": "Ladies night & themed nights"
+      },
+      {
+        "id": "NEG-NOCHE-21",
+        "orden": 21,
+        "es": "After-hours",
+        "en": "After-hours"
+      },
+      {
+        "id": "NEG-NOCHE-22",
+        "orden": 22,
+        "es": "Promotor de eventos nocturnos",
+        "en": "Event promoter"
+      },
+      {
+        "id": "NEG-NOCHE-23",
+        "orden": 23,
+        "es": "DJ de discoteca",
+        "en": "Nightclub DJ"
+      },
+      {
+        "id": "NEG-NOCHE-24",
+        "orden": 24,
+        "es": "Servicio VIP",
+        "en": "Bottle service & VIP tables"
+      },
+      {
+        "id": "NEG-NOCHE-25",
+        "orden": 25,
+        "es": "Local para fiestas privadas",
+        "en": "Private party venue"
+      }
+    ]
+  },
+  {
+    "id": "NEG-MERC",
+    "orden": 6,
+    "es": "Mercados y Bodegas",
+    "en": "Markets and Bodegas",
+    "corto": {
+      "es": "Mercados",
+      "en": "Markets",
+      "provisional": false
+    },
+    "icono": "cart",
+    "filtros": [
+      "F-RETAIL"
+    ],
+    "modulos": [
+      "shop",
+      "pedidos",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "shop",
+    "subcategorias": [
+      {
+        "id": "NEG-MERC-01",
+        "orden": 1,
+        "es": "Bodega de la esquina",
+        "en": "Bodega / corner store"
+      },
+      {
+        "id": "NEG-MERC-02",
+        "orden": 2,
+        "es": "Supermercado latino",
+        "en": "Latin supermarket"
+      },
+      {
+        "id": "NEG-MERC-03",
+        "orden": 3,
+        "es": "Abarrotes",
+        "en": "Grocery store"
+      },
+      {
+        "id": "NEG-MERC-04",
+        "orden": 4,
+        "es": "Carnicería",
+        "en": "Butcher shop"
+      },
+      {
+        "id": "NEG-MERC-05",
+        "orden": 5,
+        "es": "Pescadería",
+        "en": "Fish market"
+      },
+      {
+        "id": "NEG-MERC-06",
+        "orden": 6,
+        "es": "Frutas y verduras",
+        "en": "Produce market"
+      },
+      {
+        "id": "NEG-MERC-07",
+        "orden": 7,
+        "es": "Tortillería",
+        "en": "Tortillería"
+      },
+      {
+        "id": "NEG-MERC-08",
+        "orden": 8,
+        "es": "Delicatessen y comida lista",
+        "en": "Deli & prepared foods"
+      },
+      {
+        "id": "NEG-MERC-09",
+        "orden": 9,
+        "es": "Congelados",
+        "en": "Frozen foods"
+      },
+      {
+        "id": "NEG-MERC-10",
+        "orden": 10,
+        "es": "Quesos y lácteos",
+        "en": "Cheese & dairy"
+      },
+      {
+        "id": "NEG-MERC-11",
+        "orden": 11,
+        "es": "Especias y granos",
+        "en": "Spices & dried goods"
+      },
+      {
+        "id": "NEG-MERC-12",
+        "orden": 12,
+        "es": "Productos mexicanos",
+        "en": "Mexican products"
+      },
+      {
+        "id": "NEG-MERC-13",
+        "orden": 13,
+        "es": "Productos dominicanos",
+        "en": "Dominican products"
+      },
+      {
+        "id": "NEG-MERC-14",
+        "orden": 14,
+        "es": "Productos centroamericanos",
+        "en": "Central American products"
+      },
+      {
+        "id": "NEG-MERC-15",
+        "orden": 15,
+        "es": "Productos sudamericanos",
+        "en": "South American products"
+      },
+      {
+        "id": "NEG-MERC-16",
+        "orden": 16,
+        "es": "Productos del Caribe",
+        "en": "Caribbean products"
+      },
+      {
+        "id": "NEG-MERC-17",
+        "orden": 17,
+        "es": "Mayorista",
+        "en": "Wholesale & mayoreo"
+      },
+      {
+        "id": "NEG-MERC-18",
+        "orden": 18,
+        "es": "Mercado de agricultores",
+        "en": "Farmers market"
+      },
+      {
+        "id": "NEG-MERC-19",
+        "orden": 19,
+        "es": "Tienda de conveniencia",
+        "en": "Convenience store"
+      },
+      {
+        "id": "NEG-MERC-20",
+        "orden": 20,
+        "es": "Tienda de a dólar",
+        "en": "Dollar & discount store"
+      },
+      {
+        "id": "NEG-MERC-21",
+        "orden": 21,
+        "es": "Licorería",
+        "en": "Liquor store"
+      },
+      {
+        "id": "NEG-MERC-22",
+        "orden": 22,
+        "es": "Cerveza y vino",
+        "en": "Beer & wine"
+      },
+      {
+        "id": "NEG-MERC-23",
+        "orden": 23,
+        "es": "Tabaquería",
+        "en": "Smoke shop"
+      },
+      {
+        "id": "NEG-MERC-24",
+        "orden": 24,
+        "es": "Vape shop",
+        "en": "Vape shop"
+      },
+      {
+        "id": "NEG-MERC-25",
+        "orden": 25,
+        "es": "Botánica y hierbas",
+        "en": "Botánica & herbs"
+      },
+      {
+        "id": "NEG-MERC-26",
+        "orden": 26,
+        "es": "Agua e hielo",
+        "en": "Water & ice"
+      },
+      {
+        "id": "NEG-MERC-27",
+        "orden": 27,
+        "es": "Alimento para mascotas",
+        "en": "Pet food"
+      },
+      {
+        "id": "NEG-MERC-28",
+        "orden": 28,
+        "es": "Panadería dentro del mercado",
+        "en": "Bakery counter inside market"
+      },
+      {
+        "id": "NEG-MERC-29",
+        "orden": 29,
+        "es": "Servicios de dinero en bodega",
+        "en": "Money services inside bodega"
+      },
+      {
+        "id": "NEG-MERC-30",
+        "orden": 30,
+        "es": "Entrega a domicilio del mercado",
+        "en": "Home delivery from market"
+      }
+    ]
+  },
+  {
+    "id": "NEG-FIESTA",
+    "orden": 7,
+    "es": "Fiestas y Celebraciones",
+    "en": "Party and Celebrations",
+    "corto": {
+      "es": "Fiestas",
+      "en": "Parties",
+      "provisional": false
+    },
+    "icono": "party",
+    "filtros": [
+      "F-EVENTO"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "cot",
+      "renta",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-FIESTA-01",
+        "orden": 1,
+        "es": "Organizador de eventos",
+        "en": "Event planner"
+      },
+      {
+        "id": "NEG-FIESTA-02",
+        "orden": 2,
+        "es": "Organizador de quinceañeras",
+        "en": "Quinceañera planner"
+      },
+      {
+        "id": "NEG-FIESTA-03",
+        "orden": 3,
+        "es": "Organizador de bodas",
+        "en": "Wedding planner"
+      },
+      {
+        "id": "NEG-FIESTA-04",
+        "orden": 4,
+        "es": "Organizador de baby shower",
+        "en": "Baby shower planner"
+      },
+      {
+        "id": "NEG-FIESTA-05",
+        "orden": 5,
+        "es": "Fiestas de cumpleaños",
+        "en": "Birthday parties"
+      },
+      {
+        "id": "NEG-FIESTA-06",
+        "orden": 6,
+        "es": "Eventos corporativos",
+        "en": "Corporate events"
+      },
+      {
+        "id": "NEG-FIESTA-07",
+        "orden": 7,
+        "es": "Salón de fiestas",
+        "en": "Party venue"
+      },
+      {
+        "id": "NEG-FIESTA-08",
+        "orden": 8,
+        "es": "Montaje en patio",
+        "en": "Backyard & outdoor setup"
+      },
+      {
+        "id": "NEG-FIESTA-09",
+        "orden": 9,
+        "es": "Renta de artículos para fiesta",
+        "en": "Party rentals"
+      },
+      {
+        "id": "NEG-FIESTA-10",
+        "orden": 10,
+        "es": "Renta de mesas y sillas",
+        "en": "Tables & chairs rental"
+      },
+      {
+        "id": "NEG-FIESTA-11",
+        "orden": 11,
+        "es": "Renta de carpas",
+        "en": "Tents & canopies"
+      },
+      {
+        "id": "NEG-FIESTA-12",
+        "orden": 12,
+        "es": "Mantelería",
+        "en": "Linens & covers"
+      },
+      {
+        "id": "NEG-FIESTA-13",
+        "orden": 13,
+        "es": "Decoración y centros de mesa",
+        "en": "Décor & centerpieces"
+      },
+      {
+        "id": "NEG-FIESTA-14",
+        "orden": 14,
+        "es": "Decoración con globos",
+        "en": "Balloon décor"
+      },
+      {
+        "id": "NEG-FIESTA-15",
+        "orden": 15,
+        "es": "Fondos y arcos",
+        "en": "Backdrops & arches"
+      },
+      {
+        "id": "NEG-FIESTA-16",
+        "orden": 16,
+        "es": "Iluminación y sonido",
+        "en": "Lighting & sound"
+      },
+      {
+        "id": "NEG-FIESTA-17",
+        "orden": 17,
+        "es": "Escenario y pista",
+        "en": "Stage & dance floor"
+      },
+      {
+        "id": "NEG-FIESTA-18",
+        "orden": 18,
+        "es": "Brincolines e inflables",
+        "en": "Bounce house & inflatables"
+      },
+      {
+        "id": "NEG-FIESTA-19",
+        "orden": 19,
+        "es": "Juegos y renta de feria",
+        "en": "Games & carnival rentals"
+      },
+      {
+        "id": "NEG-FIESTA-20",
+        "orden": 20,
+        "es": "Piñatas",
+        "en": "Piñatas"
+      },
+      {
+        "id": "NEG-FIESTA-21",
+        "orden": 21,
+        "es": "Mesa de dulces",
+        "en": "Candy table"
+      },
+      {
+        "id": "NEG-FIESTA-22",
+        "orden": 22,
+        "es": "Fuente de chocolate",
+        "en": "Chocolate fountain"
+      },
+      {
+        "id": "NEG-FIESTA-23",
+        "orden": 23,
+        "es": "Pastel y postres de evento",
+        "en": "Cake & desserts for events"
+      },
+      {
+        "id": "NEG-FIESTA-24",
+        "orden": 24,
+        "es": "Taquiza y parrillada",
+        "en": "Taco & grill catering"
+      },
+      {
+        "id": "NEG-FIESTA-25",
+        "orden": 25,
+        "es": "Servicio de bartender",
+        "en": "Bartender service"
+      },
+      {
+        "id": "NEG-FIESTA-26",
+        "orden": 26,
+        "es": "Meseros",
+        "en": "Waitstaff"
+      },
+      {
+        "id": "NEG-FIESTA-27",
+        "orden": 27,
+        "es": "Barra móvil",
+        "en": "Portable bar"
+      },
+      {
+        "id": "NEG-FIESTA-28",
+        "orden": 28,
+        "es": "Baños portátiles",
+        "en": "Portable restrooms"
+      },
+      {
+        "id": "NEG-FIESTA-29",
+        "orden": 29,
+        "es": "Plantas de luz",
+        "en": "Generators & power"
+      },
+      {
+        "id": "NEG-FIESTA-30",
+        "orden": 30,
+        "es": "Florería",
+        "en": "Florist"
+      },
+      {
+        "id": "NEG-FIESTA-31",
+        "orden": 31,
+        "es": "Invitaciones e impresión",
+        "en": "Invitations & printing"
+      },
+      {
+        "id": "NEG-FIESTA-32",
+        "orden": 32,
+        "es": "Tienda de artículos de fiesta",
+        "en": "Party supply store"
+      },
+      {
+        "id": "NEG-FIESTA-33",
+        "orden": 33,
+        "es": "DJ",
+        "en": "DJ"
+      },
+      {
+        "id": "NEG-FIESTA-34",
+        "orden": 34,
+        "es": "Renta de sonido",
+        "en": "Sound system rental"
+      },
+      {
+        "id": "NEG-FIESTA-35",
+        "orden": 35,
+        "es": "Mariachi",
+        "en": "Mariachi"
+      },
+      {
+        "id": "NEG-FIESTA-36",
+        "orden": 36,
+        "es": "Banda & norteño",
+        "en": "Banda & norteño"
+      },
+      {
+        "id": "NEG-FIESTA-37",
+        "orden": 37,
+        "es": "Trío & serenata",
+        "en": "Trío & serenata"
+      },
+      {
+        "id": "NEG-FIESTA-38",
+        "orden": 38,
+        "es": "Grupo musical",
+        "en": "Live band"
+      },
+      {
+        "id": "NEG-FIESTA-39",
+        "orden": 39,
+        "es": "Cantante",
+        "en": "Solo singer"
+      },
+      {
+        "id": "NEG-FIESTA-40",
+        "orden": 40,
+        "es": "Maestro de ceremonias y animador",
+        "en": "MC & animator"
+      },
+      {
+        "id": "NEG-FIESTA-41",
+        "orden": 41,
+        "es": "Payasos",
+        "en": "Clowns"
+      },
+      {
+        "id": "NEG-FIESTA-42",
+        "orden": 42,
+        "es": "Personajes y botargas",
+        "en": "Character animators"
+      },
+      {
+        "id": "NEG-FIESTA-43",
+        "orden": 43,
+        "es": "Pintacaritas",
+        "en": "Face painting"
+      },
+      {
+        "id": "NEG-FIESTA-44",
+        "orden": 44,
+        "es": "Mago",
+        "en": "Magician"
+      },
+      {
+        "id": "NEG-FIESTA-45",
+        "orden": 45,
+        "es": "Bailarines y hora loca",
+        "en": "Dancers & hora loca"
+      },
+      {
+        "id": "NEG-FIESTA-46",
+        "orden": 46,
+        "es": "Entretenimiento infantil",
+        "en": "Kids entertainment"
+      },
+      {
+        "id": "NEG-FIESTA-47",
+        "orden": 47,
+        "es": "Fotógrafo",
+        "en": "Photographer"
+      },
+      {
+        "id": "NEG-FIESTA-48",
+        "orden": 48,
+        "es": "Videógrafo",
+        "en": "Videographer"
+      },
+      {
+        "id": "NEG-FIESTA-49",
+        "orden": 49,
+        "es": "Fotografía con dron",
+        "en": "Drone photography"
+      },
+      {
+        "id": "NEG-FIESTA-50",
+        "orden": 50,
+        "es": "Cabina de fotos",
+        "en": "Photo booth"
+      },
+      {
+        "id": "NEG-FIESTA-51",
+        "orden": 51,
+        "es": "Cabina 360",
+        "en": "360 photo booth"
+      },
+      {
+        "id": "NEG-FIESTA-52",
+        "orden": 52,
+        "es": "Limosina y party bus",
+        "en": "Limo & party bus"
+      },
+      {
+        "id": "NEG-FIESTA-53",
+        "orden": 53,
+        "es": "Chambelanes y coreografía",
+        "en": "Chambelanes & choreography"
+      },
+      {
+        "id": "NEG-FIESTA-54",
+        "orden": 54,
+        "es": "Renta de vestidos y trajes",
+        "en": "Dress & tuxedo rental"
+      },
+      {
+        "id": "NEG-FIESTA-55",
+        "orden": 55,
+        "es": "Coordinación de ceremonia religiosa",
+        "en": "Religious ceremony coordination"
+      },
+      {
+        "id": "NEG-FIESTA-56",
+        "orden": 56,
+        "es": "Pirotecnia y chispas frías",
+        "en": "Fireworks & cold sparks"
+      }
+    ]
+  },
+  {
+    "id": "NEG-SALUD",
+    "orden": 8,
+    "es": "Doctores y Medicina",
+    "en": "Doctors and Medicine",
+    "corto": {
+      "es": "Salud",
+      "en": "Health",
+      "provisional": false
+    },
+    "icono": "medical",
+    "filtros": [
+      "F-SALUD"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "shop",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-SALUD-01",
+        "orden": 1,
+        "es": "Medicina general",
+        "en": "Primary care"
+      },
+      {
+        "id": "NEG-SALUD-02",
+        "orden": 2,
+        "es": "Clínica sin cita y urgencias",
+        "en": "Walk-in & urgent care"
+      },
+      {
+        "id": "NEG-SALUD-03",
+        "orden": 3,
+        "es": "Clínica comunitaria de bajo costo",
+        "en": "Community clinic – sliding scale"
+      },
+      {
+        "id": "NEG-SALUD-04",
+        "orden": 4,
+        "es": "Pediatría",
+        "en": "Pediatrics"
+      },
+      {
+        "id": "NEG-SALUD-05",
+        "orden": 5,
+        "es": "Ginecología y obstetricia",
+        "en": "OB-GYN"
+      },
+      {
+        "id": "NEG-SALUD-06",
+        "orden": 6,
+        "es": "Control prenatal",
+        "en": "Prenatal care"
+      },
+      {
+        "id": "NEG-SALUD-07",
+        "orden": 7,
+        "es": "Partera y doula",
+        "en": "Midwife & doula"
+      },
+      {
+        "id": "NEG-SALUD-08",
+        "orden": 8,
+        "es": "Fertilidad",
+        "en": "Fertility"
+      },
+      {
+        "id": "NEG-SALUD-09",
+        "orden": 9,
+        "es": "Planificación familiar",
+        "en": "Family planning"
+      },
+      {
+        "id": "NEG-SALUD-10",
+        "orden": 10,
+        "es": "Dentista",
+        "en": "Dentist"
+      },
+      {
+        "id": "NEG-SALUD-11",
+        "orden": 11,
+        "es": "Ortodoncia",
+        "en": "Orthodontist"
+      },
+      {
+        "id": "NEG-SALUD-12",
+        "orden": 12,
+        "es": "Cirugía oral",
+        "en": "Oral surgery"
+      },
+      {
+        "id": "NEG-SALUD-13",
+        "orden": 13,
+        "es": "Prótesis e implantes",
+        "en": "Dentures & implants"
+      },
+      {
+        "id": "NEG-SALUD-14",
+        "orden": 14,
+        "es": "Dentista infantil",
+        "en": "Pediatric dentist"
+      },
+      {
+        "id": "NEG-SALUD-15",
+        "orden": 15,
+        "es": "Optometría",
+        "en": "Optometrist & eye exam"
+      },
+      {
+        "id": "NEG-SALUD-16",
+        "orden": 16,
+        "es": "Óptica y lentes",
+        "en": "Optical shop & glasses"
+      },
+      {
+        "id": "NEG-SALUD-17",
+        "orden": 17,
+        "es": "Dermatología",
+        "en": "Dermatology"
+      },
+      {
+        "id": "NEG-SALUD-18",
+        "orden": 18,
+        "es": "Cardiología",
+        "en": "Cardiology"
+      },
+      {
+        "id": "NEG-SALUD-19",
+        "orden": 19,
+        "es": "Endocrinología y diabetes",
+        "en": "Endocrinology & diabetes"
+      },
+      {
+        "id": "NEG-SALUD-20",
+        "orden": 20,
+        "es": "Gastroenterología",
+        "en": "Gastroenterology"
+      },
+      {
+        "id": "NEG-SALUD-21",
+        "orden": 21,
+        "es": "Neurología",
+        "en": "Neurology"
+      },
+      {
+        "id": "NEG-SALUD-22",
+        "orden": 22,
+        "es": "Neumología",
+        "en": "Pulmonology"
+      },
+      {
+        "id": "NEG-SALUD-23",
+        "orden": 23,
+        "es": "Urología",
+        "en": "Urology"
+      },
+      {
+        "id": "NEG-SALUD-24",
+        "orden": 24,
+        "es": "Nefrología",
+        "en": "Nephrology"
+      },
+      {
+        "id": "NEG-SALUD-25",
+        "orden": 25,
+        "es": "Reumatología",
+        "en": "Rheumatology"
+      },
+      {
+        "id": "NEG-SALUD-26",
+        "orden": 26,
+        "es": "Ortopedia",
+        "en": "Orthopedics"
+      },
+      {
+        "id": "NEG-SALUD-27",
+        "orden": 27,
+        "es": "Medicina deportiva",
+        "en": "Sports medicine"
+      },
+      {
+        "id": "NEG-SALUD-28",
+        "orden": 28,
+        "es": "Podología",
+        "en": "Podiatry"
+      },
+      {
+        "id": "NEG-SALUD-29",
+        "orden": 29,
+        "es": "Otorrinolaringología",
+        "en": "ENT"
+      },
+      {
+        "id": "NEG-SALUD-30",
+        "orden": 30,
+        "es": "Alergias y asma",
+        "en": "Allergy & asthma"
+      },
+      {
+        "id": "NEG-SALUD-31",
+        "orden": 31,
+        "es": "Oncología",
+        "en": "Oncology"
+      },
+      {
+        "id": "NEG-SALUD-32",
+        "orden": 32,
+        "es": "Manejo del dolor",
+        "en": "Pain management"
+      },
+      {
+        "id": "NEG-SALUD-33",
+        "orden": 33,
+        "es": "Quiropráctico",
+        "en": "Chiropractor"
+      },
+      {
+        "id": "NEG-SALUD-34",
+        "orden": 34,
+        "es": "Terapia física",
+        "en": "Physical therapy"
+      },
+      {
+        "id": "NEG-SALUD-35",
+        "orden": 35,
+        "es": "Terapia ocupacional",
+        "en": "Occupational therapy"
+      },
+      {
+        "id": "NEG-SALUD-36",
+        "orden": 36,
+        "es": "Terapia del habla",
+        "en": "Speech therapy"
+      },
+      {
+        "id": "NEG-SALUD-37",
+        "orden": 37,
+        "es": "Psicología y consejería",
+        "en": "Psychology & counseling"
+      },
+      {
+        "id": "NEG-SALUD-38",
+        "orden": 38,
+        "es": "Psiquiatría",
+        "en": "Psychiatry"
+      },
+      {
+        "id": "NEG-SALUD-39",
+        "orden": 39,
+        "es": "Terapia familiar y de pareja",
+        "en": "Family & couples therapy"
+      },
+      {
+        "id": "NEG-SALUD-40",
+        "orden": 40,
+        "es": "Adicciones y recuperación",
+        "en": "Addiction & recovery"
+      },
+      {
+        "id": "NEG-SALUD-41",
+        "orden": 41,
+        "es": "Nutriólogo",
+        "en": "Nutritionist"
+      },
+      {
+        "id": "NEG-SALUD-42",
+        "orden": 42,
+        "es": "Clínica de pérdida de peso",
+        "en": "Weight loss clinic"
+      },
+      {
+        "id": "NEG-SALUD-43",
+        "orden": 43,
+        "es": "Medicina estética",
+        "en": "Aesthetic medicine"
+      },
+      {
+        "id": "NEG-SALUD-44",
+        "orden": 44,
+        "es": "Terapia intravenosa y bienestar",
+        "en": "IV therapy & wellness"
+      },
+      {
+        "id": "NEG-SALUD-45",
+        "orden": 45,
+        "es": "Vacunas",
+        "en": "Vaccinations"
+      },
+      {
+        "id": "NEG-SALUD-46",
+        "orden": 46,
+        "es": "Laboratorio y análisis",
+        "en": "Lab & bloodwork"
+      },
+      {
+        "id": "NEG-SALUD-47",
+        "orden": 47,
+        "es": "Imagenología y rayos X",
+        "en": "Imaging & X-ray"
+      },
+      {
+        "id": "NEG-SALUD-48",
+        "orden": 48,
+        "es": "Farmacia",
+        "en": "Pharmacy"
+      },
+      {
+        "id": "NEG-SALUD-49",
+        "orden": 49,
+        "es": "Farmacia de preparación",
+        "en": "Compounding pharmacy"
+      },
+      {
+        "id": "NEG-SALUD-50",
+        "orden": 50,
+        "es": "Equipo médico",
+        "en": "Medical equipment & supplies"
+      },
+      {
+        "id": "NEG-SALUD-51",
+        "orden": 51,
+        "es": "Aparatos auditivos",
+        "en": "Hearing aids"
+      },
+      {
+        "id": "NEG-SALUD-52",
+        "orden": 52,
+        "es": "Cuidador a domicilio",
+        "en": "Home health aide"
+      },
+      {
+        "id": "NEG-SALUD-53",
+        "orden": 53,
+        "es": "Enfermería a domicilio",
+        "en": "Home nursing"
+      },
+      {
+        "id": "NEG-SALUD-54",
+        "orden": 54,
+        "es": "Cuidado de adultos mayores",
+        "en": "Elder care"
+      },
+      {
+        "id": "NEG-SALUD-55",
+        "orden": 55,
+        "es": "Cuidados paliativos",
+        "en": "Hospice & palliative"
+      },
+      {
+        "id": "NEG-SALUD-56",
+        "orden": 56,
+        "es": "Transporte médico",
+        "en": "Non-emergency medical transport"
+      },
+      {
+        "id": "NEG-SALUD-57",
+        "orden": 57,
+        "es": "Telemedicina",
+        "en": "Telemedicine"
+      },
+      {
+        "id": "NEG-SALUD-58",
+        "orden": 58,
+        "es": "Clínica del sueño",
+        "en": "Sleep clinic"
+      },
+      {
+        "id": "NEG-SALUD-59",
+        "orden": 59,
+        "es": "Exámenes médicos laborales y DOT",
+        "en": "Occupational & DOT physicals"
+      },
+      {
+        "id": "NEG-SALUD-60",
+        "orden": 60,
+        "es": "Veterinario",
+        "en": "Veterinarian"
+      }
+    ]
+  },
+  {
+    "id": "NEG-PRO",
+    "orden": 9,
+    "es": "Servicios Profesionales",
+    "en": "Professional Services",
+    "corto": {
+      "es": "Profesionales",
+      "en": "Pros",
+      "provisional": false
+    },
+    "icono": "brief",
+    "filtros": [
+      "F-PRO"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "cot",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-PRO-01",
+        "orden": 1,
+        "es": "Abogado de inmigración",
+        "en": "Immigration attorney"
+      },
+      {
+        "id": "NEG-PRO-02",
+        "orden": 2,
+        "es": "Ayuda con documentos de inmigración",
+        "en": "Immigration document help"
+      },
+      {
+        "id": "NEG-PRO-03",
+        "orden": 3,
+        "es": "Trámites de consulado y pasaporte",
+        "en": "Consulate & passport help"
+      },
+      {
+        "id": "NEG-PRO-04",
+        "orden": 4,
+        "es": "Abogado general",
+        "en": "General attorney"
+      },
+      {
+        "id": "NEG-PRO-05",
+        "orden": 5,
+        "es": "Derecho familiar",
+        "en": "Family law"
+      },
+      {
+        "id": "NEG-PRO-06",
+        "orden": 6,
+        "es": "Divorcio y custodia",
+        "en": "Divorce & custody"
+      },
+      {
+        "id": "NEG-PRO-07",
+        "orden": 7,
+        "es": "Defensa penal",
+        "en": "Criminal defense"
+      },
+      {
+        "id": "NEG-PRO-08",
+        "orden": 8,
+        "es": "Multas de tránsito y DUI",
+        "en": "Traffic tickets & DUI"
+      },
+      {
+        "id": "NEG-PRO-09",
+        "orden": 9,
+        "es": "Accidentes y lesiones",
+        "en": "Personal injury & accidents"
+      },
+      {
+        "id": "NEG-PRO-10",
+        "orden": 10,
+        "es": "Compensación laboral",
+        "en": "Workers' comp"
+      },
+      {
+        "id": "NEG-PRO-11",
+        "orden": 11,
+        "es": "Bancarrota",
+        "en": "Bankruptcy"
+      },
+      {
+        "id": "NEG-PRO-12",
+        "orden": 12,
+        "es": "Abogado de bienes raíces",
+        "en": "Real estate attorney"
+      },
+      {
+        "id": "NEG-PRO-13",
+        "orden": 13,
+        "es": "Testamentos y sucesiones",
+        "en": "Wills & estate"
+      },
+      {
+        "id": "NEG-PRO-14",
+        "orden": 14,
+        "es": "Fianzas",
+        "en": "Bail bonds"
+      },
+      {
+        "id": "NEG-PRO-15",
+        "orden": 15,
+        "es": "Notario público",
+        "en": "Notary public"
+      },
+      {
+        "id": "NEG-PRO-16",
+        "orden": 16,
+        "es": "Apostilla y legalización",
+        "en": "Apostille & document legalization"
+      },
+      {
+        "id": "NEG-PRO-17",
+        "orden": 17,
+        "es": "Traducción e interpretación",
+        "en": "Translation & interpretation"
+      },
+      {
+        "id": "NEG-PRO-18",
+        "orden": 18,
+        "es": "Traducción certificada",
+        "en": "Certified document translation"
+      },
+      {
+        "id": "NEG-PRO-19",
+        "orden": 19,
+        "es": "Contador",
+        "en": "Accountant"
+      },
+      {
+        "id": "NEG-PRO-20",
+        "orden": 20,
+        "es": "Preparación de impuestos",
+        "en": "Tax preparation"
+      },
+      {
+        "id": "NEG-PRO-21",
+        "orden": 21,
+        "es": "Solicitud de ITIN",
+        "en": "ITIN application"
+      },
+      {
+        "id": "NEG-PRO-22",
+        "orden": 22,
+        "es": "Contabilidad y libros",
+        "en": "Bookkeeping"
+      },
+      {
+        "id": "NEG-PRO-23",
+        "orden": 23,
+        "es": "Nómina",
+        "en": "Payroll"
+      },
+      {
+        "id": "NEG-PRO-24",
+        "orden": 24,
+        "es": "Formación de empresa y LLC",
+        "en": "Business formation & LLC"
+      },
+      {
+        "id": "NEG-PRO-25",
+        "orden": 25,
+        "es": "Licencias y permisos",
+        "en": "Licenses & permits"
+      },
+      {
+        "id": "NEG-PRO-26",
+        "orden": 26,
+        "es": "Consultoría de negocios",
+        "en": "Business consulting"
+      },
+      {
+        "id": "NEG-PRO-27",
+        "orden": 27,
+        "es": "Seguros de auto",
+        "en": "Insurance agent – auto"
+      },
+      {
+        "id": "NEG-PRO-28",
+        "orden": 28,
+        "es": "Seguros de casa y renta",
+        "en": "Insurance agent – home & renters"
+      },
+      {
+        "id": "NEG-PRO-29",
+        "orden": 29,
+        "es": "Seguros de vida y salud",
+        "en": "Insurance agent – life & health"
+      },
+      {
+        "id": "NEG-PRO-30",
+        "orden": 30,
+        "es": "Seguros comerciales",
+        "en": "Commercial & business insurance"
+      },
+      {
+        "id": "NEG-PRO-31",
+        "orden": 31,
+        "es": "Envío de dinero y remesas",
+        "en": "Money transfer & remittances"
+      },
+      {
+        "id": "NEG-PRO-32",
+        "orden": 32,
+        "es": "Cambio de cheques",
+        "en": "Check cashing"
+      },
+      {
+        "id": "NEG-PRO-33",
+        "orden": 33,
+        "es": "Pago de servicios",
+        "en": "Bill payment services"
+      },
+      {
+        "id": "NEG-PRO-34",
+        "orden": 34,
+        "es": "Asesor financiero",
+        "en": "Financial advisor"
+      },
+      {
+        "id": "NEG-PRO-35",
+        "orden": 35,
+        "es": "Reparación de crédito",
+        "en": "Credit repair"
+      },
+      {
+        "id": "NEG-PRO-36",
+        "orden": 36,
+        "es": "Préstamos",
+        "en": "Loans & lending"
+      },
+      {
+        "id": "NEG-PRO-37",
+        "orden": 37,
+        "es": "Broker hipotecario",
+        "en": "Mortgage broker"
+      },
+      {
+        "id": "NEG-PRO-38",
+        "orden": 38,
+        "es": "Diseño web",
+        "en": "Web design"
+      },
+      {
+        "id": "NEG-PRO-39",
+        "orden": 39,
+        "es": "Diseño gráfico y logotipos",
+        "en": "Graphic design & logo"
+      },
+      {
+        "id": "NEG-PRO-40",
+        "orden": 40,
+        "es": "Imprenta y rótulos",
+        "en": "Printing & signs"
+      },
+      {
+        "id": "NEG-PRO-41",
+        "orden": 41,
+        "es": "Bordado y serigrafía",
+        "en": "Embroidery & screen printing"
+      },
+      {
+        "id": "NEG-PRO-42",
+        "orden": 42,
+        "es": "Mercadeo y redes sociales",
+        "en": "Marketing & social media"
+      },
+      {
+        "id": "NEG-PRO-43",
+        "orden": 43,
+        "es": "Fotografía comercial",
+        "en": "Commercial photography"
+      },
+      {
+        "id": "NEG-PRO-44",
+        "orden": 44,
+        "es": "Producción de video",
+        "en": "Video production"
+      },
+      {
+        "id": "NEG-PRO-45",
+        "orden": 45,
+        "es": "Desarrollo de software y apps",
+        "en": "Software & app development"
+      },
+      {
+        "id": "NEG-PRO-46",
+        "orden": 46,
+        "es": "Soporte técnico",
+        "en": "IT support"
+      },
+      {
+        "id": "NEG-PRO-47",
+        "orden": 47,
+        "es": "Reparación de computadoras",
+        "en": "Computer repair"
+      },
+      {
+        "id": "NEG-PRO-48",
+        "orden": 48,
+        "es": "Reparación de celulares",
+        "en": "Phone & tablet repair"
+      },
+      {
+        "id": "NEG-PRO-49",
+        "orden": 49,
+        "es": "Agencia de empleo",
+        "en": "Staffing & employment agency"
+      },
+      {
+        "id": "NEG-PRO-50",
+        "orden": 50,
+        "es": "Recursos humanos y cumplimiento",
+        "en": "HR & compliance"
+      },
+      {
+        "id": "NEG-PRO-51",
+        "orden": 51,
+        "es": "Seguridad privada",
+        "en": "Security guard services"
+      },
+      {
+        "id": "NEG-PRO-52",
+        "orden": 52,
+        "es": "Investigador privado",
+        "en": "Private investigator"
+      },
+      {
+        "id": "NEG-PRO-53",
+        "orden": 53,
+        "es": "Mensajería",
+        "en": "Courier & document delivery"
+      },
+      {
+        "id": "NEG-PRO-54",
+        "orden": 54,
+        "es": "Despacho de camiones",
+        "en": "Truck dispatch"
+      },
+      {
+        "id": "NEG-PRO-55",
+        "orden": 55,
+        "es": "Cumplimiento CDL y DOT",
+        "en": "CDL & DOT compliance"
+      },
+      {
+        "id": "NEG-PRO-56",
+        "orden": 56,
+        "es": "Arquitectura",
+        "en": "Architecture"
+      },
+      {
+        "id": "NEG-PRO-57",
+        "orden": 57,
+        "es": "Ingeniería",
+        "en": "Engineering"
+      },
+      {
+        "id": "NEG-PRO-58",
+        "orden": 58,
+        "es": "Topografía",
+        "en": "Surveying"
+      },
+      {
+        "id": "NEG-PRO-59",
+        "orden": 59,
+        "es": "Diseño de interiores",
+        "en": "Interior design"
+      },
+      {
+        "id": "NEG-PRO-60",
+        "orden": 60,
+        "es": "Oficiante de bodas y eventos",
+        "en": "Wedding & event officiant"
+      }
+    ]
+  },
+  {
+    "id": "NEG-TIENDA",
+    "orden": 10,
+    "es": "Tiendas",
+    "en": "Shops & Stores",
+    "corto": {
+      "es": "Tiendas",
+      "en": "Shops",
+      "provisional": true
+    },
+    "icono": "bag",
+    "filtros": [
+      "F-RETAIL"
+    ],
+    "modulos": [
+      "shop",
+      "pedidos",
+      "svc",
+      "citas",
+      "renta",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "shop",
+    "subcategorias": [
+      {
+        "id": "NEG-TIENDA-01",
+        "orden": 1,
+        "es": "Ropa de mujer",
+        "en": "Women's clothing"
+      },
+      {
+        "id": "NEG-TIENDA-02",
+        "orden": 2,
+        "es": "Ropa de hombre",
+        "en": "Men's clothing"
+      },
+      {
+        "id": "NEG-TIENDA-03",
+        "orden": 3,
+        "es": "Ropa de niños",
+        "en": "Children's clothing"
+      },
+      {
+        "id": "NEG-TIENDA-04",
+        "orden": 4,
+        "es": "Vestidos de quinceañera y novia",
+        "en": "Quinceañera & bridal dresses"
+      },
+      {
+        "id": "NEG-TIENDA-05",
+        "orden": 5,
+        "es": "Ropa formal y trajes",
+        "en": "Formal wear & tuxedos"
+      },
+      {
+        "id": "NEG-TIENDA-06",
+        "orden": 6,
+        "es": "Ropa vaquera, botas y sombreros",
+        "en": "Western wear – boots & hats"
+      },
+      {
+        "id": "NEG-TIENDA-07",
+        "orden": 7,
+        "es": "Zapatería",
+        "en": "Shoes"
+      },
+      {
+        "id": "NEG-TIENDA-08",
+        "orden": 8,
+        "es": "Tenis y ropa urbana",
+        "en": "Sneakers & streetwear"
+      },
+      {
+        "id": "NEG-TIENDA-09",
+        "orden": 9,
+        "es": "Uniformes y ropa de trabajo",
+        "en": "Uniforms & workwear"
+      },
+      {
+        "id": "NEG-TIENDA-10",
+        "orden": 10,
+        "es": "Camisetas personalizadas",
+        "en": "Custom t-shirts"
+      },
+      {
+        "id": "NEG-TIENDA-11",
+        "orden": 11,
+        "es": "Sastrería y arreglos de ropa",
+        "en": "Tailor & alterations"
+      },
+      {
+        "id": "NEG-TIENDA-12",
+        "orden": 12,
+        "es": "Tintorería",
+        "en": "Dry cleaning"
+      },
+      {
+        "id": "NEG-TIENDA-13",
+        "orden": 13,
+        "es": "Lavandería",
+        "en": "Laundromat"
+      },
+      {
+        "id": "NEG-TIENDA-14",
+        "orden": 14,
+        "es": "Joyería",
+        "en": "Jewelry"
+      },
+      {
+        "id": "NEG-TIENDA-15",
+        "orden": 15,
+        "es": "Reparación de relojes y joyas",
+        "en": "Watch & jewelry repair"
+      },
+      {
+        "id": "NEG-TIENDA-16",
+        "orden": 16,
+        "es": "Accesorios y bolsos",
+        "en": "Accessories & bags"
+      },
+      {
+        "id": "NEG-TIENDA-17",
+        "orden": 17,
+        "es": "Ropa de segunda",
+        "en": "Thrift & second hand"
+      },
+      {
+        "id": "NEG-TIENDA-18",
+        "orden": 18,
+        "es": "Consignación",
+        "en": "Consignment"
+      },
+      {
+        "id": "NEG-TIENDA-19",
+        "orden": 19,
+        "es": "Casa de empeño",
+        "en": "Pawn shop"
+      },
+      {
+        "id": "NEG-TIENDA-20",
+        "orden": 20,
+        "es": "Mueblería",
+        "en": "Furniture store"
+      },
+      {
+        "id": "NEG-TIENDA-21",
+        "orden": 21,
+        "es": "Colchones",
+        "en": "Mattresses"
+      },
+      {
+        "id": "NEG-TIENDA-22",
+        "orden": 22,
+        "es": "Decoración del hogar",
+        "en": "Home décor"
+      },
+      {
+        "id": "NEG-TIENDA-23",
+        "orden": 23,
+        "es": "Artículos de cocina",
+        "en": "Kitchenware"
+      },
+      {
+        "id": "NEG-TIENDA-24",
+        "orden": 24,
+        "es": "Electrodomésticos",
+        "en": "Appliances"
+      },
+      {
+        "id": "NEG-TIENDA-25",
+        "orden": 25,
+        "es": "Electrónica",
+        "en": "Electronics"
+      },
+      {
+        "id": "NEG-TIENDA-26",
+        "orden": 26,
+        "es": "Tienda de celulares y planes",
+        "en": "Cell phone store & plans"
+      },
+      {
+        "id": "NEG-TIENDA-27",
+        "orden": 27,
+        "es": "Computadoras",
+        "en": "Computers"
+      },
+      {
+        "id": "NEG-TIENDA-28",
+        "orden": 28,
+        "es": "Videojuegos",
+        "en": "Video games"
+      },
+      {
+        "id": "NEG-TIENDA-29",
+        "orden": 29,
+        "es": "Instrumentos musicales",
+        "en": "Musical instruments"
+      },
+      {
+        "id": "NEG-TIENDA-30",
+        "orden": 30,
+        "es": "Artículos deportivos",
+        "en": "Sporting goods"
+      },
+      {
+        "id": "NEG-TIENDA-31",
+        "orden": 31,
+        "es": "Bicicletería",
+        "en": "Bicycle shop"
+      },
+      {
+        "id": "NEG-TIENDA-32",
+        "orden": 32,
+        "es": "Juguetería",
+        "en": "Toy store"
+      },
+      {
+        "id": "NEG-TIENDA-33",
+        "orden": 33,
+        "es": "Artículos para bebé",
+        "en": "Baby gear"
+      },
+      {
+        "id": "NEG-TIENDA-34",
+        "orden": 34,
+        "es": "Tienda de regalos",
+        "en": "Gift shop"
+      },
+      {
+        "id": "NEG-TIENDA-35",
+        "orden": 35,
+        "es": "Florería",
+        "en": "Flower shop"
+      },
+      {
+        "id": "NEG-TIENDA-36",
+        "orden": 36,
+        "es": "Artículos de fiesta",
+        "en": "Party supplies"
+      },
+      {
+        "id": "NEG-TIENDA-37",
+        "orden": 37,
+        "es": "Artículos religiosos",
+        "en": "Religious goods"
+      },
+      {
+        "id": "NEG-TIENDA-38",
+        "orden": 38,
+        "es": "Productos de belleza",
+        "en": "Beauty supply"
+      },
+      {
+        "id": "NEG-TIENDA-39",
+        "orden": 39,
+        "es": "Ferretería",
+        "en": "Hardware store"
+      },
+      {
+        "id": "NEG-TIENDA-40",
+        "orden": 40,
+        "es": "Tienda de pinturas",
+        "en": "Paint store"
+      },
+      {
+        "id": "NEG-TIENDA-41",
+        "orden": 41,
+        "es": "Materiales de construcción",
+        "en": "Building materials"
+      },
+      {
+        "id": "NEG-TIENDA-42",
+        "orden": 42,
+        "es": "Vivero y jardinería",
+        "en": "Garden center & nursery"
+      },
+      {
+        "id": "NEG-TIENDA-43",
+        "orden": 43,
+        "es": "Tienda de autopartes",
+        "en": "Auto parts store"
+      },
+      {
+        "id": "NEG-TIENDA-44",
+        "orden": 44,
+        "es": "Renta de herramienta",
+        "en": "Tool rental"
+      },
+      {
+        "id": "NEG-TIENDA-45",
+        "orden": 45,
+        "es": "Tienda de mascotas",
+        "en": "Pet shop"
+      },
+      {
+        "id": "NEG-TIENDA-46",
+        "orden": 46,
+        "es": "Estética canina",
+        "en": "Pet grooming"
+      },
+      {
+        "id": "NEG-TIENDA-47",
+        "orden": 47,
+        "es": "Librería y papelería",
+        "en": "Book & stationery"
+      },
+      {
+        "id": "NEG-TIENDA-48",
+        "orden": 48,
+        "es": "Trofeos y grabados",
+        "en": "Trophies & engraving"
+      },
+      {
+        "id": "NEG-TIENDA-49",
+        "orden": 49,
+        "es": "Telas y mercería",
+        "en": "Fabric & sewing supplies"
+      },
+      {
+        "id": "NEG-TIENDA-50",
+        "orden": 50,
+        "es": "Manualidades y material para piñatas",
+        "en": "Craft & piñata supplies"
+      },
+      {
+        "id": "NEG-TIENDA-51",
+        "orden": 51,
+        "es": "Tienda en línea",
+        "en": "Online store"
+      },
+      {
+        "id": "NEG-TIENDA-52",
+        "orden": 52,
+        "es": "Vendedor móvil",
+        "en": "Mobile & pop-up vendor"
+      }
+    ]
+  },
+  {
+    "id": "NEG-TRANS",
+    "orden": 11,
+    "es": "Transporte",
+    "en": "Transportation",
+    "corto": {
+      "es": "Transporte",
+      "en": "Rides",
+      "provisional": true
+    },
+    "icono": "truck",
+    "filtros": [
+      "F-TRANSPORTE"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "cot",
+      "renta",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-TRANS-01",
+        "orden": 1,
+        "es": "Viajes locales",
+        "en": "Local ride"
+      },
+      {
+        "id": "NEG-TRANS-02",
+        "orden": 2,
+        "es": "Traslado al aeropuerto",
+        "en": "Airport transfer"
+      },
+      {
+        "id": "NEG-TRANS-03",
+        "orden": 3,
+        "es": "Camioneta de larga distancia",
+        "en": "Long-distance van"
+      },
+      {
+        "id": "NEG-TRANS-04",
+        "orden": 4,
+        "es": "Shuttle entre ciudades",
+        "en": "Intercity shuttle"
+      },
+      {
+        "id": "NEG-TRANS-05",
+        "orden": 5,
+        "es": "Viajes entre estados",
+        "en": "Cross-state trips"
+      },
+      {
+        "id": "NEG-TRANS-06",
+        "orden": 6,
+        "es": "Transporte de empleados",
+        "en": "Employee shuttle"
+      },
+      {
+        "id": "NEG-TRANS-07",
+        "orden": 7,
+        "es": "Transporte de trabajadores",
+        "en": "Farm & labor transport"
+      },
+      {
+        "id": "NEG-TRANS-08",
+        "orden": 8,
+        "es": "Transporte escolar",
+        "en": "School & kids transport"
+      },
+      {
+        "id": "NEG-TRANS-09",
+        "orden": 9,
+        "es": "Traslados médicos y de adultos mayores",
+        "en": "Senior & medical rides"
+      },
+      {
+        "id": "NEG-TRANS-10",
+        "orden": 10,
+        "es": "Conductor designado",
+        "en": "Designated driver"
+      },
+      {
+        "id": "NEG-TRANS-11",
+        "orden": 11,
+        "es": "Chofer privado",
+        "en": "Chauffeur service"
+      },
+      {
+        "id": "NEG-TRANS-12",
+        "orden": 12,
+        "es": "Limosina y party bus",
+        "en": "Limo & party bus"
+      },
+      {
+        "id": "NEG-TRANS-13",
+        "orden": 13,
+        "es": "Repartidor y mensajería",
+        "en": "Delivery courier"
+      },
+      {
+        "id": "NEG-TRANS-14",
+        "orden": 14,
+        "es": "Mensajería el mismo día",
+        "en": "Same-day courier"
+      },
+      {
+        "id": "NEG-TRANS-15",
+        "orden": 15,
+        "es": "Repartidor de comida",
+        "en": "Food delivery driver"
+      },
+      {
+        "id": "NEG-TRANS-16",
+        "orden": 16,
+        "es": "Entrega de compras",
+        "en": "Grocery delivery"
+      },
+      {
+        "id": "NEG-TRANS-17",
+        "orden": 17,
+        "es": "Envíos a Latinoamérica",
+        "en": "Package to Latin America"
+      },
+      {
+        "id": "NEG-TRANS-18",
+        "orden": 18,
+        "es": "Carga y flete",
+        "en": "Freight & cargo"
+      },
+      {
+        "id": "NEG-TRANS-19",
+        "orden": 19,
+        "es": "Camión de caja y hotshot",
+        "en": "Box truck & hotshot"
+      },
+      {
+        "id": "NEG-TRANS-20",
+        "orden": 20,
+        "es": "Tráiler y transporte CDL",
+        "en": "Semi & CDL trucking"
+      },
+      {
+        "id": "NEG-TRANS-21",
+        "orden": 21,
+        "es": "Traslado de maquinaria",
+        "en": "Equipment hauling"
+      },
+      {
+        "id": "NEG-TRANS-22",
+        "orden": 22,
+        "es": "Traslado de vehículos",
+        "en": "Vehicle shipping"
+      },
+      {
+        "id": "NEG-TRANS-23",
+        "orden": 23,
+        "es": "Grúas",
+        "en": "Towing"
+      },
+      {
+        "id": "NEG-TRANS-24",
+        "orden": 24,
+        "es": "Camión de mudanza con chofer",
+        "en": "Moving trucks with driver"
+      },
+      {
+        "id": "NEG-TRANS-25",
+        "orden": 25,
+        "es": "Renta de autos",
+        "en": "Car rental"
+      },
+      {
+        "id": "NEG-TRANS-26",
+        "orden": 26,
+        "es": "Renta de camionetas",
+        "en": "Van & truck rental"
+      },
+      {
+        "id": "NEG-TRANS-27",
+        "orden": 27,
+        "es": "Renta de remolques",
+        "en": "Trailer rental"
+      },
+      {
+        "id": "NEG-TRANS-28",
+        "orden": 28,
+        "es": "Reparto en moto",
+        "en": "Motorcycle delivery"
+      },
+      {
+        "id": "NEG-TRANS-29",
+        "orden": 29,
+        "es": "Mensajería en bicicleta",
+        "en": "Bike courier"
+      },
+      {
+        "id": "NEG-TRANS-30",
+        "orden": 30,
+        "es": "Traslado de botes y casas rodantes",
+        "en": "Boat & RV transport"
+      }
+    ]
+  },
+  {
+    "id": "NEG-EDU",
+    "orden": 12,
+    "es": "Cursos y Educación",
+    "en": "Courses & Education",
+    "corto": {
+      "es": "Cursos",
+      "en": "Courses",
+      "provisional": true
+    },
+    "icono": "grid",
+    "filtros": [
+      "F-EDUCACION"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "shop",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-EDU-01",
+        "orden": 1,
+        "es": "Clases de inglés",
+        "en": "English classes – ESL"
+      },
+      {
+        "id": "NEG-EDU-02",
+        "orden": 2,
+        "es": "Clases de español",
+        "en": "Spanish classes"
+      },
+      {
+        "id": "NEG-EDU-03",
+        "orden": 3,
+        "es": "Práctica de conversación en inglés",
+        "en": "Conversational English practice"
+      },
+      {
+        "id": "NEG-EDU-04",
+        "orden": 4,
+        "es": "Preparación para ciudadanía",
+        "en": "Citizenship & civics prep"
+      },
+      {
+        "id": "NEG-EDU-05",
+        "orden": 5,
+        "es": "GED y preparatoria abierta",
+        "en": "GED & high school equivalency"
+      },
+      {
+        "id": "NEG-EDU-06",
+        "orden": 6,
+        "es": "Educación básica para adultos",
+        "en": "Adult basic education"
+      },
+      {
+        "id": "NEG-EDU-07",
+        "orden": 7,
+        "es": "Tutoría de matemáticas",
+        "en": "Tutoring – math"
+      },
+      {
+        "id": "NEG-EDU-08",
+        "orden": 8,
+        "es": "Tutoría de lectura y escritura",
+        "en": "Tutoring – reading & writing"
+      },
+      {
+        "id": "NEG-EDU-09",
+        "orden": 9,
+        "es": "Ayuda con tareas",
+        "en": "Homework help"
+      },
+      {
+        "id": "NEG-EDU-10",
+        "orden": 10,
+        "es": "Preparación SAT y ACT",
+        "en": "Test prep – SAT & ACT"
+      },
+      {
+        "id": "NEG-EDU-11",
+        "orden": 11,
+        "es": "Asesoría universitaria y FAFSA",
+        "en": "College advising & FAFSA"
+      },
+      {
+        "id": "NEG-EDU-12",
+        "orden": 12,
+        "es": "Ayuda con becas",
+        "en": "Scholarship help"
+      },
+      {
+        "id": "NEG-EDU-13",
+        "orden": 13,
+        "es": "Educación financiera",
+        "en": "Financial literacy"
+      },
+      {
+        "id": "NEG-EDU-14",
+        "orden": 14,
+        "es": "Computación básica",
+        "en": "Computer & digital skills"
+      },
+      {
+        "id": "NEG-EDU-15",
+        "orden": 15,
+        "es": "Programas de oficina",
+        "en": "Office software"
+      },
+      {
+        "id": "NEG-EDU-16",
+        "orden": 16,
+        "es": "Programación",
+        "en": "Coding & programming"
+      },
+      {
+        "id": "NEG-EDU-17",
+        "orden": 17,
+        "es": "Curso de marketing digital",
+        "en": "Digital marketing course"
+      },
+      {
+        "id": "NEG-EDU-18",
+        "orden": 18,
+        "es": "Negocios y emprendimiento",
+        "en": "Business & entrepreneurship"
+      },
+      {
+        "id": "NEG-EDU-19",
+        "orden": 19,
+        "es": "Curso de contabilidad",
+        "en": "Bookkeeping course"
+      },
+      {
+        "id": "NEG-EDU-20",
+        "orden": 20,
+        "es": "Escuela de oficios",
+        "en": "Trade school"
+      },
+      {
+        "id": "NEG-EDU-21",
+        "orden": 21,
+        "es": "Escuela de CDL",
+        "en": "CDL school"
+      },
+      {
+        "id": "NEG-EDU-22",
+        "orden": 22,
+        "es": "Escuela de manejo",
+        "en": "Driving school"
+      },
+      {
+        "id": "NEG-EDU-23",
+        "orden": 23,
+        "es": "Escuela de barbería",
+        "en": "Barber school"
+      },
+      {
+        "id": "NEG-EDU-24",
+        "orden": 24,
+        "es": "Escuela de cosmetología",
+        "en": "Cosmetology school"
+      },
+      {
+        "id": "NEG-EDU-25",
+        "orden": 25,
+        "es": "Curso de uñas",
+        "en": "Nail tech course"
+      },
+      {
+        "id": "NEG-EDU-26",
+        "orden": 26,
+        "es": "Curso de pestañas y cejas",
+        "en": "Lash & brow course"
+      },
+      {
+        "id": "NEG-EDU-27",
+        "orden": 27,
+        "es": "Curso de maquillaje",
+        "en": "Makeup course"
+      },
+      {
+        "id": "NEG-EDU-28",
+        "orden": 28,
+        "es": "Curso de soldadura",
+        "en": "Welding course"
+      },
+      {
+        "id": "NEG-EDU-29",
+        "orden": 29,
+        "es": "Certificación HVAC",
+        "en": "HVAC certification"
+      },
+      {
+        "id": "NEG-EDU-30",
+        "orden": 30,
+        "es": "Capacitación en electricidad y plomería",
+        "en": "Electrical & plumbing training"
+      },
+      {
+        "id": "NEG-EDU-31",
+        "orden": 31,
+        "es": "Seguridad en construcción OSHA",
+        "en": "Construction safety – OSHA"
+      },
+      {
+        "id": "NEG-EDU-32",
+        "orden": 32,
+        "es": "Manejo de alimentos",
+        "en": "Food handler & ServSafe"
+      },
+      {
+        "id": "NEG-EDU-33",
+        "orden": 33,
+        "es": "Primeros auxilios y CPR",
+        "en": "First aid & CPR"
+      },
+      {
+        "id": "NEG-EDU-34",
+        "orden": 34,
+        "es": "Certificación de cuidador",
+        "en": "Home health aide certification"
+      },
+      {
+        "id": "NEG-EDU-35",
+        "orden": 35,
+        "es": "Curso de asistente médico",
+        "en": "Medical assistant course"
+      },
+      {
+        "id": "NEG-EDU-36",
+        "orden": 36,
+        "es": "Curso de licencia inmobiliaria",
+        "en": "Real estate license course"
+      },
+      {
+        "id": "NEG-EDU-37",
+        "orden": 37,
+        "es": "Curso de licencia de seguros",
+        "en": "Insurance license course"
+      },
+      {
+        "id": "NEG-EDU-38",
+        "orden": 38,
+        "es": "Capacitación de notario",
+        "en": "Notary training"
+      },
+      {
+        "id": "NEG-EDU-39",
+        "orden": 39,
+        "es": "Curso de preparador de impuestos",
+        "en": "Tax preparer course"
+      },
+      {
+        "id": "NEG-EDU-40",
+        "orden": 40,
+        "es": "Clases de música",
+        "en": "Music lessons"
+      },
+      {
+        "id": "NEG-EDU-41",
+        "orden": 41,
+        "es": "Clases de salsa y bachata",
+        "en": "Dance classes – salsa & bachata"
+      },
+      {
+        "id": "NEG-EDU-42",
+        "orden": 42,
+        "es": "Danza folclórica",
+        "en": "Folkloric dance"
+      },
+      {
+        "id": "NEG-EDU-43",
+        "orden": 43,
+        "es": "Clases de arte",
+        "en": "Art classes"
+      },
+      {
+        "id": "NEG-EDU-44",
+        "orden": 44,
+        "es": "Clases de cocina",
+        "en": "Cooking classes"
+      },
+      {
+        "id": "NEG-EDU-45",
+        "orden": 45,
+        "es": "Clases de costura",
+        "en": "Sewing classes"
+      },
+      {
+        "id": "NEG-EDU-46",
+        "orden": 46,
+        "es": "Curso de fotografía",
+        "en": "Photography course"
+      },
+      {
+        "id": "NEG-EDU-47",
+        "orden": 47,
+        "es": "Oratoria",
+        "en": "Public speaking"
+      },
+      {
+        "id": "NEG-EDU-48",
+        "orden": 48,
+        "es": "Coaching personal y de carrera",
+        "en": "Personal & career coaching"
+      }
+    ]
+  },
+  {
+    "id": "NEG-NINOS",
+    "orden": 13,
+    "es": "Niños",
+    "en": "Children",
+    "corto": {
+      "es": "Niños",
+      "en": "Kids",
+      "provisional": true
+    },
+    "icono": "smile",
+    "filtros": [
+      "F-NINOS"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "shop",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-NINOS-01",
+        "orden": 1,
+        "es": "Guardería",
+        "en": "Daycare center"
+      },
+      {
+        "id": "NEG-NINOS-02",
+        "orden": 2,
+        "es": "Cuidado infantil en casa",
+        "en": "Home daycare"
+      },
+      {
+        "id": "NEG-NINOS-03",
+        "orden": 3,
+        "es": "Preescolar",
+        "en": "Preschool"
+      },
+      {
+        "id": "NEG-NINOS-04",
+        "orden": 4,
+        "es": "Programa Pre-K",
+        "en": "Pre-K program"
+      },
+      {
+        "id": "NEG-NINOS-05",
+        "orden": 5,
+        "es": "Programas subsidiados",
+        "en": "Head Start & subsidized programs"
+      },
+      {
+        "id": "NEG-NINOS-06",
+        "orden": 6,
+        "es": "Niñera por horas",
+        "en": "Babysitter"
+      },
+      {
+        "id": "NEG-NINOS-07",
+        "orden": 7,
+        "es": "Nana de tiempo completo",
+        "en": "Nanny"
+      },
+      {
+        "id": "NEG-NINOS-08",
+        "orden": 8,
+        "es": "Cuidado de noche y fin de semana",
+        "en": "Overnight & weekend care"
+      },
+      {
+        "id": "NEG-NINOS-09",
+        "orden": 9,
+        "es": "Cuidado después de la escuela",
+        "en": "After-school care"
+      },
+      {
+        "id": "NEG-NINOS-10",
+        "orden": 10,
+        "es": "Campamento de verano",
+        "en": "Summer camp"
+      },
+      {
+        "id": "NEG-NINOS-11",
+        "orden": 11,
+        "es": "Campamento de invierno y primavera",
+        "en": "Winter & spring camp"
+      },
+      {
+        "id": "NEG-NINOS-12",
+        "orden": 12,
+        "es": "Tutoría para niños",
+        "en": "Kids tutoring"
+      },
+      {
+        "id": "NEG-NINOS-13",
+        "orden": 13,
+        "es": "Programas bilingües",
+        "en": "Bilingual learning programs"
+      },
+      {
+        "id": "NEG-NINOS-14",
+        "orden": 14,
+        "es": "Cortes de cabello para niños",
+        "en": "Kids haircuts"
+      },
+      {
+        "id": "NEG-NINOS-15",
+        "orden": 15,
+        "es": "Gimnasia para niños",
+        "en": "Kids gym & tumbling"
+      },
+      {
+        "id": "NEG-NINOS-16",
+        "orden": 16,
+        "es": "Fútbol infantil",
+        "en": "Kids soccer"
+      },
+      {
+        "id": "NEG-NINOS-17",
+        "orden": 17,
+        "es": "Béisbol infantil",
+        "en": "Kids baseball"
+      },
+      {
+        "id": "NEG-NINOS-18",
+        "orden": 18,
+        "es": "Básquetbol infantil",
+        "en": "Kids basketball"
+      },
+      {
+        "id": "NEG-NINOS-19",
+        "orden": 19,
+        "es": "Artes marciales para niños",
+        "en": "Kids martial arts"
+      },
+      {
+        "id": "NEG-NINOS-20",
+        "orden": 20,
+        "es": "Clases de natación",
+        "en": "Swim lessons"
+      },
+      {
+        "id": "NEG-NINOS-21",
+        "orden": 21,
+        "es": "Baile para niños",
+        "en": "Kids dance"
+      },
+      {
+        "id": "NEG-NINOS-22",
+        "orden": 22,
+        "es": "Música para niños",
+        "en": "Kids music lessons"
+      },
+      {
+        "id": "NEG-NINOS-23",
+        "orden": 23,
+        "es": "Arte para niños",
+        "en": "Kids art classes"
+      },
+      {
+        "id": "NEG-NINOS-24",
+        "orden": 24,
+        "es": "Área de juegos techada",
+        "en": "Indoor playground"
+      },
+      {
+        "id": "NEG-NINOS-25",
+        "orden": 25,
+        "es": "Parque de trampolines",
+        "en": "Trampoline park"
+      },
+      {
+        "id": "NEG-NINOS-26",
+        "orden": 26,
+        "es": "Entretenimiento de fiestas infantiles",
+        "en": "Kids party entertainment"
+      },
+      {
+        "id": "NEG-NINOS-27",
+        "orden": 27,
+        "es": "Terapias infantiles",
+        "en": "Speech & occupational therapy for kids"
+      },
+      {
+        "id": "NEG-NINOS-28",
+        "orden": 28,
+        "es": "Apoyo a necesidades especiales",
+        "en": "Special needs support"
+      },
+      {
+        "id": "NEG-NINOS-29",
+        "orden": 29,
+        "es": "Clases para padres",
+        "en": "Parenting classes"
+      },
+      {
+        "id": "NEG-NINOS-30",
+        "orden": 30,
+        "es": "Apoyo de lactancia y recién nacido",
+        "en": "Lactation & newborn support"
+      },
+      {
+        "id": "NEG-NINOS-31",
+        "orden": 31,
+        "es": "Renta de artículos de bebé",
+        "en": "Baby gear rental"
+      },
+      {
+        "id": "NEG-NINOS-32",
+        "orden": 32,
+        "es": "Fotografía infantil",
+        "en": "Kids photography"
+      },
+      {
+        "id": "NEG-NINOS-33",
+        "orden": 33,
+        "es": "Ayuda con WIC y asistencia familiar",
+        "en": "WIC & family assistance help"
+      },
+      {
+        "id": "NEG-NINOS-34",
+        "orden": 34,
+        "es": "Ayuda con inscripción escolar",
+        "en": "School enrollment help"
+      },
+      {
+        "id": "NEG-NINOS-35",
+        "orden": 35,
+        "es": "Recursos de acogida y adopción",
+        "en": "Foster & adoption resources"
+      }
+    ]
+  },
+  {
+    "id": "NEG-DEPORTE",
+    "orden": 14,
+    "es": "Vida Activa y Deporte",
+    "en": "Active Life & Sport",
+    "corto": {
+      "es": "Deporte",
+      "en": "Sports",
+      "provisional": true
+    },
+    "icono": "bolt",
+    "filtros": [
+      "F-DEPORTE"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "shop",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-DEPORTE-01",
+        "orden": 1,
+        "es": "Gimnasio",
+        "en": "Gym"
+      },
+      {
+        "id": "NEG-DEPORTE-02",
+        "orden": 2,
+        "es": "Gimnasio 24 horas",
+        "en": "24-hour gym"
+      },
+      {
+        "id": "NEG-DEPORTE-03",
+        "orden": 3,
+        "es": "Entrenador personal",
+        "en": "Personal trainer"
+      },
+      {
+        "id": "NEG-DEPORTE-04",
+        "orden": 4,
+        "es": "Clases grupales",
+        "en": "Group fitness classes"
+      },
+      {
+        "id": "NEG-DEPORTE-05",
+        "orden": 5,
+        "es": "Zumba y baile fitness",
+        "en": "Zumba & dance fitness"
+      },
+      {
+        "id": "NEG-DEPORTE-06",
+        "orden": 6,
+        "es": "Spinning",
+        "en": "Spinning & cycling studio"
+      },
+      {
+        "id": "NEG-DEPORTE-07",
+        "orden": 7,
+        "es": "CrossFit",
+        "en": "CrossFit"
+      },
+      {
+        "id": "NEG-DEPORTE-08",
+        "orden": 8,
+        "es": "Levantamiento de pesas",
+        "en": "Weightlifting & powerlifting"
+      },
+      {
+        "id": "NEG-DEPORTE-09",
+        "orden": 9,
+        "es": "Gimnasio de boxeo",
+        "en": "Boxing gym"
+      },
+      {
+        "id": "NEG-DEPORTE-10",
+        "orden": 10,
+        "es": "MMA & jiu-jitsu",
+        "en": "MMA & jiu-jitsu"
+      },
+      {
+        "id": "NEG-DEPORTE-11",
+        "orden": 11,
+        "es": "Karate & taekwondo",
+        "en": "Karate & taekwondo"
+      },
+      {
+        "id": "NEG-DEPORTE-12",
+        "orden": 12,
+        "es": "Lucha",
+        "en": "Wrestling"
+      },
+      {
+        "id": "NEG-DEPORTE-13",
+        "orden": 13,
+        "es": "Yoga",
+        "en": "Yoga"
+      },
+      {
+        "id": "NEG-DEPORTE-14",
+        "orden": 14,
+        "es": "Pilates",
+        "en": "Pilates"
+      },
+      {
+        "id": "NEG-DEPORTE-15",
+        "orden": 15,
+        "es": "Estiramiento y movilidad",
+        "en": "Stretching & mobility"
+      },
+      {
+        "id": "NEG-DEPORTE-16",
+        "orden": 16,
+        "es": "Nutrición deportiva",
+        "en": "Nutrition & body composition"
+      },
+      {
+        "id": "NEG-DEPORTE-17",
+        "orden": 17,
+        "es": "Liga de fútbol",
+        "en": "Soccer league"
+      },
+      {
+        "id": "NEG-DEPORTE-18",
+        "orden": 18,
+        "es": "Fútbol rápido",
+        "en": "Indoor soccer"
+      },
+      {
+        "id": "NEG-DEPORTE-19",
+        "orden": 19,
+        "es": "Renta de canchas",
+        "en": "Field & court rental"
+      },
+      {
+        "id": "NEG-DEPORTE-20",
+        "orden": 20,
+        "es": "Liga de básquetbol",
+        "en": "Basketball league"
+      },
+      {
+        "id": "NEG-DEPORTE-21",
+        "orden": 21,
+        "es": "Voleibol",
+        "en": "Volleyball"
+      },
+      {
+        "id": "NEG-DEPORTE-22",
+        "orden": 22,
+        "es": "Liga de béisbol y softbol",
+        "en": "Baseball & softball league"
+      },
+      {
+        "id": "NEG-DEPORTE-23",
+        "orden": 23,
+        "es": "Flag football",
+        "en": "Flag football"
+      },
+      {
+        "id": "NEG-DEPORTE-24",
+        "orden": 24,
+        "es": "Boliche",
+        "en": "Bowling"
+      },
+      {
+        "id": "NEG-DEPORTE-25",
+        "orden": 25,
+        "es": "Golf",
+        "en": "Golf & driving range"
+      },
+      {
+        "id": "NEG-DEPORTE-26",
+        "orden": 26,
+        "es": "Tenis y pickleball",
+        "en": "Tennis & pickleball"
+      },
+      {
+        "id": "NEG-DEPORTE-27",
+        "orden": 27,
+        "es": "Alberca y clases",
+        "en": "Swimming pool & lessons"
+      },
+      {
+        "id": "NEG-DEPORTE-28",
+        "orden": 28,
+        "es": "Club de corredores",
+        "en": "Running club"
+      },
+      {
+        "id": "NEG-DEPORTE-29",
+        "orden": 29,
+        "es": "Club ciclista",
+        "en": "Cycling club"
+      },
+      {
+        "id": "NEG-DEPORTE-30",
+        "orden": 30,
+        "es": "Senderismo y aire libre",
+        "en": "Hiking & outdoors"
+      },
+      {
+        "id": "NEG-DEPORTE-31",
+        "orden": 31,
+        "es": "Pesca",
+        "en": "Fishing"
+      },
+      {
+        "id": "NEG-DEPORTE-32",
+        "orden": 32,
+        "es": "Cacería y campo de tiro",
+        "en": "Hunting & gun range"
+      },
+      {
+        "id": "NEG-DEPORTE-33",
+        "orden": 33,
+        "es": "Paintball & airsoft",
+        "en": "Paintball & airsoft"
+      },
+      {
+        "id": "NEG-DEPORTE-34",
+        "orden": 34,
+        "es": "Go-karts",
+        "en": "Go-karts"
+      },
+      {
+        "id": "NEG-DEPORTE-35",
+        "orden": 35,
+        "es": "Parque de patinetas",
+        "en": "Skate park"
+      },
+      {
+        "id": "NEG-DEPORTE-36",
+        "orden": 36,
+        "es": "Patinaje sobre hielo",
+        "en": "Ice skating"
+      },
+      {
+        "id": "NEG-DEPORTE-37",
+        "orden": 37,
+        "es": "Escalada",
+        "en": "Rock climbing"
+      },
+      {
+        "id": "NEG-DEPORTE-38",
+        "orden": 38,
+        "es": "Equitación",
+        "en": "Horseback riding"
+      },
+      {
+        "id": "NEG-DEPORTE-39",
+        "orden": 39,
+        "es": "Charreada y rodeo",
+        "en": "Charrería & rodeo"
+      },
+      {
+        "id": "NEG-DEPORTE-40",
+        "orden": 40,
+        "es": "Centro recreativo",
+        "en": "Recreation center"
+      },
+      {
+        "id": "NEG-DEPORTE-41",
+        "orden": 41,
+        "es": "Entrenadores y árbitros",
+        "en": "Coaches & referees"
+      },
+      {
+        "id": "NEG-DEPORTE-42",
+        "orden": 42,
+        "es": "Academia deportiva juvenil",
+        "en": "Youth sports academy"
+      },
+      {
+        "id": "NEG-DEPORTE-43",
+        "orden": 43,
+        "es": "Organizador de torneos",
+        "en": "Sports event organizer"
+      }
+    ]
+  },
+  {
+    "id": "NEG-FE",
+    "orden": 15,
+    "es": "Iglesias y Religión",
+    "en": "Churches & Religion",
+    "corto": {
+      "es": "Iglesias",
+      "en": "Churches",
+      "provisional": true
+    },
+    "icono": "building",
+    "filtros": [
+      "F-FE"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-FE-01",
+        "orden": 1,
+        "es": "Parroquia católica",
+        "en": "Catholic parish"
+      },
+      {
+        "id": "NEG-FE-02",
+        "orden": 2,
+        "es": "Misa en español",
+        "en": "Mass in Spanish"
+      },
+      {
+        "id": "NEG-FE-03",
+        "orden": 3,
+        "es": "Iglesia evangélica",
+        "en": "Evangelical church"
+      },
+      {
+        "id": "NEG-FE-04",
+        "orden": 4,
+        "es": "Iglesia pentecostal",
+        "en": "Pentecostal church"
+      },
+      {
+        "id": "NEG-FE-05",
+        "orden": 5,
+        "es": "Iglesia bautista",
+        "en": "Baptist church"
+      },
+      {
+        "id": "NEG-FE-06",
+        "orden": 6,
+        "es": "Iglesia metodista",
+        "en": "Methodist church"
+      },
+      {
+        "id": "NEG-FE-07",
+        "orden": 7,
+        "es": "Iglesia adventista",
+        "en": "Adventist church"
+      },
+      {
+        "id": "NEG-FE-08",
+        "orden": 8,
+        "es": "Iglesia no denominacional",
+        "en": "Non-denominational church"
+      },
+      {
+        "id": "NEG-FE-09",
+        "orden": 9,
+        "es": "Salón de los Testigos de Jehová",
+        "en": "Jehovah's Witnesses hall"
+      },
+      {
+        "id": "NEG-FE-10",
+        "orden": 10,
+        "es": "Capilla de los Santos",
+        "en": "LDS ward"
+      },
+      {
+        "id": "NEG-FE-11",
+        "orden": 11,
+        "es": "Iglesia ortodoxa",
+        "en": "Orthodox church"
+      },
+      {
+        "id": "NEG-FE-12",
+        "orden": 12,
+        "es": "Mezquita",
+        "en": "Mosque"
+      },
+      {
+        "id": "NEG-FE-13",
+        "orden": 13,
+        "es": "Sinagoga",
+        "en": "Synagogue"
+      },
+      {
+        "id": "NEG-FE-14",
+        "orden": 14,
+        "es": "Ministerio cristiano",
+        "en": "Christian ministry"
+      },
+      {
+        "id": "NEG-FE-15",
+        "orden": 15,
+        "es": "Ministerio juvenil",
+        "en": "Youth ministry"
+      },
+      {
+        "id": "NEG-FE-16",
+        "orden": 16,
+        "es": "Ministerio de damas",
+        "en": "Women's ministry"
+      },
+      {
+        "id": "NEG-FE-17",
+        "orden": 17,
+        "es": "Ministerio de varones",
+        "en": "Men's ministry"
+      },
+      {
+        "id": "NEG-FE-18",
+        "orden": 18,
+        "es": "Alabanza y coro",
+        "en": "Worship & choir"
+      },
+      {
+        "id": "NEG-FE-19",
+        "orden": 19,
+        "es": "Estudio bíblico y células",
+        "en": "Bible study & cell groups"
+      },
+      {
+        "id": "NEG-FE-20",
+        "orden": 20,
+        "es": "Escuela dominical",
+        "en": "Sunday school"
+      },
+      {
+        "id": "NEG-FE-21",
+        "orden": 21,
+        "es": "Catecismo y preparación de sacramentos",
+        "en": "Catechism & sacrament prep"
+      },
+      {
+        "id": "NEG-FE-22",
+        "orden": 22,
+        "es": "Bautizos",
+        "en": "Baptism"
+      },
+      {
+        "id": "NEG-FE-23",
+        "orden": 23,
+        "es": "Primera comunión y confirmación",
+        "en": "First communion & confirmation"
+      },
+      {
+        "id": "NEG-FE-24",
+        "orden": 24,
+        "es": "Misa de quinceañera",
+        "en": "Quinceañera mass"
+      },
+      {
+        "id": "NEG-FE-25",
+        "orden": 25,
+        "es": "Bodas religiosas",
+        "en": "Religious weddings"
+      },
+      {
+        "id": "NEG-FE-26",
+        "orden": 26,
+        "es": "Consejería matrimonial y familiar",
+        "en": "Marriage & family counseling"
+      },
+      {
+        "id": "NEG-FE-27",
+        "orden": 27,
+        "es": "Consejería cristiana",
+        "en": "Christian counseling"
+      },
+      {
+        "id": "NEG-FE-28",
+        "orden": 28,
+        "es": "Ministerio de recuperación",
+        "en": "Addiction recovery ministry"
+      },
+      {
+        "id": "NEG-FE-29",
+        "orden": 29,
+        "es": "Servicios funerarios",
+        "en": "Funeral services"
+      },
+      {
+        "id": "NEG-FE-30",
+        "orden": 30,
+        "es": "Funeraria",
+        "en": "Funeral home"
+      },
+      {
+        "id": "NEG-FE-31",
+        "orden": 31,
+        "es": "Cremación",
+        "en": "Cremation"
+      },
+      {
+        "id": "NEG-FE-32",
+        "orden": 32,
+        "es": "Repatriación de restos",
+        "en": "Repatriation of remains"
+      },
+      {
+        "id": "NEG-FE-33",
+        "orden": 33,
+        "es": "Servicio memorial y novenario",
+        "en": "Memorial & novenario"
+      },
+      {
+        "id": "NEG-FE-34",
+        "orden": 34,
+        "es": "Capellanía",
+        "en": "Hospital & prison chaplain"
+      },
+      {
+        "id": "NEG-FE-35",
+        "orden": 35,
+        "es": "Línea de oración",
+        "en": "Prayer line & support"
+      },
+      {
+        "id": "NEG-FE-36",
+        "orden": 36,
+        "es": "Despensa de alimentos",
+        "en": "Food pantry"
+      },
+      {
+        "id": "NEG-FE-37",
+        "orden": 37,
+        "es": "Donación de ropa",
+        "en": "Clothing donations"
+      },
+      {
+        "id": "NEG-FE-38",
+        "orden": 38,
+        "es": "Refugio y ayuda de emergencia",
+        "en": "Shelter & emergency aid"
+      },
+      {
+        "id": "NEG-FE-39",
+        "orden": 39,
+        "es": "Ayuda migratoria de la iglesia",
+        "en": "Immigration help through church"
+      },
+      {
+        "id": "NEG-FE-40",
+        "orden": 40,
+        "es": "Labor comunitaria y misiones",
+        "en": "Community outreach & missions"
+      },
+      {
+        "id": "NEG-FE-41",
+        "orden": 41,
+        "es": "Oportunidades de voluntariado",
+        "en": "Volunteer opportunities"
+      },
+      {
+        "id": "NEG-FE-42",
+        "orden": 42,
+        "es": "Tienda de artículos religiosos",
+        "en": "Religious goods store"
+      },
+      {
+        "id": "NEG-FE-43",
+        "orden": 43,
+        "es": "Tradiciones espirituales y botánica",
+        "en": "Spiritual traditions & botánica"
+      }
+    ]
+  },
+  {
+    "id": "NEG-INMUEBLE",
+    "orden": 16,
+    "es": "Bienes Raíces",
+    "en": "Real Estate",
+    "corto": {
+      "es": "Casas",
+      "en": "Homes",
+      "provisional": true
+    },
+    "icono": "key",
+    "filtros": [
+      "F-INMUEBLE"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-INMUEBLE-01",
+        "orden": 1,
+        "es": "Agente inmobiliario",
+        "en": "Real estate agent"
+      },
+      {
+        "id": "NEG-INMUEBLE-02",
+        "orden": 2,
+        "es": "Agente bilingüe",
+        "en": "Bilingual realtor"
+      },
+      {
+        "id": "NEG-INMUEBLE-03",
+        "orden": 3,
+        "es": "Agente del comprador",
+        "en": "Buyer's agent"
+      },
+      {
+        "id": "NEG-INMUEBLE-04",
+        "orden": 4,
+        "es": "Agente del vendedor",
+        "en": "Seller's agent"
+      },
+      {
+        "id": "NEG-INMUEBLE-05",
+        "orden": 5,
+        "es": "Casas en venta",
+        "en": "Homes for sale"
+      },
+      {
+        "id": "NEG-INMUEBLE-06",
+        "orden": 6,
+        "es": "Condominios y townhouses",
+        "en": "Condos & townhomes"
+      },
+      {
+        "id": "NEG-INMUEBLE-07",
+        "orden": 7,
+        "es": "Obra nueva",
+        "en": "New construction"
+      },
+      {
+        "id": "NEG-INMUEBLE-08",
+        "orden": 8,
+        "es": "Multifamiliar e inversión",
+        "en": "Multi-family & investment"
+      },
+      {
+        "id": "NEG-INMUEBLE-09",
+        "orden": 9,
+        "es": "Terrenos",
+        "en": "Land & lots"
+      },
+      {
+        "id": "NEG-INMUEBLE-10",
+        "orden": 10,
+        "es": "Propiedad rural",
+        "en": "Farm & rural property"
+      },
+      {
+        "id": "NEG-INMUEBLE-11",
+        "orden": 11,
+        "es": "Casas móviles",
+        "en": "Mobile & manufactured homes"
+      },
+      {
+        "id": "NEG-INMUEBLE-12",
+        "orden": 12,
+        "es": "Parques de casas móviles",
+        "en": "Mobile home parks"
+      },
+      {
+        "id": "NEG-INMUEBLE-13",
+        "orden": 13,
+        "es": "Propiedad comercial en venta",
+        "en": "Commercial property for sale"
+      },
+      {
+        "id": "NEG-INMUEBLE-14",
+        "orden": 14,
+        "es": "Apartamentos en renta",
+        "en": "Apartments for rent"
+      },
+      {
+        "id": "NEG-INMUEBLE-15",
+        "orden": 15,
+        "es": "Casas en renta",
+        "en": "Houses for rent"
+      },
+      {
+        "id": "NEG-INMUEBLE-16",
+        "orden": 16,
+        "es": "Cuartos en renta",
+        "en": "Rooms for rent"
+      },
+      {
+        "id": "NEG-INMUEBLE-17",
+        "orden": 17,
+        "es": "Vivienda compartida",
+        "en": "Shared housing & roommates"
+      },
+      {
+        "id": "NEG-INMUEBLE-18",
+        "orden": 18,
+        "es": "Renta corta y amueblada",
+        "en": "Short-term & furnished rentals"
+      },
+      {
+        "id": "NEG-INMUEBLE-19",
+        "orden": 19,
+        "es": "Section 8 y vivienda accesible",
+        "en": "Section 8 & affordable housing"
+      },
+      {
+        "id": "NEG-INMUEBLE-20",
+        "orden": 20,
+        "es": "Vivienda para adultos mayores",
+        "en": "Senior housing"
+      },
+      {
+        "id": "NEG-INMUEBLE-21",
+        "orden": 21,
+        "es": "Programas para primer comprador",
+        "en": "First-time buyer programs"
+      },
+      {
+        "id": "NEG-INMUEBLE-22",
+        "orden": 22,
+        "es": "Hipoteca con ITIN o sin crédito",
+        "en": "ITIN & no-credit mortgage"
+      },
+      {
+        "id": "NEG-INMUEBLE-23",
+        "orden": 23,
+        "es": "Precalificación hipotecaria",
+        "en": "Mortgage pre-approval"
+      },
+      {
+        "id": "NEG-INMUEBLE-24",
+        "orden": 24,
+        "es": "Ayuda con el enganche",
+        "en": "Down payment assistance"
+      },
+      {
+        "id": "NEG-INMUEBLE-25",
+        "orden": 25,
+        "es": "Avalúo",
+        "en": "Home appraisal"
+      },
+      {
+        "id": "NEG-INMUEBLE-26",
+        "orden": 26,
+        "es": "Inspección de vivienda",
+        "en": "Home inspection"
+      },
+      {
+        "id": "NEG-INMUEBLE-27",
+        "orden": 27,
+        "es": "Título y cierre",
+        "en": "Title & escrow"
+      },
+      {
+        "id": "NEG-INMUEBLE-28",
+        "orden": 28,
+        "es": "Administración de propiedades",
+        "en": "Property management"
+      },
+      {
+        "id": "NEG-INMUEBLE-29",
+        "orden": 29,
+        "es": "Servicios para propietarios",
+        "en": "Landlord services"
+      },
+      {
+        "id": "NEG-INMUEBLE-30",
+        "orden": 30,
+        "es": "Ayuda y derechos del inquilino",
+        "en": "Tenant help & rights"
+      },
+      {
+        "id": "NEG-INMUEBLE-31",
+        "orden": 31,
+        "es": "Ayuda con desalojo",
+        "en": "Eviction help"
+      },
+      {
+        "id": "NEG-INMUEBLE-32",
+        "orden": 32,
+        "es": "Renta con opción a compra",
+        "en": "Rent-to-own"
+      },
+      {
+        "id": "NEG-INMUEBLE-33",
+        "orden": 33,
+        "es": "Compradores en efectivo",
+        "en": "Cash home buyers"
+      },
+      {
+        "id": "NEG-INMUEBLE-34",
+        "orden": 34,
+        "es": "Ejecución hipotecaria y venta corta",
+        "en": "Foreclosure & short sale"
+      },
+      {
+        "id": "NEG-INMUEBLE-35",
+        "orden": 35,
+        "es": "Servicios de HOA",
+        "en": "HOA services"
+      },
+      {
+        "id": "NEG-INMUEBLE-36",
+        "orden": 36,
+        "es": "Fotografía inmobiliaria",
+        "en": "Real estate photography"
+      },
+      {
+        "id": "NEG-INMUEBLE-37",
+        "orden": 37,
+        "es": "Ambientación para venta",
+        "en": "Staging"
+      },
+      {
+        "id": "NEG-INMUEBLE-38",
+        "orden": 38,
+        "es": "Oficinas",
+        "en": "Office space"
+      },
+      {
+        "id": "NEG-INMUEBLE-39",
+        "orden": 39,
+        "es": "Local comercial",
+        "en": "Retail space & storefront"
+      },
+      {
+        "id": "NEG-INMUEBLE-40",
+        "orden": 40,
+        "es": "Bodega industrial",
+        "en": "Warehouse & industrial"
+      },
+      {
+        "id": "NEG-INMUEBLE-41",
+        "orden": 41,
+        "es": "Renta de cocina comercial",
+        "en": "Commercial kitchen rental"
+      },
+      {
+        "id": "NEG-INMUEBLE-42",
+        "orden": 42,
+        "es": "Renta de espacio para eventos",
+        "en": "Event space rental"
+      },
+      {
+        "id": "NEG-INMUEBLE-43",
+        "orden": 43,
+        "es": "Bodegas de almacenamiento",
+        "en": "Storage units"
+      },
+      {
+        "id": "NEG-INMUEBLE-44",
+        "orden": 44,
+        "es": "Renta de estacionamiento",
+        "en": "Parking & lot rental"
+      },
+      {
+        "id": "NEG-INMUEBLE-45",
+        "orden": 45,
+        "es": "Grupo de inversión inmobiliaria",
+        "en": "Real estate investing group"
+      }
+    ]
+  },
+  {
+    "id": "NEG-DEALER",
+    "orden": 17,
+    "es": "Venta de Autos",
+    "en": "Car Dealers",
+    "corto": {
+      "es": "Autos",
+      "en": "Cars",
+      "provisional": true
+    },
+    "icono": "car",
+    "filtros": [
+      "F-VEHICULO"
+    ],
+    "modulos": [
+      "svc",
+      "citas",
+      "cot",
+      "staff",
+      "eventos",
+      "nov",
+      "jobs"
+    ],
+    "principal": "svc",
+    "subcategorias": [
+      {
+        "id": "NEG-DEALER-01",
+        "orden": 1,
+        "es": "Agencia de autos nuevos",
+        "en": "New car dealer"
+      },
+      {
+        "id": "NEG-DEALER-02",
+        "orden": 2,
+        "es": "Lote de autos usados",
+        "en": "Used car dealer"
+      },
+      {
+        "id": "NEG-DEALER-03",
+        "orden": 3,
+        "es": "Lote independiente",
+        "en": "Independent lot"
+      },
+      {
+        "id": "NEG-DEALER-04",
+        "orden": 4,
+        "es": "Compre aquí pague aquí",
+        "en": "Buy here pay here"
+      },
+      {
+        "id": "NEG-DEALER-05",
+        "orden": 5,
+        "es": "Sin crédito",
+        "en": "No credit needed"
+      },
+      {
+        "id": "NEG-DEALER-06",
+        "orden": 6,
+        "es": "Financiamiento con ITIN",
+        "en": "ITIN financing"
+      },
+      {
+        "id": "NEG-DEALER-07",
+        "orden": 7,
+        "es": "Financiamiento para primer comprador",
+        "en": "First-time buyer financing"
+      },
+      {
+        "id": "NEG-DEALER-08",
+        "orden": 8,
+        "es": "Certificados usados",
+        "en": "Certified pre-owned"
+      },
+      {
+        "id": "NEG-DEALER-09",
+        "orden": 9,
+        "es": "Autos de lujo",
+        "en": "Luxury & exotic"
+      },
+      {
+        "id": "NEG-DEALER-10",
+        "orden": 10,
+        "es": "Camionetas y pickups",
+        "en": "Trucks & pickups"
+      },
+      {
+        "id": "NEG-DEALER-11",
+        "orden": 11,
+        "es": "SUVs",
+        "en": "SUVs"
+      },
+      {
+        "id": "NEG-DEALER-12",
+        "orden": 12,
+        "es": "Vans y minivans",
+        "en": "Vans & minivans"
+      },
+      {
+        "id": "NEG-DEALER-13",
+        "orden": 13,
+        "es": "Vehículos de trabajo",
+        "en": "Work & commercial vehicles"
+      },
+      {
+        "id": "NEG-DEALER-14",
+        "orden": 14,
+        "es": "Venta a flotas",
+        "en": "Fleet sales"
+      },
+      {
+        "id": "NEG-DEALER-15",
+        "orden": 15,
+        "es": "Camiones de caja",
+        "en": "Box trucks"
+      },
+      {
+        "id": "NEG-DEALER-16",
+        "orden": 16,
+        "es": "Tráileres",
+        "en": "Semi trucks"
+      },
+      {
+        "id": "NEG-DEALER-17",
+        "orden": 17,
+        "es": "Remolques",
+        "en": "Trailers"
+      },
+      {
+        "id": "NEG-DEALER-18",
+        "orden": 18,
+        "es": "Motocicletas",
+        "en": "Motorcycles"
+      },
+      {
+        "id": "NEG-DEALER-19",
+        "orden": 19,
+        "es": "Cuatrimotos",
+        "en": "ATV & UTV"
+      },
+      {
+        "id": "NEG-DEALER-20",
+        "orden": 20,
+        "es": "Scooters",
+        "en": "Scooters & mopeds"
+      },
+      {
+        "id": "NEG-DEALER-21",
+        "orden": 21,
+        "es": "Botes y motos acuáticas",
+        "en": "Boats & jet skis"
+      },
+      {
+        "id": "NEG-DEALER-22",
+        "orden": 22,
+        "es": "Casas rodantes",
+        "en": "RV & campers"
+      },
+      {
+        "id": "NEG-DEALER-23",
+        "orden": 23,
+        "es": "Carritos de golf",
+        "en": "Golf carts"
+      },
+      {
+        "id": "NEG-DEALER-24",
+        "orden": 24,
+        "es": "Clásicos y proyectos",
+        "en": "Classic & project cars"
+      },
+      {
+        "id": "NEG-DEALER-25",
+        "orden": 25,
+        "es": "Título salvage y reconstruido",
+        "en": "Salvage & rebuilt title"
+      },
+      {
+        "id": "NEG-DEALER-26",
+        "orden": 26,
+        "es": "Subasta de autos",
+        "en": "Auto auction"
+      },
+      {
+        "id": "NEG-DEALER-27",
+        "orden": 27,
+        "es": "Distribuidor mayorista",
+        "en": "Wholesale dealer"
+      },
+      {
+        "id": "NEG-DEALER-28",
+        "orden": 28,
+        "es": "Broker y buscador de autos",
+        "en": "Car broker & finder"
+      },
+      {
+        "id": "NEG-DEALER-29",
+        "orden": 29,
+        "es": "Venta en consignación",
+        "en": "Consignment sales"
+      },
+      {
+        "id": "NEG-DEALER-30",
+        "orden": 30,
+        "es": "Cambio y avalúo",
+        "en": "Trade-in & appraisal"
+      },
+      {
+        "id": "NEG-DEALER-31",
+        "orden": 31,
+        "es": "Compra de autos en efectivo",
+        "en": "Cash for cars"
+      },
+      {
+        "id": "NEG-DEALER-32",
+        "orden": 32,
+        "es": "Venta por dueño",
+        "en": "Private seller listings"
+      },
+      {
+        "id": "NEG-DEALER-33",
+        "orden": 33,
+        "es": "Financiamiento del dealer",
+        "en": "Dealer financing"
+      },
+      {
+        "id": "NEG-DEALER-34",
+        "orden": 34,
+        "es": "Garantía extendida",
+        "en": "Extended warranty"
+      },
+      {
+        "id": "NEG-DEALER-35",
+        "orden": 35,
+        "es": "Seguro y GAP",
+        "en": "GAP & dealer insurance"
+      },
+      {
+        "id": "NEG-DEALER-36",
+        "orden": 36,
+        "es": "Placas, título y registro",
+        "en": "Tag, title & registration"
+      },
+      {
+        "id": "NEG-DEALER-37",
+        "orden": 37,
+        "es": "Taller del dealer",
+        "en": "Dealer service department"
+      },
+      {
+        "id": "NEG-DEALER-38",
+        "orden": 38,
+        "es": "Prueba y entrega a domicilio",
+        "en": "Home test drive & delivery"
+      },
+      {
+        "id": "NEG-DEALER-39",
+        "orden": 39,
+        "es": "Exportación y envío de vehículos",
+        "en": "Export & vehicle shipping"
+      }
+    ]
+  }
+]

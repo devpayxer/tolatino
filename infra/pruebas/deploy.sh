@@ -30,6 +30,13 @@ log "docker compose up (commit $COMMIT)"
 docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" up -d --build --remove-orphans
 docker image prune -f >/dev/null 2>&1 || true
 
+# 3b) Base de datos: migraciones pendientes, en orden, una sola vez cada una.
+for i in $(seq 1 30); do
+  docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino >/dev/null 2>&1 && break
+  sleep 2
+done
+bash "$REPO/packages/db/migrar.sh" docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml"
+
 # 4) nginx: la app en /, la página de estado del servidor en /estado.
 install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" /etc/nginx/sites-available/tolatino-pruebas
 ln -sf /etc/nginx/sites-available/tolatino-pruebas /etc/nginx/sites-enabled/tolatino-pruebas
