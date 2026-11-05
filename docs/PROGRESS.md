@@ -15,8 +15,9 @@ _Actualizado: 5 nov 2026._
 - **Incidente 5 nov:** una sesión nueva arrancó desde la rama por defecto vieja
   (`claude/tolatino-repo-setup-1efdil` = v1), leyó el `CLAUDE.md` de la v1 e hizo
   una «Fase 0» de la v1 sobre `pruebas`. Causa: no se había cambiado la rama por
-  defecto a la v2. Corrección: `main` creada; el fundador cambia la rama por
-  defecto en GitHub y `pruebas` se reapunta a `main`.
+  defecto a la v2. Corregido el 5 nov: `main` creada y puesta como rama por defecto por el
+  fundador; `pruebas` borrada y recreada desde `main` (5a47a56). Las ramas
+  `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
 - **Plan APROBADO (5 nov 2026). Sigue: Fase 0 — Cimientos.** Todas las decisiones
