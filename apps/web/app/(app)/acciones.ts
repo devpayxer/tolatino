@@ -1,7 +1,7 @@
 "use server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { yo } from "@/lib/cuenta";
+import { ipCliente, yo } from "@/lib/cuenta";
 import { ubicacion } from "@/lib/ubicacion";
 
 export async function cambiarIdioma(lang: "es" | "en") {
@@ -33,11 +33,17 @@ export async function guardarNegocio(id: string): Promise<Respuesta> {
 const TOQUES = new Set(["call", "whatsapp", "directions", "share", "calendar", "copy"]);
 export async function registrarToque(id: string, kind: string, origen: string): Promise<void> {
   if (typeof id !== "string" || !ID_NEG.test(id) || !TOQUES.has(kind)) return;
-  const u = await yo();
+  const [u, ip] = await Promise.all([yo(), ipCliente()]);
+  // Cuenta para las cifras del panel: una vez cada 10 min por persona (o red) y negocio; máx. 60 por red y hora;
+  // la gente del propio negocio no cuenta. Nadie puede inflar los contactos de un negocio.
   await db().query(
-    `insert into contact_taps (business_id, user_id, kind, source)
-     select id, $2, $3, left($4, 60) from businesses where id = $1 and status = 'active'`,
-    [id, u?.id ?? null, kind, String(origen ?? "")],
+    `insert into contact_taps (business_id, user_id, kind, source, ip)
+     select b.id, $2, $3, left($4, 60), $5::inet from businesses b where b.id = $1 and b.status = 'active'
+        and not exists (select 1 from business_members m where m.business_id = b.id and m.user_id = $2::uuid and m.status = 'active')
+        and not exists (select 1 from contact_taps t where t.business_id = b.id and t.at > now() - interval '10 minutes'
+                         and (($2::uuid is not null and t.user_id = $2::uuid) or ($2::uuid is null and $5::inet is not null and t.ip = $5::inet and t.user_id is null)))
+        and ($5::inet is null or (select count(*) from contact_taps t where t.ip = $5::inet and t.at > now() - interval '1 hour') < 60)`,
+    [id, u?.id ?? null, kind, String(origen ?? ""), ip],
   );
 }
 

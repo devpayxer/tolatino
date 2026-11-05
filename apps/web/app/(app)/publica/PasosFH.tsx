@@ -146,8 +146,10 @@ function fuerza(d: Borrador, p: Publicado, es: boolean) {
     [true, 8, "", "", "clock"],
     [false, 4, E2("Marca lo que hay en tu negocio", "Mark what your place offers"), E2("Estacionamiento, tarjeta, para niños…", "Parking, cards, kid friendly…"), "grid"],
   ];
+  // A qué apartado del panel lleva cada tarea (strength del diseño: part). Las de apartados que aún no existen no llevan a ninguno.
+  const PART = ["", "fotos", "about", "fotos", "", "", "", "", "equipo", "hor", "about"];
   const got = T.reduce((a, t) => a + (t[0] ? t[1] : 0), 0), max = T.reduce((a, t) => a + t[1], 0);
-  return { sc: Math.round(30 + (70 * got) / max), tasks: T.filter((t) => !t[0]).map((t) => ({ p: t[1], t: t[2], g: t[3], icon: t[4] })) };
+  return { sc: Math.round(30 + (70 * got) / max), tasks: T.map((t, i) => ({ ok: t[0], p: t[1], t: t[2], g: t[3], icon: t[4], part: PART[i] ?? "" })).filter((t) => !t.ok) };
 }
 
 export function PasoH1({ p, d, es, pv, toast }: { p: Publicado; d: Borrador; es: boolean; pv: unknown; toast: (t: string) => void }) {
@@ -169,7 +171,7 @@ export function PasoH1({ p, d, es, pv, toast }: { p: Publicado; d: Borrador; es:
       <div style={{ height: 6, borderRadius: 99, background: "rgba(11,14,18,.08)", overflow: "hidden" }}><div style={{ width: `${S.sc}%`, height: "100%", borderRadius: 99, background: "var(--tl-action)" }} /></div>
       <div>
         {S.tasks.slice(0, 6).map((x) => (
-          <div key={x.t} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 0", borderBottom: "1px solid rgba(11,14,18,.08)" }}>
+          <div key={x.t} role={x.part ? "link" : undefined} onClick={x.part ? () => { window.location.href = `/panel/${p.id}/pagina/${x.part}`; } : undefined} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 0", borderBottom: "1px solid rgba(11,14,18,.08)", cursor: x.part ? "pointer" : "default" }}>
             <span style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={x.icon} size={16} /></span>
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.3 Manrope,sans-serif" }}>{x.t}</div>{x.g ? <div style={{ marginTop: 2, font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.58)" }}>{x.g}</div> : null}</div>
             <span style={{ flex: "none", font: "700 10px 'JetBrains Mono',monospace", letterSpacing: ".06em", color: "var(--tl-action)" }}>+{x.p} %</span>

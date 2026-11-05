@@ -172,7 +172,7 @@ export function Publica({ v }: { v: VistaPublica }) {
     } else if (ui.back) { H.show = false; goB.onClick = () => void tras({ nombre: ui.bkName, primero: ui.bkName }); }
     else if (publicado) {
       H.tag = E2("PUBLICADA", "LIVE"); H.t = publicado.nombre + E2(` ya sale en ${v.ciudad}`, ` is live in ${v.ciudad}`); H.s = E2("Lo demás lo completas en tu panel cuando quieras.", "Finish the rest in your dashboard whenever you want.");
-      goB.label = E2("Ver mi página", "See my page"); goB.onClick = () => router.push(`/n/${publicado.id}`);
+      goB.label = E2("Ir a mi panel", "Go to my dashboard"); goB.onClick = () => router.push(`/panel/${publicado.id}`);
     } else {
       H.t = E2("Sigue donde lo dejaste", "Pick up where you left off"); H.s = E2("Todo lo que llenaste está guardado.", "Everything you filled in is saved.");
       goB.label = E2("Seguir donde lo dejé", "Continue where I left off"); goB.onClick = () => go((SEQ as readonly string[]).includes(d.last) ? (d.last as Paso) : "B1");
@@ -210,7 +210,7 @@ export function Publica({ v }: { v: VistaPublica }) {
     const mins = publicado.minutos;
     H.tag = E2("PUBLICADA", "LIVE"); H.t = publicado.nombre + E2(` ya sale en ${v.ciudad}`, ` is live in ${v.ciudad}`);
     H.s = mins && mins <= 30 ? E2(`Te tomó ${mins} ${mins === 1 ? "minuto" : "minutos"}. Lo demás lo completas en tu panel cuando quieras.`, `It took you ${mins} minute${mins === 1 ? "" : "s"}. Finish the rest in your dashboard whenever you want.`) : E2("Lo demás lo completas en tu panel cuando quieras.", "Finish the rest in your dashboard whenever you want.");
-    goB.label = E2("Ver mi página", "See my page"); goB.onClick = () => router.push(`/n/${publicado.id}`);
+    goB.label = E2("Ir a mi panel", "Go to my dashboard"); goB.onClick = () => router.push(`/panel/${publicado.id}`);
     note = E2(`PRO GRATIS HASTA EL ${publicado.hasta.toUpperCase()} · SIN TARJETA`, `PRO FREE UNTIL ${publicado.hasta.toUpperCase()} · NO CARD`);
   }
   const cuerpoF1 = st === "F1" ? <PasoF1 d={d} up={up} es={es} desk={desk} dw={dw} pv={pv} fechas={fechas} len={len} toast={toast} /> : null;

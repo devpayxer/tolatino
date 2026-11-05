@@ -214,8 +214,25 @@ _Actualizado: 5 nov 2026._
   `pruebas.env`), nginx `/medios/`, `/api/medios` (con cuenta, 60/hora, `sharp`: endereza, 1600 px, JPEG sin EXIF/GPS),
   firma SigV4 propia en `lib/medios.ts`. Probado de punta a punta con Playwright y Garage local (foto falsa rechazada,
   EXIF quitado, negocio creado). Ayuda: `docs/ayuda/publica.md`.
+- **Fase 1 · bloque 1h Panel base ✓ (5 nov, espera OK del fundador):** `/panel` → `/panel/{negocio}` (Tu página),
+  `/hoy`, `/pagina/{hor|fotos|about|equipo}` y `?det=stf:…` (diseño «Panel negocio v2»: barra del negocio + pestañas en
+  el teléfono; menú 264 px + contenido + detalle 420 px ≥ 1200 o ventana en escritorio). Bloques del panel portados a
+  `@tolatino/ui` (`packages/ui/src/panel/Bloques.tsx`: head, hero, kpis, tabs, chips, group, rows, note, lock, kv,
+  field, step, photos, hours con 2.º tramo ajustable, empty, acts, rvsum). Servidor: `lib/panel.ts` (acceso por
+  membresía activa, datos en 7 consultas fijas), `lib/panel-reglas.ts` (fuerza del perfil 11 reglas, prueba Pro por
+  fases, horario panel↔base, horario de cada persona), `lib/plan.ts` (cifras Free/Pro en un solo lugar: Free 3 fotos
+  según PLAN §2 — la ficha mostraba 6, corregido). Acciones con acceso + auditoría (`app/panel/acciones*.ts`, guardián
+  `accionesConAcceso`). Migraciones 0014 (vistas diarias, `closed_on` «Cerrar por hoy» en `negocio_abierto`, equipo:
+  código de invitación, año, motivo de salida; logo como `media` aparte) y 0015 (contactos sin inflar: 1 cada 10 min por
+  persona/red, 60/h por red, sin contar al propio negocio). Comodidades: catálogo `amenities` generado del prototipo
+  (`scripts/catalogo/generar-amenidades-sql.mjs`), se guardan claves (Publica convierte). **Espejo en la ficha:** logo
+  real, «Quién está detrás» (OwnerCard: dueño con sus palabras o el texto del negocio, equipo, lo verificado), «En el
+  local», «Cerrado hoy» en ficha y listas, vistas contadas al servir `/n/[id]`. Publica H1 → «Ir a mi panel» y tareas
+  que llevan al apartado. Probado con Playwright en teléfono y escritorio sobre negocios publicados (Hoy, cerrar/abrir
+  y la ficha lo dice, horario, logo, portada, Quiénes somos, invitar/cancelar, perfil del dueño, sin cuenta → entrar).
+  Ayuda: `docs/ayuda/panel.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
-  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base · 1i admin Negocios + colas.
+  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

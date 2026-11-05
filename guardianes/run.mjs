@@ -114,7 +114,7 @@ const guardianes = {
   },
 
   /* 3f. Panel del negocio: toda acción del servidor revisa en el servidor que la persona sea miembro activo con acceso
-     a esa parte (6 nov, 1h). Cada «export async function» de app/panel/acciones*.ts debe pasar por entrar(…) /
+     a esa parte (5 nov, 1h). Cada «export async function» de app/panel/acciones*.ts debe pasar por entrar(…) /
      accesoPanel(…) antes de tocar la base. */
   accionesConAcceso() {
     for (const f of codigo) {

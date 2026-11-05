@@ -80,11 +80,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
   cortan en el borde de la tarjeta. Pedir al diseño cómo debe partirse.
 - [ ] **«Cómo llegar»** abre Google Maps del teléfono hasta tener el mapa propio.
 - [ ] **«Avísame cuando haya»** guarda la búsqueda; el envío del aviso se construye en la Fase 2 (notificaciones push/SMS/correo).
-- [ ] **Toques de contacto sin límite:** «Llamar» y «Cómo llegar» registran `contact_taps` también sin sesión; falta un
-  límite por IP/dispositivo para que nadie infle las estadísticas de un negocio. Antes de que el panel muestre esos
-  números (bloque 1h).
-- [ ] **Ficha — lo que se ve cuando exista su dato o módulo:** tarjeta «Quién está detrás» + «sobre nosotros» (Equipo,
-  1h), reseñas y «N vecinos lo recomiendan» (Fase 2), menú/servicios/tienda/reservaciones/staff/eventos/jobs (sus
+- [x] **Toques de contacto sin límite:** resuelto en 1h (0015: uno cada 10 min por persona o red, 60/h por red, sin
+  contar a la gente del negocio).
+- [ ] **Ficha — lo que se ve cuando exista su dato o módulo:** («Quién está detrás» y «En el local» ✓ en 1h) reseñas y «N vecinos lo recomiendan» (Fase 2), menú/servicios/tienda/reservaciones/staff/eventos/jobs (sus
   fases), mini mapa con la zona (mapa propio), botón principal por módulo (hoy:
   «Llamar»). En el prototipo la tarjeta «Hoy» y la del dueño inventaban cifras (35–45 min por defecto, pedidos =
   reseñas × 0,7, rango por reseñas): no se copian.
@@ -98,3 +96,36 @@ en el momento. Se marca solo cuando está hecho de verdad.
   Apple/Google). Revisar con el fundador si se acepta o se construye uno propio antes de producción.
 - [ ] **Vocabulario de búsqueda (`search_vocab`)** se refresca en cada despliegue; con negocios nuevos todos los días
   hace falta refrescarlo cada hora (trabajo programado, con el resto de procesos).
+
+## Panel del negocio · base (bloque 1h, 5 nov 2026)
+- [ ] **Aceptar una invitación al equipo (`/e/{código}`):** el SMS dice «Acepta y pon tu foto aquí», pero el diseño no
+  tiene esa pantalla (quien acepta entra con su teléfono, pone foto, palabras e idiomas). **Pedir el diseño al
+  fundador.** Hasta entonces las invitaciones se guardan y vencen a los 7 días; nadie puede aceptar.
+- [ ] **SMS de invitación y de «Reenviar»:** sale con el proveedor de SMS (decisión E2, Fase 2). La pantalla dice con la
+  verdad que el SMS no salió. Igual «Le avisamos por SMS» al quitar a alguien y el aviso a quien pidió unirse (quitados
+  del texto hasta que existan).
+- [ ] **Secciones del panel que llegan en su fase (ocultas, no a medias):** Clientes, Mensajes, Lo que vendes (módulos,
+  ítems, «Marcar agotado»), Entrega, Eventos, El Compa, Moderadores, Cobros y plan (los botones «Tu plan / Decidir /
+  Pro» de las notas de la prueba), Ajustes, «Más»; apartados Información y contacto, Ubicación y zona, Reseñas,
+  Novedades («Publicar novedad»), Preguntas frecuentes, Relacionados, Vacantes, Verificación y sello, Insights. Las
+  tareas de la fuerza que llevan ahí (ítems, sello, correo, FAQ, reseñas) se muestran sin enlace.
+- [ ] **Hoy con datos reales:** pedidos, citas, reservaciones, cotizaciones, mensajes y reseñas (Fase 2–3). Hoy las cifras
+  son cero porque esos módulos no existen; «Free: 0 de 10» cuenta de verdad cuando existan las operaciones en línea.
+- [ ] **Horario — feriados, vacaciones, días especiales propios y «Abro por temporada»** (y que el estado abierto/
+  cerrado los mire): catálogo de feriados por año en el servidor + días propios. Ocultos hasta construirlos (el
+  subtítulo del apartado los menciona: texto del diseño).
+- [ ] **Horario distinto por módulo** (último pedido en línea, citas que dejan de entrar antes de cerrar): con Pedidos y
+  Citas.
+- [ ] **El Compa traduce** (Quiénes somos, rol, especialidades, palabras): Fase 7; hoy se escribe a mano.
+- [ ] **Pestaña Staff de la ficha** y «Ver equipo» de «Quién está detrás» (sin botón por ahora): con las pestañas Pro.
+  «Sus platos» de cada persona: con el Menú (Fase 2).
+- [ ] **Prueba Pro al terminar** (pasar a Free, primer cobro, «decidiste seguir/no seguir»): con Cobros y plan (Fase 2);
+  hoy `business_stats_cache.plan` no cambia solo el día 30.
+- [ ] **Avisos de la prueba fuera del panel** (día 20, 25, último, fin: push/SMS/correo a las 10 AM): Fase 2.
+- [ ] **Super Admin del panel (triángulo):** ver y corregir horario, fotos (quitar con motivo → nota «To'Latino quitó…»),
+  Quiénes somos (nota «To'Latino editó…»), equipo (quitar persona, pausar Staff), cerrar la página por días: bloque 1i.
+- [ ] **Vistas:** se cuentan al servir la ficha (sin robots ni gente del negocio). Revisar con tráfico real si hace falta
+  dedupe por persona/día como los contactos.
+- [ ] **Botones del sistema de diseño (`Button`) son `<div>` sin `role="button"`:** accesibilidad por teclado/lector de
+  pantalla en todo el sitio. Corregir en `portar-sistema.mjs` (guardián de accesibilidad) antes de la fase 9.
+
