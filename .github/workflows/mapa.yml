@@ -39,5 +39,9 @@ jobs:
             file "t$z.png"; ls -la "t$z.png"
             echo "== PNG z$z base64 ini"; base64 -w0 "t$z.png"; echo; echo "== PNG z$z base64 fin"
           done
-          curl -fsS -o v.pbf "localhost:8080/data/$(curl -fsS localhost:8080/data.json | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['id'])")/14/$((X15/2))/$((Y15/2)).pbf"
-          ls -la v.pbf
+          # Vectorial (para MapLibre): la URL sale del TileJSON que publica el propio servidor.
+          curl -fsS localhost:8080/data.json > data.json; cat data.json; echo
+          URL=$(python3 -c "import json;print(json.load(open('data.json'))[0]['tiles'][0])")
+          echo "== plantilla vectorial: $URL"
+          V=$(echo "$URL" | sed "s#{z}#14#; s#{x}#$((X15/2))#; s#{y}#$((Y15/2))#; s#^https\?://[^/]*#localhost:8080#")
+          curl -fsS -o v.pbf "$V"; ls -la v.pbf
