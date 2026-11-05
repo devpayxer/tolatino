@@ -36,9 +36,11 @@ for (const [obj, cat] of Object.entries(CATS)) {
       horas.push(cerrado || !r ? { weekday: d, open: false, ranges: [] } : { weekday: d, open: true, ranges: [[h2t(r[0]), h2t(r[1])]] });
     }
     const attrs = {}; for (const [k, v] of Object.entries(b)) if (!CORE.has(k) && !k.startsWith("_") && typeof v !== "function") attrs[k] = v;
-    attrs.tarjeta = { eta: b.eta && { es: b.eta, en: b.etaEn || b.eta }, fee: b.fee && { es: b.fee, en: b.feeEn || b.fee }, offer: b.offer && { es: b.offer, en: b.offerEn || b.offer } };
+    attrs.tarjeta = { eta: b.eta && { es: b.eta, en: b.etaEn || b.eta }, fee: b.fee && { es: b.fee, en: b.feeEn || b.fee }, offer: b.offer && { es: b.offer, en: b.offerEn || b.offer },
+      status: b.noHrs && b.st ? { es: b.st, en: b.stEn || b.st } : undefined };
     let addr = null; try { addr = b.addr ? `${b.addr}, Hazleton PA` : C.addr(b); } catch (e) {}
     out.push({ id: b.id, category_id: cat, name: b.name, subcategory_ids: subs, plan: b.pro ? "pro" : "free", verified: !!b.verified,
+      service_radius_mi: b.zone ? Math.max(1, Math.min(100, Math.round(b.zone))) : null, works_from_home: !!(b.zone && !b.d),
       rating_avg: b.r ?? null, review_count: b.n ?? 0, filter_values: b.tags || [], address: addr, geo: ll, phone: telFic(),
       founded_year: b.yrs ? 2026 - b.yrs : null, photos: (b.ph || []).map(id => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg`),
       hours: horas, category_attrs: attrs });

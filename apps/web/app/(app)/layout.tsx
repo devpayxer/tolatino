@@ -10,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const t = T[lang];
   const iniciales = u ? (((u.first_name?.[0] ?? "") + (u.last_name?.[0] ?? "")).toUpperCase() || "TL") : "";
   return (
-    <AppShell lang={lang} t={{ search: t.search, searchDesk: t.searchDesk, nav: t.nav, tabs: t.tabs, login: t.login, publish: t.publish }} yo={u ? { iniciales } : null}>
+    <AppShell lang={lang} t={{ searchIn: t.searchIn, searchDesk: t.searchDesk, nav: t.nav, tabs: t.tabs, login: t.login, publish: t.publish }} yo={u ? { iniciales } : null}>
       {children}
     </AppShell>
   );

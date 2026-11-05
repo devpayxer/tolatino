@@ -8,7 +8,7 @@ import { cambiarIdioma } from "./acciones";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { SiteHeader, BottomNav } = UI as unknown as Record<"SiteHeader" | "BottomNav", ComponentType<any>>;
 
-export type TextosShell = { search: string; searchDesk: string; nav: readonly string[]; tabs: readonly string[]; login: string; publish: string };
+export type TextosShell = { searchIn: string; searchDesk: string; nav: readonly string[]; tabs: readonly string[]; login: string; publish: string };
 
 function useDesk() {
   const [d, setD] = useState(false);
@@ -43,7 +43,7 @@ export function AppShell({ lang, t, yo, children }: { lang: "es" | "en"; t: Text
           lang={lang.toUpperCase()}
           member={!!yo}
           initials={yo?.iniciales}
-          searchPlaceholder={desk ? t.searchDesk : t.search}
+          searchPlaceholder={desk ? t.searchDesk : t.searchIn}
           loginLabel={t.login}
           publishLabel={t.publish}
           tabs={t.tabs.map((label, i) => ({ id: ["home", "neg", "com", "evt"][i], label }))}

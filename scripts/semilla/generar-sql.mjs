@@ -14,10 +14,11 @@ begin;
 `;
 for (const b of N) {
   const geo = b.geo ? `st_geogfromtext('POINT(${b.geo[1]} ${b.geo[0]})')` : "null";
-  sql += `insert into businesses (id, city_id, category_id, subcategory_ids, name, status, origin, address, geo, phone, founded_year, filter_values, category_attrs, is_demo)
-values (${q(b.id)}, 'hzl', ${q(b.category_id)}, ${arr(b.subcategory_ids)}, ${q(b.name)}, 'active', 'self', ${q(b.address)}, ${geo}, ${q(b.phone)}, ${b.founded_year ?? "null"}, ${arr(b.filter_values)}, ${j(b.category_attrs)}, true)
+  sql += `insert into businesses (id, city_id, category_id, subcategory_ids, name, status, origin, address, geo, phone, founded_year, filter_values, category_attrs, service_radius_mi, works_from_home, is_demo)
+values (${q(b.id)}, 'hzl', ${q(b.category_id)}, ${arr(b.subcategory_ids)}, ${q(b.name)}, 'active', 'self', ${q(b.address)}, ${geo}, ${q(b.phone)}, ${b.founded_year ?? "null"}, ${arr(b.filter_values)}, ${j(b.category_attrs)}, ${b.service_radius_mi ?? "null"}, ${!!b.works_from_home}, true)
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
-  geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs;
+  geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
+  service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
 insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
 values (${q(b.id)}, ${q(b.plan)}, ${b.verified}, ${b.rating_avg ?? "null"}, ${b.review_count ?? 0}, ${b.photos.length})
 on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();

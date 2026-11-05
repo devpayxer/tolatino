@@ -9,6 +9,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 212,
   "filter_values": [
@@ -129,6 +131,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 64,
   "filter_values": [
@@ -245,6 +249,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 301,
   "filter_values": [
@@ -359,6 +365,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 158,
   "filter_values": [
@@ -474,6 +482,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 120,
   "filter_values": [
@@ -585,6 +595,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 97,
   "filter_values": [
@@ -704,6 +716,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 140,
   "filter_values": [
@@ -814,6 +828,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 88,
   "filter_values": [
@@ -929,6 +945,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 64,
   "filter_values": [
@@ -1042,6 +1060,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 73,
   "filter_values": [
@@ -1157,6 +1177,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 41,
   "filter_values": [
@@ -1266,6 +1288,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 18,
   "filter_values": [
@@ -1368,6 +1392,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 88,
   "filter_values": [
@@ -1519,6 +1545,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 57,
   "filter_values": [
@@ -1670,6 +1698,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 73,
   "filter_values": [
@@ -1816,6 +1846,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 46,
   "filter_values": [
@@ -1964,6 +1996,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 5,
   "review_count": 19,
   "filter_values": [
@@ -2107,6 +2141,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 34,
   "filter_values": [
@@ -2252,6 +2288,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 61,
   "filter_values": [
@@ -2397,6 +2435,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 52,
   "filter_values": [
@@ -2545,6 +2585,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 14,
   "filter_values": [
@@ -2684,6 +2726,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 21,
   "filter_values": [
@@ -2823,6 +2867,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 17,
   "filter_values": [
@@ -2961,6 +3007,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 26,
   "filter_values": [
@@ -3099,6 +3147,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 15,
   "filter_values": [
@@ -3239,6 +3289,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 39,
   "filter_values": [
@@ -3382,6 +3434,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 44,
   "filter_values": [
@@ -3520,6 +3574,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 48,
   "filter_values": [
@@ -3658,6 +3714,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 23,
   "filter_values": [
@@ -3795,6 +3853,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 31,
   "filter_values": [
@@ -3933,6 +3993,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 5,
   "review_count": 3,
   "filter_values": [
@@ -4035,6 +4097,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 22,
   "filter_values": [
@@ -4137,6 +4201,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 15,
   "filter_values": [
@@ -4239,6 +4305,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 31,
   "filter_values": [
@@ -4340,6 +4408,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 57,
   "filter_values": [
@@ -4443,6 +4513,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 26,
   "filter_values": [
@@ -4545,6 +4617,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 12,
   "filter_values": [
@@ -4647,6 +4721,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 38,
   "filter_values": [
@@ -4749,6 +4825,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 9,
   "filter_values": [
@@ -4851,6 +4929,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 20,
   "filter_values": [
@@ -4953,6 +5033,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 44,
   "filter_values": [
@@ -5054,6 +5136,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 11,
   "filter_values": [
@@ -5155,6 +5239,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 7,
   "filter_values": [
@@ -5259,6 +5345,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 20,
   "filter_values": [
@@ -5625,6 +5713,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 176,
   "filter_values": [
@@ -5753,6 +5843,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 143,
   "filter_values": [
@@ -5878,6 +5970,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 98,
   "filter_values": [
@@ -5998,6 +6092,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 52,
   "filter_values": [
@@ -6122,6 +6218,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": 10,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 37,
   "filter_values": [
@@ -6245,6 +6343,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 61,
   "filter_values": [
@@ -6367,6 +6467,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 44,
   "filter_values": [
@@ -6488,6 +6590,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 89,
   "filter_values": [
@@ -6610,6 +6714,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 121,
   "filter_values": [
@@ -6728,6 +6834,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 0,
   "review_count": 0,
   "filter_values": [
@@ -6846,6 +6954,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 23,
   "filter_values": [
@@ -6952,6 +7062,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 15,
   "filter_values": [
@@ -7059,6 +7171,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 31,
   "filter_values": [
@@ -7156,6 +7270,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 9,
   "filter_values": [
@@ -7263,6 +7379,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 12,
   "filter_values": [
@@ -7369,6 +7487,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 5,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 6,
   "filter_values": [
@@ -7477,6 +7597,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 4,
   "filter_values": [
@@ -7582,6 +7704,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 0,
   "review_count": 0,
   "filter_values": [
@@ -7690,6 +7814,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 64,
   "filter_values": [
@@ -7811,6 +7937,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 38,
   "filter_values": [
@@ -7932,6 +8060,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 17,
   "filter_values": [
@@ -8041,6 +8171,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 29,
   "filter_values": [
@@ -8162,6 +8294,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 11,
   "filter_values": [
@@ -8270,6 +8404,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 47,
   "filter_values": [
@@ -8391,6 +8527,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 26,
   "filter_values": [
@@ -8511,6 +8649,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 21,
   "filter_values": [
@@ -8618,6 +8758,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 8,
   "filter_values": [
@@ -8726,6 +8868,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 73,
   "filter_values": [
@@ -8846,6 +8990,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 9,
   "filter_values": [
@@ -8954,6 +9100,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 34,
   "filter_values": [
@@ -9073,6 +9221,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 19,
   "filter_values": [
@@ -9181,6 +9331,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 31,
   "filter_values": [
@@ -9302,6 +9454,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 7,
   "filter_values": [
@@ -9417,6 +9571,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 21,
   "filter_values": [
@@ -9566,6 +9722,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 211,
   "filter_values": [
@@ -9720,6 +9878,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 164,
   "filter_values": [
@@ -9871,6 +10031,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 302,
   "filter_values": [
@@ -10036,6 +10198,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 256,
   "filter_values": [
@@ -10207,6 +10371,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 88,
   "filter_values": [
@@ -10355,6 +10521,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 47,
   "filter_values": [
@@ -10503,6 +10671,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 73,
   "filter_values": [
@@ -10668,6 +10838,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 58,
   "filter_values": [
@@ -10806,6 +10978,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 39,
   "filter_values": [
@@ -10953,6 +11127,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 0,
   "review_count": 0,
   "filter_values": [
@@ -11094,6 +11270,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 198,
   "filter_values": [
@@ -11257,6 +11435,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 12,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 34,
   "filter_values": [
@@ -11410,6 +11590,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 26,
   "filter_values": [
@@ -11537,6 +11719,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 41,
   "filter_values": [
@@ -11681,6 +11865,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 19,
   "filter_values": [
@@ -11816,6 +12002,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 10,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 8,
   "filter_values": [
@@ -11963,6 +12151,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 33,
   "filter_values": [
@@ -12103,6 +12293,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 57,
   "filter_values": [
@@ -12257,6 +12449,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 64,
   "filter_values": [
@@ -12401,6 +12595,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 62,
   "filter_values": [
@@ -12564,6 +12760,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 87,
   "filter_values": [
@@ -12724,6 +12922,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 48,
   "filter_values": [
@@ -12884,6 +13084,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 31,
   "filter_values": [
@@ -13039,6 +13241,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 29,
   "filter_values": [
@@ -13186,6 +13390,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 14,
   "filter_values": [
@@ -13327,6 +13533,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 22,
   "filter_values": [
@@ -13461,6 +13669,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 11,
   "filter_values": [
@@ -13608,6 +13818,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 0,
   "review_count": 0,
   "filter_values": [
@@ -13740,6 +13952,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 22,
   "filter_values": [
@@ -13948,6 +14162,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 187,
   "filter_values": [
@@ -14080,6 +14296,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 241,
   "filter_values": [
@@ -14210,6 +14428,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 96,
   "filter_values": [
@@ -14334,6 +14554,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 30,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 152,
   "filter_values": [
@@ -14464,6 +14686,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 118,
   "filter_values": [
@@ -14588,6 +14812,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 35,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 64,
   "filter_values": [
@@ -14712,6 +14938,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 77,
   "filter_values": [
@@ -14835,6 +15063,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 18,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 89,
   "filter_values": [
@@ -14958,6 +15188,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 41,
   "filter_values": [
@@ -15082,6 +15314,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 58,
   "filter_values": [
@@ -15209,6 +15443,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 0,
   "review_count": 0,
   "filter_values": [
@@ -15325,6 +15561,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 33,
   "filter_values": [
@@ -15427,6 +15665,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 10,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 21,
   "filter_values": [
@@ -15529,6 +15769,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 17,
   "filter_values": [
@@ -15624,6 +15866,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 12,
   "filter_values": [
@@ -15718,6 +15962,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 28,
   "filter_values": [
@@ -15823,6 +16069,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 12,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 9,
   "filter_values": [
@@ -15923,6 +16171,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 46,
   "filter_values": [
@@ -16030,6 +16280,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 12,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 38,
   "filter_values": [
@@ -16135,6 +16387,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 30,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 92,
   "filter_values": [
@@ -16291,6 +16545,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 35,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 58,
   "filter_values": [
@@ -16445,6 +16701,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 71,
   "filter_values": [
@@ -16598,6 +16856,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 84,
   "filter_values": [
@@ -16750,6 +17010,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 50,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 133,
   "filter_values": [
@@ -16907,6 +17169,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 30,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 66,
   "filter_values": [
@@ -17059,6 +17323,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 30,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 49,
   "filter_values": [
@@ -17208,6 +17474,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 60,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 27,
   "filter_values": [
@@ -17353,6 +17621,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 30,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 77,
   "filter_values": [
@@ -17505,6 +17775,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 31,
   "filter_values": [
@@ -17649,6 +17921,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 19,
   "filter_values": [
@@ -17761,6 +18035,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 30,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 14,
   "filter_values": [
@@ -17866,6 +18142,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 22,
   "filter_values": [
@@ -17981,6 +18259,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 28,
   "filter_values": [
@@ -18097,6 +18377,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 17,
   "filter_values": [
@@ -18210,6 +18492,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 33,
   "filter_values": [
@@ -18323,6 +18607,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 24,
   "filter_values": [
@@ -18431,6 +18717,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 20,
   "filter_values": [
@@ -18584,6 +18872,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 214,
   "filter_values": [
@@ -18723,6 +19013,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 402,
   "filter_values": [
@@ -18863,6 +19155,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 318,
   "filter_values": [
@@ -18995,6 +19289,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 176,
   "filter_values": [
@@ -19124,6 +19420,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 233,
   "filter_values": [
@@ -19260,6 +19558,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 88,
   "filter_values": [
@@ -19381,6 +19681,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 141,
   "filter_values": [
@@ -19514,6 +19816,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 97,
   "filter_values": [
@@ -19643,6 +19947,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 64,
   "filter_values": [
@@ -19772,6 +20078,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 129,
   "filter_values": [
@@ -19892,6 +20200,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 0,
   "review_count": 0,
   "filter_values": [
@@ -20018,6 +20328,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 58,
   "filter_values": [
@@ -20126,6 +20438,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 33,
   "filter_values": [
@@ -20234,6 +20548,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 21,
   "filter_values": [
@@ -20331,6 +20647,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 44,
   "filter_values": [
@@ -20431,6 +20749,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 12,
   "filter_values": [
@@ -20532,6 +20852,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 9,
   "filter_values": [
@@ -20628,6 +20950,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 27,
   "filter_values": [
@@ -20733,6 +21057,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 18,
   "filter_values": [
@@ -20832,6 +21158,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 6,
   "filter_values": [
@@ -20923,6 +21251,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 73,
   "filter_values": [
@@ -21050,6 +21380,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 112,
   "filter_values": [
@@ -21175,6 +21507,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 88,
   "filter_values": [
@@ -21299,6 +21633,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 66,
   "filter_values": [
@@ -21422,6 +21758,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 94,
   "filter_values": [
@@ -21549,6 +21887,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 81,
   "filter_values": [
@@ -21672,6 +22012,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 41,
   "filter_values": [
@@ -21793,6 +22135,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 58,
   "filter_values": [
@@ -21919,6 +22263,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 49,
   "filter_values": [
@@ -22050,6 +22396,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 23,
   "filter_values": [
@@ -22165,6 +22513,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 31,
   "filter_values": [
@@ -22284,6 +22634,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 17,
   "filter_values": [
@@ -22392,6 +22744,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 12,
   "filter_values": [
@@ -22530,6 +22884,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 19,
   "filter_values": [
@@ -22644,6 +23000,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 36,
   "filter_values": [
@@ -22767,6 +23125,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 20,
   "filter_values": [
@@ -22926,6 +23286,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 188,
   "filter_values": [
@@ -23060,6 +23422,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 241,
   "filter_values": [
@@ -23186,6 +23550,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 352,
   "filter_values": [
@@ -23316,6 +23682,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 296,
   "filter_values": [
@@ -23458,6 +23826,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 64,
   "filter_values": [
@@ -23582,6 +23952,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 47,
   "filter_values": [
@@ -23704,6 +24076,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 173,
   "filter_values": [
@@ -23835,6 +24209,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 129,
   "filter_values": [
@@ -23966,6 +24342,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 88,
   "filter_values": [
@@ -24084,6 +24462,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 212,
   "filter_values": [
@@ -24205,6 +24585,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 96,
   "filter_values": [
@@ -24335,6 +24717,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 58,
   "filter_values": [
@@ -24456,6 +24840,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 19,
   "filter_values": [
@@ -24567,6 +24953,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 41,
   "filter_values": [
@@ -24682,6 +25070,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 12,
   "filter_values": [
@@ -24800,6 +25190,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4,
   "review_count": 73,
   "filter_values": [
@@ -24907,6 +25299,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 9,
   "filter_values": [
@@ -25019,6 +25413,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 0,
   "filter_values": [
@@ -25132,6 +25528,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 3,
   "filter_values": [
@@ -25237,6 +25635,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 40,
+  "works_from_home": false,
   "rating_avg": 5,
   "review_count": 14,
   "filter_values": [
@@ -25355,6 +25755,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 61,
   "filter_values": [
@@ -25479,6 +25881,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 47,
   "filter_values": [
@@ -25605,6 +26009,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 34,
   "filter_values": [
@@ -25718,6 +26124,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 40,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 42,
   "filter_values": [
@@ -25836,6 +26244,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 29,
   "filter_values": [
@@ -25950,6 +26360,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 38,
   "filter_values": [
@@ -26071,6 +26483,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 16,
   "filter_values": [
@@ -26183,6 +26597,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": true,
   "rating_avg": 4.6,
   "review_count": 11,
   "filter_values": [
@@ -26293,6 +26709,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 13,
   "filter_values": [
@@ -26400,6 +26818,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 162,
   "filter_values": [
@@ -26528,6 +26948,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 87,
   "filter_values": [
@@ -26646,6 +27068,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 241,
   "filter_values": [
@@ -26772,6 +27196,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 40,
+  "works_from_home": true,
   "rating_avg": 4.8,
   "review_count": 133,
   "filter_values": [
@@ -26901,6 +27327,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 50,
+  "works_from_home": true,
   "rating_avg": 4.9,
   "review_count": 96,
   "filter_values": [
@@ -27029,6 +27457,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 30,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 118,
   "filter_values": [
@@ -27156,6 +27586,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 60,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 104,
   "filter_values": [
@@ -27280,6 +27712,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 209,
   "filter_values": [
@@ -27394,6 +27828,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": 20,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 76,
   "filter_values": [
@@ -27521,6 +27957,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 5,
   "review_count": 58,
   "filter_values": [
@@ -27639,6 +28077,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 35,
+  "works_from_home": true,
   "rating_avg": 4.7,
   "review_count": 39,
   "filter_values": [
@@ -27759,6 +28199,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": true,
   "rating_avg": 4.9,
   "review_count": 22,
   "filter_values": [
@@ -27883,6 +28325,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 47,
   "filter_values": [
@@ -28000,6 +28444,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 30,
+  "works_from_home": true,
   "rating_avg": 4.4,
   "review_count": 18,
   "filter_values": [
@@ -28123,6 +28569,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 60,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 31,
   "filter_values": [
@@ -28249,6 +28697,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 64,
   "filter_values": [
@@ -28369,6 +28819,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 30,
+  "works_from_home": true,
   "rating_avg": 4.8,
   "review_count": 27,
   "filter_values": [
@@ -28492,6 +28944,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 80,
+  "works_from_home": true,
   "rating_avg": 4.7,
   "review_count": 12,
   "filter_values": [
@@ -28618,6 +29072,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 88,
   "filter_values": [
@@ -28736,6 +29192,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 5,
   "review_count": 4,
   "filter_values": [
@@ -28847,6 +29305,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 25,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 64,
   "filter_values": [
@@ -28974,6 +29434,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 35,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 53,
   "filter_values": [
@@ -29102,6 +29564,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 60,
+  "works_from_home": true,
   "rating_avg": 4.9,
   "review_count": 47,
   "filter_values": [
@@ -29223,6 +29687,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 40,
+  "works_from_home": true,
   "rating_avg": 4.7,
   "review_count": 14,
   "filter_values": [
@@ -29347,6 +29813,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 40,
+  "works_from_home": true,
   "rating_avg": 4.6,
   "review_count": 9,
   "filter_values": [
@@ -29472,6 +29940,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 11,
   "filter_values": [
@@ -29584,6 +30054,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 388,
   "filter_values": [
@@ -29715,6 +30187,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 276,
   "filter_values": [
@@ -29837,6 +30311,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 192,
   "filter_values": [
@@ -29960,6 +30436,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 141,
   "filter_values": [
@@ -30076,6 +30554,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 233,
   "filter_values": [
@@ -30199,6 +30679,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 168,
   "filter_values": [
@@ -30320,6 +30802,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 97,
   "filter_values": [
@@ -30441,6 +30925,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 84,
   "filter_values": [
@@ -30558,6 +31044,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 215,
   "filter_values": [
@@ -30679,6 +31167,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 73,
   "filter_values": [
@@ -30799,6 +31289,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 122,
   "filter_values": [
@@ -30916,6 +31408,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 36,
   "filter_values": [
@@ -31022,6 +31516,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 19,
   "filter_values": [
@@ -31121,6 +31617,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 28,
   "filter_values": [
@@ -31225,6 +31723,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 52,
   "filter_values": [
@@ -31329,6 +31829,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 15,
   "filter_values": [
@@ -31433,6 +31935,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 21,
   "filter_values": [
@@ -31538,6 +32042,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 44,
   "filter_values": [
@@ -31618,6 +32124,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 3,
   "filter_values": [
@@ -31726,6 +32234,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 0,
   "filter_values": [
@@ -31828,6 +32338,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 64,
   "filter_values": [
@@ -31948,6 +32460,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 88,
   "filter_values": [
@@ -32066,6 +32580,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 52,
   "filter_values": [
@@ -32179,6 +32695,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 71,
   "filter_values": [
@@ -32297,6 +32815,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 26,
   "filter_values": [
@@ -32403,6 +32923,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 14,
   "filter_values": [
@@ -32509,6 +33031,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 318,
   "filter_values": [
@@ -32638,6 +33162,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 204,
   "filter_values": [
@@ -32770,6 +33296,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 271,
   "filter_values": [
@@ -32910,6 +33438,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 189,
   "filter_values": [
@@ -33030,6 +33560,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 143,
   "filter_values": [
@@ -33147,6 +33679,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 166,
   "filter_values": [
@@ -33285,6 +33819,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 152,
   "filter_values": [
@@ -33401,6 +33937,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 88,
   "filter_values": [
@@ -33533,6 +34071,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 97,
   "filter_values": [
@@ -33660,6 +34200,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 112,
   "filter_values": [
@@ -33770,6 +34312,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 76,
   "filter_values": [
@@ -33896,6 +34440,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 37,
   "filter_values": [
@@ -33992,7 +34538,12 @@
   "category_attrs": {
    "m": "solo",
    "noHrs": 1,
-   "tarjeta": {}
+   "tarjeta": {
+    "status": {
+     "es": "llama para tu fecha",
+     "en": "call for your date"
+    }
+   }
   }
  },
  {
@@ -34005,6 +34556,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 58,
   "filter_values": [
@@ -34100,7 +34653,12 @@
   "category_attrs": {
    "m": "solo",
    "noHrs": 1,
-   "tarjeta": {}
+   "tarjeta": {
+    "status": {
+     "es": "llama para la próxima noche",
+     "en": "call about the next night"
+    }
+   }
   }
  },
  {
@@ -34112,6 +34670,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 64,
   "filter_values": [
@@ -34213,6 +34773,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 41,
   "filter_values": [
@@ -34319,6 +34881,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 33,
   "filter_values": [
@@ -34423,6 +34987,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 12,
   "filter_values": [
@@ -34514,7 +35080,12 @@
   "category_attrs": {
    "m": "solo",
    "noHrs": 1,
-   "tarjeta": {}
+   "tarjeta": {
+    "status": {
+     "es": "llama para tu fecha",
+     "en": "call for your date"
+    }
+   }
   }
  },
  {
@@ -34527,6 +35098,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 9,
   "filter_values": [
@@ -34618,7 +35191,12 @@
   "category_attrs": {
    "m": "solo",
    "noHrs": 1,
-   "tarjeta": {}
+   "tarjeta": {
+    "status": {
+     "es": "llama para la próxima noche",
+     "en": "call about the next night"
+    }
+   }
   }
  },
  {
@@ -34630,6 +35208,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 14,
   "filter_values": [
@@ -34735,6 +35315,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4,
   "review_count": 6,
   "filter_values": [
@@ -34838,6 +35420,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 4,
   "filter_values": [
@@ -34931,6 +35515,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 29,
   "filter_values": [
@@ -35038,6 +35624,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 3.9,
   "review_count": 0,
   "filter_values": [
@@ -35120,6 +35708,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 184,
   "filter_values": [
@@ -35242,6 +35832,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 211,
   "filter_values": [
@@ -35360,6 +35952,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 132,
   "filter_values": [
@@ -35476,6 +36070,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 96,
   "filter_values": [
@@ -35582,6 +36178,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 267,
   "filter_values": [
@@ -35699,6 +36297,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 154,
   "filter_values": [
@@ -35823,6 +36423,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 198,
   "filter_values": [
@@ -35939,6 +36541,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 143,
   "filter_values": [
@@ -36055,6 +36659,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 88,
   "filter_values": [
@@ -36167,6 +36773,8 @@
   ],
   "plan": "pro",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 71,
   "filter_values": [
@@ -36283,6 +36891,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 109,
   "filter_values": [
@@ -36401,6 +37011,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 57,
   "filter_values": [
@@ -36507,6 +37119,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 34,
   "filter_values": [
@@ -36606,6 +37220,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 22,
   "filter_values": [
@@ -36712,6 +37328,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 12,
   "filter_values": [
@@ -36812,6 +37430,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 19,
   "filter_values": [
@@ -36917,6 +37537,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 8,
   "filter_values": [
@@ -37011,6 +37633,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 5,
   "filter_values": [
@@ -37116,6 +37740,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 26,
   "filter_values": [
@@ -37223,6 +37849,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 0,
   "filter_values": [
@@ -37329,6 +37957,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 74,
   "filter_values": [
@@ -37445,6 +38075,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 66,
   "filter_values": [
@@ -37561,6 +38193,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 92,
   "filter_values": [
@@ -37674,6 +38308,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 81,
   "filter_values": [
@@ -37790,6 +38426,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 58,
   "filter_values": [
@@ -37900,6 +38538,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 17,
   "filter_values": [
@@ -38004,6 +38644,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 21,
   "filter_values": [
@@ -38107,6 +38749,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 14,
   "filter_values": [
@@ -38209,6 +38853,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 10,
+  "works_from_home": true,
   "rating_avg": 4.8,
   "review_count": 26,
   "filter_values": [
@@ -38314,6 +38960,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 412,
   "filter_values": [
@@ -38434,6 +39082,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 233,
   "filter_values": [
@@ -38554,6 +39204,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 298,
   "filter_values": [
@@ -38669,6 +39321,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 121,
   "filter_values": [
@@ -38779,6 +39433,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 87,
   "filter_values": [
@@ -38889,6 +39545,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 164,
   "filter_values": [
@@ -39005,6 +39663,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 356,
   "filter_values": [
@@ -39123,6 +39783,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 44,
   "filter_values": [
@@ -39226,6 +39888,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 31,
   "filter_values": [
@@ -39323,6 +39987,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 18,
   "filter_values": [
@@ -39425,6 +40091,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 9,
   "filter_values": [
@@ -39526,6 +40194,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 3,
   "filter_values": [
@@ -39629,6 +40299,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 20,
+  "works_from_home": true,
   "rating_avg": 4.7,
   "review_count": 63,
   "filter_values": [
@@ -39743,6 +40415,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 100,
+  "works_from_home": true,
   "rating_avg": 4.6,
   "review_count": 48,
   "filter_values": [
@@ -39853,6 +40527,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 57,
   "filter_values": [
@@ -39963,6 +40639,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 15,
+  "works_from_home": true,
   "rating_avg": 4.8,
   "review_count": 22,
   "filter_values": [
@@ -40057,6 +40735,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 8,
+  "works_from_home": true,
   "rating_avg": 4.6,
   "review_count": 15,
   "filter_values": [
@@ -40161,6 +40841,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 214,
   "filter_values": [
@@ -40277,6 +40959,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 176,
   "filter_values": [
@@ -40389,6 +41073,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 98,
   "filter_values": [
@@ -40502,6 +41188,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 132,
   "filter_values": [
@@ -40615,6 +41303,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 118,
   "filter_values": [
@@ -40730,6 +41420,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 67,
   "filter_values": [
@@ -40843,6 +41535,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 145,
   "filter_values": [
@@ -40957,6 +41651,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 88,
   "filter_values": [
@@ -41070,6 +41766,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 41,
   "filter_values": [
@@ -41170,6 +41868,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 22,
   "filter_values": [
@@ -41267,6 +41967,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 5,
   "review_count": 7,
   "filter_values": [
@@ -41370,6 +42072,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 12,
   "filter_values": [
@@ -41472,6 +42176,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 93,
   "filter_values": [
@@ -41586,6 +42292,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 58,
   "filter_values": [
@@ -41699,6 +42407,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 76,
   "filter_values": [
@@ -41811,6 +42521,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 41,
   "filter_values": [
@@ -41924,6 +42636,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 52,
   "filter_values": [
@@ -42037,6 +42751,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 63,
   "filter_values": [
@@ -42146,6 +42862,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 37,
   "filter_values": [
@@ -42250,6 +42968,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 19,
   "filter_values": [
@@ -42352,6 +43072,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 14,
   "filter_values": [
@@ -42453,6 +43175,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 11,
   "filter_values": [
@@ -42556,6 +43280,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 156,
   "filter_values": [
@@ -42670,6 +43396,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 64,
   "filter_values": [
@@ -42789,6 +43517,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 98,
   "filter_values": [
@@ -42901,6 +43631,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 121,
   "filter_values": [
@@ -43016,6 +43748,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 76,
   "filter_values": [
@@ -43130,6 +43864,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 88,
   "filter_values": [
@@ -43245,6 +43981,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 54,
   "filter_values": [
@@ -43354,6 +44092,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 16,
   "filter_values": [
@@ -43450,6 +44190,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 10,
+  "works_from_home": true,
   "rating_avg": 5,
   "review_count": 8,
   "filter_values": [
@@ -43558,6 +44300,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 41,
   "filter_values": [
@@ -43665,6 +44409,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 84,
   "filter_values": [
@@ -43776,6 +44522,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 61,
   "filter_values": [
@@ -43886,6 +44634,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 57,
   "filter_values": [
@@ -44001,6 +44751,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 39,
   "filter_values": [
@@ -44115,6 +44867,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 46,
   "filter_values": [
@@ -44221,6 +44975,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 20,
+  "works_from_home": true,
   "rating_avg": 5,
   "review_count": 18,
   "filter_values": [
@@ -44327,6 +45083,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 10,
+  "works_from_home": true,
   "rating_avg": 4.9,
   "review_count": 9,
   "filter_values": [
@@ -44424,6 +45182,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 27,
   "filter_values": [
@@ -44525,6 +45285,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 15,
   "filter_values": [
@@ -44625,6 +45387,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 25,
+  "works_from_home": true,
   "rating_avg": 4.8,
   "review_count": 12,
   "filter_values": [
@@ -44726,6 +45490,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 8,
   "filter_values": [
@@ -44824,6 +45590,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 287,
   "filter_values": [
@@ -44944,6 +45712,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 134,
   "filter_values": [
@@ -45059,6 +45829,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 176,
   "filter_values": [
@@ -45175,6 +45947,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 98,
   "filter_values": [
@@ -45290,6 +46064,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 71,
   "filter_values": [
@@ -45406,6 +46182,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 18,
   "filter_values": [
@@ -45504,6 +46282,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 63,
   "filter_values": [
@@ -45607,6 +46387,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 11,
   "filter_values": [
@@ -45692,6 +46474,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 92,
   "filter_values": [
@@ -45807,6 +46591,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 64,
   "filter_values": [
@@ -45945,6 +46731,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 58,
   "filter_values": [
@@ -46081,6 +46869,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 81,
   "filter_values": [
@@ -46221,6 +47011,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 47,
   "filter_values": [
@@ -46334,6 +47126,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 103,
   "filter_values": [
@@ -46452,6 +47246,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 14,
   "filter_values": [
@@ -46565,6 +47361,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 39,
   "filter_values": [
@@ -46669,6 +47467,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 27,
   "filter_values": [
@@ -46769,6 +47569,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 52,
   "filter_values": [
@@ -46857,6 +47659,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 44,
   "filter_values": [
@@ -46960,6 +47764,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 21,
   "filter_values": [
@@ -47065,6 +47871,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 188,
   "filter_values": [
@@ -47199,6 +48007,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 142,
   "filter_values": [
@@ -47327,6 +48137,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 76,
   "filter_values": [
@@ -47453,6 +48265,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 97,
   "filter_values": [
@@ -47564,6 +48378,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 64,
   "filter_values": [
@@ -47680,6 +48496,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 22,
   "filter_values": [
@@ -47792,6 +48610,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 15,
   "filter_values": [
@@ -47901,6 +48721,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 58,
   "filter_values": [
@@ -48034,6 +48856,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 44,
   "filter_values": [
@@ -48154,6 +48978,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 83,
   "filter_values": [
@@ -48283,6 +49109,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 31,
   "filter_values": [
@@ -48398,6 +49226,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 29,
   "filter_values": [
@@ -48506,6 +49336,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 15,
+  "works_from_home": false,
   "rating_avg": 5,
   "review_count": 22,
   "filter_values": [
@@ -48620,6 +49452,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 47,
   "filter_values": [
@@ -48776,6 +49610,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 12,
   "filter_values": [
@@ -48873,6 +49709,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 9,
   "filter_values": [
@@ -48972,6 +49810,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 14,
   "filter_values": [
@@ -49073,6 +49913,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 11,
   "filter_values": [
@@ -49196,6 +50038,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 8,
   "filter_values": [
@@ -49305,6 +50149,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 164,
   "filter_values": [
@@ -49422,6 +50268,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 121,
   "filter_values": [
@@ -49537,6 +50385,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 77,
   "filter_values": [
@@ -49651,6 +50501,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": 3,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 43,
   "filter_values": [
@@ -49766,6 +50618,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 28,
   "filter_values": [
@@ -49864,6 +50718,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 9,
   "filter_values": [
@@ -49964,6 +50820,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 66,
   "filter_values": [
@@ -50079,6 +50937,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 27,
   "filter_values": [
@@ -50189,6 +51049,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 38,
   "filter_values": [
@@ -50302,6 +51164,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.8,
   "review_count": 52,
   "filter_values": [
@@ -50413,6 +51277,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 71,
   "filter_values": [
@@ -50526,6 +51392,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 34,
   "filter_values": [
@@ -50641,6 +51509,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 23,
   "filter_values": [
@@ -50752,6 +51622,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 29,
   "filter_values": [
@@ -50887,6 +51759,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 31,
   "filter_values": [
@@ -51001,6 +51875,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 19,
   "filter_values": [
@@ -51104,6 +51980,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 30,
+  "works_from_home": false,
   "rating_avg": 4.9,
   "review_count": 12,
   "filter_values": [
@@ -51203,6 +52081,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 211,
   "filter_values": [
@@ -51325,6 +52205,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 132,
   "filter_values": [
@@ -51442,6 +52324,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 88,
   "filter_values": [
@@ -51555,6 +52439,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 44,
   "filter_values": [
@@ -51652,6 +52538,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 30,
+  "works_from_home": true,
   "rating_avg": 4.2,
   "review_count": 17,
   "filter_values": [
@@ -51750,6 +52638,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 143,
   "filter_values": [
@@ -51869,6 +52759,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 61,
   "filter_values": [
@@ -51979,6 +52871,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 58,
   "filter_values": [
@@ -52099,6 +52993,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 39,
   "filter_values": [
@@ -52211,6 +53107,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.4,
   "review_count": 47,
   "filter_values": [
@@ -52328,6 +53226,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.7,
   "review_count": 33,
   "filter_values": [
@@ -52438,6 +53338,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.5,
   "review_count": 88,
   "filter_values": [
@@ -52546,6 +53448,8 @@
   ],
   "plan": "pro",
   "verified": true,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.6,
   "review_count": 72,
   "filter_values": [
@@ -52655,6 +53559,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.2,
   "review_count": 41,
   "filter_values": [
@@ -52760,6 +53666,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.3,
   "review_count": 22,
   "filter_values": [
@@ -52858,6 +53766,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": null,
+  "works_from_home": false,
   "rating_avg": 4.1,
   "review_count": 26,
   "filter_values": [
@@ -52957,6 +53867,8 @@
   ],
   "plan": "free",
   "verified": false,
+  "service_radius_mi": 25,
+  "works_from_home": true,
   "rating_avg": 4.4,
   "review_count": 15,
   "filter_values": [

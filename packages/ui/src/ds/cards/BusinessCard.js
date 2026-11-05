@@ -29,8 +29,20 @@ const Check = () => /*#__PURE__*/React.createElement("svg", {
 const Stars = ({
   r,
   n,
+  note,
   size = 12.5
-}) => /*#__PURE__*/React.createElement("span", {
+}) => n != null && n < 5 ? /*#__PURE__*/React.createElement("span", {
+  style: {
+    whiteSpace: 'nowrap',
+    flex: 'none',
+    font: '700 ' + size + 'px Manrope,sans-serif'
+  }
+}, r, note ? /*#__PURE__*/React.createElement("span", {
+  style: {
+    fontWeight: 500,
+    color: 'rgba(11,14,18,.42)'
+  }
+}, " ", note) : null) : /*#__PURE__*/React.createElement("span", {
   style: {
     whiteSpace: 'nowrap',
     flex: 'none',
@@ -58,6 +70,7 @@ function BusinessCard({
   meta,
   rating,
   reviews,
+  reviewsNote,
   status,
   open = true,
   photos = [],
@@ -122,6 +135,7 @@ function BusinessCard({
   }, /*#__PURE__*/React.createElement(Stars, {
     r: rating,
     n: reviews,
+    note: reviewsNote,
     size: 12
   }))), /*#__PURE__*/React.createElement(__ds_scope.Button, {
     variant: "secondary",
@@ -177,7 +191,8 @@ function BusinessCard({
     }
   }, /*#__PURE__*/React.createElement(Stars, {
     r: rating,
-    n: reviews
+    n: reviews,
+    note: reviewsNote
   }), status ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     style: {
       width: 3,

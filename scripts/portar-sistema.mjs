@@ -53,6 +53,17 @@ for (const src of archivos) {
   // Datos de demo del prototipo fuera (regla: lo del prototipo no se construye).
   t = t.replace(/data \|\| \(typeof window !== 'undefined' && window\.TLHoursPro \? window\.TLHoursPro\(\) : (\{[\s\S]*?\})\)/, "data || $1");
 
+  // BusinessCard: con menos de 5 reseñas el prototipo (cardItem) no pinta estrellas sino «3 reseñas» o
+  // «Nuevo · en To'Latino» (nota en gris). El componente del sistema no lo traía; se agrega aquí, no a mano.
+  if (rel.endsWith("cards/BusinessCard.js")) {
+    const antes = t;
+    t = t.replace(/const Stars = \(\{\n  r,\n  n,\n  size = 12\.5\n\}\) => /,
+      "const Stars = ({\n  r,\n  n,\n  note,\n  size = 12.5\n}) => n != null && n < 5 ? /*#__PURE__*/React.createElement(\"span\", {\n  style: {\n    whiteSpace: 'nowrap',\n    flex: 'none',\n    font: '700 ' + size + 'px Manrope,sans-serif'\n  }\n}, r, note ? /*#__PURE__*/React.createElement(\"span\", {\n  style: {\n    fontWeight: 500,\n    color: 'rgba(11,14,18,.42)'\n  }\n}, \" \", note) : null) : ");
+    t = t.replace(/React\.createElement\(Stars, \{\n(\s*)r: rating,\n(\s*)n: reviews/g, "React.createElement(Stars, {\n$1r: rating,\n$2n: reviews,\n$2note: reviewsNote");
+    t = t.replace(/  reviews,\n  status,/, "  reviews,\n  reviewsNote,\n  status,");
+    if (t === antes || (t.match(/note: reviewsNote/g) || []).length !== 2 || !t.includes("reviewsNote,\n  status")) throw new Error("parche BusinessCard: el origen cambió, revisar");
+  }
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();

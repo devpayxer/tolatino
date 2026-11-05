@@ -74,3 +74,9 @@
   a { color: var(--tl-action); text-decoration: none; }
   a:hover { color: var(--tl-action-hover); }
 }
+
+/* Carruseles horizontales sin barra de desplazamiento (clase «hs» del prototipo). */
+@layer utilities {
+  .hs { scrollbar-width: none; }
+  .hs::-webkit-scrollbar { display: none; }
+}

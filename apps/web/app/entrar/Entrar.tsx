@@ -25,7 +25,7 @@ async function enviar(url: string, cuerpo: unknown) {
   return (await r.json()) as { ok: boolean; mensaje?: { es: string; en: string }; espera?: number } & Record<string, unknown>;
 }
 
-export function Entrar({ inicial }: { inicial: { paso: 1 | 2; telefono?: string } }) {
+export function Entrar({ inicial, destino = "/cuenta" }: { inicial: { paso: 1 | 2; telefono?: string }; destino?: string }) {
   const router = useRouter();
   const [lang, setLang] = useState<L>("es");
   const E2 = (es: string, en: string) => (lang === "es" ? es : en);
@@ -61,7 +61,7 @@ export function Entrar({ inicial }: { inicial: { paso: 1 | 2; telefono?: string 
     const r = await enviar("/api/cuenta/verificar", { telefono: tel, codigo });
     setOcupado(false);
     if (!r.ok) return msg(r);
-    if (r.nombre) return router.replace("/cuenta"); // ya tenía cuenta: entra directo
+    if (r.nombre) return router.replace(destino); // ya tenía cuenta: entra directo
     setPaso(2);
   }
   async function guardar() {
@@ -69,7 +69,7 @@ export function Entrar({ inicial }: { inicial: { paso: 1 | 2; telefono?: string 
     const r = await enviar("/api/cuenta/perfil", { nombre, apellido, apodo });
     setOcupado(false);
     if (!r.ok) return msg(r);
-    router.replace("/cuenta");
+    router.replace(destino);
   }
 
   const top =

@@ -43,4 +43,20 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (eventos, Fase 6), Comunidad (Fase 5) y el mini mapa de la columna derecha (mapa propio). Cada una se
   enciende en el Inicio cuando su módulo exista; el prototipo manda en su forma.
 - [ ] **Pantallas `Pronto` (sandbox):** toda ruta que aún muestra «En construcción» debe llegar a 0 antes de la
-  fase 9 (hoy: c/[slug], n/[id], negocios, buscar, ciudad, publica, comunidad, eventos).
+  fase 9 (hoy: n/[id], buscar, ciudad, mapa, abierto, publica, recomendar, comunidad, eventos).
+- [ ] **Banderas de «Por país» (Comida):** el prototipo usa `assets/flags/*.png`, que no vinieron en el export.
+  Los mosaicos salen sin la banderita hasta tener los archivos (o una fuente abierta que apruebe el fundador).
+- [ ] **Banda de emergencia de Hogar:** oculta hasta que exista el flujo «Pedir ayuda ahora»
+  (APP-NEG-HOGAR-EMERGENCIA). Las de Doctores y Profesionales sí están (filtran la lista).
+- [ ] **Negocios — secciones ocultas hasta tener datos reales:** «Hoy en el barrio» (módulo Novedades) y
+  «Recomendados por vecinos» (el prototipo lo calculaba como reseñas ÷ 4; necesita el dato real de las reseñas).
+- [ ] **Paginación numerada (excepción a «paginación por cursor»):** el diseño pide «Página 2 de 5» y números; la
+  lista de una categoría en una ciudad es acotada, así que va con OFFSET y tope de 100 páginas. Revisar con datos
+  reales antes de la fase 9 (si una categoría pasa de ~1 000 negocios en una ciudad, pasar a cursor).
+- [ ] **Chips largos en BusinessCard:** textos largos (p. ej. «Coordinación del día $900 · boda completa…») se
+  cortan en el borde de la tarjeta. Pedir al diseño cómo debe partirse.
+- [ ] **«Cómo llegar»** abre Google Maps del teléfono hasta tener el mapa propio.
+- [ ] **«Avísame cuando haya»** guarda la búsqueda; el envío del aviso se construye en la Fase 8 (notificaciones).
+- [ ] **Toques de contacto sin límite:** «Llamar» y «Cómo llegar» registran `contact_taps` también sin sesión; falta un
+  límite por IP/dispositivo para que nadie infle las estadísticas de un negocio. Antes de que el panel muestre esos
+  números (bloque 1h).

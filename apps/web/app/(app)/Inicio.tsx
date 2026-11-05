@@ -45,7 +45,7 @@ export function Inicio({ cats, inicio, abierto, t }: { cats: Cat[]; inicio: stri
 
           {abierto.length > 0 && (
             <section className="flex flex-col gap-3 px-5 lg:px-0">
-              <SectionHeader title={t.openNow} dot="var(--tl-open)" action={t.seeAll} onAction={() => router.push("/negocios?abierto=1")} />
+              <SectionHeader title={t.openNow} dot="var(--tl-open)" action={t.seeAll} onAction={() => router.push("/abierto")} />
               <div className="flex flex-col gap-2.5 lg:grid lg:gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))" }}>
                 {abierto.map((o, i) => (
                   <div key={o.id} className={i >= 3 ? "hidden lg:grid" : "grid"}>
