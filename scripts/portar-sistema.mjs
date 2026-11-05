@@ -85,6 +85,17 @@ for (const src of archivos) {
     if (t === antes) throw new Error("parche RadiusMap: el origen cambió, revisar");
   }
 
+  // SiteHeader: el prototipo tiene un encabezado compacto en el teléfono («APP-HEADER · móvil compacto»: logo, idioma,
+  // campana y entrar, sin la barra de búsqueda) para Mapa, la ficha, la galería y otras pantallas de detalle. El
+  // componente del sistema no lo traía; `compact` lo agrega aquí, no a mano.
+  if (rel.endsWith("layout/SiteHeader.js")) {
+    const antes = t;
+    t = t.replace("  sticky,\n  style\n}) {", "  sticky,\n  compact,\n  style\n}) {");
+    t = t.replace("padding: '6px 20px 14px',", "padding: compact ? '6px 16px 10px' : '6px 20px 14px',");
+    t = t.replace('loginLabel)), /*#__PURE__*/React.createElement("div", {\n    onClick: onSearch,', 'loginLabel)), compact ? null : /*#__PURE__*/React.createElement("div", {\n    onClick: onSearch,');
+    if (t === antes || !t.includes("  compact,\n") || !t.includes("compact ? '6px 16px 10px'") || !t.includes("compact ? null :")) throw new Error("parche SiteHeader: el origen cambió, revisar");
+  }
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();

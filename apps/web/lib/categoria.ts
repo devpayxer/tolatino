@@ -55,7 +55,7 @@ export type Resultado = {
 };
 
 /* Condiciones SQL de un mosaico y de los filtros. Los valores siempre van como parámetros. */
-function condiciones(p: Pedido, params: unknown[]) {
+export function condiciones(p: Pick<Pedido, "sub" | "filtros">, params: unknown[]) {
   const w: string[] = [];
   const add = (v: unknown) => { params.push(v); return `$${params.length}`; };
   const s = p.sub;

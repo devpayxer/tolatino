@@ -189,8 +189,17 @@ _Actualizado: 5 nov 2026._
   servicio `mapa` (tileserver-gl v5.6.0) en el compose del sandbox, `/teselas/` en nginx, paso 3d de `deploy.sh`
   (genera en segundo plano la primera vez). Prueba de punta a punta: `.github/workflows/mapa.yml`. Matemática del
   prototipo en `lib/mapa-geo.ts`. Hasta que el sandbox sirva teselas, los mapas se ven en gris (sin calles).
+- **Fase 1 · bloque 1f-3 Mapa ✓ (5 nov):** `/mapa` (diseño «Mapa», APP-NEG-MAPA): pines + lista (el más cerca
+  primero, de 20 en 20), arrastrar, + / − / volver al punto, tarjeta con Ver negocio y Cómo llegar, filtros Todos ·
+  Abierto ahora · Verificados · Destacados + categorías (sin contexto), y los filtros de la categoría cuando vienes de
+  ella (botón «Mapa» de escritorio: `?cat&sub&f&ctx=1`). `lib/mapa.ts`: dentro del radio cuentan, alrededor (2,6×) en
+  gris; quien trabaja desde casa sale en una cuadrícula de ~500 m (el servidor nunca manda su punto); sin local = sin
+  pin. Encabezado compacto en el teléfono para Mapa, ficha y galería (prototipo showMBrand; `compact` en SiteHeader
+  por `portar-sistema`). `/abierto` = Buscar «abierto ahora» (prototipo searchFrom). Planetiler fijada por huella
+  (0.10.3). Semilla del sandbox: los negocios con d = 0 del prototipo quedan sin local (34) y las fotos de la semilla
+  tienen id fijo (se actualizan, no se borran: un reporte de foto ya no rompe la semilla). Ayuda: `docs/ayuda/mapa.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
-  1f Buscar ✓ · Ciudad ✓ · Mapa (sigue) · 1g Publica tu negocio v2 · 1h panel base · 1i admin Negocios + colas.
+  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Publica tu negocio v2 · 1h panel base · 1i admin Negocios + colas.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

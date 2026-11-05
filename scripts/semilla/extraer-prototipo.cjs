@@ -30,7 +30,9 @@ for (const [obj, cat] of Object.entries(CATS)) {
     if (vistos.has(b.id)) continue; vistos.add(b.id);
     const subs = []; for (const s of b.subs || []) { const id = findSub(cat, s); if (id && !subs.includes(id)) subs.push(id); else if (!id) sinSub.push(`${cat} · ${b.name} · «${s}»`); }
     let ll = llAll[b.id] || b._ll || null;
-    if (!ll && CITY.pos) { try { const p = CITY.pos(b); if (p && p.length === 2) ll = p; } catch (e) {} }
+    // d = 0 en el prototipo = sin local (va a domicilio o atiende por teléfono): no tiene pin (Mapa: hasPos exige _d0 !== 0).
+    const sinLocal = b.d === 0 && !llAll[b.id] && !b._ll;
+    if (!ll && !sinLocal && CITY.pos) { try { const p = CITY.pos(b); if (p && p.length === 2) ll = p; } catch (e) {} }
     const horas = []; for (let d = 0; d < 7; d++) {
       const cerrado = (b.closed || []).includes(d) || (d === 0 && b.sun === null && !b.hrs);
       const r = d === 6 && b.sat ? b.sat : d === 0 && b.sun ? b.sun : b.hrs;

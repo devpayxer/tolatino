@@ -25,8 +25,11 @@ values (${q(b.id)}, ${q(b.plan)}, ${b.verified}, ${b.rating_avg ?? "null"}, ${b.
 on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = ${q(b.id)};
 ${b.hours.map((h) => `insert into business_hours (business_id, weekday, open, ranges) values (${q(b.id)}, ${h.weekday}, ${h.open}, ${j(h.ranges)});`).join("\n")}
-delete from media where owner_kind = 'business' and owner_id = ${q(b.id)} and uploaded_by is null;
-${b.photos.map((u, i) => `insert into media (owner_kind, owner_id, url, credit, sort) values ('business', ${q(b.id)}, ${q(u)}, 'Pexels', ${i});`).join("\n")}
+${b.photos.map((u, i) => `insert into media (id, owner_kind, owner_id, url, credit, sort) values (md5(${q(`semilla:${b.id}:${i}`)})::uuid, 'business', ${q(b.id)}, ${q(u)}, 'Pexels', ${i})
+on conflict (id) do update set url = excluded.url, credit = excluded.credit, sort = excluded.sort;`).join("\n")}
+update media set status = 'removed', removed_reason = 'semilla: ya no está en el prototipo'
+ where owner_kind = 'business' and owner_id = ${q(b.id)} and uploaded_by is null and status = 'visible'
+   and id <> all(array[${b.photos.map((_, i) => `md5(${q(`semilla:${b.id}:${i}`)})::uuid`).join(",")}]::uuid[]);
 delete from faqs where business_id = ${q(b.id)};
 ${(b.faqs || []).map((f, i) => `insert into faqs (business_id, question, answer, sort) values (${q(b.id)}, ${j(f.q)}, ${j(f.a)}, ${i});`).join("\n")}
 `;

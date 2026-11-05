@@ -39,7 +39,7 @@ export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en";
   const [sel, setSel] = useState<{ pedir: boolean } | null>(null);
   const [ancla, setAncla] = useState<{ left: number; top: number } | null>(null);
   const clic = useRef<DOMRect | null>(null);
-  useEffect(() => { if (sp.has("ciudad")) { setSel({ pedir: sp.get("ciudad") === "pedir" }); router.replace(ruta, { scroll: false }); } }, [sp, ruta, router]);
+  useEffect(() => { if (sp.has("ciudad")) { setSel({ pedir: sp.get("ciudad") === "pedir" }); const q = new URLSearchParams(sp.toString()); q.delete("ciudad"); router.replace(q.size ? `${ruta}?${q}` : ruta, { scroll: false }); } }, [sp, ruta, router]);
   const abrir = () => {
     const r = clic.current;
     if (r) setAncla({ left: Math.max(16, Math.min(r.left - 1, window.innerWidth - 780 - 16)), top: r.bottom + 8 });
@@ -54,6 +54,8 @@ export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en";
   const activo = ruta === "/" ? "home" : ruta.startsWith("/negocios") || ruta.startsWith("/c/") || ruta.startsWith("/n/") ? "neg" : ruta.startsWith("/comunidad") ? "com" : ruta.startsWith("/eventos") ? "evt" : "";
   // Buscar en el teléfono es pantalla completa: sin encabezado ni barra inferior (prototipo showMHeader / showNav).
   const pantallaCompleta = !desk && ruta.startsWith("/buscar");
+  // Pantallas de detalle (prototipo showMBrand): encabezado compacto y sin barra inferior en el teléfono.
+  const compacto = !desk && /^\/(mapa|n\/)/.test(ruta);
   const ir = (id: string) => router.push(id === "me" && !yo ? "/entrar" : RUTAS[id] ?? "/");
   return (
     <div className="min-h-dvh bg-white">
@@ -61,6 +63,7 @@ export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en";
         onClickCapture={(e) => { let el = e.target as HTMLElement | null; while (el && !(el.tagName === "SPAN" && el.style.padding === "7px 11px")) el = el.parentElement; clic.current = el ? el.getBoundingClientRect() : null; }}>
         <SiteHeader
           variant={desk ? "desktop" : "mobile"}
+          compact={compacto}
           city={ciudad.nombre}
           cityShort={ciudad.corto}
           radius={desk ? ciudad.radio : ciudad.radioMovil}
@@ -83,9 +86,9 @@ export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en";
           assetBase="/assets/"
         />
       </div>
-      <div className={desk || pantallaCompleta ? "" : "pb-[96px]"}>{children}</div>
+      <div className={desk || pantallaCompleta || compacto ? "" : "pb-[96px]"}>{children}</div>
       {sel ? <CiudadSelector lang={lang} modo={desk ? "pop" : "sheet"} ancla={ancla} pedir={sel.pedir} onClose={cerrar} onAplicada={aplicada} /> : null}
-      {!desk && !pantallaCompleta && (
+      {!desk && !pantallaCompleta && !compacto && (
         <div className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]">
           <BottomNav items={t.nav.map((label, i) => ({ id: ["home", "neg", "com", "evt", "me"][i], label, icon: ICONOS[i] }))} active={activo} onChange={ir} homeIndicator={false} />
         </div>

@@ -130,6 +130,7 @@ function SiteHeader({
   onPublish,
   assetBase = 'assets/',
   sticky,
+  compact,
   style
 }) {
   const auth = member ? /*#__PURE__*/React.createElement(Avatar, {
@@ -140,7 +141,7 @@ function SiteHeader({
     style: {
       background: 'var(--tl-white)',
       borderBottom: '1px solid rgba(11,14,18,.07)',
-      padding: '6px 20px 14px',
+      padding: compact ? '6px 16px 10px' : '6px 20px 14px',
       ...(sticky ? {
         position: 'sticky',
         top: 0,
@@ -177,7 +178,7 @@ function SiteHeader({
   }), auth || /*#__PURE__*/React.createElement(__ds_scope.Button, {
     size: "sm",
     onClick: onLogin
-  }, loginLabel)), /*#__PURE__*/React.createElement("div", {
+  }, loginLabel)), compact ? null : /*#__PURE__*/React.createElement("div", {
     onClick: onSearch,
     style: {
       marginTop: 12,

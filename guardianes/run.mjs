@@ -8,7 +8,8 @@ import { readFileSync } from "node:fs";
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 import { existsSync } from "node:fs";
 const archivos = execSync("git ls-files", { encoding: "utf8" }).split("\n").filter((f) => f && existsSync(f));
-const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
+// .github/ también: un flujo de CI podría apuntar la semilla o un secreto a producción (5 nov: no se revisaba).
+const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts|\.github)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
 const fallos = [];
 const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + linea : ""} — ${msg}`);
 
@@ -48,8 +49,9 @@ const guardianes = {
     for (const f of codigo) {
       const t = readFileSync(f, "utf8");
       if (/TOLATINO_ENTORNO\s*[:=]\s*["']?produccion/.test(t) && /seed|semilla/i.test(t)) falla("semilla", f, 0, "semilla configurada contra producción");
-      // La semilla de pruebas solo la puede invocar el despliegue del sandbox (y la define migrar.sh).
-      if (/(--semilla-pruebas|infra\/pruebas\/semilla)/.test(t) && !/^(infra\/pruebas\/|packages\/db\/migrar\.sh$|scripts\/semilla\/|guardianes\/)/.test(f))
+      // La semilla de pruebas solo la puede invocar el despliegue del sandbox (y la define migrar.sh). El CI la aplica en una
+      // base desechable (proyecto «ci») para probar que se puede volver a aplicar.
+      if (/(--semilla-pruebas|infra\/pruebas\/semilla)/.test(t) && !/^(infra\/pruebas\/|packages\/db\/migrar\.sh$|scripts\/semilla\/|guardianes\/|\.github\/workflows\/ci\.yml$)/.test(f))
         falla("semilla", f, 0, "la semilla de pruebas se llama desde fuera del sandbox");
     }
   },

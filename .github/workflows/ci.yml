@@ -31,3 +31,20 @@ jobs:
           bash packages/db/migrar.sh $C
           test "$($C exec -T db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c 'select count(*) from categories')" = "17"
           test "$($C exec -T db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c 'select count(*) from cities')" = "5"
+      - name: La semilla del sandbox se puede volver a aplicar con el sandbox ya usado
+        # Guardián (5 nov): la semilla borraba fotos que un «Reportar foto» ya referenciaba y fallaba. Se aplica, se
+        # simula uso real (reporte de foto, guardado, lista de espera) y se vuelve a aplicar con la semilla cambiada.
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          Q() { $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt -c "$1"; }
+          SEMILLA_DIR=infra/pruebas/semilla bash packages/db/migrar.sh --semilla-pruebas $C
+          Q "insert into users (phone, first_name, last_name) values ('+15705550198', 'CI', 'Prueba') on conflict do nothing"
+          U=$(Q "select id from users where phone = '+15705550198'")
+          Q "insert into photo_reports (media_id, reporter_user_id, reason) select id, '$U', 'otro' from media where status = 'visible' order by id limit 3"
+          Q "insert into favorites (user_id, kind, target_id) select '$U', 'business', id from businesses limit 3"
+          Q "insert into city_waitlist (city_id, user_id, source) values ('alw', '$U', 'coming_soon')"
+          Q "update schema_seeds set sha256 = 'cambiada' where name like 'pruebas/%'"
+          SEMILLA_DIR=infra/pruebas/semilla bash packages/db/migrar.sh --semilla-pruebas $C
+          test "$(Q "select count(*) from photo_reports")" = "3"
+          test "$(Q "select count(*) from media where status = 'visible'")" -gt 1000

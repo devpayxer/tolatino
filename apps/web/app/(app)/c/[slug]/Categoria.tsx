@@ -191,7 +191,7 @@ export function Categoria({ v }: { v: Vista }) {
         <span className="flex-1" />
         <Chip onClick={ciclarOrden}>{T.ordenLargo}<Icon name="chevronDown" size={14} strokeWidth={2} /></Chip>
         <Button variant={v.filtros.length ? "primary" : "secondary"} size="sm" icon="filter" onClick={() => setHoja(true)}>{T.filtros}</Button>
-        <Button variant="secondary" size="sm" icon="pin" onClick={() => router.push("/mapa")}>{T.mapa}</Button>
+        <Button variant="secondary" size="sm" icon="pin" onClick={() => { const q = new URLSearchParams({ cat: v.slug, ctx: "1" }); if (v.sub) q.set("sub", v.sub); if (v.filtros.length) q.set("f", v.filtros.join(",")); router.push(`/mapa?${q}`); }}>{T.mapa}</Button>
       </div>
 
       {/* ── Resultados ── */}
