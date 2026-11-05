@@ -23,6 +23,7 @@ const C = win.TLContact, CITY = win.TLCity;
 let fic = 100; const telFic = () => `+1570555${String(0 + (fic++ % 100)).padStart(4, "01")}`.replace(/^(\+1570555)0?(\d{4})$/, (m, a, b) => a + "01" + b.slice(-2));
 const CORE = new Set("id name pro verified subs tags r n d open st stEn ph photos eta etaEn fee feeEn offer offerEn hrs sat sun closed days addr zone yrs catEn cat k demo at".split(" "));
 const out = [], sinSub = [], vistos = new Set();
+const ABOUT = (win.TLListing && win.TLListing.ABOUT) || {}; // [es, en, año] por negocio
 const h2t = h => { const H = Math.floor(h) % 24, M = Math.round((h - Math.floor(h)) * 60); return `${String(H).padStart(2, "0")}:${String(M).padStart(2, "0")}`; };
 for (const [obj, cat] of Object.entries(CATS)) {
   for (const b of win[obj].B) {
@@ -42,11 +43,19 @@ for (const [obj, cat] of Object.entries(CATS)) {
     out.push({ id: b.id, category_id: cat, name: b.name, subcategory_ids: subs, plan: b.pro ? "pro" : "free", verified: !!b.verified,
       service_radius_mi: b.zone ? Math.max(1, Math.min(100, Math.round(b.zone))) : null, works_from_home: !!(b.zone && !b.d),
       rating_avg: b.r ?? null, review_count: b.n ?? 0, filter_values: b.tags || [], address: addr, geo: ll, phone: telFic(),
-      founded_year: b.yrs ? 2026 - b.yrs : null, photos: (b.ph || []).map(id => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg`),
+      founded_year: ABOUT[b.id] && ABOUT[b.id][2] ? ABOUT[b.id][2] : b.yrs ? 2026 - b.yrs : null,
+      about: ABOUT[b.id] ? { es: ABOUT[b.id][0], en: ABOUT[b.id][1] } : null,
+      faqs: Array.isArray(b.fq) ? b.fq.map(([qe, ae, qn, an]) => ({ q: { es: qe, en: qn || qe }, a: { es: ae, en: an || ae } })) : [], photos: (b.ph || []).map(id => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg`),
       hours: horas, category_attrs: attrs });
   }
 }
+// Relacionados (sucursal / mismo dueño) con la nota que cada negocio escribió del otro.
+const ids = new Set(out.map((x) => x.id));
+const enlaces = (((win.TLRel || {}).REL) || []).filter((r) => ids.has(r.a) && ids.has(r.b) && (r.k === "sucursal" || r.k === "dueno"))
+  .map((r) => ({ a: r.a, b: r.b, kind: r.k, note_a: r.na ? { es: r.na[0], en: r.na[1] || r.na[0] } : null, note_b: r.nb ? { es: r.nb[0], en: r.nb[1] || r.nb[0] } : null }));
 fs.writeFileSync(salida, JSON.stringify(out, null, 1));
+fs.writeFileSync(salida.replace(/negocios\.json$/, "enlaces.json"), JSON.stringify(enlaces, null, 1));
+console.log(`sobre nosotros: ${out.filter((x) => x.about).length} · con preguntas: ${out.filter((x) => x.faqs.length).length} · relacionados: ${enlaces.length}`);
 console.log(`negocios: ${out.length} · sin coordenadas: ${out.filter(x => !x.geo).length} · sin subcategoría: ${out.filter(x => !x.subcategory_ids.length).length} · subcategorías no encontradas: ${sinSub.length}`);
 console.log(sinSub.slice(0, 25).join("\n"));
 const porCat = {}; for (const x of out) porCat[x.category_id] = (porCat[x.category_id] || 0) + 1; console.log(JSON.stringify(porCat));

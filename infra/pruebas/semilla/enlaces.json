@@ -1,0 +1,41 @@
+[
+ {
+  "a": "sabor-dominicano",
+  "b": "sabor-dominicano-alter",
+  "kind": "sucursal",
+  "note_a": {
+   "es": "Nuestra segunda cocina, en Alter St. La misma carta y los mismos precios.",
+   "en": "Our second kitchen, on Alter St. Same menu, same prices."
+  },
+  "note_b": {
+   "es": "Donde empezó todo en 2014, en Wyoming St. La misma carta y los mismos precios.",
+   "en": "Where it all began in 2014, on Wyoming St. Same menu, same prices."
+  }
+ },
+ {
+  "a": "sabor-dominicano",
+  "b": "catering-hazleton",
+  "kind": "dueno",
+  "note_a": {
+   "es": "El catering de la familia Peña: bautizos, bodas y cumpleaños.",
+   "en": "The Peña family's catering: baptisms, weddings and birthdays."
+  },
+  "note_b": {
+   "es": "El restaurante de la familia Peña, en Wyoming St.",
+   "en": "The Peña family's restaurant, on Wyoming St."
+  }
+ },
+ {
+  "a": "sabor-dominicano",
+  "b": "flan-y-mas",
+  "kind": "dueno",
+  "note_a": {
+   "es": "Los flanes de doña Rosa, los sábados y domingos.",
+   "en": "Doña Rosa's flans, on Saturdays and Sundays."
+  },
+  "note_b": {
+   "es": "El restaurante de doña Rosa, en Wyoming St.",
+   "en": "Doña Rosa's restaurant, on Wyoming St."
+  }
+ }
+]

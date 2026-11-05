@@ -23,6 +23,15 @@ export const T = {
     negTitle: "Negocios en {c}", negSub: "17 CATEGORÍAS · {l}", catsSec: "Categorías", featTitle: "Destacados en {c}",
     freshTitle: "Nuevos en el barrio",
     intents: { abierto: "Abierto ahora", delivery: "Delivery", verificados: "Verificados", cita: "Con cita", domicilio: "A domicilio", pago: "Pago en línea" },
+    // Ficha del negocio (APP-NEG-LISTING)
+    ficha: {
+      back: "Volver", share: "Compartir", call: "Llamar", save: "Guardar", saved: "Guardado", copied: "Enlace copiado",
+      photos: "Fotos", photosOne: "Ver la foto", photosN: "Ver las {n} fotos", photoCount: "{n} FOTOS", photoCountOne: "1 FOTO",
+      map: "Cómo llegar", mapZone: "Dónde atiende", openMaps: "Abrir en mapas", seeZone: "Ver la zona",
+      hours: "Horario", hoursCaps: "HORARIO", faq: "Preguntas frecuentes", now: "AHORA", changes: "PRÓXIMOS CAMBIOS", week: "Esta semana",
+      tabRes: "Resumen", tabRel: "Relacionados", relSub: "Negocios conectados con {n}. Los dos negocios confirmaron la relación.",
+      open: "Abierto", closed: "Cerrado", today: "HOY",
+    },
   },
   en: {
     search: "What do you need today?", searchIn: "Search Hazleton", searchDesk: "Search businesses, events and more in Hazleton",
@@ -44,5 +53,13 @@ export const T = {
     negTitle: "Businesses in {c}", negSub: "17 CATEGORIES · {l}", catsSec: "Categories", featTitle: "Featured in {c}",
     freshTitle: "New in the neighborhood",
     intents: { abierto: "Open now", delivery: "Delivery", verificados: "Verified", cita: "By appointment", domicilio: "Comes to you", pago: "Pay online" },
+    ficha: {
+      back: "Back", share: "Share", call: "Call", save: "Save", saved: "Saved", copied: "Link copied",
+      photos: "Photos", photosOne: "See the photo", photosN: "See all {n} photos", photoCount: "{n} PHOTOS", photoCountOne: "1 PHOTO",
+      map: "Directions", mapZone: "Service area", openMaps: "Open in maps", seeZone: "See the area",
+      hours: "Hours", hoursCaps: "HOURS", faq: "FAQ", now: "NOW", changes: "UPCOMING CHANGES", week: "This week",
+      tabRes: "Overview", tabRel: "Related", relSub: "Businesses connected with {n}. Both businesses confirmed the connection.",
+      open: "Open", closed: "Closed", today: "TODAY",
+    },
   },
 } as const;

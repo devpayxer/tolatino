@@ -27,7 +27,12 @@
    -75.97818357380507
   ],
   "phone": "+15705550100",
-  "founded_year": null,
+  "founded_year": 2014,
+  "about": {
+   "es": "Cocina dominicana en Wyoming St desde 2014. Doña Rosa y su familia cocinan todos los días: la bandera al mediodía, mofongo y chivo guisado en la noche. Catering para bautizos, cumpleaños y oficinas.",
+   "en": "Dominican kitchen on Wyoming St since 2014. Doña Rosa and her family cook every day: la bandera at noon, mofongo and goat stew at night. Catering for baptisms, birthdays and offices."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39122376/pexels-photo-39122376.jpeg",
    "https://images.pexels.com/photos/38330332/pexels-photo-38330332.jpeg",
@@ -148,6 +153,8 @@
   ],
   "phone": "+15705550101",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/38330332/pexels-photo-38330332.jpeg",
    "https://images.pexels.com/photos/39143744/pexels-photo-39143744.jpeg",
@@ -264,7 +271,12 @@
    -75.9859946167939
   ],
   "phone": "+15705550102",
-  "founded_year": null,
+  "founded_year": 2011,
+  "about": {
+   "es": "Pan de agua, pan sobao y bizcocho dominicano horneados aquí desde las 5 AM. Encargos de bizcocho con 48 horas.",
+   "en": "Pan de agua, pan sobao and Dominican cake baked here from 5 AM. Cake orders with 48 hours notice."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35993723/pexels-photo-35993723.jpeg",
    "https://images.pexels.com/photos/9120377/pexels-photo-9120377.jpeg",
@@ -381,7 +393,12 @@
    -75.98987919790142
   ],
   "phone": "+15705550103",
-  "founded_year": null,
+  "founded_year": 2017,
+  "about": {
+   "es": "Parrilla dominicana en Wyoming St: churrasco, chuleta ahumada y pica pollo al carbón. Abierto hasta la medianoche.",
+   "en": "Dominican grill on Wyoming St: churrasco, smoked pork chops and charcoal fried chicken. Open until midnight."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/34822475/pexels-photo-34822475.jpeg",
    "https://images.pexels.com/photos/29075345/pexels-photo-29075345.jpeg",
@@ -498,7 +515,12 @@
    -75.96724370572575
   ],
   "phone": "+15705550104",
-  "founded_year": null,
+  "founded_year": 2019,
+  "about": {
+   "es": "Café dominicano y desayunos desde las 7 AM: mangú, tostadas y café colado al momento.",
+   "en": "Dominican coffee and breakfast from 7 AM: mangú, toast and fresh-brewed coffee."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/19252265/pexels-photo-19252265.jpeg",
    "https://images.pexels.com/photos/36238393/pexels-photo-36238393.jpeg",
@@ -610,7 +632,12 @@
    -75.95198190527235
   ],
   "phone": "+15705550105",
-  "founded_year": null,
+  "founded_year": 2018,
+  "about": {
+   "es": "Pollo a la brasa al estilo peruano, marinado 24 horas y asado a la leña. También lomo saltado y ají de gallina.",
+   "en": "Peruvian-style rotisserie chicken, marinated 24 hours and wood-roasted. Also lomo saltado and ají de gallina."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8696558/pexels-photo-8696558.jpeg",
    "https://images.pexels.com/photos/37228289/pexels-photo-37228289.jpeg",
@@ -731,7 +758,12 @@
    -75.97618063986145
   ],
   "phone": "+15705550106",
-  "founded_year": null,
+  "founded_year": 2021,
+  "about": {
+   "es": "Camión de tacos en la esquina de Broad y Pine. Tortillas hechas a mano y al pastor del trompo, hasta las 2 AM.",
+   "en": "Taco truck at the corner of Broad and Pine. Handmade tortillas and al pastor off the spit, until 2 AM."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6310256/pexels-photo-6310256.jpeg",
    "https://images.pexels.com/photos/5837188/pexels-photo-5837188.jpeg",
@@ -843,7 +875,12 @@
    -75.9439864893101
   ],
   "phone": "+15705550107",
-  "founded_year": null,
+  "founded_year": 2016,
+  "about": {
+   "es": "Pescado y mariscos frescos al estilo de Samaná. Abre para la cena, de 4 PM a 10 PM.",
+   "en": "Fresh fish and seafood, Samaná style. Open for dinner, 4 PM to 10 PM."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14786461/pexels-photo-14786461.jpeg",
    "https://images.pexels.com/photos/30258612/pexels-photo-30258612.jpeg",
@@ -960,7 +997,12 @@
    -75.99284090185853
   ],
   "phone": "+15705550108",
-  "founded_year": null,
+  "founded_year": 2022,
+  "about": {
+   "es": "Empanadas colombianas hechas en casa, solo sábados y domingos. Pide con anticipación y pasa a recoger.",
+   "en": "Homemade Colombian empanadas, Saturdays and Sundays only. Order ahead and pick up."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36905236/pexels-photo-36905236.jpeg",
    "https://images.pexels.com/photos/37368697/pexels-photo-37368697.jpeg",
@@ -1076,7 +1118,12 @@
    -75.9760680729133
   ],
   "phone": "+15705550109",
-  "founded_year": null,
+  "founded_year": 2020,
+  "about": {
+   "es": "Jugos naturales y batidos con la fruta del día: chinola, lechosa, guineo. Morir soñando como en la capital.",
+   "en": "Fresh juices and shakes with the fruit of the day: passion fruit, papaya, banana. Morir soñando like back home."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/27518954/pexels-photo-27518954.jpeg",
    "https://images.pexels.com/photos/8215113/pexels-photo-8215113.jpeg",
@@ -1191,7 +1238,12 @@
    -76.01327997438068
   ],
   "phone": "+15705550110",
-  "founded_year": null,
+  "founded_year": 2015,
+  "about": {
+   "es": "Catering dominicano para bautizos, quinceañeras y oficinas, de 20 a 200 personas. Cotización gratis; el precio final se confirma por escrito.",
+   "en": "Dominican catering for baptisms, quinceañeras and offices, 20 to 200 guests. Free quote; the final price is confirmed in writing."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2337843/pexels-photo-2337843.jpeg",
    "https://images.pexels.com/photos/12253092/pexels-photo-12253092.jpeg",
@@ -1302,7 +1354,12 @@
    -75.98262186698274
   ],
   "phone": "+15705550111",
-  "founded_year": null,
+  "founded_year": 2020,
+  "about": {
+   "es": "Frituras de la casa: quipes, pastelitos, chicharrón y yaniqueques. Pickup en la ventana de Alter St.",
+   "en": "Home-style fried food: quipes, pastelitos, chicharrón and yaniqueques. Pickup at the Alter St window."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2337843/pexels-photo-2337843.jpeg"
   ],
@@ -1408,7 +1465,43 @@
    -75.99149871650688
   ],
   "phone": "+15705550112",
-  "founded_year": null,
+  "founded_year": 2020,
+  "about": {
+   "es": "Comida puertorriqueña en Hazleton: mofongo, arroz con gandules, alcapurrias y alitas. Cocina la familia Rivera, de Bayamón.",
+   "en": "Puerto Rican food in Hazleton: mofongo, arroz con gandules, alcapurrias and wings. Cooked by the Rivera family, from Bayamón."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Qué es lo más pedido?",
+     "en": "What do people order most?"
+    },
+    "a": {
+     "es": "El mofongo con pernil y las alitas de guayaba.",
+     "en": "Mofongo with pernil and the guava wings."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hacen delivery?",
+     "en": "Do you deliver?"
+    },
+    "a": {
+     "es": "Sí, hasta 3 millas, con $3 de envío.",
+     "en": "Yes, up to 3 miles, $3 fee."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen alcapurrias todos los días?",
+     "en": "Alcapurrias every day?"
+    },
+    "a": {
+     "es": "Sí, hasta que se acaben. Los viernes hacemos más.",
+     "en": "Yes, until they sell out. We make more on Fridays."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/33776459/pexels-photo-33776459.jpeg",
    "https://images.pexels.com/photos/12181619/pexels-photo-12181619.jpeg"
@@ -1561,7 +1654,43 @@
    -75.99266996781358
   ],
   "phone": "+15705550113",
-  "founded_year": null,
+  "founded_year": 2021,
+  "about": {
+   "es": "Sándwich cubano, medianoche y tortas mexicanas en pan del día. Café cubano desde las 7 AM.",
+   "en": "Cuban sandwich, medianoche and Mexican tortas on fresh bread. Cuban coffee from 7 AM."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿El pan es cubano de verdad?",
+     "en": "Is it real Cuban bread?"
+    },
+    "a": {
+     "es": "Sí, lo hornea una panadería de Allentown y llega cada mañana.",
+     "en": "Yes, an Allentown bakery bakes it and it arrives every morning."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen tortas mexicanas?",
+     "en": "Do you have Mexican tortas?"
+    },
+    "a": {
+     "es": "Sí: milanesa y cubana mexicana, con pan telera.",
+     "en": "Yes: milanesa and torta cubana, on telera bread."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hacen bandejas para la oficina?",
+     "en": "Office trays?"
+    },
+    "a": {
+     "es": "Sí, de 10 sándwiches en adelante, con un día de aviso.",
+     "en": "Yes, from 10 sandwiches, one day ahead."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/30811288/pexels-photo-30811288.jpeg"
   ],
@@ -1713,7 +1842,43 @@
    -75.99963903861737
   ],
   "phone": "+15705550114",
-  "founded_year": null,
+  "founded_year": 2019,
+  "about": {
+   "es": "Parrilla argentina y brasileña a la leña: vacío, entraña, picanha y choripán. Argentinos y un parrillero brasileño en Hazleton.",
+   "en": "Argentinian and Brazilian wood-fired grill: vacío, skirt steak, picanha and choripán. Argentinians and a Brazilian grill cook in Hazleton."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Las carnes son a la leña?",
+     "en": "Wood-fired?"
+    },
+    "a": {
+     "es": "Sí, parrilla a la leña. Los domingos hay asado desde las 12.",
+     "en": "Yes, wood-fired grill. Sunday asado from 12."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen picanha brasileña?",
+     "en": "Brazilian picanha?"
+    },
+    "a": {
+     "es": "Sí, la picanha y el pan de queso los hace nuestro parrillero de Minas Gerais.",
+     "en": "Yes, our grill cook from Minas Gerais makes the picanha and pão de queijo."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Puedo pedir para llevar?",
+     "en": "Takeout?"
+    },
+    "a": {
+     "es": "Sí, pides aquí y pasas a recoger en 30 minutos.",
+     "en": "Yes, order here and pick up in 30 minutes."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/31917730/pexels-photo-31917730.jpeg",
    "https://images.pexels.com/photos/7931037/pexels-photo-7931037.jpeg"
@@ -1861,7 +2026,43 @@
    -75.9513329247847
   ],
   "phone": "+15705550115",
-  "founded_year": null,
+  "founded_year": 2022,
+  "about": {
+   "es": "Comida de la semana hecha en cocina certificada: almuerzos dominicanos balanceados y un plan vegano. Pides hasta el domingo, llega el lunes.",
+   "en": "Weekly meals from a certified kitchen: balanced Dominican lunches and a vegan plan. Order by Sunday, delivered Monday."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Cómo funciona?",
+     "en": "How does it work?"
+    },
+    "a": {
+     "es": "Pides hasta el domingo a las 6 PM y el lunes te llegan las comidas de la semana, en envases listos para calentar.",
+     "en": "Order by Sunday 6 PM and on Monday you get the week’s meals, ready to heat."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen plan vegano?",
+     "en": "Vegan plan?"
+    },
+    "a": {
+     "es": "Sí, el plan vegano cambia cada semana. Dinos si eres alérgico a algo.",
+     "en": "Yes, the vegan plan changes weekly. Tell us about allergies."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cuánto duran?",
+     "en": "How long do they last?"
+    },
+    "a": {
+     "es": "Hasta 5 días en la nevera. No damos consejo de dieta: si tienes una condición, pregúntale a tu médico.",
+     "en": "Up to 5 days in the fridge. We do not give diet advice: ask your doctor if you have a condition."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/34429484/pexels-photo-34429484.jpeg"
   ],
@@ -2010,7 +2211,43 @@
    -75.95353128165777
   ],
   "phone": "+15705550116",
-  "founded_year": null,
+  "founded_year": 2018,
+  "about": {
+   "es": "Chef privado: cocino en tu casa cenas dominicanas y españolas para 2 a 20 personas. Cotización por escrito.",
+   "en": "Private chef: I cook Dominican and Spanish dinners at your home for 2 to 20 people. Written quote."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Cómo funciona?",
+     "en": "How does it work?"
+    },
+    "a": {
+     "es": "Me dices la fecha, cuántos son y qué quieres comer. Te mando la cotización por escrito antes de cobrar.",
+     "en": "Tell me the date, how many and what you want to eat. I send the quote in writing before charging."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cocinas en mi casa?",
+     "en": "Do you cook at my home?"
+    },
+    "a": {
+     "es": "Sí, llevo todo y dejo la cocina limpia. Hasta 25 millas de Hazleton.",
+     "en": "Yes, I bring everything and leave the kitchen clean. Up to 25 miles from Hazleton."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Para cuántas personas?",
+     "en": "For how many?"
+    },
+    "a": {
+     "es": "De 2 a 20. Para más, mejor un catering.",
+     "en": "From 2 to 20. For more, a caterer is better."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/19524049/pexels-photo-19524049.jpeg"
   ],
@@ -2155,7 +2392,43 @@
    -75.92745115171918
   ],
   "phone": "+15705550117",
-  "founded_year": null,
+  "founded_year": 2021,
+  "about": {
+   "es": "Barra móvil y bartenders para bodas, quinceañeras y cumpleaños. Tú pones las bebidas; nosotros, la barra y el servicio.",
+   "en": "Mobile bar and bartenders for weddings, quinceañeras and birthdays. You bring the drinks; we bring the bar and service."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Ustedes ponen el alcohol?",
+     "en": "Do you supply the alcohol?"
+    },
+    "a": {
+     "es": "No. Tú compras las bebidas y nosotros ponemos barra, hielo, mezclas y bartender con certificación RAMP.",
+     "en": "No. You buy the drinks; we bring the bar, ice, mixers and a RAMP-certified bartender."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Sirven a menores?",
+     "en": "Do you serve minors?"
+    },
+    "a": {
+     "es": "No. Solo servimos alcohol a mayores de 21 con ID. Para los niños hay mocktails.",
+     "en": "No. Alcohol only to 21+ with ID. Mocktails for kids."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Con cuánto tiempo reservo?",
+     "en": "How far ahead?"
+    },
+    "a": {
+     "es": "Con una semana como mínimo. Para bodas, mejor con un mes.",
+     "en": "At least a week. For weddings, a month is better."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/32347121/pexels-photo-32347121.jpeg",
    "https://images.pexels.com/photos/4485375/pexels-photo-4485375.jpeg"
@@ -2302,7 +2575,43 @@
    -75.98997739097864
   ],
   "phone": "+15705550118",
-  "founded_year": null,
+  "founded_year": 2017,
+  "about": {
+   "es": "Pasteles decorados para bautizos, quinceañeras y bodas. Bizcocho dominicano con suspiro o fondant, hecho por encargo.",
+   "en": "Decorated cakes for baptisms, quinceañeras and weddings. Dominican cake with meringue or fondant, made to order."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Con cuánto tiempo encargo?",
+     "en": "How far ahead?"
+    },
+    "a": {
+     "es": "Con 5 días. Mándame la foto o la idea y te digo el precio antes de cobrar.",
+     "en": "5 days. Send me a photo or idea and I give you the price before charging."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Lo llevan al salón?",
+     "en": "Do you deliver to the venue?"
+    },
+    "a": {
+     "es": "Sí, hasta 10 millas por $15. Los de 2 pisos o más se llevan siempre.",
+     "en": "Yes, up to 10 miles for $15. Two tiers or more are always delivered."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Qué sabores hay?",
+     "en": "What flavors?"
+    },
+    "a": {
+     "es": "Bizcocho dominicano de vainilla, chocolate o tres leches; relleno de piña, guayaba o dulce de leche.",
+     "en": "Dominican vanilla, chocolate or tres leches cake; pineapple, guava or dulce de leche filling."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/30233153/pexels-photo-30233153.jpeg",
    "https://images.pexels.com/photos/17315403/pexels-photo-17315403.jpeg"
@@ -2450,7 +2759,43 @@
    -75.96415347878762
   ],
   "phone": "+15705550119",
-  "founded_year": null,
+  "founded_year": 2023,
+  "about": {
+   "es": "Cocina solo para entrega, de 4 PM a 11 PM: burgers, bowls y chimis con sabor latino. Sin local: todo llega a tu puerta.",
+   "en": "Delivery-only kitchen, 4 PM to 11 PM: burgers, bowls and chimis with Latin flavor. No storefront: everything comes to your door."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Puedo pasar a recoger?",
+     "en": "Can I pick up?"
+    },
+    "a": {
+     "es": "No. Es una cocina solo para entrega: no hay local para comer ni para recoger.",
+     "en": "No. It is a delivery-only kitchen: no dine-in or pickup."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hasta dónde llegan?",
+     "en": "How far do you deliver?"
+    },
+    "a": {
+     "es": "Hasta 4 millas de Hazleton, con $3 de envío.",
+     "en": "Up to 4 miles from Hazleton, $3 fee."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Puedo pedir antes de que abran?",
+     "en": "Can I order before you open?"
+    },
+    "a": {
+     "es": "Sí, pides ahora y lo programas para después de las 4 PM.",
+     "en": "Yes, order now and schedule it for after 4 PM."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/36750270/pexels-photo-36750270.jpeg"
   ],
@@ -2600,6 +2945,39 @@
   ],
   "phone": "+15705550120",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Llevan hielo a fiestas?",
+     "en": "Ice for parties?"
+    },
+    "a": {
+     "es": "Sí, desde 10 bolsas, con un día de aviso.",
+     "en": "Yes, from 10 bags, one day ahead."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cambian el botellón?",
+     "en": "Do you swap jugs?"
+    },
+    "a": {
+     "es": "Sí: traes el vacío y pagas solo el agua.",
+     "en": "Yes: bring the empty one and pay only for the water."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cómo se paga?",
+     "en": "How do I pay?"
+    },
+    "a": {
+     "es": "En efectivo o tarjeta al recibir.",
+     "en": "Cash or card on delivery."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/27650516/pexels-photo-27650516.jpeg",
    "https://images.pexels.com/photos/10376368/pexels-photo-10376368.jpeg"
@@ -2741,6 +3119,39 @@
   ],
   "phone": "+15705550121",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿La paella se pide antes?",
+     "en": "Order paella ahead?"
+    },
+    "a": {
+     "es": "Sí, la de 4 o más con una hora de aviso: se hace al momento.",
+     "en": "Yes, for 4 or more, one hour ahead: it is made to order."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen tapas?",
+     "en": "Tapas?"
+    },
+    "a": {
+     "es": "Sí: tortilla, croquetas, chorizo al vino.",
+     "en": "Yes: tortilla, croquetas, chorizo in wine."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Dónde me estaciono?",
+     "en": "Parking?"
+    },
+    "a": {
+     "es": "En la calle, frente al local.",
+     "en": "Street parking in front."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/24906297/pexels-photo-24906297.jpeg"
   ],
@@ -2881,6 +3292,39 @@
   ],
   "phone": "+15705550122",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Dónde se recogen?",
+     "en": "Where do I pick up?"
+    },
+    "a": {
+     "es": "En su casa en Grant St. La dirección exacta te llega cuando acepta tu pedido.",
+     "en": "At her home on Grant St. The exact address arrives when she accepts."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Con cuánto tiempo encargo?",
+     "en": "How far ahead?"
+    },
+    "a": {
+     "es": "La docena, con un día. Para fiestas de 5 docenas o más, con 3 días.",
+     "en": "A dozen, one day. For 5+ dozen, 3 days."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Son guatemaltecos?",
+     "en": "Are they Guatemalan?"
+    },
+    "a": {
+     "es": "Sí: colorados en hoja de plátano y chuchitos en tuza.",
+     "en": "Yes: red tamales in banana leaf and chuchitos in corn husk."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/29465179/pexels-photo-29465179.jpeg",
    "https://images.pexels.com/photos/14179987/pexels-photo-14179987.jpeg"
@@ -3022,6 +3466,39 @@
   ],
   "phone": "+15705550123",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Las tortillas son de harina hecha aquí?",
+     "en": "Are the tortillas made here?"
+    },
+    "a": {
+     "es": "Sí, se hacen al momento.",
+     "en": "Yes, made to order."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen pollo con tajadas?",
+     "en": "Pollo con tajadas?"
+    },
+    "a": {
+     "es": "Sí, todos los días.",
+     "en": "Yes, every day."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Dónde me estaciono?",
+     "en": "Parking?"
+    },
+    "a": {
+     "es": "En la calle, frente al local.",
+     "en": "Street parking in front."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/19781592/pexels-photo-19781592.jpeg"
   ],
@@ -3163,6 +3640,39 @@
   ],
   "phone": "+15705550124",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Hay encebollado todos los días?",
+     "en": "Encebollado every day?"
+    },
+    "a": {
+     "es": "Sí, desde las 8 AM hasta que se acaba.",
+     "en": "Yes, from 8 AM until it runs out."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen bolón?",
+     "en": "Bolón?"
+    },
+    "a": {
+     "es": "Sí, de queso o de chicharrón.",
+     "en": "Yes, cheese or pork rind."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Dónde me estaciono?",
+     "en": "Parking?"
+    },
+    "a": {
+     "es": "En la calle, frente al local.",
+     "en": "Street parking in front."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/31495674/pexels-photo-31495674.jpeg"
   ],
@@ -3304,6 +3814,39 @@
   ],
   "phone": "+15705550125",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Tienen chofán dominicano?",
+     "en": "Dominican chofán?"
+    },
+    "a": {
+     "es": "Sí, el chofán de la casa con cerdo, pollo y camarón.",
+     "en": "Yes, house chofán with pork, chicken and shrimp."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hacen delivery?",
+     "en": "Do you deliver?"
+    },
+    "a": {
+     "es": "Sí, hasta 3 millas, con $3 de envío.",
+     "en": "Yes, up to 3 miles, $3 fee."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cómo se paga?",
+     "en": "How do I pay?"
+    },
+    "a": {
+     "es": "Con tarjeta en la app cuando aceptan tu pedido, o en efectivo al recoger.",
+     "en": "By card in the app when accepted, or cash at pickup."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/4940832/pexels-photo-4940832.jpeg"
   ],
@@ -3448,6 +3991,39 @@
   ],
   "phone": "+15705550126",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Cuánto cuesta?",
+     "en": "How much?"
+    },
+    "a": {
+     "es": "Almuerzo $13.99 hasta las 4 PM; cena $16.99. Niños menores de 10, la mitad.",
+     "en": "Lunch $13.99 until 4 PM; dinner $16.99. Kids under 10, half."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Se puede llevar?",
+     "en": "Takeout?"
+    },
+    "a": {
+     "es": "Sí, en caja por libra.",
+     "en": "Yes, by the pound in a box."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Dónde me estaciono?",
+     "en": "Parking?"
+    },
+    "a": {
+     "es": "Parqueo propio detrás del local.",
+     "en": "Own lot behind the building."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/36408393/pexels-photo-36408393.jpeg"
   ],
@@ -3588,6 +4164,39 @@
   ],
   "phone": "+15705550127",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Las paletas son de fruta natural?",
+     "en": "Natural fruit pops?"
+    },
+    "a": {
+     "es": "Sí: mango, fresa, coco, tamarindo y más, hechas aquí.",
+     "en": "Yes: mango, strawberry, coconut, tamarind and more, made here."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hacen pedidos para fiestas?",
+     "en": "Party orders?"
+    },
+    "a": {
+     "es": "Sí, desde 30 paletas, con 2 días de aviso.",
+     "en": "Yes, from 30 pops, 2 days ahead."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Qué aguas frescas hay?",
+     "en": "Which aguas frescas?"
+    },
+    "a": {
+     "es": "Horchata, jamaica y la de temporada.",
+     "en": "Horchata, jamaica and the seasonal one."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/8678930/pexels-photo-8678930.jpeg",
    "https://images.pexels.com/photos/12939801/pexels-photo-12939801.jpeg"
@@ -3728,6 +4337,39 @@
   ],
   "phone": "+15705550128",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Qué es el boba?",
+     "en": "What is boba?"
+    },
+    "a": {
+     "es": "Té con leche o fruta y bolitas de tapioca. Tenemos sabores latinos: tamarindo, dulce de leche, chinola.",
+     "en": "Milk or fruit tea with tapioca pearls. Latin flavors: tamarind, dulce de leche, passion fruit."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Le ponen azúcar?",
+     "en": "Sugar?"
+    },
+    "a": {
+     "es": "Tú decides: 0, 50 o 100 %.",
+     "en": "Your choice: 0, 50 or 100%."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen sin cafeína?",
+     "en": "Caffeine-free?"
+    },
+    "a": {
+     "es": "Sí, los de fruta no llevan té.",
+     "en": "Yes, fruit ones have no tea."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/12666797/pexels-photo-12666797.jpeg"
   ],
@@ -3867,6 +4509,39 @@
   ],
   "phone": "+15705550129",
   "founded_year": null,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Dónde está hoy?",
+     "en": "Where is it today?"
+    },
+    "a": {
+     "es": "De lunes a sábado en Wyoming St y E Broad St, de 10 AM a 6 PM.",
+     "en": "Monday to Saturday at Wyoming St & E Broad St, 10 AM to 6 PM."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cómo se paga?",
+     "en": "How do I pay?"
+    },
+    "a": {
+     "es": "Si pides aquí, con tarjeta en la app cuando Don Nico acepta. En el carrito, en efectivo.",
+     "en": "If you order here, by card in the app when Don Nico accepts. At the cart, cash."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hace pedidos grandes?",
+     "en": "Large orders?"
+    },
+    "a": {
+     "es": "Sí, quipes y pastelitos por docena con un día de aviso.",
+     "en": "Yes, quipes and pastelitos by the dozen, one day ahead."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/5920644/pexels-photo-5920644.jpeg"
   ],
@@ -4008,6 +4683,8 @@
   ],
   "phone": "+15705550130",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6166796/pexels-photo-6166796.jpeg"
   ],
@@ -4110,7 +4787,12 @@
    -76.00094700739196
   ],
   "phone": "+15705550131",
-  "founded_year": null,
+  "founded_year": 2019,
+  "about": {
+   "es": "Bizcocho dominicano, suspiro y dulces caseros por encargo. Se recoge en N Laurel St.",
+   "en": "Dominican cake, meringue frosting and homemade sweets to order. Pickup on N Laurel St."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37228442/pexels-photo-37228442.jpeg"
   ],
@@ -4215,7 +4897,12 @@
    -76.01059616533772
   ],
   "phone": "+15705550132",
-  "founded_year": null,
+  "founded_year": 2021,
+  "about": {
+   "es": "Comida casera los fines de semana: sancocho, locrio y moro. Se acaba temprano.",
+   "en": "Home cooking on weekends: sancocho, locrio and moro. It sells out early."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/27556972/pexels-photo-27556972.jpeg"
   ],
@@ -4319,7 +5006,12 @@
    -75.97112146343322
   ],
   "phone": "+15705550133",
-  "founded_year": null,
+  "founded_year": 2017,
+  "about": {
+   "es": "Pupusas salvadoreñas hechas al momento, con curtido y salsa de la casa.",
+   "en": "Salvadoran pupusas made to order, with curtido and house salsa."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9700895/pexels-photo-9700895.jpeg"
   ],
@@ -4423,7 +5115,12 @@
    -75.96291411541901
   ],
   "phone": "+15705550134",
-  "founded_year": null,
+  "founded_year": 2012,
+  "about": {
+   "es": "Pizza, calzones y alitas para llevar o delivery, hasta la medianoche.",
+   "en": "Pizza, calzones and wings for pickup or delivery, until midnight."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8471699/pexels-photo-8471699.jpeg"
   ],
@@ -4527,7 +5224,12 @@
    -75.93434562278168
   ],
   "phone": "+15705550135",
-  "founded_year": null,
+  "founded_year": 2018,
+  "about": {
+   "es": "Hamburguesas a la plancha y papas fritas, cerca de la I-81.",
+   "en": "Griddled burgers and fries, near I-81."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4109233/pexels-photo-4109233.jpeg"
   ],
@@ -4631,7 +5333,12 @@
    -76.00066802129345
   ],
   "phone": "+15705550136",
-  "founded_year": null,
+  "founded_year": 2020,
+  "about": {
+   "es": "Arepas, cachapas y tequeños venezolanos desde el desayuno.",
+   "en": "Venezuelan arepas, cachapas and tequeños from breakfast on."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5836619/pexels-photo-5836619.jpeg"
   ],
@@ -4735,7 +5442,12 @@
    -75.96717895625001
   ],
   "phone": "+15705550137",
-  "founded_year": null,
+  "founded_year": 2019,
+  "about": {
+   "es": "Chimi, hot dog dominicano y papas locas en el camión de Alter St, de 6 PM a 2 AM.",
+   "en": "Chimi burgers, Dominican hot dogs and loaded fries at the Alter St truck, 6 PM to 2 AM."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5920681/pexels-photo-5920681.jpeg"
   ],
@@ -4839,7 +5551,12 @@
    -75.94200318276982
   ],
   "phone": "+15705550138",
-  "founded_year": null,
+  "founded_year": 2022,
+  "about": {
+   "es": "Flanes y tres leches por porción o enteros, sábados y domingos.",
+   "en": "Flan and tres leches by the slice or whole, Saturdays and Sundays."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33674417/pexels-photo-33674417.jpeg"
   ],
@@ -4943,7 +5660,12 @@
    -75.97511808932698
   ],
   "phone": "+15705550139",
-  "founded_year": null,
+  "founded_year": 2016,
+  "about": {
+   "es": "Desayuno dominicano desde las 6 AM: mangú, huevos con salami y café con leche.",
+   "en": "Dominican breakfast from 6 AM: mangú, eggs with salami and café con leche."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15640157/pexels-photo-15640157.jpeg"
   ],
@@ -5047,7 +5769,12 @@
    -75.93003701920362
   ],
   "phone": "+15705550140",
-  "founded_year": null,
+  "founded_year": 2015,
+  "about": {
+   "es": "Tacos de trompo y de lengua, y tortas al estilo de Guerrero. Pozole los fines de semana.",
+   "en": "Trompo and tongue tacos, and Guerrero-style tortas. Pozole on weekends."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4958774/pexels-photo-4958774.jpeg"
   ],
@@ -5149,7 +5876,12 @@
    -75.9670900100276
   ],
   "phone": "+15705550141",
-  "founded_year": null,
+  "founded_year": 2021,
+  "about": {
+   "es": "Batidos y jugos naturales hechos al momento con la fruta del día.",
+   "en": "Shakes and fresh juices made to order with the fruit of the day."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8215113/pexels-photo-8215113.jpeg"
   ],
@@ -5253,7 +5985,12 @@
    -75.9728523852306
   ],
   "phone": "+15705550142",
-  "founded_year": null,
+  "founded_year": 2023,
+  "about": {
+   "es": "Elotes, esquites, raspados y mangonadas los fines de semana.",
+   "en": "Elotes, esquites, shaved ice and mangonadas on weekends."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5837188/pexels-photo-5837188.jpeg"
   ],
@@ -5364,7 +6101,213 @@
    -75.97630485425957
   ],
   "phone": "+15705550143",
-  "founded_year": null,
+  "founded_year": 2014,
+  "about": {
+   "es": "Cocina de prueba de To’Latino: tiene encendida cada opción del panel. Desayuno, almuerzo criollo, postres, catering, delivery y reservaciones.",
+   "en": "To’Latino test kitchen: every panel option is on. Breakfast, Creole lunch, desserts, catering, delivery and reservations."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Hacen delivery?",
+     "en": "Do you deliver?"
+    },
+    "a": {
+     "es": "Sí, hasta 3 millas. $3 de envío, gratis desde $40.",
+     "en": "Yes, up to 3 miles. $3 fee, free over $40."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hacen catering?",
+     "en": "Do you cater?"
+    },
+    "a": {
+     "es": "Desde 20 personas, con 48 h de aviso.",
+     "en": "From 20 people, with 48 h notice."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen opciones sin carne?",
+     "en": "Meatless options?"
+    },
+    "a": {
+     "es": "Mofongo de vegetales, moro y acompañantes.",
+     "en": "Vegetable mofongo, rice and sides."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Reservan mesa?",
+     "en": "Do you take reservations?"
+    },
+    "a": {
+     "es": "Sí, hasta 8 personas en línea.",
+     "en": "Yes, up to 8 people online."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Aceptan efectivo?",
+     "en": "Do you take cash?"
+    },
+    "a": {
+     "es": "En el local y en el delivery.",
+     "en": "In store and on delivery."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Dónde me estaciono?",
+     "en": "Where do I park?"
+    },
+    "a": {
+     "es": "Parqueo propio detrás.",
+     "en": "Our own lot behind."
+    }
+   },
+   {
+    "q": {
+     "es": "¿El sancocho es todos los días?",
+     "en": "Sancocho every day?"
+    },
+    "a": {
+     "es": "Solo sábados y domingos.",
+     "en": "Saturdays and Sundays only."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen desayuno?",
+     "en": "Breakfast?"
+    },
+    "a": {
+     "es": "De 8 a 11 AM.",
+     "en": "8 to 11 AM."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Venden por libra?",
+     "en": "Sold by the pound?"
+    },
+    "a": {
+     "es": "Pernil y chicharrón.",
+     "en": "Pernil and pork belly."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Puedo programar un pedido?",
+     "en": "Can I schedule an order?"
+    },
+    "a": {
+     "es": "Sí, hasta 7 días antes.",
+     "en": "Yes, up to 7 days ahead."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hay alérgenos?",
+     "en": "Allergens?"
+    },
+    "a": {
+     "es": "Cada plato los dice: lácteos, huevo, mariscos.",
+     "en": "Each dish lists them: dairy, egg, seafood."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Venden alcohol?",
+     "en": "Alcohol?"
+    },
+    "a": {
+     "es": "Solo para comer aquí, 21+.",
+     "en": "Dine-in only, 21+."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hacen eventos privados?",
+     "en": "Private events?"
+    },
+    "a": {
+     "es": "Sí, la terraza para 30.",
+     "en": "Yes, the patio for 30."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tienen sillas para niños?",
+     "en": "High chairs?"
+    },
+    "a": {
+     "es": "Sí.",
+     "en": "Yes."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Hablan inglés?",
+     "en": "English?"
+    },
+    "a": {
+     "es": "Sí, y portugués con Yanet.",
+     "en": "Yes, and Portuguese with Yanet."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Envían por correo?",
+     "en": "Do you ship?"
+    },
+    "a": {
+     "es": "Salsa, sazón y café, sí.",
+     "en": "Sauce, seasoning and coffee, yes."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Rentan equipo para fiestas?",
+     "en": "Party equipment rental?"
+    },
+    "a": {
+     "es": "Chafing dishes, mesas y ollas.",
+     "en": "Chafing dishes, tables and pots."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Qué pasa si mi pedido llega mal?",
+     "en": "What if my order is wrong?"
+    },
+    "a": {
+     "es": "Usa Ayuda en tu pedido y lo arreglamos.",
+     "en": "Use Help on your order and we fix it."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cuánto tarda el pickup?",
+     "en": "Pickup time?"
+    },
+    "a": {
+     "es": "Unos 25 minutos.",
+     "en": "About 25 minutes."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Abren los lunes?",
+     "en": "Open Mondays?"
+    },
+    "a": {
+     "es": "Sí, de 11 AM a 9 PM.",
+     "en": "Yes, 11 AM to 9 PM."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/39122376/pexels-photo-39122376.jpeg",
    "https://images.pexels.com/photos/38330332/pexels-photo-38330332.jpeg",
@@ -5730,7 +6673,12 @@
    -75.98227020620104
   ],
   "phone": "+15705550144",
-  "founded_year": null,
+  "founded_year": 2016,
+  "about": {
+   "es": "Barbería de barrio en Wyoming St desde 2016. Somos cuatro barberos y cada uno renta su silla: tiene su agenda, sus precios y sus reseñas. Llegas y esperas turno, o reservas con el barbero que quieras.",
+   "en": "Neighborhood barbershop on Wyoming St since 2016. Four barbers, each renting their own chair: their own schedule, prices and reviews. Walk in and wait, or book the barber you want."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4969842/pexels-photo-4969842.jpeg",
    "https://images.pexels.com/photos/39559312/pexels-photo-39559312.jpeg",
@@ -5860,7 +6808,12 @@
    -75.97577187430086
   ],
   "phone": "+15705550145",
-  "founded_year": null,
+  "founded_year": 2012,
+  "about": {
+   "es": "Salón dominicano en Broad St: blower, planchado, tinte, keratina y peinados para toda ocasión. Tres estilistas de planta, cita o sin cita.",
+   "en": "Dominican salon on Broad St: blowouts, flat iron, color, keratin and styling for every occasion. Three staff stylists, walk-in or by appointment."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7195805/pexels-photo-7195805.jpeg",
    "https://images.pexels.com/photos/7755521/pexels-photo-7755521.jpeg",
@@ -5985,7 +6938,12 @@
    -75.98937233983433
   ],
   "phone": "+15705550146",
-  "founded_year": null,
+  "founded_year": 2019,
+  "about": {
+   "es": "Fades, diseños y barba con navaja. Darío abrió el local en 2019: cinco sillas, tres con barbero que toma citas, cada uno con su agenda y su precio. Abierto hasta las 9 PM.",
+   "en": "Fades, designs and straight-razor beards. Darío opened the shop in 2019: five chairs, three with barbers who take bookings, each with their own schedule and prices. Open until 9 PM."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12505400/pexels-photo-12505400.jpeg",
    "https://images.pexels.com/photos/39559325/pexels-photo-39559325.jpeg",
@@ -6108,7 +7066,12 @@
    -76.00431385722585
   ],
   "phone": "+15705550147",
-  "founded_year": null,
+  "founded_year": 2018,
+  "about": {
+   "es": "Trenzas, box braids y extensiones hechas en mi casa en N Laurel St. Trabajo sola y con cita, porque una trenza bien hecha lleva su tiempo.",
+   "en": "Braids, box braids and extensions done at my home on N Laurel St. I work alone and by appointment, because good braids take time."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35382770/pexels-photo-35382770.jpeg",
    "https://images.pexels.com/photos/16778662/pexels-photo-16778662.jpeg",
@@ -6234,7 +7197,12 @@
    -75.9746
   ],
   "phone": "+15705550148",
-  "founded_year": null,
+  "founded_year": 2021,
+  "about": {
+   "es": "Voy a tu casa con todo: silla, capa, máquina y aspiradora. Cortes para toda la familia, hasta 10 millas de Hazleton.",
+   "en": "I come to your home with everything: chair, cape, clippers and vacuum. Cuts for the whole family, up to 10 miles from Hazleton."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/19140178/pexels-photo-19140178.jpeg",
    "https://images.pexels.com/photos/33448216/pexels-photo-33448216.jpeg",
@@ -6359,7 +7327,12 @@
    -75.97542266962796
   ],
   "phone": "+15705550149",
-  "founded_year": null,
+  "founded_year": 2015,
+  "about": {
+   "es": "Peinado y maquillaje para novias y quinceañeras. Prueba antes del día y vamos al lugar de la fiesta hasta 20 millas.",
+   "en": "Hair and makeup for brides and quinceañeras. Trial before the day, and we travel to the venue up to 20 miles."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/3065096/pexels-photo-3065096.jpeg",
    "https://images.pexels.com/photos/15507425/pexels-photo-15507425.jpeg",
@@ -6483,7 +7456,12 @@
    -75.95030350089048
   ],
   "phone": "+15705550150",
-  "founded_year": null,
+  "founded_year": 2020,
+  "about": {
+   "es": "Barbería para niños: sillas de carrito, caricaturas y paciencia. Primer corte con certificado y mechón de recuerdo.",
+   "en": "Kids barbershop: car chairs, cartoons and patience. First haircut with a certificate and a lock of hair to keep."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7697358/pexels-photo-7697358.jpeg",
    "https://images.pexels.com/photos/19664861/pexels-photo-19664861.jpeg",
@@ -6607,7 +7585,12 @@
    -75.96001022633118
   ],
   "phone": "+15705550151",
-  "founded_year": null,
+  "founded_year": 2017,
+  "about": {
+   "es": "Especialistas en rizos y color. Nicole abrió el estudio en 2017 y le renta una estación a Laura: cada una con su agenda y sus precios.",
+   "en": "Curl and color specialists. Nicole opened the studio in 2017 and rents a station to Laura: each with her own schedule and prices."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9146943/pexels-photo-9146943.jpeg",
    "https://images.pexels.com/photos/3993132/pexels-photo-3993132.jpeg",
@@ -6727,7 +7710,12 @@
    -75.96502609071322
   ],
   "phone": "+15705550152",
-  "founded_year": null,
+  "founded_year": 2009,
+  "about": {
+   "es": "La barbería de siempre en Broad St. Sin cita: llegas, te sientas y esperas turno.",
+   "en": "The classic barbershop on Broad St. Walk-in only: come in, sit down and wait your turn."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4969838/pexels-photo-4969838.jpeg",
    "https://images.pexels.com/photos/19664870/pexels-photo-19664870.jpeg",
@@ -6849,7 +7837,12 @@
    -75.96364996082887
   ],
   "phone": "+15705550153",
-  "founded_year": null,
+  "founded_year": 2026,
+  "about": {
+   "es": "Salón recién abierto en Diamond Ave. Blower, planchado y alisados.",
+   "en": "Newly opened salon on Diamond Ave. Blowouts, flat iron and straightening."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7195803/pexels-photo-7195803.jpeg",
    "https://images.pexels.com/photos/14615064/pexels-photo-14615064.jpeg",
@@ -6968,6 +7961,8 @@
   ],
   "phone": "+15705550154",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4947554/pexels-photo-4947554.jpeg"
   ],
@@ -7077,6 +8072,8 @@
   ],
   "phone": "+15705550155",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7195799/pexels-photo-7195799.jpeg"
   ],
@@ -7186,6 +8183,8 @@
   ],
   "phone": "+15705550156",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/3992850/pexels-photo-3992850.jpeg"
   ],
@@ -7284,6 +8283,8 @@
   ],
   "phone": "+15705550157",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/10239026/pexels-photo-10239026.jpeg"
   ],
@@ -7394,6 +8395,8 @@
   ],
   "phone": "+15705550158",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7819734/pexels-photo-7819734.jpeg"
   ],
@@ -7502,6 +8505,8 @@
   ],
   "phone": "+15705550159",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/18213699/pexels-photo-18213699.jpeg"
   ],
@@ -7611,6 +8616,8 @@
   ],
   "phone": "+15705550160",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5941784/pexels-photo-5941784.jpeg"
   ],
@@ -7718,6 +8725,8 @@
   ],
   "phone": "+15705550161",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/3993124/pexels-photo-3993124.jpeg"
   ],
@@ -7829,7 +8838,12 @@
    -75.98739281328974
   ],
   "phone": "+15705550162",
-  "founded_year": null,
+  "founded_year": 2019,
+  "about": {
+   "es": "Salón de uñas en Alter St: manicura, pedicura spa, acrílico y diseños a mano. Luz y dos técnicas; sin cita según la espera, o reservas tu hora.",
+   "en": "Nail salon on Alter St: manicures, spa pedicures, acrylics and hand-painted designs. Luz and two techs; walk in depending on the wait, or book your time."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29877719/pexels-photo-29877719.jpeg",
    "https://images.pexels.com/photos/10123923/pexels-photo-10123923.jpeg",
@@ -7952,7 +8966,12 @@
    -75.9549819312229
   ],
   "phone": "+15705550163",
-  "founded_year": null,
+  "founded_year": 2020,
+  "about": {
+   "es": "Pestañas, cejas y maquillaje permanente en mi estudio de Broad St. Una clienta a la vez y siempre con cita.",
+   "en": "Lashes, brows and permanent makeup at my studio on Broad St. One client at a time, always by appointment."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/30896215/pexels-photo-30896215.jpeg",
    "https://images.pexels.com/photos/6089487/pexels-photo-6089487.jpeg",
@@ -8075,6 +9094,8 @@
   ],
   "phone": "+15705550164",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7020255/pexels-photo-7020255.jpeg"
   ],
@@ -8186,7 +9207,12 @@
    -75.94327961935662
   ],
   "phone": "+15705550165",
-  "founded_year": null,
+  "founded_year": 2021,
+  "about": {
+   "es": "Depilación láser, borrado de tatuajes y tratamientos de piel. La primera cita es una consulta con prueba de piel; el precio del paquete te lo damos por escrito.",
+   "en": "Laser hair removal, tattoo removal and skin treatments. The first visit is a consultation with a skin test; package pricing comes in writing."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/11781293/pexels-photo-11781293.jpeg",
    "https://images.pexels.com/photos/33716854/pexels-photo-33716854.jpeg",
@@ -8308,6 +9334,8 @@
   ],
   "phone": "+15705550166",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8460603/pexels-photo-8460603.jpeg"
   ],
@@ -8419,7 +9447,12 @@
    -75.9791777736829
   ],
   "phone": "+15705550167",
-  "founded_year": null,
+  "founded_year": 2018,
+  "about": {
+   "es": "Masajes relajantes, deportivos y en pareja. Cuatro cabinas y una sala doble para parejas.",
+   "en": "Relaxing, sports and couples massage. Four rooms and a double room for couples."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36593691/pexels-photo-36593691.jpeg",
    "https://images.pexels.com/photos/32767465/pexels-photo-32767465.jpeg",
@@ -8542,7 +9575,12 @@
    -75.97682614119951
   ],
   "phone": "+15705550168",
-  "founded_year": null,
+  "founded_year": 2017,
+  "about": {
+   "es": "Drenaje linfático post-operatorio y moldeamiento. Trabajamos con la orden de tu cirujano: no damos consejo médico.",
+   "en": "Post-op lymphatic drainage and body contouring. We follow your surgeon’s orders: we do not give medical advice."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/18450477/pexels-photo-18450477.jpeg",
    "https://images.pexels.com/photos/8460603/pexels-photo-8460603.jpeg",
@@ -8664,6 +9702,8 @@
   ],
   "phone": "+15705550169",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/32767465/pexels-photo-32767465.jpeg"
   ],
@@ -8773,6 +9813,8 @@
   ],
   "phone": "+15705550170",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12934843/pexels-photo-12934843.jpeg"
   ],
@@ -8884,7 +9926,12 @@
    -75.98319383862234
   ],
   "phone": "+15705550171",
-  "founded_year": null,
+  "founded_year": 2014,
+  "about": {
+   "es": "Tatuajes a mano y perforaciones con material estéril de un solo uso. Solo mayores de 18 con ID; el tatuaje se cotiza por diseño.",
+   "en": "Custom tattoos and piercings with single-use sterile tools. 18+ with ID only; tattoos are quoted by design."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/20830475/pexels-photo-20830475.jpeg",
    "https://images.pexels.com/photos/37601638/pexels-photo-37601638.jpeg",
@@ -9004,6 +10051,8 @@
   ],
   "phone": "+15705550172",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4929677/pexels-photo-4929677.jpeg"
   ],
@@ -9115,7 +10164,12 @@
    -75.98221097672487
   ],
   "phone": "+15705550173",
-  "founded_year": null,
+  "founded_year": 2011,
+  "about": {
+   "es": "Tienda de productos naturales, tés y vitaminas en Wyoming St. Te orientamos, pero no sustituimos a tu médico.",
+   "en": "Natural products, teas and vitamins on Wyoming St. We guide you, but we do not replace your doctor."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/38843494/pexels-photo-38843494.jpeg",
    "https://images.pexels.com/photos/13787562/pexels-photo-13787562.jpeg",
@@ -9235,6 +10289,8 @@
   ],
   "phone": "+15705550174",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/27781696/pexels-photo-27781696.jpeg"
   ],
@@ -9347,7 +10403,12 @@
    -75.9746
   ],
   "phone": "+15705550175",
-  "founded_year": null,
+  "founded_year": 2022,
+  "about": {
+   "es": "Maquillaje, peinado y uñas en tu casa o en el lugar de tu evento, hasta 15 millas. Llevo luz, silla y todo el material.",
+   "en": "Makeup, hair and nails at your home or event venue, up to 15 miles. I bring lights, a chair and everything I need."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/30884522/pexels-photo-30884522.jpeg",
    "https://images.pexels.com/photos/20186104/pexels-photo-20186104.jpeg",
@@ -9468,6 +10529,8 @@
   ],
   "phone": "+15705550176",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/38821137/pexels-photo-38821137.jpeg"
   ],
@@ -9589,7 +10652,12 @@
    -75.98086179938237
   ],
   "phone": "+15705550177",
-  "founded_year": null,
+  "founded_year": 2013,
+  "about": {
+   "es": "Salón de prueba de To’Latino: tiene encendida cada opción del panel. Cortes, color, keratina, uñas, pestañas, maquillaje, masajes y trenzas, con estilistas de planta y una silla en renta.",
+   "en": "To’Latino test salon: every panel option is on. Cuts, color, keratin, nails, lashes, makeup, massage and braids, with staff stylists and one rented chair."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7195805/pexels-photo-7195805.jpeg",
    "https://images.pexels.com/photos/7755521/pexels-photo-7755521.jpeg",
@@ -9741,7 +10809,12 @@
    -75.98609071037338
   ],
   "phone": "+15705550178",
-  "founded_year": null,
+  "founded_year": 2011,
+  "about": {
+   "es": "Taller de barrio en Wyoming St desde 2011. Rafael y Miguel trabajan las bahías 1 y 2; la 3 y la 4 las rentan dos mecánicos independientes, cada uno con su precio, su agenda y su garantía.",
+   "en": "Neighborhood shop on Wyoming St since 2011. Rafael and Miguel work bays 1 and 2; bays 3 and 4 are rented by two independent mechanics, each with their own prices, schedule and warranty."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33814734/pexels-photo-33814734.jpeg",
    "https://images.pexels.com/photos/8985457/pexels-photo-8985457.jpeg",
@@ -9898,7 +10971,12 @@
    -75.96021424187485
   ],
   "phone": "+15705550179",
-  "founded_year": null,
+  "founded_year": 2008,
+  "about": {
+   "es": "Motores y transmisiones desde 2008. Diagnóstico gratis si haces el arreglo aquí, garantía de 24 meses y te llevamos a casa mientras trabajamos.",
+   "en": "Engines and transmissions since 2008. Free diagnosis if you do the repair here, a 24-month warranty and we drive you home while we work."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4116170/pexels-photo-4116170.jpeg",
    "https://images.pexels.com/photos/8985517/pexels-photo-8985517.jpeg",
@@ -10049,7 +11127,12 @@
    -75.96497706145912
   ],
   "phone": "+15705550180",
-  "founded_year": null,
+  "founded_year": 2015,
+  "about": {
+   "es": "Cambio de aceite sin cita en unos 20 minutos, e inspección estatal y emisiones con inspector certificado.",
+   "en": "Walk-in oil changes in about 20 minutes, plus state inspection and emissions with a certified inspector."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13065691/pexels-photo-13065691.jpeg",
    "https://images.pexels.com/photos/8986148/pexels-photo-8986148.jpeg",
@@ -10215,7 +11298,12 @@
    -75.99932948564523
   ],
   "phone": "+15705550181",
-  "founded_year": null,
+  "founded_year": 2013,
+  "about": {
+   "es": "Gomas nuevas y usadas, montaje, balanceo y alineación en West Hazleton. Las usadas tienen al menos 6/32 de dibujo y te las enseñamos antes de montarlas.",
+   "en": "New and used tires, mounting, balancing and alignment in West Hazleton. Used tires have at least 6/32 tread and we show them to you before mounting."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/3807167/pexels-photo-3807167.jpeg",
    "https://images.pexels.com/photos/1301410/pexels-photo-1301410.jpeg",
@@ -10388,7 +11476,12 @@
    -75.99159729014569
   ],
   "phone": "+15705550182",
-  "founded_year": null,
+  "founded_year": 2017,
+  "about": {
+   "es": "Solo frenos y alineación. Trabajo solo y con cita: el que te atiende es el que arregla tu carro.",
+   "en": "Only brakes and alignment. I work alone and by appointment: the person you talk to is the one fixing your car."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/34277926/pexels-photo-34277926.jpeg",
    "https://images.pexels.com/photos/8986137/pexels-photo-8986137.jpeg",
@@ -10538,7 +11631,12 @@
    -75.9746
   ],
   "phone": "+15705550183",
-  "founded_year": null,
+  "founded_year": 2019,
+  "about": {
+   "es": "Voy donde está tu carro, hasta 15 millas de Hazleton: la casa, el trabajo o el parqueo de la fábrica.",
+   "en": "I go where your car is, up to 15 miles from Hazleton: home, work or the factory lot."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8478229/pexels-photo-8478229.jpeg",
    "https://images.pexels.com/photos/5572270/pexels-photo-5572270.jpeg",
@@ -10688,7 +11786,12 @@
    -75.95703021212825
   ],
   "phone": "+15705550184",
-  "founded_year": null,
+  "founded_year": 2016,
+  "about": {
+   "es": "Eléctrico, escáner y aire acondicionado. Si la luz del tablero no se apaga, empieza aquí.",
+   "en": "Electrical, scanning and A/C. If the dash light will not go off, start here."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12271950/pexels-photo-12271950.jpeg",
    "https://images.pexels.com/photos/8478228/pexels-photo-8478228.jpeg",
@@ -10857,7 +11960,12 @@
    -76.03371797354954
   ],
   "phone": "+15705550185",
-  "founded_year": null,
+  "founded_year": 2012,
+  "about": {
+   "es": "Diésel, pickups y camiones de trabajo, con grúa propia 24/7 en Airport Rd.",
+   "en": "Diesel, pickups and work trucks, with our own 24/7 tow truck on Airport Rd."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7018506/pexels-photo-7018506.jpeg",
    "https://images.pexels.com/photos/7019604/pexels-photo-7019604.jpeg",
@@ -10994,7 +12102,12 @@
    -75.97848695180042
   ],
   "phone": "+15705550186",
-  "founded_year": null,
+  "founded_year": 1998,
+  "about": {
+   "es": "Radiadores, mofles y escape desde 1998. Sin cita: llegas y Don Nelson te atiende.",
+   "en": "Radiators, mufflers and exhaust since 1998. Walk in and Don Nelson helps you."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33074473/pexels-photo-33074473.jpeg",
    "https://images.pexels.com/photos/5233284/pexels-photo-5233284.jpeg",
@@ -11142,7 +12255,12 @@
    -75.94249538480399
   ],
   "phone": "+15705550187",
-  "founded_year": null,
+  "founded_year": 2026,
+  "about": {
+   "es": "Taller nuevo de papá e hijo en Diamond Ave: diagnóstico, aceite y frenos.",
+   "en": "New father-and-son shop on Diamond Ave: diagnosis, oil and brakes."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8985456/pexels-photo-8985456.jpeg",
    "https://images.pexels.com/photos/4116173/pexels-photo-4116173.jpeg",
@@ -11286,7 +12404,12 @@
    -75.98457185869846
   ],
   "phone": "+15705550188",
-  "founded_year": null,
+  "founded_year": 2018,
+  "about": {
+   "es": "Lavado a mano sin cita y detallado con cita en N Church St. Al llegar revisamos el carro contigo y anotamos lo que ya tiene.",
+   "en": "Walk-in hand wash and booked detailing on N Church St. When you arrive we walk around the car with you and note what it already has."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6873174/pexels-photo-6873174.jpeg",
    "https://images.pexels.com/photos/6872591/pexels-photo-6872591.jpeg",
@@ -11450,7 +12573,12 @@
    -75.9746
   ],
   "phone": "+15705550189",
-  "founded_year": null,
+  "founded_year": 2021,
+  "about": {
+   "es": "Detallado a domicilio hasta 12 millas. Llevo agua y luz: no necesitas manguera ni enchufe.",
+   "en": "Mobile detailing up to 12 miles. I bring water and power: you need no hose or outlet."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6873129/pexels-photo-6873129.jpeg",
    "https://images.pexels.com/photos/14615269/pexels-photo-14615269.jpeg",
@@ -11604,6 +12732,8 @@
   ],
   "phone": "+15705550190",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1388278/pexels-photo-1388278.jpeg"
   ],
@@ -11734,6 +12864,8 @@
   ],
   "phone": "+15705550191",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/10948876/pexels-photo-10948876.jpeg"
   ],
@@ -11880,6 +13012,8 @@
   ],
   "phone": "+15705550192",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8985615/pexels-photo-8985615.jpeg"
   ],
@@ -12017,6 +13151,8 @@
   ],
   "phone": "+15705550193",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5562431/pexels-photo-5562431.jpeg"
   ],
@@ -12166,6 +13302,8 @@
   ],
   "phone": "+15705550194",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/17992463/pexels-photo-17992463.jpeg"
   ],
@@ -12308,6 +13446,8 @@
   ],
   "phone": "+15705550195",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13151224/pexels-photo-13151224.jpeg"
   ],
@@ -12463,6 +13603,8 @@
   ],
   "phone": "+15705550196",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4870724/pexels-photo-4870724.jpeg"
   ],
@@ -12610,7 +13752,12 @@
    -75.9746
   ],
   "phone": "+15705550197",
-  "founded_year": null,
+  "founded_year": 2018,
+  "about": {
+   "es": "Cerrajero de autos y auxilio en carretera. Vamos donde estás, hasta 20 millas de Hazleton, de 7 AM a 11 PM.",
+   "en": "Auto locksmith and roadside help. We come to you, up to 20 miles from Hazleton, 7 AM to 11 PM."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/97079/pexels-photo-97079.jpeg",
    "https://images.pexels.com/photos/842528/pexels-photo-842528.jpeg",
@@ -12778,7 +13925,12 @@
    -75.99639211355051
   ],
   "phone": "+15705550198",
-  "founded_year": null,
+  "founded_year": 2014,
+  "about": {
+   "es": "Parabrisas, ventanas y papel ahumado en West Broad St. Trabajamos con tu seguro y vamos a domicilio hasta 15 millas.",
+   "en": "Windshields, windows and tint on West Broad St. We work with your insurance and come to you up to 15 miles away."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7409799/pexels-photo-7409799.jpeg",
    "https://images.pexels.com/photos/20036216/pexels-photo-20036216.jpeg",
@@ -12938,7 +14090,12 @@
    -75.95245475176651
   ],
   "phone": "+15705550199",
-  "founded_year": null,
+  "founded_year": 2017,
+  "about": {
+   "es": "Tapicería, radios, cámaras y alarmas en N Vine St. Pasa sin cita para que te coticemos.",
+   "en": "Upholstery, radios, cameras and alarms on N Vine St. Walk in for a quote."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15223424/pexels-photo-15223424.jpeg",
    "https://images.pexels.com/photos/9604953/pexels-photo-9604953.jpeg",
@@ -13101,7 +14258,12 @@
    -75.9746
   ],
   "phone": "+15705550100",
-  "founded_year": null,
+  "founded_year": 2020,
+  "about": {
+   "es": "¿Vas a comprar un carro usado? Voy donde el vendedor, lo reviso y te mando el informe con fotos antes de que pagues. Hasta 25 millas de Hazleton.",
+   "en": "Buying a used car? I go to the seller, check it and send you the report with photos before you pay. Up to 25 miles from Hazleton."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6870295/pexels-photo-6870295.jpeg",
    "https://images.pexels.com/photos/5276374/pexels-photo-5276374.jpeg",
@@ -13256,6 +14418,8 @@
   ],
   "phone": "+15705550101",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1615548/pexels-photo-1615548.jpeg"
   ],
@@ -13404,6 +14568,8 @@
   ],
   "phone": "+15705550102",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/34539243/pexels-photo-34539243.jpeg"
   ],
@@ -13547,6 +14713,8 @@
   ],
   "phone": "+15705550103",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/34386337/pexels-photo-34386337.jpeg"
   ],
@@ -13684,6 +14852,8 @@
   ],
   "phone": "+15705550104",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13601011/pexels-photo-13601011.jpeg"
   ],
@@ -13832,6 +15002,8 @@
   ],
   "phone": "+15705550105",
   "founded_year": null,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/10827691/pexels-photo-10827691.jpeg"
   ],
@@ -13980,7 +15152,12 @@
    -75.95943565882723
   ],
   "phone": "+15705550106",
-  "founded_year": null,
+  "founded_year": 2012,
+  "about": {
+   "es": "Taller de prueba de To’Latino: tiene encendida cada opción del panel para revisar que todo llegue a la página. Mecánica, frenos, gomas, inspección, lavado y grúa 24/7.",
+   "en": "To’Latino test shop: every panel option is on, to check that everything reaches the page. Mechanics, brakes, tires, inspection, wash and 24/7 towing."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4489776/pexels-photo-4489776.jpeg",
    "https://images.pexels.com/photos/33814734/pexels-photo-33814734.jpeg",
@@ -14193,6 +15370,11 @@
   ],
   "phone": "+15705550107",
   "founded_year": 2012,
+  "about": {
+   "es": "Cuadrilla de seis en Hazleton desde 2012: arreglos, tablaroca, carpintería y listas de inspección. Precio completo antes de empezar.",
+   "en": "A crew of six in Hazleton since 2012: repairs, drywall, carpentry and inspection lists. Full price before we start."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4981803/pexels-photo-4981803.jpeg",
    "https://images.pexels.com/photos/5974413/pexels-photo-5974413.jpeg",
@@ -14326,6 +15508,11 @@
   ],
   "phone": "+15705550108",
   "founded_year": 2004,
+  "about": {
+   "es": "Plomería familiar desde 2004, con emergencias 24/7. Plomero maestro con licencia de la ciudad.",
+   "en": "Family plumbing since 2004, with 24/7 emergencies. Master plumber licensed by the city."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29226620/pexels-photo-29226620.jpeg",
    "https://images.pexels.com/photos/4239115/pexels-photo-4239115.jpeg",
@@ -14455,6 +15642,11 @@
   ],
   "phone": "+15705550109",
   "founded_year": 2008,
+  "about": {
+   "es": "Electricista maestro, trabajo solo y con permiso de la ciudad. Paneles, tomacorrientes, lámparas y generadores.",
+   "en": "Master electrician, I work alone and with city permits. Panels, outlets, fixtures and generators."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14319099/pexels-photo-14319099.jpeg",
    "https://images.pexels.com/photos/32713414/pexels-photo-32713414.jpeg",
@@ -14583,6 +15775,11 @@
   ],
   "phone": "+15705550110",
   "founded_year": 2010,
+  "about": {
+   "es": "Calefacción y aire en Hazleton desde 2010. Diagnóstico gratis si hacemos el arreglo, planes de mantenimiento y financiamiento.",
+   "en": "Heating and AC in Hazleton since 2010. Free diagnosis if we do the repair, maintenance plans and financing."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7347538/pexels-photo-7347538.jpeg",
    "https://images.pexels.com/photos/36152008/pexels-photo-36152008.jpeg",
@@ -14708,6 +15905,11 @@
   ],
   "phone": "+15705550111",
   "founded_year": 2020,
+  "about": {
+   "es": "Red de técnicos independientes: cada uno tiene su página, su precio, su agenda y su garantía. Tú eliges con quién.",
+   "en": "A network of independent techs: each has their own page, price, schedule and warranty. You choose who."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5217124/pexels-photo-5217124.jpeg",
    "https://images.pexels.com/photos/5691518/pexels-photo-5691518.jpeg",
@@ -14839,6 +16041,11 @@
   ],
   "phone": "+15705550112",
   "founded_year": 2006,
+  "about": {
+   "es": "Contratista general: reparaciones para inspección, baños y techos. Electricista y plomero con licencia propia; Luis responde por la obra completa.",
+   "en": "General contractor: inspection repairs, bathrooms and roofs. Electrician and plumber with their own license; Luis answers for the whole job."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8293678/pexels-photo-8293678.jpeg",
    "https://images.pexels.com/photos/7005268/pexels-photo-7005268.jpeg",
@@ -14962,6 +16169,11 @@
   ],
   "phone": "+15705550113",
   "founded_year": 2017,
+  "about": {
+   "es": "Destapes de día y de noche, con cámara. Si no lo destapo, no te cobro el destape.",
+   "en": "Drain clearing day and night, with a camera. If I don’t clear it, you don’t pay for it."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/31213992/pexels-photo-31213992.jpeg",
    "https://images.pexels.com/photos/34295401/pexels-photo-34295401.jpeg",
@@ -15086,6 +16298,11 @@
   ],
   "phone": "+15705550114",
   "founded_year": 2015,
+  "about": {
+   "es": "Reparo lavadoras, secadoras, neveras y estufas en tu casa. También vendo reacondicionadas con garantía.",
+   "en": "I repair washers, dryers, fridges and stoves at your home. I also sell refurbished ones with warranty."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8774555/pexels-photo-8774555.jpeg",
    "https://images.pexels.com/photos/7282784/pexels-photo-7282784.jpeg",
@@ -15211,6 +16428,11 @@
   ],
   "phone": "+15705550115",
   "founded_year": 2018,
+  "about": {
+   "es": "Mantenimiento para dueños de casa y landlords. Te mando fotos de cada arreglo.",
+   "en": "Maintenance for homeowners and landlords. I send you photos of every repair."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5691503/pexels-photo-5691503.jpeg",
    "https://images.pexels.com/photos/8293646/pexels-photo-8293646.jpeg",
@@ -15342,6 +16564,11 @@
   ],
   "phone": "+15705550116",
   "founded_year": 2001,
+  "about": {
+   "es": "Calentadores y calderas desde 2001. Presupuesto gratis en tu casa y cambio el mismo día si hay en existencia.",
+   "en": "Water heaters and boilers since 2001. Free estimate at your home and same-day swap when in stock."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8142971/pexels-photo-8142971.jpeg",
    "https://images.pexels.com/photos/29960487/pexels-photo-29960487.jpeg",
@@ -15464,6 +16691,11 @@
   ],
   "phone": "+15705550117",
   "founded_year": 2021,
+  "about": {
+   "es": "Electricidad y casa inteligente: tomacorrientes, lámparas, TV y cámaras.",
+   "en": "Electrical and smart home: outlets, fixtures, TVs and cameras."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/17842843/pexels-photo-17842843.jpeg",
    "https://images.pexels.com/photos/7546718/pexels-photo-7546718.jpeg",
@@ -15579,6 +16811,8 @@
   ],
   "phone": "+15705550118",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29248902/pexels-photo-29248902.jpeg"
   ],
@@ -15684,6 +16918,8 @@
   ],
   "phone": "+15705550119",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4792495/pexels-photo-4792495.jpeg"
   ],
@@ -15786,6 +17022,8 @@
   ],
   "phone": "+15705550120",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/257736/pexels-photo-257736.jpeg"
   ],
@@ -15882,6 +17120,8 @@
   ],
   "phone": "+15705550121",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5463587/pexels-photo-5463587.jpeg"
   ],
@@ -15979,6 +17219,8 @@
   ],
   "phone": "+15705550122",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8146325/pexels-photo-8146325.jpeg"
   ],
@@ -16086,6 +17328,8 @@
   ],
   "phone": "+15705550123",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5591587/pexels-photo-5591587.jpeg"
   ],
@@ -16189,6 +17433,8 @@
   ],
   "phone": "+15705550124",
   "founded_year": 2013,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13963754/pexels-photo-13963754.jpeg"
   ],
@@ -16299,6 +17545,8 @@
   ],
   "phone": "+15705550125",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7703296/pexels-photo-7703296.jpeg"
   ],
@@ -16413,6 +17661,42 @@
   ],
   "phone": "+15705550126",
   "founded_year": 2012,
+  "about": {
+   "es": "Techos, canaletas, siding y aislamiento en Hazleton desde 2012. Presupuesto gratis con fotos y garantía por escrito.",
+   "en": "Roofs, gutters, siding and insulation in Hazleton since 2012. Free estimate with photos and written warranty."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿El presupuesto es gratis?",
+     "en": "Is the estimate free?"
+    },
+    "a": {
+     "es": "Sí. Subimos al techo, tomamos fotos y te mandamos el presupuesto por escrito con las fotos.",
+     "en": "Yes. We go up, take photos and send a written estimate with the photos."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cómo se paga un techo nuevo?",
+     "en": "How do I pay for a new roof?"
+    },
+    "a": {
+     "es": "Un depósito del 30 % para pedir el material y el resto cuando apruebas el trabajo terminado.",
+     "en": "A 30% deposit to order material and the rest when you approve the finished job."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Qué pasa si llueve?",
+     "en": "What if it rains?"
+    },
+    "a": {
+     "es": "No se quita el techo viejo si hay lluvia en el pronóstico. Si cambia el tiempo, tapamos con lona ese mismo día.",
+     "en": "We don’t tear off if rain is forecast. If the weather turns, we tarp it that same day."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/37677394/pexels-photo-37677394.jpeg",
    "https://images.pexels.com/photos/5667308/pexels-photo-5667308.jpeg",
@@ -16571,6 +17855,42 @@
   ],
   "phone": "+15705550127",
   "founded_year": 2009,
+  "about": {
+   "es": "Cocinas, sótanos y remodelaciones completas. Te damos el presupuesto por etapas y cada etapa se aprueba con fotos.",
+   "en": "Kitchens, basements and full remodels. Estimate by stages; each stage is approved with photos."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Cuánto tarda una cocina?",
+     "en": "How long does a kitchen take?"
+    },
+    "a": {
+     "es": "De 3 a 6 semanas según los gabinetes. Te damos el calendario por etapas antes de empezar.",
+     "en": "3 to 6 weeks depending on cabinets. You get a stage-by-stage calendar before we start."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cómo se paga?",
+     "en": "How do I pay?"
+    },
+    "a": {
+     "es": "Por etapas: depósito al firmar y el resto cuando apruebas cada etapa en la app, con fotos.",
+     "en": "In stages: deposit at signing and the rest as you approve each stage in the app, with photos."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Quién saca el permiso?",
+     "en": "Who pulls the permit?"
+    },
+    "a": {
+     "es": "Nosotros. Electricista y plomero con su propia licencia; nosotros respondemos por la obra.",
+     "en": "We do. Electrician and plumber under their own license; we answer for the job."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/8186517/pexels-photo-8186517.jpeg",
    "https://images.pexels.com/photos/3990599/pexels-photo-3990599.jpeg",
@@ -16727,6 +18047,42 @@
   ],
   "phone": "+15705550128",
   "founded_year": 2015,
+  "about": {
+   "es": "Losa, madera, vinil y alfombra. Medimos gratis y el precio es por pie cuadrado, sin sorpresas.",
+   "en": "Tile, wood, vinyl and carpet. Free measuring and per-square-foot pricing, no surprises."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿El material va incluido?",
+     "en": "Is material included?"
+    },
+    "a": {
+     "es": "Puedes comprarlo tú o lo compramos nosotros al costo, con el recibo. El precio por pie es la mano de obra.",
+     "en": "You can buy it or we buy it at cost, with the receipt. The per-foot price is labor."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Mueven los muebles?",
+     "en": "Do you move furniture?"
+    },
+    "a": {
+     "es": "Sí, los muebles normales. Pianos y peceras no.",
+     "en": "Yes, normal furniture. Not pianos or fish tanks."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cuándo puedo pisar la losa?",
+     "en": "When can I walk on the tile?"
+    },
+    "a": {
+     "es": "Al día siguiente. La lechada se seca en 24 horas.",
+     "en": "The next day. Grout dries in 24 hours."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/11806490/pexels-photo-11806490.jpeg",
    "https://images.pexels.com/photos/1249610/pexels-photo-1249610.jpeg",
@@ -16881,6 +18237,42 @@
   ],
   "phone": "+15705550129",
   "founded_year": 2017,
+  "about": {
+   "es": "Pintura de casas por dentro y por fuera, y lavado a presión. Precio por cuarto con la pintura incluida.",
+   "en": "Interior and exterior house painting, and pressure washing. Per-room price with paint included."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿La pintura va incluida?",
+     "en": "Is paint included?"
+    },
+    "a": {
+     "es": "Sí, pintura de buena marca en el color que elijas. Si quieres otra marca, te decimos la diferencia.",
+     "en": "Yes, quality paint in the color you choose. If you want another brand, we tell you the difference."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tapan los muebles?",
+     "en": "Do you cover furniture?"
+    },
+    "a": {
+     "es": "Sí, tapamos piso y muebles y despegamos todo al terminar.",
+     "en": "Yes, we cover floors and furniture and remove it all when done."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Pintan afuera en invierno?",
+     "en": "Do you paint outside in winter?"
+    },
+    "a": {
+     "es": "No. El exterior se pinta de abril a octubre, con más de 50 °F.",
+     "en": "No. Exteriors are painted April to October, above 50 °F."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/6764270/pexels-photo-6764270.jpeg",
    "https://images.pexels.com/photos/35107481/pexels-photo-35107481.jpeg",
@@ -17037,6 +18429,42 @@
   ],
   "phone": "+15705550130",
   "founded_year": 2014,
+  "about": {
+   "es": "Mudanzas en Hazleton y hasta Nueva York y Filadelfia. Empacamos, cargamos y nos llevamos lo que no quieras.",
+   "en": "Moves in Hazleton and as far as New York and Philadelphia. We pack, load and haul away what you don’t want."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Cómo se cotiza?",
+     "en": "How is it quoted?"
+    },
+    "a": {
+     "es": "Por cuartos y distancia. Mandas fotos de cada cuarto y te damos el precio cerrado; si no, por hora con camión.",
+     "en": "By rooms and distance. Send photos of each room and we give a fixed price; otherwise hourly with truck."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Y si se rompe algo?",
+     "en": "What if something breaks?"
+    },
+    "a": {
+     "es": "Tenemos seguro. Lo reportas en la app con foto el mismo día y se cubre.",
+     "en": "We are insured. Report it in the app with a photo the same day and it is covered."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Se llevan lo que no quiero?",
+     "en": "Do you haul away what I don’t want?"
+    },
+    "a": {
+     "es": "Sí, retiro de muebles viejos y basura por carga del camión. El vertedero va incluido.",
+     "en": "Yes, old furniture and junk by truckload. Dump fee included."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/7464726/pexels-photo-7464726.jpeg",
    "https://images.pexels.com/photos/7217846/pexels-photo-7217846.jpeg",
@@ -17196,6 +18624,42 @@
   ],
   "phone": "+15705550131",
   "founded_year": 2016,
+  "about": {
+   "es": "Control de plagas con licencia del estado: cucarachas, ratones, chinches y hormigas. Plan cada 3 meses.",
+   "en": "State-licensed pest control: roaches, mice, bed bugs and ants. Plan every 3 months."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Es seguro para niños y mascotas?",
+     "en": "Is it safe for kids and pets?"
+    },
+    "a": {
+     "es": "Usamos productos aprobados por la EPA. Te decimos cuántas horas esperar antes de volver a entrar.",
+     "en": "We use EPA-approved products. We tell you how many hours to wait before going back in."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cómo funciona el plan?",
+     "en": "How does the plan work?"
+    },
+    "a": {
+     "es": "Una visita cada 3 meses; si vuelven las plagas entre visitas, venimos sin cargo.",
+     "en": "One visit every 3 months; if pests come back between visits, we return at no charge."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tratan chinches?",
+     "en": "Do you treat bed bugs?"
+    },
+    "a": {
+     "es": "Sí, con calor o producto según el caso. Te damos una lista de cómo preparar la casa.",
+     "en": "Yes, heat or product depending on the case. You get a prep list for your home."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/16851694/pexels-photo-16851694.jpeg",
    "https://images.pexels.com/photos/30912665/pexels-photo-30912665.jpeg"
@@ -17347,6 +18811,42 @@
   ],
   "phone": "+15705550132",
   "founded_year": 2019,
+  "about": {
+   "es": "Cámaras, alarmas, puertas de garaje e instalación de internet. Sin contratos obligatorios.",
+   "en": "Cameras, alarms, garage doors and internet installs. No required contracts."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Las cámaras tienen pago mensual?",
+     "en": "Do cameras have a monthly fee?"
+    },
+    "a": {
+     "es": "No, si no quieres. Las ves en tu teléfono gratis; la vigilancia con central es opcional.",
+     "en": "No, if you don’t want one. View them free on your phone; central monitoring is optional."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Arreglan puertas de garaje?",
+     "en": "Do you fix garage doors?"
+    },
+    "a": {
+     "es": "Sí: resortes, cables y motores. El resorte roto se cambia el mismo día.",
+     "en": "Yes: springs, cables and openers. A broken spring is replaced the same day."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Ponen el internet?",
+     "en": "Do you set up internet?"
+    },
+    "a": {
+     "es": "Instalamos la antena o el router y pasamos el cable. El plan lo contratas tú con la compañía.",
+     "en": "We install the dish or router and run the cable. You sign up for the plan with the provider."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/39457148/pexels-photo-39457148.jpeg",
    "https://images.pexels.com/photos/37124334/pexels-photo-37124334.jpeg",
@@ -17495,6 +18995,42 @@
   ],
   "phone": "+15705550133",
   "founded_year": 2020,
+  "about": {
+   "es": "Paneles solares para dueños de casa. Consulta gratis con tus facturas reales y precio total por escrito.",
+   "en": "Solar panels for homeowners. Free consultation with your real bills and total price in writing."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Cuánto voy a ahorrar?",
+     "en": "How much will I save?"
+    },
+    "a": {
+     "es": "Depende de tu techo, tu sombra y tu factura. Te lo calculamos con tus facturas reales; no prometemos un número sin verlas.",
+     "en": "It depends on your roof, shade and bill. We calculate with your real bills; we don’t promise a number without seeing them."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Tengo que ser dueño?",
+     "en": "Do I need to own the home?"
+    },
+    "a": {
+     "es": "Sí. Los paneles van en tu techo y necesitas ser dueño de la casa.",
+     "en": "Yes. Panels go on your roof and you must own the home."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cómo es el financiamiento?",
+     "en": "How does financing work?"
+    },
+    "a": {
+     "es": "Con aprobación aparte de un banco. Te damos el precio total antes de que firmes nada.",
+     "en": "With separate bank approval. You get the total price before you sign anything."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/12243093/pexels-photo-12243093.jpeg",
    "https://images.pexels.com/photos/30440447/pexels-photo-30440447.jpeg"
@@ -17646,6 +19182,42 @@
   ],
   "phone": "+15705550134",
   "founded_year": 2011,
+  "about": {
+   "es": "Concreto, entradas, cercas, terrazas y cimientos. Presupuesto gratis y depósito solo al empezar.",
+   "en": "Concrete, driveways, fences, decks and foundations. Free estimate and deposit only when we start."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Trabajan en invierno?",
+     "en": "Do you work in winter?"
+    },
+    "a": {
+     "es": "El concreto se echa de abril a noviembre. En invierno hacemos presupuestos y reparaciones de cimientos por dentro.",
+     "en": "Concrete is poured April to November. In winter we do estimates and inside foundation repairs."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cuándo puedo pasar con el carro?",
+     "en": "When can I drive on it?"
+    },
+    "a": {
+     "es": "A los 7 días de echar la entrada.",
+     "en": "7 days after pouring the driveway."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Necesito permiso para la cerca?",
+     "en": "Do I need a fence permit?"
+    },
+    "a": {
+     "es": "En Hazleton sí, si pasa de 4 pies. Lo sacamos nosotros.",
+     "en": "In Hazleton yes, over 4 feet. We pull it."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/8134848/pexels-photo-8134848.jpeg",
    "https://images.pexels.com/photos/11903184/pexels-photo-11903184.jpeg",
@@ -17796,6 +19368,42 @@
   ],
   "phone": "+15705550135",
   "founded_year": 2018,
+  "about": {
+   "es": "Piscinas y jacuzzis: abrir, cerrar, limpieza semanal y riego. Temporada de abril a octubre.",
+   "en": "Pools and hot tubs: opening, closing, weekly cleaning and sprinklers. Season April to October."
+  },
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Trabajan todo el año?",
+     "en": "Do you work all year?"
+    },
+    "a": {
+     "es": "Las piscinas, de abril a octubre. En invierno solo jacuzzis y cerrar el riego.",
+     "en": "Pools, April to October. In winter only hot tubs and winterizing sprinklers."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cómo es el plan de la temporada?",
+     "en": "How does the season plan work?"
+    },
+    "a": {
+     "es": "Una visita por semana: químicos, filtro y limpieza. Se cobra por temporada y se cancela cuando quieras.",
+     "en": "One visit a week: chemicals, filter and cleaning. Billed per season; cancel anytime."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cierran el riego antes del frío?",
+     "en": "Do you winterize sprinklers?"
+    },
+    "a": {
+     "es": "Sí, soplamos las líneas en octubre para que no se rompan.",
+     "en": "Yes, we blow out the lines in October so they don’t crack."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/347138/pexels-photo-347138.jpeg",
    "https://images.pexels.com/photos/37720375/pexels-photo-37720375.jpeg"
@@ -17940,6 +19548,8 @@
   ],
   "phone": "+15705550136",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/30180598/pexels-photo-30180598.jpeg"
   ],
@@ -18052,6 +19662,8 @@
   ],
   "phone": "+15705550137",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36027487/pexels-photo-36027487.jpeg"
   ],
@@ -18163,6 +19775,8 @@
   ],
   "phone": "+15705550138",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5768107/pexels-photo-5768107.jpeg"
   ],
@@ -18280,6 +19894,8 @@
   ],
   "phone": "+15705550139",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/31127615/pexels-photo-31127615.jpeg"
   ],
@@ -18396,6 +20012,8 @@
   ],
   "phone": "+15705550140",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6550121/pexels-photo-6550121.jpeg"
   ],
@@ -18509,6 +20127,8 @@
   ],
   "phone": "+15705550141",
   "founded_year": 2001,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5094568/pexels-photo-5094568.jpeg"
   ],
@@ -18626,6 +20246,8 @@
   ],
   "phone": "+15705550142",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37554739/pexels-photo-37554739.jpeg"
   ],
@@ -18750,6 +20372,11 @@
   ],
   "phone": "+15705550143",
   "founded_year": 2010,
+  "about": {
+   "es": "Empresa de prueba de To’Latino: tiene encendida cada opción del panel. Arreglos, plomería, electricidad, calefacción, pintura, limpieza, remodelación, planes y emergencias 24/7.",
+   "en": "To’Latino test company: every panel option is on. Repairs, plumbing, electrical, heating, paint, cleaning, remodeling, plans and 24/7 emergencies."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4981803/pexels-photo-4981803.jpeg",
    "https://images.pexels.com/photos/5974413/pexels-photo-5974413.jpeg",
@@ -18900,6 +20527,11 @@
   ],
   "phone": "+15705550144",
   "founded_year": 2007,
+  "about": {
+   "es": "Médicos de familia desde 2007: adultos, niños y vacunas. Revisamos tu seguro antes de la cita.",
+   "en": "Family doctors since 2007: adults, kids and vaccines. We check your insurance before your visit."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7579823/pexels-photo-7579823.jpeg",
    "https://images.pexels.com/photos/39192344/pexels-photo-39192344.jpeg",
@@ -19039,6 +20671,11 @@
   ],
   "phone": "+15705550145",
   "founded_year": 2018,
+  "about": {
+   "es": "Urgencias sin cita todos los días hasta las 9 PM, con rayos X y laboratorio. Intérprete en el teléfono.",
+   "en": "Walk-in urgent care every day until 9 PM, with X-ray and lab. Phone interpreter."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5664736/pexels-photo-5664736.jpeg",
    "https://images.pexels.com/photos/4225925/pexels-photo-4225925.jpeg",
@@ -19185,6 +20822,11 @@
   ],
   "phone": "+15705550146",
   "founded_year": 1999,
+  "about": {
+   "es": "Clínica comunitaria: pagas según tus ingresos. No pedimos papeles ni seguro social. Te ayudamos a sacar Medicaid.",
+   "en": "Community clinic: pay based on income. No papers or SSN. We help you apply for Medicaid."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6129444/pexels-photo-6129444.jpeg",
    "https://images.pexels.com/photos/7108418/pexels-photo-7108418.jpeg",
@@ -19313,6 +20955,11 @@
   ],
   "phone": "+15705550147",
   "founded_year": 2012,
+  "about": {
+   "es": "Pediatras que hablan español. Cita el mismo día si llamas antes de las 10.",
+   "en": "Spanish-speaking pediatricians. Same-day visit if you call before 10."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39192346/pexels-photo-39192346.jpeg",
    "https://images.pexels.com/photos/6958380/pexels-photo-6958380.jpeg",
@@ -19447,6 +21094,11 @@
   ],
   "phone": "+15705550148",
   "founded_year": 2015,
+  "about": {
+   "es": "Dentistas para toda la familia, con Medicaid y CHIP. El precio del arreglo antes de hacerlo.",
+   "en": "Family dentists, with Medicaid and CHIP. The repair price before the work."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6627325/pexels-photo-6627325.jpeg",
    "https://images.pexels.com/photos/14207516/pexels-photo-14207516.jpeg",
@@ -19580,6 +21232,11 @@
   ],
   "phone": "+15705550149",
   "founded_year": 2002,
+  "about": {
+   "es": "Médico internista, trabajo solo y con cita. Te llamo yo con tus resultados.",
+   "en": "Internist, solo practice by appointment. I call you with your results."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6823512/pexels-photo-6823512.jpeg",
    "https://images.pexels.com/photos/8376236/pexels-photo-8376236.jpeg",
@@ -19706,6 +21363,11 @@
   ],
   "phone": "+15705550150",
   "founded_year": 2017,
+  "about": {
+   "es": "Examen de la vista y lentes el mismo día que te dan la receta.",
+   "en": "Eye exams and glasses ordered the same day as your prescription."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5996647/pexels-photo-5996647.jpeg",
    "https://images.pexels.com/photos/5202049/pexels-photo-5202049.jpeg",
@@ -19839,6 +21501,11 @@
   ],
   "phone": "+15705550151",
   "founded_year": 2014,
+  "about": {
+   "es": "Terapia física y quiropráctico de 7 AM a 7 PM.",
+   "en": "Physical therapy and chiropractic from 7 AM to 7 PM."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4506169/pexels-photo-4506169.jpeg",
    "https://images.pexels.com/photos/29558669/pexels-photo-29558669.jpeg",
@@ -19972,6 +21639,11 @@
   ],
   "phone": "+15705550152",
   "founded_year": 2016,
+  "about": {
+   "es": "Consejería en español, en persona o por video. Medicaid y según tus ingresos.",
+   "en": "Counseling in Spanish, in person or by video. Medicaid and income-based."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/17010855/pexels-photo-17010855.jpeg",
    "https://images.pexels.com/photos/5700177/pexels-photo-5700177.jpeg",
@@ -20100,6 +21772,11 @@
   ],
   "phone": "+15705550153",
   "founded_year": 2011,
+  "about": {
+   "es": "Ginecología y embarazo. Con Medicaid de embarazo no pagas.",
+   "en": "Gynecology and pregnancy. No cost with pregnancy Medicaid."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7089299/pexels-photo-7089299.jpeg",
    "https://images.pexels.com/photos/34185202/pexels-photo-34185202.jpeg",
@@ -20222,6 +21899,11 @@
   ],
   "phone": "+15705550154",
   "founded_year": 2022,
+  "about": {
+   "es": "Análisis sin cita. Resultados en la app y a tu médico.",
+   "en": "Walk-in lab work. Results in the app and to your doctor."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8442373/pexels-photo-8442373.jpeg",
    "https://images.pexels.com/photos/9628850/pexels-photo-9628850.jpeg",
@@ -20348,6 +22030,8 @@
   ],
   "phone": "+15705550155",
   "founded_year": 2010,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8657297/pexels-photo-8657297.jpeg"
   ],
@@ -20458,6 +22142,8 @@
   ],
   "phone": "+15705550156",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8666807/pexels-photo-8666807.jpeg"
   ],
@@ -20566,6 +22252,8 @@
   ],
   "phone": "+15705550157",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4506206/pexels-photo-4506206.jpeg"
   ],
@@ -20664,6 +22352,8 @@
   ],
   "phone": "+15705550158",
   "founded_year": 2006,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39377366/pexels-photo-39377366.jpeg"
   ],
@@ -20767,6 +22457,8 @@
   ],
   "phone": "+15705550159",
   "founded_year": 2013,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5425050/pexels-photo-5425050.jpeg"
   ],
@@ -20869,6 +22561,8 @@
   ],
   "phone": "+15705550160",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15319016/pexels-photo-15319016.jpeg"
   ],
@@ -20967,6 +22661,8 @@
   ],
   "phone": "+15705550161",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29372733/pexels-photo-29372733.jpeg"
   ],
@@ -21073,6 +22769,8 @@
   ],
   "phone": "+15705550162",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14885781/pexels-photo-14885781.jpeg"
   ],
@@ -21175,6 +22873,8 @@
   ],
   "phone": "+15705550163",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6003352/pexels-photo-6003352.jpeg"
   ],
@@ -21273,6 +22973,11 @@
   ],
   "phone": "+15705550164",
   "founded_year": 2018,
+  "about": {
+   "es": "Dermatología para toda la familia y estética con precio por escrito.",
+   "en": "Dermatology for the whole family and aesthetics with written prices."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4586740/pexels-photo-4586740.jpeg",
    "https://images.pexels.com/photos/7446678/pexels-photo-7446678.jpeg",
@@ -21404,6 +23109,11 @@
   ],
   "phone": "+15705550165",
   "founded_year": 2011,
+  "about": {
+   "es": "Corazón, pulmón y sueño en un solo lugar, con electrocardiograma el mismo día.",
+   "en": "Heart, lungs and sleep in one place, with same-day EKG."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5207102/pexels-photo-5207102.jpeg",
    "https://images.pexels.com/photos/7579819/pexels-photo-7579819.jpeg",
@@ -21530,6 +23240,11 @@
   ],
   "phone": "+15705550166",
   "founded_year": 2014,
+  "about": {
+   "es": "Estómago, riñón y urología, con intérprete en cada consulta.",
+   "en": "GI, kidney and urology, with an interpreter at every visit."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8460084/pexels-photo-8460084.jpeg",
    "https://images.pexels.com/photos/8413157/pexels-photo-8413157.jpeg",
@@ -21657,6 +23372,11 @@
   ],
   "phone": "+15705550167",
   "founded_year": 2016,
+  "about": {
+   "es": "Neurología, dolor y reumatología. El plan siempre por escrito.",
+   "en": "Neurology, pain and rheumatology. The plan always in writing."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39192376/pexels-photo-39192376.jpeg",
    "https://images.pexels.com/photos/7298429/pexels-photo-7298429.jpeg",
@@ -21780,6 +23500,11 @@
   ],
   "phone": "+15705550168",
   "founded_year": 2017,
+  "about": {
+   "es": "Huesos, articulaciones y pies, con rayos X en la clínica.",
+   "en": "Bones, joints and feet, with on-site X-ray."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/30964455/pexels-photo-30964455.jpeg",
    "https://images.pexels.com/photos/8376285/pexels-photo-8376285.jpeg",
@@ -21911,6 +23636,11 @@
   ],
   "phone": "+15705550169",
   "founded_year": 2015,
+  "about": {
+   "es": "Oído, nariz, garganta y alergias para niños y adultos.",
+   "en": "Ear, nose, throat and allergies for kids and adults."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7179255/pexels-photo-7179255.jpeg",
    "https://images.pexels.com/photos/30428329/pexels-photo-30428329.jpeg",
@@ -22035,6 +23765,11 @@
   ],
   "phone": "+15705550170",
   "founded_year": 2020,
+  "about": {
+   "es": "Evaluación psiquiátrica y control de medicamentos, en persona o por video.",
+   "en": "Psychiatric evaluation and medication follow-up, in person or by video."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4100433/pexels-photo-4100433.jpeg",
    "https://images.pexels.com/photos/23496461/pexels-photo-23496461.jpeg",
@@ -22158,6 +23893,11 @@
   ],
   "phone": "+15705550171",
   "founded_year": 2019,
+  "about": {
+   "es": "Terapia del habla y ocupacional para niños, en español o inglés.",
+   "en": "Speech and occupational therapy for kids, in Spanish or English."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/339619/pexels-photo-339619.jpeg",
    "https://images.pexels.com/photos/36713062/pexels-photo-36713062.jpeg",
@@ -22286,6 +24026,11 @@
   ],
   "phone": "+15705550172",
   "founded_year": 2017,
+  "about": {
+   "es": "Enfermeras que van a tu casa, de día y de noche, con orden del médico.",
+   "en": "Nurses who come to your home, day and night, with a doctor’s order."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6753262/pexels-photo-6753262.jpeg",
    "https://images.pexels.com/photos/6129238/pexels-photo-6129238.jpeg",
@@ -22415,6 +24160,8 @@
   ],
   "phone": "+15705550173",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6627567/pexels-photo-6627567.jpeg",
    "https://images.pexels.com/photos/6627671/pexels-photo-6627671.jpeg",
@@ -22533,6 +24280,8 @@
   ],
   "phone": "+15705550174",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15831830/pexels-photo-15831830.jpeg",
    "https://images.pexels.com/photos/8666810/pexels-photo-8666810.jpeg",
@@ -22651,6 +24400,8 @@
   ],
   "phone": "+15705550175",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4474052/pexels-photo-4474052.jpeg",
    "https://images.pexels.com/photos/6975468/pexels-photo-6975468.jpeg",
@@ -22760,6 +24511,8 @@
   ],
   "phone": "+15705550176",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6129233/pexels-photo-6129233.jpeg",
    "https://images.pexels.com/photos/37464043/pexels-photo-37464043.jpeg",
@@ -22904,6 +24657,8 @@
   ],
   "phone": "+15705550177",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8685347/pexels-photo-8685347.jpeg",
    "https://images.pexels.com/photos/6376930/pexels-photo-6376930.jpeg",
@@ -23021,6 +24776,8 @@
   ],
   "phone": "+15705550178",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7659870/pexels-photo-7659870.jpeg",
    "https://images.pexels.com/photos/7659880/pexels-photo-7659880.jpeg",
@@ -23154,6 +24911,11 @@
   ],
   "phone": "+15705550179",
   "founded_year": 2007,
+  "about": {
+   "es": "Consultorio de prueba de To’Latino: tiene encendida cada opción del panel. Medicina general, niños, dental, mujer, ojos, terapia, laboratorio y urgencias sin cita, en español.",
+   "en": "To’Latino test practice: every panel option is on. Primary care, kids, dental, women, eyes, therapy, lab and walk-in urgent care, in Spanish."
+  },
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7579823/pexels-photo-7579823.jpeg",
    "https://images.pexels.com/photos/39192344/pexels-photo-39192344.jpeg",
@@ -23309,6 +25071,8 @@
   ],
   "phone": "+15705550180",
   "founded_year": 2010,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7841812/pexels-photo-7841812.jpeg",
    "https://images.pexels.com/photos/8112198/pexels-photo-8112198.jpeg",
@@ -23444,6 +25208,8 @@
   ],
   "phone": "+15705550181",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6994870/pexels-photo-6994870.jpeg",
    "https://images.pexels.com/photos/6994983/pexels-photo-6994983.jpeg",
@@ -23571,6 +25337,8 @@
   ],
   "phone": "+15705550182",
   "founded_year": 2005,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8477453/pexels-photo-8477453.jpeg",
    "https://images.pexels.com/photos/6899399/pexels-photo-6899399.jpeg",
@@ -23706,6 +25474,8 @@
   ],
   "phone": "+15705550183",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6919764/pexels-photo-6919764.jpeg",
    "https://images.pexels.com/photos/6927599/pexels-photo-6927599.jpeg",
@@ -23849,6 +25619,8 @@
   ],
   "phone": "+15705550184",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8297034/pexels-photo-8297034.jpeg",
    "https://images.pexels.com/photos/8297051/pexels-photo-8297051.jpeg",
@@ -23973,6 +25745,8 @@
   ],
   "phone": "+15705550185",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8111876/pexels-photo-8111876.jpeg",
    "https://images.pexels.com/photos/7876203/pexels-photo-7876203.jpeg",
@@ -24099,6 +25873,8 @@
   ],
   "phone": "+15705550186",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8111876/pexels-photo-8111876.jpeg",
    "https://images.pexels.com/photos/8112105/pexels-photo-8112105.jpeg",
@@ -24233,6 +26009,8 @@
   ],
   "phone": "+15705550187",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7735625/pexels-photo-7735625.jpeg",
    "https://images.pexels.com/photos/7734672/pexels-photo-7734672.jpeg",
@@ -24363,6 +26141,8 @@
   ],
   "phone": "+15705550188",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5727002/pexels-photo-5727002.jpeg",
    "https://images.pexels.com/photos/1440504/pexels-photo-1440504.jpeg",
@@ -24482,6 +26262,8 @@
   ],
   "phone": "+15705550189",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/38456504/pexels-photo-38456504.jpeg",
    "https://images.pexels.com/photos/31862950/pexels-photo-31862950.jpeg",
@@ -24608,6 +26390,8 @@
   ],
   "phone": "+15705550190",
   "founded_year": 2013,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6065083/pexels-photo-6065083.jpeg",
    "https://images.pexels.com/photos/6065254/pexels-photo-6065254.jpeg",
@@ -24737,6 +26521,8 @@
   ],
   "phone": "+15705550191",
   "founded_year": 2009,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6818151/pexels-photo-6818151.jpeg",
    "https://images.pexels.com/photos/15794052/pexels-photo-15794052.jpeg",
@@ -24859,6 +26645,8 @@
   ],
   "phone": "+15705550192",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13745480/pexels-photo-13745480.jpeg",
    "https://images.pexels.com/photos/8353764/pexels-photo-8353764.jpeg",
@@ -24972,6 +26760,8 @@
   ],
   "phone": "+15705550193",
   "founded_year": 2002,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8730385/pexels-photo-8730385.jpeg",
    "https://images.pexels.com/photos/9655620/pexels-photo-9655620.jpeg",
@@ -25088,6 +26878,8 @@
   ],
   "phone": "+15705550194",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15452106/pexels-photo-15452106.jpeg",
    "https://images.pexels.com/photos/36595112/pexels-photo-36595112.jpeg",
@@ -25207,6 +26999,8 @@
   ],
   "phone": "+15705550195",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39106311/pexels-photo-39106311.jpeg",
    "https://images.pexels.com/photos/5439368/pexels-photo-5439368.jpeg",
@@ -25316,6 +27110,8 @@
   ],
   "phone": "+15705550196",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35501716/pexels-photo-35501716.jpeg",
    "https://images.pexels.com/photos/27508769/pexels-photo-27508769.jpeg",
@@ -25431,6 +27227,8 @@
   ],
   "phone": "+15705550197",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7821529/pexels-photo-7821529.jpeg",
    "https://images.pexels.com/photos/30945618/pexels-photo-30945618.jpeg",
@@ -25545,6 +27343,8 @@
   ],
   "phone": "+15705550198",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/326518/pexels-photo-326518.jpeg",
    "https://images.pexels.com/photos/34803986/pexels-photo-34803986.jpeg"
@@ -25653,6 +27453,8 @@
   ],
   "phone": "+15705550199",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5860526/pexels-photo-5860526.jpeg",
    "https://images.pexels.com/photos/17529921/pexels-photo-17529921.jpeg",
@@ -25778,6 +27580,8 @@
   ],
   "phone": "+15705550100",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7680696/pexels-photo-7680696.jpeg",
    "https://images.pexels.com/photos/7415057/pexels-photo-7415057.jpeg",
@@ -25902,6 +27706,8 @@
   ],
   "phone": "+15705550101",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8293781/pexels-photo-8293781.jpeg",
    "https://images.pexels.com/photos/8292854/pexels-photo-8292854.jpeg",
@@ -26029,6 +27835,8 @@
   ],
   "phone": "+15705550102",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36766001/pexels-photo-36766001.jpeg",
    "https://images.pexels.com/photos/23496863/pexels-photo-23496863.jpeg"
@@ -26143,6 +27951,8 @@
   ],
   "phone": "+15705550103",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12811301/pexels-photo-12811301.jpeg",
    "https://images.pexels.com/photos/7709693/pexels-photo-7709693.jpeg",
@@ -26263,6 +28073,8 @@
   ],
   "phone": "+15705550104",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/89724/pexels-photo-89724.jpeg",
    "https://images.pexels.com/photos/6804080/pexels-photo-6804080.jpeg",
@@ -26380,6 +28192,8 @@
   ],
   "phone": "+15705550105",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6615086/pexels-photo-6615086.jpeg",
    "https://images.pexels.com/photos/5802821/pexels-photo-5802821.jpeg",
@@ -26501,6 +28315,8 @@
   ],
   "phone": "+15705550106",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33797919/pexels-photo-33797919.jpeg",
    "https://images.pexels.com/photos/12187682/pexels-photo-12187682.jpeg",
@@ -26613,6 +28429,8 @@
   ],
   "phone": "+15705550107",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6868171/pexels-photo-6868171.jpeg",
    "https://images.pexels.com/photos/6170189/pexels-photo-6170189.jpeg",
@@ -26725,6 +28543,8 @@
   ],
   "phone": "+15705550108",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5582595/pexels-photo-5582595.jpeg",
    "https://images.pexels.com/photos/8400605/pexels-photo-8400605.jpeg",
@@ -26840,6 +28660,8 @@
   ],
   "phone": "+15705550109",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12688995/pexels-photo-12688995.jpeg",
    "https://images.pexels.com/photos/4717550/pexels-photo-4717550.jpeg",
@@ -26969,6 +28791,8 @@
   ],
   "phone": "+15705550110",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39775608/pexels-photo-39775608.jpeg",
    "https://images.pexels.com/photos/19726278/pexels-photo-19726278.jpeg",
@@ -27091,6 +28915,8 @@
   ],
   "phone": "+15705550111",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37958066/pexels-photo-37958066.jpeg",
    "https://images.pexels.com/photos/11066743/pexels-photo-11066743.jpeg",
@@ -27220,6 +29046,8 @@
   ],
   "phone": "+15705550112",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/225226/pexels-photo-225226.jpeg",
    "https://images.pexels.com/photos/9005458/pexels-photo-9005458.jpeg",
@@ -27350,6 +29178,8 @@
   ],
   "phone": "+15705550113",
   "founded_year": 2010,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15145954/pexels-photo-15145954.jpeg",
    "https://images.pexels.com/photos/8639006/pexels-photo-8639006.jpeg",
@@ -27479,6 +29309,8 @@
   ],
   "phone": "+15705550114",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14457430/pexels-photo-14457430.jpeg",
    "https://images.pexels.com/photos/11282245/pexels-photo-11282245.jpeg",
@@ -27608,6 +29440,8 @@
   ],
   "phone": "+15705550115",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33072059/pexels-photo-33072059.jpeg",
    "https://images.pexels.com/photos/31798268/pexels-photo-31798268.jpeg",
@@ -27733,6 +29567,8 @@
   ],
   "phone": "+15705550116",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12616001/pexels-photo-12616001.jpeg",
    "https://images.pexels.com/photos/32333371/pexels-photo-32333371.jpeg",
@@ -27850,6 +29686,8 @@
   ],
   "phone": "+15705550117",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35532063/pexels-photo-35532063.jpeg",
    "https://images.pexels.com/photos/30150862/pexels-photo-30150862.jpeg",
@@ -27979,6 +29817,8 @@
   ],
   "phone": "+15705550118",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/811572/pexels-photo-811572.jpeg",
    "https://images.pexels.com/photos/14581440/pexels-photo-14581440.jpeg",
@@ -28102,6 +29942,8 @@
   ],
   "phone": "+15705550119",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/19674058/pexels-photo-19674058.jpeg",
    "https://images.pexels.com/photos/30206584/pexels-photo-30206584.jpeg",
@@ -28219,6 +30061,8 @@
   ],
   "phone": "+15705550120",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5051440/pexels-photo-5051440.jpeg",
    "https://images.pexels.com/photos/30218076/pexels-photo-30218076.jpeg",
@@ -28344,6 +30188,8 @@
   ],
   "phone": "+15705550121",
   "founded_year": 2007,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6720578/pexels-photo-6720578.jpeg",
    "https://images.pexels.com/photos/5409707/pexels-photo-5409707.jpeg",
@@ -28465,6 +30311,8 @@
   ],
   "phone": "+15705550122",
   "founded_year": 2013,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/128611/pexels-photo-128611.jpeg",
    "https://images.pexels.com/photos/27577330/pexels-photo-27577330.jpeg",
@@ -28591,6 +30439,8 @@
   ],
   "phone": "+15705550123",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5425443/pexels-photo-5425443.jpeg",
    "https://images.pexels.com/photos/12185055/pexels-photo-12185055.jpeg",
@@ -28718,6 +30568,8 @@
   ],
   "phone": "+15705550124",
   "founded_year": 2005,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/30215011/pexels-photo-30215011.jpeg",
    "https://images.pexels.com/photos/4717526/pexels-photo-4717526.jpeg",
@@ -28838,6 +30690,8 @@
   ],
   "phone": "+15705550125",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37516560/pexels-photo-37516560.jpeg",
    "https://images.pexels.com/photos/5112531/pexels-photo-5112531.jpeg",
@@ -28965,6 +30819,8 @@
   ],
   "phone": "+15705550126",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14364672/pexels-photo-14364672.jpeg",
    "https://images.pexels.com/photos/15732257/pexels-photo-15732257.jpeg",
@@ -29091,6 +30947,8 @@
   ],
   "phone": "+15705550127",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7180255/pexels-photo-7180255.jpeg",
    "https://images.pexels.com/photos/796584/pexels-photo-796584.jpeg",
@@ -29210,6 +31068,8 @@
   ],
   "phone": "+15705550128",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/18138580/pexels-photo-18138580.jpeg",
    "https://images.pexels.com/photos/31556689/pexels-photo-31556689.jpeg",
@@ -29329,6 +31189,8 @@
   ],
   "phone": "+15705550129",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/23495684/pexels-photo-23495684.jpeg",
    "https://images.pexels.com/photos/7155966/pexels-photo-7155966.jpeg",
@@ -29457,6 +31319,8 @@
   ],
   "phone": "+15705550130",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/10024297/pexels-photo-10024297.jpeg",
    "https://images.pexels.com/photos/8153977/pexels-photo-8153977.jpeg",
@@ -29587,6 +31451,8 @@
   ],
   "phone": "+15705550131",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37859381/pexels-photo-37859381.jpeg",
    "https://images.pexels.com/photos/27783227/pexels-photo-27783227.jpeg",
@@ -29709,6 +31575,8 @@
   ],
   "phone": "+15705550132",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37278823/pexels-photo-37278823.jpeg",
    "https://images.pexels.com/photos/2449446/pexels-photo-2449446.jpeg",
@@ -29835,6 +31703,8 @@
   ],
   "phone": "+15705550133",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29081017/pexels-photo-29081017.jpeg",
    "https://images.pexels.com/photos/13434421/pexels-photo-13434421.jpeg",
@@ -29959,6 +31829,8 @@
   ],
   "phone": "+15705550134",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35042249/pexels-photo-35042249.jpeg",
    "https://images.pexels.com/photos/7648043/pexels-photo-7648043.jpeg",
@@ -30081,6 +31953,8 @@
   ],
   "phone": "+15705550135",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2733918/pexels-photo-2733918.jpeg",
    "https://images.pexels.com/photos/33975355/pexels-photo-33975355.jpeg",
@@ -30209,6 +32083,8 @@
   ],
   "phone": "+15705550136",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1968748/pexels-photo-1968748.jpeg",
    "https://images.pexels.com/photos/20722688/pexels-photo-20722688.jpeg",
@@ -30334,6 +32210,8 @@
   ],
   "phone": "+15705550137",
   "founded_year": 2003,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/31498834/pexels-photo-31498834.jpeg",
    "https://images.pexels.com/photos/39375105/pexels-photo-39375105.jpeg",
@@ -30456,6 +32334,8 @@
   ],
   "phone": "+15705550138",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8352344/pexels-photo-8352344.jpeg",
    "https://images.pexels.com/photos/30811283/pexels-photo-30811283.jpeg",
@@ -30577,6 +32457,8 @@
   ],
   "phone": "+15705550139",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12199572/pexels-photo-12199572.jpeg",
    "https://images.pexels.com/photos/36886535/pexels-photo-36886535.jpeg",
@@ -30701,6 +32583,8 @@
   ],
   "phone": "+15705550140",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33395007/pexels-photo-33395007.jpeg",
    "https://images.pexels.com/photos/37642048/pexels-photo-37642048.jpeg",
@@ -30823,6 +32707,8 @@
   ],
   "phone": "+15705550141",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9811241/pexels-photo-9811241.jpeg",
    "https://images.pexels.com/photos/13587560/pexels-photo-13587560.jpeg",
@@ -30947,6 +32833,8 @@
   ],
   "phone": "+15705550142",
   "founded_year": 2006,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/10284048/pexels-photo-10284048.jpeg",
    "https://images.pexels.com/photos/4487383/pexels-photo-4487383.jpeg",
@@ -31065,6 +32953,8 @@
   ],
   "phone": "+15705550143",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35474462/pexels-photo-35474462.jpeg",
    "https://images.pexels.com/photos/11686671/pexels-photo-11686671.jpeg",
@@ -31188,6 +33078,8 @@
   ],
   "phone": "+15705550144",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35050985/pexels-photo-35050985.jpeg",
    "https://images.pexels.com/photos/37830084/pexels-photo-37830084.jpeg",
@@ -31308,6 +33200,8 @@
   ],
   "phone": "+15705550145",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/20612772/pexels-photo-20612772.jpeg",
    "https://images.pexels.com/photos/33957225/pexels-photo-33957225.jpeg",
@@ -31427,6 +33321,8 @@
   ],
   "phone": "+15705550146",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29831547/pexels-photo-29831547.jpeg"
   ],
@@ -31532,6 +33428,8 @@
   ],
   "phone": "+15705550147",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6633402/pexels-photo-6633402.jpeg"
   ],
@@ -31634,6 +33532,8 @@
   ],
   "phone": "+15705550148",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/11325915/pexels-photo-11325915.jpeg"
   ],
@@ -31740,6 +33640,8 @@
   ],
   "phone": "+15705550149",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5622881/pexels-photo-5622881.jpeg"
   ],
@@ -31846,6 +33748,8 @@
   ],
   "phone": "+15705550150",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13674047/pexels-photo-13674047.jpeg"
   ],
@@ -31952,6 +33856,8 @@
   ],
   "phone": "+15705550151",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37712947/pexels-photo-37712947.jpeg"
   ],
@@ -32059,6 +33965,8 @@
   ],
   "phone": "+15705550152",
   "founded_year": 2001,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36567404/pexels-photo-36567404.jpeg"
   ],
@@ -32144,6 +34052,8 @@
   ],
   "phone": "+15705550153",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14349176/pexels-photo-14349176.jpeg"
   ],
@@ -32251,6 +34161,8 @@
   ],
   "phone": "+15705550154",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33575864/pexels-photo-33575864.jpeg"
   ],
@@ -32358,6 +34270,8 @@
   ],
   "phone": "+15705550155",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12263158/pexels-photo-12263158.jpeg",
    "https://images.pexels.com/photos/35431352/pexels-photo-35431352.jpeg",
@@ -32480,6 +34394,8 @@
   ],
   "phone": "+15705550156",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/28843270/pexels-photo-28843270.jpeg",
    "https://images.pexels.com/photos/9658801/pexels-photo-9658801.jpeg",
@@ -32599,6 +34515,8 @@
   ],
   "phone": "+15705550157",
   "founded_year": 2010,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7213906/pexels-photo-7213906.jpeg",
    "https://images.pexels.com/photos/7694792/pexels-photo-7694792.jpeg",
@@ -32715,6 +34633,8 @@
   ],
   "phone": "+15705550158",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13304720/pexels-photo-13304720.jpeg",
    "https://images.pexels.com/photos/5926230/pexels-photo-5926230.jpeg",
@@ -32834,6 +34754,8 @@
   ],
   "phone": "+15705550159",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36981899/pexels-photo-36981899.jpeg"
   ],
@@ -32939,6 +34861,8 @@
   ],
   "phone": "+15705550160",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13870353/pexels-photo-13870353.jpeg"
   ],
@@ -33057,6 +34981,8 @@
   ],
   "phone": "+15705550161",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/30592863/pexels-photo-30592863.jpeg",
    "https://images.pexels.com/photos/5152595/pexels-photo-5152595.jpeg",
@@ -33184,6 +35110,8 @@
   ],
   "phone": "+15705550162",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2671916/pexels-photo-2671916.jpeg",
    "https://images.pexels.com/photos/33013695/pexels-photo-33013695.jpeg",
@@ -33320,6 +35248,8 @@
   ],
   "phone": "+15705550163",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5055433/pexels-photo-5055433.jpeg",
    "https://images.pexels.com/photos/12832988/pexels-photo-12832988.jpeg",
@@ -33460,6 +35390,8 @@
   ],
   "phone": "+15705550164",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5192289/pexels-photo-5192289.jpeg",
    "https://images.pexels.com/photos/5192273/pexels-photo-5192273.jpeg",
@@ -33581,6 +35513,8 @@
   ],
   "phone": "+15705550165",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/30489716/pexels-photo-30489716.jpeg",
    "https://images.pexels.com/photos/6173860/pexels-photo-6173860.jpeg",
@@ -33702,6 +35636,8 @@
   ],
   "phone": "+15705550166",
   "founded_year": 2009,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/16936184/pexels-photo-16936184.jpeg",
    "https://images.pexels.com/photos/14413019/pexels-photo-14413019.jpeg",
@@ -33840,6 +35776,8 @@
   ],
   "phone": "+15705550167",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/11605478/pexels-photo-11605478.jpeg",
    "https://images.pexels.com/photos/11362556/pexels-photo-11362556.jpeg",
@@ -33958,6 +35896,8 @@
   ],
   "phone": "+15705550168",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/11460325/pexels-photo-11460325.jpeg",
    "https://images.pexels.com/photos/36055834/pexels-photo-36055834.jpeg",
@@ -34092,6 +36032,8 @@
   ],
   "phone": "+15705550169",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/17299781/pexels-photo-17299781.jpeg",
    "https://images.pexels.com/photos/5858067/pexels-photo-5858067.jpeg",
@@ -34219,6 +36161,8 @@
   ],
   "phone": "+15705550170",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1840320/pexels-photo-1840320.jpeg",
    "https://images.pexels.com/photos/10078868/pexels-photo-10078868.jpeg",
@@ -34334,6 +36278,8 @@
   ],
   "phone": "+15705550171",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6761494/pexels-photo-6761494.jpeg",
    "https://images.pexels.com/photos/27223663/pexels-photo-27223663.jpeg",
@@ -34458,6 +36404,8 @@
   ],
   "phone": "+15705550172",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/32589034/pexels-photo-32589034.jpeg",
    "https://images.pexels.com/photos/9789246/pexels-photo-9789246.jpeg",
@@ -34573,6 +36521,8 @@
   ],
   "phone": "+15705550173",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5191740/pexels-photo-5191740.jpeg",
    "https://images.pexels.com/photos/9005510/pexels-photo-9005510.jpeg",
@@ -34686,6 +36636,8 @@
   ],
   "phone": "+15705550174",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/17109123/pexels-photo-17109123.jpeg",
    "https://images.pexels.com/photos/17109158/pexels-photo-17109158.jpeg",
@@ -34791,6 +36743,8 @@
   ],
   "phone": "+15705550175",
   "founded_year": 2007,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39616596/pexels-photo-39616596.jpeg"
   ],
@@ -34898,6 +36852,8 @@
   ],
   "phone": "+15705550176",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7518749/pexels-photo-7518749.jpeg"
   ],
@@ -35002,6 +36958,8 @@
   ],
   "phone": "+15705550177",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/26315454/pexels-photo-26315454.jpeg"
   ],
@@ -35113,6 +37071,8 @@
   ],
   "phone": "+15705550178",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/850715/pexels-photo-850715.jpeg"
   ],
@@ -35224,6 +37184,8 @@
   ],
   "phone": "+15705550179",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/11522856/pexels-photo-11522856.jpeg"
   ],
@@ -35331,6 +37293,8 @@
   ],
   "phone": "+15705550180",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/32623458/pexels-photo-32623458.jpeg"
   ],
@@ -35435,6 +37399,8 @@
   ],
   "phone": "+15705550181",
   "founded_year": 2024,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/19393192/pexels-photo-19393192.jpeg"
   ],
@@ -35534,6 +37500,8 @@
   ],
   "phone": "+15705550182",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15735064/pexels-photo-15735064.jpeg"
   ],
@@ -35642,6 +37610,8 @@
   ],
   "phone": "+15705550183",
   "founded_year": 2024,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/342520/pexels-photo-342520.jpeg"
   ],
@@ -35726,6 +37696,8 @@
   ],
   "phone": "+15705550184",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8387807/pexels-photo-8387807.jpeg",
    "https://images.pexels.com/photos/36730407/pexels-photo-36730407.jpeg",
@@ -35851,6 +37823,8 @@
   ],
   "phone": "+15705550185",
   "founded_year": 2010,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/18726333/pexels-photo-18726333.jpeg",
    "https://images.pexels.com/photos/5531542/pexels-photo-5531542.jpeg",
@@ -35969,6 +37943,8 @@
   ],
   "phone": "+15705550186",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1020372/pexels-photo-1020372.jpeg",
    "https://images.pexels.com/photos/28271086/pexels-photo-28271086.jpeg",
@@ -36087,6 +38063,8 @@
   ],
   "phone": "+15705550187",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8459366/pexels-photo-8459366.jpeg",
    "https://images.pexels.com/photos/5618793/pexels-photo-5618793.jpeg",
@@ -36195,6 +38173,8 @@
   ],
   "phone": "+15705550188",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8734409/pexels-photo-8734409.jpeg",
    "https://images.pexels.com/photos/4427639/pexels-photo-4427639.jpeg",
@@ -36317,6 +38297,8 @@
   ],
   "phone": "+15705550189",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/276528/pexels-photo-276528.jpeg",
    "https://images.pexels.com/photos/7535062/pexels-photo-7535062.jpeg",
@@ -36441,6 +38423,8 @@
   ],
   "phone": "+15705550190",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/38575493/pexels-photo-38575493.jpeg",
    "https://images.pexels.com/photos/27728635/pexels-photo-27728635.jpeg",
@@ -36558,6 +38542,8 @@
   ],
   "phone": "+15705550191",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14615063/pexels-photo-14615063.jpeg",
    "https://images.pexels.com/photos/592670/pexels-photo-592670.jpeg",
@@ -36676,6 +38662,8 @@
   ],
   "phone": "+15705550192",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/16063740/pexels-photo-16063740.jpeg",
    "https://images.pexels.com/photos/20299702/pexels-photo-20299702.jpeg",
@@ -36790,6 +38778,8 @@
   ],
   "phone": "+15705550193",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/691125/pexels-photo-691125.jpeg",
    "https://images.pexels.com/photos/35285848/pexels-photo-35285848.jpeg",
@@ -36910,6 +38900,8 @@
   ],
   "phone": "+15705550194",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6835090/pexels-photo-6835090.jpeg",
    "https://images.pexels.com/photos/3958962/pexels-photo-3958962.jpeg",
@@ -37028,6 +39020,8 @@
   ],
   "phone": "+15705550195",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4700400/pexels-photo-4700400.jpeg",
    "https://images.pexels.com/photos/8774643/pexels-photo-8774643.jpeg",
@@ -37135,6 +39129,8 @@
   ],
   "phone": "+15705550196",
   "founded_year": 1996,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36883230/pexels-photo-36883230.jpeg"
   ],
@@ -37236,6 +39232,8 @@
   ],
   "phone": "+15705550197",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/30686254/pexels-photo-30686254.jpeg",
    "https://images.pexels.com/photos/37235235/pexels-photo-37235235.jpeg",
@@ -37343,6 +39341,8 @@
   ],
   "phone": "+15705550198",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36887057/pexels-photo-36887057.jpeg",
    "https://images.pexels.com/photos/8718466/pexels-photo-8718466.jpeg",
@@ -37445,6 +39445,8 @@
   ],
   "phone": "+15705550199",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6764299/pexels-photo-6764299.jpeg",
    "https://images.pexels.com/photos/5409690/pexels-photo-5409690.jpeg",
@@ -37551,6 +39553,8 @@
   ],
   "phone": "+15705550100",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12811627/pexels-photo-12811627.jpeg",
    "https://images.pexels.com/photos/32603672/pexels-photo-32603672.jpeg",
@@ -37649,6 +39653,8 @@
   ],
   "phone": "+15705550101",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6068971/pexels-photo-6068971.jpeg",
    "https://images.pexels.com/photos/30922972/pexels-photo-30922972.jpeg",
@@ -37757,6 +39763,8 @@
   ],
   "phone": "+15705550102",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35503906/pexels-photo-35503906.jpeg",
    "https://images.pexels.com/photos/8985969/pexels-photo-8985969.jpeg",
@@ -37864,6 +39872,8 @@
   ],
   "phone": "+15705550103",
   "founded_year": 2024,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37712947/pexels-photo-37712947.jpeg",
    "https://images.pexels.com/photos/28802187/pexels-photo-28802187.jpeg",
@@ -37974,6 +39984,8 @@
   ],
   "phone": "+15705550104",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29765480/pexels-photo-29765480.jpeg",
    "https://images.pexels.com/photos/5560083/pexels-photo-5560083.jpeg",
@@ -38092,6 +40104,8 @@
   ],
   "phone": "+15705550105",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8135275/pexels-photo-8135275.jpeg",
    "https://images.pexels.com/photos/4437148/pexels-photo-4437148.jpeg",
@@ -38212,6 +40226,8 @@
   ],
   "phone": "+15705550106",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7640990/pexels-photo-7640990.jpeg",
    "https://images.pexels.com/photos/32759035/pexels-photo-32759035.jpeg",
@@ -38325,6 +40341,8 @@
   ],
   "phone": "+15705550107",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4705634/pexels-photo-4705634.jpeg",
    "https://images.pexels.com/photos/845451/pexels-photo-845451.jpeg",
@@ -38443,6 +40461,8 @@
   ],
   "phone": "+15705550108",
   "founded_year": 2005,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/164686/pexels-photo-164686.jpeg",
    "https://images.pexels.com/photos/34491716/pexels-photo-34491716.jpeg",
@@ -38554,6 +40574,8 @@
   ],
   "phone": "+15705550109",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5536373/pexels-photo-5536373.jpeg"
   ],
@@ -38660,6 +40682,8 @@
   ],
   "phone": "+15705550110",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36356352/pexels-photo-36356352.jpeg"
   ],
@@ -38764,6 +40788,8 @@
   ],
   "phone": "+15705550111",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9052803/pexels-photo-9052803.jpeg"
   ],
@@ -38869,6 +40895,8 @@
   ],
   "phone": "+15705550112",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33395007/pexels-photo-33395007.jpeg"
   ],
@@ -38981,6 +41009,8 @@
   ],
   "phone": "+15705550113",
   "founded_year": 2013,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14346809/pexels-photo-14346809.jpeg",
    "https://images.pexels.com/photos/12486866/pexels-photo-12486866.jpeg",
@@ -39103,6 +41133,8 @@
   ],
   "phone": "+15705550114",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37078160/pexels-photo-37078160.jpeg",
    "https://images.pexels.com/photos/34405178/pexels-photo-34405178.jpeg",
@@ -39221,6 +41253,8 @@
   ],
   "phone": "+15705550115",
   "founded_year": 2009,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9694390/pexels-photo-9694390.jpeg",
    "https://images.pexels.com/photos/6407553/pexels-photo-6407553.jpeg",
@@ -39338,6 +41372,8 @@
   ],
   "phone": "+15705550116",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15084344/pexels-photo-15084344.jpeg",
    "https://images.pexels.com/photos/33897865/pexels-photo-33897865.jpeg",
@@ -39450,6 +41486,8 @@
   ],
   "phone": "+15705550117",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35831411/pexels-photo-35831411.jpeg",
    "https://images.pexels.com/photos/35831392/pexels-photo-35831392.jpeg",
@@ -39562,6 +41600,8 @@
   ],
   "phone": "+15705550118",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4487484/pexels-photo-4487484.jpeg",
    "https://images.pexels.com/photos/32718669/pexels-photo-32718669.jpeg",
@@ -39683,6 +41723,8 @@
   ],
   "phone": "+15705550119",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/26698502/pexels-photo-26698502.jpeg",
    "https://images.pexels.com/photos/6772851/pexels-photo-6772851.jpeg",
@@ -39799,6 +41841,8 @@
   ],
   "phone": "+15705550120",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/17429097/pexels-photo-17429097.jpeg"
   ],
@@ -39902,6 +41946,8 @@
   ],
   "phone": "+15705550121",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/97079/pexels-photo-97079.jpeg"
   ],
@@ -40002,6 +42048,8 @@
   ],
   "phone": "+15705550122",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37124290/pexels-photo-37124290.jpeg"
   ],
@@ -40105,6 +42153,8 @@
   ],
   "phone": "+15705550123",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8552652/pexels-photo-8552652.jpeg"
   ],
@@ -40209,6 +42259,8 @@
   ],
   "phone": "+15705550124",
   "founded_year": 2024,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8989470/pexels-photo-8989470.jpeg"
   ],
@@ -40316,6 +42368,8 @@
   ],
   "phone": "+15705550125",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4440774/pexels-photo-4440774.jpeg",
    "https://images.pexels.com/photos/5025516/pexels-photo-5025516.jpeg",
@@ -40431,6 +42485,8 @@
   ],
   "phone": "+15705550126",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/28264496/pexels-photo-28264496.jpeg",
    "https://images.pexels.com/photos/37124290/pexels-photo-37124290.jpeg",
@@ -40543,6 +42599,8 @@
   ],
   "phone": "+15705550127",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/16094585/pexels-photo-16094585.jpeg",
    "https://images.pexels.com/photos/27522902/pexels-photo-27522902.jpeg",
@@ -40654,6 +42712,8 @@
   ],
   "phone": "+15705550128",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6440089/pexels-photo-6440089.jpeg"
   ],
@@ -40750,6 +42810,8 @@
   ],
   "phone": "+15705550129",
   "founded_year": 2024,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7362948/pexels-photo-7362948.jpeg"
   ],
@@ -40863,6 +42925,8 @@
   ],
   "phone": "+15705550130",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8197534/pexels-photo-8197534.jpeg",
    "https://images.pexels.com/photos/8197557/pexels-photo-8197557.jpeg",
@@ -40977,6 +43041,8 @@
   ],
   "phone": "+15705550131",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9716368/pexels-photo-9716368.jpeg",
    "https://images.pexels.com/photos/38705502/pexels-photo-38705502.jpeg",
@@ -41091,6 +43157,8 @@
   ],
   "phone": "+15705550132",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8867547/pexels-photo-8867547.jpeg",
    "https://images.pexels.com/photos/33448216/pexels-photo-33448216.jpeg",
@@ -41206,6 +43274,8 @@
   ],
   "phone": "+15705550133",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7979767/pexels-photo-7979767.jpeg",
    "https://images.pexels.com/photos/5303660/pexels-photo-5303660.jpeg",
@@ -41323,6 +43393,8 @@
   ],
   "phone": "+15705550134",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35645527/pexels-photo-35645527.jpeg",
    "https://images.pexels.com/photos/35645529/pexels-photo-35645529.jpeg",
@@ -41439,6 +43511,8 @@
   ],
   "phone": "+15705550135",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39178037/pexels-photo-39178037.jpeg",
    "https://images.pexels.com/photos/10638069/pexels-photo-10638069.jpeg",
@@ -41554,6 +43628,8 @@
   ],
   "phone": "+15705550136",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8463037/pexels-photo-8463037.jpeg",
    "https://images.pexels.com/photos/3901639/pexels-photo-3901639.jpeg",
@@ -41671,6 +43747,8 @@
   ],
   "phone": "+15705550137",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5845980/pexels-photo-5845980.jpeg",
    "https://images.pexels.com/photos/29224609/pexels-photo-29224609.jpeg",
@@ -41783,6 +43861,8 @@
   ],
   "phone": "+15705550138",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9518016/pexels-photo-9518016.jpeg"
   ],
@@ -41883,6 +43963,8 @@
   ],
   "phone": "+15705550139",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7750131/pexels-photo-7750131.jpeg"
   ],
@@ -41983,6 +44065,8 @@
   ],
   "phone": "+15705550140",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8511804/pexels-photo-8511804.jpeg"
   ],
@@ -42090,6 +44174,8 @@
   ],
   "phone": "+15705550141",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7520989/pexels-photo-7520989.jpeg"
   ],
@@ -42195,6 +44281,8 @@
   ],
   "phone": "+15705550142",
   "founded_year": 2010,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5428012/pexels-photo-5428012.jpeg",
    "https://images.pexels.com/photos/7713417/pexels-photo-7713417.jpeg",
@@ -42310,6 +44398,8 @@
   ],
   "phone": "+15705550143",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7972948/pexels-photo-7972948.jpeg",
    "https://images.pexels.com/photos/5905878/pexels-photo-5905878.jpeg"
@@ -42426,6 +44516,8 @@
   ],
   "phone": "+15705550144",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/37761850/pexels-photo-37761850.jpeg",
    "https://images.pexels.com/photos/37757975/pexels-photo-37757975.jpeg"
@@ -42541,6 +44633,8 @@
   ],
   "phone": "+15705550145",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5965526/pexels-photo-5965526.jpeg",
    "https://images.pexels.com/photos/7983558/pexels-photo-7983558.jpeg"
@@ -42656,6 +44750,8 @@
   ],
   "phone": "+15705550146",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8500618/pexels-photo-8500618.jpeg",
    "https://images.pexels.com/photos/7983559/pexels-photo-7983559.jpeg"
@@ -42768,6 +44864,8 @@
   ],
   "phone": "+15705550147",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8468134/pexels-photo-8468134.jpeg"
   ],
@@ -42879,6 +44977,8 @@
   ],
   "phone": "+15705550148",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6684167/pexels-photo-6684167.jpeg"
   ],
@@ -42986,6 +45086,8 @@
   ],
   "phone": "+15705550149",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/3853233/pexels-photo-3853233.jpeg",
    "https://images.pexels.com/photos/9242809/pexels-photo-9242809.jpeg",
@@ -43089,6 +45191,8 @@
   ],
   "phone": "+15705550150",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8511858/pexels-photo-8511858.jpeg"
   ],
@@ -43193,6 +45297,8 @@
   ],
   "phone": "+15705550151",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33354741/pexels-photo-33354741.jpeg",
    "https://images.pexels.com/photos/38865323/pexels-photo-38865323.jpeg"
@@ -43301,6 +45407,8 @@
   ],
   "phone": "+15705550152",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8422170/pexels-photo-8422170.jpeg",
    "https://images.pexels.com/photos/8441839/pexels-photo-8441839.jpeg",
@@ -43416,6 +45524,8 @@
   ],
   "phone": "+15705550153",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15648191/pexels-photo-15648191.jpeg",
    "https://images.pexels.com/photos/9328028/pexels-photo-9328028.jpeg",
@@ -43536,6 +45646,8 @@
   ],
   "phone": "+15705550154",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8456147/pexels-photo-8456147.jpeg",
    "https://images.pexels.com/photos/8457297/pexels-photo-8457297.jpeg",
@@ -43649,6 +45761,8 @@
   ],
   "phone": "+15705550155",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7988371/pexels-photo-7988371.jpeg",
    "https://images.pexels.com/photos/7045594/pexels-photo-7045594.jpeg",
@@ -43765,6 +45879,8 @@
   ],
   "phone": "+15705550156",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29835154/pexels-photo-29835154.jpeg",
    "https://images.pexels.com/photos/9828113/pexels-photo-9828113.jpeg",
@@ -43881,6 +45997,8 @@
   ],
   "phone": "+15705550157",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/10475538/pexels-photo-10475538.jpeg",
    "https://images.pexels.com/photos/10475536/pexels-photo-10475536.jpeg",
@@ -43998,6 +46116,8 @@
   ],
   "phone": "+15705550158",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7447271/pexels-photo-7447271.jpeg",
    "https://images.pexels.com/photos/7447264/pexels-photo-7447264.jpeg",
@@ -44107,6 +46227,8 @@
   ],
   "phone": "+15705550159",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6714218/pexels-photo-6714218.jpeg"
   ],
@@ -44206,6 +46328,8 @@
   ],
   "phone": "+15705550160",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/755049/pexels-photo-755049.jpeg"
   ],
@@ -44314,6 +46438,8 @@
   ],
   "phone": "+15705550161",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/4005325/pexels-photo-4005325.jpeg"
   ],
@@ -44429,6 +46555,8 @@
   ],
   "phone": "+15705550162",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35105982/pexels-photo-35105982.jpeg"
   ],
@@ -44539,6 +46667,8 @@
   ],
   "phone": "+15705550163",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9303528/pexels-photo-9303528.jpeg",
    "https://images.pexels.com/photos/5036963/pexels-photo-5036963.jpeg",
@@ -44652,6 +46782,8 @@
   ],
   "phone": "+15705550164",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1752757/pexels-photo-1752757.jpeg",
    "https://images.pexels.com/photos/12783350/pexels-photo-12783350.jpeg"
@@ -44769,6 +46901,8 @@
   ],
   "phone": "+15705550165",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36713062/pexels-photo-36713062.jpeg"
   ],
@@ -44882,6 +47016,8 @@
   ],
   "phone": "+15705550166",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5424649/pexels-photo-5424649.jpeg",
    "https://images.pexels.com/photos/36707289/pexels-photo-36707289.jpeg"
@@ -44990,6 +47126,8 @@
   ],
   "phone": "+15705550167",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8385033/pexels-photo-8385033.jpeg"
   ],
@@ -45099,6 +47237,8 @@
   ],
   "phone": "+15705550168",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33737251/pexels-photo-33737251.jpeg"
   ],
@@ -45197,6 +47337,8 @@
   ],
   "phone": "+15705550169",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12946022/pexels-photo-12946022.jpeg"
   ],
@@ -45299,6 +47441,8 @@
   ],
   "phone": "+15705550170",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/39629977/pexels-photo-39629977.jpeg"
   ],
@@ -45402,6 +47546,8 @@
   ],
   "phone": "+15705550171",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/437747/pexels-photo-437747.jpeg"
   ],
@@ -45505,6 +47651,8 @@
   ],
   "phone": "+15705550172",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/28674069/pexels-photo-28674069.jpeg"
   ],
@@ -45611,6 +47759,8 @@
   ],
   "phone": "+15705550173",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9545914/pexels-photo-9545914.jpeg",
    "https://images.pexels.com/photos/12250460/pexels-photo-12250460.jpeg",
@@ -45733,6 +47883,8 @@
   ],
   "phone": "+15705550174",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/31403621/pexels-photo-31403621.jpeg",
    "https://images.pexels.com/photos/5750886/pexels-photo-5750886.jpeg",
@@ -45850,6 +48002,8 @@
   ],
   "phone": "+15705550175",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6339401/pexels-photo-6339401.jpeg",
    "https://images.pexels.com/photos/8436610/pexels-photo-8436610.jpeg",
@@ -45964,6 +48118,8 @@
   ],
   "phone": "+15705550176",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/17955552/pexels-photo-17955552.jpeg",
    "https://images.pexels.com/photos/16538884/pexels-photo-16538884.jpeg",
@@ -46081,6 +48237,8 @@
   ],
   "phone": "+15705550177",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2685562/pexels-photo-2685562.jpeg",
    "https://images.pexels.com/photos/37007746/pexels-photo-37007746.jpeg",
@@ -46198,6 +48356,8 @@
   ],
   "phone": "+15705550178",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8436610/pexels-photo-8436610.jpeg"
   ],
@@ -46298,6 +48458,8 @@
   ],
   "phone": "+15705550179",
   "founded_year": 1996,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7429770/pexels-photo-7429770.jpeg"
   ],
@@ -46403,6 +48565,8 @@
   ],
   "phone": "+15705550180",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5319373/pexels-photo-5319373.jpeg"
   ],
@@ -46494,6 +48658,8 @@
   ],
   "phone": "+15705550181",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/9958671/pexels-photo-9958671.jpeg",
    "https://images.pexels.com/photos/7676548/pexels-photo-7676548.jpeg",
@@ -46611,6 +48777,8 @@
   ],
   "phone": "+15705550182",
   "founded_year": 2023,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8766368/pexels-photo-8766368.jpeg",
    "https://images.pexels.com/photos/12905809/pexels-photo-12905809.jpeg",
@@ -46749,6 +48917,8 @@
   ],
   "phone": "+15705550183",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/25599821/pexels-photo-25599821.jpeg",
    "https://images.pexels.com/photos/25596671/pexels-photo-25596671.jpeg"
@@ -46889,6 +49059,8 @@
   ],
   "phone": "+15705550184",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7045585/pexels-photo-7045585.jpeg",
    "https://images.pexels.com/photos/7045455/pexels-photo-7045455.jpeg",
@@ -47028,6 +49200,8 @@
   ],
   "phone": "+15705550185",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/13179883/pexels-photo-13179883.jpeg"
   ],
@@ -47146,6 +49320,8 @@
   ],
   "phone": "+15705550186",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/346777/pexels-photo-346777.jpeg",
    "https://images.pexels.com/photos/9044049/pexels-photo-9044049.jpeg"
@@ -47262,6 +49438,8 @@
   ],
   "phone": "+15705550187",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2361102/pexels-photo-2361102.jpeg"
   ],
@@ -47377,6 +49555,8 @@
   ],
   "phone": "+15705550188",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/32975182/pexels-photo-32975182.jpeg"
   ],
@@ -47484,6 +49664,8 @@
   ],
   "phone": "+15705550189",
   "founded_year": 2009,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1630039/pexels-photo-1630039.jpeg"
   ],
@@ -47584,6 +49766,8 @@
   ],
   "phone": "+15705550190",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/15449317/pexels-photo-15449317.jpeg"
   ],
@@ -47675,6 +49859,8 @@
   ],
   "phone": "+15705550191",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6289768/pexels-photo-6289768.jpeg"
   ],
@@ -47780,6 +49966,8 @@
   ],
   "phone": "+15705550192",
   "founded_year": 2022,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7590883/pexels-photo-7590883.jpeg"
   ],
@@ -47891,6 +50079,8 @@
   ],
   "phone": "+15705550193",
   "founded_year": 1986,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/32940344/pexels-photo-32940344.jpeg",
    "https://images.pexels.com/photos/19913305/pexels-photo-19913305.jpeg",
@@ -48027,6 +50217,8 @@
   ],
   "phone": "+15705550194",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29494246/pexels-photo-29494246.jpeg",
    "https://images.pexels.com/photos/8675061/pexels-photo-8675061.jpeg",
@@ -48154,6 +50346,8 @@
   ],
   "phone": "+15705550195",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/12745511/pexels-photo-12745511.jpeg",
    "https://images.pexels.com/photos/34328505/pexels-photo-34328505.jpeg",
@@ -48283,6 +50477,8 @@
   ],
   "phone": "+15705550196",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/6994944/pexels-photo-6994944.jpeg",
    "https://images.pexels.com/photos/6994945/pexels-photo-6994945.jpeg"
@@ -48395,6 +50591,8 @@
   ],
   "phone": "+15705550197",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/3212018/pexels-photo-3212018.jpeg",
    "https://images.pexels.com/photos/37489052/pexels-photo-37489052.jpeg",
@@ -48512,6 +50710,8 @@
   ],
   "phone": "+15705550198",
   "founded_year": 2001,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35183144/pexels-photo-35183144.jpeg"
   ],
@@ -48626,6 +50826,8 @@
   ],
   "phone": "+15705550199",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/29422233/pexels-photo-29422233.jpeg"
   ],
@@ -48739,6 +50941,8 @@
   ],
   "phone": "+15705550100",
   "founded_year": 1995,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/27686681/pexels-photo-27686681.jpeg",
    "https://images.pexels.com/photos/8815031/pexels-photo-8815031.jpeg"
@@ -48872,6 +51076,8 @@
   ],
   "phone": "+15705550101",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/23015910/pexels-photo-23015910.jpeg",
    "https://images.pexels.com/photos/7447253/pexels-photo-7447253.jpeg"
@@ -48996,6 +51202,8 @@
   ],
   "phone": "+15705550102",
   "founded_year": 1978,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35761559/pexels-photo-35761559.jpeg",
    "https://images.pexels.com/photos/30871487/pexels-photo-30871487.jpeg"
@@ -49123,6 +51331,8 @@
   ],
   "phone": "+15705550103",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/23496489/pexels-photo-23496489.jpeg"
   ],
@@ -49241,6 +51451,8 @@
   ],
   "phone": "+15705550104",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7317671/pexels-photo-7317671.jpeg",
    "https://images.pexels.com/photos/7317665/pexels-photo-7317665.jpeg"
@@ -49352,6 +51564,8 @@
   ],
   "phone": "+15705550105",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/14354566/pexels-photo-14354566.jpeg"
   ],
@@ -49468,6 +51682,49 @@
   ],
   "phone": "+15705550106",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Me dan consejo legal?",
+     "en": "Do you give legal advice?"
+    },
+    "a": {
+     "es": "No. Aquí te orientamos y te ayudamos con formularios junto a una representante acreditada por el Departamento de Justicia, con cita. Para un caso en la corte te mandamos a un abogado.",
+     "en": "No. We guide you and help with forms alongside a Department of Justice accredited representative, by appointment. For a court case we refer you to a lawyer."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Me preguntan mi estatus?",
+     "en": "Do you ask my status?"
+    },
+    "a": {
+     "es": "No. Nadie te pregunta tu estatus para entrar ni para recibir ayuda.",
+     "en": "No. Nobody asks your status to come in or to get help."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cuesta?",
+     "en": "Does it cost?"
+    },
+    "a": {
+     "es": "La orientación es gratis. Si un trámite tiene cuota del gobierno, la pagas tú directo al gobierno, nunca aquí.",
+     "en": "Guidance is free. If a filing has a government fee, you pay it directly to the government, never here."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Puedo ser voluntario?",
+     "en": "Can I volunteer?"
+    },
+    "a": {
+     "es": "Sí. Los sábados a las 9 AM salimos a repartir comida y hay misiones en el verano.",
+     "en": "Yes. On Saturdays at 9 AM we go out to hand out food and there are summer missions."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/6646981/pexels-photo-6646981.jpeg",
    "https://images.pexels.com/photos/7156158/pexels-photo-7156158.jpeg"
@@ -49625,6 +51882,8 @@
   ],
   "phone": "+15705550107",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33053436/pexels-photo-33053436.jpeg"
   ],
@@ -49726,6 +51985,8 @@
   ],
   "phone": "+15705550108",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/10373537/pexels-photo-10373537.jpeg"
   ],
@@ -49824,6 +52085,8 @@
   ],
   "phone": "+15705550109",
   "founded_year": 1931,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/28896471/pexels-photo-28896471.jpeg"
   ],
@@ -49928,6 +52191,8 @@
   ],
   "phone": "+15705550110",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/31709177/pexels-photo-31709177.jpeg",
    "https://images.pexels.com/photos/5226135/pexels-photo-5226135.jpeg"
@@ -50052,6 +52317,8 @@
   ],
   "phone": "+15705550111",
   "founded_year": 1916,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5986496/pexels-photo-5986496.jpeg",
    "https://images.pexels.com/photos/5985971/pexels-photo-5985971.jpeg"
@@ -50170,6 +52437,8 @@
   ],
   "phone": "+15705550112",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8146330/pexels-photo-8146330.jpeg",
    "https://images.pexels.com/photos/2030037/pexels-photo-2030037.jpeg",
@@ -50288,6 +52557,8 @@
   ],
   "phone": "+15705550113",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8815820/pexels-photo-8815820.jpeg",
    "https://images.pexels.com/photos/7578866/pexels-photo-7578866.jpeg",
@@ -50403,6 +52674,8 @@
   ],
   "phone": "+15705550114",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8292844/pexels-photo-8292844.jpeg",
    "https://images.pexels.com/photos/8293768/pexels-photo-8293768.jpeg",
@@ -50521,6 +52794,8 @@
   ],
   "phone": "+15705550115",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7031621/pexels-photo-7031621.jpeg",
    "https://images.pexels.com/photos/34574611/pexels-photo-34574611.jpeg",
@@ -50633,6 +52908,8 @@
   ],
   "phone": "+15705550116",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/31663643/pexels-photo-31663643.jpeg"
   ],
@@ -50733,6 +53010,8 @@
   ],
   "phone": "+15705550117",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/28153483/pexels-photo-28153483.jpeg"
   ],
@@ -50840,6 +53119,8 @@
   ],
   "phone": "+15705550118",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36729941/pexels-photo-36729941.jpeg",
    "https://images.pexels.com/photos/7937330/pexels-photo-7937330.jpeg",
@@ -50953,6 +53234,8 @@
   ],
   "phone": "+15705550119",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/27938317/pexels-photo-27938317.jpeg",
    "https://images.pexels.com/photos/8148346/pexels-photo-8148346.jpeg",
@@ -51068,6 +53351,8 @@
   ],
   "phone": "+15705550120",
   "founded_year": 2007,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7937280/pexels-photo-7937280.jpeg",
    "https://images.pexels.com/photos/7489107/pexels-photo-7489107.jpeg"
@@ -51180,6 +53465,8 @@
   ],
   "phone": "+15705550121",
   "founded_year": 2011,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/8292785/pexels-photo-8292785.jpeg",
    "https://images.pexels.com/photos/8293640/pexels-photo-8293640.jpeg",
@@ -51296,6 +53583,8 @@
   ],
   "phone": "+15705550122",
   "founded_year": 2004,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/562199/pexels-photo-562199.jpeg",
    "https://images.pexels.com/photos/7642040/pexels-photo-7642040.jpeg"
@@ -51412,6 +53701,8 @@
   ],
   "phone": "+15705550123",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7045354/pexels-photo-7045354.jpeg",
    "https://images.pexels.com/photos/35618218/pexels-photo-35618218.jpeg",
@@ -51524,6 +53815,8 @@
   ],
   "phone": "+15705550124",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7841424/pexels-photo-7841424.jpeg",
    "https://images.pexels.com/photos/7937684/pexels-photo-7937684.jpeg"
@@ -51636,6 +53929,49 @@
   ],
   "phone": "+15705550125",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [
+   {
+    "q": {
+     "es": "¿Me conviene vender en efectivo?",
+     "en": "Should I sell for cash?"
+    },
+    "a": {
+     "es": "Te damos la oferta por escrito; compárala con lo que te diría un agente. Vender en efectivo es más rápido pero casi siempre paga menos.",
+     "en": "We give you a written offer; compare it with what an agent would say. Cash is faster but almost always pays less."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Cobran comisión?",
+     "en": "Do you charge commission?"
+    },
+    "a": {
+     "es": "No. Lo que ves en la oferta es lo que recibes al cerrar.",
+     "en": "No. What you see in the offer is what you get at closing."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Ayudan si estoy atrasado con la hipoteca?",
+     "en": "Do you help if I am behind on my mortgage?"
+    },
+    "a": {
+     "es": "Sí: te explicamos la venta corta y te mandamos al consejero de vivienda gratis de HUD antes de decidir.",
+     "en": "Yes: we explain short sales and refer you to the free HUD housing counselor before you decide."
+    }
+   },
+   {
+    "q": {
+     "es": "¿Qué es el grupo de inversión?",
+     "en": "What is the investment group?"
+    },
+    "a": {
+     "es": "Una reunión mensual gratis para aprender a comprar multifamiliares. No vendemos cursos.",
+     "en": "A free monthly meeting to learn about buying multifamily homes. We do not sell courses."
+    }
+   }
+  ],
   "photos": [
    "https://images.pexels.com/photos/7937207/pexels-photo-7937207.jpeg",
    "https://images.pexels.com/photos/7937733/pexels-photo-7937733.jpeg"
@@ -51776,6 +54112,8 @@
   ],
   "phone": "+15705550126",
   "founded_year": 2013,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/36217325/pexels-photo-36217325.jpeg",
    "https://images.pexels.com/photos/5843171/pexels-photo-5843171.jpeg"
@@ -51891,6 +54229,8 @@
   ],
   "phone": "+15705550127",
   "founded_year": 2010,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7415093/pexels-photo-7415093.jpeg"
   ],
@@ -51994,6 +54334,8 @@
   ],
   "phone": "+15705550128",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7937361/pexels-photo-7937361.jpeg",
    "https://images.pexels.com/photos/7937364/pexels-photo-7937364.jpeg"
@@ -52103,6 +54445,8 @@
   ],
   "phone": "+15705550129",
   "founded_year": 2014,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35627348/pexels-photo-35627348.jpeg",
    "https://images.pexels.com/photos/35627355/pexels-photo-35627355.jpeg",
@@ -52224,6 +54568,8 @@
   ],
   "phone": "+15705550130",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/33623775/pexels-photo-33623775.jpeg",
    "https://images.pexels.com/photos/33623770/pexels-photo-33623770.jpeg",
@@ -52341,6 +54687,8 @@
   ],
   "phone": "+15705550131",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/5076489/pexels-photo-5076489.jpeg",
    "https://images.pexels.com/photos/35627388/pexels-photo-35627388.jpeg",
@@ -52454,6 +54802,8 @@
   ],
   "phone": "+15705550132",
   "founded_year": 2010,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7144207/pexels-photo-7144207.jpeg"
   ],
@@ -52552,6 +54902,8 @@
   ],
   "phone": "+15705550133",
   "founded_year": 2021,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/35627348/pexels-photo-35627348.jpeg"
   ],
@@ -52658,6 +55010,8 @@
   ],
   "phone": "+15705550134",
   "founded_year": 2005,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2127039/pexels-photo-2127039.jpeg",
    "https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg",
@@ -52775,6 +55129,8 @@
   ],
   "phone": "+15705550135",
   "founded_year": 2018,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/7144195/pexels-photo-7144195.jpeg"
   ],
@@ -52891,6 +55247,8 @@
   ],
   "phone": "+15705550136",
   "founded_year": 2015,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2116475/pexels-photo-2116475.jpeg",
    "https://images.pexels.com/photos/1715193/pexels-photo-1715193.jpeg",
@@ -53011,6 +55369,8 @@
   ],
   "phone": "+15705550137",
   "founded_year": 2009,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/296278/pexels-photo-296278.jpeg",
    "https://images.pexels.com/photos/2533092/pexels-photo-2533092.jpeg"
@@ -53127,6 +55487,8 @@
   ],
   "phone": "+15705550138",
   "founded_year": 2012,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2449454/pexels-photo-2449454.jpeg"
   ],
@@ -53243,6 +55605,8 @@
   ],
   "phone": "+15705550139",
   "founded_year": 2017,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/977003/pexels-photo-977003.jpeg",
    "https://images.pexels.com/photos/1974520/pexels-photo-1974520.jpeg",
@@ -53353,6 +55717,8 @@
   ],
   "phone": "+15705550140",
   "founded_year": 2005,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2244746/pexels-photo-2244746.jpeg",
    "https://images.pexels.com/photos/4489702/pexels-photo-4489702.jpeg",
@@ -53463,6 +55829,8 @@
   ],
   "phone": "+15705550141",
   "founded_year": 2013,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg",
    "https://images.pexels.com/photos/262353/pexels-photo-262353.jpeg"
@@ -53575,6 +55943,8 @@
   ],
   "phone": "+15705550142",
   "founded_year": 2008,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg",
    "https://images.pexels.com/photos/5835359/pexels-photo-5835359.jpeg"
@@ -53681,6 +56051,8 @@
   ],
   "phone": "+15705550143",
   "founded_year": 2016,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg"
   ],
@@ -53780,6 +56152,8 @@
   ],
   "phone": "+15705550144",
   "founded_year": 2019,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1638459/pexels-photo-1638459.jpeg",
    "https://images.pexels.com/photos/1592261/pexels-photo-1592261.jpeg"
@@ -53881,6 +56255,8 @@
   ],
   "phone": "+15705550145",
   "founded_year": 2020,
+  "about": null,
+  "faqs": [],
   "photos": [
    "https://images.pexels.com/photos/1719648/pexels-photo-1719648.jpeg"
   ],

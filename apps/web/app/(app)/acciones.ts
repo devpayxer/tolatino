@@ -40,7 +40,7 @@ export async function registrarToque(id: string, kind: string, origen: string): 
   );
 }
 
-/* «Avísame cuando haya»: guarda la búsqueda; cuando llegue un negocio que encaje, se avisa (Fase 8, notificaciones). */
+/* «Avísame cuando haya»: guarda la búsqueda; cuando llegue un negocio que encaje, se avisa (Fase 2, notificaciones). */
 export async function avisame(ciudad: string, cat: string, sub: string, filtros: string[]): Promise<Respuesta> {
   const u = await yo();
   if (!u) return { ok: false, entrar: true };

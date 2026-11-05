@@ -12,6 +12,10 @@ function HoursPro({
   dateLabel = 'HOY',
   status = 'Abierto',
   nextLabel,
+  nowLabel,
+  changesLabel,
+  weekLabel,
+  statusColor,
   weekOpen: weekOpenProp,
   style
 }) {
@@ -42,7 +46,7 @@ function HoursPro({
       marginTop: 8,
       font: '800 22px/1.1 Sora,sans-serif',
       letterSpacing: '-.04em',
-      color: 'var(--tl-open-text)'
+      color: statusColor || 'var(--tl-open-text)'
     }
   }, status), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -112,7 +116,7 @@ function HoursPro({
       fontSize: 8.5,
       padding: '2px 6px'
     }
-  }, "AHORA") : null), /*#__PURE__*/React.createElement("div", {
+  }, nowLabel || "AHORA") : null), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 2,
       font: '500 11.5px Manrope,sans-serif',
@@ -132,7 +136,7 @@ function HoursPro({
       letterSpacing: '.12em',
       color: 'var(--tl-action)'
     }
-  }, "PR\xD3XIMOS CAMBIOS"), d.hpChanges.map((x, i) => /*#__PURE__*/React.createElement("div", {
+  }, changesLabel || "PR\xD3XIMOS CAMBIOS"), d.hpChanges.map((x, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       display: 'flex',
@@ -173,7 +177,7 @@ function HoursPro({
     style: {
       font: '700 13px Manrope,sans-serif'
     }
-  }, "Esta semana"), /*#__PURE__*/React.createElement("svg", {
+  }, weekLabel || "Esta semana"), /*#__PURE__*/React.createElement("svg", {
     width: "15",
     height: "15",
     viewBox: "0 0 24 24",

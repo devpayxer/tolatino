@@ -64,6 +64,19 @@ for (const src of archivos) {
     if (t === antes || (t.match(/note: reviewsNote/g) || []).length !== 2 || !t.includes("reviewsNote,\n  status")) throw new Error("parche BusinessCard: el origen cambió, revisar");
   }
 
+  // HoursPro: textos fijos en español (AHORA, PRÓXIMOS CAMBIOS, Esta semana) → props para ES/EN; y el estado
+  // siempre en verde → `statusColor` (un «Cerrado» va en rojo, como en el resto de la ficha).
+  if (rel.endsWith("patterns/HoursPro.js")) {
+    const antes = t;
+    t = t.replace("  nextLabel,\n", "  nextLabel,\n  nowLabel,\n  changesLabel,\n  weekLabel,\n  statusColor,\n");
+    t = t.replace('}, "AHORA")', '}, nowLabel || "AHORA")');
+    t = t.replace('}, "PR\\xD3XIMOS CAMBIOS")', '}, changesLabel || "PR\\xD3XIMOS CAMBIOS")');
+    t = t.replace('}, "Esta semana")', '}, weekLabel || "Esta semana")');
+    t = t.replace(/(letterSpacing: '-\.04em',\n\s*color: )'#00695B'/, "$1statusColor || '#00695B'");
+    if (t === antes || !t.includes("nowLabel ||") || !t.includes("changesLabel ||") || !t.includes("weekLabel ||") || !t.includes("statusColor ||"))
+      throw new Error("parche HoursPro: el origen cambió, revisar");
+  }
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();
