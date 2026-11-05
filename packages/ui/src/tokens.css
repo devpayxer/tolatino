@@ -134,3 +134,23 @@
   --blur-bar: blur(14px); /* @kind other */
   --ease-sheet: cubic-bezier(.2,.8,.2,1); /* @kind other */
 }
+
+/* ── Puntuales del sistema (generado por scripts/portar-sistema.mjs): colores que los componentes
+   del sistema usan una o pocas veces y no tenían token. Se nombran por su valor; no se usan en pantallas nuevas. */
+:root {
+  --tl-ds-332a6b: #332A6B;
+  --tl-ds-b9b4aa: #B9B4AA;
+  --tl-ds-dce8e4: #DCE8E4;
+  --tl-ds-e3f4f1: #E3F4F1;
+  --tl-ds-e6e3dc: #E6E3DC;
+  --tl-ds-e7e5e0: #E7E5E0;
+  --tl-ds-e8f0ed: #E8F0ED;
+  --tl-ds-edf3ff: #EDF3FF;
+  --tl-ds-eeebff: #EEEBFF;
+  --tl-ds-f1efea: #F1EFEA;
+  --tl-ds-f1f0ec: #F1F0EC;
+  --tl-ds-f4f3ef: #F4F3EF;
+  --tl-ds-fbfaf7: #FBFAF7;
+  --tl-ds-fde8e6: #FDE8E6;
+  --tl-ds-fff4d6: #FFF4D6;
+}

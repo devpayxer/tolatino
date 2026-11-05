@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+/* Porta el sistema de diseño exportado (docs/diseno/design-system/components-web, 2 nov 2026)
+   a packages/ui/src/ds como módulos ESM. Es determinista: se puede volver a correr y produce lo mismo.
+
+   Qué hace con cada componente:
+   1. Lo envuelve como módulo: "use client" + import de React + el registro común (__ds_scope).
+   2. Cambia cada color hex por su token (var(--tl-…)). Los hex del sistema que no tenían token
+      se registran como tokens puntuales --tl-ds-xxxxxx en packages/ui/src/tokens.css.
+   3. Quita lo que es solo del prototipo: window.TLHoursPro (datos de demo con hora fija) y
+      assets/icons/icons.js (duplicado de Icon).
+   Al final escribe packages/ui/src/ds/index.ts con los 132 nombres exportados. */
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
+import { join, relative, dirname } from "node:path";
+
+const RAIZ = new URL("..", import.meta.url).pathname;
+const ORIGEN = join(RAIZ, "docs/diseno/design-system/components-web/components");
+const DESTINO = join(RAIZ, "packages/ui/src/ds");
+const TOKENS = join(RAIZ, "packages/ui/src/tokens.css");
+
+const TOKEN_DE = {
+  "0B0E12": "--tl-ink", "7B61FF": "--tl-brand", "4B37F5": "--tl-action", "2E1FD1": "--tl-action-hover",
+  "00E5C4": "--tl-signal", "F7F6F3": "--tl-paper", "FFFFFF": "--tl-white", "FFF": "--tl-white",
+  "FFB020": "--tl-pro", "EDEBE6": "--tl-desk", "00A88F": "--tl-open", "00695B": "--tl-open-text",
+  "C0392B": "--tl-danger", "FF2D7A": "--tl-mod-events", "1E7BFF": "--tl-mod-transport",
+  "0FA958": "--tl-mod-realestate", "FF8A1F": "--tl-mod-autos", "C2410C": "--tl-mod-jobs",
+  "14181F": "--tl-dark-2", "1C222B": "--tl-dark-3", "E4E1DA": "--tl-photo-bg", "DDD9D1": "--tl-photo-bg-2",
+  "F6F7F5": "--tl-paper-2", "E8EDE9": "--tl-mint-soft", "8A5A00": "--tl-pro-ink", "04120F": "--tl-signal-ink",
+};
+const SOLO_PROTOTIPO = new Set(["patterns/hours-pro.js"]);
+
+const puntuales = new Map();
+const nombres = [];
+const grupos = {};
+const archivos = [];
+(function recorrer(dir) {
+  for (const n of readdirSync(dir)) {
+    const p = join(dir, n);
+    if (statSync(p).isDirectory()) recorrer(p);
+    else if (n.endsWith(".js")) archivos.push(p);
+  }
+})(ORIGEN);
+archivos.sort();
+
+rmSync(DESTINO, { recursive: true, force: true });
+for (const src of archivos) {
+  const rel = relative(ORIGEN, src);
+  if (SOLO_PROTOTIPO.has(rel)) continue;
+  let t = readFileSync(src, "utf8");
+
+  // Encabezado del export original fuera; el nuevo dice de dónde viene.
+  t = t.replace(/^\/\/ Fuente:.*\n\/\/ Compilado.*\n/, "");
+
+  // Datos de demo del prototipo fuera (regla: lo del prototipo no se construye).
+  t = t.replace(/data \|\| \(typeof window !== 'undefined' && window\.TLHoursPro \? window\.TLHoursPro\(\) : (\{[\s\S]*?\})\)/, "data || $1");
+
+  // Hex → token.
+  t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
+    const H = h.toUpperCase();
+    if (TOKEN_DE[H]) return `var(${TOKEN_DE[H]})`;
+    const nombre = `--tl-ds-${H.toLowerCase()}`;
+    puntuales.set(nombre, `#${H}`);
+    return `var(${nombre})`;
+  });
+
+  const m = [...t.matchAll(/Object\.assign\(__ds_scope, \{([^}]*)\}\);/g)];
+  for (const x of m) {
+    const ns = x[1].split(",").map((s) => s.trim()).filter(Boolean);
+    nombres.push(...ns);
+    const g = rel.split("/")[0];
+    (grupos[g] ??= []).push(...ns.filter((n) => !/^[A-Z_]+$/.test(n)));
+  }
+
+  const profundidad = relative(dirname(join(DESTINO, rel)), DESTINO) || ".";
+  const cabecera = `"use client";
+// @ts-nocheck — portado por scripts/portar-sistema.mjs desde docs/diseno/design-system/components-web/components/${rel}
+// (To'Latino Design System, bundle del 2 nov 2026). No editar a mano: los cambios se hacen en el componente tipado
+// que lo reemplace, o en el script. Colores = tokens (var(--tl-…)).
+import * as React from "react";
+import { __ds_scope } from "${profundidad}/scope.js";
+`;
+  mkdirSync(dirname(join(DESTINO, rel)), { recursive: true });
+  writeFileSync(join(DESTINO, rel), cabecera + "\n" + t);
+}
+
+writeFileSync(join(DESTINO, "scope.js"), `/* Registro común de los componentes portados: cada módulo se agrega aquí y busca a los demás aquí. */
+export const __ds_scope = {};
+`);
+
+const modulos = archivos.map((a) => relative(ORIGEN, a)).filter((r) => !SOLO_PROTOTIPO.has(r));
+const unicos = [...new Set(nombres)];
+writeFileSync(join(DESTINO, "index.ts"), `"use client";
+/* Generado por scripts/portar-sistema.mjs — ${unicos.length} exportaciones de ${modulos.length} módulos. */
+import type { ComponentType } from "react";
+import { __ds_scope } from "./scope.js";
+${modulos.map((r) => `import "./${r}";`).join("\n")}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type C = ComponentType<any>;
+const S = __ds_scope as Record<string, unknown>;
+${unicos.map((n) => (/^[A-Z_]+$/.test(n) ? `export const ${n} = S.${n} as unknown;` : `export const ${n} = S.${n} as C;`)).join("\n")}
+`);
+
+writeFileSync(join(DESTINO, "catalogo.ts"), `/* Generado por scripts/portar-sistema.mjs — componentes por grupo, para la página /sistema. */
+export const CATALOGO: Record<string, string[]> = ${JSON.stringify(grupos, null, 2)};
+`);
+
+// Tokens puntuales del sistema (colores que el sistema usa pero que no tenían nombre).
+let tok = readFileSync(TOKENS, "utf8").replace(/\n\/\* ── Puntuales del sistema[\s\S]*$/, "\n");
+const lineas = [...puntuales].sort().map(([n, v]) => `  ${n}: ${v};`).join("\n");
+tok = tok.trimEnd() + `\n\n/* ── Puntuales del sistema (generado por scripts/portar-sistema.mjs): colores que los componentes
+   del sistema usan una o pocas veces y no tenían token. Se nombran por su valor; no se usan en pantallas nuevas. */
+:root {\n${lineas}\n}\n`;
+writeFileSync(TOKENS, tok);
+
+console.log(`portados ${modulos.length} módulos · ${unicos.length} exportaciones · ${puntuales.size} tokens puntuales`);

@@ -33,9 +33,19 @@ _Actualizado: 5 nov 2026._
   (fondo Paper, Sora/Manrope/Mono comprobados por `getComputedStyle`).
   **Lección:** para probar el standalone en local hay que copiar `.next/static` y `public`
   dentro de `.next/standalone/apps/web/` (el Dockerfile ya lo hace).
-- **Sigue · bloque 2:** puerto del sistema de diseño (132 componentes de
-  `docs/diseno/design-system/components-web/` → `packages/ui/src/**`, TSX con tokens, sin hex),
-  página `/sistema` con el catálogo, captura por componente, guardián visual.
+- **Fase 0 · bloque 2 HECHO (5 nov):** `scripts/portar-sistema.mjs` porta los 49 módulos del
+  sistema (**130 componentes**, no 132: el conteo anterior incluía funciones internas) a
+  `packages/ui/src/ds/` como ESM ("use client", registro `scope.js`), cambia todo hex por
+  `var(--tl-…)` (15 colores sin token → `--tl-ds-xxxxxx` en tokens.css) y quita lo del prototipo
+  (`hours-pro.js` con hora fija, `icons.js` duplicado). Se re-ejecuta y da lo mismo.
+  `/sistema` = catálogo por grupos (126 componentes + 4 constantes); 22 con ejemplos
+  (`apps/web/app/sistema/ejemplos.tsx`), el resto dibuja con valores por defecto o se marca
+  «sin ejemplo». Capturas `capturas/sistema-{base,tarjetas,pagina}.png`.
+  **Pendiente honesto:** los componentes portados son JS sin tipos (`@ts-nocheck`); cada uno pasa
+  a TSX tipado cuando una pantalla lo usa por primera vez. `ChangeProposal` necesita datos.
+  Ejemplos de `ReviewCard`/`OwnerCard` con forma de datos incompleta (no muestran facts/trust).
+- **Sigue · bloque 3:** cuenta (teléfono verificado + passkeys + sesión), ciudad (5 ciudades),
+  taxonomía como datos, Super Admin esqueleto, `docs/ayuda/` inicial.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama
