@@ -48,6 +48,9 @@ const guardianes = {
     for (const f of codigo) {
       const t = readFileSync(f, "utf8");
       if (/TOLATINO_ENTORNO\s*[:=]\s*["']?produccion/.test(t) && /seed|semilla/i.test(t)) falla("semilla", f, 0, "semilla configurada contra producción");
+      // La semilla de pruebas solo la puede invocar el despliegue del sandbox (y la define migrar.sh).
+      if (/(--semilla-pruebas|infra\/pruebas\/semilla)/.test(t) && !/^(infra\/pruebas\/|packages\/db\/migrar\.sh$|scripts\/semilla\/|guardianes\/)/.test(f))
+        falla("semilla", f, 0, "la semilla de pruebas se llama desde fuera del sandbox");
     }
   },
 

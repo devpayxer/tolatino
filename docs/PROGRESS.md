@@ -88,9 +88,19 @@ _Actualizado: 5 nov 2026._
   acentos por trigger y GIST geo; caché de derivados `business_stats_cache`; horarios, feriados, enlaces,
   equipo, licencias, sello, media, FAQ, reclamos, borrador de onboarding, toques de contacto, guardados,
   seguir, búsquedas, avísame, recomendaciones). Probado: «barberia» encuentra «Barbería»; radio 5 mi.
-- **Bloqueado:** los datos de ejemplo del prototipo viven en `project/prototype/*.js` del artifact
-  `tolatino-master+` y la herramienta no deja leer esa ruta (nombre reservado «prototype»). Se pidió al
-  fundador el zip completo del proyecto de diseño.
+- **Fase 1 · bloque 1b HECHO (5 nov) · semilla del sandbox:** el fundador subió `prototype.zip` (Export →
+  Project HTML, solo la carpeta `prototype`). `scripts/semilla/extraer-prototipo.cjs` carga los 46 scripts del
+  prototipo en un `vm` aislado y saca los negocios de los 17 `TL<Cat>.B` → `infra/pruebas/semilla/negocios.json`
+  (**446 negocios**, no 276: la memoria era de una versión vieja; 289 Pro, 278 verificados, todos con
+  coordenadas y subcategoría). `scripts/semilla/generar-sql.mjs` → `0001_negocios.sql` (negocios, caché de
+  derivados, horarios, 1 091 fotos de Pexels). Teléfonos cambiados al rango de ficción 555-01xx (los del
+  prototipo parecían reales de Hazleton). La aplica solo `infra/pruebas/deploy.sh` (`migrar.sh
+  --semilla-pruebas`); guardián `semilla` impide llamarla desde fuera del sandbox (probado al revés).
+  **Inconsistencia del diseño:** 5 subcategorías de las demos no existen en la taxonomía (Comida criolla,
+  Calefacción y aire, Quitar nieve, Optometrista, Psicólogo y terapia). Pendiente: las 17 demos ricas
+  (`TLDemo`: menú, staff, reseñas…) entran con su bloque.
+- **El kit `tolatino-app-kit.zip`** (Claude Design) asume Expo + Supabase: queda sustituido por las decisiones
+  B, C y D; sus documentos ya estaban en `docs/diseno/`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo · 1c shell (SiteHeader,
   BottomNav) + Inicio (APP-HOME, estructura ya leída) · 1d página de categoría · 1e ficha Pro/Free ·
   1f Buscar · 1g Publica tu negocio v2 · 1h panel base · 1i admin Negocios + colas.

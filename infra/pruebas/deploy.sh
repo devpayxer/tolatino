@@ -39,6 +39,9 @@ for i in $(seq 1 30); do
 done
 bash "$REPO/packages/db/migrar.sh" docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml"
 
+# 3c) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
+SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml"
+
 # 4) nginx: la app en /, la página de estado del servidor en /estado.
 install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" /etc/nginx/sites-available/tolatino-pruebas
 ln -sf /etc/nginx/sites-available/tolatino-pruebas /etc/nginx/sites-enabled/tolatino-pruebas
