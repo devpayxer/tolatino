@@ -28,6 +28,7 @@ import { useLang } from '@/lib/i18n';
 import { useApp } from '@/lib/state';
 import { useAuth } from '@/lib/auth';
 import { useUrlDetail } from '@/lib/urlView';
+import { currentPageUrl } from '@/lib/site';
 import { Card, Chip, Overlay, OverlayTitle, PrimaryBtn, SkeletonList, VerifiedBadge } from '@/components/ui';
 import {
   RE_DEALS, RE_TYPES, RE_TILE,
@@ -322,7 +323,7 @@ export function BienesRaicesScreen() {
   const doShare = async (title: string, slug: string) => {
     let url = '';
     if (typeof window !== 'undefined') {
-      url = `${window.location.origin}${window.location.pathname}?p=${encodeURIComponent(slug)}`;
+      url = `${currentPageUrl()}?p=${encodeURIComponent(slug)}`;
     }
     const text = L('Mira esta propiedad en To’Latino', 'Check out this listing on To’Latino');
     try {

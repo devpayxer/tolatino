@@ -26,6 +26,7 @@ import { EVENT_CATS, EVENT_CAT_BY_ID } from '@/data/fixtures';
 import { Qr } from '@/components/Qr';
 import { SectionTabs, type SectionTab } from '@/components/SectionTabs';
 import { QrScanner, useBarcodeSupport } from '@/components/QrScanner';
+import { siteUrl } from '@/lib/site';
 
 const cardCls = 'rounded-card-sm border border-line bg-white ';
 
@@ -1821,7 +1822,7 @@ export function EventsModule({ ctx, tab }: { ctx: PanelCtx; tab: TabKey }) {
       </div>
 
       <div className="mt-5 flex w-full max-w-[420px] flex-col gap-2.5">
-        <button onClick={() => { const url = typeof window !== 'undefined' ? `${window.location.origin}/eventos` : ''; if (typeof navigator !== 'undefined' && navigator.clipboard && url) void navigator.clipboard.writeText(url); flash(L('Enlace de eventos copiado', 'Events link copied')); }} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
+        <button onClick={() => { const url = typeof window !== 'undefined' ? siteUrl('/eventos') : ''; if (typeof navigator !== 'undefined' && navigator.clipboard && url) void navigator.clipboard.writeText(url); flash(L('Enlace de eventos copiado', 'Events link copied')); }} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-btn-lg bg-primary py-3.5 text-[13.5px] font-extrabold text-white shadow-cta">
           <Share2 size={16} stroke={2.4} />{L('Compartir eventos', 'Share events')}
         </button>
         <button onClick={() => { setView('list'); setListTab('upcoming'); }} className="w-full cursor-pointer rounded-btn-lg border-[1.5px] border-lilac-line bg-white py-3.5 text-[13.5px] font-extrabold text-ink">{L('Volver a eventos', 'Back to events')}</button>

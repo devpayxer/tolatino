@@ -3,7 +3,65 @@
 > **Purpose.** A living "where we are / how to resume" doc so a fresh session can
 > pick up instantly. Read this + `CLAUDE.md` (vision/standards) +
 > `docs/LAUNCH-CHECKLIST.md` (deferred decisions) before working.
-> Last updated: 2026-08-06.
+> Last updated: 2026-11-05.
+
+## Fase 0 de las tiendas: las URLs que SALEN de la app (2026-11-05)
+
+Primera de las tres fases del plan de tiendas (`docs/LAUNCH-CHECKLIST.md` §4).
+Es la única que se podía hacer entera sin pagar ni abrir cuentas, y arregla una
+clase de fallo que **no se ve en el navegador**: dentro del envoltorio nativo el
+origen no es `tolatino.com`, es local del teléfono —`capacitor://localhost` en
+iOS, `http://localhost` en Android—, así que las 12 URLs que la app construía
+con `window.location.origin` nacían rotas. Las dos que más dolían: el enlace
+mágico del correo (nadie podría registrarse desde la app) y el `return_url` de
+Stripe (el comprador paga y no vuelve a ninguna parte).
+
+- **Un solo helper: `apps/web/src/lib/site.ts`** → `siteUrl('/ruta')` y
+  `currentPageUrl()`. Los 12 usos pasan por ahí (auth ×2, stripe.ts,
+  CheckoutSheet, los 5 «compartir» del cliente, los 3 «copiar enlace» del panel).
+- **Lo que NO se hizo, aunque la nota del plan lo pedía:** devolver *siempre*
+  `https://tolatino.com`. Eso habría roto el sitio de pruebas del fundador — el
+  enlace del correo sale del origen REAL a propósito, para que `pruebas` mande a
+  `pruebas` y producción a producción. El helper respeta el origen del navegador
+  y solo devuelve el dominio público **dentro del envoltorio**, que detecta por
+  `window.Capacitor.isNativePlatform()`, por un protocolo que no es http(s), o
+  por el host `localhost` **sin puerto** (con puerto no cuenta: eso es
+  `next dev` :3000 y las auditorías :4173).
+- **Dos guardianes nuevos en `verify-build.mjs`**, los dos probados al revés:
+  (1) `location.origin` queda prohibido fuera de `lib/site.ts` — escribirlo es
+  el reflejo natural de cualquiera, así que sin guardián el arreglo se deshace
+  solo; (2) un build de **producción** tiene que traer `https://tolatino.com`
+  horneado, porque sin `NEXT_PUBLIC_SITE_URL` la constante cae en
+  `tolatino.vercel.app` y la app empaquetada mandaría los enlaces a ese host
+  **en silencio** (las Edge Functions también lo aceptan).
+- **Enlaces profundos: la cañería montada, sin inventar identificadores.**
+  `scripts/gen-deeplinks.mjs` corre en `postbuild` y publica
+  `apple-app-site-association` + `assetlinks.json` en cuanto existan
+  `TOLATINO_IOS_APP_ID` (Team ID de Apple) y `TOLATINO_ANDROID_FINGERPRINTS`
+  (SHA-256 de Play); valida el formato y, si falta el dato, **no escribe nada y
+  lo dice**. Un Team ID falso rompe los enlaces en silencio, que es peor que no
+  tenerlos. `vercel.json` ya sirve `/.well-known/` como `application/json` (sin
+  esa cabecera Apple rechaza el archivo, que va sin extensión). `/negocio/*` y
+  `/admin/*` quedan EXCLUIDOS: el panel se queda en la web por la comisión de
+  las tiendas.
+- **Prueba nueva: `tools/mobile-audit/webview-fase0.js`** — el MISMO build en
+  tres contextos (envoltorio Android servido en `http://localhost` sin puerto,
+  envoltorio iOS con la bandera de Capacitor, y web normal como **control**).
+  Mide lo que la app pide de verdad: intercepta la llamada de Supabase y lee el
+  `emailRedirectTo` (sin mandar correo ni crear usuario), y lee del portapapeles
+  el enlace de «Compartir». El tercer contexto es el que hace válida la prueba:
+  la web debe seguir con su origen local. Probada al revés — deshecho el
+  arreglo, los dos envoltorios fallan con `http://localhost/entrar/` y el
+  control sigue en verde.
+- **Nota de entorno:** este contenedor no alcanza Supabase (la política de red
+  da 403 al CONNECT), así que la prueba detecta «modo sin red», sirve una
+  publicación de prueba local para poder pulsar «Compartir» y lo anuncia en el
+  informe. Con red usa los datos reales de staging por el relé de curl. Por lo
+  mismo, las auditorías que dependen de datos (`no-demo-flash`, `permisos-anon`)
+  no se pueden correr desde aquí.
+- **Lo que falta de la Fase 0** (y no se puede hoy): los dos identificadores de
+  tienda. Se pegan como variables de entorno en Vercel y el siguiente despliegue
+  publica los archivos sin tocar código. Detalle en el checklist §4.
 
 ## El fondo, y por qué los recuadros ya no llevan sombra (2026-08-06)
 

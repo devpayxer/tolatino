@@ -5,7 +5,6 @@
   "buildCommand": "pnpm --filter @tolatino/web build",
   "outputDirectory": "apps/web/out",
   "trailingSlash": true,
-
   "headers": [
     {
       "source": "/(.*)",
@@ -21,6 +20,19 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
         }
       ]
     }

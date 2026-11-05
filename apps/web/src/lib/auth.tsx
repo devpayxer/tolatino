@@ -7,6 +7,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { siteUrl } from '@/lib/site';
 
 export type Profile = {
   id: string;
@@ -209,12 +210,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return { error: 'not_configured' };
     // `emailRedirectTo` sale del origen REAL desde el que se pidió el código, no
     // de una constante: así una vista previa manda a la vista previa y
-    // producción a producción. Y apunta a `/entrar/`, no a la portada, porque
+    // producción a producción. (`siteUrl` respeta eso; solo DENTRO del
+    // envoltorio nativo devuelve el dominio público, porque allí el origen es
+    // `capacitor://localhost` y el enlace del correo nacería roto.) Y apunta a
+    // `/entrar/`, no a la portada, porque
     // mientras el correo de Supabase siga llevando un ENLACE en vez del código
     // (hace falta SMTP propio para cambiar la plantilla — ver LAUNCH-CHECKLIST),
     // ese enlace es el único camino del usuario: tiene que caer donde el alta
     // puede continuar, no en una página que no sabe que acaba de entrar.
-    const redirect = typeof window !== 'undefined' ? `${window.location.origin}/entrar/` : undefined;
+    const redirect = typeof window !== 'undefined' ? siteUrl('/entrar/') : undefined;
     const { error } = channel === 'sms'
       ? await supabase.auth.signInWithOtp({ phone: target })
       : await supabase.auth.signInWithOtp({ email: target.trim().toLowerCase(), options: { emailRedirectTo: redirect } });
@@ -242,7 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // pantalla que recoge la sesión de recuperación y pide la contraseña nueva.
   const sendPasswordReset: AuthCtx['sendPasswordReset'] = async (email) => {
     if (!supabase) return { error: 'not_configured' };
-    const redirect = typeof window !== 'undefined' ? `${window.location.origin}/entrar/` : undefined;
+    const redirect = typeof window !== 'undefined' ? siteUrl('/entrar/') : undefined;
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: redirect });
     return { error: error ? friendly(error.message) : null };
   };

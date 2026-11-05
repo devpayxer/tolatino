@@ -2530,18 +2530,97 @@ urgente HOY (0 negocios, 0 ventas), y todos muerden en cuanto haya dinero.
   **Apple NO exige «Sign in with Apple»** — eso solo se dispara si ofreces
   Google/Facebook.
 
-  **Fase 0 — código, gratis, sin cuentas (se puede hacer YA):**
-  - [ ] Los **12 usos de `window.location.origin`** (auth.tsx ×2, stripe.ts,
-    CheckoutSheet, PostCard, BizDetail, Eventos, Autos ×2, BienesRaices,
-    RealEstate, Events). Dentro del envoltorio el origen es
-    `capacitor://localhost`, así que HOY se romperían: los enlaces mágicos del
-    correo llegarían a `localhost`, los enlaces para compartir también, y el
-    `return_url` de Stripe igual. Se arregla con un `siteUrl()` que devuelva
-    siempre `https://tolatino.com` y se barre en los 12.
-  - [ ] **Enlaces profundos**: servir `/.well-known/apple-app-site-association`
-    y `/.well-known/assetlinks.json` desde tolatino.com para que
-    `tolatino.com/negocios/?b=…` abra la app en vez del navegador.
-  - [ ] Probar el export dentro de un WebView antes de tocar ninguna tienda.
+  **Fase 0 — HECHA el 2026-11-05** (código, gratis, sin cuentas). Las tres
+  tareas de esta fase están cerradas; lo único que falta de la fase es un dato
+  que solo existe con cuenta de tienda, y está desglosado al final.
+  - [x] **Los 12 usos de `window.location.origin`, barridos.** Ahora salen de un
+    solo helper, `apps/web/src/lib/site.ts`:
+    `siteUrl('/ruta')` y `currentPageUrl()`. Los 12: `auth.tsx` ×2 (el enlace
+    mágico del correo y el de recuperar contraseña), `stripe.ts` (el origen que
+    viaja a las Edge Functions y se vuelve `return_url`), `CheckoutSheet`
+    (`return_url` del Payment Element), `PostCard`, `BizDetail`, `Eventos`,
+    `Autos`, `BienesRaices` (los cinco botones de «compartir» del cliente) y
+    `negocio/modules/{Autos,Events,RealEstate}` (los tres «copiar enlace» del
+    panel).
+    **Matiz importante que NO se hizo como decía esta nota.** Decía «que
+    devuelva siempre `https://tolatino.com`». Eso habría roto el sitio de
+    pruebas del fundador: hoy el enlace del correo sale del origen REAL a
+    propósito —para que una vista previa mande a la vista previa y producción a
+    producción (está escrito así en `sendCode`)—, y con una constante el código
+    del correo de `pruebas` habría aterrizado en producción. Así que `siteUrl()`
+    respeta el origen del navegador y devuelve el dominio público **solo dentro
+    del envoltorio nativo**, que se detecta por tres señales:
+    `window.Capacitor.isNativePlatform()`, un protocolo que no es http(s)
+    (`capacitor://`, `ionic://`, `file://`), o el host `localhost` **sin
+    puerto** (el WebView de Android; con puerto NO cuenta, que es `next dev`
+    :3000 y las auditorías :4173).
+  - [x] **Guardián nuevo, para que la clase no vuelva.** `verify-build.mjs`
+    **rompe el build** si aparece `location.origin` en cualquier archivo de
+    `apps/web/src` que no sea `lib/site.ts` (escribirlo es el reflejo natural de
+    cualquiera, así que un arreglo manual se desharía solo), y si un build de
+    **producción** no trae `https://tolatino.com` horneado — sin
+    `NEXT_PUBLIC_SITE_URL` la constante cae en su reserva (`tolatino.vercel.app`)
+    y la app empaquetada mandaría los enlaces a un host que no es el de la marca,
+    **en silencio**, porque `safeOrigin()` de las Edge Functions también lo
+    acepta. Los dos probados al revés (regresión inyectada → build roto).
+  - [x] **Enlaces profundos: toda la cañería montada**, y los dos archivos se
+    publican solos en cuanto existan sus identificadores.
+    `scripts/gen-deeplinks.mjs` corre en `postbuild` y escribe
+    `/.well-known/apple-app-site-association` (iOS, formato `components`, con
+    `/negocio/*` y `/admin/*` EXCLUIDOS a propósito: el panel se queda en la web
+    por la comisión de las tiendas) y `/.well-known/assetlinks.json` (Android).
+    `vercel.json` ya sirve esa carpeta como `application/json` — sin esa cabecera
+    Apple rechaza el archivo, porque va sin extensión y se serviría como binario.
+    **Deliberadamente no se inventó ningún identificador:** el script valida el
+    formato, y si falta el dato no escribe el archivo y lo dice. Un archivo con
+    un Team ID falso hace que los enlaces profundos fallen en silencio, que es
+    peor que no tenerlos.
+  - [x] **El export probado dentro del envoltorio.**
+    `tools/mobile-audit/webview-fase0.js` corre el MISMO build en tres
+    contextos: envoltorio **Android** (servido en `http://localhost` sin puerto,
+    el origen real de un WebView/TWA), envoltorio **iOS**
+    (`Capacitor.isNativePlatform() = true`) y **web normal** como control. En
+    cada uno comprueba que el export arranca y se ve (portada, Comunidad,
+    Negocios, Entrar), que el `emailRedirectTo` que la app pide de verdad a
+    Supabase lleva el dominio público (se intercepta la llamada: no se manda
+    ningún correo ni se crea ningún usuario), y que el enlace de «Compartir»
+    copiado al portapapeles también. El **tercer contexto es el que hace válida
+    la prueba**: la web tiene que seguir usando su origen local. Probada al
+    revés —con el arreglo deshecho, los dos envoltorios fallan con
+    `http://localhost/entrar/` y el control sigue en verde.
+  - [ ] **Lo único que falta de la Fase 0, y por qué no se puede hacer hoy:** los
+    dos identificadores de los enlaces profundos existen solo con cuenta de
+    tienda. Cuando las haya, se pegan como variables de entorno en Vercel
+    (Settings → Environment Variables) y el siguiente despliegue publica los dos
+    archivos sin tocar código:
+    · `TOLATINO_IOS_APP_ID` = `TEAMID.com.tolatino.app` — el **Team ID** lo da
+      Apple al pagar los $99/año (Apple Developer → Membership details).
+    · `TOLATINO_ANDROID_FINGERPRINTS` = la huella **SHA-256** del certificado con
+      el que Google Play firma la app (Play Console → Integridad de la app →
+      Firma de apps). Si se prueba en un teléfono con un APK propio, añadir
+      también la de la *upload key*, separadas por coma.
+    · `TOLATINO_ANDROID_PACKAGE` solo si el paquete deja de ser
+      `com.tolatino.app` (el valor por defecto; mismo identificador en las dos
+      tiendas a propósito).
+  - [ ] **Al armar el envoltorio Android, repetir ahí la exclusión de rutas.**
+    `assetlinks.json` no sabe excluir rutas — eso va en el manifiesto de la app
+    (`<data android:pathPrefix>`), así que hay que dejar fuera `/negocio` y
+    `/admin` también ahí, o el panel del negocio acabaría abriéndose dentro de la
+    app y con él la suscripción (justo lo que dispara la comisión del 30 %).
+  - [ ] **Comprobar las cabeceras de `/.well-known/` EN VIVO** cuando haya
+    archivos que servir: las pone Vercel, no el build, así que en local no se
+    pueden ver (igual que en `docs/CABECERAS-SEGURIDAD.md`). Con
+    `curl -sI https://tolatino.com/.well-known/apple-app-site-association` tiene
+    que salir `content-type: application/json` y **200 sin redirección** (ojo:
+    `trailingSlash: true` podría intentar añadirle una barra a un archivo sin
+    extensión).
+  - [ ] **Dentro del envoltorio, `SITE_URL` sale del build, no del teléfono.** La
+    app de tienda hay que empaquetarla desde un build de **producción**. Un build
+    de staging también trae `tolatino.com` hoy (Next carga `.env.production`
+    porque `NODE_ENV=production`, y `.env.staging` no define
+    `NEXT_PUBLIC_SITE_URL`), pero eso es un efecto de cómo se cargan los `.env`,
+    no una garantía: si algún día se define en staging, un envoltorio compilado
+    de pruebas mandaría los enlaces al sitio de pruebas.
 
   **Fase 1 — Android primero (barato y sin 30%):** Google Play acepta un
   **TWA/Bubblewrap** (la PWA empaquetada), $25 una sola vez, sin segundo

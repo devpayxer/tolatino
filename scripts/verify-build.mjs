@@ -365,6 +365,63 @@ try {
   colorMsg = `  Fondo: no se pudo comprobar (${e.message})`;
 }
 
+// ── Guardián: ninguna URL que SALGA de la app puede nacer de `location.origin` ─
+// De dónde sale: la Fase 0 del plan de tiendas (2026-11-05). Dentro del
+// envoltorio nativo el origen del navegador es `capacitor://localhost` (iOS) o
+// `http://localhost` (Android) — un origen que solo existe DENTRO del teléfono.
+// Había 12 sitios que construían URLs con él: los enlaces mágicos del correo,
+// los seis botones de «compartir», los tres de «copiar enlace» del panel y el
+// `return_url` de Stripe. En la web funcionan; empaquetados, los doce nacen
+// rotos — el usuario recibiría un correo que lleva a «localhost» y el comprador
+// se quedaría en el vacío después de pagar.
+//
+// La regla: ese origen se pide por `siteUrl()` / `currentPageUrl()`
+// (`apps/web/src/lib/site.ts`), que respetan el host real en el navegador —así
+// una vista previa sigue mandando a la vista previa— y devuelven el dominio
+// público solo dentro del envoltorio. `location.origin` queda prohibido en el
+// resto del código: es un arreglo que de otro modo se desharía solo, porque
+// escribir `window.location.origin` es el reflejo natural de cualquiera.
+const origenFail = [];
+let origenMsg = '';
+try {
+  const raiz = new URL('..', import.meta.url).pathname;
+  const base = join(raiz, 'apps/web/src');
+  const permitido = join(base, 'lib/site.ts'); // el único que puede leerlo
+  const archivos = walk(base).filter((f) => /\.tsx?$/.test(f) && f !== permitido);
+  for (const f of archivos) {
+    const src = readFileSync(f, 'utf8');
+    for (const m of src.matchAll(/location\s*\.\s*origin/g)) {
+      origenFail.push({ archivo: f.slice(base.length + 1), linea: src.slice(0, m.index).split('\n').length });
+    }
+  }
+  origenMsg = `  Origen: ${archivos.length} archivos revisados`
+    + (origenFail.length ? '' : ', ninguna URL de salida nace de `location.origin`');
+} catch (e) {
+  origenMsg = `  Origen: no se pudo comprobar (${e.message})`;
+}
+
+// ── Guardián: el build de producción tiene que traer el dominio público ──────
+// `siteUrl()` cae en `SITE_URL`, que sale de `NEXT_PUBLIC_SITE_URL` y se HORNEA
+// al compilar. Si ese valor falta en un build de producción, la constante cae en
+// su valor de reserva (`tolatino.vercel.app`) y la app empaquetada mandaría los
+// enlaces del correo y el `return_url` de Stripe a un host que no es el de la
+// marca —y que `safeOrigin()` de las Edge Functions acepta, así que el fallo
+// sería silencioso. En staging NO se exige: las vistas previas usan su propio
+// origen real y no se indexan.
+let dominioFail = false;
+let dominioMsg = '';
+const DOMINIO_PUBLICO = 'https://tolatino.com';
+if (target === 'production') {
+  if (!textoTodo.includes(DOMINIO_PUBLICO)) {
+    dominioFail = true;
+    dominioMsg = `  ✖ Dominio: el build de PRODUCCIÓN no trae ${DOMINIO_PUBLICO} — falta NEXT_PUBLIC_SITE_URL`;
+  } else {
+    dominioMsg = `  Dominio: ${DOMINIO_PUBLICO} horneado en el build`;
+  }
+} else {
+  dominioMsg = '  Dominio: destino staging — se usa el origen real de la vista previa';
+}
+
 // ── Reporte ─────────────────────────────────────────────────────────────────
 console.log(`\nverify-build · ${jsFiles.length} archivos JS, ${htmlFiles.length} HTML en ${OUT}`);
 console.log(envMsg);
@@ -373,6 +430,8 @@ console.log(kindsMsg);
 console.log(demoMsg);
 console.log(efectoMsg);
 console.log(colorMsg);
+console.log(origenMsg);
+console.log(dominioMsg);
 for (const { nombre, ruta, faltan } of kindsFail) {
   console.error(`\n  ✖ ${faltan.length} tipo(s) que la base emite y ${nombre} NO sabe dibujar:`);
   console.error(`      ${faltan.join(', ')}`);
@@ -393,12 +452,19 @@ for (const c of colorFail) {
   console.error('        buscador y todos los formularios quedan invisibles.');
 }
 
+for (const o of origenFail) {
+  console.error(`\n  ✖ ${o.archivo}:${o.linea}: una URL se construye con \`location.origin\`.`);
+  console.error('      → dentro de la app empaquetada ese origen es `capacitor://localhost`');
+  console.error('        (iOS) o `http://localhost` (Android): el enlace nace roto.');
+  console.error("        Usa `siteUrl('/ruta')` o `currentPageUrl()` de `@/lib/site`.");
+}
+
 for (const d of demoFail) {
   console.error(`\n  ✖ ${d.archivo}: useState arranca con \`${d.constante}\` (datos de ejemplo).`);
   console.error('      → el valor inicial debe ser vacío; que el cargador decida si toca demo.');
 }
 
-if (hits.length === 0 && !stripeFail && !envFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0 && colorFail.length === 0) {
+if (hits.length === 0 && !stripeFail && !envFail && !dominioFail && kindsFail.length === 0 && demoFail.length === 0 && efectoFail.length === 0 && colorFail.length === 0 && origenFail.length === 0) {
   console.log('\n✅ Sin datos fabricados, sin secretos y con la base correcta.\n');
   process.exit(0);
 }
