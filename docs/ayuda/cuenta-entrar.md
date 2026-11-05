@@ -21,7 +21,10 @@ Una sola cuenta de To'Latino con tu número de teléfono de EE. UU. Sin contrase
 | Código equivocado | «Ese código no es. Revísalo e inténtalo otra vez.» | Revisar el texto recibido. |
 | 5 códigos equivocados, o más de 5 códigos pedidos en una hora | «Demasiados intentos. Prueba otra vez en una hora.» | Esperar una hora. Es para proteger tu cuenta. |
 | El código tiene más de 10 minutos | «El código venció. Pide uno nuevo.» | Tocar Reenviar. |
-| Cuenta suspendida o cerrada | «Esta cuenta no puede entrar. Escríbele a Soporte.» | Pasar a una persona de Soporte. |
+| Cuenta suspendida (14 días) | «Tu cuenta está suspendida hasta el {fecha}. Motivo: {motivo}.» | Esperar a la fecha (se levanta sola) o escribir a Soporte. |
+| Cuenta baneada, cerrada o fusionada | «Esta cuenta no puede entrar. Motivo: {motivo}. Escríbele a Soporte.» | Pasar a una persona de Soporte. |
+| Cuenta borrándose (30 días de gracia) | «Esta cuenta se está borrando: se borra del todo el {fecha}. Si fue un error, escríbele a Soporte antes.» | Soporte puede pedir a un Admin que la restaure antes de la fecha. |
+| Dispositivo bloqueado por el equipo | «Desde este dispositivo no se puede entrar. Escríbele a Soporte.» | Pasar a Soporte (puede ser un teléfono perdido o robado). |
 
 ## Preguntas frecuentes
 - **¿Me piden mi estatus, ITIN o seguro social?** Nunca. Solo tu teléfono y tu nombre.

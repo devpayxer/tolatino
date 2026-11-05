@@ -23,8 +23,10 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   const r = await db().query<{
     id: string; queue: Cola; opened_at: string; priority: string; assigned_to: string | null; assignee: string | null;
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
+    subject_kind: string; sctype: string | null; sname: string | null;
   }>(
-    `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee,
+    `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
+            coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
             b.name as bname,
             (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as cover,
             rc.business_name as rname, c.name->>'es' as rcat,
@@ -37,6 +39,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
        left join users u on u.id = q.assigned_to
        left join recommendations rc on q.queue = 'rec' and rc.id::text = q.subject_id
        left join categories c on c.id = rc.category_id
+       left join sensitive_changes sc on q.subject_kind = 'sensitive_change' and sc.id = q.subject_id
+       left join users su on sc.target_kind = 'user' and su.id::text = sc.target_id
       where q.status = 'open' and q.queue = any($1::text[]) and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))
       order by extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc
       limit 200`,
@@ -51,18 +55,20 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     const t = x.queue === "sello" ? { title: `Sello · ${b}`, sub: "Pidió el sello de verificación" }
       : x.queue === "nuevo" ? { title: b, sub: "Publicado desde la app · revisión ligera" }
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
+      : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
     return {
       id: x.id, queue: x.queue, ...t, priority: x.priority,
-      who: x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
+      who: x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : x.subject_kind === "sensitive_change" ? { name: x.sname ?? "", initials: (x.sname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
       assignee: x.assignee, mine: x.assigned_to === s.id, esp: e,
     };
   });
   const casos = todos.filter((c) => (!f.mios || c.mine) && (!f.sinAsignar || !c.assignee) && (!f.vencidos || c.esp.r >= 1));
   return { casos, conteo, vencidos, total: todos.length };
 }
+export const CAMBIO_L: Record<string, string> = { deleteUser: "Borrar cuenta", mergeUser: "Fusionar cuentas" };
 export const MOTIVO_FOTO: Record<string, string> = { no_es: "No es de este negocio", inapropiado: "Contenido inapropiado", datos: "Muestra datos personales", spam: "Es publicidad o spam", otro: "Otro motivo" };
 
 /* Casos abiertos que ve la persona (contador de la barra y del menú). */
@@ -79,15 +85,25 @@ export async function casosAbiertos(s: Staff) {
 /* Un caso con lo que necesita su decisión. null = no existe o no es para esta persona. */
 export async function caso(s: Staff, id: string) {
   if (!/^\d{1,18}$/.test(id)) return null;
-  const q = (await db().query<{ id: string; queue: Cola; subject_id: string; business_id: string | null; city_id: string; opened_at: string; status: string; assigned_to: string | null; assignee: string | null; decision: string | null }>(
-    `select q.id::text, q.queue, q.subject_id, q.business_id, q.city_id, q.opened_at, q.status, q.assigned_to, u.first_name as assignee, q.decision
+  const q = (await db().query<{ id: string; queue: Cola; subject_kind: string; subject_id: string; business_id: string | null; city_id: string | null; opened_at: string; status: string; assigned_to: string | null; assignee: string | null; decision: string | null }>(
+    `select q.id::text, q.queue, q.subject_kind, q.subject_id, q.business_id, q.city_id, q.opened_at, q.status, q.assigned_to, u.first_name as assignee, q.decision
        from queue_items q left join users u on u.id = q.assigned_to where q.id = $1`, [id])).rows[0];
-  if (!q || !colasVisibles(s).includes(q.queue) || (s.cities.length && !s.cities.includes(q.city_id))) return null;
+  if (!q || !colasVisibles(s).includes(q.queue) || (s.cities.length && (!q.city_id || !s.cities.includes(q.city_id)))) return null;
   const base = { ...q, esp: espera(q.opened_at, COLAS[q.queue].sla), mine: q.assigned_to === s.id, puedeDecidir: s.puede("colas", "aprobar") };
   const negocio = q.business_id ? await negocioCorto(q.business_id) : null;
   if (q.queue === "sello") {
     const v = (await db().query<{ status: string; checks: Record<string, boolean>; note: string | null }>(`select status, checks, note from verification_requests where id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, sello: v ?? null };
+  }
+  if (q.queue === "cambio" && q.subject_kind === "sensitive_change") {
+    const sc = (await db().query<{ id: string; type: string; status: string; reason: string; created_at: string; requested_by: string; quien: string | null; target_id: string;
+      nombre: string | null; phone: string; ciudad: string | null; creado: string; negocios: number; estado: string }>(
+      `select sc.id, sc.type, sc.status, sc.reason, sc.created_at, sc.requested_by, nullif(trim(coalesce(a.first_name, '') || ' ' || coalesce(a.last_name, '')), '') as quien, sc.target_id,
+              nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), '') as nombre, u.phone, ci.name as ciudad, u.created_at as creado,
+              (select count(*)::int from business_members m where m.user_id = u.id and m.status = 'active' and m.kind = 'owner') as negocios, u.status as estado
+         from sensitive_changes sc join users a on a.id = sc.requested_by join users u on u.id::text = sc.target_id left join cities ci on ci.id = u.home_city_id
+        where sc.id = $1`, [q.subject_id])).rows[0];
+    return { ...base, negocio: null, cambio: sc ? { ...sc, phone: telefonoBonito(sc.phone), mio: sc.requested_by === s.id } : null };
   }
   if (q.queue === "cambio") {
     const cl = (await db().query<{ id: string; role: string; method: string; doc_kind: string | null; note: string | null; source: string; status: string; created_at: string;

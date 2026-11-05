@@ -7,7 +7,7 @@ Versión: Fase 1 · bloques 1i, 1k y 1j (5 nov 2026). Para el equipo de To'Latin
 - **Colas:** todo lo que espera la decisión de una persona del equipo, la más vieja contra su plazo primero:
   **Sello de verificación** (48 h), **Negocios nuevos** (24 h, revisión ligera), **Medios marcados** (4 h, fotos que
   reportó un vecino), **Recomendaciones de vecinos** (7 días), **Licencias** (72 h) y **Cambios sensibles** (48 h,
-  por ahora los reclamos de «Recuperar tu negocio»). Cada persona ve solo las colas de su rol y de sus
+  los reclamos de «Recuperar tu negocio» y los pedidos de borrar una cuenta; ver `admin-usuarios.md`). Cada persona ve solo las colas de su rol y de sus
   ciudades. «Tomar siguiente» te asigna el caso sin dueño más urgente; «Tomar» avisa a los demás «Lo está viendo X».
 - **Negocios:** lista con buscador (nombre, id, teléfono, dirección, subcategoría), categoría, plan, estado, «Más
   filtros» y orden. El **360°** muestra el negocio como lo ve el cliente, lo que hizo el dueño y lo que hizo el equipo:

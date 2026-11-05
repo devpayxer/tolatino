@@ -10,7 +10,8 @@ import { ciudades } from "@/lib/ubicacion";
 export type Recomendacion = { ciudad: string; name: string; cat: string | null; where: string; casa: boolean; con: string; know: string | null; why: string; show: boolean };
 export type RespRec =
   | { ok: true; id: string; at: string; name: string; ciudad: string }
-  | { ok: false; error: "entrar" | "faltan" | "repetida" | "muchas" | "origen" };
+  | { ok: false; error: "entrar" | "faltan" | "repetida" | "muchas" | "origen" }
+  | { ok: false; error: "silenciado"; hasta: string | null; motivo: string | null };
 
 const KNOW = new Set(["cli", "fam", "mio"]);
 const limpio = (s: unknown, max: number) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -19,6 +20,12 @@ export async function enviarRecomendacion(r: Recomendacion): Promise<RespRec> {
   if (!(await mismoOrigen())) return { ok: false, error: "origen" };
   const me = await yo();
   if (!me) return { ok: false, error: "entrar" };
+  // Silencio o bloqueo de publicación (Super Admin › Usuarios): no publica hasta que venza o se levante.
+  if (me.estado === "muted") {
+    const m = (await db().query<{ reason: string }>(
+      `select reason from sanctions where target_kind = 'user' and target_id = $1::text and kind in ('mute7', 'nopub') and lifted_at is null order by starts_at desc limit 1`, [me.id])).rows[0];
+    return { ok: false, error: "silenciado", hasta: me.hasta, motivo: m?.reason ?? null };
+  }
   const name = limpio(r.name, 80), where = limpio(r.where, 120), why = limpio(r.why, 280), con = limpio(r.con, 60);
   const casa = !!r.casa, know = KNOW.has(String(r.know)) ? String(r.know) : null;
   const c = (await ciudades()).find((x) => x.id === r.ciudad);

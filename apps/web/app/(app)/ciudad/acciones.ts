@@ -1,8 +1,7 @@
 "use server";
-import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { ipCliente, mismoOrigen, normalizarTelefono, yo } from "@/lib/cuenta";
+import { dispositivo, ipCliente, mismoOrigen, normalizarTelefono, yo } from "@/lib/cuenta";
 import { millas, type LL } from "@/lib/mapa-geo";
 import { centroDe, ciudades, COOKIE_LOC, escribir, porDefecto, resolver, ubicacion } from "@/lib/ubicacion";
 import { buscarLugar, ciudadDeTexto, cuantosPiden, masPedidas, medir, miCiudad, misPedidos, resumenCiudades, telefonoBonito } from "@/lib/ciudad";
@@ -52,17 +51,6 @@ export async function medirBorrador(p: { c: string; z: string; r: number; g?: [n
 /* Búsqueda de lugar del selector (dirección, barrio, ciudad o código postal). Solo lectura. */
 export async function lugares(q: string) {
   return buscarLugar(String(q ?? "").slice(0, 60));
-}
-
-/* Identificador aleatorio del dispositivo (para que solo este pueda quitar lo que pidió sin cuenta). */
-async function dispositivo(crear: boolean) {
-  const jar = await cookies();
-  const v = jar.get("tl_dev")?.value;
-  if (v && /^[0-9a-f-]{36}$/.test(v)) return v;
-  if (!crear) return null;
-  const n = randomUUID();
-  jar.set("tl_dev", n, { path: "/", maxAge: 5 * UN_ANO, sameSite: "lax", httpOnly: true });
-  return n;
 }
 
 export type RespPedir = { ok: true; c: string; n: number; mios: { id: string; t: string }[] } | { ok: false; error: "vacio" | "telefono" | "muchos" | "origen" };

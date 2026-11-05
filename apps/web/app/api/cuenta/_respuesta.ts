@@ -10,6 +10,7 @@ const MENSAJES: Record<string, [number, string, string]> = {
   espera: [429, "Espera unos segundos para pedir otro código.", "Wait a few seconds to ask for another code."],
   demasiados: [429, "Demasiados intentos. Prueba otra vez en una hora.", "Too many tries. Try again in an hour."],
   cuenta_bloqueada: [403, "Esta cuenta no puede entrar. Escríbele a Soporte.", "This account can't sign in. Contact Support."],
+  dispositivo_bloqueado: [403, "Desde este dispositivo no se puede entrar. Escríbele a Soporte.", "You can't sign in from this device. Contact Support."],
   sin_sesion: [401, "Tu sesión terminó. Entra otra vez.", "Your session ended. Sign in again."],
   nombre_requerido: [400, "Escribe tu nombre y tu apellido.", "Enter your first and last name."],
   sin_proveedor: [503, "No pudimos mandar el código ahora. Inténtalo en un rato.", "We couldn't send the code right now. Try again soon."],
@@ -19,7 +20,7 @@ const MENSAJES: Record<string, [number, string, string]> = {
 export function respuestaError(e: unknown) {
   if (e instanceof ErrorCuenta) {
     const [status, es, en] = MENSAJES[e.codigo] ?? [400, "No se pudo completar.", "Couldn't complete."];
-    return NextResponse.json({ ok: false, error: e.codigo, mensaje: { es, en }, espera: e.espera }, { status });
+    return NextResponse.json({ ok: false, error: e.codigo, mensaje: e.detalle ?? { es, en }, espera: e.espera }, { status });
   }
   console.error("[cuenta]", e);
   return NextResponse.json({ ok: false, error: "interno", mensaje: { es: "Algo falló de nuestro lado. Inténtalo otra vez.", en: "Something failed on our side. Try again." } }, { status: 500 });

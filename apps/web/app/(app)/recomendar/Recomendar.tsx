@@ -73,7 +73,11 @@ export function Recomendar({ v }: { v: VistaRec }) {
       setF(F0); setTried(false); try { localStorage.removeItem(DK); } catch { /* sin almacenamiento */ }
       window.scrollTo(0, 0);
     } else if (r.error === "entrar") router.push(`/entrar?volver=${encodeURIComponent(ruta)}`);
-    else setError(r.error === "repetida" ? E2("Ya recomendaste este negocio. Te avisamos cuando publique.", "You already recommended this business. We will tell you when it joins.")
+    else if (r.error === "silenciado") {
+      const d = r.hasta ? new Date(r.hasta).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long" }) : null;
+      setError(d ? E2(`No puedes publicar hasta el ${d}.${r.motivo ? ` Motivo: ${r.motivo}.` : ""}`, `You can’t post until ${d}.${r.motivo ? ` Reason: ${r.motivo}.` : ""}`)
+        : E2(`No puedes publicar por ahora.${r.motivo ? ` Motivo: ${r.motivo}.` : ""}`, `You can’t post for now.${r.motivo ? ` Reason: ${r.motivo}.` : ""}`));
+    } else setError(r.error === "repetida" ? E2("Ya recomendaste este negocio. Te avisamos cuando publique.", "You already recommended this business. We will tell you when it joins.")
       : r.error === "muchas" ? E2("Ya mandaste muchas recomendaciones hoy. Prueba mañana.", "You sent many recommendations today. Try tomorrow.")
       : E2("No se pudo enviar. Prueba otra vez.", "Couldn’t send. Try again."));
   };

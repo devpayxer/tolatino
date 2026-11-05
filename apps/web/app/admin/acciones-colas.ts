@@ -11,14 +11,14 @@ import { tx } from "@/lib/db";
 export type ResAdm = { ok: true; mensaje?: string; caso?: string } | { ok: false; mensaje: string };
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
 const motivoOk = (m: unknown) => (typeof m === "string" ? m.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 500) : "");
-type Fila = { id: string; queue: Cola; subject_id: string; business_id: string | null; city_id: string; status: string; assigned_to: string | null; assignee: string | null };
+type Fila = { id: string; queue: Cola; subject_kind: string; subject_id: string; business_id: string | null; city_id: string | null; status: string; assigned_to: string | null; assignee: string | null };
 
 async function abrir(c: PoolClient, s: Staff, id: string): Promise<Fila | string> {
   if (!/^\d{1,18}$/.test(String(id))) return "Ese caso no existe.";
   const q = (await c.query<Fila>(
-    `select q.id::text, q.queue, q.subject_id, q.business_id, q.city_id, q.status, q.assigned_to, u.first_name as assignee
+    `select q.id::text, q.queue, q.subject_kind, q.subject_id, q.business_id, q.city_id, q.status, q.assigned_to, u.first_name as assignee
        from queue_items q left join users u on u.id = q.assigned_to where q.id = $1 for update of q`, [id])).rows[0];
-  if (!q || !colasVisibles(s).includes(q.queue) || (s.cities.length && !s.cities.includes(q.city_id))) return "Ese caso no existe.";
+  if (!q || !colasVisibles(s).includes(q.queue) || (s.cities.length && (!q.city_id || !s.cities.includes(q.city_id)))) return "Ese caso no existe.";
   if (q.status !== "open") return "Este caso ya se decidió.";
   return q;
 }
@@ -28,6 +28,7 @@ async function quien(): Promise<Staff | null> {
 }
 const cerrar = (c: PoolClient, q: Fila, s: Staff, decision: string, motivo: string) =>
   c.query(`update queue_items set status = 'decided', decision = $2, reason = $3, decided_by = $4, decided_at = now() where id = $1`, [q.id, decision, motivo, s.id]);
+const EST_CUENTA: Record<string, string> = { active: "activa", muted: "silenciada", suspended: "suspendida", banned: "baneada" };
 const listo = () => { revalidatePath("/admin/colas"); revalidatePath("/admin"); revalidatePath("/admin/negocios"); };
 
 /* Tomar un caso (bloqueo suave: «Lo está viendo X»). */
@@ -182,7 +183,8 @@ export async function decidirLicencia(id: string, accion: "valid" | "expired" | 
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
     if (q.queue !== "lic") return "Ese caso no es de esta cola.";
-    const l = (await c.query<{ status: string; kind: string }>(`select status, kind from licenses where id = $1::bigint for update`, [q.subject_id])).rows[0];
+    const l = (await c.query<{ status: string; kind: string; titulo: string }>(
+      `select l.status, l.kind, coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' as titulo from licenses l join license_kinds k on k.key = l.kind where l.id = $1::bigint for update of l`, [q.subject_id])).rows[0];
     if (!l || l.status === "withdrawn") return "El negocio retiró esa licencia.";
     await c.query(
       `update licenses set status = $2, status_reason = $3, checked_at = now(), checked_by = $4, updated_at = now(),
@@ -192,7 +194,7 @@ export async function decidirLicencia(id: string, accion: "valid" | "expired" | 
     await c.query(`select licencias_refrescar($1)`, [q.business_id]);
     await cerrar(c, q, s, accion, m);
     const L: Record<string, string> = { valid: "verificada", expired: "vencida", not_found: "no se pudo verificar" };
-    await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : accion === "expired" ? "licencia.vencida" : "licencia.no_aparece", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { licencia: l.kind, estado: "por verificar" }, after: { licencia: l.kind, estado: L[accion] }, reason: m });
+    await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : accion === "expired" ? "licencia.vencida" : "licencia.no_aparece", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { licencia: l.titulo, estado: "por verificar" }, after: { licencia: l.titulo, estado: L[accion] }, reason: m });
     return "ok";
   });
   if (r !== "ok") return no(r);
@@ -211,7 +213,7 @@ export async function decidirReclamo(id: string, aprobar: boolean, motivo: strin
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
-    if (q.queue !== "cambio") return "Ese caso no es de esta cola.";
+    if (q.queue !== "cambio" || q.subject_kind !== "claim") return "Ese caso no es de esta cola.";
     const cl = (await c.query<{ id: string; user_id: string; status: string; role: string; owner_notified_at: string | null }>(
       `select id, user_id, status, role, owner_notified_at from claims where id = $1 for update`, [q.subject_id])).rows[0];
     if (!cl || cl.status !== "pending") return "Este reclamo ya se decidió.";
@@ -228,7 +230,8 @@ export async function decidirReclamo(id: string, aprobar: boolean, motivo: strin
       const ya = (await c.query(`update business_members set kind = 'owner', panel_access = '{all}', status = 'active', updated_at = now() where business_id = $1 and user_id = $2 and status = 'active'`, [q.business_id, cl.user_id])).rowCount;
       if (!ya) await c.query(`insert into business_members (business_id, user_id, kind, display_name, phone, panel_access, status) values ($1, $2, 'owner', $3, $4, '{all}', 'active')`, [q.business_id, cl.user_id, u.nombre, u.phone]);
       await c.query(`update businesses set owner_user_id = $2, origin = case when origin = 'self' then origin else 'claim' end, updated_at = now() where id = $1`, [q.business_id, cl.user_id]);
-      await auditar(c, { actor: s.id, action: "negocio.dueno.cambiar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { dueno: b.owner }, after: { dueno: cl.user_id, reclamo: cl.id }, reason: m });
+      const antes = b.owner ? (await c.query<{ n: string }>(`select coalesce(nullif(trim(coalesce(first_name,'') || ' ' || coalesce(last_name,'')), ''), phone) as n from users where id = $1`, [b.owner])).rows[0]?.n : null;
+      await auditar(c, { actor: s.id, action: "negocio.dueno.cambiar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { dueno: antes ?? "sin dueño", ref: { usuario: b.owner } }, after: { dueno: u.nombre, reclamo: cl.id, ref: { usuario: cl.user_id } }, reason: m });
     }
     await c.query(`update claims set status = $2, reason = $3, decided_by = $4, decided_at = now() where id = $1`, [cl.id, aprobar ? "approved" : "rejected", m, s.id]);
     await cerrar(c, q, s, aprobar ? "aprobar" : "rechazar", m);
@@ -238,6 +241,42 @@ export async function decidirReclamo(id: string, aprobar: boolean, motivo: strin
   if (r !== "ok") return no(r);
   listo();
   return { ok: true, mensaje: aprobar ? "Cambio aplicado. Ya es el dueño." : "Listo. Quien reclamó ve el motivo." };
+}
+
+/* Cambios sensibles de una cuenta (por ahora, borrar): lo pide una persona del equipo y lo aplica OTRA. Al aplicar el
+   borrado: la cuenta queda «borrándose» 30 días (se puede restaurar), sus sesiones se cierran y no puede entrar. */
+export async function decidirCambio(id: string, aprobar: boolean, motivo: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(motivo);
+  if (!m) return no("Escribe el motivo.");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "cambio" || q.subject_kind !== "sensitive_change") return "Ese caso no es de esta cola.";
+    const sc = (await c.query<{ id: string; type: string; status: string; target_id: string; requested_by: string }>(
+      `select id, type, status, target_id, requested_by from sensitive_changes where id = $1 for update`, [q.subject_id])).rows[0];
+    if (!sc || sc.status !== "pending") return "Este cambio ya se decidió.";
+    if (sc.requested_by === s.id) return "Lo pediste tú: lo aplica otra persona del equipo.";
+    if (sc.type !== "deleteUser") return "Este cambio todavía no se puede aplicar.";
+    if (aprobar) {
+      const u = (await c.query<{ status: string; staff: boolean }>(
+        `select status, exists (select 1 from staff_members m where m.user_id = u.id and m.status = 'active') as staff from users u where u.id::text = $1 for update`, [sc.target_id])).rows[0];
+      if (!u || ["deleted_pending", "deleted", "merged"].includes(u.status)) return "Esta cuenta ya está borrada.";
+      if (u.staff) return "Es del equipo de To’Latino: quítale el rol en Sistema › Equipo antes.";
+      await c.query(`update users set status = 'deleted_pending', delete_at = now() + interval '30 days', status_until = null where id::text = $1`, [sc.target_id]);
+      await c.query(`update sessions set signed_out_at = now() where user_id::text = $1 and signed_out_at is null`, [sc.target_id]);
+      await auditar(c, { actor: s.id, action: "usuario.borrar", targetKind: "user", targetId: sc.target_id, city: q.city_id, before: { estado: EST_CUENTA[u.status] ?? "activa" }, after: { estado: "borrándose · 30 días de gracia", pedido: sc.id }, reason: m });
+    }
+    await c.query(`update sensitive_changes set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where id = $1`, [sc.id, aprobar ? "applied" : "rejected", s.id, m]);
+    await cerrar(c, q, s, aprobar ? "aplicar" : "rechazar", m);
+    await auditar(c, { actor: s.id, action: aprobar ? "cambio.aplicar" : "cambio.rechazar", targetKind: "sensitive_change", targetId: sc.id, city: q.city_id, before: { estado: "pendiente" }, after: { estado: aprobar ? "aplicado" : "rechazado" }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  revalidatePath("/admin/usuarios");
+  return { ok: true, mensaje: aprobar ? "Aplicado. La cuenta tiene 30 días de gracia." : "Rechazado. Queda en el historial." };
 }
 
 /* Recomendaciones · «Crear semilla»: negocio no reclamado que sale al final de «También en {ciudad}» de su categoría

@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { COLAS, type Cola } from "@/lib/colas";
-import { crearSemilla, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -91,7 +91,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -141,6 +141,18 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Rechazar", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Por qué no se aplica?", sub: "El motivo lo ve quien reclamó.", peligro: true, plantillas: ["El documento no muestra el nombre del negocio", "La dirección no coincide con la página", "No pudimos confirmar que eres del negocio"], hacer: (m) => decidirReclamo(k.id, false, m) }) },
       ];
     }
+    if (k.queue === "cambio" && "cambio" in k && k.cambio) {
+      const c = k.cambio;
+      extra = <A.AdminList rows={[{ initials: (c.nombre ?? "?").slice(0, 1), title: c.nombre ?? "(sin nombre todavía)", sub: `${c.phone}${c.ciudad ? ` · ${c.ciudad}` : ""}`, chevron: true, onClick: () => router.push(`/admin/usuarios/${c.target_id}`) }]} />;
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LO PIDIÓ", v: c.quien ?? "Equipo" }, { k: "AFECTA A", v: "La cuenta y todo lo suyo" }, { k: "PEDIDO", v: `#${c.id}` }, { k: "NEGOCIOS DE LOS QUE ES DUEÑA", v: String(c.negocios) }] });
+      cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `MOTIVO · «${c.reason}»` });
+      cuerpoB.push({ type: "note", tone: "info", t: "Al aplicarlo hay 30 días de gracia para restaurarla. Después se borra todo, también sus transacciones; los pagos con tarjeta quedan solo en Stripe." });
+      if (c.mio) cuerpoB.push({ type: "note", tone: "warn", icon: "lock", t: "Lo pediste tú: lo aplica otra persona del equipo." });
+      acts = c.mio ? [] : [
+        { l: "Aplicar cambio", v: "action", icon: "check", onClick: () => setConf({ titulo: "Confirmar el borrado", sub: "La cuenta no puede entrar desde ahora y tiene 30 días de gracia. Queda en la auditoría.", cta: "Aplicar", peligro: true, hacer: (m) => decidirCambio(k.id, true, m) }) },
+        { l: "Rechazar", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Por qué no se aplica?", hacer: (m) => decidirCambio(k.id, false, m) }) },
+      ];
+    }
     if (k.queue === "lic" && "licencia" in k && k.licencia && n) {
       const l = k.licencia, est = ({ valid: ["Verificada", "var(--tl-open-text)"], expired: ["Vencida", "var(--tl-danger)"], not_found: ["No aparece", "var(--tl-danger)"], revoked: ["No aparece", "var(--tl-danger)"] } as Record<string, [string, string]>)[l.status] ?? ["Por verificar", "var(--tl-pro-ink)"];
       cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LICENCIA", v: l.title }, { k: "PUEDE", v: l.can }, { k: "NÚMERO", v: l.number ? `${l.label} ${l.number}` : "No lo dio" }, { k: "ESTADO HOY", v: est[0], fg: est[1] }, { k: "ÚLTIMA REVISIÓN", v: l.checked ? new Date(l.checked).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—" }, { k: "REGISTRO", v: l.site }] });
@@ -181,15 +193,16 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Descartar", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Por qué se descarta?", peligro: true, hacer: (m) => decidirRec(k.id, "descartar", m) }) },
       ];
     }
+    const arriba = k.queue === "medios" || ("cambio" in k && !!k.cambio);
     if (conf) return <><PanelBloques bloques={[out[0]!]} h1={22} /><ConfirmarMotivo c={conf} desk={false} onBack={() => setConf(null)} onDone={hecho} /></>;
     return (
       <>
         <PanelBloques bloques={out} h1={22} />
         {notas}
-        {extra && k.queue === "medios" ? extra : null}
+        {extra && arriba ? extra : null}
         {filaNeg}
         <PanelBloques bloques={cuerpoB} />
-        {extra && k.queue !== "medios" ? extra : null}
+        {extra && !arriba ? extra : null}
         {k.queue === "sello" ? <A.AdminNote tone="ink" icon="shield">Nunca se piden documentos de identidad para el sello.</A.AdminNote> : null}
         {k.puedeDecidir ? <PanelBloques bloques={[{ type: "acts", items: acts.map((a) => ({ ...a, off: a.off || pend })) }]} /> : null}
       </>

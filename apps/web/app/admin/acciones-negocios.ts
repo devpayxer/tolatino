@@ -40,6 +40,7 @@ async function hacer(id: string, accion: "editar" | "retirar", motivo: unknown, 
   listo(id);
   return { ok: true, mensaje: ok };
 }
+const LIC_EST: Record<string, string> = { review: "en revisión", valid: "verificada", expired: "vencida", not_found: "no se pudo verificar", revoked: "no se pudo verificar" };
 const ESTADO_L: Record<string, string> = { active: "visible", hidden: "oculto", suspended: "suspendido", closed: "cerrado", temp_closed: "cerrado temporal", draft: "borrador" };
 
 /* Ocultar · Suspender · Cerrar (neg:retirar; cerrar solo el rol Admin). Sale de búsquedas y de la categoría. */
@@ -175,7 +176,8 @@ export async function nota(id: string, texto: string): Promise<ResAdm> {
 export async function licencia(id: string, licId: string, accion: "valid" | "not_found", motivo: string): Promise<ResAdm> {
   if (!/^\d{1,18}$/.test(String(licId)) || !["valid", "not_found"].includes(accion)) return no("Esa licencia no existe.");
   return hacer(id, "editar", motivo, async (c, s, b, m) => {
-    const l = (await c.query<{ kind: string; status: string }>(`select kind, status from licenses where id = $1::bigint and business_id = $2 for update`, [licId, b.id])).rows[0];
+    const l = (await c.query<{ kind: string; status: string; titulo: string }>(
+      `select l.kind, l.status, coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' as titulo from licenses l join license_kinds k on k.key = l.kind where l.id = $1::bigint and l.business_id = $2 for update of l`, [licId, b.id])).rows[0];
     if (!l || l.status === "withdrawn") return "Esa licencia no existe.";
     await c.query(
       `update licenses set status = $2, status_reason = $3, checked_at = now(), checked_by = $4, updated_at = now(),
@@ -183,7 +185,7 @@ export async function licencia(id: string, licId: string, accion: "valid" | "not
               next_review = case when $2 = 'valid' then (now() + interval '3 months')::date else next_review end where id = $1::bigint`, [licId, accion, m, s.id]);
     await c.query(`select licencias_refrescar($1)`, [b.id]);
     await c.query(`update queue_items set status = 'decided', decision = $2, reason = $3, decided_by = $4, decided_at = now() where queue = 'lic' and subject_id = $1 and status = 'open'`, [String(licId), accion, m, s.id]);
-    await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : "licencia.no_aparece", targetKind: "business", targetId: b.id, city: b.city_id, before: { licencia: l.kind, estado: l.status }, after: { licencia: l.kind, estado: accion === "valid" ? "verificada" : "no se pudo verificar" }, reason: m });
+    await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : "licencia.no_aparece", targetKind: "business", targetId: b.id, city: b.city_id, before: { licencia: l.titulo, estado: LIC_EST[l.status] ?? "en revisión" }, after: { licencia: l.titulo, estado: accion === "valid" ? "verificada" : "no se pudo verificar" }, reason: m });
     return null;
   }, accion === "valid" ? "Licencia verificada." : "Listo. Quedó en la auditoría.");
 }

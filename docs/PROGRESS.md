@@ -247,7 +247,7 @@ _Actualizado: 5 nov 2026._
   comprobaciones → ficha y panel; nuevo «Todo bien»; cierre temporal → ficha y panel → reabrir; editar nombre →
   aviso en el panel; admin en teléfono; el dueño no entra al admin). Ayuda: `docs/ayuda/admin-negocios.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
-  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓ · 1k Licencia ✓ · 1j Recuperar negocio + semillas ✓.
+  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓ · 1k Licencia ✓ · 1j Recuperar negocio + semillas ✓ · 1l Usuarios 360° ✓.
 - **Fase 1 · bloque 1k Licencia ✓ (5 nov, espera OK del fundador):** `/n/{id}/licencia` (diseño «Licencia», portado
   1:1: línea fija, una tarjeta por licencia con estado real, número, próxima revisión y registro oficial, «Cómo la
   verificamos»), tarjeta «¿Puede hacerlo por ley?» en el Resumen de la ficha (Pro; va a Servicios cuando exista esa
@@ -269,7 +269,19 @@ _Actualizado: 5 nov 2026._
   (código → pendiente; documento sobre negocio con dueño → aviso en su panel y bloqueo antes de 7 días; aplicar →
   «Ya es tuyo» → panel; semilla en la categoría; documento sin permiso → 404; sin errores de consola).
   Ayuda: `docs/ayuda/recuperar-negocio.md` (+ `admin-negocios.md`).
-  Sigue (PLAN fila 1): Usuarios 360° completo · Catálogo · analítica propia (eventos).
+- **Fase 1 · bloque 1l Usuarios 360° ✓ (5 nov, espera OK del fundador):** lista `/admin/usuarios` (buscar por nombre,
+  teléfono, correo o id; QUIÉN, ESTADO, más filtros, ordenar; tabla densa / filas) y 360° `/admin/usuarios/{id}` con
+  Resumen, Seguridad, Confianza y Privacidad (Actividad, Dinero y Comunidad llegan con sus módulos). Migración 0019:
+  `sanctions` (adv, mute7, nopub, susp14, ban; se levantan solas o por una persona), `cuenta_estado()`, dispositivo de
+  cada sesión (cookie `tl_dev`) y `blocked_devices`, `sensitive_changes` (borrar cuenta: lo pide una persona y lo
+  aplica otra; 30 días de gracia; Admin restaura). Entrar respeta suspensión (con fecha y motivo), baneo, borrado y
+  dispositivo bloqueado; Recomendar respeta el silencio; Mi cuenta muestra advertencia y silencio. Exportar datos
+  (JSON, auditado). Guardián nuevo `auditoriaLegible` (cazó también el cambio de dueño con ids y la licencia con su
+  estado interno). Probado con Playwright: silencio → no recomienda; suspensión → no entra y ve hasta cuándo;
+  levantar; bloquear dispositivo → otra cuenta no entra; ciudad → lista de espera; exportar; borrar (quien lo pide no
+  lo aplica, otro Admin sí) → no entra → restaurar; Soporte no ve Sancionar ni Exportar.
+  Ayuda: `docs/ayuda/admin-usuarios.md` (+ `cuenta-entrar.md`, `admin-negocios.md`).
+  Sigue (PLAN fila 1): Catálogo · analítica propia (eventos).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

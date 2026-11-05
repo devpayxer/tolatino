@@ -1,5 +1,5 @@
 import "server-only";
-import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { db, tx } from "./db";
 import { MODO_SMS, secretoAuth } from "./entorno";
@@ -17,10 +17,23 @@ const MAX_POR_TELEFONO_HORA = 5;
 const MAX_POR_IP_HORA = 20;
 
 export class ErrorCuenta extends Error {
-  constructor(public codigo: string, public espera?: number) {
+  constructor(public codigo: string, public espera?: number, public detalle?: { es: string; en: string }) {
     super(codigo);
   }
 }
+
+/* Identificador aleatorio del dispositivo (cookie tl_dev, 5 años, solo el servidor la lee): cuentas en el mismo
+   dispositivo y «Bloquear dispositivo» del Super Admin. Borrar las cookies lo cambia; es una señal, no una prueba. */
+export async function dispositivo(crear: boolean): Promise<string | null> {
+  const jar = await cookies();
+  const v = jar.get("tl_dev")?.value;
+  if (v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v)) return v;
+  if (!crear) return null;
+  const n = randomUUID();
+  jar.set("tl_dev", n, { path: "/", maxAge: 5 * 365 * 86400, sameSite: "lax", httpOnly: true });
+  return n;
+}
+const fechaCorta = (d: string | Date, en = false) => new Date(d).toLocaleDateString(en ? "en-US" : "es-US", { day: "numeric", month: "long", year: "numeric", timeZone: "America/New_York" });
 
 /* (570) 555-0134 → +15705550134. Solo EE. UU. por ahora (+1, área 2–9). */
 export function normalizarTelefono(entrada: string): string | null {
@@ -70,6 +83,7 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
   if (!tel || !/^\d{6}$/.test(codigo)) throw new ErrorCuenta("codigo_invalido");
   const ip = await ipCliente();
   const h = await headers();
+  const dev = await dispositivo(true);
 
   const res = await tx(async (c) => {
     const o = await c.query<{ id: number; code_hash: string; attempts: number }>(
@@ -89,24 +103,39 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
     }
     await c.query("update otp_codes set used_at = now() where id = $1", [fila.id]);
 
-    const u = await c.query<{ id: string; first_name: string | null; status: string; nuevo: boolean }>(
+    if ((await c.query(`select 1 from blocked_devices where device = $1::uuid and lifted_at is null`, [dev])).rowCount)
+      return { error: "dispositivo_bloqueado" as const };
+    const u = await c.query<{ id: string; first_name: string | null; status: string; until: string | null; delete_at: string | null; nuevo: boolean }>(
       `insert into users (phone, phone_verified_at) values ($1, now())
        on conflict (phone) do update set phone_verified_at = coalesce(users.phone_verified_at, now()), last_seen_at = now()
-       returning id, first_name, status, (xmax = 0) as nuevo`,
+       returning id, first_name, cuenta_estado(status, status_until) as status, status_until as until, delete_at, (xmax = 0) as nuevo`,
       [tel],
     );
     const user = u.rows[0]!;
-    if (["suspended", "banned", "deleted", "merged"].includes(user.status)) throw new ErrorCuenta("cuenta_bloqueada");
+    // Lo que la persona ve al intentar entrar: el estado, hasta cuándo y el motivo (sanción o borrado).
+    if (["suspended", "banned", "deleted_pending", "deleted", "merged"].includes(user.status)) {
+      const m = (await c.query<{ reason: string }>(
+        `select reason from sanctions where target_kind = 'user' and target_id = $1::text and lifted_at is null and kind in ('susp14', 'ban') order by starts_at desc limit 1`, [user.id])).rows[0]?.reason;
+      const por = m ? { es: ` Motivo: ${m}.`, en: ` Reason: ${m}.` } : { es: "", en: "" };
+      const det = user.status === "suspended" && user.until
+        ? { es: `Tu cuenta está suspendida hasta el ${fechaCorta(user.until)}.${por.es}`, en: `Your account is suspended until ${fechaCorta(user.until, true)}.${por.en}` }
+        : user.status === "deleted_pending" && user.delete_at
+          ? { es: `Esta cuenta se está borrando: se borra del todo el ${fechaCorta(user.delete_at)}. Si fue un error, escríbele a Soporte antes.`, en: `This account is being deleted: it is fully erased on ${fechaCorta(user.delete_at, true)}. If this is a mistake, contact Support before then.` }
+          : { es: `Esta cuenta no puede entrar.${por.es} Escríbele a Soporte.`, en: `This account can't sign in.${por.en} Contact Support.` };
+      return { error: "cuenta_bloqueada" as const, detalle: det };
+    }
+    // Un silencio o una suspensión que ya venció se levanta sola.
+    await c.query(`update users set status = 'active', status_until = null where id = $1 and status in ('muted', 'suspended') and status_until <= now()`, [user.id]);
 
     const token = randomBytes(32).toString("base64url");
     await c.query(
-      `insert into sessions (user_id, token_hash, ip, user_agent, expires_at)
-       values ($1, $2, $3::inet, $4, now() + make_interval(days => $5))`,
-      [user.id, huellaToken(token), ip, (h.get("user-agent") || "").slice(0, 300), SESION_DIAS],
+      `insert into sessions (user_id, token_hash, ip, user_agent, expires_at, device)
+       values ($1, $2, $3::inet, $4, now() + make_interval(days => $5), $6::uuid)`,
+      [user.id, huellaToken(token), ip, (h.get("user-agent") || "").slice(0, 300), SESION_DIAS, dev],
     );
     return { token, nuevo: user.nuevo, nombre: user.first_name };
   });
-  if ("error" in res) throw new ErrorCuenta(res.error!);
+  if ("error" in res) throw new ErrorCuenta(res.error!, undefined, "detalle" in res ? res.detalle : undefined);
 
   const seguro = (h.get("x-forwarded-proto") || "").includes("https");
   (await cookies()).set(COOKIE, res.token, {
@@ -119,7 +148,7 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
   return { nuevo: res.nuevo, nombre: res.nombre };
 }
 
-export type Yo = { id: string; phone: string; first_name: string | null; last_name: string | null; nick: string | null; lang: string };
+export type Yo = { id: string; phone: string; first_name: string | null; last_name: string | null; nick: string | null; lang: string; estado: string; hasta: string | null };
 
 export async function yo(): Promise<Yo | null> {
   const t = (await cookies()).get(COOKIE)?.value;
@@ -128,8 +157,8 @@ export async function yo(): Promise<Yo | null> {
     `update sessions s set last_seen_at = now()
        from users u
       where s.token_hash = $1 and s.user_id = u.id and s.signed_out_at is null and not s.blocked
-        and s.expires_at > now() and u.status in ('active', 'muted')
-      returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang`,
+        and s.expires_at > now() and cuenta_estado(u.status, u.status_until) in ('active', 'muted')
+      returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang, cuenta_estado(u.status, u.status_until) as estado, u.status_until as hasta`,
     [huellaToken(t)],
   );
   return r.rows[0] ?? null;

@@ -148,7 +148,6 @@ en el momento. Se marca solo cuando está hecho de verdad.
   cola vive en código; pasarla a la base si el Super Admin la quiere editar.
 - [ ] **Lista de Negocios con OFFSET** (14 por página, tope 100 páginas) y filtros de transacciones, Stripe, licencias,
   «sin actividad 30 d», «Exportar CSV» (servidor + auditoría): con sus datos.
-- [ ] **Usuarios 360° completo** (actividad, dinero, comunidad, seguridad, privacidad): bloques siguientes.
 - [ ] **«Teléfono verificado» del negocio** = el teléfono del negocio es el del dueño que entró con código. Verificar
   un teléfono distinto (llamada o SMS) llega con el proveedor de SMS.
 
@@ -175,3 +174,20 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **«Llamar» desde una semilla** abre el teléfono pero aún no se cuenta (la tabla `contact_taps` ya admite `seed_id`).
 - [ ] **Guardián de tipos de parámetros SQL:** el error «inconsistent types deduced for parameter» salió dos veces
   (mismo `$n` usado como texto y uuid). Hoy lo caza la prueba punta a punta; falta un guardián estático.
+
+## Usuarios 360° (bloque 1l, 5 nov 2026)
+- [ ] **Pestañas Actividad, Dinero y Comunidad** y los KPI del encabezado (pedidos, citas, Wallet, rango): con sus
+  módulos. Igual la columna RANGO/ACTIVIDAD de la lista y los filtros «Con reportes», «Con saldo en Wallet», rango y
+  «Promotores».
+- [ ] **Enviar mensaje** (SMS/push, AdminMessage) y **avisos por SMS** de sanciones: con las notificaciones (Fase 2).
+- [ ] **Apelaciones** (cola de 72 h y botón en Mi cuenta): con Soporte / Confianza y seguridad. Hoy la persona ve el
+  motivo y «Escríbele a Soporte».
+- [ ] **Fusionar cuentas**: el pedido y su aplicación mueven todo lo de una cuenta a otra; se construye con un guardián
+  que obligue a cada tabla nueva con `users` a declarar cómo se fusiona. No está en este bloque.
+- [ ] **Borrado definitivo a los 30 días** (y qué pasa con sus negocios: quedan sin reclamar): trabajos programados.
+- [ ] **«Ver como (solo lectura)»**, términos aceptados y avisos que recibe (Privacidad): con Mi cuenta completa.
+- [ ] **Decisiones tomadas sin el diseño (confirmar con el fundador):** textos de Mi cuenta y de Recomendar para la
+  persona silenciada o advertida; textos al entrar (suspendida, borrándose, dispositivo bloqueado); «Silencio» y
+  «Bloquear publicación» frenan Recomendar (no hay Comunidad todavía); no se sanciona ni borra a alguien del equipo.
+- [ ] **Lista de Usuarios con OFFSET** (14 por página, tope 100 páginas) y conteos con `count(*)`: cambiar a cursor
+  cuando haga falta.

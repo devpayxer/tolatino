@@ -16,23 +16,6 @@ export async function accionArranque(_: Resultado | null, f: FormData): Promise<
   redirect("/admin");
 }
 
-export async function cerrarSesion(_: Resultado | null, f: FormData): Promise<Resultado> {
-  const s = await requerir("usr", "editar");
-  const id = String(f.get("sesion") ?? ""), motivo = motivoOk(f.get("motivo")), bloquear = f.get("bloquear") === "1";
-  if (!motivo) return { ok: false, mensaje: "Escribe el motivo." };
-  await tx(async (c) => {
-    const r = await c.query<{ user_id: string }>(
-      `update sessions set signed_out_at = coalesce(signed_out_at, now()), blocked = blocked or $2
-        where id = $1 returning user_id`,
-      [id, bloquear],
-    );
-    if (!r.rows[0]) throw new Error("sesión no encontrada");
-    await auditar(c, { actor: s.id, action: bloquear ? "usuario.sesion.bloquear" : "usuario.sesion.cerrar", targetKind: "session", targetId: id, after: { user: r.rows[0].user_id, bloqueada: bloquear }, reason: motivo });
-  });
-  revalidatePath("/admin/usuarios");
-  return { ok: true, mensaje: bloquear ? "Sesión cerrada y dispositivo bloqueado." : "Sesión cerrada." };
-}
-
 export async function cambiarPermiso(_: Resultado | null, f: FormData): Promise<Resultado> {
   const s = await requerir("sys", "editar");
   const role = String(f.get("rol")), section = String(f.get("seccion")), action = String(f.get("accion")) as Accion;

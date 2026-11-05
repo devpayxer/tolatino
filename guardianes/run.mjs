@@ -154,6 +154,18 @@ const guardianes = {
     }
   },
 
+  /* El historial del admin lo lee una persona: nada de valores internos (estado en inglés, ids) en el antes → después.
+     Lo interno va dentro de `ref: { … }` (se guarda, no se muestra). Clase cazada en 1l: «active → Silencio 7 días». */
+  auditoriaLegible() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.ts$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        const x = l.replace(/ref: \{[^}]*\}/g, "");
+        if (/(before|after): \{[^}]*:\s*[a-z]\w*\.(status|estado|kind|owner|device|user_id|owner_user_id)\s*[,}]/.test(x)) falla("auditoriaLegible", f, i + 1, "valor interno en el historial: tradúcelo o muévelo a ref");
+      });
+    }
+  },
+
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
   idioma() {
     for (const f of codigo) {
