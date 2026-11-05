@@ -3,3 +3,4 @@
 export { Wordmark } from "./core/Wordmark";
 export * from "./ds/index";
 export { CATALOGO } from "./ds/catalogo";
+export { PanelBloque, PanelBloques, type Bloque as PanelBloqueT, type Fila as PanelFila, type Accion as PanelAccion, type Dia as PanelDia } from "./panel/Bloques";
