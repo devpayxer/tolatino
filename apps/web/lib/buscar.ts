@@ -47,7 +47,7 @@ export type Entendido = { intenciones: { k: string; frase: string; label: { es: 
 /* Entender la búsqueda. `vivo` = mientras se escribe: la última palabra cuenta como prefijo. */
 export async function entender(q: string, vivo = false): Promise<Entendido> {
   const D = await diccionario();
-  let n = ` ${N(q).replace(/[^a-z0-9/ ]+/g, " ").replace(/\s+/g, " ").trim()} `;
+  let n = ` ${N(q).replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim()} `;
   for (const [a, b] of D.frases) n = n.split(` ${a} `).join(` ${b} `);
   const intenciones: Entendido["intenciones"] = [];
   for (const [frase, k] of D.intenciones) {
