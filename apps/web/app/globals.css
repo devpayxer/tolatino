@@ -4,6 +4,22 @@
 
 /* Los tokens del sistema (docs/diseno/design-system/tokens) expuestos a Tailwind.
    Regla: ningún componente usa hex a pelo; solo estos nombres. */
+
+/* Fuentes alojadas en el repo (public/fuentes, licencia OFL, Fontsource 5.3.0). Nada se descarga de Google:
+   el 5 nov un fallo de Google Fonts tumbó el CI (guardián buildSinRed). Subconjunto latino: incluye ñ, tildes, ¿ ¡. */
+@font-face { font-family: "Sora"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fuentes/sora-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Sora"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fuentes/sora-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Sora"; font-style: normal; font-weight: 800; font-display: swap; src: url("/fuentes/sora-latin-800-normal.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fuentes/manrope-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fuentes/manrope-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fuentes/manrope-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fuentes/manrope-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Manrope"; font-style: normal; font-weight: 800; font-display: swap; src: url("/fuentes/manrope-latin-800-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fuentes/jetbrains-mono-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fuentes/jetbrains-mono-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fuentes/jetbrains-mono-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 800; font-display: swap; src: url("/fuentes/jetbrains-mono-latin-800-normal.woff2") format("woff2"); }
+
 @theme {
   /* Cortes del prototipo: escritorio desde 1024; columna derecha (c3) desde 1200. */
   --breakpoint-xl: 75rem;
@@ -38,11 +54,11 @@
   --color-photo-bg-2: var(--tl-photo-bg-2);
   --color-mint-soft: var(--tl-mint-soft);
 
-  /* next/font carga Sora / Manrope / JetBrains Mono (self-hosted) y los expone como --font-sora/-manrope/-jetbrains;
-     aquí toman el nombre del sistema. (No usar var(--font-display) aquí: sería un ciclo y la fuente se perdería.) */
-  --font-display: var(--font-sora), "Sora", sans-serif;
-  --font-body: var(--font-manrope), "Manrope", system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), "JetBrains Mono", monospace;
+  /* Sora / Manrope / JetBrains Mono con su nombre exacto (@font-face abajo): los componentes del sistema los piden
+     por nombre en sus estilos, así que el nombre registrado tiene que ser ese. */
+  --font-display: "Sora", sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
   --radius-tag: var(--radius-tag);
   --radius-chip: var(--radius-chip-sq);

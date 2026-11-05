@@ -134,6 +134,12 @@ _Actualizado: 5 nov 2026._
     sin horario.
   - Guardián nuevo `rutasVivas`: ningún enlace a una pantalla que no existe (probado al revés).
   - Arreglo de 1c: el buscador del encabezado en el teléfono dice «Buscar en Hazleton» (como el prototipo).
+  - **Fuentes alojadas en el repo** (`apps/web/public/fuentes`, OFL, Fontsource 5.3.0) con `@font-face` y el nombre
+    exacto del sistema (Sora, Manrope, JetBrains Mono). Motivo: el CI del 1d falló porque Google Fonts no respondió
+    bien durante el build, y además los componentes del sistema piden las fuentes por nombre y `next/font` las
+    registraba con nombres generados: JetBrains Mono nunca cargaba (las líneas en mono salían con la fuente del
+    sistema). Guardián nuevo `buildSinRed` (nada de Google Fonts en el build; probado al revés). `rutasVivas` ahora
+    acepta archivos de `public/`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha Pro/Free ·
   1f Buscar · 1g Publica tu negocio v2 · 1h panel base · 1i admin Negocios + colas.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
