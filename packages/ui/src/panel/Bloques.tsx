@@ -21,7 +21,7 @@ export type Fila = {
 export type Dia = { d: string; today?: boolean; h: string; hFg?: string; on: boolean; open?: boolean; onOpen?: Fn; onTg?: Fn; aL?: string; bL?: string; aM?: Fn; aP?: Fn; bM?: Fn; bP?: Fn; a2L?: string; b2L?: string; a2M?: Fn; a2P?: Fn; b2M?: Fn; b2P?: Fn; twoL?: string; onTwo?: Fn; onCopy?: Fn };
 export type Bloque =
   | { type: "head"; t: string; s?: string; eye?: string; onBack?: Fn; act?: Accion; h1?: number }
-  | { type: "hero"; t: string; ph?: string; ini?: string; st: string; stFg: string; stDot: string; plan?: string; planV?: string; kpis: { v: string; k: string; s?: string; sFg?: string; onClick?: Fn }[]; acts: { l: string; icon: string; bg?: string; fg?: string; onClick?: Fn }[] }
+  | { type: "hero"; t: string; s?: string; kn?: number; ph?: string; ini?: string; st: string; stFg: string; stDot: string; plan?: string; planV?: string; kpis: { v: string; k: string; s?: string; sFg?: string; onClick?: Fn }[]; acts: { l: string; icon: string; bg?: string; fg?: string; onClick?: Fn }[] }
   | { type: "kpis"; cols?: string; items: { k: string; v: string; s?: string; sFg?: string; bg?: string; fg?: string; bd?: string; onClick?: Fn }[] }
   | { type: "tabs"; items: { l: string; n?: string; on: boolean; onClick: Fn }[] }
   | { type: "chips"; k?: string; help?: string; items: { l: string; v: string; onClick?: Fn }[] }
@@ -61,11 +61,12 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
           <span style={{ width: 46, height: 46, borderRadius: 14, backgroundImage: b.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "rgba(255,255,255,.12)", display: "grid", placeItems: "center", font: "800 16px/1 Sora,sans-serif", flex: "none" }}>{b.ini}</span>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: "block", font: "800 19px/1.15 Sora,sans-serif", letterSpacing: "-.03em" }}>{b.t}</span>
+            {b.s ? <span style={{ display: "block", marginTop: 3, font: "500 12.5px/1.4 Manrope,sans-serif", color: "rgba(255,255,255,.7)" }}>{b.s}</span> : null}
             <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: b.stFg }}><span style={{ width: 6, height: 6, borderRadius: 99, background: b.stDot }} />{b.st}</span>
           </span>
           {b.plan ? <Chip variant={b.planV ?? "pro"}>{b.plan}</Chip> : null}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${b.kn ?? 3},minmax(0,1fr))`, gap: 8 }}>
           {b.kpis.map((k, i) => (
             <span key={i} role={k.onClick ? "button" : undefined} onClick={k.onClick} style={{ padding: 10, borderRadius: 13, background: "rgba(255,255,255,.08)", display: "flex", flexDirection: "column", gap: 3, cursor: "pointer" }}>
               <span style={{ font: "800 20px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{k.v}</span>
@@ -73,9 +74,9 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
               {k.s ? <span style={{ font: "600 10.5px Manrope,sans-serif", color: k.sFg ?? "rgba(255,255,255,.7)" }}>{k.s}</span> : null}
             </span>))}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {b.acts.length ? <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {b.acts.map((a, i) => <span key={i} role="button" onClick={a.onClick} style={{ height: 36, padding: "0 13px", borderRadius: 11, background: a.bg ?? "rgba(255,255,255,.12)", color: a.fg ?? "var(--tl-white)", display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", cursor: "pointer" }}><Icon name={a.icon} size={15} color={a.fg ?? "var(--tl-white)"} />{a.l}</span>)}
-        </div>
+        </div> : null}
       </div>);
     case "kpis": return (
       <div style={{ display: "grid", gridTemplateColumns: b.cols ?? "repeat(2,minmax(0,1fr))", gap: 8 }}>

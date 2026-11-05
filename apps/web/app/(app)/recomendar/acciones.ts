@@ -31,10 +31,14 @@ export async function enviarRecomendacion(r: Recomendacion): Promise<RespRec> {
   const n = (await db().query<{ n: number }>(`select count(*)::int as n from recommendations where by_user_id = $1 and created_at > now() - interval '1 day'`, [me.id])).rows[0]?.n ?? 0;
   if (n >= 20) return { ok: false, error: "muchas" };
   const ins = await db().query<{ id: string; at: string }>(
-    `insert into recommendations (by_user_id, city_id, business_name, category_id, "where", address, contact_phone, contact_kind, how_known, is_mine, reveal_me, note)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-     on conflict do nothing
-     returning id::text, to_char(created_at at time zone (select timezone from cities where id = $2), 'HH12:MI AM') as at`,
+    // La recomendación y su caso en la cola «Recomendaciones de vecinos» del Super Admin, en una sola sentencia.
+    `with ins as (
+       insert into recommendations (by_user_id, city_id, business_name, category_id, "where", address, contact_phone, contact_kind, how_known, is_mine, reveal_me, note)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       on conflict do nothing
+       returning id, city_id, created_at),
+     caso as (insert into queue_items (queue, subject_kind, subject_id, city_id) select 'rec', 'recommendation', id::text, city_id from ins on conflict do nothing)
+     select id::text, to_char(created_at at time zone (select timezone from cities where id = $2), 'HH12:MI AM') as at from ins`,
     [me.id, c.id, name, cat, casa ? "sin_local" : "address", casa ? null : where, contacto, kind, know, know === "mio", !!r.show, why || null]);
   if (!ins.rows[0]) return { ok: false, error: "repetida" };
   return { ok: true, id: ins.rows[0].id, at: ins.rows[0].at.replace(/^0/, ""), name, ciudad: c.name };

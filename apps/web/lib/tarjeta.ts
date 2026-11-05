@@ -15,8 +15,9 @@ export function hora12(hm: string) {
 const min = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number); return h * 60 + m; };
 
 /* «Abierto · hasta 8 PM» · «Cerrado · abre 11 AM» · «Cerrado · abre vie 8 AM» · «Abierto · 24 horas». */
-export function estado(dias: Dia[], ahora: { dow: number; hm: string }, abierto: boolean, lang: Lang, nota?: { es: string; en: string } | null, cerradoHoy = false) {
+export function estado(dias: Dia[], ahora: { dow: number; hm: string }, abierto: boolean, lang: Lang, nota?: { es: string; en: string } | null, cerradoHoy = false, cerradoTemp = false) {
   const es = lang === "es";
+  if (cerradoTemp) return { open: false, text: es ? "Cerrado temporalmente" : "Temporarily closed" }; // To'Latino lo cerró unos días
   if (cerradoHoy) {
     // «Cerrar por hoy» (panel · Hoy): hoy no abre; se busca desde mañana.
     for (let k = 1; k <= 7; k++) {

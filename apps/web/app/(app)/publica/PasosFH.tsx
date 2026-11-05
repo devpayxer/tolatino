@@ -147,7 +147,7 @@ function fuerza(d: Borrador, p: Publicado, es: boolean) {
     [false, 4, E2("Marca lo que hay en tu negocio", "Mark what your place offers"), E2("Estacionamiento, tarjeta, para niños…", "Parking, cards, kid friendly…"), "grid"],
   ];
   // A qué apartado del panel lleva cada tarea (strength del diseño: part). Las de apartados que aún no existen no llevan a ninguno.
-  const PART = ["", "fotos", "about", "fotos", "", "", "", "", "equipo", "hor", "about"];
+  const PART = ["", "fotos", "about", "fotos", "ver", "ver", "", "", "equipo", "hor", "about"];
   const got = T.reduce((a, t) => a + (t[0] ? t[1] : 0), 0), max = T.reduce((a, t) => a + t[1], 0);
   return { sc: Math.round(30 + (70 * got) / max), tasks: T.map((t, i) => ({ ok: t[0], p: t[1], t: t[2], g: t[3], icon: t[4], part: PART[i] ?? "" })).filter((t) => !t.ok) };
 }

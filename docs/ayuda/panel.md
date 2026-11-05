@@ -13,6 +13,10 @@ Es donde el dueño maneja su página de To'Latino. Todo lo que cambia aquí se v
 - **Fotos y portada:** portada (siempre la primera foto), logo aparte y la galería; tocar una foto para moverla,
   ponerla de portada o quitarla.
 - **Quiénes somos:** el texto del negocio (300 letras, en español y, si quiere, en inglés) y lo que hay en el local.
+- **Verificación y sello:** el teléfono, el correo y el sello Verificado. «Solicitar sello» lo manda a revisión del
+  equipo (unas 48 h); si piden un dato, «Ya lo mandé» lo devuelve a revisión; se puede cancelar mientras espera.
+- **Avisos de To'Latino:** si el equipo oculta, suspende o cierra la página por unos días, corrige el nombre o
+  «Quiénes somos», quita una foto o el sello, el panel lo dice con el motivo.
 - **Equipo:** quién sale en la página. Se invita con nombre, teléfono y qué hace; solo sale quien acepta. Cada persona
   pone su foto, sus palabras y sus idiomas; el negocio pone el rol, desde cuándo, las especialidades y el horario.
 

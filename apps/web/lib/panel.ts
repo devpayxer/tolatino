@@ -18,7 +18,7 @@ export async function accesoPanel(negocioId: string, parte?: string): Promise<Ac
   const r = (await db().query<{ id: string; name: string; city_id: string; category_id: string; status: string; kind: Acceso["kind"]; panel_access: string[] }>(
     `select b.id, b.name, b.city_id, b.category_id, b.status, m.kind, m.panel_access
        from business_members m join businesses b on b.id = m.business_id
-      where m.business_id = $1 and m.user_id = $2 and m.status = 'active' and b.status not in ('merged', 'closed')
+      where m.business_id = $1 and m.user_id = $2 and m.status = 'active' and b.status <> 'merged'
       order by (m.kind = 'owner') desc limit 1`, [negocioId, me.id])).rows[0];
   if (!r) return null;
   const partes = r.kind === "owner" ? ["all"] : r.panel_access ?? [];
@@ -35,7 +35,7 @@ export async function misNegocios(userId: string) {
             (select x.url from media x where x.owner_kind = 'business' and x.owner_id = b.id and x.status = 'visible' order by x.sort limit 1) as foto,
             b.category_attrs->'onb'->'trial'->>'until' as until, (b.category_attrs->'onb'->'trial'->>'days')::int as days
        from business_members m join businesses b on b.id = m.business_id left join business_stats_cache s on s.business_id = b.id
-      where m.user_id = $1 and m.status = 'active' and b.status not in ('merged', 'closed')
+      where m.user_id = $1 and m.status = 'active' and b.status <> 'merged'
       order by (m.kind = 'owner') desc, b.created_at`, [userId])).rows;
 }
 
@@ -59,6 +59,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     id: string; name: string; cat: string; city: string; ciudad: string; status: string; plan: string; verified: boolean; review_count: number;
     attrs: Record<string, any>; logo: string | null; about: Bi | null; amen: string[]; op: string; from_home: boolean; mods: string[];
     email_ok: boolean; owner: string | null; tz: string; dow: number; hm: string; hoy: string; hora: number; open: boolean; closed_today: boolean; created: string;
+    status_reason: string | null; temp_until: string | null; temp_reason: string | null; admin_edits: Record<string, unknown>; phone: string | null; owner_phone: string | null;
+    email: string | null; sello: string | null; sello_note: string | null;
   }>(
     `select b.id, b.name, b.category_id as cat, b.city_id as city, c.name as ciudad, b.status, coalesce(s.plan, 'free') as plan,
             coalesce(s.verified, false) as verified, coalesce(s.review_count, 0) as review_count, b.category_attrs as attrs, b.logo_url as logo,
@@ -67,7 +69,11 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
             extract(dow from now() at time zone c.timezone)::int as dow, to_char(now() at time zone c.timezone, 'HH24:MI') as hm,
             to_char(now() at time zone c.timezone, 'YYYY-MM-DD') as hoy, extract(hour from now() at time zone c.timezone)::int as hora,
             negocio_abierto(b.id, (now() at time zone c.timezone)::timestamp) as open,
-            coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as closed_today, b.created_at as created
+            coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as closed_today, b.created_at as created,
+            b.status_reason, case when b.temp_closed_until > now() then b.temp_closed_until end as temp_until, b.temp_closed_reason as temp_reason, b.admin_edits,
+            b.phone, u.phone as owner_phone, u.email,
+            (select v.status from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello,
+            (select v.note from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello_note
        from businesses b join cities c on c.id = b.city_id left join business_stats_cache s on s.business_id = b.id
        left join users u on u.id = b.owner_user_id
       where b.id = $1`, [id])).rows[0];
@@ -107,11 +113,15 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   }));
   const okEquipo = equipo.filter((p) => p.st === "ok" && p.kind !== "owner");
   const dias: DiaPanel[] = aPanel(horas.rows);
-  const st = estado(horas.rows, { dow: b.dow, hm: b.hm }, b.open, lang, null, b.closed_today);
+  const st = estado(horas.rows, { dow: b.dow, hm: b.hm }, b.open, lang, null, b.closed_today, !!b.temp_until);
+  // Fotos que quitó To'Latino (con su motivo): el dueño lo ve en Fotos y portada.
+  const quitadas = (await db().query<{ note: string | null }>(`select removed_note as note from media where owner_kind = 'business' and owner_id = $1 and status = 'removed' and removed_reason = 'admin' order by removed_at desc limit 10`, [id])).rows;
   const f = fuerza({
     items, itemsW, galeria: fotos.rows.length, about: !!b.about?.es, logo: !!b.logo, sello: b.verified, correo: b.email_ok, faqs: faqs.rows[0]?.n ?? 0,
     resenasSinResponder: 0, equipo: okEquipo.length, aDomicilio: b.op === "casa", diasAbiertos: dias.filter((d) => d.on).length, amenidades: b.amen.length, pro,
   });
+  // Derivado cacheado (lo leen las listas del Super Admin): se guarda solo si cambió.
+  await db().query(`update business_stats_cache set profile_strength = $2, updated_at = now() where business_id = $1 and profile_strength <> $2`, [id, f.sc]);
   const k = cifras.rows[0] ?? { v7: 0, vhoy: 0, vprueba: 0, c7: 0, cprueba: 0 };
   const onb = !!b.attrs?.onb && Date.now() - Date.parse(b.created) < 45 * D;
   const ahoraHora = b.hora;
@@ -119,6 +129,9 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     trial: tr && tr.on ? tr : null, trialUsed: !!tr, onb, sells, mods: b.mods, op: b.op, itemsW, items,
     st: { open: st.open, text: st.text, closedToday: b.closed_today },
+    // Lo que hizo To'Latino (triángulo): el dueño siempre ve qué pasó y por qué.
+    adm: { status: b.status, reason: b.status_reason, tempUntil: b.temp_until, tempReason: b.temp_reason, nombre: !!b.admin_edits?.name, about: !!b.admin_edits?.about, fotos: quitadas.map((x) => x.note ?? "") },
+    ver: { phone: telefonoBonito(b.phone), phoneOk: !!b.phone && b.phone === b.owner_phone, email: b.email_ok ? b.email : null, sello: b.verified ? "ok" : (b.sello as string | null) ?? "none", selloNote: b.sello_note },
     ph: fotos.rows[0]?.url ?? null, logo: b.logo,
     kpis: { views7: k.v7, contacts7: k.c7, viewsToday: k.vhoy, viewsTrial: k.vprueba, contactsTrial: k.cprueba },
     fuerza: f, duerme: seDuerme({ galeria: fotos.rows.length, equipo: okEquipo.length, items, itemsW, itemsFree: ITEMS_FREE }, es),

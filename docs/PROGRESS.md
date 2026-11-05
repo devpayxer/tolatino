@@ -231,8 +231,25 @@ _Actualizado: 5 nov 2026._
   que llevan al apartado. Probado con Playwright en teléfono y escritorio sobre negocios publicados (Hoy, cerrar/abrir
   y la ficha lo dice, horario, logo, portada, Quiénes somos, invitar/cancelar, perfil del dueño, sin cuenta → entrar).
   Ayuda: `docs/ayuda/panel.md`.
+- **Fase 1 · bloque 1i Super Admin › Negocios + Colas ✓ (5 nov, espera OK del fundador):** spec del diseño en
+  `scratchpad` (resumen aquí). `/admin/colas` (QueueCard ordenadas por plazo, pestañas por cola, Míos / Sin asignar /
+  Vencidos, «Tomar siguiente» en la barra y en la cabecera, «Lo está viendo X», detalle al lado ≥ 1200 o pantalla
+  completa, ReasonConfirm con plantillas del diseño) con 4 colas: sello, nuevos, medios marcados, recomendaciones.
+  `/admin/negocios` (buscar, categorías con contador, plan, estado, más filtros, orden, DenseTable / filas, Pager) y
+  `/admin/negocios/{id}` 360° (Resumen con fuerza en HBars y notas internas, Ficha con fotos y edición en su nombre,
+  Equipo, Confianza; historial). Migración 0016: `queue_items` (nacen con su fuente: publicar, recomendar, reportar
+  foto, pedir sello), motivo/fecha/quién del estado, cierre temporal del equipo, `admin_edits`, fotos quitadas por el
+  equipo, estados nuevos de sello y recomendación, `admin_notes` (solo inserción), `perfil_fuerza()` + caché.
+  Permisos: matriz de 0007 + colas por rol (`lib/colas.ts`) + ciudades del miembro. **Triángulo:** el panel muestra
+  ocultar/suspender/cerrar/cierre temporal/nombre/Quiénes somos/fotos/sello de To'Latino con motivo; nuevo apartado
+  «Verificación y sello» (pedir, «Ya lo mandé», cancelar); ficha y listas dicen «Cerrado temporalmente». Barra
+  inferior del admin en el teléfono. Probado con Playwright (dueño pide sello → admin lo aprueba con las 3
+  comprobaciones → ficha y panel; nuevo «Todo bien»; cierre temporal → ficha y panel → reabrir; editar nombre →
+  aviso en el panel; admin en teléfono; el dueño no entra al admin). Ayuda: `docs/ayuda/admin-negocios.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
-  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas.
+  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓.
+  Sigue (PLAN fila 1): Recuperar / reclamar negocio (con «Crear semilla» de Recomendaciones) · Licencia (ficha +
+  cola Licencias) · Usuarios 360° completo · Catálogo · analítica propia (eventos).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

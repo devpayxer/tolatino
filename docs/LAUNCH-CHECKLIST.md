@@ -122,10 +122,33 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Prueba Pro al terminar** (pasar a Free, primer cobro, «decidiste seguir/no seguir»): con Cobros y plan (Fase 2);
   hoy `business_stats_cache.plan` no cambia solo el día 30.
 - [ ] **Avisos de la prueba fuera del panel** (día 20, 25, último, fin: push/SMS/correo a las 10 AM): Fase 2.
-- [ ] **Super Admin del panel (triángulo):** ver y corregir horario, fotos (quitar con motivo → nota «To'Latino quitó…»),
-  Quiénes somos (nota «To'Latino editó…»), equipo (quitar persona, pausar Staff), cerrar la página por días: bloque 1i.
+- [x] **Super Admin del panel (triángulo):** hecho en 1i (fotos, Quiénes somos, nombre, teléfono, dirección, staff,
+  cierre temporal, ocultar/suspender/cerrar, sello). El horario queda en lectura en el admin (como el prototipo).
 - [ ] **Vistas:** se cuentan al servir la ficha (sin robots ni gente del negocio). Revisar con tráfico real si hace falta
   dedupe por persona/día como los contactos.
 - [ ] **Botones del sistema de diseño (`Button`) son `<div>` sin `role="button"`:** accesibilidad por teclado/lector de
   pantalla en todo el sitio. Corregir en `portar-sistema.mjs` (guardián de accesibilidad) antes de la fase 9.
+
+## Super Admin · Negocios y Colas (bloque 1i, 5 nov 2026)
+- [ ] **Colas que llegan con su pantalla:** Licencias (con la ficha «Licencia»: número de licencia en Publica/panel,
+  filas `licenses` en revisión, estado «No aparece»); «Crear semilla» en Recomendaciones (con Reclamar negocio y la fila
+  «SIN RECLAMAR» de la categoría); Reportes de contenido/negocio/usuario, Cambios sensibles, Ciudad nueva (sus fases).
+- [ ] **Acciones del 360° que dependen de otras piezas:** Mensaje al dueño (bandeja en el panel + SMS), Destacar 7 días
+  (Destacados), Cambiar categoría / Transferir / Fusionar / Reclamos (cola Cambios sensibles), Invitar a reclamar
+  (SMS), Pro de cortesía / prueba / pagos (Fase 2), quitar acceso al panel (Moderadores), pausar módulos, «Panel del
+  dueño» y «Ver como cliente» de un negocio no activo (vista del equipo). Pestañas Lo que vende, Operación, Dinero,
+  Contenido: con sus módulos.
+- [ ] **Avisos por SMS** al dueño (sello, ocultar, foto quitada) y al vecino que reportó o recomendó: Fase 2. Los
+  textos del admin dicen «lo ve en su panel» (verdad hoy).
+- [ ] **Avisos del panel sin diseño propio:** «To’Latino ocultó / suspendió / cerró tu página: {motivo}» usan el patrón
+  del aviso «To’Latino cerró tu página por unos días» (el diseño del panel no trae esos tres). Confirmar con el fundador.
+- [ ] **Colas:** atajos de teclado J/K/A/R y acciones en lote (plan §6), vencimiento del «tomado», tope de 200 casos por
+  vista (paginar cuando haga falta), SLA editables por el Super Admin (hoy en `lib/colas.ts`).
+- [ ] **Permisos:** la matriz de 0007 manda (el prototipo daba Colas a soporte, finanzas y lectura). La visibilidad por
+  cola vive en código; pasarla a la base si el Super Admin la quiere editar.
+- [ ] **Lista de Negocios con OFFSET** (14 por página, tope 100 páginas) y filtros de transacciones, Stripe, licencias,
+  «sin actividad 30 d», «Exportar CSV» (servidor + auditoría): con sus datos.
+- [ ] **Usuarios 360° completo** (actividad, dinero, comunidad, seguridad, privacidad): bloques siguientes.
+- [ ] **«Teléfono verificado» del negocio** = el teléfono del negocio es el del dueño que entró con código. Verificar
+  un teléfono distinto (llamada o SMS) llega con el proveedor de SMS.
 

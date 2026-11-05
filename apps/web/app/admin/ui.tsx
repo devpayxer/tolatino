@@ -4,6 +4,9 @@ import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import type { Resultado } from "./acciones";
+import { tomarSiguiente } from "./acciones-colas";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Icono = UI.Icon as ComponentType<any>;
 
 type N = "AdminBar" | "AdminNav" | "AdminNote" | "AdminRow" | "AdminList" | "KpiRow" | "AuditLog" | "PermMatrix" | "ReasonConfirm" | "Tag" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,7 +27,7 @@ function useDesk() {
 export type ItemNav = { key: string; label: string; icon: string; href: string | null; fase?: string };
 export type GrupoNav = { label: string; items: ItemNav[] };
 
-export function Shell({ yo, grupos, children }: { yo: { nombre: string; rol: string; iniciales: string }; grupos: GrupoNav[]; children: ReactNode }) {
+export function Shell({ yo, grupos, casos, children }: { yo: { nombre: string; rol: string; iniciales: string }; grupos: GrupoNav[]; casos: { n: number; late: boolean; tomar: boolean }; children: ReactNode }) {
   const desk = useDesk();
   const router = useRouter();
   const ruta = usePathname();
@@ -36,6 +39,8 @@ export function Shell({ yo, grupos, children }: { yo: { nombre: string; rol: str
       on: i.href ? (i.href === "/admin" ? ruta === "/admin" : ruta.startsWith(i.href)) : false,
       lock: !i.href,
       dim: !i.href,
+      count: i.key === "colas" && casos.n ? casos.n : undefined,
+      late: i.key === "colas" && casos.late,
       onClick: () => router.push(i.href ?? `/admin/pendiente/${i.key}`),
     })),
   }));
@@ -48,9 +53,9 @@ export function Shell({ yo, grupos, children }: { yo: { nombre: string; rol: str
           onHome={() => router.push("/admin")}
           searchPlaceholder="Buscar usuario por nombre o teléfono…"
           onSearch={() => router.push("/admin/usuarios")}
-          onBell={() => router.push("/admin/pendiente/colas")}
+          onBell={() => router.push("/admin/colas")}
           cities={[{ label: "Todas", on: true }]}
-          count={0}
+          count={casos.n}
           me={{ name: yo.nombre, role: yo.rol, initials: yo.iniciales }}
           onMe={() => router.push("/cuenta")}
         />
@@ -58,11 +63,26 @@ export function Shell({ yo, grupos, children }: { yo: { nombre: string; rol: str
       <div className="mx-auto flex w-full max-w-[1440px] gap-6 px-4 pb-16 pt-4 lg:px-6">
         {desk && (
           <aside className="sticky top-[76px] h-[calc(100dvh-92px)] w-[232px] flex-none overflow-y-auto">
-            <A.AdminNav groups={navGroups} onTakeNext={undefined} />
+            <A.AdminNav groups={navGroups} onTakeNext={casos.tomar ? () => void tomarSiguiente().then((r) => { if (r.ok && r.caso) router.push(`/admin/colas?caso=${r.caso}`); else router.push("/admin/colas?f=sin"); }) : undefined} />
           </aside>
         )}
-        <main className="flex min-w-0 flex-1 flex-col gap-5">{children}</main>
+        <main className="flex min-w-0 flex-1 flex-col gap-5 pb-[84px] lg:pb-0">{children}</main>
       </div>
+      {!desk && (
+        /* Barra inferior del teléfono (Super Admin.dc.html SA:251-262): Inicio · Colas · Negocios · Usuarios.
+           Transacciones llega en la Fase 2. */
+        <nav style={{ position: "fixed", insetInline: 0, bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "8px 8px 14px", display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))" }}>
+          {([["/admin", "home", "Inicio"], ["/admin/colas", "bell", "Colas"], ["/admin/negocios", "store", "Negocios"], ["/admin/usuarios", "users", "Usuarios"]] as const).map(([href, icon, l]) => {
+            const on = href === "/admin" ? ruta === "/admin" : ruta.startsWith(href);
+            return (
+              <div key={href} role="link" onClick={() => router.push(href)} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
+                <Icono name={icon} size={21} color={on ? "var(--tl-ink)" : "rgba(11,14,18,.42)"} />
+                <span style={{ font: "700 10.5px Manrope,sans-serif" }}>{l}</span>
+                {href === "/admin/colas" && casos.n ? <span style={{ position: "absolute", top: 1, left: "calc(50% + 6px)", minWidth: 17, height: 17, padding: "0 4px", boxSizing: "border-box", borderRadius: 99, background: casos.late ? "var(--tl-danger)" : "var(--tl-action)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 9px 'JetBrains Mono',monospace" }}>{casos.n}</span> : null}
+              </div>);
+          })}
+        </nav>
+      )}
     </div>
   );
 }

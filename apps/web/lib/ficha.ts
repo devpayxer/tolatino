@@ -47,7 +47,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     id: string; cat: string; city: string; name: string; plan: string; verified: boolean; rating: number | null; reviews: number;
     subs: string[]; tags: string[]; attrs: Record<string, unknown>; about: Bi | null; founded: number | null; phone: string | null;
     address: string | null; radius: number | null; from_home: boolean; lat: number | null; lng: number | null; mi: number | null;
-    open: boolean; ciudad: string; estado: string; dow: number; hm: string; dia: number; mes: number; logo: string | null; cerrado_hoy: boolean;
+    open: boolean; ciudad: string; estado: string; dow: number; hm: string; dia: number; mes: number; logo: string | null; cerrado_hoy: boolean; cerrado_temp: boolean;
   }>(
     `select b.id, b.category_id as cat, b.city_id as city, b.name, s.plan, s.verified, s.rating_avg::float as rating, s.review_count as reviews,
             b.subcategory_ids as subs, b.filter_values as tags, b.category_attrs as attrs, b.about, b.founded_year as founded, b.phone,
@@ -58,7 +58,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
             c.name as ciudad, c.state as estado,
             extract(dow from now() at time zone c.timezone)::int as dow, to_char(now() at time zone c.timezone, 'HH24:MI') as hm,
             extract(day from now() at time zone c.timezone)::int as dia, extract(month from now() at time zone c.timezone)::int as mes,
-            b.logo_url as logo, coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as cerrado_hoy
+            b.logo_url as logo, coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as cerrado_hoy, coalesce(b.temp_closed_until > now(), false) as cerrado_temp
        from businesses b join business_stats_cache s on s.business_id = b.id join cities c on c.id = b.city_id
       where b.id = $1 and b.status = 'active'`,
     [id],
@@ -84,7 +84,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   ]);
   const pro = b.plan === "pro", n = b.reviews, dias = horas.rows, ahora = { dow: b.dow, hm: b.hm };
   const urls = fotos.rows.map((x) => x.url);
-  const st = estado(dias, ahora, b.open, lang, (b.attrs.tarjeta as { status?: Bi } | undefined)?.status ?? null, b.cerrado_hoy);
+  const st = estado(dias, ahora, b.open, lang, (b.attrs.tarjeta as { status?: Bi } | undefined)?.status ?? null, b.cerrado_hoy, b.cerrado_temp);
   const nota = st.text.replace(/^(Abierto|Cerrado|Open|Closed)( · )?/, "");
   const iniciales = b.name.split(" ").filter((w) => w.length > 2).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const fecha = `${DIA_LARGO[lang][b.dow]} ${es ? `${b.dia} ${MES.es[b.mes - 1]}` : `${MES.en[b.mes - 1]} ${b.dia}`}`;
@@ -93,7 +93,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   const t = min(b.hm);
 
   // Horario Pro (HoursPro): los rangos reales de hoy, la cuenta regresiva, cambios programados y la semana.
-  const rangosHoy = hoy?.open && !b.cerrado_hoy ? hoy.ranges : [];
+  const rangosHoy = hoy?.open && !b.cerrado_hoy && !b.cerrado_temp ? hoy.ranges : [];
   const hpToday = rangosHoy.length
     ? rangosHoy.map((rg, i) => {
         const ahoraDentro = b.open && min(rg[0]) <= t && (min(rg[1]) > t || min(rg[1]) <= min(rg[0]));
@@ -135,7 +135,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   if (cols.length && cols.length < 3) cols.push({ k: L("PAGO", "PAYMENT"), v: L("En el local", "In store") });
   const modos = [dl ? "delivery" : null, pk ? "pickup" : null, di ? L("para comer aquí", "dine-in") : null].filter(Boolean) as string[];
   const ms = modos.length > 1 ? `${modos.slice(0, -1).join(", ")}${L(" o ", " or ")}${modos[modos.length - 1]}` : modos[0] ?? "";
-  const tituloHoy = b.cerrado_hoy ? L("Cerrado hoy", "Closed today") : b.open
+  const tituloHoy = b.cerrado_temp ? L("Cerrado temporalmente", "Temporarily closed") : b.cerrado_hoy ? L("Cerrado hoy", "Closed today") : b.open
     ? (prox.cierra ? L(`Abierto hasta las ${hora12(prox.cierra)}`, `Open until ${hora12(prox.cierra)}`) : L("Abierto las 24 horas", "Open 24 hours"))
     : prox.abre ? (prox.dias === 0 ? L(`Abre a las ${hora12(prox.abre)}`, `Opens at ${hora12(prox.abre)}`) : prox.dias === 1 ? L(`Abre mañana a las ${hora12(prox.abre)}`, `Opens tomorrow at ${hora12(prox.abre)}`) : L(`Abre el ${DIA_LARGO.es[(b.dow + prox.dias) % 7]!.toLowerCase()} a las ${hora12(prox.abre)}`, `Opens ${DIA_LARGO.en[(b.dow + prox.dias) % 7]!.charAt(0)}${DIA_LARGO.en[(b.dow + prox.dias) % 7]!.slice(1).toLowerCase()} at ${hora12(prox.abre)}`))
     : L("Cerrado", "Closed");

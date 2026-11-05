@@ -118,14 +118,16 @@ const guardianes = {
      accesoPanel(…) antes de tocar la base. */
   accionesConAcceso() {
     for (const f of codigo) {
-      if (!/^apps\/web\/app\/panel\/acciones[^/]*\.ts$/.test(f)) continue;
+      const admin = /^apps\/web\/app\/admin\/acciones[^/]*\.ts$/.test(f);
+      if (!admin && !/^apps\/web\/app\/panel\/acciones[^/]*\.ts$/.test(f)) continue;
       const t = readFileSync(f, "utf8");
       if (!/^\s*["']use server["']/.test(t)) falla("accionesConAcceso", f, 0, "las acciones del panel van en un archivo «use server»");
       const partes = t.split(/\nexport async function /).slice(1);
       for (const p of partes) {
         const nombre = p.slice(0, p.indexOf("(")), cuerpo = p.slice(0, 1500);
-        const iAcc = cuerpo.search(/await (entrar|accesoPanel)\(/), iDb = cuerpo.search(/db\(\)|tx\(/);
-        if (iAcc < 0 || (iDb >= 0 && iDb < iAcc)) falla("accionesConAcceso", f, 0, `«${nombre}» no revisa el acceso al panel antes de usar la base`);
+        // Super Admin (5 nov, 1i): requerir()/staff()/quien() o el envoltorio hacer() que los llama.
+        const iAcc = cuerpo.search(admin ? /await (requerir|staff|quien|arrancar)\(|return hacer\(/ : /await (entrar|accesoPanel)\(/), iDb = cuerpo.search(/db\(\)|tx\(/);
+        if (iAcc < 0 || (iDb >= 0 && iDb < iAcc)) falla("accionesConAcceso", f, 0, `«${nombre}» no revisa ${admin ? "el permiso del equipo" : "el acceso al panel"} antes de usar la base`);
       }
     }
   },

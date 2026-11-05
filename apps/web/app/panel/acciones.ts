@@ -145,7 +145,44 @@ export async function aboutGuardar(id: string, x: { es: string; en: string; amen
   const amen = pedidas.filter((k) => validas.includes(k));
   const antes = (await db().query(`select about, amenities from businesses where id = $1`, [a.negocio.id])).rows[0];
   const about = es || en ? { es, en } : null;
-  await db().query(`update businesses set about = $2::jsonb, amenities = $3, updated_at = now() where id = $1`, [a.negocio.id, about ? JSON.stringify(about) : null, amen]);
+  // Si To'Latino lo había editado, gana lo último: lo del dueño (se quita la marca «EDITADO POR TO'LATINO»).
+  await db().query(`update businesses set about = $2::jsonb, amenities = $3, admin_edits = admin_edits - 'about', updated_at = now() where id = $1`, [a.negocio.id, about ? JSON.stringify(about) : null, amen]);
   await auditar(a, "panel.about", antes, { about, amenities: amen });
+  return { ok: true };
+}
+
+/* ── Verificación y sello ── Pedir el sello abre un caso en la cola «Sello de verificación» del Super Admin.
+   «Ya lo mandé» (cuando To'Latino pidió un dato) lo devuelve a revisión; «Cancelar solicitud» lo saca de la cola. */
+export async function selloPedir(id: string): Promise<Res> {
+  const a = await entrar(id, "set");
+  if (!a) return SIN_ACCESO;
+  const r = await tx(async (c) => {
+    const ult = (await c.query<{ id: string; status: string }>(`select id::text, status from verification_requests where business_id = $1 order by created_at desc limit 1 for update`, [a.negocio.id])).rows[0];
+    if (ult && ["review", "ok"].includes(ult.status)) return ult.status === "ok" ? "ya" : "revision";
+    const veces = (await c.query<{ n: number }>(`select count(*)::int as n from verification_requests where business_id = $1 and created_at > now() - interval '1 day'`, [a.negocio.id])).rows[0]!.n;
+    if (veces >= 3) return "muchas";
+    if (ult?.status === "info") {
+      await c.query(`update verification_requests set status = 'review' where id = $1::bigint`, [ult.id]);
+      await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('sello', 'verification_request', $1, $2, $3) on conflict do nothing`, [ult.id, a.negocio.id, a.negocio.city_id]);
+    } else {
+      const v = (await c.query<{ id: string }>(`insert into verification_requests (business_id, status) values ($1, 'review') returning id::text`, [a.negocio.id])).rows[0]!;
+      await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('sello', 'verification_request', $1, $2, $3)`, [v.id, a.negocio.id, a.negocio.city_id]);
+    }
+    return null;
+  });
+  if (r === "ya") return no("Ya tienes el sello.", "You already have the badge.");
+  if (r === "revision") return no("Tu solicitud ya está en revisión.", "Your request is already in review.");
+  if (r === "muchas") return no("Ya pediste el sello varias veces hoy. Prueba mañana.", "You requested the badge several times today. Try tomorrow.");
+  await auditar(a, "panel.sello_pedir", null, null);
+  return { ok: true };
+}
+export async function selloCancelar(id: string): Promise<Res> {
+  const a = await entrar(id, "set");
+  if (!a) return SIN_ACCESO;
+  await tx(async (c) => {
+    const v = (await c.query<{ id: string }>(`update verification_requests set status = 'canceled' where business_id = $1 and status in ('review', 'info') returning id::text`, [a.negocio.id])).rows;
+    for (const x of v) await c.query(`update queue_items set status = 'decided', decision = 'canceled', reason = 'El dueño canceló la solicitud', decided_at = now() where queue = 'sello' and subject_id = $1 and status = 'open'`, [x.id]);
+  });
+  await auditar(a, "panel.sello_cancelar", null, null);
   return { ok: true };
 }

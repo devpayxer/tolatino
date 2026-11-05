@@ -128,6 +128,8 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
         op === "home", needZone(op) ? Math.max(1, Math.min(100, zoneOf(d))) : null, tel,
         (dv.tags ?? []) as string[], ((dv.amen ?? []) as string[]).map(claveAmenidad), Object.keys(dv.mods ?? {}), JSON.stringify(attrs)]);
     await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, mias.length]);
+    // Revisión ligera del equipo (Super Admin › Colas › Negocios nuevos). El negocio ya sale; esto no lo detiene.
+    await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('nuevo', 'business', $1, $1, $2) on conflict do nothing`, [slug, loc.ciudad]);
     await c.query(`insert into business_members (business_id, user_id, kind, display_name, phone, panel_access) values ($1, $2, 'owner', $3, $4, '{all}')`, [slug, me.id, nombreYo, tel]);
     const D = daysOf(d);
     for (let i = 0; i < 7; i++) {

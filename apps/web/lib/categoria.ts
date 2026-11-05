@@ -175,12 +175,13 @@ export async function horarios(ciudad: string, ids: string[]) {
     db().query<{ dow: number; hm: string }>(
       `select extract(dow from t)::int as dow, to_char(t, 'HH24:MI') as hm from (select now() at time zone timezone as t from cities where id = $1) x`, [ciudad]),
     // «Cerrar por hoy» desde el panel: la tarjeta dice «Cerrado hoy».
-    db().query<{ id: string }>(
-      `select b.id from businesses b join cities c on c.id = b.city_id where b.id = any($1::text[]) and b.closed_on = (now() at time zone c.timezone)::date`, [ids]),
+    db().query<{ id: string; temp: boolean }>(
+      `select b.id, b.temp_closed_until > now() as temp from businesses b join cities c on c.id = b.city_id
+        where b.id = any($1::text[]) and (b.closed_on = (now() at time zone c.timezone)::date or b.temp_closed_until > now())`, [ids]),
   ]);
   const porId = new Map<string, { weekday: number; open: boolean; ranges: [string, string][] }[]>();
   for (const x of h.rows) (porId.get(x.id) ?? porId.set(x.id, []).get(x.id)!).push(x);
-  return { porId, ahora: t.rows[0] ?? { dow: 0, hm: "00:00" }, cerrados: new Set(c.rows.map((x) => x.id)) };
+  return { porId, ahora: t.rows[0] ?? { dow: 0, hm: "00:00" }, cerrados: new Set(c.rows.filter((x) => !x.temp).map((x) => x.id)), temporales: new Set(c.rows.filter((x) => x.temp).map((x) => x.id)) };
 }
 
 /* Nombres de subcategorías (para la línea de la tarjeta). */

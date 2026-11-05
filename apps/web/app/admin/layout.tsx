@@ -5,6 +5,7 @@ import { yo } from "@/lib/cuenta";
 import { Arranque } from "./Arranque";
 import { gruposNav } from "@/lib/admin-nav";
 import { Shell } from "./ui";
+import { casosAbiertos } from "@/lib/admin-colas";
 
 export const metadata: Metadata = { title: "Admin · To'Latino", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const nombre = [s.first_name, s.last_name].filter(Boolean).join(" ");
   const iniciales = ((s.first_name?.[0] ?? "") + (s.last_name?.[0] ?? "")).toUpperCase();
   return (
-    <Shell yo={{ nombre, rol: s.roleName.toUpperCase(), iniciales }} grupos={grupos}>
+    <Shell yo={{ nombre, rol: s.roleName.toUpperCase(), iniciales }} grupos={grupos} casos={{ ...(await casosAbiertos(s)), tomar: s.puede("colas", "aprobar") }}>
       {children}
     </Shell>
   );

@@ -74,9 +74,14 @@ export async function reportarFoto(mediaId: string, motivo: string, nota: string
   if (!u) return { ok: false, entrar: true };
   const n = typeof nota === "string" ? nota.replace(/\s+/g, " ").trim().slice(0, 200) : "";
   await db().query(
-    `insert into photo_reports (media_id, reporter_user_id, reason, note)
-     select m.id, $2, $3, nullif($4, '') from media m where m.id = $1 and m.status = 'visible' and m.owner_kind = 'business'
-     on conflict (media_id, reporter_user_id) do nothing`,
+    // El reporte y, si es el primero abierto de esa foto, su caso en la cola «Medios marcados» (uno por foto).
+    `with ins as (
+       insert into photo_reports (media_id, reporter_user_id, reason, note)
+       select m.id, $2, $3, nullif($4, '') from media m where m.id = $1 and m.status = 'visible' and m.owner_kind = 'business'
+       on conflict (media_id, reporter_user_id) do nothing returning media_id)
+     insert into queue_items (queue, subject_kind, subject_id, business_id, city_id)
+     select 'medios', 'media', m.id::text, m.owner_id, b.city_id from ins join media m on m.id = ins.media_id join businesses b on b.id = m.owner_id
+     on conflict do nothing`,
     [mediaId, u.id, motivo, n],
   );
   return { ok: true, on: true };

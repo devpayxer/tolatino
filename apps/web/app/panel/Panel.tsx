@@ -12,7 +12,7 @@ import { aBase, fmtHora, type DiaPanel } from "@/lib/panel-reglas";
 import { FOTOS_FREE, ITEMS_FREE, PRECIO_PRO, dinero } from "@/lib/plan";
 import { subirFoto } from "@/lib/subir-foto";
 import { estado } from "@/lib/tarjeta";
-import { aboutGuardar, cerrarPorHoy, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, logoPoner, type Res } from "./acciones";
+import { aboutGuardar, cerrarPorHoy, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, logoPoner, selloCancelar, selloPedir, type Res } from "./acciones";
 import { equipoBloques, equipoDetalle } from "./Equipo";
 
 const Icon = UI.Icon as ComponentType<any>;
@@ -27,6 +27,7 @@ export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
   { k: "fotos", icon: "image", l: ["Fotos y portada", "Photos and cover"], s: ["Portada, logo y galería.", "Cover, logo and gallery."] },
   { k: "about", icon: "quote", l: ["Quiénes somos", "About us"], s: ["Tus palabras y lo que hay en tu negocio.", "Your words and what your place offers."] },
   { k: "equipo", icon: "users", l: ["Equipo", "Team"], s: ["Las personas que salen en tu página.", "The people who show on your page."] },
+  { k: "ver", icon: "shield", l: ["Verificación y sello", "Verification and badge"], s: ["Teléfono, correo y el sello Verificado.", "Phone, email and the Verified badge."] },
 ];
 const HECHOS = new Set(PARTS.map((p) => p.k));
 const MES: Bi[] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
@@ -234,7 +235,7 @@ function secciones(c: Ctx): Sec {
       act: p.k === "equipo" ? { l: E2("Invitar", "Invite"), icon: "plus", onClick: () => c.det("stf:new") } : undefined },
     { type: "tabs", items: PARTS.map((z) => ({ l: E2(...z.l), on: z.k === p.k, onClick: () => c.go("pag", z.k) })) },
   ];
-  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : { blocks: equipoBloques(c), ed: null };
+  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : { blocks: equipoBloques(c), ed: null };
   return { blocks: [...head, ...r.blocks], ed: r.ed };
 }
 
@@ -271,13 +272,14 @@ function resumen(c: Ctx, k: string) {
   if (k === "hor") return d.st.text;
   if (k === "fotos") return `${d.fotos.length} ${E2("fotos", "photos")} · ${d.logo ? "logo" : E2("sin logo", "no logo")}`;
   if (k === "about") { const a = d.about?.es ?? ""; return a ? (a.length > 56 ? `${a.slice(0, 56)}…` : a) : E2("Sin escribir", "Not written"); }
+  if (k === "ver") return selloL(c).t;
   const ok = d.equipo.filter((p) => p.st === "ok").length, inv = d.equipo.filter((p) => p.st === "inv").length;
   return `${ok} ${E2("en tu página", "on your page")}${inv ? (inv === 1 ? E2(" · 1 invitación", " · 1 invite") : E2(` · ${inv} invitaciones`, ` · ${inv} invites`)) : ""}`;
 }
 
 /* Tu página (DASH-PAGINA, inicio del panel). */
 function pagina(c: Ctx): (Bloque | null)[] {
-  const { d, E2, es } = c, f = d.fuerza, out: (Bloque | null)[] = [];
+  const { d, E2, es } = c, f = d.fuerza, out: (Bloque | null)[] = [...avisosAdmin(c, "pag")];
   if (d.st.closedToday) out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Cerraste por hoy: tu página dice «Cerrado hoy» y no recibes pedidos ni citas. Mañana abres normal.", "You closed for today: your page says “Closed today” and you get no orders or bookings. Tomorrow you open as usual."), cta: E2("Abrir", "Open"), onCta: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) });
   out.push({
     type: "hero", t: d.name, ini: d.ph ? "" : d.name.slice(0, 1), ph: d.ph ? `url("${d.ph}")` : "", st: d.st.text.toUpperCase(),
@@ -307,14 +309,14 @@ function pagina(c: Ctx): (Bloque | null)[] {
   }
   const cols2 = c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined;
   const grp = (k: string, keys: string[]): Bloque => ({ type: "rows", k, cols: cols2, items: keys.map((p) => { const P = PARTS.find((x) => x.k === p)!; return { icon: P.icon, t: E2(...P.l), s: resumen(c, p), onClick: () => c.go("pag", p) }; }) });
-  out.push(grp(E2("LO QUE VEN LOS CLIENTES", "WHAT CLIENTS SEE"), ["hor", "fotos", "about"]), grp(E2("CONTENIDO", "CONTENT"), ["equipo"]));
+  out.push(grp(E2("LO QUE VEN LOS CLIENTES", "WHAT CLIENTS SEE"), ["hor", "fotos", "about"]), grp(E2("CONTENIDO", "CONTENT"), ["equipo"]), grp(E2("CONFIANZA Y NÚMEROS", "TRUST AND NUMBERS"), ["ver"]));
   if (!d.pro && !d.trialUsed) out.push({ type: "note", tone: "warn", icon: "star", t: E2(`Con Free tu página es una sola, sin pestañas, y se ven ${FOTOS_FREE} fotos y ${ITEMS_FREE} ${d.itemsW[0]}. Nada se borra.`, `On Free your page is a single page, no tabs, showing ${FOTOS_FREE} photos and ${ITEMS_FREE} ${d.itemsW[1]}. Nothing is deleted.`) });
   return out;
 }
 
 /* Hoy (DASH-HOY). Pedidos, citas, mensajes y reseñas llegan en la Fase 2: hasta entonces las cifras reales son cero. */
 function hoy(c: Ctx): (Bloque | null)[] {
-  const { d, E2, es } = c, out: (Bloque | null)[] = [];
+  const { d, E2, es } = c, out: (Bloque | null)[] = [...avisosAdmin(c, "hoy")];
   if (d.st.closedToday) out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Cerraste por hoy: tu página dice «Cerrado hoy» y no recibes pedidos ni citas. Mañana abres normal.", "You closed for today: your page says “Closed today” and you get no orders or bookings. Tomorrow you open as usual."), cta: E2("Abrir", "Open"), onCta: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) });
   const [y, m, dd] = d.hoy.fecha.split("-").map(Number), hora = fmtHora(Number(d.hoy.hm.slice(0, 2)) + Number(d.hoy.hm.slice(3)) / 60);
   const fecha = es ? `${DIA_L[d.hoy.dow]![0]} ${dd} ${MES[m! - 1]![0].toUpperCase()}` : `${DIA_L[d.hoy.dow]![1]} ${MES[m! - 1]![1].toUpperCase()} ${dd}`;
@@ -358,6 +360,7 @@ function fotos(c: Ctx): (Bloque | null)[] {
     c.setUi({ orden: n, gSel: b });
     c.run(() => fotosOrden(d.id, n.map((z) => z.id)), b === 0 ? E2("Listo. Ya se ve en tu página.", "Done. It shows on your page now.") : undefined, () => c.setUi({ orden: null }));
   };
+  if (d.adm.fotos.length) out.push({ type: "note", tone: "warn", icon: "image", t: E2(`To'Latino quitó ${d.adm.fotos.length === 1 ? "1 foto" : `${d.adm.fotos.length} fotos`} de tu página: ${[...new Set(d.adm.fotos.filter(Boolean))].join(" · ")}. Si crees que es un error, escríbenos desde Ayuda.`, `To'Latino removed ${d.adm.fotos.length === 1 ? "1 photo" : `${d.adm.fotos.length} photos`} from your page: ${[...new Set(d.adm.fotos.filter(Boolean))].join(" · ")}. If you think it is a mistake, write to us from Help.`) });
   if (!d.pro && g.length > FOTOS_FREE) out.push({ type: "note", tone: "warn", icon: "image", t: E2(`Con Free tu página muestra las primeras ${FOTOS_FREE} fotos de tu galería. Las otras ${g.length - FOTOS_FREE} quedan guardadas y salen con Pro.`, `On Free your page shows the first ${FOTOS_FREE} photos of your gallery. The other ${g.length - FOTOS_FREE} stay saved and show with Pro.`) });
   out.push({ type: "rows", k: E2("PORTADA Y LOGO", "COVER AND LOGO"), cols: c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined, items: [
     { img: g[0] ? `url("${g[0].url}")` : undefined, imgIni: g[0] ? undefined : " ", imgW: "56px", t: E2("Portada", "Cover"), s: E2("Lo primero que ven. Es la primera foto de tu galería.", "The first thing people see. It is the first photo of your gallery."), acts: [{ l: E2("Elegir otra", "Choose another"), icon: "image", off: c.pending, onClick: () => subir(false, "cover") }] },
@@ -422,6 +425,7 @@ function horario(c: Ctx): { blocks: (Bloque | null)[]; ed: Editor } {
 /* Quiénes somos (sub about). */
 function about(c: Ctx): { blocks: (Bloque | null)[]; ed: Editor } {
   const { d, E2 } = c, F = c.form<{ es: string; en: string; amen: string[] }>(`about:${d.id}`, { es: d.about?.es ?? "", en: d.about?.en ?? "", amen: d.amen }), out: (Bloque | null)[] = [];
+  if (d.adm.about) out.push({ type: "note", tone: "warn", icon: "edit", t: E2("To’Latino editó tu «Quiénes somos». Lo que ves aquí es lo que sale. Si lo cambias, se publica lo tuyo.", "To’Latino edited your “About us”. What you see here is what shows. If you change it, yours is published.") });
   out.push({ type: "field", area: true, rows: 5, max: 300, k: E2("QUIÉNES SOMOS", "ABOUT US"), val: F.d.es, count: `${F.d.es.length}/300`, onChange: (v) => F.set({ es: v }),
     ph: E2("Qué haces, desde cuándo y qué te hace distinto.", "What you do, since when and what makes you different."),
     help: E2("Sale en el Resumen de tu página cuando no hay una persona con sus palabras en «Quién está detrás».", "Shows in your page Overview when there is no person with their own words in “Who is behind it”.") });
@@ -436,4 +440,52 @@ function about(c: Ctx): { blocks: (Bloque | null)[]; ed: Editor } {
     items: d.amenAll.map((a) => { const on = F.d.amen.includes(a.key); return { l: a.l, v: on ? "selected" : "filter", onClick: () => F.set({ amen: on ? F.d.amen.filter((k) => k !== a.key) : F.d.amen.concat(a.key) }) }; }) });
   out.push({ type: "kv", items: [{ k: E2("LA PERSONA DETRÁS", "THE PERSON BEHIND IT"), v: d.owner ?? "—" }, { k: E2("SE MUESTRA COMO", "SHOWN AS"), v: E2("Tu nombre, tus palabras y tu equipo", "Your name, your words and your team") }] });
   return { blocks: out, ed: { F, l: E2("Guardar", "Save"), valid: true, apply: (x) => aboutGuardar(d.id, x) } };
+}
+
+/* Lo que hizo To'Latino con la página (Super Admin): el dueño ve qué pasó y por qué (Panel v2 tempAdm / nameAdm). */
+function avisosAdmin(c: Ctx, donde: "pag" | "hoy"): Bloque[] {
+  const { d, E2 } = c, a = d.adm, out: Bloque[] = [];
+  const motivo = a.reason ? `: ${a.reason}` : "";
+  if (a.status === "hidden") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino ocultó tu página${motivo}. No sale en búsquedas ni en la categoría.`, `To’Latino hid your page${motivo}. It doesn’t show in search or the category.`) });
+  else if (a.status === "suspended") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino suspendió tu página${motivo}. No sale en búsquedas ni en la categoría.`, `To’Latino suspended your page${motivo}. It doesn’t show in search or the category.`) });
+  else if (a.status === "closed") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino cerró tu negocio en la app${motivo}.`, `To’Latino closed your business on the app${motivo}.`) });
+  if (a.tempUntil) out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino cerró tu página por unos días${a.tempReason ? `: ${a.tempReason}` : ""}. Los clientes la ven como «cerrado temporalmente».`, `To’Latino closed your page for a few days${a.tempReason ? `: ${a.tempReason}` : ""}. Clients see it as “temporarily closed”.`) });
+  if (donde === "pag" && a.nombre) out.push({ type: "note", tone: "warn", icon: "edit", t: E2(`To’Latino corrigió tu nombre en la página: «${d.name}».`, `To’Latino corrected your name on the page: “${d.name}”.`) });
+  if (donde === "pag" && d.ver.sello === "revoked") out.push({ type: "note", tone: "danger", icon: "shield", t: E2("To’Latino te quitó el sello Verificado. Puedes pedirlo otra vez cuando lo arregles.", "To’Latino removed your Verified badge. You can request it again once it is fixed."), cta: E2("Ver", "See"), onCta: () => c.go("pag", "ver") });
+  return out;
+}
+
+function selloL(c: Ctx) {
+  const { E2 } = c, s = c.d.ver.sello;
+  return s === "ok" ? { t: E2("Tienes el sello", "You have the badge"), tag: E2("VERIFICADO", "VERIFIED"), tone: "signal" }
+    : s === "review" ? { t: E2("En revisión · unas 48 h", "In review · about 48 h"), tag: E2("EN REVISIÓN", "IN REVIEW"), tone: "action" }
+    : s === "info" ? { t: E2("To’Latino necesita un dato más", "To’Latino needs one more detail"), tag: E2("TE FALTA UN DATO", "ONE MORE DETAIL"), tone: "neutral" }
+    : s === "no" ? { t: E2("No se aprobó esta vez", "Not approved this time"), tag: E2("NO APROBADO", "NOT APPROVED"), tone: "danger" }
+    : { t: E2("Pide el sello", "Request the badge"), tag: null, tone: "action" };
+}
+
+/* Verificación y sello (sub ver, Panel v2 L1385–1390). El correo se verifica con el envío de correos (Fase 2). */
+function verificacion(c: Ctx): (Bloque | null)[] {
+  const { d, E2 } = c, v = d.ver, s = v.sello, out: (Bloque | null)[] = [];
+  if (s === "revoked") out.push({ type: "note", tone: "danger", icon: "shield", t: E2("To’Latino te quitó el sello Verificado. Puedes pedirlo otra vez cuando lo arregles.", "To’Latino removed your Verified badge. You can request it again once it is fixed.") });
+  const lvl = 35 + (v.email ? 25 : 0) + (s === "ok" ? 40 : s === "review" ? 10 : 0);
+  out.push({ type: "kpis", cols: "repeat(2,minmax(0,1fr))", items: [
+    { k: E2("NIVEL DE CONFIANZA", "TRUST LEVEL"), v: lvl < 50 ? E2("Básico", "Basic") : lvl < 80 ? E2("Bueno", "Good") : E2("Alto", "High"), s: `${lvl} / 100` },
+    { k: E2("SE VE EN TU PÁGINA", "SHOWS ON YOUR PAGE"), v: s === "ok" ? "✓" : "—", s: s === "ok" ? E2("check azul junto al nombre", "blue check next to the name") : E2("aún sin sello", "no badge yet") },
+  ] });
+  out.push({ type: "rows", items: [
+    { icon: "phone", t: E2("Teléfono", "Phone"), s: v.phone || "—", tag: v.phoneOk ? E2("VERIFICADO", "VERIFIED") : null, tone: "signal" },
+    { icon: "chat", t: E2("Correo", "Email"), s: v.email ?? E2("Para recibos y para recuperar tu cuenta.", "For receipts and to recover your account."), tag: v.email ? E2("VERIFICADO", "VERIFIED") : null, tone: "signal" },
+  ] });
+  const L = selloL(c);
+  const acts = s === "none" || s === "no" || s === "revoked" || s === "canceled"
+    ? [{ l: s === "no" || s === "revoked" ? E2("Volver a pedir el sello", "Request the badge again") : E2("Solicitar sello", "Request badge"), v: "action", icon: "shield", off: c.pending, onClick: () => c.run(() => selloPedir(d.id), E2("Solicitud enviada.", "Request sent.")) }]
+    : s === "info" ? [{ l: E2("Ya lo mandé", "I sent it"), v: "action", icon: "check", off: c.pending, onClick: () => c.run(() => selloPedir(d.id), E2("Gracias. To’Latino sigue con la revisión.", "Thanks. To’Latino continues the review.")) }]
+    : s === "review" ? [{ l: E2("Cancelar solicitud", "Cancel request"), off: c.pending, onClick: () => c.run(() => selloCancelar(d.id)) }] : [];
+  out.push({ type: "rows", k: E2("SELLO VERIFICADO POR TO'LATINO", "VERIFIED BY TO'LATINO BADGE"), items: [{
+    icon: "shield", t: L.t, tag: L.tag, tone: L.tone,
+    s: (s === "info" || s === "no") ? (v.selloNote || E2("Revisa tu página y vuelve a pedirlo.", "Check your page and request it again.")) : E2(`El equipo revisa que el negocio existe en ${d.ciudad}, que tú lo representas y que tu página coincide. Nunca se piden documentos.`, `The team checks the business exists in ${d.ciudad}, that you represent it and that your page matches. No documents are ever requested.`),
+    acts,
+  }] });
+  return out;
 }

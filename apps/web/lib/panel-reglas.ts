@@ -11,7 +11,7 @@ export type EntradaFuerza = {
   faqs: number; resenasSinResponder: number; equipo: number; aDomicilio: boolean; diasAbiertos: number; amenidades: number; pro: boolean;
 };
 export type Tarea = { p: number; part: string; t: Bi; g: Bi };
-export function fuerza(x: EntradaFuerza): { sc: number; tasks: Tarea[] } {
+export function fuerza(x: EntradaFuerza): { sc: number; tasks: Tarea[]; todas: (Tarea & { ok: boolean })[] } {
   const T: [boolean, number, string, Bi, Bi][] = [
     [x.items >= 3, 12, "mod", [`Agrega 3 o más ${x.itemsW[0]}`, `Add 3 or more ${x.itemsW[1]}`], ["Con 3 o más, la gente compara y se decide.", "With 3 or more, people compare and decide."]],
     [x.galeria >= 5, 10, "fotos", ["Sube 5 fotos de tu trabajo", "Upload 5 photos of your work"], ["Con 5+ fotos recibes 3× más contactos.", "5+ photos get 3× more contacts."]],
@@ -26,7 +26,8 @@ export function fuerza(x: EntradaFuerza): { sc: number; tasks: Tarea[] } {
     [x.about && x.amenidades > 0, 4, "about", ["Marca lo que hay en tu negocio", "Mark what your place offers"], ["Estacionamiento, tarjeta, para niños…", "Parking, cards, kid friendly…"]],
   ];
   const base = 30, got = T.reduce((a, t) => a + (t[0] ? t[1] : 0), 0), max = T.reduce((a, t) => a + t[1], 0);
-  return { sc: Math.round(base + ((100 - base) * got) / max), tasks: T.filter((t) => !t[0]).map((t) => ({ p: t[1], part: t[2], t: t[3], g: t[4] })) };
+  const todas = T.map((t) => ({ ok: t[0], p: t[1], part: t[2], t: t[3], g: t[4] }));
+  return { sc: Math.round(base + ((100 - base) * got) / max), tasks: todas.filter((t) => !t.ok).map(({ ok: _o, ...t }) => t), todas };
 }
 
 /* ── Prueba Pro (pro-trial.js TLTrial.of) ─────────────────────────────────────────────────────────────────────────
