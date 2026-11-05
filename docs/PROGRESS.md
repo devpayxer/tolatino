@@ -3,9 +3,21 @@
 _Actualizado: 5 nov 2026._
 
 ## Estado
-- **Etapa: plan versión 2 escrito, esperando el OK del fundador.** Las 20 decisiones
-  están cerradas en `docs/DECISIONES.md`; `docs/PLAN.md` v2 y el `CLAUDE.md`
-  definitivo las integran. No hay código de la app todavía.
+- **Plan APROBADO (5 nov 2026). Sigue: Fase 0 — Cimientos.** Todas las decisiones
+  (A–Z) están en `docs/DECISIONES.md`; `docs/PLAN.md` v2 y `CLAUDE.md` las integran.
+  No hay código de la app todavía.
+- **Cómo arrancar la Fase 0 (sesión nueva, `/model opus`, `/effort high`):**
+  1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
+  2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama
+     `pruebas` nueva con `infra/pruebas/deploy.sh` (que además reemplaza
+     `tolatino-sync` con `flock`), compose del sandbox (Postgres+PostGIS, MinIO,
+     tiempo real, observabilidad), tubería CI, primeros guardianes.
+  3. Segundo bloque: puerto del sistema de diseño desde
+     `docs/diseno/design-system/components-web/` + tokens → `packages/ui`, página de
+     catálogo de componentes, **primera captura en el teléfono** para el OK.
+  4. Después: cuenta (teléfono una vez + passkeys), ciudad (5 ciudades), taxonomía,
+     Super Admin esqueleto, `docs/ayuda/` inicial.
+- El fundador trabaja desde el teléfono y solo da el OK (decisión U).
 - El fundador trabaja desde el teléfono y solo da el OK (decisión U).
 
 ## Infraestructura de PRUEBAS (sandbox) — creada el 5 nov
@@ -28,7 +40,7 @@ _Actualizado: 5 nov 2026._
 
 ## Pendiente inmediato
 1. ~~Verificado por el fundador (5 nov 00:08 EST): la página de estado carga, sync en commit 430e46a.~~ **Defecto conocido:** en el primer arranque `tolatino-sync` corrió dos veces a la vez (runcmd + timer) y chocó el clone; se autocorrigió al minuto. **Corregir en Fase 0:** `deploy.sh` reemplaza `/usr/local/bin/tolatino-sync` con una versión con `flock`.
-2. OK del fundador a `docs/PLAN.md` v2 → empieza la Fase 0.
+2. ~~OK del fundador al plan~~ dado el 5 nov.
 3. ~~Pexels~~ hecho (5 nov): clave nueva en los secretos del entorno, probada (HTTP 200).
 4. Crear la rama `pruebas` nueva (hoy apunta al código v1) con `infra/pruebas/deploy.sh`
    cuando empiece la Fase 0.

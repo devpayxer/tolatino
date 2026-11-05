@@ -1,7 +1,7 @@
 # To'Latino v2 — Plan de construcción (versión 2)
 
-> **Estado: para aprobar por el fundador (5 nov 2026).** Integra las 20 decisiones
-> de `docs/DECISIONES.md`. Nada de código de la app hasta el OK.
+> **Estado: APROBADO por el fundador el 5 nov 2026.** Integra las decisiones de
+> `docs/DECISIONES.md` (A–Z). Fase 0 en marcha.
 > Fuente de verdad del *producto y el diseño*: `docs/diseno/`. Fuente de verdad del
 > *código*: este plan + `CLAUDE.md`.
 
@@ -231,8 +231,10 @@ nuevos cuando la fase los pide · `docs/ayuda/` de cada función (V) · captura 
    `docs/PROGRESS.md`. **Herramientas** → `docs/HERRAMIENTAS.md` (crece).
 7. **Reporte diario** al fundador por los guardianes.
 8. **Reportar con fidelidad:** lo que falla se dice; «listo» solo con la captura.
-9. Modelo/esfuerzo: Sonnet/medium para pantallas; Opus/high para RLS, pagos,
-   migraciones, seguridad o un bug que falló dos veces. Claude avisa cuándo.
+9. Modelo/esfuerzo (decisión Z): Opus 5.5/high para Fase 0, base, permisos, pagos,
+   seguridad y bugs reincidentes; Sonnet 5.5/medium para pantallas y flujos; Haiku
+   para lo mecánico; Fable 5.1 solo cuando Opus ya falló en algo caro. Nunca `max`.
+   Una sesión por tarea; sesión nueva al terminar. Claude avisa cuándo cambiar.
 
 ---
 
