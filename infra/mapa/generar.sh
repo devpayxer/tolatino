@@ -9,7 +9,8 @@
 set -euo pipefail
 DIR="${1:?carpeta de datos}"
 AQUI="$(cd "$(dirname "$0")" && pwd)"
-PLANETILER="${PLANETILER_IMAGEN:-ghcr.io/onthegomap/planetiler:latest}"
+# Fijada por huella: la 0.10.3 que pasó la prueba de punta a punta (CI «Mapa», 5 nov 2026).
+PLANETILER="${PLANETILER_IMAGEN:-ghcr.io/onthegomap/planetiler@sha256:b3b48614759d8676739f341b3de028bf852bbc80a0ea70804a2c55681d235c90}"
 OUT="$DIR/pennsylvania.mbtiles"
 mkdir -p "$DIR/sources"
 if [ -f "$OUT" ] && [ -z "$(find "$OUT" -mtime +30 2>/dev/null)" ] && [ "${FORZAR:-0}" != 1 ]; then
