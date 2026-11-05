@@ -1,0 +1,43 @@
+name: Mapa · teselas propias
+# Comprueba de punta a punta las teselas propias: genera Pensilvania, las sirve con tileserver-gl y pide teselas
+# reales de Hazleton (raster y vectorial). Corre a mano o cuando cambia infra/mapa.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["infra/mapa/**", ".github/workflows/mapa.yml"]
+
+jobs:
+  teselas:
+    name: generar · servir · probar
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generar teselas de Pensilvania
+        run: |
+          docker pull ghcr.io/onthegomap/planetiler:latest
+          docker run --rm ghcr.io/onthegomap/planetiler:latest --help 2>&1 | head -3 || true
+          docker image inspect ghcr.io/onthegomap/planetiler:latest --format '{{index .Config.Labels "org.opencontainers.image.version"}}' || true
+          time bash infra/mapa/generar.sh "$RUNNER_TEMP/mapa"
+      - name: Servir y pedir teselas de Hazleton
+        run: |
+          docker run -d --name teselas -p 8080:8080 -v "$RUNNER_TEMP/mapa":/data maptiler/tileserver-gl:v5.6.0 --file /data/pennsylvania.mbtiles
+          for i in $(seq 1 90); do curl -fsS localhost:8080/health >/dev/null 2>&1 && break; sleep 2; done
+          docker logs teselas 2>&1 | tail -20
+          echo "== estilos"; curl -fsS localhost:8080/styles.json
+          echo "== datos"; curl -fsS localhost:8080/data.json | head -c 600; echo
+          read X15 Y15 X13 Y13 < <(python3 -c "
+          import math
+          def t(lat,lon,z):
+            n=2**z; x=int((lon+180)/360*n); y=int((1-math.asinh(math.tan(math.radians(lat)))/math.pi)/2*n); return x,y
+          a=t(40.9584,-75.9746,15); b=t(40.9584,-75.9746,13); print(a[0],a[1],b[0],b[1])")
+          ESTILO=$(curl -fsS localhost:8080/styles.json | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['id'])")
+          for z in 15 13; do
+            if [ $z = 15 ]; then X=$X15; Y=$Y15; else X=$X13; Y=$Y13; fi
+            curl -fsS -o "t$z.png" "localhost:8080/styles/$ESTILO/$z/$X/$Y.png"
+            file "t$z.png"; ls -la "t$z.png"
+            echo "== PNG z$z base64 ini"; base64 -w0 "t$z.png"; echo; echo "== PNG z$z base64 fin"
+          done
+          curl -fsS -o v.pbf "localhost:8080/data/$(curl -fsS localhost:8080/data.json | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['id'])")/14/$((X15/2))/$((Y15/2)).pbf"
+          ls -la v.pbf
