@@ -21,4 +21,16 @@ for f in "$DIR"/*.sql; do
     exit 1
   fi
 done
+# Semillas repetibles (configuración real, no datos de ejemplo): se vuelven a aplicar cuando cambian.
+psql -c "create table if not exists schema_seeds (name text primary key, sha256 text not null, applied_at timestamptz not null default now());"
+for f in "$(dirname "$DIR")"/seeds/*.sql; do
+  [ -e "$f" ] || continue
+  n=$(basename "$f"); h=$(sha256sum "$f" | cut -d' ' -f1)
+  prev=$(psql -c "select sha256 from schema_seeds where name = '$n'")
+  if [ "$prev" != "$h" ]; then
+    echo "[migrar] semilla $n"
+    psql < "$f"
+    psql -c "insert into schema_seeds (name, sha256) values ('$n', '$h') on conflict (name) do update set sha256 = excluded.sha256, applied_at = now()"
+  fi
+done
 echo "[migrar] al día: $(psql -c 'select count(*) from schema_migrations') migraciones"

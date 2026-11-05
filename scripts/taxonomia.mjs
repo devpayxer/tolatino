@@ -10,17 +10,17 @@ import { join } from "node:path";
 const RAIZ = new URL("..", import.meta.url).pathname;
 const md = readFileSync(join(RAIZ, "docs/diseno/plan/taxonomia-negocios.md"), "utf8");
 
-// Del prototipo: [ícono, corto ES, corto EN, provisional]
+// Del diseño (To'Latino Onboarding vecino.dc.html, CATS): [ícono, corto ES, corto EN, provisional]
 const EXTRA = {
-  "NEG-AUTO": ["car", "Auto", "Auto", false], "NEG-BELL": ["scissors", "Belleza", "Beauty", false],
-  "NEG-FOOD": ["restaurant", "Comida", "Food", false], "NEG-HOGAR": ["wrench", "Hogar", "Home", false],
+  "NEG-FOOD": ["restaurant", "Comida", "Food", false], "NEG-BELL": ["scissors", "Belleza", "Beauty", false],
+  "NEG-AUTO": ["car", "Auto", "Auto", false], "NEG-HOGAR": ["wrench", "Hogar", "Home", false],
   "NEG-NOCHE": ["drink", "Noche", "Nightlife", false], "NEG-MERC": ["cart", "Mercados", "Markets", false],
-  "NEG-FIESTA": ["party", "Fiestas", "Parties", false], "NEG-SALUD": ["medical", "Salud", "Health", false],
-  "NEG-PRO": ["brief", "Profesionales", "Pros", false], "NEG-TIENDA": ["bag", "Tiendas", "Shops", true],
-  "NEG-TRANS": ["truck", "Transporte", "Rides", true], "NEG-EDU": ["grid", "Cursos", "Courses", true],
-  "NEG-NINOS": ["smile", "Niños", "Kids", true], "NEG-DEPORTE": ["bolt", "Deporte", "Sports", true],
-  "NEG-FE": ["building", "Iglesias", "Churches", true], "NEG-INMUEBLE": ["key", "Casas", "Homes", true],
-  "NEG-DEALER": ["car", "Autos", "Cars", true],
+  "NEG-FIESTA": ["party", "Fiestas", "Parties", false], "NEG-SALUD": ["medical", "Doctores", "Doctors", false],
+  "NEG-PRO": ["brief", "Profesionales", "Professionals", false], "NEG-TIENDA": ["bag", "Tiendas", "Shops", false],
+  "NEG-TRANS": ["truck", "Transporte", "Transport", false], "NEG-EDU": ["grid", "Educación", "Education", false],
+  "NEG-NINOS": ["smile", "Niños", "Kids", false], "NEG-DEPORTE": ["bolt", "Deporte", "Sports", false],
+  "NEG-FE": ["building", "Iglesias", "Churches", false], "NEG-INMUEBLE": ["key", "Bienes raíces", "Real estate", false],
+  "NEG-DEALER": ["car", "Venta de autos", "Car dealers", false],
 };
 // Módulos permitidos por categoría (decisión del 3 nov, TLOnbNeg.ALLOW) + staff, eventos, nov, jobs en todas.
 const ALLOW = {
@@ -65,15 +65,17 @@ writeFileSync(join(RAIZ, "packages/taxonomy/categorias.json"), JSON.stringify(ca
 
 const q = (s) => (s == null ? "null" : `'${String(s).replace(/'/g, "''")}'`);
 const j = (o) => `${q(JSON.stringify(o))}::jsonb`;
-let sql = `-- 0004 · Datos del catálogo: 17 categorías y sus subcategorías.
+let sql = `-- Semilla repetible del catálogo: 17 categorías y sus subcategorías.
 -- GENERADO por scripts/taxonomia.mjs desde docs/diseno/plan/taxonomia-negocios.md. No editar a mano.
--- Idempotente: inserta lo nuevo y actualiza nombres; nunca borra (lo que el Super Admin apagó sigue apagado).
+-- packages/db/migrar.sh la vuelve a aplicar cuando cambia (upserts): inserta lo nuevo y actualiza nombres;
+-- nunca borra ni toca status (lo que el Super Admin apagó sigue apagado).
 begin;
 `;
 for (const c of cats) {
   sql += `insert into categories (id, sort, name, short, icon, filter_families, allowed_modules, main_module, short_provisional)
 values (${q(c.id)}, ${c.orden}, ${j({ es: c.es, en: c.en })}, ${j({ es: c.corto.es, en: c.corto.en })}, ${q(c.icono)}, ${j(c.filtros)}, ${j(c.modulos)}, ${q(c.principal)}, ${c.corto.provisional})
 on conflict (id) do update set sort = excluded.sort, name = excluded.name, icon = excluded.icon,
+  short = excluded.short, short_provisional = excluded.short_provisional,
   filter_families = excluded.filter_families, allowed_modules = excluded.allowed_modules, main_module = excluded.main_module;
 `;
   for (const s of c.subcategorias)
@@ -82,6 +84,6 @@ on conflict (id) do update set sort = excluded.sort, name = excluded.name;
 `;
 }
 sql += "commit;\n";
-mkdirSync(join(RAIZ, "packages/db/migrations"), { recursive: true });
-writeFileSync(join(RAIZ, "packages/db/migrations/0004_catalogo_datos.sql"), sql);
+mkdirSync(join(RAIZ, "packages/db/seeds"), { recursive: true });
+writeFileSync(join(RAIZ, "packages/db/seeds/catalogo.sql"), sql);
 console.log(`17 categorías · ${cats.reduce((a, c) => a + c.subcategorias.length, 0)} subcategorías`);

@@ -51,6 +51,16 @@ const guardianes = {
     }
   },
 
+  /* 3b. El código de entrada en «modo pruebas» jamás en producción (decisión E2). */
+  modoPruebas() {
+    for (const f of archivos) {
+      if (!/(^|\/)(infra\/produccion|\.env\.produccion)/.test(f) && !/produccion/.test(f)) continue;
+      if (/TOLATINO_SMS_MODO\s*[:=]\s*["']?pruebas/.test(readFileSync(f, "utf8"))) falla("modoPruebas", f, 0, "modo pruebas del código en un archivo de producción");
+    }
+    const ent = readFileSync("apps/web/lib/entorno.ts", "utf8");
+    if (!/ENTORNO === "produccion" && MODO_SMS === "pruebas"[\s\S]{0,40}throw/.test(ent)) falla("modoPruebas", "apps/web/lib/entorno.ts", 0, "falta el candado de tiempo de ejecución");
+  },
+
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
   idioma() {
     for (const f of codigo) {

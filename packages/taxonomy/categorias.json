@@ -2012,8 +2012,8 @@
     "es": "Doctores y Medicina",
     "en": "Doctors and Medicine",
     "corto": {
-      "es": "Salud",
-      "en": "Health",
+      "es": "Doctores",
+      "en": "Doctors",
       "provisional": false
     },
     "icono": "medical",
@@ -2400,7 +2400,7 @@
     "en": "Professional Services",
     "corto": {
       "es": "Profesionales",
-      "en": "Pros",
+      "en": "Professionals",
       "provisional": false
     },
     "icono": "brief",
@@ -2788,7 +2788,7 @@
     "corto": {
       "es": "Tiendas",
       "en": "Shops",
-      "provisional": true
+      "provisional": false
     },
     "icono": "bag",
     "filtros": [
@@ -3128,8 +3128,8 @@
     "en": "Transportation",
     "corto": {
       "es": "Transporte",
-      "en": "Rides",
-      "provisional": true
+      "en": "Transport",
+      "provisional": false
     },
     "icono": "truck",
     "filtros": [
@@ -3335,9 +3335,9 @@
     "es": "Cursos y Educación",
     "en": "Courses & Education",
     "corto": {
-      "es": "Cursos",
-      "en": "Courses",
-      "provisional": true
+      "es": "Educación",
+      "en": "Education",
+      "provisional": false
     },
     "icono": "grid",
     "filtros": [
@@ -3652,7 +3652,7 @@
     "corto": {
       "es": "Niños",
       "en": "Kids",
-      "provisional": true
+      "provisional": false
     },
     "icono": "smile",
     "filtros": [
@@ -3889,7 +3889,7 @@
     "corto": {
       "es": "Deporte",
       "en": "Sports",
-      "provisional": true
+      "provisional": false
     },
     "icono": "bolt",
     "filtros": [
@@ -4174,7 +4174,7 @@
     "corto": {
       "es": "Iglesias",
       "en": "Churches",
-      "provisional": true
+      "provisional": false
     },
     "icono": "building",
     "filtros": [
@@ -4456,9 +4456,9 @@
     "es": "Bienes Raíces",
     "en": "Real Estate",
     "corto": {
-      "es": "Casas",
-      "en": "Homes",
-      "provisional": true
+      "es": "Bienes raíces",
+      "en": "Real estate",
+      "provisional": false
     },
     "icono": "key",
     "filtros": [
@@ -4752,9 +4752,9 @@
     "es": "Venta de Autos",
     "en": "Car Dealers",
     "corto": {
-      "es": "Autos",
-      "en": "Cars",
-      "provisional": true
+      "es": "Venta de autos",
+      "en": "Car dealers",
+      "provisional": false
     },
     "icono": "car",
     "filtros": [

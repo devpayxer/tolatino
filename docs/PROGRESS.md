@@ -59,8 +59,18 @@ _Actualizado: 5 nov 2026._
   **Pendiente:** búsqueda trigram «barberia» también trae «Bar» (umbral 0.3): se afina con Buscar.
   Nombres cortos provisionales (no estaban en el prototipo): Tiendas, Transporte, Cursos, Niños,
   Deporte, Iglesias, Casas, Autos — editables en el Super Admin.
-- **Sigue · bloque 3b:** cuenta (teléfono verificado + passkeys + sesión). Necesita proveedor de
-  SMS/WhatsApp (decisión E) para mandar códigos reales; ver LAUNCH-CHECKLIST.
+- **Fase 0 · bloque 3b HECHO (5 nov) · cuenta:** migración 0006 (users, otp_codes, sessions,
+  account_changes); `apps/web/lib/cuenta.ts` (código de 6 números guardado como HMAC, 10 min,
+  5 intentos, reenvío a los 30 s, 5 códigos/hora por teléfono y 20 por IP, comparación en tiempo
+  constante; sesión = token aleatorio en cookie httpOnly/SameSite=Lax de 180 días, guardado como
+  huella; defensa CSRF por Origin); rutas `/api/cuenta/{codigo,verificar,perfil,salir,yo}`;
+  pantallas `/entrar` (ONB-USR-1 y -2, textos 1:1 del diseño 2au) y `/cuenta` mínima.
+  **Modo pruebas (decisión E2):** el código sale en pantalla con «MODO PRUEBAS»; candado en
+  `lib/entorno.ts` + guardián `modoPruebas` (probado al revés). Semilla del catálogo pasa a
+  `packages/db/seeds/catalogo.sql` (repetible) con los nombres cortos del diseño de onboarding.
+  Probado de punta a punta en iPhone 15 contra PostGIS real + 5 ataques (CSRF, número inválido,
+  reenvío rápido, fuerza bruta, huellas). Ayuda para El Compa: `docs/ayuda/cuenta-entrar.md`.
+  Pendientes en LAUNCH-CHECKLIST (proveedor SMS, passkeys con HTTPS, pasos 3–5, Button accesible).
 - **Luego · bloque 3c:** Super Admin esqueleto (equipo, roles, matriz, auditoría, ciudades, catálogo).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.

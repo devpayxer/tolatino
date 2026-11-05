@@ -22,6 +22,8 @@ MINIO_ROOT_USER=tolatino
 MINIO_ROOT_PASSWORD=$(openssl rand -hex 24)
 EOF
 fi
+# Secretos que se agregaron después: se completan sin tocar los que ya existen.
+grep -q '^AUTH_SECRET=' "$ENV_FILE" || echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
 # 3) Contenedores: app (se reconstruye con el commit nuevo), Postgres + PostGIS, MinIO.
