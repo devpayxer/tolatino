@@ -1,0 +1,70 @@
+:root {
+  /* Core */
+  --tl-ink: #0B0E12;
+  --tl-brand: #7B61FF;      /* identidad solamente: logo, apóstrofe. Nunca botón */
+  --tl-action: #4B37F5;     /* todo lo interactivo */
+  --tl-action-hover: #2E1FD1;
+  --tl-signal: #00E5C4;
+  --tl-paper: #F7F6F3;
+  --tl-white: #FFFFFF;
+  --tl-pro: #FFB020;
+  --tl-desk: #EDEBE6;       /* fondo detrás del dispositivo */
+
+  /* Estados */
+  --tl-open: #00A88F;       /* punto "abierto", verificado */
+  --tl-open-text: #00695B;
+  --tl-danger: #C0392B;
+
+  /* Tonos de módulo */
+  --tl-mod-community: #4B37F5;
+  --tl-mod-business: #00A88F;
+  --tl-mod-events: #FF2D7A;
+  --tl-mod-transport: #1E7BFF;
+  --tl-mod-realestate: #0FA958;
+  --tl-mod-autos: #FF8A1F;
+  --tl-mod-jobs: #C2410C;
+
+  /* Superficie oscura (noche, conductor) */
+  --tl-dark-1: #0B0E12;
+  --tl-dark-2: #14181F;
+  --tl-dark-3: #1C222B;
+  --tl-dark-line: rgba(255,255,255,.14);
+
+  /* Texto sobre claro (ink con alfa) */
+  --tl-text: #0B0E12;
+  --tl-text-2: rgba(11,14,18,.75);
+  --tl-text-3: rgba(11,14,18,.6);
+  --tl-text-muted: rgba(11,14,18,.5);
+  --tl-text-faint: rgba(11,14,18,.42);
+
+  /* Líneas y rellenos */
+  --tl-line: rgba(11,14,18,.08);
+  --tl-line-strong: rgba(11,14,18,.14);
+  --tl-fill: rgba(11,14,18,.05);
+  --tl-fill-soft: rgba(11,14,18,.035);
+
+  /* Tintes */
+  --tl-action-tint: rgba(75,55,245,.09);
+  --tl-signal-tint: rgba(0,229,196,.2);
+  --tl-danger-tint: rgba(192,57,43,.1);
+
+  /* Neutros de imagen y apoyo (usados en pantallas) */
+  --tl-photo-bg: #E4E1DA;       /* fondo de foto mientras carga */
+  --tl-photo-bg-2: #DDD9D1;     /* avatar / miniatura sin foto */
+  --tl-paper-2: #F6F7F5;        /* fila alterna / superficie hundida */
+  --tl-mint-soft: #E8EDE9;      /* fondo suave de verificado */
+  --tl-pro-ink: #8A5A00;        /* texto sobre tinte Pro */
+  --tl-signal-ink: #04120F;     /* texto sobre Signal */
+
+
+  /* Semánticos */
+  --surface-page: var(--tl-white);
+  --surface-card: var(--tl-white);
+  --surface-sunken: var(--tl-paper);
+  --text-body: var(--tl-text-2);
+  --text-heading: var(--tl-ink);
+  --border-card: var(--tl-line);
+  --button-primary-bg: var(--tl-ink);
+  --button-action-bg: var(--tl-action);
+  --link: var(--tl-action);
+}

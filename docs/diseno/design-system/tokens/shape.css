@@ -1,0 +1,38 @@
+:root {
+  --radius-tag: 5px;
+  --radius-6: 6px;
+  --radius-7: 7px;
+  --radius-chip-sq: 8px;
+  --radius-9: 9px;
+  --radius-10: 10px;            /* botón chico, chip de conductor */
+  --radius-11: 11px;            /* botón sm */
+  --radius-sm: 12px;
+  --radius-13: 13px;            /* botón md, tile de ícono */
+  --radius-14: 14px;            /* input, fila de negocio, CTA de barra (el más usado) */
+  --radius-button: 15px;
+  --radius-16: 16px;            /* buscador, bloque interno */
+  --radius-card: 17px;
+  --radius-18: 18px;            /* tile de módulo, fila de viaje */
+  --radius-20: 20px;            /* tarjeta de evento, card desktop */
+  --radius-card-lg: 22px;
+  --radius-24: 24px;
+  --radius-sheet: 26px;
+  --radius-pill: 999px;
+  --radius-device: 43px;
+
+  --shadow-card: 0 12px 26px -22px rgba(11,14,18,.45);
+  --shadow-float: 0 24px 48px -34px rgba(11,14,18,.45);
+  --shadow-action: 0 8px 20px -8px rgba(75,55,245,.7);
+  --shadow-device: 0 40px 80px -30px rgba(11,14,18,.55);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --gutter-mobile: 20px;
+
+  --blur-bar: blur(14px); /* @kind other */
+  --ease-sheet: cubic-bezier(.2,.8,.2,1); /* @kind other */
+}

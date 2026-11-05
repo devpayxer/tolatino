@@ -1,0 +1,27 @@
+:root {
+  --font-display: "Sora", sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --type-display: 800 34px/1.05 var(--font-display);   /* -0.035em */
+  --type-h1: 800 24px/1.08 var(--font-display);        /* -0.04em */
+  --type-section: 800 17px/1 var(--font-display);      /* -0.02em */
+  --type-card-title: 700 19px/1.25 var(--font-body);
+  --type-body: 400 13.5px/1.62 var(--font-body);
+  --type-ui: 700 13px var(--font-body);
+  --type-button: 700 14.5px var(--font-body);
+  --type-small: 600 12px var(--font-body);
+  --type-meta: 600 11px var(--font-mono);              /* 0.06em, MAYÚSCULAS */
+  --type-label: 800 10px var(--font-mono);             /* 0.12em, MAYÚSCULAS */
+  --type-tab: 800 12px var(--font-mono);               /* 0.06em */
+
+  /* Escala real usada en pantallas (más frecuentes primero) */
+  --size-ui-xs: 10.5px;  --size-ui-sm: 11.5px;  --size-ui: 12px;  --size-ui-md: 12.5px;  --size-ui-lg: 13px;  --size-body: 13.5px;  --size-ui-xl: 14px;
+  --size-mono-xxs: 8.5px; --size-mono-xs: 9px;  --size-mono-sm: 9.5px;  --size-mono: 10px;  --size-mono-md: 11px;  --size-mono-lg: 12px;
+  --size-title-sm: 15px; --size-title: 16px;  --size-title-md: 17px;  --size-title-lg: 18px;  --size-price: 20px;  --size-h2: 22px;  --size-h1: 24px;
+
+  --track-display: -0.04em;
+  --track-section: -0.02em;
+  --track-mono: 0.06em;
+  --track-label: 0.12em;
+}

@@ -1,0 +1,564 @@
+{
+ "v": 1,
+ "fecha": "23 oct 2026",
+ "intro": "El prototipo es la especificación, pero trae piezas que solo sirven para moverlo: barras de revisión, respuestas que llegan solas, un reloj que no corre y servicios imitados. Aquí está cada una, dónde vive y qué pasa en la app. Se explica una sola vez; ninguna se diseña ni se construye tal cual.",
+ "reglas": [
+  [
+   "Lo marcado no se construye",
+   "Lo que lleva `data-proto` en el código, y lo que tiene dentro, no pasa a la app: las barras de revisión y las pantallas de encargo."
+  ],
+  [
+   "Nada avanza solo",
+   "Cada cambio de estado lo hace una persona (vecino, negocio, repartidor, equipo) o un plazo del servidor. La demo los adelanta sola o con un botón de la barra."
+  ],
+  [
+   "La hora corre",
+   "La demo vive siempre el jueves 24 sep 2026 a las 12:30 PM. En la app, abierto, cerrado y cada plazo se calculan con la hora de la ciudad."
+  ],
+  [
+   "Lo de ejemplo no se migra",
+   "Negocios, personas, fotos y transacciones de ejemplo existen para ver las pantallas llenas. La app empieza con datos reales."
+  ],
+  [
+   "Lo del teléfono es del teléfono",
+   "Las hojas de llamar, mapas, calendario y compartir, la ubicación, el dictado y los avisos son del sistema o de un proveedor."
+  ]
+ ],
+ "grupos": [
+  {
+   "k": "barras",
+   "n": "Barras y botones para revisar",
+   "c": "Barras y botones",
+   "d": "Solo existen para mover la demo. No se diseñan ni se construyen.",
+   "i": [
+    {
+     "k": "barra-proto",
+     "n": "Barra del prototipo",
+     "marca": "barra",
+     "donde": "`To'Latino Prototipo.dc.html` · arriba del teléfono",
+     "demo": "Muestra la ruta en pantalla y cambia Móvil/Desktop y el ancho (1440 · 1280 · 1024). Según la pantalla trae CUENTA, PRUEBA PRO, RANGO, RESPUESTA y el botón de simulación. Lleva a Inicio, Panel negocio, Admin y Cola.",
+     "app": "No existe. El vecino entra por la app o la web, el negocio por su panel y el equipo por el Super Admin, cada uno con su cuenta."
+    },
+    {
+     "k": "barra-panel",
+     "n": "Barra de revisión del panel",
+     "marca": "barra",
+     "donde": "`To'Latino Panel negocio v2.dc.html` suelto · «Revisión · controles»",
+     "demo": "Móvil/Desktop, ancho, ES/EN, Dueño/Moderador, negocio de ejemplo (Sabor Dominicano, Barbería El Primo, Empanadas Doña Luz y uno por categoría) y día de la prueba Pro.",
+     "app": "El negocio y el rol salen de la cuenta: el dueño ve sus negocios y el moderador solo sus áreas. El idioma sale de Ajustes."
+    },
+    {
+     "k": "barra-admin",
+     "n": "Barra de revisión del Super Admin",
+     "marca": "barra",
+     "donde": "`To'Latino Super Admin.dc.html` suelto · «Revisión · controles»",
+     "demo": "Móvil/Desktop, ancho, ES/EN, rol (7) y ciudad.",
+     "app": "El rol sale de la cuenta del equipo. La ciudad sí es del producto: vive en la barra del admin (2ap)."
+    },
+    {
+     "k": "respuesta",
+     "n": "RESPUESTA",
+     "marca": "",
+     "donde": "Barra del prototipo · estado `scen` del Prototipo; lo leen `prototype/neg-*-flow.js`, `neg-*-rev.js`, `neg-*-pre.js`, `neg-hogar-mas.js`, `neg-bell-book.js`, `neg-cita-help.js` y `evp-flow.js`",
+     "demo": "Decide cómo responde el negocio. La barra trae «Responder en el panel» (abre el panel en Hoy para contestar tú como el negocio) y «Tarjeta rechazada» (el próximo pago falla). Los motores entienden además `ok`, `cambio`, `rechaza` y `nada`.",
+     "app": "No existe. Responde el negocio desde su panel: Confirmar, Otra hora o No puedo. Si no responde a tiempo, la solicitud vence sola. La tarjeta la acepta o la rechaza Stripe."
+    },
+    {
+     "k": "simular",
+     "n": "Botón de simulación",
+     "marca": "",
+     "donde": "Barra del prototipo · `ctSim`; cada motor tiene su `sim()`",
+     "demo": "Adelanta lo que en la vida real hace otra persona o el reloj: «El negocio responde», «Pasan 24 h», «To'Latino decide», «Pasó la cita», «Lo pesaron»…",
+     "app": "No existe. Cada paso lo dispara quien corresponde: ver «Lo que hace otra persona» y «Lo que hace el reloj»."
+    },
+    {
+     "k": "cuenta",
+     "n": "CUENTA · Con historial / Cuenta nueva",
+     "marca": "",
+     "donde": "Barra del prototipo en Mi cuenta · `usrDemo`",
+     "demo": "Cambia Mi cuenta entre una cuenta con historial y una recién creada.",
+     "app": "No existe. Cada cuenta muestra lo suyo; la cuenta nueva es el estado vacío de cada sección."
+    },
+    {
+     "k": "prueba-dia",
+     "n": "PRUEBA PRO · día de la prueba",
+     "marca": "",
+     "donde": "Barra del prototipo en el panel y barra del panel · `TLTrial.setDay` (`prototype/pro-trial.js`)",
+     "demo": "Pone al negocio en el día 0, 20, 25 o 29 de su prueba, o en el día en que terminó.",
+     "app": "El día sale de la fecha en que empezó. Un proceso diario manda los avisos de los días 20, 25 y 29 y, el día 30, pasa el negocio a Free o hace el primer cobro."
+    },
+    {
+     "k": "rango",
+     "n": "RANGO en El Patio",
+     "marca": "",
+     "donde": "Barra del prototipo en `APP-PATIO-*` · `patioOpts`",
+     "demo": "Cambia tu rango para probar la mesa privada, que se abre en Teniente.",
+     "app": "El rango sale de los puntos de la cuenta."
+    },
+    {
+     "k": "encargo",
+     "n": "Encargo y Cola",
+     "marca": "encargo · cola",
+     "donde": "Prototipo · `PROTO-ENCARGO` y `PROTO-COLA` (móvil y desktop) · función `encargo()`",
+     "demo": "Pantalla de «aún no construido» y su lista de trabajo (regla del plan). Hoy solo aparece si un script no cargó.",
+     "app": "No existe. Toda ruta de V1 está construida."
+    },
+    {
+     "k": "marco",
+     "n": "Marco del teléfono",
+     "marca": "",
+     "donde": "Prototipo · vista móvil (393 × 852, barra 9:41 · 5G)",
+     "demo": "Dibuja el teléfono alrededor de la app.",
+     "app": "Es el teléfono. La app respeta el área segura del sistema."
+    },
+    {
+     "k": "entrar-como",
+     "n": "«Entrar como»",
+     "marca": "",
+     "donde": "Super Admin · Sistema · Equipo",
+     "demo": "Cambia de persona del equipo para ver el admin con otro rol.",
+     "app": "No existe. Cada persona entra con su cuenta y su rol; los permisos se revisan en la matriz (2am)."
+    },
+    {
+     "k": "en-vivo",
+     "n": "EN VIVO · «En vivo (del prototipo)»",
+     "marca": "",
+     "donde": "Super Admin · Colas, Usuarios y Transacciones · `liveItems`, `liveU`, uid `live`",
+     "demo": "Separa lo que hiciste en esta sesión del prototipo de los ejemplos fijos.",
+     "app": "No existe. Todo es en vivo: sin filtro ni etiqueta."
+    },
+    {
+     "k": "estados",
+     "n": "Galería de estados",
+     "marca": "",
+     "donde": "Super Admin · Sistema · Estados",
+     "demo": "Pone juntos los 9 estados de pantalla del plan (§4) para revisarlos.",
+     "app": "No es una pantalla. Cada estado sale donde ocurre."
+    },
+    {
+     "k": "avisos-rev",
+     "n": "Avisos para quien revisa",
+     "marca": "",
+     "donde": "Super Admin · «Abre el Super Admin desde el Prototipo…», «Herramienta del prototipo…», «· respuesta de ejemplo»",
+     "demo": "Explican la demo dentro de la pantalla.",
+     "app": "No existen."
+    },
+    {
+     "k": "asas",
+     "n": "Asas de revisión",
+     "marca": "",
+     "donde": "`window.__tlProto`, `__d2`, `__admInst`, `__tlCom`, `__tlUsr`",
+     "demo": "Dejan mover la demo desde la consola.",
+     "app": "No existen."
+    }
+   ]
+  },
+  {
+   "k": "otra",
+   "n": "Lo que hace otra persona",
+   "c": "Otra persona",
+   "d": "En la demo pasa solo a los pocos segundos o con el botón de simulación. En la app lo hace una persona desde su lado, y a quien espera le llega el aviso.",
+   "i": [
+    {
+     "k": "neg-responde",
+     "n": "El negocio responde una solicitud",
+     "marca": "",
+     "donde": "`prototype/neg-*-flow.js` (`respond`, 3–3.5 s) · `neg-bell-book.js` (`TLBook.reply`) · Prototipo (reservaciones) · `evp-flow.js` (evento privado, 4 s)",
+     "demo": "Citas, reservaciones, visitas, consultas, fechas, apartados, pedidos de mercado, viajes y clases se confirman solos. Botón: «El negocio responde» (o el taller, el mercado, el local, el consultorio, la oficina, la tienda).",
+     "app": "El negocio contesta en su panel (Hoy · Esperan tu respuesta): Confirmar, Otra hora, No puedo o la propuesta de su categoría. Solo se confirma sola si el profesional activó «Aprobar citas al instante» (D4)."
+    },
+    {
+     "k": "precio",
+     "n": "Pre-estimados y presupuestos",
+     "marca": "",
+     "donde": "`neg-auto-pre.js` y `neg-hogar-pre.js` (4 s) · `neg-hogar-mas.js` (presupuestos, 3.5 s)",
+     "demo": "El taller o el negocio manda su precio solo. Botones: «El taller responde», «Responde otro negocio».",
+     "app": "Cada negocio manda su precio desde su panel."
+    },
+    {
+     "k": "emergencia",
+     "n": "Emergencia de Hogar",
+     "marca": "",
+     "donde": "`neg-hogar-mas.js` (3.5 s)",
+     "demo": "Alguien la acepta solo. Botón: «Alguien acepta».",
+     "app": "La acepta, desde su panel, el primero de los negocios cercanos que la recibió."
+    },
+    {
+     "k": "ayuda",
+     "n": "Ayuda con un pedido o una cita",
+     "marca": "",
+     "donde": "`neg-*-rev.js` y `neg-cita-help.js` (4 s) · Prototipo (ayuda del pedido de comida)",
+     "demo": "El negocio responde solo. Botón: «El negocio responde».",
+     "app": "El negocio tiene 24 h para responder desde su panel. Si no responde, pasa a To'Latino."
+    },
+    {
+     "k": "tolatino",
+     "n": "To'Latino decide",
+     "marca": "",
+     "donde": "`neg-*-rev.js` y `neg-cita-help.js`",
+     "demo": "Botón: «To'Latino decide» o «To'Latino responde»; devuelve un monto de ejemplo.",
+     "app": "El equipo lo resuelve en Super Admin · Colas en 48 h, y la devolución sale por Stripe."
+    },
+    {
+     "k": "pedido",
+     "n": "Avanza el pedido de comida",
+     "marca": "",
+     "donde": "Prototipo · `startTrack`",
+     "demo": "El seguimiento avanza solo, paso por paso.",
+     "app": "El negocio marca cada paso en su panel y el repartidor marca los suyos en su app (`plan/apps-delivery-checkin.md`)."
+    },
+    {
+     "k": "pasos",
+     "n": "Pasos del servicio",
+     "marca": "",
+     "donde": "`neg-merc-flow.js`, `neg-tienda-flow.js`, `neg-trans-flow.js`, `neg-hogar-plan.js`, `neg-salud-flow.js`, `neg-pro-flow.js`, `neg-fiesta-flow.js`, `neg-noche-flow.js`, `neg-bell-book.js`",
+     "demo": "Botones: «Lo pesaron», «Llegó», «Lo recogí», «Salió», «La recogiste», «La devolviste», «Pasa una visita», «Pasó la cita», «Pasó la fiesta», «Pasó la noche», «Pasó la consulta», «Terminó el trámite».",
+     "app": "Lo marca el negocio en su panel (o el chofer en su app) cuando pasa: pesa y confirma el precio, entrega, sale, recibe, termina. Al terminar se abre la reseña."
+    },
+    {
+     "k": "resena",
+     "n": "Respuesta a tu reseña",
+     "marca": "",
+     "donde": "Prototipo · `_rvT`",
+     "demo": "El negocio responde solo a los pocos segundos.",
+     "app": "El negocio responde en Panel · Reseñas. Si pide revisarla, decide el equipo en Super Admin · Contenido."
+    },
+    {
+     "k": "vacante",
+     "n": "Postulación a una vacante",
+     "marca": "",
+     "donde": "Prototipo · `replyJob`",
+     "demo": "La postulación avanza sola.",
+     "app": "El negocio la mueve en Panel · Vacantes."
+    },
+    {
+     "k": "espera",
+     "n": "Lista de espera de mesa",
+     "marca": "",
+     "donde": "Prototipo · `rsvWait` (8 s)",
+     "demo": "Se libera una mesa sola.",
+     "app": "Cuando el negocio libera una mesa en su panel, se le ofrece al primero de la lista."
+    },
+    {
+     "k": "mensajes",
+     "n": "Mensajes con el negocio",
+     "marca": "",
+     "donde": "Mi cuenta · `REPLY` (1.8 s)",
+     "demo": "El negocio contesta solo.",
+     "app": "El negocio contesta desde Panel · Mensajes."
+    },
+    {
+     "k": "soporte",
+     "n": "Soporte",
+     "marca": "",
+     "donde": "`prototype/sop-store.js` · `pick` (5 s)",
+     "demo": "Dayana contesta sola con una respuesta de ejemplo.",
+     "app": "Contesta el equipo en Super Admin · Soporte."
+    },
+    {
+     "k": "vecinos",
+     "n": "Comunidad",
+     "marca": "",
+     "donde": "Comunidad · `simulate()`",
+     "demo": "Botón: «Los vecinos responden» o «Te contestan».",
+     "app": "Votos, comentarios y respuestas de otras personas."
+    },
+    {
+     "k": "invitados",
+     "n": "Invitados a una mesa privada",
+     "marca": "",
+     "donde": "Comunidad (unos 2.4 s)",
+     "demo": "Los invitados aceptan solos.",
+     "app": "Cada invitado acepta desde su teléfono."
+    },
+    {
+     "k": "jugadores",
+     "n": "Los otros jugadores de El Patio",
+     "marca": "",
+     "donde": "Comunidad y `prototype/patio-parchis.js` · `bot` (0.85 s parchís, 0.95 s dominó)",
+     "demo": "Los vecinos de la mesa juegan solos y se adelantan cuando vuelves.",
+     "app": "Juegan personas, cada una en su turno, y la partida vive en el servidor. Mesa pública: se espera hasta 60 s a que lleguen vecinos y los lugares que falten los juega «La computadora» (D6). Mesa privada: los de quien no aceptó."
+    },
+    {
+     "k": "llegan",
+     "n": "Llegan vecinos a la mesa pública",
+     "marca": "",
+     "donde": "Comunidad · `waitStart` (a los 5 y a los 17 s)",
+     "demo": "Mientras esperas, se sientan dos vecinos de ejemplo. En dominó y en parchís de 4 queda un lugar vacío; en parchís de 2 o 3 la mesa se llena y empieza.",
+     "app": "Se sientan personas que buscan mesa en ese momento."
+    },
+    {
+     "k": "equipo",
+     "n": "Tu equipo acepta la invitación",
+     "marca": "",
+     "donde": "Publica tu negocio (3.5 s)",
+     "demo": "Las personas que invitas aceptan solas.",
+     "app": "Cada persona acepta la invitación desde su teléfono."
+    },
+    {
+     "k": "stripe",
+     "n": "Stripe activa los cobros",
+     "marca": "",
+     "donde": "Panel · Cobros y plan (4 s)",
+     "demo": "Los cobros con tarjeta se activan solos.",
+     "app": "Stripe revisa la cuenta del negocio y avisa cuando ya puede cobrar."
+    },
+    {
+     "k": "reclamo",
+     "n": "Decisión sobre un reclamo",
+     "marca": "",
+     "donde": "Recuperar negocio (pregunta cada 5 s)",
+     "demo": "La pantalla pregunta cada 5 s si el equipo ya decidió en el Super Admin.",
+     "app": "El aviso llega en el momento en que el equipo decide."
+    }
+   ]
+  },
+  {
+   "k": "reloj",
+   "n": "Lo que hace el reloj",
+   "c": "El reloj",
+   "d": "En la demo la hora no corre. En la app, un proceso del servidor vence cada plazo, mueve el dinero y avisa.",
+   "i": [
+    {
+     "k": "hora",
+     "n": "Hora fija",
+     "marca": "",
+     "donde": "`NOW` y `TODAY` en los datos (`neg-food.js`, `com-data.js`, motores de cada categoría)",
+     "demo": "Hoy es siempre jueves 24 sep 2026, 12:30 PM. Barbería El Primo está en el día 25 de su prueba Pro (empezó el 30 ago).",
+     "app": "La hora de la ciudad. Abierto, cerrado y cada plazo se calculan con ella."
+    },
+    {
+     "k": "plazos",
+     "n": "Plazos sin respuesta",
+     "marca": "",
+     "donde": "Motores de cada categoría · `scen` = `nada`",
+     "demo": "Botones: «Pasan 24 h» (ayudas, pre-estimados, fiestas), «Pasan 48 h» (apartados de Tiendas, presupuestos de Hogar), «Pasan 10 min» (Mercados), «Pasan 15 min» (emergencia de Hogar), «Pasa 1 hora» (Vida Nocturna), «Pasa el tiempo» (Salud, Servicios Profesionales, Transporte).",
+     "app": "Al vencer: SIN RESPUESTA, se libera lo retenido y se le ofrecen otras opciones al vecino. La ayuda sin respuesta en 24 h pasa a To'Latino."
+    },
+    {
+     "k": "boletos",
+     "n": "Boletos apartados",
+     "marca": "",
+     "donde": "Eventos · pago (8 min)",
+     "demo": "El apartado de 8 minutos cuenta en el navegador.",
+     "app": "Lo lleva el servidor: los boletos se sueltan al vencer, aunque el vecino cierre la app."
+    },
+    {
+     "k": "espera",
+     "n": "Espera de la mesa pública",
+     "marca": "",
+     "donde": "Comunidad · `waitV` (`APP-PATIO-ESPERA`) · Super Admin › Gamificación › El Patio (`gam.patio.wait`)",
+     "demo": "La cuenta regresiva de 60 s corre en el navegador. Botón: «Pasa la espera».",
+     "app": "Lo lleva el servidor: al vencer, La computadora entra en los lugares vacíos y empieza la partida, aunque el vecino haya cerrado la app (D6)."
+    },
+    {
+     "k": "evento",
+     "n": "Día del evento",
+     "marca": "",
+     "donde": "Eventos · tu orden · `advance()`",
+     "demo": "Botón: «Pasa el tiempo» lleva la orden hasta el día del evento y después.",
+     "app": "La orden avanza con la fecha del evento y con el escaneo del boleto en la puerta."
+    }
+   ]
+  },
+  {
+   "k": "fuera",
+   "n": "Funciones del teléfono y servicios de afuera",
+   "c": "Teléfono y servicios",
+   "d": "El prototipo los imita para que el recorrido no se corte. En la app son del sistema o de un proveedor.",
+   "i": [
+    {
+     "k": "hojas",
+     "n": "Llamar, Cómo llegar, Calendario y Compartir",
+     "marca": "",
+     "donde": "`To'Latino Teléfono.dc.html` y `prototype/biz-contact.js`",
+     "demo": "En móvil dibuja la hoja del sistema (iPhone o Android).",
+     "app": "Hojas del sistema: marcar, la app de mapas que elija el vecino, el calendario y compartir. En desktop, la ventana To'Latino con enlaces reales sí es del producto."
+    },
+    {
+     "k": "chofer",
+     "n": "Número temporal del repartidor",
+     "marca": "",
+     "donde": "`prototype/biz-contact.js` (Miguel Reyes)",
+     "demo": "Un número fijo.",
+     "app": "Número enmascarado (Twilio) que dura `drvMask` minutos después de entregar."
+    },
+    {
+     "k": "entrar",
+     "n": "Entrar con tu teléfono",
+     "marca": "",
+     "donde": "Prototipo · AuthSheet (2m)",
+     "demo": "Cualquier código de 6 números sirve y siempre entras como Ana Rodríguez.",
+     "app": "Código por SMS (Twilio Verify) y la cuenta de esa persona."
+    },
+    {
+     "k": "codigos",
+     "n": "Otros códigos",
+     "marca": "",
+     "donde": "Publica tu negocio (correo) · Recuperar negocio (llamada) · Super Admin (entrar)",
+     "demo": "Aceptan cualquier código de 6 números.",
+     "app": "Códigos reales por correo, llamada o SMS, con vencimiento y límite de intentos."
+    },
+    {
+     "k": "pagos",
+     "n": "Pagos",
+     "marca": "",
+     "donde": "`prototype/pay-methods.js` (Visa ·· 4242, Mastercard ·· 8812) · RESPUESTA «Tarjeta rechazada»",
+     "demo": "No se cobra nada. El dinero pasa por Retenido, Cobrado, Liberado y Devuelto según la operación.",
+     "app": "Stripe: retener (captura manual), cobrar (captura), liberar (se cancela la retención) y devolver (reembolso). Los pagos al negocio van por Connect."
+    },
+    {
+     "k": "avisos",
+     "n": "Avisos",
+     "marca": "",
+     "donde": "Plantillas en Super Admin · Notificaciones",
+     "demo": "Se ven dentro de la app (Mi cuenta · Avisos, el panel); no se envían.",
+     "app": "Push, SMS y correo con esas plantillas, en español o inglés según la cuenta."
+    },
+    {
+     "k": "ubicacion",
+     "n": "Ubicación",
+     "marca": "",
+     "donde": "Ciudad (1.3 s)",
+     "demo": "«Usar mi ubicación» siempre te pone en Hazleton.",
+     "app": "Permiso de ubicación del teléfono o del navegador, y la ciudad abierta más cercana."
+    },
+    {
+     "k": "voz",
+     "n": "Búsqueda por voz",
+     "marca": "",
+     "donde": "Buscar (1.9 s)",
+     "demo": "«Oye» una frase de ejemplo.",
+     "app": "Dictado del sistema en español o inglés."
+    },
+    {
+     "k": "traduccion",
+     "n": "Traducciones",
+     "marca": "",
+     "donde": "`prototype/ugc-lang.js` (`TLLang`)",
+     "demo": "La traducción viene escrita en los datos de ejemplo (es y en) y 1 de cada 6 textos se escribió en inglés. Donde el dato trae un solo idioma, como lo que escribes tú o las reseñas del panel, no aparece «Ver traducción».",
+     "app": "Un servicio de traducción la hace la primera vez que alguien toca «Ver traducción» y se guarda con el texto (D3)."
+    },
+    {
+     "k": "importar",
+     "n": "Importar tu negocio",
+     "marca": "",
+     "donde": "Publica tu negocio · `TLOnbNeg.IMPORT` (`prototype/onb-neg-data.js`, 1.1 s)",
+     "demo": "Google Maps, Instagram o Facebook devuelven siempre el mismo negocio de ejemplo (Pica Pollo Doña Mery).",
+     "app": "Se leen los datos públicos del enlace (Google Places para Maps) y el dueño revisa cada campo antes de publicar."
+    },
+    {
+     "k": "mapas",
+     "n": "Mapas",
+     "marca": "",
+     "donde": "Mapa, Ciudad e Inicio · `miniMap`",
+     "demo": "Teselas públicas de ArcGIS.",
+     "app": "El servicio de mapas que se elija para la app y la web."
+    },
+    {
+     "k": "fotos",
+     "n": "Fotos",
+     "marca": "",
+     "donde": "Pexels (`ph` = número) · fotos que subes (dataURL)",
+     "demo": "Las de ejemplo son números de Pexels; las que subes se guardan dentro del navegador.",
+     "app": "Se suben a un almacenamiento y se guarda su URL (Media en el modelo). Las de ejemplo no se migran."
+    },
+    {
+     "k": "pdf",
+     "n": "Recibo en PDF",
+     "marca": "",
+     "donde": "`prototype/receipt-pdf.js`",
+     "demo": "El PDF se arma en el navegador.",
+     "app": "El mismo recibo lo genera el servidor, para descargarlo y para el correo."
+    },
+    {
+     "k": "ia",
+     "n": "El Compa · la IA",
+     "marca": "",
+     "donde": "`prototype/compa.js` (`window.claude.complete`) · `To'Latino Compa.dc.html`",
+     "demo": "Llama a Claude desde el navegador con las reglas, la ayuda y los datos de la sesión en el texto. Si no hay IA, contesta con reglas fijas (fallback). La respuesta automática «si no contestas en 10 min» espera 6 s.",
+     "app": "La IA corre en el servidor: reglas fijas que no se apagan, solo los datos de esa cuenta, tapa tarjeta, contraseñas y SSN antes de guardar, y registra cada respuesta (CompaConversation). WhatsApp y SMS por el proveedor de mensajes; las acciones se confirman con enlace a la app."
+    }
+   ]
+  },
+  {
+   "k": "datos",
+   "n": "Datos y carga",
+   "c": "Datos y carga",
+   "d": "El detalle de cada dato está en el Modelo de datos (E2).",
+   "i": [
+    {
+     "k": "navegador",
+     "n": "Todo se guarda en el navegador",
+     "marca": "",
+     "donde": "`localStorage` `tl-*` (Modelo de datos · Dónde vive hoy)",
+     "demo": "Cada pantalla guarda lo suyo en el navegador.",
+     "app": "Base de datos en el servidor, con las entidades del Modelo de datos."
+    },
+    {
+     "k": "conexion",
+     "n": "Pantallas que se hablan",
+     "marca": "",
+     "donde": "Props `live` y `api` (`dashLive`, `dashRespond`, `admLive`, `usrAll`) y el evento `storage`",
+     "demo": "El Prototipo le pasa al panel y al admin lo que hizo el vecino en esta sesión.",
+     "app": "API y avisos en tiempo real entre la app del vecino, el panel y el Super Admin."
+    },
+    {
+     "k": "ejemplo",
+     "n": "Datos de ejemplo",
+     "marca": "",
+     "donde": "`prototype/*.js` · `adm-data.js` (semilla fija)",
+     "demo": "Los negocios de Hazleton, 65 usuarios y 433 transacciones de 90 días. Cuentas PRUEBA: Rosaura Méndez Batista (`u00`) y Sabor Dominicano.",
+     "app": "No se migran. Las cuentas de prueba llevan `is_test`."
+    },
+    {
+     "k": "copias",
+     "n": "Copias de base",
+     "marca": "",
+     "donde": "`_d0` · `_ll` · `_n0` · `_o0` · `_s0` · `_ph0` · `_pro0`",
+     "demo": "Guardan el valor original para deshacer lo que cambian el panel o el admin.",
+     "app": "Lo hace el historial (Super Admin · Historial)."
+    },
+    {
+     "k": "textos",
+     "n": "Textos guardados como dato",
+     "marca": "",
+     "donde": "`st` «cierra 9 PM», `eta` «Pickup 25 min», `fee` «Delivery $3», `d` (distancia)",
+     "demo": "Vienen escritos en los datos.",
+     "app": "Se calculan del horario, de la configuración de entrega y de la ubicación."
+    },
+    {
+     "k": "lotes",
+     "n": "Lotes del admin",
+     "marca": "",
+     "donde": "Super Admin · Contenido (240 ms por elemento)",
+     "demo": "El progreso del lote avanza en el navegador.",
+     "app": "Un trabajo en el servidor, con su progreso y sus fallos reales."
+    },
+    {
+     "k": "carga",
+     "n": "Carga de scripts",
+     "marca": "",
+     "donde": "`prototype/bundle-1…4.js` · esperas de 40–120 ms por cada `window.TL*`",
+     "demo": "Los datos se cargan como scripts y las pantallas esperan a que existan.",
+     "app": "Módulos con import. Los componentes vienen del sistema de diseño."
+    }
+   ]
+  }
+ ],
+ "dudas": [
+  {
+   "k": "D6",
+   "t": "Mesa pública de El Patio sin gente",
+   "d": "En la demo los otros asientos los juega el prototipo. En la mesa privada los asientos vacíos ya juegan con «La computadora». Falta decidir la mesa pública cuando no llega nadie.",
+   "o": [
+    "Se completa con «La computadora» después de esperar un rato, como la privada",
+    "Espera hasta que se sienten personas"
+   ],
+   "r": 2,
+   "f": "22 oct",
+   "nota": "Con tope: se espera hasta 60 s; si la mesa no se llena, los lugares vacíos los juega La computadora. Si se llena antes, empieza",
+   "hecho": "Hecho en Comunidad (dominó y parchís) y en el Super Admin (30 · 60 · 90 · 120 s)."
+  }
+ ]
+}
