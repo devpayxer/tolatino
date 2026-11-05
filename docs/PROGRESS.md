@@ -203,8 +203,19 @@ _Actualizado: 5 nov 2026._
   enviar pide entrar y vuelve. `recommendations` (0013: `note`, `contact_kind`, sin duplicados por persona y ciudad;
   tope 20/día). Teléfono normalizado o @Instagram. Desde Buscar (?q), categoría (?cat) y Próximamente (?ciudad).
   Ayuda: `docs/ayuda/recomendar.md`.
+- **Fase 1 · bloque 1g-2 Publica tu negocio v2 ✓ (5 nov):** `/publica?paso=` (diseño «Publica tu negocio v2»: A1 entrada
+  con teléfono y código, B1–F1, H1 publicada; teléfono con barra arriba y botón fijo; escritorio con pasos, formulario y
+  «tu página en vivo»). Reglas y datos del prototipo traídos tal cual por `scripts/catalogo/portar-onboarding.mjs` →
+  `lib/onb/datos.ts` (los usan la pantalla y el servidor). `publica/logica.ts` y `vista.ts` (puras, con la hora real de la
+  ciudad). Borrador en `onboarding_drafts` (seguir desde otro teléfono). Publicar (`acciones.publicar`): el servidor vuelve
+  a pasar las reglas y crea en una transacción negocio (activo), plan Pro de prueba, dueño, horario, fotos y la solicitud
+  al local si renta espacio. **Fotos:** Garage (S3 propio, `dxflrs/garage:v2.1.0`) preparado por
+  `infra/pruebas/medios.sh` (configuración con secretos en el servidor, bucket público «medios», llave de la app en
+  `pruebas.env`), nginx `/medios/`, `/api/medios` (con cuenta, 60/hora, `sharp`: endereza, 1600 px, JPEG sin EXIF/GPS),
+  firma SigV4 propia en `lib/medios.ts`. Probado de punta a punta con Playwright y Garage local (foto falsa rechazada,
+  EXIF quitado, negocio creado). Ayuda: `docs/ayuda/publica.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
-  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Publica tu negocio v2 · 1h panel base · 1i admin Negocios + colas.
+  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base · 1i admin Negocios + colas.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

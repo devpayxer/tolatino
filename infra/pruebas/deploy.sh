@@ -26,7 +26,12 @@ fi
 grep -q '^AUTH_SECRET=' "$ENV_FILE" || echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
-# 3) Contenedores: app (se reconstruye con el commit nuevo), Postgres + PostGIS, MinIO.
+# 2b) Fotos: Garage (S3 propio). Antes que el resto: su configuración (con secretos) tiene que existir antes de montar
+#     el contenedor. La primera vez crea el bucket y la llave de la app (a $ENV_FILE), que el paso 3 le pasa a la app.
+ENV_FILE="$ENV_FILE" GARAGE_TOML=/etc/tolatino/garage.toml bash "$REPO/infra/pruebas/medios.sh" docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" \
+  || log "medios: falló la preparación (las fotos no se pueden subir)"
+
+# 3) Contenedores: app (se reconstruye con el commit nuevo), Postgres + PostGIS y Garage (fotos).
 export TOLATINO_COMMIT="$COMMIT"
 log "docker compose up (commit $COMMIT)"
 docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" up -d --build --remove-orphans

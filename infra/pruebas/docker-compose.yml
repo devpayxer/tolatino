@@ -17,6 +17,9 @@ services:
       DATABASE_URL: postgres://tolatino:${POSTGRES_PASSWORD}@db:5432/tolatino
       AUTH_SECRET: ${AUTH_SECRET}
       TOLATINO_SMS_MODO: pruebas
+      MEDIOS_S3_URL: http://medios:3900
+      MEDIOS_KEY_ID: ${MEDIOS_KEY_ID:-}
+      MEDIOS_SECRET: ${MEDIOS_SECRET:-}
     depends_on:
       db:
         condition: service_healthy
@@ -51,8 +54,18 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
 
-# Almacenamiento de archivos (S3 propio): entra con la subida de fotos, con Garage (dxflrs/garage).
-# MinIO quedó fuera: sus imágenes públicas ya no se pueden bajar (5 nov 2026).
+  # Fotos: S3 propio (Garage, código abierto). La configuración con sus secretos la escribe infra/pruebas/medios.sh en
+  # /etc/tolatino/garage.toml (nunca en el repo). nginx sirve el bucket público en /medios/. MinIO quedó fuera: sus
+  # imágenes públicas ya no se pueden bajar (5 nov 2026).
+  medios:
+    image: dxflrs/garage:v2.1.0
+    restart: unless-stopped
+    volumes:
+      - /etc/tolatino/garage.toml:/etc/garage.toml:ro
+      - /var/lib/tolatino/medios:/var/lib/garage
+    ports:
+      - "127.0.0.1:3900:3900"
+      - "127.0.0.1:3902:3902"
 
 volumes:
   db-data:
