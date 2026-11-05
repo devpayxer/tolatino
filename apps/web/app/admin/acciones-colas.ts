@@ -199,3 +199,72 @@ export async function decidirLicencia(id: string, accion: "valid" | "expired" | 
   listo();
   return { ok: true, mensaje: "Listo. Quedó en la auditoría." };
 }
+
+/* Reclamo (Cambios sensibles): aplicar el cambio de dueño o rechazarlo. Con dueño anterior (decisión R2): solo un Admin
+   y solo pasados 7 días desde que el dueño vio el aviso en su panel. Nada se borra: el dueño anterior sale del panel
+   como miembro «removed / claim». */
+export async function decidirReclamo(id: string, aprobar: boolean, motivo: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(motivo);
+  if (!m) return no("Escribe el motivo.");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "cambio") return "Ese caso no es de esta cola.";
+    const cl = (await c.query<{ id: string; user_id: string; status: string; role: string; owner_notified_at: string | null }>(
+      `select id, user_id, status, role, owner_notified_at from claims where id = $1 for update`, [q.subject_id])).rows[0];
+    if (!cl || cl.status !== "pending") return "Este reclamo ya se decidió.";
+    const b = (await c.query<{ owner: string | null; status: string; name: string }>(`select owner_user_id as owner, status, name from businesses where id = $1 for update`, [q.business_id])).rows[0];
+    if (!b || b.status !== "active") return "El negocio ya no está activo.";
+    if (aprobar && b.owner && b.owner !== cl.user_id) {
+      if (s.role !== "admin") return "Este negocio ya tiene dueño: solo un Admin aprueba el cambio.";
+      if (!cl.owner_notified_at || Date.now() - new Date(cl.owner_notified_at).getTime() < 7 * 86_400_000) return "El dueño actual tiene 7 días desde el aviso para responder. Todavía no se puede aplicar.";
+    }
+    if (aprobar) {
+      const u = (await c.query<{ nombre: string; phone: string }>(`select coalesce(nullif(trim(coalesce(first_name,'') || ' ' || coalesce(last_name,'')), ''), 'Dueño') as nombre, phone from users where id = $1`, [cl.user_id])).rows[0]!;
+      await c.query(`update business_members set status = 'removed', removed_reason = 'claim', removed_at = now(), panel_access = '{}', updated_at = now()
+                      where business_id = $1 and kind = 'owner' and status = 'active' and user_id is distinct from $2`, [q.business_id, cl.user_id]);
+      const ya = (await c.query(`update business_members set kind = 'owner', panel_access = '{all}', status = 'active', updated_at = now() where business_id = $1 and user_id = $2 and status = 'active'`, [q.business_id, cl.user_id])).rowCount;
+      if (!ya) await c.query(`insert into business_members (business_id, user_id, kind, display_name, phone, panel_access, status) values ($1, $2, 'owner', $3, $4, '{all}', 'active')`, [q.business_id, cl.user_id, u.nombre, u.phone]);
+      await c.query(`update businesses set owner_user_id = $2, origin = case when origin = 'self' then origin else 'claim' end, updated_at = now() where id = $1`, [q.business_id, cl.user_id]);
+      await auditar(c, { actor: s.id, action: "negocio.dueno.cambiar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { dueno: b.owner }, after: { dueno: cl.user_id, reclamo: cl.id }, reason: m });
+    }
+    await c.query(`update claims set status = $2, reason = $3, decided_by = $4, decided_at = now() where id = $1`, [cl.id, aprobar ? "approved" : "rejected", m, s.id]);
+    await cerrar(c, q, s, aprobar ? "aprobar" : "rechazar", m);
+    await auditar(c, { actor: s.id, action: aprobar ? "reclamo.aprobar" : "reclamo.rechazar", targetKind: "claim", targetId: cl.id, city: q.city_id, before: { estado: "en revisión" }, after: { estado: aprobar ? "aprobado" : "no aprobado" }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: aprobar ? "Cambio aplicado. Ya es el dueño." : "Listo. Quien reclamó ve el motivo." };
+}
+
+/* Recomendaciones · «Crear semilla»: negocio no reclamado que sale al final de «También en {ciudad}» de su categoría
+   hasta que el dueño lo publique (decisión I: las semillas solo nacen de recomendaciones). */
+export async function crearSemilla(id: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = "Negocio no reclamado creado; el dueño puede reclamarlo";
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "rec") return "Ese caso no es de esta cola.";
+    const rec = (await c.query<{ id: string; business_name: string; category_id: string | null; where: string | null; address: string | null; contact_phone: string | null; contact_kind: string | null }>(
+      `select id::text, business_name, category_id, "where", address, contact_phone, contact_kind from recommendations where id = $1::bigint for update`, [q.subject_id])).rows[0];
+    if (!rec) return "Esa recomendación no existe.";
+    if (!rec.category_id) return "La recomendación no tiene categoría.";
+    const tel = rec.contact_kind === "phone" && /^\+1[2-9]\d{9}$/.test(rec.contact_phone ?? "") ? rec.contact_phone : null;
+    const sd = (await c.query<{ id: string }>(
+      `insert into seed_listings (recommendation_id, city_id, category_id, name, "where", address, phone, created_by)
+       values ($1::bigint, $2, $3, $4, $5, $6, $7, $8) returning id::text`,
+      [rec.id, q.city_id, rec.category_id, rec.business_name.slice(0, 80), rec.where === "sin_local" ? "sin_local" : "address", rec.where === "sin_local" ? null : rec.address, tel, s.id])).rows[0]!;
+    await c.query(`update recommendations set status = 'seeded', seed_id = $2::bigint, decided_by = $3, decided_at = now(), decision_reason = $4 where id = $1::bigint`, [rec.id, sd.id, s.id, m]);
+    await cerrar(c, q, s, "semilla", m);
+    await auditar(c, { actor: s.id, action: "recomendacion.semilla", targetKind: "recommendation", targetId: rec.id, city: q.city_id, before: { estado: "recomendación" }, after: { estado: "negocio no reclamado", semilla: sd.id }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: "Semilla creada. Sale al final de su categoría como «sin reclamar»." };
+}

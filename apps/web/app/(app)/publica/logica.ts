@@ -8,6 +8,7 @@ export type Paso = "A1" | (typeof SEQ)[number] | "H1";
 export type Dia = { on: boolean; a: number; b: number; two: boolean; a2: number; b2: number };
 export type Cust = { n: string; p: number | string; u: string; dur: number };
 export type Borrador = {
+  semilla?: string | null; // «Reclámalo gratis» desde una semilla (negocio que recomendó un vecino)
   v: 2; last: string; reach: number; started: boolean; t0: number; name: string; cat: string | null; subs: string[];
   own: Record<string, unknown>; sel: Record<string, { on?: boolean; p?: number | string; flag?: boolean; alt?: number | null }>; cust: Cust[];
   via: string; op: string | null; addr: string; ref: string; zone: number; join: string | null; joinName: string; days: Dia[] | null;

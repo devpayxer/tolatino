@@ -51,6 +51,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     const t = x.queue === "sello" ? { title: `Sello · ${b}`, sub: "Pidió el sello de verificación" }
       : x.queue === "nuevo" ? { title: b, sub: "Publicado desde la app · revisión ligera" }
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
+      : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
     return {
@@ -87,6 +88,19 @@ export async function caso(s: Staff, id: string) {
   if (q.queue === "sello") {
     const v = (await db().query<{ status: string; checks: Record<string, boolean>; note: string | null }>(`select status, checks, note from verification_requests where id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, sello: v ?? null };
+  }
+  if (q.queue === "cambio") {
+    const cl = (await db().query<{ id: string; role: string; method: string; doc_kind: string | null; note: string | null; source: string; status: string; created_at: string;
+      quien: string | null; quien_id: string; quien_tel: string; call_phone: string | null; had_owner: string | null; dueno_actual: string | null; notified: string | null; doc: boolean }>(
+      `select cl.id, cl.role, cl.method, cl.doc_kind, cl.note, cl.source, cl.status, cl.created_at,
+              nullif(trim(coalesce(u.first_name,'') || ' ' || coalesce(u.last_name,'')), '') as quien, u.id as quien_id, u.phone as quien_tel, cl.call_phone,
+              nullif(trim(coalesce(o.first_name,'') || ' ' || coalesce(o.last_name,'')), '') as had_owner,
+              nullif(trim(coalesce(d.first_name,'') || ' ' || coalesce(d.last_name,'')), '') as dueno_actual,
+              cl.owner_notified_at as notified, cl.doc_media is not null as doc
+         from claims cl join users u on u.id = cl.user_id left join users o on o.id = cl.had_owner_id
+         left join businesses b on b.id = cl.business_id left join users d on d.id = b.owner_user_id
+        where cl.id = $1`, [q.subject_id])).rows[0];
+    return { ...base, negocio, reclamo: cl ? { ...cl, quien_tel: telefonoBonito(cl.quien_tel) } : null };
   }
   if (q.queue === "lic") {
     const l = (await db().query<{ id: string; status: string; title: string; can: string; number: string | null; label: string; checked: string | null; url: string; site: string }>(

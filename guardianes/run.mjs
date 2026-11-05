@@ -143,6 +143,17 @@ const guardianes = {
     }
   },
 
+  /* 3h. Documentos privados (reclamos, 1j): nginx nunca sirve /medios/privado/, y nada en la app arma una URL pública
+     con «privado/». */
+  documentosPrivados() {
+    const ng = "infra/pruebas/nginx-pruebas.conf";
+    if (existsSync(ng) && !/^\s*location \^~ \/medios\/privado\/ \{ return 404; \}/m.test(readFileSync(ng, "utf8"))) falla("documentosPrivados", ng, 0, "falta el bloqueo de /medios/privado/");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/urlPublica\([^)]*privado|["'`]\/medios\/privado/.test(l)) falla("documentosPrivados", f, i + 1, "un documento privado no se sirve por /medios"); });
+    }
+  },
+
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
   idioma() {
     for (const f of codigo) {

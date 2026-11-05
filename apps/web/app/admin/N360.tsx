@@ -116,7 +116,7 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
         {!staff.length ? <A.AdminNote tone="info" icon="users">Solo el dueño. Las personas del equipo salen aquí cuando el dueño las invita.</A.AdminNote> : null}
       </>);
   } else if (tab === "confianza") {
-    const COL: Record<string, string> = { sello: "Sello de verificación", nuevo: "Negocios nuevos", medios: "Medios marcados", rec: "Recomendaciones" };
+    const COL: Record<string, string> = { sello: "Sello de verificación", nuevo: "Negocios nuevos", medios: "Medios marcados", rec: "Recomendaciones", lic: "Licencias", cambio: "Reclamo (cambio sensible)" };
     const selloL = n.verified ? "Verificado" : n.sello?.status === "review" ? "En revisión" : n.sello?.status === "info" ? "Te falta un dato" : n.sello?.status === "no" ? "No aprobado" : "Sin sello";
     cuerpo = (
       <>

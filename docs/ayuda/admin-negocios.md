@@ -1,12 +1,13 @@
 # Super Admin · Negocios y Colas · Super Admin · Businesses and Queues
 
 _Pantallas: ADM-COLAS (`/admin/colas`) y ADM-NEG (`/admin/negocios`, `/admin/negocios/{id}`), teléfono y escritorio.
-Versión: Fase 1 · bloque 1i (5 nov 2026). Para el equipo de To'Latino (y El Compa como copiloto del equipo)._
+Versión: Fase 1 · bloques 1i, 1k y 1j (5 nov 2026). Para el equipo de To'Latino (y El Compa como copiloto del equipo)._
 
 ## Qué hace
 - **Colas:** todo lo que espera la decisión de una persona del equipo, la más vieja contra su plazo primero:
   **Sello de verificación** (48 h), **Negocios nuevos** (24 h, revisión ligera), **Medios marcados** (4 h, fotos que
-  reportó un vecino) y **Recomendaciones de vecinos** (7 días). Cada persona ve solo las colas de su rol y de sus
+  reportó un vecino), **Recomendaciones de vecinos** (7 días), **Licencias** (72 h) y **Cambios sensibles** (48 h,
+  por ahora los reclamos de «Recuperar tu negocio»). Cada persona ve solo las colas de su rol y de sus
   ciudades. «Tomar siguiente» te asigna el caso sin dueño más urgente; «Tomar» avisa a los demás «Lo está viendo X».
 - **Negocios:** lista con buscador (nombre, id, teléfono, dirección, subcategoría), categoría, plan, estado, «Más
   filtros» y orden. El **360°** muestra el negocio como lo ve el cliente, lo que hizo el dueño y lo que hizo el equipo:
@@ -20,7 +21,8 @@ Versión: Fase 1 · bloque 1i (5 nov 2026). Para el equipo de To'Latino (y El Co
 | Pedir un dato / No aprobar (con motivo) | Cola sello | colas · aprobar | «To’Latino necesita un dato más» / «No se aprobó esta vez» con el motivo, y el botón para volver a pedirlo |
 | Todo bien / Ocultar | Negocios nuevos | colas · aprobar | Ocultar: sale de búsquedas y categoría; aviso con el motivo en su panel |
 | Está bien / Quitar foto | Medios marcados | colas · aprobar | La foto sale de la ficha; «To'Latino quitó 1 foto…» con el motivo en Fotos. La única foto visible no se quita |
-| Ya existe (cuál) / Descartar | Recomendaciones | colas · aprobar | — |
+| Ya existe (cuál) / Crear semilla / Descartar | Recomendaciones | colas · aprobar | Crear semilla: sale al final de su categoría como «Sin reclamar · ¿Es tuyo?» hasta que el dueño lo publique |
+| Aplicar cambio / Rechazar (con motivo) | Cambios sensibles | colas · aprobar | Aplicar: quien reclamó queda como dueño y abre el panel; el dueño anterior sale del equipo. Si ya tenía dueño, solo un Admin y pasados 7 días del aviso en su panel (R2). Rechazar: ve el motivo |
 | Dar / Quitar sello | 360 › Resumen | neg · editar | Ficha y panel; al quitarlo, aviso en su panel |
 | Cierre temporal (1, 3, 7, 14 días) / Reabrir | 360 › Resumen | neg · editar | Ficha y listas: «Cerrado temporalmente»; panel: «To’Latino cerró tu página por unos días…»; vuelve solo |
 | Ocultar · Suspender · Cerrar (solo Admin) · Restaurar | 360 › Resumen | neg · retirar | Sale de búsquedas y categoría; aviso con el motivo en su panel |
@@ -40,16 +42,19 @@ después, motivo y cuándo. Nada se borra.
 **¿Le llega un SMS al dueño?** Todavía no: los avisos por SMS llegan con las notificaciones (Fase 2). Hoy el dueño ve
 todo en su panel.
 
-**¿Dónde están las licencias y «Crear semilla»?** Llegan con la ficha Licencia y con Reclamar negocio.
+**¿Dónde veo la foto del documento de un reclamo?** En el caso de Cambios sensibles. Es privada: no tiene enlace
+público y cada vez que se abre queda en la auditoría. Más en `recuperar-negocio.md` y `licencia.md`.
 
 ---
 
 ## English
 Queues: everything waiting for a team decision, oldest against its SLA first — Verification badge (48 h), New
-businesses (24 h light review), Flagged media (4 h) and Neighbor recommendations (7 days). You only see your role's
+businesses (24 h light review), Flagged media (4 h), Neighbor recommendations (7 days), Licenses (72 h) and Sensitive changes (48 h, business claims). You only see your role's
 queues in your cities; "Take next" assigns you the most urgent unassigned case; "Take" shows others "X is on it".
 Businesses: searchable list with category, plan, status, more filters and sorting; the 360° shows the business as
 clients see it, what the owner did and what the team did (Overview, Page, Team, Trust). Every action asks for a
 reason (approvals store a fixed one), writes the audit log, and the owner sees the result and reason in their
 dashboard; the page reflects it (temporarily closed, hidden, photo removed, badge). Owner texts arrive with
-notifications (Phase 2). Licenses and "Create seed" arrive with the License page and Claim business.
+notifications (Phase 2). "Create seed" lists a recommended business as unclaimed in its category; "Apply change"
+makes the claimant the owner (an already-owned business: Admin only, 7 days after the owner's notice); claim
+documents are private and every view is audited.

@@ -130,6 +130,17 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
     await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, mias.length]);
     // Revisión ligera del equipo (Super Admin › Colas › Negocios nuevos). El negocio ya sale; esto no lo detiene.
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('nuevo', 'business', $1, $1, $2) on conflict do nothing`, [slug, loc.ciudad]);
+    // Si vino de una semilla («Reclámalo gratis»): la semilla queda reclamada y la recomendación del vecino, enlazada.
+    if (typeof d.semilla === "string" && /^\d{1,18}$/.test(d.semilla)) {
+      const sd = (await c.query<{ recommendation_id: string }>(
+        `update seed_listings set status = 'claimed', business_id = $2, claimed_at = now() where id = $1::bigint and status = 'shown' and city_id = $3 returning recommendation_id::text`,
+        [d.semilla, slug, loc.ciudad])).rows[0];
+      if (sd) {
+        await c.query(`update recommendations set status = 'joined', business_id = $2 where id = $1::bigint`, [sd.recommendation_id, slug]);
+        await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, after) values ('user', $1, 'semilla.reclamada', 'business', $2, $3, $4::jsonb)`,
+          [me.id, slug, loc.ciudad, JSON.stringify({ semilla: d.semilla })]);
+      }
+    }
     // Licencias que marcó (Trámites y profesionales): «en revisión» en su ficha Licencia y un caso en la cola Licencias.
     const lics = Array.isArray(dv.cx?.lic) ? (dv.cx.lic as unknown[]).filter((k): k is string => typeof k === "string" && /^[a-z]{2,12}$/.test(k)).slice(0, 10) : [];
     if (lics.length) {

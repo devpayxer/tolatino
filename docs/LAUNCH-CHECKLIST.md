@@ -163,3 +163,15 @@ en el momento. Se marca solo cuando está hecho de verdad.
   el paso 2 de «Cómo la verificamos» dice «la quitamos de su ficha» (el diseño decía «el sello», que es otra cosa).
 - [ ] **Chip de la tarjeta** usa el título de la semilla (`licL`); un negocio nuevo verificado aún no muestra chip.
 
+## Recuperar negocio y semillas (bloque 1j, 5 nov 2026)
+- [ ] **Proveedor de SMS en producción** para el código del reclamo (R1). En el sandbox el código sale en pantalla;
+  sin proveedor, producción responde «Los mensajes de texto todavía no están disponibles. Usa un documento».
+- [ ] **Borrar la foto del documento a los 90 días** de decidido el reclamo: necesita los trabajos programados.
+- [ ] **Botones de Soporte** del diseño (chat / llamar) ocultos hasta que exista Soporte.
+- [ ] **Admin Negocios › pestañas «Reclamos» y «Duplicados»** e **«Invitar a reclamar»** (SMS): con sus módulos.
+- [ ] **Entrada «¿Es tuyo?» desde la ficha** de un negocio: el diseño no la trae; hoy se llega desde Publica y semillas.
+- [ ] **Decisiones tomadas sin el diseño (confirmar con el fundador):** texto del aviso al dueño actual en su panel
+  (R2), las 3 plantillas de «Rechazar», el detalle del caso en «Cambios sensibles» (compuesto con piezas del admin).
+- [ ] **«Llamar» desde una semilla** abre el teléfono pero aún no se cuenta (la tabla `contact_taps` ya admite `seed_id`).
+- [ ] **Guardián de tipos de parámetros SQL:** el error «inconsistent types deduced for parameter» salió dos veces
+  (mismo `$n` usado como texto y uuid). Hoy lo caza la prueba punta a punta; falta un guardián estático.

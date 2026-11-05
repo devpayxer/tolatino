@@ -16,7 +16,7 @@ export const T = {
     notify: "Avísame cuando haya", notified: "Te avisaremos", sortBy: "Ordenar: ", sortGroup: "ORDENAR",
     sorts: { rel: "Relevancia", near: "Más cerca", top: "Mejor calificados", rev: "Más reseñas" },
     result: "resultado", results: "resultados", seeN: "Ver {n} resultados", page: "PÁGINA {p} DE {n}",
-    freeTitle: "También en {c}", freeSub: "NEGOCIOS FREE · LLAMA O PASA", seeAllN: "Ver todas",
+    freeTitle: "También en {c}", freeSub: "NEGOCIOS FREE · LLAMA O PASA", seedUnclaimed: "SIN RECLAMAR", seedYours: "¿Es tuyo?", seedClaim: "Reclámalo gratis", seeAllN: "Ver todas",
     ddPh: "Busca la marca", ddNone: "No la encontramos",
     statsBiz: "NEGOCIOS", statsOpen: "ABIERTOS AHORA",
     // Negocios (APP-NEG-HOME)
@@ -75,7 +75,7 @@ export const T = {
     notify: "Notify me", notified: "We will let you know", sortBy: "Sort: ", sortGroup: "SORT",
     sorts: { rel: "Relevance", near: "Nearest", top: "Top rated", rev: "Most reviews" },
     result: "result", results: "results", seeN: "See {n} results", page: "PAGE {p} OF {n}",
-    freeTitle: "Also in {c}", freeSub: "FREE LISTINGS · CALL OR STOP BY", seeAllN: "See all",
+    freeTitle: "Also in {c}", freeSub: "FREE LISTINGS · CALL OR STOP BY", seedUnclaimed: "UNCLAIMED", seedYours: "Is it yours?", seedClaim: "Claim it free", seeAllN: "See all",
     ddPh: "Search make", ddNone: "Not found",
     statsBiz: "BUSINESSES", statsOpen: "OPEN NOW",
     negTitle: "Businesses in {c}", negSub: "17 CATEGORIES · {l}", catsSec: "Categories", featTitle: "Featured in {c}",

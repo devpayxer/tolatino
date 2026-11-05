@@ -247,7 +247,7 @@ _Actualizado: 5 nov 2026._
   comprobaciones → ficha y panel; nuevo «Todo bien»; cierre temporal → ficha y panel → reabrir; editar nombre →
   aviso en el panel; admin en teléfono; el dueño no entra al admin). Ayuda: `docs/ayuda/admin-negocios.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
-  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓.
+  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓ · 1k Licencia ✓ · 1j Recuperar negocio + semillas ✓.
 - **Fase 1 · bloque 1k Licencia ✓ (5 nov, espera OK del fundador):** `/n/{id}/licencia` (diseño «Licencia», portado
   1:1: línea fija, una tarjeta por licencia con estado real, número, próxima revisión y registro oficial, «Cómo la
   verificamos»), tarjeta «¿Puede hacerlo por ley?» en el Resumen de la ficha (Pro; va a Servicios cuando exista esa
@@ -258,8 +258,18 @@ _Actualizado: 5 nov 2026._
   «Licencias» (Verificada / Vencida / No aparece) y 360° › Lo que vende. Guardián nuevo `servidorSoloFunciones`.
   Probado con Playwright (vecino → ficha → Licencia; dueño agrega CPA con número; admin la verifica; la ficha la muestra).
   Ayuda: `docs/ayuda/licencia.md`.
-  Sigue (PLAN fila 1): Recuperar / reclamar negocio (con «Crear semilla») · Usuarios 360° completo · Catálogo ·
-  analítica propia (eventos).
+- **Fase 1 · bloque 1j Recuperar / reclamar negocio + semillas ✓ (5 nov, espera OK del fundador):** `/recuperar/{id}`
+  (diseño ONB-NEG-RECUPERAR: qué eres del negocio, código por SMS al teléfono del negocio (R1) o documento, nota,
+  estado del reclamo con OrderTracker; «¿Es tuyo? Reclámalo» de Publica lleva aquí). Documento en almacenamiento
+  privado (`privado/…`, nginx devuelve 404; solo `/api/admin/reclamo/{id}` con permiso de la cola, auditado). Negocio
+  con dueño: solo documento, aviso en su panel y 7 días; luego solo un Admin lo aplica (R2). Cola nueva «Cambios
+  sensibles» (Aplicar cambio / Rechazar con motivo; cambio de dueño auditado). «Crear semilla» en la cola de
+  Recomendaciones → `seed_listings`, sale al final de su categoría «Sin reclamar · ¿Es tuyo?» → Publica con
+  `?semilla=` la marca reclamada. Migración 0018. Guardián nuevo `documentosPrivados`. Probado con Playwright
+  (código → pendiente; documento sobre negocio con dueño → aviso en su panel y bloqueo antes de 7 días; aplicar →
+  «Ya es tuyo» → panel; semilla en la categoría; documento sin permiso → 404; sin errores de consola).
+  Ayuda: `docs/ayuda/recuperar-negocio.md` (+ `admin-negocios.md`).
+  Sigue (PLAN fila 1): Usuarios 360° completo · Catálogo · analítica propia (eventos).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

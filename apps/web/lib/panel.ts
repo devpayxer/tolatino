@@ -61,7 +61,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     attrs: Record<string, any>; logo: string | null; about: Bi | null; amen: string[]; op: string; from_home: boolean; mods: string[];
     email_ok: boolean; owner: string | null; tz: string; dow: number; hm: string; hoy: string; hora: number; open: boolean; closed_today: boolean; created: string;
     status_reason: string | null; temp_until: string | null; temp_reason: string | null; admin_edits: Record<string, unknown>; phone: string | null; owner_phone: string | null;
-    email: string | null; sello: string | null; sello_note: string | null;
+    email: string | null; sello: string | null; sello_note: string | null; reclamo_aviso: string | null;
   }>(
     `select b.id, b.name, b.category_id as cat, b.city_id as city, c.name as ciudad, b.status, coalesce(s.plan, 'free') as plan,
             coalesce(s.verified, false) as verified, coalesce(s.review_count, 0) as review_count, b.category_attrs as attrs, b.logo_url as logo,
@@ -74,7 +74,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
             b.status_reason, case when b.temp_closed_until > now() then b.temp_closed_until end as temp_until, b.temp_closed_reason as temp_reason, b.admin_edits,
             b.phone, u.phone as owner_phone, u.email,
             (select v.status from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello,
-            (select v.note from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello_note
+            (select v.note from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello_note,
+            (select cl.owner_notified_at from claims cl where cl.business_id = b.id and cl.status = 'pending' and cl.had_owner_id = b.owner_user_id order by cl.created_at limit 1) as reclamo_aviso
        from businesses b join cities c on c.id = b.city_id left join business_stats_cache s on s.business_id = b.id
        left join users u on u.id = b.owner_user_id
       where b.id = $1`, [id])).rows[0];
@@ -133,7 +134,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     trial: tr && tr.on ? tr : null, trialUsed: !!tr, onb, sells, mods: b.mods, op: b.op, itemsW, items,
     st: { open: st.open, text: st.text, closedToday: b.closed_today },
     // Lo que hizo To'Latino (triángulo): el dueño siempre ve qué pasó y por qué.
-    adm: { status: b.status, reason: b.status_reason, tempUntil: b.temp_until, tempReason: b.temp_reason, nombre: !!b.admin_edits?.name, about: !!b.admin_edits?.about, fotos: quitadas.map((x) => x.note ?? "") },
+    adm: { status: b.status, reason: b.status_reason, tempUntil: b.temp_until, tempReason: b.temp_reason, nombre: !!b.admin_edits?.name, about: !!b.admin_edits?.about, fotos: quitadas.map((x) => x.note ?? ""), reclamo: acc.kind === "owner" && b.reclamo_aviso ? b.reclamo_aviso : null },
     ver: { phone: telefonoBonito(b.phone), phoneOk: !!b.phone && b.phone === b.owner_phone, email: b.email_ok ? b.email : null, sello: b.verified ? "ok" : (b.sello as string | null) ?? "none", selloNote: b.sello_note },
     ph: fotos.rows[0]?.url ?? null, logo: b.logo,
     kpis: { views7: k.v7, contacts7: k.c7, viewsToday: k.vhoy, viewsTrial: k.vprueba, contactsTrial: k.cprueba },

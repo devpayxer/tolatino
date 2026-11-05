@@ -1,3 +1,4 @@
+import { db } from "@/lib/db";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { yo } from "@/lib/cuenta";
@@ -43,6 +44,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     cifras(loc, c.id, P.stats_tag),
   ]);
   const tarjetas = await armarTarjetas(CIUDAD, res.items, lang, u?.id ?? null);
+  // Semillas (negocios no reclamados que recomendó un vecino): al final de «También en {ciudad}», solo en la primera
+  // página, sin filtros y con todas las subcategorías (Prototipo seedRows).
+  const semillas = pagina === 0 && !elegidos.length && !sub ? (await db().query<{ id: string; name: string; address: string | null; phone: string | null }>(
+    `select id::text, name, address, phone from seed_listings where city_id = $1 and category_id = $2 and status = 'shown' order by created_at desc limit 10`, [CIUDAD, c.id])).rows : [];
   const lugar = ciudad ? `${ciudad.name.toUpperCase()}, ${ciudad.state}` : "";
   const nombreCiudad = ciudad?.name ?? "";
 
@@ -84,9 +89,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       anterior: t.prev, siguiente: t.next, buscar: t.searchBtn, mapa: t.mapBtn, volver: t.allCatsTitle, llamar: t.call, hoy: t.todayTag,
       vacioLabel: t.emptyLabel, vacioBody: t.emptyBody, invitar: t.invite, avisame: t.notify, avisado: t.notified,
       vacioTitulo: elegidos.length ? t.emptyFilters : t.emptyNone.replace("{x}", (nombreSub(sub) ?? L(P.title)).toLowerCase()).replace("{c}", nombreCiudad),
+      sinReclamar: t.seedUnclaimed, esTuyo: t.seedYours, reclamalo: t.seedClaim,
       cerrar: lang === "es" ? "Cerrar" : "Close", freeTitulo: t.freeTitle.replace("{c}", nombreCiudad), freeSub: t.freeSub, ddPh: t.ddPh, ddNone: t.ddNone,
     },
-    tarjetas,
+    tarjetas, semillas,
   };
   return <Categoria v={vista} />;
 }

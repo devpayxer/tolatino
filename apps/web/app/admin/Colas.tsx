@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { COLAS, type Cola } from "@/lib/colas";
-import { decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
+import { crearSemilla, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -91,7 +91,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -122,6 +122,23 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ver como cliente", icon: "search", onClick: () => window.open(`/n/${n.id}`, "_blank") },
         { l: "Todo bien", v: "action", icon: "check", onClick: () => run(() => decidirNuevo(k.id, "ok", ""), () => ir({ caso: null })) },
         { l: "Ocultar", v: "danger", icon: "ban", onClick: () => setConf({ titulo: "¿Por qué se oculta?", plantillas: PLANT.biz, peligro: true, hacer: (m) => decidirNuevo(k.id, "ocultar", m) }) },
+      ];
+    }
+    if (k.queue === "cambio" && "reclamo" in k && k.reclamo && n) {
+      const c = k.reclamo, ROL: Record<string, string> = { dueno: "dueño", socio: "socio", encargado: "encargado" }, DOC: Record<string, string> = { licencia: "Licencia del negocio", servicio: "Factura de luz o agua", ein: "Carta del IRS con el EIN", otro: "Otro documento" };
+      const diasAviso = c.notified ? Math.floor((Date.now() - new Date(c.notified).getTime()) / 86_400_000) : null;
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LO RECLAMA", v: `${c.quien ?? "Sin nombre"} · ${c.quien_tel}` }, { k: "AFECTA A", v: "El panel del negocio pasa a esta persona" }, { k: "RECLAMO", v: `#${c.id}` }, { k: "ORIGEN", v: c.source === "publica" ? "Publica tu negocio (nombre repetido)" : "Recuperar tu negocio" }] });
+      if (c.doc) extra = <div style={{ height: 220, borderRadius: 18, backgroundImage: `url("/api/admin/reclamo/${c.id}")`, backgroundSize: "contain", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} />;
+      cuerpoB.push({ type: "group", k: "EVIDENCIAS" });
+      cuerpoB.push({ type: "rows", items: [
+        c.method === "call_code" ? { icon: "check", ibg: "rgba(0,229,196,.14)", ifg: "var(--tl-open-text)", t: "Código por mensaje al teléfono del negocio: correcto" } : { icon: "check", ibg: "rgba(0,229,196,.14)", ifg: "var(--tl-open-text)", t: `Documento: ${DOC[c.doc_kind ?? "otro"]} (foto abajo)` },
+        { icon: "users", t: `Dice que es ${ROL[c.role] ?? c.role} del negocio` },
+        ...(c.dueno_actual ? [{ icon: "warning", ibg: "rgba(255,176,32,.14)", ifg: "var(--tl-pro-ink)", t: `Ya tiene dueño: ${c.dueno_actual}.`, s: diasAviso == null ? "Sin aviso." : diasAviso >= 7 ? `Vio el aviso hace ${diasAviso} días: ya puede aplicarlo un Admin.` : `Vio el aviso hace ${diasAviso} ${diasAviso === 1 ? "día" : "días"}: tiene 7 días para responder.` }] : []),
+      ] });
+      cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE PIDIÓ · «${c.note ?? (c.source === "publica" ? "Pidió recuperar el negocio desde Publica tu negocio (nombre repetido)." : "Pidió recuperar el negocio.")}»` });
+      acts = [
+        { l: "Aplicar cambio", v: "action", icon: "check", onClick: () => setConf({ titulo: "Confirmar el cambio", sub: "Quien reclama pasa a ser el dueño y entra al panel. El motivo queda en la auditoría.", cta: "Aplicar", hacer: (m) => decidirReclamo(k.id, true, m) }) },
+        { l: "Rechazar", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Por qué no se aplica?", sub: "El motivo lo ve quien reclamó.", peligro: true, plantillas: ["El documento no muestra el nombre del negocio", "La dirección no coincide con la página", "No pudimos confirmar que eres del negocio"], hacer: (m) => decidirReclamo(k.id, false, m) }) },
       ];
     }
     if (k.queue === "lic" && "licencia" in k && k.licencia && n) {
@@ -159,10 +176,10 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         extra = <A.AdminList rows={par.map((p) => ({ image: p.cover ?? undefined, initials: p.cover ? undefined : p.name.slice(0, 1), title: p.name, sub: `${p.cat}${p.address ? ` · ${p.address}` : ""}`, chevron: true, onClick: () => router.push(`/admin/negocios/${p.id}`) }))} />;
       }
       acts = [
+        { l: "Crear semilla", v: "action", icon: "plus", off: !r.cat, onClick: () => run(() => crearSemilla(k.id), () => ir({ caso: null })) },
         { l: "Ya existe", icon: "check", off: !par.length, onClick: () => setConf({ titulo: "¿Cuál negocio es?", sub: "La recomendación queda enlazada a ese negocio.", cta: "Guardar", elegir: { label: "ES ESTE", items: par.map((p) => ({ k: p.id, l: p.name })) }, plantillas: ["Ya estaba en To’Latino"], hacer: (_m, e) => decidirRec(k.id, "existe", "", e) }) },
         { l: "Descartar", v: "danger", icon: "close", onClick: () => setConf({ titulo: "¿Por qué se descarta?", peligro: true, hacer: (m) => decidirRec(k.id, "descartar", m) }) },
       ];
-      cuerpoB.push({ type: "note", tone: "info", t: "«Crear semilla» (negocio no reclamado que el dueño puede reclamar) llega con Reclamar negocio." });
     }
     if (conf) return <><PanelBloques bloques={[out[0]!]} h1={22} /><ConfirmarMotivo c={conf} desk={false} onBack={() => setConf(null)} onDone={hecho} /></>;
     return (

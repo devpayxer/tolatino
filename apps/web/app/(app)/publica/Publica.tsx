@@ -68,6 +68,8 @@ export function Publica({ v }: { v: VistaPublica }) {
   }, [d, usuario, publicado]);
 
   // ¿Ya existe ese nombre en la ciudad? (lo decide el servidor)
+  // «Reclámalo gratis» (fila SIN RECLAMAR de una categoría): la semilla viaja en el borrador hasta publicar.
+  useEffect(() => { const s0 = sp.get("semilla"); if (s0 && /^\d{1,18}$/.test(s0)) setD((x) => (x.semilla === s0 ? x : { ...x, semilla: s0 })); }, [sp]);
   useEffect(() => { const n = (d.name || "").trim(); if (n.length < 3) { setDup(null); return; } let vivo = true; const t = setTimeout(() => negocioIgual(n).then((r) => { if (vivo) setDup(r); }), 350); return () => { vivo = false; clearTimeout(t); }; }, [d.name]);
 
   // ── En qué paso estamos (mismas reglas del prototipo) ──
@@ -314,7 +316,7 @@ export function Publica({ v }: { v: VistaPublica }) {
               ) : null}
             </div>
           ) : null}
-          {st === "B1" ? <PasoB1 d={d} up={up} ui={ui} setUi={setUi} es={es} desk={desk} dup={dup} toast={toast} onClaim={() => toast(E2("Recuperar un negocio llega pronto. Escríbenos y lo pasamos a tu nombre.", "Claiming a business is coming soon. Message us and we will move it to you."))} /> : null}
+          {st === "B1" ? <PasoB1 d={d} up={up} ui={ui} setUi={setUi} es={es} desk={desk} dup={dup} toast={toast} onClaim={() => { if (dup) router.push(`/recuperar/${dup.id}?volver=publica`); }} /> : null}
           {st === "C1" ? <PasoC1 d={d} up={up} es={es} /> : null}
           {st === "D1" ? <PasoD1 d={d} up={up} es={es} /> : null}
           {st === "E1" ? <PasoE1 d={d} up={up} es={es} ciudad={v.ciudad} irA={go} /> : null}

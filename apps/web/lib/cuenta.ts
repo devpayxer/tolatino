@@ -168,3 +168,40 @@ export async function mismoOrigen(): Promise<boolean> {
     return false;
   }
 }
+
+/* Reclamar negocio (decisión R1): código por SMS al TELÉFONO DEL NEGOCIO, mismo motor que el de entrar (huella,
+   vencimiento, intentos, límites). Prueba que quien reclama tiene acceso a ese teléfono; una persona aprueba igual. */
+export async function codigoReclamo(telNegocio: string): Promise<{ reenviarEn: number; codigoPrueba?: string }> {
+  const tel = normalizarTelefono(telNegocio);
+  if (!tel) throw new ErrorCuenta("telefono_invalido");
+  const ip = await ipCliente();
+  const r = await db().query<{ ultimo: number | null; tel_hora: number; tel_dia: number; ip_hora: number }>(
+    `select extract(epoch from now() - max(created_at) filter (where phone = $1))::float as ultimo,
+            count(*) filter (where phone = $1 and created_at > now() - interval '1 hour')::int as tel_hora,
+            count(*) filter (where phone = $1 and created_at > now() - interval '1 day')::int as tel_dia,
+            count(*) filter (where ip = $2::inet and created_at > now() - interval '1 hour')::int as ip_hora
+       from otp_codes where purpose = 'claim_call' and (phone = $1 or ip = $2::inet) and created_at > now() - interval '1 day'`, [tel, ip]);
+  const x = r.rows[0];
+  if (x?.ultimo != null && x.ultimo < REENVIO_SEG) throw new ErrorCuenta("espera", Math.ceil(REENVIO_SEG - x.ultimo));
+  if ((x?.tel_hora ?? 0) >= 3 || (x?.tel_dia ?? 0) >= 5 || (x?.ip_hora ?? 0) >= 5) throw new ErrorCuenta("demasiados");
+  const codigo = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  await db().query(
+    `insert into otp_codes (phone, purpose, code_hash, ip, channel, expires_at) values ($1, 'claim_call', $2, $3::inet, $4, now() + make_interval(mins => $5))`,
+    [tel, huellaCodigo(tel, codigo), ip, MODO_SMS === "pruebas" ? "pruebas" : "sms", CODIGO_MIN]);
+  if (MODO_SMS === "pruebas") return { reenviarEn: REENVIO_SEG, codigoPrueba: codigo };
+  throw new ErrorCuenta("sin_proveedor");
+}
+/* Verifica el código del reclamo dentro de la transacción de quien llama (para crear el reclamo en la misma). */
+export async function verificarCodigoReclamo(c: import("pg").PoolClient, telNegocio: string, codigo: string): Promise<"ok" | "codigo_incorrecto" | "codigo_vencido" | "demasiados"> {
+  const tel = normalizarTelefono(telNegocio);
+  if (!tel || !/^\d{6}$/.test(codigo)) return "codigo_incorrecto";
+  const f = (await c.query<{ id: number; code_hash: string; attempts: number }>(
+    `select id, code_hash, attempts from otp_codes where phone = $1 and purpose = 'claim_call' and used_at is null and expires_at > now()
+      order by created_at desc limit 1 for update`, [tel])).rows[0];
+  if (!f) return "codigo_vencido";
+  if (f.attempts >= MAX_INTENTOS) return "demasiados";
+  const a = Buffer.from(f.code_hash, "hex"), b = Buffer.from(huellaCodigo(tel, codigo), "hex");
+  if (a.length !== b.length || !timingSafeEqual(a, b)) { await c.query("update otp_codes set attempts = attempts + 1 where id = $1", [f.id]); return "codigo_incorrecto"; }
+  await c.query("update otp_codes set used_at = now() where id = $1", [f.id]);
+  return "ok";
+}

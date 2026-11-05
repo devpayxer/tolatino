@@ -8,9 +8,9 @@ import { avisame } from "../../acciones";
 import { TarjetaNegocio } from "../../TarjetaNegocio";
 import type { Tarjeta } from "@/lib/tarjeta";
 
-type N = "Chip" | "Button" | "IconButton" | "Icon" | "InfoCard" | "Eyebrow" | "SearchSelect";
+type N = "Chip" | "Button" | "IconButton" | "Icon" | "InfoCard" | "Eyebrow" | "SearchSelect" | "BusinessCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Chip, Button, IconButton, Icon, InfoCard, Eyebrow, SearchSelect } = UI as unknown as Record<N, ComponentType<any>>;
+const { Chip, Button, IconButton, Icon, InfoCard, Eyebrow, SearchSelect, BusinessCard } = UI as unknown as Record<N, ComponentType<any>>;
 
 type Tile = { key: string; label: string; photo: string | null; flag: string | null };
 export type Vista = {
@@ -22,7 +22,7 @@ export type Vista = {
   rapidos: { key: string; icon: string; label: string }[];
   grupos: { key: string; title: string; options: { key: string; label: string }[] }[];
   sub: string | null; filtros: string[]; orden: string; pagina: number; paginas: number; total: number;
-  textos: Record<string, string>; tarjetas: Tarjeta[];
+  textos: Record<string, string>; tarjetas: Tarjeta[]; semillas: { id: string; name: string; address: string | null; phone: string | null }[];
 };
 
 const fondo = (url: string | null) => (url ? { backgroundImage: `url(${url})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
@@ -216,13 +216,22 @@ export function Categoria({ v }: { v: Vista }) {
         )}
 
         {pros.length > 0 && <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:gap-4">{pros.map(tarjeta)}</div>}
-        {frees.length > 0 && (
+        {(frees.length > 0 || v.semillas.length > 0) && (
           <div className="flex flex-col gap-3">
             <div className="hidden flex-wrap items-baseline gap-3 lg:flex">
               <span className="font-display text-[22px] font-extrabold tracking-[-0.035em]">{T.freeTitulo}</span>
               <span className="font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{T.freeSub}</span>
             </div>
-            <div className="flex flex-col gap-3 lg:mt-0.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{frees.map(tarjeta)}</div>
+            <div className="flex flex-col gap-3 lg:mt-0.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
+              {frees.map(tarjeta)}
+              {/* Semilla: «SIN RECLAMAR · ¿Es tuyo? Reclámalo gratis» → Publica tu negocio (Prototipo P:2419-2421). */}
+              {v.semillas.map((x) => (
+                <div key={`s${x.id}`} className="grid">
+                  <BusinessCard plan="free" name={x.name} verified={false} meta={`${T.sinReclamar}${x.address ? ` · ${x.address.toUpperCase()}` : ""}`} rating={T.esTuyo} reviews={0} reviewsNote={T.reclamalo}
+                    photos={[]} chips={[]} contactLabel={T.llamar} onOpen={() => router.push(`/publica?semilla=${x.id}`)}
+                    onContact={() => { if (x.phone) location.href = `tel:${x.phone}`; else router.push(`/publica?semilla=${x.id}`); }} />
+                </div>))}
+            </div>
           </div>
         )}
 
