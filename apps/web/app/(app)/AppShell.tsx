@@ -31,10 +31,12 @@ export function AppShell({ lang, t, yo, children }: { lang: "es" | "en"; t: Text
   const ruta = usePathname();
   const [, pasar] = useTransition();
   const activo = ruta === "/" ? "home" : ruta.startsWith("/negocios") || ruta.startsWith("/c/") || ruta.startsWith("/n/") ? "neg" : ruta.startsWith("/comunidad") ? "com" : ruta.startsWith("/eventos") ? "evt" : "";
+  // Buscar en el teléfono es pantalla completa: sin encabezado ni barra inferior (prototipo showMHeader / showNav).
+  const pantallaCompleta = !desk && ruta.startsWith("/buscar");
   const ir = (id: string) => router.push(id === "me" && !yo ? "/entrar" : RUTAS[id] ?? "/");
   return (
     <div className="min-h-dvh bg-white">
-      <div className="sticky top-0 z-40">
+      <div className={`sticky top-0 z-40 ${pantallaCompleta ? "hidden" : ""}`}>
         <SiteHeader
           variant={desk ? "desktop" : "mobile"}
           city="Hazleton, PA"
@@ -59,8 +61,8 @@ export function AppShell({ lang, t, yo, children }: { lang: "es" | "en"; t: Text
           assetBase="/assets/"
         />
       </div>
-      <div className={desk ? "" : "pb-[96px]"}>{children}</div>
-      {!desk && (
+      <div className={desk || pantallaCompleta ? "" : "pb-[96px]"}>{children}</div>
+      {!desk && !pantallaCompleta && (
         <div className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]">
           <BottomNav items={t.nav.map((label, i) => ({ id: ["home", "neg", "com", "evt", "me"][i], label, icon: ICONOS[i] }))} active={activo} onChange={ir} homeIndicator={false} />
         </div>

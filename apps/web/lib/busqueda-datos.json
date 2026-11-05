@@ -1,0 +1,254 @@
+{
+ "vacias": [
+  "de",
+  "del",
+  "la",
+  "las",
+  "el",
+  "los",
+  "en",
+  "para",
+  "por",
+  "un",
+  "una",
+  "unos",
+  "que",
+  "y",
+  "o",
+  "con",
+  "a",
+  "al",
+  "mi",
+  "me",
+  "lo",
+  "le",
+  "se",
+  "hay",
+  "donde",
+  "busco",
+  "buscando",
+  "quiero",
+  "necesito",
+  "alguien",
+  "algun",
+  "alguna",
+  "algo",
+  "tenga",
+  "tengan",
+  "acepte",
+  "acepten",
+  "aceptan",
+  "acepta",
+  "the",
+  "an",
+  "for",
+  "in",
+  "of",
+  "with",
+  "i",
+  "need",
+  "want",
+  "looking",
+  "that",
+  "takes",
+  "take",
+  "accepts",
+  "accept",
+  "to",
+  "near",
+  "my",
+  "some",
+  "any",
+  "where",
+  "who",
+  "is",
+  "are",
+  "and",
+  "or",
+  "cerca"
+ ],
+ "intenciones": [
+  {
+   "key": "open",
+   "label": {
+    "es": "Abierto ahora",
+    "en": "Open now"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "near",
+   "label": {
+    "es": "A menos de 1 mi",
+    "en": "Under 1 mi"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "ver",
+   "label": {
+    "es": "Verificado",
+    "en": "Verified"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "dlv",
+   "label": {
+    "es": "Delivery",
+    "en": "Delivery"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "pk",
+   "label": {
+    "es": "Pickup",
+    "en": "Pickup"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "walk",
+   "label": {
+    "es": "Sin cita",
+    "en": "Walk-in"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "casa",
+   "label": {
+    "es": "A domicilio",
+    "en": "Comes to you"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "h24",
+   "label": {
+    "es": "24 horas",
+    "en": "24 hours"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "esp",
+   "label": {
+    "es": "Habla español",
+    "en": "Speaks Spanish"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "medicaid",
+   "label": {
+    "es": "Acepta Medicaid",
+    "en": "Takes Medicaid"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "medicare",
+   "label": {
+    "es": "Acepta Medicare",
+    "en": "Takes Medicare"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "chip",
+   "label": {
+    "es": "Acepta CHIP",
+    "en": "Takes CHIP"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "sinssn",
+   "label": {
+    "es": "Sin seguro social",
+    "en": "No SSN"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "sinseg",
+   "label": {
+    "es": "Sin seguro",
+    "en": "Uninsured"
+   },
+   "tipo": "bz"
+  },
+  {
+   "key": "tonight",
+   "label": {
+    "es": "Esta noche",
+    "en": "Tonight"
+   },
+   "tipo": "ev"
+  },
+  {
+   "key": "wknd",
+   "label": {
+    "es": "Este fin de semana",
+    "en": "This weekend"
+   },
+   "tipo": "ev"
+  },
+  {
+   "key": "today",
+   "label": {
+    "es": "Hoy",
+    "en": "Today"
+   },
+   "tipo": "ev"
+  },
+  {
+   "key": "free",
+   "label": {
+    "es": "Gratis",
+    "en": "Free"
+   },
+   "tipo": "both"
+  },
+  {
+   "key": "best",
+   "label": {
+    "es": "Mejor calificados",
+    "en": "Top rated"
+   },
+   "tipo": "sort"
+  },
+  {
+   "key": "cheap",
+   "label": {
+    "es": "Más barato primero",
+    "en": "Cheapest first"
+   },
+   "tipo": "sort"
+  }
+ ],
+ "ejemplos": [
+  {
+   "es": "barbería sin cita abierta ahora",
+   "en": "walk-in barber open now"
+  },
+  {
+   "es": "dentista que acepte Medicaid",
+   "en": "dentist that takes Medicaid"
+  },
+  {
+   "es": "mofongo con delivery",
+   "en": "mofongo with delivery"
+  },
+  {
+   "es": "plomero 24 horas",
+   "en": "plumber 24 hours"
+  },
+  {
+   "es": "bachata esta noche",
+   "en": "bachata tonight"
+  }
+ ]
+}

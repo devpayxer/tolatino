@@ -74,9 +74,9 @@ function condiciones(p: Pedido, params: unknown[]) {
 }
 
 /* Columnas de un negocio en una lista (todas derivadas del servidor; la tarjeta no calcula nada). */
-const CTE = `with c as (select center, timezone, default_radius from cities where id = $1),
+export const CTE = `with c as (select center, timezone, default_radius from cities where id = $1),
           t as (select (now() at time zone c.timezone) as t from c)`;
-const COLUMNAS = `b.id, b.category_id as cat, b.name, s.plan = 'pro' as pro, s.verified, s.rating_avg::float as rating,
+export const COLUMNAS = `b.id, b.category_id as cat, b.name, s.plan = 'pro' as pro, s.verified, s.rating_avg::float as rating,
                    s.review_count as reviews,
                    case when b.geo is null then null else round((st_distance(b.geo, c.center) / 1609.34)::numeric, 1)::float end as mi,
                    b.service_radius_mi as radius, b.works_from_home as "fromHome", b.phone,
@@ -85,12 +85,12 @@ const COLUMNAS = `b.id, b.category_id as cat, b.name, s.plan = 'pro' as pro, s.v
                    negocio_abierto(b.id, t.t) as open,
                    coalesce(s.rating_avg, 0) * ln(s.review_count + 2) as score,
                    extract(day from t.t)::int as dia`;
-const DESDE = `from businesses b join business_stats_cache s on s.business_id = b.id, c, t
+export const DESDE = `from businesses b join business_stats_cache s on s.business_id = b.id, c, t
              where b.city_id = $1 and b.status = 'active'
                and (b.geo is null or st_dwithin(b.geo, c.center, c.default_radius * 1609.34))`;
-const FOTO = (x: string) =>
+export const FOTO = (x: string) =>
   `(select m.url from media m where m.owner_kind = 'business' and m.owner_id = ${x}.id and m.status = 'visible' order by m.sort limit 1) as photo`;
-const conFoto = <X extends { photo: string | null }>(x: X) => ({ ...x, photo: foto(x.photo) });
+export const conFoto = <X extends { photo: string | null }>(x: X) => ({ ...x, photo: foto(x.photo) });
 
 export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total: number; pagina: number; paginas: number }> {
   const params: unknown[] = [p.ciudad, p.cat];

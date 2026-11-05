@@ -74,3 +74,19 @@ export async function reportarFoto(mediaId: string, motivo: string, nota: string
   );
   return { ok: true, on: true };
 }
+
+/* «Avísame cuando haya» desde Buscar: guarda la búsqueda tal como se escribió (y la categoría, si había). */
+export async function avisameBusqueda(q: string, catSlug: string | null): Promise<Respuesta> {
+  const u = await yo();
+  if (!u) return { ok: false, entrar: true };
+  const texto = typeof q === "string" ? q.replace(/\s+/g, " ").trim().slice(0, 120) : "";
+  if (!texto) return { ok: false };
+  const slug = typeof catSlug === "string" && /^[a-z-]{2,30}$/.test(catSlug) ? catSlug : null;
+  await db().query(
+    `insert into search_alerts (user_id, city_id, query, filters)
+     select $1, 'hzl', $2, $3::jsonb
+      where not exists (select 1 from search_alerts where user_id = $1 and city_id = 'hzl' and lower(query) = lower($2) and removed_at is null)`,
+    [u.id, texto, JSON.stringify({ cat: slug })],
+  );
+  return { ok: true, on: true };
+}

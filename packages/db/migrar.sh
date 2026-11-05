@@ -9,6 +9,8 @@ if [ "${1:-}" = "--semilla-pruebas" ]; then SOLO_SEMILLA=1; shift; fi
 COMPOSE=("$@")  # p. ej.: docker compose --env-file … -f …
 DIR="$(cd "$(dirname "$0")" && pwd)/migrations"
 psql() { "${COMPOSE[@]}" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt "$@"; }
+# Derivados de búsqueda (vocabulario de «¿Quisiste decir…?»): se refrescan después de cualquier semilla.
+refrescar() { psql -c "do \$\$ begin if exists (select 1 from pg_proc where proname = 'refrescar_busqueda') then perform refrescar_busqueda(); end if; end \$\$;"; }
 
 if [ "$SOLO_SEMILLA" = 1 ]; then
   # Semilla del sandbox: SOLO pruebas. Candado: la base debe decir que es de pruebas.
@@ -23,6 +25,7 @@ if [ "$SOLO_SEMILLA" = 1 ]; then
       psql -c "insert into schema_seeds (name, sha256) values ('$n', '$h') on conflict (name) do update set sha256 = excluded.sha256, applied_at = now()"
     fi
   done
+  refrescar
   exit 0
 fi
 
@@ -51,4 +54,5 @@ for f in "$(dirname "$DIR")"/seeds/*.sql; do
     psql -c "insert into schema_seeds (name, sha256) values ('$n', '$h') on conflict (name) do update set sha256 = excluded.sha256, applied_at = now()"
   fi
 done
+refrescar
 echo "[migrar] al día: $(psql -c 'select count(*) from schema_migrations') migraciones"
