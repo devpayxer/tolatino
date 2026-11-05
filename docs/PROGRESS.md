@@ -101,8 +101,17 @@ _Actualizado: 5 nov 2026._
   (`TLDemo`: menú, staff, reseñas…) entran con su bloque.
 - **El kit `tolatino-app-kit.zip`** (Claude Design) asume Expo + Supabase: queda sustituido por las decisiones
   B, C y D; sus documentos ya estaban en `docs/diseno/`.
-- **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo · 1c shell (SiteHeader,
-  BottomNav) + Inicio (APP-HOME, estructura ya leída) · 1d página de categoría · 1e ficha Pro/Free ·
+- **Fase 1 · bloque 1c ✓ (5 nov, espera OK del fundador):** shell `app/(app)/` (SiteHeader móvil/escritorio,
+  pestañas, BottomNav, idioma ES/EN por cookie `tl_lang`) + Inicio (APP-HOME) 1:1 con el prototipo: móvil =
+  7 categorías + «Todas (17)» + Abierto ahora (3) + Para negocios; escritorio = columnas del prototipo
+  (`deskCols`: 220 | centro desde 1024; 240 | centro | 320 desde 1200, corte `xl` = 75rem en globals.css).
+  «Abierto ahora» es real: Pro con foto, abierto según `business_hours` en la zona de la ciudad, el más
+  cercano por categoría. **Ocultas hasta tener datos reales:** Hoy en el barrio, Esta semana (eventos),
+  Comunidad y el mini mapa (no hay mapa todavía). Rutas aún no construidas muestran `Pronto` con su bloque
+  (c/[slug], n/[id], negocios, buscar, ciudad, publica, comunidad, eventos) — fase 9 exige 0.
+  Nota de verificación: este contenedor no llega a images.pexels.com (proxy 403), así que las fotos solo se
+  ven en el sandbox; la página sí pide las URLs correctas.
+- **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría · 1e ficha Pro/Free ·
   1f Buscar · 1g Publica tu negocio v2 · 1h panel base · 1i admin Negocios + colas.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
@@ -115,7 +124,6 @@ _Actualizado: 5 nov 2026._
      catálogo de componentes, **primera captura en el teléfono** para el OK.
   4. Después: cuenta (teléfono una vez + passkeys), ciudad (5 ciudades), taxonomía,
      Super Admin esqueleto, `docs/ayuda/` inicial.
-- El fundador trabaja desde el teléfono y solo da el OK (decisión U).
 - El fundador trabaja desde el teléfono y solo da el OK (decisión U).
 
 ## Infraestructura de PRUEBAS (sandbox) — creada el 5 nov

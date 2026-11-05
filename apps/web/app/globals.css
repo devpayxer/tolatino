@@ -5,6 +5,8 @@
 /* Los tokens del sistema (docs/diseno/design-system/tokens) expuestos a Tailwind.
    Regla: ningún componente usa hex a pelo; solo estos nombres. */
 @theme {
+  /* Cortes del prototipo: escritorio desde 1024; columna derecha (c3) desde 1200. */
+  --breakpoint-xl: 75rem;
   --color-ink: var(--tl-ink);
   --color-brand: var(--tl-brand);
   --color-action: var(--tl-action);
