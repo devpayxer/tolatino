@@ -7,9 +7,9 @@ import { useState, type ComponentType } from "react";
 import type { ficha } from "@/lib/ficha";
 import { guardarNegocio, registrarToque } from "../../acciones";
 
-type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip";
+type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Button, IconButton, Tabs, DesktopTabs, TodayCard, HoursPro, Tag, Chip, OwnerCard } = UI as unknown as Record<N, ComponentType<any>>;
 
 type F = NonNullable<Awaited<ReturnType<typeof ficha>>> & { guardado: boolean };
 type Textos = Record<string, string>;
@@ -60,7 +60,7 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
   );
   const logo = (cls: string) => (
     <span className={`grid flex-none place-items-center border border-line font-display font-extrabold leading-none text-white ${cls}`}
-      style={{ ...fondo(f.logo), backgroundColor: f.pro ? "var(--tl-photo-bg)" : "var(--tl-ink)" }}>{f.pro ? "" : f.iniciales}</span>
+      style={{ ...fondo(f.logo), backgroundColor: f.logo ? "var(--tl-photo-bg)" : "var(--tl-ink)" }}>{f.logo ? "" : f.iniciales}</span>
   );
 
   /* ── Bloques del Resumen ── */
@@ -123,6 +123,21 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
           <button type="button" onClick={llegar} className="grid h-[38px] flex-none place-items-center rounded-xl bg-ink/5 px-[15px] text-[12.5px] font-bold">{t.openMaps}</button>
         )}
       </div>
+      {f.amen.length > 0 && (
+        <>
+          <div className="mt-3.5 font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{f.amenK}</div>
+          <div className="mt-1.5 grid grid-cols-2 gap-x-3.5 gap-y-0.5">
+            {f.amen.map((a) => (
+              <div key={a.l} className="flex items-center gap-[9px] py-2"><Icon name={a.icon} size={17} color="var(--tl-action)" /><span className="text-[12.5px] font-semibold text-ink/70">{a.l}</span></div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+  const quien = (desk: boolean) => f.quien && (
+    <div data-screen-label={desk ? "Resumen desktop · quién está detrás" : "Resumen · quién está detrás"} className="grid">
+      <OwnerCard {...f.quien} teamCta="" desktop={desk} />
     </div>
   );
   const preguntas = f.pro && f.faqs.length > 0 && (
@@ -303,6 +318,8 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
         ) : (
           <div data-screen-label="Ficha · resumen" className="lg:mt-8 lg:grid lg:items-start lg:gap-12 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
             <div className="flex min-w-0 flex-col gap-0 lg:gap-9">
+              {f.quien && <div className="px-5 pt-[18px] lg:hidden">{quien(false)}</div>}
+              {f.quien && <div className="hidden lg:block">{quien(true)}</div>}
               <div className="px-5 pt-3.5 lg:hidden">{hoy(false)}</div>
               <div className="hidden lg:block">{hoy(true)}</div>
               {oferta && <div className="mx-5 mt-3.5 lg:mx-0 lg:mt-0">{oferta}</div>}

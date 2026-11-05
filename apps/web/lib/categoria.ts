@@ -169,15 +169,18 @@ export async function cifras(p: Punto, cat: string, tag: string) {
 
 /* Horario de la semana de los negocios listados (una sola consulta) y la hora local de la ciudad. */
 export async function horarios(ciudad: string, ids: string[]) {
-  const [h, t] = await Promise.all([
+  const [h, t, c] = await Promise.all([
     db().query<{ id: string; weekday: number; open: boolean; ranges: [string, string][] }>(
       `select business_id as id, weekday, open, ranges from business_hours where module = '' and business_id = any($1::text[])`, [ids]),
     db().query<{ dow: number; hm: string }>(
       `select extract(dow from t)::int as dow, to_char(t, 'HH24:MI') as hm from (select now() at time zone timezone as t from cities where id = $1) x`, [ciudad]),
+    // «Cerrar por hoy» desde el panel: la tarjeta dice «Cerrado hoy».
+    db().query<{ id: string }>(
+      `select b.id from businesses b join cities c on c.id = b.city_id where b.id = any($1::text[]) and b.closed_on = (now() at time zone c.timezone)::date`, [ids]),
   ]);
   const porId = new Map<string, { weekday: number; open: boolean; ranges: [string, string][] }[]>();
   for (const x of h.rows) (porId.get(x.id) ?? porId.set(x.id, []).get(x.id)!).push(x);
-  return { porId, ahora: t.rows[0] ?? { dow: 0, hm: "00:00" } };
+  return { porId, ahora: t.rows[0] ?? { dow: 0, hm: "00:00" }, cerrados: new Set(c.rows.map((x) => x.id)) };
 }
 
 /* Nombres de subcategorías (para la línea de la tarjeta). */

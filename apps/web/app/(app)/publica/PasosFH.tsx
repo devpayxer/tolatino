@@ -2,6 +2,7 @@
 /* Publica tu negocio v2 · paso 5 (ONB-NEG-F1 · tu foto y tu página) y «publicada» (ONB-NEG-H1). Tal cual el diseño.
    Las fotos son reales: se toman o se eligen del teléfono, se reducen aquí y el servidor las limpia y las guarda
    (/api/medios). «Elegir de tus fotos» abre las fotos del teléfono (el prototipo mostraba un carrete de ejemplo). */
+import { reducir } from "@/lib/subir-foto";
 import * as UI from "@tolatino/ui";
 import { useRef, useState, type ComponentType } from "react";
 import { probarPromo } from "./acciones";
@@ -21,17 +22,6 @@ export function fechasPrueba(len: number, es: boolean) {
   const f = (ms: number) => { const d = new Date(ms); return es ? `${d.getDate()} ${MES[d.getMonth()]![0]}` : `${MES[d.getMonth()]![1]} ${d.getDate()}`; };
   const t0 = Date.now();
   return { fin: f(t0 + len * 864e5), aviso: f(t0 + (len - 5) * 864e5) };
-}
-
-/* Reduce la foto en el teléfono (como el prototipo: lado mayor 1600 px, JPEG) antes de subirla. */
-async function reducir(file: File): Promise<Blob> {
-  const url = URL.createObjectURL(file);
-  try {
-    const im = await new Promise<HTMLImageElement>((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
-    const k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight)), w = Math.round(im.naturalWidth * k), h = Math.round(im.naturalHeight * k);
-    const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d")!.drawImage(im, 0, 0, w, h);
-    return await new Promise<Blob>((ok) => cv.toBlob((b) => ok(b ?? file), "image/jpeg", 0.85));
-  } catch { return file; } finally { URL.revokeObjectURL(url); }
 }
 
 /* Lo que trae Pro con SU negocio (proRows del diseño). */

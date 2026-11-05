@@ -4,6 +4,7 @@ import { db } from "./db";
 import { foto } from "./directorio";
 import type { Lang } from "./idioma";
 import { estado, hora12 } from "./tarjeta";
+import { FOTOS_FREE, FOTOS_PRO } from "./plan";
 
 /* Ficha del negocio (APP-NEG-LISTING), base de la Fase 1: encabezado, Resumen, horario, fotos, cómo llegar,
    preguntas y Relacionados. Todo lo calcula el servidor; los módulos (menú, servicios, reseñas…) llegan en sus fases. */
@@ -13,8 +14,7 @@ type Rango = [string, string];
 type Dia = { weekday: number; open: boolean; ranges: Rango[] };
 
 export const ID_NEGOCIO = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-/* Modelo de datos (Media): un Free muestra hasta 6 fotos; un Pro, las que suba (tope de lectura 60). */
-const FOTOS_FREE = 6, FOTOS_PRO = 60;
+/* PLAN §2: un Free muestra 3 fotos; un Pro, las que suba (tope de lectura 60). Las cifras viven en lib/plan.ts. */
 
 /* Galería (APP-NEG-GALERIA): las fotos visibles del negocio con su id (para reportarlas) y cuáles ya reportó la persona. */
 export async function galeria(id: string, userId: string | null) {
@@ -47,7 +47,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     id: string; cat: string; city: string; name: string; plan: string; verified: boolean; rating: number | null; reviews: number;
     subs: string[]; tags: string[]; attrs: Record<string, unknown>; about: Bi | null; founded: number | null; phone: string | null;
     address: string | null; radius: number | null; from_home: boolean; lat: number | null; lng: number | null; mi: number | null;
-    open: boolean; ciudad: string; estado: string; dow: number; hm: string; dia: number; mes: number; logo: string | null;
+    open: boolean; ciudad: string; estado: string; dow: number; hm: string; dia: number; mes: number; logo: string | null; cerrado_hoy: boolean;
   }>(
     `select b.id, b.category_id as cat, b.city_id as city, b.name, s.plan, s.verified, s.rating_avg::float as rating, s.review_count as reviews,
             b.subcategory_ids as subs, b.filter_values as tags, b.category_attrs as attrs, b.about, b.founded_year as founded, b.phone,
@@ -58,7 +58,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
             c.name as ciudad, c.state as estado,
             extract(dow from now() at time zone c.timezone)::int as dow, to_char(now() at time zone c.timezone, 'HH24:MI') as hm,
             extract(day from now() at time zone c.timezone)::int as dia, extract(month from now() at time zone c.timezone)::int as mes,
-            b.logo_url as logo
+            b.logo_url as logo, coalesce(b.closed_on = (now() at time zone c.timezone)::date, false) as cerrado_hoy
        from businesses b join business_stats_cache s on s.business_id = b.id join cities c on c.id = b.city_id
       where b.id = $1 and b.status = 'active'`,
     [id],
@@ -66,16 +66,25 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   const b = r.rows[0];
   if (!b) return null;
 
-  const [fotos, horas, subs, faqs, enlaces] = await Promise.all([
+  const [fotos, horas, subs, faqs, enlaces, gente, amen] = await Promise.all([
     db().query<{ url: string }>(`select url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit $2`, [id, b.plan === "pro" ? FOTOS_PRO : FOTOS_FREE]),
     db().query<Dia>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
     db().query<{ n: string }>(`select name->>$2 as n from subcategories where id = any($1::text[]) order by array_position($1::text[], id)`, [b.subs, lang]),
     db().query<{ q: string; a: string }>(`select question->>$2 as q, answer->>$2 as a from faqs where business_id = $1 order by sort`, [id, lang]),
     relacionados(id, lang, desde),
+    // Quién está detrás (Tu página · Equipo): solo quien aceptó y sale en la página, el dueño primero.
+    db().query<{ kind: string; name: string; nick: string | null; role: Bi | null; photo: string | null; bio: Bi | null }>(
+      `select kind, display_name as name, nickname as nick, role, photo_url as photo, bio from business_members
+        where business_id = $1 and status = 'active' and show_on_page and hidden_by_admin is null
+          and not exists (select 1 from businesses x where x.id = $1 and x.staff_hidden)
+        order by (kind = 'owner') desc, sort, id limit 8`, [id]),
+    // En el local (Quiénes somos · EN TU NEGOCIO): claves del catálogo.
+    db().query<{ icon: string | null; l: string }>(
+      `select a.icon, a.label->>$2 as l from businesses b cross join unnest(b.amenities) with ordinality u(k, o) join amenities a on a.key = u.k where b.id = $1 order by u.o`, [id, lang]),
   ]);
   const pro = b.plan === "pro", n = b.reviews, dias = horas.rows, ahora = { dow: b.dow, hm: b.hm };
   const urls = fotos.rows.map((x) => x.url);
-  const st = estado(dias, ahora, b.open, lang, (b.attrs.tarjeta as { status?: Bi } | undefined)?.status ?? null);
+  const st = estado(dias, ahora, b.open, lang, (b.attrs.tarjeta as { status?: Bi } | undefined)?.status ?? null, b.cerrado_hoy);
   const nota = st.text.replace(/^(Abierto|Cerrado|Open|Closed)( · )?/, "");
   const iniciales = b.name.split(" ").filter((w) => w.length > 2).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const fecha = `${DIA_LARGO[lang][b.dow]} ${es ? `${b.dia} ${MES.es[b.mes - 1]}` : `${MES.en[b.mes - 1]} ${b.dia}`}`;
@@ -84,7 +93,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   const t = min(b.hm);
 
   // Horario Pro (HoursPro): los rangos reales de hoy, la cuenta regresiva, cambios programados y la semana.
-  const rangosHoy = hoy?.open ? hoy.ranges : [];
+  const rangosHoy = hoy?.open && !b.cerrado_hoy ? hoy.ranges : [];
   const hpToday = rangosHoy.length
     ? rangosHoy.map((rg, i) => {
         const ahoraDentro = b.open && min(rg[0]) <= t && (min(rg[1]) > t || min(rg[1]) <= min(rg[0]));
@@ -126,7 +135,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   if (cols.length && cols.length < 3) cols.push({ k: L("PAGO", "PAYMENT"), v: L("En el local", "In store") });
   const modos = [dl ? "delivery" : null, pk ? "pickup" : null, di ? L("para comer aquí", "dine-in") : null].filter(Boolean) as string[];
   const ms = modos.length > 1 ? `${modos.slice(0, -1).join(", ")}${L(" o ", " or ")}${modos[modos.length - 1]}` : modos[0] ?? "";
-  const tituloHoy = b.open
+  const tituloHoy = b.cerrado_hoy ? L("Cerrado hoy", "Closed today") : b.open
     ? (prox.cierra ? L(`Abierto hasta las ${hora12(prox.cierra)}`, `Open until ${hora12(prox.cierra)}`) : L("Abierto las 24 horas", "Open 24 hours"))
     : prox.abre ? (prox.dias === 0 ? L(`Abre a las ${hora12(prox.abre)}`, `Opens at ${hora12(prox.abre)}`) : prox.dias === 1 ? L(`Abre mañana a las ${hora12(prox.abre)}`, `Opens tomorrow at ${hora12(prox.abre)}`) : L(`Abre el ${DIA_LARGO.es[(b.dow + prox.dias) % 7]!.toLowerCase()} a las ${hora12(prox.abre)}`, `Opens ${DIA_LARGO.en[(b.dow + prox.dias) % 7]!.charAt(0)}${DIA_LARGO.en[(b.dow + prox.dias) % 7]!.slice(1).toLowerCase()} at ${hora12(prox.abre)}`))
     : L("Cerrado", "Closed");
@@ -145,7 +154,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   return {
     id: b.id, cat: b.cat, pro, nombre: b.name, verificado: b.verified, abierto: b.open, telefono: b.phone, lat: b.lat, lng: b.lng,
     hero: foto(urls[0] ?? null, 650), mosaico: [urls[1] ?? urls[0] ?? null, urls[2] ?? urls[0] ?? null].map((u) => foto(u, 650)),
-    logo: pro ? foto(urls[1] ?? urls[0] ?? null, 200) : null, iniciales, fotos: urls.map((u) => foto(u, 350)!), nFotos: urls.length,
+    logo: pro && b.logo ? b.logo : null, iniciales, fotos: urls.map((u) => foto(u, 350)!), nFotos: urls.length,
     subsLinea: subs.rows.map((x) => x.n).join(" · "),
     s1: n >= 5 ? (b.rating?.toFixed(1) ?? "") : n > 0 ? String(n) : L("Nuevo", "New"), s1Estrella: n >= 5,
     s1Sub: n >= 5 ? `${n} ${L("RESEÑAS", "REVIEWS")}` : n > 0 ? L("RESEÑAS", "REVIEWS") : "EN TO'LATINO",
@@ -153,7 +162,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     estado: st.text, estadoCorto: b.open ? L("Abierto", "Open") : L("Cerrado", "Closed"), estadoNota: nota.toUpperCase(), estadoResto: nota ? `· ${nota}` : "",
     dist: b.mi != null ? `${b.mi} mi` : "—", ciudad: b.ciudad.toUpperCase(),
     oferta: pro ? tj.offer?.[lang] ?? null : null,
-    sobre: b.about?.[lang] ?? null, desde: b.founded ? L(`EN ${b.ciudad.toUpperCase()} DESDE ${b.founded}`, `IN ${b.ciudad.toUpperCase()} SINCE ${b.founded}`) : null,
+    sobre: b.about?.[lang] || b.about?.es || null, desde: b.founded ? L(`EN ${b.ciudad.toUpperCase()} DESDE ${b.founded}`, `IN ${b.ciudad.toUpperCase()} SINCE ${b.founded}`) : null,
     hoy: hoyCard,
     horario: { data: { hpToday, hpChanges, hpWeek, hpCountdown: prox.minutos != null ? duracion(prox.minutos) : "" },
       dateLabel: `${L("HOY", "TODAY")} · ${hoyCorto}`, status: b.open ? L("Abierto", "Open") : L("Cerrado", "Closed"),
@@ -163,6 +172,9 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     zona: enCasa && b.radius ? L(`Va a domicilio hasta ${b.radius} mi`, `Comes to you up to ${b.radius} mi`) : null,
     direccionMeta: `${b.mi ?? "—"} MI · ${b.ciudad.toUpperCase()}, ${b.estado}`,
     faqs: faqs.rows, relacionados: enlaces,
+    quien: pro ? quienDetras(gente.rows, b.about?.[lang] || b.about?.es || null, b.founded, b.ciudad, b.verified, lang) : null,
+    amen: pro ? amen.rows.map((a) => ({ icon: a.icon ?? "check", l: a.l })) : [],
+    amenK: enCasa ? L("CÓMO TRABAJA", "HOW THEY WORK") : L("EN EL LOCAL", "AT THE PLACE"),
   };
 }
 
@@ -216,4 +228,38 @@ async function relacionados(id: string, lang: Lang, desde: string) {
       movil, telefono: x.phone, lat: x.lat, lng: x.lng,
     };
   });
+}
+
+/* Una vista de la página del negocio (las cifras del panel: «VISTAS · 7 DÍAS», «VISTAS HOY»). Día de la ciudad del
+   negocio; no cuenta a la gente del propio negocio ni a los robots. Una fila por negocio y día (derivado, nadie lo edita). */
+const ROBOT = /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|whatsapp/i;
+export async function registrarVista(id: string, userId: string | null, ua: string | null) {
+  if (!ID_NEGOCIO.test(id) || id.length > 80 || !ua || ROBOT.test(ua)) return;
+  await db().query(
+    `insert into business_views_daily (business_id, day, n)
+     select b.id, (now() at time zone c.timezone)::date, 1 from businesses b join cities c on c.id = b.city_id
+      where b.id = $1 and b.status = 'active'
+        and not exists (select 1 from business_members m where m.business_id = b.id and m.user_id = $2::uuid and m.status = 'active')
+     on conflict (business_id, day) do update set n = business_views_daily.n + 1`, [id, userId]);
+}
+
+/* Resumen · Quién está detrás (OwnerCard 15b): la persona (el dueño con sus palabras) o, sin ella, el texto del negocio;
+   su equipo (hasta 3 fotos) y la franja de lo verificado. Pro (en Free se duerme, como en el prototipo freeCut). */
+function quienDetras(gente: { kind: string; name: string; nick: string | null; role: Bi | null; photo: string | null; bio: Bi | null }[], about: string | null, founded: number | null, ciudad: string, verified: boolean, lang: Lang) {
+  const es = lang === "es", L = (a: string, b: string) => (es ? a : b);
+  const p = gente.find((x) => x.kind === "owner" && x.bio?.es), quote = p ? (p.bio?.[lang] || p.bio?.es || "") : "";
+  if (!p && !about) return null;
+  const otros = gente.filter((x) => x !== p).slice(0, 3);
+  const corto = (n: string) => { const w = n.split(" "); return w.length > 2 ? w.slice(0, -1).join(" ") : w[0]!; };
+  const nombres = otros.map((x) => corto(x.name));
+  const lista = nombres.length < 2 ? nombres[0] ?? "" : `${nombres.slice(0, -1).join(", ")}${L(" y ", " and ")}${nombres[nombres.length - 1]}`;
+  return {
+    photo: p?.photo ?? "", name: p ? p.name : "", role: p ? (p.role?.[lang] || p.role?.es || (es ? "Dueño" : "Owner")) : "",
+    nick: p?.nick ? L(`LE DICEN ${p.nick.toUpperCase()}`, `KNOWN AS ${p.nick.toUpperCase()}`) : "", quote,
+    about: p ? "" : about ?? "", since: p ? "" : founded ? L(`EN ${ciudad.toUpperCase()} DESDE ${founded}`, `IN ${ciudad.toUpperCase()} SINCE ${founded}`) : "",
+    team: p ? otros.filter((x) => x.photo).map((x) => x.photo!) : [], teamLabel: p && otros.length ? `${L("Con ", "With ")}${lista}` : "",
+    // «Teléfono verificado» solo si el dueño entró con su teléfono (código por SMS); nada que no sea cierto.
+    trust: [...(verified ? [{ icon: "verified", label: L("Sello To'Latino", "To'Latino seal"), tone: "ok" }] : gente.some((x) => x.kind === "owner") ? [{ icon: "phone", label: L("Teléfono verificado", "Phone verified"), tone: "ok" }] : []),
+      ...(founded ? [{ icon: "store", label: L(`En ${ciudad} desde ${founded}`, `In ${ciudad} since ${founded}`), tone: "info" }] : [])],
+  };
 }

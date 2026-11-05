@@ -1,0 +1,151 @@
+"use server";
+import { claveAmenidad } from "@/lib/amenidades";
+import { mismoOrigen } from "@/lib/cuenta";
+import { db, tx } from "@/lib/db";
+import { accesoPanel, type Acceso } from "@/lib/panel";
+import { aBase, diaValido, type DiaPanel } from "@/lib/panel-reglas";
+
+/* Lo que el dueño cambia desde el panel (Tu página · Hoy · Fotos · Horario · Quiénes somos). Cada acción: mismo
+   sitio, miembro activo con acceso a esa parte (decide el servidor), datos revisados, y una línea en la auditoría
+   (solo inserción). La pantalla solo muestra. */
+type Bi = { es: string; en: string };
+export type Res = { ok: true } | { ok: false; mensaje: Bi };
+const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
+const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+async function entrar(id: unknown, parte = "page"): Promise<Acceso | null> {
+  if (!(await mismoOrigen())) return null;
+  return typeof id === "string" ? accesoPanel(id, parte) : null;
+}
+async function auditar(a: Acceso, action: string, before: unknown, after: unknown) {
+  await db().query(
+    `insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, $2, 'business', $3, $4, $5::jsonb, $6::jsonb)`,
+    [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(before ?? null), JSON.stringify(after ?? null)]);
+}
+const esPro = async (id: string) => ((await db().query<{ plan: string }>(`select plan from business_stats_cache where business_id = $1`, [id])).rows[0]?.plan ?? "free") === "pro";
+const recontarFotos = (id: string) =>
+  db().query(`update business_stats_cache set photo_count = (select count(*) from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'), updated_at = now() where business_id = $1`, [id]);
+
+/* ── Hoy · «Cerrar por hoy» / «Abrir de nuevo» ── */
+export async function cerrarPorHoy(id: string, cerrar: boolean): Promise<Res> {
+  const a = await entrar(id, "ord");
+  if (!a) return SIN_ACCESO;
+  await db().query(
+    `update businesses b set closed_on = case when $2 then (now() at time zone c.timezone)::date else null end, updated_at = now()
+       from cities c where c.id = b.city_id and b.id = $1`, [a.negocio.id, !!cerrar]);
+  await auditar(a, cerrar ? "panel.cerrar_hoy" : "panel.abrir_hoy", null, null);
+  return { ok: true };
+}
+
+/* ── Fotos y portada ──
+   Las fotos se suben con /api/medios (quedan a nombre de quien sube) y aquí pasan al negocio. La portada es siempre
+   la primera de la galería (sort 0). El logo es una foto aparte (owner_kind 'logo'). */
+export async function fotosAgregar(id: string, ids: string[], portada = false): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const lista = Array.isArray(ids) ? ids.filter((x) => typeof x === "string" && UUID.test(x)).slice(0, 20) : [];
+  if (!lista.length) return no("No llegó ninguna foto.", "No photo arrived.");
+  const r = await tx(async (c) => {
+    const n = (await c.query<{ n: number }>(`select count(*)::int as n from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [a.negocio.id])).rows[0]!.n;
+    if (n + lista.length > 60) return "tope" as const;
+    if (portada) await c.query(`update media set sort = sort + $2 where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [a.negocio.id, lista.length]);
+    for (let i = 0; i < lista.length; i++) {
+      await c.query(`update media set owner_kind = 'business', owner_id = $1, sort = $2 where id = $3::uuid and owner_kind = 'user' and owner_id = $4 and status = 'visible'`,
+        [a.negocio.id, portada ? i : n + i, lista[i], a.yo.id]);
+    }
+    return "ok" as const;
+  });
+  if (r === "tope") return no("Tu galería llegó a 60 fotos. Quita alguna para subir más.", "Your gallery reached 60 photos. Remove some to add more.");
+  await recontarFotos(a.negocio.id);
+  await auditar(a, portada ? "panel.portada" : "panel.fotos_agregar", null, { media: lista });
+  return { ok: true };
+}
+
+export async function fotosOrden(id: string, orden: string[]): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  if (!Array.isArray(orden) || orden.length > 60 || !orden.every((x) => typeof x === "string" && UUID.test(x))) return no("Ese orden no es válido.", "That order is not valid.");
+  const r = await db().query(
+    `update media m set sort = o.i - 1 from unnest($2::uuid[]) with ordinality o(id, i)
+      where m.id = o.id and m.owner_kind = 'business' and m.owner_id = $1 and m.status = 'visible'`, [a.negocio.id, orden]);
+  if (!r.rowCount) return no("No se encontraron esas fotos.", "Those photos were not found.");
+  await auditar(a, "panel.fotos_orden", null, { orden });
+  return { ok: true };
+}
+
+export async function fotoQuitar(id: string, mediaId: string): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  if (typeof mediaId !== "string" || !UUID.test(mediaId)) return no("Esa foto no existe.", "That photo doesn’t exist.");
+  const n = (await db().query<{ n: number }>(`select count(*)::int as n from media where owner_kind = 'business' and owner_id = $1 and status = 'visible'`, [a.negocio.id])).rows[0]!.n;
+  if (n <= 1) return no("Tu página necesita al menos una foto: sube otra antes de quitar esta.", "Your page needs at least one photo: upload another before removing this one.");
+  const r = await db().query(
+    `update media set status = 'removed', removed_reason = 'owner', removed_by = $3 where id = $2::uuid and owner_kind = 'business' and owner_id = $1 and status = 'visible'`,
+    [a.negocio.id, mediaId, a.yo.id]);
+  if (!r.rowCount) return no("Esa foto no existe.", "That photo doesn’t exist.");
+  await recontarFotos(a.negocio.id);
+  await auditar(a, "panel.foto_quitar", { media: mediaId }, null);
+  return { ok: true };
+}
+
+export async function logoPoner(id: string, mediaId: string | null): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  if (mediaId !== null && (typeof mediaId !== "string" || !UUID.test(mediaId))) return no("Esa foto no existe.", "That photo doesn’t exist.");
+  const antes = (await db().query<{ logo_url: string | null }>(`select logo_url from businesses where id = $1`, [a.negocio.id])).rows[0]?.logo_url ?? null;
+  const ok = await tx(async (c) => {
+    await c.query(`update media set status = 'removed', removed_reason = 'replaced', removed_by = $2 where owner_kind = 'logo' and owner_id = $1 and status = 'visible'`, [a.negocio.id, a.yo.id]);
+    if (mediaId === null) { await c.query(`update businesses set logo_url = null, updated_at = now() where id = $1`, [a.negocio.id]); return true; }
+    const m = (await c.query<{ url: string }>(
+      `update media set owner_kind = 'logo', owner_id = $1, sort = 0 where id = $2::uuid and owner_kind = 'user' and owner_id = $3 and status = 'visible' returning url`,
+      [a.negocio.id, mediaId, a.yo.id])).rows[0];
+    if (!m) return false;
+    await c.query(`update businesses set logo_url = $2, updated_at = now() where id = $1`, [a.negocio.id, m.url]);
+    return true;
+  });
+  if (!ok) return no("Esa foto no existe.", "That photo doesn’t exist.");
+  await auditar(a, mediaId ? "panel.logo" : "panel.logo_quitar", { logo: antes }, { media: mediaId });
+  return { ok: true };
+}
+
+/* ── Horario ── Free: un tramo por día. Pro: dos. */
+export async function horarioGuardar(id: string, dias: DiaPanel[]): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  if (!Array.isArray(dias) || dias.length !== 7) return no("Falta algún día.", "A day is missing.");
+  const limpio: DiaPanel[] = dias.map((d) => ({ on: !!d?.on, a: Number(d?.a), b: Number(d?.b), two: !!d?.two, a2: Number(d?.a2), b2: Number(d?.b2) }));
+  if (!limpio.every(diaValido)) return no("Revisa las horas: cada día cierra después de abrir.", "Check the hours: each day closes after it opens.");
+  if (limpio.some((d) => d.on && d.two) && !(await esPro(a.negocio.id))) return no("Con Free: un horario por día. Dos tramos es de Pro.", "On Free: one window per day. Two windows are Pro.");
+  const filas = aBase(limpio);
+  const antes = (await db().query(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [a.negocio.id])).rows;
+  await tx(async (c) => {
+    for (const f of filas) {
+      await c.query(
+        `insert into business_hours (business_id, module, weekday, open, ranges) values ($1, '', $2, $3, $4::jsonb)
+         on conflict (business_id, module, weekday) do update set open = excluded.open, ranges = excluded.ranges`,
+        [a.negocio.id, f.weekday, f.open, JSON.stringify(f.ranges)]);
+    }
+    await c.query(`update businesses set updated_at = now() where id = $1`, [a.negocio.id]);
+  });
+  await auditar(a, "panel.horario", antes, filas);
+  return { ok: true };
+}
+
+/* ── Quiénes somos ── 300 caracteres por idioma; lo que hay en tu negocio = claves del catálogo de su categoría. */
+export async function aboutGuardar(id: string, x: { es: string; en: string; amen: string[] }): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const t = (s: unknown) => (typeof s === "string" ? s.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim() : "");
+  const es = t(x?.es), en = t(x?.en);
+  if (es.length > 300 || en.length > 300) return no("Máximo 300 letras.", "300 characters max.");
+  const pedidas = Array.isArray(x?.amen) ? [...new Set(x.amen.filter((k) => typeof k === "string").map(claveAmenidad))].slice(0, 30) : [];
+  const validas = (await db().query<{ key: string }>(
+    `select key from amenities where key = any($2::text[]) and (categories = '{}' or $1 = any(categories))`, [a.negocio.category_id, pedidas])).rows.map((r) => r.key);
+  const amen = pedidas.filter((k) => validas.includes(k));
+  const antes = (await db().query(`select about, amenities from businesses where id = $1`, [a.negocio.id])).rows[0];
+  const about = es || en ? { es, en } : null;
+  await db().query(`update businesses set about = $2::jsonb, amenities = $3, updated_at = now() where id = $1`, [a.negocio.id, about ? JSON.stringify(about) : null, amen]);
+  await auditar(a, "panel.about", antes, { about, amenities: amen });
+  return { ok: true };
+}

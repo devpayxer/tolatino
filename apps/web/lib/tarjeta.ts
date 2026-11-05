@@ -15,8 +15,16 @@ export function hora12(hm: string) {
 const min = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number); return h * 60 + m; };
 
 /* «Abierto · hasta 8 PM» · «Cerrado · abre 11 AM» · «Cerrado · abre vie 8 AM» · «Abierto · 24 horas». */
-export function estado(dias: Dia[], ahora: { dow: number; hm: string }, abierto: boolean, lang: Lang, nota?: { es: string; en: string } | null) {
+export function estado(dias: Dia[], ahora: { dow: number; hm: string }, abierto: boolean, lang: Lang, nota?: { es: string; en: string } | null, cerradoHoy = false) {
   const es = lang === "es";
+  if (cerradoHoy) {
+    // «Cerrar por hoy» (panel · Hoy): hoy no abre; se busca desde mañana.
+    for (let k = 1; k <= 7; k++) {
+      const d = dias.find((x) => x.weekday === (ahora.dow + k) % 7), a = d?.open ? d.ranges.map(([x]) => x).sort((x, y) => min(x) - min(y))[0] : undefined;
+      if (a) return { open: false, text: `${es ? "Cerrado hoy · abre" : "Closed today · opens"} ${k === 1 ? (es ? "mañana" : "tomorrow") : DIAS[lang][(ahora.dow + k) % 7]} ${hora12(a)}` };
+    }
+    return { open: false, text: es ? "Cerrado hoy" : "Closed today" };
+  }
   if (nota) { const x = nota[lang]; return { open: true, text: x.charAt(0).toUpperCase() + x.slice(1) }; }
   const t = min(ahora.hm), de = (d: number) => dias.find((x) => x.weekday === ((d % 7) + 7) % 7);
   if (abierto) {

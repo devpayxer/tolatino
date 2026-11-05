@@ -15,7 +15,7 @@ export async function armarTarjetas(ciudad: string, items: Resultado[], lang: La
   ]);
   return items.map((b) => {
     const tj = (b.attrs.tarjeta ?? {}) as { offer?: { es?: string; en?: string }; status?: { es: string; en: string } };
-    const st = estado(hor.porId.get(b.id) ?? [], hor.ahora, b.open, lang, tj.status ?? null);
+    const st = estado(hor.porId.get(b.id) ?? [], hor.ahora, b.open, lang, tj.status ?? null, hor.cerrados.has(b.id));
     const btn = botonPrincipal(b.cat, b.pro, b.tags, lang);
     const rv = resenas(b.rating, b.reviews, lang);
     return {

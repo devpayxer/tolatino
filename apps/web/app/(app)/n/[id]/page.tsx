@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import { yo } from "@/lib/cuenta";
 import { guardados } from "@/lib/categoria";
-import { ficha } from "@/lib/ficha";
+import { ficha, registrarVista } from "@/lib/ficha";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { ubicacion } from "@/lib/ubicacion";
@@ -20,6 +22,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const [{ id }, lang, u] = await Promise.all([params, idioma(), yo()]);
   const f = await ficha(id, lang, await ubicacion(u));
   if (!f) notFound();
+  const ua = (await headers()).get("user-agent");
+  after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   const fav = await guardados(u?.id ?? null, [f.id]);
   const t = T[lang].ficha;
   return (

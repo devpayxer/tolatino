@@ -18,7 +18,7 @@ export type Fila = {
   tag?: string | null; tone?: string; r?: string; chev?: boolean; onClick?: Fn; compact?: boolean; bg?: string; bd?: string; dim?: boolean;
   acts?: Accion[]; lock?: boolean; tgOn?: boolean; onTg?: Fn; sel?: { on: boolean; onClick: Fn }; key?: string;
 };
-export type Dia = { d: string; today?: boolean; h: string; hFg?: string; on: boolean; open?: boolean; onOpen?: Fn; onTg?: Fn; aL?: string; bL?: string; aM?: Fn; aP?: Fn; bM?: Fn; bP?: Fn; twoL?: string; onTwo?: Fn; onCopy?: Fn };
+export type Dia = { d: string; today?: boolean; h: string; hFg?: string; on: boolean; open?: boolean; onOpen?: Fn; onTg?: Fn; aL?: string; bL?: string; aM?: Fn; aP?: Fn; bM?: Fn; bP?: Fn; a2L?: string; b2L?: string; a2M?: Fn; a2P?: Fn; b2M?: Fn; b2P?: Fn; twoL?: string; onTwo?: Fn; onCopy?: Fn };
 export type Bloque =
   | { type: "head"; t: string; s?: string; eye?: string; onBack?: Fn; act?: Accion; h1?: number }
   | { type: "hero"; t: string; ph?: string; ini?: string; st: string; stFg: string; stDot: string; plan?: string; planV?: string; kpis: { v: string; k: string; s?: string; sFg?: string; onClick?: Fn }[]; acts: { l: string; icon: string; bg?: string; fg?: string; onClick?: Fn }[] }
@@ -35,7 +35,8 @@ export type Bloque =
   | { type: "photos"; k?: string; count?: string; cols?: number; items: { bg: string; on?: boolean; tag?: string; onClick?: Fn; key?: string }[]; addL?: string; onAdd?: Fn; selActs?: Accion[] }
   | { type: "hours"; items: Dia[]; todayL: string; openK: string; closeK: string; copyL: string; free?: boolean }
   | { type: "empty"; icon: string; t: string; s: string; cta?: string; onCta?: Fn }
-  | { type: "acts"; pt?: string; items: Accion[] };
+  | { type: "acts"; pt?: string; items: Accion[] }
+  | { type: "rvsum"; icon: string; t: string; s?: string; tag?: string; tone?: string; progT: string; progR: string; pct: string; barC: string; stats: { k: string; v: string; s?: string; fg?: string }[]; tools: { l: string; icon: string; onClick?: Fn }[] };
 
 const toque = (on: boolean): CSSProperties => ({ width: 42, height: 24, borderRadius: 99, background: on ? "var(--tl-ink)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" });
 const bolita = (on: boolean): CSSProperties => ({ position: "absolute", top: 3, left: 3, width: 18, height: 18, borderRadius: 99, background: "var(--tl-white)", transform: `translateX(${on ? 18 : 0}px)`, transition: "transform .2s" });
@@ -180,7 +181,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
               <Icon name="plus" size={20} color="var(--tl-action)" /><span style={{ font: "700 11.5px Manrope,sans-serif", color: "var(--tl-action)", textAlign: "center", padding: "0 6px" }}>{b.addL}</span>
             </div>) : null}
         </div>
-        {b.selActs?.length ? <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{b.selActs.map((a, i) => <Button key={i} variant={a.v} size="sm" icon={a.icon ?? undefined} disabled={a.off} onClick={a.onClick}>{a.l}</Button>)}</div> : null}
+        {b.selActs?.length ? <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>{b.selActs.map((a, i) => <Button key={i} variant={a.v ?? "secondary"} size="sm" icon={a.icon ?? undefined} disabled={a.off} onClick={a.onClick}>{a.l}</Button>)}</div> : null}
       </div>);
     case "hours": return (
       <div style={{ border: "1px solid rgba(11,14,18,.08)", borderRadius: 18, background: "var(--tl-white)", overflow: "hidden" }}>
@@ -193,8 +194,10 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             </div>
             {x.open ? (
               <div style={{ padding: "2px 14px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
-                  {([[b.openK, x.aL, x.aM, x.aP], [b.closeK, x.bL, x.bM, x.bP]] as const).map(([k, v, m, p]) => (
+                {/* Segundo tramo (Pro): las mismas cajas, para poder ajustarlo (el prototipo lo agregaba sin controles). */}
+                {([[x.aL, x.aM, x.aP, x.bL, x.bM, x.bP]] as const).concat(x.a2L ? [[x.a2L, x.a2M, x.a2P, x.b2L, x.b2M, x.b2P]] as const : []).map(([aL, aM, aP, bL, bM, bP], t) => (
+                <div key={t} style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
+                  {([[b.openK, aL, aM, aP], [b.closeK, bL, bM, bP]] as const).map(([k, v, m, p]) => (
                     <div key={k} style={{ padding: 9, borderRadius: 13, background: "var(--tl-paper)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                       <span style={{ font: `700 9px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{k}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -203,7 +206,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
                         <span role="button" aria-label="+" onClick={p} style={{ width: 30, height: 30, borderRadius: 10, background: "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></span>
                       </div>
                     </div>))}
-                </div>
+                </div>))}
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 16px" }}>
                   {x.twoL ? <span role="button" onClick={x.onTwo} style={{ display: "flex", alignItems: "center", gap: 7, font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{x.twoL}{b.free ? <Chip variant="pro">PRO</Chip> : null}</span> : null}
                   <span role="button" onClick={x.onCopy} style={{ font: "700 12.5px Manrope,sans-serif", color: "rgba(11,14,18,.6)", cursor: "pointer" }}>{b.copyL}</span>
@@ -217,6 +220,33 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         <span style={{ font: "800 15px/1.3 Sora,sans-serif", letterSpacing: "-.02em" }}>{b.t}</span>
         <span style={{ font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span>
         {b.cta ? <span role="button" onClick={b.onCta} style={{ marginTop: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.cta}</span> : null}
+      </div>);
+    case "rvsum": return (
+      <div style={{ padding: 14, borderRadius: 22, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ width: 44, height: 44, flex: "none", borderRadius: 13, background: "var(--tl-paper)", display: "grid", placeItems: "center" }}><Icon name={b.icon} size={20} /></span>
+          <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "800 17px/1.2 Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)" }}>{b.t}</span>{b.s ? <span style={{ display: "block", marginTop: 3, font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.62)" }}>{b.s}</span> : null}</span>
+          {b.tag ? <span style={{ flex: "none", display: "flex" }}><Tag tone={b.tone ?? "neutral"}>{b.tag}</Tag></span> : null}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><span style={{ minWidth: 0, font: "700 13px Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.progT}</span><span style={{ flex: "none", font: `700 11px ${MONO}`, color: "rgba(11,14,18,.55)" }}>{b.progR}</span></div>
+          <span style={{ display: "block", height: 6, borderRadius: 99, background: "rgba(11,14,18,.07)", overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: b.pct, borderRadius: 99, background: b.barC }} /></span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)" }}>
+          {b.stats.map((x, i) => (
+            <span key={i} style={{ minWidth: 0, padding: i === 0 ? "0 10px 0 0" : "0 10px", borderLeft: i === 0 ? "none" : "1px solid rgba(11,14,18,.07)" }}>
+              <span style={{ display: "block", font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.k}</span>
+              <span style={{ display: "block", marginTop: 6, font: "800 17px/1 Sora,sans-serif", letterSpacing: "-.03em", color: x.fg ?? "var(--tl-ink)", whiteSpace: "nowrap" }}>{x.v}</span>
+              {x.s ? <span style={{ display: "block", marginTop: 5, font: "500 11px Manrope,sans-serif", color: "rgba(11,14,18,.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.s}</span> : null}
+            </span>))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${b.tools.length},minmax(0,1fr))`, gap: 4, margin: "-4px -4px -6px" }}>
+          {b.tools.map((x, i) => (
+            <span key={i} role="button" onClick={x.onClick} style={{ minWidth: 0, padding: "8px 2px", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer", textAlign: "center" }}>
+              <span style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center" }}><Icon name={x.icon} size={18} /></span>
+              <span style={{ font: "700 11px/1.25 Manrope,sans-serif", color: "var(--tl-ink)" }}>{x.l}</span>
+            </span>))}
+        </div>
       </div>);
     case "acts": return (
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: b.pt ?? 0 }}>

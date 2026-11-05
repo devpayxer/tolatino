@@ -1,4 +1,5 @@
 "use server";
+import { claveAmenidad } from "@/lib/amenidades";
 import { db, tx } from "@/lib/db";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { ubicacion } from "@/lib/ubicacion";
@@ -125,7 +126,7 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
       [slug, loc.ciudad, d.cat, subIds, d.name, me.id, operacion, op === "rento" && d.join ? d.join : null,
         op === "casa" ? null : d.addr.trim() || null, op === "rento" && d.joinName && !d.join ? `Dentro de ${d.joinName}` : d.ref?.trim() || null,
         op === "home", needZone(op) ? Math.max(1, Math.min(100, zoneOf(d))) : null, tel,
-        (dv.tags ?? []) as string[], (dv.amen ?? []) as string[], Object.keys(dv.mods ?? {}), JSON.stringify(attrs)]);
+        (dv.tags ?? []) as string[], ((dv.amen ?? []) as string[]).map(claveAmenidad), Object.keys(dv.mods ?? {}), JSON.stringify(attrs)]);
     await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, mias.length]);
     await c.query(`insert into business_members (business_id, user_id, kind, display_name, phone, panel_access) values ($1, $2, 'owner', $3, $4, '{all}')`, [slug, me.id, nombreYo, tel]);
     const D = daysOf(d);

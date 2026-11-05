@@ -83,7 +83,8 @@ const guardianes = {
   rutasVivas() {
     const paginas = archivos.filter((f) => /^apps\/web\/app\/.*page\.tsx$/.test(f) || f === "apps/web/app/page.tsx")
       .map((f) => f.replace(/^apps\/web\/app/, "").replace(/\/page\.tsx$/, "").split("/").filter((s) => s && !/^\(.*\)$/.test(s)))
-      .map((seg) => new RegExp("^/" + seg.map((s) => (/^\[.*\]$/.test(s) ? "[^/]+" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))).join("/") + "/?$"));
+      // «[[...r]]» (opcional, cualquier cantidad de segmentos) casa con nada o con /lo/que/sea.
+      .map((seg) => new RegExp("^/" + seg.map((s) => (/^\[\[\.\.\..*\]\]$/.test(s) ? "\u0000" : /^\[.*\]$/.test(s) ? "[^/]+" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))).join("/").replace(/\/?\u0000/, "(?:/.*)?") + "/?$"));
     const apis = archivos.filter((f) => /^apps\/web\/app\/.*route\.ts$/.test(f)).map((f) => f.replace(/^apps\/web\/app/, "").replace(/\/route\.ts$/, ""));
     for (const f of codigo) {
       if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f)) continue;
@@ -109,6 +110,23 @@ const guardianes = {
         if (/next\/font\/google|fonts\.googleapis\.com|fonts\.gstatic\.com/.test(l) && !/GUARDIAN-OK/.test(l) && !/^\s*(\/\/|\/\*|\*)/.test(l))
           falla("buildSinRed", f, i + 1, "fuente descargada de Google en el build; usar next/font/local con app/fuentes");
       });
+    }
+  },
+
+  /* 3f. Panel del negocio: toda acción del servidor revisa en el servidor que la persona sea miembro activo con acceso
+     a esa parte (6 nov, 1h). Cada «export async function» de app/panel/acciones*.ts debe pasar por entrar(…) /
+     accesoPanel(…) antes de tocar la base. */
+  accionesConAcceso() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/panel\/acciones[^/]*\.ts$/.test(f)) continue;
+      const t = readFileSync(f, "utf8");
+      if (!/^\s*["']use server["']/.test(t)) falla("accionesConAcceso", f, 0, "las acciones del panel van en un archivo «use server»");
+      const partes = t.split(/\nexport async function /).slice(1);
+      for (const p of partes) {
+        const nombre = p.slice(0, p.indexOf("(")), cuerpo = p.slice(0, 1500);
+        const iAcc = cuerpo.search(/await (entrar|accesoPanel)\(/), iDb = cuerpo.search(/db\(\)|tx\(/);
+        if (iAcc < 0 || (iDb >= 0 && iDb < iAcc)) falla("accionesConAcceso", f, 0, `«${nombre}» no revisa el acceso al panel antes de usar la base`);
+      }
     }
   },
 
