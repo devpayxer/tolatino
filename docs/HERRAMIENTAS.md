@@ -24,7 +24,7 @@
 | 15 | Tablero del fundador | todo lo anterior en una pantalla: usuarios, pedidos, dinero, errores, velocidad, colas | interno en cada grande | **Propio** en el Super Admin, alimentado por los guardianes. |
 
 ## Lo que sí se paga (lista cerrada; crece solo con decisión del fundador)
-SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/año) y Google ($25) · IA de El Compa (Claude API) · minutos de Mac en la nube para compilar iPhone (si se agotan los gratis; decisión W) · servidores Hetzner (~$11/mes pruebas; ~$40/mes real cuando se encienda; decisión C).
+SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/año) y Google ($25) · IA de El Compa (Claude API) · minutos de Mac en la nube para compilar iPhone (si se agotan los gratis; decisión W) · servidores en la nube (pruebas: Hetzner Alemania cx33 ≈ $12/mes con respaldos; producción en EE. UU. al encenderla, proveedor por precio real ese día; decisión C2).
 
 ## Agregadas el 5 nov 2026 (decisión T — todas aprobadas)
 
