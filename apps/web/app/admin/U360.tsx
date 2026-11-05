@@ -45,7 +45,7 @@ export function U360({ u, tab }: { u: Usuario360; tab: string }) {
   const rol = ["Cliente", ...(u.negocios.some((n) => n.kind === "owner") ? ["Dueño"] : u.negocios.length ? ["Equipo de un negocio"] : []), ...(u.staff ? [`Equipo de To’Latino · ${u.staff}`] : [])].join(" · ");
   const cab: Bloque[] = [{
     type: "hero", t: nombre, s: `${lugar} · ${u.lang === "en" ? "English" : "Español"}${u.negocios.some((n) => n.kind === "owner") ? " · dueño" : ""}`,
-    ph: u.photo ? `url("${u.photo}")` : "", ini: u.photo ? "" : nombre.slice(0, 1), st: stL, stFg: u.estado === "ok" ? "var(--tl-signal)" : "#FF8A80", stDot: u.estado === "ok" ? "var(--tl-signal)" : "#FF8A80", kpis: [], acts: [],
+    ph: u.photo ? `url("${u.photo}")` : "", ini: u.photo ? "" : nombre.slice(0, 1), st: stL, stFg: u.estado === "ok" ? "var(--tl-signal)" : "var(--tl-pro)", stDot: u.estado === "ok" ? "var(--tl-signal)" : "var(--tl-pro)", kpis: [], acts: [],
   }];
 
   /* Avisos de arriba: prueba, borrada (con Restaurar), sanción vigente (con Levantar), pedido de borrado en la cola. */

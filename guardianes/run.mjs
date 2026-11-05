@@ -7,7 +7,8 @@ import { readFileSync } from "node:fs";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 import { existsSync } from "node:fs";
-const archivos = execSync("git ls-files", { encoding: "utf8" }).split("\n").filter((f) => f && existsSync(f));
+// Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
+const archivos = execSync("git ls-files --cached --others --exclude-standard", { encoding: "utf8" }).split("\n").filter((f) => f && existsSync(f));
 // .github/ también: un flujo de CI podría apuntar la semilla o un secreto a producción (5 nov: no se revisaba).
 const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts|\.github)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
 const fallos = [];
@@ -126,7 +127,7 @@ const guardianes = {
       for (const p of partes) {
         const nombre = p.slice(0, p.indexOf("(")), cuerpo = p.slice(0, 1500);
         // Super Admin (5 nov, 1i): requerir()/staff()/quien() o el envoltorio hacer() que los llama.
-        const iAcc = cuerpo.search(admin ? /await (requerir|staff|quien|arrancar)\(|return hacer\(/ : /await (entrar|accesoPanel)\(/), iDb = cuerpo.search(/db\(\)|tx\(/);
+        const iAcc = cuerpo.search(admin ? /await (requerir|staff|quien|arrancar|hacer)\(|return hacer\(/ : /await (entrar|accesoPanel)\(/), iDb = cuerpo.search(/db\(\)|tx\(/);
         if (iAcc < 0 || (iDb >= 0 && iDb < iAcc)) falla("accionesConAcceso", f, 0, `«${nombre}» no revisa ${admin ? "el permiso del equipo" : "el acceso al panel"} antes de usar la base`);
       }
     }
