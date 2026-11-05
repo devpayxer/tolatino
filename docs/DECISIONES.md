@@ -16,6 +16,7 @@ Las letras siguen la sección 3 de `docs/PLAN.md`.
 | 2026-11-05 | P | **Competimos con los grandes (DoorDash, Instacart, Walmart, Uber, etc.). Nada que no esté a su altura.** Siempre se busca la manera de crear una solución mejor que la del líder, para que el cliente tenga una razón real de pagar por el servicio. | Toda pieza se mide contra el líder de su categoría antes de construirse y antes de darse por terminada; «suficiente» no es un estado aceptable. |
 | 2026-11-05 | Q | **Seguridad siempre:** el código debe ser seguro en todo momento. | Revisión de seguridad en toda pieza que toque cuenta, dinero, permisos o datos personales; nada sale sin ella. |
 | 2026-11-05 | R | **Optimización: la plataforma más rápida del mercado.** | La velocidad es un requisito de cada pantalla y cada consulta, medido, no una mejora posterior. |
+| 2026-11-05 | S | **Herramientas de plataforma aprobadas** (las 15 áreas de `docs/HERRAMIENTAS.md`: analítica, grabación de sesiones, errores, salud/velocidad, logs, interruptores/A-B, comunicación, soporte, pagos/fraude, mapas/geo/rutas, búsqueda, imágenes, seguridad, estado/respaldos, tablero del fundador). Propias o sobre código abierto autoalojado; se paga solo SMS, WhatsApp, correo, Stripe, tiendas e IA. | `docs/HERRAMIENTAS.md` es parte del plan y se amplía conforme avanzamos. |
 
 ## Pendientes de decidir (sección 3 del plan)
 A alcance del lanzamiento · C backend · D hosting · E costo del OTP · F El Compa · G El Patio · H las 4 apps · I datos de ejemplo · K reglas del repo viejo.
