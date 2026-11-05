@@ -17,7 +17,7 @@ curl -fsSL --retry 4 -o "$DIR/pennsylvania-latest.osm.pbf.tmp" https://download.
 mv "$DIR/pennsylvania-latest.osm.pbf.tmp" "$DIR/pennsylvania-latest.osm.pbf"
 echo "[mapa] generando teselas con $PLANETILER…"
 docker run --rm -e JAVA_TOOL_OPTIONS="-Xmx3g" -v "$DIR":/data "$PLANETILER" \
-  --osm-path=/data/pennsylvania-latest.osm.pbf --output=/data/pennsylvania.mbtiles.tmp --download --force
-mv "$DIR/pennsylvania.mbtiles.tmp" "$OUT"
+  --osm-path=/data/pennsylvania-latest.osm.pbf --output=/data/pennsylvania.nuevo.mbtiles --download --force
+mv "$DIR/pennsylvania.nuevo.mbtiles" "$OUT"
 ls -la "$OUT"
 echo "[mapa] listo"
