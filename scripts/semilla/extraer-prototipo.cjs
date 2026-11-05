@@ -29,9 +29,10 @@ for (const [obj, cat] of Object.entries(CATS)) {
   for (const b of win[obj].B) {
     if (vistos.has(b.id)) continue; vistos.add(b.id);
     const subs = []; for (const s of b.subs || []) { const id = findSub(cat, s); if (id && !subs.includes(id)) subs.push(id); else if (!id) sinSub.push(`${cat} · ${b.name} · «${s}»`); }
-    let ll = llAll[b.id] || b._ll || null;
-    // d = 0 en el prototipo = sin local (va a domicilio o atiende por teléfono): no tiene pin (Mapa: hasPos exige _d0 !== 0).
-    const sinLocal = b.d === 0 && !llAll[b.id] && !b._ll;
+    // d = 0 en el prototipo = sin local (va a domicilio o atiende por teléfono): no tiene pin. Es la regla del Mapa
+    // (hasPos exige _d0 !== 0), aunque al cargar el prototipo le calcule una posición (_ll) en el centro.
+    const sinLocal = (b._d0 !== undefined ? b._d0 : b.d) === 0;
+    let ll = sinLocal ? null : llAll[b.id] || b._ll || null;
     if (!ll && !sinLocal && CITY.pos) { try { const p = CITY.pos(b); if (p && p.length === 2) ll = p; } catch (e) {} }
     const horas = []; for (let d = 0; d < 7; d++) {
       const cerrado = (b.closed || []).includes(d) || (d === 0 && b.sun === null && !b.hrs);
