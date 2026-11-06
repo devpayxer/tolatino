@@ -441,3 +441,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       retención) en vez de coordinar por Mensajes.
 - [ ] Si se devuelve más que un cobro (estimado + «algo más»), hoy sale del de más saldo: repartir entre cobros.
 
+## Fase 4 · 4g-3
+- [ ] Analítica de Hogar y Auto: aprobado vs. cobrado, llegó en la franja, tiempo de respuesta a emergencias, % de
+      pre-estimados que terminan en cita.
+- [ ] Configuración en el Super Admin: plazos (pre-estimado 24 h, presupuesto 48 h, emergencia 15 min, apartado 48 h) y la
+      regla de impuesto (tax_rules) editables con motivo; hoy viven en el código y en datos.
+- [ ] «Devolver» desde Transacciones para cobros de planes y rentas.
+

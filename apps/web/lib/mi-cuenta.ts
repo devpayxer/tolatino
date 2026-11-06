@@ -192,3 +192,18 @@ export async function misSolicitudes(userId: string) {
       where a.user_id = $1 order by a.id desc limit 100`, [userId])).rows;
 }
 export type MisSolicitudes = Awaited<ReturnType<typeof misSolicitudes>>;
+
+/* Mi cuenta › Citas y reservas (4g-3): tus planes, rentas y apartados (abiertos en «Próximas», cerrados en «Pasadas»).
+   Cada uno abre su página; los barridos corren al abrirla. */
+export type MiOtro = { kind: "plan" | "rental" | "hold"; num: string; biz: string; bname: string; foto: string | null; st: string; abierto: boolean; svc: { es: string; en: string } | null; tot: number; at: string };
+export async function misPlanesRentas(userId: string): Promise<MiOtro[]> {
+  return (await db().query<MiOtro>(
+    `select o.kind, o.number as num, o.business_id as biz, b.name as bname, ${FOTO} as foto,
+            coalesce((select r.status from rentals r where r.operation_id = o.id), (select s.status from plan_subscriptions s where s.operation_id = o.id), o.status) as st,
+            case o.kind when 'rental' then exists (select 1 from rentals r where r.operation_id = o.id and r.status in ('held', 'out'))
+                        when 'plan' then exists (select 1 from plan_subscriptions s where s.operation_id = o.id and s.status <> 'cancelled')
+                        else o.status in ('pending', 'change_proposed', 'confirmed') end as abierto,
+            coalesce(o.details->'svc', o.details->'art') as svc, o.total_cents as tot, ${ISO("o.sent_at")} as at
+       from operations o join businesses b on b.id = o.business_id where o.user_id = $1 and o.kind in ('plan', 'rental', 'hold') order by o.id desc limit 30`, [userId])).rows;
+}
+

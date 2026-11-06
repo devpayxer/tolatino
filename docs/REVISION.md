@@ -613,3 +613,12 @@ porque no hay Wallet. Lo que se devuelve sale del cobro de la visita con más sa
 _Arreglado de paso: la ayuda de Belleza tomaba el texto de Hogar/Auto («belleza» cuenta como verdadero); guardián
 `rubroComoBooleano` (probado al revés)._
 
+## Fase 4 · 4g-3 Super Admin y Mi cuenta (cierra Hogar + Auto)
+1. Super Admin › Transacciones: pestañas nuevas **Planes**, **Rentas** y **Apartados** (lo cobrado y lo retenido de cada
+   uno; un apartado dice «en la caja · sin cobro en la app») y la cifra «Planes · rentas · apartados».
+2. Mi cuenta › Citas y reservas: sección «Planes, rentas y apartados» (abiertos en Próximas, cerrados en Pasadas).
+_Decidido por mí (reversible): los pre-estimados, presupuestos y emergencias no son transacciones (no mueven dinero): se
+ven en su cita cuando reservan; un listado propio en el Super Admin queda para Analítica (% de pre-estimados que terminan
+en cita, tiempo de respuesta a emergencias), en LAUNCH-CHECKLIST. «Devolver» desde Transacciones sigue para pedidos y
+depósitos de citas; en planes y rentas se devuelve desde la ayuda de la cita o la cola de daños._
+
