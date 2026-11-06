@@ -33,6 +33,25 @@ const SRC: Record<Tarjeta["src"], [string, string, string]> = {
 /* Lo que dice la tarjeta de los datos (revCard · Comida): cómo llegó, a tiempo / N min tarde, cuánto esperó, precio. */
 function hechos(c: Tarjeta, es: boolean) {
   const E2 = (a: string, b: string) => (es ? a : b), dl = c.src === "dl", ord = c.src === "dl" || c.src === "pk", f: { icon: string; label: string; color: string }[] = [];
+  // Hogar y Auto (4g): el dato de la visita (franja, lo cotizado contra lo cobrado, algo extra con su OK) y lo que contestó.
+  const A = c.answers, F = c.facts;
+  if (["first", "trato", "clean", "care", "who", "ask", "part", "carro", "precio"].some((k) => k in A) || F.ok != null) {
+    const casa = "clean" in A || "care" in A || "who" in A || F.win != null, add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
+    if (F.win != null) add(F.win <= 0, "clock", F.win <= 0 ? E2("Llegó en la franja", "Arrived in the window") : E2(`Llegó ${F.win} min tarde`, `Arrived ${F.win} min late`));
+    if (F.ok != null && F.cob != null) add(F.cob <= F.ok, "dollar", F.cob <= F.ok ? (casa ? E2("Cobró lo cotizado", "Charged as quoted") : E2("Cobró lo del estimado", "Charged as estimated")) : E2(`Cobró $${Math.round((F.cob - F.ok) / 100)} más`, `Charged $${Math.round((F.cob - F.ok) / 100)} more`));
+    if (F.xtra) add(true, "check", E2("Algo extra con su OK", "Extra work with their OK"));
+    if (A.wait) add(A.wait === "a" ? true : A.wait === "c" ? false : null, "clock", casa ? { a: E2("Llegó en la franja", "Arrived in the window"), b: E2("Hasta 30 min tarde", "Up to 30 min late"), c: E2("Llegó más tarde", "Arrived later") }[A.wait] : { a: E2("Listo cuando prometieron", "Ready when promised"), b: E2("Un poco tarde", "A bit late"), c: E2("Mucho más tarde", "Much later") }[A.wait]);
+    if (A.precio != null) add(A.precio === 1, "dollar", A.precio === 1 ? E2("Cobró lo que dijo", "Charged what they said") : E2("Cobró más", "Charged more"));
+    if (A.first != null) add(A.first === 1 ? true : A.first === -1 ? false : null, "check", A.first === 1 ? E2("Quedó bien a la primera", "Right the first time") : A.first === 0 ? E2("Tuvo que volver", "Had to come back") : E2("Sigue igual", "Still broken"));
+    if (A.who != null) add(A.who === 1 ? true : null, "users", A.who === 1 ? E2("Llegó quien reservó", "The booked person came") : E2("Vino otra persona", "Someone else came"));
+    if (A.ask != null) add(A.ask === 1, "check", A.ask === 1 ? E2("Pidieron su OK", "Asked for their OK") : E2("No pidieron su OK", "Did not ask for their OK"));
+    if (A.part != null && A.part !== 0) add(A.part === 1, "wrench", A.part === 1 ? E2("Le enseñaron la pieza vieja", "Showed the old part") : E2("No le enseñaron la pieza vieja", "Did not show the old part"));
+    if (A.clean != null && A.clean !== 0) add(A.clean === 1, "check", A.clean === 1 ? E2("Limpió al terminar", "Cleaned up after") : E2("No limpió", "Did not clean up"));
+    if (A.care != null) add(A.care === 1, "home", A.care === 1 ? E2("Cuidó la casa", "Took care of the home") : E2("Dañó algo", "Damaged something"));
+    if (A.carro != null) add(A.carro === 1, "check", A.carro === 1 ? E2("Carro limpio", "Car returned clean") : E2("Carro sucio", "Car returned dirty"));
+    if (A.trato != null && A.trato !== 0) add(A.trato === 1, "bubble", A.trato === 1 ? E2("Explicó todo", "Explained everything") : E2("Mal trato", "Treated badly"));
+    return f.slice(0, 6);
+  }
   const h = c.answers.hot;
   if (h === 1) f.push({ icon: "hot", label: dl ? E2("Llegó caliente", "Arrived hot") : E2("Caliente", "Hot"), color: BIEN });
   else if (h === 0) f.push({ icon: "hot", label: E2("Tibio", "Lukewarm"), color: NEUTRO });

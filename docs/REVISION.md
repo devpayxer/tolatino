@@ -592,3 +592,12 @@ _Arreglado de paso: en la pestaña Tienda la barra de Booking de la ficha tapaba
 guardián `barraDoble`. Y una consulta con un parámetro sin tipo junto a un `interval` no dejaba mandar el apartado
 (42804); guardián `parametroSinTipo` (ambos probados al revés)._
 
+## Fase 4 · 4g-1 Reseña de Hogar y Auto
+1. Marisol › Plomería Rodríguez › una visita terminada › 2 ★: arriba «Tu visita · dato de la visita» (llegó en la franja,
+   aprobaste, cobrado · lo cotizado, algo extra con tu OK); preguntas del hogar; abajo «La reseña no devuelve dinero…» con
+   «Ir a Ayuda con la visita». Publicada, la tarjeta muestra esas marcas.
+2. Taller Hermanos Peña › una cita terminada › 5 ★: «Tu cita · dato de la cita» y las preguntas de autos.
+_Decidido por mí (reversible): «llegó en la franja» = «Llegué» antes del final de la franja de 2 h; con cita no se pregunta
+el precio (sale del dato). La variante de lavado (precio publicado · a tiempo · quedó limpio · cuidaron tu carro) usa por
+ahora las preguntas de Auto; «Lo que importa en el hogar / en autos» en la pestaña Reseñas (porcentajes) llega con 4g-3._
+

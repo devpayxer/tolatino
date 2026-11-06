@@ -69,3 +69,21 @@ emails, up to 6 photos. It posts instantly; you can edit it for 48 h and delete 
 Reporting needs a sign-in, a reason and an optional 300-character note; the review stays visible while a person at
 To'Latino reviews it (48 h). Businesses cannot delete or change reviews; To'Latino only hides those that break the rules,
 and the author sees the reason.
+
+## Reseñas de talleres y servicios del hogar (Fase 4 · 4g)
+- **Verificada** si la visita (Hogar) o la cita (Auto) se hizo por To'Latino y terminó.
+- **El dato de la visita** sale de To'Latino y no se edita: si llegó en la franja de 2 horas (Hogar, por «Llegué»), lo
+  aprobado del estimado contra lo cobrado («lo cotizado» / «lo del estimado») y si hubo algo extra con tu OK.
+- **Las preguntas:** Hogar — ¿quedó bien a la primera?, ¿llegó quien reservaste?, ¿limpió?, ¿cuidó tu casa?, trato. Auto —
+  ¿quedó arreglado a la primera?, ¿pidieron tu OK antes de algo extra?, ¿te enseñaron la pieza vieja?, ¿te devolvieron el
+  carro limpio?, trato. Sin visita por To'Latino (visitante) también se pregunta la franja / si estuvo listo y el precio.
+- **Con 1 o 2 estrellas:** la reseña no devuelve dinero ni pide que vuelvan; para eso está **Ayuda con la visita / con la
+  cita** (el negocio responde en 24 h).
+- En la ficha, cada reseña muestra esos datos como marcas (verde = bien, rojo = mal).
+
+### Auto and home reviews (EN)
+Verified when the visit or appointment was booked through To'Latino and finished. Arrival in the window, approved vs.
+charged and extra work with your OK come from the booking and cannot be edited. Home asks: right the first time, the
+booked person came, cleaned up, took care of your home, care. Auto asks: fixed the first time, asked your OK before extra
+work, showed the old part, car returned clean, care. With 1–2 stars, a review does not refund or request a return visit:
+use Visit/Appointment help.
