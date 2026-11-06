@@ -21,6 +21,7 @@ import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./
 import { entregaBloques } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
 import type { CobrosPanel } from "@/lib/cobros";
+import type { RepPanel } from "@/lib/repartidor";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
 import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
@@ -74,10 +75,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[] }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -116,7 +117,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps

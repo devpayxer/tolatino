@@ -34,6 +34,9 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
    sistema de diseño. Del panel faltan por lo mismo «Tus repartidores» (invitar con código), «Despacho» y «Cuadre de
    efectivo». Mientras: el negocio marca «Salió en camino» y «Entregado» en su panel. ¿Se diseñan las pantallas del
    Repartidor (en Claude Design) o las compongo yo con el sistema de diseño y te las muestro antes de conectarlas?
+   **Hecho (6 nov, decisión AB, bloque 2l):** compuestas con los bloques del sistema y la barra inferior, conectadas y
+   probadas. Del panel: «Tus repartidores» y el cuadre en Entrega, y el despacho en el detalle del pedido. Míralas en la
+   guía 2l abajo; si las quieres diseñadas en Claude Design, se cambian las piezas sin tocar la lógica.
 7. **Reseñas: lo que el diseño promete y todavía no existe.** No se muestra hasta que exista (nada falso):
    - El **rango** del vecino (Recluta, Vecino, Sargento…) y los **puntos** («+15 puntos», «sumas puntos para tu rango»):
      llegan con la gamificación. Hoy la tarjeta dice solo «N RESEÑAS».
@@ -287,3 +290,15 @@ color), no nuestro campo: así To'Latino nunca toca el número (norma PCI). «Ca
 verifica), en lugar del formulario con código del prototipo: To'Latino no guarda números de banco. El Wallet de To'Latino
 todavía no existe (no sale en la hoja). La verificación 3D Secure por ahora pide otra tarjeta. La última tarjeta que pagó
 queda como predeterminada. Con «Confirmar al instante» un cambio o un pedido se cobra al enviar._
+
+## Fase 2 · 2l App To'Latino Repartidor
+_Hace falta un teléfono de prueba para el repartidor (p. ej. 570-555-0144) y Sabor con delivery «Mi equipo»._
+1. Pedro › **Entrega** › Tus repartidores › **Invitar repartidor** → nombre y teléfono → sale el código.
+2. En otro teléfono: `/repartidor` → entra con 570-555-0144 → escribe el código → Moto → **Entrar al equipo** → **En línea**.
+3. Marisol pide a domicilio (efectivo). Pedro › **Aceptar** → en el pedido, **¿Quién lo lleva?** › **Asignar**.
+4. Repartidor › la entrega → **Recogí, voy en camino** → **Llegué** (Marisol ve «Juan llegó con tu pedido») → **Cobrar** →
+   **Cobré · Entregado**. Pedro › Entrega › **Efectivo de hoy**.
+5. Prueba sin señal (modo avión) al tocar «Recogí»: dice «se guardó» y se envía al volver la señal.
+_Compuesto sin diseño propio (plan apps-delivery-checkin §1.3). No hay todavía: mapa en vivo, llamada enmascarada, foto o
+código de entrega, ofertas con cuenta regresiva, entregas múltiples, repartidores de To'Latino ni sección del Super Admin
+(anotado en LAUNCH-CHECKLIST). Además: el botón del sistema de diseño ahora es un botón accesible (rol, foco y teclado)._

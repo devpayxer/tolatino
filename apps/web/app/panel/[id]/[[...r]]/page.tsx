@@ -16,6 +16,7 @@ import type { NovData } from "../../NovedadesPanel";
 import { horarioVac, solicitudesNuevas, vacantePanel, vacantesPanel, verSolicitud } from "@/lib/jobs";
 import { db } from "@/lib/db";
 import { actualizarCuenta, cobrosPanel } from "@/lib/cobros";
+import { repartidoresDe } from "@/lib/repartidor";
 import type { JobsData } from "../../JobsPanel";
 import { Panel, type Ruta } from "../../Panel";
 
@@ -111,5 +112,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // Cobros (solo el dueño): al volver de Stripe se lee el estado real de la cuenta.
   if (ruta.sec === "pay" && sp.vuelta) await actualizarCuenta(d.id).catch(() => undefined);
   const cob = ruta.sec === "pay" ? await cobrosPanel(d.id) : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} />;
+  // Repartidores: Entrega (Tus repartidores, cuadre) y el detalle de un pedido de delivery (despacho).
+  const reps = food && (ruta.sec === "dlv" || ruta.det?.startsWith("ped:")) ? await repartidoresDe(d.id) : undefined;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} />;
 }

@@ -5,6 +5,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AjustesPed, DetallePed, Fila as FilaPed, FiltroPed, pedidosHoy, pedidosLista } from "@/lib/pedidos";
 import { menuAjustes } from "./acciones-menu";
 import type { Ayuda } from "@/lib/ayuda";
+import { repAsignar } from "./acciones-repartidores";
 import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
@@ -114,6 +115,15 @@ export function pedidoDetalle(c: Ctx): Sec {
   if (x.st === "pend" && x.pago) out.push({ type: "note", tone: "info", t: E2(`Pagó con tarjeta: ${money(x.pago.monto)} retenidos. Se cobran cuando aceptas; si no respondes antes de las ${x.responde}, se liberan y el pedido se cancela solo.`, `Paid by card: ${money(x.pago.monto)} held. Charged when you accept; if you do not reply by ${x.responde}, it is released and the order cancels on its own.`) });
   else if (x.st === "pend") out.push({ type: "note", tone: "info", t: ENT ? E2(`Pagan en efectivo al recibir. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay cash on delivery. If you do not reply by ${x.responde}, it cancels on its own.`)
     : E2(`Pagan en el local al recoger. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay at the store at pickup. If you do not reply by ${x.responde}, it cancels on its own.`) });
+  // Despacho (delivery con tu equipo): quién lo lleva. Se asigna a un repartidor activo; el repartidor recibe el aviso.
+  if (ENT && x.equipo && !ENT.ext && (x.st === "ok" || x.st === "ready" || x.st === "out")) {
+    const R = (c.reps ?? []).filter((r) => r.estado === "active").sort((p, q) => Number(q.enLinea) - Number(p.enLinea));
+    if (x.repartidor) out.push({ type: "rows", k: E2("REPARTIDOR", "DRIVER"), items: [{ icon: "truck", t: x.repartidor.nombre, s: x.st === "out" ? E2("Va en camino", "On the way") : E2("Asignado · lo ve en su app", "Assigned · they see it in their app"), chev: false, compact: true,
+      acts: x.st !== "out" ? [{ l: E2("Cambiar", "Change"), v: "secondary", off: c.pending, onClick: () => c.run(() => repAsignar(c.d.id, x.numero, null), E2("Quitado. Asígnalo a otro.", "Removed. Assign someone else.")) }] : undefined }] });
+    else if (R.length) out.push({ type: "rows", k: E2("¿QUIÉN LO LLEVA?", "WHO TAKES IT?"), items: R.map((r) => ({ key: r.id, icon: "truck", t: r.nombre, s: `${r.enLinea ? E2("en línea", "online") : E2("fuera de línea", "offline")}${r.hoy.activos ? ` · ${r.hoy.activos} ${E2("en curso", "active")}` : ""}`, tag: r.enLinea ? E2("EN LÍNEA", "ONLINE") : null, tone: "signal", chev: false, compact: true,
+      acts: [{ l: E2("Asignar", "Assign"), v: "primary", off: c.pending, onClick: () => c.run(() => repAsignar(c.d.id, x.numero, r.id), E2(`Asignado a ${r.nombre}. Ya le llegó el aviso.`, `Assigned to ${r.nombre}. They got the notice.`)) }] })) });
+    else out.push({ type: "note", tone: "info", icon: "truck", t: E2("Sin repartidores en la app: invítalos en Entrega, o marca tú «Salió en camino» y «Entregado».", "No drivers in the app: invite them in Delivery, or mark “Out for delivery” and “Delivered” yourself."), cta: E2("Entrega", "Delivery"), onCta: () => c.go("dlv") });
+  }
   // Tarjeta: devolver dinero (solo el dueño). La comisión baja en proporción; el cliente recibe el aviso.
   const pg = x.pago, puedeDev = !!pg && (pg.estado === "captured" || pg.estado === "partially_refunded") && (c.d.kind === "owner" || c.d.partes.includes("all"));
   if (pg && pg.devuelto) out.push({ type: "note", tone: "info", icon: "dollar", t: E2(`Devueltos ${money(pg.devuelto)} de ${money(pg.monto)} a la tarjeta del cliente.`, `${money(pg.devuelto)} of ${money(pg.monto)} refunded to the client's card.`) });

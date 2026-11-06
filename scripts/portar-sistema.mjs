@@ -88,6 +88,16 @@ for (const src of archivos) {
   // SiteHeader: el prototipo tiene un encabezado compacto en el teléfono («APP-HEADER · móvil compacto»: logo, idioma,
   // campana y entrar, sin la barra de búsqueda) para Mapa, la ficha, la galería y otras pantallas de detalle. El
   // componente del sistema no lo traía; `compact` lo agrega aquí, no a mano.
+  // Button: el botón base era un <div> con onClick, sin rol, sin foco y sin teclado (6 nov, 2l: ningún lector de pantalla ni
+  // teclado podía usar los botones de la app). Aquí se vuelve un botón accesible: role, tabIndex (no enfocable si está
+  // apagado), aria-disabled y Enter/Espacio. Se ve igual.
+  if (rel.endsWith("core/Button.js")) {
+    const antes = t;
+    t = t.replace("  return /*#__PURE__*/React.createElement(\"div\", {\n    onClick: disabled ? undefined : onClick,\n    style: {",
+      "  return /*#__PURE__*/React.createElement(\"div\", {\n    onClick: disabled ? undefined : onClick,\n    role: \"button\",\n    tabIndex: disabled ? -1 : 0,\n    \"aria-disabled\": disabled ? true : undefined,\n    onKeyDown: disabled || !onClick ? undefined : e => {\n      if (e.key === 'Enter' || e.key === ' ') {\n        e.preventDefault();\n        onClick(e);\n      }\n    },\n    style: {");
+    if (t === antes || !t.includes('role: "button"')) throw new Error("parche Button: el origen cambió, revisar");
+  }
+
   if (rel.endsWith("layout/SiteHeader.js")) {
     const antes = t;
     t = t.replace("  sticky,\n  style\n}) {", "  sticky,\n  compact,\n  style\n}) {");

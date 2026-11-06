@@ -146,13 +146,16 @@ export type DetallePed = Fila & {
   envio: number; propina: number; entrega: EntregaPed | null; telCliente: string | null;
   tl: { t: Bi; at: string }[];
   pago: PagoVista | null; // tarjeta en la app (retenido, cobrado, liberado, devuelto)
+  repartidor: { id: string; nombre: string } | null; equipo: boolean; // delivery con «Mi equipo»: quién lo lleva
 };
 export async function pedidoNegocio(negocio: string, numero: string): Promise<DetallePed | null> {
   if (!/^\d{1,12}$/.test(numero)) return null;
   await vencer({ negocio, numero });
   const r = await db().query<FilaDb & { id: string; customer_note: string | null; subtotal_cents: number; tax_cents: number; delivery_cents: number; tip_cents: number;
-    details: { to?: EntregaPed["to"]; drop?: EntregaPed["drop"]; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } }; phone: string }>(
-    `select ${COLS}, o.id::text, o.customer_note, o.subtotal_cents, o.tax_cents, o.delivery_cents, o.tip_cents, o.details, u.phone
+    details: { to?: EntregaPed["to"]; drop?: EntregaPed["drop"]; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } }; phone: string; rid: string | null; rnombre: string | null; equipo: boolean }>(
+    `select ${COLS}, o.id::text, o.customer_note, o.subtotal_cents, o.tax_cents, o.delivery_cents, o.tip_cents, o.details, u.phone,
+            o.driver_id::text as rid, (select display_name from delivery_drivers where id = o.driver_id) as rnombre,
+            coalesce((select who from delivery_settings where business_id = o.business_id), 'team') = 'team' as equipo
        from operations o join users u on u.id = o.user_id join cities c on c.id = o.city_id
       where o.business_id = $1 and o.number = $2 and o.kind = 'order'`, [negocio, numero]);
   const o = r.rows[0];
@@ -175,6 +178,7 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
     on_the_way: (q) => ({ es: `Salió en camino${q ? ` · ${q}` : ""}`, en: `Out for delivery${q ? ` · ${q}` : ""}` }),
     delivered: (q) => (pago ? { es: `Entregado${q ? ` · ${q}` : ""}`, en: `Delivered${q ? ` · ${q}` : ""}` } : { es: `Entregado · cobrado en efectivo${q ? ` · ${q}` : ""}`, en: `Delivered · paid in cash${q ? ` · ${q}` : ""}` }),
     tracking: (q) => ({ es: `Enlace de seguimiento${q ? ` · ${q}` : ""}`, en: `Tracking link${q ? ` · ${q}` : ""}` }),
+    driver_unassigned: (q) => ({ es: `Sin repartidor${q ? ` · ${q}` : ""}`, en: `Driver removed${q ? ` · ${q}` : ""}` }),
     picked_up: (q) => (pago ? { es: `Entregado${q ? ` · ${q}` : ""}`, en: `Delivered${q ? ` · ${q}` : ""}` } : { es: `Entregado · pagó en el local${q ? ` · ${q}` : ""}`, en: `Delivered · paid at the store${q ? ` · ${q}` : ""}` }),
     expired: () => ({ es: "Nadie contestó en 10 minutos", en: "No reply in 10 minutes" }),
     cancelled: () => ({ es: "Lo canceló el cliente", en: "Cancelled by the client" }),
@@ -187,7 +191,7 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
       llega: o.details?.eta ? `${hora(o.details.eta.d1)}–${hora(o.details.eta.d2)}` : null } : null,
     lineas: ls.rows.map((l) => ({ q: l.q, name: l.name, opts: (Array.isArray(l.options) ? l.options : []).map((x) => x.o), nota: l.instructions, cents: l.total })),
     tl: ev.rows.map((e) => ({ t: (T[e.kind] ?? (() => e.note ?? { es: e.kind, en: e.kind }))(e.quien), at: hora(hm2m(e.at)) })),
-    pago,
+    pago, repartidor: o.rid && o.rnombre ? { id: o.rid, nombre: o.rnombre } : null, equipo: o.equipo,
   };
 }
 

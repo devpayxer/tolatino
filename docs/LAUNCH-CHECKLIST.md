@@ -355,3 +355,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Depósitos de citas, boletos y apartados** (comisiones 8 %, 5 % + $1, 6 % ya están en `fee_rules`): llegan con sus
       bloques. Super Admin › Planes › Comisiones (programar cambios con 30 días) también.
 - [ ] **Recibo por correo** del pedido pagado (Fase 2, con el correo).
+
+## Repartidor (bloque 2l, 6 nov 2026)
+- [ ] **App de tienda (Capacitor)** «To'Latino Repartidor» apuntando a `/repartidor` (decisión B) con su ícono; ubicación
+      en vivo con permiso del sistema (mapa en vivo para el cliente y el negocio, plan §1.4) y push.
+- [ ] **Llamada y mensaje enmascarados** (hoy el botón llama al número real del cliente, solo mientras la entrega está activa).
+- [ ] **Prueba de entrega** (foto, código del cliente) y **código de recogida** del negocio.
+- [ ] **Ofertas con cuenta regresiva y asignación automática**; entregas múltiples (batch); programados con recordatorio.
+- [ ] **Super Admin › Repartidores (ADM-DLV)**: lista, 360°, incidencias (cola) y sanciones.
+- [ ] **Repartidores de To'Latino** (registro, verificación, payout por Stripe Connect): «más adelante», por ciudad.
+- [ ] **Accesibilidad:** el botón base ya es accesible (guardián `botonAccesible`); revisar el resto de piezas del sistema
+      que usan `div` con onClick (auditoría por clase, decisión T).

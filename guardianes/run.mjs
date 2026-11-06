@@ -329,6 +329,12 @@ const guardianes = {
     });
   },
 
+  /* 3n. El botón del sistema de diseño es un botón de verdad (6 nov, 2l: era un <div> sin rol ni teclado). */
+  botonAccesible() {
+    const f = "packages/ui/src/ds/core/Button.js", t = readFileSync(f, "utf8");
+    if (!/role: "button"/.test(t) || !/onKeyDown/.test(t) || !/tabIndex/.test(t)) falla("botonAccesible", f, 1, "Button sin rol, foco o teclado; se arregla en scripts/portar-sistema.mjs (parche Button)");
+  },
+
   /* 3m. El simulador de pagos vive en un solo lugar (6 nov, 2d): solo lib/pagos/pasarela.ts toca sim_intents, y esa
      pasarela no corre el simulador en producción (candado). Ningún otro archivo «cobra» por su cuenta. */
   simuladorAislado() {

@@ -437,6 +437,13 @@ _Actualizado: 5 nov 2026._
   en la app» en Pedidos, «Devolver dinero» en el pedido. Super Admin › Transacciones: retenido, comisión, devuelto y
   «Devolver». Webhook `/api/stripe/webhook`. Contrato con stripe-mock en el CI. Guardianes `tarjetaEnServidor`,
   `simuladorAislado`, `retencionPorTarjeta`. Probado: 21 + 7 (webhook) + 11 (contrato). Ayuda `pagar-con-tarjeta.md`.
+- **Fase 2 · bloque 2l App To'Latino Repartidor ✓ (6 nov):** migración 0035 (`delivery_drivers` con código de invitación de
+  6, `operations.driver_id`, efectivo cobrado; avisos drv_assigned, ord_here, biz_dlv_issue). `lib/repartidor.ts`.
+  `/repartidor` compuesta con el sistema: alta con código (solo el teléfono invitado, tope de intentos), En línea, Inicio,
+  Pedidos, detalle con un botón por paso (recogí, llegué, cobrar/entregado), problemas, Ganancias, Perfil, cola sin señal.
+  Panel: Tus repartidores y Efectivo de hoy en Entrega, «¿Quién lo lleva?» en el pedido. Cliente: «Te lo lleva / llegó».
+  `Button` del sistema accesible (parche en portar-sistema + guardián `botonAccesible`). Probado: 17 + regresión completa.
+  Ayuda `repartidor.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

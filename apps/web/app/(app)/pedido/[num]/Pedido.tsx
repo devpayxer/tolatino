@@ -44,7 +44,8 @@ export function Pedido({ p, es, ayuda }: { p: PedidoVista; es: boolean; ayuda: {
     [E2("Pedido enviado", "Order sent"), E2(`${p.negocio.nombre} lo confirma antes de las ${p.respondeHasta}.`, `${p.negocio.nombre} confirms it before ${p.respondeHasta}.`)],
     [E2("Preparando tu pedido", "Preparing your order"), E2(`${p.negocio.nombre} lo aceptó. Sale hacia tu casa a las ${p.listo}.`, `${p.negocio.nombre} accepted it. Leaves for your place at ${p.listo}.`)],
     [E2("En camino", "On the way"), ENT?.ext ? E2(`Lo lleva un repartidor de ${ENT.ext}.${ENT.seguimiento ? " Síguelo con el enlace." : ""}`, `A ${ENT.ext} driver has it.${ENT.seguimiento ? " Follow it with the link." : ""}`)
-      : ENT?.drop?.drop === "puerta" ? E2("Te lo dejan en tu puerta.", "It will be left at your door.") : E2("Te lo entregan en la mano.", "It will be handed to you.")],
+      : p.repartidor?.llego ? E2(`${p.repartidor.nombre} llegó con tu pedido.`, `${p.repartidor.nombre} is here with your order.`)
+      : `${p.repartidor ? E2(`Te lo lleva ${p.repartidor.nombre}. `, `${p.repartidor.nombre} is bringing it. `) : ""}${ENT?.drop?.drop === "puerta" ? E2("Te lo dejan en tu puerta.", "It will be left at your door.") : E2("Te lo entregan en la mano.", "It will be handed to you.")}`],
     [E2("Entregado", "Delivered"), E2("Buen provecho.", "Enjoy your meal.")],
   ] as const;
   const H = dl ? HD : [

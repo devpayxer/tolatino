@@ -1,9 +1,11 @@
 "use client";
 /* Entrega (Panel v2 · dlvBlocks, revisión 25 oct): cómo entregas (Delivery, Pickup), cómo se recoge, zona y costo,
-   tiempo y horario, quién entrega (mi equipo o una app externa) y «Así lo ve el cliente». Tus repartidores, Despacho y
-   Cuadre de efectivo llegan con la app Repartidor (ver docs/REVISION.md). El servidor valida y guarda (entregaAjustes). */
+   tiempo y horario, quién entrega (mi equipo o una app externa) y «Así lo ve el cliente». Con «Mi equipo»: Tus repartidores
+   (invitar con código, quitar), quién está en línea y el cuadre de efectivo de hoy (plan apps-delivery-checkin §1.5; sin
+   diseño propio: compuesto, ver REVISION). El despacho (asignar) vive en el detalle de cada pedido. */
 import type { PanelBloqueT as Bloque } from "@tolatino/ui";
 import { entregaAjustes, type EntregaIn } from "./acciones-pedidos";
+import { repInvitar, repQuitar } from "./acciones-repartidores";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -56,6 +58,27 @@ export function entregaBloques(c: Ctx): Sec {
     ...(v.pickup ? [["store", `${E2(`Pickup · listo en ${pk} min`, `Pickup · ready in ${pk} min`)}${v.pkNote.trim() ? ` · «${v.pkNote.trim()}»` : ""}.`]] as [string, string][] : []),
   ];
   if (VW.length) out.push({ type: "rows", k: E2("ASÍ LO VE EL CLIENTE", "HOW THE CLIENT SEES IT"), items: VW.map(([icon, t]) => ({ icon, t, compact: true, chev: false })) });
+  // Tus repartidores (con «Mi equipo»): la app To'Latino Repartidor en su teléfono.
+  if (a.delivery && a.who === "team" && c.reps) {
+    const R = c.reps, inv = c.ui.repInv as { n: string; t: string } | undefined, cod = c.ui.repCod as string | undefined;
+    const VH: Record<string, [string, string]> = { pie: ["a pie", "on foot"], bici: ["bici", "bike"], moto: ["moto", "motorbike"], auto: ["auto", "car"], camioneta: ["camioneta", "van"] };
+    out.push({ type: "group", k: E2(`TUS REPARTIDORES · ${R.filter((x) => x.estado === "active").length}`, `YOUR DRIVERS · ${R.filter((x) => x.estado === "active").length}`) });
+    if (R.length) out.push({ type: "rows", items: R.map((x) => ({ key: x.id, icon: "truck", t: x.nombre,
+      s: x.estado === "invited" ? E2(`Invitado · código ${x.codigo ?? "—"} · que entre a tolatino.com/repartidor con su teléfono`, `Invited · code ${x.codigo ?? "—"} · they open tolatino.com/repartidor with their phone`)
+        : `${(VH[x.vehiculo ?? ""] ?? ["", ""])[es ? 0 : 1]}${x.enLinea ? E2(" · en línea", " · online") : E2(" · fuera de línea", " · offline")} · ${x.hoy.entregas} ${E2("hoy", "today")}${x.hoy.activos ? ` · ${x.hoy.activos} ${E2("en curso", "active")}` : ""}`,
+      tag: x.estado === "invited" ? E2("INVITADO", "INVITED") : x.enLinea ? E2("EN LÍNEA", "ONLINE") : null, tone: x.enLinea ? "signal" : "neutral", chev: false,
+      acts: [{ l: x.estado === "invited" ? E2("Cancelar", "Cancel") : E2("Quitar", "Remove"), v: "secondary", off: c.pending,
+        onClick: () => { if (window.confirm(E2(`¿Quitar a ${x.nombre}?`, `Remove ${x.nombre}?`))) c.run(() => repQuitar(d.id, x.id, ""), E2("Quitado. Lo que tenía asignado queda sin repartidor.", "Removed. Their assigned orders are unassigned.")); } }] })) });
+    if (cod) out.push({ type: "note", tone: "ok", icon: "check", t: E2(`Dale este código: ${cod}. Que abra tolatino.com/repartidor, entre con su teléfono y escriba el código. Vence en 7 días.`, `Give them this code: ${cod}. They open tolatino.com/repartidor, sign in with their phone and type the code. It expires in 7 days.`), cta: E2("Listo", "Done"), onCta: () => c.setUi({ repCod: undefined }) });
+    if (inv) {
+      out.push({ type: "field", k: E2("NOMBRE", "NAME"), val: inv.n, onChange: (v: string) => c.setUi({ repInv: { ...inv, n: v.slice(0, 40) } }) });
+      out.push({ type: "field", k: E2("TELÉFONO · CON ESE NÚMERO ENTRA", "PHONE · THEY SIGN IN WITH IT"), val: inv.t, onChange: (v: string) => c.setUi({ repInv: { ...inv, t: v.replace(/[^0-9()\- ]/g, "").slice(0, 16) } }) });
+      out.push({ type: "acts", items: [{ l: E2("Crear código", "Create code"), v: "primary", icon: "check", off: c.pending || inv.n.trim().length < 2 || inv.t.replace(/\D/g, "").length < 10,
+        onClick: () => c.run(() => repInvitar(d.id, inv.n, inv.t), undefined, (r) => c.setUi({ repInv: undefined, repCod: r?.codigo })) }, { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => c.setUi({ repInv: undefined }) }] });
+    } else out.push({ type: "acts", items: [{ l: E2("Invitar repartidor", "Invite a driver"), v: "secondary", icon: "plus", onClick: () => c.setUi({ repInv: { n: "", t: "" } }) }] });
+    const cuadre = R.filter((x) => x.hoy.efectivo > 0);
+    if (cuadre.length) out.push({ type: "rows", k: E2("EFECTIVO DE HOY · LO ENTREGAN AL CERRAR", "TODAY'S CASH · THEY HAND IT IN AT CLOSING"), items: cuadre.map((x) => ({ key: `c${x.id}`, icon: "dollar", t: x.nombre, s: `${x.hoy.entregas} ${x.hoy.entregas === 1 ? E2("entrega", "delivery") : E2("entregas", "deliveries")}`, r: mn(x.hoy.efectivo), chev: false, compact: true })) });
+  }
   // El pago en delivery vive en Pedidos en línea: si falta, se dice aquí.
   if (v.delivery && a.delivery && !a.cashD && !a.card) out.push({ type: "note", tone: "warn", t: E2("Falta cómo te pagan en delivery: enciende «Efectivo al entregar» en Pedidos en línea.", "Missing how they pay on delivery: turn on “Cash on delivery” in Online orders."), cta: E2("Pedidos en línea", "Online orders"), onCta: () => c.go("mod", "pedidos") });
   if (none && F.dirty) out.push({ type: "note", tone: "warn", t: E2("Para guardar falta: una forma de entrega.", "To save, add: a delivery method.") });

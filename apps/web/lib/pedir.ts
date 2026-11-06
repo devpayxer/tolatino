@@ -440,6 +440,7 @@ export type PedidoVista = {
   entrega: { to: { label: string; street: string; apt: string | null; zip: string } | null; drop: DropPref | null; ext: string | null; seguimiento: string | null; llega: string | null } | null;
   // Tarjeta en la app: el estado del dinero (retenido, cobrado, liberado, devuelto) y con qué tarjeta.
   pago: { estado: string; monto: string; devuelto: string | null; tarjeta: string | null } | null;
+  repartidor: { nombre: string; llego: boolean } | null; // delivery con el equipo del negocio
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 export async function pedidoDe(userId: string, numero: string, lang: Lang): Promise<PedidoVista | null> {
@@ -450,14 +451,16 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     id: string; number: string; business_id: string; name: string; address: string | null; phone: string | null; lat: number | null; lng: number | null;
     status: string; stage: string | null; vencido: boolean; enviado: string; listo: string; programado: string | null; responde: string; customer_note: string | null;
     subtotal_cents: number; tax_cents: number; total_cents: number; pickup_note: Bi | null; cancelled_by: string | null;
-    mode: string | null; delivery_cents: number; tip_cents: number; det: { to?: { label: string; street: string; apt: string | null; zip: string }; drop?: DropPref; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } } | null;
+    mode: string | null; delivery_cents: number; tip_cents: number; repartidor: string | null; llego: boolean; det: { to?: { label: string; street: string; apt: string | null; zip: string }; drop?: DropPref; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } } | null;
   }>(
     `select o.id::text, o.number, o.business_id, b.name, b.address, b.phone, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
             o.status, o.stage, (o.status = 'pending' and o.respond_by <= now()) as vencido,
             to_char(o.sent_at at time zone c.timezone, 'HH24:MI') as enviado, to_char(o.ready_at at time zone c.timezone, 'HH24:MI') as listo,
             to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as programado, to_char(o.respond_by at time zone c.timezone, 'HH24:MI') as responde,
             o.customer_note, o.subtotal_cents, o.tax_cents, o.total_cents, o.details->'pickupNote' as pickup_note, o.cancelled_by,
-            o.mode, o.delivery_cents, o.tip_cents, o.details as det
+            o.mode, o.delivery_cents, o.tip_cents, o.details as det,
+            (select split_part(display_name, ' ', 1) from delivery_drivers where id = o.driver_id) as repartidor,
+            exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'driver_arrived') as llego
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
       where o.number = $1 and o.user_id = $2 and o.kind = 'order'`, [numero, userId]);
   const o = r.rows[0];
@@ -476,6 +479,7 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     `select status as st, amount_cents as amount, refunded_cents as refunded, card_brand as brand, card_last4 as l4 from payments where operation_id = $1 and kind = 'full'`, [o.id])).rows[0];
   const MARCA: Record<string, string> = { visa: "Visa", mc: "Mastercard", mastercard: "Mastercard", amex: "Amex", disc: "Discover", discover: "Discover" };
   return {
+    repartidor: o.repartidor ? { nombre: o.repartidor, llego: o.llego } : null,
     pago: pg ? { estado: pg.st, monto: money(pg.amount), devuelto: pg.refunded ? money(pg.refunded) : null, tarjeta: pg.brand && pg.l4 ? `${MARCA[pg.brand] ?? pg.brand} ·· ${pg.l4}` : null } : null,
     numero: o.number, negocio: { id: o.business_id, nombre: o.name, direccion: o.address, telefono: o.phone, lat: o.lat, lng: o.lng },
     status: o.status, stage: o.stage, sinRespuesta: o.vencido, enviado: hora(hm2m(o.enviado)), listo: hora(hm2m(o.listo)), programado: o.programado ? hora(hm2m(o.programado)) : null,
