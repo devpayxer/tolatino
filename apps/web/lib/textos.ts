@@ -25,7 +25,7 @@ export const T = {
     intents: { abierto: "Abierto ahora", delivery: "Delivery", verificados: "Verificados", cita: "Con cita", domicilio: "A domicilio", pago: "Pago en línea" },
     // Ficha del negocio (APP-NEG-LISTING)
     ficha: {
-      back: "Volver", share: "Compartir", call: "Llamar", save: "Guardar", saved: "Guardado", copied: "Enlace copiado",
+      back: "Volver", share: "Compartir", call: "Llamar", msg: "Mensaje", save: "Guardar", saved: "Guardado", copied: "Enlace copiado",
       photos: "Fotos", photosOne: "Ver la foto", photosN: "Ver las {n} fotos", photoCount: "{n} FOTOS", photoCountOne: "1 FOTO",
       map: "Cómo llegar", mapZone: "Dónde atiende", openMaps: "Abrir en mapas", seeZone: "Ver la zona",
       leyK: "¿PUEDE HACERLO POR LEY?", leyNoK: "LO QUE NO HACE", leyNo: "No puede:", leyCta: "Verificar",
@@ -82,7 +82,7 @@ export const T = {
     freshTitle: "New in the neighborhood",
     intents: { abierto: "Open now", delivery: "Delivery", verificados: "Verified", cita: "By appointment", domicilio: "Comes to you", pago: "Pay online" },
     ficha: {
-      back: "Back", share: "Share", call: "Call", save: "Save", saved: "Saved", copied: "Link copied",
+      back: "Back", share: "Share", call: "Call", msg: "Message", save: "Save", saved: "Saved", copied: "Link copied",
       photos: "Photos", photosOne: "See the photo", photosN: "See all {n} photos", photoCount: "{n} PHOTOS", photoCountOne: "1 PHOTO",
       map: "Directions", mapZone: "Service area", openMaps: "Open in maps", seeZone: "See the area",
       leyK: "ARE THEY ALLOWED BY LAW?", leyNoK: "WHAT THEY DO NOT DO", leyNo: "Cannot:", leyCta: "Verify",

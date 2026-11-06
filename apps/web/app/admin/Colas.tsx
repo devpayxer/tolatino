@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -214,6 +214,29 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ocultar", v: "danger", icon: "close", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", plantillas: PLANT.hide, peligro: true, hacer: (m) => decidirRep(k.id, "ocultar", m) }) },
         { l: "Ocultar y sancionar", v: "danger", icon: "warning", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", sub: "Además, una sanción al autor.", plantillas: PLANT.hide, peligro: true,
           elegir: { label: "SANCIÓN", items: [{ k: "adv", l: "Advertencia" }, { k: "mute7", l: "Silencio 7 días" }, { k: "nopub", l: "Bloquear publicación 30 días" }, { k: "susp14", l: "Suspender 14 días" }] }, hacer: (m, e) => decidirRep(k.id, "ocultar", m, e) }) },
+      ];
+    }
+    if (k.queue === "chat" && "chat" in k) {
+      // Mensajes reportados (2p): el hilo se lee solo con el caso abierto. Ocultar un mensaje avisa a quien lo escribió.
+      const t = k.chat, reps = k.reportesC ?? [], MC: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa" };
+      const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
+      cuerpoB.push({ type: "kv", cols: 3, items: [
+        { k: "VECINO", v: t?.vecino ?? "—" }, { k: "CONTEXTO", v: t?.ctx?.es ?? "Consulta general" }, { k: "REPORTES", v: `${reps.length}${reps[0] ? ` · hace ${hace(reps[0].at)}` : ""}` },
+      ] });
+      reps.forEach((x) => cuerpoB.push({ type: "note", tone: x.by_business ? "info" : "warn", t: `${x.by_business ? "Lo reportó el negocio" : `Lo reportó ${x.quien ?? "el vecino"}`} · ${MC[x.reason] ?? "Otra cosa"}${x.note ? ` · «${x.note}»` : ""}` }));
+      cuerpoB.push({ type: "note", tone: "info", icon: "lock", t: "Ves esta conversación porque hay un reporte abierto. Al cerrar el caso deja de verse aquí." });
+      if (t?.bloqueado) cuerpoB.push({ type: "note", tone: "ink", icon: "ban", t: "El negocio ya bloqueó a este vecino." });
+      cuerpoB.push({ type: "group", k: `CONVERSACIÓN · ${t?.msjs.length ?? 0} MENSAJES` });
+      extra = t ? <A.AdminList rows={t.msjs.map((m) => ({
+        icon: m.de === "user" ? "users" : m.de === "business" ? "store" : "info", title: m.de === "system" ? m.t.split(" · ")[0] : m.t,
+        sub: `${m.de === "user" ? t.vecino : m.de === "business" ? `${n?.name ?? "Negocio"}${m.quien ? ` · ${m.quien}` : ""}` : m.de === "auto" ? "Respuesta automática" : "Aviso del sistema"} · hace ${hace(m.at)}`,
+        tag: m.oculto ? "OCULTO" : undefined, tone: m.oculto ? "danger" : undefined,
+        actions: k.puedeDecidir && !m.oculto && (m.de === "user" || m.de === "business") ? [{ label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: "¿Por qué se oculta este mensaje?", sub: "Quien lo escribió ve el motivo. La conversación sigue.", plantillas: PLANT.hide, peligro: true, hacer: (x) => chatOcultarMensaje(k.id, m.id, x) }) }] : undefined,
+      }))} /> : null;
+      acts = [
+        { l: "Todo bien", v: "action", icon: "check", onClick: () => setConf({ titulo: "¿Por qué está bien?", plantillas: PLANT.keep, hacer: (x) => decidirChat(k.id, "mantener", x) }) },
+        { l: "Resuelto", v: "ghost", icon: "shield", onClick: () => setConf({ titulo: "¿Qué se hizo?", plantillas: ["Se ocultaron los mensajes que no cumplían las reglas.", "Se sancionó a la cuenta desde Usuarios.", "El negocio ya bloqueó a la persona."], hacer: (x) => decidirChat(k.id, "resuelto", x) }) },
+        ...(t ? [{ l: "Ver al vecino", v: "ghost", icon: "users", onClick: () => router.push(`/admin/usuarios/${t.vecino_id}`) }] : []),
       ];
     }
     if (k.queue === "rec" && "rec" in k && k.rec) {

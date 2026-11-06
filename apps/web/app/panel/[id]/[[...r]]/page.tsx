@@ -19,11 +19,13 @@ import { actualizarCuenta, cobrosPanel } from "@/lib/cobros";
 import { repartidoresDe } from "@/lib/repartidor";
 import type { JobsData } from "../../JobsPanel";
 import { Panel, type Ruta } from "../../Panel";
+import type { MsjPanel } from "../../MensajesPanel";
+import { conversacionNegocio, hilosNegocio } from "@/lib/mensajes";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -33,6 +35,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (r.length === 0) ruta = { sec: "pag", sub: null, det: null };
   else if (r.length === 1 && r[0] === "hoy") ruta = { sec: "hoy", sub: null, det: null };
   else if (r.length === 1 && r[0] === "clientes") ruta = { sec: "cli", sub: null, det: null };
+  else if (r.length === 1 && r[0] === "mensajes") ruta = { sec: "msg", sub: null, det: null };
   else if (r.length === 2 && r[0] === "pagina" && SUBS.has(r[1]!)) ruta = { sec: "pag", sub: r[1]!, det: null };
   else if (r.length === 1 && r[0] === "vendes") ruta = { sec: "mod", sub: null, det: null };
   else if (r.length === 1 && r[0] === "entrega") ruta = { sec: "dlv", sub: null, det: null };
@@ -42,7 +45,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
-  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "mas" ? undefined : "page");
+  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "msg" ? "msg" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "mas" ? undefined : "page");
   if (!acc) {
     const es = lang === "es";
     return (
@@ -122,5 +125,14 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   })() : undefined;
   // Repartidores: Entrega (Tus repartidores, cuadre) y el detalle de un pedido de delivery (despacho).
   const reps = food && (ruta.sec === "dlv" || ruta.det?.startsWith("ped:")) ? await repartidoresDe(d.id) : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} />;
+  // Mensajes (2p): la lista, la conversación (marca leído) y «Mensajes sin responder» en Hoy. Piden acceso a Mensajes.
+  const vMsg = acc.partes.includes("all") || acc.partes.includes("msg");
+  if (ruta.det?.startsWith("msg:") && !vMsg) ruta.det = null;
+  const msj: MsjPanel = {
+    lista: ruta.sec === "msg" && vMsg ? await hilosNegocio(d.id, "todas", typeof sp.antes === "string" ? sp.antes : null) : undefined,
+    det: ruta.det?.startsWith("msg:") ? await conversacionNegocio(d.id, ruta.det.slice(4)) : undefined,
+    hoy: ruta.sec === "hoy" && vMsg ? (await hilosNegocio(d.id, "sin")).hilos.slice(0, 5) : undefined,
+    n: vMsg ? (await db().query<{ n: number }>(`select count(*)::int as n from chat_threads where business_id = $1 and biz_unread > 0`, [d.id])).rows[0]?.n ?? 0 : 0,
+  };
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} />;
 }

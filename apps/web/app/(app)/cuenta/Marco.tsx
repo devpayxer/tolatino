@@ -42,6 +42,8 @@ export type Bloque =
   | { type: "tel"; b: Bloque[] }
   // Solo en escritorio (los botones que en el teléfono van en la barra de abajo).
   | { type: "desk"; b: Bloque[] }
+  // Conversación con un negocio (plantilla isChat): contexto, burbujas y la caja para escribir (fija abajo en el teléfono).
+  | { type: "chat"; ph?: string | null; ini: string; ctx: string; onBiz: Fn; msgs: { yo: boolean; t: string; time: string; suave?: boolean }[]; v: string; onV: (v: string) => void; ph2: string; send: string; onSend: Fn; off?: boolean; nota?: string }
   | { type: "biz"; items: { name: string; meta: string; ver: boolean; slot: string; img?: string; on: Fn }[] };
 export type Tarjeta = { label?: string; k?: string; t?: string; s?: string; rows?: { t: string; s?: string; v?: string; on?: Fn }[]; cta?: string; onCta?: Fn };
 export type Hoja = { title: string; sub?: string; yes: string; onYes: Fn; peligro?: boolean } | null;
@@ -51,6 +53,7 @@ const NAV: ([string, string] | [string, string, string, string, string])[] = [
   ["MI ACTIVIDAD", "MY ACTIVITY"], ["USR-HOME", "Resumen", "Overview", "grid", "/cuenta"], ["USR-PEDIDOS", "Pedidos", "Orders", "bag", "/cuenta/pedidos"],
   ["USR-CITAS", "Citas y reservas", "Bookings", "calendar", "/cuenta/citas"], ["USR-FAVORITOS", "Guardados", "Saved", "heart", "/cuenta/guardados"],
   ["USR-RESENAS", "Reseñas", "Reviews", "star", "/cuenta/resenas"], ["USR-EMPLEOS", "Empleos", "Jobs", "brief", "/cuenta/empleos"],
+  ["USR-MENSAJES", "Mensajes", "Messages", "chat", "/cuenta/mensajes"],
   ["MI CUENTA", "MY ACCOUNT"], ["USR-PERFIL", "Perfil", "Profile", "users", "/cuenta/perfil"], ["USR-DIRECCIONES", "Direcciones", "Addresses", "home", "/cuenta/direcciones"],
   ["USR-AVISOS", "Avisos", "Notifications", "bell", "/cuenta/avisos"], ["USR-AJUSTES", "Ajustes", "Settings", "shield", "/cuenta/ajustes"], ["USR-INVITAR", "Invita vecinos", "Invite neighbors", "share", "/cuenta/invitar"],
 ];
@@ -87,9 +90,10 @@ export function Marco({ es, code, t, s, back, act, blocks, rcards = [], bar, yo,
   const salir = async () => { await fetch("/api/cuenta/salir", { method: "POST" }); router.replace("/entrar"); };
   const items = NAV.map((x) => x.length === 2 ? { isH: true, l: es ? x[0] : x[1] } : { isH: false, code: x[0], l: es ? x[1] : x[2], ic: x[3], href: x[4] });
   const B = blocks.filter((b): b is Bloque => !!b);
+  if (M && B.some((b) => b.type === "chat")) lay.pb = "110px";
 
   return (
-    <div data-screen-label={`${code} · ${D ? "desktop" : "móvil"}`} style={{ minHeight: "100%", background: "var(--tl-paper)", color: "var(--tl-ink)", fontFamily: "Manrope,sans-serif", paddingBottom: lay.pb, boxSizing: "border-box" }}>
+    <div data-screen-label={`${code} · ${D ? "desktop" : "móvil"}`} style={{ minHeight: "calc(100dvh - 57px)", background: "var(--tl-paper)", color: "var(--tl-ink)", fontFamily: "Manrope,sans-serif", paddingBottom: lay.pb, boxSizing: "border-box" }}>
       {M && !home && (
         <div data-screen-label="Mi cuenta · encabezado" style={{ position: "sticky", top: 57, zIndex: 20, padding: "12px 16px", background: "var(--tl-white)", borderBottom: LINE, display: "flex", alignItems: "center", gap: 12 }}>
           <span role="button" aria-label={E2("Volver", "Back")} onClick={() => ir(back ?? "/cuenta")} style={{ width: 34, height: 34, borderRadius: 11, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="chevronLeft" size={16} strokeWidth={2} /></span>
@@ -209,7 +213,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
               {r.acts?.length ? <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>{r.acts.map(([l, v, on], j) => <span key={j} onClick={(e) => { e.stopPropagation(); on(); }}><Button variant={v} size="sm">{l}</Button></span>)}</div> : null}
             </div>
             {r.v != null && <div style={{ textAlign: "right", flex: "none" }}><div style={{ font: "800 14px Sora,sans-serif" }}>{r.v}</div>{r.vs && <div style={{ marginTop: 4, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.45)" }}>{r.vs}</div>}</div>}
-            {r.tog != null && <span role="switch" aria-checked={r.tog} onClick={(e) => { e.stopPropagation(); r.onTog?.(); }} style={{ width: 44, height: 26, borderRadius: 99, background: r.tog ? "var(--tl-action)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" }}><span style={{ position: "absolute", top: 3, left: r.tog ? 21 : 3, width: 20, height: 20, borderRadius: 99, background: "var(--tl-white)", transition: "left .2s" }} /></span>}
+            {r.tog != null && <span role="switch" aria-checked={r.tog} aria-label={r.t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.onTog?.(); } }} onClick={(e) => { e.stopPropagation(); r.onTog?.(); }} style={{ width: 44, height: 26, borderRadius: 99, background: r.tog ? "var(--tl-action)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" }}><span style={{ position: "absolute", top: 3, left: r.tog ? 21 : 3, width: 20, height: 20, borderRadius: 99, background: "var(--tl-white)", transition: "left .2s" }} /></span>}
             {r.chev && <span style={{ display: "grid", flex: "none" }}><Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /></span>}
           </div>))}
       </div>);
@@ -230,6 +234,25 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
         <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".16em", color: "var(--tl-open-text)" }}>{b.k}</div>
         <div style={{ marginTop: 7, font: "800 17px/1.3 Sora,sans-serif", letterSpacing: "-.02em", textWrap: "pretty" }}>{b.t}</div>
         <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 8 }}>{b.cells.map((x, i) => <div key={i} style={{ padding: 10, borderRadius: 13, background: "var(--tl-paper)", minWidth: 0 }}><div style={{ font: "800 18px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{x.v}</div><div style={{ marginTop: 6, font: `700 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{x.l}</div></div>)}</div>
+      </div>);
+    case "chat": return (
+      <div data-screen-label="Mi cuenta · chat con el negocio" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div role="link" onClick={b.onBiz} style={{ alignSelf: "center", display: "flex", alignItems: "center", gap: 8, padding: "6px 12px 6px 6px", borderRadius: 99, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", cursor: "pointer", maxWidth: "100%", boxSizing: "border-box" }}>
+          <span style={{ width: 26, height: 26, borderRadius: 99, background: b.ph ? `url("${b.ph}") center/cover` : "rgba(11,14,18,.1)", flex: "none", display: "grid", placeItems: "center", font: "800 11px Sora,sans-serif" }}>{b.ph ? "" : b.ini}</span>
+          <span style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.ctx}</span>
+        </div>
+        {b.msgs.map((m, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.yo ? "flex-end" : "flex-start", gap: 3 }}>
+            <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.yo ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.suave ? "rgba(75,55,245,.07)" : m.yo ? "var(--tl-ink)" : "var(--tl-white)", color: m.suave ? "rgba(11,14,18,.6)" : m.yo ? "var(--tl-white)" : "var(--tl-ink)", border: m.yo && !m.suave ? "none" : "1px solid rgba(11,14,18,.08)", font: "500 14px/1.45 Manrope,sans-serif", textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</div>
+            <span style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.42)" }}>{m.time}</span>
+          </div>))}
+        {b.nota ? <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(75,55,245,.07)", color: "var(--tl-action-ink)", font: "600 13px/1.45 Manrope,sans-serif", textAlign: "center" }}>{b.nota}</div> : null}
+        {!b.off && (
+          <div data-screen-label="Mi cuenta · escribir" style={{ position: M ? "fixed" : "relative", left: 0, right: 0, bottom: 0, zIndex: 40, background: M ? "rgba(247,246,243,.96)" : "var(--tl-white)", backdropFilter: M ? "blur(14px)" : "none", WebkitBackdropFilter: M ? "blur(14px)" : "none", borderTop: "1px solid rgba(11,14,18,.08)", borderRadius: M ? 0 : 18, borderLeft: M ? "none" : "1px solid rgba(11,14,18,.08)", borderRight: M ? "none" : "1px solid rgba(11,14,18,.08)", borderBottom: M ? "none" : "1px solid rgba(11,14,18,.08)", padding: M ? "10px 14px 26px" : 10, display: "flex", gap: 8, alignItems: "center" }}>
+            <input value={b.v} onChange={(e) => b.onV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) b.onSend(); }} placeholder={b.ph2} maxLength={1000} aria-label={b.ph2}
+              style={{ flex: 1, minWidth: 0, height: 44, boxSizing: "border-box", padding: "0 14px", borderRadius: 13, border: "1px solid rgba(11,14,18,.12)", outline: "none", font: "500 15px Manrope,sans-serif", background: "var(--tl-white)", color: "var(--tl-ink)" }} />
+            <span role="button" aria-label={b.send} onClick={b.onSend} style={{ width: 44, height: 44, borderRadius: 13, background: b.v.trim() ? "var(--tl-ink)" : "rgba(11,14,18,.22)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="right" size={18} strokeWidth={2} color="var(--tl-white)" /></span>
+          </div>)}
       </div>);
     case "biz": return <div data-screen-label="Mi cuenta · negocios" style={{ display: "grid", gridTemplateColumns: M ? "minmax(0,1fr)" : "repeat(auto-fill,minmax(320px,1fr))", gap: 8 }}>{b.items.map((x, i) => <BusinessRow key={i} name={x.name} meta={x.meta} verified={x.ver} slot={x.slot} image={x.img} onClick={x.on} />)}</div>;
     case "desk": return !M ? <>{b.b.map((x, i) => <Pieza key={i} b={x} M={M} />)}</> : null;

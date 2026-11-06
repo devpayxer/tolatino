@@ -98,6 +98,17 @@ for (const src of archivos) {
     if (t === antes || !t.includes('role: "button"')) throw new Error("parche Button: el origen cambió, revisar");
   }
 
+  // IconButton: igual que Button (6 nov, 2p: corazón, compartir y mensaje de la ficha eran <div> mudos). Rol, foco, teclado,
+  // aria-pressed cuando está activo y un nombre: `label` (en el idioma de la pantalla) o, si no llega, el del ícono en ES.
+  if (rel.endsWith("core/IconButton.js")) {
+    const antes = t;
+    t = t.replace("function IconButton({\n  icon,\n  size = 50,\n  active,\n  onClick,\n  style\n}) {",
+      "const LBL = { heart: 'Guardar', share: 'Compartir', chat: 'Mensaje', phone: 'Llamar', close: 'Cerrar', search: 'Buscar', filter: 'Filtros', map: 'Mapa', pin: 'Cómo llegar', bell: 'Avisos' };\nfunction IconButton({\n  icon,\n  size = 50,\n  active,\n  onClick,\n  label,\n  style\n}) {");
+    t = t.replace("  return /*#__PURE__*/React.createElement(\"div\", {\n    onClick: onClick,\n    style: {",
+      "  return /*#__PURE__*/React.createElement(\"div\", {\n    onClick: onClick,\n    role: \"button\",\n    tabIndex: 0,\n    \"aria-label\": label || LBL[icon] || icon,\n    \"aria-pressed\": active === undefined ? undefined : !!active,\n    onKeyDown: !onClick ? undefined : e => {\n      if (e.key === 'Enter' || e.key === ' ') {\n        e.preventDefault();\n        onClick(e);\n      }\n    },\n    style: {");
+    if (t === antes || !t.includes('role: "button"') || !t.includes("label,")) throw new Error("parche IconButton: el origen cambió, revisar");
+  }
+
   if (rel.endsWith("layout/SiteHeader.js")) {
     const antes = t;
     t = t.replace("  sticky,\n  style\n}) {", "  sticky,\n  compact,\n  style\n}) {");

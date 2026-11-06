@@ -133,7 +133,7 @@ export function PasoC1({ d, up, es }: { d: Borrador; up: Up; es: boolean }) {
                 </div>
               </div>); })() : null}
             {q.type === "yn" ? (
-              <div role="switch" aria-checked={!!v} onClick={() => setOwn(q.k, !v)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: "1px solid rgba(11,14,18,.1)", cursor: "pointer" }}>
+              <div role="switch" aria-checked={!!v} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOwn(q.k, !v); } }} onClick={() => setOwn(q.k, !v)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, border: "1px solid rgba(11,14,18,.1)", cursor: "pointer" }}>
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 14px/1.3 Manrope,sans-serif" }}>{t}</div>{sx ? <div style={{ marginTop: 3, font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{sx}</div> : null}</div>
                 <span style={{ width: 42, height: 26, boxSizing: "border-box", borderRadius: 99, padding: 3, background: v ? "var(--tl-ink)" : "rgba(11,14,18,.15)", display: "flex", justifyContent: v ? "flex-end" : "flex-start", flex: "none" }}><span style={{ width: 20, height: 20, borderRadius: 99, background: "var(--tl-white)", boxShadow: "0 1px 2px rgba(11,14,18,.2)" }} /></span>
               </div>

@@ -208,6 +208,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
       {acts.length > 0 && <div className="grid grid-cols-2 gap-2">{acts.map(([i, l, on]) => <button key={i} type="button" onClick={on!} className="flex items-center gap-2.5 rounded-[15px] border-[1.5px] border-ink/[.14] bg-white px-3.5 py-[13px] text-left"><Icon name={i} size={17} /><span className="text-[13px] font-bold leading-[1.25]">{l}</span></button>)}</div>}
       {(cxd || lost || r.st === "done" || r.st === "nos") && <div className="flex"><Button variant="primary" icon="calendar" block onClick={() => tab(`&p=${r.p}`)}>{E2("Reservar otra vez", "Book again")}</Button></div>}
       {!cxd && !ok && llamar && <div className="flex"><Button variant="secondary" icon="phone" block onClick={llamar}>{`${E2("Llamar a ", "Call ")}${n}`}</Button></div>}
+      {!cxd && <div className="flex"><Button variant="secondary" icon="chat" block onClick={() => router.push(`/cuenta/mensajes/${r.negocio.id}?op=${encodeURIComponent(r.numero)}`)}>{E2("Escribir al negocio", "Message the business")}</Button></div>}
       {(ok || pend) && (
         <div className="flex flex-wrap items-center justify-center gap-[22px] py-1">
           {(pend || (ok && !r.chg && r.minutosFaltan > 0)) && <button type="button" onClick={() => tab(`&editar=${r.numero}&p=${r.p}&d=${Math.max(0, r.dia)}&h=${r.h}`)} className="text-[13px] font-bold text-action">{pend ? E2("Cambiar solicitud", "Change request") : E2("Cambiar reservación", "Change reservation")}</button>}

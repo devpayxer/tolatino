@@ -153,7 +153,7 @@ export function Recomendar({ v }: { v: VistaRec }) {
                     <input value={f.where} onChange={(e) => up({ where: e.target.value.slice(0, 120) })} placeholder={E2("Calle o dirección", "Street or address")} style={entrada} />
                   </label>
                 ) : null}
-                <div role="switch" aria-checked={f.casa} onClick={() => up({ casa: !f.casa })} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+                <div role="switch" aria-checked={f.casa} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); up({ casa: !f.casa }); } }} onClick={() => up({ casa: !f.casa })} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
                   <span style={{ flex: 1, minWidth: 0, font: "600 13px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.75)" }}>{E2("No tiene local: va a domicilio o trabaja desde su casa", "No storefront: goes to you or works from home")}</span>
                   <Interruptor on={f.casa} />
                 </div>
@@ -181,7 +181,7 @@ export function Recomendar({ v }: { v: VistaRec }) {
                   <span style={{ display: "flex", justifyContent: "space-between", gap: 10, font: "700 13px Manrope,sans-serif" }}><span>{E2("¿Por qué lo recomiendas? · Opcional", "Why do you recommend it? · Optional")}</span><span style={{ font: `600 10px ${MONO}`, color: "rgba(11,14,18,.42)" }}>{f.why.length} / 280</span></span>
                   <textarea value={f.why} onChange={(e) => up({ why: e.target.value.slice(0, 280) })} placeholder={E2("Ej.: el mejor sancocho del barrio, siempre a tiempo…", "E.g. best sancocho around, always on time…")} rows={3} style={{ padding: "12px 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", font: "500 14px/1.5 Manrope,sans-serif", color: "var(--tl-ink)", outline: "none", resize: "none", boxSizing: "border-box", width: "100%" }} />
                 </label>
-                <div role="switch" aria-checked={f.show} onClick={() => up({ show: !f.show })} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+                <div role="switch" aria-checked={f.show} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); up({ show: !f.show }); } }} onClick={() => up({ show: !f.show })} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                     <span style={{ font: "700 13.5px Manrope,sans-serif" }}>{E2("Decirle que fuiste tú", "Tell them it was you")}</span>
                     <span style={{ font: "500 12px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{f.show ? E2(`El mensaje dice «${who} te recomendó».`, `The message says "${who} recommended you".`) : E2("El mensaje dice «un vecino te recomendó».", "The message says \"a neighbor recommended you\".")}</span>

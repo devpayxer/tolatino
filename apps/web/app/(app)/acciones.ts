@@ -33,7 +33,7 @@ export async function guardarNegocio(id: string): Promise<Respuesta> {
 }
 
 /* Toque de contacto (llamar, cómo llegar): alimenta las estadísticas del negocio en su panel. */
-const TOQUES = new Set(["call", "whatsapp", "directions", "share", "calendar", "copy"]);
+const TOQUES = new Set(["call", "whatsapp", "directions", "share", "calendar", "copy", "message"]);
 export async function registrarToque(id: string, kind: string, origen: string): Promise<void> {
   if (!(await mismoOrigen())) return;
   if (typeof id !== "string" || !ID_NEG.test(id) || !TOQUES.has(kind)) return;

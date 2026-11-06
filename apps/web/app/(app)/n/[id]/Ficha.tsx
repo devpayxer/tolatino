@@ -46,6 +46,7 @@ export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, t
   const conTabs = f.pro && tabs.length > 1;
   const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
+  const escribir = () => { void registrarToque(f.id, "message", "ficha"); router.push(`/cuenta/mensajes/${f.id}`); };
   const llamar = () => { if (!f.telefono) return; void registrarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; };
   const llegar = () => {
     if (f.lat == null || f.lng == null) return;
@@ -282,6 +283,7 @@ export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, t
           <div className="flex flex-none gap-2">
             <Button variant={guardado ? "soft" : "secondary"} size="md" icon="heart" onClick={guardar}>{guardado ? t.saved : t.save}</Button>
             <Button variant="secondary" size="md" icon="share" onClick={compartir}>{copiado ? t.copied : t.share}</Button>
+            {f.mensajes && <Button variant="secondary" size="md" icon="chat" onClick={escribir}>{t.msg}</Button>}
             {f.telefono && <Button variant="secondary" size="md" icon="phone" onClick={llamar}>{t.call}</Button>}
           </div>
         </div>
@@ -334,8 +336,9 @@ export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, t
           </div>
           <div className="mt-3.5 flex gap-[9px]">
             {f.telefono && <div className="flex min-w-0 flex-1"><Button icon="phone" block onClick={llamar}>{t.call}</Button></div>}
-            <IconButton icon="heart" active={guardado} onClick={guardar} />
-            <IconButton icon="share" onClick={compartir} />
+            {f.mensajes && <IconButton icon="chat" label={t.msg} onClick={escribir} />}
+            <IconButton icon="heart" label={guardado ? t.saved : t.save} active={guardado} onClick={guardar} />
+            <IconButton icon="share" label={t.share} onClick={compartir} />
           </div>
           {copiado && <div className="mt-2 text-center text-[12px] font-semibold text-open-text">{t.copied}</div>}
         </div>

@@ -26,6 +26,7 @@ import { planSeguir } from "./acciones-cobros";
 import type { CobrosPanel } from "@/lib/cobros";
 import type { RepPanel } from "@/lib/repartidor";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
+import { hoyMensajes, mensajeDetalle, mensajesBloques, type MsjPanel } from "./MensajesPanel";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
 import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
 import type { MenuPanel } from "@/lib/menu";
@@ -34,7 +35,7 @@ const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
 
-export type Ruta = { sec: "pag" | "hoy" | "cli" | "mod" | "dlv" | "mas" | "pay"; sub: string | null; det: string | null };
+export type Ruta = { sec: "pag" | "hoy" | "cli" | "msg" | "mod" | "dlv" | "mas" | "pay"; sub: string | null; det: string | null };
 type Bi = [string, string];
 /* Apartados de Tu página (PARTS del prototipo). Solo los que ya existen: los demás llegan en sus fases (LAUNCH-CHECKLIST). */
 export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
@@ -78,10 +79,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -93,7 +94,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);
   const base = `/panel/${d.id}`;
-  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "dlv" ? `${base}/entrega` : sec === "pay" ? `${base}/cobros${sub ? `/${sub}` : ""}` : sec === "mas" ? `${base}/mas` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
+  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "msg" ? `${base}/mensajes` : sec === "dlv" ? `${base}/entrega` : sec === "pay" ? `${base}/cobros${sub ? `/${sub}` : ""}` : sec === "mas" ? `${base}/mas` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
   const go = useCallback((sec: Ruta["sec"], sub?: string | null) => {
     setForms({}); setUi({ dayOpen: -1, gSel: -1, sheet: null });
     router.push(url(sec, sub ?? null));
@@ -120,11 +121,17 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
   const D = useMemo(() => (ruta.det ? detalle(ctx) : null), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Mensajes abiertos: trae lo nuevo cada 5 segundos mientras la pestaña se ve (lo escrito en el campo no se pierde).
+  useEffect(() => {
+    if (ruta.sec !== "msg" && !ruta.det?.startsWith("msg:")) return;
+    const t = window.setInterval(() => { if (!document.hidden) router.refresh(); }, 5000);
+    return () => window.clearInterval(t);
+  }, [ruta.sec, ruta.det, router]);
   const ed = (D?.ed ?? (desk || !ruta.det ? S.ed : null)) ?? null;
   const commit = (e: Editor | null) => { if (!e) return; const k = e.F.key; run(() => e.apply(e.F.d), e.toast ?? E2("Guardado · ya se ve en tu página", "Saved · it shows on your page now"), () => { setForms((z) => { const n = { ...z }; delete n[k]; return n; }); e.onDone?.(); }); };
   const discard = (e: Editor | null) => { if (!e) return; const k = e.F.key; setForms((z) => { const n = { ...z }; delete n[k]; return n; }); if (!desk && ruta.det) closeDet(); };
@@ -152,7 +159,9 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const cobra = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay");
   // Entrega (Panel v2 · hasDlv): con Pedidos en línea encendido y permiso de Entrega.
   const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
-  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(vende ? [d.sells ? { k: "mas", l: E2("Más", "More"), icon: "grid" } : { k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
+  // Mensajes (2p): el dueño o quien tenga Mensajes en el equipo.
+  const msgs = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("msg");
+  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(msgs ? [{ k: "msg", l: E2("Mensajes", "Messages"), icon: "chat" }] : []), ...(vende ? [d.sells ? { k: "mas", l: E2("Más", "More"), icon: "grid" } : { k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
   const avatar = (n: number) => <span style={{ width: n, height: n, borderRadius: 12, backgroundImage: bz.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 13px/1 Sora,sans-serif", flex: "none" }}>{bz.ini}</span>;
   const estadoL = (sz: number, ls: string) => <span style={{ display: "flex", alignItems: "center", gap: 5, font: `700 ${sz}px ${MONO}`, letterSpacing: ls, color: stFg }}><span style={{ width: 6, height: 6, borderRadius: 99, background: stDot }} />{bz.stL}</span>;
 
@@ -205,6 +214,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
                   <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("CADA DÍA", "EVERY DAY")}</span>
                   {navIt(sec === "hoy", "home", E2("Hoy", "Today"), () => go("hoy"))}
                   {navIt(sec === "cli", "users", E2("Clientes", "Clients"), () => go("cli"))}
+                  {msgs ? navIt(sec === "msg", "chat", msj?.n ? E2(`Mensajes · ${msj.n}`, `Messages · ${msj.n}`) : E2("Mensajes", "Messages"), () => go("msg")) : null}
                   {vende ? navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod")) : null}
                   {entrega ? navIt(sec === "dlv", "truck", E2("Entrega", "Delivery"), () => go("dlv")) : null}
                   {cobra ? navIt(sec === "pay", "card", E2("Cobros y plan", "Payouts and plan"), () => go("pay", d.cat === "NEG-FOOD" ? null : "plan")) : null}
@@ -213,6 +223,12 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
                   <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
                   {navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod"))}
+                  {msgs ? navIt(sec === "msg", "chat", msj?.n ? E2(`Mensajes · ${msj.n}`, `Messages · ${msj.n}`) : E2("Mensajes", "Messages"), () => go("msg")) : null}
+                </div>
+              ) : msgs ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
+                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
+                  {navIt(sec === "msg", "chat", msj?.n ? E2(`Mensajes · ${msj.n}`, `Messages · ${msj.n}`) : E2("Mensajes", "Messages"), () => go("msg"))}
                 </div>
               ) : null}
             </div>
@@ -270,6 +286,7 @@ function Cerrar({ onClick }: { onClick: () => void }): ReactNode {
 /* ─────────────────────────── Secciones ─────────────────────────── */
 function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
+  if (c.ruta.sec === "msg") return mensajesBloques(c);
   if (c.ruta.sec === "cli") return { blocks: c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
   if (c.ruta.sec === "dlv") return entregaBloques(c);
   if (c.ruta.sec === "pay") {
@@ -298,6 +315,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("ped:")) return pedidoDetalle(c);
   if (id.startsWith("rsv:")) return rsvDetalle(c);
   if (id.startsWith("rev:")) return resenaDetalle(c);
+  if (id.startsWith("msg:")) return mensajeDetalle(c);
   if (id.startsWith("nov:")) return novDetalle(c);
   if (id.startsWith("vac:") || id.startsWith("vap:")) return jobsDetalle(c);
   return null;
@@ -386,6 +404,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push(...avisosPrueba(c, "hoy"));
   // Pedidos (Comida): cifras, los que esperan respuesta y la agenda de hoy (Panel v2 · DASH-HOY).
   out.push(...hoyPedidos(c));
+  out.push(...hoyMensajes(c));
   out.push(...hoyResenas(c));
   out.push(...hoyAyudas(c));
   out.push(...hoyJobs(c));

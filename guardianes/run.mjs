@@ -336,8 +336,11 @@ const guardianes = {
 
   /* 3n. El botón del sistema de diseño es un botón de verdad (6 nov, 2l: era un <div> sin rol ni teclado). */
   botonAccesible() {
-    const f = "packages/ui/src/ds/core/Button.js", t = readFileSync(f, "utf8");
-    if (!/role: "button"/.test(t) || !/onKeyDown/.test(t) || !/tabIndex/.test(t)) falla("botonAccesible", f, 1, "Button sin rol, foco o teclado; se arregla en scripts/portar-sistema.mjs (parche Button)");
+    for (const f of ["packages/ui/src/ds/core/Button.js", "packages/ui/src/ds/core/IconButton.js"]) {
+      const t = readFileSync(f, "utf8");
+      if (!/role: "button"/.test(t) || !/onKeyDown/.test(t) || !/tabIndex/.test(t)) falla("botonAccesible", f, 1, "botón sin rol, foco o teclado; se arregla en scripts/portar-sistema.mjs (parches Button / IconButton)");
+    }
+    if (!/"aria-label"/.test(readFileSync("packages/ui/src/ds/core/IconButton.js", "utf8"))) falla("botonAccesible", "packages/ui/src/ds/core/IconButton.js", 1, "IconButton sin nombre (aria-label)");
   },
 
   /* 3m. El simulador de pagos vive en un solo lugar (6 nov, 2d): solo lib/pagos/pasarela.ts toca sim_intents, y esa
@@ -396,6 +399,36 @@ const guardianes = {
           if (!verbos.has(m[1])) falla("verboEnHistorial", f, i + 1, `«${m[1]}» no tiene verbo en el historial del 360° (VERBO en N360.tsx)`);
       });
     }
+  },
+
+  /* 3o. Todo interruptor (role="switch") se usa con teclado: si no es un <button>, lleva tabIndex y onKeyDown; si es un
+     <span> suelto, además su nombre (aria-label). 6 nov, 2p: el de «Respuesta automática» y otros cuatro no tenían. */
+  interruptorAccesible() {
+    for (const f of codigo) {
+      if (!/\.tsx$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        const m = l.match(/<(\w+) [^>]*role="switch"[^>]*>/);
+        if (!m || m[1] === "button") return;
+        if (!/tabIndex=/.test(l) || !/onKeyDown=/.test(l)) falla("interruptorAccesible", f, i + 1, "interruptor sin tabIndex u onKeyDown (no se puede usar con teclado)");
+        else if (m[1] === "span" && !/aria-label/.test(l)) falla("interruptorAccesible", f, i + 1, "interruptor sin nombre (aria-label)");
+      });
+    }
+  },
+
+  /* 3p. Correo (6 nov, 2q): los colores del correo (hex, porque los clientes de correo no leen variables) son los mismos
+     que los tokens; y el modo «pruebas» (el correo no sale) nunca puede existir en producción. */
+  correo() {
+    const f = "apps/web/lib/correo/colores.ts";
+    if (existsSync(f)) {
+      const tok = readFileSync("packages/ui/src/tokens.css", "utf8");
+      for (const m of readFileSync(f, "utf8").matchAll(/(\w+): "(#[0-9A-Fa-f]{6})"/g)) {
+        const t = tok.match(new RegExp(`--tl-${m[1]}:\\s*(#[0-9A-Fa-f]{6})`));
+        if (!t || t[1].toUpperCase() !== m[2].toUpperCase()) falla("correo", f, 0, `el color «${m[1]}» del correo no es igual a --tl-${m[1]} de tokens.css`);
+      }
+    }
+    const i = "apps/web/lib/correo/index.ts";
+    if (existsSync(i) && !/if \(ENTORNO !== "produccion" && process\.env\.TOLATINO_CORREO_MODO !== "ses"\) return "pruebas";/.test(readFileSync(i, "utf8")))
+      falla("correo", i, 0, "el modo pruebas del correo debe depender de ENTORNO !== \"produccion\" (nunca en producción)");
   },
 
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */

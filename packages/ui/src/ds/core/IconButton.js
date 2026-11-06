@@ -6,16 +6,28 @@ import * as React from "react";
 import { __ds_scope } from "../scope.js";
 
 
+const LBL = { heart: 'Guardar', share: 'Compartir', chat: 'Mensaje', phone: 'Llamar', close: 'Cerrar', search: 'Buscar', filter: 'Filtros', map: 'Mapa', pin: 'Cómo llegar', bell: 'Avisos' };
 function IconButton({
   icon,
   size = 50,
   active,
   onClick,
+  label,
   style
 }) {
   const r = size >= 50 ? 15 : size >= 42 ? 13 : 12;
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
+    role: "button",
+    tabIndex: 0,
+    "aria-label": label || LBL[icon] || icon,
+    "aria-pressed": active === undefined ? undefined : !!active,
+    onKeyDown: !onClick ? undefined : e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick(e);
+      }
+    },
     style: {
       width: size,
       height: size,

@@ -48,7 +48,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     id: string; cat: string; city: string; name: string; plan: string; verified: boolean; rating: number | null; reviews: number;
     subs: string[]; tags: string[]; attrs: Record<string, unknown>; about: Bi | null; founded: number | null; phone: string | null;
     address: string | null; radius: number | null; from_home: boolean; lat: number | null; lng: number | null; mi: number | null;
-    open: boolean; ciudad: string; estado: string; dow: number; hm: string; dia: number; mes: number; logo: string | null; cerrado_hoy: boolean; cerrado_temp: boolean;
+    open: boolean; ciudad: string; estado: string; dow: number; hm: string; dia: number; mes: number; logo: string | null; cerrado_hoy: boolean; cerrado_temp: boolean; chat: boolean;
   }>(
     `select b.id, b.category_id as cat, b.city_id as city, b.name, s.plan, s.verified, s.rating_avg::float as rating, s.review_count as reviews,
             b.subcategory_ids as subs, b.filter_values as tags, b.category_attrs as attrs, b.about, b.founded_year as founded, b.phone,
@@ -56,6 +56,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
             st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
             case when b.geo is null then null else round((st_distance(b.geo, ${desde}) / 1609.34)::numeric, 1)::float end as mi,
             negocio_abierto(b.id, now() at time zone c.timezone) as open,
+            exists (select 1 from business_members m where m.business_id = b.id and m.kind = 'owner' and m.status = 'active') as chat,
             c.name as ciudad, c.state as estado,
             extract(dow from now() at time zone c.timezone)::int as dow, to_char(now() at time zone c.timezone, 'HH24:MI') as hm,
             extract(day from now() at time zone c.timezone)::int as dia, extract(month from now() at time zone c.timezone)::int as mes,
@@ -156,6 +157,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   const enCasa = b.from_home || (b.cat === "NEG-HOGAR" && !!b.radius);
   return {
     id: b.id, cat: b.cat, pro, nombre: b.name, verificado: b.verified, abierto: b.open, telefono: b.phone, lat: b.lat, lng: b.lng,
+    mensajes: b.chat, // Mensajes (2p): solo negocios con dueño en To'Latino
     hero: foto(urls[0] ?? null, 650), mosaico: [urls[1] ?? urls[0] ?? null, urls[2] ?? urls[0] ?? null].map((u) => foto(u, 650)),
     logo: pro && b.logo ? b.logo : null, iniciales, fotos: urls.map((u) => foto(u, 350)!), nFotos: urls.length,
     subsLinea: subs.rows.map((x) => x.n).join(" · "),

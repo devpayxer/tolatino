@@ -88,13 +88,17 @@ export async function resumen(userId: string) {
           from job_applications a join businesses b on b.id = a.business_id join cities c on c.id = a.city_id
          where a.user_id = $1 and a.status = 'interview' and a.interview_at > now() and a.interview_at < now() + interval '8 days' order by a.interview_at limit 3)`, [userId]),
     // Pendiente de ti: respuestas que esperan a la persona y reseñas por escribir (lo terminado en 14 días, sin reseña).
-    q.query<{ kind: "alt" | "iv" | "esp" | "rev"; t: string; biz: string; href: string; at: string; tz: string; extra: string | null }>(
+    q.query<{ kind: "alt" | "iv" | "esp" | "rev" | "msg"; t: string; biz: string; href: string; at: string; tz: string; extra: string | null }>(
       `(select 'alt' as kind, b.name as t, o.business_id as biz, '/reserva/' || o.number as href, ${ISO("o.scheduled_at")} as at, c.timezone as tz, null::text as extra
           from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.user_id = $1 and o.kind = 'table' and o.status = 'change_proposed' limit 3)
        union all
        (select 'iv', b.name, a.business_id, '/solicitud/' || a.number, ${ISO("a.interview_at")}, c.timezone, j.title->>'es'
           from job_applications a join businesses b on b.id = a.business_id join cities c on c.id = a.city_id join job_postings j on j.id = a.job_id
          where a.user_id = $1 and a.status = 'interview' and not a.interview_confirmed and a.interview_at > now() limit 3)
+       union all
+       (select 'msg', b.name, t.business_id, '/cuenta/mensajes/' || t.business_id, ${ISO("t.last_at")}, c.timezone,
+              case when t.last_from <> 'system' then t.last_text when (select lang from users where id = $1) = 'en' then split_part(t.last_text, ' · ', 2) else split_part(t.last_text, ' · ', 1) end
+          from chat_threads t join businesses b on b.id = t.business_id join cities c on c.id = b.city_id where t.user_id = $1 and t.user_unread > 0 order by t.last_at desc limit 3)
        union all
        (select 'esp', b.name, o.business_id, '/reserva/' || o.number, ${ISO("o.scheduled_at")}, c.timezone, o.party_size::text
           from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.user_id = $1 and o.kind = 'table' and o.status = 'pending' limit 3)

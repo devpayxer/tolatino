@@ -372,3 +372,48 @@ export async function decidirRep(id: string, accion: "mantener" | "ocultar", mot
   listo();
   return { ok: true, mensaje: accion === "ocultar" ? (sk ? "Oculta y sanción aplicada. El autor ve el motivo." : "Oculta. El autor ve el motivo.") : "Se queda. Quedó en la auditoría." };
 }
+
+/* Mensajes reportados: ocultar un mensaje (avisa a quien lo escribió) y cerrar el caso (Todo bien / Resuelto). El hilo
+   solo se toca con el caso abierto. Nada se borra. */
+export async function chatOcultarMensaje(id: string, mensaje: string, motivo: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(motivo);
+  if (!m) return no("Escribe el motivo.");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "chat") return "Ese caso no es de esta cola.";
+    const x = (await c.query<{ id: string; autor: string | null; de: string }>(
+      `update chat_messages set hidden_at = now(), hidden_reason = $3, hidden_by = $4 where id = $1::bigint and thread_id = $2::bigint and hidden_at is null
+       returning id::text, sender_user_id::text as autor, sender as de`, [String(mensaje ?? "0").replace(/\D/g, "") || "0", q.subject_id, m, s.id])).rows[0];
+    if (!x) return "Ese mensaje no está en esta conversación o ya está oculto.";
+    await auditar(c, { actor: s.id, action: "mensaje.ocultar", targetKind: "chat_message", targetId: x.id, city: q.city_id, before: { mensaje: "visible" }, after: { mensaje: "oculto" }, reason: m });
+    return x;
+  });
+  if (typeof r === "string") return no(r);
+  if (r.autor && (r.de === "user" || r.de === "business")) {
+    const { avisar } = await import("@/lib/avisos");
+    await avisar(r.autor, "mod_hide", { tipo: "mensaje", motivo: m }, { href: r.de === "user" ? "/cuenta/mensajes" : undefined }).catch(() => undefined);
+  }
+  listo();
+  return { ok: true, mensaje: "Mensaje oculto. Quien lo escribió ve el motivo." };
+}
+export async function decidirChat(id: string, accion: "mantener" | "resuelto", motivo: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(motivo);
+  if (!m) return no("Escribe el motivo.");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "chat") return "Ese caso no es de esta cola.";
+    await c.query(`update content_reports set status = $2, decided_by = $3, decided_at = now() where target_kind = 'chat' and target_id = $1 and status = 'open'`, [q.subject_id, accion === "resuelto" ? "actioned" : "dismissed", s.id]);
+    await cerrar(c, q, s, accion, m);
+    await auditar(c, { actor: s.id, action: accion === "resuelto" ? "chat.resuelto" : "chat.mantener", targetKind: "chat_thread", targetId: q.subject_id, city: q.city_id, before: { conversacion: "reportada" }, after: { conversacion: accion === "resuelto" ? "resuelta" : "todo bien" }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: accion === "resuelto" ? "Caso cerrado. La conversación ya no se puede leer desde aquí." : "Todo bien. Caso cerrado." };
+}

@@ -1,4 +1,5 @@
 import "server-only";
+const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa" };
 import type { Staff } from "./admin";
 import { COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
 import { db } from "./db";
@@ -23,7 +24,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   const r = await db().query<{
     id: string; queue: Cola; opened_at: string; priority: string; assigned_to: string | null; assignee: string | null;
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
-    subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean;
+    subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -36,7 +37,10 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' from licenses l join license_kinds k on k.key = l.kind where q.queue = 'lic' and l.id::text = q.subject_id) as ltitle,
             (select cr.reason from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open' order by cr.by_business desc, cr.created_at limit 1) as rpreason,
             (select count(*)::int from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open') as rpn,
-            coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open'), false) as rpbiz
+            coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open'), false) as rpbiz,
+            (select cr.reason from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open' order by cr.created_at limit 1) as chreason,
+            (select count(*)::int from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open') as chn,
+            coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open'), false) as chbiz
        from queue_items q
        left join businesses b on b.id = q.business_id
        left join users u on u.id = q.assigned_to
@@ -61,6 +65,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
       : x.queue === "sop" ? { title: `Ayuda con un pedido · ${b}`, sub: "El cliente espera una respuesta" }
+      : x.queue === "chat" ? { title: `Mensajes reportados · ${b}`, sub: `${x.chreason ? MOTIVO_CHAT[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""}${x.chbiz ? " · lo reportó el negocio" : ""}` }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
@@ -145,6 +150,20 @@ export async function caso(s: Staff, id: string) {
               coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, u.id::text as uid
          from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, ayuda: h ?? null };
+  }
+  if (q.queue === "chat") {
+    // La conversación reportada: solo se lee con el caso abierto (si ya se decidió, no se muestra el hilo).
+    const t = (await db().query<{ vecino: string; vecino_id: string; ctx: { es: string; en: string } | null; bloqueado: boolean }>(
+      `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as vecino, u.id::text as vecino_id, t.context as ctx, t.blocked_at is not null as bloqueado
+         from chat_threads t join users u on u.id = t.user_id where t.id = $1::bigint`, [q.subject_id])).rows[0];
+    const msjs = q.status === "open" && t ? (await db().query<{ id: string; de: string; t: string; at: string; oculto: boolean; quien: string | null }>(
+      `select m.id::text, m.sender as de, m.body as t, m.created_at as at, m.hidden_at is not null as oculto,
+              (select coalesce(nullif(trim(coalesce(x.first_name, '')), ''), 'Equipo') from users x where x.id = m.sender_user_id and m.sender = 'business') as quien
+         from chat_messages m where m.thread_id = $1::bigint order by m.id desc limit 60`, [q.subject_id])).rows.reverse() : [];
+    const reps = (await db().query<{ reason: string; note: string | null; at: string; by_business: boolean; quien: string | null }>(
+      `select cr.reason, cr.note, cr.created_at as at, cr.by_business, nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien
+         from content_reports cr join users u on u.id = cr.reporter_user_id where cr.target_kind = 'chat' and cr.target_id = $1 and cr.status = 'open' order by cr.created_at`, [q.subject_id])).rows;
+    return { ...base, negocio, chat: t ? { ...t, msjs } : null, reportesC: reps };
   }
   if (q.queue === "rep") {
     // La reseña (sigue visible mientras se decide), su autor y los reportes abiertos.

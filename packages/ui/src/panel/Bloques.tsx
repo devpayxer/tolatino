@@ -41,7 +41,7 @@ export type Bloque =
      future = lo que falta (hueco). */
   | { type: "timeline"; k?: string; items: { t: string; s?: string; now?: boolean; future?: boolean }[] }
   /* Panel v2 · bl('thread'): la reseña (o el mensaje) a la izquierda y la respuesta del negocio a la derecha. */
-  | { type: "thread"; items: { t: string; mine?: boolean }[] }
+  | { type: "thread"; items: { t: string; mine?: boolean; m?: string; soft?: boolean }[] }
   /* Panel v2 · novPrev: «Así se ve» una novedad, con la PostCard del sistema. */
   | { type: "nprev"; k?: string; name: string; logo?: string; tags: { label: string; tone: string }[]; body: string; photos: string[]; foot?: string }
   /* Plantilla del Panel v2 (isUtabs, isSearch, isBulk, isMprev): pestañas con ícono y cuenta, buscador con enlace,
@@ -82,8 +82,9 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
     case "thread": return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 14, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
         {b.items.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.mine ? "flex-end" : "flex-start" }}>
-            <span style={{ maxWidth: "82%", padding: "10px 13px", borderRadius: m.mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.mine ? "var(--tl-ink)" : "var(--tl-paper)", color: m.mine ? "var(--tl-white)" : "var(--tl-ink)", font: "600 13px/1.45 Manrope,sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</span>
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.mine ? "flex-end" : "flex-start", gap: 3 }}>
+            <span style={{ maxWidth: "82%", padding: "10px 13px", borderRadius: m.mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.soft ? "rgba(75,55,245,.07)" : m.mine ? "var(--tl-ink)" : "var(--tl-paper)", color: m.soft ? "rgba(11,14,18,.62)" : m.mine ? "var(--tl-white)" : "var(--tl-ink)", font: "600 13px/1.45 Manrope,sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</span>
+            {m.m ? <span style={{ font: "600 8.5px 'JetBrains Mono',monospace", letterSpacing: ".06em", color: "rgba(11,14,18,.42)" }}>{m.m}</span> : null}
           </div>
         ))}
       </div>);
@@ -183,7 +184,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
                 {x.tag ? <Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag> : null}
                 {x.r ? <span style={{ font: "800 15px/1 Sora,sans-serif", flex: "none", textAlign: "right" }}>{x.r}</span> : null}
                 {x.qv !== undefined ? <span onClick={para} style={{ flex: "none" }}><QtyStepper value={x.qv} size="sm" onDec={x.onQm} onInc={x.onQp} /></span> : null}
-                {tg ? <span role="switch" aria-checked={!!x.tgOn} onClick={(e) => { para(e); x.onTg?.(); }} style={toque(!!x.tgOn)}><span style={bolita(!!x.tgOn)} /></span> : null}
+                {tg ? <span role="switch" aria-checked={!!x.tgOn} aria-label={x.t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); x.onTg?.(); } }} onClick={(e) => { para(e); x.onTg?.(); }} style={toque(!!x.tgOn)}><span style={bolita(!!x.tgOn)} /></span> : null}
                 {chev ? <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /> : null}
                 {x.lock ? <Chip variant="pro">PRO</Chip> : null}
               </div>
@@ -250,7 +251,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             <div role="button" onClick={x.onOpen} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer" }}>
               <span style={{ width: 92, flex: "none", display: "flex", alignItems: "center", gap: 6, font: "700 13.5px Manrope,sans-serif" }}>{x.d}{x.today ? <span style={{ font: `800 8.5px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}>{b.todayL}</span> : null}</span>
               <span style={{ flex: 1, minWidth: 0, font: "600 13px Manrope,sans-serif", color: x.hFg ?? "var(--tl-ink)" }}>{x.h}</span>
-              <span role="switch" aria-checked={x.on} aria-label={x.d} onClick={(e) => { para(e); x.onTg?.(); }} style={toque(x.on)}><span style={bolita(x.on)} /></span>
+              <span role="switch" aria-checked={x.on} aria-label={x.d} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); x.onTg?.(); } }} onClick={(e) => { para(e); x.onTg?.(); }} style={toque(x.on)}><span style={bolita(x.on)} /></span>
             </div>
             {x.open ? (
               <div style={{ padding: "2px 14px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -288,7 +289,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
             <span style={{ width: 40, height: 40, flex: "none", borderRadius: 12, background: "rgba(75,55,245,.08)", display: "grid", placeItems: "center" }}><Icon name={b.icon} size={18} color="var(--tl-action)" /></span>
             <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.t}</span><span style={{ display: "block", marginTop: 2, font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span></span>
           </span>
-          <span role="switch" aria-checked={b.on} aria-label={b.t} onClick={b.onTg} style={toque(b.on)}><span style={bolita(b.on)} /></span>
+          <span role="switch" aria-checked={b.on} aria-label={b.t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); b.onTg(); } }} onClick={b.onTg} style={toque(b.on)}><span style={bolita(b.on)} /></span>
         </div>
         {b.on && (b.chips.length > 0 || !b.open) ? (
           <div role="button" onClick={b.onClick} style={{ display: "flex", flexWrap: "wrap", gap: 6, cursor: "pointer" }}>

@@ -146,6 +146,7 @@ export function Pedido({ p, es, ayuda }: { p: PedidoVista; es: boolean; ayuda: {
   const puedeCancelar = p.status === "pending" && !p.sinRespuesta;
   const botones = (
     <div className="flex flex-col gap-2.5">
+      {!fin && <div className="flex"><Button variant={p.status === "pending" ? "secondary" : "primary"} icon="chat" block onClick={() => router.push(`/cuenta/mensajes/${p.negocio.id}?op=${encodeURIComponent(p.numero)}`)}>{E2("Escribir al negocio", "Message the business")}</Button></div>}
       {llamar && <div className="flex"><Button variant="secondary" icon="phone" block onClick={llamar}>{E2("Llamar al negocio", "Call the business")}</Button></div>}
       {/* Prototipo ord.lbl.review: al terminar, «Escribir una reseña» (sale verificada por este pedido). */}
       {p.status === "done" && <div className="flex"><Button variant="primary" icon="star" block onClick={() => router.push(`/n/${p.negocio.id}/resena?pedido=${encodeURIComponent(p.numero)}`)}>{E2("Escribir una reseña", "Write a review")}</Button></div>}

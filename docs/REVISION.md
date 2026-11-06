@@ -331,3 +331,17 @@ _Compuesto de la pestaña «din» del prototipo. Decisiones (AB): pausar pagos l
 Finanzas); con Stripe real se pone el calendario de pagos en manual (lo más seguro y reversible). Los pagos al banco se
 calculan de lo cobrado (Stripe hace el pago los martes); al encender Stripe se leerán de Stripe. Agregué «Anular
 suscripción», que estaba en el diseño y faltaba. La pestaña «Operación» del diseño llega con Analítica._
+
+## Fase 2 · 2p Mensajes (vecino ↔ negocio)
+1. Marisol › página de **Sabor Dominicano** › botón **Mensaje** → escribe; prueba escribir un teléfono (no se envía).
+2. Pedro › Panel › **Mensajes** (y Hoy › «Mensajes sin responder») → contesta con una respuesta rápida; **Compartir mi teléfono**.
+3. Marisol ve la respuesta sin recargar; en Mi cuenta › Resumen sale «Sabor Dominicano te escribió».
+4. Panel › **Respuesta automática fuera de horario** encendida → con el negocio cerrado contesta sola.
+5. **Reportar** una conversación → Ana › Colas › **Mensajes reportados**: lee el hilo, oculta un mensaje, cierra el caso.
+_Compuesto de USR-MENSAJES / USR-CHAT-NEG (Mi cuenta) y la sección Mensajes del Panel v2. Decisiones (AB): una
+conversación por vecino y negocio; solo negocios con dueño; el negocio no escribe en frío; sin teléfonos en el texto (de
+nadie); avisos: al negocio el primero sin leer (con SMS), al vecino en la app (sin SMS); la conversación se actualiza
+cada 4–5 s mientras está abierta (tiempo real con WebSocket queda para el lanzamiento). El botón «Mensaje» va junto a
+Llamar en la ficha (en el diseño está en la hoja de Llamar de escritorio). «El Compa contesta por ti» y «Sugerir
+respuesta» llegan con El Compa (Fase 4). Fotos en el chat, después (LAUNCH-CHECKLIST). Cola nueva «Mensajes reportados»
+(48 h). Arreglos de accesibilidad de paso: IconButton y todos los interruptores con teclado y nombre (guardianes)._

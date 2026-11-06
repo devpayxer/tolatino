@@ -456,6 +456,14 @@ _Actualizado: 5 nov 2026._
 - **Fase 2 · bloque 2o Negocio 360° › Dinero ✓ (6 nov):** migración 0037 (`stripe_accounts.paused_at/paused_by`, avisos
   `pay_hold`/`pay_resume`), `lib/admin-dinero.ts`, `app/admin/N360Dinero.tsx`, `acciones-dinero.ts` (pausar/reanudar con
   `pasarela.cuentaPagos`: calendario manual en Stripe), `anularSuscripcion` + `planAnular`. Ayuda: admin-negocio-dinero.md.
+- **Fase 2 · bloque 2p Mensajes ✓ (6 nov):** migraciones 0038 (`chat_threads`, `chat_messages`, `businesses.chat_auto_reply`,
+  reportes `chat`, avisos `msg_user`/`biz_msg`), 0039 (toque «message») y 0040 (cola `chat`). `lib/mensajes.ts` (una
+  conversación por vecino y negocio, sin teléfonos, límites, respuesta automática, avisos sin repetir, bloquear, reportar).
+  Mi cuenta › Mensajes + conversación (bloque `chat` del marco, se actualiza cada 4 s); botón Mensaje en la ficha y
+  «Escribir al negocio» en pedido y reservación; Resumen «te escribió». Panel › Mensajes (+ Hoy, `thread`, respuestas
+  rápidas, compartir teléfono, quién lo lleva, bloquear, reportar). Super Admin › Colas › Mensajes reportados (el hilo solo
+  con caso abierto; ocultar mensaje con motivo). Accesibilidad: IconButton e interruptores (guardianes botonAccesible e
+  interruptorAccesible). Ayuda: mensajes.md.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama
