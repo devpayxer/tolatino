@@ -16,7 +16,7 @@ import { aboutGuardar, cerrarPorHoy, fotoQuitar, fotosAgregar, fotosOrden, horar
 import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { equipoBloques, equipoDetalle } from "./Equipo";
 import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
-import { clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
+import { hoyAyudas, clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
 import { entregaBloques } from "./Entrega";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
@@ -366,6 +366,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   // Pedidos (Comida): cifras, los que esperan respuesta y la agenda de hoy (Panel v2 · DASH-HOY).
   out.push(...hoyPedidos(c));
   out.push(...hoyResenas(c));
+  out.push(...hoyAyudas(c));
   out.push(...hoyJobs(c));
   out.push({ type: "group", k: E2("ACCIONES RÁPIDAS", "QUICK ACTIONS") });
   out.push({ type: "acts", items: [d.st.closedToday

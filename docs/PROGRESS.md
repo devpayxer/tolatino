@@ -405,7 +405,13 @@ _Actualizado: 5 nov 2026._
   vacantes en una lista; cifras, pestañas, búsqueda, filtros con reporte / ocultos / votos negativos; ocultar o mostrar con
   motivo, también comentarios) y Transacciones (pedidos y reservaciones de 90 días; cifras, pestañas, estados, búsqueda y CSV
   protegido contra fórmulas, en la auditoría; `lib/csv.ts` compartido con Analítica). Probado: 13 comprobaciones. Ayuda
-  `admin-contenido.md`. **Sigue: 2i (2) Soporte y «Ayuda con el pedido».**
+  `admin-contenido.md`.
+- **Fase 2 · bloque 2i (2) Ayuda con el pedido y Soporte ✓ (6 nov):** migración 0031 (`help_requests` H-5001…, una por pedido;
+  cola `sop`). Cliente: `/pedido/{n}/ayuda` (qué pasó según pickup o delivery, platos, qué quiere, detalle) y el estado en el
+  pedido (enviada, respuesta, «Pedir que To'Latino lo revise», resuelta). Panel: Hoy y el detalle del pedido con «Enviar
+  respuesta». Super Admin: Soporte = cola «Ayuda con pedidos» (pasa sola a las 24 h sin respuesta) con «Resolver con un
+  mensaje», auditado. Probado: 13 comprobaciones; 2b, 2c, 2f, 2h y Usuarios otra vez en verde. Ayuda
+  `ayuda-con-el-pedido.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

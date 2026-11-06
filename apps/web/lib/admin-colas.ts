@@ -60,6 +60,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
+      : x.queue === "sop" ? { title: `Ayuda con un pedido · ${b}`, sub: "El cliente espera una respuesta" }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
@@ -136,6 +137,14 @@ export async function caso(s: Staff, id: string) {
     const reps = (await db().query<{ reason: string; note: string | null; at: string }>(
       `select reason, note, created_at as at from photo_reports where media_id = $1::uuid and status = 'open' order by created_at`, [q.subject_id])).rows;
     return { ...base, negocio, foto: m ?? null, reportes: reps };
+  }
+  if (q.queue === "sop") {
+    // Ayuda con un pedido: la solicitud, lo que pidió, la respuesta del negocio (si hubo) y el pedido.
+    const h = (await db().query<{ number: string; reason: string; items: { n: string; q: number }[]; wants: string; body: string | null; status: string; reply: string | null; escalated_by: string | null; creada: string; num: string; total: number; quien: string; uid: string }>(
+      `select h.number, h.reason, h.items, h.wants, h.body, h.status, h.reply, h.escalated_by, h.created_at as creada, o.number as num, o.total_cents as total,
+              coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, u.id::text as uid
+         from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id])).rows[0];
+    return { ...base, negocio, ayuda: h ?? null };
   }
   if (q.queue === "rep") {
     // La reseña (sigue visible mientras se decide), su autor y los reportes abiertos.

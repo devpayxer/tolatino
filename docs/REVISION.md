@@ -226,3 +226,13 @@ _Entra como Marisol (5705550122). En el sandbox los códigos salen en pantalla (
 2. Ana › **Transacciones**: filtra **Terminado**, busca un número de pedido, **Exportar** (abre el CSV en Sheets).
 _Contenido no trae todavía publicaciones de la comunidad, «Hoy en el barrio», auto-moderación ni cuenta oficial (Fase 5);
 Transacciones no trae retenido, devoluciones ni comisión (Stripe, pregunta 3)._
+
+## Fase 2 · 2i (2) Ayuda con el pedido y Soporte
+_Hace falta un pedido terminado de los últimos 7 días (Marisol pide en Sabor y Pedro lo marca Entregado)._
+1. Marisol › el pedido › **Ayuda con el pedido** → «Falta algo» → elige el plato → «Que me devuelvan lo de esos platos» →
+   **Enviar solicitud** → el pedido dice «Solicitud enviada».
+2. Pedro › **Hoy**: «Ayuda con pedidos» → el pedido → escribe y **Enviar respuesta** → Marisol la ve en su pedido.
+3. Marisol › **Pedir que To'Latino lo revise** → Ana › **Soporte** (cola Ayuda con pedidos) → **Resolver con un mensaje** →
+   Marisol ve «Solicitud resuelta por To'Latino».
+_Cambios del diseño: Soporte es por ahora esta cola (sin tickets por WhatsApp o correo, macros ni CSAT); no hay devolución con
+tarjeta (todo se paga en el local), así que «devolver» se arregla con el negocio; sin El Compa antes de la ayuda._

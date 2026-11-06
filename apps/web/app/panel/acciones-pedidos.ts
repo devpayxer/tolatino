@@ -3,6 +3,7 @@ import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import { cambiarPaso, guardarSeguimiento, type Paso } from "@/lib/pedidos";
+import { responderAyuda } from "@/lib/ayuda";
 import type { Res } from "./acciones";
 
 /* Pedidos desde el panel (Panel v2 · Hoy, Clientes y Lo que vendes › Pedidos en línea). Responder y mover un pedido
@@ -113,5 +114,15 @@ export async function entregaAjustes(id: string, p: EntregaIn): Promise<Res> {
   const L = (x: Record<string, unknown> | null) => x && { pickup: x.pickup ? "Sí" : "No", delivery: x.delivery ? "Sí" : "No", zona: `${x.zone_mi} mi`, envio: usd(x.fee_cents), gratis_desde: usd(x.free_over_cents),
     minimo: usd(x.min_order_cents), camino: `${x.travel_min} min`, quien: x.who === "external" ? `App externa (${x.external_app})` : "Mi equipo", nota: x.nota ?? "" };
   await auditar(a, "entrega.ajustes", L(antes), L({ pickup: p.pickup, delivery: p.delivery, zone_mi: p.zone, fee_cents: p.fee, free_over_cents: p.free, min_order_cents: p.min, travel_min: p.travel, who: p.who, external_app: ext, nota }));
+  return { ok: true };
+}
+
+/* Ayuda con el pedido: el negocio responde la solicitud del cliente (24 h). Pide acceso a «Hoy y pedidos». */
+export async function ayudaResponder(id: string, numero: string, texto: string): Promise<Res> {
+  const a = await entrar(id, "ord");
+  if (!a) return SIN_ACCESO;
+  const r = await responderAyuda(a.negocio.id, String(numero ?? ""), String(texto ?? ""), a.yo.id);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "pedido.ayuda.responder", { pedido: String(numero) }, { respuesta: String(texto).trim().slice(0, 120) });
   return { ok: true };
 }

@@ -311,6 +311,25 @@ export async function crearSemilla(id: string): Promise<ResAdm> {
 /* Reportes de contenido · reseña: se queda (los reportes se descartan; si el negocio la pidió revisar, queda «revisada»)
    u se oculta con motivo (sale de la página y de las ★; el autor ve el motivo). Con sanción, además, al autor. */
 const SANC_CONTENIDO = ["adv", "mute7", "nopub", "susp14"] as const;
+/* Ayuda con pedidos: To'Latino resuelve con un mensaje que el cliente ve en su pedido y el negocio en su panel. */
+export async function decidirSop(id: string, mensaje: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(mensaje);
+  if (!m) return no("Escribe la respuesta para el cliente.");
+  if (m.length > 500) return no("Máximo 500 letras.");
+  return tx(async (c) => {
+    const q = (await c.query<{ subject_id: string; business_id: string | null; city_id: string }>(
+      `select subject_id, business_id, city_id from queue_items where id = $1::bigint and queue = 'sop' and status = 'open' and (cardinality($2::text[]) = 0 or city_id = any($2::text[])) for update`, [id, s.cities])).rows[0];
+    if (!q) return no("Este caso ya se decidió.");
+    const h = await c.query(`update help_requests set status = 'resolved', resolution = $2, resolved_at = now(), resolved_by = $3, updated_at = now() where id = $1::bigint and status in ('open', 'answered', 'escalated') returning number`, [q.subject_id, m, s.id]);
+    if (!h.rowCount) return no("Esta solicitud ya se resolvió.");
+    await c.query(`update queue_items set status = 'decided', decision = 'resuelta', reason = $2, decided_by = $3, decided_at = now() where id = $1::bigint`, [id, m, s.id]);
+    await auditar(c, { actor: s.id, action: "soporte.resolver", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: (h.rows[0] as { number: string }).number, estado: "abierta" }, after: { estado: "resuelta" }, reason: m });
+    return { ok: true as const, mensaje: "Resuelta. El cliente la ve en su pedido." };
+  });
+}
+
 export async function decidirRep(id: string, accion: "mantener" | "ocultar", motivo: string, sancion?: string | null): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");

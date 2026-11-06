@@ -1,3 +1,4 @@
+import { escalarVencidas } from "@/lib/ayuda";
 import { requerir } from "@/lib/admin";
 import { caso as leerCaso, colasVisibles, listaCasos } from "@/lib/admin-colas";
 import type { Cola } from "@/lib/colas";
@@ -7,6 +8,7 @@ import { Colas } from "../Colas";
 export default async function Page({ searchParams }: { searchParams: Promise<{ cola?: string; f?: string; caso?: string }> }) {
   const s = await requerir("colas", "ver");
   const sp = await searchParams;
+  await escalarVencidas();
   const vis = colasVisibles(s);
   const cola = vis.includes(sp.cola as Cola) ? (sp.cola as Cola) : null;
   const [l, c] = await Promise.all([

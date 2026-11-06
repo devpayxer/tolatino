@@ -6,6 +6,7 @@ import { ajustesPedidos, pedidoNegocio, pedidosHoy, pedidosLista, type FiltroPed
 import type { PedPanel } from "../../Pedidos";
 import { mesaDetalle, mesasPanel, mesasPendientes, rsvAjustes, type FiltroMesa } from "@/lib/reservas";
 import { pedidosPendientes } from "@/lib/pedidos";
+import { ayudaPanel, ayudasNegocio } from "@/lib/ayuda";
 import type { RsvPanel } from "../../Reservas";
 import { accesoPanel, datosPanel } from "@/lib/panel";
 import { resenaPanel, resenasPanel, resenasSinResponder, type FiltroPanel } from "@/lib/resenas";
@@ -61,6 +62,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     lista: ruta.sec === "cli" && sp.t !== "rsv" ? await pedidosLista(d.id, f, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f, q,
     det: ruta.det?.startsWith("ped:") ? await pedidoNegocio(d.id, ruta.det.slice(4)) : undefined,
     aj: ruta.sec === "mod" || ruta.sec === "dlv" ? await ajustesPedidos(d.id) : undefined,
+    ayuda: ruta.det?.startsWith("ped:") && ord ? await ayudaPanel(d.id, ruta.det.slice(4)) : undefined,
+    ayudas: ruta.sec === "hoy" && ord ? await ayudasNegocio(d.id) : undefined,
   } : undefined;
   // Reservaciones (Comida): las vivas para Hoy y el módulo, la lista de Clientes (?t=rsv), el detalle y los ajustes.
   const tRsv = ruta.sec === "cli" && sp.t === "rsv";

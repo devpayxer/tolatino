@@ -321,3 +321,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
   letra más grande, ajustes de la comunidad**: con sus fases (REVISION 11).
 - [ ] **Invita vecinos con código** (quién invitó a quién) cuando exista la gamificación.
 - [ ] **Alertas de búsqueda** («Avísame cuando haya») listadas en Avisos con «Quitar».
+
+## Ayuda con el pedido y Soporte (bloque 2i, 6 nov 2026)
+- [ ] **Devolución a la tarjeta y reponer con un pedido nuevo sin costo**: con Stripe (2d) y el Repartidor.
+- [ ] **Soporte completo**: tickets por WhatsApp y correo, macros ES/EN, primera respuesta y CSAT; ayuda con citas y reservaciones.
+- [ ] **Avisos** al negocio de una solicitud nueva y al cliente de la respuesta (SMS/push).
+- [ ] **El Compa** antes de abrir la solicitud (el prototipo lo pone primero).

@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -94,7 +94,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "sop" ? `Ayuda con un pedido · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -179,6 +179,21 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       acts = [
         { l: "Está bien", v: "action", icon: "check", onClick: () => run(() => decidirMedios(k.id, "mantener", ""), () => ir({ caso: null })) },
         { l: "Quitar foto", v: "danger", icon: "trash", off: unica, onClick: () => setConf({ titulo: "¿Por qué se quita?", plantillas: PLANT.foto, peligro: true, hacer: (m) => decidirMedios(k.id, "quitar", m) }) },
+      ];
+    }
+    if (k.queue === "sop" && "ayuda" in k && k.ayuda) {
+      // Ayuda con un pedido: qué pasó, qué platos, qué quiere, su nota, la respuesta del negocio y el pedido.
+      const h = k.ayuda, MOT: Record<string, string> = { falta: "Falta algo", equivocado: "Llegó algo equivocado", frio: "Llegó frío o mal preparado", danado: "Llegó dañado o derramado", tarde: "Llegó tarde", nollego: "No le llegó", pago: "Problema con el pago", otro: "Otro problema" };
+      const Q: Record<string, string> = { reponer: "Que se lo repongan", devolver: "Que le devuelvan lo de esos platos", avisar: "Solo quiere que lo sepan" };
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: "PEDIDO", v: `#${h.num} · $${(h.total / 100).toFixed(2)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: MOT[h.reason] ?? h.reason },
+        ...(h.items.length ? [{ k: "PLATOS", v: h.items.map((x) => `${x.q} × ${x.n}`).join(" · ") }] : []), { k: "QUÉ QUIERE", v: Q[h.wants] ?? h.wants }] });
+      if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `SU NOTA · «${h.body}»` });
+      cuerpoB.push(h.reply ? { type: "note", tone: "info", icon: "chat", t: `RESPUESTA DEL NEGOCIO · «${h.reply}»${h.escalated_by === "user" ? " · el cliente pidió que lo revisemos" : ""}` } : { type: "note", tone: "warn", icon: "clock", t: "El negocio no respondió en 24 horas." });
+      acts = [
+        { l: "Resolver con un mensaje", v: "action", icon: "check", onClick: () => setConf({ titulo: "Tu respuesta al cliente", sub: "La ve en su pedido; el negocio la ve en su panel. Queda en la auditoría.", cta: "Resolver",
+          plantillas: ["Hablamos con el negocio: te reponen lo que faltó.", "Hablamos con el negocio: te devuelven lo de esos platos en el local.", "Gracias por avisar. Se lo dijimos al negocio para que no vuelva a pasar."],
+          hacer: (m) => decidirSop(k.id, m) }) },
+        { l: "Ver el cliente", icon: "users", onClick: () => router.push(`/admin/usuarios/${h.uid}`) },
       ];
     }
     if (k.queue === "rep" && "resena" in k) {

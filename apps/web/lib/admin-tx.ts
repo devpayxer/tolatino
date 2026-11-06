@@ -26,7 +26,7 @@ function donde(s: Staff, f: FiltrosTx) {
   if (f.q) { v.push(`%${f.q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`); w.push(`(o.number ilike $${v.length} or b.name ilike $${v.length} or o.business_id ilike $${v.length} or u.phone ilike $${v.length} or coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '') ilike $${v.length})`); }
   return { w: w.join(" and "), v };
 }
-const DESDE = `from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id`;
+const DESDE = `from operations o join businesses b on b.id = o.business_id and o.kind in ('order', 'table') join users u on u.id = o.user_id`;
 export async function listaTx(s: Staff, f: FiltrosTx) {
   const { w, v } = donde(s, f);
   const [L, n, k] = await Promise.all([

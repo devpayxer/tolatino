@@ -5,6 +5,8 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, type ComponentType } from "react";
 import type { PedidoVista } from "@/lib/pedir";
+import type { Ayuda } from "@/lib/ayuda";
+import { AyudaEstado } from "./AyudaEstado";
 import { guardarCarrito } from "../../n/[id]/MenuCliente";
 import { lineasDelPedido } from "./acciones";
 
@@ -17,7 +19,7 @@ const ETAPAS = ["sent", "accepted", "preparing", "ready", "picked_up"];
 // Delivery (prototipo ordVals · dl): enviado → preparando → en camino → entregado.
 const ETAPAS_D = ["sent", "preparing", "on_the_way", "delivered"];
 
-export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
+export function Pedido({ p, es, ayuda }: { p: PedidoVista; es: boolean; ayuda: { a: Ayuda | null; puede: boolean } | null }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const pendiente = (p.status === "pending" && !p.sinRespuesta) || p.status === "confirmed"; // en curso: se actualiza sola
@@ -138,6 +140,7 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
       {llamar && <div className="flex"><Button variant="secondary" icon="phone" block onClick={llamar}>{E2("Llamar al negocio", "Call the business")}</Button></div>}
       {/* Prototipo ord.lbl.review: al terminar, «Escribir una reseña» (sale verificada por este pedido). */}
       {p.status === "done" && <div className="flex"><Button variant="primary" icon="star" block onClick={() => router.push(`/n/${p.negocio.id}/resena?pedido=${encodeURIComponent(p.numero)}`)}>{E2("Escribir una reseña", "Write a review")}</Button></div>}
+      {ayuda && <AyudaEstado numero={p.numero} negocio={p.negocio.nombre} a={ayuda.a} puede={ayuda.puede} es={es} />}
       {(fin || cerrado) && <div className="flex"><Button variant="secondary" icon="bag" block onClick={otraVez}>{E2("Volver a pedir", "Order again")}</Button></div>}
       {puedeCancelar && (
         <div className="flex flex-wrap items-center gap-3">
