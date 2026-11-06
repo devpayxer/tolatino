@@ -58,3 +58,15 @@ export async function comisionProgramar(kind: string, pct: string, motivo: strin
   });
   return { ok: true, mensaje: `Programado: ${p} % en 30 días. Lo ya vendido no cambia.` };
 }
+
+/* Ingresos · Exportar CSV (8 semanas: comisiones y Pro; por categoría 90 días). Permiso tx:exportar; queda en la auditoría. */
+export async function ingresosCsv(): Promise<ResAdm & { archivo?: string; nombre?: string }> {
+  const s = await staff();
+  if (!s || !s.puede("tx", "exportar")) return { ok: false, mensaje: "Tu rol no exporta datos." };
+  const { ingresos } = await import("@/lib/admin-planes"), { csv } = await import("@/lib/csv");
+  const d = await ingresos(s), m = (c: number) => (c / 100).toFixed(2);
+  const filas: string[][] = [...d.semanas.map((w) => [`Semana del ${w.ini}`, m(w.fee), m(w.pro), String(w.n)]), ["Total 8 semanas", m(d.semanas.reduce((a, w) => a + w.fee, 0)), m(d.semanas.reduce((a, w) => a + w.pro, 0)), String(d.semanas.reduce((a, w) => a + w.n, 0))],
+    [], ["Categoría (90 días)", "Comisiones", "", ""], ...d.categorias.map((k) => [k.cat, m(k.fee), "", ""])];
+  await tx((c) => auditar(c, { actor: s.id, action: "plan.ingresos_exportar", targetKind: "report", targetId: "ingresos", after: { filas: filas.length }, reason: "Exportar ingresos" }));
+  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo: csv(["Periodo", "Comisiones (USD)", "Pro (USD)", "Cobros con tarjeta"], filas), nombre: `tolatino-ingresos-${new Date().toISOString().slice(0, 10)}.csv` };
+}

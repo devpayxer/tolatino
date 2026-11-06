@@ -5,7 +5,7 @@ import { PRECIO_PRO, PRUEBA_DIAS, TOPE_FREE } from "./plan";
 
 /* ADM-PLAN · Planes y suscripciones (Super Admin.dc.html secPlan): MRR, en prueba, cobro fallido, Free al techo; Planes
    (qué incluye cada uno), Suscripciones (estado de cada negocio de tus ciudades) y Comisiones (vigentes y programadas). */
-export type TabPlan = "res" | "subs" | "fees";
+export type TabPlan = "res" | "subs" | "fees" | "ing";
 export type FilaSub = { negocio: string; nombre: string; estado: string; fin: string | null; ciclo: string; intentos: number; dueño: string | null; desde: string };
 const CIUD = "(cardinality($1::text[]) = 0 or b.city_id = any($1::text[]))";
 export async function datosPlanes(s: Staff, tab: TabPlan, est: string | null) {
@@ -34,3 +34,32 @@ export async function datosPlanes(s: Staff, tab: TabPlan, est: string | null) {
   return { kpi: { ...x, mrr: x.activos * precio + Math.round((x.anuales * precio * 10) / 12) }, subs: L.rows, fees: F.rows, cfg: { precio, prueba: PRUEBA_DIAS, tope: TOPE_FREE } };
 }
 export type DatosPlanes = Awaited<ReturnType<typeof datosPlanes>>;
+
+/* Ingresos (diseño secPlan · «ing»): comisiones de 8 semanas (lo cobrado con tarjeta, neto de devoluciones), cobros de Pro
+   de 8 semanas, comisión por categoría en 90 días. Acotado a las ciudades de quien mira; semanas de lunes a domingo
+   (hora del Este). Todo sale del libro propio (payments, subscription_events). */
+export async function ingresos(s: Staff) {
+  const C = "(cardinality($1::text[]) = 0 or b.city_id = any($1::text[]))";
+  const [W, P, K] = await Promise.all([
+    db().query<{ ini: string; fee: number; n: number }>(
+      `with s as (select generate_series(date_trunc('week', now() at time zone 'America/New_York') - interval '7 weeks', date_trunc('week', now() at time zone 'America/New_York'), interval '1 week') as ini)
+       select to_char(s.ini, 'YYYY-MM-DD') as ini,
+              coalesce(sum(p.fee_cents * (p.amount_cents - p.refunded_cents) / nullif(p.amount_cents, 0)), 0)::int as fee, count(p.id)::int as n
+         from s left join (payments p join businesses b on b.id = p.business_id and ${C})
+           on p.status in ('captured', 'partially_refunded') and date_trunc('week', p.captured_at at time zone 'America/New_York') = s.ini
+        group by s.ini order by s.ini`, [s.cities]),
+    db().query<{ ini: string; pro: number }>(
+      `with s as (select generate_series(date_trunc('week', now() at time zone 'America/New_York') - interval '7 weeks', date_trunc('week', now() at time zone 'America/New_York'), interval '1 week') as ini)
+       select to_char(s.ini, 'YYYY-MM-DD') as ini, coalesce(sum(e.amount_cents), 0)::int as pro
+         from s left join (subscription_events e join businesses b on b.id = e.business_id and ${C})
+           on e.kind = 'charged' and date_trunc('week', e.at at time zone 'America/New_York') = s.ini
+        group by s.ini order by s.ini`, [s.cities]),
+    db().query<{ cat: string; fee: number }>(
+      `select coalesce(c.name ->> 'es', b.category_id) as cat, sum(p.fee_cents * (p.amount_cents - p.refunded_cents) / nullif(p.amount_cents, 0))::int as fee
+         from payments p join businesses b on b.id = p.business_id left join categories c on c.id = b.category_id
+        where ${C} and p.status in ('captured', 'partially_refunded') and p.captured_at > now() - interval '90 days'
+        group by 1 having sum(p.fee_cents) > 0 order by 2 desc limit 8`, [s.cities]),
+  ]);
+  return { semanas: W.rows.map((w, i) => ({ ...w, pro: P.rows[i]?.pro ?? 0 })), categorias: K.rows };
+}
+export type Ingresos = Awaited<ReturnType<typeof ingresos>>;

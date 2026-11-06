@@ -30,3 +30,12 @@ Todo queda en la auditoría con el motivo.
 `/admin/plans`: MRR, trials (ending within 7 days), failed charges and Free at cap. Plans (what Free and Pro include).
 Subscriptions per business with actions: extend trial, courtesy Pro, remove courtesy, retry charge — each with a reason
 and audited. Fees: current and scheduled; a change applies in 30 days and never touches past sales.
+
+## Ingresos (bloque 2s)
+Pestaña **Ingresos** en Planes y suscripciones: **comisiones de 8 semanas** (lo que To'Latino se queda de cada cobro con
+tarjeta, neto de devoluciones; la semana actual resaltada), **cobros de Pro de 8 semanas** (con el MRR) y **comisión por
+categoría en 90 días**. Semanas de lunes a domingo, hora del Este; solo tus ciudades. **Exportar CSV** (permiso de exportar
+transacciones) queda en el Historial.
+
+_English:_ **Revenue** tab: 8-week fees (net of refunds), 8-week Pro charges (with MRR) and fees by category over 90
+days, for your cities; CSV export is audited.

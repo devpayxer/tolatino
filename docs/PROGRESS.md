@@ -474,6 +474,9 @@ _Actualizado: 5 nov 2026._
   aceptar, cerrar, simulador); webhook `charge.dispute.*`; pasarela `disputaResponder/Aceptar` + `evidenciaStripe`
   (contrato: campos de evidencia contra la especificación); Colas (detalle con evidencia), Transacciones (estado +
   simulador), Panel › Cobros y 360 › Dinero (etiquetas). Ayuda: disputas.md.
+- **Fase 2 · bloque 2s Ingresos ✓ (6 nov):** `/admin/planes?tab=ing` (`ingresos()` en lib/admin-planes: comisiones netas y
+  Pro por semana, por categoría 90 días; BarChart/HBars del sistema; `ingresosCsv` auditado). Con esto quedan hechos los
+  pendientes de la Fase 2 listados al retomar (2o Dinero, 2p Mensajes, 2q Correo, 2r Disputas, 2s Ingresos).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

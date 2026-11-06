@@ -1,24 +1,24 @@
 "use client";
 /* ADM-PLAN · Planes y suscripciones (Super Admin.dc.html secPlan): MRR, en prueba, cobro fallido y Free al techo; Planes
    (Free y Pro), Suscripciones (filtros por estado; extender prueba, cortesía, quitar cortesía, reintentar cobro) y
-   Comisiones (vigentes y programadas con 30 días). «Ingresos» del diseño llega con Analítica de dinero (LAUNCH-CHECKLIST). */
+   Comisiones (vigentes y programadas con 30 días) e Ingresos (comisiones y Pro de 8 semanas, por categoría, CSV). */
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
-import type { DatosPlanes, TabPlan } from "@/lib/admin-planes";
-import { comisionProgramar, planCortesia, planExtender, planQuitarCortesia, planReintentar } from "./acciones-planes";
+import type { DatosPlanes, Ingresos, TabPlan } from "@/lib/admin-planes";
+import { comisionProgramar, ingresosCsv, planCortesia, planExtender, planQuitarCortesia, planReintentar } from "./acciones-planes";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const A = UI as unknown as Record<"AdminList", ComponentType<any>>;
+const A = UI as unknown as Record<"AdminList" | "BarChart" | "HBars", ComponentType<any>>;
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const EST: Record<string, [string, string, string]> = { trial: ["EN PRUEBA", "action", "En prueba"], active: ["PRO", "signal", "Pro"], canceling: ["PASA A FREE", "neutral", "Pasa a Free"], past_due: ["COBRO FALLIDO", "danger", "Cobro fallido"], courtesy: ["CORTESÍA", "action", "Cortesía"], ended: ["FREE", "neutral", "Free"] };
 const KIND: Record<string, string> = { ped: "Pedidos (Comida, Mercados, Tiendas)", cita: "Citas y solicitudes", bol: "Boletos", apt: "Apartados", rsv: "Reservaciones de mesa" };
 const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" }).format(new Date(iso)).replace(/\./g, "") : "—");
 
-export function Planes({ d, tab, est, editar, aprobar }: { d: DatosPlanes; tab: TabPlan; est: string | null; editar: boolean; aprobar: boolean }) {
+export function Planes({ d, ing, tab, est, editar, aprobar, exportar }: { d: DatosPlanes; ing?: Ingresos | null; tab: TabPlan; est: string | null; editar: boolean; aprobar: boolean; exportar?: boolean }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -39,7 +39,7 @@ export function Planes({ d, tab, est, editar, aprobar }: { d: DatosPlanes; tab: 
       { k: "COBRO FALLIDO", v: String(k.fallidos), s: "3 intentos en 7 días", onClick: () => ir("subs", "past_due") },
       { k: "FREE AL TECHO", v: String(k.techo), s: `${d.cfg.tope} en línea este mes · solo Llamar` },
     ] },
-    { type: "tabs", items: ([["res", "Planes"], ["subs", "Suscripciones"], ["fees", "Comisiones"]] as const).map(([t, l]) => ({ l, on: tab === t, onClick: () => ir(t) })) },
+    { type: "tabs", items: ([["res", "Planes"], ["subs", "Suscripciones"], ["fees", "Comisiones"], ["ing", "Ingresos"]] as const).map(([t, l]) => ({ l, on: tab === t, onClick: () => ir(t) })) },
   ];
   if (tab === "res") {
     B.push({ type: "group", k: "FREE" }, { type: "kv", items: [{ k: "TECHO MENSUAL EN LÍNEA", v: `${d.cfg.tope} pedidos o citas · después, Llamar` }, { k: "PÁGINA", v: "Una sola página, pocas fotos y 5 ítems; reseñas sin respuesta" }] });
@@ -66,6 +66,22 @@ export function Planes({ d, tab, est, editar, aprobar }: { d: DatosPlanes; tab: 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <PanelBloques bloques={B} h1={desk ? 26 : 22} />
+      {tab === "ing" && ing ? (() => {
+        // Ingresos (diseño «ing»): comisiones de 8 semanas (la actual resaltada), Pro de 8 semanas, comisión por categoría.
+        const dia = (ymd: string) => new Intl.DateTimeFormat("es-US", { timeZone: "UTC", day: "numeric", month: "short" }).format(new Date(`${ymd}T12:00:00Z`)).replace(/\./g, "");
+        const tot = ing.semanas.reduce((a, w) => a + w.fee, 0), totPro = ing.semanas.reduce((a, w) => a + w.pro, 0), mx = Math.max(1, ...ing.categorias.map((k) => k.fee));
+        const descargar = async () => { const r = await ingresosCsv(); if (!r.ok || !r.archivo) { setToast(r.ok ? "No se pudo." : r.mensaje); return; }
+          const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([`\ufeff${r.archivo}`], { type: "text/csv;charset=utf-8" })); a.download = r.nombre ?? "tolatino-ingresos.csv"; document.body.appendChild(a); a.click(); a.remove(); setToast(r.mensaje ?? "Descargado."); };
+        return (<>
+          <A.BarChart label="COMISIONES · 8 SEMANAS" value={money(tot)} note={`Más Pro: ${money(totPro)} cobrados en 8 semanas · MRR ${money(d.kpi.mrr)} al mes.`}
+            bars={ing.semanas.map((w, i) => ({ value: w.fee, label: dia(w.ini), color: i === ing.semanas.length - 1 ? "var(--tl-action)" : "rgba(75,55,245,.35)" }))} />
+          <A.BarChart label="COBROS DE PRO · 8 SEMANAS" value={money(totPro)} bars={ing.semanas.map((w, i) => ({ value: w.pro, label: dia(w.ini), color: i === ing.semanas.length - 1 ? "var(--tl-ink)" : "rgba(11,14,18,.3)" }))} />
+          {ing.categorias.length ? <A.HBars label="COMISIÓN POR CATEGORÍA · 90 DÍAS" items={ing.categorias.map((k) => ({ label: k.cat, width: `${Math.round((k.fee / mx) * 100)}%`, value: money(k.fee), color: "var(--tl-ink)" }))} />
+            : <PanelBloques bloques={[{ type: "empty", icon: "dollar", t: "Sin comisiones en 90 días", s: "Aparecen cuando los negocios cobran con tarjeta." }]} />}
+          <PanelBloques bloques={[{ type: "note", tone: "info", icon: "info", t: "Comisión = lo que To’Latino se queda de cada cobro con tarjeta, neto de devoluciones. Pro = cobros de suscripción. Los pagos a los negocios salen cada martes por Stripe." },
+            ...(exportar ? [{ type: "acts" as const, items: [{ l: "Exportar CSV", v: "secondary", icon: "folder", onClick: () => { void descargar(); } }] }] : [])]} />
+        </>);
+      })() : null}
       {tab === "subs" && (filas.length ? <A.AdminList rows={filas.map((x) => ({ icon: "wallet", title: x.nombre, sub: `${EST[x.estado]?.[2] ?? x.estado}${x.fin ? ` · ${x.estado === "trial" ? "termina" : x.estado === "past_due" ? "próximo intento" : x.estado === "ended" ? "desde" : x.estado === "courtesy" ? "hasta" : "próximo cobro"} ${fecha(x.fin)}` : ""}${x.intentos ? ` · intento ${x.intentos} de 3` : ""}${x.ciclo === "year" ? " · anual" : ""}${x.dueño ? ` · ${x.dueño}` : ""}`,
         tag: EST[x.estado]?.[0] ?? x.estado, tone: EST[x.estado]?.[1] ?? "neutral", actions: acciones(x) }))} />
         : <PanelBloques bloques={[{ type: "empty", icon: "wallet", t: "Nada con ese filtro", s: "Prueba otro estado." }]} />)}

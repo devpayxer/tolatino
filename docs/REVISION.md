@@ -365,3 +365,7 @@ _Decisiones (AB): la cola la trabajan Admin y Finanzas (Finanzas ahora ve Colas,
 de dinero. La evidencia sale de nuestros datos (pedido, línea de tiempo, entrega, mensajes, devoluciones); el resumen para
 el banco lo escribe el equipo. Una disputa ya cerrada no cambia con un aviso tarde del banco. Subir fotos de entrega como
 evidencia: LAUNCH-CHECKLIST._
+
+## Fase 2 · 2s Planes › Ingresos
+1. Ana › Planes y suscripciones › **Ingresos**: comisiones y Pro de 8 semanas, comisión por categoría → **Exportar CSV**.
+_Del diseño (pestaña «ing»), con el BarChart y HBars del sistema. Las cifras salen del libro propio (cobros y Pro)._
