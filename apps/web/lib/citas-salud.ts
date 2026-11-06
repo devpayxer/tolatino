@@ -15,6 +15,7 @@ import { herramientaSP } from "./salud-pro";
 type Bi = { es: string; en: string };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, ID = /^\d{1,18}$/;
 export const DIAS_S = 14;
+export { filtroHoy };
 export const MOTIVOS = ["nuevo", "seguimiento", "receta", "papeles", "chequeo"] as const;
 
 async function servicio(c: Q, negocio: string, id: string) {
@@ -26,8 +27,11 @@ async function servicio(c: Q, negocio: string, id: string) {
 async function licenciados(c: Q, negocio: string) {
   return new Set((await c.query<{ id: string }>(`select distinct l.member_id::text as id from licenses l where l.business_id = $1 and l.member_id is not null and l.status = 'valid'`, [negocio])).rows.map((r) => r.id));
 }
-async function preparar(c: Q, negocio: string, svc: string, con: string) {
-  const x = await contexto(c, negocio, ["NEG-SALUD"]);
+/* El motor común de Doctores y Profesionales (4l reusa este): agenda de quien tiene licencia verificada (si el negocio tiene
+   alguna; si no, el negocio) y que hace ese servicio. */
+export async function prepararSP(c: Q, negocio: string, svc: string, con: string, cat: "NEG-SALUD" | "NEG-PRO" = "NEG-SALUD") { return preparar(c, negocio, svc, con, cat); }
+async function preparar(c: Q, negocio: string, svc: string, con: string, cat: "NEG-SALUD" | "NEG-PRO" = "NEG-SALUD") {
+  const x = await contexto(c, negocio, [cat]);
   if (!x || !ID.test(svc)) return null;
   const s = await servicio(c, negocio, svc);
   if (!s || s.k === "walk") return null;
@@ -42,10 +46,10 @@ async function preparar(c: Q, negocio: string, svc: string, con: string) {
 const filtroHoy = (x: Ctx, i: number, tele: boolean) => (h: Hueco) => i > 0 || h.m >= x.now + (tele ? 30 : 60);
 
 export type HorasSalud = { dias: { i: number; ymd: string; dow: number; num: string; off: boolean }[]; sl: Hueco[]; sig: { i: number; m: number } | null; dur: number };
-export async function horasSalud(negocio: string, svc: string, con: string, i0: number): Promise<HorasSalud | null> {
-  const c = db(), P = await preparar(c, negocio, svc, con);
+export async function horasSalud(negocio: string, svc: string, con: string, i0: number, cat: "NEG-SALUD" | "NEG-PRO" = "NEG-SALUD", remoto = false): Promise<HorasSalud | null> {
+  const c = db(), P = await preparar(c, negocio, svc, con, cat);
   if (!P || !P.cand.length) return null;
-  const tele = P.s.k === "tele", dur = Math.max(15, P.s.dur);
+  const tele = P.s.k === "tele" || remoto, dur = Math.max(15, P.s.dur);
   const L = (k: number) => huecos(P.x, P.cand, k, dur, 0, P.occ).filter(filtroHoy(P.x, k, tele));
   const i = Math.max(0, Math.min(DIAS_S - 1, Math.floor(i0) || 0));
   const dias = Array.from({ length: DIAS_S }, (_, k) => { const ymd = fecha(P.x.hoy, k); return { i: k, ymd, dow: new Date(`${ymd}T12:00:00Z`).getUTCDay(), num: String(Number(ymd.slice(8))), off: !L(k).some((h) => h.free) }; });

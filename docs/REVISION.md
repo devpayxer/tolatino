@@ -712,3 +712,9 @@ _Decidido por mí (reversible):_
 2. Ferreira Injury Law: «33 % · SOLO SI GANAS · SI NO, $0». TecnoFix (escritorio): sin textos de abogado, «LISTO EN».
 _Decidido por mí (reversible): hasta la consulta en línea (4l) la hoja ofrece «Llama para tu consulta»; las preguntas frecuentes por tipo quedan para 4m._
 
+## Fase 4 · 4l-1 Consulta con un profesional
+1. Como **Marisol**: Bufete Almonte › Consulta de inmigración › Elegir hora → Por video · Me llegó una carta · nota → hora → Enviar.
+2. Como dueño del bufete (570-555-0166): Hoy › la consulta: situación y nota privada; Confirmar.
+_Decidido por mí (reversible): si la oficina no tiene a nadie con licencia de persona verificada, la consulta es con cualquiera
+del equipo que reciba citas (como en Doctores). La nota rechaza A-number y números de caso._
+

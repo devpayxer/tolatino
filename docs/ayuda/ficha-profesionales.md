@@ -16,7 +16,9 @@ _Pantalla: la página de un negocio de Profesionales › Servicios y Resumen. Ve
 |---|---|
 | Cambia la tarifa del gobierno | El total de la página cambia; un total que ya te mandaron por escrito no. |
 | Alguien te promete un resultado | Desconfía: nadie puede prometer una visa, una green card, un reembolso ni ganar un caso. |
-| Pedir la consulta | Hoy: «Llama para tu consulta». La consulta en línea y el total por escrito llegan en el bloque 4l. |
+| Pedir la consulta | «Elegir hora» → 3 pasos: **Tu trámite** (cómo la quieres: oficina, video o teléfono; tu situación; una nota), **día y hora**, **revisa y envía**. Hoy pagas $0. |
+| La nota | Solo la ve la oficina, va cifrada y se borra 30 días después. No escribas números de caso, A-number ni documentos (no se acepta). |
+| Los avisos a la oficina | Dicen quién pide y cuándo, nunca el trámite. |
 
 ---
 ## What it does (EN)

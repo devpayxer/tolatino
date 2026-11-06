@@ -90,6 +90,13 @@ export function citaDetalle(c: Ctx): Sec {
     ...x.adds.map((a) => ({ icon: "plus", t: nm(a.name), r: `+${money(a.cents)}`, compact: true, chev: false } as Fila)),
   ];
   if (det.length) out.push({ type: "rows", k: E2("LO QUE PIDIÓ", "WHAT THEY ASKED FOR"), items: det });
+  // Profesionales (4l): cómo, la situación y la nota privada.
+  if (x.prof) {
+    const p = x.prof, SIT: Record<string, [string, string]> = { primera: ["Primera vez", "First time"], caso: ["Ya tiene un caso", "Has a case"], carta: ["Le llegó una carta", "Got a letter"], fecha: ["Tiene fecha límite", "Has a deadline"] };
+    const MO: Record<string, [string, string]> = { oficina: ["En la oficina", "At the office"], video: ["Por video", "By video"], telefono: ["Por teléfono", "By phone"] };
+    out.push({ type: "kv", items: [{ k: E2("CÓMO", "HOW"), v: (MO[p.modo] ?? MO.oficina!)[es ? 0 : 1] }, { k: E2("PRECIO", "PRICE"), v: nm(p.precio) }, ...(p.sit ? [{ k: E2("SITUACIÓN", "SITUATION"), v: (SIT[p.sit] ?? [p.sit, p.sit])[es ? 0 : 1] }] : [])] });
+    if (p.nota) out.push({ type: "note", tone: "warn", icon: "lock", t: `${E2("Nota del cliente (privada): ", "Client note (private): ")}${p.nota}` });
+  }
   // Doctores (4j): el seguro, para quién, el motivo y la nota (cifrada; se borra 30 días después de la cita).
   if (x.sal) {
     const s = x.sal, MOT: Record<string, [string, string]> = { nuevo: ["Algo nuevo", "Something new"], seguimiento: ["Seguimiento", "Follow-up"], receta: ["Receta o resultados", "Prescription or results"], papeles: ["Papeles (trabajo, escuela)", "Forms (work, school)"], chequeo: ["Chequeo", "Checkup"] };

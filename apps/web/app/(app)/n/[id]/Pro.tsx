@@ -4,7 +4,9 @@
    resultado», la licencia y lo que no puede; los no legales: listo en, garantía, presupuesto antes («Nada se cobra sin tu OK»).
    Compuesto con el sistema de diseño (Button, Icon). El servidor decide; el cliente solo muestra. */
 import * as UI from "@tolatino/ui";
+import { useRouter } from "next/navigation";
 import { useState, type ComponentType, type MouseEvent } from "react";
+import { precioPro, usd } from "@/lib/pro-comun";
 import type { ProPublico, SvcPro } from "@/lib/pro-publico";
 
 type N = "Icon" | "Button";
@@ -13,20 +15,7 @@ const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
-const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
-const UNIT: Record<string, [string, string]> = { cheque: ["DEL CHEQUE", "OF THE CHECK"], fianza: ["DE LA FIANZA", "OF THE BOND"], carga: ["POR CARGA", "PER LOAD"], caso: ["DE LO QUE GANES", "OF WHAT YOU WIN"] };
 const LANG: Record<string, [string, string]> = { es: ["Español", "Spanish"], en: ["English", "English"], pt: ["Português", "Portuguese"], ht: ["Kreyòl", "Haitian Creole"] };
-
-/* El precio de cada forma (priceFor): el total, nunca escondido. */
-export function precioPro(s: SvcPro, es: boolean): { l: string; s: string } {
-  const E2 = (a: string, b: string) => (es ? a : b);
-  if (s.k === "fijo") return s.gov ? { l: `${usd(s.cents + s.gov)}${s.mes ? E2("/mes", "/mo") : ""}`, s: E2(`HONORARIO ${usd(s.cents)} + GOBIERNO ${usd(s.gov)}`, `FEE ${usd(s.cents)} + GOVERNMENT ${usd(s.gov)}`) } : { l: `${usd(s.cents)}${s.mes ? E2("/mes", "/mo") : ""}`, s: E2("PRECIO FIJO", "FLAT PRICE") };
-  if (s.k === "cons") return s.cents ? { l: usd(s.cents), s: s.cred ? E2("SE DESCUENTA SI LO CONTRATAS", "CREDITED IF YOU HIRE") : E2("CONSULTA", "CONSULTATION") } : { l: E2("Gratis", "Free"), s: E2("CONSULTA GRATIS", "FREE CONSULTATION") };
-  if (s.k === "hora") return { l: `${usd(s.cents)}${E2("/hora", "/hour")}`, s: s.hrs ? E2(`ESTIMADO ${s.hrs} H`, `ESTIMATED ${s.hrs} H`) : E2("POR HORA", "HOURLY") };
-  if (s.k === "pct") return { l: `${s.cents / 100} %`, s: `${(UNIT[s.unit ?? "caso"] ?? UNIT.caso!)[es ? 0 : 1]} · ${E2("SOLO SI GANAS · SI NO, $0", "ONLY IF YOU WIN · IF NOT, $0")}` };
-  if (s.k === "cotiza") return s.cents ? { l: `${E2("Desde ", "From ")}${usd(s.cents)}`, s: E2("TOTAL POR ESCRITO EN LA CONSULTA", "TOTAL IN WRITING AT THE CONSULTATION") } : { l: E2("Se cotiza", "Quoted"), s: E2("TOTAL POR ESCRITO EN LA CONSULTA", "TOTAL IN WRITING AT THE CONSULTATION") };
-  return { l: s.cents ? usd(s.cents) : E2("Gratis", "Free"), s: E2("SIN CITA", "WALK-IN") };
-}
 
 export function usePro(pp: ProPublico | null, es: boolean) {
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -103,13 +92,16 @@ export function PrTab({ v, desk }: { v: Pr; desk: boolean }) {
 /* La hoja del servicio (prof: 1): precio, EL TOTAL, lo que no incluye, ¿con quién? (con su licencia) y la CTA. */
 export function PrHoja({ v }: { v: Pr }) {
   const { pp, E2, es, nm } = v;
+  const router = useRouter();
   const [con, setCon] = useState("any");
   if (!v.hoja) return null;
   const s = pp.servicios.find((x) => x.id === v.hoja);
   if (!s) return null;
   const P = precioPro(s, es), walk = s.k === "walk";
   const gente = pp.gente.filter((p) => !s.who.length || s.who.includes(p.id));
-  const cta = walk ? E2("Cómo llegar", "Directions") : pp.negocio.telefono ? E2("Llama para tu consulta", "Call for your consultation") : E2("Pide tu consulta en la oficina", "Ask at the office");
+  const llamar = !walk && !pp.booking;
+  const cta = walk ? E2("Cómo llegar", "Directions") : llamar ? (pp.negocio.telefono ? E2("Llama para tu consulta", "Call for your consultation") : E2("Pide tu consulta en la oficina", "Ask at the office")) : E2("Elegir hora", "Choose a time");
+  const go = () => { if (walk) return v.llegar(); if (llamar) return v.llamar(); const q = new URLSearchParams({ s: s.id }); if (con !== "any") q.set("c", con); router.push(`/n/${pp.negocio.id}/tramite?${q.toString()}`); };
   return (
     <div data-screen-label="Servicio · Profesionales" className="fixed inset-0 z-[60]">
       <div onClick={v.cerrar} className="absolute inset-0 bg-ink/50" />
@@ -154,7 +146,7 @@ export function PrHoja({ v }: { v: Pr }) {
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
           <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">TOTAL</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div></div>
-          <div className="flex min-w-0 flex-1"><Button block icon={walk ? "pin" : "phone"} onClick={walk ? v.llegar : v.llamar}>{cta}</Button></div>
+          <div className="flex min-w-0 flex-1"><Button block icon={walk ? "pin" : llamar ? "phone" : "calendar"} onClick={go}>{cta}</Button></div>
         </div>
       </div>
     </div>

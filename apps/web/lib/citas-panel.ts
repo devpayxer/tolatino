@@ -63,6 +63,7 @@ export type CitaPanel = FilaCita & {
   est: EstadoEstimado | null; rate: number; taxBp: number; pre: { num: string; lo: number; hi: number } | null; plan: string | null; // 4d: el estimado, la tarifa y el impuesto de piezas (para ver el total mientras se arma)
   of: { veh: string | null; mi: number | null; casa: string | null; inq: boolean; w: string | null; win: number | null; luces: string[]; area: string | null; acceso: string | null; accesoNota: string | null; piezas: boolean } | null;
   // Doctores (4j · §3): lo ve solo el consultorio de esta cita, con acceso a «Hoy y pedidos». La nota se descifra aquí y se borra a los 30 días.
+  prof: { modo: string; sit: string | null; nota: string | null; precio: Bi } | null; // Profesionales (4l): situación (clave), nota cifrada, cómo
   sal: { seguro: Bi; acepta: boolean; ninguno: boolean; last4: string | null; para: string; motivo: string | null; nota: string | null; interp: boolean; tele: boolean; precio: Bi } | null;
 };
 export async function citaPanel(negocio: string, numero: string): Promise<CitaPanel | null> {
@@ -106,6 +107,11 @@ export async function citaPanel(negocio: string, numero: string): Promise<CitaPa
     alt: r.alt ? { ymd: r.alt.ymd, m: r.alt.m, hasta: r.alt_hasta ?? "" } : null, cambio: r.chgp ? { ymd: r.chgp.ymd, m: r.chgp.m, hasta: r.chg_hasta ?? "" } : null,
     tl: tl.map((e) => ({ t: e.note ?? K[e.kind] ?? { es: e.kind, en: e.kind }, at: e.at })),
     est, rate: x4d.rate, taxBp: x4d.tax, pre: d.pre ?? null, plan: d.plan ?? null,
+    prof: d.rubro === "pro" ? await (async () => {
+      const z = r.det as { modo?: string; precio?: Bi };
+      const p = (await db().query<{ reason: string | null; note_enc: Buffer | null }>(`select reason, note_enc from op_private where operation_id = $1::bigint`, [r.id])).rows[0];
+      return { modo: z.modo ?? "oficina", sit: p?.reason ?? null, nota: descifrar(p?.note_enc), precio: z.precio ?? { es: "", en: "" } };
+    })() : null,
     sal: d.rubro === "salud" ? await (async () => {
       const z = r.det as { seguro?: { kind?: string; acepta?: boolean; last4?: string | null; nombre?: Bi }; para?: string; tele?: boolean; precio?: Bi };
       const p = (await db().query<{ reason: string | null; note_enc: Buffer | null; interp: boolean }>(`select reason, note_enc, interp from op_private where operation_id = $1::bigint`, [r.id])).rows[0];

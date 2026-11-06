@@ -88,6 +88,12 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita confirmada", "Visit confirmed"), `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}. ${sal.acepta ? E2("Aceptaron tu seguro. ", "They took your insurance. ") : ""}${sal.tele ? E2("El enlace del video te llega a tus Avisos 10 minutos antes.", "The video link arrives in your Alerts 10 minutes before.") : E2("Llega 15 minutos antes con tu tarjeta del seguro y una identificación.", "Arrive 15 minutes early with your insurance card and an ID.")}`, E2("CONFIRMADA", "CONFIRMED"), "bg-signal/20", "var(--tl-open-text)"];
     H.done = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita terminada", "Visit done"), `${cap(diaL)}${E2(" con ", " with ")}${withL}. ${E2("Pagaste en la consulta.", "You paid at the visit.")}`, E2("TERMINADA", "DONE"), "bg-signal/20", "var(--tl-open-text)"];
   }
+  // Profesionales (4l): la consulta; nada se cobra en la app.
+  const prof = c.pro;
+  if (prof) {
+    H.pend = ["clock", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("Solicitud enviada", "Request sent"), E2(`Confirman la hora en unos ${mins}. No se ha cobrado nada.`, `They confirm the time in about ${mins}. Nothing has been charged.`), E2("PENDIENTE DE CONFIRMAR", "WAITING FOR CONFIRMATION"), "bg-pro/20", "var(--tl-pro-ink)"];
+    H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Consulta confirmada", "Consultation confirmed"), `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}. ${prof.modo === "oficina" ? E2("Trae tu identificación y los papeles de tu trámite.", "Bring your ID and the papers for your case.") : E2("El enlace o la llamada te llegan a tus Avisos 10 minutos antes.", "The link or call arrives in your Alerts 10 minutes before.")}`, E2("CONFIRMADA", "CONFIRMED"), "bg-signal/20", "var(--tl-open-text)"];
+  }
   const [ic, icBg, icFg, t, line, pill, pillBg, pillFg] = H[c.st];
   const pend = c.st === "pend", ok = c.st === "ok", alt = c.st === "alt", done = c.st === "done", dead = c.st === "no" || c.st === "exp" || c.st === "cx";
   const steps = [{ label: E2("Solicitud enviada", "Request sent"), time: horaL(c.enviada), state: "done" },
@@ -105,6 +111,11 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   const paraL = c.para === "me" ? yo : `${c.nombre ?? E2("Otra persona", "Someone else")}${c.para === "kid" && c.edad ? ` · ${c.edad}${E2(" años", " yrs")}` : ""}`;
   const rows = [[E2("SERVICIO", "SERVICE"), `${nm(c.svc)}${optL ? ` · ${optL}` : ""}`], ...(addL ? [["EXTRAS", addL]] : []), [E2("CUÁNDO", "WHEN"), `${cap(diaL)} · ${horaL(c.m)} – ${horaL(c.m + c.dur)}`],
     [E2("CON", "WITH"), withL], ...(c.veh ? [[E2("VEHÍCULO", "VEHICLE"), c.veh]] : []), [E2("DÓNDE", "WHERE"), c.casa ?? c.negocio.direccion ?? c.negocio.nombre], ...(c.rubro ? [] : [[E2("PARA", "FOR"), paraL]]), ...(c.nota ? [[E2("NOTA", "NOTE"), c.nota]] : []), ["TOTAL", dinero(c.est && (c.est.estimado || c.est.extras.length) ? c.est.dinero.final : c.total)]];
+  if (prof) {
+    const MO: Record<string, string> = { oficina: E2("En la oficina", "At the office"), video: E2("Por video", "By video"), telefono: E2("Por teléfono", "By phone") };
+    rows.splice(0, rows.length, [E2("SERVICIO", "SERVICE"), nm(c.svc)], [E2("CUÁNDO", "WHEN"), `${cap(diaL)} · ${horaL(c.m)} – ${horaL(c.m + c.dur)}`], [E2("CÓMO", "HOW"), MO[prof.modo] ?? ""],
+      [E2("CON", "WITH"), c.con?.nombre ?? E2("El primero libre", "First available")], [E2("DÓNDE", "WHERE"), prof.modo === "oficina" ? c.negocio.direccion ?? c.negocio.nombre : E2("A distancia", "Remote")], [E2("PRECIO", "PRICE"), nm(prof.precio)]);
+  }
   if (sal) {
     const PA: Record<string, string> = { yo: E2("Para mí", "For me"), hijo: E2("Para mi hijo o hija", "For my child"), otro: E2("Para otra persona", "For someone else") };
     rows.splice(0, rows.length, [E2("SERVICIO", "SERVICE"), nm(c.svc)], [E2("CUÁNDO", "WHEN"), `${cap(diaL)} · ${horaL(c.m)} – ${horaL(c.m + c.dur)}`], [E2("CON", "WITH"), c.con?.nombre ?? E2("El primero libre", "First available")],
@@ -119,12 +130,13 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     else if (c.perdio || c.pago === "captured") plata.push(["warning", `${E2("Se queda con ", "Kept by ")}${who1}`, dinero(c.dep), "var(--tl-danger)", E2("Cancelación tardía", "Late cancellation")]);
     else plata.push(["check", E2("Depósito devuelto", "Deposit refunded"), dinero(c.dep), "var(--tl-open-text)", `${tarjeta}${E2(" · 1 a 5 días hábiles", " · 1 to 5 business days")}`]);
   }
-  if (!dead && sal) plata.push(["store", E2("En la consulta", "At the visit"), nm(sal.precio).split(" · ")[0] ?? "", "var(--tl-ink)", E2("Copago o precio sin seguro. Nada se cobró en la app.", "Copay or uninsured price. Nothing was charged in the app.")]);
+  if (!dead && prof) plata.push(["store", E2("En la oficina", "At the office"), c.total ? dinero(c.total) : "$0", "var(--tl-ink)", E2("Antes de contratar te dan el total por escrito. Nada se cobró en la app.", "Before hiring you get the total in writing. Nothing was charged in the app.")]);
+  else if (!dead && sal) plata.push(["store", E2("En la consulta", "At the visit"), nm(sal.precio).split(" · ")[0] ?? "", "var(--tl-ink)", E2("Copago o precio sin seguro. Nada se cobró en la app.", "Copay or uninsured price. Nothing was charged in the app.")]);
   else if (!dead) plata.push(["store", `${cap(diaL)}, ${restW}`, dinero(c.dep ? rest : c.total), "var(--tl-ink)", silla && c.con ? E2(`Efectivo o tarjeta, a ${c.con.corto}. No al local.`, `Cash or card, to ${c.con.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card.")]);
   const foto = silla && c.con?.foto ? c.con.foto : c.negocio.foto;
   const llamar = () => { if (c.negocio.telefono) location.href = `tel:${c.negocio.telefono}`; };
   const DLs = (i: number, ymd: string) => { const z = new Date(`${ymd}T12:00:00Z`); return i === 0 ? E2("hoy", "today") : i === 1 ? E2("mañana", "tomorrow") : `${(DS[es ? "es" : "en"][z.getUTCDay()] ?? "").toLowerCase()} ${z.getUTCDate()}`; };
-  const otra = sal ? `/n/${c.negocio.id}/consulta?s=${c.svcId ?? ""}` : `/n/${c.negocio.id}/cita?${new URLSearchParams({ s: c.svcId ?? "", ...(c.optIdx ? { o: c.optIdx } : {}), ...(c.addIds.length ? { a: c.addIds.join(",") } : {}), con: c.mid ?? "any" })}`;
+  const otra = prof ? `/n/${c.negocio.id}/tramite?s=${c.svcId ?? ""}` : sal ? `/n/${c.negocio.id}/consulta?s=${c.svcId ?? ""}` : `/n/${c.negocio.id}/cita?${new URLSearchParams({ s: c.svcId ?? "", ...(c.optIdx ? { o: c.optIdx } : {}), ...(c.addIds.length ? { a: c.addIds.join(",") } : {}), con: c.mid ?? "any" })}`;
   const aTiempo = c.mins >= c.cxh * 60, lateOk = ok && !c.late && c.mins <= 120 && c.mins > -15;
   // «Al calendario»: un .ics con la hora de la cita (hora local del negocio).
   const ics = () => {
@@ -143,7 +155,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)], ["help", c.rubro === "hogar" ? E2("Ayuda con la visita", "Visit help") : E2("Ayuda con la cita", "Appointment help"), () => router.push(`/cita/${c.numero}/ayuda`)]]
       : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
   // Doctores: cambiar = cancelar gratis y pedir otra (el consultorio revisa el seguro de nuevo); por video, sin «Cómo llegar».
-  const actsV = sal ? acts.filter(([i]) => i !== "edit" && !(sal.tele && i === "pin")) : hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
+  const actsV = prof ? acts.filter(([i]) => i !== "edit" && !(prof.modo !== "oficina" && i === "pin")) : sal ? acts.filter(([i]) => i !== "edit" && !(sal.tele && i === "pin")) : hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
   // Doctores · «No aceptan tu seguro»: la hora sigue guardada 2 h; el paciente elige.
   const segOpc = sal?.seg && pend ? (
     <div data-screen-label="Cita · no aceptan tu seguro" className="flex flex-col gap-2.5 rounded-[20px] border-[1.5px] border-ink bg-white p-4">

@@ -50,6 +50,8 @@ async function datos(numero: string) {
 /* Doctores (4j · §3): cada aviso tiene su versión neutra (sin consultorio, servicio ni paciente); el que no la tiene no sale. */
 const SAL_C: Record<string, string> = { cita_ok: "sal_cita_ok", cita_ok_dep: "sal_cita_ok", cita_no: "sal_cita_no", cita_alt: "sal_cita_alt", cita_exp: "sal_cita_exp", cita_rec: "sal_cita_rec", cita_alt_fin: "sal_cita_alt_fin" };
 const SAL_N: Record<string, string> = { biz_cita_cx: "biz_sal_cx", biz_cita_alt_ok: "biz_sal_alt_ok", biz_cita_tarde: "biz_sal_tarde" };
+// Profesionales (4l): al negocio nunca el trámite (los avisos que lo nombran tienen su versión sin {servicio}).
+const PRO_N: Record<string, string> = { biz_cita_cx: "biz_pro_cx" };
 async function avisarCliente(numero: string, tpl: string, extra: Record<string, string> = {}) {
   const d = await datos(numero);
   if (!d) return;
@@ -62,6 +64,7 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   const d = await datos(numero);
   if (!d) return;
   if (d.rubro === "salud") { const t = SAL_N[tpl]; if (!t) return; tpl = t; }
+  if (d.rubro === "pro" && PRO_N[tpl]) tpl = PRO_N[tpl]!;
   const { avisarNegocio } = await import("./avisos");
   await avisarNegocio(d.biz, tpl, { cliente: d.cliente, servicio: d.servicio, dia: d.dia, hora: d.hora, dep: "", ...extra }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
 }

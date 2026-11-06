@@ -45,7 +45,7 @@ export async function proPublico(negocio: string): Promise<ProPublico | null> {
     negocio: { id: b.id, nombre: b.name, direccion: b.address, telefono: b.phone, foto: b.foto },
     secciones: S.rows.filter((s) => usados.has(s.id)), servicios: I.rows, gente: G.rows.filter((p) => p.lic || !H.legal), h: H,
     lic: L.rows[0] ?? null, cant: cant && cant.es ? cant : null, langs: b.langs ?? ["es"],
-    // La consulta y el total por escrito se piden en línea con 4l; hasta entonces, la hoja ofrece llamar.
-    booking: false,
+    // 4l: la consulta se pide en línea (/n/{id}/tramite) cuando la oficina toma citas.
+    booking: (b.mods ?? []).includes("citas") && !(b.off ?? {}).citas,
   };
 }
