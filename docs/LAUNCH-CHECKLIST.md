@@ -309,3 +309,15 @@ en el momento. Se marca solo cuando está hecho de verdad.
   el botón).
 - [ ] **Vacantes en Buscar y en la portada de la ciudad** («Empleos en Hazleton»): el diseño las ubica en la pestaña del
   negocio; decidir si van en Buscar.
+
+## Mi cuenta (bloque 2h, 6 nov 2026)
+- [ ] **Borrado definitivo a los 30 días** de lo que pidió la persona (`users.delete_at`, `delete_reason`): un trabajo
+  programado borra perfil, direcciones, guardados, reseñas y comentarios, cierra solicitudes y quita los pedidos de la
+  cuenta (lo que la pantalla promete). Hoy solo queda programado y se cancela al entrar.
+- [ ] **Verificar el correo** (enlace) y **recibos por correo**: con el proveedor de correo.
+- [ ] **Avisos al teléfono** que respeten `users.notif_prefs` (pedidos, reservas, empleos, negocios guardados, correo,
+  horas de silencio) y el aviso «cambiaste tu número» al número viejo.
+- [ ] **Boletos, Mensajes, Pagos y Wallet, Apartados, platos y eventos guardados, Ayuda y soporte, Descargar mis datos,
+  letra más grande, ajustes de la comunidad**: con sus fases (REVISION 11).
+- [ ] **Invita vecinos con código** (quién invitó a quién) cuando exista la gamificación.
+- [ ] **Alertas de búsqueda** («Avísame cuando haya») listadas en Avisos con «Quitar».

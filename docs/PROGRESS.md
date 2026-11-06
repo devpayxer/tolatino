@@ -391,7 +391,16 @@ _Actualizado: 5 nov 2026._
   publicar / ya la cubrí / duplicar / quitar, y «Solicitudes de empleo nuevas» en Hoy. Super Admin: ocultar / mostrar
   vacante y pausar Jobs (360 › Contenido). Semilla 0009 (Sabor y El Fogón). Guardianes nuevos `promesaSms` y
   `botonEnColumna`. Probado con Playwright: 36 comprobaciones; 2b, 2c, 2e, 2f, 2g-1 y 2g-2 otra vez en verde. Ayuda
-  `jobs.md`. **Sigue: 2h Mi cuenta.**
+  `jobs.md`.
+- **Fase 2 · bloque 2h Mi cuenta ✓ (6 nov):** migración 0030 (`users.notif_prefs`, `delete_reason`, código
+  `account_delete`, historial con foto / borrar / cancelar borrado). Resumen (tarjeta de vecino, completa tu cuenta, tu
+  semana, pendiente de ti, accesos, tu apoyo al barrio), Pedidos (filtros, por mes, cursor), Citas y reservas, Guardados,
+  Reseñas, Empleos, Perfil (foto, nombre, apodo, correo sin verificar), Cambiar mi número (código al nuevo), Avisos
+  (se guardan), Ajustes (idioma de la cuenta), Mi ciudad (30 días, solo abiertas), Privacidad (sesiones), Borrar (3 pasos,
+  30 días; entrar lo cancela), Invita vecinos. Marco con bloques nuevos (tarjeta de vecino, completa tu cuenta, semana,
+  accesos, apoyo, negocios, chips, «Ver más», solo teléfono / escritorio). Super Admin › Usuarios 360 muestra correo y
+  borrado. Guardián nuevo `idSegunTipo` (cerrar sesión no cerraba: id uuid pasado como bigint). Probado con Playwright:
+  29 comprobaciones. Ayuda `mi-cuenta.md`. **Sigue: 2i admin.**
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

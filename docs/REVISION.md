@@ -57,6 +57,19 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
      encargado», que nadie escribió). Las horas que se ofrecen son las horas en punto en que el negocio está abierto.
    - «Solicitudes respondidas · suelen esperar 2–3 días» → «esperan tu respuesta» (no medimos aún cuánto tardan).
    - **Lo que vendes** ahora sale para todas las categorías (antes solo Comida), porque Jobs sirve a cualquier negocio Pro.
+11. **Mi cuenta: lo que no muestro todavía y lo que compuse** (dime si lo dejo así):
+   - Sin **Boletos** (llega con Eventos), **Mensajes** y el chat con el negocio (llega con Mensajes), **Pagos y Wallet**
+     (llega con Stripe, pregunta 3), **Apartados**, platos y eventos guardados, rango, monedas, puntos, «Ayuda y soporte»,
+     «Letra más grande», «Descargar mis datos» y los ajustes de la comunidad (llegan con sus fases).
+   - La tarjeta de vecino muestra **Reseñas, Guardados y Sigues** en vez de Rango, Monedas y Wallet.
+   - **Pedidos** y **Citas** abren la página del pedido o de la reservación que ya existe (recibo y estado en vivo) en vez de
+     una pantalla de recibo aparte. «Ver más» (paginación) es un botón del sistema que el diseño no traía.
+   - **Empleos** (tus solicitudes) no está en el diseño de Mi cuenta: la compuse con las piezas del marco (sección, filas,
+     vacío) y la puse en la navegación.
+   - **Avisos** dice arriba que los avisos al teléfono llegan pronto; se guardan tus preferencias. Sin la fila de boletos ni
+     de comunidad.
+   - **Invita vecinos** comparte el enlace de To'Latino, sin código de referido ni puntos.
+   - Cambiar el número no «avisa al número viejo» (no hay SMS todavía).
 5. **«Avísame si se libera»** (lista de espera de una hora sin mesa) y **«Otros restaurantes con mesa»** en la pantalla
    de «no pudo»: necesitan los avisos por SMS para ser de verdad. Se hacen con las notificaciones.
 
@@ -193,3 +206,16 @@ _Sabor Dominicano trae 2 vacantes del prototipo (ayudante de cocina $15–17/hor
 5. Ana › Negocios › Sabor › **Contenido** › VACANTES: **Ocultar la vacante** con motivo (Pedro ve OCULTA POR TO'LATINO) y
    **Pausar Jobs** (la pestaña se va; Pedro ve el motivo).
 6. Escritorio: la vacante con la columna de la derecha (Aplicar, guardar, compartir) y el panel con la solicitud a la derecha.
+
+## Fase 2 · 2h Mi cuenta
+_Entra como Marisol (5705550122). En el sandbox los códigos salen en pantalla («Sandbox: el código es …»)._
+1. **Mi cuenta**: tu tarjeta, «Completa tu cuenta», **Tu semana** y **Pendiente de ti**; abajo, tu apoyo al barrio del mes.
+2. **Pedidos**: filtra Entregados y Cancelados; «Ver más pedidos»; toca uno → abre su página. «Volver a pedir».
+3. **Citas y reservas** → Pasadas. **Guardados**: guarda un negocio con el corazón y míralo aquí; «Editar» → Quitar.
+4. **Reseñas** → Por escribir → «Escribir reseña». **Empleos**: tu solicitud de la vacante.
+5. **Perfil**: sube una foto, pon cómo te dicen y un correo → Guardar. Teléfono → **Cambiar** → número nuevo → el código →
+   entras con el nuevo (vuelve a cambiarlo al tuyo igual).
+6. **Ajustes**: cambia a English y de vuelta; **Mi ciudad**; **Privacidad**: entra desde otro teléfono y ciérrale la
+   sesión desde aquí.
+7. **Borrar mi cuenta**: los 3 pasos con el código → Mi cuenta dice la fecha → **Cancelar el borrado** (o entra otra vez).
+8. Escritorio: la navegación a la izquierda y la tarjeta de invitar a la derecha.

@@ -1,0 +1,34 @@
+"use client";
+/* USR-AVISOS (diseño «To'Latino Mi cuenta» · notifV): lo que siempre te llega, pedidos y reservas, empleos, negocios que
+   guardas, correo y horas de silencio. Los avisos al teléfono todavía no salen: tus preferencias quedan guardadas y se
+   aplican desde el primero (anotado en LAUNCH-CHECKLIST). Sin comunidad ni boletos hasta que existan. */
+import { useState } from "react";
+import type { avisosDe } from "@/lib/perfil";
+import { avisoGuardar } from "../acciones-perfil";
+import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
+
+type P = Awaited<ReturnType<typeof avisosDe>>;
+export function Avisos({ p, es, yo }: { p: P; es: boolean; yo: Yo }) {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  const ui = useCuentaUi();
+  const [v, setV] = useState(p);
+  const tg = async (k: keyof P) => {
+    const nv = !v[k]; setV({ ...v, [k]: nv });
+    const r = await avisoGuardar(k, nv).catch(() => null);
+    if (!r?.ok) { setV((x) => ({ ...x, [k]: !nv })); ui.toast(E2("No se pudo guardar. Prueba de nuevo.", "Could not save. Try again.")); }
+  };
+  const G: [string, [keyof P, string, string][]][] = [
+    [E2("PEDIDOS Y RESERVAS", "ORDERS AND BOOKINGS"), [["ord", E2("Cómo va tu pedido", "Order updates"), E2("ACEPTADO · EN CAMINO · LISTO", "ACCEPTED · ON THE WAY · READY")], ["cit", E2("Respuesta a tus reservaciones", "Booking replies"), E2("CONFIRMADA · OTRA HORA · NO PUDO", "CONFIRMED · NEW TIME · DECLINED")]]],
+    [E2("EMPLEOS", "JOBS"), [["emp", E2("Respuesta a tus solicitudes", "Replies to your applications"), E2("VISTA · TE VAN A LLAMAR · ENTREVISTA", "SEEN · THEY WILL CALL · INTERVIEW")]]],
+    [E2("NEGOCIOS QUE GUARDAS", "SAVED BUSINESSES"), [["hoy", E2("Lo que traen hoy", "What they have today"), E2("SUS NOVEDADES", "THEIR UPDATES")], ["of", E2("Ofertas", "Deals"), E2("MÁXIMO 1 AL DÍA", "AT MOST 1 A DAY")]]],
+    [E2("CORREO", "EMAIL"), [["mailR", E2("Recibos", "Receipts"), E2("DE CADA PEDIDO Y RESERVACIÓN", "FOR EVERY ORDER AND BOOKING")], ["mailW", E2("Resumen semanal del barrio", "Weekly neighborhood digest"), E2("LOS LUNES", "MONDAYS")]]],
+  ];
+  const B: Bloque[] = [
+    { type: "note", tone: "warn", ic: "bell", t: E2("Los avisos al teléfono llegan pronto", "Phone notifications are coming soon"), s: E2("Mientras, todo lo ves en Mi cuenta y en la página de cada pedido, reservación o solicitud. Lo que elijas aquí queda guardado y se aplica desde el primer aviso.", "Meanwhile you see everything in My account and on each order, booking or application page. What you choose here is saved and applies from the first notification.") },
+    { type: "note", tone: "info", ic: "lock", t: E2("Esto siempre te llega", "You always get these"), s: E2("El código para entrar. No se apaga.", "Your sign-in code. It cannot be turned off.") },
+  ];
+  G.forEach(([t, rows], gi) => B.push({ type: "sec", t, fs: "14px", mt: gi ? "8px" : "4px" }, { type: "rows", rows: rows.map(([k, l, s]) => ({ key: k, t: l, s, tog: v[k], onTog: () => void tg(k) })) }));
+  B.push({ type: "sec", t: E2("Horas de silencio", "Quiet hours"), fs: "14px", mt: "8px" }, { type: "rows", rows: [{ ic: "clock", t: E2("De 10 PM a 7 AM", "10 PM to 7 AM"), s: E2("SOLO PASA LO CRÍTICO", "ONLY CRITICAL ONES GET THROUGH"), tog: v.quiet, onTog: () => void tg("quiet") }] });
+  return <Marco es={es} code="USR-AVISOS" back="/cuenta" t={E2("Avisos", "Notifications")} s={E2("QUÉ TE LLEGA Y CUÁNDO", "WHAT YOU GET AND WHEN")} blocks={B} yo={yo} ui={ui}
+    rcards={[{ label: "Avisos · regla", k: E2("NUESTRA REGLA", "OUR RULE"), t: E2("Nunca publicidad por aquí.", "Never ads here."), s: E2("Agrupamos lo que se puede: un aviso con todo, no tres.", "We group what we can: one notification with everything, not three.") }]} />;
+}

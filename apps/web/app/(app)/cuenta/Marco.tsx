@@ -7,15 +7,15 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 
-type N = "Icon" | "Button" | "Chip" | "Tag";
+type N = "Icon" | "Button" | "Chip" | "Tag" | "NeighborCard" | "CompleteAccount" | "WeekAgenda" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button, Chip, Tag } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Button, Chip, Tag, NeighborCard, CompleteAccount, WeekAgenda, BusinessRow } = UI as unknown as Record<N, ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
 const LINE = "1px solid rgba(11,14,18,.07)";
 type Fn = () => void;
 
 export type Fila = {
-  t: string; s?: string; x?: string; ic?: string; ibg?: string; ifg?: string; al?: "center" | "flex-start"; tag?: [string, string] | null;
+  t: string; s?: string; x?: string; ic?: string; ibg?: string; ifg?: string; ph?: string | null; ini?: string; date?: { dd: string; mo: string }; dbg?: string; dfg?: string; al?: "center" | "flex-start"; tag?: [string, string] | null;
   v?: string; vs?: string; chev?: boolean; on?: Fn; acts?: [string, string, Fn][]; tog?: boolean; onTog?: Fn; key?: string;
 };
 export type Campo = {
@@ -29,14 +29,30 @@ export type Bloque =
   | { type: "form"; fields: Campo[] }
   | { type: "kv"; kw?: string; rows: { k: string; v: string; l?: string; on?: Fn }[] }
   | { type: "empty"; ic: string; t: string; s: string; cta?: string; onCta?: Fn }
-  | { type: "acts"; btns: [string, string, string, Fn, boolean?][]; cols?: string };
+  | { type: "acts"; btns: [string, string, string, Fn, boolean?][]; cols?: string }
+  // Resumen (homeV): tarjeta de vecino, completa tu cuenta, tu semana, accesos y tu apoyo al barrio.
+  | { type: "hero"; name: string; nick?: string; photo?: string; ini: string; city: string; badge: string; cells: { label: string; value: string; color: string; onClick?: Fn }[]; onMe: Fn }
+  | { type: "prog"; k: string; t: string; al: string; items: { label: string; done: boolean; onClick?: Fn }[] }
+  | { type: "agenda"; items: { day: string; today: boolean; time: string; title: string; meta: string; tag: string; tone: string; dot: string; onClick: Fn }[] }
+  | { type: "tiles"; cols: string; tiles: { l: string; ic: string; n?: number; on: Fn }[] }
+  | { type: "stats"; k: string; t: string; cells: { v: string; l: string }[] }
+  | { type: "chips"; items: { l: string; on: boolean; onClick: Fn }[] }
+  | { type: "more"; l: string; on: Fn }
+  // Solo en el teléfono (accesos y «Tu cuenta» del Resumen: en escritorio están en la navegación).
+  | { type: "tel"; b: Bloque[] }
+  // Solo en escritorio (los botones que en el teléfono van en la barra de abajo).
+  | { type: "desk"; b: Bloque[] }
+  | { type: "biz"; items: { name: string; meta: string; ver: boolean; slot: string; img?: string; on: Fn }[] };
 export type Tarjeta = { label?: string; k?: string; t?: string; s?: string; rows?: { t: string; s?: string; v?: string; on?: Fn }[]; cta?: string; onCta?: Fn };
 export type Hoja = { title: string; sub?: string; yes: string; onYes: Fn; peligro?: boolean } | null;
 
 const TONE = { info: ["rgba(75,55,245,.07)", "var(--tl-action-ink)"], ok: ["rgba(0,229,196,.12)", "var(--tl-open-text)"], warn: ["rgba(255,176,32,.14)", "var(--tl-pro-ink)"], danger: ["rgba(192,57,43,.08)", "var(--tl-danger)"] } as const;
 const NAV: ([string, string] | [string, string, string, string, string])[] = [
-  ["MI ACTIVIDAD", "MY ACTIVITY"], ["USR-HOME", "Resumen", "Overview", "grid", "/cuenta"],
-  ["MI CUENTA", "MY ACCOUNT"], ["USR-DIRECCIONES", "Direcciones", "Addresses", "home", "/cuenta/direcciones"],
+  ["MI ACTIVIDAD", "MY ACTIVITY"], ["USR-HOME", "Resumen", "Overview", "grid", "/cuenta"], ["USR-PEDIDOS", "Pedidos", "Orders", "bag", "/cuenta/pedidos"],
+  ["USR-CITAS", "Citas y reservas", "Bookings", "calendar", "/cuenta/citas"], ["USR-FAVORITOS", "Guardados", "Saved", "heart", "/cuenta/guardados"],
+  ["USR-RESENAS", "Reseñas", "Reviews", "star", "/cuenta/resenas"], ["USR-EMPLEOS", "Empleos", "Jobs", "brief", "/cuenta/empleos"],
+  ["MI CUENTA", "MY ACCOUNT"], ["USR-PERFIL", "Perfil", "Profile", "users", "/cuenta/perfil"], ["USR-DIRECCIONES", "Direcciones", "Addresses", "home", "/cuenta/direcciones"],
+  ["USR-AVISOS", "Avisos", "Notifications", "bell", "/cuenta/avisos"], ["USR-AJUSTES", "Ajustes", "Settings", "shield", "/cuenta/ajustes"], ["USR-INVITAR", "Invita vecinos", "Invite neighbors", "share", "/cuenta/invitar"],
 ];
 
 export function useAnchoCuenta() {
@@ -183,6 +199,8 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
       <div style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
         {b.rows.map((r, i) => (
           <div key={r.key ?? i} role={r.on ? "link" : undefined} onClick={r.on} style={{ padding: "13px 16px", borderTop: i ? LINE : "none", display: "flex", gap: 12, alignItems: r.al ?? "center", cursor: r.on ? "pointer" : "default", background: "var(--tl-white)" }}>
+            {r.ph !== undefined && <span style={{ width: 46, height: 46, borderRadius: 13, background: r.ph ? `url("${r.ph}") center/cover` : undefined, backgroundColor: "var(--tl-photo-bg)", flex: "none", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", color: "var(--tl-ink)" }}>{r.ph ? "" : r.ini ?? ""}</span>}
+            {r.date && <span style={{ width: 48, height: 52, borderRadius: 13, background: r.dbg ?? "var(--tl-paper)", color: r.dfg ?? "var(--tl-ink)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: "none" }}><span style={{ font: `700 8.5px ${MONO}`, letterSpacing: ".12em" }}>{r.date.mo}</span><span style={{ marginTop: 2, font: "800 19px/1 Sora,sans-serif" }}>{r.date.dd}</span></span>}
             {r.ic && <span style={{ width: 40, height: 40, borderRadius: 12, background: r.ibg ?? "rgba(75,55,245,.1)", display: "grid", placeItems: "center", flex: "none" }}><Icon name={r.ic} size={18} color={r.ifg ?? "var(--tl-action)"} /></span>}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", rowGap: 4 }}><span style={{ font: "700 14px/1.3 Manrope,sans-serif", textWrap: "pretty" }}>{r.t}</span>{r.tag && <Tag tone={r.tag[1]}>{r.tag[0]}</Tag>}</div>
@@ -195,6 +213,29 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
             {r.chev && <span style={{ display: "grid", flex: "none" }}><Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /></span>}
           </div>))}
       </div>);
+    case "hero": return <div data-screen-label="Mi cuenta · tu tarjeta de vecino"><NeighborCard name={b.name} nick={b.nick} photo={b.photo} initials={b.ini} city={b.city} badge={b.badge} cells={b.cells} onProfile={b.onMe} /></div>;
+    case "prog": return <div data-screen-label="Mi cuenta · completa tu cuenta"><CompleteAccount kicker={b.k} title={b.t} items={b.items} actionLabel={b.al} /></div>;
+    case "agenda": return <div data-screen-label="Mi cuenta · tu semana"><WeekAgenda items={b.items} /></div>;
+    case "tiles": return (
+      <div data-screen-label="Mi cuenta · accesos" style={{ display: "grid", gridTemplateColumns: b.cols, gap: 8 }}>
+        {b.tiles.map((x, i) => (
+          <div key={i} role="link" onClick={x.on} style={{ position: "relative", padding: "14px 8px 12px", borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, cursor: "pointer", textAlign: "center", minWidth: 0 }}>
+            <span style={{ width: 42, height: 42, borderRadius: 13, background: "rgba(75,55,245,.1)", display: "grid", placeItems: "center" }}><Icon name={x.ic} size={19} color="var(--tl-action)" /></span>
+            <span style={{ font: "700 11.5px/1.25 Manrope,sans-serif", textWrap: "pretty" }}>{x.l}</span>
+            {x.n ? <span style={{ position: "absolute", top: 8, right: 8, minWidth: 18, height: 18, padding: "0 5px", boxSizing: "border-box", borderRadius: 99, background: "var(--tl-action)", color: "var(--tl-white)", font: `700 10px ${MONO}`, display: "grid", placeItems: "center" }}>{x.n}</span> : null}
+          </div>))}
+      </div>);
+    case "stats": return (
+      <div data-screen-label="Mi cuenta · tu apoyo al barrio" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 }}>
+        <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".16em", color: "var(--tl-open-text)" }}>{b.k}</div>
+        <div style={{ marginTop: 7, font: "800 17px/1.3 Sora,sans-serif", letterSpacing: "-.02em", textWrap: "pretty" }}>{b.t}</div>
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 8 }}>{b.cells.map((x, i) => <div key={i} style={{ padding: 10, borderRadius: 13, background: "var(--tl-paper)", minWidth: 0 }}><div style={{ font: "800 18px/1 Sora,sans-serif", letterSpacing: "-.02em" }}>{x.v}</div><div style={{ marginTop: 6, font: `700 8.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.5)" }}>{x.l}</div></div>)}</div>
+      </div>);
+    case "biz": return <div data-screen-label="Mi cuenta · negocios" style={{ display: "grid", gridTemplateColumns: M ? "minmax(0,1fr)" : "repeat(auto-fill,minmax(320px,1fr))", gap: 8 }}>{b.items.map((x, i) => <BusinessRow key={i} name={x.name} meta={x.meta} verified={x.ver} slot={x.slot} image={x.img} onClick={x.on} />)}</div>;
+    case "desk": return !M ? <>{b.b.map((x, i) => <Pieza key={i} b={x} M={M} />)}</> : null;
+    case "tel": return M ? <>{b.b.map((x, i) => <Pieza key={i} b={x} M={M} />)}</> : null;
+    case "chips": return <div className="hs" style={{ display: "flex", gap: 6, overflowX: "auto" }}>{b.items.map((x, i) => <Chip key={i} variant={x.on ? "selected" : "filter"} onClick={x.onClick}>{x.l}</Chip>)}</div>;
+    case "more": return <div style={{ display: "flex", justifyContent: "center" }}><Button variant="secondary" size="md" onClick={b.on}>{b.l}</Button></div>;
     case "kv": return (
       <div style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: "4px 16px" }}>
         {b.rows.map((x, i) => <div key={i} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i ? LINE : "none", alignItems: "flex-start" }}><span style={{ width: b.kw ?? "96px", flex: "none", font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.45)", paddingTop: 3 }}>{x.k}</span><div style={{ flex: 1, minWidth: 0, font: "600 13.5px/1.45 Manrope,sans-serif", textWrap: "pretty" }}>{x.v}</div>{x.l && <span role="button" onClick={x.on} style={{ font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer", flex: "none" }}>{x.l}</span>}</div>)}

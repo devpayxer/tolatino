@@ -44,6 +44,8 @@ export function normalizarTelefono(entrada: string): string | null {
 
 const huellaCodigo = (tel: string, codigo: string) => createHmac("sha256", secretoAuth()).update(`${tel}:${codigo}`).digest("hex");
 const huellaToken = (t: string) => createHash("sha256").update(t).digest("hex");
+/* La huella de la sesión de esta petición (para marcar «este» en Privacidad y no cerrarla desde ahí). */
+export async function sesionActual(): Promise<string | null> { const t = (await cookies()).get(COOKIE)?.value; return t ? huellaToken(t) : null; }
 
 export async function ipCliente(): Promise<string | null> {
   const h = await headers();
@@ -52,7 +54,7 @@ export async function ipCliente(): Promise<string | null> {
 }
 
 /* Paso 1: pedir el código. Devuelve el código solo en modo pruebas (sandbox). */
-export async function pedirCodigo(entrada: string): Promise<{ reenviarEn: number; codigoPrueba?: string }> {
+export async function pedirCodigo(entrada: string, proposito: "login" | "phone_change" | "account_delete" = "login"): Promise<{ reenviarEn: number; codigoPrueba?: string }> {
   const tel = normalizarTelefono(entrada);
   if (!tel) throw new ErrorCuenta("telefono_invalido");
   const ip = await ipCliente();
@@ -70,11 +72,25 @@ export async function pedirCodigo(entrada: string): Promise<{ reenviarEn: number
   const codigo = String(randomInt(0, 1_000_000)).padStart(6, "0");
   await db().query(
     `insert into otp_codes (phone, purpose, code_hash, ip, channel, expires_at)
-     values ($1, 'login', $2, $3::inet, $4, now() + make_interval(mins => $5))`,
-    [tel, huellaCodigo(tel, codigo), ip, MODO_SMS === "pruebas" ? "pruebas" : "sms", CODIGO_MIN],
+     values ($1, $6, $2, $3::inet, $4, now() + make_interval(mins => $5))`,
+    [tel, huellaCodigo(tel, codigo), ip, MODO_SMS === "pruebas" ? "pruebas" : "sms", CODIGO_MIN, proposito],
   );
   if (MODO_SMS === "pruebas") return { reenviarEn: REENVIO_SEG, codigoPrueba: codigo };
   throw new ErrorCuenta("sin_proveedor"); // Telnyx se conecta aquí (decisión E2).
+}
+
+/* Revisa un código (cambiar teléfono, borrar la cuenta) dentro de una transacción: el último vigente de ese propósito,
+   con tope de intentos y comparación de tiempo constante. */
+export async function consumirCodigo(c: import("pg").PoolClient, tel: string, proposito: "phone_change" | "account_delete", codigo: string): Promise<"ok" | "codigo_incorrecto" | "codigo_vencido" | "demasiados"> {
+  if (!/^\d{6}$/.test(codigo)) return "codigo_incorrecto";
+  const f = (await c.query<{ id: number; code_hash: string; attempts: number }>(
+    `select id, code_hash, attempts from otp_codes where phone = $1 and purpose = $2 and used_at is null and expires_at > now() order by created_at desc limit 1 for update`, [tel, proposito])).rows[0];
+  if (!f) return "codigo_vencido";
+  if (f.attempts >= MAX_INTENTOS) return "demasiados";
+  const a = Buffer.from(f.code_hash, "hex"), b = Buffer.from(huellaCodigo(tel, codigo), "hex");
+  if (a.length !== b.length || !timingSafeEqual(a, b)) { await c.query("update otp_codes set attempts = attempts + 1 where id = $1", [f.id]); return "codigo_incorrecto"; }
+  await c.query("update otp_codes set used_at = now() where id = $1", [f.id]);
+  return "ok";
 }
 
 /* Paso 2: verificar el código → crea la cuenta si no existe y abre la sesión. */
@@ -124,6 +140,9 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
           : { es: `Esta cuenta no puede entrar.${por.es} Escríbele a Soporte.`, en: `This account can't sign in.${por.en} Contact Support.` };
       return { error: "cuenta_bloqueada" as const, detalle: det };
     }
+    // Entrar antes de los 30 días cancela el borrado que pidió la persona (no el de To'Latino).
+    if ((await c.query(`update users set delete_at = null, delete_reason = null where id = $1 and status = 'active' and delete_at is not null and coalesce(delete_reason, '') <> 'admin' returning 1`, [user.id])).rowCount)
+      await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'undelete', null, 'entró', 'user')`, [user.id]);
     // Un silencio o una suspensión que ya venció se levanta sola.
     await c.query(`update users set status = 'active', status_until = null where id = $1 and status in ('muted', 'suspended') and status_until <= now()`, [user.id]);
 

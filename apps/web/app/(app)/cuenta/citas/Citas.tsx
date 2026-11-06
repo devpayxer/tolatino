@@ -1,0 +1,35 @@
+"use client";
+/* USR-CITAS (diseño «To'Latino Mi cuenta» · citasV / citaRow): Próximas y Pasadas, cada una con su caja de fecha, el
+   negocio, el estado, qué es, cuándo y para cuántos; lo que falta (esperando respuesta, te proponen otra hora, no pudo).
+   «Volver a reservar» y «Escribir reseña» en las terminadas. Cada una abre su página. */
+import { useRouter } from "next/navigation";
+import type { EstMesa, MisReservas } from "@/lib/mi-cuenta";
+import { Marco, useCuentaUi, type Bloque, type Fila, type Yo } from "../Marco";
+import { cajaFecha, diaRel, horaDe } from "../fechas";
+
+export const tagMesa = (st: EstMesa, es: boolean): [string, string] => {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  return ({ pend: [E2("PENDIENTE", "PENDING"), "neutral"], alt: [E2("TE PROPONEN UN CAMBIO", "THEY PROPOSE A CHANGE"), "action"], ok: [E2("CONFIRMADA", "CONFIRMED"), "signal"], in: [E2("EN CURSO", "IN PROGRESS"), "action"],
+    done: [E2("TERMINADA", "DONE"), "ink"], nos: [E2("NO LLEGASTE", "NO-SHOW"), "danger"], no: [E2("NO PUDO", "COULD NOT"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "neutral"], cx: [E2("CANCELADA", "CANCELED"), "neutral"] } as Record<EstMesa, [string, string]>)[st];
+};
+
+export function Citas({ d, f, es, yo, pagina }: { d: MisReservas; f: "up" | "past"; es: boolean; yo: Yo; pagina: boolean }) {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  const router = useRouter(), ui = useCuentaUi();
+  const ir = (q: string) => router.push("/cuenta/citas" + q);
+  const B: Bloque[] = [{ type: "chips", items: [{ l: `${E2("Próximas", "Upcoming")} · ${d.n.up}`, on: f === "up", onClick: () => ir("") }, { l: `${E2("Pasadas", "Past")} · ${d.n.past}`, on: f === "past", onClick: () => ir("?f=past") }] }];
+  if (f === "up" && d.filas.length) B.push({ type: "note", tone: "info", ic: "info", s: E2("Toda reservación es una solicitud: queda confirmada solo cuando el negocio responde.", "Every booking is a request: it is confirmed only when the business replies.") });
+  B.push(d.filas.length ? { type: "rows", rows: d.filas.map((c): Fila => {
+    const x = c.st === "pend" ? E2("Solicitud enviada · esperando respuesta", "Request sent · waiting for a reply") : c.st === "alt" ? E2("Te proponen un cambio. Ábrela para decidir.", "They propose a change. Open it to decide.")
+      : c.st === "no" ? E2("El restaurante no pudo. Ábrela para ver otras horas.", "The restaurant could not. Open it to see other times.") : c.st === "exp" ? E2("No respondieron a tiempo. No se te cobró nada.", "They did not reply in time. You were not charged.") : "";
+    return {
+      key: c.num, date: cajaFecha(c.at, c.tz, es), dbg: c.up ? "var(--tl-ink)" : undefined, dfg: c.up ? "var(--tl-white)" : undefined, t: c.bname, tag: tagMesa(c.st, es),
+      s: `${E2("Mesa para ", "Table for ")}${c.p} · ${diaRel(c.dia, c.at, c.tz, es)} · ${horaDe(c.at, c.tz, es)}`.toUpperCase(), x, chev: true, on: () => router.push(`/reserva/${c.num}`),
+      acts: c.st === "done" ? [[E2("Volver a reservar", "Book again"), "secondary", () => router.push(`/n/${c.biz}?tab=rsv`)], ...(!c.rev ? [[E2("Escribir reseña", "Write review"), "primary", () => router.push(`/n/${c.biz}/resena?pedido=${c.num}`)] as [string, string, () => void]] : [])] : undefined,
+    };
+  }) } : { type: "empty", ic: "calendar", t: f === "up" ? E2("No tienes reservaciones próximas", "No upcoming bookings") : E2("Todavía no hay reservaciones pasadas", "No past bookings yet"),
+    s: E2("Reserva mesa en un restaurante y aquí la ves con su estado.", "Book a restaurant table and it shows here with its status."), cta: E2("Buscar dónde", "Find a place"), onCta: () => router.push("/negocios") });
+  if (d.sig) B.push({ type: "more", l: E2("Ver más", "See more"), on: () => ir(`?f=past&antes=${d.sig}`) });
+  if (pagina) B.push({ type: "more", l: E2("Volver a las más recientes", "Back to the latest"), on: () => ir("?f=past") });
+  return <Marco es={es} code="USR-CITAS" t={E2("Citas y reservas", "Bookings")} s={`${d.n.up}${E2(" PRÓXIMAS · ", " UPCOMING · ")}${d.n.past}${E2(" PASADAS", " PAST")}`} blocks={B} yo={yo} ui={ui} />;
+}
