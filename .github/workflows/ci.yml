@@ -24,6 +24,8 @@ jobs:
           docker run -d --rm --name stripe-mock -p 12111:12111 stripe/stripe-mock@sha256:aeb96b83e87a893d2ac005e363ac01ffa6e59a5ad85b49c155dfc9129de02e78
           for i in $(seq 1 30); do curl -sf -u sk_test_123: http://127.0.0.1:12111/v1/accounts/acct_1 > /dev/null && break; sleep 1; done
           bash scripts/contrato-stripe/correr.sh
+      - name: Firma del correo (SES SigV4) contra el vector oficial de AWS
+        run: node scripts/prueba-firma-ses/prueba.mjs
       - name: Imagen del sandbox se construye
         run: docker build -f infra/pruebas/Dockerfile -t tolatino/web:ci .
       - name: Migraciones en una base real (dos veces, la segunda no cambia nada)

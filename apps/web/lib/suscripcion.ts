@@ -76,6 +76,7 @@ async function cobrarPeriodo(s: Fila, desde: number): Promise<{ ok: true } | { o
   await evento(s.business_id, "charged", { monto, note: { pi: r.id, hasta: hasta.toISOString() }, idem });
   const t = (await db().query<{ marca: string; l4: string }>(`select brand as marca, last4 as l4 from payment_methods where stripe_pm_id = $1`, [s.card_pm])).rows[0];
   await avisarDueño(s.business_id, "pro_charged", { monto: money(monto), negocio: await nombre(s.business_id), tarjeta: t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "tarjeta" });
+  await (await import("./correo/recibos")).reciboPro(s.business_id, s.payer_user_id, monto, hasta.toISOString(), t ? `${t.marca.toUpperCase()} ·· ${t.l4}` : "—", idem); // 2q
   return { ok: true };
 }
 async function aFree(negocio: string, por: string) {

@@ -43,6 +43,7 @@ export async function mesaPaso(id: string, numero: string, paso: PasoMesa): Prom
   await auditar(a, `reserva.${paso}`, { reservacion: numero }, { reservacion: numero, paso: PASO_L[paso] });
   const AV = { confirmar: "rsv_ok", otra: "rsv_alt", nohay: "rsv_no" } as const;
   if (paso in AV) await avisarMesa(String(numero), AV[paso as keyof typeof AV]);
+  if (paso === "confirmar") await (await import("@/lib/correo/recibos")).reciboMesa(String(numero)); // 2q: confirmación por correo
   return { ok: true };
 }
 

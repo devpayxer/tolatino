@@ -15,7 +15,9 @@ const SMS: Record<string, [string, string]> = { no: ["SOLO BANDEJA", "neutral"],
 const PREF: Record<string, string> = { ord: "Pedidos", cit: "Citas y reservas", emp: "Empleos" };
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
-export function Notificaciones({ d, tab, puede }: { d: DatosNotif; tab: "tpl" | "log" | "rules"; puede: boolean }) {
+const MAIL: Record<string, [string, string]> = { pruebas: ["EN MODO PRUEBAS", "action"], pendiente: ["PENDIENTE", "neutral"], enviado: ["ENVIADO", "signal"], fallo: ["FALLÓ", "danger"], sin_proveedor: ["SIN PROVEEDOR", "danger"] };
+const MAIL_TPL: Record<string, string> = { verify: "Confirma tu correo", receipt_order: "Recibo de pedido", receipt_table: "Mesa confirmada", receipt_pro: "Recibo de Pro" };
+export function Notificaciones({ d, tab, puede }: { d: DatosNotif; tab: "tpl" | "log" | "rules" | "mail"; puede: boolean }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [pend, start] = useTransition();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -43,7 +45,7 @@ export function Notificaciones({ d, tab, puede }: { d: DatosNotif; tab: "tpl" | 
       { k: "SMS FRENADOS · 24 H", v: String(k.frenados), s: "por sus avisos o las horas de silencio" },
       { k: "SMS CON PROBLEMA · 24 H", v: String(k.fallos), s: k.fallos ? "fallaron o no hay proveedor" : "ninguno", sFg: k.fallos ? "var(--tl-danger)" : undefined },
     ] },
-    { type: "tabs", items: ([["tpl", "Plantillas", String(d.plantillas.length)], ["log", "Envíos"], ["rules", "Reglas"]] as const).map(([t, l, n]) => ({ l, n, on: tab === t, onClick: () => ir(t) })) },
+    { type: "tabs", items: ([["tpl", "Plantillas", String(d.plantillas.length)], ["log", "Envíos"], ["mail", "Correos", d.kmail.hoy ? String(d.kmail.hoy) : undefined], ["rules", "Reglas"]] as const).map(([t, l, n]) => ({ l, n, on: tab === t, onClick: () => ir(t) })) },
   ];
   if (tab === "tpl") for (const g of Object.keys(G) as GrupoNotif[]) {
     const L = d.plantillas.filter((p) => p.grp === g);
@@ -61,14 +63,25 @@ export function Notificaciones({ d, tab, puede }: { d: DatosNotif; tab: "tpl" | 
       tag: SMS[x.sms]?.[0] ?? x.sms, tone: SMS[x.sms]?.[1] ?? "neutral", chev: true, onClick: () => router.push(`/admin/usuarios/${x.uid}`),
     })) });
   }
+  if (tab === "mail") {
+    const m = d.kmail;
+    B.push({ type: "note", tone: "info", icon: "info", t: `Correo con plantillas propias, enviado por Amazon SES. 24 h: ${m.hoy} correos · ${m.enviados} enviados${m.pruebas ? ` · ${m.pruebas} en modo pruebas (no salen)` : ""}${m.problemas ? ` · ${m.problemas} con problema` : ""}. Solo a correos confirmados y si la persona tiene «Recibos» encendido.` });
+    if (!d.correos.length) B.push({ type: "empty", icon: "info", t: "Todavía no sale ningún correo", s: "Aparecen aquí cuando alguien confirma su correo, termina un pedido, le confirman una mesa o se cobra Pro." });
+    else B.push({ type: "rows", items: d.correos.map((x) => ({
+      key: x.id, icon: "info", t: x.subject, s: `${MAIL_TPL[x.tpl] ?? x.tpl} · ${x.quien ?? "—"} · ${x.to}${x.error ? ` · ${x.error}` : ""}`, m: cuando(x.at),
+      tag: MAIL[x.status]?.[0] ?? x.status, tone: MAIL[x.status]?.[1] ?? "neutral", chev: true, onClick: () => router.push(`/admin/notificaciones/correo/${x.id}`),
+    })) });
+  }
   if (tab === "rules") B.push({ type: "rows", items: [
     { icon: "lock", t: "Lo crítico siempre llega", s: "El código para entrar sale siempre por SMS. No se apaga ni espera las horas de silencio." },
     { icon: "clock", t: "Horas de silencio", s: "De 10 PM a 7 AM, hora de la ciudad de la persona: el SMS que no es crítico no sale; el aviso queda en su bandeja. La persona puede desactivarlas en Mi cuenta › Avisos. La solicitud nueva al negocio no espera: solo llega mientras el negocio está recibiendo." },
     { icon: "bell", t: "La bandeja siempre", s: "Cada aviso queda en la campana de la app, aunque el SMS esté apagado. Abrir la bandeja lo marca como leído." },
     { icon: "users", t: "Lo decide cada persona", s: "En Mi cuenta › Avisos apaga el SMS de pedidos, de citas y reservas, o de empleos. Lo que no tiene interruptor (un pedido no aceptado, la respuesta a una ayuda) llega siempre." },
     { icon: "globe", t: "En su idioma", s: "Cada aviso sale en el idioma de la cuenta de la persona: español o inglés." },
+    { icon: "info", t: "Correo", s: "Plantillas propias y envío por Amazon SES. Solo a correos confirmados (enlace de un solo uso, 24 horas). Recibos de pedidos, mesas confirmadas y cobros de Pro; cada uno se manda una vez. En el sandbox ningún correo sale: queda «en modo pruebas» y se ve en Correos." },
     { icon: "phone", t: "Proveedor de SMS", s: "Telnyx, con la clave del entorno. En el sandbox ningún SMS sale: queda «en modo pruebas» y se ve en Envíos. Sin clave, queda «sin proveedor»." },
   ] });
+  if (tab === "mail" && d.sig) B.push({ type: "acts", items: [{ l: "Ver más", v: "secondary", onClick: () => ir("mail", d.sig!) }] });
   if (tab === "log" && d.sig) B.push({ type: "acts", items: [{ l: "Ver más", v: "secondary", onClick: () => ir("log", d.sig!) }] });
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

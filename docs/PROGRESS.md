@@ -464,6 +464,11 @@ _Actualizado: 5 nov 2026._
   rápidas, compartir teléfono, quién lo lleva, bloquear, reportar). Super Admin › Colas › Mensajes reportados (el hilo solo
   con caso abierto; ocultar mensaje con motivo). Accesibilidad: IconButton e interruptores (guardianes botonAccesible e
   interruptorAccesible). Ayuda: mensajes.md.
+- **Fase 2 · bloque 2q Correo ✓ (6 nov):** migración 0041 (`email_outbox` historial, `email_verifications`); `lib/correo/`
+  (`ses.ts` firma SigV4 propia + envío SES v2, `plantillas.ts` marco con la marca, `index.ts` bandeja/modo/verificar,
+  `recibos.ts` pedido terminado, mesa confirmada, cobro de Pro; uno por cosa). Perfil «Confirma tu correo» + `/cuenta/correo`.
+  Super Admin › Notificaciones › Correos + ver un correo (enmascarado). CI: `scripts/prueba-firma-ses` (vector de AWS).
+  Guardián `correo` (colores = tokens; sin modo pruebas en producción). Ayuda: correo.md.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

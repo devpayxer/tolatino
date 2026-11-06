@@ -345,3 +345,13 @@ cada 4–5 s mientras está abierta (tiempo real con WebSocket queda para el lan
 Llamar en la ficha (en el diseño está en la hoja de Llamar de escritorio). «El Compa contesta por ti» y «Sugerir
 respuesta» llegan con El Compa (Fase 4). Fotos en el chat, después (LAUNCH-CHECKLIST). Cola nueva «Mensajes reportados»
 (48 h). Arreglos de accesibilidad de paso: IconButton y todos los interruptores con teclado y nombre (guardianes)._
+
+## Fase 2 · 2q Correo y recibos
+1. Marisol › Mi cuenta › **Perfil**: escribe su correo, Guardar → «Confirma tu correo» → en el sandbox **Abrir el enlace** → «Tu correo está confirmado».
+2. Termina un pedido de Marisol (Pedro: Entregado) → Ana › Notificaciones › **Correos**: «Recibo de tu pedido #…» EN MODO PRUEBAS → ábrelo: así le llega.
+3. Pedro confirma una mesa → «Mesa confirmada». Un cobro de Pro → «Recibo de Pro».
+4. Mi cuenta › Avisos › Correo › **Recibos** apagado → ya no llegan.
+_Decisiones (AB): PLAN §8 dice SES; la firma la hacemos nosotros (sin SDK) y se prueba contra el vector oficial de AWS en
+CI. Solo correos confirmados (enlace de un solo uso, 24 h). En el sandbox ningún correo sale (modo pruebas, candado: nunca
+en producción). El equipo ve los correos enmascarados y el enlace de confirmar tapado. El «Resumen semanal del barrio»
+(Avisos) llega con Comunidad._

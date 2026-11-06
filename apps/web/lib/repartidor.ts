@@ -186,6 +186,7 @@ export async function pasoRepartidor(userId: string, numero: string, paso: PasoR
     return { ok: true, op: o.id } as const;
   });
   if (r.ok && "op" in r && r.op) await cobrarOperacion(r.op as string).catch(() => undefined); // con tarjeta: ya se cobró al aceptar; esto solo repara
+  if (r.ok && "op" in r && r.op) await (await import("./correo/recibos")).reciboPedido(r.op as string); // 2q: recibo por correo
   return r;
 }
 

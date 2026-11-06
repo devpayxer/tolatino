@@ -16,6 +16,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   after(() => actividad(u?.id ?? null, loc.c.id, ctx));
   // Plan Pro: fin de pruebas, renovaciones y reintentos (cada 5 min a lo sumo; nunca frena la página).
   after(async () => { await (await import("@/lib/suscripcion")).procesar().catch(() => undefined); });
+  // Correo (2q): reintenta lo pendiente (solo con SES; en el sandbox no sale nada). Un reloj propio llega con el lanzamiento.
+  after(async () => { await (await import("@/lib/correo")).procesarCorreos().catch(() => undefined); });
   const t = T[lang], es = lang === "es";
   const iniciales = u ? (((u.first_name?.[0] ?? "") + (u.last_name?.[0] ?? "")).toUpperCase() || "TL") : "";
   // Encabezado (prototipo locLabel / locShort): «Hazleton, PA · 5 mi · tú» o «Allentown, PA · pronto».

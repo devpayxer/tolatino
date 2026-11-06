@@ -233,6 +233,7 @@ export async function cambiarPaso(negocio: string, numero: string, paso: Paso, a
     // La tarjeta: se cobra al aceptar; se libera si se rechaza (después de guardar el paso, fuera de la transacción).
     if (r.ok && "op" in r && paso === "aceptar") await cobrarOperacion(r.op as string);
     if (r.ok && "op" in r && paso === "rechazar") await liberarOperacion(r.op as string);
+    if (r.ok && "op" in r && paso === "entregado") await (await import("./correo/recibos")).reciboPedido(r.op as string); // 2q: recibo por correo
     return r.ok ? { ok: true as const } : r;
   });
 }

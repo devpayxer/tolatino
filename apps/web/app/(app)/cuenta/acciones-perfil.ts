@@ -30,3 +30,10 @@ export async function idiomaCuenta(lang: "es" | "en"): Promise<ResP> {
   await db().query(`update users set lang = $2 where id = $1`, [u.id, l]);
   return { ok: true };
 }
+/* Correo (2q): manda el enlace para confirmar el correo. En el sandbox devuelve el enlace (el correo no sale). */
+export async function perfilVerificar(): Promise<{ ok: true; enlacePrueba?: string } | { ok: false; msg: { es: string; en: string } }> {
+  const u = await quien();
+  if (!u) return NO as { ok: false; msg: { es: string; en: string } };
+  const { pedirVerificacion } = await import("@/lib/correo");
+  return pedirVerificacion(u.id);
+}
